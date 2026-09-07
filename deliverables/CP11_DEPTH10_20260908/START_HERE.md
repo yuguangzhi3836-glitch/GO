@@ -34,6 +34,16 @@ This depth establishes the group-directory control plane required before wide cr
 - explicit states: DISCOVERED -> IDENTITY_VERIFIED -> CATALOG_CAPTURE -> MEDIA_CAPTURE -> QUALITY_GATE -> READY_TO_PUBLISH / NEEDS_ENRICHMENT
 - no failure may replace a last-known-good published page
 
+## Implemented in this branch
+
+- `chain_hotel_registry.py`: locked chain order, official-host policy, stable chain/property idempotency key and bounded adapter contract.
+- `hyatt_directory_adapter.py`: Hyatt China official-directory enumerator with official-host enforcement, stable official property codes, deduplication, bounded pagination, resumable cursor and snapshot-hash protection. A changed directory snapshot cannot be silently mixed into a resumed inventory.
+- `chain_task_lease.py`: persistent DB event-ledger state machine: QUEUED -> LEASED -> ACKED or RETRY_WAIT/DEAD. PostgreSQL advisory transaction locks serialize claims; expired leases are reclaimable after worker death; heartbeat extends ownership; ACK requires a live owned lease.
+- `chain_autonomous_build.py`: verified Hyatt directory seeds are converted into `GROUP_OFFICIAL` discovery seeds and handed to the existing official catalog pipeline. Deterministic identity/source failures dead-letter; recoverable failures retry with bounded backoff.
+- tests cover official host boundaries, Hyatt property dedupe, cursor resume, snapshot drift, conflicting identities, task claimability/state folding and the official discovery bridge.
+
+The current production regional worker still uses the legacy Redis queue path. DEPTH10 does **not** claim that legacy path is now safe merely because the new durable chain task ledger exists. Cutover must occur only after PostgreSQL integration and forced-worker-termination tests pass.
+
 ## Concurrency policy
 
 Initial operational target is 50 hotels concurrently active across the fleet, not 50 requests against one domain. Domain-level throttling is mandatory. Validation tier is 200 concurrent hotels; 1000+ nationwide tasks may be queued/active only after persistence, ACK/lease recovery, media atomicity and real multi-group tests pass.
@@ -54,10 +64,10 @@ The hotel consumer surface is a release gate, not decoration. Representative rea
 
 ## Immediate engineering sequence
 
-1. Add chain registry + property seed model.
-2. Add first Hyatt directory adapter behind a bounded interface.
-3. Feed verified Hyatt seeds into the existing official capture pipeline.
-4. Add persistent claim/lease/ACK/retry/resume semantics to the regional build path.
+1. ~~Add chain registry + property seed model.~~ Implemented.
+2. ~~Add first Hyatt directory adapter behind a bounded interface.~~ Implemented, pending real official-directory capture validation.
+3. ~~Feed verified Hyatt seeds into the existing official capture pipeline.~~ Bridge implemented, pending real multi-hotel run.
+4. **Cut the chain worker over to persistent claim/lease/ACK/retry/resume semantics and prove PostgreSQL crash recovery.**
 5. Move media indexing to atomic durable storage before enabling high concurrency.
 6. Validate at least 10 real hotels across multiple official-site templates.
 7. Add C-end masterpiece visual benchmark before release.
