@@ -1,0 +1,1971 @@
+--- DEPTH07/alembic/versions/0116_autonomy_durable.py
++++ DEPTH08/alembic/versions/0116_autonomy_durable.py
+@@ -0,0 +1,83 @@
++"""Durable governed task execution; existing business schema remains intact."""
++from alembic import op
++import sqlalchemy as sa
++
++revision = "0116_autonomy_durable"
++down_revision = "0115_rental_change_settlement"
++branch_labels = None
++depends_on = None
++
++
++def upgrade():
++    op.create_table('autonomy_cell_control',
++        sa.Column('environment', sa.String(length=24), primary_key=True, nullable=False),
++        sa.Column('cell_id', sa.String(length=8), primary_key=True, nullable=False),
++        sa.Column('paused', sa.Boolean(), nullable=False),
++        sa.Column('version', sa.Integer(), nullable=False),
++        sa.Column('updated_by', sa.String(length=64), nullable=False),
++        sa.Column('updated_ms', sa.BigInteger(), nullable=False))
++    op.create_table('autonomy_qualification',
++        sa.Column('qualification_id', sa.String(length=64), primary_key=True, nullable=False),
++        sa.Column('record_json', sa.JSON(), nullable=False),
++        sa.Column('expires_ms', sa.BigInteger(), nullable=False),
++        sa.Column('revision', sa.Integer(), nullable=False),
++        sa.Column('updated_ms', sa.BigInteger(), nullable=False))
++    op.create_table('autonomy_task',
++        sa.Column('task_id', sa.String(length=64), primary_key=True, nullable=False),
++        sa.Column('environment', sa.String(length=24), nullable=False),
++        sa.Column('cell_id', sa.String(length=8), nullable=False),
++        sa.Column('operation', sa.String(length=96), nullable=False),
++        sa.Column('handler_version', sa.String(length=64), nullable=False),
++        sa.Column('request_hash', sa.String(length=64), nullable=False),
++        sa.Column('submitted_by', sa.String(length=64), nullable=False),
++        sa.Column('payload_json', sa.JSON(), nullable=False),
++        sa.Column('status', sa.String(length=24), nullable=False),
++        sa.Column('attempt', sa.Integer(), nullable=False),
++        sa.Column('max_attempts', sa.Integer(), nullable=False),
++        sa.Column('next_step', sa.Integer(), nullable=False),
++        sa.Column('event_seq', sa.Integer(), nullable=False),
++        sa.Column('available_ms', sa.BigInteger(), nullable=False),
++        sa.Column('lease_until_ms', sa.BigInteger(), nullable=True),
++        sa.Column('lease_token', sa.String(length=64), nullable=True),
++        sa.Column('worker_id', sa.String(length=128), nullable=True),
++        sa.Column('external_started', sa.Boolean(), nullable=False),
++        sa.Column('last_code', sa.String(length=128), nullable=True),
++        sa.Column('result_json', sa.JSON(), nullable=True),
++        sa.Column('created_ms', sa.BigInteger(), nullable=False),
++        sa.Column('updated_ms', sa.BigInteger(), nullable=False),
++        sa.CheckConstraint('attempt >= 0 AND max_attempts BETWEEN 1 AND 20 AND next_step >= 0', name='ck_autonomy_task_bounds'),
++        sa.CheckConstraint("status IN ('QUEUED','RUNNING','RETRY_WAIT','HOLD','SUCCEEDED','FAILED','DEAD','UNCERTAIN','CANCELLED')", name='ck_autonomy_task_status'))
++    op.create_index('ix_autonomy_task_cell', 'autonomy_task', ['environment', 'cell_id', 'created_ms'], unique=False)
++    op.create_index('ix_autonomy_task_queue', 'autonomy_task', ['environment', 'status', 'available_ms'], unique=False)
++    op.create_table('autonomy_step',
++        sa.Column('task_id', sa.String(length=64), sa.ForeignKey('autonomy_task.task_id'), primary_key=True, nullable=False),
++        sa.Column('step_no', sa.Integer(), primary_key=True, nullable=False),
++        sa.Column('result_json', sa.JSON(), nullable=False),
++        sa.Column('result_hash', sa.String(length=64), nullable=False),
++        sa.Column('completed_ms', sa.BigInteger(), nullable=False))
++    op.create_table('autonomy_event',
++        sa.Column('event_id', sa.String(length=64), primary_key=True, nullable=False),
++        sa.Column('task_id', sa.String(length=64), sa.ForeignKey('autonomy_task.task_id'), nullable=True),
++        sa.Column('environment', sa.String(length=24), nullable=False),
++        sa.Column('cell_id', sa.String(length=8), nullable=False),
++        sa.Column('event_type', sa.String(length=48), nullable=False),
++        sa.Column('actor_id', sa.String(length=128), nullable=False),
++        sa.Column('details_json', sa.JSON(), nullable=False),
++        sa.Column('created_ms', sa.BigInteger(), nullable=False),
++        sa.Column('sequence', sa.Integer(), nullable=False),
++        sa.UniqueConstraint('task_id', 'sequence', name='uq_autonomy_event_sequence'))
++    op.create_index('ix_autonomy_event_task_id', 'autonomy_event', ['task_id'], unique=False)
++
++
++def downgrade():
++    conn = op.get_bind()
++    # Queue/evidence deletion is not an application rollback. Export or restore a
++    # verified database backup before explicitly removing populated tables.
++    for name in ['autonomy_cell_control', 'autonomy_qualification', 'autonomy_task', 'autonomy_step', 'autonomy_event']:
++        if conn.scalar(sa.text('SELECT count(*) FROM ' + name)):
++            raise RuntimeError('AUTONOMY_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE')
++    op.drop_table('autonomy_event')
++    op.drop_table('autonomy_step')
++    op.drop_table('autonomy_task')
++    op.drop_table('autonomy_qualification')
++    op.drop_table('autonomy_cell_control')
+--- DEPTH07/scripts/assemble_depth08_candidate.py
++++ DEPTH08/scripts/assemble_depth08_candidate.py
+@@ -0,0 +1,134 @@
++#!/usr/bin/env python3
++"""Restore DEPTH08 into a new directory from exact CP11 + DEPTH07 + sealed delta."""
++import argparse
++import hashlib
++import json
++import os
++from pathlib import Path, PurePosixPath
++import shutil
++import stat
++import zipfile
++
++PARENT_SHA = '8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb'
++WORK_SHA = '25e92a436ecd811794cbe90b1e000f9cfe71eeca8b420eaeff151e62ae61b808'
++ROOTS = {'src', 'frontend', 'tests', 'tests_frontend', 'scripts', 'alembic'}
++
++
++def sha(path):
++    with path.open('rb') as stream:
++        return hashlib.file_digest(stream, 'sha256').hexdigest()
++
++
++def safe_name(name):
++    p = PurePosixPath(name)
++    if not name or p.is_absolute() or '..' in p.parts or '\\' in name or ':' in name:
++        raise ValueError('UNSAFE_ARCHIVE_PATH')
++    return p
++
++
++def preflight(z):
++    names = z.namelist()
++    if len(names) != len(set(names)):
++        raise ValueError('DUPLICATE_ARCHIVE_MEMBER')
++    for info in z.infolist():
++        safe_name(info.filename)
++        if stat.S_ISLNK(info.external_attr >> 16):
++            raise ValueError('ARCHIVE_SYMLINK_REJECTED')
++    bad = z.testzip()
++    if bad:
++        raise ValueError('ARCHIVE_CRC_FAILED:' + bad)
++
++
++def extract(z, output):
++    for info in z.infolist():
++        path = safe_name(info.filename)
++        if '__pycache__' in path.parts or path.suffix in {'.pyc', '.pyo'}:
++            continue
++        target = output / str(path)
++        if info.is_dir():
++            target.mkdir(parents=True, exist_ok=True)
++            continue
++        target.parent.mkdir(parents=True, exist_ok=True)
++        with z.open(info) as source, target.open('wb') as dest:
++            shutil.copyfileobj(source, dest)
++        if os.name != 'nt':
++            target.chmod(0o755 if (info.external_attr >> 16) & 0o111 else 0o644)
++
++
++def source_entries(root):
++    entries = []
++    for path in sorted(root.rglob('*')):
++        rel = path.relative_to(root)
++        if rel.parts[0] not in ROOTS and rel.as_posix() not in {'pyproject.toml', 'alembic.ini'}:
++            continue
++        if '__pycache__' in rel.parts or path.suffix in {'.pyc', '.pyo'} or not path.is_file():
++            continue
++        entries.append({'path': rel.as_posix(), 'sha256': sha(path)})
++    return entries
++
++
++def tree_hash(entries):
++    return hashlib.sha256(json.dumps(entries, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
++
++
++def restore(parent, work, delta, output):
++    if output.exists():
++        raise ValueError('OUTPUT_MUST_BE_NEW_DIRECTORY')
++    if sha(parent) != PARENT_SHA or sha(work) != WORK_SHA:
++        raise ValueError('EXACT_DEPENDENCY_HASH_MISMATCH')
++    with zipfile.ZipFile(parent) as pz, zipfile.ZipFile(work) as wz, zipfile.ZipFile(delta) as dz:
++        for z in (pz, wz, dz):
++            preflight(z)
++        manifest = json.loads(dz.read('DEPTH08_DELTA_MANIFEST.json'))
++        if manifest['parent_sha256'] != PARENT_SHA or manifest['depth07_work_sha256'] != WORK_SHA:
++            raise ValueError('DELTA_LINEAGE_MISMATCH')
++        expected = {'DEPTH08_DELTA_MANIFEST.json'} | {'payload/' + f['path'] for f in manifest['files']}
++        if set(dz.namelist()) != expected:
++            raise ValueError('UNMANIFESTED_DELTA_MEMBER')
++        for f in manifest['files']:
++            safe_name(f['path'])
++            data = dz.read('payload/' + f['path'])
++            if hashlib.sha256(data).hexdigest() != f['sha256'] or len(data) != f['size']:
++                raise ValueError('DELTA_PAYLOAD_HASH_MISMATCH')
++        output.mkdir(parents=True)
++        try:
++            extract(pz, output)
++            extract(wz, output)
++            for f in manifest['files']:
++                target = output / f['path']
++                actual = sha(target) if target.is_file() else None
++                if actual != f['before_sha256']:
++                    raise ValueError('BASE_FILE_MISMATCH:' + f['path'])
++            for f in manifest['files']:
++                target = output / f['path']
++                target.parent.mkdir(parents=True, exist_ok=True)
++                target.write_bytes(dz.read('payload/' + f['path']))
++                if os.name != 'nt':
++                    target.chmod(f['mode'])
++            source_sha = tree_hash(source_entries(output))
++            if source_sha != manifest['source_tree_sha256']:
++                raise ValueError('RESTORED_SOURCE_TREE_MISMATCH')
++            if os.name != 'nt':
++                for name in ('python', 'python3', 'python3.13'):
++                    (output / 'gate_runtime/python/bin' / name).chmod(0o755)
++            receipt = {'build': manifest['build'], 'parent_sha256': PARENT_SHA,
++                'depth07_work_sha256': WORK_SHA, 'delta_sha256': sha(delta),
++                'source_tree_sha256': source_sha, 'payload_files_verified': len(manifest['files']),
++                'FINAL_RELEASE_GATE': 'HOLD', 'deployed': False}
++            (output / 'DEPTH08_RESTORATION.json').write_text(json.dumps(receipt, indent=2) + '\n')
++        except BaseException:
++            shutil.rmtree(output)
++            raise
++    return receipt
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    for name in ('parent', 'depth07-work', 'delta', 'output'):
++        parser.add_argument('--' + name, required=True, type=Path)
++    args = parser.parse_args()
++    print(json.dumps(restore(args.parent, args.depth07_work, args.delta, args.output.resolve()), indent=2))
++
++
++if __name__ == '__main__':
++    main()
+--- DEPTH07/scripts/build_depth08_delta.py
++++ DEPTH08/scripts/build_depth08_delta.py
+@@ -0,0 +1,174 @@
++#!/usr/bin/env python3
++"""Seal measured DEPTH08 changes without altering the archived DEPTH07."""
++import argparse
++import copy
++import difflib
++import hashlib
++import json
++from pathlib import Path
++import xml.etree.ElementTree as ET
++import zipfile
++
++from assemble_depth08_candidate import PARENT_SHA, WORK_SHA, ROOTS, sha, source_entries, tree_hash
++
++ROOT = Path(__file__).resolve().parents[1]
++EVIDENCE = ROOT / 'verification/current_build/depth08'
++
++
++def write(path, value):
++    path.parent.mkdir(parents=True, exist_ok=True)
++    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n')
++
++
++def hexdigest(data):
++    return hashlib.sha256(data).hexdigest()
++
++
++def measured_xml(path):
++    suites = list(ET.parse(path).getroot().iter('testsuite'))
++    counts = {k: sum(int(s.get(k, 0)) for s in suites) for k in ('tests', 'failures', 'errors', 'skipped')}
++    counts['passed'] = counts['tests'] - counts['failures'] - counts['errors'] - counts['skipped']
++    counts['seconds'] = round(sum(float(s.get('time', 0)) for s in suites), 3)
++    return counts
++
++
++def build(parent, work):
++    if sha(parent) != PARENT_SHA or sha(work) != WORK_SHA:
++        raise ValueError('BASELINE_HASH_MISMATCH')
++    with zipfile.ZipFile(parent) as pz, zipfile.ZipFile(work) as wz:
++        # Only content that may be compared or replaced is loaded; Python runtime
++        # bytes stay in the verified original parent and are never repackaged.
++        baseline = {}
++        for z in (pz, wz):
++            for name in z.namelist():
++                if not name.endswith('/') and '__pycache__' not in name and not name.endswith(('.pyc', '.pyo')):
++                    if name.split('/')[0] in ROOTS | {'acceptance', 'verification', 'governance'} or '/' not in name:
++                        baseline[name] = z.read(name)
++    totals = measured_xml(EVIDENCE / 'full_regression.xml')
++    if totals['failures'] or totals['errors'] or totals['tests'] < 1026:
++        raise ValueError('FULL_REGRESSION_NOT_PASSING')
++    full = ET.parse(EVIDENCE / 'full_regression.xml')
++    selected = [copy.deepcopy(c) for c in full.getroot().iter('testcase')
++                if 'test_depth08_durable' in c.get('classname', '') or 'test_depth08_api_and_migration' in c.get('classname', '')]
++    target = ET.Element('testsuites')
++    suite = ET.SubElement(target, 'testsuite', name='DEPTH08 subset of full_regression.xml',
++              tests=str(len(selected)), failures='0', errors='0', skipped='0',
++              time=str(sum(float(c.get('time', 0)) for c in selected)))
++    suite.extend(selected)
++    ET.ElementTree(target).write(EVIDENCE / 'targeted.xml', encoding='utf-8', xml_declaration=True)
++    targeted = measured_xml(EVIDENCE / 'targeted.xml')
++    if targeted['tests'] < 57 or any(c.find('failure') is not None or c.find('error') is not None or c.find('skipped') is not None for c in selected):
++        raise ValueError('DEPTH08_TARGETED_MATRIX_INCOMPLETE')
++
++    current = {f['path']: ROOT / f['path'] for f in source_entries(ROOT)}
++    before = {name: data for name, data in baseline.items()
++              if name.split('/')[0] in ROOTS or name in {'pyproject.toml', 'alembic.ini'}}
++    removed = set(before) - set(current)
++    if removed:
++        raise ValueError('UNSUPPORTED_REMOVAL:' + repr(sorted(removed)))
++    changes, patch = [], []
++    for name, path in sorted(current.items()):
++        data, old = path.read_bytes(), before.get(name)
++        if data == old:
++            continue
++        changes.append({'path': name, 'status': 'ADDED' if old is None else 'MODIFIED',
++                        'before_sha256': hexdigest(old) if old is not None else None, 'after_sha256': hexdigest(data)})
++        patch.extend(difflib.unified_diff((old or b'').decode().splitlines(True), data.decode().splitlines(True),
++                      fromfile='DEPTH07/' + name, tofile='DEPTH08/' + name))
++    write(ROOT / 'acceptance/DEPTH08_SOURCE_CHANGES.json', {'baseline_work_sha256': WORK_SHA, 'changes': changes})
++    (ROOT / 'acceptance/DEPTH08_SOURCE_CHANGES.patch').write_text(''.join(patch))
++
++    groups = {
++        'prior_115_migrations': [n for n in before if n.startswith('alembic/versions/') and n.endswith('.py')],
++        'frontend': [n for n in before if n.startswith('frontend/')],
++        'autonomy_constitution': [n for n in before if n.startswith('src/go_hotel/autonomy/')],
++        'v7_master': ['GO_ULTIMATE_MASTER_PLAN_V7.0_2026-08-31_CONSTITUTIONAL_LEGAL_SYNC_MASTER.pdf'],
++    }
++    immutable = {label: {'count': len(names), 'all_match': all((ROOT / n).read_bytes() == baseline[n] for n in names),
++                        'files': [{'path': n, 'sha256': hexdigest(baseline[n])} for n in sorted(names)]}
++                 for label, names in groups.items()}
++    if not all(g['all_match'] for g in immutable.values()):
++        raise ValueError('IMMUTABLE_BASELINE_CHANGED')
++    write(EVIDENCE / 'immutable_baseline.json', immutable)
++
++    status = json.loads(baseline['verification/current_build/depth07/CURRENT_BUILD_STATUS.json'])
++    status.update(build='CP11_DEPTH_08_DURABLE_EXECUTION', FINAL_RELEASE_GATE='HOLD', engineering_complete=False,
++                  deployed=False, python=totals, new_targeted=targeted,
++                  targeted_source='Extracted unchanged testcase records from this full_regression.xml')
++    status['baseline']['depth07_work_sha256'] = WORK_SHA
++    status['baseline']['depth07_archive_commit'] = '34b80961ee11b282a642e3e3722233dd6bd8120b'
++    status['blocked_gates'].append('DURABLE_POSTGRESQL_RUNTIME_AND_MIGRATION')
++    status['frontend']['evidence_inherited_from'] = 'DEPTH07; frontend bytes unchanged, no new browser or Node certification'
++    status['migrations'] = {'current_head': '0116_autonomy_durable', 'prior_files_unchanged': 115,
++                            'added_this_batch': ['alembic/versions/0116_autonomy_durable.py'],
++                            'new_tables': ['autonomy_task', 'autonomy_step', 'autonomy_event', 'autonomy_cell_control', 'autonomy_qualification'],
++                            'populated_downgrade': 'REFUSED; retain evidence or restore verified backup'}
++    status['durable_execution'] = {
++        'sqlite_reliability_gate': 'PASS', 'postgresql_runtime_gate': 'NOT_RUN_NO_LOCAL_SERVER',
++        'registered_cells': 14, 'application_observation_adapters': 14, 'steps_per_observation': 2,
++        'sigkill_fault_points': ['after_claim', 'inside_transaction', 'after_checkpoint', 'after_external_effect'],
++        'local_effect_semantics': 'Effect + checkpoint + evidence committed in one DB transaction per step and task identity',
++        'external_effect_semantics': 'No automatic resend after ambiguous outcome; receipt must bind original operation key',
++        'qualification_semantics': 'Persistent, expiring, independently validated; checked again before every step',
++        'c13_semantics': 'Deterministic admin-authorized observation; self-qualification remains prohibited',
++        'application_scope': 'Aggregate operational observations; no refunds, provider actions or release approvals executed',
++        'worker': 'Explicit standalone process; drains durable queue; no automatic periodic task producer',
++        'production_autonomy_accepted': False,
++    }
++    status['immutable_depth08'] = {k: {'count': v['count'], 'all_match': v['all_match']} for k, v in immutable.items()}
++    status['engineering_gaps'] = [g for g in status['engineering_gaps'] if g != '14_CELL_DURABLE_EXECUTION_AND_RECOVERY'] + [
++        '14_CELL_POSTGRES_RUNTIME_BUSINESS_ADAPTERS_AND_PRODUCTION_QUALIFICATION']
++    status['source_tree_sha256'] = tree_hash(source_entries(ROOT))
++    status['source_tree_definition'] = 'Canonical sorted path/SHA256 JSON for src, frontend, tests, tests_frontend, scripts, alembic, pyproject.toml and alembic.ini; excludes bytecode'
++    write(EVIDENCE / 'CURRENT_BUILD_STATUS.json', status)
++    write(EVIDENCE / 'SOURCE_TREE_MANIFEST.json', {'sha256': status['source_tree_sha256'], 'files': source_entries(ROOT)})
++    write(ROOT / 'CURRENT_DEPTH_CANDIDATE.json', {'build': status['build'], 'FINAL_RELEASE_GATE': 'HOLD',
++        'deployed': False, 'source_tree_sha256': status['source_tree_sha256'],
++        'current_report': 'verification/current_build/depth08/CURRENT_BUILD_STATUS.json',
++        'start_here': 'GO_DEPTH08_START_HERE.md', 'older_release_documents': 'Historical inherited milestones, not DEPTH08 release evidence'})
++    register = json.loads(baseline['acceptance/MASTER_CLOSURE_REGISTER.json'])
++    for r in register['requirements']:
++        if r['id'] in {'GOV-01', 'GOV-02', 'GOV-03'}:
++            r.update(status='LOCAL_DURABLE_GOVERNED_EXECUTION_AND_RECOVERY_TESTED', fully_accepted=False,
++                current_evidence=['verification/current_build/depth08/targeted.xml'],
++                scope_note='14 deterministic observation adapters + versioned execution kernel. SQLite and killed-process tests pass; PostgreSQL, expanded business adapters and production qualifications remain unaccepted.')
++    register['current_build_report'] = 'verification/current_build/depth08/CURRENT_BUILD_STATUS.json'
++    write(ROOT / 'acceptance/MASTER_CLOSURE_REGISTER.json', register)
++
++    selected_paths = {c['path'] for c in changes} | {
++        'GO_DEPTH08_START_HERE.md', 'CURRENT_DEPTH_CANDIDATE.json', 'acceptance/GO_DEPTH08_REVIEW.md',
++        'acceptance/MASTER_CLOSURE_REGISTER.json', 'acceptance/DEPTH08_SOURCE_CHANGES.json',
++        'acceptance/DEPTH08_SOURCE_CHANGES.patch'}
++    selected_paths |= {p.relative_to(ROOT).as_posix() for p in EVIDENCE.iterdir() if p.suffix in {'.json', '.xml'}}
++    manifest = {'build': status['build'], 'FINAL_RELEASE_GATE': 'HOLD', 'parent_sha256': PARENT_SHA,
++                'depth07_work_sha256': WORK_SHA, 'source_tree_sha256': status['source_tree_sha256'], 'files': []}
++    for name in sorted(selected_paths):
++        path = ROOT / name
++        manifest['files'].append({'path': name, 'size': path.stat().st_size, 'sha256': sha(path),
++            'before_sha256': hexdigest(baseline[name]) if name in baseline else None,
++            'mode': 0o755 if path.stat().st_mode & 0o111 else 0o644})
++    out = ROOT / 'deliverables'
++    out.mkdir(exist_ok=True)
++    destination = out / 'GO_CP11_DEPTH_08_DURABLE_EXECUTION_DELTA_20260907.zip'
++    with zipfile.ZipFile(destination, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
++        z.writestr('DEPTH08_DELTA_MANIFEST.json', json.dumps(manifest, indent=2))
++        for f in manifest['files']:
++            z.write(ROOT / f['path'], 'payload/' + f['path'])
++    with zipfile.ZipFile(destination) as z:
++        if z.testzip():
++            raise ValueError('DELTA_CRC_FAILURE')
++    result = {'filename': destination.name, 'path': str(destination), 'size_bytes': destination.stat().st_size,
++              'sha256': sha(destination), 'source_tree_sha256': status['source_tree_sha256'],
++              'changed_source_files': len(changes), 'payload_files': len(manifest['files']), 'python': totals,
++              'new_targeted': targeted, 'FINAL_RELEASE_GATE': 'HOLD'}
++    write(out / 'GO_DEPTH08_BUILD_RECEIPT.json', result)
++    (out / (destination.name + '.sha256')).write_text(result['sha256'] + '  ' + destination.name + '\n')
++    print(json.dumps(result, indent=2))
++
++
++if __name__ == '__main__':
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--parent', required=True, type=Path)
++    parser.add_argument('--depth07-work', required=True, type=Path)
++    args = parser.parse_args()
++    build(args.parent, args.depth07_work)
+--- DEPTH07/src/go_hotel/api/routes/autonomy_execution.py
++++ DEPTH08/src/go_hotel/api/routes/autonomy_execution.py
+@@ -0,0 +1,86 @@
++"""Admin-authenticated queue controls for the reviewed 14-cell observation set."""
++from fastapi import APIRouter, Depends, HTTPException, Query, Response
++from pydantic import BaseModel, ConfigDict, Field
++from go_hotel.autonomy.durable import ExecutionError
++from go_hotel.autonomy.operations import application_executor
++from go_hotel.security.deps import current_principal
++from go_hotel.security.service import Principal
++
++
++router = APIRouter(prefix='/internal/v1/autonomy', tags=['autonomy-execution'])
++
++
++def reader(response: Response, p: Principal = Depends(current_principal)):
++    if p.actor_type != 'GO_ADMIN' or 'admin:read' not in p.permissions:
++        raise HTTPException(403, 'AUTONOMY_ADMIN_READ_REQUIRED')
++    response.headers['Cache-Control'] = 'no-store, private'
++    return p
++
++
++def operator(p: Principal = Depends(reader)):
++    if 'admin:rules' not in p.permissions:
++        raise HTTPException(403, 'AUTONOMY_ADMIN_RULES_REQUIRED')
++    return p
++
++
++def invoke(fn, *args, **kwargs):
++    try:
++        return {'data': fn(*args, **kwargs)}
++    except ExecutionError as exc:
++        raise HTTPException(404 if str(exc) == 'TASK_NOT_FOUND' else 409, str(exc)) from exc
++
++
++class ObserveBody(BaseModel):
++    model_config = ConfigDict(extra='forbid', strict=True)
++    idempotency_key: str = Field(min_length=1, max_length=160)
++    cell_ids: list[str] = Field(min_length=1, max_length=14)
++
++
++class PauseBody(BaseModel):
++    model_config = ConfigDict(extra='forbid', strict=True)
++    paused: bool
++    expected_version: int = Field(ge=1)
++
++
++@router.get('/cells')
++def cells(p: Principal = Depends(reader)):
++    return invoke(application_executor().cells)
++
++
++@router.get('/tasks')
++def tasks(cell_id: str | None = None, limit: int = Query(default=100, ge=1, le=200), p: Principal = Depends(reader)):
++    return invoke(application_executor().list_tasks, cell_id=cell_id, limit=limit)
++
++
++@router.get('/tasks/{task_id}')
++def task(task_id: str, p: Principal = Depends(reader)):
++    return invoke(application_executor().inspect, task_id)
++
++
++@router.post('/observe')
++def observe(body: ObserveBody, p: Principal = Depends(operator)):
++    runtime = application_executor()
++    if len(set(body.cell_ids)) != len(body.cell_ids) or any(c + '.OPERATIONS_OBSERVE' not in runtime.handlers for c in body.cell_ids):
++        raise HTTPException(422, 'DISTINCT_KNOWN_CELLS_REQUIRED')
++    # A disconnected client repeats the same cycle key. Previously enqueued
++    # cells keep their IDs; the remaining cells are added without duplication.
++    return invoke(lambda: [runtime.submit(c + '.OPERATIONS_OBSERVE', idempotency_key=body.idempotency_key,
++                                         submitted_by=p.user_id) for c in body.cell_ids])
++
++
++@router.post('/cells/{cell_id}/control')
++def control(cell_id: str, body: PauseBody, p: Principal = Depends(operator)):
++    runtime = application_executor()
++    if cell_id + '.OPERATIONS_OBSERVE' not in runtime.handlers:
++        raise HTTPException(404, 'CELL_NOT_FOUND')
++    return invoke(runtime.set_paused, cell_id, paused=body.paused, actor=p.user_id, expected_version=body.expected_version)
++
++
++@router.post('/tasks/{task_id}/resume')
++def resume(task_id: str, p: Principal = Depends(operator)):
++    return invoke(application_executor().resume, task_id, actor=p.user_id)
++
++
++@router.post('/tasks/{task_id}/cancel')
++def cancel(task_id: str, p: Principal = Depends(operator)):
++    return invoke(application_executor().cancel, task_id, actor=p.user_id)
+--- DEPTH07/src/go_hotel/autonomy/durable.py
++++ DEPTH08/src/go_hotel/autonomy/durable.py
+@@ -0,0 +1,579 @@
++"""Durable execution for trusted, versioned adapters; never executes user supplied code.
++
++DB_ATOMIC steps commit their effect, checkpoint and evidence together. External
++dispatch is recorded *before* invoking the adapter; ambiguous outcomes are only
++reconciled, never automatically resent. A database lease is not an external fence.
++"""
++from __future__ import annotations
++
++from contextlib import contextmanager
++from dataclasses import asdict, dataclass, replace
++import hashlib
++import json
++import uuid
++from typing import Callable, Mapping
++
++from sqlalchemy import func, select, text
++from sqlalchemy.dialects.postgresql import insert as pg_insert
++from sqlalchemy.dialects.sqlite import insert as sqlite_insert
++from sqlalchemy.orm import Session
++
++from go_hotel.db.models import (
++    AutonomyCellControlRow as Control, AutonomyEventRow as Event,
++    AutonomyQualificationRow as Qualification, AutonomyStepRow as Step,
++    AutonomyTaskRow as Task,
++)
++from .action_control import AILegalPolicyRegistry, AuthorityConstitutionGate, evaluate_ai_action
++from .definitions import ALL_CELL_REGISTRY
++from .policy import RiskFactors
++from .registry import AutonomyQualificationRegistry, GovernanceViolation
++from .types import (
++    AIActionEnvelope, Environment, LegalDecision, LegalExposureProfile,
++    ProductionReality, QualificationEvidence, QualificationKey,
++    QualificationRecord, RiskClass,
++)
++
++
++class ExecutionError(RuntimeError):
++    pass
++
++
++class RetryableStepError(ExecutionError):
++    """A local transactional step rolled back and may be retried."""
++
++
++class LostLease(ExecutionError):
++    pass
++
++
++def canonical(value) -> str:
++    return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False)
++
++
++def digest(value) -> str:
++    return hashlib.sha256(canonical(value).encode()).hexdigest()
++
++
++def db_now_ms(s: Session) -> int:
++    if s.bind.dialect.name == 'postgresql':
++        return int(s.scalar(select(func.extract('epoch', func.clock_timestamp()))) * 1000)
++    return int(s.scalar(select((func.julianday('now') - 2440587.5) * 86400000)))
++
++
++def insert_once(s, model, values, keys):
++    factory = pg_insert if s.bind.dialect.name == 'postgresql' else sqlite_insert
++    s.execute(factory(model).values(**values).on_conflict_do_nothing(index_elements=keys))
++
++
++@contextmanager
++def transaction(factory):
++    with factory() as s:
++        if s.bind.dialect.name not in {'sqlite', 'postgresql'}:
++            raise ExecutionError('UNSUPPORTED_EXECUTION_DATABASE')
++        # SQLite's deferred read-to-write upgrade is not a row lock. Reserve the
++        # writer before reading. PostgreSQL locks selected rows instead.
++        if s.bind.dialect.name == 'sqlite':
++            s.execute(text('BEGIN IMMEDIATE'))
++        try:
++            yield s
++            s.commit()
++        except BaseException:
++            s.rollback()
++            raise
++
++
++class DurableQualifications:
++    """Use inside the caller's transaction so revocation serializes with steps.
++
++    qualify/revoke are trusted governance integration methods, not task handlers
++    or public HTTP endpoints. Existing C13 independent validation rules apply.
++    """
++    def __init__(self, session, cells=ALL_CELL_REGISTRY):
++        self.s, self.cells = session, cells
++
++    @staticmethod
++    def key_id(key):
++        return digest(asdict(key))
++
++    def get(self, key):
++        row = self.s.scalar(select(Qualification).where(
++            Qualification.qualification_id == self.key_id(key)).with_for_update())
++        if row is None or row.expires_ms <= db_now_ms(self.s):
++            return None
++        data = dict(row.record_json)
++        k = data.pop('key')
++        evidence = data.pop('evidence')
++        record = QualificationRecord(
++            key=QualificationKey(k['cell_id'], k['capability'], RiskClass(k['risk_class']), Environment(k['environment'])),
++            evidence=QualificationEvidence(**evidence),
++            **{**data, 'reality': ProductionReality(data['reality'])},
++        )
++        # Revalidate against the currently installed ownership/policy registry.
++        AutonomyQualificationRegistry(cells=self.cells).qualify(record)
++        return record
++
++    def qualify(self, record, *, expires_ms, expected_revision=0):
++        AutonomyQualificationRegistry(cells=self.cells).qualify(record)
++        if not record.evidence.evidence_refs or expires_ms <= db_now_ms(self.s):
++            raise GovernanceViolation('DATED_QUALIFICATION_EVIDENCE_REQUIRED')
++        key_id = self.key_id(record.key)
++        insert_once(self.s, Qualification, dict(qualification_id=key_id, record_json={},
++                    expires_ms=0, revision=0, updated_ms=db_now_ms(self.s)), ['qualification_id'])
++        row = self.s.scalar(select(Qualification).where(Qualification.qualification_id == key_id).with_for_update())
++        if row.revision != expected_revision:
++            raise GovernanceViolation('QUALIFICATION_REVISION_CONFLICT')
++        row.record_json, row.expires_ms = json.loads(canonical(asdict(record))), expires_ms
++        row.revision += 1
++        row.updated_ms = db_now_ms(self.s)
++        self.s.flush()
++        return row.revision
++
++    def revoke(self, key, *, reason, expected_revision):
++        row = self.s.scalar(select(Qualification).where(
++            Qualification.qualification_id == self.key_id(key)).with_for_update())
++        if row is None or row.revision != expected_revision:
++            raise GovernanceViolation('QUALIFICATION_REVISION_CONFLICT')
++        row.record_json = {**row.record_json, 'reality': ProductionReality.RESTRICTED.value,
++                           'metadata': {**row.record_json.get('metadata', {}), 'revocation_reason': reason}}
++        row.revision += 1
++        row.updated_ms = db_now_ms(self.s)
++        self.s.flush()
++
++
++@dataclass(frozen=True)
++class StepContext:
++    task_id: str
++    cell_id: str
++    environment: str
++    payload: dict
++    previous: tuple[dict, ...]
++    execute: Callable
++
++
++@dataclass(frozen=True)
++class ExternalContext:
++    operation_key: str
++    cell_id: str
++    environment: str
++    payload: dict
++
++
++@dataclass(frozen=True)
++class ReconciledResult:
++    # No NOT_APPLIED retry: an old worker may still dispatch after a timeout.
++    state: str  # SUCCEEDED, FAILED (authoritative terminal result), or UNKNOWN
++    operation_key: str
++    evidence_reference: str
++    result: dict
++
++
++@dataclass(frozen=True)
++class Handler:
++    operation: str
++    version: str
++    cell_id: str
++    capability: str
++    steps: tuple[Callable[[StepContext], dict], ...] = ()
++    mode: str = 'DB_ATOMIC'
++    risk: RiskFactors = RiskFactors(0, 0, 0, 0, 0, 0, 0, 0, 0)
++    exposure: LegalExposureProfile = LegalExposureProfile()
++    truth_mutation: bool = False
++    autonomous: bool = False
++    target_domain: str | None = None
++    jurisdiction: str | None = None
++    dispatch: Callable[[ExternalContext], dict] | None = None
++    reconcile: Callable[[ExternalContext], ReconciledResult] | None = None
++
++    def contract(self):
++        return {'operation': self.operation, 'version': self.version, 'cell_id': self.cell_id,
++                'capability': self.capability, 'mode': self.mode, 'steps': len(self.steps),
++                'risk': asdict(self.risk), 'exposure': asdict(self.exposure),
++                'truth_mutation': self.truth_mutation, 'autonomous': self.autonomous,
++                'target_domain': self.target_domain, 'jurisdiction': self.jurisdiction}
++
++
++@dataclass(frozen=True)
++class Claim:
++    task_id: str
++    token: str
++    attempt: int
++
++
++class DurableExecutor:
++    def __init__(self, sessions, handlers, *, environment: Environment,
++                 authorize_actor: Callable[[Session, str], bool],
++                 lease_ms=30000, retry_ms=1000, legal_registry=None):
++        if not isinstance(environment, Environment) or not 100 <= lease_ms <= 300000 or not 0 <= retry_ms <= 3600000:
++            raise ValueError('INVALID_EXECUTOR_CONFIGURATION')
++        self.sessions, self.environment = sessions, environment
++        self.authorize_actor = authorize_actor
++        self.lease_ms, self.retry_ms = lease_ms, retry_ms
++        self.legal = legal_registry or AILegalPolicyRegistry()
++        self.handlers = {}
++        for h in handlers:
++            ALL_CELL_REGISTRY.cell(h.cell_id)
++            if h.operation in self.handlers or not h.version:
++                raise ValueError('DUPLICATE_OR_UNVERSIONED_HANDLER')
++            if h.mode == 'DB_ATOMIC' and not h.steps:
++                raise ValueError('TRANSACTIONAL_STEPS_REQUIRED')
++            if h.mode == 'EXTERNAL' and (h.dispatch is None or h.reconcile is None or h.steps):
++                raise ValueError('EXTERNAL_DISPATCH_AND_RECONCILIATION_REQUIRED')
++            if h.mode not in {'DB_ATOMIC', 'EXTERNAL'}:
++                raise ValueError('UNSUPPORTED_HANDLER_MODE')
++            self.handlers[h.operation] = h
++
++    def _handler(self, row):
++        h = self.handlers.get(row.operation)
++        if h is None or digest(h.contract()) != row.handler_version:
++            raise ExecutionError('HANDLER_VERSION_UNAVAILABLE')
++        if digest([row.payload_json, row.submitted_by, h.contract(), row.max_attempts]) != row.request_hash:
++            raise ExecutionError('TASK_REQUEST_INTEGRITY_FAILURE')
++        return h
++
++    def _event(self, s, row, kind, actor, **details):
++        row.event_seq += 1
++        s.add(Event(event_id=uuid.uuid4().hex, task_id=row.task_id, environment=row.environment,
++                    cell_id=row.cell_id, event_type=kind, actor_id=actor,
++                    details_json=details, sequence=row.event_seq, created_ms=db_now_ms(s)))
++
++    def _control(self, s, cell_id, actor):
++        insert_once(s, Control, dict(environment=self.environment.value, cell_id=cell_id,
++                    paused=False, version=1, updated_by=actor, updated_ms=db_now_ms(s)), ['environment', 'cell_id'])
++        return s.scalar(select(Control).where(Control.environment == self.environment.value,
++                        Control.cell_id == cell_id).with_for_update())
++
++    def _authorize(self, s, row, h):
++        if row.environment != self.environment.value or h.cell_id != row.cell_id:
++            return 'EXECUTION_SCOPE_MISMATCH'
++        if not self.authorize_actor(s, row.submitted_by):
++            return 'SUBMITTER_AUTHORITY_REVOKED'
++        if self._control(s, row.cell_id, row.submitted_by).paused:
++            return 'CELL_PAUSED'
++        # Production accountability remains unbound in the frozen baseline.
++        if self.environment in {Environment.PRODUCTION, Environment.CANARY}:
++            return 'PRODUCTION_EXECUTION_NOT_CERTIFIED'
++        action = AIActionEnvelope(row.task_id, h.cell_id, h.capability,
++                   h.target_domain or ALL_CELL_REGISTRY.cell(h.cell_id).domain,
++                   self.environment, h.risk, h.exposure, jurisdiction=h.jurisdiction,
++                   truth_mutation=h.truth_mutation, require_autonomous_execution=h.autonomous)
++        try:
++            result = evaluate_ai_action(action,
++                authority_gate=AuthorityConstitutionGate(ALL_CELL_REGISTRY, DurableQualifications(s)),
++                legal_registry=self.legal)
++        except (GovernanceViolation, ValueError, TypeError, KeyError):
++            return 'QUALIFICATION_INVALID'
++        self._event(s, row, 'C14_REVIEW', row.submitted_by, authority=result.authority.code,
++                    legal=result.legal.decision.value if result.legal else None,
++                    policy_rules=list(result.legal.policy_rule_ids) if result.legal else [])
++        if not result.executable:
++            return result.authority.code if not result.authority.allowed else result.legal.decision.value
++        # The existing policy primitive allows conditional results; this runner
++        # has no condition satisfier and therefore must not treat them as grants.
++        if result.legal and result.legal.decision is LegalDecision.LEGAL_ALLOW_WITH_CONDITIONS:
++            return 'LEGAL_CONDITIONS_UNSATISFIED'
++        return None
++
++    @staticmethod
++    def snapshot(row):
++        return {k: getattr(row, k) for k in ('task_id', 'environment', 'cell_id', 'operation',
++                'handler_version', 'status', 'attempt', 'max_attempts', 'next_step',
++                'available_ms', 'lease_until_ms', 'worker_id', 'last_code',
++                'result_json', 'created_ms', 'updated_ms')}
++
++    def submit(self, operation, *, idempotency_key, submitted_by, payload=None, max_attempts=5):
++        h = self.handlers.get(operation)
++        if h is None:
++            raise ExecutionError('OPERATION_NOT_ALLOWLISTED')
++        if not isinstance(idempotency_key, str) or not 1 <= len(idempotency_key) <= 160 or not submitted_by or len(submitted_by) > 64:
++            raise ExecutionError('INVALID_TASK_IDENTITY')
++        if type(max_attempts) is not int or not 1 <= max_attempts <= 20 or (payload is not None and type(payload) is not dict):
++            raise ExecutionError('INVALID_TASK_INPUT')
++        body = json.loads(canonical(payload or {}))
++        if len(canonical(body).encode()) > 32768:
++            raise ExecutionError('TASK_PAYLOAD_TOO_LARGE')
++        task_id = digest([self.environment.value, h.cell_id, operation, idempotency_key])
++        request_hash = digest([body, submitted_by, h.contract(), max_attempts])
++        with transaction(self.sessions) as s:
++            now = db_now_ms(s)
++            insert_once(s, Task, dict(task_id=task_id, environment=self.environment.value,
++                cell_id=h.cell_id, operation=operation, handler_version=digest(h.contract()),
++                request_hash=request_hash, submitted_by=submitted_by, payload_json=body,
++                status='QUEUED', attempt=0, max_attempts=max_attempts, next_step=0, event_seq=0,
++                available_ms=now, external_started=False, created_ms=now, updated_ms=now), ['task_id'])
++            row = s.scalar(select(Task).where(Task.task_id == task_id).with_for_update())
++            # Match execution's lock order: task -> actor -> cell -> qualification.
++            # Rejected submissions roll back the insert; no unauthorized task persists.
++            if not self.authorize_actor(s, submitted_by):
++                raise ExecutionError('SUBMITTER_NOT_AUTHORIZED')
++            if row.request_hash != request_hash:
++                raise ExecutionError('IDEMPOTENCY_CONFLICT')
++            # Replays return the original result/state, including cancelled/dead
++            # tasks. They cannot create a new execution or reset retry budgets.
++            if not s.scalar(select(Event.event_id).where(Event.task_id == task_id).limit(1)):
++                blocked = self._authorize(s, row, h)
++                if blocked:
++                    row.status, row.last_code = 'HOLD', blocked
++                self._event(s, row, 'SUBMITTED', submitted_by, request_hash=request_hash)
++            s.flush()
++            return self.snapshot(row)
++
++    def _get(self, s, task_id, lock=False):
++        stmt = select(Task).where(Task.task_id == task_id, Task.environment == self.environment.value)
++        row = s.scalar(stmt.with_for_update() if lock else stmt)
++        if row is None:
++            raise ExecutionError('TASK_NOT_FOUND')
++        return row
++
++    def _leased(self, s, claim):
++        row = self._get(s, claim.task_id, lock=True)
++        if row.status != 'RUNNING' or row.lease_token != claim.token or row.attempt != claim.attempt or (row.lease_until_ms or 0) <= db_now_ms(s):
++            raise LostLease('LEASE_EXPIRED_OR_REPLACED')
++        return row
++
++    def _finish(self, s, row, status, code, actor):
++        row.status, row.last_code, row.updated_ms = status, code, db_now_ms(s)
++        row.lease_token, row.lease_until_ms, row.worker_id = None, None, None
++        self._event(s, row, status, actor, code=code, attempt=row.attempt, next_step=row.next_step)
++
++    def recover_expired(self, limit=100):
++        with transaction(self.sessions) as s:
++            rows = s.scalars(select(Task).where(Task.environment == self.environment.value,
++                    Task.status == 'RUNNING', Task.lease_until_ms <= db_now_ms(s))
++                    .order_by(Task.lease_until_ms, Task.task_id).limit(min(max(limit, 1), 1000))
++                    .with_for_update(skip_locked=True)).all()
++            for row in rows:
++                status = 'UNCERTAIN' if row.external_started else ('DEAD' if row.attempt >= row.max_attempts else 'RETRY_WAIT')
++                self._finish(s, row, status, 'WORKER_LEASE_EXPIRED', 'recovery')
++                row.available_ms = db_now_ms(s) + self.retry_ms
++            return len(rows)
++
++    def claim(self, worker_id, *, cell_id=None):
++        if not worker_id or len(worker_id) > 128:
++            raise ExecutionError('INVALID_WORKER_ID')
++        if cell_id is not None:
++            ALL_CELL_REGISTRY.cell(cell_id)
++        self.recover_expired()
++        with transaction(self.sessions) as s:
++            stmt = select(Task).where(Task.environment == self.environment.value,
++                Task.status.in_(['QUEUED', 'RETRY_WAIT']), Task.available_ms <= db_now_ms(s))
++            if cell_id is not None:
++                stmt = stmt.where(Task.cell_id == cell_id)
++            row = s.scalar(stmt.order_by(Task.available_ms, Task.created_ms, Task.task_id).limit(1).with_for_update(skip_locked=True))
++            if row is None:
++                return None
++            if row.attempt >= row.max_attempts:
++                self._finish(s, row, 'DEAD', 'ATTEMPTS_EXHAUSTED', worker_id)
++                return None
++            row.status, row.lease_token, row.worker_id = 'RUNNING', uuid.uuid4().hex, worker_id
++            row.attempt += 1
++            row.updated_ms = db_now_ms(s)
++            row.lease_until_ms = row.updated_ms + self.lease_ms
++            self._event(s, row, 'CLAIMED', worker_id, attempt=row.attempt)
++            return Claim(row.task_id, row.lease_token, row.attempt)
++
++    def heartbeat(self, claim):
++        with transaction(self.sessions) as s:
++            row = self._leased(s, claim)
++            row.lease_until_ms = db_now_ms(s) + self.lease_ms
++            return row.lease_until_ms
++
++    def run_step(self, claim):
++        """One bounded DB step. Process death rolls back effects before checkpoint."""
++        try:
++            with transaction(self.sessions) as s:
++                row = self._leased(s, claim)
++                h = self._handler(row)
++                if h.mode != 'DB_ATOMIC':
++                    raise ExecutionError('USE_EXTERNAL_DISPATCH')
++                blocked = self._authorize(s, row, h)
++                if blocked:
++                    self._finish(s, row, 'HOLD', blocked, row.worker_id)
++                    return self.snapshot(row)
++                prior = s.scalars(select(Step).where(Step.task_id == row.task_id).order_by(Step.step_no)).all()
++                if len(prior) != row.next_step or [p.step_no for p in prior] != list(range(row.next_step)) or any(digest(p.result_json) != p.result_hash for p in prior):
++                    raise ExecutionError('CHECKPOINT_INTEGRITY_FAILURE')
++                context = StepContext(row.task_id, row.cell_id, row.environment,
++                                      json.loads(canonical(row.payload_json)), tuple(p.result_json for p in prior), s.execute)
++                result = h.steps[row.next_step](context)
++                if type(result) is not dict or len(canonical(result).encode()) > 65536:
++                    raise ExecutionError('INVALID_STEP_RESULT')
++                # A long-running local step cannot commit after its lease expires.
++                if row.lease_until_ms <= db_now_ms(s):
++                    raise LostLease('LEASE_EXPIRED_DURING_STEP')
++                s.add(Step(task_id=row.task_id, step_no=row.next_step, result_json=result,
++                           result_hash=digest(result), completed_ms=db_now_ms(s)))
++                row.next_step += 1
++                row.result_json = result
++                row.updated_ms = db_now_ms(s)
++                self._event(s, row, 'CHECKPOINT', row.worker_id, next_step=row.next_step, result_hash=digest(result))
++                if row.next_step == len(h.steps):
++                    self._finish(s, row, 'SUCCEEDED', 'TRANSACTION_COMMITTED', row.worker_id)
++                else:
++                    row.lease_until_ms = db_now_ms(s) + self.lease_ms
++                s.flush()
++                return self.snapshot(row)
++        except LostLease:
++            raise
++        except Exception as exc:
++            return self._failed_step(claim, exc)
++
++    def _failed_step(self, claim, exc):
++        with transaction(self.sessions) as s:
++            row = self._leased(s, claim)
++            retry = isinstance(exc, RetryableStepError)
++            code = str(exc) if isinstance(exc, ExecutionError) else type(exc).__name__
++            code = code[:128]
++            status = ('RETRY_WAIT' if row.attempt < row.max_attempts else 'DEAD') if retry else 'FAILED'
++            if code == 'HANDLER_VERSION_UNAVAILABLE':
++                status = 'HOLD'
++            self._finish(s, row, status, code, row.worker_id)
++            row.available_ms = db_now_ms(s) + min(self.retry_ms * (2 ** (row.attempt - 1)), 3600000)
++            return self.snapshot(row)
++
++    def dispatch_external(self, claim):
++        with transaction(self.sessions) as s:
++            row = self._leased(s, claim)
++            h = self._handler(row)
++            if h.mode != 'EXTERNAL' or row.external_started:
++                raise ExecutionError('EXTERNAL_DISPATCH_NOT_ALLOWED')
++            blocked = self._authorize(s, row, h)
++            if blocked:
++                self._finish(s, row, 'HOLD', blocked, row.worker_id)
++                return self.snapshot(row)
++            row.external_started = True
++            ctx = ExternalContext(row.task_id, row.cell_id, row.environment, row.payload_json)
++            self._event(s, row, 'EXTERNAL_DISPATCH_INTENT', row.worker_id, operation_key=row.task_id)
++        try:
++            result = h.dispatch(ctx)
++            if type(result) is not dict or len(canonical(result).encode()) > 65536:
++                raise ExecutionError('INVALID_EXTERNAL_RESULT')
++        except Exception:
++            # Includes network timeout and adapter bugs. No speculative resend.
++            with transaction(self.sessions) as s:
++                row = self._leased(s, claim)
++                self._finish(s, row, 'UNCERTAIN', 'EXTERNAL_RESULT_UNKNOWN', row.worker_id)
++                return self.snapshot(row)
++        with transaction(self.sessions) as s:
++            row = self._leased(s, claim)
++            row.result_json = result
++            self._finish(s, row, 'SUCCEEDED', 'EXTERNAL_RESULT_RECORDED', row.worker_id)
++            return self.snapshot(row)
++
++    def reconcile_external(self, task_id, *, actor):
++        # Adapter contract is read-only, operation-key-bound provider lookup.
++        # It cannot claim NOT_APPLIED and thereby race a delayed old dispatch.
++        with transaction(self.sessions) as s:
++            row = self._get(s, task_id, lock=True)
++            if not self.authorize_actor(s, actor):
++                raise ExecutionError('OPERATOR_NOT_AUTHORIZED')
++            if row.status != 'UNCERTAIN' or not row.external_started:
++                raise ExecutionError('TASK_NOT_UNCERTAIN')
++            h = self._handler(row)
++            if h.mode != 'EXTERNAL':
++                raise ExecutionError('NOT_EXTERNAL')
++            blocked = self._authorize(s, row, h)
++            if blocked:
++                self._event(s, row, 'RECONCILIATION_HOLD', actor, code=blocked)
++                return self.snapshot(row)
++            result = h.reconcile(ExternalContext(row.task_id, row.cell_id, row.environment, row.payload_json))
++            if not isinstance(result, ReconciledResult) or result.operation_key != row.task_id:
++                raise ExecutionError('RECONCILIATION_SCOPE_MISMATCH')
++            if result.state not in {'SUCCEEDED', 'FAILED', 'UNKNOWN'}:
++                raise ExecutionError('INVALID_RECONCILIATION_STATE')
++            if result.state != 'UNKNOWN':
++                if not result.evidence_reference or type(result.result) is not dict or len(canonical(result.result).encode()) > 65536:
++                    raise ExecutionError('RECONCILIATION_EVIDENCE_REQUIRED')
++                row.result_json = result.result
++                self._finish(s, row, result.state, 'AUTHORITATIVE_RECONCILIATION', actor)
++            self._event(s, row, 'RECONCILED', actor, state=result.state, evidence_reference=result.evidence_reference)
++            return self.snapshot(row)
++
++    def run_once(self, worker_id, *, cell_id=None):
++        claim = self.claim(worker_id, cell_id=cell_id)
++        if claim is None:
++            return None
++        try:
++            with self.sessions() as s:
++                h = self._handler(self._get(s, claim.task_id))
++            if h.mode == 'EXTERNAL':
++                return self.dispatch_external(claim)
++            while True:
++                state = self.run_step(claim)
++                if state['status'] != 'RUNNING':
++                    return state
++        except LostLease:
++            return self.inspect(claim.task_id)
++        except ExecutionError as exc:
++            return self._failed_step(claim, exc)
++
++    def set_paused(self, cell_id, *, paused, actor, expected_version):
++        ALL_CELL_REGISTRY.cell(cell_id)
++        with transaction(self.sessions) as s:
++            if not self.authorize_actor(s, actor):
++                raise ExecutionError('OPERATOR_NOT_AUTHORIZED')
++            row = self._control(s, cell_id, actor)
++            if row.version != expected_version:
++                raise ExecutionError('CELL_CONTROL_VERSION_CONFLICT')
++            row.paused, row.updated_by, row.updated_ms = bool(paused), actor, db_now_ms(s)
++            row.version += 1
++            s.add(Event(event_id=uuid.uuid4().hex, environment=self.environment.value, cell_id=cell_id,
++                        task_id=None, event_type='CELL_PAUSED' if paused else 'CELL_RESUMED',
++                        actor_id=actor, details_json={'version': row.version}, sequence=row.version, created_ms=row.updated_ms))
++            return {'cell_id': cell_id, 'paused': row.paused, 'version': row.version}
++
++    def resume(self, task_id, *, actor):
++        with transaction(self.sessions) as s:
++            row = self._get(s, task_id, lock=True)
++            if not self.authorize_actor(s, actor):
++                raise ExecutionError('OPERATOR_NOT_AUTHORIZED')
++            if row.status != 'HOLD' or row.external_started or row.attempt >= row.max_attempts:
++                raise ExecutionError('TASK_NOT_RESUMABLE')
++            h = self._handler(row)
++            blocked = self._authorize(s, row, h)
++            if blocked:
++                row.last_code = blocked
++            else:
++                row.status, row.last_code, row.available_ms = 'QUEUED', None, db_now_ms(s)
++                self._event(s, row, 'RESUMED', actor, attempt=row.attempt)
++            row.updated_ms = db_now_ms(s)
++            return self.snapshot(row)
++
++    def cancel(self, task_id, *, actor):
++        with transaction(self.sessions) as s:
++            row = self._get(s, task_id, lock=True)
++            if not self.authorize_actor(s, actor):
++                raise ExecutionError('OPERATOR_NOT_AUTHORIZED')
++            if row.external_started or row.status not in {'QUEUED', 'RETRY_WAIT', 'HOLD', 'RUNNING'}:
++                raise ExecutionError('TASK_NOT_CANCELLABLE')
++            self._finish(s, row, 'CANCELLED', 'OPERATOR_CANCELLED', actor)
++            return self.snapshot(row)
++
++    def inspect(self, task_id):
++        with self.sessions() as s:
++            row = self._get(s, task_id)
++            out = self.snapshot(row)
++            out['events'] = [{'sequence': e.sequence, 'event_type': e.event_type, 'actor_id': e.actor_id, 'details': e.details_json,
++                              'created_ms': e.created_ms} for e in s.scalars(select(Event).where(
++                              Event.task_id == task_id).order_by(Event.sequence))]
++            out['checkpoints'] = [{'step_no': p.step_no, 'result_hash': p.result_hash, 'result': p.result_json}
++                                 for p in s.scalars(select(Step).where(Step.task_id == task_id).order_by(Step.step_no))]
++            return out
++
++    def list_tasks(self, *, cell_id=None, limit=100):
++        with self.sessions() as s:
++            stmt = select(Task).where(Task.environment == self.environment.value)
++            if cell_id:
++                stmt = stmt.where(Task.cell_id == cell_id)
++            return [self.snapshot(r) for r in s.scalars(stmt.order_by(Task.created_ms.desc(), Task.task_id).limit(min(max(limit, 1), 200)))]
++
++    def cells(self):
++        with self.sessions() as s:
++            rows = {r.cell_id: r for r in s.scalars(select(Control).where(Control.environment == self.environment.value))}
++            counts = {(c, state): n for c, state, n in s.execute(select(Task.cell_id, Task.status, func.count())
++                      .where(Task.environment == self.environment.value).group_by(Task.cell_id, Task.status))}
++            return [{'cell_id': c.cell_id, 'name': c.name, 'domain': c.domain,
++                'paused': rows[c.cell_id].paused if c.cell_id in rows else False,
++                'control_version': rows[c.cell_id].version if c.cell_id in rows else 1,
++                'operations': [h.operation for h in self.handlers.values() if h.cell_id == c.cell_id],
++                'tasks': {state: n for (cell, state), n in counts.items() if cell == c.cell_id}}
++                for c in ALL_CELL_REGISTRY.cells.values()]
+--- DEPTH07/src/go_hotel/autonomy/operations.py
++++ DEPTH08/src/go_hotel/autonomy/operations.py
+@@ -0,0 +1,97 @@
++"""Reviewed operational observations for all 14 cells.
++
++Adapters query aggregate states from their owned services and persist observations
++through the executor. They do not approve refunds, certify releases, expose PII,
++change qualifications, or call suppliers. Wider business adapters need separate
++capability-specific review and evidence before registration.
++"""
++from sqlalchemy import func, select
++
++from go_hotel.db.models import Base, IdentityUserRow
++from go_hotel.security.rbac import permissions_for
++from .definitions import ALL_CELL_REGISTRY
++from .durable import DurableExecutor, ExecutionError, Handler
++from .types import Environment
++
++
++# No caller-supplied SQL, table names, authority envelopes, or Python import paths.
++OBSERVATIONS = {
++    'C01': ('HOTEL_EXCEPTION', ('hotel_order_runtime', 'hosted_direct_reservation', 'post_stay_dispute_case')),
++    'C02': ('FLIGHT_EXCEPTION', ('flight_order_runtime', 'flight_refund_runtime')),
++    'C03': ('RAIL_EXCEPTION', ('rail_order_runtime', 'rail_refund_runtime')),
++    'C04': ('RENTAL_PICKUP_RETURN', ('mobility_rental_order_runtime', 'rental_change_quote')),
++    'C05': ('RIDE_CANCEL_EXCEPTION', ('mobility_ride_order_runtime',)),
++    'C06': ('ATTRACTION_FULFILLMENT', ('attraction_order_runtime',)),
++    'C07': ('TRAVELER_CONTEXT_EVIDENCE', ('profile_import_job',)),
++    'C08': ('TOOL_ORCHESTRATION', ('go_ai_request',)),
++    'C09': ('RECOMMENDATION_EVIDENCE', ('recommendation_decision_runtime',)),
++    'C10': ('JOURNEY_EXCEPTION', ('go_journey_runtime',)),
++    'C11': ('RECONCILIATION', ('omnichannel_payment_intent', 'finance_scoped_close_batch')),
++    'C12': ('OBSERVABILITY', ('transactional_outbox',)),
++    'C13': ('REGRESSION', ('journey_recovery_release_verification',)),
++    'C14': ('LEGAL_EVIDENCE_AUDIT', ('autonomy_task',)),
++}
++
++
++def _observe(tables):
++    def run(ctx):
++        if ctx.payload:
++            raise ExecutionError('OBSERVATION_PAYLOAD_MUST_BE_EMPTY')
++        readings = {}
++        for name in tables:
++            table = Base.metadata.tables[name]
++            state = table.c.get('status')
++            if state is None:
++                state = table.c.get('state')
++            stmt = select(func.count()).select_from(table) if state is None else select(state, func.count()).group_by(state)
++            if name == 'autonomy_task':
++                stmt = stmt.where(table.c.environment == ctx.environment)
++            result = ctx.execute(stmt).all()
++            readings[name] = {'total': result[0][0]} if state is None else {str(k): n for k, n in result}
++        return {'cell_id': ctx.cell_id, 'environment': ctx.environment,
++                'readings': readings, 'scope': 'AGGREGATE_OPERATIONAL_OBSERVATION'}
++    return run
++
++
++def _assess(ctx):
++    observations = ctx.previous[0]
++    attention = [{'source': name, 'state': state, 'count': count}
++        for name, states in observations['readings'].items() for state, count in states.items()
++        if count and any(word in state.upper() for word in ('FAIL', 'DEAD', 'HOLD', 'UNKNOWN', 'UNCERTAIN', 'CONFLICT'))]
++    return {**observations, 'attention': attention,
++            'assessment': 'REVIEW_REQUIRED' if attention else 'NO_FLAGGED_STATE_OBSERVED',
++            'business_actions_executed': False, 'production_certification': False}
++
++
++def observation_handlers():
++    handlers = []
++    for cell_id, (capability, tables) in OBSERVATIONS.items():
++        if capability not in ALL_CELL_REGISTRY.cell(cell_id).capabilities:
++            raise ExecutionError('OBSERVATION_CAPABILITY_NOT_OWNED')
++        for name in tables:
++            if name not in Base.metadata.tables:
++                raise ExecutionError('OBSERVATION_SCHEMA_MISSING:' + name)
++        handlers.append(Handler(cell_id + '.OPERATIONS_OBSERVE', 'DEPTH08.1', cell_id,
++                         capability, steps=(_observe(tables), _assess)))
++    return tuple(handlers)
++
++
++def operator_authorized(session, actor):
++    # The user may have lost their role since submission. Lock against concurrent
++    # role revocation for the duration of each local transactional step.
++    user = session.scalar(select(IdentityUserRow).where(IdentityUserRow.user_id == actor).with_for_update())
++    return bool(user and user.status == 'ACTIVE' and user.actor_type == 'GO_ADMIN'
++                and 'admin:rules' in permissions_for(user.roles or []))
++
++
++def application_executor():
++    from go_hotel.core.config import settings
++    from go_hotel.db.session import SessionLocal
++    aliases = {'LOCAL': 'DEV', 'DEVELOPMENT': 'DEV', 'TESTING': 'TEST', 'PROD': 'PRODUCTION'}
++    env = settings.app_env.upper()
++    try:
++        environment = Environment(aliases.get(env, env))
++    except ValueError as exc:
++        raise ExecutionError('UNKNOWN_EXECUTION_ENVIRONMENT') from exc
++    return DurableExecutor(SessionLocal, observation_handlers(), environment=environment,
++                           authorize_actor=operator_authorized)
+--- DEPTH07/src/go_hotel/db/models.py
++++ DEPTH08/src/go_hotel/db/models.py
+@@ -5,6 +5,81 @@
+ 
+ class Base(DeclarativeBase):
+     pass
++
++
++# DEPTH08: durable, governed execution. No business tables are repurposed as queues.
++class AutonomyTaskRow(Base):
++    __tablename__ = 'autonomy_task'
++    task_id: Mapped[str] = mapped_column(String(64), primary_key=True)
++    environment: Mapped[str] = mapped_column(String(24), nullable=False)
++    cell_id: Mapped[str] = mapped_column(String(8), nullable=False)
++    operation: Mapped[str] = mapped_column(String(96), nullable=False)
++    handler_version: Mapped[str] = mapped_column(String(64), nullable=False)
++    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
++    submitted_by: Mapped[str] = mapped_column(String(64), nullable=False)
++    payload_json: Mapped[dict] = mapped_column(JSON, nullable=False)
++    status: Mapped[str] = mapped_column(String(24), nullable=False)
++    attempt: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
++    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False)
++    next_step: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
++    event_seq: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
++    available_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    lease_until_ms: Mapped[int | None] = mapped_column(BigInteger)
++    lease_token: Mapped[str | None] = mapped_column(String(64))
++    worker_id: Mapped[str | None] = mapped_column(String(128))
++    external_started: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
++    last_code: Mapped[str | None] = mapped_column(String(128))
++    result_json: Mapped[dict | None] = mapped_column(JSON)
++    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    updated_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    __table_args__ = (
++        Index('ix_autonomy_task_queue', 'environment', 'status', 'available_ms'),
++        Index('ix_autonomy_task_cell', 'environment', 'cell_id', 'created_ms'),
++        CheckConstraint('attempt >= 0 AND max_attempts BETWEEN 1 AND 20 AND next_step >= 0', name='ck_autonomy_task_bounds'),
++        CheckConstraint("status IN ('QUEUED','RUNNING','RETRY_WAIT','HOLD','SUCCEEDED','FAILED','DEAD','UNCERTAIN','CANCELLED')", name='ck_autonomy_task_status'),
++    )
++
++
++class AutonomyStepRow(Base):
++    __tablename__ = 'autonomy_step'
++    task_id: Mapped[str] = mapped_column(ForeignKey('autonomy_task.task_id'), primary_key=True)
++    step_no: Mapped[int] = mapped_column(Integer, primary_key=True)
++    result_json: Mapped[dict] = mapped_column(JSON, nullable=False)
++    result_hash: Mapped[str] = mapped_column(String(64), nullable=False)
++    completed_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++
++
++class AutonomyEventRow(Base):
++    __tablename__ = 'autonomy_event'
++    event_id: Mapped[str] = mapped_column(String(64), primary_key=True)
++    task_id: Mapped[str | None] = mapped_column(ForeignKey('autonomy_task.task_id'), index=True)
++    environment: Mapped[str] = mapped_column(String(24), nullable=False)
++    cell_id: Mapped[str] = mapped_column(String(8), nullable=False)
++    event_type: Mapped[str] = mapped_column(String(48), nullable=False)
++    actor_id: Mapped[str] = mapped_column(String(128), nullable=False)
++    details_json: Mapped[dict] = mapped_column(JSON, nullable=False)
++    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
++    __table_args__ = (UniqueConstraint('task_id', 'sequence', name='uq_autonomy_event_sequence'),)
++
++
++class AutonomyCellControlRow(Base):
++    __tablename__ = 'autonomy_cell_control'
++    environment: Mapped[str] = mapped_column(String(24), primary_key=True)
++    cell_id: Mapped[str] = mapped_column(String(8), primary_key=True)
++    paused: Mapped[bool] = mapped_column(Boolean, nullable=False)
++    version: Mapped[int] = mapped_column(Integer, nullable=False)
++    updated_by: Mapped[str] = mapped_column(String(64), nullable=False)
++    updated_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++
++
++class AutonomyQualificationRow(Base):
++    __tablename__ = 'autonomy_qualification'
++    qualification_id: Mapped[str] = mapped_column(String(64), primary_key=True)
++    record_json: Mapped[dict] = mapped_column(JSON, nullable=False)
++    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    revision: Mapped[int] = mapped_column(Integer, nullable=False)
++    updated_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+ 
+ class OfferRow(Base):
+     __tablename__ = "offer_snapshot"
+--- DEPTH07/src/go_hotel/main.py
++++ DEPTH08/src/go_hotel/main.py
+@@ -3,6 +3,7 @@
+ from pathlib import Path
+ from contextlib import asynccontextmanager
+ from go_hotel.api.routes.health import router as health_router
++from go_hotel.api.routes.autonomy_execution import router as autonomy_execution_router
+ from go_hotel.api.routes.consumer_checkout import router as consumer_checkout_router
+ from go_hotel.api.routes.hotel import router as hotel_router
+ from go_hotel.api.routes.booking import router as booking_router
+@@ -156,6 +157,7 @@
+ for r in [health_router, observability_router, bff_router, auth_router, hotel_router, consumer_router, consumer_identity_router, mobile_router, flight_router, rail_router, mobility_router, attractions_router, journey_router, journey_intelligence_router, journey_recovery_router, journey_recovery_execution_router, recovery_reconciliation_router, recovery_control_plane_router, recovery_reliability_router, recovery_strategy_governance_router, recovery_experimentation_router, recovery_learning_registry_router, recovery_data_governance_router, recovery_learning_incident_router, recovery_release_governance_router, recovery_runtime_verification_router, recovery_runtime_observability_router, recovery_runtime_telemetry_governance_router, recovery_runtime_telemetry_trust_router, recovery_runtime_identity_lifecycle_router, recovery_runtime_identity_reissuance_router, recovery_credential_authority_router, recovery_federated_trust_router, recovery_external_trust_witness_router, recovery_transparency_gossip_router, recovery_trust_plane_dr_router, recovery_trust_plane_chaos_router, recovery_continuous_chaos_router, recovery_waiver_exposure_governance_router, recovery_exception_debt_burndown_router, recovery_enterprise_risk_portfolio_router, recovery_enterprise_risk_appetite_router, recovery_enterprise_risk_forecast_router, recovery_risk_forecast_calibration_router, recovery_forecast_model_promotion_router, recovery_forecast_statistical_promotion_router, recovery_forecast_drift_governance_router, recovery_forecast_training_governance_router, recovery_forecast_artifact_governance_router, recovery_forecast_serving_governance_router, recovery_forecast_traffic_governance_router, recovery_forecast_online_feedback_router, recovery_forecast_online_segment_governance_router, recovery_forecast_segment_remediation_router, recovery_forecast_generalization_router, recovery_forecast_portfolio_governance_router, recovery_forecast_champion_governance_router, booking_router, fare_router, compensation_router, truth_router, judgment_router, dashboard_router, interactive_router, outbox_router, webhook_router, ops_router, connectors_router, onboarding_router, routing_router, merge_router, go_ai_router]:
+     app.include_router(r)
+ app.include_router(hotel_partner_core_router)
++app.include_router(autonomy_execution_router)
+ app.include_router(commercial_constitution_router)
+ app.include_router(supplier_commercial_router)
+ app.include_router(good_hotel_standard_router)
+--- DEPTH07/src/go_hotel/workers/autonomy_worker.py
++++ DEPTH08/src/go_hotel/workers/autonomy_worker.py
+@@ -0,0 +1,52 @@
++"""Run with python -m go_hotel.workers.autonomy_worker [--once].
++
++Run explicitly after migration; not automatically enabled by API startup.
++No shell adapter, arbitrary import, provider dispatch or schema creation exists.
++"""
++import argparse
++import json
++import logging
++import os
++import signal
++import threading
++import uuid
++
++from sqlalchemy.exc import OperationalError
++from go_hotel.autonomy.durable import ExecutionError
++from go_hotel.autonomy.operations import application_executor
++
++
++def main(argv=None):
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--once', action='store_true')
++    parser.add_argument('--cell', choices=['C%02d' % n for n in range(1, 15)])
++    parser.add_argument('--poll-seconds', type=float, default=1)
++    args = parser.parse_args(argv)
++    if not 0.1 <= args.poll_seconds <= 30:
++        parser.error('poll-seconds must be between 0.1 and 30')
++    runtime = application_executor()
++    worker = 'autonomy-%s-%s' % (os.getpid(), uuid.uuid4().hex[:12])
++    stop = threading.Event()
++    for sig in (signal.SIGTERM, signal.SIGINT):
++        signal.signal(sig, lambda *_: stop.set())
++    while not stop.is_set():
++        try:
++            result = runtime.run_once(worker, cell_id=args.cell)
++        except (OperationalError, ExecutionError) as exc:
++            # Errors must remain visible without logging DB URLs or payloads.
++            logging.getLogger('go.autonomy').error('WORKER_ERROR:%s', type(exc).__name__)
++            if args.once:
++                return 1
++            stop.wait(args.poll_seconds)
++            continue
++        if result:
++            print(json.dumps({k: result[k] for k in ('task_id', 'cell_id', 'status', 'attempt', 'last_code')}), flush=True)
++        if args.once:
++            return 0
++        if result is None:
++            stop.wait(args.poll_seconds)
++    return 0
++
++
++if __name__ == '__main__':
++    raise SystemExit(main())
+--- DEPTH07/tests/autonomy/test_depth08_durable.py
++++ DEPTH08/tests/autonomy/test_depth08_durable.py
+@@ -0,0 +1,443 @@
++"""Real file-database, thread and killed-process evidence for DEPTH08.
++
++The same matrix can run on an explicitly supplied local PostgreSQL test DB via
++GO_DEPTH08_TEST_DATABASE_URL. Each test owns a fresh schema. No public schema or
++existing application database is reset by this suite.
++"""
++from concurrent.futures import ThreadPoolExecutor
++from dataclasses import replace
++import multiprocessing
++import os
++import threading
++import uuid
++
++import pytest
++from sqlalchemy import create_engine, func, select, text, update
++from sqlalchemy.engine import make_url
++from sqlalchemy.orm import sessionmaker
++
++from go_hotel.autonomy import ALL_CELL_REGISTRY, Environment, RiskFactors
++from go_hotel.autonomy.action_control import AILegalPolicyRegistry, LegalPolicyRule
++from go_hotel.autonomy.durable import (
++    Claim, DurableExecutor, DurableQualifications, ExecutionError, Handler,
++    LostLease, ReconciledResult, RetryableStepError, db_now_ms, transaction,
++)
++from go_hotel.autonomy.types import (
++    LegalDecision, LegalExposureProfile, ProductionReality, QualificationEvidence,
++    QualificationKey, QualificationRecord, RiskClass,
++)
++from go_hotel.db.models import Base, AutonomyTaskRow as Task, AutonomyStepRow as Step
++
++pytestmark = pytest.mark.no_db
++TABLES = [Base.metadata.tables[n] for n in ('autonomy_cell_control', 'autonomy_qualification',
++          'autonomy_task', 'autonomy_step', 'autonomy_event')]
++
++
++def actor_check(s, actor):
++    return actor == 'operator' and s.scalar(text('SELECT active FROM test_operator')) == 1
++
++
++def make_runtime(url, *, cell='C01', steps=None, max_lease=30000, retry=0, **overrides):
++    engine = create_engine(url, connect_args={'timeout': 15} if make_url(url).get_backend_name() == 'sqlite' else {})
++    sessions = sessionmaker(engine, expire_on_commit=False)
++    definition = ALL_CELL_REGISTRY.cell(cell)
++    def effect(ctx):
++        ctx.execute(text('INSERT INTO test_effect(task_id, step_no, value) VALUES (:id,:step,1)'),
++                    {'id': ctx.task_id, 'step': len(ctx.previous)})
++        return {'effect': len(ctx.previous), 'cell_id': ctx.cell_id}
++    handler = Handler('test.' + cell, 'test-v1', cell, sorted(definition.capabilities)[0], steps=(effect, effect) if steps is None else steps)
++    handler = replace(handler, **overrides)
++    runtime = DurableExecutor(sessions, (handler,), environment=Environment.TEST,
++                   authorize_actor=actor_check, lease_ms=max_lease, retry_ms=retry)
++    return runtime
++
++
++@pytest.fixture
++def db_url(tmp_path):
++    supplied = os.getenv('GO_DEPTH08_TEST_DATABASE_URL')
++    admin = None
++    if supplied:
++        url = make_url(supplied)
++        if url.get_backend_name() != 'postgresql' or url.host not in {'localhost', '127.0.0.1', '::1'} or not (url.database or '').endswith('_test'):
++            pytest.fail('Only an explicitly isolated local PostgreSQL *_test database is accepted')
++        schema = 'depth08_' + uuid.uuid4().hex
++        admin = create_engine(url)
++        with admin.begin() as conn:
++            conn.execute(text('CREATE SCHEMA ' + schema))
++        target = url.update_query_dict({'options': '-csearch_path=' + schema}).render_as_string(hide_password=False)
++    else:
++        target = 'sqlite+pysqlite:///' + str(tmp_path / 'execution.db')
++    engine = create_engine(target)
++    Base.metadata.create_all(engine, tables=TABLES)
++    with engine.begin() as conn:
++        conn.execute(text('CREATE TABLE test_effect(task_id varchar(64), step_no integer, value integer, PRIMARY KEY(task_id,step_no))'))
++        conn.execute(text('CREATE TABLE test_operator(active integer)'))
++        conn.execute(text('INSERT INTO test_operator VALUES(1)'))
++    engine.dispose()
++    yield target
++    if admin:
++        with admin.begin() as conn:
++            conn.execute(text('DROP SCHEMA ' + schema + ' CASCADE'))
++        admin.dispose()
++
++
++def submit(rt, key='one', **kwargs):
++    return rt.submit(next(iter(rt.handlers)), idempotency_key=key, submitted_by='operator', **kwargs)
++
++
++def expire(rt, task_id):
++    with transaction(rt.sessions) as s:
++        s.execute(update(Task).where(Task.task_id == task_id).values(lease_until_ms=0))
++
++
++def effects(rt):
++    with rt.sessions() as s:
++        return s.execute(text('SELECT task_id,step_no,value FROM test_effect ORDER BY task_id,step_no')).all()
++
++
++@pytest.mark.parametrize('cell', ['C%02d' % n for n in range(1, 15)])
++def test_every_cell_persists_and_resumes_committed_step_without_duplicate(db_url, cell):
++    rt = make_runtime(db_url, cell=cell)
++    task = submit(rt)
++    claim = rt.claim('worker-a')
++    assert rt.run_step(claim)['next_step'] == 1
++    assert len(effects(rt)) == 1
++    expire(rt, task['task_id'])
++    # New executor and new engine, with no in-memory execution state.
++    restored = make_runtime(db_url, cell=cell)
++    assert restored.run_once('worker-b')['status'] == 'SUCCEEDED'
++    with pytest.raises(LostLease):
++        rt.run_step(claim)
++    final = restored.inspect(task['task_id'])
++    assert final['attempt'] == 2 and final['next_step'] == 2
++    assert len(final['checkpoints']) == len(effects(rt)) == 2
++    assert [e['sequence'] for e in final['events']] == list(range(1, len(final['events']) + 1))
++    assert sum(e['event_type'] == 'C14_REVIEW' for e in final['events']) == 3
++    assert submit(restored)['task_id'] == task['task_id']
++    assert restored.run_once('worker-c') is None
++
++
++@pytest.mark.parametrize('field,value', [('payload', {'changed': True}), ('max_attempts', 3)])
++def test_same_key_cannot_change_request(db_url, field, value):
++    rt = make_runtime(db_url)
++    submit(rt)
++    with pytest.raises(ExecutionError, match='IDEMPOTENCY_CONFLICT'):
++        submit(rt, **{field: value})
++    assert len(rt.list_tasks()) == 1
++
++
++def test_parallel_submit_and_claim_have_one_effect(db_url):
++    rt = make_runtime(db_url)
++    barrier = threading.Barrier(6)
++    def producer(_):
++        barrier.wait(10)
++        return submit(make_runtime(db_url))['task_id']
++    with ThreadPoolExecutor(6) as pool:
++        ids = list(pool.map(producer, range(6)))
++    assert len(set(ids)) == 1
++    with ThreadPoolExecutor(6) as pool:
++        results = list(pool.map(lambda n: make_runtime(db_url).run_once('w' + str(n)), range(6)))
++    assert sum(r is not None for r in results) == 1
++    assert len(effects(rt)) == 2
++    assert rt.inspect(ids[0])['attempt'] == 1
++
++
++def test_retry_rolls_back_effect_and_stops_at_budget(db_url):
++    def fail(ctx):
++        ctx.execute(text('INSERT INTO test_effect VALUES (:id,0,1)'), {'id': ctx.task_id})
++        raise RetryableStepError('INJECTED_TRANSACTION_FAILURE')
++    rt = make_runtime(db_url, steps=(fail,))
++    task = submit(rt, max_attempts=2)
++    assert rt.run_once('a')['status'] == 'RETRY_WAIT'
++    assert effects(rt) == []
++    assert rt.run_once('b')['status'] == 'DEAD'
++    assert submit(rt, max_attempts=2)['status'] == 'DEAD'
++    with pytest.raises(ExecutionError, match='TASK_NOT_RESUMABLE'):
++        rt.resume(task['task_id'], actor='operator')
++    assert rt.run_once('c') is None
++
++
++def test_retry_has_persisted_backoff(db_url):
++    def fail(_):
++        raise RetryableStepError('TRY_LATER')
++    rt = make_runtime(db_url, steps=(fail,), retry=5000)
++    submit(rt)
++    result = rt.run_once('a')
++    assert result['available_ms'] >= result['updated_ms'] + 5000
++    assert make_runtime(db_url, steps=(fail,)).claim('b') is None
++
++
++def test_unknown_handler_and_new_version_hold_existing_task(db_url):
++    rt = make_runtime(db_url)
++    task = submit(rt)
++    changed = make_runtime(db_url, version='test-v2')
++    assert changed.run_once('b')['status'] == 'HOLD'
++    assert changed.inspect(task['task_id'])['last_code'] == 'HANDLER_VERSION_UNAVAILABLE'
++    assert effects(rt) == []
++    with pytest.raises(ExecutionError, match='OPERATION_NOT_ALLOWLISTED'):
++        rt.submit('shell', idempotency_key='x', submitted_by='operator', payload={'cmd': 'echo unsafe'})
++
++
++def test_pause_resume_and_cancel_fence_old_worker(db_url):
++    rt = make_runtime(db_url)
++    task = submit(rt)
++    claim = rt.claim('a')
++    rt.set_paused('C01', paused=True, actor='operator', expected_version=1)
++    assert rt.run_step(claim)['last_code'] == 'CELL_PAUSED'
++    rt.set_paused('C01', paused=False, actor='operator', expected_version=2)
++    with pytest.raises(ExecutionError, match='CELL_CONTROL_VERSION_CONFLICT'):
++        rt.set_paused('C01', paused=True, actor='operator', expected_version=1)
++    assert rt.resume(task['task_id'], actor='operator')['status'] == 'QUEUED'
++    second = rt.claim('b')
++    assert rt.cancel(task['task_id'], actor='operator')['status'] == 'CANCELLED'
++    with pytest.raises(LostLease):
++        rt.run_step(second)
++    assert submit(rt)['status'] == 'CANCELLED'
++    assert effects(rt) == []
++
++
++def test_role_revoked_after_first_checkpoint_prevents_next_step(db_url):
++    rt = make_runtime(db_url)
++    submit(rt)
++    claim = rt.claim('a')
++    rt.run_step(claim)
++    with transaction(rt.sessions) as s:
++        s.execute(text('UPDATE test_operator SET active=0'))
++    assert rt.run_step(claim)['last_code'] == 'SUBMITTER_AUTHORITY_REVOKED'
++    assert len(effects(rt)) == 1
++
++
++def qualification(handler):
++    key = QualificationKey(handler.cell_id, handler.capability, RiskClass.R0, Environment.TEST)
++    evidence = QualificationEvidence(True, True, True, True, True, True, True, True, False, ('test://independent-depth08',))
++    return QualificationRecord(key, ProductionReality.AUTONOMOUS_QUALIFIED, evidence, 'C13', 'C12')
++
++
++@pytest.mark.parametrize('loss', ['revoke', 'expire'])
++def test_standing_qualification_survives_restart_and_loss_stops_retry(db_url, loss):
++    rt = make_runtime(db_url, autonomous=True)
++    record = qualification(next(iter(rt.handlers.values())))
++    task = submit(rt)
++    assert task['status'] == 'HOLD'
++    with transaction(rt.sessions) as s:
++        DurableQualifications(s).qualify(record, expires_ms=db_now_ms(s) + 60000)
++    rt = make_runtime(db_url, autonomous=True)
++    assert rt.resume(task['task_id'], actor='operator')['status'] == 'QUEUED'
++    claim = rt.claim('a')
++    rt.run_step(claim)
++    with transaction(rt.sessions) as s:
++        if loss == 'revoke':
++            DurableQualifications(s).revoke(record.key, reason='independent regression', expected_revision=1)
++        else:
++            from go_hotel.db.models import AutonomyQualificationRow
++            s.execute(update(AutonomyQualificationRow).values(expires_ms=0))
++    assert rt.run_step(claim)['status'] == 'HOLD'
++    assert len(effects(rt)) == 1
++
++
++def test_c13_cannot_self_qualify(db_url):
++    rt = make_runtime(db_url, cell='C13', autonomous=True)
++    with transaction(rt.sessions) as s:
++        with pytest.raises(RuntimeError, match='SELF_CERTIFICATION_PROHIBITED'):
++            DurableQualifications(s).qualify(qualification(next(iter(rt.handlers.values()))), expires_ms=db_now_ms(s) + 60000)
++    assert submit(rt)['status'] == 'HOLD'
++
++
++@pytest.mark.parametrize('change,code', [
++    ({'target_domain': 'FLIGHT', 'truth_mutation': True}, 'CROSS_DOMAIN_TRUTH_MUTATION_DENIED'),
++    ({'capability': 'GRANT_SELF_PERMISSION'}, 'SELF_EMPOWERMENT_PROHIBITED'),
++    ({'autonomous': True}, 'AUTONOMY_QUALIFICATION_MISSING'),
++    ({'exposure': LegalExposureProfile(money_or_refund=True)}, 'LEGAL_HOLD'),
++])
++def test_c14_cannot_be_bypassed_in_durable_execution(db_url, change, code):
++    rt = make_runtime(db_url, **change)
++    assert submit(rt)['last_code'] == code
++    assert rt.run_once('a') is None
++    assert effects(rt) == []
++
++
++def test_conditional_legal_allow_is_not_executable_without_satisfier(db_url):
++    rt = make_runtime(db_url, exposure=LegalExposureProfile(money_or_refund=True), jurisdiction='TEST')
++    rt.legal = AILegalPolicyRegistry((LegalPolicyRule('test-only', LegalDecision.LEGAL_ALLOW_WITH_CONDITIONS,
++                                        conditions=('independent_case_approval',)),))
++    assert submit(rt)['last_code'] == 'LEGAL_CONDITIONS_UNSATISFIED'
++
++
++def test_expired_and_wrong_token_heartbeats_do_not_resurrect_lease(db_url):
++    rt = make_runtime(db_url)
++    task = submit(rt)
++    claim = rt.claim('a')
++    assert rt.heartbeat(claim) > 0
++    with pytest.raises(LostLease):
++        rt.heartbeat(Claim(claim.task_id, 'wrong-token', claim.attempt))
++    expire(rt, task['task_id'])
++    with pytest.raises(LostLease):
++        rt.heartbeat(claim)
++    assert rt.run_once('b')['status'] == 'SUCCEEDED'
++
++
++def test_checkpoints_detect_corruption(db_url):
++    rt = make_runtime(db_url)
++    task = submit(rt)
++    claim = rt.claim('a')
++    rt.run_step(claim)
++    with transaction(rt.sessions) as s:
++        s.execute(update(Step).where(Step.task_id == task['task_id']).values(result_hash='tampered'))
++    assert rt.run_step(claim)['last_code'] == 'CHECKPOINT_INTEGRITY_FAILURE'
++    assert len(effects(rt)) == 1
++
++
++def test_request_tampering_is_rejected_before_effect(db_url):
++    rt = make_runtime(db_url)
++    task = submit(rt)
++    with transaction(rt.sessions) as s:
++        s.execute(update(Task).where(Task.task_id == task['task_id']).values(payload_json={'changed': True}))
++    assert rt.run_once('a')['last_code'] == 'TASK_REQUEST_INTEGRITY_FAILURE'
++    assert effects(rt) == []
++
++
++def test_local_step_expiring_before_commit_rolls_back(db_url):
++    def slow(ctx):
++        ctx.execute(text('INSERT INTO test_effect VALUES (:id,0,1)'), {'id': ctx.task_id})
++        threading.Event().wait(0.15)
++        return {'done': True}
++    rt = make_runtime(db_url, steps=(slow,), max_lease=100)
++    task = submit(rt)
++    rt.run_once('a')
++    assert effects(rt) == []
++    assert rt.inspect(task['task_id'])['checkpoints'] == []
++    rt.recover_expired()
++    assert rt.inspect(task['task_id'])['status'] == 'RETRY_WAIT'
++
++
++def test_environment_scope_isolation_and_production_gate(db_url):
++    rt = make_runtime(db_url)
++    task = submit(rt)
++    other = DurableExecutor(rt.sessions, rt.handlers.values(), environment=Environment.STAGING, authorize_actor=actor_check)
++    assert other.run_once('a') is None
++    with pytest.raises(ExecutionError, match='TASK_NOT_FOUND'):
++        other.inspect(task['task_id'])
++    prod = DurableExecutor(rt.sessions, rt.handlers.values(), environment=Environment.PRODUCTION, authorize_actor=actor_check)
++    assert submit(prod)['last_code'] == 'PRODUCTION_EXECUTION_NOT_CERTIFIED'
++
++
++@pytest.mark.parametrize('outcome', ['SUCCEEDED', 'UNKNOWN', 'FAILED'])
++def test_external_ambiguous_outcome_is_reconciled_without_resend(db_url, outcome):
++    calls = []
++    def dispatch(ctx):
++        calls.append(ctx.operation_key)
++        raise TimeoutError('provider may already have applied')
++    def reconcile(ctx):
++        return ReconciledResult(outcome, ctx.operation_key, 'test://provider-receipt', {'provider_state': outcome})
++    rt = make_runtime(db_url, mode='EXTERNAL', steps=(), dispatch=dispatch, reconcile=reconcile)
++    task = submit(rt)
++    assert rt.run_once('a')['status'] == 'UNCERTAIN'
++    assert rt.run_once('b') is None
++    with pytest.raises(ExecutionError, match='TASK_NOT_RESUMABLE'):
++        rt.resume(task['task_id'], actor='operator')
++    with pytest.raises(ExecutionError, match='TASK_NOT_CANCELLABLE'):
++        rt.cancel(task['task_id'], actor='operator')
++    state = rt.reconcile_external(task['task_id'], actor='operator')
++    assert state['status'] == ('UNCERTAIN' if outcome == 'UNKNOWN' else outcome)
++    assert len(calls) == 1
++
++
++def test_external_reconciliation_rejects_unbound_receipt(db_url):
++    rt = make_runtime(db_url, mode='EXTERNAL', steps=(),
++        dispatch=lambda _: (_ for _ in ()).throw(TimeoutError()),
++        reconcile=lambda _: ReconciledResult('SUCCEEDED', 'wrong-key', 'receipt', {}))
++    task = submit(rt)
++    rt.run_once('a')
++    with pytest.raises(ExecutionError, match='RECONCILIATION_SCOPE_MISMATCH'):
++        rt.reconcile_external(task['task_id'], actor='operator')
++    assert rt.inspect(task['task_id'])['status'] == 'UNCERTAIN'
++
++
++def _killed_worker(url, ready, stage):
++    def pending_effect(ctx):
++        ctx.execute(text('INSERT INTO test_effect VALUES (:id,0,1)'), {'id': ctx.task_id})
++        ready.set()
++        threading.Event().wait(30)
++        return {'effect': 0}
++    rt = make_runtime(url, steps=(pending_effect,) if stage == 'inside_transaction' else None)
++    claim = rt.claim('doomed-process')
++    if stage == 'inside_transaction':
++        rt.run_step(claim)
++    elif stage == 'after_claim':
++        ready.set()
++        threading.Event().wait(30)
++    else:
++        rt.run_step(claim)
++        ready.set()
++        threading.Event().wait(30)
++
++
++@pytest.mark.parametrize('stage', ['after_claim', 'inside_transaction', 'after_checkpoint'])
++def test_sigkill_recovery_uses_database_not_process_memory(db_url, stage):
++    rt = make_runtime(db_url)
++    # For the transaction fault point keep the same one-step handler contract.
++    if stage == 'inside_transaction':
++        h = next(iter(rt.handlers.values()))
++        rt = make_runtime(db_url, steps=(h.steps[0],))
++    task = submit(rt)
++    ctx = multiprocessing.get_context('spawn')
++    ready = ctx.Event()
++    proc = ctx.Process(target=_killed_worker, args=(db_url, ready, stage))
++    proc.start()
++    try:
++        assert ready.wait(15), 'child did not reach fault point'
++        proc.kill()
++        proc.join(10)
++        assert proc.exitcode is not None and proc.exitcode != 0
++    finally:
++        if proc.is_alive():
++            proc.kill()
++            proc.join(5)
++    before = effects(rt)
++    assert len(before) == (1 if stage == 'after_checkpoint' else 0)
++    expire(rt, task['task_id'])
++    assert rt.run_once('replacement-process')['status'] == 'SUCCEEDED'
++    assert len(effects(rt)) == (1 if stage == 'inside_transaction' else 2)
++
++
++def _external_crash(url, ready):
++    def dispatch(ctx):
++        # A separate transaction models the provider's own durable effect.
++        engine = create_engine(url)
++        with engine.begin() as conn:
++            conn.execute(text('INSERT INTO test_effect VALUES (:id,0,1)'), {'id': ctx.operation_key})
++        ready.set()
++        threading.Event().wait(30)
++        return {'provider': 'applied'}
++    rt = make_runtime(url, mode='EXTERNAL', steps=(), dispatch=dispatch,
++                      reconcile=lambda _: None)
++    rt.run_once('external-doomed')
++
++
++def test_process_dies_after_provider_effect_never_redispatches(db_url):
++    calls = []
++    def dispatch(ctx):
++        calls.append(ctx.operation_key)
++        return {}
++    def reconcile(ctx):
++        return ReconciledResult('SUCCEEDED', ctx.operation_key, 'test://persisted-provider', {'provider': 'applied'})
++    rt = make_runtime(db_url, mode='EXTERNAL', steps=(), dispatch=dispatch, reconcile=reconcile)
++    task = submit(rt)
++    ctx = multiprocessing.get_context('spawn')
++    ready = ctx.Event()
++    proc = ctx.Process(target=_external_crash, args=(db_url, ready))
++    proc.start()
++    try:
++        assert ready.wait(15)
++        proc.kill()
++        proc.join(10)
++    finally:
++        if proc.is_alive():
++            proc.kill()
++            proc.join(5)
++    expire(rt, task['task_id'])
++    assert rt.run_once('replacement') is None
++    assert rt.inspect(task['task_id'])['status'] == 'UNCERTAIN'
++    assert len(effects(rt)) == 1 and calls == []
++    assert rt.reconcile_external(task['task_id'], actor='operator')['status'] == 'SUCCEEDED'
++    assert calls == []
+--- DEPTH07/tests/test_depth06_migration.py
++++ DEPTH08/tests/test_depth06_migration.py
+@@ -10,7 +10,7 @@
+     env={**os.environ,'DATABASE_URL':f'sqlite+pysqlite:///{db}','PYTHONPATH':'src'}
+     def alembic(*args):
+         return subprocess.run([sys.executable,'-m','alembic',*args],env=env,text=True,capture_output=True,check=True)
+-    alembic('stamp','0114_ext_truth_incident_hard');alembic('upgrade','head')
++    alembic('stamp','0114_ext_truth_incident_hard');alembic('upgrade','0115_rental_change_settlement')
+     with sqlite3.connect(db) as conn:
+         assert conn.execute('select version_num from alembic_version').fetchone()[0]=='0115_rental_change_settlement'
+         assert conn.execute('select settlement_plan_json from mobility_refund_runtime').fetchone()[0]=='[]'
+@@ -20,4 +20,4 @@
+     with sqlite3.connect(db) as conn:
+         assert conn.execute('select * from mobility_refund_runtime').fetchone()==('old-refund','REFUND_COMPLETED')
+         assert not conn.execute("select name from sqlite_master where name='rental_change_quote'").fetchone()
+-    alembic('upgrade','head')
++    alembic('upgrade','0115_rental_change_settlement')
+--- DEPTH07/tests/test_depth08_api_and_migration.py
++++ DEPTH08/tests/test_depth08_api_and_migration.py
+@@ -0,0 +1,166 @@
++import json
++import os
++from pathlib import Path
++import sqlite3
++import subprocess
++import sys
++
++import pytest
++from sqlalchemy import select, update
++from go_hotel.autonomy.operations import application_executor
++from go_hotel.db.models import AutonomyTaskRow, IdentityUserRow, OutboxRow
++from go_hotel.db.session import SessionLocal
++from go_hotel.security.service import identity_service
++
++
++PREFIX = '/internal/v1/autonomy'
++
++
++def login(client, username='go_admin', password='change-me-admin'):
++    reply = client.post('/v1/auth/login', json={'username': username, 'password': password})
++    assert reply.status_code == 200, reply.text
++    client.cookies.clear()
++    return {'Authorization': 'Bearer ' + reply.json()['data']['access_token']}
++
++
++def test_all14_observations_execute_against_application_database(client):
++    headers = login(client)
++    response = client.get(PREFIX + '/cells', headers=headers)
++    assert response.status_code == 200 and 'no-store' in response.headers['Cache-Control']
++    assert len(response.json()['data']) == 14
++    cells = ['C%02d' % n for n in range(1, 15)]
++    from datetime import datetime, timezone
++    now = datetime.now(timezone.utc)
++    with SessionLocal.begin() as s:
++        s.add(OutboxRow(event_id='depth08-failed-delivery', event_type='TEST', aggregate_id='test',
++            payload={'private': 'must-not-appear'}, status='DEAD', attempt_count=5,
++            available_at=now, created_at=now))
++    body = {'idempotency_key': 'operator-cycle-1', 'cell_ids': cells}
++    queued = client.post(PREFIX + '/observe', json=body, headers=headers)
++    assert queued.status_code == 200, queued.text
++    original_ids = {r['task_id'] for r in queued.json()['data']}
++    runtime = application_executor()
++    for _ in cells:
++        result = runtime.run_once('integration-worker')
++        assert result['status'] == 'SUCCEEDED', result
++        assert result['next_step'] == 2
++        assert result['result_json']['production_certification'] is False
++    assert runtime.run_once('idle') is None
++    replay = client.post(PREFIX + '/observe', json=body, headers=headers).json()['data']
++    assert {r['task_id'] for r in replay} == original_ids
++    assert all(r['status'] == 'SUCCEEDED' for r in replay)
++    c12 = next(r for r in replay if r['cell_id'] == 'C12')
++    assert c12['result_json']['attention'] == [{'source': 'transactional_outbox', 'state': 'DEAD', 'count': 1}]
++    assert 'must-not-appear' not in json.dumps(replay)
++    detail = client.get(PREFIX + '/tasks/' + c12['task_id'], headers=headers).json()['data']
++    assert len(detail['checkpoints']) == 2 and len(detail['events']) > 3
++    assert 'lease_token' not in detail
++
++
++@pytest.mark.parametrize('identity', ['anonymous', 'supplier', 'read_only'])
++def test_queue_mutation_requires_go_admin_rules_permission(client, identity):
++    if identity == 'anonymous':
++        headers, code = {}, 401
++    elif identity == 'supplier':
++        headers, code = login(client, 'supplier_owner', 'change-me-supplier'), 403
++    else:
++        identity_service.ensure_user('reader-depth08', 'StrongReader123!', 'GO_ADMIN', None, ['GO_READ_ONLY'])
++        headers, code = login(client, 'reader-depth08', 'StrongReader123!'), 403
++        assert client.get(PREFIX + '/cells', headers=headers).status_code == 200
++    reply = client.post(PREFIX + '/observe', json={'idempotency_key': 'reject', 'cell_ids': ['C01']}, headers=headers)
++    assert reply.status_code == code
++    with SessionLocal() as s:
++        assert s.scalar(select(AutonomyTaskRow.task_id)) is None
++
++
++@pytest.mark.parametrize('change', [
++    {'cell_ids': ['C01', 'C01']}, {'cell_ids': ['C99']}, {'capability': 'REFUND'},
++    {'environment': 'PRODUCTION'}, {'require_autonomous_execution': False}, {'payload': {'shell': 'do-something'}},
++])
++def test_api_rejects_client_supplied_execution_authority(client, change):
++    headers = login(client)
++    reply = client.post(PREFIX + '/observe', headers=headers,
++                         json={'idempotency_key': 'reject', 'cell_ids': ['C01'], **change})
++    assert reply.status_code == 422
++
++
++def test_queued_observation_holds_if_admin_role_is_revoked(client):
++    headers = login(client)
++    queued = client.post(PREFIX + '/observe', headers=headers,
++        json={'idempotency_key': 'revoked', 'cell_ids': ['C01']}).json()['data'][0]
++    with SessionLocal.begin() as s:
++        s.execute(update(IdentityUserRow).where(IdentityUserRow.username == 'go_admin').values(roles=['GO_READ_ONLY']))
++    runtime = application_executor()
++    assert runtime.run_once('a')['last_code'] == 'SUBMITTER_AUTHORITY_REVOKED'
++    assert runtime.inspect(queued['task_id'])['checkpoints'] == []
++
++
++def test_api_pause_resume_cancel_and_revision_conflict(client):
++    headers = login(client)
++    control = PREFIX + '/cells/C01/control'
++    assert client.post(control, headers=headers, json={'paused': True, 'expected_version': 1}).status_code == 200
++    assert client.post(control, headers=headers, json={'paused': False, 'expected_version': 1}).status_code == 409
++    task = client.post(PREFIX + '/observe', headers=headers,
++        json={'idempotency_key': 'held', 'cell_ids': ['C01']}).json()['data'][0]
++    assert task['status'] == 'HOLD'
++    assert client.post(control, headers=headers, json={'paused': False, 'expected_version': 2}).status_code == 200
++    route = PREFIX + '/tasks/' + task['task_id']
++    assert client.post(route + '/resume', headers=headers).json()['data']['status'] == 'QUEUED'
++    assert client.post(route + '/cancel', headers=headers).json()['data']['status'] == 'CANCELLED'
++    assert application_executor().run_once('idle') is None
++
++
++def test_worker_cli_process_consumes_persisted_queue(client):
++    headers = login(client)
++    task = client.post(PREFIX + '/observe', headers=headers,
++        json={'idempotency_key': 'subprocess', 'cell_ids': ['C12']}).json()['data'][0]
++    from go_hotel.db.session import engine
++    # Legacy test modules overwrite DATABASE_URL during collection. Bind the
++    # child to this fixture's actual engine, not the process-wide last writer.
++    env = {**os.environ, 'PYTHONPATH': 'src', 'APP_ENV': 'local',
++           'DATABASE_URL': engine.url.render_as_string(hide_password=False)}
++    worker = subprocess.run([sys.executable, '-m', 'go_hotel.workers.autonomy_worker', '--once'],
++                             env=env, capture_output=True, text=True, timeout=30)
++    assert worker.returncode == 0, worker.stderr
++    result = json.loads(worker.stdout)
++    assert result['task_id'] == task['task_id'] and result['status'] == 'SUCCEEDED'
++    again = subprocess.run([sys.executable, '-m', 'go_hotel.workers.autonomy_worker', '--once'],
++                            env=env, capture_output=True, text=True, timeout=30)
++    assert again.returncode == 0 and not again.stdout.strip()
++
++
++@pytest.mark.no_db
++def test_migration_roundtrip_preserves_prior_data_and_protects_execution_evidence(tmp_path):
++    from alembic import command
++    from alembic.config import Config
++    from go_hotel.core.config import settings
++    from sqlalchemy import create_engine, inspect
++    db = tmp_path / 'migration.db'
++    with sqlite3.connect(db) as conn:
++        conn.execute('CREATE TABLE retained_business_data (id text PRIMARY KEY, state text)')
++        conn.execute("INSERT INTO retained_business_data VALUES ('existing','REFUNDED')")
++    config = Config('alembic.ini')
++    original = settings.database_url
++    settings.database_url = 'sqlite+pysqlite:///' + str(db)
++    try:
++        command.stamp(config, '0115_rental_change_settlement')
++        command.upgrade(config, '0116_autonomy_durable')
++        engine = create_engine(settings.database_url)
++        inspector = inspect(engine)
++        names = {'autonomy_task', 'autonomy_step', 'autonomy_event', 'autonomy_cell_control', 'autonomy_qualification'}
++        assert names <= set(inspector.get_table_names())
++        assert {r['name'] for r in inspector.get_indexes('autonomy_task')} == {'ix_autonomy_task_queue', 'ix_autonomy_task_cell'}
++        assert {c['name'] for c in inspector.get_unique_constraints('autonomy_event')} == {'uq_autonomy_event_sequence'}
++        command.downgrade(config, '0115_rental_change_settlement')
++        command.upgrade(config, '0116_autonomy_durable')
++        with sqlite3.connect(db) as conn:
++            assert conn.execute('SELECT * FROM retained_business_data').fetchone() == ('existing', 'REFUNDED')
++            conn.execute("INSERT INTO autonomy_cell_control VALUES ('TEST','C01',1,2,'operator',0)")
++        with pytest.raises(RuntimeError, match='AUTONOMY_DATA_PRESENT'):
++            command.downgrade(config, '0115_rental_change_settlement')
++        with sqlite3.connect(db) as conn:
++            assert conn.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0116_autonomy_durable'
++            assert conn.execute('SELECT count(*) FROM autonomy_cell_control').fetchone()[0] == 1
++        engine.dispose()
++    finally:
++        settings.database_url = original
+--- DEPTH07/tests/test_parent_implementation_code_review_debt_closure.py
++++ DEPTH08/tests/test_parent_implementation_code_review_debt_closure.py
+@@ -148,7 +148,7 @@
+ 
+     heads = subprocess.run([sys.executable, "-m", "alembic", "heads"], env=env, text=True, capture_output=True, check=True)
+     head_lines = [line.strip() for line in heads.stdout.splitlines() if line.strip().endswith("(head)")]
+-    assert head_lines == ["0115_rental_change_settlement (head)"]
++    assert head_lines == ["0116_autonomy_durable (head)"]
+ 
+     subprocess.run([sys.executable, "-m", "alembic", "upgrade", "0114_ext_truth_incident_hard"], env=env, text=True, capture_output=True, check=True)
+     conn = sqlite3.connect(db)
