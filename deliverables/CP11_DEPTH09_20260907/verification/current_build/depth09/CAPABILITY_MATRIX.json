@@ -1,0 +1,67 @@
+{
+  "review_date": "2026-09-07",
+  "FINAL_RELEASE_GATE": "HOLD",
+  "HOTEL_REPLICATION_GATE": "HOLD",
+  "baseline_official_catalog": {
+    "room_types": 17,
+    "source_url": "https://www.hyatt.com/unbound-collection/zh-CN/hrbub-aoluguya/rooms",
+    "source_sha256": "b32b3245784ba02f4327581cdf064e4a2bbc27f27ca132a1a8a4a3697a16e3b1",
+    "unchanged": true
+  },
+  "capabilities": [
+    {
+      "capability": "Official URL seed intake",
+      "state": "IMPLEMENTED_WITH_AUTHORIZATION_CHECKS"
+    },
+    {
+      "capability": "Screenshot OCR to verified hotel build",
+      "state": "NOT_FOUND_IN_BUILD_CALL_CHAIN"
+    },
+    {
+      "capability": "Structured official multi-page room extraction",
+      "state": "ISOLATED_FIXTURE_TESTED",
+      "scope": "Hotel containsPlace HotelRoom/Suite explicit relationships"
+    },
+    {
+      "capability": "Arbitrary official website adapters",
+      "state": "NOT_COMPLETE"
+    },
+    {
+      "capability": "Full room-type inventory parity",
+      "state": "REQUIRES_INDEPENDENT_OFFICIAL_INDEX_REVIEW"
+    },
+    {
+      "capability": "Identity deduplication and same-source concurrent import",
+      "state": "SQLITE_TESTED_POSTGRESQL_PENDING"
+    },
+    {
+      "capability": "Per-room image correspondence and last-good page publication",
+      "state": "ISOLATED_FIXTURE_TESTED"
+    },
+    {
+      "capability": "Automatic capture-to-download media orchestration",
+      "state": "NOT_WIRED"
+    },
+    {
+      "capability": "Media index concurrent multi-process mutation",
+      "state": "UNACCEPTED"
+    },
+    {
+      "capability": "Regional queue delivery acknowledgement and crash recovery",
+      "state": "UNACCEPTED_BRPOP_WITHOUT_ACK"
+    },
+    {
+      "capability": "Generic Canonical to HostedDirect room mapping",
+      "state": "UNACCEPTED_SINGLE_HOTEL_CONFIGURATOR_EXISTS"
+    },
+    {
+      "capability": "Real multi-hotel capture speed and accuracy",
+      "state": "NOT_MEASURED"
+    },
+    {
+      "capability": "Browser mobile and HK acceptance",
+      "state": "NOT_ACCEPTED"
+    }
+  ],
+  "evidence_separation": "A reachable public website, isolated fixture tests and a deployed working hotel builder are separate facts."
+}

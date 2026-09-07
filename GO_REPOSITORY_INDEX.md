@@ -1,12 +1,12 @@
 # GO 候选归档索引
 
-用户于 2026-09-07 明确指定：确认仓库可用后，后续 GO 工作优先保存到 `yuguangzhi3836-glitch/GO`。
+用户于 2026-09-07 指定后续 GO 工作优先保存到 yuguangzhi3836-glitch/GO。
 
-当前候选：[CP11 DEPTH08 · 自运营持久执行与恢复](deliverables/CP11_DEPTH08_20260907/README.md)。
+当前候选：[DEPTH09 · 酒店建库准确性与复制复核](deliverables/CP11_DEPTH09_20260907/README.md)。
 
-- 基线：已验证的 DEPTH07，继续保留原件与证据。
-- 本批：持久任务、检查点、租约恢复、防重复执行，以及 14 个受控运行观察适配器。
-- 回归：1020 通过、6 项 PostgreSQL 检查跳过、0 失败；封包恢复后 77 项通过。
-- `FINAL_RELEASE_GATE=HOLD`。归档作为工程复核候选，不表示部署或生产放行。
+上一冻结候选：[DEPTH08 · 14 单元持久执行与恢复](deliverables/CP11_DEPTH08_20260907/README.md)。
 
-每批候选保存独立目录、文件校验清单、源码差异、恢复说明与原始测试证据。
+DEPTH09 在 DEPTH08 上增加酒店身份、明确官网房型关系采集、逐房型照片核对、可靠页面版本切换、
+批次真实完成统计和管理写权限。更广一键建库流水线仍待完成。
+
+FINAL_RELEASE_GATE=HOLD；HOTEL_REPLICATION_GATE=HOLD。以上均为工程复核归档，未部署香港。

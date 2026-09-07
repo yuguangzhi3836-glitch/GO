@@ -1,0 +1,41 @@
+✔ HTTP helper retains CSRF together with idempotency header (3.686474ms)
+✔ Escape cancels traveler selection without authorizing or creating an order (9.066527ms)
+✔ rental consent is bound to the selected traveler, field and purpose (4.271865ms)
+✔ payment is cancelled without any checkout mutation (1.748671ms)
+✔ a failed confirmed payment stays visible and can be retried (1.815871ms)
+✔ cancelling a party selection creates no order or grant (1.681522ms)
+✔ a party must contain the exact number of different travelers (1.650776ms)
+✔ party confirmation returns only the explicitly selected traveler references (1.523576ms)
+✔ party selection cannot submit without confirming adult travelers and purpose (2.879263ms)
+✔ hotel funds distinguish frozen, charged, released and refunded cent amounts (28.158969ms)
+✔ only approved pending refunds expose retry and all server labels are escaped (1.150551ms)
+✔ unknown funding shows reconciliation instead of a false payment claim (0.557539ms)
+✔ trip links only open the exact canonical owned direct-reservation path (0.382639ms)
+✔ closing a stay complaint form makes no request (1.531999ms)
+✔ complaint retries reuse the same request identity and have no refund approval fields (2.29226ms)
+✔ blank complaints and duplicate submission clicks cannot send extra requests (1.231292ms)
+✔ closing hotel authorization leaves funds untouched (3.023337ms)
+✔ hotel checkout requires confirmation and binds the complete stay amount (1.932244ms)
+✔ a second click cannot create another hotel authorization while the first is pending (1.322368ms)
+✔ a failed hotel authorization remains visible and can be retried (1.000338ms)
+✔ cancelling date selection never requests a quote or payment (2.820074ms)
+✔ ride changes continue to use their separate workflow (0.865918ms)
+✔ viewing a rental quote does not execute the change (0.828893ms)
+✔ confirmed refund difference retains its sign and server quote identity (2.490244ms)
+✔ unchecked amount consent blocks executing a displayed quote (1.377199ms)
+✔ the shared amount formatter preserves cents on confirmation screens (16.726673ms)
+✔ closing permission confirmation sends no permission mutation (4.676727ms)
+✔ source disconnect remains explicit and retains server-directed semantics (2.830541ms)
+✔ person edit binds the displayed revision and leaves a blank birth date untouched (1.723264ms)
+✔ sensitive import inspection happens only after explicit confirmation, with no implicit acceptance (7.982785ms)
+✔ untrusted imported content is escaped before display (1.945043ms)
+✔ duplicate submits during a pending mutation call the server once (1.731696ms)
+✔ import reassignment binds traveler and item revision and does not accept content (2.246392ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 160.995513

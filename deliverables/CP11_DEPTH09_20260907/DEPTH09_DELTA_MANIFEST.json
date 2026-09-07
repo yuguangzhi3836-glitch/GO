@@ -1,0 +1,234 @@
+{
+  "build": "CP11_DEPTH_09_HOTEL_REPLICATION_CORRECTNESS",
+  "FINAL_RELEASE_GATE": "HOLD",
+  "HOTEL_REPLICATION_GATE": "HOLD",
+  "depth08_delta_sha256": "e6446a852d1806cc4afe0ae0ec88a79e228484518dcf21039fea551342507c0a",
+  "baseline_source_tree_sha256": "c4c00f4476a3c7041ae7ed10a10bef60dc2efcf8c56e86c83d35ca24748310ea",
+  "source_tree_sha256": "1c92d5d79c48a58a5194a57fbd61e395156e5b710bfe2e27e171a9b3d50c43bd",
+  "files": [
+    {
+      "path": "CURRENT_DEPTH_CANDIDATE.json",
+      "size": 456,
+      "sha256": "1897c03ddbe3eb602c2f685432283de24837cd253c4ee618b19e3fb8067a6477",
+      "before_sha256": "4a50682ff6282334dfeb65dbedd646c15ee46ebbef8ecbafd3feb21cc235eba3",
+      "mode": 420
+    },
+    {
+      "path": "GO_DEPTH09_START_HERE.md",
+      "size": 4667,
+      "sha256": "0d92cff806370442aa9f0ff0b52150848a223a47ad4c98d5666066727470f814",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "acceptance/DEPTH09_SOURCE_CHANGES.json",
+      "size": 3481,
+      "sha256": "441b0fab07672edd10f3bdc736cda63e9765054c73e575df289b61a1852ffdba",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "acceptance/DEPTH09_SOURCE_CHANGES.patch",
+      "size": 122301,
+      "sha256": "6619051d3ecb03f3b2c107e31c93f58e88b4672e67d6f21de999b96fa2516061",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "acceptance/GO_DEPTH09_REVIEW.md",
+      "size": 5666,
+      "sha256": "d1584307d2947ced4db3d198b8d67af222e7aab2eaed79d7481df4027bc700a1",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "acceptance/MASTER_CLOSURE_REGISTER.json",
+      "size": 22981,
+      "sha256": "a8f4eb8fafcc72f6d42bc94115dff4c2949246ed06b7228916e48a4eac3ea2a4",
+      "before_sha256": "b4741224bf2fa3bea4e10c5cc32cbe905f1059c37abea2567ddcd6f52bc76589",
+      "mode": 420
+    },
+    {
+      "path": "frontend/admin/hotel-page-factory.js",
+      "size": 23179,
+      "sha256": "57e0ebfaec56a681a72dd88c9c951b417dd16421a98376816dffbe13a65be86f",
+      "before_sha256": "601da536462f1fbfd78e4b4fd1c88dad420700d84c8bfcbee63380ef822a5b60",
+      "mode": 420
+    },
+    {
+      "path": "scripts/assemble_depth09_candidate.py",
+      "size": 3037,
+      "sha256": "fdacad586bb8d4bf9a3f6466cc8b3308bec214c97e28c77f56860891830fd724",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "scripts/build_depth09_delta.py",
+      "size": 10222,
+      "sha256": "a3bd7362a899a36f2273eaf5e23034a93b3444bd112f0fff941b28e637223058",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "src/go_hotel/api/routes/hotel_autopage_factory.py",
+      "size": 10191,
+      "sha256": "1e180297f05154f63c8adbeecdee3951e56d9b291dbc810f886983ca3ec46548",
+      "before_sha256": "0e3010aaa0829906e7e4c233383c4a5419b6009978470a3418c03cbb116b4634",
+      "mode": 420
+    },
+    {
+      "path": "src/go_hotel/services/hotel_autopage_factory.py",
+      "size": 37419,
+      "sha256": "02b7cc98204f5198bbc159b61cf5dbde94597c0ebc7d1e5eb54b9cd766181855",
+      "before_sha256": "8dacd2d1172f7e2bd82ff8a1350d6cfce9327e07e7017e017415c04984cc838d",
+      "mode": 420
+    },
+    {
+      "path": "src/go_hotel/services/hotel_catalog_quality.py",
+      "size": 8710,
+      "sha256": "b8cd96b31638c037a8fdc9b5e7154d597fff3ae5ae4bbac7ccf71ec281204bca",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "src/go_hotel/services/hotel_discovery_orchestrator.py",
+      "size": 36051,
+      "sha256": "3e50751f45dd5176b9014573b01fb0c6afd890d42e2ecf39c185f0a4dfaa1f71",
+      "before_sha256": "7adad99dd9cbb39ad95d24b44fdaf72c29237ee6f71fc35a33e544a1bb06402d",
+      "mode": 420
+    },
+    {
+      "path": "src/go_hotel/services/hotel_infrastructure_p0.py",
+      "size": 9061,
+      "sha256": "9dac943866ec1e688f6b0c66fd018d5f5e77625ff9da0cf079d1f0d642638701",
+      "before_sha256": "25e040840f3d9814189d99ddd2f5696e7045e9ed070522cd876119e396805c01",
+      "mode": 420
+    },
+    {
+      "path": "src/go_hotel/services/media_harvester.py",
+      "size": 18319,
+      "sha256": "0b12ae55d6e4f1edd2217648b9da126ecd3f56e8381f21326dc8a76a9d9b2492",
+      "before_sha256": "3661ed936e4495e1897bc29855933a30919f425a736ac731149e1828d0da5361",
+      "mode": 420
+    },
+    {
+      "path": "src/go_hotel/services/official_hotel_capture.py",
+      "size": 10038,
+      "sha256": "e0ce25da93ef676cc79f216773a8ad01a63863f1cf3a888a0103a980ef03f792",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "src/go_hotel/services/regional_hotel_build.py",
+      "size": 40875,
+      "sha256": "725e09c1d8a6a7e3a22465ba74e8ad717a3d0f8769df363424ef556f7859ab87",
+      "before_sha256": "1c295393ac899c0342c7fed0dd737e7bcc8caccf23a15e5f8c0d7e7ce49d3bda",
+      "mode": 420
+    },
+    {
+      "path": "tests/test_depth09_hotel_replication.py",
+      "size": 21727,
+      "sha256": "1e14b55f7558ec504038d1a4538f029ac9973c864cef286bdbca1e133f35aa25",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "tests/test_rc19_national_throughput_product_completeness.py",
+      "size": 2238,
+      "sha256": "e26557742e16f9b97ffe49aabbb3c800dccd7f974d4894ba7eaa94ab8c920056",
+      "before_sha256": "604e1bc0d34322f57067f411f17fe5a10e4c2fd1ad240b129deb28af0bfbf939",
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/CAPABILITY_MATRIX.json",
+      "size": 2189,
+      "sha256": "39491439e0eafcd3dcc60c0d2cb40aaa4a24929920538637654df3193e363c49",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/CURRENT_BUILD_STATUS.json",
+      "size": 8772,
+      "sha256": "58bcc27d76b31bda0eeb3eae68ddd64723cb41e9f899521ec88bcc26aab66a7b",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/SOURCE_TREE_MANIFEST.json",
+      "size": 142533,
+      "sha256": "74f938aca5555e02ff140d8c1f69e0299f71524c6f17cdbfaa9f276b947f89da",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/earlier_run_summary.json",
+      "size": 421,
+      "sha256": "4bf28fcf7b7cc7344d5fd92c737ec18d647980b5c0822a3ccfd5b2204392d2a5",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/frontend.log",
+      "size": 2908,
+      "sha256": "7bdb1a0ed241ce117afa6edddf5321fb188236b8c82f98d4a933690401f235ae",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/frontend_verification.json",
+      "size": 258,
+      "sha256": "6efa0d04cb354c59e2bc88529c3d5ad53df65420cfa1d4d2677715d2c06f4f08",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/full_regression.log",
+      "size": 1200,
+      "sha256": "5927c8dbf50483827b4122baa6cda6d889e73837cb87366b04f820fcb8ddd22b",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/full_regression.xml",
+      "size": 156041,
+      "sha256": "5a0b88b501c8c63c3edc50ffcfc5a2fb646c7c5e20f5dfb33d212ae1f2a9a7e8",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/immutable_baseline.json",
+      "size": 33341,
+      "sha256": "b14c8724eb3ff8c5c99f51b293fa37de3da3a04da28cbd616d86625c8659a592",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/live_official_probe.json",
+      "size": 376,
+      "sha256": "c2655525742f2245296cb7406db662c6738b07272b6ef4850bc89ae7a2c09806",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/preseal_targeted.xml",
+      "size": 7281,
+      "sha256": "a85899b9a2b01c578a00b9f1fbef3f3714b705257f373fd99506a1d957193de7",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/targeted.xml",
+      "size": 6792,
+      "sha256": "a7b2abb666c7a072b48ce0de128f9dfff2f058f108d61d3c129ba176c78ffd81",
+      "before_sha256": null,
+      "mode": 420
+    },
+    {
+      "path": "verification/current_build/depth09/tested_source.json",
+      "size": 154,
+      "sha256": "0acf6292864e9ebbdb8e50c699901f7e3feb82b4c80133481bf7ee7b342ceeba",
+      "before_sha256": null,
+      "mode": 420
+    }
+  ]
+}

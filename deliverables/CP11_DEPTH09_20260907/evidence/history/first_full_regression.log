@@ -1,0 +1,39 @@
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 20%]
+........................................................................ [ 26%]
+........................................................................ [ 33%]
+........................................................................ [ 40%]
+..s....sssss............................................................ [ 47%]
+...................................................F.................... [ 53%]
+........................................................................ [ 60%]
+........................................................................ [ 67%]
+........................................................................ [ 74%]
+........................................................................ [ 80%]
+........................................................................ [ 87%]
+........................................................................ [ 94%]
+............................................................             [100%]
+=================================== FAILURES ===================================
+____________________ test_rc19_regional_throughput_contract ____________________
+
+    def test_rc19_regional_throughput_contract():
+        root=Path(__file__).resolve().parents[1]
+        regional=(root/'src/go_hotel/services/regional_hotel_build.py').read_text('utf-8')
+        discovery=(root/'src/go_hotel/services/hotel_discovery_orchestrator.py').read_text('utf-8')
+        worker=(root/'src/go_hotel/workers/regional_hotel_build_worker.py').read_text('utf-8')
+        compose=(root/'docker-compose.staging.yml').read_text('utf-8')
+        ui=(root/'frontend/admin/hotel-page-factory.js').read_text('utf-8')
+        assert 'OSM_FALLBACK_ENDPOINT' in regional
+        assert 'REGIONAL_PROVIDER_MAX_ATTEMPTS' in regional
+        assert "task':'HOTEL'" in regional or '"task":"HOTEL"' in regional
+        assert 'duplicates_removed' in regional
+        assert 'read_timeout=min(max(requested,12.0),90.0)' in discovery
+        assert "GO_HOTEL_REGION_WORKER_CONCURRENCY','6'" in worker
+        assert 'GO_HOTEL_REGION_WORKER_CONCURRENCY' in compose
+        assert '异常中心摘要' in ui and '系统自动运行' in ui
+>       assert '当前批次发现' in ui and '有效酒店网页' in ui
+E       assert ('当前批次发现' in "(function(){\n  const STAGE_LABELS={NEEDS_ENRICHMENT:'资料待补齐',WAIT_BUILD:'待建网页',COLLECTING:'采集中',WAIT_MERGE:'待合并',WAIT...oryRun');if(btn){btn.disabled=false;btn.textContent='开始采集并建立网页'}}}}\n  window.GO_HOTEL_PAGE_FACTORY={render};\n})();\n" and '有效酒店网页' in "(function(){\n  const STAGE_LABELS={NEEDS_ENRICHMENT:'资料待补齐',WAIT_BUILD:'待建网页',COLLECTING:'采集中',WAIT_MERGE:'待合并',WAIT...oryRun');if(btn){btn.disabled=false;btn.textContent='开始采集并建立网页'}}}}\n  window.GO_HOTEL_PAGE_FACTORY={render};\n})();\n")
+
+tests/test_rc19_national_throughput_product_completeness.py:22: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_rc19_national_throughput_product_completeness.py::test_rc19_regional_throughput_contract
