@@ -15,6 +15,7 @@ from urllib.parse import urlsplit
 class ChainCode(str, Enum):
     HYATT = "HYATT"
     MARRIOTT = "MARRIOTT"
+    SHANGRI_LA = "SHANGRI_LA"
     HILTON = "HILTON"
     IHG = "IHG"
     H_WORLD = "H_WORLD"
@@ -24,6 +25,7 @@ class ChainCode(str, Enum):
 CHAIN_EXECUTION_ORDER = (
     ChainCode.HYATT,
     ChainCode.MARRIOTT,
+    ChainCode.SHANGRI_LA,
     ChainCode.HILTON,
     ChainCode.IHG,
     ChainCode.H_WORLD,
@@ -42,6 +44,7 @@ class ChainPolicy:
 POLICIES = {
     ChainCode.HYATT: ChainPolicy(ChainCode.HYATT, ("hyatt.com", "www.hyatt.com"), 3, 30),
     ChainCode.MARRIOTT: ChainPolicy(ChainCode.MARRIOTT, ("marriott.com", "www.marriott.com"), 3, 30),
+    ChainCode.SHANGRI_LA: ChainPolicy(ChainCode.SHANGRI_LA, ("shangri-la.com", "www.shangri-la.com"), 3, 30),
     ChainCode.HILTON: ChainPolicy(ChainCode.HILTON, ("hilton.com", "www.hilton.com"), 3, 30),
     ChainCode.IHG: ChainPolicy(ChainCode.IHG, ("ihg.com", "www.ihg.com"), 3, 30),
     ChainCode.H_WORLD: ChainPolicy(ChainCode.H_WORLD, ("hworld.com", "www.hworld.com"), 3, 30),
@@ -71,7 +74,6 @@ def _host_allowed(host: str, allowed: tuple[str, ...]) -> bool:
 
 
 def validate_official_seed(seed: OfficialPropertySeed) -> OfficialPropertySeed:
-    """Fail closed before a directory result can enter hotel capture."""
     if not seed.official_property_id.strip() or not seed.name.strip():
         raise ValueError("CHAIN_PROPERTY_IDENTITY_REQUIRED")
     policy = POLICIES[seed.chain]
@@ -85,13 +87,6 @@ def validate_official_seed(seed: OfficialPropertySeed) -> OfficialPropertySeed:
 
 
 class ChainDirectoryAdapter:
-    """Bounded adapter interface implemented separately for every group.
-
-    `fetch_page` must be supplied by the application's SSRF-safe network layer.
-    A cursor is opaque adapter state persisted by the task runner.  Implementors
-    must never silently turn a partial directory into a completed directory.
-    """
-
     chain: ChainCode
 
     def enumerate_page(self, fetch_page, cursor: str | None = None) -> tuple[list[OfficialPropertySeed], str | None]:
