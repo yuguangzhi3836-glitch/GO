@@ -1,8 +1,8 @@
-"""Fail-closed official directory adapters backed by per-chain source contracts.
+"""Per-chain official directory adapters.
 
-Adapters may only enumerate from a contract-approved official entrypoint. Chains
-whose full official directory is not yet verified stay HOLD; a generic homepage or
-third-party listing can never silently become nationwide inventory truth.
+Marriott, Hilton and IHG use resumable hierarchical official-directory traversal.
+Shangri-La retains its verified flat Find-a-Hotel contract. H World and Atour stay
+fail-closed until a complete official inventory contract is verified.
 """
 from __future__ import annotations
 import base64, hashlib, json, os, re
@@ -10,9 +10,11 @@ from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
 from .chain_hotel_registry import ChainCode, ChainDirectoryAdapter, OfficialPropertySeed, POLICIES
 from .chain_official_source_contracts import assert_directory_production_ready, validate_contract_document
+from .hierarchical_chain_directory import HierarchicalOfficialDirectoryAdapter
 
 _GENERIC={"hotel","view hotel","view details","book now","learn more","reserve","查看酒店","查看详情","立即预订","预订","了解更多"}
 def _norm(value): return re.sub(r"\s+"," ",str(value or "")).strip()
+
 class _Links(HTMLParser):
     def __init__(self): super().__init__(convert_charrefs=True); self.href=None; self.text=[]; self.links=[]
     def handle_starttag(self,tag,attrs):
@@ -23,6 +25,7 @@ class _Links(HTMLParser):
         if self.href is not None:self.text.append(data)
     def handle_endtag(self,tag):
         if tag.lower()=="a" and self.href is not None:self.links.append((self.href,_norm(" ".join(self.text)))); self.href=None; self.text=[]
+
 def _host_ok(host,roots):
     host=str(host or "").lower().rstrip("."); return bool(host) and any(host==root or host.endswith("."+root) for root in roots)
 def _fetch(fetch_page,url):
@@ -75,13 +78,16 @@ class ContractDirectoryAdapter(ChainDirectoryAdapter):
         page=seeds[offset:offset+self.page_size]; next_offset=offset+len(page)
         return page,(_encode(next_offset,snapshot) if next_offset<len(seeds) else None)
 
-class MarriottDirectoryAdapter(ContractDirectoryAdapter):
-    chain=ChainCode.MARRIOTT; env_directory_url="GO_MARRIOTT_DIRECTORY_URL"
-    def extract_property_identity(self,url,label):
+class MarriottDirectoryAdapter(HierarchicalOfficialDirectoryAdapter):
+    chain=ChainCode.MARRIOTT
+    def classify_official_link(self,url,label):
         path=urlsplit(url).path
         for pattern in (r"/(?:[a-z]{2}-[a-z]{2}/)?hotels/([a-z0-9]{3,12})-[^/]+(?:/|$)",r"/hotels/travel/([a-z0-9]{3,12})(?:/|$)"):
             m=re.search(pattern,path,re.I)
-            if m:return m.group(1).upper(),label
+            if m and _norm(label).casefold() not in _GENERIC:return "PROPERTY",(m.group(1).upper(),_norm(label))
+        low=path.lower()
+        if any(token in low for token in ("hotel-search","/hotels/","/travel/")) and not re.search(r"/hotels/[a-z0-9]{3,12}-",low):
+            return "DIRECTORY",None
         return None
 
 class ShangriLaDirectoryAdapter(ContractDirectoryAdapter):
@@ -90,24 +96,29 @@ class ShangriLaDirectoryAdapter(ContractDirectoryAdapter):
         m=re.match(r"^/(?:cn/|en/)?([a-z0-9-]{2,40})/([a-z0-9-]{3,64})/?$",urlsplit(url).path,re.I)
         return ((m.group(1)+"__"+m.group(2)).upper(),label) if m else None
 
-class HiltonDirectoryAdapter(ContractDirectoryAdapter):
-    chain=ChainCode.HILTON; env_directory_url="GO_HILTON_DIRECTORY_URL"
-    def extract_property_identity(self,url,label):
-        m=re.search(r"/(?:[a-z]{2}/)?hotels/([a-z0-9]{4,18})-[^/]+(?:/|$)",urlsplit(url).path,re.I)
-        return (m.group(1).upper(),label) if m else None
+class HiltonDirectoryAdapter(HierarchicalOfficialDirectoryAdapter):
+    chain=ChainCode.HILTON
+    def classify_official_link(self,url,label):
+        path=urlsplit(url).path
+        m=re.search(r"/(?:[a-z]{2}/)?hotels/([a-z0-9]{4,18})-[^/]+(?:/|$)",path,re.I)
+        if m and _norm(label).casefold() not in _GENERIC:return "PROPERTY",(m.group(1).upper(),_norm(label))
+        if re.search(r"/(?:[a-z]{2}/)?locations(?:/|$)",path,re.I) or "/locations/" in path.lower():return "DIRECTORY",None
+        return None
 
-class IHGDirectoryAdapter(ContractDirectoryAdapter):
-    chain=ChainCode.IHG; env_directory_url="GO_IHG_DIRECTORY_URL"
-    def extract_property_identity(self,url,label):
-        m=re.search(r"/hotels/[a-z]{2}/[a-z]{2}/[^/]+/[^/]+/([a-z0-9]{4,14})/hoteldetail(?:/|$)",urlsplit(url).path,re.I)
-        return (m.group(1).upper(),label) if m else None
+class IHGDirectoryAdapter(HierarchicalOfficialDirectoryAdapter):
+    chain=ChainCode.IHG
+    def classify_official_link(self,url,label):
+        path=urlsplit(url).path
+        m=re.search(r"/hotels/[a-z]{2}/[a-z]{2}/[^/]+/[^/]+/([a-z0-9]{4,14})/hoteldetail(?:/|$)",path,re.I)
+        if m and _norm(label).casefold() not in _GENERIC:return "PROPERTY",(m.group(1).upper(),_norm(label))
+        low=path.lower()
+        if low.startswith("/hotels/") and "hoteldetail" not in low:return "DIRECTORY",None
+        return None
 
 class HWorldDirectoryAdapter(ContractDirectoryAdapter):
     chain=ChainCode.H_WORLD; env_directory_url="GO_HWORLD_DIRECTORY_URL"; country_code="CN"
-    def extract_property_identity(self,url,label):
-        raise ValueError("CHAIN_FULL_DIRECTORY_CONTRACT_HOLD:H_WORLD")
+    def extract_property_identity(self,url,label):raise ValueError("CHAIN_FULL_DIRECTORY_CONTRACT_HOLD:H_WORLD")
 
 class AtourDirectoryAdapter(ContractDirectoryAdapter):
     chain=ChainCode.ATOUR; env_directory_url="GO_ATOUR_DIRECTORY_URL"; country_code="CN"
-    def extract_property_identity(self,url,label):
-        raise ValueError("CHAIN_FULL_DIRECTORY_CONTRACT_HOLD:ATOUR")
+    def extract_property_identity(self,url,label):raise ValueError("CHAIN_FULL_DIRECTORY_CONTRACT_HOLD:ATOUR")
