@@ -1,0 +1,16 @@
+{
+  "mode": "ISOLATED_CONTRACT_SIMULATOR",
+  "external_live": false,
+  "probe": "deterministic interleaving after refund movement before order commit",
+  "refund_call_error": "ATTRACTION_ORDER_NOT_REFUNDABLE",
+  "redemption_status": "FULFILLED",
+  "final_order_status": "FULFILLED",
+  "confirmed_refunds": [
+    {
+      "state": "CONFIRMED",
+      "amount_minor": 18000
+    }
+  ],
+  "gap_reproduced": true,
+  "required_next_work": "Reserve refund intent and order state before external money effects; serialize redemption/change against it; recover by querying fixed original operations."
+}

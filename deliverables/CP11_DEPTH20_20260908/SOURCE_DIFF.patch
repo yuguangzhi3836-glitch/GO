@@ -1,0 +1,1666 @@
+--- a/alembic/versions/0127_vertical_prebook_contract.py
++++ b/alembic/versions/0127_vertical_prebook_contract.py
+@@ -0,0 +1,34 @@
++"""Bind quoted parties and terms to one consumer order; no fabricated legacy backfill."""
++from alembic import op
++import sqlalchemy as sa
++
++revision='0127_vertical_prebook_contract'
++down_revision='0126_travel_operational_facts'
++branch_labels=None
++depends_on=None
++
++
++def upgrade():
++    op.create_table('vertical_prebook_contract',
++        sa.Column('prebook_id',sa.String(64),primary_key=True,nullable=False),
++        sa.Column('vertical',sa.String(16),nullable=False),
++        sa.Column('issued_account_id',sa.String(64)),
++        sa.Column('owner_id',sa.String(64)),
++        sa.Column('order_id',sa.String(64)),
++        sa.Column('state',sa.String(16),nullable=False),
++        sa.Column('terms_json',sa.JSON(),nullable=False),
++        sa.Column('terms_hash',sa.String(64),nullable=False),
++        sa.Column('consumed_hash',sa.String(64)),
++        sa.Column('expires_ms',sa.BigInteger(),nullable=False),
++        sa.Column('created_ms',sa.BigInteger(),nullable=False),
++        sa.Column('consumed_ms',sa.BigInteger()),
++        sa.UniqueConstraint('vertical','order_id',name='uq_vertical_prebook_order'),
++        sa.CheckConstraint("state IN ('QUOTED','CONSUMED')",name='ck_vertical_prebook_contract_state'))
++    op.create_index('ix_vertical_prebook_contract_vertical','vertical_prebook_contract',['vertical'])
++    op.create_index('ix_vertical_prebook_contract_owner_id','vertical_prebook_contract',['owner_id'])
++
++
++def downgrade():
++    if op.get_bind().scalar(sa.text('SELECT count(*) FROM vertical_prebook_contract')):
++        raise RuntimeError('PREBOOK_CONTRACT_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE')
++    op.drop_table('vertical_prebook_contract')
+--- a/frontend/consumer/app.js
++++ b/frontend/consumer/app.js
+@@ -90,9 +90,9 @@
+ async function flightRefund(){try{const q=await api(`/v1/flights/orders/${state.flightOrder.order_id}/refund-quote`);uxConfirm({title:'申请机票退款',summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div>`,confirmLabel:'确认退款',danger:true,onConfirm:async()=>{await api(`/v1/flights/orders/${state.flightOrder.order_id}/refund`,{method:'POST'});await flightReload()}})}catch(e){toast(e.message)}}
+ 
+ function showRailSearch(){setVerticalVIMode(true);state.screen='rail';$('#app').innerHTML=shell(`<section class="go-page-head"><button class="go-back" id="railBack" aria-label="返回">‹</button><div><span>火车票</span><h1>搜索车次</h1></div></section><section class="go-form-card"><div class="route-row"><div class="field"><label>出发站</label><input id="ro" placeholder="上海 / SHA"></div><span>→</span><div class="field"><label>到达站</label><input id="rd" placeholder="杭州 / HZH"></div></div><div class="field wide"><label>出发日期</label><input id="rdate" type="date"></div><button class="btn primary" id="rgo">查询车次</button></section>`,'home');bindNav();$('#railBack').onclick=showHome;$('#rgo').onclick=railSearch}
+-async function railSearch(){try{const b={origin_station:$('#ro').value||'SHA',destination_station:$('#rd').value||'HZH',travel_date:$('#rdate').value,currency:'CNY'};if(!b.travel_date){toast('请选择日期');return}state.railCriteria=b;const d=await api('/v1/rail/search',{method:'POST',body:JSON.stringify(b)});state.railSearch=d.items||[];$('#app').innerHTML=shell(`<h1 class="screen-title">车次结果</h1>${state.railSearch.map(x=>`<section class="card" data-rail="${x.offer_id}"><div class="row"><h3>${safe(x.train_no)} · ${safe(x.seat_class)}</h3><b>${money(x.total_amount_minor,x.currency)}</b></div><div class="kv"><span>${safe(x.departure_time)} → ${safe(x.arrival_time)}</span><span>余票 ${x.inventory_left}</span></div><button class="btn primary">选择</button></section>`).join('')}`,'search');bindNav();document.querySelectorAll('[data-rail]').forEach(x=>x.onclick=()=>railSelect(x.dataset.rail))}catch(e){toast(e.message)}}
+-async function railSelect(id){try{if(!state.me){showAuth();return}state.railOffer=state.railSearch.find(x=>x.offer_id===id);state.railPrebook=await api(`/v1/rail/offers/${id}/prebook`,{method:'POST'});const o=await api('/v1/rail/orders',{method:'POST',body:JSON.stringify({prebook_id:state.railPrebook.prebook_id,passengers:[{full_name:state.me.display_name||'GO Traveler',type:'ADT'}]})});await api(`/v1/rail/orders/${o.order_id}/checkout`,{method:'POST',body:JSON.stringify({payment_method_id:'pm_rc20_engineering_token'})});state.railOrder=await api(`/v1/rail/orders/${o.order_id}`);renderRailOrder()}catch(e){toast(e.message)}}
+-function renderRailOrder(){const o=state.railOrder||{},j=o.journey||{};$('#app').innerHTML=shell(`<h1 class="screen-title">火车票订单</h1><section class="card"><div class="kv"><span>状态</span><b>${consumerLabel(o.status)}</b></div><div class="kv"><span>车次</span><b>${safe(j.train_no)}</b></div><div class="kv"><span>席别</span><span>${safe(j.seat_class)}</span></div><div class="kv"><span>预订号</span><span>${safe(o.booking_reference)}</span></div><p class="muted">工程出票链不等于真实铁路生产出票。</p></section><section class="card"><button class="btn ghost" id="rchg" ${o.status!=='TICKETED'?'disabled':''}>改签</button><button class="btn danger" id="rref" ${o.status!=='TICKETED'?'disabled':''}>退票</button><button class="btn ghost" id="rtrips">GO Trips</button></section><section class="card"><h3>证据链</h3>${evHtml(o.evidence)}</section>`,'trips');bindNav();$('#rchg').onclick=railChange;$('#rref').onclick=railRefund;$('#rtrips').onclick=showUnifiedTrips}
++async function railSearch(){try{const b={origin_station:$('#ro').value||'SHA',destination_station:$('#rd').value||'HZH',travel_date:$('#rdate').value,currency:'CNY'};if(!b.travel_date){toast('请选择日期');return}state.railCriteria=b;const d=await api('/v1/rail/search',{method:'POST',body:JSON.stringify(b)});state.railSearch=d.items||[];$('#app').innerHTML=shell(`<h1 class="screen-title">车次结果</h1>${state.railSearch.map(x=>`<section class="card" data-rail="${x.offer_id}"><div class="row"><h3>${safe(x.train_no)} · ${safe(x.seat_class)}</h3><b>${money(x.total_amount_minor,x.currency)} / 成人</b></div><div class="kv"><span>${safe(x.departure_time)} → ${safe(x.arrival_time)}</span><span>余票 ${x.inventory_left}</span></div><button class="btn primary">选择</button></section>`).join('')}`,'search');bindNav();document.querySelectorAll('[data-rail]').forEach(x=>x.onclick=()=>railSelect(x.dataset.rail))}catch(e){toast(e.message)}}
++async function railSelect(id){toast('火车票预订组件尚未就绪，请刷新后重试。')}
++function renderRailOrder(){const o=state.railOrder||{},j=o.journey||{};$('#app').innerHTML=shell(`<h1 class="screen-title">火车票订单</h1><section class="card"><div class="kv"><span>状态</span><b>${consumerLabel(o.status)}</b></div><div class="kv"><span>车次</span><b>${safe(j.train_no)}</b></div><div class="kv"><span>席别</span><span>${safe(j.seat_class)}</span></div><div class="kv"><span>预订号</span><span>${safe(o.booking_reference)}</span></div><div class="kv"><span>人数 / 含税总价</span><span>${o.passenger_count||0} 人 · ${money(o.total_amount_minor,o.currency)}</span></div><p class="muted">隔离测试订单，不能用于实际乘车。</p></section><section class="card"><button class="btn ghost" id="rchg" ${o.status!=='TICKETED'?'disabled':''}>改签</button><button class="btn danger" id="rref" ${o.status!=='TICKETED'?'disabled':''}>退票</button><button class="btn ghost" id="rtrips">GO Trips</button></section><section class="card"><h3>证据链</h3>${evHtml(o.evidence)}</section>`,'trips');bindNav();$('#rchg').onclick=railChange;$('#rref').onclick=railRefund;$('#rtrips').onclick=showUnifiedTrips}
+ async function railReload(){state.railOrder=await api(`/v1/rail/orders/${state.railOrder.order_id}`);renderRailOrder()}
+ function railChange(){uxSheet({title:'铁路改签',fields:[{id:'newTravelDate',label:'新出发日期',type:'date'}],confirmLabel:'查看改签费用',onConfirm:async v=>{const q=await api(`/v1/rail/orders/${state.railOrder.order_id}/change-quote`,{method:'POST',body:JSON.stringify({new_travel_date:v.newTravelDate,new_seat_class:state.railOrder.journey?.seat_class})});uxConfirm({title:'确认铁路改签',summary:`<div class="kv"><span>改签费用</span><b>${money(q.total_due_minor,q.currency)}</b></div>`,confirmLabel:'确认改签',onConfirm:async()=>{await api(`/v1/rail/orders/${state.railOrder.order_id}/execute-change/${q.quote_id}`,{method:'POST'});await railReload()}})}})}
+ async function railRefund(){try{const q=await api(`/v1/rail/orders/${state.railOrder.order_id}/refund-quote`);uxConfirm({title:'申请铁路退款',summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div>`,confirmLabel:'确认退款',danger:true,onConfirm:async()=>{await api(`/v1/rail/orders/${state.railOrder.order_id}/refund`,{method:'POST'});await railReload()}})}catch(e){toast(e.message)}}
+@@ -109,9 +109,9 @@
+ async function mobilityCancel(kind){const o=kind==='RENTAL'?state.rentalOrder:state.rideOrder;try{const q=await api(`/v1/mobility/orders/${o.order_id}/refund-quote`);uxConfirm({title:kind==='RENTAL'?'取消租车订单':'取消接送订单',summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div>`,confirmLabel:'确认取消',danger:true,onConfirm:async()=>{await api(`/v1/mobility/orders/${o.order_id}/cancel`,{method:'POST'});await mobilityReload(kind)}})}catch(e){toast(e.message)}}
+ 
+ function showAttractionSearch(){setVerticalVIMode(true);state.screen='attraction';$('#app').innerHTML=shell(`<section class="go-page-head"><button class="go-back" id="attrBack" aria-label="返回">‹</button><div><span>景点玩乐</span><h1>景点门票与体验</h1></div></section><section class="go-form-card"><div class="field"><label>目的地</label><input id="adest" placeholder="东京"></div><div class="field"><label>游玩日期</label><input id="adate" type="date"></div><button class="btn primary" id="ago">查询</button></section>`,'home');bindNav();$('#attrBack').onclick=showHome;$('#ago').onclick=attractionSearch}
+-async function attractionSearch(){try{const b={destination:$('#adest').value||'东京',visit_date:$('#adate').value,currency:'CNY'};if(!b.visit_date){toast('请选择日期');return}state.attractionCriteria=b;const d=await api('/v1/attractions/search',{method:'POST',body:JSON.stringify(b)});state.attractionSearch=d.items||[];$('#app').innerHTML=shell(`<h1 class="screen-title">门票与体验</h1>${state.attractionSearch.map(x=>`<section class="card" data-attr="${x.offer_id}"><div class="row"><h3>${safe(x.product_name)}</h3><b>${money(x.total_amount_minor,x.currency)}</b></div><div class="kv"><span>场次</span><span>${safe(x.session_time)}</span></div><div class="kv"><span>库存</span><span>${x.inventory_units}</span></div><div class="kv"><span>凭证</span><span>${safe(x.voucher_type)}</span></div><button class="btn primary">选择</button></section>`).join('')}`,'search');bindNav();document.querySelectorAll('[data-attr]').forEach(x=>x.onclick=()=>attractionBook(x.dataset.attr))}catch(e){toast(e.message)}}
+-async function attractionBook(id){try{if(!state.me){showAuth();return}state.attractionOffer=state.attractionSearch.find(x=>x.offer_id===id);state.attractionPrebook=await api('/v1/attractions/prebook',{method:'POST',body:JSON.stringify({offer_id:id,visit_date:state.attractionCriteria.visit_date,quantity:1,currency:'CNY'})});const o=await api('/v1/attractions/orders',{method:'POST',body:JSON.stringify({offer_id:id,visit_date:state.attractionCriteria.visit_date,quantity:1,currency:'CNY',attendees:[{name:state.me.display_name||'GO Traveler'}]})});state.attractionOrder=await api(`/v1/attractions/orders/${o.order_id}`);renderAttractionOrder()}catch(e){toast(e.message)}}
+-function renderAttractionOrder(){const o=state.attractionOrder||{};$('#app').innerHTML=shell(`<h1 class="screen-title">门票 / 体验订单</h1><section class="card"><div class="kv"><span>状态</span><b>${consumerLabel(o.status)}</b></div><div class="kv"><span>产品</span><b>${safe(o.product_name)}</b></div><div class="kv"><span>日期 / 场次</span><span>${safe(o.visit_date)} ${safe(o.session_time,'')}</span></div><div class="kv"><span>核销凭证</span><b>${safe(o.voucher_code)}</b></div></section><section class="card"><button class="btn ghost" id="achg" ${o.status!=='CONFIRMED'?'disabled':''}>改期</button><button class="btn ghost" id="ared" ${o.status!=='CONFIRMED'?'disabled':''}>确认核销</button><button class="btn danger" id="aref" ${o.status!=='CONFIRMED'?'disabled':''}>退款</button></section><section class="card"><h3>证据链</h3>${evHtml(o.evidence)}</section>`,'trips');bindNav();$('#achg').onclick=attractionChange;$('#ared').onclick=attractionRedeem;$('#aref').onclick=attractionRefund}
++async function attractionSearch(){try{const b={destination:$('#adest').value||'东京',visit_date:$('#adate').value,currency:'CNY'};if(!b.visit_date){toast('请选择日期');return}state.attractionCriteria=b;const d=await api('/v1/attractions/search',{method:'POST',body:JSON.stringify(b)});state.attractionSearch=d.items||[];$('#app').innerHTML=shell(`<h1 class="screen-title">门票与体验</h1>${state.attractionSearch.map(x=>`<section class="card" data-attr="${x.offer_id}"><div class="row"><h3>${safe(x.product_name)}</h3><b>${money(x.total_amount_minor,x.currency)} / 张</b></div><div class="kv"><span>场次</span><span>${safe(x.session_time)}</span></div><div class="kv"><span>库存</span><span>${x.inventory_units}</span></div><div class="kv"><span>凭证</span><span>${safe(x.voucher_type)}</span></div><button class="btn primary">选择</button></section>`).join('')}`,'search');bindNav();document.querySelectorAll('[data-attr]').forEach(x=>x.onclick=()=>attractionBook(x.dataset.attr))}catch(e){toast(e.message)}}
++async function attractionBook(id){toast('门票预订组件尚未就绪，请刷新后重试。')}
++function renderAttractionOrder(){const o=state.attractionOrder||{};$('#app').innerHTML=shell(`<h1 class="screen-title">门票 / 体验订单</h1><section class="card"><div class="kv"><span>状态</span><b>${consumerLabel(o.status)}</b></div><div class="kv"><span>产品</span><b>${safe(o.product_name)}</b></div><div class="kv"><span>日期 / 场次</span><span>${safe(o.visit_date)} ${safe(o.session_time,'')}</span></div><div class="kv"><span>人数 / 含税总价</span><span>${o.quantity||0} 人 · ${money(o.total_amount_minor,o.currency)}</span></div><div class="kv"><span>核销凭证</span><b>${safe(o.voucher_code)}</b></div></section><section class="card"><button class="btn ghost" id="achg" ${o.status!=='CONFIRMED'?'disabled':''}>改期</button><button class="btn ghost" id="ared" ${o.status!=='CONFIRMED'?'disabled':''}>确认核销</button><button class="btn danger" id="aref" ${o.status!=='CONFIRMED'?'disabled':''}>退款</button></section><section class="card"><h3>证据链</h3>${evHtml(o.evidence)}</section>`,'trips');bindNav();$('#achg').onclick=attractionChange;$('#ared').onclick=attractionRedeem;$('#aref').onclick=attractionRefund}
+ async function attractionReload(){state.attractionOrder=await api(`/v1/attractions/orders/${state.attractionOrder.order_id}`);renderAttractionOrder()}
+ function attractionChange(){uxSheet({title:'修改游玩日期',fields:[{id:'newVisitDate',label:'新游玩日期',type:'date'}],confirmLabel:'查看改期方案',onConfirm:async v=>{const q=await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/change-quote`,{method:'POST',body:JSON.stringify({new_visit_date:v.newVisitDate})});uxConfirm({title:'确认改期',description:'请确认新的日期与当前规则。',confirmLabel:'确认改期',onConfirm:async()=>{await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/execute-change/${q.quote_id}`,{method:'POST'});await attractionReload()}})}})}
+ async function attractionRedeem(){try{await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/redeem`,{method:'POST',body:JSON.stringify({evidence_reference:'CONSUMER_UI_REDEMPTION'})});await attractionReload()}catch(e){toast(e.message)}}
+--- a/frontend/consumer/booking-travelers.js
++++ b/frontend/consumer/booking-travelers.js
+@@ -22,11 +22,12 @@
+   }
+   async function traveler(vertical) {
+     const v=await api('/v1/consumer/profile/vault');
++    v.travelers=v.travelers.filter(t=>t.booking_permission!==false&&(t.permissions?.USE_FOR_BOOKING??true));
+     if(!v.travelers.length){await showAccount();toast('请先添加一位旅行者，再继续预订');return null}
+     return dialog(`核对${titles[vertical]}出行资料`,`<p>请选择本次实际出行人。仅为这次${titles[vertical]}预订使用${scopes[vertical].map(f=>fields[f]).join('、')}。</p><div class="field"><label for="goTraveler">旅行者</label><select id="goTraveler" required><option value="">请选择出行人</option>${v.travelers.map(t=>`<option value="${esc(t.traveler_id)}">${esc(t.full_name)} · ${t.relationship_type==='SELF'?'本人':'同行人'}</option>`).join('')}</select></div><label class="go-consent"><input type="checkbox" data-consent required><span>我已核对出行人资料，并确认有权为其预订及使用以上资料。</span></label>`,'确认出行人',async d=>{
+       if(!d.querySelector('[data-consent]').checked)throw Error('请先确认本次资料用途');
+       const tid=d.querySelector('#goTraveler').value;if(!tid)throw Error('请选择旅行者');
+-      const selected=v.travelers.find(t=>t.traveler_id===tid);
++      const selected=v.travelers.find(t=>t.traveler_id===tid);if(!selected)throw Error('请选择已授权的旅行者');
+       const sensitive=scopes[vertical].filter(f=>selected.facts.some(x=>x.field_type===f&&x.sensitive));
+       if(sensitive.length)await api('/v1/consumer/profile/consents',{method:'POST',body:JSON.stringify({traveler_id:tid,consent_type:'SENSITIVE_DATA_RELEASE',purpose:`${vertical}_BOOKING`,scope:sensitive,expires_at:new Date(Date.now()+15*60000).toISOString()})});
+       return tid;
+@@ -42,14 +43,20 @@
+   }
+   async function travelers(vertical,count) {
+     if(count===1){const tid=await traveler(vertical);return tid?[tid]:null}
+-    if(!Number.isInteger(count)||count<1||count>9)throw Error('乘机人数不正确，请重新搜索。');
++    if(!Number.isInteger(count)||count<1||count>9)throw Error('本次请为 1 至 9 位出行人预订。');
++    const person=vertical==='FLIGHT'?'成年乘机人':vertical==='RAIL'?'成年乘车人':'参加人';
+     const v=await api('/v1/consumer/profile/vault');
+     const eligible=v.travelers.filter(t=>t.booking_permission!==false&&(t.permissions?.USE_FOR_BOOKING??true));
+-    if(eligible.length<count){await showAccount();toast(`请先添加并授权 ${count} 位实际成年乘机人，再继续预订。`);return null}
+-    return dialog('核对本次全部乘机人',`<p>本次报价包含 ${count} 位成人。请按证件姓名选择 ${count} 位不同的实际乘机人；儿童及婴儿票暂未开放。</p>${eligible.map(t=>`<label class="go-consent"><input type="checkbox" data-traveler value="${esc(t.traveler_id)}"><span>${esc(t.full_name)} · ${t.relationship_type==='SELF'?'本人':'同行人'}</span></label>`).join('')}<label class="go-consent"><input type="checkbox" data-consent required><span>我已逐一核对成年乘机人与姓名，并有权为其预订及为本次机票使用姓名。</span></label>`,'确认全部乘机人',d=>{
++    if(eligible.length<count){await showAccount();toast(`请先添加并授权 ${count} 位实际${person}，再继续预订。`);return null}
++    return dialog(`核对本次全部${person}`,`<p>本次报价包含 ${count} 位出行人。请按证件姓名选择 ${count} 位不同的实际${person}。</p>${eligible.map(t=>`<label class="go-consent"><input type="checkbox" data-traveler value="${esc(t.traveler_id)}"><span>${esc(t.full_name)} · ${t.relationship_type==='SELF'?'本人':'同行人'}</span></label>`).join('')}<label class="go-consent"><input type="checkbox" data-consent required><span>我已逐一核对${person}与姓名，确认符合所选票种的适用条件，并有权为其预订及为本次${titles[vertical]}使用姓名。</span></label>`,'确认全部出行人',async d=>{
+       if(!d.querySelector('[data-consent]').checked)throw Error('请确认本次资料用途。');
+       const ids=[...d.querySelectorAll('[data-traveler]:checked')].map(el=>el.value);
+-      if(ids.length!==count||new Set(ids).size!==count||ids.some(id=>!eligible.some(t=>t.traveler_id===id)))throw Error(`请选择 ${count} 位不同的实际乘机人。`);
++      if(ids.length!==count||new Set(ids).size!==count||ids.some(id=>!eligible.some(t=>t.traveler_id===id)))throw Error(`请选择 ${count} 位不同的实际${person}。`);
++      for(const tid of ids){
++        const selected=eligible.find(t=>t.traveler_id===tid);
++        const sensitive=scopes[vertical].filter(f=>(selected.facts||[]).some(x=>x.field_type===f&&x.sensitive));
++        if(sensitive.length)await api('/v1/consumer/profile/consents',{method:'POST',body:JSON.stringify({traveler_id:tid,consent_type:'SENSITIVE_DATA_RELEASE',purpose:`${vertical}_BOOKING`,scope:sensitive,expires_at:new Date(Date.now()+15*60000).toISOString()})});
++      }
+       return ids;
+     });
+   }
+@@ -58,9 +65,7 @@
+   const oldPay=renderPay;
+   renderPay=async()=>{const caps=await api('/v1/consumer/checkout-capabilities');if(!caps.simulation_available){oldPay();return}$('#app').innerHTML=shell(`<h1 class="screen-title">确认酒店订单</h1><section class="card"><div class="kv"><span>含税总价</span><b>${esc(money(state.order.total_amount_minor,state.order.currency))}</b></div><div class="go-sim-note">隔离测试订单，不产生真实扣款。</div><button class="btn primary" id="goHotelPay">核对并继续</button></section>`,'trips');bindNav();$('#goHotelPay').onclick=()=>run(async()=>{if(await pay('HOTEL',state.order))await showTrip(state.order.order_id)})};
+   createFlightOrderAndCheckout=()=>run(async()=>{const ids=await travelers('FLIGHT',state.flightPrebook.passenger_count||state.flightOffer?.passenger_count||1);if(!ids)return;const o=await post('/v1/flights/orders',{prebook_id:state.flightPrebook.prebook_id,traveler_ids:ids},`flight:${state.flightPrebook.prebook_id}:${ids.join(':')}`);await pay('FLIGHT',o);state.flightOrder=await api(`/v1/flights/orders/${o.order_id}`);renderFlightOrder()});
+-  railSelect=id=>run(async()=>{state.railOffer=state.railSearch.find(x=>x.offer_id===id);const tid=await traveler('RAIL');if(!tid)return;state.railPrebook=await api(`/v1/rail/offers/${id}/prebook`,{method:'POST'});const o=await post('/v1/rail/orders',{prebook_id:state.railPrebook.prebook_id,traveler_ids:[tid]},`rail:${id}:${tid}`);await pay('RAIL',o);state.railOrder=await api(`/v1/rail/orders/${o.order_id}`);renderRailOrder()});
+   mobilityBook=(kind,id)=>run(async()=>{const tid=await traveler(kind);if(!tid)return;const rental=kind==='RENTAL',criteria=rental?state.rentalCriteria:state.rideCriteria;const o=await post(rental?'/v1/mobility/rentals/orders':'/v1/mobility/rides/orders',{...criteria,offer_id:id,traveler_ids:[tid]},`${kind}:${id}:${tid}:${JSON.stringify(criteria)}`);await pay(kind,o);const detail=await api(`/v1/mobility/orders/${o.order_id}`);if(rental)state.rentalOrder=detail;else state.rideOrder=detail;renderMobilityOrder(kind)});
+-  attractionBook=id=>run(async()=>{const tid=await traveler('ATTRACTION');if(!tid)return;const b={offer_id:id,visit_date:state.attractionCriteria.visit_date,quantity:1,currency:'CNY'};await post('/v1/attractions/prebook',b,`attraction-prebook:${id}:${b.visit_date}`);const o=await post('/v1/attractions/orders',{...b,traveler_ids:[tid]},`attraction:${id}:${b.visit_date}:${tid}`);await pay('ATTRACTION',o);state.attractionOrder=await api(`/v1/attractions/orders/${o.order_id}`);renderAttractionOrder()});
+   function resume(vertical,o){if(!o||!['PAYMENT_PENDING','PAYMENT_AUTHORIZED','PAYMENT_CONFIRMED_AWAITING_SUPPLIER'].includes(o.status))return;const b=document.createElement('button');b.className='btn primary';b.textContent='继续核对与支付';document.querySelector('#app').append(b);b.onclick=()=>run(async()=>{if(await pay(vertical,o)){if(vertical==='FLIGHT'){state.flightOrder=await api(`/v1/flights/orders/${o.order_id}`);renderFlightOrder()}else if(vertical==='RAIL'){state.railOrder=await api(`/v1/rail/orders/${o.order_id}`);renderRailOrder()}else if(vertical==='ATTRACTION')await attractionReload();else await mobilityReload(vertical)}})}
+   const oldFlight=renderFlightOrder,oldRail=renderRailOrder,oldMobility=renderMobilityOrder,oldAttraction=renderAttractionOrder;
+   renderFlightOrder=()=>{oldFlight();resume('FLIGHT',state.flightOrder)};renderRailOrder=()=>{oldRail();resume('RAIL',state.railOrder)};renderMobilityOrder=k=>{oldMobility(k);resume(k,k==='RENTAL'?state.rentalOrder:state.rideOrder)};renderAttractionOrder=()=>{oldAttraction();resume('ATTRACTION',state.attractionOrder)};
+--- a/frontend/consumer/index.html
++++ b/frontend/consumer/index.html
+@@ -17,10 +17,11 @@
+   <script src="/go-app/flight-journeys.js?v=20260906-depth1" defer></script>
+   <script src="/go-app/catalog-fare.js?v=20260907-depth13" defer></script>
+   <script src="/go-app/catalog-cash-fare.js?v=20260907-depth14" defer></script>
+-  <script src="/go-app/booking-travelers.js?v=20260907-master03" defer></script>
++  <script src="/go-app/booking-travelers.js?v=20260908-depth20" defer></script>
+   <script src="/go-app/catalog-credit.js?v=20260907-depth12" defer></script>
+   <script src="/go-app/rental-after-sales.js?v=20260907-depth06" defer></script>
+   <script src="/go-app/vault-manager.js?v=20260907-depth04" defer></script>
+   <script src="/go-app/travel-status.js?v=20260908-depth19" defer></script>
++  <script src="/go-app/rail-attraction-booking.js?v=20260908-depth20" defer></script>
+ </body>
+ </html>
+--- a/frontend/consumer/rail-attraction-booking.js
++++ b/frontend/consumer/rail-attraction-booking.js
+@@ -0,0 +1,80 @@
++/* Party size, quoted total and slot remain bound through explicit confirmation. */
++(() => {
++  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
++  const seats = {SECOND_CLASS:'二等座',FIRST_CLASS:'一等座',BUSINESS_CLASS:'商务座'};
++  const eligibilityText = e => {
++    if (!e || typeof e !== 'object') return String(e || '请核对适用条件');
++    const age = {'all':'所有年龄','12+ adult':'12 岁及以上（成人票）','6+':'6 岁及以上'}[e.age] || String(e.age || '以票种年龄要求为准');
++    return `年龄要求：${age}；${e.id_required ? '需持有效身份证件入场' : '请按票种说明入场'}。`;
++  };
++  function validateQuote(q, vertical, offer, selection, now = Date.now()) {
++    if (!q || !q.prebook_id || !q.terms_hash || q.offer_id !== offer.offer_id ||
++        q.quantity !== selection.quantity || q.currency !== 'CNY' ||
++        !Number.isSafeInteger(q.unit_amount_minor) || q.unit_amount_minor <= 0 ||
++        !Number.isSafeInteger(q.total_amount_minor) || q.total_amount_minor !== q.unit_amount_minor * q.quantity ||
++        !Number.isSafeInteger(q.expires_ms) || q.expires_ms <= now) throw Error('报价已变化或过期，请重新选择。');
++    if (vertical === 'ATTRACTION' && (q.visit_date !== selection.visit_date || q.session_time !== selection.session_time))
++      throw Error('日期或场次与所选不一致，请重新选择。');
++    if (vertical === 'RAIL' && (!q.journey || ['travel_date','train_no','origin_station','destination_station','seat_class'].some(k => q.journey[k] !== offer[k])))
++      throw Error('车次信息已变化，请重新搜索。');
++    return q;
++  }
++  function createFlow(d) {
++    let busy = false;
++    return async (vertical, offer, criteria) => {
++      if (busy) return null;
++      busy = true;
++      try {
++        const rail = vertical === 'RAIL', title = rail ? '火车票' : '门票';
++        const sessions = rail ? [] : [...new Set(offer.available_sessions || [offer.session_time])].filter(Boolean);
++        const max = Math.min(9, Number(rail ? offer.inventory_left : offer.inventory_units));
++        if (!Number.isInteger(max) || max < 1 || (!rail && !sessions.length)) throw Error('当前暂无可选名额，请重新搜索。');
++        const selection = await d.dialog(`选择${title}人数${rail ? '' : '与场次'}`,
++          `<p>${esc(rail ? `${offer.travel_date} · ${offer.train_no} · ${seats[offer.seat_class] || offer.seat_class}` : `${criteria.visit_date} · ${offer.product_name}`)}</p><div class="field"><label for="goPartyCount">${rail ? '成人乘车人数' : '参加人数'}</label><select id="goPartyCount">${Array.from({length:max},(_,i)=>`<option value="${i+1}">${i+1} 人</option>`).join('')}</select></div>${rail ? '<p>本次为成人票，儿童票需另行报价。</p>' : `<div class="field"><label for="goPartySession">入场场次</label><select id="goPartySession">${sessions.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('')}</select></div><p>${esc(offer.ticket_type)} · ${esc(eligibilityText(offer.eligibility))}</p>`}<p>下一步将按所选人数核验含税总价。当前展示名额尚未占用。</p>`,'核验总价', el => {
++            const quantity = Number(el.querySelector('#goPartyCount').value);
++            const session_time = rail ? null : el.querySelector('#goPartySession').value;
++            if (!Number.isInteger(quantity) || quantity < 1 || quantity > max || (!rail && !sessions.includes(session_time))) throw Error('请重新选择人数与场次。');
++            return {quantity, ...(rail ? {} : {visit_date:criteria.visit_date, session_time})};
++          });
++        if (!selection) return null;
++        const raw = await d.post(rail ? `/v1/rail/offers/${encodeURIComponent(offer.offer_id)}/prebook` : '/v1/attractions/prebook',
++          rail ? {quantity:selection.quantity} : {offer_id:offer.offer_id,...selection,currency:'CNY'}, d.uuid());
++        const q = validateQuote(raw, vertical, offer, selection, d.now());
++        const ids = await d.travelers(vertical, q.quantity);
++        if (!ids) return null;
++        if (ids.length !== q.quantity || new Set(ids).size !== q.quantity) throw Error('出行人数与报价不一致，请重新核对。');
++        const policy = (label,p) => p?.allowed ? `${label}手续费 ${d.money(p.fee_minor * q.quantity,q.currency)} / 本次 ${q.quantity} 人${label==='改签'?'，票价差额另行核验。':'。'}` : `此票种不支持${label}。`;
++        const rules = rail ? [policy('改签',q.change_policy),policy('退票',q.refund_policy)] : [eligibilityText(q.eligibility), q.changeable ? '支持按规则申请改期，需确认新场次。' : '此票种不支持改期。', q.refundable ? '支持按规则申请退款，以退款核验结果为准。' : '此票种不可退款。'];
++        const o = await d.dialog(`核对${title}与总价`,
++          `<p>${esc(rail ? `${q.journey.travel_date} · ${q.journey.train_no} · ${seats[q.journey.seat_class] || q.journey.seat_class}` : `${q.product_name} · ${q.visit_date} · ${q.session_time}`)}</p><div class="kv"><span>${q.quantity} 人 × ${esc(d.money(q.unit_amount_minor,q.currency))}</span><strong>${esc(d.money(q.total_amount_minor,q.currency))}</strong></div><p>以上为本次含税应付总额。</p>${rules.filter(Boolean).map(r=>`<p>${esc(r)}</p>`).join('')}<div class="go-sim-note">当前为隔离测试，不会购买真实车票或门票。测试凭证不能用于出行。</div><label class="go-consent"><input type="checkbox" data-quote-consent required><span>我已核对人数、日期${rail ? '、车次与席别' : '、场次与适用条件'}、含税总价及退改规则。</span></label>`,'确认订单', async el => {
++            if (!el.querySelector('[data-quote-consent]').checked) throw Error('请先核对并确认预订信息。');
++            validateQuote(q,vertical,offer,selection,d.now());
++            const body = {prebook_id:q.prebook_id,traveler_ids:ids,...(rail ? {} : {offer_id:q.offer_id,visit_date:q.visit_date,session_time:q.session_time,quantity:q.quantity,currency:q.currency})};
++            return d.post(rail ? '/v1/rail/orders' : '/v1/attractions/orders',body,`party:${vertical}:${q.prebook_id}:${ids.join(':')}`);
++          });
++        if (!o) return null;
++        try { await d.pay(vertical,o); }
++        finally { await d.show(vertical,o.order_id); }
++        return o;
++      } finally { busy = false; }
++    };
++  }
++  window.GOPartyBooking = {validateQuote,createFlow};
++  if (!window.GOBooking || typeof state === 'undefined') return;
++  const keys = new Map();
++  const book = createFlow({
++    ...window.GOBooking, now:()=>Date.now(), uuid:()=>crypto.randomUUID(), money,
++    post:(path,body,name)=>{if(!keys.has(name))keys.set(name,crypto.randomUUID());return api(path,{method:'POST',headers:{'Idempotency-Key':keys.get(name)},body:JSON.stringify(body)});},
++    show:async(vertical,id)=>{if(vertical==='RAIL'){state.railOrder=await api(`/v1/rail/orders/${id}`);renderRailOrder();}else{state.attractionOrder=await api(`/v1/attractions/orders/${id}`);renderAttractionOrder();}}
++  });
++  const start = async (vertical,id) => {
++    try {
++      if(!state.me){showAuth();return;}
++      const rail=vertical==='RAIL', offer=(rail?state.railSearch:state.attractionSearch)?.find(x=>x.offer_id===id);
++      if(!offer)throw Error('此结果已过期，请重新搜索。');
++      await book(vertical,structuredClone(offer),structuredClone(rail?state.railCriteria:state.attractionCriteria));
++    } catch(e) {toast(e.message);}
++  };
++  railSelect=id=>start('RAIL',id);
++  attractionBook=id=>start('ATTRACTION',id);
++})();
+--- a/scripts/assemble_depth20_review.py
++++ b/scripts/assemble_depth20_review.py
+@@ -0,0 +1,107 @@
++#!/usr/bin/env python3
++"""Restore DEPTH20 from pinned parent + DEPTH17 WORK + reviewed DEPTH20 delta."""
++import argparse
++import hashlib
++import json
++import os
++from pathlib import Path, PurePosixPath
++import shutil
++import stat
++import zipfile
++
++PARENT_SHA = '8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb'
++BASE_SHA = '1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79'
++
++
++def sha(path):
++    h=hashlib.sha256()
++    with path.open('rb') as stream:
++        for block in iter(lambda:stream.read(1024*1024),b''):h.update(block)
++    return h.hexdigest()
++
++
++def safe(name):
++    p=PurePosixPath(name)
++    if not name or p.is_absolute() or '..' in p.parts or '\\' in name or ':' in name:
++        raise ValueError('UNSAFE_ARCHIVE_PATH:'+name)
++    return p
++
++
++def preflight(z):
++    seen=set()
++    for info in z.infolist():
++        safe(info.filename)
++        if info.filename in seen or stat.S_ISLNK(info.external_attr >> 16):
++            raise ValueError('DUPLICATE_OR_LINK_ARCHIVE_ENTRY:'+info.filename)
++        seen.add(info.filename)
++
++
++def verify_entries(z, entries, prefix=''):
++    for f in entries:
++        safe(f['path'])
++        data=z.read(prefix+f['path'])
++        if len(data)!=f['size'] or hashlib.sha256(data).hexdigest()!=f['sha256']:
++            raise ValueError('PAYLOAD_INTEGRITY_FAILURE:'+f['path'])
++
++
++def extract(z, output, prefix=''):
++    for info in z.infolist():
++        if not info.filename.startswith(prefix):continue
++        p=safe(info.filename[len(prefix):])
++        if '__pycache__' in p.parts or p.suffix in {'.pyc','.pyo'}:continue
++        target=output/str(p)
++        if info.is_dir():target.mkdir(parents=True,exist_ok=True);continue
++        target.parent.mkdir(parents=True,exist_ok=True)
++        with z.open(info) as source,target.open('wb') as sink:shutil.copyfileobj(source,sink)
++        if os.name!='nt':target.chmod(0o755 if (info.external_attr>>16)&0o111 else 0o644)
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    for name in ('parent','base-work','delta','output'):parser.add_argument('--'+name,type=Path,required=True)
++    args=parser.parse_args(); output=args.output.resolve()
++    if output.exists():parser.error('Output must be a new directory')
++    if sha(args.parent)!=PARENT_SHA or sha(args.base_work)!=BASE_SHA:
++        parser.error('Locked parent or DEPTH17 WORK SHA256 mismatch')
++    with zipfile.ZipFile(args.parent) as parent,zipfile.ZipFile(args.base_work) as base,zipfile.ZipFile(args.delta) as delta:
++        for z in (parent,base,delta):preflight(z)
++        old=json.loads(base.read('DELIVERY_FILE_MANIFEST.json'))
++        change=json.loads(delta.read('DEPTH20_DELTA_MANIFEST.json'))
++        result_bytes=delta.read('RESULT_FILE_MANIFEST.json')
++        if hashlib.sha256(result_bytes).hexdigest()!=change['result_manifest_sha256']:
++            parser.error('Result manifest fingerprint mismatch')
++        result=json.loads(result_bytes)
++        if change['baseline_work_sha256']!=BASE_SHA or change['parent_sha256']!=PARENT_SHA or change['removed']:
++            parser.error('Unsupported delta lineage or removals')
++        verify_entries(base,old['files']);verify_entries(delta,change['files'],'payload/')
++        known={f['path']:f for f in old['files']}
++        for f in change['files']:
++            before=known.get(f['path'])
++            if (before['sha256'] if before else None)!=f['before_sha256']:
++                parser.error('Delta baseline mismatch: '+f['path'])
++            known[f['path']]={k:f[k] for k in ('path','size','sha256')}
++        expected={f['path']:{k:f[k] for k in ('path','size','sha256')} for f in result['files']}
++        normalized={n:{k:f[k] for k in ('path','size','sha256')} for n,f in known.items()}
++        if expected!=normalized or len(expected)!=len(result['files']):
++            parser.error('Result manifest does not match composed delta')
++        if set(delta.namelist())!={'DEPTH20_DELTA_MANIFEST.json','RESULT_FILE_MANIFEST.json',*('payload/'+f['path'] for f in change['files'])}:
++            parser.error('Unexpected delta entries')
++        output.mkdir(parents=True)
++        try:
++            extract(parent,output);extract(base,output);extract(delta,output,'payload/')
++            (output/'DELIVERY_FILE_MANIFEST.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
++            for f in result['files']:
++                if sha(output/f['path'])!=f['sha256']:raise ValueError('RESTORED_HASH_MISMATCH:'+f['path'])
++            if os.name!='nt':
++                for name in ('python','python3','python3.13'):(output/'gate_runtime/python/bin'/name).chmod(0o755)
++            receipt={'parent_sha256':PARENT_SHA,'base_work_sha256':BASE_SHA,'delta_sha256':sha(args.delta),
++                'verified_files':len(result['files']),'migration_head':'0127_vertical_prebook_contract','release_gate':'HOLD'}
++            (output/'DEPTH20_RESTORATION.json').write_text(json.dumps(receipt,indent=2)+'\n')
++        except BaseException:
++            shutil.rmtree(output)
++            raise
++    print(json.dumps(receipt,indent=2))
++    print('Read GO_DEPTH20_START_HERE.md; this is an engineering review copy.')
++
++
++if __name__=='__main__':main()
+--- a/scripts/build_depth20_delivery.py
++++ b/scripts/build_depth20_delivery.py
+@@ -0,0 +1,77 @@
++#!/usr/bin/env python3
++"""Seal a verified DEPTH20 delta against the GitHub-pinned DEPTH17 cumulative WORK."""
++import argparse
++import hashlib
++import json
++from pathlib import Path
++import zipfile
++from build_review_delivery import allowed, digest
++
++ROOT=Path(__file__).resolve().parents[1]
++BASE_SHA='1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79'
++PARENT_SHA='8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb'
++STEM='GO_CP11_DEPTH_20_PARTY_PREBOOK_TICKET_CONTRACT'
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--baseline-work',required=True,type=Path)
++    parser.add_argument('--output-dir',type=Path,default=ROOT/'deliverables')
++    parser.add_argument('--previous-delta',required=True,type=Path)
++    parser.add_argument('--preseal',action='store_true',help='Prepare a restoration candidate; does not certify delivery')
++    args=parser.parse_args();out=args.output_dir.resolve();out.mkdir(parents=True,exist_ok=True)
++    if digest(args.baseline_work)!=BASE_SHA:parser.error('DEPTH17 WORK fingerprint mismatch')
++    evidence=ROOT/'verification/current_build/depth20'
++    status={'build':'CP11_DEPTH_20_PARTY_PREBOOK_TICKET_CONTRACT'} if args.preseal else json.loads((evidence/'CURRENT_BUILD_STATUS.json').read_text())
++    if not args.preseal:
++        assert status['python']['one_clean_full_run'] and not status['python']['failures'] and not status['python']['errors']
++        assert status['independent_restored_runtime']['passed']==status['independent_restored_runtime']['tests']
++    frozen=json.loads((evidence/'full_run_source_fingerprint.json').read_text())['files']
++    assert all(digest(ROOT/n)==h for n,h in frozen.items()),'FROZEN_SOURCE_CHANGED'
++    with zipfile.ZipFile(args.baseline_work) as base:
++        before={f['path']:f for f in json.loads(base.read('DELIVERY_FILE_MANIFEST.json'))['files']}
++    names=set(before)
++    assert digest(args.previous_delta)=='2dfe21d33f17ee949270f9d927803ba2b1495ebea5da95734ef1b5643cde27d4'
++    with zipfile.ZipFile(args.previous_delta) as prior:
++        names.update(f['path'] for f in json.loads(prior.read('RESULT_FILE_MANIFEST.json'))['files'])
++    for folder in ('src','frontend','tests','tests_frontend','scripts','acceptance','alembic'):
++        names.update(p.relative_to(ROOT).as_posix() for p in (ROOT/folder).rglob('*') if allowed(p))
++    names.update(p.relative_to(ROOT).as_posix() for p in evidence.rglob('*') if allowed(p) and p.suffix!='.log')
++    names.update({'GO_DEPTH20_START_HERE.md','CURRENT_DEPTH_CANDIDATE.json'})
++    names.discard('DELIVERY_FILE_MANIFEST.json')
++    result={'status':'ENGINEERING_REVIEW_NOT_RELEASE_ACCEPTED','files':[]}
++    changes=[]
++    for name in sorted(names):
++        p=ROOT/name
++        assert allowed(p),name
++        row={'path':name,'size':p.stat().st_size,'sha256':digest(p)}
++        result['files'].append(row)
++        previous=before.get(name)
++        if not previous or previous['sha256']!=row['sha256']:
++            changes.append({**row,'before_sha256':previous['sha256'] if previous else None,'mode':p.stat().st_mode&0o777})
++    result_bytes=json.dumps(result,ensure_ascii=False,indent=2).encode()
++    manifest={'build':status['build'],'parent_sha256':PARENT_SHA,'baseline_work_sha256':BASE_SHA,
++              'baseline_github_commit':'b02f65db7c6ce4212e3a4d678b540fb286c14768',
++              'previous_checkpoint_commit':'5cb603438bd39699304f3c7b6682d739ba18f386',
++              'includes_depth18':True,'includes_depth19':True,'preseal':args.preseal,
++              'result_manifest_sha256':hashlib.sha256(result_bytes).hexdigest(),
++              'FINAL_RELEASE_GATE':'HOLD','removed':[],'files':changes}
++    path=out/(STEM+'_DELTA_20260908.zip');temporary=path.with_suffix('.building')
++    with zipfile.ZipFile(temporary,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
++        for f in changes:z.write(ROOT/f['path'],'payload/'+f['path'])
++        z.writestr('DEPTH20_DELTA_MANIFEST.json',json.dumps(manifest,indent=2))
++        z.writestr('RESULT_FILE_MANIFEST.json',result_bytes)
++    with zipfile.ZipFile(temporary) as z:
++        assert z.testzip() is None
++        assert len(z.namelist())==len(changes)+2
++        for f in changes:assert hashlib.sha256(z.read('payload/'+f['path'])).hexdigest()==f['sha256']
++    temporary.replace(path)
++    receipt={'delta':{'path':str(path),'size':path.stat().st_size,'sha256':digest(path),'entries':len(changes)+2},
++             'changed_payload_files':len(changes),'result_files':len(result['files']),
++             'baseline_work_sha256':BASE_SHA,'release_gate':'HOLD','engineering_complete':False}
++    (out/'GO_DEPTH20_DELIVERY.json').write_text(json.dumps(receipt,indent=2)+'\n')
++    (out/'GO_DEPTH20_SHA256SUMS.txt').write_text(f"{digest(path)}  {path.name}\n")
++    print(json.dumps(receipt,indent=2))
++
++
++if __name__=='__main__':main()
+--- a/scripts/record_depth20_evidence.py
++++ b/scripts/record_depth20_evidence.py
+@@ -0,0 +1,100 @@
++#!/usr/bin/env python3
++"""Verify real evidence and record the bounded DEPTH20 engineering result."""
++import difflib
++import hashlib
++import json
++from pathlib import Path
++import xml.etree.ElementTree as ET
++import zipfile
++
++ROOT=Path(__file__).resolve().parents[1]
++OUT=ROOT/'verification/current_build/depth20'
++
++def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
++def write(p,v):p.write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n')
++def count(p):
++    root=ET.parse(p).getroot();cases=list(root.iter('testcase'))
++    result={'tests':len(cases),'failures':sum(c.find('failure') is not None for c in cases),
++        'errors':sum(c.find('error') is not None for c in cases),'skipped':sum(c.find('skipped') is not None for c in cases)}
++    result['passed']=result['tests']-result['failures']-result['errors']-result['skipped']
++    suites=list(root.iter('testsuite'));result['seconds']=sum(float(s.get('time','0')) for s in suites)
++    return root,result
++
++def main():
++    frozen=json.loads((OUT/'full_run_source_fingerprint.json').read_text())['files']
++    assert all(sha(ROOT/n)==h for n,h in frozen.items()),'FROZEN_SOURCE_CHANGED'
++    root,total=count(OUT/'full_regression.xml');old,prior=count(ROOT/'verification/current_build/depth19/full_regression.xml')
++    ids=lambda r:{c.get('classname')+'::'+c.get('name') for c in r.iter('testcase')}
++    before,after=ids(old),ids(root);new=after-before
++    assert not before-after and len(new)==48 and all('test_depth20_' in n for n in new)
++    assert total['tests']==prior['tests']+48 and total['failures']==total['errors']==0
++    total['one_clean_full_run']=True
++    _,targeted=count(OUT/'targeted.xml');_,restored=count(OUT/'restored_regression.xml');_,front=count(OUT/'frontend_logic.xml')
++    assert targeted['tests']==targeted['passed']==77
++    assert restored['passed']==restored['tests'] and restored['tests']>=77
++    assert front['passed']==front['tests']==99
++    syntax=json.loads((OUT/'frontend_syntax.json').read_text());assert syntax['failed']==0
++    eq=json.loads((OUT/'restored_source_equivalence.json').read_text())
++    assert all(sha(Path(eq['restored_root'])/n)==h for n,h in frozen.items())
++    immutable=json.loads((OUT/'immutable_baseline.json').read_text())
++    assert all(sha(ROOT/f['path'])==f['sha256'] for group in immutable.values() for f in group['files'])
++    write(OUT/'regression_case_continuity.json',{'baseline_tests':prior['tests'],'retained_case_identities':len(before),'new_case_identities':sorted(new),'removed':[],
++        'historical_assertion_changes':'Head advances to 0127. Five historical attraction fixture files explicitly obtain required quotes and identify their participants; all historical testcase identities and behavioral assertions are retained.'})
++    write(OUT/'skipped_cases.json',[{'case':c.get('classname')+'::'+c.get('name'),'reason':c.find('skipped').get('message')} for c in root.iter('testcase') if c.find('skipped') is not None])
++    previous=json.loads((ROOT/'verification/current_build/depth19/CURRENT_BUILD_STATUS.json').read_text())
++    scope=('Rail and attraction quotes durably bind party count, unit/total price, dates, journey/slot and policy. '
++        'Signed-in quotes bind the account before consumption; anonymous browsing quotes allow one authenticated owner to claim. '
++        'Order creation and quote consumption commit atomically, exact replay returns the same order, and different accounts, bodies or vault IDs cannot reuse it. '
++        'Rail confirmations require distinct ticket identities matching party count and exact confirmed replay; reissue checks precede adjustment capture. '
++        'Quoted rail fees scale per person; refunds include original and adjustment captures and retain paid change fees. '
++        'Customer flows explicitly confirm count, participants, quote and payment; cancellation never substitutes nickname or creates unconfirmed orders. '
++        'This is isolated engineering behavior, without provider capacity reservations, full age/ID certification or advanced after-sales concurrency closure.')
++    status={**previous,'build':'CP11_DEPTH_20_PARTY_PREBOOK_TICKET_CONTRACT','python':total,
++        'baseline':{**previous['baseline'],'depth19_github_commit':'5cb603438bd39699304f3c7b6682d739ba18f386','depth19_delta_sha256':'2dfe21d33f17ee949270f9d927803ba2b1495ebea5da95734ef1b5643cde27d4'},
++        'new_backend_cases_passed':48,'targeted_runtime':targeted,'independent_restored_runtime':restored,
++        'frontend':{'logic':front,'syntax':syntax,'visual_accepted':False,'frozen_node_22_certified':False,'current_iteration_rerun':True},
++        'immutable':{k:{x:g[x] for x in ('count','all_match')} for k,g in immutable.items()},
++        'party_prebook_ticket_scope':scope,
++        'migrations':{**previous['migrations'],'current_head':'0127_vertical_prebook_contract','prior_126_files_unchanged':True,
++            'added_files':previous['migrations']['added_files']+['alembic/versions/0127_vertical_prebook_contract.py']},
++        'validation_scope':f"One clean full run over {len(frozen)} frozen source/test/script files. 48 new backend and 11 new frontend cases. Targeted and restored totals overlap the full suite. No browser, provider, production or PostgreSQL acceptance is implied.",
++        'engineering_gaps':list(dict.fromkeys(previous['engineering_gaps']+['RAIL_ATTRACTION_CAPACITY_HOLDS_AND_SHARED_INVENTORY','RAIL_ATTRACTION_AGE_ID_QUALIFICATION','RAIL_ATTRACTION_DURABLE_AFTERSALES_CONCURRENCY_AND_RECONCILIATION'])),
++        'FINAL_RELEASE_GATE':'HOLD','engineering_complete':False,'deployed':False}
++    write(OUT/'CURRENT_BUILD_STATUS.json',status)
++    write(ROOT/'CURRENT_DEPTH_CANDIDATE.json',{'build':status['build'],'report':'acceptance/GO_DEPTH20_REVIEW.md','status':'verification/current_build/depth20/CURRENT_BUILD_STATUS.json','FINAL_RELEASE_GATE':'HOLD','deployed':False})
++    register=json.loads((ROOT/'acceptance/MASTER_CLOSURE_REGISTER.json').read_text())
++    for item in register['requirements']:
++        if item['id'] in {'RAIL-01','ATTRACTION-01'}:
++            item.update(status='PARTY_QUOTE_BINDING_TESTED_CAPACITY_QUALIFICATION_ADVANCED_AFTERSALES_OPEN',fully_accepted=False,
++                source_ids=['V7-P12-08','V7-P13-01','V7-P13-04','V7-P13-05','V7-P21-07' if item['id']=='RAIL-01' else 'V7-P21-08'],
++                current_evidence=['tests/test_depth20_prebook_contract.py','tests/test_depth20_attraction_contract.py','tests/test_depth20_api_fulfillment.py','tests_frontend/rail_attraction_booking.test.mjs'],scope_note=scope)
++    write(ROOT/'acceptance/MASTER_CLOSURE_REGISTER.json',register)
++    report=f'''# GO DEPTH20 工程审阅记录
++
++**HOLD；尚未全面完工，未部署。** 按 V7 P12/P13/P21 的人数、全价、铁路站点席别、门票场次与适用条件继续推进。
++
++- 铁路与门票保存逐笔报价；人数、单价、总价、日期、场次和退改规则均绑定。报价与订单原子提交；相同请求返回原订单，跨账号或改换参与人不能复用。
++- 登录后报价在下单前已绑定账号；匿名浏览报价只允许一位消费者领取。失效旧报价拒绝自动补造条款。新迁移 0127 保留历史，有新证据时禁止直接降级。
++- 铁路出票要求与人数一致的不同票号；已确认票号不能被重放更换。改签按人数与原报价手续费计算，退款保留历次手续费并退回原票款和改签补款的各自支付来源。
++- 客户页面明确选择人数、门票场次及个人库出行人，核对含税总价与规则后创建订单。取消确认不下单；付款取消或中断后仍能打开已有订单。
++
++| 实测 | 结果 |
++| --- | --- |
++| 累计 Python 回归 | {total['tests']} 项，{total['passed']} 通过，{total['skipped']} PostgreSQL 跳过，0 失败/错误 |
++| 本轮后端 / 前端新增 | 48 / 11 项，均包含于相应累计结果 |
++| 后端专项 / 独立恢复副本 | {targeted['passed']} / {restored['passed']} 通过，和累计回归重叠 |
++| 前端逻辑 / JavaScript 语法 | {front['passed']} / {syntax['passed']} 通过，Node {syntax['node']} |
++| 冻结源文件 | {len(frozen)} 个，恢复副本逐个指纹一致 |
++| 不变基线 | 126 个历史迁移、3 个母版文件、23 个品牌素材 |
++
++旧用例身份和功能断言保留；5 份门票旧用例显式补齐新接口要求的报价与测试参加人，详见源码差异。
++
++本轮未关闭：跨报价共享库存与持有/释放、独立年龄/证件资格证明、铁路真实新车次报价、改签与退款并发竞争、退款中断后的统一查询与人工核对、部分履约/部分退款。当前库存只是模拟可用数量的观察，不是供应商占位；模拟列车、价格和门票场次不构成真实官方承诺。
++
++母版完整条款分解、六业务高级售后、14 个业务细胞真实执行、实时供应商/支付、PostgreSQL、Redis 切换和跨设备视觉仍需继续。99 项前端逻辑通过不代表视觉验收或冻结 Node 22 认证。
++'''
++    (ROOT/'acceptance/GO_DEPTH20_REVIEW.md').write_text(report)
++    write(OUT/'WORKLOG.json',{'state':'LOCAL_VERIFIED_DELIVERY_PREPARATION','release_gate':'HOLD','github_delivery':'PENDING_REMOTE_READBACK'})
++    print(json.dumps({'python':total,'frontend':front,'restored':restored,'source_files':len(frozen)},indent=2))
++
++if __name__=='__main__':main()
+--- a/src/go_hotel/api/routes/attractions.py
++++ b/src/go_hotel/api/routes/attractions.py
+@@ -1,6 +1,6 @@
+ from fastapi import APIRouter,Depends,HTTPException,Header
+ from pydantic import BaseModel,Field
+-from go_hotel.security.deps import consumer_principal,admin_principal
++from go_hotel.security.deps import consumer_principal,admin_principal,optional_consumer_principal
+ from go_hotel.security.service import Principal
+ from go_hotel.attractions.service import attraction_service as a
+ from go_hotel.api.idempotency import run_idempotent
+@@ -14,8 +14,8 @@
+   msg=str(e); code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(k in msg for k in ("ILLEGAL_STATE","CHANGEABLE","REFUNDABLE","INVALID","RECONCILIATION")) else (400 if "NON_REFUNDABLE" in msg else 404))
+   raise HTTPException(code,detail=str(e))
+ class Search(BaseModel):destination:str;visit_date:str;product_type:str|None=None;currency:str="CNY"
+-class Prebook(BaseModel):offer_id:str;visit_date:str;quantity:int=1;currency:str="CNY"
+-class Book(BaseModel):offer_id:str;visit_date:str;session_time:str|None=None;quantity:int=1;currency:str="CNY";attendees:list[dict]=Field(default_factory=list);traveler_ids:list[str]=Field(default_factory=list)
++class Prebook(BaseModel):offer_id:str;visit_date:str;quantity:int=Field(default=1,ge=1,le=100,strict=True);currency:str="CNY";session_time:str|None=None
++class Book(BaseModel):prebook_id:str;offer_id:str;visit_date:str;session_time:str|None=None;quantity:int=Field(default=1,ge=1,le=100,strict=True);currency:str="CNY";attendees:list[dict]=Field(default_factory=list);traveler_ids:list[str]=Field(default_factory=list)
+ class Change(BaseModel):new_visit_date:str;new_session_time:str|None=None
+ class Redeem(BaseModel):evidence_reference:str
+ class ExternalState(BaseModel):state:str;evidence_reference:str;supplier_reference:str|None=None;voucher_code:str|None=None
+@@ -26,13 +26,13 @@
+   msg=str(e);raise HTTPException(503 if "PROVIDER_TRUTH_REQUIRED" in msg else 422,detail=msg)
+  return {"data":{"items":items,"comparison_basis":["final_price","session","eligibility","inventory","change_refund"]}}
+ @router.post("/v1/attractions/prebook")
+-def prebook(b:Prebook,idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+- return run_idempotent('ATTRACTION_PREBOOK',idempotency_key,b.model_dump(),lambda:w(a.prebook,b.offer_id,b.visit_date,b.quantity,b.currency))
++def prebook(b:Prebook,p:Principal|None=Depends(optional_consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
++ return run_idempotent('ATTRACTION_PREBOOK',idempotency_key,{'account':p.user_id if p else None,**b.model_dump()},lambda:w(a.prebook,b.offer_id,b.visit_date,b.quantity,b.currency,b.session_time,p.user_id if p else None))
+ @router.post("/v1/attractions/orders")
+ def book(b:Book,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+ 
+  def execute():
+-  body=b.model_dump(); released=release_booking_data(p.user_id,'ATTRACTION',b.traveler_ids,b.attendees,requester_id=p.user_id); body['attendees']=released['items']; body.pop('traveler_ids',None)
++  body=b.model_dump(); released=release_booking_data(p.user_id,'ATTRACTION',b.traveler_ids,b.attendees,requester_id=p.user_id); body['attendees']=released['items']
+   response=w(a.create_order,p.user_id,body)
+   if released['release_ids']:
+    with SessionLocal.begin() as s: append_vertical_evidence(s,'ATTRACTION',response['data']['order_id'],'VAULT_BOOKING_DATA_RELEASED',response['data']['status'],{'release_ids':released['release_ids'],'minimum_necessary':True})
+--- a/src/go_hotel/api/routes/rail.py
++++ b/src/go_hotel/api/routes/rail.py
+@@ -1,6 +1,7 @@
+ from fastapi import APIRouter, Depends, HTTPException, Header
+ from pydantic import BaseModel, Field
+-from go_hotel.security.deps import consumer_principal, admin_principal
++from fastapi import Body
++from go_hotel.security.deps import consumer_principal, admin_principal, optional_consumer_principal
+ from go_hotel.security.service import Principal
+ from go_hotel.rail.service import rail_service
+ from go_hotel.api.idempotency import run_idempotent
+@@ -11,8 +12,10 @@
+ router=APIRouter(tags=["sprint3b-rail"])
+ class SearchBody(BaseModel):
+     origin_station:str="SHA"; destination_station:str="HZH"; travel_date:str="2026-09-01"; currency:str="CNY"
++class PrebookBody(BaseModel):
++    quantity:int=Field(default=1,ge=1,le=9,strict=True)
+ class OrderBody(BaseModel):
+-    prebook_id:str; passengers:list[dict]=Field(default_factory=lambda:[{"full_name":"GO Traveler","type":"ADT"}]); traveler_ids:list[str]=Field(default_factory=list)
++    prebook_id:str; passengers:list[dict]=Field(default_factory=list); traveler_ids:list[str]=Field(default_factory=list)
+ class CheckoutBody(BaseModel): payment_method_id:str
+ class ExternalStateBody(BaseModel):
+     state:str; evidence_reference:str; supplier_reference:str|None=None; ticket_numbers:list[str]=Field(default_factory=list)
+@@ -33,13 +36,15 @@
+ @router.get('/v1/rail/offers/{offer_id}')
+ def offer(offer_id:str): return wrap(rail_service.get_offer,offer_id)
+ @router.post('/v1/rail/offers/{offer_id}/prebook')
+-def prebook(offer_id:str): return wrap(rail_service.prebook,offer_id)
++def prebook(offer_id:str,body:PrebookBody|None=Body(default=None),p:Principal|None=Depends(optional_consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
++    quantity=body.quantity if body else 1;account=p.user_id if p else None
++    return run_idempotent('RAIL_PREBOOK',idempotency_key,{'account':account,'offer_id':offer_id,'quantity':quantity},lambda:wrap(rail_service.prebook,offer_id,quantity,account))
+ @router.post('/v1/rail/orders')
+ def create_order(body:OrderBody,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+     payload={'user_id':p.user_id,**body.model_dump()}
+     def execute():
+         released=release_booking_data(p.user_id,'RAIL',body.traveler_ids,body.passengers,requester_id=p.user_id)
+-        response=wrap(rail_service.create_order,p.user_id,body.prebook_id,released['items'])
++        response=wrap(rail_service.create_order,p.user_id,body.prebook_id,released['items'],body.traveler_ids)
+         if released['release_ids']:
+             with SessionLocal.begin() as s:
+                 append_vertical_evidence(s,'RAIL',response['data']['order_id'],'VAULT_BOOKING_DATA_RELEASED',response['data']['status'],{'release_ids':released['release_ids'],'minimum_necessary':True})
+--- a/src/go_hotel/attractions/service.py
++++ b/src/go_hotel/attractions/service.py
+@@ -1,4 +1,4 @@
+-from datetime import UTC, datetime, timedelta
++from datetime import UTC, datetime, timedelta, date
+ from sqlalchemy import select
+ from go_hotel.db.session import SessionLocal
+ from go_hotel.db.models import AttractionOrderRow,AttractionChangeQuoteRow,AttractionRefundRow
+@@ -8,39 +8,83 @@
+ from go_hotel.services.vertical_money_bridge import vertical_money_bridge
+ from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service
+ from go_hotel.core.production_truth_gate import production_truth_required
++from go_hotel.autonomy.durable import transaction,digest
++from go_hotel.services import vertical_prebook_contract as contracts
++from go_hotel.db.models import VerticalPrebookContractRow
+ 
+ def now(): return datetime.now(UTC).replace(tzinfo=None)
+ CATALOG={
+- "tokyo_skytree":{"name":"东京晴空塔天望甲板","type":"ATTRACTION","destination":"东京","ticket_type":"成人票","price":18000,"session":"16:00","eligibility":{"age":"12+ adult","id_required":False},"voucher_type":"QR_CODE","inventory":24,"changeable":True,"refundable":True},
+- "teamlab_planets":{"name":"teamLab Planets TOKYO","type":"EXPERIENCE","destination":"东京","ticket_type":"标准入场","price":26000,"session":"18:30","eligibility":{"age":"all","id_required":False},"voucher_type":"QR_CODE","inventory":8,"changeable":True,"refundable":False},
+- "tokyo_concert":{"name":"Tokyo Live Night","type":"EVENT","destination":"东京","ticket_type":"指定席 A","price":68000,"session":"19:30","eligibility":{"age":"6+","id_required":True},"voucher_type":"E_TICKET","inventory":4,"changeable":False,"refundable":True},
++ "tokyo_skytree":{"name":"东京晴空塔天望甲板","type":"ATTRACTION","destination":"东京","ticket_type":"成人票","price":18000,"session":"16:00","sessions":["16:00","17:00"],"eligibility":{"age":"12+ adult","id_required":False},"voucher_type":"QR_CODE","inventory":24,"changeable":True,"refundable":True},
++ "teamlab_planets":{"name":"teamLab Planets TOKYO","type":"EXPERIENCE","destination":"东京","ticket_type":"标准入场","price":26000,"session":"18:30","sessions":["18:30"],"eligibility":{"age":"all","id_required":False},"voucher_type":"QR_CODE","inventory":8,"changeable":True,"refundable":False},
++ "tokyo_concert":{"name":"Tokyo Live Night","type":"EVENT","destination":"东京","ticket_type":"指定席 A","price":68000,"session":"19:30","sessions":["19:30"],"eligibility":{"age":"6+","id_required":True},"voucher_type":"E_TICKET","inventory":4,"changeable":False,"refundable":True},
+ }
+ class AttractionService:
++ def _catalog(self,offer_id,visit_date,session_time=None,currency='CNY'):
++  x=CATALOG.get(offer_id)
++  if not x:raise ValueError('ATTRACTION_OFFER_NOT_FOUND')
++  try:
++   if date.fromisoformat(visit_date).isoformat()!=visit_date:raise ValueError()
++  except (TypeError,ValueError):raise ValueError('ATTRACTION_DATE_INVALID') from None
++  if currency!='CNY':raise ValueError('ATTRACTION_ENGINEERING_CURRENCY_INVALID')
++  session=session_time or x['session']
++  if session not in x['sessions']:raise ValueError('ATTRACTION_SESSION_INVALID')
++  return x,session
++ def _order_terms(self,s,order_id):
++  row=s.scalar(select(VerticalPrebookContractRow).where(VerticalPrebookContractRow.vertical=='ATTRACTION',VerticalPrebookContractRow.order_id==order_id))
++  if not row or row.terms_hash!=digest(contracts._identity(row)):raise ValueError('ATTRACTION_LEGACY_TERMS_REVIEW_REQUIRED')
++  return row.terms_json
+  def search(self,destination,visit_date,product_type=None,currency="CNY"):
+   production_truth_required("ATTRACTION", "SEARCH")
++  if currency!='CNY':raise ValueError('ATTRACTION_ENGINEERING_CURRENCY_INVALID')
++  try:
++   if date.fromisoformat(visit_date).isoformat()!=visit_date:raise ValueError()
++  except (ValueError,TypeError):raise ValueError('ATTRACTION_DATE_INVALID') from None
+   items=[]
+   for pid,x in CATALOG.items():
+    if destination not in x["destination"]: continue
+    if product_type and x["type"]!=product_type: continue
+-   items.append({"offer_id":pid,"product_id":pid,"product_name":x["name"],"product_type":x["type"],"destination":x["destination"],"visit_date":visit_date,"session_time":x["session"],"ticket_type":x["ticket_type"],"total_amount_minor":x["price"],"currency":currency,"inventory_units":x["inventory"],"eligibility":x["eligibility"],"voucher_type":x["voucher_type"],"changeable":x["changeable"],"refundable":x["refundable"],"external_live":False})
++   items.append({"offer_id":pid,"product_id":pid,"product_name":x["name"],"product_type":x["type"],"destination":x["destination"],"visit_date":visit_date,"session_time":x["session"],"available_sessions":x["sessions"],"price_basis":"PER_TICKET","unit_amount_minor":x["price"],"ticket_type":x["ticket_type"],"total_amount_minor":x["price"],"currency":currency,"inventory_units":x["inventory"],"eligibility":x["eligibility"],"voucher_type":x["voucher_type"],"changeable":x["changeable"],"refundable":x["refundable"],"external_live":False})
+   return items
+- def prebook(self,offer_id,visit_date,quantity=1,currency="CNY"):
+-  production_truth_required("ATTRACTION", "PREBOOK")
+-  x=CATALOG.get(offer_id)
+-  if not x: raise ValueError("ATTRACTION_OFFER_NOT_FOUND")
+-  if quantity<1 or quantity>x["inventory"]: raise ValueError("ATTRACTION_INVENTORY_CHANGED")
+-  return {"prebook_id":new_id("attr_pre"),"offer_id":offer_id,"product_name":x["name"],"visit_date":visit_date,"session_time":x["session"],"ticket_type":x["ticket_type"],"quantity":quantity,"unit_amount_minor":x["price"],"total_amount_minor":x["price"]*quantity,"currency":currency,"inventory_confirmed":True,"eligibility":x["eligibility"],"changeable":x["changeable"],"refundable":x["refundable"],"expires_at":(now()+timedelta(minutes=10)).isoformat()}
++ def prebook(self,offer_id,visit_date,quantity=1,currency='CNY',session_time=None,account=None):
++  production_truth_required('ATTRACTION','PREBOOK')
++  quantity=contracts.party_count(quantity,100)
++  x,session=self._catalog(offer_id,visit_date,session_time,currency)
++  if quantity>x['inventory']:raise ValueError('ATTRACTION_INVENTORY_CHANGED')
++  terms={'offer_id':offer_id,'product_name':x['name'],'product_type':x['type'],'destination':x['destination'],
++   'visit_date':visit_date,'session_time':session,'available_sessions':x['sessions'],'ticket_type':x['ticket_type'],
++   'quantity':quantity,'unit_amount_minor':x['price'],'total_amount_minor':x['price']*quantity,'currency':currency,
++   'eligibility':x['eligibility'],'voucher_type':x['voucher_type'],'changeable':x['changeable'],'refundable':x['refundable'],
++   'inventory_observed_units':x['inventory'],'inventory_reserved':False}
++  with transaction(SessionLocal) as s:
++   row=contracts.issue_in(s,'ATTRACTION',new_id('attr_pre'),terms,account=account)
++   return contracts.projection(row)|{'inventory_confirmed':True,'expires_at':datetime.fromtimestamp(row.expires_ms/1000,UTC).isoformat()}
+  def create_order(self,account,b):
+-  production_truth_required("ATTRACTION", "CREATE_ORDER")
+-  x=CATALOG.get(b["offer_id"])
+-  if not x: raise ValueError("ATTRACTION_OFFER_NOT_FOUND")
+-  q=int(b.get("quantity",1))
+-  if q<1 or q>x["inventory"]: raise ValueError("ATTRACTION_INVENTORY_CHANGED")
+-  with SessionLocal.begin() as s:
+-   o=AttractionOrderRow(order_id=new_id("attr_ord"),account_id=account,status="PAYMENT_PENDING",product_id=b["offer_id"],product_name=x["name"],product_type=x["type"],destination=x["destination"],visit_date=b["visit_date"],session_time=b.get("session_time") or x["session"],ticket_type=x["ticket_type"],quantity=q,eligibility=x["eligibility"],voucher_type=x["voucher_type"],voucher_code=None,total_amount_minor=x["price"]*q,currency=b.get("currency","CNY"),attendees=b.get("attendees",[]),supplier_reference=None,created_at=now(),updated_at=now());s.add(o);s.flush()
+-   append_vertical_evidence(s,"ATTRACTION",o.order_id,"ORDER_CREATED",o.status,{"offer_id":b["offer_id"],"external_live":False})
++  production_truth_required('ATTRACTION','CREATE_ORDER')
++  if not b.get('prebook_id'):raise ValueError('ATTRACTION_PREBOOK_REQUIRED')
++  with transaction(SessionLocal) as s:
++   request={k:b.get(k) for k in ('offer_id','visit_date','session_time','quantity','currency','attendees','traveler_ids')}
++   contract,replay=contracts.current_in(s,'ATTRACTION',b['prebook_id'],account,request)
++   if replay:
++    old=s.get(AttractionOrderRow,contract.order_id)
++    if not old or old.account_id!=account:raise ValueError('ATTRACTION_PREBOOK_ORDER_INTEGRITY_INVALID')
++    return self.out(old)
++   terms=contract.terms_json
++   for key in ('offer_id','visit_date','quantity','currency'):
++    if b.get(key,1 if key=='quantity' else 'CNY' if key=='currency' else None)!=terms[key]:raise ValueError('ATTRACTION_PREBOOK_BODY_MISMATCH')
++   if b.get('session_time') not in {None,terms['session_time']}:raise ValueError('ATTRACTION_PREBOOK_SESSION_MISMATCH')
++   people=contracts.named_party(b.get('attendees'),terms['quantity'],maximum=100,adults_only=terms['ticket_type']=='成人票')
++   contracts.party_refs(b.get('traveler_ids'),terms['quantity'])
++   current,_=self._catalog(terms['offer_id'],terms['visit_date'],terms['session_time'],terms['currency'])
++   if current['inventory']<terms['quantity']:raise ValueError('ATTRACTION_INVENTORY_CHANGED')
++   o=AttractionOrderRow(order_id=new_id('attr_ord'),account_id=account,status='PAYMENT_PENDING',product_id=terms['offer_id'],
++    product_name=terms['product_name'],product_type=terms['product_type'],destination=terms['destination'],visit_date=terms['visit_date'],
++    session_time=terms['session_time'],ticket_type=terms['ticket_type'],quantity=terms['quantity'],eligibility=terms['eligibility'],
++    voucher_type=terms['voucher_type'],voucher_code=None,total_amount_minor=terms['total_amount_minor'],currency=terms['currency'],
++    attendees=people,supplier_reference=None,created_at=now(),updated_at=now())
++   s.add(o);s.flush();contracts.consume_in(s,contract,account,o.order_id,request)
++   append_vertical_evidence(s,'ATTRACTION',o.order_id,'ORDER_CREATED',o.status,{'prebook_id':contract.prebook_id,'terms_hash':contract.terms_hash,'external_live':False})
+    result=self.out(o)
+-  vertical_source_runtime_service.decide("ATTRACTION",result["order_id"],[{"source_id":"attraction-engineering-source","source_type":"ATTRACTION_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"attraction-offer://{b['offer_id']}"}])
++  vertical_source_runtime_service.decide('ATTRACTION',result['order_id'],[{'source_id':'attraction-engineering-source','source_type':'ATTRACTION_OFFICIAL','authorized':True,'available':True,'evidence_reference':f"attraction-prebook://{b['prebook_id']}"}])
+   return result
+  def out(self,o): return {"vertical":"ATTRACTION","order_id":o.order_id,"status":o.status,"product_id":o.product_id,"product_name":o.product_name,"product_type":o.product_type,"destination":o.destination,"visit_date":o.visit_date,"session_time":o.session_time,"ticket_type":o.ticket_type,"quantity":o.quantity,"eligibility":o.eligibility,"voucher_type":o.voucher_type,"voucher_code":o.voucher_code if o.status=="CONFIRMED" else None,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"attendees":o.attendees,"supplier_reference":o.supplier_reference if o.status=="CONFIRMED" else None,"external_live":False}
+  def get(self,account,order_id):
+@@ -52,7 +96,9 @@
+   with SessionLocal() as s:return [self.out(x) for x in s.scalars(select(AttractionOrderRow).where(AttractionOrderRow.account_id==account)).all()]
+  def change_quote(self,account,order_id,new_visit_date,new_session_time=None):
+   production_truth_required("ATTRACTION", "CHANGE_QUOTE")
+-  order=self.get(account,order_id);x=CATALOG[order["product_id"]]
++  order=self.get(account,order_id)
++  with SessionLocal() as read:x=self._order_terms(read,order_id)
++  self._catalog(order["product_id"],new_visit_date,new_session_time or order["session_time"],order["currency"])
+   if order["status"]!="CONFIRMED": raise ValueError("ATTRACTION_ORDER_NOT_CHANGEABLE")
+   if not x["changeable"]: raise ValueError("ATTRACTION_NOT_CHANGEABLE")
+   with SessionLocal.begin() as s:
+@@ -68,7 +114,8 @@
+   production_truth_required("ATTRACTION", "REFUND_QUOTE")
+   o=self.get(account,order_id)
+   if o["status"]!="CONFIRMED": raise ValueError("ATTRACTION_ORDER_NOT_REFUNDABLE")
+-  x=CATALOG[o["product_id"]];fee=0 if x["refundable"] else o["total_amount_minor"];return {"order_id":order_id,"refund_fee_minor":fee,"refund_amount_minor":o["total_amount_minor"]-fee,"currency":o["currency"],"refund_to":"ORIGINAL_PAYMENT_METHOD","refundable":x["refundable"]}
++  with SessionLocal() as read:x=self._order_terms(read,order_id)
++  fee=0 if x["refundable"] else o["total_amount_minor"];return {"order_id":order_id,"refund_fee_minor":fee,"refund_amount_minor":o["total_amount_minor"]-fee,"currency":o["currency"],"refund_to":"ORIGINAL_PAYMENT_METHOD","refundable":x["refundable"]}
+  def refund(self,account,order_id):
+   production_truth_required("ATTRACTION", "REFUND")
+   quote=self.refund_quote(account,order_id)
+--- a/src/go_hotel/db/models.py
++++ b/src/go_hotel/db/models.py
+@@ -5,6 +5,25 @@
+ 
+ class Base(DeclarativeBase):
+     pass
++
++class VerticalPrebookContractRow(Base):
++    __tablename__ = 'vertical_prebook_contract'
++    prebook_id: Mapped[str] = mapped_column(String(64), primary_key=True)
++    vertical: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
++    issued_account_id: Mapped[str | None] = mapped_column(String(64))
++    owner_id: Mapped[str | None] = mapped_column(String(64), index=True)
++    order_id: Mapped[str | None] = mapped_column(String(64))
++    state: Mapped[str] = mapped_column(String(16), nullable=False)
++    terms_json: Mapped[dict] = mapped_column(JSON, nullable=False)
++    terms_hash: Mapped[str] = mapped_column(String(64), nullable=False)
++    consumed_hash: Mapped[str | None] = mapped_column(String(64))
++    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    consumed_ms: Mapped[int | None] = mapped_column(BigInteger)
++    __table_args__ = (
++        UniqueConstraint('vertical','order_id',name='uq_vertical_prebook_order'),
++        CheckConstraint("state IN ('QUOTED','CONSUMED')",name='ck_vertical_prebook_contract_state'),
++    )
+ 
+ class TravelFactAuthorityRow(Base):
+     __tablename__ = 'travel_fact_authority'
+--- a/src/go_hotel/rail/service.py
++++ b/src/go_hotel/rail/service.py
+@@ -1,5 +1,5 @@
+ from __future__ import annotations
+-from datetime import UTC, datetime, timedelta
++from datetime import UTC, datetime, timedelta, date
+ from sqlalchemy import select
+ from go_hotel.db.session import SessionLocal
+ from go_hotel.db.models import RailOfferRow, RailPrebookRow, RailOrderRow, RailChangeQuoteRow, RailRefundRow
+@@ -9,12 +9,27 @@
+ from go_hotel.services.vertical_money_bridge import vertical_money_bridge
+ from go_hotel.core.production_truth_gate import production_truth_required
+ from go_hotel.services.vertical_transaction_bridge import vertical_transaction_bridge
++from go_hotel.autonomy.durable import transaction,db_now_ms
++from go_hotel.services import vertical_prebook_contract as contracts
++from go_hotel.db.models import VerticalPrebookContractRow
+ 
+ def now(): return datetime.now(UTC).replace(tzinfo=None)
+ 
+ class RailService:
++    def _terms(self,s,order):
++        row=s.get(VerticalPrebookContractRow,order.prebook_id)
++        if not row or row.vertical!='RAIL' or row.owner_id!=order.account_id or row.order_id!=order.order_id or row.state!='CONSUMED' or row.terms_hash!=contracts.digest(contracts._identity(row)):
++            raise ValueError('RAIL_LEGACY_TERMS_REVIEW_REQUIRED')
++        if len(order.passengers or [])!=row.terms_json['quantity']:raise ValueError('RAIL_ORDER_PARTY_INTEGRITY_INVALID')
++        return row.terms_json
+     def search(self, origin_station:str, destination_station:str, travel_date:str, currency:str="CNY"):
+         production_truth_required("RAIL", "SEARCH")
++        if currency!='CNY':raise ValueError('RAIL_ENGINEERING_CURRENCY_INVALID')
++        try:
++            if date.fromisoformat(travel_date).isoformat()!=travel_date:raise ValueError()
++        except (ValueError,TypeError):raise ValueError('RAIL_DATE_INVALID') from None
++        if not str(origin_station).strip() or not str(destination_station).strip() or origin_station.strip().upper()==destination_station.strip().upper():
++            raise ValueError('RAIL_STATION_PAIR_INVALID')
+         templates=[
+             ("G7315","SECOND_CLASS",7350,"08:05","08:50",45,18,{"allowed":True,"fee_minor":500},{"allowed":True,"fee_minor":800}),
+             ("G7501","FIRST_CLASS",11800,"09:30","10:18",48,8,{"allowed":True,"fee_minor":500},{"allowed":True,"fee_minor":800}),
+@@ -29,28 +44,56 @@
+                 s.add(r); out.append(self._offer(r) | {"external_live": False})
+         return out
+     def _offer(self,r):
+-        return {"offer_id":r.offer_id,"origin_station":r.origin_station,"destination_station":r.destination_station,"travel_date":r.travel_date,"train_no":r.train_no,"seat_class":r.seat_class,"total_amount_minor":r.total_amount_minor,"currency":r.currency,"departure_time":r.departure_time,"arrival_time":r.arrival_time,"duration_minutes":r.duration_minutes,"stations":r.stations,"change_policy":r.change_policy,"refund_policy":r.refund_policy,"inventory_left":r.inventory_left,"expires_at":r.expires_at.isoformat()}
++        return {"offer_id":r.offer_id,"origin_station":r.origin_station,"destination_station":r.destination_station,"travel_date":r.travel_date,"train_no":r.train_no,"seat_class":r.seat_class,"total_amount_minor":r.total_amount_minor,"currency":r.currency,"departure_time":r.departure_time,"arrival_time":r.arrival_time,"duration_minutes":r.duration_minutes,"stations":r.stations,"change_policy":r.change_policy,"refund_policy":r.refund_policy,"inventory_left":r.inventory_left,"price_basis":"PER_ADULT","unit_amount_minor":r.total_amount_minor,"expires_at":r.expires_at.isoformat()}
+     def get_offer(self,offer_id):
+         with SessionLocal() as s:
+             r=s.get(RailOfferRow,offer_id)
+             if not r: raise ValueError("RAIL_OFFER_NOT_FOUND")
+             return self._offer(r)
+-    def prebook(self,offer_id):
++    def prebook(self,offer_id,quantity=1,account=None):
+         production_truth_required("RAIL", "PREBOOK")
+-        with SessionLocal.begin() as s:
+-            o=s.get(RailOfferRow,offer_id)
+-            if not o or o.expires_at<now() or o.inventory_left<=0: raise ValueError("RAIL_OFFER_EXPIRED_OR_SOLD_OUT")
+-            p=RailPrebookRow(prebook_id=new_id("rail_pb"),offer_id=offer_id,total_amount_minor=o.total_amount_minor,currency=o.currency,status="CONFIRMED",price_locked=True,inventory_confirmed=True,expires_at=now()+timedelta(minutes=10),created_at=now())
+-            s.add(p); s.flush()
+-            return {"prebook_id":p.prebook_id,"offer_id":offer_id,"status":p.status,"total_amount_minor":p.total_amount_minor,"currency":p.currency,"price_locked":True,"inventory_confirmed":True,"expires_at":p.expires_at.isoformat()}
+-    def create_order(self,account_id,prebook_id,passengers):
+-        with SessionLocal.begin() as s:
++        contracts.party_count(quantity)
++        with transaction(SessionLocal) as s:
++            off=s.get(RailOfferRow,offer_id)
++            if not off or off.expires_at.replace(tzinfo=off.expires_at.tzinfo or UTC).timestamp()*1000<=db_now_ms(s) or off.inventory_left<quantity:
++                raise ValueError("RAIL_OFFER_EXPIRED_OR_SOLD_OUT")
++            if off.currency!='CNY':raise ValueError('RAIL_ENGINEERING_CURRENCY_INVALID')
++            journey={"origin_station":off.origin_station,"destination_station":off.destination_station,"travel_date":off.travel_date,
++                "train_no":off.train_no,"seat_class":off.seat_class,"departure_time":off.departure_time,
++                "arrival_time":off.arrival_time,"duration_minutes":off.duration_minutes,"stations":off.stations}
++            terms={'offer_id':offer_id,'quantity':quantity,'unit_amount_minor':off.total_amount_minor,
++                'total_amount_minor':off.total_amount_minor*quantity,'currency':off.currency,'journey':journey,
++                'change_policy':off.change_policy,'refund_policy':off.refund_policy,'fare_kind':'ADT',
++                'inventory_observed_units':off.inventory_left,'inventory_reserved':False}
++            lifetime=min(600000,int(off.expires_at.replace(tzinfo=off.expires_at.tzinfo or UTC).timestamp()*1000)-db_now_ms(s))
++            if lifetime<1000:raise ValueError('RAIL_OFFER_EXPIRED_OR_SOLD_OUT')
++            contract=contracts.issue_in(s,'RAIL',new_id('rail_pb'),terms,lifetime_ms=lifetime,account=account)
++            expires=datetime.fromtimestamp(contract.expires_ms/1000,UTC).replace(tzinfo=None)
++            p=RailPrebookRow(prebook_id=contract.prebook_id,offer_id=offer_id,total_amount_minor=terms['total_amount_minor'],
++                currency=off.currency,status='CONFIRMED',price_locked=True,inventory_confirmed=True,expires_at=expires,created_at=now())
++            s.add(p);s.flush()
++            return contracts.projection(contract)|{'status':p.status,'price_locked':True,'inventory_confirmed':True,'expires_at':expires.isoformat()}
++    def create_order(self,account_id,prebook_id,passengers,traveler_ids=None):
++        production_truth_required('RAIL','CREATE_ORDER')
++        with transaction(SessionLocal) as s:
++            request={'passengers':passengers,'traveler_ids':contracts.party_refs(traveler_ids,len(passengers))}
++            contract,replay=contracts.current_in(s,'RAIL',prebook_id,account_id,request)
++            if replay:
++                old=s.get(RailOrderRow,contract.order_id)
++                if not old or old.account_id!=account_id:raise ValueError('RAIL_PREBOOK_ORDER_INTEGRITY_INVALID')
++                return self._order(old)
++            terms=contract.terms_json
++            people=contracts.named_party(passengers,terms['quantity'],adults_only=True)
+             p=s.get(RailPrebookRow,prebook_id)
+-            if not p or p.status!="CONFIRMED" or p.expires_at<now(): raise ValueError("RAIL_PREBOOK_INVALID")
+-            off=s.get(RailOfferRow,p.offer_id)
+-            journey={"origin_station":off.origin_station,"destination_station":off.destination_station,"travel_date":off.travel_date,"train_no":off.train_no,"seat_class":off.seat_class,"departure_time":off.departure_time,"arrival_time":off.arrival_time,"duration_minutes":off.duration_minutes,"stations":off.stations}
+-            o=RailOrderRow(order_id=new_id("rail_ord"),account_id=account_id,prebook_id=prebook_id,status="PAYMENT_PENDING",total_amount_minor=p.total_amount_minor,currency=p.currency,passengers=passengers,payment_method_id=None,booking_reference=None,ticket_numbers=[],current_journey=journey,created_at=now(),updated_at=now())
+-            s.add(o); s.flush(); append_vertical_evidence(s,"RAIL",o.order_id,"ORDER_CREATED",o.status,{"prebook_id":prebook_id}); return self._order(o)
++            if not p or p.status!='CONFIRMED' or p.total_amount_minor!=terms['total_amount_minor'] or p.currency!=terms['currency'] or p.offer_id!=terms['offer_id']:
++                raise ValueError('RAIL_PREBOOK_INVALID')
++            o=RailOrderRow(order_id=new_id('rail_ord'),account_id=account_id,prebook_id=prebook_id,status='PAYMENT_PENDING',
++                total_amount_minor=terms['total_amount_minor'],currency=terms['currency'],passengers=people,payment_method_id=None,
++                booking_reference=None,ticket_numbers=[],current_journey=terms['journey'],created_at=now(),updated_at=now())
++            s.add(o);s.flush();contracts.consume_in(s,contract,account_id,o.order_id,request);p.status='CONSUMED'
++            append_vertical_evidence(s,'RAIL',o.order_id,'ORDER_CREATED',o.status,{'prebook_id':prebook_id,
++                'terms_hash':contract.terms_hash,'passenger_count':terms['quantity'],'unit_amount_minor':terms['unit_amount_minor']})
++            return self._order(o)
+     def checkout(self,account_id,order_id,payment_method_id):
+         production_truth_required("RAIL", "CHECKOUT")
+         with SessionLocal.begin() as s:
+@@ -63,7 +106,7 @@
+         with SessionLocal.begin() as s:
+             o=s.get(RailOrderRow,order_id); o.status=tx['state']; o.updated_at=now(); append_vertical_evidence(s,'RAIL',order_id,'PAYMENT_CAPTURED',o.status,{'payment_intent_id':tx['payment_intent_id'],'capture_id':tx['capture_id'],'external_live':False}); s.flush(); return self._order(o)
+     def _order(self,o):
+-        return {"order_id":o.order_id,"account_id":o.account_id,"status":o.status,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"passengers":o.passengers,"booking_reference":o.booking_reference if o.status=="TICKETED" else None,"ticket_numbers":o.ticket_numbers if o.status=="TICKETED" else [],"journey":o.current_journey,"created_at":o.created_at.isoformat(),"updated_at":o.updated_at.isoformat()}
++        return {"order_id":o.order_id,"account_id":o.account_id,"status":o.status,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"passengers":o.passengers,"passenger_count":len(o.passengers or []),"data_mode":"SIMULATION","external_live":False,"booking_reference":o.booking_reference if o.status=="TICKETED" else None,"ticket_numbers":o.ticket_numbers if o.status=="TICKETED" else [],"journey":o.current_journey,"created_at":o.created_at.isoformat(),"updated_at":o.updated_at.isoformat()}
+     def order(self,account_id,order_id):
+         with SessionLocal() as s:
+             o=s.get(RailOrderRow,order_id)
+@@ -81,11 +124,18 @@
+             return [self._order(x) for x in rows]
+     def change_quote(self,account_id,order_id,new_travel_date,new_seat_class=None):
+         production_truth_required("RAIL", "CHANGE_QUOTE")
++        try:
++            if date.fromisoformat(new_travel_date).isoformat()!=new_travel_date:raise ValueError()
++        except (ValueError,TypeError):raise ValueError('RAIL_DATE_INVALID') from None
+         with SessionLocal.begin() as s:
+             o=s.get(RailOrderRow,order_id)
+             if not o or o.account_id!=account_id or o.status!="TICKETED": raise ValueError("RAIL_ORDER_NOT_CHANGEABLE")
+             current=o.current_journey or {}; seat=new_seat_class or current.get("seat_class","SECOND_CLASS")
+-            fare_diff=12000 if seat!=current.get("seat_class") else 3000; fee=500
++            count=contracts.party_count(len(o.passengers or []))
++            terms=self._terms(s,o)
++            if not terms['change_policy']['allowed']:raise ValueError('RAIL_ORDER_NOT_CHANGEABLE')
++            if seat not in {'SECOND_CLASS','FIRST_CLASS','BUSINESS_CLASS'}:raise ValueError('RAIL_SEAT_CLASS_INVALID')
++            fare_diff=(12000 if seat!=current.get("seat_class") else 3000)*count; fee=terms['change_policy']['fee_minor']*count
+             q=RailChangeQuoteRow(quote_id=new_id("rail_chq"),order_id=order_id,new_travel_date=new_travel_date,new_train_no="G7319",new_seat_class=seat,fare_difference_minor=max(0,fare_diff),change_fee_minor=fee,total_due_minor=max(0,fare_diff)+fee,currency=o.currency,status="QUOTED",expires_at=now()+timedelta(minutes=10),created_at=now())
+             s.add(q); s.flush(); return {"quote_id":q.quote_id,"order_id":order_id,"new_travel_date":q.new_travel_date,"new_train_no":q.new_train_no,"new_seat_class":q.new_seat_class,"fare_difference_minor":q.fare_difference_minor,"change_fee_minor":q.change_fee_minor,"total_due_minor":q.total_due_minor,"currency":q.currency,"expires_at":q.expires_at.isoformat()}
+     def execute_change(self,account_id,order_id,quote_id):
+@@ -104,12 +154,18 @@
+         with SessionLocal() as s:
+             o=s.get(RailOrderRow,order_id)
+             if not o or o.account_id!=account_id or o.status!="TICKETED": raise ValueError("RAIL_ORDER_NOT_REFUNDABLE")
+-            fee=800; amount=max(0,o.total_amount_minor-fee)
++            count=contracts.party_count(len(o.passengers or []))
++            terms=self._terms(s,o)
++            if not terms['refund_policy']['allowed']:raise ValueError('RAIL_ORDER_NOT_REFUNDABLE')
++            retained=sum(q.change_fee_minor for q in s.scalars(select(RailChangeQuoteRow).where(RailChangeQuoteRow.order_id==order_id,RailChangeQuoteRow.status=='EXECUTED')))
++            fee=terms['refund_policy']['fee_minor']*count+retained; amount=max(0,o.total_amount_minor-fee)
+             return {"order_id":order_id,"refund_fee_minor":fee,"refund_amount_minor":amount,"currency":o.currency,"refund_to":"ORIGINAL_PAYMENT_METHOD"}
+     def refund(self,account_id,order_id):
+         production_truth_required("RAIL", "REFUND")
+         quote=self.refund_quote(account_id,order_id)
+-        movement=vertical_money_bridge.refund('RAIL',order_id,quote['refund_amount_minor'],f'rail-refund://{order_id}',f'rail-refund:{order_id}')
++        with SessionLocal() as s:
++            adjustment_ids=list(s.scalars(select(RailChangeQuoteRow.quote_id).where(RailChangeQuoteRow.order_id==order_id,RailChangeQuoteRow.status=='EXECUTED').order_by(RailChangeQuoteRow.created_at,RailChangeQuoteRow.quote_id)))
++        movement=vertical_money_bridge.refund_with_adjustments('RAIL',order_id,adjustment_ids,quote['refund_amount_minor'],f'rail-refund://{order_id}',f'rail-refund:{order_id}')
+         if movement['state']!='CONFIRMED': raise ValueError('RAIL_REFUND_MONEY_NOT_CONFIRMED')
+         with SessionLocal.begin() as s:
+             o=s.get(RailOrderRow,order_id)
+@@ -121,18 +177,27 @@
+             return {"refund_id":r.refund_id,"order_id":order_id,"status":r.status,"refund_fee_minor":r.refund_fee_minor,"refund_amount_minor":r.refund_amount_minor,"currency":o.currency}
+     def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,ticket_numbers=None):
+         if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
+-        state=state.upper();ticket_numbers=list(ticket_numbers or [])
++        state=state.upper();ticket_numbers=ticket_numbers or []
+         with SessionLocal() as s:
+             o=s.get(RailOrderRow,order_id)
+             if not o: raise ValueError("RAIL_ORDER_NOT_FOUND")
+             pending=s.scalar(select(RailChangeQuoteRow).where(RailChangeQuoteRow.order_id==order_id,RailChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(RailChangeQuoteRow.created_at.desc()))
+             if state=='TICKETED' and o.status=='UNKNOWN_EXTERNAL_STATE' and pending:
+-                if not str(supplier_reference or '').strip() or not ticket_numbers: raise ValueError('RAIL_RECONCILIATION_SUPPLIER_REFERENCE_REQUIRED')
++                if not str(supplier_reference or '').strip(): raise ValueError('RAIL_RECONCILIATION_SUPPLIER_REFERENCE_REQUIRED')
++                ticket_numbers=contracts.rail_tickets(ticket_numbers,len(o.passengers or []))
+                 due=pending.total_due_minor;qid=pending.quote_id
+             elif state=='FAILED' and o.status=='UNKNOWN_EXTERNAL_STATE' and pending:due=pending.total_due_minor;qid=pending.quote_id
+             else:due=0;qid=None
+-        if qid and state=='TICKETED':vertical_money_bridge.capture_adjustment('RAIL',qid,due,evidence_reference)
+-        if qid and state=='FAILED':vertical_money_bridge.release_adjustment('RAIL',qid,due,evidence_reference)
++        if qid and due>0 and state in {'TICKETED','FAILED'}:
++            action=vertical_money_bridge.capture_adjustment if state=='TICKETED' else vertical_money_bridge.release_adjustment
++            money=action('RAIL',qid,due,evidence_reference)
++            from go_hotel.db.models import OmnichannelMoneyMovementRow,PaymentOrderRootRow
++            key='capture_id' if state=='TICKETED' else 'release_id'
++            with SessionLocal() as s:
++                root=s.scalar(select(PaymentOrderRootRow).where(PaymentOrderRootRow.business_type=='RAIL_CHANGE',PaymentOrderRootRow.business_id==qid))
++                movement=s.get(OmnichannelMoneyMovementRow,money[key]) if money and money.get(key) else None
++                if not root or not movement or movement.root_payment_intent_id!=root.payment_intent_id or movement.state!='CONFIRMED' or movement.amount_minor!=due or movement.movement_type!=('CAPTURE' if state=='TICKETED' else 'RELEASE'):
++                    raise ValueError('RAIL_CHANGE_MONEY_NOT_CONFIRMED')
+         with SessionLocal.begin() as sess:
+             o=sess.get(RailOrderRow,order_id);pending=sess.scalar(select(RailChangeQuoteRow).where(RailChangeQuoteRow.order_id==order_id,RailChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(RailChangeQuoteRow.created_at.desc()))
+             if not o: raise ValueError("RAIL_ORDER_NOT_FOUND")
+@@ -142,7 +207,8 @@
+             elif state=="TICKETED":
+                 if o.status!="UNKNOWN_EXTERNAL_STATE":raise ValueError("RAIL_RECONCILIATION_NOT_REQUIRED")
+                 if pending:
+-                    if not str(supplier_reference or '').strip() or not ticket_numbers:raise ValueError('RAIL_RECONCILIATION_SUPPLIER_REFERENCE_REQUIRED')
++                    if not str(supplier_reference or '').strip():raise ValueError('RAIL_RECONCILIATION_SUPPLIER_REFERENCE_REQUIRED')
++                    ticket_numbers=contracts.rail_tickets(ticket_numbers,len(o.passengers or []))
+                     j=dict(o.current_journey);j.update({"travel_date":pending.new_travel_date,"train_no":pending.new_train_no,"seat_class":pending.new_seat_class,"departure_time":"08:30","arrival_time":"09:18"});o.current_journey=j;o.total_amount_minor+=pending.total_due_minor;pending.status='EXECUTED';o.booking_reference=supplier_reference;o.ticket_numbers=ticket_numbers;kind='CHANGE_RECONCILED_TO_TICKETED'
+                 else:kind="RECONCILED_TO_TICKETED"
+                 o.status="TICKETED"
+--- a/src/go_hotel/security/deps.py
++++ b/src/go_hotel/security/deps.py
+@@ -51,6 +51,12 @@
+     if p.actor_type != "CONSUMER": raise HTTPException(403,detail="CONSUMER_IDENTITY_REQUIRED")
+     return p
+ 
++def optional_consumer_principal(request:Request, cred:HTTPAuthorizationCredentials|None=Depends(bearer)):
++    """Public browsing can quote anonymously; supplied credentials must be valid."""
++    token=cred.credentials if cred else (request.cookies.get(settings.access_cookie_name) or request.cookies.get(settings.consumer_access_cookie_name))
++    if not token:return None
++    return consumer_principal(current_principal(request,cred))
++
+ def assert_consumer_order(p:Principal, order_id:str):
+     with SessionLocal() as s:
+         row=s.get(OrderRow,order_id)
+--- a/src/go_hotel/services/order_supplier_fulfillment.py
++++ b/src/go_hotel/services/order_supplier_fulfillment.py
+@@ -2,6 +2,8 @@
+ import hashlib,json,uuid
+ from sqlalchemy import select
+ from go_hotel.db.session import SessionLocal
++from go_hotel.autonomy.durable import transaction
++from go_hotel.services.vertical_prebook_contract import rail_tickets
+ from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence
+ from go_hotel.services.consumer_unified_lifecycle import consumer_unified_lifecycle_service
+ from go_hotel.db.models import (
+@@ -26,7 +28,7 @@
+   if state not in {'SUPPLIER_CONFIRMED','UNKNOWN_EXTERNAL_STATE','SUPPLIER_FAILED'}:raise ValueError('INVALID_SUPPLIER_FACT_STATE')
+   if not b.get('evidence_reference'):raise ValueError('SUPPLIER_FACT_EVIDENCE_REQUIRED')
+   if state=='SUPPLIER_CONFIRMED' and not b.get('supplier_confirmation_reference'):raise ValueError('SUPPLIER_CONFIRMATION_REFERENCE_REQUIRED')
+-  with SessionLocal() as s:
++  with transaction(SessionLocal) as s:
+    f=s.scalar(select(Fulfillment).where(Fulfillment.order_supplier_fulfillment_id==fid).with_for_update())
+    if not f:raise ValueError('SUPPLIER_FULFILLMENT_NOT_FOUND')
+    if f.state=='SUPPLIER_CONFIRMED' and state!='SUPPLIER_CONFIRMED':raise ValueError('SUPPLIER_CONFIRMATION_IMMUTABLE')
+@@ -45,6 +47,10 @@
+    projected_life='CONFIRMED' if state=='SUPPLIER_CONFIRMED' else ('FAILED' if state=='SUPPLIER_FAILED' else 'UNKNOWN_EXTERNAL_STATE')
+    if existing_life and existing_life.lifecycle_state in {'COMPLETED','CANCELLED','FAILED'} and projected_life!=existing_life.lifecycle_state:
+     raise ValueError('TERMINAL_LIFECYCLE_SUPPLIER_FACT_REJECTED')
++   if vertical=='RAIL' and state=='SUPPLIER_CONFIRMED':
++    tickets=rail_tickets(b.get('ticket_numbers'),len(order.passengers or []))
++    if f.state=='SUPPLIER_CONFIRMED' and (f.supplier_confirmation_reference!=b.get('supplier_confirmation_reference') or tickets!=order.ticket_numbers or (b.get('external_operation_id') and b['external_operation_id']!=f.external_operation_id)):
++     raise ValueError('RAIL_CONFIRMED_TICKET_IDENTITY_IMMUTABLE')
+    same_external=(not b.get('external_operation_id') or b.get('external_operation_id')==f.external_operation_id)
+    same_confirmation=(state!='SUPPLIER_CONFIRMED' or b.get('supplier_confirmation_reference')==f.supplier_confirmation_reference)
+    if f.state==state and same_external and same_confirmation:
+--- a/src/go_hotel/services/vertical_prebook_contract.py
++++ b/src/go_hotel/services/vertical_prebook_contract.py
+@@ -0,0 +1,93 @@
++"""Immutable quoted terms and single-order consumption. No provider inventory hold is implied."""
++import json
++from sqlalchemy import select
++from go_hotel.autonomy.durable import canonical, db_now_ms, digest
++from go_hotel.db.models import VerticalPrebookContractRow as Row
++
++
++def party_count(value, maximum=9):
++    if type(value) is not int or not 1 <= value <= maximum:
++        raise ValueError('BOOKING_PARTY_COUNT_INVALID')
++    return value
++
++
++def named_party(people, quantity, *, adults_only=False, maximum=9):
++    party_count(quantity,maximum)
++    if not isinstance(people,list) or len(people)!=quantity:
++        raise ValueError('BOOKING_QUOTED_PARTY_COUNT_MISMATCH')
++    result=[]
++    for person in people:
++        if not isinstance(person,dict):raise ValueError('BOOKING_TRAVELER_INVALID')
++        name=person.get('full_name') or person.get('name')
++        if not isinstance(name,str) or not name.strip() or len(name.strip())>128 or name.strip().casefold() in {'go traveler','traveler'}:
++            raise ValueError('BOOKING_CONFIRMED_TRAVELER_NAME_REQUIRED')
++        if adults_only and person.get('type','ADT')!='ADT':
++            raise ValueError('BOOKING_CHILD_FARE_NOT_IN_ADULT_QUOTE')
++        result.append({**person,'full_name':name.strip()})
++    # Real people can share a name. Distinct vault IDs are checked by release_booking_data.
++    return result
++
++def party_refs(refs, quantity):
++    if refs is None or refs==[]:return []
++    if not isinstance(refs,list) or len(refs)!=quantity or any(not isinstance(x,str) or not x.strip() for x in refs) or len(set(refs))!=quantity:
++        raise ValueError('BOOKING_TRAVELER_REFERENCE_COUNT_INVALID')
++    return list(refs)
++
++def rail_tickets(tickets, quantity):
++    if not isinstance(tickets,list) or len(tickets)!=quantity or any(not isinstance(x,str) or not x.strip() or len(x)>128 or x!=x.strip() for x in tickets) or len(set(tickets))!=quantity:
++        raise ValueError('RAIL_TICKET_PARTY_COUNT_OR_IDENTITY_INVALID')
++    return list(tickets)
++
++
++def _identity(row):
++    return {'prebook_id':row.prebook_id,'vertical':row.vertical,'issued_account_id':row.issued_account_id,
++        'terms':row.terms_json,'expires_ms':row.expires_ms}
++
++
++def issue_in(s, vertical, prebook_id, terms, *, lifetime_ms=600000, account=None):
++    if vertical not in {'RAIL','ATTRACTION'} or not isinstance(terms,dict):
++        raise ValueError('PREBOOK_CONTRACT_INVALID')
++    quantity=party_count(terms.get('quantity'),9 if vertical=='RAIL' else 100)
++    unit=terms.get('unit_amount_minor');total=terms.get('total_amount_minor')
++    if type(unit) is not int or unit<=0 or type(total) is not int or total!=unit*quantity or terms.get('currency')!='CNY':
++        raise ValueError('PREBOOK_PRICE_CONTRACT_INVALID')
++    if type(lifetime_ms) is not int or not 1000<=lifetime_ms<=900000:
++        raise ValueError('PREBOOK_VALIDITY_INVALID')
++    now=db_now_ms(s)
++    row=Row(prebook_id=prebook_id,vertical=vertical,issued_account_id=account,owner_id=None,order_id=None,
++        state='QUOTED',terms_json=json.loads(canonical(terms)),terms_hash='',consumed_hash=None,
++        expires_ms=now+lifetime_ms,created_ms=now,consumed_ms=None)
++    row.terms_hash=digest(_identity(row));s.add(row);s.flush()
++    return row
++
++
++def current_in(s, vertical, prebook_id, account, request):
++    """Caller uses a writer transaction; returns existing claimed result only for exact owner/body."""
++    row=s.scalar(select(Row).where(Row.prebook_id==prebook_id).with_for_update())
++    if not row or row.vertical!=vertical or row.issued_account_id not in {None,account}:
++        raise ValueError('PREBOOK_CONTRACT_NOT_FOUND')
++    if digest(_identity(row))!=row.terms_hash:
++        raise ValueError('PREBOOK_CONTRACT_INTEGRITY_FAILED')
++    bound=digest({'account':account,'prebook_id':prebook_id,'request':request})
++    if row.state=='CONSUMED':
++        if row.owner_id!=account or row.consumed_hash!=bound or not row.order_id:
++            raise ValueError('PREBOOK_CONSUMPTION_CONFLICT')
++        return row,True
++    if row.expires_ms<=db_now_ms(s):raise ValueError('PREBOOK_CONTRACT_EXPIRED')
++    if row.owner_id or row.order_id or row.consumed_hash:
++        raise ValueError('PREBOOK_CONTRACT_STATE_INVALID')
++    return row,False
++
++
++def consume_in(s, row, account, order_id, request):
++    if row.state!='QUOTED' or row.expires_ms<=db_now_ms(s):
++        raise ValueError('PREBOOK_CONTRACT_NOT_CONSUMABLE')
++    row.owner_id=account;row.order_id=order_id;row.state='CONSUMED'
++    row.consumed_hash=digest({'account':account,'prebook_id':row.prebook_id,'request':request})
++    row.consumed_ms=db_now_ms(s);s.flush()
++
++
++def projection(row):
++    return {**row.terms_json,'prebook_id':row.prebook_id,'terms_hash':row.terms_hash,
++        'expires_ms':row.expires_ms,'data_mode':'SIMULATION','external_live':False,
++        'provider_inventory_reserved':False}
+--- a/tests/attraction_fixtures.py
++++ b/tests/attraction_fixtures.py
+@@ -0,0 +1,12 @@
++"""Explicit valid setup for historical positive attraction scenarios."""
++def quoted_attraction(client, body, headers=None):
++    body=dict(body)
++    quantity=body.get('quantity',1)
++    quote={k:body[k] for k in ('offer_id','visit_date','session_time','quantity','currency') if k in body}
++    response=client.post('/v1/attractions/prebook',json=quote,headers=headers or {})
++    assert response.status_code==200,response.text
++    q=response.json()['data']
++    body.update(prebook_id=q['prebook_id'],session_time=q['session_time'])
++    if not body.get('traveler_ids') and not body.get('attendees'):
++        body['attendees']=[{'full_name':f'ISOLATED ADULT {i+1}'} for i in range(quantity)]
++    return body
+--- a/tests/test_depth20_api_fulfillment.py
++++ b/tests/test_depth20_api_fulfillment.py
+@@ -0,0 +1,151 @@
++import sqlite3
++from copy import deepcopy
++
++import pytest
++from sqlalchemy import select
++from go_hotel.db.session import SessionLocal
++from go_hotel.db.models import (OrderSupplierFulfillmentRow as Fulfillment, RailOrderRow,
++    RailChangeQuoteRow, OmnichannelMoneyMovementRow as Movement, VerticalPrebookContractRow as Contract)
++from go_hotel.rail.service import rail_service
++from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as supplier
++from tests.test_sprint3b_rail import auth
++
++
++def rail_order(client,quantity=2,seat=0):
++    h=auth(client)
++    offer=client.post('/v1/rail/search',json={'origin_station':'SHA','destination_station':'HZH','travel_date':'2026-09-11'}).json()['data']['items'][seat]
++    quote=client.post(f"/v1/rail/offers/{offer['offer_id']}/prebook",headers=h,json={'quantity':quantity}).json()['data']
++    people=[{'full_name':f'ISOLATED ADULT {i}','type':'ADT'} for i in range(quantity)]
++    response=client.post('/v1/rail/orders',headers=h,json={'prebook_id':quote['prebook_id'],'passengers':people})
++    assert response.status_code==200,response.text
++    return h,response.json()['data'],quote
++
++
++def captured(client,quantity=2,seat=0):
++    h,o,q=rail_order(client,quantity,seat);oid=o['order_id']
++    response=client.post(f'/v1/rail/orders/{oid}/checkout',headers=h,json={'payment_method_id':'isolated-depth20'})
++    assert response.status_code==200,response.text
++    with SessionLocal() as s:
++        f=s.scalar(select(Fulfillment).where(Fulfillment.business_id==oid));fid=f.order_supplier_fulfillment_id
++    fact={'state':'SUPPLIER_CONFIRMED','external_operation_id':'operation-'+oid,'supplier_confirmation_reference':'booking-'+oid,
++        'evidence_reference':'isolated://depth20/'+oid,'ticket_numbers':[f'TICKET-{i}-{oid}' for i in range(quantity)]}
++    return h,o,q,fid,fact
++
++
++@pytest.mark.parametrize('tickets',[[],['ONE'],['SAME','SAME'],[' A','B'],['A',123]])
++def test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities(client,tickets):
++    h,o,q,fid,fact=captured(client);fact['ticket_numbers']=tickets
++    with pytest.raises(ValueError,match='TICKET_PARTY'):supplier.record_supplier_fact(fid,fact)
++    with SessionLocal() as s:
++        assert s.get(RailOrderRow,o['order_id']).status=='PAYMENT_CONFIRMED_AWAITING_SUPPLIER'
++        assert s.get(Fulfillment,fid).state=='CAPTURE_CONFIRMED_READY_FOR_SUPPLIER'
++
++
++def test_confirmed_rail_tickets_replay_exactly_and_cannot_be_replaced(client):
++    h,o,q,fid,fact=captured(client);supplier.record_supplier_fact(fid,fact)
++    assert supplier.record_supplier_fact(fid,fact)['replayed']
++    changed=deepcopy(fact);changed['ticket_numbers'][0]='OTHER-PERSON-TICKET'
++    with pytest.raises(ValueError,match='IDENTITY_IMMUTABLE'):supplier.record_supplier_fact(fid,changed)
++    changed=deepcopy(fact);changed['supplier_confirmation_reference']='OTHER-BOOKING'
++    with pytest.raises(ValueError,match='IDENTITY_IMMUTABLE'):supplier.record_supplier_fact(fid,changed)
++    assert rail_service.order(o['account_id'],o['order_id'])['ticket_numbers']==fact['ticket_numbers']
++
++
++def test_multi_person_change_refund_returns_to_original_and_adjustment_captures(client):
++    h,o,q,fid,fact=captured(client);supplier.record_supplier_fact(fid,fact);oid=o['order_id'];owner=o['account_id']
++    change=rail_service.change_quote(owner,oid,'2026-09-12')
++    assert change['fare_difference_minor']==6000 and change['change_fee_minor']==1000
++    rail_service.execute_change(owner,oid,change['quote_id'])
++    rail_service.admin_external_state(oid,'TICKETED','isolated://reissue','ops','BOOKING-REISSUE',['R1','R2'])
++    quote=rail_service.refund_quote(owner,oid)
++    assert quote['refund_fee_minor']==2600 and quote['refund_amount_minor']==19100
++    refund=rail_service.refund(owner,oid)
++    assert refund['status']=='REFUND_COMPLETED' and refund['refund_amount_minor']==19100
++    with SessionLocal() as s:
++        refunds=list(s.scalars(select(Movement).where(Movement.movement_type=='REFUND')))
++        assert len(refunds)==2 and sum(r.amount_minor for r in refunds)==19100
++        assert len({r.parent_movement_id for r in refunds})==2
++        assert all(r.state=='CONFIRMED' for r in refunds)
++
++
++def test_business_class_change_uses_quoted_zero_fee(client):
++    h,o,q,fid,fact=captured(client,1,2);supplier.record_supplier_fact(fid,fact)
++    assert q['change_policy']['fee_minor']==0
++    assert rail_service.change_quote(o['account_id'],o['order_id'],'2026-09-12')['change_fee_minor']==0
++
++
++def test_wrong_reissued_party_cannot_capture_adjustment(client):
++    h,o,q,fid,fact=captured(client);supplier.record_supplier_fact(fid,fact)
++    change=rail_service.change_quote(o['account_id'],o['order_id'],'2026-09-12')
++    rail_service.execute_change(o['account_id'],o['order_id'],change['quote_id'])
++    with pytest.raises(ValueError,match='TICKET_PARTY'):
++        rail_service.admin_external_state(o['order_id'],'TICKETED','isolated://reissue','ops','BOOKING',['ONE'])
++    with SessionLocal() as s:
++        assert len(list(s.scalars(select(Movement).where(Movement.movement_type=='CAPTURE'))))==1
++        assert s.get(RailChangeQuoteRow,change['quote_id']).status=='PENDING_SUPPLIER'
++
++
++def test_missing_confirmed_adjustment_cannot_mark_change_executed(client,monkeypatch):
++    from go_hotel.rail.service import vertical_money_bridge
++    h,o,q,fid,fact=captured(client);supplier.record_supplier_fact(fid,fact)
++    change=rail_service.change_quote(o['account_id'],o['order_id'],'2026-09-12')
++    rail_service.execute_change(o['account_id'],o['order_id'],change['quote_id'])
++    monkeypatch.setattr(vertical_money_bridge,'capture_adjustment',lambda *a:None)
++    with pytest.raises(ValueError,match='MONEY_NOT_CONFIRMED'):
++        rail_service.admin_external_state(o['order_id'],'TICKETED','isolated://reissue','ops','BOOKING',['ONE','TWO'])
++    with SessionLocal() as s:
++        assert s.get(RailChangeQuoteRow,change['quote_id']).status=='PENDING_SUPPLIER'
++        assert s.get(RailOrderRow,o['order_id']).status=='UNKNOWN_EXTERNAL_STATE'
++
++
++def test_signed_in_prebook_cannot_be_claimed_by_another_consumer(client):
++    h=auth(client,'quote-owner@example.com')
++    other=auth(client,'quote-other@example.com')
++    offer=rail_service.search('SHA','HZH','2026-09-11')[0]
++    q=client.post(f"/v1/rail/offers/{offer['offer_id']}/prebook",headers=h,json={'quantity':1}).json()['data']
++    response=client.post('/v1/rail/orders',headers=other,json={'prebook_id':q['prebook_id'],'passengers':[{'full_name':'OTHER'}]})
++    assert response.status_code==404
++    with SessionLocal() as s:assert s.get(Contract,q['prebook_id']).state=='QUOTED'
++    aq=client.post('/v1/attractions/prebook',headers=h,json={'offer_id':'tokyo_skytree','visit_date':'2026-09-11'}).json()['data']
++    response=client.post('/v1/attractions/orders',headers=other,json={'prebook_id':aq['prebook_id'],'offer_id':'tokyo_skytree','visit_date':'2026-09-11','attendees':[{'name':'OTHER'}]})
++    assert response.status_code==404
++
++
++@pytest.mark.parametrize('quantity',[True,1.2,'2',0,10])
++def test_rail_http_rejects_ambiguous_or_unsupported_quantities(client,quantity):
++    offer=rail_service.search('SHA','HZH','2026-09-11')[0]
++    response=client.post(f"/v1/rail/offers/{offer['offer_id']}/prebook",json={'quantity':quantity})
++    assert response.status_code==422
++
++
++def test_invalid_authentication_never_falls_back_to_anonymous_quote(client):
++    response=client.post('/v1/attractions/prebook',headers={'Authorization':'Bearer invalid'},json={'offer_id':'tokyo_skytree','visit_date':'2026-09-11'})
++    assert response.status_code==401
++
++
++def test_changed_vault_identity_with_same_name_cannot_reuse_prebook():
++    offer=rail_service.search('SHA','HZH','2026-09-11')[0];q=rail_service.prebook(offer['offer_id'])
++    party=[{'full_name':'SAME NAME','type':'ADT'}]
++    rail_service.create_order('owner',q['prebook_id'],party,['person-a'])
++    with pytest.raises(ValueError,match='CONSUMPTION_CONFLICT'):
++        rail_service.create_order('owner',q['prebook_id'],party,['person-b'])
++
++
++@pytest.mark.no_db
++def test_migration_roundtrip_preserves_history_and_refuses_prebook_evidence_loss(tmp_path,monkeypatch):
++    from alembic import command
++    from alembic.config import Config
++    from go_hotel.core.config import settings
++    db=tmp_path/'migration.sqlite3';url='sqlite+pysqlite:///'+str(db)
++    monkeypatch.setattr(settings,'database_url',url)
++    config=Config('alembic.ini');config.set_main_option('sqlalchemy.url',url)
++    with sqlite3.connect(db) as c:c.execute('CREATE TABLE historical_order (id TEXT)');c.execute("INSERT INTO historical_order VALUES ('keep')")
++    command.stamp(config,'0126_travel_operational_facts');command.upgrade(config,'0127_vertical_prebook_contract')
++    command.downgrade(config,'0126_travel_operational_facts');command.upgrade(config,'0127_vertical_prebook_contract')
++    with sqlite3.connect(db) as c:
++        c.execute("INSERT INTO vertical_prebook_contract (prebook_id,vertical,state,terms_json,terms_hash,expires_ms,created_ms) VALUES ('q','RAIL','QUOTED','{}','hash',1,0)")
++    with pytest.raises(RuntimeError,match='DATA_PRESENT'):command.downgrade(config,'0126_travel_operational_facts')
++    with sqlite3.connect(db) as c:
++        assert c.execute('SELECT id FROM historical_order').fetchone()[0]=='keep'
++        assert c.execute('SELECT count(*) FROM vertical_prebook_contract').fetchone()[0]==1
++        assert c.execute('SELECT version_num FROM alembic_version').fetchone()[0]=='0127_vertical_prebook_contract'
+--- a/tests/test_depth20_attraction_contract.py
++++ b/tests/test_depth20_attraction_contract.py
+@@ -0,0 +1,94 @@
++from concurrent.futures import ThreadPoolExecutor
++from datetime import date,timedelta
++from copy import deepcopy
++
++import pytest
++from sqlalchemy import select,func
++from go_hotel.db.session import SessionLocal
++from go_hotel.db.models import AttractionOrderRow,VerticalPrebookContractRow as Contract
++from go_hotel.attractions.service import attraction_service as svc,CATALOG
++from go_hotel.services import vertical_prebook_contract as contracts
++
++
++def quoted(quantity=2,product='tokyo_skytree',session=None):
++    day=(date.today()+timedelta(days=2)).isoformat();q=svc.prebook(product,day,quantity,session_time=session)
++    return q,{'prebook_id':q['prebook_id'],'offer_id':product,'visit_date':day,'session_time':q['session_time'],
++        'quantity':quantity,'currency':'CNY','attendees':[{'full_name':f'ISOLATED {i}'} for i in range(quantity)]}
++
++
++def test_persisted_quote_binds_session_party_and_locked_total():
++    q,b=quoted(session='17:00');order=svc.create_order('owner',b)
++    assert order['quantity']==2 and order['total_amount_minor']==36000 and order['session_time']=='17:00'
++    assert order['voucher_code'] is None
++    assert svc.create_order('owner',b)['order_id']==order['order_id']
++    with SessionLocal() as s:assert s.get(Contract,q['prebook_id']).order_id==order['order_id']
++
++
++def test_unquoted_order_and_unlisted_session_are_rejected():
++    q,b=quoted();b.pop('prebook_id')
++    with pytest.raises(ValueError,match='PREBOOK_REQUIRED'):svc.create_order('owner',b)
++    with pytest.raises(ValueError,match='SESSION_INVALID'):quoted(session='03:17')
++
++
++@pytest.mark.parametrize('field,value',[('quantity',1),('currency','USD'),('visit_date','2030-01-01'),('session_time','03:17'),('offer_id','teamlab_planets')])
++def test_client_cannot_change_quote_terms(field,value):
++    q,b=quoted();b[field]=value
++    with pytest.raises(ValueError,match='PREBOOK_(BODY|SESSION)_MISMATCH'):svc.create_order('owner',b)
++    with SessionLocal() as s:assert s.get(Contract,q['prebook_id']).state=='QUOTED'
++
++
++def test_quantity_and_attendees_must_match():
++    q,b=quoted();b['attendees']=b['attendees'][:1]
++    with pytest.raises(ValueError,match='PARTY_COUNT_MISMATCH'):svc.create_order('owner',b)
++
++
++def test_cross_account_and_changed_person_cannot_reuse_consumed_quote():
++    q,b=quoted();svc.create_order('owner',b)
++    with pytest.raises(ValueError,match='CONSUMPTION_CONFLICT'):svc.create_order('other',b)
++    changed=deepcopy(b);changed['attendees'][0]['full_name']='DIFFERENT'
++    with pytest.raises(ValueError,match='CONSUMPTION_CONFLICT'):svc.create_order('owner',changed)
++
++
++def test_current_inventory_is_rechecked_before_order_creation(monkeypatch):
++    q,b=quoted();monkeypatch.setitem(CATALOG['tokyo_skytree'],'inventory',1)
++    with pytest.raises(ValueError,match='INVENTORY_CHANGED'):svc.create_order('owner',b)
++
++
++def test_locked_price_and_refund_terms_do_not_change_with_catalog(monkeypatch):
++    q,b=quoted();monkeypatch.setitem(CATALOG['tokyo_skytree'],'price',99999)
++    monkeypatch.setitem(CATALOG['tokyo_skytree'],'refundable',False)
++    order=svc.create_order('owner',b)
++    assert order['total_amount_minor']==36000
++    with SessionLocal.begin() as s:s.get(AttractionOrderRow,order['order_id']).status='CONFIRMED'
++    assert svc.refund_quote('owner',order['order_id'])['refund_amount_minor']==36000
++
++
++def test_expired_quote_cannot_be_consumed(monkeypatch):
++    q,b=quoted();now=contracts.db_now_ms;monkeypatch.setattr(contracts,'db_now_ms',lambda s:now(s)+700000)
++    with pytest.raises(ValueError,match='EXPIRED'):svc.create_order('owner',b)
++
++
++def test_parallel_consumption_makes_one_order():
++    q,b=quoted()
++    def consume(i):
++        try:return svc.create_order('owner',b)['order_id']
++        except ValueError:return None
++    with ThreadPoolExecutor(max_workers=6) as pool:results=list(pool.map(consume,range(6)))
++    assert None not in results and len(set(results))==1
++    with SessionLocal() as s:assert s.scalar(select(func.count()).select_from(AttractionOrderRow))==1
++
++
++def test_failed_evidence_rolls_back_contract_and_order(monkeypatch):
++    from go_hotel.attractions import service
++    q,b=quoted()
++    def fail(*args,**kw):raise RuntimeError('isolated failure')
++    monkeypatch.setattr(service,'append_vertical_evidence',fail)
++    with pytest.raises(RuntimeError):svc.create_order('owner',b)
++    with SessionLocal() as s:
++        assert s.get(Contract,q['prebook_id']).state=='QUOTED'
++        assert s.scalar(select(func.count()).select_from(AttractionOrderRow))==0
++
++
++def test_declared_child_cannot_use_an_adult_product_quote():
++    q,b=quoted(1);b['attendees'][0]['type']='CHD'
++    with pytest.raises(ValueError,match='CHILD_FARE'):svc.create_order('owner',b)
+--- a/tests/test_depth20_prebook_contract.py
++++ b/tests/test_depth20_prebook_contract.py
+@@ -0,0 +1,102 @@
++from concurrent.futures import ThreadPoolExecutor
++from datetime import date,timedelta
++from copy import deepcopy
++
++import pytest
++from sqlalchemy import select,func
++from go_hotel.db.session import SessionLocal
++from go_hotel.db.models import RailOrderRow,RailPrebookRow,VerticalPrebookContractRow as Contract
++from go_hotel.rail.service import rail_service
++from go_hotel.services import vertical_prebook_contract as contracts
++
++
++def quote(quantity=2,account=None):
++    offer=rail_service.search('SHA','HZH',(date.today()+timedelta(days=2)).isoformat())[0]
++    return rail_service.prebook(offer['offer_id'],quantity,account)
++
++
++def party(count=2):return [{'full_name':f'ISOLATED {i}','type':'ADT'} for i in range(count)]
++
++
++def test_party_quote_binds_total_count_and_one_order():
++    q=quote();assert q['quantity']==2 and q['total_amount_minor']==14700 and q['unit_amount_minor']==7350
++    assert q['provider_inventory_reserved'] is False
++    order=rail_service.create_order('owner',q['prebook_id'],party())
++    assert order['total_amount_minor']==14700 and order['passenger_count']==2
++    replay=rail_service.create_order('owner',q['prebook_id'],party())
++    assert replay['order_id']==order['order_id']
++    with SessionLocal() as s:
++        assert s.get(RailPrebookRow,q['prebook_id']).status=='CONSUMED'
++        assert s.get(Contract,q['prebook_id']).order_id==order['order_id']
++        assert s.scalar(select(func.count()).select_from(RailOrderRow))==1
++
++
++@pytest.mark.parametrize('count',[0,1,3])
++def test_unquoted_party_size_cannot_change_price_at_order_creation(count):
++    q=quote()
++    with pytest.raises(ValueError,match='PARTY_COUNT_MISMATCH'):rail_service.create_order('owner',q['prebook_id'],party(count))
++    with SessionLocal() as s:assert s.get(Contract,q['prebook_id']).state=='QUOTED'
++
++
++def test_same_quote_cannot_be_reused_by_another_owner_or_changed_party():
++    q=quote();rail_service.create_order('owner',q['prebook_id'],party())
++    with pytest.raises(ValueError,match='CONSUMPTION_CONFLICT'):rail_service.create_order('other',q['prebook_id'],party())
++    people=party();people[0]['full_name']='DIFFERENT PERSON'
++    with pytest.raises(ValueError,match='CONSUMPTION_CONFLICT'):rail_service.create_order('owner',q['prebook_id'],people)
++
++
++def test_issued_quote_is_private_to_its_account_before_first_consumption():
++    q=quote(account='owner')
++    with pytest.raises(ValueError,match='NOT_FOUND'):rail_service.create_order('other',q['prebook_id'],party())
++    assert rail_service.create_order('owner',q['prebook_id'],party())['passenger_count']==2
++
++
++def test_expired_quote_cannot_be_consumed_but_exact_completed_request_can_be_replayed(monkeypatch):
++    q=quote();old=contracts.db_now_ms
++    monkeypatch.setattr(contracts,'db_now_ms',lambda s:old(s)+700000)
++    with pytest.raises(ValueError,match='EXPIRED'):rail_service.create_order('owner',q['prebook_id'],party())
++    monkeypatch.setattr(contracts,'db_now_ms',old)
++    order=rail_service.create_order('owner',q['prebook_id'],party())
++    monkeypatch.setattr(contracts,'db_now_ms',lambda s:old(s)+700000)
++    assert rail_service.create_order('owner',q['prebook_id'],party())['order_id']==order['order_id']
++
++
++def test_tampered_terms_cannot_reprice_an_existing_quote():
++    q=quote()
++    with SessionLocal.begin() as s:
++        row=s.get(Contract,q['prebook_id']);row.terms_json=dict(row.terms_json,total_amount_minor=1)
++    with pytest.raises(ValueError,match='INTEGRITY'):rail_service.create_order('owner',q['prebook_id'],party())
++
++
++def test_order_and_quote_consumption_roll_back_together(monkeypatch):
++    from go_hotel.rail import service
++    q=quote()
++    def fail(*args,**kwargs):raise RuntimeError('isolated failed evidence commit')
++    monkeypatch.setattr(service,'append_vertical_evidence',fail)
++    with pytest.raises(RuntimeError):rail_service.create_order('owner',q['prebook_id'],party())
++    with SessionLocal() as s:
++        assert s.get(Contract,q['prebook_id']).state=='QUOTED'
++        assert s.get(RailPrebookRow,q['prebook_id']).status=='CONFIRMED'
++        assert s.scalar(select(func.count()).select_from(RailOrderRow))==0
++
++
++def test_parallel_consumers_cannot_create_multiple_orders_for_one_prebook():
++    q=quote()
++    def consume(i):
++        try:return rail_service.create_order(f'owner-{i}',q['prebook_id'],party())['order_id']
++        except ValueError:return None
++    with ThreadPoolExecutor(max_workers=8) as pool:results=list(pool.map(consume,range(8)))
++    assert len([x for x in results if x])==1
++    with SessionLocal() as s:assert s.scalar(select(func.count()).select_from(RailOrderRow))==1
++
++
++@pytest.mark.parametrize('person',[{'full_name':'GO Traveler'},{'full_name':' '},{'full_name':'CHILD','type':'CHD'}])
++def test_placeholder_name_or_child_cannot_be_used_for_quoted_adult(person):
++    q=quote(1)
++    with pytest.raises(ValueError):rail_service.create_order('owner',q['prebook_id'],[person])
++
++
++def test_legacy_prebook_missing_terms_is_not_backfilled_from_current_offer():
++    q=quote()
++    with SessionLocal.begin() as s:s.delete(s.get(Contract,q['prebook_id']))
++    with pytest.raises(ValueError,match='NOT_FOUND'):rail_service.create_order('owner',q['prebook_id'],party())
+--- a/tests/test_final_depth_terminal_hardening.py
++++ b/tests/test_final_depth_terminal_hardening.py
+@@ -1,3 +1,4 @@
++from tests.attraction_fixtures import quoted_attraction
+ import pytest
+ from datetime import timedelta
+ from sqlalchemy import select
+@@ -24,7 +25,7 @@
+ def test_attraction_expired_quote_fails_closed(client):
+     h=attr_auth(client)
+     off=client.post('/v1/attractions/search',json={'destination':'东京','visit_date':'2026-09-03'}).json()['data']['items'][0]
+-    o=client.post('/v1/attractions/orders',headers=h,json={'offer_id':off['offer_id'],'visit_date':'2026-09-03','quantity':1}).json()['data']
++    o=client.post('/v1/attractions/orders',headers=h,json=quoted_attraction(client,{'offer_id':off['offer_id'],'visit_date':'2026-09-03','quantity':1})).json()['data']
+     pay_and_confirm(client,h,'ATTRACTION_ORDER',o['order_id'],'ATTR-'+o['order_id'][-6:],voucher_code='V-'+o['order_id'][-6:])
+     q=client.post(f"/v1/attractions/orders/{o['order_id']}/change-quote",headers=h,json={'new_visit_date':'2026-09-04'}).json()['data']
+     with SessionLocal.begin() as s:
+@@ -75,7 +76,7 @@
+     from go_hotel.services.rc20_vertical_evidence import list_vertical_evidence
+     h=attr_auth(client)
+     off=client.post('/v1/attractions/search',json={'destination':'东京','visit_date':'2026-09-03'}).json()['data']['items'][0]
+-    o=client.post('/v1/attractions/orders',headers=h,json={'offer_id':off['offer_id'],'visit_date':'2026-09-03','quantity':1}).json()['data']
++    o=client.post('/v1/attractions/orders',headers=h,json=quoted_attraction(client,{'offer_id':off['offer_id'],'visit_date':'2026-09-03','quantity':1})).json()['data']
+     pay_and_confirm(client,h,'ATTRACTION_ORDER',o['order_id'],'ATTR-'+o['order_id'][-6:],voucher_code='VOUCH-'+o['order_id'][-6:])
+     assert client.post(f"/v1/attractions/orders/{o['order_id']}/redeem",headers=h,json={'evidence_reference':'gate-scan'}).status_code==200
+     with SessionLocal() as s:
+--- a/tests/test_final_depth_vault_booking_entry.py
++++ b/tests/test_final_depth_vault_booking_entry.py
+@@ -1,3 +1,4 @@
++from tests.attraction_fixtures import quoted_attraction
+ from sqlalchemy import select
+ from go_hotel.services.personal_travel_vault import personal_travel_vault_service as vault
+ from go_hotel.db.session import SessionLocal
+@@ -53,7 +54,7 @@
+     assert rental.json()['data']['drivers']==[{'full_name':'VAULT TESTER','driver_license_number':'DL-12345678'}]
+     # Attraction
+     attrs=client.post('/v1/attractions/search',json={'destination':'东京','visit_date':'2026-09-03'}).json()['data']['items'][0]
+-    attr=client.post('/v1/attractions/orders',headers=h,json={'offer_id':attrs['offer_id'],'visit_date':'2026-09-03','quantity':1,'traveler_ids':[tid]}); assert attr.status_code==200,attr.text
++    attr=client.post('/v1/attractions/orders',headers=h,json=quoted_attraction(client,{'offer_id':attrs['offer_id'],'visit_date':'2026-09-03','quantity':1,'traveler_ids':[tid]})); assert attr.status_code==200,attr.text
+     assert attr.json()['data']['attendees']==[{'full_name':'VAULT TESTER'}]
+ 
+     with SessionLocal() as s:
+--- a/tests/test_master03_closure.py
++++ b/tests/test_master03_closure.py
+@@ -1,3 +1,4 @@
++from tests.attraction_fixtures import quoted_attraction
+ from datetime import date, timedelta
+ import json
+ import pytest
+@@ -89,7 +90,7 @@
+         offer=post(base+'/search',body)['items'][0]
+         out[vertical]=post(base+'/orders',{**body,'offer_id':offer['offer_id'],'traveler_ids':[tid]})
+     offer=post('/v1/attractions/search',{'destination':'东京','visit_date':d})['items'][0]
+-    out['ATTRACTION']=post('/v1/attractions/orders',{'offer_id':offer['offer_id'],'visit_date':d,'quantity':1,'traveler_ids':[tid]})
++    out['ATTRACTION']=post('/v1/attractions/orders',quoted_attraction(client,{'offer_id':offer['offer_id'],'visit_date':d,'quantity':1,'traveler_ids':[tid]}))
+     return headers,out
+ 
+ def test_all_six_explicit_checkouts_bind_amount_and_capture_once(client,monkeypatch):
+--- a/tests/test_parent_implementation_code_review_debt_closure.py
++++ b/tests/test_parent_implementation_code_review_debt_closure.py
+@@ -148,7 +148,7 @@
+ 
+     heads = subprocess.run([sys.executable, "-m", "alembic", "heads"], env=env, text=True, capture_output=True, check=True)
+     head_lines = [line.strip() for line in heads.stdout.splitlines() if line.strip().endswith("(head)")]
+-    assert head_lines == ["0126_travel_operational_facts (head)"]
++    assert head_lines == ["0127_vertical_prebook_contract (head)"]
+ 
+     subprocess.run([sys.executable, "-m", "alembic", "upgrade", "0114_ext_truth_incident_hard"], env=env, text=True, capture_output=True, check=True)
+     conn = sqlite3.connect(db)
+--- a/tests/test_rc20_2_all_b_to_a.py
++++ b/tests/test_rc20_2_all_b_to_a.py
+@@ -1,3 +1,4 @@
++from tests.attraction_fixtures import quoted_attraction
+ from pathlib import Path
+ from go_hotel.mobility.service import mobility_service
+ from go_hotel.attractions.service import attraction_service
+@@ -77,7 +78,7 @@
+     h=auth(client,'rc20-attr@example.com')
+     s=client.post('/v1/attractions/search',json={'destination':'东京','visit_date':'2026-09-03'}).json()['data']['items']
+     off=next(x for x in s if x['offer_id']=='tokyo_skytree')
+-    o=client.post('/v1/attractions/orders',headers=h,json={'offer_id':off['offer_id'],'visit_date':'2026-09-03','quantity':1,'attendees':[{'name':'A'}]}).json()['data']
++    o=client.post('/v1/attractions/orders',headers=h,json=quoted_attraction(client,{'offer_id':off['offer_id'],'visit_date':'2026-09-03','quantity':1,'attendees':[{'name':'A'}]})).json()['data']
+     oid=o['order_id']
+     pay_and_confirm(client,h,'ATTRACTION_ORDER',oid,'ATTR-'+oid[-6:],voucher_code='V-'+oid[-6:])
+     attraction_service.admin_external_state(oid,'UNKNOWN_EXTERNAL_STATE','supplier-timeout','expert-review')
+@@ -93,7 +94,7 @@
+ 
+ def test_attraction_supplier_closure_blocks_consumer_mutations(client):
+     h=auth(client,'rc20-attr-close@example.com')
+-    o=client.post('/v1/attractions/orders',headers=h,json={'offer_id':'tokyo_skytree','visit_date':'2026-09-03','quantity':1}).json()['data']
++    o=client.post('/v1/attractions/orders',headers=h,json=quoted_attraction(client,{'offer_id':'tokyo_skytree','visit_date':'2026-09-03','quantity':1})).json()['data']
+     pay_and_confirm(client,h,'ATTRACTION_ORDER',o['order_id'],'ATTR-'+o['order_id'][-6:],voucher_code='V-'+o['order_id'][-6:])
+     attraction_service.admin_external_state(o['order_id'],'CLOSED_BY_SUPPLIER','closure-notice','expert-review')
+     assert client.post(f"/v1/attractions/orders/{o['order_id']}/change-quote",headers=h,json={'new_visit_date':'2026-09-04'}).status_code==422
+--- a/tests/test_sprint3d_attractions.py
++++ b/tests/test_sprint3d_attractions.py
+@@ -1,3 +1,4 @@
++from tests.attraction_fixtures import quoted_attraction
+ from go_hotel.attractions.service import attraction_service
+ from tests.vertical_transaction_helpers import pay_and_confirm
+ def auth(client):
+@@ -7,11 +8,11 @@
+  h=auth(client)
+  s=client.post("/v1/attractions/search",json={"destination":"东京","visit_date":"2026-09-03"});assert s.status_code==200;items=s.json()["data"]["items"];assert len(items)>=3;assert "eligibility" in items[0] and "inventory_units" in items[0]
+  off=items[0];p=client.post("/v1/attractions/prebook",json={"offer_id":off["offer_id"],"visit_date":"2026-09-03","quantity":2});assert p.status_code==200;assert p.json()["data"]["inventory_confirmed"] is True
+- o=client.post("/v1/attractions/orders",headers=h,json={"offer_id":off["offer_id"],"visit_date":"2026-09-03","quantity":2,"attendees":[{"name":"A"},{"name":"B"}]});assert o.status_code==200;d=o.json()["data"];assert d["status"]=="PAYMENT_PENDING" and d["voucher_code"] is None;pay_and_confirm(client,h,"ATTRACTION_ORDER",d["order_id"],"ATTR-"+d["order_id"][-6:],voucher_code="VCHR-"+d["order_id"][-6:]);d=client.get(f"/v1/attractions/orders/{d['order_id']}",headers=h).json()["data"];assert d["status"]=="CONFIRMED" and d["voucher_code"]
++ o=client.post("/v1/attractions/orders",headers=h,json={"prebook_id":p.json()["data"]["prebook_id"],"offer_id":off["offer_id"],"visit_date":"2026-09-03","quantity":2,"attendees":[{"name":"A"},{"name":"B"}]});assert o.status_code==200;d=o.json()["data"];assert d["status"]=="PAYMENT_PENDING" and d["voucher_code"] is None;pay_and_confirm(client,h,"ATTRACTION_ORDER",d["order_id"],"ATTR-"+d["order_id"][-6:],voucher_code="VCHR-"+d["order_id"][-6:]);d=client.get(f"/v1/attractions/orders/{d['order_id']}",headers=h).json()["data"];assert d["status"]=="CONFIRMED" and d["voucher_code"]
+  oid=d["order_id"];q=client.post(f"/v1/attractions/orders/{oid}/change-quote",headers=h,json={"new_visit_date":"2026-09-04","new_session_time":"17:00"});assert q.status_code==200
+  qid=q.json()["data"]["quote_id"];e=client.post(f"/v1/attractions/orders/{oid}/execute-change/{qid}",headers=h);assert e.status_code==200 and e.json()["data"]["status"]=="UNKNOWN_EXTERNAL_STATE" and e.json()["data"]["voucher_code"] is None
+  rec=attraction_service.admin_external_state(oid,"CONFIRMED","supplier-change-proof","ops","ATTR-REISSUED","VCHR-REISSUED");assert rec["visit_date"]=="2026-09-04" and rec["voucher_code"]=="VCHR-REISSUED"
+  rq=client.get(f"/v1/attractions/orders/{oid}/refund-quote",headers=h);assert rq.status_code==200 and rq.json()["data"]["refund_amount_minor"]>0
+  rr=client.post(f"/v1/attractions/orders/{oid}/refund",headers=h);assert rr.status_code==200 and rr.json()["data"]["status"]=="REFUND_COMPLETED"
+ def test_non_refundable_experience(client):
+- h=auth(client);o=client.post("/v1/attractions/orders",headers=h,json={"offer_id":"teamlab_planets","visit_date":"2026-09-03","quantity":1}).json()["data"];pay_and_confirm(client,h,"ATTRACTION_ORDER",o["order_id"],"ATTR-"+o["order_id"][-6:],voucher_code="VCHR-"+o["order_id"][-6:]);rq=client.get(f"/v1/attractions/orders/{o['order_id']}/refund-quote",headers=h).json()["data"];assert rq["refund_amount_minor"]==0 and rq["refundable"] is False
++ h=auth(client);o=client.post("/v1/attractions/orders",headers=h,json=quoted_attraction(client,{"offer_id":"teamlab_planets","visit_date":"2026-09-03","quantity":1})).json()["data"];pay_and_confirm(client,h,"ATTRACTION_ORDER",o["order_id"],"ATTR-"+o["order_id"][-6:],voucher_code="VCHR-"+o["order_id"][-6:]);rq=client.get(f"/v1/attractions/orders/{o['order_id']}/refund-quote",headers=h).json()["data"];assert rq["refund_amount_minor"]==0 and rq["refundable"] is False
+--- a/tests_frontend/rail_attraction_booking.test.mjs
++++ b/tests_frontend/rail_attraction_booking.test.mjs
+@@ -0,0 +1,89 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import vm from 'node:vm';
++
++const context={window:{},Date};
++vm.runInNewContext(fs.readFileSync('frontend/consumer/rail-attraction-booking.js','utf8'),context);
++const {createFlow,validateQuote}=context.window.GOPartyBooking;
++const rail={offer_id:'rail-1',travel_date:'2026-09-12',train_no:'G7315',seat_class:'SECOND_CLASS',origin_station:'SHA',destination_station:'HZH',inventory_left:18};
++const attraction={offer_id:'attr-1',product_name:'ISOLATED EXPERIENCE',available_sessions:['16:00','17:00'],session_time:'16:00',inventory_units:8,ticket_type:'成人票',eligibility:{age:'12+ adult',id_required:true}};
++function setup(vertical='RAIL', options={}) {
++  const calls=[],texts=[];let time=1000,dialogs=0;
++  const offer=vertical==='RAIL'?rail:attraction;
++  const q={offer_id:offer.offer_id,prebook_id:'quote-20',terms_hash:'contract-hash',quantity:2,unit_amount_minor:7350,total_amount_minor:14700,currency:'CNY',expires_ms:2000,
++    journey:rail,visit_date:'2026-09-12',session_time:'17:00',product_name:attraction.product_name,eligibility:attraction.eligibility,changeable:true,refundable:false,
++    change_policy:{allowed:true,fee_minor:500},refund_policy:{allowed:true,fee_minor:800}};
++  const deps={now:()=>time,uuid:()=>`key-${calls.length}`,money:a=>`CNY ${a/100}`,
++    dialog:async(title,html,button,accept)=>{
++      dialogs++;texts.push({title,html,button});if(options.cancel===dialogs)return null;
++      return accept({querySelector:selector=>selector==='[data-quote-consent]'?{checked:options.consent!==false}:{value:selector==='#goPartyCount'?'2':'17:00'}});
++    },
++    travelers:async(v,n)=>{calls.push({step:'travelers',vertical:v,count:n});if(options.expire)time=2500;return options.cancelParty?null:options.ids||['a','b'];},
++    post:async(path,body,key)=>{calls.push({step:'post',path,body,key});if(path.endsWith('prebook'))return structuredClone(q);return {order_id:'order-20',total_amount_minor:14700,currency:'CNY',status:'PAYMENT_PENDING'};},
++    pay:async(v,o)=>{calls.push({step:'pay',vertical:v,order:o});if(options.payError)throw Error('payment connection unavailable');return null;},
++    show:async(v,id)=>{calls.push({step:'show',vertical:v,id});}
++  };
++  return {flow:createFlow(deps),deps,q,calls,texts,offer,criteria:{visit_date:'2026-09-12'}};
++}
++
++test('rail order preserves party, immutable prebook and original total through payment cancellation',async()=>{
++  const s=setup();await s.flow('RAIL',s.offer,s.criteria);
++  assert.equal(s.calls[0].body.quantity,2);
++  const order=s.calls.find(c=>c.path==='/v1/rail/orders');
++  assert.deepEqual(JSON.parse(JSON.stringify(order.body)),{prebook_id:'quote-20',traveler_ids:['a','b']});
++  assert.match(order.key,/quote-20:a:b/);
++  assert.equal(s.calls.find(c=>c.step==='pay').order.total_amount_minor,14700);
++  assert.equal(s.calls.at(-1).step,'show');
++  assert.match(s.texts[1].html,/CNY 147/);assert.match(s.texts[1].html,/改签手续费 CNY 10/);assert.doesNotMatch(s.texts[1].html,/\[object Object\]/);
++});
++
++test('attraction order uses the quoted slot, quantity and prebook and shows eligibility',async()=>{
++  const s=setup('ATTRACTION');await s.flow('ATTRACTION',s.offer,s.criteria);
++  const order=s.calls.find(c=>c.path==='/v1/attractions/orders');
++  assert.equal(order.body.session_time,'17:00');assert.equal(order.body.quantity,2);assert.equal(order.body.prebook_id,'quote-20');
++  assert.match(s.texts[1].html,/不可退款/);assert.match(s.texts[1].html,/有效身份证件/);assert.doesNotMatch(s.texts[1].html,/\[object Object\]/);
++});
++
++for(const cancel of [1,2])test(`cancelling confirmation step ${cancel} never creates an order or payment`,async()=>{
++  const s=setup('ATTRACTION',{cancel});assert.equal(await s.flow('ATTRACTION',s.offer,s.criteria),null);
++  assert.equal(s.calls.filter(c=>c.path==='/v1/attractions/orders'||c.step==='pay').length,0);
++});
++
++test('cancelled party selection cannot reach order creation',async()=>{
++  const s=setup('RAIL',{cancelParty:true});assert.equal(await s.flow('RAIL',s.offer,s.criteria),null);
++  assert.equal(s.calls.filter(c=>c.step==='post').length,1);
++});
++
++test('quote that expires during traveler selection cannot create or pay an order',async()=>{
++  const s=setup('RAIL',{expire:true});await assert.rejects(s.flow('RAIL',s.offer,s.criteria),/过期/);
++  assert.equal(s.calls.filter(c=>c.path==='/v1/rail/orders'||c.step==='pay').length,0);
++});
++
++test('missing final consent never creates an order',async()=>{
++  const s=setup('RAIL',{consent:false});await assert.rejects(s.flow('RAIL',s.offer,s.criteria),/确认预订/);
++  assert.equal(s.calls.filter(c=>c.path==='/v1/rail/orders').length,0);
++});
++
++test('different people are required for every quoted place',async()=>{
++  const s=setup('ATTRACTION',{ids:['a','a']});await assert.rejects(s.flow('ATTRACTION',s.offer,s.criteria),/人数/);
++  assert.equal(s.calls.filter(c=>c.path==='/v1/attractions/orders').length,0);
++});
++
++test('an uncertain payment still opens the existing order for recovery',async()=>{
++  const s=setup('RAIL',{payError:true});await assert.rejects(s.flow('RAIL',s.offer,s.criteria),/connection/);
++  assert.equal(s.calls.at(-1).step,'show');assert.equal(s.calls.at(-1).id,'order-20');
++});
++
++test('repeated clicks cannot start a second booking while confirmation is open',async()=>{
++  const s=setup();let release;const deps={...s.deps,dialog:()=>new Promise(resolve=>{release=resolve;})};
++  const flow=createFlow(deps),first=flow('RAIL',s.offer,s.criteria);
++  assert.equal(await flow('ATTRACTION',attraction,s.criteria),null);release(null);assert.equal(await first,null);assert.equal(s.calls.length,0);
++});
++
++test('mismatched total, journey or slot is refused before any traveler consent',()=>{
++  const s=setup();const selection={quantity:2};
++  assert.throws(()=>validateQuote({...s.q,total_amount_minor:7350},'RAIL',rail,selection,1000),/变化/);
++  assert.throws(()=>validateQuote({...s.q,journey:{...rail,train_no:'OTHER'}},'RAIL',rail,selection,1000),/车次/);
++  assert.throws(()=>validateQuote({...s.q,offer_id:'attr-1'},'ATTRACTION',attraction,{quantity:2,visit_date:'2026-09-12',session_time:'03:17'},1000),/场次/);
++});
