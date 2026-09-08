@@ -13,14 +13,16 @@ class ChainAutonomousBuildService:
  def enumerate_and_enqueue(self,*,chain:ChainCode,fetch_page,cursor:str|None=None,actor:str="SYSTEM")->dict:
   adapter_cls=ADAPTERS.get(chain)
   if adapter_cls is None:raise ValueError("CHAIN_DIRECTORY_ADAPTER_NOT_IMPLEMENTED")
-  adapter=adapter_cls();directory_evidence=None
+  adapter=adapter_cls();directory_evidence=None;durable=None
   if chain in DURABLE_HIERARCHICAL:
-   seeds,next_cursor,directory_evidence=DurableHierarchicalDirectoryAdapter(adapter).enumerate_page(fetch_page,cursor,actor=actor)
+   durable=DurableHierarchicalDirectoryAdapter(adapter);seeds,prepared_cursor,directory_evidence=durable.enumerate_page(fetch_page,cursor,actor=actor);next_cursor=prepared_cursor
   else:seeds,next_cursor=adapter.enumerate_page(fetch_page,cursor)
   queued=[]
   for seed in seeds:
    payload={"task_type":"CHAIN_HOTEL","chain":seed.chain.value,"official_property_id":seed.official_property_id,"idempotency_key":seed.idempotency_key,"directory_url":seed.directory_url,"discovery_seed":discovery_seed(seed)}
    task=chain_task_lease_service.enqueue(task_id=seed.idempotency_key,payload=payload,actor=actor);queued.append({"task_id":task.task_id,"state":task.state,"attempt":task.attempt})
+  if durable is not None and seeds:
+   next_cursor,commit_evidence=durable.commit_emission(cursor=prepared_cursor,actor=actor);directory_evidence={**(directory_evidence or {}),**commit_evidence,"emission_committed":True}
   return {"chain":chain.value,"enumerated":len(seeds),"tasks":queued,"next_cursor":next_cursor,"directory_complete":next_cursor is None,"directory_evidence":directory_evidence}
  def process_one(self,*,worker_id:str,actor:str="SYSTEM",lease_seconds:int=180,task_id:str|None=None)->dict|None:
   task=chain_task_lease_service.claim(worker_id=worker_id,lease_seconds=lease_seconds,actor=actor,task_type="CHAIN_HOTEL",task_id=task_id)
