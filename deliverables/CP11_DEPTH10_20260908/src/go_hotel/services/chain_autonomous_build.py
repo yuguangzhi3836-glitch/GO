@@ -30,6 +30,10 @@ class ChainAutonomousBuildService:
                 registration=discovery.register_seed(seed,actor);result=discovery.run_job(registration["job_id"],actor,max_retries=2);heartbeat.assert_healthy()
             build_state=result.get("build_state")
             if build_state!="READY":raise ValueError(f"CHAIN_BUILD_NOT_READY:{build_state}")
+            if payload.get("chain")=="HYATT":
+                from .hyatt_build_evidence_bridge import record_hyatt_build_evidence
+                enriched=dict(result);enriched.setdefault("job_id",registration["job_id"])
+                record_hyatt_build_evidence(task_id=task.task_id,payload=payload,result=enriched,actor=actor)
             chain_task_lease_service.ack(task_id=task.task_id,worker_id=worker_id,result={"job_id":registration["job_id"],"hotel_id":result.get("hotel_id"),"build_state":build_state,"failure_count":result.get("failure_count")},actor=actor)
             return {"task_id":task.task_id,"state":"ACKED","result":result}
         except Exception as exc:
