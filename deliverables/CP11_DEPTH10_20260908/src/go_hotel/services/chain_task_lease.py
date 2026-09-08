@@ -2,7 +2,9 @@
 
 DB event stream is the durable authority: enqueue -> claim(lease) -> heartbeat ->
 ack, with retry/dead-letter semantics. Claims can be partitioned by task_type and
-can target an exact task_id for deterministic acceptance cohorts.
+can target an exact task_id for deterministic acceptance cohorts. Terminal ACKED
+tasks are never silently reused for acceptance reruns; rerun() creates an explicit
+new generation on the same idempotency identity.
 """
 from __future__ import annotations
 from dataclasses import dataclass
@@ -25,7 +27,7 @@ def _parse_time(v):
     return d.astimezone(timezone.utc)
 @dataclass(frozen=True)
 class TaskView:
-    task_id:str; state:str; payload:dict; attempt:int; worker_id:str|None; lease_until:datetime|None; retry_at:datetime|None; last_error:str|None
+    task_id:str; state:str; payload:dict; attempt:int; worker_id:str|None; lease_until:datetime|None; retry_at:datetime|None; last_error:str|None; generation:int=1
     @property
     def task_type(self): return str(self.payload.get("task_type") or self.payload.get("task") or "")
     def claimable(self,at): return self.state=="QUEUED" or (self.state=="RETRY_WAIT" and (self.retry_at is None or self.retry_at<=at)) or (self.state=="LEASED" and (self.lease_until is None or self.lease_until<=at))
@@ -37,7 +39,8 @@ def _fold(rows):
         st=row.event_type[len(EVENT_PREFIX):] if row.event_type.startswith(EVENT_PREFIX) else ""; prev=state.get(tid)
         payload=ev.get("payload") if isinstance(ev.get("payload"),dict) else (prev.payload if prev else {})
         attempt=int(ev.get("attempt") if ev.get("attempt") is not None else (prev.attempt if prev else 0))
-        state[tid]=TaskView(tid,st,payload,attempt,ev.get("worker_id"),_parse_time(ev.get("lease_until")),_parse_time(ev.get("retry_at")),ev.get("error") or (prev.last_error if prev else None))
+        generation=int(ev.get("generation") if ev.get("generation") is not None else (prev.generation if prev else 1))
+        state[tid]=TaskView(tid,st,payload,attempt,ev.get("worker_id"),_parse_time(ev.get("lease_until")),_parse_time(ev.get("retry_at")),ev.get("error") or (prev.last_error if prev else None),generation)
     return state
 def _append(s,state,evidence,actor="SYSTEM"): s.add(HotelAutoPageEventRow(hotel_auto_page_event_id=_ident(),hotel_id=evidence.get("hotel_id"),event_type=_event_name(state),evidence_json=evidence,actor=actor,created_at=_now()))
 def _events(s,task_id=None):
@@ -53,7 +56,20 @@ class ChainTaskLeaseService:
             if not _pg_try_lock(s,task_id):raise ValueError("CHAIN_TASK_BUSY")
             cur=_fold(_events(s,task_id)).get(task_id)
             if cur and cur.state!="DEAD":s.commit();return cur
-            _append(s,"QUEUED",{"task_id":task_id,"payload":payload,"attempt":0},actor);s.commit()
+            generation=(cur.generation+1) if cur else 1
+            _append(s,"QUEUED",{"task_id":task_id,"payload":payload,"attempt":0,"generation":generation},actor);s.commit()
+        return self.get(task_id)
+    def rerun(self,*,task_id,payload=None,actor="SYSTEM",reason="ACCEPTANCE_RERUN"):
+        with SessionLocal() as s:
+            if not _pg_try_lock(s,task_id):raise ValueError("CHAIN_TASK_BUSY")
+            cur=_fold(_events(s,task_id)).get(task_id)
+            if cur is None:raise ValueError("CHAIN_TASK_NOT_FOUND")
+            if cur.state!="ACKED":raise ValueError(f"CHAIN_TASK_RERUN_REQUIRES_ACKED:{cur.state}")
+            next_payload=dict(payload if isinstance(payload,dict) else cur.payload)
+            if not str(next_payload.get("task_type") or next_payload.get("task") or ""):raise ValueError("CHAIN_TASK_INVALID")
+            generation=cur.generation+1
+            next_payload["rerun_generation"]=generation
+            _append(s,"QUEUED",{"task_id":task_id,"payload":next_payload,"attempt":0,"generation":generation,"rerun_reason":str(reason)[:200]},actor);s.commit()
         return self.get(task_id)
     def get(self,task_id):
         with SessionLocal() as s:cur=_fold(_events(s,task_id)).get(task_id)
@@ -61,12 +77,22 @@ class ChainTaskLeaseService:
         return cur
     def list(self):
         with SessionLocal() as s:return list(_fold(_events(s)).values())
+    def terminal_event_count(self,task_id,*,generation=None,state="ACKED"):
+        with SessionLocal() as s:rows=_events(s,task_id)
+        count=0
+        current_generation=1
+        for row in rows:
+            ev=row.evidence_json or {}
+            current_generation=int(ev.get("generation") if ev.get("generation") is not None else current_generation)
+            st=row.event_type[len(EVENT_PREFIX):] if row.event_type.startswith(EVENT_PREFIX) else ""
+            if st==state and (generation is None or current_generation==int(generation)):count+=1
+        return count
     def _claim_exact(self,*,task_id,worker_id,lease_seconds,actor,task_type=None):
         with SessionLocal() as s:
             if not _pg_try_lock(s,task_id):return None
             cur=_fold(_events(s,task_id)).get(task_id); now=_now()
             if cur is None or not cur.claimable(now) or (task_type is not None and cur.task_type!=task_type):s.commit();return None
-            attempt=cur.attempt+1; until=now+timedelta(seconds=int(lease_seconds)); _append(s,"LEASED",{"task_id":cur.task_id,"payload":cur.payload,"attempt":attempt,"worker_id":worker_id,"lease_until":_iso(until)},actor);s.commit()
+            attempt=cur.attempt+1; until=now+timedelta(seconds=int(lease_seconds)); _append(s,"LEASED",{"task_id":cur.task_id,"payload":cur.payload,"attempt":attempt,"generation":cur.generation,"worker_id":worker_id,"lease_until":_iso(until)},actor);s.commit()
         return self.get(task_id)
     def claim(self,*,worker_id,lease_seconds=120,actor="SYSTEM",task_type=None,task_id=None):
         if not worker_id or not 15<=int(lease_seconds)<=900:raise ValueError("CHAIN_TASK_LEASE_INVALID")
@@ -83,7 +109,7 @@ class ChainTaskLeaseService:
             cur=_fold(_events(s,task_id)).get(task_id);now=_now()
             if cur is None or cur.state!="LEASED" or cur.worker_id!=worker_id:raise ValueError("CHAIN_TASK_LEASE_OWNERSHIP_REQUIRED")
             if cur.lease_until and cur.lease_until<=now:raise ValueError("CHAIN_TASK_LEASE_EXPIRED")
-            _append(s,"LEASED",{"task_id":task_id,"payload":cur.payload,"attempt":cur.attempt,"worker_id":worker_id,"lease_until":_iso(now+timedelta(seconds=int(lease_seconds)))},actor);s.commit()
+            _append(s,"LEASED",{"task_id":task_id,"payload":cur.payload,"attempt":cur.attempt,"generation":cur.generation,"worker_id":worker_id,"lease_until":_iso(now+timedelta(seconds=int(lease_seconds)))},actor);s.commit()
         return self.get(task_id)
     def ack(self,*,task_id,worker_id,result=None,actor="SYSTEM"):
         with SessionLocal() as s:
@@ -91,7 +117,7 @@ class ChainTaskLeaseService:
             cur=_fold(_events(s,task_id)).get(task_id);now=_now()
             if cur is None or cur.state!="LEASED" or cur.worker_id!=worker_id:raise ValueError("CHAIN_TASK_LEASE_OWNERSHIP_REQUIRED")
             if cur.lease_until and cur.lease_until<=now:raise ValueError("CHAIN_TASK_LEASE_EXPIRED")
-            _append(s,"ACKED",{"task_id":task_id,"payload":cur.payload,"attempt":cur.attempt,"worker_id":worker_id,"result":result or {}},actor);s.commit()
+            _append(s,"ACKED",{"task_id":task_id,"payload":cur.payload,"attempt":cur.attempt,"generation":cur.generation,"worker_id":worker_id,"result":result or {}},actor);s.commit()
         return self.get(task_id)
     def fail(self,*,task_id,worker_id,error,retryable=True,max_attempts=5,actor="SYSTEM"):
         if not 1<=int(max_attempts)<=10:raise ValueError("CHAIN_TASK_MAX_ATTEMPTS_INVALID")
@@ -99,9 +125,9 @@ class ChainTaskLeaseService:
             if not _pg_try_lock(s,task_id):raise ValueError("CHAIN_TASK_BUSY")
             cur=_fold(_events(s,task_id)).get(task_id)
             if cur is None or cur.state!="LEASED" or cur.worker_id!=worker_id:raise ValueError("CHAIN_TASK_LEASE_OWNERSHIP_REQUIRED")
-            if (not retryable) or cur.attempt>=int(max_attempts):_append(s,"DEAD",{"task_id":task_id,"payload":cur.payload,"attempt":cur.attempt,"worker_id":worker_id,"error":str(error)[:4000]},actor)
+            if (not retryable) or cur.attempt>=int(max_attempts):_append(s,"DEAD",{"task_id":task_id,"payload":cur.payload,"attempt":cur.attempt,"generation":cur.generation,"worker_id":worker_id,"error":str(error)[:4000]},actor)
             else:
-                retry=_now()+timedelta(seconds=min(900,5*(2**max(0,cur.attempt-1))));_append(s,"RETRY_WAIT",{"task_id":task_id,"payload":cur.payload,"attempt":cur.attempt,"worker_id":worker_id,"error":str(error)[:4000],"retry_at":_iso(retry)},actor)
+                retry=_now()+timedelta(seconds=min(900,5*(2**max(0,cur.attempt-1))));_append(s,"RETRY_WAIT",{"task_id":task_id,"payload":cur.payload,"attempt":cur.attempt,"generation":cur.generation,"worker_id":worker_id,"error":str(error)[:4000],"retry_at":_iso(retry)},actor)
             s.commit()
         return self.get(task_id)
 chain_task_lease_service=ChainTaskLeaseService()
