@@ -1,9 +1,9 @@
 """Per-chain official source contracts for autonomous directory acquisition.
 
-A chain adapter is not considered production-ready merely because a regex matches.
-Each contract names the approved official directory entrypoint, expected semantics
-and durable property identity strategy. A directory entrypoint is not promoted to a
-verified full-property inventory without runtime completeness evidence.
+GO does not require a partner API. A source contract may be an official public page,
+a browser-visible XHR/JSON/GraphQL response, or hydration data used by that page.
+What matters is official-host provenance, deterministic property identity, complete
+inventory evidence and reproducible snapshot semantics. Unverified chains fail closed.
 """
 from __future__ import annotations
 from dataclasses import dataclass
@@ -20,8 +20,8 @@ ChainCode.MARRIOTT:OfficialSourceContract(ChainCode.MARRIOTT,"https://www.marrio
 ChainCode.SHANGRI_LA:OfficialSourceContract(ChainCode.SHANGRI_LA,"https://www.shangri-la.com/cn/find-a-hotel/",DirectoryReadiness.VERIFIED_FULL_DIRECTORY,("中国内地","香格里拉"),"SHANGRILA_CITY_AND_PROPERTY_SLUG","Official Find a Hotel list exposes the verified regional property inventory under the approved host contract."),
 ChainCode.HILTON:OfficialSourceContract(ChainCode.HILTON,"https://www.hilton.com/en/locations/",DirectoryReadiness.VERIFIED_DIRECTORY_ENTRYPOINT,("Hotel Locations","Asia"),"HILTON_OFFICIAL_PROPERTY_SLUG_OR_CODE","Official locations tree is an entrypoint; hierarchical traversal/runtime evidence must prove full coverage."),
 ChainCode.IHG:OfficialSourceContract(ChainCode.IHG,"https://www.ihg.com/hotels/cn/zh/reservation",DirectoryReadiness.VERIFIED_DIRECTORY_ENTRYPOINT,("洲际酒店集团","酒店"),"IHG_OFFICIAL_HOTEL_CODE","Official destination entrypoint only; full inventory semantics remain runtime-gated."),
-ChainCode.H_WORLD:OfficialSourceContract(ChainCode.H_WORLD,"https://www.hworld.com/",DirectoryReadiness.FULL_DIRECTORY_NOT_YET_VERIFIED,("华住旗下","酒店"),"HWORLD_OFFICIAL_HOTEL_ID_REQUIRED","Homepage is official but not a proven complete inventory; enumeration remains HOLD until official booking/app inventory contract is frozen."),
-ChainCode.ATOUR:OfficialSourceContract(ChainCode.ATOUR,"https://www.atour.com/",DirectoryReadiness.FULL_DIRECTORY_NOT_YET_VERIFIED,(),"ATOUR_OFFICIAL_HOTEL_ID_REQUIRED","Third-party listings are forbidden; enumeration remains HOLD until an official inventory endpoint/page is captured and frozen."),}
+ChainCode.H_WORLD:OfficialSourceContract(ChainCode.H_WORLD,"https://www.hworld.com/",DirectoryReadiness.FULL_DIRECTORY_NOT_YET_VERIFIED,("华住","酒店"),"HWORLD_BROWSER_VISIBLE_OFFICIAL_HOTEL_ID_REQUIRED","hworld.com is verified official and publicly reports group scale, but the homepage is not a complete property inventory. GO must discover and freeze the public official booking/app page data contract itself; no partner API is required."),
+ChainCode.ATOUR:OfficialSourceContract(ChainCode.ATOUR,"https://ir.yaduo.com/",DirectoryReadiness.FULL_DIRECTORY_NOT_YET_VERIFIED,("Atour",),"ATOUR_BROWSER_VISIBLE_OFFICIAL_HOTEL_ID_REQUIRED","Atour Lifestyle's verified corporate/IR web presence is under yaduo.com. atour.com is forbidden. A complete public hotel inventory page/runtime data contract is not yet verified, so hotel enumeration remains fail-closed while GO discovers it itself."),}
 def contract_for(chain:ChainCode)->OfficialSourceContract:
     try:return CONTRACTS[chain]
     except KeyError as exc:raise ValueError("CHAIN_OFFICIAL_SOURCE_CONTRACT_MISSING") from exc
