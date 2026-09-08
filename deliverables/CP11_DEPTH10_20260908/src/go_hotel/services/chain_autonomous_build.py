@@ -5,14 +5,15 @@ from .chain_hotel_registry import ChainCode, OfficialPropertySeed
 from .chain_task_lease import chain_task_lease_service
 from .hyatt_directory_adapter import HyattDirectoryAdapter
 from .standard_chain_directory_adapters import (
-    MarriottDirectoryAdapter, HiltonDirectoryAdapter, IHGDirectoryAdapter,
-    HWorldDirectoryAdapter, AtourDirectoryAdapter,
+    MarriottDirectoryAdapter, ShangriLaDirectoryAdapter, HiltonDirectoryAdapter,
+    IHGDirectoryAdapter, HWorldDirectoryAdapter, AtourDirectoryAdapter,
 )
 
 
 ADAPTERS = {
     ChainCode.HYATT: HyattDirectoryAdapter,
     ChainCode.MARRIOTT: MarriottDirectoryAdapter,
+    ChainCode.SHANGRI_LA: ShangriLaDirectoryAdapter,
     ChainCode.HILTON: HiltonDirectoryAdapter,
     ChainCode.IHG: IHGDirectoryAdapter,
     ChainCode.H_WORLD: HWorldDirectoryAdapter,
@@ -21,7 +22,6 @@ ADAPTERS = {
 
 
 def discovery_seed(seed: OfficialPropertySeed) -> dict:
-    """Translate a verified official chain seed into the existing DEPTH09 input."""
     return {
         "name": seed.name,
         "country": seed.country_code,
