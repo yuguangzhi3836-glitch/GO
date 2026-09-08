@@ -105,7 +105,8 @@ class StaticOfficialLinkDirectoryAdapter(ChainDirectoryAdapter):
         for pattern in self.property_patterns:
             match = pattern.search(path)
             if match:
-                return str(match.group(1)).upper()
+                groups = [str(x).strip().upper() for x in match.groups() if str(x or "").strip()]
+                return "__".join(groups) if groups else str(match.group(1)).upper()
         return None
 
     def _inventory(self, fetch_page):
@@ -165,6 +166,19 @@ class MarriottDirectoryAdapter(StaticOfficialLinkDirectoryAdapter):
         re.compile(r"/(?:[a-z]{2}-[a-z]{2}/)?hotels/([a-z0-9]{3,12})-[^/]+(?:/|$)", re.I),
         re.compile(r"/hotels/travel/([a-z0-9]{3,12})(?:/|$)", re.I),
     )
+
+
+class ShangriLaDirectoryAdapter(StaticOfficialLinkDirectoryAdapter):
+    chain = ChainCode.SHANGRI_LA
+    default_directory_url = "https://www.shangri-la.com/cn/find-a-hotel/"
+    env_directory_url = "GO_SHANGRILA_DIRECTORY_URL"
+    # Current official property URLs resolve to /<city>/<property-slug>/ with an
+    # optional locale prefix, e.g. /harbin/shangrila/ and /harbin/songbeishangrila/.
+    # We derive the durable property identity from the two official path segments.
+    property_patterns = (
+        re.compile(r"^/(?:cn/|en/)?([a-z0-9-]{2,40})/([a-z0-9-]{3,64})/?$", re.I),
+    )
+    country_code = "CN"
 
 
 class HiltonDirectoryAdapter(StaticOfficialLinkDirectoryAdapter):
