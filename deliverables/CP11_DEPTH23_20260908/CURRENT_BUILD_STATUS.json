@@ -1,0 +1,86 @@
+{
+  "build": "CP11_DEPTH_23_SHARED_CAPACITY",
+  "FINAL_RELEASE_GATE": "HOLD",
+  "engineering_complete": false,
+  "deployed": false,
+  "baseline": {
+    "previous_commit": "ba758eb92dc4a51fd6432a94f77b62f8f8dc4c28",
+    "previous_delta_sha256": "49b761bb9ec8c6f986a9826361ca4b7f232edf74341e5b195421af30567c8f99",
+    "parent_sha256": "8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb",
+    "depth17_work_sha256": "1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79"
+  },
+  "python": {
+    "tests": 1548,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 6,
+    "seconds": 665.587,
+    "passed": 1542,
+    "one_clean_full_run": true,
+    "source_unchanged": true,
+    "report": "full_regression.xml"
+  },
+  "targeted_runtime": {
+    "tests": 82,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 24.271,
+    "passed": 82
+  },
+  "independent_restored_runtime": {
+    "tests": 82,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 25.41,
+    "passed": 82
+  },
+  "frontend": {
+    "logic": {
+      "tests": 111,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 0.332,
+      "passed": 111
+    },
+    "syntax": {
+      "node": "v24.19.0",
+      "passed": 44,
+      "failures": []
+    },
+    "real_browser": "NOT_ACCEPTED_PRIOR_ENVIRONMENT_BLOCK",
+    "visual_accepted": false,
+    "frozen_node_22_certified": false
+  },
+  "migration_head": "0130_vertical_capacity",
+  "frozen_source_files": 1042,
+  "scope": "Cumulative DEPTH22 rail change decision recovery plus DEPTH23 shared rail/attraction capacity, exact-once allocation and release in order transactions, outcome-bound change pools and unpaid cancellation coordinated with payment roots.",
+  "initial_regression": {
+    "checkpoint": "DEPTH22",
+    "result": {
+      "tests": 1525,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 6,
+      "seconds": 725.648,
+      "passed": 1518
+    },
+    "failure": "Unmodified autonomy external-process test did not reach fault point within 15 seconds; isolated original group 43 passed. This cumulative full run passes without relaxing the test.",
+    "report": "depth22_full_regression.xml"
+  },
+  "remaining": [
+    "PostgreSQL execution/concurrency/crash acceptance: six checks skipped; install attempt rejected by environment setgroups/seteuid permissions",
+    "Partial-passenger advanced after-sales and broader six-vertical fulfillment completeness",
+    "Unpaid automatic expiry coordinated with payment outcomes; legacy capacity reconciliation/import; provider seat-map segment reuse",
+    "Shared capacity for other verticals and actual provider inventory integration beyond the isolated rail/attraction model",
+    "14 autonomous cells still use aggregate observation adapters, not complete business execution",
+    "Real Redis acceptance, frozen Node 22.22, real browser and cross-device master visual acceptance",
+    "Full decomposition and verification of all V7 master requirements"
+  ],
+  "scope_exclusions": [
+    "No Hong Kong deployment, RDS migration or live money movement",
+    "Live inventory/rates/payment integration is not a prerequisite for isolated functional acceptance, but functional and environment gaps still prevent a full-completion claim."
+  ]
+}
