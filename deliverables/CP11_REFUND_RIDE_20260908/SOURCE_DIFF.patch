@@ -1,0 +1,1740 @@
+--- a/src/go_hotel/mobility/service.py
++++ b/src/go_hotel/mobility/service.py
+@@ -48,8 +48,12 @@
+     def refund_quote(self, account, order_id):
+         return (ride_service if self._vertical(order_id) == "RIDE" else rental_service).refund_quote(account, order_id)
+ 
+-    def cancel(self, account, order_id):
+-        return (ride_service if self._vertical(order_id) == "RIDE" else rental_service).cancel(account, order_id)
++    def cancel(self, account, order_id, expected_quote_hash=None, existing_only=False):
++        if self._vertical(order_id)=='RIDE':
++            return ride_service.cancel(account,order_id,expected_quote_hash,existing_only)
++        if existing_only:
++            raise ValueError('REFUND_OPERATION_NOT_FOUND')
++        return rental_service.cancel(account,order_id)
+ 
+     def fulfill(self, account, order_id, action, evidence_reference):
+         return (ride_service if self._vertical(order_id) == "RIDE" else rental_service).fulfill(account, order_id, action, evidence_reference)
+--- a/src/go_hotel/rail/service.py
++++ b/src/go_hotel/rail/service.py
+@@ -181,10 +181,10 @@
+         with transaction(SessionLocal) as s:
+             o=s.get(RailOrderRow,order_id,with_for_update=True)
+             if not o or o.account_id!=account_id or o.status!='TICKETED':raise ValueError('RAIL_ORDER_NOT_REFUNDABLE')
+-            return self._refund_quote_in(s,o)
+-    def refund(self,account_id,order_id):
++            return vertical_refund_recovery.bind_quote('RAIL',o,self._refund_quote_in(s,o))
++    def refund(self,account_id,order_id,expected_quote_hash=None,existing_only=False):
+         production_truth_required('RAIL','REFUND')
+-        return vertical_refund_recovery.refund('RAIL',account_id,order_id,self._refund_quote_in)
++        return vertical_refund_recovery.refund('RAIL',account_id,order_id,self._refund_quote_in,expected_quote_hash,existing_only)
+     def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,ticket_numbers=None,quote_id=None):
+         from go_hotel.services.rail_change_resolution import reconcile
+         return reconcile(order_id,state,evidence_reference,actor,supplier_reference,ticket_numbers,quote_id,self._order)
+--- a/src/go_hotel/db/models.py
++++ b/src/go_hotel/db/models.py
+@@ -70,7 +70,7 @@
+     created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+     completed_ms: Mapped[int | None] = mapped_column(BigInteger)
+     __table_args__ = (
+-        CheckConstraint("vertical IN ('RAIL','ATTRACTION')", name='ck_refund_operation_vertical'),
++        CheckConstraint("vertical IN ('RAIL','ATTRACTION','RIDE')", name='ck_refund_operation_vertical'),
+         CheckConstraint("state IN ('PENDING','COMPLETED')", name='ck_refund_operation_state'),
+         CheckConstraint('attempt >= 0 AND lease_until_ms >= 0', name='ck_refund_operation_lease'),
+     )
+--- a/src/go_hotel/services/vertical_refund_recovery.py
++++ b/src/go_hotel/services/vertical_refund_recovery.py
+@@ -15,7 +15,7 @@
+     VerticalRefundOperationRow as Operation, RailOrderRow, AttractionOrderRow,
+     RailRefundRow, AttractionRefundRow, RailChangeQuoteRow,
+     OmnichannelMoneyMovementRow as Movement, OmnichannelPaymentIntentRow as Intent,
+-    PaymentOrderRootRow as Root,
++    PaymentOrderRootRow as Root, MobilityRideOrderRow, MobilityRefundRow,
+ )
+ from go_hotel.domain.models import new_id
+ from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence
+@@ -24,7 +24,8 @@
+ from go_hotel.services import vertical_capacity as capacity
+ 
+ MODELS = {'RAIL': (RailOrderRow, RailRefundRow, 'TICKETED'),
+-          'ATTRACTION': (AttractionOrderRow, AttractionRefundRow, 'CONFIRMED')}
++          'ATTRACTION': (AttractionOrderRow, AttractionRefundRow, 'CONFIRMED'),
++          'RIDE': (MobilityRideOrderRow, MobilityRefundRow, 'CONFIRMED')}
+ LEASE_MS = 30000
+ 
+ 
+@@ -35,6 +36,64 @@
+ def _identity(row):
+     return {'vertical': row.vertical, 'order_id': row.order_id, 'account_id': row.account_id,
+             'quote': row.quote_json, 'adjustments': row.adjustment_ids_json}
++
++
++def bind_quote(vertical, order, quote):
++    """Bind consent to the current fulfillment identity, even at the same price.
++
++    No personal details are returned: only their digest is part of the quote.
++    Order status is deliberately excluded because an accepted refund moves it
++    to REFUND_PENDING while retaining exactly this authorized identity.
++    """
++    context = {'vertical': vertical, 'order_id': order.order_id,
++               'account_id': order.account_id, 'amount_minor': order.total_amount_minor,
++               'currency': order.currency}
++    if vertical == 'RAIL':
++        context.update(prebook_id=order.prebook_id, journey=order.current_journey,
++                       passengers=order.passengers, tickets=order.ticket_numbers,
++                       supplier_reference=order.booking_reference)
++    elif vertical == 'ATTRACTION':
++        context.update(product_id=order.product_id, visit_date=order.visit_date,
++                       session_time=order.session_time, quantity=order.quantity,
++                       attendees=order.attendees, voucher=order.voucher_code,
++                       supplier_reference=order.supplier_reference)
++    elif vertical == 'RIDE':
++        context.update(pickup=order.pickup, dropoff=order.dropoff,
++                       pickup_at=order.pickup_at, vehicle_class=order.vehicle_class,
++                       passengers=order.passengers, flight_no=order.flight_no,
++                       supplier_reference=order.supplier_reference)
++    else:
++        raise ValueError('REFUND_VERTICAL_INVALID')
++    values = {k: v for k, v in quote.items() if k not in {'quote_hash', 'order_context_hash'}}
++    values['order_context_hash'] = digest(context)
++    return {**values, 'quote_hash': digest(values)}
++
++
++def _verify_context(op, order):
++    # Older accepted operations retain their original evidence. Do not invent
++    # a past consent or order fingerprint for them during recovery.
++    if 'order_context_hash' in op.quote_json:
++        current = bind_quote(op.vertical, order, op.quote_json)
++        if current['quote_hash'] != op.quote_json.get('quote_hash'):
++            raise ValueError('REFUND_ORDER_CONTEXT_CHANGED_REVIEW_REQUIRED')
++
++
++def progress(vertical, account, order_id):
++    if vertical not in MODELS:
++        raise ValueError('REFUND_VERTICAL_INVALID')
++    with SessionLocal() as s:
++        order = s.get(MODELS[vertical][0], order_id)
++        if not order or order.account_id != account:
++            raise ValueError(f'{vertical}_ORDER_NOT_FOUND')
++        op = s.get(Operation, (vertical, order_id))
++        if not op:
++            raise ValueError('REFUND_OPERATION_NOT_FOUND')
++        _verify(op, account)
++        return {'order_id': order_id, 'status': op.state,
++                'refund_amount_minor': op.quote_json['refund_amount_minor'],
++                'refund_fee_minor': op.quote_json['refund_fee_minor'],
++                'currency': op.quote_json['currency'],
++                'refund_to': 'ORIGINAL_PAYMENT_METHOD', 'external_live': False}
+ 
+ 
+ def _locked_order(s, vertical, order_id, account):
+@@ -85,7 +144,7 @@
+     return ids
+ 
+ 
+-def refund(vertical, account, order_id, quote_in):
++def refund(vertical, account, order_id, quote_in, expected_quote_hash=None, existing_only=False):
+     """quote_in receives the same locked session/order used to start the refund."""
+     if vertical not in MODELS:
+         raise ValueError('REFUND_VERTICAL_INVALID')
+@@ -94,6 +153,9 @@
+         op = _operation(s, vertical, order_id)
+         if op:
+             _verify(op, account)
++            if expected_quote_hash is not None and expected_quote_hash != op.quote_json.get('quote_hash'):
++                raise ValueError('REFUND_QUOTE_CHANGED')
++            _verify_context(op, order)
+             if op.state == 'COMPLETED':
+                 if order.status != 'REFUNDED':
+                     raise ValueError('REFUND_ORDER_STATE_INVALID')
+@@ -101,9 +163,23 @@
+             if order.status != 'REFUND_PENDING':
+                 raise ValueError('REFUND_ORDER_STATE_INVALID')
+         else:
++            if vertical == 'RIDE' and order.status == 'REFUNDED':
++                # Pre-journal completed refunds are immutable receipts; retain
++                # them without constructing a fictional past authorization.
++                old = s.scalar(select(MobilityRefundRow).where(
++                    MobilityRefundRow.order_id == order_id, MobilityRefundRow.vertical == 'RIDE',
++                    MobilityRefundRow.status == 'REFUND_COMPLETED').order_by(MobilityRefundRow.created_at.desc()))
++                if old:
++                    return {'refund_id': old.refund_id, 'order_id': order_id, 'status': old.status,
++                            'refund_fee_minor': old.fee_minor, 'refund_amount_minor': old.refund_amount_minor,
++                            'currency': old.currency}
++            if existing_only:
++                raise ValueError('REFUND_OPERATION_NOT_FOUND')
+             if order.status != MODELS[vertical][2]:
+                 raise ValueError(f'{vertical}_ORDER_NOT_REFUNDABLE')
+-            quote = quote_in(s, order)
++            quote = bind_quote(vertical, order, quote_in(s, order))
++            if expected_quote_hash is not None and expected_quote_hash != quote['quote_hash']:
++                raise ValueError('REFUND_QUOTE_CHANGED')
+             if type(quote['refund_amount_minor']) is not int or quote['refund_amount_minor'] <= 0:
+                 raise ValueError(f'{vertical}_NON_REFUNDABLE')
+             adjustments = list(s.scalars(select(RailChangeQuoteRow.quote_id).where(
+@@ -130,7 +206,7 @@
+         quote = dict(op.quote_json)
+         adjustments = list(op.adjustment_ids_json)
+     try:
+-        prefix = 'rail' if vertical == 'RAIL' else 'attraction'
++        prefix = vertical.lower()
+         movement = vertical_money_bridge.refund_with_adjustments(
+             vertical, order_id, adjustments, quote['refund_amount_minor'],
+             f'{prefix}-refund://{order_id}', f'{prefix}-refund:{order_id}')
+@@ -140,6 +216,7 @@
+             order = _locked_order(s, vertical, order_id, account)
+             op = _operation(s, vertical, order_id)
+             _verify(op, account)
++            _verify_context(op, order)
+             if op.state == 'COMPLETED':
+                 return dict(op.result_json)
+             if op.lease_token != token or op.lease_until_ms <= db_now_ms(s):
+@@ -147,15 +224,20 @@
+             if order.status != 'REFUND_PENDING':
+                 raise ValueError('REFUND_ORDER_STATE_INVALID')
+             ids = _confirmed_money_in(s, op, movement)
+-            record = MODELS[vertical][1](refund_id=new_id('rail_ref' if vertical == 'RAIL' else 'attr_ref'),
+-                order_id=order_id, refund_fee_minor=quote['refund_fee_minor'],
+-                refund_amount_minor=quote['refund_amount_minor'], currency=quote['currency'],
+-                status='REFUND_COMPLETED', created_at=_now(), completed_at=_now())
++            values = dict(refund_id=new_id(prefix+'_ref'), order_id=order_id,
++                          refund_amount_minor=quote['refund_amount_minor'], currency=quote['currency'],
++                          status='REFUND_COMPLETED', created_at=_now())
++            if vertical == 'RIDE':
++                values.update(vertical='RIDE', fee_minor=quote['refund_fee_minor'])
++            else:
++                values.update(refund_fee_minor=quote['refund_fee_minor'], completed_at=_now())
++            record = MODELS[vertical][1](**values)
+             s.add(record)
+             result = {'refund_id': record.refund_id, 'order_id': order_id, 'status': record.status,
+-                      'refund_fee_minor': record.refund_fee_minor, 'refund_amount_minor': record.refund_amount_minor,
++                      'refund_fee_minor': quote['refund_fee_minor'], 'refund_amount_minor': record.refund_amount_minor,
+                       'currency': record.currency}
+-            capacity.release_all_in(s, vertical, order_id)
++            if vertical in {'RAIL', 'ATTRACTION'}:
++                capacity.release_all_in(s, vertical, order_id)
+             order.status = 'REFUNDED'
+             order.updated_at = _now()
+             op.state = 'COMPLETED'
+--- a/src/go_hotel/attractions/service.py
++++ b/src/go_hotel/attractions/service.py
+@@ -131,10 +131,10 @@
+   with transaction(SessionLocal) as s:
+    o=s.get(AttractionOrderRow,order_id,with_for_update=True)
+    if not o or o.account_id!=account or o.status!='CONFIRMED':raise ValueError('ATTRACTION_ORDER_NOT_REFUNDABLE')
+-   return self._refund_quote_in(s,o)
+- def refund(self,account,order_id):
++   return vertical_refund_recovery.bind_quote('ATTRACTION',o,self._refund_quote_in(s,o))
++ def refund(self,account,order_id,expected_quote_hash=None,existing_only=False):
+   production_truth_required('ATTRACTION','REFUND')
+-  return vertical_refund_recovery.refund('ATTRACTION',account,order_id,self._refund_quote_in)
++  return vertical_refund_recovery.refund('ATTRACTION',account,order_id,self._refund_quote_in,expected_quote_hash,existing_only)
+  def redeem(self,account,order_id,evidence_reference):
+   if not str(evidence_reference or '').strip(): raise ValueError('FULFILLMENT_EVIDENCE_REQUIRED')
+   production_truth_required("ATTRACTION", "REDEEM")
+--- a/src/go_hotel/mobility/ride/service.py
++++ b/src/go_hotel/mobility/ride/service.py
+@@ -5,9 +5,11 @@
+ from sqlalchemy import select
+ 
+ from go_hotel.core.production_truth_gate import production_truth_required
+-from go_hotel.db.models import MobilityRefundRow, MobilityRideOrderRow
++from go_hotel.db.models import MobilityRefundRow, MobilityRideOrderRow, RideFlightAdjustmentRow
+ from go_hotel.mobility.ride.flight_sync import engineering_policy, reject_client_rules, snapshot_policy, flight_ride_sync
+ from go_hotel.db.session import SessionLocal
++from go_hotel.autonomy.durable import transaction
++from go_hotel.services import vertical_refund_recovery as refund_recovery
+ from go_hotel.domain.models import new_id
+ from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence, list_vertical_evidence
+ from go_hotel.services.vertical_lifecycle_projection import project_vertical_lifecycle
+@@ -34,7 +36,7 @@
+         total = prices.get(body["offer_id"])
+         if total is None:
+             raise ValueError("RIDE_OFFER_NOT_FOUND")
+-        with SessionLocal.begin() as s:
++        with transaction(SessionLocal) as s:
+             o = MobilityRideOrderRow(
+                 order_id=new_id("ride_ord"), account_id=account, status="PAYMENT_PENDING",
+                 pickup=body["pickup"], dropoff=body["dropoff"], pickup_at=body["pickup_at"],
+@@ -66,7 +68,7 @@
+ 
+     def get(self, account: str, order_id: str):
+         with SessionLocal() as s:
+-            o = s.get(MobilityRideOrderRow, order_id)
++            o = s.get(MobilityRideOrderRow, order_id, with_for_update=True)
+             if not o or o.account_id != account:
+                 raise ValueError("MOBILITY_ORDER_NOT_FOUND")
+             out = self.out(o); out["evidence"] = list_vertical_evidence(s, "RIDE", order_id); return out
+@@ -77,42 +79,49 @@
+ 
+     def modify(self, account: str, order_id: str, new_time: str):
+         production_truth_required("RIDE", "MODIFY")
+-        with SessionLocal.begin() as s:
+-            o = s.get(MobilityRideOrderRow, order_id)
++        with transaction(SessionLocal) as s:
++            o = s.get(MobilityRideOrderRow, order_id, with_for_update=True)
+             if not o or o.account_id != account or o.status != "CONFIRMED":
+                 raise ValueError("MOBILITY_ORDER_NOT_CHANGEABLE")
+             o.pickup_at = new_time; o.updated_at = now()
+             append_vertical_evidence(s, "RIDE", order_id, "MODIFIED", o.status, {"new_time": new_time})
+             return self.out(o)
+ 
++    def _refund_quote_in(self, s, order):
++        # Preserve the current isolated full-refund contract. Provider-specific
++        # deadlines and certified fleet cancellation remain separate acceptance.
++        if s.scalar(select(RideFlightAdjustmentRow.adjustment_id).where(
++                RideFlightAdjustmentRow.ride_order_id==order.order_id,
++                RideFlightAdjustmentRow.status.in_(['DISPATCHED','UNKNOWN','HOLD'])).limit(1)):
++            raise ValueError('RIDE_FLEET_RECONCILIATION_REQUIRED')
++        return {'order_id':order.order_id,'refund_fee_minor':0,'fee_minor':0,
++                'refund_amount_minor':order.total_amount_minor,'currency':order.currency,
++                'refund_to':'ORIGINAL_PAYMENT_METHOD'}
++
+     def refund_quote(self, account: str, order_id: str):
+-        production_truth_required("RIDE", "REFUND_QUOTE")
+-        o = self.get(account, order_id)
+-        if o["status"] != "CONFIRMED":
+-            raise ValueError("MOBILITY_ORDER_NOT_CANCELLABLE")
+-        return {"order_id": order_id, "fee_minor": 0, "refund_amount_minor": o["total_amount_minor"], "currency": o["currency"], "refund_to": "ORIGINAL_PAYMENT_METHOD"}
++        production_truth_required('RIDE','REFUND_QUOTE')
++        with transaction(SessionLocal) as s:
++            order=s.get(MobilityRideOrderRow,order_id,with_for_update=True)
++            if not order or order.account_id!=account or order.status!='CONFIRMED':
++                raise ValueError('MOBILITY_ORDER_NOT_CANCELLABLE')
++            return refund_recovery.bind_quote('RIDE',order,self._refund_quote_in(s,order))
+ 
+-    def cancel(self, account: str, order_id: str):
+-        production_truth_required("RIDE", "CANCEL")
+-        quote=self.refund_quote(account,order_id)
+-        movement=vertical_money_bridge.refund('RIDE',order_id,quote["refund_amount_minor"],f'ride-refund://{order_id}',f'ride-refund:{order_id}')
+-        if movement['state']!='CONFIRMED': raise ValueError('MOBILITY_REFUND_MONEY_NOT_CONFIRMED')
+-        with SessionLocal.begin() as s:
+-            o = s.get(MobilityRideOrderRow, order_id)
+-            existing=s.scalar(select(MobilityRefundRow).where(MobilityRefundRow.order_id==order_id,MobilityRefundRow.vertical=='RIDE',MobilityRefundRow.status=='REFUND_COMPLETED').order_by(MobilityRefundRow.created_at.desc()))
+-            if existing:return {"refund_id":existing.refund_id,"order_id":order_id,"status":existing.status,"refund_amount_minor":existing.refund_amount_minor,"currency":existing.currency}
+-            if not o or o.account_id != account or o.status != "CONFIRMED": raise ValueError("MOBILITY_ORDER_NOT_CANCELLABLE")
+-            amount = quote["refund_amount_minor"]; o.status = "REFUNDED"; o.updated_at = now()
+-            r = MobilityRefundRow(refund_id=new_id("mob_ref"), order_id=order_id, vertical="RIDE", fee_minor=quote["fee_minor"], refund_amount_minor=amount, currency=o.currency, status="REFUND_COMPLETED", created_at=now())
+-            s.add(r); append_vertical_evidence(s, "RIDE", order_id, "REFUND_COMPLETED", o.status, {"refund_id": r.refund_id, "refund_amount_minor": amount,"money_movement_id":movement['money_movement_id']}); project_vertical_lifecycle(s,"RIDE",o,"refund:"+r.refund_id,facts={"refund_id":r.refund_id,"refund_amount_minor":amount,"money_movement_id":movement['money_movement_id']})
+-            s.flush(); return {"refund_id": r.refund_id, "order_id": order_id, "status": r.status, "refund_amount_minor": amount, "currency": o.currency}
++    def cancel(self, account: str, order_id: str, expected_quote_hash=None, existing_only=False):
++        production_truth_required('RIDE','CANCEL')
++        try:
++            return refund_recovery.refund('RIDE',account,order_id,self._refund_quote_in,
++                                          expected_quote_hash,existing_only)
++        except ValueError as exc:
++            if str(exc)=='RIDE_ORDER_NOT_REFUNDABLE':
++                raise ValueError('MOBILITY_ORDER_NOT_CANCELLABLE') from None
++            raise
+ 
+     def fulfill(self, account: str, order_id: str, action: str, evidence_reference: str):
+         if not str(evidence_reference or '').strip(): raise ValueError('FULFILLMENT_EVIDENCE_REQUIRED')
+         production_truth_required("RIDE", "FULFILLMENT")
+         action = action.upper()
+-        with SessionLocal.begin() as s:
+-            o = s.get(MobilityRideOrderRow, order_id)
++        with transaction(SessionLocal) as s:
++            o = s.get(MobilityRideOrderRow, order_id, with_for_update=True)
+             if not o or o.account_id != account:
+                 raise ValueError("MOBILITY_ORDER_NOT_FOUND")
+             target = {("CONFIRMED", "START"): "IN_PROGRESS", ("IN_PROGRESS", "COMPLETE"): "COMPLETED"}.get((o.status, action))
+@@ -127,8 +136,8 @@
+         state = state.upper()
+         if state not in {"UNKNOWN_EXTERNAL_STATE", "CONFIRMED", "FAILED"}:
+             raise ValueError("MOBILITY_EXTERNAL_STATE_INVALID")
+-        with SessionLocal.begin() as s:
+-            o = s.get(MobilityRideOrderRow, order_id)
++        with transaction(SessionLocal) as s:
++            o = s.get(MobilityRideOrderRow, order_id, with_for_update=True)
+             if not o:
+                 raise ValueError("MOBILITY_ORDER_NOT_FOUND")
+             if state == "UNKNOWN_EXTERNAL_STATE":
+--- a/src/go_hotel/api/routes/rail.py
++++ b/src/go_hotel/api/routes/rail.py
+@@ -26,8 +26,11 @@
+     try:return {"data":fn(*args)}
+     except ValueError as e:
+         msg=str(e)
+-        if msg in {'REFUND_ALREADY_PROCESSING','REFUND_LEASE_LOST','RAIL_RESOLUTION_CONFLICT','RAIL_RESOLUTION_ALREADY_PROCESSING','RAIL_RESOLUTION_LEASE_LOST','RAIL_RESOLUTION_QUOTE_ID_REQUIRED','UNPAID_CANCELLATION_NOT_ALLOWED','PAYMENT_ALREADY_STARTED_RECONCILIATION_REQUIRED'}:raise HTTPException(409,detail=msg)
++        if msg in {'REFUND_QUOTE_CHANGED','REFUND_ORDER_CONTEXT_CHANGED_REVIEW_REQUIRED','REFUND_ALREADY_PROCESSING','REFUND_LEASE_LOST','RAIL_RESOLUTION_CONFLICT','RAIL_RESOLUTION_ALREADY_PROCESSING','RAIL_RESOLUTION_LEASE_LOST','RAIL_RESOLUTION_QUOTE_ID_REQUIRED','UNPAID_CANCELLATION_NOT_ALLOWED','PAYMENT_ALREADY_STARTED_RECONCILIATION_REQUIRED'}:raise HTTPException(409,detail=msg)
+         code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(x in msg for x in ("INVALID","CHANGEABLE","REFUNDABLE","SOLD_OUT","INVENTORY_CHANGED")) else 404); raise HTTPException(code,detail=msg)
++
++class RefundBody(BaseModel):
++    expected_quote_hash:str=Field(pattern=r'^[0-9a-f]{64}$')
+ 
+ @router.post('/v1/rail/search')
+ def search(body:SearchBody):
+@@ -69,9 +72,9 @@
+ @router.get('/v1/rail/orders/{order_id}/refund-quote')
+ def refund_quote(order_id:str,p:Principal=Depends(consumer_principal)): return wrap(rail_service.refund_quote,p.user_id,order_id)
+ @router.post('/v1/rail/orders/{order_id}/refund')
+-def refund(order_id:str,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+-    payload={'user_id':p.user_id,'order_id':order_id}
+-    return run_idempotent('RAIL_REFUND',idempotency_key,payload,lambda:wrap(rail_service.refund,p.user_id,order_id))
++def refund(order_id:str,body:RefundBody,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
++    payload={'user_id':p.user_id,'order_id':order_id,**body.model_dump()}
++    return run_idempotent('RAIL_REFUND',idempotency_key,payload,lambda:wrap(rail_service.refund,p.user_id,order_id,body.expected_quote_hash))
+ 
+ @router.post('/internal/v1/admin/rail/orders/{order_id}/external-state')
+ def admin_external_state(order_id:str,body:ExternalStateBody,p:Principal=Depends(admin_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+@@ -82,3 +85,13 @@
+ def cancel_unpaid(order_id:str,p:Principal=Depends(consumer_principal)):
+     from go_hotel.services.vertical_capacity import cancel_unpaid as cancel
+     return wrap(cancel,'RAIL',p.user_id,order_id,rail_service._order)
++
++@router.get('/v1/rail/orders/{order_id}/refund-progress')
++def refund_progress(order_id:str,p:Principal=Depends(consumer_principal)):
++    from go_hotel.services.vertical_refund_recovery import progress
++    return wrap(progress,'RAIL',p.user_id,order_id)
++
++@router.post('/v1/rail/orders/{order_id}/refund-progress/reconcile')
++def reconcile_refund(order_id:str,p:Principal=Depends(consumer_principal)):
++    # This can only resume an already accepted operation under its order lock.
++    return wrap(rail_service.refund,p.user_id,order_id,None,True)
+--- a/src/go_hotel/api/routes/mobility.py
++++ b/src/go_hotel/api/routes/mobility.py
+@@ -1,4 +1,4 @@
+-from fastapi import APIRouter,Depends,HTTPException,Header
++from fastapi import APIRouter,Depends,HTTPException,Header,Body
+ from pydantic import BaseModel,Field,ConfigDict
+ from typing import Literal
+ from go_hotel.security.deps import consumer_principal,admin_principal
+@@ -12,8 +12,12 @@
+ def w(fn,*a):
+  try:return {"data":fn(*a)}
+  except ValueError as e:
+-  msg=str(e); code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(x in msg for x in ("ILLEGAL_STATE","CHANGEABLE","CANCELLABLE","INVALID","RECONCILIATION","QUOTE_","RECONFIRM","NOT_CONFIRMED","FORBIDDEN")) else 404)
++  msg=str(e)
++  if msg in {'REFUND_QUOTE_CHANGED','REFUND_ORDER_CONTEXT_CHANGED_REVIEW_REQUIRED','REFUND_ALREADY_PROCESSING','REFUND_LEASE_LOST'}:raise HTTPException(409,detail=msg)
++  code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(x in msg for x in ("ILLEGAL_STATE","CHANGEABLE","CANCELLABLE","INVALID","RECONCILIATION","QUOTE_","RECONFIRM","NOT_CONFIRMED","FORBIDDEN")) else 404)
+   raise HTTPException(code,detail=str(e))
++class RefundConfirmation(BaseModel):
++ expected_quote_hash:str=Field(pattern=r'^[0-9a-f]{64}$')
+ class RideSearch(BaseModel):pickup:str;dropoff:str;pickup_at:str;currency:str="CNY"
+ class RideBook(RideSearch):
+  flight_identity:dict|None=None;flight_authority_id:str|None=None
+@@ -65,8 +69,11 @@
+ @router.get("/v1/mobility/orders/{order_id}/refund-quote")
+ def rq(order_id:str,p:Principal=Depends(consumer_principal)):return w(m.refund_quote,p.user_id,order_id)
+ @router.post("/v1/mobility/orders/{order_id}/cancel")
+-def cancel(order_id:str,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+- return run_idempotent('MOBILITY_CANCEL',idempotency_key,{'user_id':p.user_id,'order_id':order_id},lambda:w(m.cancel,p.user_id,order_id))
++def cancel(order_id:str,body:RefundConfirmation|None=Body(default=None),p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
++ current=w(m.get_order,p.user_id,order_id)['data']
++ if current['vertical']=='RIDE' and body is None:raise HTTPException(422,detail='REFUND_QUOTE_CONFIRMATION_REQUIRED')
++ expected=body.expected_quote_hash if body else None
++ return run_idempotent('MOBILITY_CANCEL',idempotency_key,{'user_id':p.user_id,'order_id':order_id,'expected_quote_hash':expected},lambda:w(m.cancel,p.user_id,order_id,expected))
+ @router.post("/v1/mobility/orders/{order_id}/fulfillment")
+ def fulfill(order_id:str,b:Fulfillment,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+  return run_idempotent('MOBILITY_FULFILLMENT',idempotency_key,{'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(m.fulfill,p.user_id,order_id,b.action,b.evidence_reference))
+@@ -91,3 +98,12 @@
+ def rental_execute_change(order_id:str,quote_id:str,b:RentalChangeConfirmation,p:Principal=Depends(consumer_principal)):
+  from go_hotel.mobility.rental.changes import execute
+  return w(execute,p.user_id,order_id,quote_id,b.expected_difference_minor,b.currency)
++
++@router.get('/v1/mobility/orders/{order_id}/refund-progress')
++def ride_refund_progress(order_id:str,p:Principal=Depends(consumer_principal)):
++ from go_hotel.services.vertical_refund_recovery import progress
++ return w(progress,'RIDE',p.user_id,order_id)
++
++@router.post('/v1/mobility/orders/{order_id}/refund-progress/reconcile')
++def reconcile_ride_refund(order_id:str,p:Principal=Depends(consumer_principal)):
++ return w(m.cancel,p.user_id,order_id,None,True)
+--- a/src/go_hotel/api/routes/attractions.py
++++ b/src/go_hotel/api/routes/attractions.py
+@@ -12,7 +12,7 @@
+  try:return {"data":fn(*x)}
+  except ValueError as e:
+   msg=str(e)
+-  if msg in {'REFUND_ALREADY_PROCESSING','REFUND_LEASE_LOST','UNPAID_CANCELLATION_NOT_ALLOWED','PAYMENT_ALREADY_STARTED_RECONCILIATION_REQUIRED'}:raise HTTPException(409,detail=msg)
++  if msg in {'REFUND_QUOTE_CHANGED','REFUND_ORDER_CONTEXT_CHANGED_REVIEW_REQUIRED','REFUND_ALREADY_PROCESSING','REFUND_LEASE_LOST','UNPAID_CANCELLATION_NOT_ALLOWED','PAYMENT_ALREADY_STARTED_RECONCILIATION_REQUIRED'}:raise HTTPException(409,detail=msg)
+   code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(k in msg for k in ("ILLEGAL_STATE","CHANGEABLE","REFUNDABLE","INVALID","RECONCILIATION","INVENTORY_CHANGED")) else (400 if "NON_REFUNDABLE" in msg else 404))
+   raise HTTPException(code,detail=str(e))
+ class Search(BaseModel):destination:str;visit_date:str;product_type:str|None=None;currency:str="CNY"
+@@ -21,6 +21,9 @@
+ class Change(BaseModel):new_visit_date:str;new_session_time:str|None=None
+ class Redeem(BaseModel):evidence_reference:str
+ class ExternalState(BaseModel):state:str;evidence_reference:str;supplier_reference:str|None=None;voucher_code:str|None=None
++class RefundBody(BaseModel):
++    expected_quote_hash:str=Field(pattern=r'^[0-9a-f]{64}$')
++
+ @router.post("/v1/attractions/search")
+ def search(b:Search):
+  try:items=a.search(**b.model_dump())
+@@ -52,8 +55,8 @@
+ @router.get("/v1/attractions/orders/{order_id}/refund-quote")
+ def rq(order_id:str,p:Principal=Depends(consumer_principal)):return w(a.refund_quote,p.user_id,order_id)
+ @router.post("/v1/attractions/orders/{order_id}/refund")
+-def refund(order_id:str,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+- return run_idempotent('ATTRACTION_REFUND',idempotency_key,{'user_id':p.user_id,'order_id':order_id},lambda:w(a.refund,p.user_id,order_id))
++def refund(order_id:str,body:RefundBody,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
++ return run_idempotent('ATTRACTION_REFUND',idempotency_key,{'user_id':p.user_id,'order_id':order_id,**body.model_dump()},lambda:w(a.refund,p.user_id,order_id,body.expected_quote_hash))
+ @router.post("/v1/attractions/orders/{order_id}/redeem")
+ def redeem(order_id:str,b:Redeem,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+  return run_idempotent('ATTRACTION_REDEEM',idempotency_key,{'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(a.redeem,p.user_id,order_id,b.evidence_reference))
+@@ -65,3 +68,13 @@
+ def cancel_unpaid(order_id:str,p:Principal=Depends(consumer_principal)):
+  from go_hotel.services.vertical_capacity import cancel_unpaid as cancel
+  return w(cancel,'ATTRACTION',p.user_id,order_id,a.out)
++
++@router.get('/v1/attractions/orders/{order_id}/refund-progress')
++def refund_progress(order_id:str,p:Principal=Depends(consumer_principal)):
++    from go_hotel.services.vertical_refund_recovery import progress
++    return w(progress,'ATTRACTION',p.user_id,order_id)
++
++@router.post('/v1/attractions/orders/{order_id}/refund-progress/reconcile')
++def reconcile_refund(order_id:str,p:Principal=Depends(consumer_principal)):
++    # This can only resume an already accepted operation under its order lock.
++    return w(a.refund,p.user_id,order_id,None,True)
+--- a/alembic/versions/0131_ride_refund_operation.py
++++ b/alembic/versions/0131_ride_refund_operation.py
+@@ -0,0 +1,27 @@
++"""Allow durable ride cancellation in the existing refund journal.
++
++Revision ID: 0131_ride_refund_operation
++Revises: 0130_vertical_capacity
++"""
++from alembic import op
++import sqlalchemy as sa
++revision='0131_ride_refund_operation'
++down_revision='0130_vertical_capacity'
++branch_labels=None
++depends_on=None
++
++
++def _constraint(values):
++    with op.batch_alter_table('vertical_refund_operation') as batch:
++        batch.drop_constraint('ck_refund_operation_vertical',type_='check')
++        batch.create_check_constraint('ck_refund_operation_vertical',values)
++
++
++def upgrade():
++    _constraint("vertical IN ('RAIL','ATTRACTION','RIDE')")
++
++
++def downgrade():
++    if op.get_bind().execute(sa.text("SELECT count(*) FROM vertical_refund_operation WHERE vertical='RIDE'")).scalar():
++        raise RuntimeError('RIDE_REFUND_DATA_PRESENT_DOWNGRADE_BLOCKED')
++    _constraint("vertical IN ('RAIL','ATTRACTION')")
+--- a/tests/test_sprint3d_attractions.py
++++ b/tests/test_sprint3d_attractions.py
+@@ -13,6 +13,6 @@
+  qid=q.json()["data"]["quote_id"];e=client.post(f"/v1/attractions/orders/{oid}/execute-change/{qid}",headers=h);assert e.status_code==200 and e.json()["data"]["status"]=="UNKNOWN_EXTERNAL_STATE" and e.json()["data"]["voucher_code"] is None
+  rec=attraction_service.admin_external_state(oid,"CONFIRMED","supplier-change-proof","ops","ATTR-REISSUED","VCHR-REISSUED");assert rec["visit_date"]=="2026-09-04" and rec["voucher_code"]=="VCHR-REISSUED"
+  rq=client.get(f"/v1/attractions/orders/{oid}/refund-quote",headers=h);assert rq.status_code==200 and rq.json()["data"]["refund_amount_minor"]>0
+- rr=client.post(f"/v1/attractions/orders/{oid}/refund",headers=h);assert rr.status_code==200 and rr.json()["data"]["status"]=="REFUND_COMPLETED"
++ rr=client.post(f'/v1/attractions/orders/{oid}/refund',headers=h,json={'expected_quote_hash':rq.json()['data']['quote_hash']});assert rr.status_code==200 and rr.json()["data"]["status"]=="REFUND_COMPLETED"
+ def test_non_refundable_experience(client):
+  h=auth(client);o=client.post("/v1/attractions/orders",headers=h,json=quoted_attraction(client,{"offer_id":"teamlab_planets","visit_date":"2026-09-03","quantity":1})).json()["data"];pay_and_confirm(client,h,"ATTRACTION_ORDER",o["order_id"],"ATTR-"+o["order_id"][-6:],voucher_code="VCHR-"+o["order_id"][-6:]);rq=client.get(f"/v1/attractions/orders/{o['order_id']}/refund-quote",headers=h).json()["data"];assert rq["refund_amount_minor"]==0 and rq["refundable"] is False
+--- a/tests/test_rc20_2_all_b_to_a.py
++++ b/tests/test_rc20_2_all_b_to_a.py
+@@ -84,10 +84,11 @@
+     attraction_service.admin_external_state(oid,'UNKNOWN_EXTERNAL_STATE','supplier-timeout','expert-review')
+     assert client.get(f'/v1/attractions/orders/{oid}/refund-quote',headers=h).status_code==422
+     attraction_service.admin_external_state(oid,'CONFIRMED','supplier-reconciled','expert-review')
++    confirmed_refund=client.get(f'/v1/attractions/orders/{oid}/refund-quote',headers=h).json()['data']
+     red=client.post(f'/v1/attractions/orders/{oid}/redeem',headers=h,json={'evidence_reference':'gate-scan'})
+     assert red.status_code==200 and red.json()['data']['status']=='FULFILLED'
+     assert client.post(f'/v1/attractions/orders/{oid}/redeem',headers=h,json={'evidence_reference':'replay'}).status_code==422
+-    assert client.post(f'/v1/attractions/orders/{oid}/refund',headers=h).status_code==422
++    assert client.post(f'/v1/attractions/orders/{oid}/refund',headers=h,json={'expected_quote_hash':confirmed_refund['quote_hash']}).status_code==422
+     detail=client.get(f'/v1/attractions/orders/{oid}',headers=h).json()['data']
+     assert [x['kind'] for x in detail['evidence']][-1]=='VOUCHER_REDEEMED'
+ 
+--- a/tests/test_ride_refund_reservation.py
++++ b/tests/test_ride_refund_reservation.py
+@@ -0,0 +1,203 @@
++import pytest
++from sqlalchemy import select
++from go_hotel.db.session import SessionLocal
++from go_hotel.db.models import MobilityRideOrderRow, OmnichannelMoneyMovementRow as Movement, VerticalRefundOperationRow as Operation
++from go_hotel.mobility.ride.service import ride_service as svc
++from go_hotel.services.vertical_transaction_bridge import vertical_transaction_bridge
++from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as supplier
++from go_hotel.services.vertical_money_bridge import vertical_money_bridge
++
++
++def booked(owner='ride-refund-owner'):
++    order=svc.create(owner,{'offer_id':'ride_standard','pickup':'PVG','dropoff':'Bund',
++        'pickup_at':'2026-09-20T10:00:00','currency':'CNY','passengers':[{'full_name':'RIDER'}]})
++    oid=order['order_id'];tx=vertical_transaction_bridge.checkout_contract('RIDE',oid,owner,'test-source','isolated://ride-refund')
++    supplier.record_supplier_fact(tx['supplier_fulfillment_id'],{'state':'SUPPLIER_CONFIRMED',
++        'external_operation_id':'ride-op-'+oid,'supplier_confirmation_reference':'ride-'+oid,'evidence_reference':'isolated://confirmed'})
++    return owner,oid
++
++
++def state(oid):
++    with SessionLocal() as s:return s.get(MobilityRideOrderRow,oid).status
++
++
++def refunds():
++    with SessionLocal() as s:return list(s.scalars(select(Movement).where(Movement.movement_type=='REFUND')))
++
++
++def test_refund_reservation_blocks_pickup_before_money(monkeypatch):
++    owner,oid=booked();original=vertical_money_bridge.refund;started=[]
++    def during_money(*a,**kw):
++        try:started.append(svc.fulfill(owner,oid,'START','isolated://pickup-race'))
++        except ValueError:pass
++        return original(*a,**kw)
++    monkeypatch.setattr(vertical_money_bridge,'refund',during_money)
++    error=None
++    try:result=svc.cancel(owner,oid)
++    except ValueError as exc:error=str(exc)
++    assert not started,{'order_status':state(oid),'confirmed_refunds':len(refunds()),'error':error}
++    assert error is None and result['status']=='REFUND_COMPLETED'
++    assert state(oid)=='REFUNDED' and len(refunds())==1
++
++
++def test_lost_refund_response_reserves_order_and_recovers_once(monkeypatch):
++    owner,oid=booked();quote=svc.refund_quote(owner,oid);original=vertical_money_bridge.refund
++    def lost(*a,**kw):original(*a,**kw);raise RuntimeError('RECEIPT_LOST')
++    monkeypatch.setattr(vertical_money_bridge,'refund',lost)
++    with pytest.raises(RuntimeError,match='RECEIPT_LOST'):svc.cancel(owner,oid,quote['quote_hash'])
++    assert state(oid)=='REFUND_PENDING' and len(refunds())==1
++    for action in ['START','COMPLETE']:
++        with pytest.raises(ValueError):svc.fulfill(owner,oid,action,'isolated://must-not-fulfill')
++    with pytest.raises(ValueError):svc.modify(owner,oid,'2026-09-20T11:00:00')
++    with pytest.raises(ValueError):svc.admin_external_state(oid,'UNKNOWN_EXTERNAL_STATE','isolated://stale','ops')
++    monkeypatch.setattr(vertical_money_bridge,'refund',original)
++    first=svc.cancel(owner,oid,None,True)
++    assert svc.cancel(owner,oid,quote['quote_hash'])==first
++    assert state(oid)=='REFUNDED' and len(refunds())==1
++
++
++def test_completed_pickup_blocks_refund_without_money():
++    owner,oid=booked();quote=svc.refund_quote(owner,oid)
++    svc.fulfill(owner,oid,'START','isolated://pickup')
++    with pytest.raises(ValueError,match='NOT_CANCELLABLE'):svc.cancel(owner,oid,quote['quote_hash'])
++    assert state(oid)=='IN_PROGRESS' and not refunds()
++
++
++def test_simultaneous_refund_uses_one_lease_and_original_receipt(monkeypatch):
++    from concurrent.futures import ThreadPoolExecutor
++    from threading import Event
++    owner,oid=booked();q=svc.refund_quote(owner,oid);original=vertical_money_bridge.refund
++    entered,finish=Event(),Event()
++    def slow(*a,**kw):entered.set();assert finish.wait(10);return original(*a,**kw)
++    monkeypatch.setattr(vertical_money_bridge,'refund',slow)
++    with ThreadPoolExecutor(max_workers=2) as pool:
++        task=pool.submit(svc.cancel,owner,oid,q['quote_hash'])
++        try:
++            assert entered.wait(10)
++            with pytest.raises(ValueError,match='ALREADY_PROCESSING'):svc.cancel(owner,oid,q['quote_hash'])
++        finally:finish.set()
++        assert task.result()['status']=='REFUND_COMPLETED'
++    assert len(refunds())==1
++
++
++def test_process_exit_after_money_resumes_existing_operation():
++    import os,subprocess,sys
++    from go_hotel.db.session import engine
++    from go_hotel.core.config import settings
++    owner,oid=booked()
++    code='''import os
++from go_hotel.mobility.ride.service import ride_service
++from go_hotel.services.vertical_money_bridge import vertical_money_bridge
++original=vertical_money_bridge.refund
++def crash(*a,**kw):
++ original(*a,**kw)
++ os._exit(73)
++vertical_money_bridge.refund=crash
++ride_service.cancel(os.environ['RIDE_OWNER'],os.environ['RIDE_ID'])
++'''
++    env={**os.environ,'DATABASE_URL':str(engine.url),'APP_ENV':settings.app_env,'PYTHONPATH':os.path.abspath('src'),'RIDE_OWNER':owner,'RIDE_ID':oid}
++    p=subprocess.run([sys.executable,'-c',code],env=env,capture_output=True,timeout=30)
++    assert p.returncode==73,p.stderr.decode()
++    assert state(oid)=='REFUND_PENDING' and len(refunds())==1
++    with pytest.raises(ValueError,match='ALREADY_PROCESSING'):svc.cancel(owner,oid,None,True)
++    with SessionLocal.begin() as s:s.get(Operation,('RIDE',oid)).lease_until_ms=1
++    assert svc.cancel(owner,oid,None,True)['status']=='REFUND_COMPLETED'
++    assert len(refunds())==1
++
++
++def test_public_ride_cancel_requires_exact_quote_and_recovery_cannot_start(client):
++    from tests.test_refund_consent import auth
++    owner,h=auth(client,'ride-api');_,oid=booked(owner)
++    base='/v1/mobility/orders/'+oid
++    assert client.post(base+'/cancel',headers=h).status_code==422
++    assert client.post(base+'/refund-progress/reconcile',headers=h).status_code==404
++    q=client.get(base+'/refund-quote',headers=h).json()['data']
++    svc.modify(owner,oid,'2026-09-20T11:00:00')
++    assert client.post(base+'/cancel',headers=h,json={'expected_quote_hash':q['quote_hash']}).status_code==409
++    assert not refunds()
++    q=client.get(base+'/refund-quote',headers=h).json()['data']
++    accepted=client.post(base+'/cancel',headers=h,json={'expected_quote_hash':q['quote_hash']})
++    assert accepted.status_code==200,accepted.text
++    progress=client.get(base+'/refund-progress',headers=h)
++    assert progress.json()['data']['status']=='COMPLETED'
++    assert client.post(base+'/refund-progress/reconcile',headers=h).status_code==200
++    _,other=auth(client,'ride-other')
++    assert client.get(base+'/refund-progress',headers=other).status_code==404
++    assert client.post(base+'/refund-progress/reconcile',headers=other).status_code==404
++    assert len(refunds())==1
++
++
++@pytest.mark.no_db
++def test_migration_keeps_prior_refunds_and_blocks_ride_history_loss(tmp_path,monkeypatch):
++    import sqlite3
++    from alembic import command
++    from alembic.config import Config
++    from go_hotel.core.config import settings
++    db=tmp_path/'ride-refunds.sqlite3';url='sqlite+pysqlite:///'+str(db)
++    monkeypatch.setattr(settings,'database_url',url)
++    config=Config('alembic.ini');config.set_main_option('sqlalchemy.url',url)
++    command.stamp(config,'0127_vertical_prebook_contract');command.upgrade(config,'0130_vertical_capacity')
++    with sqlite3.connect(db) as c:
++        c.execute("INSERT INTO vertical_refund_operation (vertical,order_id,account_id,state,quote_json,adjustment_ids_json,request_hash,lease_until_ms,attempt,created_ms) VALUES ('RAIL','old','owner','PENDING','{}','[]','unchanged',0,0,0)")
++    command.upgrade(config,'0131_ride_refund_operation');command.downgrade(config,'0130_vertical_capacity');command.upgrade(config,'0131_ride_refund_operation')
++    with sqlite3.connect(db) as c:
++        assert c.execute("SELECT request_hash FROM vertical_refund_operation WHERE order_id='old'").fetchone()[0]=='unchanged'
++        c.execute("INSERT INTO vertical_refund_operation (vertical,order_id,account_id,state,quote_json,adjustment_ids_json,request_hash,lease_until_ms,attempt,created_ms) VALUES ('RIDE','ride','owner','PENDING','{}','[]','keep',0,0,0)")
++    with pytest.raises(RuntimeError,match='DATA_PRESENT'):command.downgrade(config,'0130_vertical_capacity')
++    with sqlite3.connect(db) as c:
++        assert c.execute('SELECT version_num FROM alembic_version').fetchone()[0]=='0131_ride_refund_operation'
++        assert c.execute('SELECT count(*) FROM vertical_refund_operation').fetchone()[0]==2
++
++
++@pytest.mark.parametrize('fleet_state',['DISPATCHED','UNKNOWN','HOLD'])
++def test_unresolved_fleet_change_blocks_refund(fleet_state):
++    from tests.test_depth19_ride_sync import authority,seed_ride,proposal
++    from go_hotel.db.models import RideFlightAdjustmentRow
++    auth=authority();ride,identity=seed_ride(auth);aid=proposal(auth,ride,identity)
++    with SessionLocal.begin() as s:s.get(RideFlightAdjustmentRow,aid).status=fleet_state
++    with pytest.raises(ValueError,match='FLEET_RECONCILIATION_REQUIRED'):svc.refund_quote('u19',ride['order_id'])
++    with pytest.raises(ValueError,match='FLEET_RECONCILIATION_REQUIRED'):svc.cancel('u19',ride['order_id'])
++    assert state(ride['order_id'])=='CONFIRMED' and not refunds()
++
++
++def test_completed_legacy_receipt_is_returned_without_new_authorization():
++    owner,oid=booked();first=svc.cancel(owner,oid)
++    # Reproduce the pre-journal schema state using the actual immutable receipt.
++    with SessionLocal.begin() as s:s.delete(s.get(Operation,('RIDE',oid)))
++    assert svc.cancel(owner,oid)==first
++    with SessionLocal() as s:assert s.get(Operation,('RIDE',oid)) is None
++    assert len(refunds())==1
++
++
++def test_local_commit_failure_after_money_recovers(monkeypatch):
++    from go_hotel.services import vertical_refund_recovery as recovery
++    owner,oid=booked();original=recovery.project_vertical_lifecycle
++    def fail(s,v,o,*a,**kw):
++        if v=='RIDE' and o.status=='REFUNDED':raise RuntimeError('LOCAL_COMMIT_FAILED')
++        return original(s,v,o,*a,**kw)
++    monkeypatch.setattr(recovery,'project_vertical_lifecycle',fail)
++    with pytest.raises(RuntimeError,match='LOCAL_COMMIT_FAILED'):svc.cancel(owner,oid)
++    assert state(oid)=='REFUND_PENDING' and len(refunds())==1
++    monkeypatch.setattr(recovery,'project_vertical_lifecycle',original)
++    assert svc.cancel(owner,oid,None,True)['status']=='REFUND_COMPLETED'
++    assert len(refunds())==1
++
++
++def test_fabricated_money_confirmation_cannot_cancel_ride(monkeypatch):
++    owner,oid=booked()
++    monkeypatch.setattr(vertical_money_bridge,'refund_with_adjustments',lambda *a,**kw:{'state':'CONFIRMED','money_movement_id':'absent'})
++    with pytest.raises(ValueError,match='MONEY_NOT_CONFIRMED'):svc.cancel(owner,oid)
++    assert state(oid)=='REFUND_PENDING' and not refunds()
++
++
++def test_public_cancel_denies_foreign_or_absent_orders_without_server_error(client):
++    from tests.test_refund_consent import auth
++    owner,h=auth(client,'ride-access');_,oid=booked(owner)
++    _,other=auth(client,'ride-access-other')
++    body={'expected_quote_hash':svc.refund_quote(owner,oid)['quote_hash']}
++    foreign=client.post('/v1/mobility/orders/'+oid+'/cancel',headers=other,json=body)
++    missing=client.post('/v1/mobility/orders/absent/cancel',headers=h,json=body)
++    assert foreign.status_code==missing.status_code==404
++    assert foreign.json()['detail']==missing.json()['detail']=='MOBILITY_ORDER_NOT_FOUND'
++    assert client.post('/v1/mobility/orders/'+oid+'/cancel',json=body).status_code==401
++    assert state(oid)=='CONFIRMED' and not refunds()
+--- a/tests/test_sprint3b_rail.py
++++ b/tests/test_sprint3b_rail.py
+@@ -42,7 +42,7 @@
+     h=auth(client,'rail-refund@example.com'); oid=create_ticketed(client,h)
+     q=client.get(f'/v1/rail/orders/{oid}/refund-quote',headers=h); assert q.status_code==200
+     assert q.json()['data']['refund_to']=='ORIGINAL_PAYMENT_METHOD'
+-    r=client.post(f'/v1/rail/orders/{oid}/refund',headers=h); assert r.status_code==200,r.text
++    r=client.post(f'/v1/rail/orders/{oid}/refund',headers=h,json={'expected_quote_hash':q.json()['data']['quote_hash']}); assert r.status_code==200,r.text
+     assert r.json()['data']['status']=='REFUND_COMPLETED'
+     d=client.get(f'/v1/rail/orders/{oid}',headers=h).json()['data']; assert d['status']=='REFUNDED'
+ 
+--- a/tests/test_refund_consent.py
++++ b/tests/test_refund_consent.py
+@@ -0,0 +1,136 @@
++import pytest
++from go_hotel.db.session import SessionLocal
++from go_hotel.db.models import VerticalRefundOperationRow as Operation, RailOrderRow, AttractionOrderRow
++from tests.test_depth21_refund_recovery import booked, refunded_movements, row_state
++
++
++def auth(client, vertical):
++    email=f'consent-{vertical}@example.test'
++    r=client.post('/v1/consumer/auth/register',json={'email':email,'password':'StrongPass123!','display_name':'Consent'})
++    assert r.status_code==200,r.text
++    owner=r.json()['data']['profile']['user_id']
++    token=client.post('/v1/mobile/auth/login',json={'email':email,'password':'StrongPass123!'}).json()['data']['access_token']
++    client.cookies.clear()
++    return owner,{'Authorization':'Bearer '+token}
++
++
++def case(client,vertical):
++    owner,headers=auth(client,vertical);svc,_,oid=booked(vertical,owner)
++    base='/v1/'+('rail' if vertical=='RAIL' else 'attractions')+'/orders/'+oid
++    return svc,owner,oid,headers,base
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_public_refund_requires_quote_confirmation_before_any_money(client,vertical):
++    svc,owner,oid,headers,base=case(client,vertical)
++    response=client.post(base+'/refund',headers=headers)
++    assert response.status_code==422,response.text
++    assert not refunded_movements()
++    assert row_state(vertical,oid)==('TICKETED' if vertical=='RAIL' else 'CONFIRMED')
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_completed_change_invalidates_displayed_quote_even_for_same_price(client,vertical):
++    svc,owner,oid,h,base=case(client,vertical)
++    quote=client.get(base+'/refund-quote',headers=h).json()['data']
++    change=svc.change_quote(owner,oid,'2026-09-16');svc.execute_change(owner,oid,change['quote_id'])
++    if vertical=='RAIL':
++        svc.admin_external_state(oid,'TICKETED','isolated://changed','ops','NEW',['NEW-A','NEW-B'],change['quote_id'])
++    else:
++        svc.admin_external_state(oid,'CONFIRMED','isolated://changed','ops','NEW','NEW-VOUCHER')
++    fresh=client.get(base+'/refund-quote',headers=h).json()['data']
++    assert fresh['quote_hash']!=quote['quote_hash']
++    if vertical=='ATTRACTION':assert fresh['refund_amount_minor']==quote['refund_amount_minor']
++    stale=client.post(base+'/refund',headers=h,json={'expected_quote_hash':quote['quote_hash']})
++    assert stale.status_code==409 and stale.json()['detail']=='REFUND_QUOTE_CHANGED'
++    assert not refunded_movements()
++    with SessionLocal() as s:assert s.get(Operation,(vertical,oid)) is None
++    accepted=client.post(base+'/refund',headers=h,json={'expected_quote_hash':fresh['quote_hash']})
++    assert accepted.status_code==200,accepted.text
++    assert accepted.json()['data']['refund_amount_minor']==fresh['refund_amount_minor']
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_quote_belongs_to_exact_order_and_replay_keeps_original_confirmation(client,vertical):
++    svc,owner,oid,h,base=case(client,vertical)
++    quote=client.get(base+'/refund-quote',headers=h).json()['data']
++    _,_,second=booked(vertical,owner)
++    second_quote=svc.refund_quote(owner,second)
++    assert second_quote['refund_amount_minor']==quote['refund_amount_minor']
++    bad=client.post(base+'/refund',headers=h,json={'expected_quote_hash':second_quote['quote_hash']})
++    assert bad.status_code==409 and not refunded_movements()
++    body={'expected_quote_hash':quote['quote_hash']}
++    first=client.post(base+'/refund',headers={**h,'Idempotency-Key':'original'},json=body)
++    assert first.status_code==200,first.text
++    for key in ['original','different-device']:
++        retry=client.post(base+'/refund',headers={**h,'Idempotency-Key':key},json=body)
++        assert retry.status_code==200 and retry.json()==first.json()
++    changed=client.post(base+'/refund',headers={**h,'Idempotency-Key':'original'},json={'expected_quote_hash':second_quote['quote_hash']})
++    assert changed.status_code==409
++    assert len(refunded_movements())==1
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_recovery_endpoint_cannot_initiate_refund_and_is_owner_scoped(client,vertical):
++    svc,owner,oid,h,base=case(client,vertical)
++    for suffix,method in [('/refund-progress',client.get),('/refund-progress/reconcile',client.post)]:
++        assert method(base+suffix,headers=h).status_code==404
++        assert method(base+suffix).status_code==401
++    assert not refunded_movements()
++    with SessionLocal() as s:assert s.get(Operation,(vertical,oid)) is None
++    svc.refund(owner,oid,svc.refund_quote(owner,oid)['quote_hash'])
++    _,other=auth(client,vertical+'-other')
++    assert client.get(base+'/refund-progress',headers=other).status_code==404
++    assert client.post(base+'/refund-progress/reconcile',headers=other).status_code==404
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_readonly_progress_and_explicit_recovery_preserve_confirmed_money(client,vertical,monkeypatch):
++    from go_hotel.services import vertical_refund_recovery as recovery
++    svc,owner,oid,h,base=case(client,vertical);q=svc.refund_quote(owner,oid)
++    original=recovery.vertical_money_bridge.refund_with_adjustments
++    def lost(*a,**kw):original(*a,**kw);raise RuntimeError('RECEIPT_LOST')
++    monkeypatch.setattr(recovery.vertical_money_bridge,'refund_with_adjustments',lost)
++    with pytest.raises(RuntimeError,match='RECEIPT_LOST'):svc.refund(owner,oid,q['quote_hash'])
++    with SessionLocal() as s:
++        op=s.get(Operation,(vertical,oid));before=(op.attempt,op.lease_until_ms,op.state,dict(op.quote_json))
++    for _ in range(3):
++        progress=client.get(base+'/refund-progress',headers=h)
++        assert progress.status_code==200 and progress.json()['data']['status']=='PENDING'
++        assert progress.json()['data']['refund_amount_minor']==q['refund_amount_minor']
++        assert progress.json()['data']['external_live'] is False
++    with SessionLocal() as s:
++        op=s.get(Operation,(vertical,oid));assert before==(op.attempt,op.lease_until_ms,op.state,dict(op.quote_json))
++    monkeypatch.setattr(recovery.vertical_money_bridge,'refund_with_adjustments',original)
++    response=client.post(base+'/refund-progress/reconcile',headers=h)
++    assert response.status_code==200,response.text
++    assert response.json()['data']['status']=='REFUND_COMPLETED' and len(refunded_movements())==1
++    assert client.get(base+'/refund-progress',headers=h).json()['data']['status']=='COMPLETED'
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_order_identity_drift_after_acceptance_requires_review_before_money(client,vertical,monkeypatch):
++    from go_hotel.services import vertical_refund_recovery as recovery
++    svc,owner,oid,h,base=case(client,vertical);q=svc.refund_quote(owner,oid)
++    original=recovery.vertical_money_bridge.refund_with_adjustments
++    def offline(*a,**kw):raise RuntimeError('OFFLINE')
++    monkeypatch.setattr(recovery.vertical_money_bridge,'refund_with_adjustments',offline)
++    with pytest.raises(RuntimeError):svc.refund(owner,oid,q['quote_hash'])
++    # Simulate an invalid out-of-band correction. Recovery must not release the
++    # new ticket or its capacity using the prior customer's authorization.
++    with SessionLocal.begin() as s:
++        order=s.get(RailOrderRow if vertical=='RAIL' else AttractionOrderRow,oid)
++        if vertical=='RAIL':order.ticket_numbers=['CHANGED-A','CHANGED-B']
++        else:order.voucher_code='CHANGED-VOUCHER'
++    monkeypatch.setattr(recovery.vertical_money_bridge,'refund_with_adjustments',original)
++    response=client.post(base+'/refund-progress/reconcile',headers=h)
++    assert response.status_code==409 and 'CONTEXT_CHANGED' in response.json()['detail']
++    assert row_state(vertical,oid)=='REFUND_PENDING' and not refunded_movements()
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++@pytest.mark.parametrize('value',['0'*63,'G'*64,7])
++def test_malformed_confirmation_is_rejected(client,vertical,value):
++    svc,owner,oid,h,base=case(client,vertical)
++    assert client.post(base+'/refund',headers=h,json={'expected_quote_hash':value}).status_code==422
++    assert not refunded_movements()
+--- a/tests/test_sprint3c_mobility.py
++++ b/tests/test_sprint3c_mobility.py
+@@ -6,7 +6,8 @@
+  s=client.post("/v1/mobility/rides/search",json={"pickup":"PVG","dropoff":"Shanghai Bund","pickup_at":"2026-09-01T10:00:00","currency":"CNY"});assert s.status_code==200
+  o=client.post("/v1/mobility/rides/orders",headers=h,json={"offer_id":s.json()["data"]["items"][0]["offer_id"],"pickup":"PVG","dropoff":"Shanghai Bund","pickup_at":"2026-09-01T10:00:00","currency":"CNY","flight_no":"MU510"});assert o.status_code==200;oid=o.json()["data"]["order_id"];assert o.json()['data']['status']=='PAYMENT_PENDING';pay_and_confirm(client,h,'RIDE_ORDER',oid,'RIDE-'+oid[-6:])
+  assert client.post(f"/v1/mobility/orders/{oid}/modify",headers=h,json={"new_time":"2026-09-01T11:00:00"}).status_code==200
+- assert client.post(f"/v1/mobility/orders/{oid}/cancel",headers=h).json()["data"]["status"]=="REFUND_COMPLETED"
++ q=client.get(f'/v1/mobility/orders/{oid}/refund-quote',headers=h).json()['data']
++ assert client.post(f'/v1/mobility/orders/{oid}/cancel',headers=h,json={'expected_quote_hash':q['quote_hash']}).json()["data"]["status"]=="REFUND_COMPLETED"
+  s=client.post("/v1/mobility/rentals/search",json={"pickup_location":"NRT","return_location":"NRT","pickup_at":"2026-09-02T09:00:00","return_at":"2026-09-05T09:00:00","currency":"CNY"});assert s.status_code==200
+  x=s.json()["data"]["items"][0];assert "insurance" in x and "mileage" in x and "deposit_minor" in x
+  o=client.post("/v1/mobility/rentals/orders",headers=h,json={"offer_id":x["offer_id"],"pickup_location":"NRT","return_location":"NRT","pickup_at":"2026-09-02T09:00:00","return_at":"2026-09-05T09:00:00","currency":"CNY"});assert o.status_code==200;rid=o.json()['data']['order_id'];pay_and_confirm(client,h,'RENTAL_ORDER',rid,'RENT-'+rid[-6:])
+--- a/tests/test_master03_closure.py
++++ b/tests/test_master03_closure.py
+@@ -117,7 +117,11 @@
+         else:
+             route={'FLIGHT':'flights','RAIL':'rail','RENTAL':'mobility','RIDE':'mobility','ATTRACTION':'attractions'}[vertical]
+             action='cancel' if vertical in {'RENTAL','RIDE'} else 'refund'
+-            refunded=client.post(f"/v1/{route}/orders/{order['order_id']}/{action}",headers={**headers,'Idempotency-Key':f'refund:{vertical}'})
++            refund_body=None
++            if vertical in {'RAIL','ATTRACTION','RIDE'}:
++                quote=client.get(f"/v1/{route}/orders/{order['order_id']}/refund-quote",headers=headers).json()['data']
++                refund_body={'expected_quote_hash':quote['quote_hash']}
++            refunded=client.post(f"/v1/{route}/orders/{order['order_id']}/{action}",headers={**headers,'Idempotency-Key':f'refund:{vertical}'},json=refund_body)
+         assert refunded.status_code==200,refunded.text
+         with SessionLocal() as s:
+             refunds=s.scalars(select(OmnichannelMoneyMovementRow).where(OmnichannelMoneyMovementRow.root_payment_intent_id==root.payment_intent_id,OmnichannelMoneyMovementRow.movement_type=='REFUND')).all()
+--- a/tests/test_parent_implementation_code_review_debt_closure.py
++++ b/tests/test_parent_implementation_code_review_debt_closure.py
+@@ -148,7 +148,7 @@
+ 
+     heads = subprocess.run([sys.executable, "-m", "alembic", "heads"], env=env, text=True, capture_output=True, check=True)
+     head_lines = [line.strip() for line in heads.stdout.splitlines() if line.strip().endswith("(head)")]
+-    assert head_lines == ["0130_vertical_capacity (head)"]
++    assert head_lines == ["0131_ride_refund_operation (head)"]
+ 
+     subprocess.run([sys.executable, "-m", "alembic", "upgrade", "0114_ext_truth_incident_hard"], env=env, text=True, capture_output=True, check=True)
+     conn = sqlite3.connect(db)
+--- a/tests_frontend/vertical_refund_recovery.test.mjs
++++ b/tests_frontend/vertical_refund_recovery.test.mjs
+@@ -9,15 +9,15 @@
+  const c={state:{railOrder:order,attractionOrder:order},crypto:{randomUUID:()=> 'request-21'},Error,
+   api:async(path,options)=>{calls.push({path,options});if(options&&error)throw Error(error);return options?{status:'REFUND_COMPLETED'}:{...order,status:'REFUNDED'}},
+   renderRailOrder:()=>calls.push({render:'RAIL'}),renderAttractionOrder:()=>calls.push({render:'ATTRACTION'}),
+-  uxConfirm:options=>options};
++  money:(amount,currency)=>`${currency} ${amount}`,toast:()=>{},uxConfirm:options=>options};
+  vm.createContext(c);vm.runInContext(helpers,c);return {c,calls,order};
+ }
+ for(const vertical of ['RAIL','ATTRACTION']){
+  test(`${vertical}: opening recovery does not send a refund until confirmed`,async()=>{
+-  const s=setup(vertical),dialog=s.c.resumeVerticalRefund(vertical);assert.equal(s.calls.length,0);
++  const s=setup(vertical),dialog=await s.c.resumeVerticalRefund(vertical);assert.equal(s.calls.filter(x=>x.options?.method==='POST').length,0);
+   await dialog.onConfirm();assert.equal(s.calls.filter(x=>x.options?.method==='POST').length,1);
+-  assert.equal(s.calls[0].options.headers['Idempotency-Key'],'request-21');
+-  assert.match(s.calls[0].path,/owned-order\/refund$/);assert.equal(s.calls.at(-1).render,vertical);
++  assert.equal(s.calls[1].options.headers['Idempotency-Key'],'request-21');
++  assert.match(s.calls[1].path,/owned-order\/refund-progress\/reconcile$/);assert.equal(s.calls.at(-1).render,vertical);
+  });
+  test(`${vertical}: failed response still reloads persisted order state`,async()=>{
+   const s=setup(vertical,'connection lost');await assert.rejects(s.c.submitVerticalRefund(vertical,'owned-order'),/connection lost/);
+--- a/tests_frontend/refund_consent.test.mjs
++++ b/tests_frontend/refund_consent.test.mjs
+@@ -0,0 +1,50 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import vm from 'node:vm';
++const code=fs.readFileSync('frontend/consumer/app.js','utf8');
++const helper=code.slice(code.indexOf('async function submitVerticalRefund('),code.indexOf('async function railRefund('));
++function setup(vertical,config={}){
++ const group=vertical==='RAIL'?'rail':vertical==='RIDE'?'mobility':'attractions',field=vertical==='RAIL'?'railOrder':vertical==='RIDE'?'rideOrder':'attractionOrder';
++ const calls=[],order={order_id:'order/consent',status:vertical==='RAIL'?'TICKETED':'CONFIRMED'};
++ const quote={order_id:order.order_id,quote_hash:'a'.repeat(64),refund_amount_minor:900,refund_fee_minor:100,currency:'CNY',...config.quote};
++ let keys=0;
++ const c={state:{[field]:order},crypto:{randomUUID:()=>`request-${++keys}`},Error,encodeURIComponent,
++  money:(a,c)=>`${c} ${a}`,toast:x=>calls.push({toast:x}),uxConfirm:x=>x,
++  api:async(path,options)=>{calls.push({path,options});if(options&&config.fail)throw Error(config.fail);return path.endsWith('refund-quote')?quote:options?{status:'REFUND_COMPLETED'}:{...order,status:'REFUNDED'}},
++  renderMobilityOrder:kind=>calls.push({render:kind}),renderRailOrder:()=>calls.push({render:'RAIL'}),renderAttractionOrder:()=>calls.push({render:'ATTRACTION'})};
++ vm.createContext(c);vm.runInContext(helper,c);return {c,calls,field,group,quote};
++}
++for(const vertical of ['RAIL','ATTRACTION','RIDE']){
++ test(`${vertical}: confirmation captures displayed quote and order with one stable key`,async()=>{
++  const s=setup(vertical),dialog=await s.c.openVerticalRefund(vertical);
++  assert.equal(s.calls.filter(x=>x.options).length,0);
++  assert.match(dialog.summary,/900/);assert.match(dialog.summary,/100/);
++  s.c.state[s.field]={order_id:'different-order',status:'CONFIRMED'};
++  await dialog.onConfirm();await dialog.onConfirm();
++  const posts=s.calls.filter(x=>x.options);
++  assert.equal(posts.length,2);
++  assert.ok(posts.every(x=>x.path.endsWith('/order%2Fconsent/'+(vertical==='RIDE'?'cancel':'refund'))));
++  assert.ok(posts.every(x=>JSON.parse(x.options.body).expected_quote_hash==='a'.repeat(64)));
++  assert.equal(posts[0].options.headers['Idempotency-Key'],posts[1].options.headers['Idempotency-Key']);
++  assert.equal(s.c.state[s.field].order_id,'different-order');
++  assert.equal(s.calls.filter(x=>x.render).length,0);
++ });
++ test(`${vertical}: stale quote does not trigger a replacement refund or automatic reconsent`,async()=>{
++  const s=setup(vertical,{fail:'REFUND_QUOTE_CHANGED'}),dialog=await s.c.openVerticalRefund(vertical);
++  await assert.rejects(dialog.onConfirm(),/重新查看退款金额并确认/);
++  assert.equal(s.calls.filter(x=>x.options).length,1);
++  assert.equal(s.calls.filter(x=>x.path?.endsWith('refund-quote')).length,1);
++ });
++ test(`${vertical}: incomplete quote blocks the confirmation dialog`,async()=>{
++  const s=setup(vertical,{quote:{quote_hash:undefined}});
++  assert.equal(await s.c.openVerticalRefund(vertical),undefined);
++  assert.equal(s.calls.filter(x=>x.options).length,0);
++  assert.match(s.calls.at(-1).toast,/未完整返回/);
++ });
++ test(`${vertical}: a quote for another order is never displayed as consent`,async()=>{
++  const s=setup(vertical,{quote:{order_id:'not-this-order'}});
++  assert.equal(await s.c.openVerticalRefund(vertical),undefined);
++  assert.equal(s.calls.filter(x=>x.options).length,0);
++ });
++}
+--- a/tests_frontend/mobile_refund_controller.test.mjs
++++ b/tests_frontend/mobile_refund_controller.test.mjs
+@@ -0,0 +1,58 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import {createRefundController} from '../mobile/go-app/src/afterSales/refundController.ts';
++function setup(vertical,options={}){
++ const calls=[],id='mobile/order',quote={order_id:id,quote_hash:'b'.repeat(64),refund_amount_minor:900,refund_fee_minor:100,currency:'CNY'};
++ let status=vertical==='RAIL'?'TICKETED':'CONFIRMED',progress='PENDING',n=0;
++ const api=async(path,init)=>{
++  calls.push({path,init});
++  if(init){
++   if(options.reject){throw Error(options.reject)}
++   status='REFUND_PENDING';progress='PENDING';
++   if(!options.pending){status='REFUNDED';progress='COMPLETED'}
++   if(options.lost)throw Error('NETWORK_REQUEST_FAILED');
++   return {data:{status:'REFUND_COMPLETED'}};
++  }
++  if(path.endsWith('/refund-quote'))return {data:quote};
++  if(path.endsWith('/refund-progress'))return {data:{...quote,status:progress}};
++  return {data:{order_id:id,status}};
++ };
++ const c=createRefundController(api,()=>`key-${++n}`,vertical,id);
++ return {c,calls,quote,setStatus:value=>{status=value},complete:()=>{status='REFUNDED';progress='COMPLETED'}};
++}
++for(const vertical of ['RAIL','ATTRACTION','RIDE']){
++ test(`mobile ${vertical}: opening is read-only and confirm carries the displayed identity`,async()=>{
++  const s=setup(vertical);await s.c.load();assert.equal(s.c.get().phase,'QUOTE');
++  assert.equal(s.calls.filter(x=>x.init).length,0);
++  await s.c.submit();const post=s.calls.find(x=>x.init);
++  assert.match(post.path,/mobile%2Forder\/(refund|cancel)$/);
++  assert.equal(JSON.parse(post.init.body).expected_quote_hash,s.quote.quote_hash);
++  assert.equal(post.init.headers['Idempotency-Key'],'key-1');
++  assert.equal(s.c.get().phase,'COMPLETE');
++  await s.c.submit();assert.equal(s.calls.filter(x=>x.init).length,1);
++ });
++ test(`mobile ${vertical}: lost response uses persisted progress instead of navigation success`,async()=>{
++  const s=setup(vertical,{lost:true,pending:true});await s.c.load();await s.c.submit();
++  assert.equal(s.c.get().phase,'PENDING');
++  await s.c.load();assert.equal(s.calls.filter(x=>x.init).length,1);
++  await s.c.recover();assert.match(s.calls.filter(x=>x.init).at(-1).path,/refund-progress\/reconcile$/);
++  assert.equal(s.c.get().phase,'PENDING');
++  s.complete();await s.c.load();assert.equal(s.c.get().phase,'COMPLETE');
++ });
++ test(`mobile ${vertical}: stale confirmation cannot automatically initiate a new refund`,async()=>{
++  const s=setup(vertical,{reject:'REFUND_QUOTE_CHANGED'});await s.c.load();await s.c.submit();
++  assert.equal(s.calls.filter(x=>x.init).length,1);assert.equal(s.c.get().phase,'QUOTE');
++  assert.match(s.c.get().message,/重新核对/);
++  await s.c.recover();assert.equal(s.calls.filter(x=>x.init).length,1);
++ });
++}
++test('mobile: double-tap has one mutation while the first request is pending',async()=>{
++ let release;const wait=new Promise(r=>release=r);let calls=0;
++ const quote={order_id:'id',quote_hash:'c'.repeat(64),refund_amount_minor:10,refund_fee_minor:0,currency:'CNY'};
++ const c=createRefundController(async(path,init)=>{if(init){calls++;await wait;throw Error('lost')}return {data:path.endsWith('refund-quote')?quote:{order_id:'id',status:'TICKETED'}}},()=> 'key','RAIL','id');
++ await c.load();const first=c.submit();await c.submit();assert.equal(calls,1);release();await first;
++});
++test('mobile: missing order cannot display completion or create a request',async()=>{
++ let calls=0;const c=createRefundController(async()=>{calls++},()=> 'key','RIDE','');
++ await c.load();await c.submit();await c.recover();assert.equal(calls,0);assert.equal(c.get().phase,'BLOCKED');
++});
+--- a/frontend/consumer/app.js
++++ b/frontend/consumer/app.js
+@@ -96,28 +96,67 @@
+ async function railResumeChange(){const o=state.railOrder,q=(o.change_quotes||[]).find(x=>x.status==='PREPARING');if(!q){toast('正在核对原改签申请，请稍后刷新。');return}uxConfirm({title:'继续原改签申请',description:'将继续处理已经提交的日期、席别和补款方案。',confirmLabel:'继续核对',onConfirm:async()=>{try{await api(`/v1/rail/orders/${encodeURIComponent(o.order_id)}/execute-change/${encodeURIComponent(q.quote_id)}`,{method:'POST',headers:{'Idempotency-Key':crypto.randomUUID()}})}finally{await railReload()}}})}
+ async function railReload(){state.railOrder=await api(`/v1/rail/orders/${state.railOrder.order_id}`);renderRailOrder()}
+ function railChange(){uxSheet({title:'铁路改签',fields:[{id:'newTravelDate',label:'新出发日期',type:'date'}],confirmLabel:'查看改签费用',onConfirm:async v=>{const q=await api(`/v1/rail/orders/${state.railOrder.order_id}/change-quote`,{method:'POST',body:JSON.stringify({new_travel_date:v.newTravelDate,new_seat_class:state.railOrder.journey?.seat_class})});uxConfirm({title:'确认铁路改签',summary:`<div class="kv"><span>改签费用</span><b>${money(q.total_due_minor,q.currency)}</b></div>`,confirmLabel:'确认改签',onConfirm:async()=>{try{await api(`/v1/rail/orders/${state.railOrder.order_id}/execute-change/${q.quote_id}`,{method:'POST'})}finally{await railReload()}}})}})}
+-async function submitVerticalRefund(vertical,orderId){
+- const group=vertical==='RAIL'?'rail':'attractions';
+- try{return await api(`/v1/${group}/orders/${encodeURIComponent(orderId)}/refund`,{method:'POST',headers:{'Idempotency-Key':crypto.randomUUID()}})}
+- catch(e){if(/REFUND_ALREADY_PROCESSING|REFUND_LEASE_LOST/.test(e.message))throw new Error('原退款正在核对，请稍后刷新订单。');throw e}
+- finally{const fresh=await api(`/v1/${group}/orders/${encodeURIComponent(orderId)}`);if(vertical==='RAIL'){state.railOrder=fresh;renderRailOrder()}else{state.attractionOrder=fresh;renderAttractionOrder()}}
++async function submitVerticalRefund(vertical,orderId,quoteHash=null,requestKey=crypto.randomUUID()){
++ if(!['RAIL','ATTRACTION','RIDE'].includes(vertical))throw new Error('退款订单类型无效');
++ const group=vertical==='RAIL'?'rail':vertical==='RIDE'?'mobility':'attractions',field=vertical==='RAIL'?'railOrder':vertical==='RIDE'?'rideOrder':'attractionOrder';
++ const base=`/v1/${group}/orders/${encodeURIComponent(orderId)}`;
++ let result,failure;
++ try{
++  const options={method:'POST',headers:{'Idempotency-Key':requestKey}};
++  if(quoteHash)options.body=JSON.stringify({expected_quote_hash:quoteHash});
++  result=await api(base+(quoteHash?(vertical==='RIDE'?'/cancel':'/refund'):'/refund-progress/reconcile'),options);
++ }catch(e){
++  failure=/REFUND_QUOTE_CHANGED/.test(e.message)?new Error('订单或退款方案已变化，请重新查看退款金额并确认。'):
++   /REFUND_ALREADY_PROCESSING|REFUND_LEASE_LOST/.test(e.message)?new Error('原退款正在核对，请稍后刷新订单。'):
++   /REFUND_ORDER_CONTEXT_CHANGED_REVIEW_REQUIRED/.test(e.message)?new Error('原退款与订单信息需要核对，请联系订单支持。'):e;
++ }
++ try{
++  const fresh=await api(base);
++  if(state[field]?.order_id===orderId){state[field]=fresh;(vertical==='RAIL'?renderRailOrder:vertical==='RIDE'?()=>renderMobilityOrder('RIDE'):renderAttractionOrder)()}
++ }catch(e){if(!failure)failure=new Error('请重新打开订单核对处理结果。')}
++ if(failure)throw failure;
++ return result;
+ }
+-function resumeVerticalRefund(vertical){
+- const o=vertical==='RAIL'?state.railOrder:state.attractionOrder;
+- return uxConfirm({title:'继续核对原退款',description:'原申请已受理。我们会继续核对同一笔退款，处理中暂不办理改签或核销。',confirmLabel:'核对退款进度',onConfirm:()=>submitVerticalRefund(vertical,o.order_id)});
++async function resumeVerticalRefund(vertical){
++ const o=vertical==='RAIL'?state.railOrder:vertical==='RIDE'?state.rideOrder:state.attractionOrder;
++ if(!o||o.status!=='REFUND_PENDING')return;
++ const group=vertical==='RAIL'?'rail':vertical==='RIDE'?'mobility':'attractions',orderId=o.order_id;
++ try{
++  const progress=await api(`/v1/${group}/orders/${encodeURIComponent(orderId)}/refund-progress`);
++  const requestKey=crypto.randomUUID();
++  return uxConfirm({title:'继续核对原退款',description:'核对已经受理的同一笔申请。隔离测试不会产生真实银行卡退款。',
++   summary:`<div class="kv"><span>原申请退款</span><b>${money(progress.refund_amount_minor,progress.currency)}</b></div>`,
++   confirmLabel:'核对退款进度',onConfirm:()=>submitVerticalRefund(vertical,orderId,null,requestKey)});
++ }catch(e){toast(e.message)}
+ }
+-async function railRefund(){if(state.railOrder?.status==='REFUND_PENDING')return resumeVerticalRefund('RAIL');try{const q=await api(`/v1/rail/orders/${state.railOrder.order_id}/refund-quote`);uxConfirm({title:'申请铁路退款',summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div>`,confirmLabel:'确认退款',danger:true,onConfirm:async()=>{await submitVerticalRefund('RAIL',state.railOrder.order_id)}})}catch(e){toast(e.message)}}
++async function openVerticalRefund(vertical){
++ const o=vertical==='RAIL'?state.railOrder:vertical==='RIDE'?state.rideOrder:state.attractionOrder;
++ if(!o)return;
++ if(o.status==='REFUND_PENDING')return resumeVerticalRefund(vertical);
++ const group=vertical==='RAIL'?'rail':vertical==='RIDE'?'mobility':'attractions',orderId=o.order_id;
++ try{
++  const q=await api(`/v1/${group}/orders/${encodeURIComponent(orderId)}/refund-quote`);
++  if(q.refundable===false){toast('该产品不可退款');return}
++  if(q.order_id!==orderId||!/^[0-9a-f]{64}$/.test(q.quote_hash||''))throw new Error('退款方案未完整返回，请重新查询。');
++  const quoteHash=q.quote_hash,requestKey=crypto.randomUUID();
++  return uxConfirm({title:vertical==='RAIL'?'申请铁路退款':vertical==='RIDE'?'取消接送并退款':'申请门票退款',
++   description:'退款将退回原支付方式。隔离测试不会产生真实银行卡退款。',
++   summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div><div class="kv"><span>保留费用</span><span>${money(q.refund_fee_minor,q.currency)}</span></div>`,
++   confirmLabel:'确认此退款方案',danger:true,onConfirm:()=>submitVerticalRefund(vertical,orderId,quoteHash,requestKey)});
++ }catch(e){toast(e.message)}
++}
++async function railRefund(){return openVerticalRefund('RAIL')}
+ 
+ function showRideSearch(){showMobilitySearch('RIDE')}
+ function showRentalSearch(){showMobilitySearch('RENTAL')}
+ function showMobilitySearch(kind){setVerticalVIMode(true);const rental=kind==='RENTAL';state.screen=rental?'rental':'ride';$('#app').innerHTML=shell(`<section class="go-page-head"><button class="go-back" id="mobBack" aria-label="返回">‹</button><div><span>${rental?'租车':'用车'}</span><h1>${rental?'搜索租车':'搜索接送'}</h1></div></section><section class="go-form-card">${rental?`<div class="field"><label>取车地点</label><input id="m1" placeholder="东京 / NRT"></div><div class="field"><label>还车地点</label><input id="m2" placeholder="东京 / NRT"></div><div class="field"><label>取车时间</label><input id="mt1" type="datetime-local"></div><div class="field"><label>还车时间</label><input id="mt2" type="datetime-local"></div>`:`<div class="field"><label>上车地点</label><input id="m1" placeholder="上海浦东机场 / PVG"></div><div class="field"><label>目的地</label><input id="m2" placeholder="上海外滩"></div><div class="field"><label>上车时间</label><input id="mt1" type="datetime-local"></div>`}<button class="btn primary" id="mgo">查询</button></section>`,'home');bindNav();$('#mobBack').onclick=showHome;$('#mgo').onclick=()=>mobilitySearch(kind)}
+ async function mobilitySearch(kind){try{const rental=kind==='RENTAL';let b;if(rental){b={pickup_location:$('#m1').value||'NRT',return_location:$('#m2').value||'NRT',pickup_at:$('#mt1').value,return_at:$('#mt2').value,currency:'CNY'}}else{b={pickup:$('#m1').value||'PVG',dropoff:$('#m2').value||'上海外滩',pickup_at:$('#mt1').value,currency:'CNY'}};if(!b.pickup_at||rental&&!b.return_at){toast('请填写时间');return}const d=await api(rental?'/v1/mobility/rentals/search':'/v1/mobility/rides/search',{method:'POST',body:JSON.stringify(b)});if(rental){state.rentalCriteria=b;state.rentalSearch=d.items||[]}else{state.rideCriteria=b;state.rideSearch=d.items||[]}const rows=(d.items||[]).map(x=>`<section class="card" data-mob="${x.offer_id}"><div class="row"><h3>${safe(x.vehicle_class)}</h3><b>${money(x.total_amount_minor,x.currency)}</b></div>${rental?`<div class="kv"><span>保险</span><span>${safe(x.insurance?.type)}</span></div><div class="kv"><span>押金</span><span>${money(x.deposit_minor,x.currency)}</span></div>`:`<div class="kv"><span>免费等待</span><span>${x.included_wait_minutes}分钟</span></div>`}<button class="btn primary">选择</button></section>`).join('');$('#app').innerHTML=shell(`<h1 class="screen-title">${rental?'租车':'接送'}方案</h1>${rows}`,'search');bindNav();document.querySelectorAll('[data-mob]').forEach(x=>x.onclick=()=>mobilityBook(kind,x.dataset.mob))}catch(e){toast(e.message)}}
+ async function mobilityBook(kind,id){try{if(!state.me){showAuth();return}const rental=kind==='RENTAL',b=rental?{...state.rentalCriteria,offer_id:id,drivers:[{name:state.me.display_name||'GO Traveler'}]}:{...state.rideCriteria,offer_id:id,passengers:[{name:state.me.display_name||'GO Traveler'}]};const o=await api(rental?'/v1/mobility/rentals/orders':'/v1/mobility/rides/orders',{method:'POST',body:JSON.stringify(b)});const d=await api(`/v1/mobility/orders/${o.order_id}`);if(rental)state.rentalOrder=d;else state.rideOrder=d;renderMobilityOrder(kind)}catch(e){toast(e.message)}}
+-function renderMobilityOrder(kind){const rental=kind==='RENTAL',o=rental?state.rentalOrder:state.rideOrder;$('#app').innerHTML=shell(`<h1 class="screen-title">${rental?'租车':'接送'}订单</h1><section class="card"><div class="kv"><span>状态</span><b>${consumerLabel(o.status)}</b></div><div class="kv"><span>车型</span><b>${safe(o.vehicle_class)}</b></div>${rental?`<div class="kv"><span>保险</span><span>${safe(o.insurance?.type)}</span></div><div class="kv"><span>押金</span><span>${money(o.deposit_minor,o.currency)}</span></div>`:`<div class="kv"><span>行程</span><span>${safe(o.pickup)} → ${safe(o.dropoff)}</span></div>`}<div class="kv"><span>供应确认</span><span>${safe(o.supplier_reference)}</span></div></section><section class="card"><button class="btn ghost" id="mmod" ${o.status!=='CONFIRMED'?'disabled':''}>修改时间</button><button class="btn ghost" id="mstart" ${o.status!=='CONFIRMED'?'disabled':''}>${rental?'确认取车':'确认上车'}</button><button class="btn ghost" id="mend" ${o.status!=='IN_PROGRESS'?'disabled':''}>${rental?'确认还车':'确认送达'}</button><button class="btn danger" id="mcancel" ${o.status!=='CONFIRMED'?'disabled':''}>取消并退款</button></section><section class="card"><h3>证据链</h3>${evHtml(o.evidence)}</section>`,'trips');bindNav();$('#mmod').onclick=()=>mobilityModify(kind);$('#mstart').onclick=()=>mobilityFulfill(kind,rental?'PICKUP':'START');$('#mend').onclick=()=>mobilityFulfill(kind,rental?'RETURN':'COMPLETE');$('#mcancel').onclick=()=>mobilityCancel(kind)}
++function renderMobilityOrder(kind){const rental=kind==='RENTAL',o=rental?state.rentalOrder:state.rideOrder;$('#app').innerHTML=shell(`<h1 class="screen-title">${rental?'租车':'接送'}订单</h1><section class="card"><div class="kv"><span>状态</span><b>${consumerLabel(o.status)}</b></div><div class="kv"><span>车型</span><b>${safe(o.vehicle_class)}</b></div>${rental?`<div class="kv"><span>保险</span><span>${safe(o.insurance?.type)}</span></div><div class="kv"><span>押金</span><span>${money(o.deposit_minor,o.currency)}</span></div>`:`<div class="kv"><span>行程</span><span>${safe(o.pickup)} → ${safe(o.dropoff)}</span></div>`}<div class="kv"><span>供应确认</span><span>${safe(o.supplier_reference)}</span></div></section><section class="card"><button class="btn ghost" id="mmod" ${o.status!=='CONFIRMED'?'disabled':''}>修改时间</button><button class="btn ghost" id="mstart" ${o.status!=='CONFIRMED'?'disabled':''}>${rental?'确认取车':'确认上车'}</button><button class="btn ghost" id="mend" ${o.status!=='IN_PROGRESS'?'disabled':''}>${rental?'确认还车':'确认送达'}</button><button class="btn danger" id="mcancel" ${!(o.status==='CONFIRMED'||(!rental&&o.status==='REFUND_PENDING'))?'disabled':''}>${o.status==='REFUND_PENDING'?'继续核对原退款':'取消并退款'}</button></section><section class="card"><h3>证据链</h3>${evHtml(o.evidence)}</section>`,'trips');bindNav();$('#mmod').onclick=()=>mobilityModify(kind);$('#mstart').onclick=()=>mobilityFulfill(kind,rental?'PICKUP':'START');$('#mend').onclick=()=>mobilityFulfill(kind,rental?'RETURN':'COMPLETE');$('#mcancel').onclick=()=>mobilityCancel(kind)}
+ async function mobilityReload(kind){const o=kind==='RENTAL'?state.rentalOrder:state.rideOrder;const d=await api(`/v1/mobility/orders/${o.order_id}`);if(kind==='RENTAL')state.rentalOrder=d;else state.rideOrder=d;renderMobilityOrder(kind)}
+ function mobilityModify(kind){const o=kind==='RENTAL'?state.rentalOrder:state.rideOrder;uxSheet({title:kind==='RENTAL'?'修改取车时间':'修改上车时间',fields:[{id:'newTime',label:'新时间',type:'datetime-local'}],confirmLabel:'确认修改',onConfirm:async v=>{await api(`/v1/mobility/orders/${o.order_id}/modify`,{method:'POST',body:JSON.stringify({new_time:v.newTime})});await mobilityReload(kind)}})}
+ async function mobilityFulfill(kind,action){const o=kind==='RENTAL'?state.rentalOrder:state.rideOrder;try{await api(`/v1/mobility/orders/${o.order_id}/fulfillment`,{method:'POST',body:JSON.stringify({action,evidence_reference:`CONSUMER_UI_${action}`})});await mobilityReload(kind)}catch(e){toast(e.message)}}
+-async function mobilityCancel(kind){const o=kind==='RENTAL'?state.rentalOrder:state.rideOrder;try{const q=await api(`/v1/mobility/orders/${o.order_id}/refund-quote`);uxConfirm({title:kind==='RENTAL'?'取消租车订单':'取消接送订单',summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div>`,confirmLabel:'确认取消',danger:true,onConfirm:async()=>{await api(`/v1/mobility/orders/${o.order_id}/cancel`,{method:'POST'});await mobilityReload(kind)}})}catch(e){toast(e.message)}}
++async function mobilityCancel(kind){if(kind==='RIDE')return openVerticalRefund('RIDE');const o=kind==='RENTAL'?state.rentalOrder:state.rideOrder;try{const q=await api(`/v1/mobility/orders/${o.order_id}/refund-quote`);uxConfirm({title:kind==='RENTAL'?'取消租车订单':'取消接送订单',summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div>`,confirmLabel:'确认取消',danger:true,onConfirm:async()=>{await api(`/v1/mobility/orders/${o.order_id}/cancel`,{method:'POST'});await mobilityReload(kind)}})}catch(e){toast(e.message)}}
+ 
+ function showAttractionSearch(){setVerticalVIMode(true);state.screen='attraction';$('#app').innerHTML=shell(`<section class="go-page-head"><button class="go-back" id="attrBack" aria-label="返回">‹</button><div><span>景点玩乐</span><h1>景点门票与体验</h1></div></section><section class="go-form-card"><div class="field"><label>目的地</label><input id="adest" placeholder="东京"></div><div class="field"><label>游玩日期</label><input id="adate" type="date"></div><button class="btn primary" id="ago">查询</button></section>`,'home');bindNav();$('#attrBack').onclick=showHome;$('#ago').onclick=attractionSearch}
+ async function attractionSearch(){try{const b={destination:$('#adest').value||'东京',visit_date:$('#adate').value,currency:'CNY'};if(!b.visit_date){toast('请选择日期');return}state.attractionCriteria=b;const d=await api('/v1/attractions/search',{method:'POST',body:JSON.stringify(b)});state.attractionSearch=d.items||[];$('#app').innerHTML=shell(`<h1 class="screen-title">门票与体验</h1>${state.attractionSearch.map(x=>`<section class="card" data-attr="${x.offer_id}"><div class="row"><h3>${safe(x.product_name)}</h3><b>${money(x.total_amount_minor,x.currency)} / 张</b></div><div class="kv"><span>场次</span><span>${safe(x.session_time)}</span></div><div class="kv"><span>库存</span><span>${x.inventory_units}</span></div><div class="kv"><span>凭证</span><span>${safe(x.voucher_type)}</span></div><button class="btn primary">选择</button></section>`).join('')}`,'search');bindNav();document.querySelectorAll('[data-attr]').forEach(x=>x.onclick=()=>attractionBook(x.dataset.attr))}catch(e){toast(e.message)}}
+@@ -126,12 +165,12 @@
+ async function attractionReload(){state.attractionOrder=await api(`/v1/attractions/orders/${state.attractionOrder.order_id}`);renderAttractionOrder()}
+ function attractionChange(){uxSheet({title:'修改游玩日期',fields:[{id:'newVisitDate',label:'新游玩日期',type:'date'}],confirmLabel:'查看改期方案',onConfirm:async v=>{const q=await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/change-quote`,{method:'POST',body:JSON.stringify({new_visit_date:v.newVisitDate})});uxConfirm({title:'确认改期',description:'请确认新的日期与当前规则。',confirmLabel:'确认改期',onConfirm:async()=>{await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/execute-change/${q.quote_id}`,{method:'POST'});await attractionReload()}})}})}
+ async function attractionRedeem(){try{await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/redeem`,{method:'POST',body:JSON.stringify({evidence_reference:'CONSUMER_UI_REDEMPTION'})});await attractionReload()}catch(e){toast(e.message)}}
+-async function attractionRefund(){if(state.attractionOrder?.status==='REFUND_PENDING')return resumeVerticalRefund('ATTRACTION');try{const q=await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/refund-quote`);if(!q.refundable){toast('该产品不可退款');return}uxConfirm({title:'申请门票退款',summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div>`,confirmLabel:'确认退款',danger:true,onConfirm:async()=>{await submitVerticalRefund('ATTRACTION',state.attractionOrder.order_id)}})}catch(e){toast(e.message)}}
++async function attractionRefund(){return openVerticalRefund('ATTRACTION')}
+ 
+ bootstrapConsumer().finally(showHome);
+ 
+ function cancelUnpaidVertical(vertical){
+- const o=vertical==='RAIL'?state.railOrder:state.attractionOrder;
++ const o=vertical==='RAIL'?state.railOrder:vertical==='RIDE'?state.rideOrder:state.attractionOrder;
+  if(!o||o.status!=='PAYMENT_PENDING')return;
+  const group=vertical==='RAIL'?'rail':'attractions';
+  return uxConfirm({title:'取消未支付订单',description:'取消后将释放当前预留名额。如已开始支付，请先核对支付结果。',confirmLabel:'确认取消',danger:true,onConfirm:async()=>{
+--- a/scripts/build_refund_consent_delivery.py
++++ b/scripts/build_refund_consent_delivery.py
+@@ -0,0 +1,77 @@
++#!/usr/bin/env python3
++"""Seal a verified REFUND_CONSENT delta against the GitHub-pinned DEPTH17 cumulative WORK."""
++import argparse
++import hashlib
++import json
++from pathlib import Path
++import zipfile
++from build_review_delivery import allowed, digest
++
++ROOT=Path(__file__).resolve().parents[1]
++BASE_SHA='1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79'
++PARENT_SHA='8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb'
++STEM='GO_CP11_REFUND_CONSENT'
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--baseline-work',required=True,type=Path)
++    parser.add_argument('--output-dir',type=Path,default=ROOT/'deliverables')
++    parser.add_argument('--previous-delta',required=True,type=Path)
++    parser.add_argument('--preseal',action='store_true',help='Prepare a restoration candidate; does not certify delivery')
++    args=parser.parse_args();out=args.output_dir.resolve();out.mkdir(parents=True,exist_ok=True)
++    if digest(args.baseline_work)!=BASE_SHA:parser.error('DEPTH17 WORK fingerprint mismatch')
++    evidence=ROOT/'verification/current_build/refund_consent'
++    status={'build':'CP11_REFUND_CONSENT'} if args.preseal else json.loads((evidence/'CURRENT_BUILD_STATUS.json').read_text())
++    if not args.preseal:
++        assert status['python']['one_clean_full_run'] and not status['python']['failures'] and not status['python']['errors']
++        assert status['independent_restored_runtime']['passed']==status['independent_restored_runtime']['tests']
++    frozen=json.loads((evidence/'source_fingerprint.json').read_text())['files']
++    assert all(digest(ROOT/n)==h for n,h in frozen.items()),'FROZEN_SOURCE_CHANGED'
++    with zipfile.ZipFile(args.baseline_work) as base:
++        before={f['path']:f for f in json.loads(base.read('DELIVERY_FILE_MANIFEST.json'))['files']}
++    names=set(before)
++    assert digest(args.previous_delta)=='1c237a7f800081497fc3b993fd6b8a73281593b51440cfe0dcb90487489fdb15'
++    with zipfile.ZipFile(args.previous_delta) as prior:
++        names.update(f['path'] for f in json.loads(prior.read('RESULT_FILE_MANIFEST.json'))['files'])
++    for folder in ('src','frontend','tests','tests_frontend','scripts','acceptance','alembic'):
++        names.update(p.relative_to(ROOT).as_posix() for p in (ROOT/folder).rglob('*') if allowed(p))
++    names.update(p.relative_to(ROOT).as_posix() for p in evidence.rglob('*') if allowed(p) and p.suffix!='.log')
++    names.update({'GO_REFUND_CONSENT_START_HERE.md','CURRENT_DEPTH_CANDIDATE.json'})
++    names.discard('DELIVERY_FILE_MANIFEST.json')
++    result={'status':'ENGINEERING_REVIEW_NOT_RELEASE_ACCEPTED','files':[]}
++    changes=[]
++    for name in sorted(names):
++        p=ROOT/name
++        assert allowed(p),name
++        row={'path':name,'size':p.stat().st_size,'sha256':digest(p)}
++        result['files'].append(row)
++        previous=before.get(name)
++        if not previous or previous['sha256']!=row['sha256']:
++            changes.append({**row,'before_sha256':previous['sha256'] if previous else None,'mode':p.stat().st_mode&0o777})
++    result_bytes=json.dumps(result,ensure_ascii=False,indent=2).encode()
++    manifest={'build':status['build'],'parent_sha256':PARENT_SHA,'baseline_work_sha256':BASE_SHA,
++              'baseline_github_commit':'b02f65db7c6ce4212e3a4d678b540fb286c14768',
++              'previous_checkpoint_commit':'ba758eb92dc4a51fd6432a94f77b62f8f8dc4c28',
++              'includes_depth18':True,'includes_depth19':True,'includes_depth20':True,'includes_depth21':True,'includes_depth22':True,'includes_depth23':True,'preseal':args.preseal,
++              'result_manifest_sha256':hashlib.sha256(result_bytes).hexdigest(),
++              'FINAL_RELEASE_GATE':'HOLD','removed':[],'files':changes}
++    path=out/(STEM+'_DELTA_20260908.zip');temporary=path.with_suffix('.building')
++    with zipfile.ZipFile(temporary,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
++        for f in changes:z.write(ROOT/f['path'],'payload/'+f['path'])
++        z.writestr('REFUND_CONSENT_DELTA_MANIFEST.json',json.dumps(manifest,indent=2))
++        z.writestr('RESULT_FILE_MANIFEST.json',result_bytes)
++    with zipfile.ZipFile(temporary) as z:
++        assert z.testzip() is None
++        assert len(z.namelist())==len(changes)+2
++        for f in changes:assert hashlib.sha256(z.read('payload/'+f['path'])).hexdigest()==f['sha256']
++    temporary.replace(path)
++    receipt={'delta':{'path':str(path),'size':path.stat().st_size,'sha256':digest(path),'entries':len(changes)+2},
++             'changed_payload_files':len(changes),'result_files':len(result['files']),
++             'baseline_work_sha256':BASE_SHA,'release_gate':'HOLD','engineering_complete':False}
++    (out/'GO_REFUND_CONSENT_DELIVERY.json').write_text(json.dumps(receipt,indent=2)+'\n')
++    (out/'GO_REFUND_CONSENT_SHA256SUMS.txt').write_text(f"{digest(path)}  {path.name}\n")
++    print(json.dumps(receipt,indent=2))
++
++
++if __name__=='__main__':main()
+--- a/scripts/assemble_refund_ride_review.py
++++ b/scripts/assemble_refund_ride_review.py
+@@ -0,0 +1,107 @@
++#!/usr/bin/env python3
++"""Restore REFUND_RIDE from pinned parent + DEPTH17 WORK + reviewed REFUND_RIDE delta."""
++import argparse
++import hashlib
++import json
++import os
++from pathlib import Path, PurePosixPath
++import shutil
++import stat
++import zipfile
++
++PARENT_SHA = '8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb'
++BASE_SHA = '1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79'
++
++
++def sha(path):
++    h=hashlib.sha256()
++    with path.open('rb') as stream:
++        for block in iter(lambda:stream.read(1024*1024),b''):h.update(block)
++    return h.hexdigest()
++
++
++def safe(name):
++    p=PurePosixPath(name)
++    if not name or p.is_absolute() or '..' in p.parts or '\\' in name or ':' in name:
++        raise ValueError('UNSAFE_ARCHIVE_PATH:'+name)
++    return p
++
++
++def preflight(z):
++    seen=set()
++    for info in z.infolist():
++        safe(info.filename)
++        if info.filename in seen or stat.S_ISLNK(info.external_attr >> 16):
++            raise ValueError('DUPLICATE_OR_LINK_ARCHIVE_ENTRY:'+info.filename)
++        seen.add(info.filename)
++
++
++def verify_entries(z, entries, prefix=''):
++    for f in entries:
++        safe(f['path'])
++        data=z.read(prefix+f['path'])
++        if len(data)!=f['size'] or hashlib.sha256(data).hexdigest()!=f['sha256']:
++            raise ValueError('PAYLOAD_INTEGRITY_FAILURE:'+f['path'])
++
++
++def extract(z, output, prefix=''):
++    for info in z.infolist():
++        if not info.filename.startswith(prefix):continue
++        p=safe(info.filename[len(prefix):])
++        if '__pycache__' in p.parts or p.suffix in {'.pyc','.pyo'}:continue
++        target=output/str(p)
++        if info.is_dir():target.mkdir(parents=True,exist_ok=True);continue
++        target.parent.mkdir(parents=True,exist_ok=True)
++        with z.open(info) as source,target.open('wb') as sink:shutil.copyfileobj(source,sink)
++        if os.name!='nt':target.chmod(0o755 if (info.external_attr>>16)&0o111 else 0o644)
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    for name in ('parent','base-work','delta','output'):parser.add_argument('--'+name,type=Path,required=True)
++    args=parser.parse_args(); output=args.output.resolve()
++    if output.exists():parser.error('Output must be a new directory')
++    if sha(args.parent)!=PARENT_SHA or sha(args.base_work)!=BASE_SHA:
++        parser.error('Locked parent or DEPTH17 WORK SHA256 mismatch')
++    with zipfile.ZipFile(args.parent) as parent,zipfile.ZipFile(args.base_work) as base,zipfile.ZipFile(args.delta) as delta:
++        for z in (parent,base,delta):preflight(z)
++        old=json.loads(base.read('DELIVERY_FILE_MANIFEST.json'))
++        change=json.loads(delta.read('REFUND_RIDE_DELTA_MANIFEST.json'))
++        result_bytes=delta.read('RESULT_FILE_MANIFEST.json')
++        if hashlib.sha256(result_bytes).hexdigest()!=change['result_manifest_sha256']:
++            parser.error('Result manifest fingerprint mismatch')
++        result=json.loads(result_bytes)
++        if change['baseline_work_sha256']!=BASE_SHA or change['parent_sha256']!=PARENT_SHA or change['removed']:
++            parser.error('Unsupported delta lineage or removals')
++        verify_entries(base,old['files']);verify_entries(delta,change['files'],'payload/')
++        known={f['path']:f for f in old['files']}
++        for f in change['files']:
++            before=known.get(f['path'])
++            if (before['sha256'] if before else None)!=f['before_sha256']:
++                parser.error('Delta baseline mismatch: '+f['path'])
++            known[f['path']]={k:f[k] for k in ('path','size','sha256')}
++        expected={f['path']:{k:f[k] for k in ('path','size','sha256')} for f in result['files']}
++        normalized={n:{k:f[k] for k in ('path','size','sha256')} for n,f in known.items()}
++        if expected!=normalized or len(expected)!=len(result['files']):
++            parser.error('Result manifest does not match composed delta')
++        if set(delta.namelist())!={'REFUND_RIDE_DELTA_MANIFEST.json','RESULT_FILE_MANIFEST.json',*('payload/'+f['path'] for f in change['files'])}:
++            parser.error('Unexpected delta entries')
++        output.mkdir(parents=True)
++        try:
++            extract(parent,output);extract(base,output);extract(delta,output,'payload/')
++            (output/'DELIVERY_FILE_MANIFEST.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
++            for f in result['files']:
++                if sha(output/f['path'])!=f['sha256']:raise ValueError('RESTORED_HASH_MISMATCH:'+f['path'])
++            if os.name!='nt':
++                for name in ('python','python3','python3.13'):(output/'gate_runtime/python/bin'/name).chmod(0o755)
++            receipt={'parent_sha256':PARENT_SHA,'base_work_sha256':BASE_SHA,'delta_sha256':sha(args.delta),
++                'verified_files':len(result['files']),'migration_head':'0131_ride_refund_operation','release_gate':'HOLD'}
++            (output/'REFUND_RIDE_RESTORATION.json').write_text(json.dumps(receipt,indent=2)+'\n')
++        except BaseException:
++            shutil.rmtree(output)
++            raise
++    print(json.dumps(receipt,indent=2))
++    print('Read GO_REFUND_RIDE_START_HERE.md; this is an engineering review copy.')
++
++
++if __name__=='__main__':main()
+--- a/scripts/assemble_refund_consent_review.py
++++ b/scripts/assemble_refund_consent_review.py
+@@ -0,0 +1,107 @@
++#!/usr/bin/env python3
++"""Restore REFUND_CONSENT from pinned parent + DEPTH17 WORK + reviewed REFUND_CONSENT delta."""
++import argparse
++import hashlib
++import json
++import os
++from pathlib import Path, PurePosixPath
++import shutil
++import stat
++import zipfile
++
++PARENT_SHA = '8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb'
++BASE_SHA = '1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79'
++
++
++def sha(path):
++    h=hashlib.sha256()
++    with path.open('rb') as stream:
++        for block in iter(lambda:stream.read(1024*1024),b''):h.update(block)
++    return h.hexdigest()
++
++
++def safe(name):
++    p=PurePosixPath(name)
++    if not name or p.is_absolute() or '..' in p.parts or '\\' in name or ':' in name:
++        raise ValueError('UNSAFE_ARCHIVE_PATH:'+name)
++    return p
++
++
++def preflight(z):
++    seen=set()
++    for info in z.infolist():
++        safe(info.filename)
++        if info.filename in seen or stat.S_ISLNK(info.external_attr >> 16):
++            raise ValueError('DUPLICATE_OR_LINK_ARCHIVE_ENTRY:'+info.filename)
++        seen.add(info.filename)
++
++
++def verify_entries(z, entries, prefix=''):
++    for f in entries:
++        safe(f['path'])
++        data=z.read(prefix+f['path'])
++        if len(data)!=f['size'] or hashlib.sha256(data).hexdigest()!=f['sha256']:
++            raise ValueError('PAYLOAD_INTEGRITY_FAILURE:'+f['path'])
++
++
++def extract(z, output, prefix=''):
++    for info in z.infolist():
++        if not info.filename.startswith(prefix):continue
++        p=safe(info.filename[len(prefix):])
++        if '__pycache__' in p.parts or p.suffix in {'.pyc','.pyo'}:continue
++        target=output/str(p)
++        if info.is_dir():target.mkdir(parents=True,exist_ok=True);continue
++        target.parent.mkdir(parents=True,exist_ok=True)
++        with z.open(info) as source,target.open('wb') as sink:shutil.copyfileobj(source,sink)
++        if os.name!='nt':target.chmod(0o755 if (info.external_attr>>16)&0o111 else 0o644)
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    for name in ('parent','base-work','delta','output'):parser.add_argument('--'+name,type=Path,required=True)
++    args=parser.parse_args(); output=args.output.resolve()
++    if output.exists():parser.error('Output must be a new directory')
++    if sha(args.parent)!=PARENT_SHA or sha(args.base_work)!=BASE_SHA:
++        parser.error('Locked parent or DEPTH17 WORK SHA256 mismatch')
++    with zipfile.ZipFile(args.parent) as parent,zipfile.ZipFile(args.base_work) as base,zipfile.ZipFile(args.delta) as delta:
++        for z in (parent,base,delta):preflight(z)
++        old=json.loads(base.read('DELIVERY_FILE_MANIFEST.json'))
++        change=json.loads(delta.read('REFUND_CONSENT_DELTA_MANIFEST.json'))
++        result_bytes=delta.read('RESULT_FILE_MANIFEST.json')
++        if hashlib.sha256(result_bytes).hexdigest()!=change['result_manifest_sha256']:
++            parser.error('Result manifest fingerprint mismatch')
++        result=json.loads(result_bytes)
++        if change['baseline_work_sha256']!=BASE_SHA or change['parent_sha256']!=PARENT_SHA or change['removed']:
++            parser.error('Unsupported delta lineage or removals')
++        verify_entries(base,old['files']);verify_entries(delta,change['files'],'payload/')
++        known={f['path']:f for f in old['files']}
++        for f in change['files']:
++            before=known.get(f['path'])
++            if (before['sha256'] if before else None)!=f['before_sha256']:
++                parser.error('Delta baseline mismatch: '+f['path'])
++            known[f['path']]={k:f[k] for k in ('path','size','sha256')}
++        expected={f['path']:{k:f[k] for k in ('path','size','sha256')} for f in result['files']}
++        normalized={n:{k:f[k] for k in ('path','size','sha256')} for n,f in known.items()}
++        if expected!=normalized or len(expected)!=len(result['files']):
++            parser.error('Result manifest does not match composed delta')
++        if set(delta.namelist())!={'REFUND_CONSENT_DELTA_MANIFEST.json','RESULT_FILE_MANIFEST.json',*('payload/'+f['path'] for f in change['files'])}:
++            parser.error('Unexpected delta entries')
++        output.mkdir(parents=True)
++        try:
++            extract(parent,output);extract(base,output);extract(delta,output,'payload/')
++            (output/'DELIVERY_FILE_MANIFEST.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
++            for f in result['files']:
++                if sha(output/f['path'])!=f['sha256']:raise ValueError('RESTORED_HASH_MISMATCH:'+f['path'])
++            if os.name!='nt':
++                for name in ('python','python3','python3.13'):(output/'gate_runtime/python/bin'/name).chmod(0o755)
++            receipt={'parent_sha256':PARENT_SHA,'base_work_sha256':BASE_SHA,'delta_sha256':sha(args.delta),
++                'verified_files':len(result['files']),'migration_head':'0130_vertical_capacity','release_gate':'HOLD'}
++            (output/'REFUND_CONSENT_RESTORATION.json').write_text(json.dumps(receipt,indent=2)+'\n')
++        except BaseException:
++            shutil.rmtree(output)
++            raise
++    print(json.dumps(receipt,indent=2))
++    print('Read GO_REFUND_CONSENT_START_HERE.md; this is an engineering review copy.')
++
++
++if __name__=='__main__':main()
+--- a/scripts/build_refund_ride_delivery.py
++++ b/scripts/build_refund_ride_delivery.py
+@@ -0,0 +1,79 @@
++#!/usr/bin/env python3
++"""Seal a verified REFUND_RIDE delta against the GitHub-pinned DEPTH17 cumulative WORK."""
++import argparse
++import hashlib
++import json
++from pathlib import Path
++import zipfile
++from build_review_delivery import allowed, digest
++
++ROOT=Path(__file__).resolve().parents[1]
++BASE_SHA='1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79'
++PARENT_SHA='8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb'
++STEM='GO_CP11_REFUND_AND_RIDE_RECOVERY'
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--baseline-work',required=True,type=Path)
++    parser.add_argument('--output-dir',type=Path,default=ROOT/'deliverables')
++    parser.add_argument('--previous-delta',required=True,type=Path)
++    parser.add_argument('--preseal',action='store_true',help='Prepare a restoration candidate; does not certify delivery')
++    args=parser.parse_args();out=args.output_dir.resolve();out.mkdir(parents=True,exist_ok=True)
++    if digest(args.baseline_work)!=BASE_SHA:parser.error('DEPTH17 WORK fingerprint mismatch')
++    evidence=ROOT/'verification/current_build/ride_refund'
++    status={'build':'CP11_REFUND_AND_RIDE_RECOVERY'} if args.preseal else json.loads((evidence/'CURRENT_BUILD_STATUS.json').read_text())
++    if not args.preseal:
++        assert status['python']['one_clean_full_run'] and not status['python']['failures'] and not status['python']['errors']
++        assert status['independent_restored_runtime']['passed']==status['independent_restored_runtime']['tests']
++    frozen=json.loads((evidence/'source_fingerprint.json').read_text())['files']
++    assert all(digest(ROOT/n)==h for n,h in frozen.items()),'FROZEN_SOURCE_CHANGED'
++    with zipfile.ZipFile(args.baseline_work) as base:
++        before={f['path']:f for f in json.loads(base.read('DELIVERY_FILE_MANIFEST.json'))['files']}
++    names=set(before)
++    assert digest(args.previous_delta)=='1c237a7f800081497fc3b993fd6b8a73281593b51440cfe0dcb90487489fdb15'
++    with zipfile.ZipFile(args.previous_delta) as prior:
++        names.update(f['path'] for f in json.loads(prior.read('RESULT_FILE_MANIFEST.json'))['files'])
++    for folder in ('src','frontend','tests','tests_frontend','scripts','acceptance','alembic','mobile','specs','governance','design'):
++        names.update(p.relative_to(ROOT).as_posix() for p in (ROOT/folder).rglob('*') if allowed(p))
++    names.update(p.relative_to(ROOT).as_posix() for p in evidence.rglob('*') if allowed(p) and p.suffix!='.log')
++    names.update(p.relative_to(ROOT).as_posix() for p in (ROOT/'verification/current_build/refund_consent').rglob('*') if allowed(p) and p.suffix!='.log')
++    names.add('GO_REFUND_CONSENT_START_HERE.md')
++    names.update({'GO_REFUND_RIDE_START_HERE.md','CURRENT_DEPTH_CANDIDATE.json'})
++    names.discard('DELIVERY_FILE_MANIFEST.json')
++    result={'status':'ENGINEERING_REVIEW_NOT_RELEASE_ACCEPTED','files':[]}
++    changes=[]
++    for name in sorted(names):
++        p=ROOT/name
++        assert allowed(p),name
++        row={'path':name,'size':p.stat().st_size,'sha256':digest(p)}
++        result['files'].append(row)
++        previous=before.get(name)
++        if not previous or previous['sha256']!=row['sha256']:
++            changes.append({**row,'before_sha256':previous['sha256'] if previous else None,'mode':p.stat().st_mode&0o777})
++    result_bytes=json.dumps(result,ensure_ascii=False,indent=2).encode()
++    manifest={'build':status['build'],'parent_sha256':PARENT_SHA,'baseline_work_sha256':BASE_SHA,
++              'baseline_github_commit':'b02f65db7c6ce4212e3a4d678b540fb286c14768',
++              'previous_checkpoint_commit':'7c5a2e54e1243a8d6c1c297ef9cf8e2f2960a33b',
++              'includes_depth18':True,'includes_depth19':True,'includes_depth20':True,'includes_depth21':True,'includes_depth22':True,'includes_depth23':True,'preseal':args.preseal,
++              'result_manifest_sha256':hashlib.sha256(result_bytes).hexdigest(),
++              'FINAL_RELEASE_GATE':'HOLD','removed':[],'files':changes}
++    path=out/(STEM+'_DELTA_20260908.zip');temporary=path.with_suffix('.building')
++    with zipfile.ZipFile(temporary,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
++        for f in changes:z.write(ROOT/f['path'],'payload/'+f['path'])
++        z.writestr('REFUND_RIDE_DELTA_MANIFEST.json',json.dumps(manifest,indent=2))
++        z.writestr('RESULT_FILE_MANIFEST.json',result_bytes)
++    with zipfile.ZipFile(temporary) as z:
++        assert z.testzip() is None
++        assert len(z.namelist())==len(changes)+2
++        for f in changes:assert hashlib.sha256(z.read('payload/'+f['path'])).hexdigest()==f['sha256']
++    temporary.replace(path)
++    receipt={'delta':{'path':str(path),'size':path.stat().st_size,'sha256':digest(path),'entries':len(changes)+2},
++             'changed_payload_files':len(changes),'result_files':len(result['files']),
++             'baseline_work_sha256':BASE_SHA,'release_gate':'HOLD','engineering_complete':False}
++    (out/'GO_REFUND_RIDE_DELIVERY.json').write_text(json.dumps(receipt,indent=2)+'\n')
++    (out/'GO_REFUND_RIDE_SHA256SUMS.txt').write_text(f"{digest(path)}  {path.name}\n")
++    print(json.dumps(receipt,indent=2))
++
++
++if __name__=='__main__':main()
+--- a/mobile/go-app/src/screens/RideCancelScreen.tsx
++++ b/mobile/go-app/src/screens/RideCancelScreen.tsx
+@@ -1,2 +1,6 @@
+-import React from'react';import{ScrollView,Text,View}from'react-native';import{screen}from'../design';import{Brand,Btn,Chip}from'../components/GO';
+-export default function S({navigation}:any){return <ScrollView style={screen.root} contentContainerStyle={screen.content}><Brand/><Text style={[screen.h1,{marginTop:24}]}>取消接送</Text><Text style={[screen.sub,{marginTop:8}]}>先展示取消费与应退金额，再执行取消</Text><View style={[screen.card,{marginTop:18}]}><Text style={screen.h2}>GO Mobility</Text><View style={{flexDirection:'row',flexWrap:'wrap',marginTop:12}}><Chip>真实总成本</Chip><Chip>规则透明</Chip><Chip>GO Trips</Chip></View><Btn title="确认取消并退款" onPress={()=>navigation.navigate('MobilityRefundSuccess')}/></View></ScrollView>}+import React from 'react';
++import RefundReview from './RefundReviewScreen';
++export default function Screen({route,navigation}:any){
++  const id=route.params?.orderId||route.params?.order?.order_id||route.params?.refund?.order_id;
++  return <RefundReview vertical='RIDE' orderId={id} navigation={navigation}/>;
++}
+--- a/mobile/go-app/src/screens/RailRefundSuccessScreen.tsx
++++ b/mobile/go-app/src/screens/RailRefundSuccessScreen.tsx
+@@ -1,2 +1,6 @@
+-import React from'react';import{ScrollView,Text,View}from'react-native';import{screen}from'../design';import{Brand,Btn,Price}from'../components/GO';
+-export default function RailRefundSuccess({route,navigation}:any){const r=route.params.refund;return <ScrollView style={screen.root} contentContainerStyle={screen.content}><Brand/><View style={{alignItems:'center',marginTop:80}}><Text style={{fontSize:58}}>✓</Text><Text style={screen.h1}>退票与退款完成</Text><Text style={screen.sub}>已原路退回</Text></View><View style={screen.card}><View style={screen.row}><Text>退款金额</Text><Price minor={r.refund_amount_minor}/></View><Text style={[screen.sub,{marginTop:10}]}>状态 {r.status}</Text><Btn title="返回 GO Trips" onPress={()=>navigation.navigate('Main',{screen:'Trips'})}/></View></ScrollView>}+import React from 'react';
++import RefundReview from './RefundReviewScreen';
++export default function Screen({route,navigation}:any){
++  const id=route.params?.orderId||route.params?.order?.order_id||route.params?.refund?.order_id;
++  return <RefundReview vertical='RAIL' orderId={id} navigation={navigation}/>;
++}
+--- a/mobile/go-app/src/screens/RefundReviewScreen.tsx
++++ b/mobile/go-app/src/screens/RefundReviewScreen.tsx
+@@ -0,0 +1,31 @@
++import React,{useEffect,useMemo,useState} from 'react';
++import {ActivityIndicator,ScrollView,Text,View} from 'react-native';
++import {GO,screen} from '../design';
++import {TopBar,Btn,Price} from '../components/GO';
++import {api} from '../api/client';
++import {idempotencyKey} from '../api/network';
++import {createRefundController} from '../afterSales/refundController';
++import type {RefundVertical,RefundView} from '../afterSales/refundController';
++
++export default function RefundReview({vertical,orderId,navigation}:{vertical:RefundVertical;orderId:string;navigation:any}){
++  const controller=useMemo(()=>createRefundController(api,()=>idempotencyKey('refund'),vertical,orderId),[vertical,orderId]);
++  const [view,setView]=useState<RefundView>({phase:'LOADING'});
++  useEffect(()=>{const detach=controller.subscribe(setView);void controller.load();return detach},[controller]);
++  const amount=view.quote||view.progress;
++  const title=view.phase==='COMPLETE'?'隔离退款处理完成':view.phase==='PENDING'?'原退款正在处理':'核对退款方案';
++  return <ScrollView style={screen.root} contentContainerStyle={screen.content}>
++    <TopBar title={vertical==='RIDE'?'取消接送':'退票'} onBack={()=>navigation.goBack()}/>
++    <Text style={screen.h1}>{title}</Text>
++    <Text style={[screen.sub,{marginTop:8}]}>隔离测试不会产生真实预订或银行卡退款。</Text>
++    {['LOADING','BUSY'].includes(view.phase)&&<ActivityIndicator color={GO.navy} accessibilityLabel="正在核对退款"/>}
++    {amount&&<View style={screen.card}>
++      <View style={screen.row}><Text>保留费用</Text><Price minor={amount.refund_fee_minor} currency={amount.currency}/></View>
++      <View style={[screen.row,{marginTop:12}]}><Text>原路退款金额</Text><Price minor={amount.refund_amount_minor} currency={amount.currency}/></View>
++    </View>}
++    {!!view.message&&<View style={screen.card}><Text accessibilityRole="alert">{view.message}</Text></View>}
++    {view.phase==='QUOTE'&&<Btn title="确认此退款方案" onPress={()=>void controller.submit()}/>}
++    {view.phase==='PENDING'&&<Btn title="继续核对原退款" onPress={()=>void controller.recover()}/>}
++    {!['LOADING','BUSY'].includes(view.phase)&&<Btn title="重新查询进度" secondary onPress={()=>void controller.load()}/>}
++    <Btn title="返回 GO Trips" secondary onPress={()=>navigation.navigate('Main',{screen:'Trips'})}/>
++  </ScrollView>;
++}
+--- a/mobile/go-app/src/screens/AttractionTripDetailScreen.tsx
++++ b/mobile/go-app/src/screens/AttractionTripDetailScreen.tsx
+@@ -1 +1 @@
+-import React,{useEffect,useState}from'react';import{ScrollView,Text,View}from'react-native';import{screen}from'../design';import{TopBar,Btn,Chip,Price}from'../components/GO';import{api}from'../api/client';export default function S({route,navigation}:any){const[o,setO]=useState<any>(route.params?.order||null);useEffect(()=>{if(route.params?.orderId)api('/v1/attractions/orders/'+route.params.orderId).then(r=>setO(r.data))},[]);if(!o)return <View/>;return <ScrollView style={screen.root} contentContainerStyle={screen.content}><TopBar title="门票订单"/><Text style={screen.h1}>{o.product_name}</Text><View style={screen.card}><Text style={screen.h2}>{o.visit_date} {o.session_time}</Text><Text style={[screen.sub,{marginTop:6}]}>{o.ticket_type} × {o.quantity}</Text><View style={{flexDirection:'row',marginTop:10}}><Chip>{o.voucher_type}</Chip><Chip>{o.voucher_code}</Chip></View><View style={[screen.row,{marginTop:14}]}><Text style={screen.sub}>订单总额</Text><Price minor={o.total_amount_minor}/></View><Btn title="改期" onPress={()=>navigation.navigate('AttractionChange',{order:o})}/><Btn title="取消 / 退款" secondary onPress={()=>navigation.navigate('AttractionRefund',{order:o})}/></View></ScrollView>}+import React,{useEffect,useState}from'react';import{ScrollView,Text,View}from'react-native';import{screen}from'../design';import{TopBar,Btn,Chip,Price}from'../components/GO';import{api}from'../api/client';export default function S({route,navigation}:any){const[o,setO]=useState<any>(route.params?.order||null);useEffect(()=>{if(route.params?.orderId)api('/v1/attractions/orders/'+route.params.orderId).then(r=>setO(r.data))},[]);if(!o)return <View/>;return <ScrollView style={screen.root} contentContainerStyle={screen.content}><TopBar title="门票订单"/><Text style={screen.h1}>{o.product_name}</Text><View style={screen.card}><Text style={screen.h2}>{o.visit_date} {o.session_time}</Text><Text style={[screen.sub,{marginTop:6}]}>{o.ticket_type} × {o.quantity}</Text><View style={{flexDirection:'row',marginTop:10}}><Chip>{o.voucher_type}</Chip><Chip>{o.voucher_code}</Chip></View><View style={[screen.row,{marginTop:14}]}><Text style={screen.sub}>订单总额</Text><Price minor={o.total_amount_minor}/></View><Btn title="改期" disabled={o.status!=='CONFIRMED'} onPress={()=>navigation.navigate('AttractionChange',{order:o})}/><Btn title="取消 / 退款" secondary onPress={()=>navigation.navigate('AttractionRefund',{order:o})}/></View></ScrollView>}--- a/mobile/go-app/src/screens/AttractionRefundScreen.tsx
++++ b/mobile/go-app/src/screens/AttractionRefundScreen.tsx
+@@ -1 +1,6 @@
+-import React,{useEffect,useState}from'react';import{ScrollView,Text,View}from'react-native';import{screen}from'../design';import{TopBar,Btn,Price}from'../components/GO';import{api}from'../api/client';export default function S({route,navigation}:any){const o=route.params.order,[q,setQ]=useState<any>(null);useEffect(()=>{api(`/v1/attractions/orders/${o.order_id}/refund-quote`).then(r=>setQ(r.data))},[]);async function go(){const r=await api(`/v1/attractions/orders/${o.order_id}/refund`,{method:'POST'});navigation.navigate('AttractionRefundSuccess',{refund:r.data})}return <ScrollView style={screen.root} contentContainerStyle={screen.content}><TopBar title="退票"/><Text style={screen.h1}>先看清退票结果</Text>{q&&<View style={screen.card}><View style={screen.row}><Text style={screen.sub}>退票费</Text><Price minor={q.refund_fee_minor}/></View><View style={[screen.row,{marginTop:12}]}><Text style={screen.sub}>预计原路退款</Text><Price minor={q.refund_amount_minor}/></View><Btn title={q.refundable?'确认退票':'此票不可退'} onPress={go} disabled={!q.refundable}/></View>}</ScrollView>}+import React from 'react';
++import RefundReview from './RefundReviewScreen';
++export default function Screen({route,navigation}:any){
++  const id=route.params?.orderId||route.params?.order?.order_id||route.params?.refund?.order_id;
++  return <RefundReview vertical='ATTRACTION' orderId={id} navigation={navigation}/>;
++}
+--- a/mobile/go-app/src/screens/MobilityTripDetailScreen.tsx
++++ b/mobile/go-app/src/screens/MobilityTripDetailScreen.tsx
+@@ -1,3 +1,30 @@
+-import React,{useEffect,useState}from'react';import{ActivityIndicator,ScrollView,Text,View}from'react-native';import{GO,screen}from'../design';import{Brand,InfoRow,StatusPill}from'../components/GO';import{api}from'../api/client';
+-export default function MobilityTripDetail({route}:any){const id=route.params?.orderId,[o,setO]=useState<any>(null),[t,setT]=useState<any>(null),[error,setError]=useState('');useEffect(()=>{if(!id){setError('ORDER_ID_REQUIRED');return}Promise.all([api(`/v1/mobility/orders/${id}`),api(`/v1/mobility/rides/orders/${id}/flight-tracking`)]).then(([a,b])=>{setO(a.data);setT(b.data)}).catch(e=>setError(e.message))},[id]);const b=t?.binding,free=b?Math.min(b.max_free_wait_minutes,b.included_wait_minutes+(b.delay_protection_enabled?b.delay_protection_free_wait_minutes:0)):0;return <ScrollView style={screen.root} contentContainerStyle={screen.content}><Brand/><Text style={screen.h1}>机场接送</Text>{!o&&!error?<ActivityIndicator color={GO.navy}/>:error?<View style={screen.card}><Text style={screen.h2}>接送事实加载失败</Text><Text style={screen.sub}>{error}</Text></View>:<View style={screen.card}><Text style={screen.h2}>{o.flight_no||'未绑定航班'}</Text><InfoRow label="当前接机时间" value={b?.current_pickup_at||o.pickup_at||'待车队确认'}/><InfoRow label="规则内免费等待" value={b?`${free} 分钟`:'未开启'}/><StatusPill text={b?.sync_state||'未开启航班追踪'} tone={b?.sync_state==='CONFIRMED_BY_FLEET'?'green':'navy'}/></View>}</ScrollView>}
+-
++import React,{useEffect,useState} from 'react';
++import {ActivityIndicator,ScrollView,Text,View} from 'react-native';
++import {GO,screen} from '../design';
++import {Brand,InfoRow,StatusPill,Btn} from '../components/GO';
++import {api} from '../api/client';
++export default function MobilityTripDetail({route,navigation}:any){
++  const id=route.params?.orderId;
++  const [order,setOrder]=useState<any>(null),[tracking,setTracking]=useState<any>(null),[error,setError]=useState('');
++  useEffect(()=>{
++    let active=true;setOrder(null);setTracking(null);setError('');
++    if(!id){setError('请从 GO Trips 重新打开订单。');return}
++    api(`/v1/mobility/orders/${encodeURIComponent(id)}`).then(async r=>{
++      if(!active)return;setOrder(r.data);
++      if(r.data.vertical==='RIDE'){
++        try{const t=await api(`/v1/mobility/rides/orders/${encodeURIComponent(id)}/flight-tracking`);if(active)setTracking(t.data)}catch{/* Order actions remain available if optional tracking cannot be loaded. */}
++      }
++    }).catch(()=>{if(active)setError('订单暂时无法加载，请稍后重试。')});
++    return ()=>{active=false};
++  },[id]);
++  return <ScrollView style={screen.root} contentContainerStyle={screen.content}>
++    <Brand/><Text style={screen.h1}>{order?.vertical==='RENTAL'?'租车订单':'接送订单'}</Text>
++    {!order&&!error?<ActivityIndicator color={GO.navy}/>:error?<Text accessibilityRole="alert">{error}</Text>:<View style={screen.card}>
++      <InfoRow label="订单状态" value={order.status}/>
++      <InfoRow label="当前出发时间" value={tracking?.confirmed_pickup_at||order.pickup_at||'待确认'}/>
++      <InfoRow label="行程" value={`${order.pickup||order.pickup_location||''} → ${order.dropoff||order.return_location||''}`}/>
++      <StatusPill text={tracking?.binding?'已开启航班追踪':'航班追踪未返回'}/>
++      {order.vertical==='RIDE'&&['CONFIRMED','REFUND_PENDING','REFUNDED'].includes(order.status)&&<Btn title={order.status==='CONFIRMED'?'取消接送 / 查看退款':'查看退款进度'} onPress={()=>navigation.navigate('RideCancel',{orderId:id})}/>}
++    </View>}
++  </ScrollView>;
++}
+--- a/mobile/go-app/src/screens/MobilityRefundSuccessScreen.tsx
++++ b/mobile/go-app/src/screens/MobilityRefundSuccessScreen.tsx
+@@ -1,2 +1,6 @@
+-import React from'react';import{ScrollView,Text,View}from'react-native';import{screen}from'../design';import{Brand,Btn,Chip}from'../components/GO';
+-export default function S({navigation}:any){return <ScrollView style={screen.root} contentContainerStyle={screen.content}><Brand/><Text style={[screen.h1,{marginTop:24}]}>退款完成</Text><Text style={[screen.sub,{marginTop:8}]}>退款已原路返回支付方式；取消与退款是两个独立状态</Text><View style={[screen.card,{marginTop:18}]}><Text style={screen.h2}>GO Mobility</Text><View style={{flexDirection:'row',flexWrap:'wrap',marginTop:12}}><Chip>真实总成本</Chip><Chip>规则透明</Chip><Chip>GO Trips</Chip></View><Btn title="返回 GO Trips" onPress={()=>navigation.navigate('Main')}/></View></ScrollView>}+import React from 'react';
++import RefundReview from './RefundReviewScreen';
++export default function Screen({route,navigation}:any){
++  const id=route.params?.orderId||route.params?.order?.order_id||route.params?.refund?.order_id;
++  return <RefundReview vertical='RIDE' orderId={id} navigation={navigation}/>;
++}
+--- a/mobile/go-app/src/screens/AttractionRefundSuccessScreen.tsx
++++ b/mobile/go-app/src/screens/AttractionRefundSuccessScreen.tsx
+@@ -1 +1,6 @@
+-import React from'react';import{ScrollView,Text,View}from'react-native';import{screen}from'../design';import{TopBar,Btn,Price}from'../components/GO';export default function S({route,navigation}:any){const r=route.params.refund;return <ScrollView style={screen.root} contentContainerStyle={screen.content}><TopBar title="退款完成"/><Text style={screen.h1}>原路退款已完成</Text><View style={screen.card}><Text style={screen.h2}>REFUND COMPLETED</Text><View style={[screen.row,{marginTop:14}]}><Text style={screen.sub}>退款金额</Text><Price minor={r.refund_amount_minor}/></View><Btn title="返回 GO Trips" onPress={()=>navigation.navigate('Trips')}/></View></ScrollView>}+import React from 'react';
++import RefundReview from './RefundReviewScreen';
++export default function Screen({route,navigation}:any){
++  const id=route.params?.orderId||route.params?.order?.order_id||route.params?.refund?.order_id;
++  return <RefundReview vertical='ATTRACTION' orderId={id} navigation={navigation}/>;
++}
+--- a/mobile/go-app/src/screens/RailRefundScreen.tsx
++++ b/mobile/go-app/src/screens/RailRefundScreen.tsx
+@@ -1,2 +1,6 @@
+-import React,{useEffect,useState}from'react';import{ScrollView,Text,View}from'react-native';import{screen}from'../design';import{Brand,Btn,Price}from'../components/GO';import{api}from'../api/client';
+-export default function RailRefund({route,navigation}:any){const id=route.params.orderId,[q,setQ]=useState<any>(null);useEffect(()=>{api(`/v1/rail/orders/${id}/refund-quote`).then(r=>setQ(r.data))},[id]);async function go(){const r=await api(`/v1/rail/orders/${id}/refund`,{method:'POST'});navigation.replace('RailRefundSuccess',{refund:r.data})}return <ScrollView style={screen.root} contentContainerStyle={screen.content}><Brand/><Text style={[screen.h1,{marginTop:22}]}>退票</Text>{q&&<View style={screen.card}><View style={screen.row}><Text>退票手续费</Text><Price minor={q.refund_fee_minor}/></View><View style={[screen.row,{marginTop:12}]}><Text>预计原路退款</Text><Price minor={q.refund_amount_minor}/></View><Text style={[screen.sub,{marginTop:12}]}>退票确认和退款到账分开追踪。</Text><Btn title="确认退票" onPress={go}/></View>}</ScrollView>}+import React from 'react';
++import RefundReview from './RefundReviewScreen';
++export default function Screen({route,navigation}:any){
++  const id=route.params?.orderId||route.params?.order?.order_id||route.params?.refund?.order_id;
++  return <RefundReview vertical='RAIL' orderId={id} navigation={navigation}/>;
++}
+--- a/mobile/go-app/src/screens/RailTripDetailScreen.tsx
++++ b/mobile/go-app/src/screens/RailTripDetailScreen.tsx
+@@ -1,2 +1,2 @@
+ import React,{useEffect,useState}from'react';import{ScrollView,Text,View}from'react-native';import{screen}from'../design';import{Brand,Btn,Price}from'../components/GO';import{api}from'../api/client';
+-export default function RailTripDetail({route,navigation}:any){const[id]=useState(route.params.orderId),[o,setO]=useState<any>(null);useEffect(()=>{api(`/v1/rail/orders/${id}`).then(r=>setO(r.data))},[id]);if(!o)return <ScrollView style={screen.root} contentContainerStyle={screen.content}><Text>加载中…</Text></ScrollView>;const j=o.journey;return <ScrollView style={screen.root} contentContainerStyle={screen.content}><Brand/><Text style={[screen.h1,{marginTop:22}]}>火车票订单</Text><View style={[screen.card,{marginTop:16}]}><Text style={screen.h2}>{j.train_no} · {j.seat_class} · {o.status}</Text><Text style={screen.sub}>{j.travel_date} · {j.origin_station} → {j.destination_station}</Text><Text style={[screen.label,{marginTop:16}]}>订座号</Text><Text>{o.booking_reference}</Text><Text style={[screen.label,{marginTop:12}]}>电子票号</Text><Text>{o.ticket_numbers?.[0]}</Text><View style={[screen.row,{marginTop:18}]}><Text>订单总额</Text><Price minor={o.total_amount_minor}/></View><Btn title="改签" onPress={()=>navigation.navigate('RailChange',{orderId:id})}/><Btn title="退票" secondary onPress={()=>navigation.navigate('RailRefund',{orderId:id})}/></View></ScrollView>}+export default function RailTripDetail({route,navigation}:any){const[id]=useState(route.params.orderId),[o,setO]=useState<any>(null);useEffect(()=>{api(`/v1/rail/orders/${id}`).then(r=>setO(r.data))},[id]);if(!o)return <ScrollView style={screen.root} contentContainerStyle={screen.content}><Text>加载中…</Text></ScrollView>;const j=o.journey;return <ScrollView style={screen.root} contentContainerStyle={screen.content}><Brand/><Text style={[screen.h1,{marginTop:22}]}>火车票订单</Text><View style={[screen.card,{marginTop:16}]}><Text style={screen.h2}>{j.train_no} · {j.seat_class} · {o.status}</Text><Text style={screen.sub}>{j.travel_date} · {j.origin_station} → {j.destination_station}</Text><Text style={[screen.label,{marginTop:16}]}>订座号</Text><Text>{o.booking_reference}</Text><Text style={[screen.label,{marginTop:12}]}>电子票号</Text><Text>{o.ticket_numbers?.[0]}</Text><View style={[screen.row,{marginTop:18}]}><Text>订单总额</Text><Price minor={o.total_amount_minor}/></View><Btn title="改签" disabled={o.status!=='TICKETED'} onPress={()=>navigation.navigate('RailChange',{orderId:id})}/><Btn title={o.status==='REFUND_PENDING'?'查看退款进度':'退票'} disabled={!['TICKETED','REFUND_PENDING','REFUNDED'].includes(o.status)} secondary onPress={()=>navigation.navigate('RailRefund',{orderId:id})}/></View></ScrollView>}--- a/mobile/go-app/src/afterSales/refundController.ts
++++ b/mobile/go-app/src/afterSales/refundController.ts
+@@ -0,0 +1,51 @@
++export type RefundVertical = 'RAIL' | 'ATTRACTION' | 'RIDE';
++type Api = (path:string,init?:RequestInit)=>Promise<any>;
++export type RefundView = {phase:string;quote?:any;progress?:any;message?:string};
++const routes = {RAIL:'rail',ATTRACTION:'attractions',RIDE:'mobility'};
++export function createRefundController(api:Api,key:()=>string,vertical:RefundVertical,orderId:string){
++  const base=`/v1/${routes[vertical]}/orders/${encodeURIComponent(orderId||'')}`;
++  let view:RefundView={phase:'LOADING'},requestKey='',busy=false;
++  const listeners=new Set<(v:RefundView)=>void>();
++  function set(value:RefundView){view=value;for(const listener of listeners)listener({...value});return view}
++  async function load(){
++    if(!orderId)return set({phase:'BLOCKED',message:'缺少订单，请从 GO Trips 重新打开。'});
++    try{
++      const order=(await api(base)).data;
++      if(order.order_id!==orderId)throw Error('ORDER_IDENTITY_INVALID');
++      if(['REFUND_PENDING','REFUNDED'].includes(order.status)){
++        const progress=(await api(base+'/refund-progress')).data;
++        if(progress.order_id!==orderId)throw Error('REFUND_IDENTITY_INVALID');
++        if(progress.status==='COMPLETED'&&order.status==='REFUNDED')return set({phase:'COMPLETE',progress});
++        if(progress.status==='PENDING'&&order.status==='REFUND_PENDING')return set({phase:'PENDING',progress});
++        return set({phase:'BLOCKED',message:'订单与退款进度需要核对，请联系订单支持。'});
++      }
++      if(order.status!==(vertical==='RAIL'?'TICKETED':'CONFIRMED'))return set({phase:'BLOCKED',message:'当前订单状态不支持退款。'});
++      const quote=(await api(base+'/refund-quote')).data;
++      if(quote.refundable===false||quote.refund_amount_minor===0)return set({phase:'BLOCKED',quote,message:'此方案当前不可退款。'});
++      if(quote.order_id!==orderId||!/^[0-9a-f]{64}$/.test(quote.quote_hash||'')||!Number.isSafeInteger(quote.refund_amount_minor)||quote.refund_amount_minor<=0)throw Error('REFUND_QUOTE_INVALID');
++      if(view.quote?.quote_hash!==quote.quote_hash||!requestKey)requestKey=key();
++      return set({phase:'QUOTE',quote});
++    }catch{return set({phase:'UNKNOWN',message:'暂时无法核实处理结果，请重新查询。'})}
++  }
++  async function run(recover:boolean){
++    if(busy||view.phase!==(recover?'PENDING':'QUOTE'))return view;
++    busy=true;
++    const quoted=view.quote,originalKey=requestKey||key();
++    set({...view,phase:'BUSY'});
++    let failure='';
++    try{
++      const options:RequestInit={method:'POST',headers:{'Idempotency-Key':originalKey}};
++      if(!recover)options.body=JSON.stringify({expected_quote_hash:quoted.quote_hash});
++      await api(base+(recover?'/refund-progress/reconcile':vertical==='RIDE'?'/cancel':'/refund'),options);
++    }catch(e:any){
++      failure=String(e.message).includes('REFUND_QUOTE_CHANGED')?'方案已变化，请重新核对金额后确认。':'申请结果需要核对，请查看订单的最新进度。';
++    }
++    // A success screen is never inferred from navigation or a lost response.
++    // Only the independently loaded order and operation establish completion.
++    await load();busy=false;
++    if(failure&&view.phase!=='COMPLETE')set({...view,message:failure});
++    return view;
++  }
++  return {load,submit:()=>run(false),recover:()=>run(true),get:()=>({...view}),
++    subscribe(listener:(v:RefundView)=>void){listeners.add(listener);listener({...view});return ()=>{listeners.delete(listener)}}};
++}

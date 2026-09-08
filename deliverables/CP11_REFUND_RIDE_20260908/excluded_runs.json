@@ -1,0 +1,18 @@
+{
+  "first_consent_full": {
+    "tests": 1566,
+    "failed": 9,
+    "errors": 0,
+    "skipped": 6,
+    "accepted": false,
+    "reason": "Missing inherited specs/mobile/governance files in local snapshot; all restored from verified DEPTH23."
+  },
+  "interrupted_ride_full": {
+    "accepted": false,
+    "reason": "Stopped after full first-run report identified the remaining governance directory omission; restarted after complete materialization."
+  },
+  "initial_ride_targeted": {
+    "accepted": false,
+    "reason": "Initial new migration test tried historical 0001-to-head path, which fails at unchanged 0113 due to a duplicate claimed_by column. New migration is separately validated against actual frozen 0128-0130 schemas."
+  }
+}

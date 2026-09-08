@@ -1,0 +1,80 @@
+{
+  "build": "CP11_REFUND_AND_RIDE_RECOVERY",
+  "saved_form": "COMPLETE_CUMULATIVE_SOURCE_ARCHIVE_PLUS_SEPARATE_FINAL_EVIDENCE",
+  "source_archive": {
+    "filename": "GO_CP11_REFUND_AND_RIDE_RECOVERY_DELTA_20260908.zip",
+    "size": 7614559,
+    "sha256": "1afc010d364b3dcdbd50c201fa18571c50d25504512fef89bfc3dcc4928535d2",
+    "parts": [
+      {
+        "filename": "part00",
+        "size": 983040,
+        "sha256": "d02500f0ebe1c88f2d068ce5af0e720b0fb0b2990fb0d7f1394dea921140231d"
+      },
+      {
+        "filename": "part01",
+        "size": 983040,
+        "sha256": "573a5e26111a7dc4c51ba63957023eb161b5b55f15bc5b26b6ee7d08e8db2c76"
+      },
+      {
+        "filename": "part02",
+        "size": 983040,
+        "sha256": "8b13a58949e9e311496550adbc170d6aa697dac104db3b06f747793cd604fc51"
+      },
+      {
+        "filename": "part03",
+        "size": 983040,
+        "sha256": "dfe2a8b08467429cab818b15a0920cf43388094625d92404e701dc9be4b146d7"
+      },
+      {
+        "filename": "part04",
+        "size": 983040,
+        "sha256": "3828b366ebc063407ff8b11a95bbdff156e7e9247656037714aa05977019e932"
+      },
+      {
+        "filename": "part05",
+        "size": 983040,
+        "sha256": "72eaa9004260f15b723ef81be5f00091f098d7139437bc1f52a9515b45117f97"
+      },
+      {
+        "filename": "part06",
+        "size": 983040,
+        "sha256": "56a87c4f906c8639a0c22cba5f110fe18865568ddd2dbbb632bb2810fa54970b"
+      },
+      {
+        "filename": "part07",
+        "size": 733279,
+        "sha256": "475f63fa0e3b40a1f55813e8220aa07463d9b96d5ddbd3d2e68393ec7e6fa798"
+      }
+    ]
+  },
+  "source_archive_result_files": 2153,
+  "checkpoint_commit": "3f72a451755a2825627ec032f51fca65a43b96a5",
+  "frozen_files": 1339,
+  "source_fingerprint_git_blob": "bba481af1dcec020edaf0762a71d54cf9d019348",
+  "checkpoint_and_final_source_fingerprints_identical": true,
+  "final_evidence": {
+    "status": "CURRENT_BUILD_STATUS.json",
+    "full": "full_regression.xml",
+    "restored_backend": "restored_regression.xml",
+    "restored_frontend": "restored_frontend_logic.xml",
+    "restored_source": "restored_source_equivalence.json"
+  },
+  "full_regression": {
+    "tests": 1580,
+    "passed": 1574,
+    "skipped": 6,
+    "failures": 0,
+    "errors": 0
+  },
+  "restored_backend_passed": 160,
+  "restored_frontend_passed": 134,
+  "unavailable_local_seal": {
+    "sha256": "f300298c520a6c1c98bc68a16c2286f1485d5ba6509066b65ff4171977e9b465",
+    "uploaded_in_full": false,
+    "reason": "Execution environment went offline during binary upload. Only first two raw blobs were created; they are not presented as a downloadable archive."
+  },
+  "FINAL_RELEASE_GATE": "HOLD",
+  "engineering_complete": false,
+  "deployed": false
+}
