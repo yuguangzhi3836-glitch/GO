@@ -1,0 +1,470 @@
+{
+  "master_sha256": "877aa1d093d675155d20c4b6e424b70454ee89c9969f52810abfd5086d6db66d",
+  "status": "IN_PROGRESS_NOT_RELEASE_ACCEPTED",
+  "note": "Critical closure register; full master source index is included. This register is not a claim that all master requirements are decomposed or passed.",
+  "requirements": [
+    {
+      "id": "BRAND-01",
+      "requirement": "GO 主标及子品牌比例锁定",
+      "master_clause": "V5.0-7 / 1.6",
+      "implementation": "frontend/consumer/assets",
+      "status": "VISUAL_QA_REQUIRED",
+      "fully_accepted": false
+    },
+    {
+      "id": "BRAND-02",
+      "requirement": "GO AI / GO Offer 同权，三张 Navy 卡无图标渐变阴影",
+      "master_clause": "V5.0-7 / 3.0A",
+      "implementation": "frontend/consumer/vi-reference-10.css",
+      "status": "VISUAL_QA_REQUIRED",
+      "fully_accepted": false
+    },
+    {
+      "id": "ALL-01",
+      "requirement": "六品类均完成搜索、下单、支付、确认、售后、退款、关闭",
+      "master_clause": "2.8",
+      "implementation": "src/go_hotel/api/routes/consumer_checkout.py",
+      "status": "SIX_VERTICAL_SIMULATED_PAYMENT_REFUND_TESTED",
+      "current_evidence": [
+        "tests.test_master03_closure::test_export_is_explicit_owner_scoped_and_companion_permission_bound",
+        "tests.test_master03_closure::test_traveler_delete_erases_reusable_sensitive_data_and_revokes_consent",
+        "tests.test_master03_closure::test_same_name_does_not_merge_distinct_people",
+        "tests.test_master03_closure::test_unusable_sensitive_fact_is_never_released[past]",
+        "tests.test_master03_closure::test_unusable_sensitive_fact_is_never_released[future]",
+        "tests.test_master03_closure::test_unusable_sensitive_fact_is_never_released[malformed]",
+        "tests.test_master03_closure::test_autonomy_without_qualification_registry_is_denied",
+        "tests.test_master03_closure::test_all_six_explicit_checkouts_bind_amount_and_capture_once"
+      ],
+      "fully_accepted": false
+    },
+    {
+      "id": "ALL-02",
+      "requirement": "取消与退款分别显示连续状态",
+      "master_clause": "2.8",
+      "implementation": "src/go_hotel/services/consumer_unified_lifecycle.py",
+      "status": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN",
+      "fully_accepted": false,
+      "current_evidence": [
+        "verification/current_build/depth15/full_regression.xml",
+        "verification/current_build/depth15/frontend.tap",
+        "verification/current_build/depth15/upgrade_14_to_15.json"
+      ],
+      "scope_note": "Cash catalog cancellation/change binds immutable quoted rules, current confirmed room value, paid fees, forfeited lower-change value, original and supplemental captures less prior refunds. Master V7 5.12 forbids future offsets from lower changes: the current confirmed room price replaces historical maximum price after each completed change. Exact quote consent, per-order persisted operation ownership, atomic original-capture refund lines, isolated authorization/capture and release, query-only unknown supplier outcomes, declined payment, capture-ledger failures and resumed refunds are tested. Customer web/mobile share ownership and request identity with separate supplier/cash progress. Historical absent fee policy is not fabricated; amendments following partial refund remain held until room value allocation is reconciled. DEPTH15 closes source allocation after verified accepted lower-price forfeiture. New published cash cancellation policy explicitly excludes forfeiture and prior refunds and includes paid change fees. Provider execution is isolated and CNY tests do not certify live channels. Accepted cash lower-change forfeiture is allocated separately from actual prior refunds and retained prepaid credit. Every capture equals funded credit plus prior actual refunds plus excluded cash-change value. Even zero-funded sources remain uniquely reserved, preventing generic refund bypass. Immutable source contracts reference verified original accepted cash operations and quote/plan hashes, and checked reads validate the origin and conservation. Redemption, later lower-price redemption, customer cancellation, supplier-fault original refund/compensation and expiry cannot restore original excluded value. Old source contracts retain their four original source fields, original hashes and expiry. Migration defaults old exclusion to zero without fabricating consent; downgrade refuses to drop nonzero exclusions. Customer review/detail shows paid/refunded/excluded/retained values without exposing internal source references or displaying an empty historical breakdown."
+    },
+    {
+      "id": "HOTEL-01",
+      "requirement": "房型按官网事实；价格库存与内容来源分开",
+      "master_clause": "V5.0-1",
+      "implementation": "src/go_hotel/services/official_hotel_catalog.py",
+      "status": "LOCAL_DURABLE_MEDIA_REGIONAL_RECOVERY_TESTED_REPLICATION_OPEN",
+      "current_evidence": [
+        "verification/current_build/depth18/full_regression.xml",
+        "tests/test_depth18_media_durability.py",
+        "tests/test_depth18_regional_queue.py",
+        "tests/test_depth09_hotel_replication.py"
+      ],
+      "fully_accepted": false,
+      "scope_note": "DEPTH17 catalog behavior is retained. DEPTH18 adds Local SQLite metadata commits preserve concurrent admissions and every rights event across independent processes. One-time legacy JSON import retains its source hash and refuses malformed input. Revision-bound approvals reject stale writes; current owner/evidence/contract/expiry gates are rechecked, with no-store media responses. SIGKILL rollback, shared-file purge, failed writes and content tampering are tested. Each redirect target is checked before request; deployment private-test bypass is disabled. This does not certify distributed/network filesystems, comprehensive DNS pinning or retroactive removal of previously cached client copies. Application database queue replaces destructive Redis pop for regional workers. Durable claims, database-time leases, heartbeats, fenced ACK, bounded backoff and SIGKILL recovery are tested locally. Stable child identities and enqueue evidence commit together; tier acceptance and next root commit together. Terminal failures have actionable records and atomically linked replacement tasks; duplicate/recovered incidents do not create duplicate retries or block current completion. Legacy JSON queue exports can be prevalidated and imported idempotently without deleting Redis. Semantics remain at least once: every discovery adapter side effect is not in one queue transaction, and real Redis cutover/PostgreSQL execution are not certified. Hotel quality acceptance remains distinct from queue ACK."
+    },
+    {
+      "id": "HOTEL-02",
+      "requirement": "逐夜库存价格及并发不超卖",
+      "master_clause": "2.8",
+      "implementation": "src/go_hotel/services/hosted_reservation_operations.py",
+      "status": "LOCAL_HOSTED_AND_CATALOG_CASH_SUPPLIER_REMEDY_TESTED",
+      "current_evidence": [
+        "verification/current_build/depth11/full_regression.xml",
+        "verification/current_build/depth11/frontend.tap"
+      ],
+      "fully_accepted": false,
+      "scope_note": "Funded property-only StayCredit conversion, new reservation redemption with higher-price cash shortfall and lower-price forfeiture, source/value conservation ledger and original expiry. Cancellation/no-show/partial fulfillment restore only unused prepaid value under explicit supplier snapshot terms. Independent cash refunds reserve exact original cash/credit captures; mixed-source failures are atomic and retryable. Customer conversion/redemption dialogs show current quoted rules and require current named traveler/purpose consent. SQLite concurrency and migrations 0117/0118 are tested in the cumulative regression. Independent hosted supplier disruption is separately tested in this build; catalog cash-order supplier compensation is additionally tested in DEPTH11; legacy credit, complete supplier UI and advanced other-vertical flows remain open; no PostgreSQL or browser visual acceptance claimed. CNY isolated catalog cash orders: supplier claims and structured evidence do not decide liability; an independent checker binds current evidence and approved original-capture refund lines. Supplier cancellation is durably requested once; lost replies remain unknown until status reconciliation, without resend or premature refunds. Original payment plus captured change supplements are refunded to their own canonical captures in one atomic stage, followed by independently funded compensation. Finite settlement/reserve/current scoped bank/protection priority and cross-order-family recovery receipt deduplication share the hosted funding engine. Supplier, finance and customer surfaces preserve ownership, CSRF and idempotency; approved money budgets freeze conflicting actions. Legacy credit redemption orders are explicitly held for value reconciliation, not treated as zero-paid cash orders. No browser visual or live provider acceptance is claimed."
+    },
+    {
+      "id": "HOTEL-03",
+      "requirement": "取消阶梯、改期高补低不退、原酒店住宿额度",
+      "master_clause": "2.9",
+      "implementation": [
+        "src/go_hotel/services/hosted_fare_rules.py",
+        "src/go_hotel/services/hosted_fare_change.py",
+        "src/go_hotel/services/hosted_stay_credit.py",
+        "src/go_hotel/services/hosted_credit_value.py",
+        "src/go_hotel/services/hosted_credit_refunds.py"
+      ],
+      "status": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN",
+      "fully_accepted": false,
+      "current_evidence": [
+        "verification/current_build/depth15/full_regression.xml",
+        "verification/current_build/depth15/frontend.tap",
+        "verification/current_build/depth15/upgrade_14_to_15.json"
+      ],
+      "scope_note": "Cash catalog cancellation/change binds immutable quoted rules, current confirmed room value, paid fees, forfeited lower-change value, original and supplemental captures less prior refunds. Master V7 5.12 forbids future offsets from lower changes: the current confirmed room price replaces historical maximum price after each completed change. Exact quote consent, per-order persisted operation ownership, atomic original-capture refund lines, isolated authorization/capture and release, query-only unknown supplier outcomes, declined payment, capture-ledger failures and resumed refunds are tested. Customer web/mobile share ownership and request identity with separate supplier/cash progress. Historical absent fee policy is not fabricated; amendments following partial refund remain held until room value allocation is reconciled. DEPTH15 closes source allocation after verified accepted lower-price forfeiture. New published cash cancellation policy explicitly excludes forfeiture and prior refunds and includes paid change fees. Provider execution is isolated and CNY tests do not certify live channels. Accepted cash lower-change forfeiture is allocated separately from actual prior refunds and retained prepaid credit. Every capture equals funded credit plus prior actual refunds plus excluded cash-change value. Even zero-funded sources remain uniquely reserved, preventing generic refund bypass. Immutable source contracts reference verified original accepted cash operations and quote/plan hashes, and checked reads validate the origin and conservation. Redemption, later lower-price redemption, customer cancellation, supplier-fault original refund/compensation and expiry cannot restore original excluded value. Old source contracts retain their four original source fields, original hashes and expiry. Migration defaults old exclusion to zero without fabricating consent; downgrade refuses to drop nonzero exclusions. Customer review/detail shows paid/refunded/excluded/retained values without exposing internal source references or displaying an empty historical breakdown."
+    },
+    {
+      "id": "FLIGHT-01",
+      "requirement": "单程、往返、多程与专业条件",
+      "master_clause": "2.5 / 2.8",
+      "implementation": "src/go_hotel/flight/journeys.py",
+      "status": "LOCAL_PARTY_AND_ORIGINAL_REFUND_TESTED_EXTERNAL_ACCEPTANCE_PENDING",
+      "fully_accepted": false,
+      "current_evidence": [
+        "verification/current_build/depth05/full_regression.xml",
+        "verification/current_build/depth05/frontend.tap"
+      ],
+      "scope_note": "1–9 adults; per-leg server prices/taxes/refund fees, explicit distinct vault travelers, one simulated ticket per traveler per leg. Child/infant fares, partial-leg changes/refunds and protected connections remain unaccepted."
+    },
+    {
+      "id": "FLIGHT-02",
+      "requirement": "值机开放、已值机、登机牌状态以官方证据为准",
+      "master_clause": "V7 2.6 / P06 / P13",
+      "implementation": "src/go_hotel/services/travel_operational_facts.py",
+      "status": "SIGNED_PER_LEG_TRAVELER_FACTS_TESTED_TRIPS_ENTRY_OPEN",
+      "fully_accepted": false,
+      "next_closure_contract": "acceptance/FLIGHT_RIDE_NEXT_CLOSURE_CONTRACT.md",
+      "current_evidence": [
+        "tests/test_depth19_travel_facts.py",
+        "tests/test_depth19_api_migration.py",
+        "tests_frontend/travel_status.test.mjs"
+      ],
+      "source_ids": [
+        "V7-P06-10",
+        "V7-P13-02"
+      ],
+      "scope_note": "Ed25519 signed facts bind current itinerary, traveler, ticket and leg; current independently reviewed authority, carrier/kind scope, exact HTTPS link hosts, provider/event identity, ordered source sequence and validity are checked. Reads are owner-scoped and do not create official states. Revocation, amendment or invalid latest evidence removes stale pass links; official corrections may move to an earlier state. Legacy unsigned records stay unverified. Only local engineering/sandbox sources are supported; registration cannot enable live providers. Check-in is displayed per traveler and leg on the flight order page."
+    },
+    {
+      "id": "RAIL-01",
+      "requirement": "铁路席别、站点、改签退票闭环",
+      "master_clause": "2.5 / 2.8",
+      "implementation": "src/go_hotel/rail/service.py",
+      "status": "E2E_REQUIRED",
+      "fully_accepted": false
+    },
+    {
+      "id": "RENTAL-01",
+      "requirement": "租期计价、保险里程押金及退款",
+      "master_clause": "2.5 / 2.8",
+      "implementation": "src/go_hotel/mobility/rental/service.py",
+      "status": "LOCAL_RENTAL_SETTLEMENT_AND_DIRECT_AUTHORIZATION_TESTED",
+      "current_evidence": [
+        "verification/current_build/depth06/full_regression.xml",
+        "verification/current_build/depth06/frontend.tap"
+      ],
+      "fully_accepted": false,
+      "scope_note": "CNY isolated fixed-day pricing, pickup/return reprice quote, amount consent, durable change/refund plans; repeated positive/negative changes and original remaining-capture refunds, partial failure recovery and SQLite concurrency tested. Supplier dynamic pricing, close-to-pickup penalties and deposit settlement remain unaccepted."
+    },
+    {
+      "id": "RIDE-01",
+      "requirement": "航班绑定延误同步及供应商规则内免费等待",
+      "master_clause": "V7 4.6 / P22",
+      "implementation": "src/go_hotel/mobility/ride/flight_sync.py",
+      "status": "SIGNED_EXACT_FLIGHT_DURABLE_ISOLATED_FLEET_TESTED_DRIVER_SETTLEMENT_OPEN",
+      "fully_accepted": false,
+      "next_closure_contract": "acceptance/FLIGHT_RIDE_NEXT_CLOSURE_CONTRACT.md",
+      "current_evidence": [
+        "tests/test_depth19_ride_sync.py",
+        "verification/current_build/depth19/restored_worker_cli.json",
+        "tests_frontend/travel_status.test.mjs"
+      ],
+      "source_ids": [
+        "V7-P06-11",
+        "V7-P22-03",
+        "V7-P44-05"
+      ],
+      "scope_note": "Server-created immutable engineering offer policy snapshots bound waiting benefits; client rule overrides are rejected. Extra waiting applies only to signed DELAYED events; early, landed and corrected facts do not automatically gain the benefit. Explicit version-bound tracking matches carrier/flight/date/arrival airport and excludes closed orders. Verified arrivals create proposals without changing confirmed pickup time. Durable dispatch is recorded before the isolated fleet call; UNKNOWN/DISPATCHED recovery queries only, including SIGKILL after a separately committed fleet receipt. Current authority, binding, fact, order, terms and request hash are rechecked before local confirmation. Conflicting confirmed outcomes remain HOLD in the operational queue. Legacy naive pickup times remain opaque comparison values; new signed proposed times require offsets. The supplied CLI processes a bounded batch with a disk-backed simulator; no real fleet/driver workflow, timeout-fee settlement or automatic manual-HOLD resolution is certified.",
+      "source_correction": "The former V5.2-9 label is superseded by the current V7 4.6 clause."
+    },
+    {
+      "id": "ATTRACTION-01",
+      "requirement": "场次、资格、库存、凭证与改退",
+      "master_clause": "2.5 / 2.8",
+      "implementation": "src/go_hotel/attractions/service.py",
+      "status": "E2E_REQUIRED",
+      "fully_accepted": false
+    },
+    {
+      "id": "VAULT-01",
+      "requirement": "敏感候选必须确认，来源不可自授可信",
+      "master_clause": "B.2 / B.6",
+      "implementation": "src/go_hotel/services/personal_travel_vault.py",
+      "status": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING",
+      "fully_accepted": false,
+      "current_evidence": [
+        "verification/current_build/depth04/full_regression.xml",
+        "verification/current_build/depth04/frontend.tap"
+      ],
+      "targeted_cases": [
+        "test_fact_edit_creates_user_revision_and_drops_prior_document_certification",
+        "test_two_concurrent_person_edits_cannot_silently_overwrite",
+        "test_revoking_self_permission_blocks_real_data_release[USE_FOR_BOOKING-LEGAL_NAME]",
+        "test_revoking_self_permission_blocks_real_data_release[SENSITIVE_DATA-DATE_OF_BIRTH]",
+        "test_companion_identity_match_cannot_bypass_edit_permission",
+        "test_unknown_or_rejected_reference_never_falls_back_to_account_owner[missing]",
+        "test_unknown_or_rejected_reference_never_falls_back_to_account_owner[rejected]",
+        "test_source_disconnect_blocks_new_and_pending_imports_but_keeps_saved_facts",
+        "test_conflict_choice_requires_review_again_when_existing_value_changes[edit]",
+        "test_conflict_choice_requires_review_again_when_existing_value_changes[delete]",
+        "test_deleted_revision_chain_is_erased_from_export_core_and_import_copies",
+        "test_invalid_edit_is_atomic_and_cannot_change_relationship_or_certification",
+        "test_api_requires_owner_strict_permission_and_explicit_uncached_inspection",
+        "test_completed_import_review_is_immutable_and_replay_does_not_duplicate",
+        "test_duplicate_traveler_reference_is_rejected_atomically",
+        "test_source_delete_erases_core_values_and_reconnect_requires_fresh_import",
+        "test_clearing_birth_date_also_erases_original_traveler_declaration",
+        "test_source_deletion_retains_independent_manual_revision",
+        "test_self_export_respects_revoked_share_and_sensitive_permissions"
+      ]
+    },
+    {
+      "id": "VAULT-02",
+      "requirement": "同名不可静默合并，冲突须明确选择",
+      "master_clause": "B.7",
+      "implementation": "src/go_hotel/services/personal_travel_vault.py",
+      "status": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING",
+      "fully_accepted": false,
+      "current_evidence": [
+        "verification/current_build/depth04/full_regression.xml",
+        "verification/current_build/depth04/frontend.tap"
+      ],
+      "targeted_cases": [
+        "test_fact_edit_creates_user_revision_and_drops_prior_document_certification",
+        "test_two_concurrent_person_edits_cannot_silently_overwrite",
+        "test_revoking_self_permission_blocks_real_data_release[USE_FOR_BOOKING-LEGAL_NAME]",
+        "test_revoking_self_permission_blocks_real_data_release[SENSITIVE_DATA-DATE_OF_BIRTH]",
+        "test_companion_identity_match_cannot_bypass_edit_permission",
+        "test_unknown_or_rejected_reference_never_falls_back_to_account_owner[missing]",
+        "test_unknown_or_rejected_reference_never_falls_back_to_account_owner[rejected]",
+        "test_source_disconnect_blocks_new_and_pending_imports_but_keeps_saved_facts",
+        "test_conflict_choice_requires_review_again_when_existing_value_changes[edit]",
+        "test_conflict_choice_requires_review_again_when_existing_value_changes[delete]",
+        "test_deleted_revision_chain_is_erased_from_export_core_and_import_copies",
+        "test_invalid_edit_is_atomic_and_cannot_change_relationship_or_certification",
+        "test_api_requires_owner_strict_permission_and_explicit_uncached_inspection",
+        "test_completed_import_review_is_immutable_and_replay_does_not_duplicate",
+        "test_duplicate_traveler_reference_is_rejected_atomically",
+        "test_source_delete_erases_core_values_and_reconnect_requires_fresh_import",
+        "test_clearing_birth_date_also_erases_original_traveler_declaration",
+        "test_source_deletion_retains_independent_manual_revision",
+        "test_self_export_respects_revoked_share_and_sensitive_permissions"
+      ]
+    },
+    {
+      "id": "VAULT-03",
+      "requirement": "查看修改删除导出断开撤回",
+      "master_clause": "B.2 / B.11",
+      "implementation": "frontend/consumer/vault-manager.js; src/go_hotel/services/personal_vault_management.py",
+      "status": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING",
+      "fully_accepted": false,
+      "current_evidence": [
+        "verification/current_build/depth04/full_regression.xml",
+        "verification/current_build/depth04/frontend.tap"
+      ],
+      "targeted_cases": [
+        "test_fact_edit_creates_user_revision_and_drops_prior_document_certification",
+        "test_two_concurrent_person_edits_cannot_silently_overwrite",
+        "test_revoking_self_permission_blocks_real_data_release[USE_FOR_BOOKING-LEGAL_NAME]",
+        "test_revoking_self_permission_blocks_real_data_release[SENSITIVE_DATA-DATE_OF_BIRTH]",
+        "test_companion_identity_match_cannot_bypass_edit_permission",
+        "test_unknown_or_rejected_reference_never_falls_back_to_account_owner[missing]",
+        "test_unknown_or_rejected_reference_never_falls_back_to_account_owner[rejected]",
+        "test_source_disconnect_blocks_new_and_pending_imports_but_keeps_saved_facts",
+        "test_conflict_choice_requires_review_again_when_existing_value_changes[edit]",
+        "test_conflict_choice_requires_review_again_when_existing_value_changes[delete]",
+        "test_deleted_revision_chain_is_erased_from_export_core_and_import_copies",
+        "test_invalid_edit_is_atomic_and_cannot_change_relationship_or_certification",
+        "test_api_requires_owner_strict_permission_and_explicit_uncached_inspection",
+        "test_completed_import_review_is_immutable_and_replay_does_not_duplicate",
+        "test_duplicate_traveler_reference_is_rejected_atomically",
+        "test_source_delete_erases_core_values_and_reconnect_requires_fresh_import",
+        "test_clearing_birth_date_also_erases_original_traveler_declaration",
+        "test_source_deletion_retains_independent_manual_revision",
+        "test_self_export_respects_revoked_share_and_sensitive_permissions"
+      ],
+      "scope_note": "Source controls apply to this imported source fingerprint, not an external OAuth account connection."
+    },
+    {
+      "id": "VAULT-04",
+      "requirement": "逐旅行者、逐目的最小字段释放与审计",
+      "master_clause": "B.8",
+      "implementation": "src/go_hotel/services/booking_data_release.py",
+      "status": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING",
+      "fully_accepted": false,
+      "current_evidence": [
+        "verification/current_build/depth04/full_regression.xml",
+        "verification/current_build/depth04/frontend.tap"
+      ],
+      "targeted_cases": [
+        "test_fact_edit_creates_user_revision_and_drops_prior_document_certification",
+        "test_two_concurrent_person_edits_cannot_silently_overwrite",
+        "test_revoking_self_permission_blocks_real_data_release[USE_FOR_BOOKING-LEGAL_NAME]",
+        "test_revoking_self_permission_blocks_real_data_release[SENSITIVE_DATA-DATE_OF_BIRTH]",
+        "test_companion_identity_match_cannot_bypass_edit_permission",
+        "test_unknown_or_rejected_reference_never_falls_back_to_account_owner[missing]",
+        "test_unknown_or_rejected_reference_never_falls_back_to_account_owner[rejected]",
+        "test_source_disconnect_blocks_new_and_pending_imports_but_keeps_saved_facts",
+        "test_conflict_choice_requires_review_again_when_existing_value_changes[edit]",
+        "test_conflict_choice_requires_review_again_when_existing_value_changes[delete]",
+        "test_deleted_revision_chain_is_erased_from_export_core_and_import_copies",
+        "test_invalid_edit_is_atomic_and_cannot_change_relationship_or_certification",
+        "test_api_requires_owner_strict_permission_and_explicit_uncached_inspection",
+        "test_completed_import_review_is_immutable_and_replay_does_not_duplicate",
+        "test_duplicate_traveler_reference_is_rejected_atomically",
+        "test_source_delete_erases_core_values_and_reconnect_requires_fresh_import",
+        "test_clearing_birth_date_also_erases_original_traveler_declaration",
+        "test_source_deletion_retains_independent_manual_revision",
+        "test_self_export_respects_revoked_share_and_sensitive_permissions"
+      ]
+    },
+    {
+      "id": "GOV-01",
+      "requirement": "每个动作100%经过C14权限门禁",
+      "master_clause": "Constitutional Legal Synchronization 1-6",
+      "implementation": "src/go_hotel/autonomy/action_control.py",
+      "status": "DURABLE_CURRENT_AUTHORITY_AND_OBSERVATIONS_TESTED_FULL_BUSINESS_INTEGRATION_OPEN",
+      "fully_accepted": false,
+      "current_evidence": [
+        "verification/current_build/depth17/full_regression.xml",
+        "tests/autonomy/test_depth17_durable_authority.py",
+        "tests/test_depth08_api_and_migration.py"
+      ],
+      "scope_note": "Durable local execution integrates the current C14 authority and all-condition evidence checks. SQL leases, atomic effect/checkpoint/event commits, bounded retries, SIGKILL recovery and unknown-external-outcome query-only handling are tested. Current actor, paused cell, qualification policy/validity/revocation and exact request/handler/step proof are rechecked before local commit. Persisted legacy records lacking windows remain HOLD without backdating. New trusted registrations serialize immutable records and enforce fresh evidence after revocation. Fourteen registered application adapters perform admin-authorized aggregate observations only; no autonomous business actions, independent signer identities or production qualifications are certified."
+    },
+    {
+      "id": "GOV-02",
+      "requirement": "自治资格持续有效；禁止自我扩权",
+      "master_clause": "Executive summary / 8",
+      "implementation": "src/go_hotel/autonomy/registry.py",
+      "status": "DURABLE_CURRENT_AUTHORITY_AND_OBSERVATIONS_TESTED_FULL_BUSINESS_INTEGRATION_OPEN",
+      "fully_accepted": false,
+      "current_evidence": [
+        "verification/current_build/depth17/full_regression.xml",
+        "tests/autonomy/test_depth17_durable_authority.py",
+        "tests/test_depth08_api_and_migration.py"
+      ],
+      "scope_note": "Durable local execution integrates the current C14 authority and all-condition evidence checks. SQL leases, atomic effect/checkpoint/event commits, bounded retries, SIGKILL recovery and unknown-external-outcome query-only handling are tested. Current actor, paused cell, qualification policy/validity/revocation and exact request/handler/step proof are rechecked before local commit. Persisted legacy records lacking windows remain HOLD without backdating. New trusted registrations serialize immutable records and enforce fresh evidence after revocation. Fourteen registered application adapters perform admin-authorized aggregate observations only; no autonomous business actions, independent signer identities or production qualifications are certified."
+    },
+    {
+      "id": "GOV-03",
+      "requirement": "外部法律暴露动态判定，缺少规则则保持关闭",
+      "master_clause": "Constitutional Legal Synchronization 3-6",
+      "implementation": "src/go_hotel/autonomy/action_control.py",
+      "status": "DURABLE_CURRENT_AUTHORITY_AND_OBSERVATIONS_TESTED_FULL_BUSINESS_INTEGRATION_OPEN",
+      "current_evidence": [
+        "verification/current_build/depth17/full_regression.xml",
+        "tests/autonomy/test_depth17_durable_authority.py",
+        "tests/test_depth08_api_and_migration.py"
+      ],
+      "fully_accepted": false,
+      "scope_note": "Durable local execution integrates the current C14 authority and all-condition evidence checks. SQL leases, atomic effect/checkpoint/event commits, bounded retries, SIGKILL recovery and unknown-external-outcome query-only handling are tested. Current actor, paused cell, qualification policy/validity/revocation and exact request/handler/step proof are rechecked before local commit. Persisted legacy records lacking windows remain HOLD without backdating. New trusted registrations serialize immutable records and enforce fresh evidence after revocation. Fourteen registered application adapters perform admin-authorized aggregate observations only; no autonomous business actions, independent signer identities or production qualifications are certified."
+    },
+    {
+      "id": "PAY-01",
+      "requirement": "持牌支付机构受控资金、原路退款、账单对账",
+      "master_clause": "V5.0-5",
+      "implementation": "src/go_hotel/services/unified_money_movement.py",
+      "status": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN",
+      "fully_accepted": false,
+      "current_evidence": [
+        "verification/current_build/depth15/full_regression.xml",
+        "verification/current_build/depth15/frontend.tap",
+        "verification/current_build/depth15/upgrade_14_to_15.json"
+      ],
+      "scope_note": "Cash catalog cancellation/change binds immutable quoted rules, current confirmed room value, paid fees, forfeited lower-change value, original and supplemental captures less prior refunds. Master V7 5.12 forbids future offsets from lower changes: the current confirmed room price replaces historical maximum price after each completed change. Exact quote consent, per-order persisted operation ownership, atomic original-capture refund lines, isolated authorization/capture and release, query-only unknown supplier outcomes, declined payment, capture-ledger failures and resumed refunds are tested. Customer web/mobile share ownership and request identity with separate supplier/cash progress. Historical absent fee policy is not fabricated; amendments following partial refund remain held until room value allocation is reconciled. DEPTH15 closes source allocation after verified accepted lower-price forfeiture. New published cash cancellation policy explicitly excludes forfeiture and prior refunds and includes paid change fees. Provider execution is isolated and CNY tests do not certify live channels. Accepted cash lower-change forfeiture is allocated separately from actual prior refunds and retained prepaid credit. Every capture equals funded credit plus prior actual refunds plus excluded cash-change value. Even zero-funded sources remain uniquely reserved, preventing generic refund bypass. Immutable source contracts reference verified original accepted cash operations and quote/plan hashes, and checked reads validate the origin and conservation. Redemption, later lower-price redemption, customer cancellation, supplier-fault original refund/compensation and expiry cannot restore original excluded value. Old source contracts retain their four original source fields, original hashes and expiry. Migration defaults old exclusion to zero without fabricating consent; downgrade refuses to drop nonzero exclusions. Customer review/detail shows paid/refunded/excluded/retained values without exposing internal source references or displaying an empty historical breakdown."
+    },
+    {
+      "id": "TRUTH-01",
+      "requirement": "工程、沙箱、灰度、生产状态分开",
+      "master_clause": "V5.0-6",
+      "implementation": "src/go_hotel/core/production_truth_gate.py",
+      "status": "LOCAL_SIMULATOR_PRODUCTION_BLOCK_TESTED",
+      "current_evidence": [
+        "tests.test_master03_closure::test_export_is_explicit_owner_scoped_and_companion_permission_bound",
+        "tests.test_master03_closure::test_traveler_delete_erases_reusable_sensitive_data_and_revokes_consent",
+        "tests.test_master03_closure::test_same_name_does_not_merge_distinct_people",
+        "tests.test_master03_closure::test_unusable_sensitive_fact_is_never_released[past]",
+        "tests.test_master03_closure::test_unusable_sensitive_fact_is_never_released[future]",
+        "tests.test_master03_closure::test_unusable_sensitive_fact_is_never_released[malformed]",
+        "tests.test_master03_closure::test_autonomy_without_qualification_registry_is_denied",
+        "tests.test_master03_closure::test_all_six_explicit_checkouts_bind_amount_and_capture_once"
+      ],
+      "fully_accepted": false
+    },
+    {
+      "id": "DIRECT-01",
+      "requirement": "Direct First；合法多渠道Fallback不以佣金优化",
+      "master_clause": "V5.0-4",
+      "implementation": "src/go_hotel/services/vertical_source_runtime.py",
+      "status": "SOURCE_SELECTION_CONTRACT_TESTED",
+      "current_evidence": [
+        "tests.test_phase1_cross_domain_closure::test_all_day_one_verticals_share_required_capability_contract",
+        "tests.test_phase1_cross_domain_closure::test_direct_first_wins_even_when_fallback_is_present",
+        "tests.test_phase1_cross_domain_closure::test_fallback_requires_authority_availability_and_evidence",
+        "tests.test_phase1_cross_domain_closure::test_evidence_policy_forbids_timeout_resend_and_mock_success"
+      ],
+      "fully_accepted": false
+    },
+    {
+      "id": "RECOMMEND-01",
+      "requirement": "Recommendation和Value永久隔离；商业利益不购买推荐",
+      "master_clause": "3 / V5.2-9",
+      "implementation": "src/go_hotel/services/phase1_closure.py",
+      "status": "TEST_REQUIRED",
+      "fully_accepted": false
+    },
+    {
+      "id": "OFFER-01",
+      "requirement": "第二页结构化需求；房间与会议分别授权报价",
+      "master_clause": "3.0A",
+      "implementation": "frontend/consumer/app.js",
+      "status": "E2E_REQUIRED",
+      "fully_accepted": false
+    },
+    {
+      "id": "TRIPS-01",
+      "requirement": "统一旅行事实与销售方收款方履约方及售后状态",
+      "master_clause": "2.6",
+      "implementation": "src/go_hotel/api/routes/consumer.py",
+      "status": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN",
+      "fully_accepted": false,
+      "current_evidence": [
+        "verification/current_build/depth15/full_regression.xml",
+        "verification/current_build/depth15/frontend.tap",
+        "verification/current_build/depth15/upgrade_14_to_15.json"
+      ],
+      "scope_note": "Cash catalog cancellation/change binds immutable quoted rules, current confirmed room value, paid fees, forfeited lower-change value, original and supplemental captures less prior refunds. Master V7 5.12 forbids future offsets from lower changes: the current confirmed room price replaces historical maximum price after each completed change. Exact quote consent, per-order persisted operation ownership, atomic original-capture refund lines, isolated authorization/capture and release, query-only unknown supplier outcomes, declined payment, capture-ledger failures and resumed refunds are tested. Customer web/mobile share ownership and request identity with separate supplier/cash progress. Historical absent fee policy is not fabricated; amendments following partial refund remain held until room value allocation is reconciled. DEPTH15 closes source allocation after verified accepted lower-price forfeiture. New published cash cancellation policy explicitly excludes forfeiture and prior refunds and includes paid change fees. Provider execution is isolated and CNY tests do not certify live channels. Accepted cash lower-change forfeiture is allocated separately from actual prior refunds and retained prepaid credit. Every capture equals funded credit plus prior actual refunds plus excluded cash-change value. Even zero-funded sources remain uniquely reserved, preventing generic refund bypass. Immutable source contracts reference verified original accepted cash operations and quote/plan hashes, and checked reads validate the origin and conservation. Redemption, later lower-price redemption, customer cancellation, supplier-fault original refund/compensation and expiry cannot restore original excluded value. Old source contracts retain their four original source fields, original hashes and expiry. Migration defaults old exclusion to zero without fabricating consent; downgrade refuses to drop nonzero exclusions. Customer review/detail shows paid/refunded/excluded/retained values without exposing internal source references or displaying an empty historical breakdown."
+    },
+    {
+      "id": "SUPPLIER-01",
+      "requirement": "供应商移动运营完整闭环",
+      "master_clause": "CU-3",
+      "implementation": "frontend/supplier",
+      "status": "E2E_REQUIRED",
+      "fully_accepted": false
+    },
+    {
+      "id": "INTELLIGENCE-01",
+      "requirement": "Model Gateway五维成本治理与单向信息边界",
+      "master_clause": "CU-7 / CU-11",
+      "implementation": "src/go_hotel",
+      "status": "TEST_REQUIRED",
+      "fully_accepted": false
+    },
+    {
+      "id": "BUSINESS-01",
+      "requirement": "官方直订0%佣金与T20后固定订阅",
+      "master_clause": "CU-2 / 6",
+      "implementation": "src/go_hotel",
+      "status": "TEST_REQUIRED",
+      "fully_accepted": false
+    },
+    {
+      "id": "MEMBER-01",
+      "requirement": "Staff自动核验失效；Owner互斥权益与认可",
+      "master_clause": "Appendix A",
+      "implementation": "src/go_hotel",
+      "status": "E2E_REQUIRED",
+      "fully_accepted": false
+    }
+  ],
+  "current_build_report": "verification/current_build/depth17/CURRENT_BUILD_STATUS.json",
+  "source_trace": "acceptance/MASTER_V7_PARAGRAPH_TRACE.json"
+}

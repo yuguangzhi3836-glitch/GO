@@ -1,0 +1,2408 @@
+--- DEPTH18/CURRENT_DEPTH_CANDIDATE.json
++++ DEPTH19/CURRENT_DEPTH_CANDIDATE.json
+@@ -1,7 +1,7 @@
+ {
+-  "build": "CP11_DEPTH_18_MEDIA_REGIONAL_DURABILITY",
+-  "report": "acceptance/GO_DEPTH18_REVIEW.md",
+-  "status": "verification/current_build/depth18/CURRENT_BUILD_STATUS.json",
++  "build": "CP11_DEPTH_19_SIGNED_TRAVEL_FLEET_RECOVERY",
++  "report": "acceptance/GO_DEPTH19_REVIEW.md",
++  "status": "verification/current_build/depth19/CURRENT_BUILD_STATUS.json",
+   "FINAL_RELEASE_GATE": "HOLD",
+   "deployed": false
+ }
+--- DEPTH18/GO_DEPTH19_START_HERE.md
++++ DEPTH19/GO_DEPTH19_START_HERE.md
+@@ -0,0 +1,50 @@
++# GO DEPTH19 工程审阅入口
++
++本轮接续已保存的 DEPTH18，增加逐航段、逐旅行者的签名值机事实，以及航班接送申请的持久恢复。**系统仍为 HOLD，尚未全面完工或部署。**
++
++## 恢复
++
++DEPTH19 交付是相对 GitHub 已保存的 DEPTH17 WORK 的累计增量，已经包含 DEPTH18 的修改。因此恢复时不需要另外叠加 DEPTH18。
++
++1. 从同仓库 `deliverables/CP11_DEPTH17_20260908/` 获取分卷、清单和 `join_depth17_work.py`，合并出 WORK。完整 SHA256 必须为 `1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79`。
++2. 使用此前恢复的原始父包，其 SHA256 为 `8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb`。
++3. 核对 `GO_DEPTH19_SHA256SUMS.txt` 后执行：
++
++```bash
++python3 assemble_depth19_review.py --parent /path/to/GO_WAVE07_FRG02_PARENT_CP11_RECONCILED_20260906.zip --base-work /path/to/GO_CP11_DEPTH_17_DURABLE_CATALOG_CONSOLIDATION_WORK_20260908.zip --delta /path/to/GO_CP11_DEPTH_19_SIGNED_TRAVEL_FLEET_RECOVERY_DELTA_20260908.zip --output /new/path/go-depth19
++```
++
++输出目录必须不存在。恢复器验证父包、WORK、累计增量及每个结果文件，不覆盖现有工作目录。
++
++进入新目录后：
++
++```bash
++./gate_runtime/python/bin/python scripts/verify_delivery.py
++./gate_runtime/python/bin/python scripts/run_local_demo.py --check --data-dir /tmp/go-depth19-demo
++./gate_runtime/python/bin/python -m pytest
++```
++
++## 功能与现有环境升级
++
++- 新增 `0126_travel_operational_facts`，旧 125 个迁移、母版和品牌资产不变。先备份再通过现有迁移流程升级；有任何新事实、规则或申请记录时禁止直接降级删除证据。
++- 原值机和接送绑定记录保留。未经签名的旧记录不会自动变成官方事实；旧接送缺少服务器规则快照时，需要核对原始条款，不能采用客户自己填的等待数字。
++- 接送新单保存服务器规则快照。现有模拟报价的普通车型包含等待 60 分钟，高级车型包含 90 分钟；本轮隔离规则允许明确选择额外 30 分钟保护，不能超出规则上限。额外等待只用于签名事实明确标为 DELAYED 的事件；提前、普通落地与更正不会自动获得额外等待，页面区分条件上限与本次申请额度。这些是工程模拟条款，不是真实车队承诺。
++- 历史订单未标时区的接车时间保持原始值，用作变更前条件；本轮不推断其时区。签名事实中的新抵达时间必须带时区，且仅在车队确认后成为订单新时间。
++- 签名来源先通过 `/internal/v1/travel-fact-authorities` 登记公钥、权限、航司、链接域与期限；由另一位具有 `admin:rules` 权限的管理员批准。登记及批准均不能打开生产门禁。应用不保存签名私钥。
++- 事实接口使用 `{fact, signature_hex}`。`fact` 正文包含 `authority_id/provider_id/event_id/kind/source_sequence/observed_ms/expires_ms/subject/data`，采用 UTF-8、键排序、紧凑 JSON、禁止 NaN 的规范正文签名。值机 subject 绑定当前订单、航段、乘机人、客票、行程及旅行者指纹。详细可执行例子见 `tests/test_depth19_travel_facts.py`。
++- 事件重放不增加新申请；相同事件身份但内容不同会拒绝。来源更正采用递增序号，允许撤回过时的值机状态，不强制沿状态等级单向前进。
++- 接送先保存建议时间和申请。隔离车队处理器持久保存回执；失联或进程中断后查询原申请，绝不盲目重发。若已确认的车队结果与当前授权、订单或绑定冲突，进入 `HOLD`，可在 `/internal/v1/mobility/flight-adjustments` 查看，等待人工核对。
++
++隔离处理器只运行一个有上限的批次，可由本地受控调度器重复调用。它不连接真实车队，也不启动常驻自动服务：
++
++```bash
++PYTHONPATH=src ./gate_runtime/python/bin/python scripts/run_flight_ride_sync.py --simulate --receipt-db /persistent/local/path/isolated-fleet.sqlite3 --limit 100
++```
++
++回执数据库必须与应用数据库分别持久保存。不要删除回执库来尝试重发未知申请；丢失回执时应核对原申请。
++
++## 尚未验收
++
++真实航司/车队与司机通知、生产授权证据、跨设备视觉、PostgreSQL、真实 Redis 切换等仍独立验收。值机的 GO Trips 列表及出发前统一入口、实际等待超时后的费用/取消闭环、ETA/司机流程和未知结果人工核对闭环还需继续深化。六品类高级售后、完整费用结算及 14 个业务细胞自动执行也尚未全面闭合。
++
++详见 `acceptance/GO_DEPTH19_REVIEW.md` 与 `verification/current_build/depth19/CURRENT_BUILD_STATUS.json`。测试数量不作为全面完成百分比。
+--- DEPTH18/acceptance/DEPTH19_IMPLEMENTATION_BOUNDARY.md
++++ DEPTH19/acceptance/DEPTH19_IMPLEMENTATION_BOUNDARY.md
+@@ -0,0 +1,10 @@
++# DEPTH19 实施边界（进行中）
++
++基线为已保存的 DEPTH18：GitHub 提交 `0037614a4a8339323b40f1904f10c55869b22e34`；原有 125 个迁移和母版保持锁定。本文是实施约束，不是通过报告。
++
++1. 官方事实按当前订单、航段、旅行者/客票绑定。无来源时返回待核实，读取不创建官方状态。旧值机记录保留，但不自动获得新签名认证。
++2. 事实授权包含独立登记的供应商、权限、航司、可信链接域、有效窗口、撤销状态及签名公钥；事实绑定来源序号、观察与过期时间、事件身份和完整正文。隔离供应商使用真实签名算法；不据此声称真实航司已经接通。
++3. 航班事件按航班号、出发日期及到达机场绑定；多日期、多航段和已关闭订单隔离。正常官方更正使用来源序号，不能由状态等级阻止更正。
++4. 等待规则来自创建订单时保存的供应商规则快照。客户可以选择规则内的保护选项，不能自行提供已授权等待时间或费用。
++5. 建议接车时间和车队已确认时间分开。持久记录外部请求意图；未知结果只查询。当前绑定、事实授权、规则、订单状态与请求版本必须在执行和确认时复验。
++6. 隔离测试优先完成逻辑闭环；真实供应商、设备和发布验收另记。不得把本阶段的工作计划、模型存在或测试数量当作系统全面完工。
+--- DEPTH18/acceptance/GO_DEPTH19_REVIEW.md
++++ DEPTH19/acceptance/GO_DEPTH19_REVIEW.md
+@@ -0,0 +1,39 @@
++# GO DEPTH19 工程审阅记录
++
++**状态：HOLD；尚未全面完工，未部署。** 从已保存的 DEPTH18 提交 `0037614a4a8339323b40f1904f10c55869b22e34` 继续，按 V7 第 2.6、4.6 节及 P06/P13/P22/P44 相关条款完成本轮实现与隔离实测。
++
++## 本轮变化
++
++- 值机改为逐航段、逐乘机人、逐客票事实。登记的公钥验证完整正文签名；来源权限、当前授权、有效时间及顺序均须通过核对。
++- 读取不再把缺少事实显示为“值机未开放”。旧无签名记录保留为未验证；正常来源更正可以撤回过时状态。改签、更换客票、乘机人变更或授权撤销后不继续展示旧登机牌。
++- 接送规则来自下单时服务器保存的模拟产品条款；客户只能选择条款内的保护，不能自己填写已授权等待上限。
++- 航班按航司、航班号、出发日期及到达机场匹配。已关闭订单隔离。事实只产生建议时间；确认前保留原接送安排。
++- 外部申请意图先落库。车队模拟器在独立数据库保存回执，断线和 SIGKILL 后只查询原申请。执行和确认均复验当前状态；冲突结果进入待人工核对队列。
++- 客户订单页增加值机/登机牌和航班接送面板；明确显示建议时间、已确认时间和未知结果。关联、保护选择及暂停均有明确确认。
++
++## 运行证据
++
++| 检查 | 实测结果 |
++| --- | --- |
++| 完整 Python 回归 | 1439 项：1433 通过，6 PostgreSQL 跳过，0 失败/错误 |
++| 新增后端用例 | 63 项，包含签名、并发、进程终止与恢复 |
++| 专项检查 | 73 项通过，与完整回归重叠 |
++| 独立恢复副本 | 122 项通过；原有隔离演示启动检查通过 |
++| 隔离车队 CLI | 首批确认一笔，第二批不重发；生产环境调用被拒绝 |
++| 前端逻辑 / JavaScript 语法 | 88 / 43 项通过，Node v24.19.0 |
++| 冻结源文件 | 867 个，复测副本逐个指纹相同 |
++| 不变基线 | 125 个历史迁移、3 个母版文件、23 个品牌素材 |
++
++旧测试身份全部保留。两项旧 P0 测试替换了无授权来源字符串与直接改时间的旧预期，使用实际签名事实和独立车队确认；详见差异。前两次完整测试为修复旧订单时间兼容和延误保护触发条件而主动中止，不计入通过证据。
++
++## 交付和边界
++
++增量相对 GitHub 中的 DEPTH17 WORK 累计封装，包含 DEPTH18；无需再叠加 DEPTH18。恢复命令见 `GO_DEPTH19_START_HERE.md`。新迁移 `0126_travel_operational_facts` 有数据时禁止直接降级。
++
++本轮签名由隔离供应商真实执行 Ed25519 算法，但不等于实际航司授权已接入。私钥不存入应用。算法接口依据 [cryptography 官方文档](https://cryptography.io/en/latest/hazmat/primitives/asymmetric/ed25519/)。
++
++当前模拟规则的到达至接车偏移为 0；不代表真实机场通关或车队等待承诺。历史无时区接车值作为原始比较条件保留，不推断其时区。车队确认前始终不改订单时间。
++
++隔离创建检查还复现铁路两位成人仍使用一人报价、同一 prebook 跨账号复用，以及门票人数与自由场次缺少绑定。检查未扣款；详见 `next_vertical_audit.json` 与 `acceptance/RAIL_ATTRACTION_NEXT_CLOSURE_CONTRACT.md`，这些缺口尚未关闭。
++
++仍待继续：GO Trips 列表及出发前统一值机入口、司机/ETA 流程、等待超时的费用与取消、未知结果人工核对闭环；六品类高级售后、完整费用结算、14 细胞业务执行与母版完整需求分解。真实供应商、PostgreSQL、Redis 切换、跨设备视觉及冻结 Node 22 工具链均未验收。不得将本轮测试数量、源文索引或工程模拟当作全面完工。
+--- DEPTH18/acceptance/MASTER_CLOSURE_REGISTER.json
++++ DEPTH19/acceptance/MASTER_CLOSURE_REGISTER.json
+@@ -115,11 +115,21 @@
+     {
+       "id": "FLIGHT-02",
+       "requirement": "值机开放、已值机、登机牌状态以官方证据为准",
+-      "master_clause": "2.6",
+-      "implementation": "src/go_hotel/api/routes/flight.py",
+-      "status": "E2E_REQUIRED",
+-      "fully_accepted": false,
+-      "next_closure_contract": "acceptance/FLIGHT_RIDE_NEXT_CLOSURE_CONTRACT.md"
++      "master_clause": "V7 2.6 / P06 / P13",
++      "implementation": "src/go_hotel/services/travel_operational_facts.py",
++      "status": "SIGNED_PER_LEG_TRAVELER_FACTS_TESTED_TRIPS_ENTRY_OPEN",
++      "fully_accepted": false,
++      "next_closure_contract": "acceptance/FLIGHT_RIDE_NEXT_CLOSURE_CONTRACT.md",
++      "current_evidence": [
++        "tests/test_depth19_travel_facts.py",
++        "tests/test_depth19_api_migration.py",
++        "tests_frontend/travel_status.test.mjs"
++      ],
++      "source_ids": [
++        "V7-P06-10",
++        "V7-P13-02"
++      ],
++      "scope_note": "Ed25519 signed facts bind current itinerary, traveler, ticket and leg; current independently reviewed authority, carrier/kind scope, exact HTTPS link hosts, provider/event identity, ordered source sequence and validity are checked. Reads are owner-scoped and do not create official states. Revocation, amendment or invalid latest evidence removes stale pass links; official corrections may move to an earlier state. Legacy unsigned records stay unverified. Only local engineering/sandbox sources are supported; registration cannot enable live providers. Check-in is displayed per traveler and leg on the flight order page."
+     },
+     {
+       "id": "RAIL-01",
+@@ -145,11 +155,23 @@
+     {
+       "id": "RIDE-01",
+       "requirement": "航班绑定延误同步及供应商规则内免费等待",
+-      "master_clause": "V5.2-9",
+-      "implementation": "src/go_hotel/mobility/ride/service.py",
+-      "status": "E2E_REQUIRED",
+-      "fully_accepted": false,
+-      "next_closure_contract": "acceptance/FLIGHT_RIDE_NEXT_CLOSURE_CONTRACT.md"
++      "master_clause": "V7 4.6 / P22",
++      "implementation": "src/go_hotel/mobility/ride/flight_sync.py",
++      "status": "SIGNED_EXACT_FLIGHT_DURABLE_ISOLATED_FLEET_TESTED_DRIVER_SETTLEMENT_OPEN",
++      "fully_accepted": false,
++      "next_closure_contract": "acceptance/FLIGHT_RIDE_NEXT_CLOSURE_CONTRACT.md",
++      "current_evidence": [
++        "tests/test_depth19_ride_sync.py",
++        "verification/current_build/depth19/restored_worker_cli.json",
++        "tests_frontend/travel_status.test.mjs"
++      ],
++      "source_ids": [
++        "V7-P06-11",
++        "V7-P22-03",
++        "V7-P44-05"
++      ],
++      "scope_note": "Server-created immutable engineering offer policy snapshots bound waiting benefits; client rule overrides are rejected. Extra waiting applies only to signed DELAYED events; early, landed and corrected facts do not automatically gain the benefit. Explicit version-bound tracking matches carrier/flight/date/arrival airport and excludes closed orders. Verified arrivals create proposals without changing confirmed pickup time. Durable dispatch is recorded before the isolated fleet call; UNKNOWN/DISPATCHED recovery queries only, including SIGKILL after a separately committed fleet receipt. Current authority, binding, fact, order, terms and request hash are rechecked before local confirmation. Conflicting confirmed outcomes remain HOLD in the operational queue. Legacy naive pickup times remain opaque comparison values; new signed proposed times require offsets. The supplied CLI processes a bounded batch with a disk-backed simulator; no real fleet/driver workflow, timeout-fee settlement or automatic manual-HOLD resolution is certified.",
++      "source_correction": "The former V5.2-9 label is superseded by the current V7 4.6 clause."
+     },
+     {
+       "id": "ATTRACTION-01",
+--- DEPTH18/acceptance/RAIL_ATTRACTION_NEXT_CLOSURE_CONTRACT.md
++++ DEPTH19/acceptance/RAIL_ATTRACTION_NEXT_CLOSURE_CONTRACT.md
+@@ -0,0 +1,23 @@
++# 铁路与门票后续闭环约束
++
++这是 DEPTH19 封存期间的下一轮实施依据，**不是已完成报告**。依据 V7 源段落 `V7-P12-08`、`V7-P13-01/04/05`、`V7-P21-05/07/08`、`V7-P22-02/04`。母版要求比较真实总价与专业条件，并完成从选择、核对、支付到改退、退款进度和订单关闭的全过程。
++
++## 本轮隔离检查已复现
++
++证据：`verification/current_build/depth19/next_vertical_audit.json`。检查只创建模拟待支付订单，未发生扣款或真实预订。
++
++- 铁路同一份 7,350 分报价接受两位成人，但订单仍为 7,350 分；人数没有绑定预订总价。
++- 同一铁路 prebook 可以为两个账号创建不同订单；来源、归属和单次消费缺少绑定。
++- 门票数量 2 可以配 1 位参加人，且能够接受目录未列出的 `03:17` 场次。
++- 门票预订结果未持久保存，创建订单不要求引用先前核验的 prebook。上述测试只证明创建入口的缺口，尚未证明支付后实际超卖。
++
++## 下一轮必须落实
++
++1. 报价明确单价、人数/数量、币种及含税总额；创建订单只使用服务器核验的价格快照，不能靠客户重复提交价格或自由场次。
++2. prebook 持久保存身份、适用用户、日期/场次、数量、价格版本、失效时间和消费状态。重复同一请求应恢复原结果；换账号或换正文不得复用。
++3. 旅行者数量、资格与产品要求一致；铁路成人/儿童/婴儿票种不能混用。旧默认 `GO Traveler` 不能被作为已确认真实姓名。
++4. 库存按有效供给身份和日期/场次持久化。重复搜索不能凭空补库存；并发、占用期限、支付未知结果、取消和改期失败必须保持一致。
++5. 铁路改签、门票改期保留品类自己的价差、规则、席别/场次和凭证事实；供应商结果必须绑定当前申请。未明确出票/确认时不得展示可用票号或凭证。
++6. 已支付金额、历史手续费和可退基础分开；退款未知时能够继续核对同一笔原路退款，不能再次扣款或重复退回。低价改期是否退差按各品类当前规则决定，不套用酒店条款。
++7. 客户端选择人数/参加人、显示总价、确认场次与资格、查看原申请恢复入口；官方深链与真实出票接入保持独立验收，工程模拟不得冒充实际官方交易。
++8. 对每一条可执行分支做正向与反向实测，并对照统一行程和供应商端。迁移保留旧订单；缺少可核验来源的旧报价进入复核，不能回填虚构证据。
+--- DEPTH18/alembic/versions/0126_travel_operational_facts.py
++++ DEPTH19/alembic/versions/0126_travel_operational_facts.py
+@@ -0,0 +1,100 @@
++"""Signed travel facts and versioned flight-linked ride adjustments; no legacy facts are upgraded."""
++from alembic import op
++import sqlalchemy as sa
++
++revision = '0126_travel_operational_facts'
++down_revision = '0125_regional_queue'
++branch_labels = None
++depends_on = None
++
++
++def upgrade():
++    op.create_table('travel_fact_authority',
++        sa.Column('authority_id', sa.String(64), nullable=False, primary_key=True),
++        sa.Column('provider_id', sa.String(64), nullable=False),
++        sa.Column('environment', sa.String(24), nullable=False),
++        sa.Column('source_type', sa.String(48), nullable=False),
++        sa.Column('contract_json', sa.JSON(), nullable=False),
++        sa.Column('contract_hash', sa.String(64), nullable=False),
++        sa.Column('public_key_hex', sa.String(64), nullable=False),
++        sa.Column('status', sa.String(16), nullable=False),
++        sa.Column('created_by', sa.String(64), nullable=False),
++        sa.Column('approved_by', sa.String(64), nullable=True),
++        sa.Column('valid_from_ms', sa.BigInteger(), nullable=False),
++        sa.Column('valid_until_ms', sa.BigInteger(), nullable=False),
++        sa.Column('created_ms', sa.BigInteger(), nullable=False),
++        sa.Column('updated_ms', sa.BigInteger(), nullable=False),
++        sa.Column('revision', sa.Integer(), nullable=False),
++        sa.CheckConstraint("status IN ('DRAFT','ACTIVE','REVOKED')", name='ck_travel_fact_authority_status'))
++    op.create_table('travel_operational_fact',
++        sa.Column('fact_id', sa.String(64), nullable=False, primary_key=True),
++        sa.Column('authority_id', sa.String(64), sa.ForeignKey('travel_fact_authority.authority_id'), nullable=False),
++        sa.Column('provider_id', sa.String(64), nullable=False),
++        sa.Column('event_id', sa.String(128), nullable=False),
++        sa.Column('kind', sa.String(24), nullable=False),
++        sa.Column('stream_key', sa.String(64), nullable=False),
++        sa.Column('order_id', sa.String(64), nullable=True),
++        sa.Column('source_sequence', sa.BigInteger(), nullable=False),
++        sa.Column('payload_json', sa.JSON(), nullable=False),
++        sa.Column('payload_hash', sa.String(64), nullable=False),
++        sa.Column('signature_hex', sa.String(128), nullable=False),
++        sa.Column('observed_ms', sa.BigInteger(), nullable=False),
++        sa.Column('expires_ms', sa.BigInteger(), nullable=False),
++        sa.Column('created_ms', sa.BigInteger(), nullable=False),
++        sa.UniqueConstraint('provider_id','event_id',name='uq_travel_fact_event'),
++        sa.UniqueConstraint('provider_id','stream_key','source_sequence',name='uq_travel_fact_sequence'))
++    op.create_table('ride_service_policy_snapshot',
++        sa.Column('ride_order_id', sa.String(64), nullable=False, primary_key=True),
++        sa.Column('policy_json', sa.JSON(), nullable=False),
++        sa.Column('policy_hash', sa.String(64), nullable=False),
++        sa.Column('accepted_ms', sa.BigInteger(), nullable=False))
++    op.create_table('ride_flight_binding_v2',
++        sa.Column('ride_order_id', sa.String(64), nullable=False, primary_key=True),
++        sa.Column('account_id', sa.String(64), nullable=False),
++        sa.Column('flight_key', sa.String(64), nullable=False),
++        sa.Column('identity_json', sa.JSON(), nullable=False),
++        sa.Column('authority_id', sa.String(64), sa.ForeignKey('travel_fact_authority.authority_id'), nullable=False),
++        sa.Column('policy_hash', sa.String(64), nullable=False),
++        sa.Column('tracking_enabled', sa.Boolean(), nullable=False),
++        sa.Column('delay_protection_enabled', sa.Boolean(), nullable=False),
++        sa.Column('original_pickup_at', sa.String(48), nullable=False),
++        sa.Column('current_pickup_at', sa.String(48), nullable=False),
++        sa.Column('revision', sa.Integer(), nullable=False),
++        sa.Column('last_fact_id', sa.String(64), nullable=True),
++        sa.Column('updated_ms', sa.BigInteger(), nullable=False))
++    op.create_table('ride_flight_adjustment',
++        sa.Column('adjustment_id', sa.String(64), nullable=False, primary_key=True),
++        sa.Column('ride_order_id', sa.String(64), nullable=False),
++        sa.Column('fact_id', sa.String(64), sa.ForeignKey('travel_operational_fact.fact_id'), nullable=False),
++        sa.Column('binding_revision', sa.Integer(), nullable=False),
++        sa.Column('policy_hash', sa.String(64), nullable=False),
++        sa.Column('expected_pickup_at', sa.String(48), nullable=False),
++        sa.Column('proposed_pickup_at', sa.String(48), nullable=False),
++        sa.Column('free_wait_minutes', sa.Integer(), nullable=False),
++        sa.Column('status', sa.String(24), nullable=False),
++        sa.Column('request_hash', sa.String(64), nullable=False),
++        sa.Column('provider_reference', sa.String(256), nullable=True),
++        sa.Column('result_json', sa.JSON(), nullable=True),
++        sa.Column('created_ms', sa.BigInteger(), nullable=False),
++        sa.Column('updated_ms', sa.BigInteger(), nullable=False),
++        sa.UniqueConstraint('ride_order_id','fact_id','binding_revision',name='uq_ride_flight_adjustment_fact'),
++        sa.CheckConstraint("status IN ('PENDING','DISPATCHED','UNKNOWN','CONFIRMED','REJECTED','SUPERSEDED','HOLD')",name='ck_ride_flight_adjustment_status'))
++    op.create_index('ix_travel_fact_authority_provider_id', 'travel_fact_authority', ['provider_id'])
++    op.create_index('ix_travel_operational_fact_order_id', 'travel_operational_fact', ['order_id'])
++    op.create_index('ix_travel_fact_stream', 'travel_operational_fact', ['kind', 'stream_key', 'created_ms'])
++    op.create_index('ix_ride_flight_binding_v2_flight_key', 'ride_flight_binding_v2', ['flight_key'])
++    op.create_index('ix_ride_flight_adjustment_ride_order_id', 'ride_flight_adjustment', ['ride_order_id'])
++
++
++def downgrade():
++    connection=op.get_bind()
++    if connection.scalar(sa.text('SELECT count(*) FROM ride_flight_adjustment')):raise RuntimeError('TRAVEL_FACT_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE')
++    if connection.scalar(sa.text('SELECT count(*) FROM ride_flight_binding_v2')):raise RuntimeError('TRAVEL_FACT_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE')
++    if connection.scalar(sa.text('SELECT count(*) FROM ride_service_policy_snapshot')):raise RuntimeError('TRAVEL_FACT_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE')
++    if connection.scalar(sa.text('SELECT count(*) FROM travel_operational_fact')):raise RuntimeError('TRAVEL_FACT_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE')
++    if connection.scalar(sa.text('SELECT count(*) FROM travel_fact_authority')):raise RuntimeError('TRAVEL_FACT_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE')
++    op.drop_table('ride_flight_adjustment')
++    op.drop_table('ride_flight_binding_v2')
++    op.drop_table('ride_service_policy_snapshot')
++    op.drop_table('travel_operational_fact')
++    op.drop_table('travel_fact_authority')
+--- DEPTH18/frontend/consumer/index.html
++++ DEPTH19/frontend/consumer/index.html
+@@ -9,6 +9,7 @@
+   <link rel="stylesheet" href="/go-app/flight-journeys.css?v=20260906-depth1" />
+   <link rel="stylesheet" href="/go-app/booking-travelers.css?v=20260907-master03" />
+   <link rel="stylesheet" href="/go-app/vault-manager.css?v=20260907-depth04" />
++  <link rel="stylesheet" href="/go-app/travel-status.css?v=20260908-depth19" />
+ </head>
+ <body>
+   <div id="app"></div>
+@@ -20,5 +21,6 @@
+   <script src="/go-app/catalog-credit.js?v=20260907-depth12" defer></script>
+   <script src="/go-app/rental-after-sales.js?v=20260907-depth06" defer></script>
+   <script src="/go-app/vault-manager.js?v=20260907-depth04" defer></script>
++  <script src="/go-app/travel-status.js?v=20260908-depth19" defer></script>
+ </body>
+ </html>
+--- DEPTH18/frontend/consumer/travel-status.css
++++ DEPTH19/frontend/consumer/travel-status.css
+@@ -0,0 +1,10 @@
++.go-travel-status{color:#122748;overflow-wrap:anywhere}
++.go-travel-status h2{font-size:1.35rem;margin:0 0 1rem}
++.go-travel-status label{display:block;margin:.75rem 0}
++.go-travel-cell{padding:1.2rem 0;border-top:1px solid #dbe1e9}
++.go-travel-cell h3{font-size:1rem;margin:0 0 .5rem}
++.go-travel-cell p{line-height:1.6;margin:.5rem 0}
++.go-travel-actions{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:.75rem}
++.go-travel-status button,.go-travel-actions a{min-height:44px}
++.go-travel-status button:focus-visible,.go-travel-actions a:focus-visible{outline:3px solid #315f9a;outline-offset:3px}
++@media(max-width:640px){.go-travel-actions{display:grid}.go-travel-status button{width:100%;margin-top:.5rem}}
+--- DEPTH18/frontend/consumer/travel-status.js
++++ DEPTH19/frontend/consumer/travel-status.js
+@@ -0,0 +1,57 @@
++/* Current signed facts only; does not invent check-in or fleet success. */
++(() => {
++  'use strict';
++  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
++  const labels={CHECK_IN_UNVERIFIED:'等待航空公司信息',CHECK_IN_NOT_OPEN:'值机尚未开放',CHECK_IN_OPEN:'可以办理值机',CHECKED_IN:'已办理值机',BOARDING_PASS_AVAILABLE:'登机牌已就绪'};
++  const rideLabels={PENDING:'等待车队处理',DISPATCHED:'车队处理中',UNKNOWN:'正在核对车队结果',CONFIRMED:'车队已确认',REJECTED:'车队未接受调整',SUPERSEDED:'行程已更新，此申请不再执行',HOLD:'需要人工协助核对'};
++  function link(url,label){
++    try{const u=new URL(url);if(u.protocol!=='https:'||u.username||u.password||u.port||/[\s\\]/.test(url))return '';}
++    catch{return '';}
++    return `<a class="j-select" href="${esc(url)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">${label}</a>`;
++  }
++  function flightHTML(order,result){
++    const rows=(result.items||[]).map(cell=>{
++      const leg=(order.itinerary||[])[cell.leg_index]||{},person=(order.passengers||[])[cell.passenger_index]||{};
++      const state=Object.hasOwn(labels,cell.state)?cell.state:'CHECK_IN_UNVERIFIED';
++      return `<article class="go-travel-cell"><h3>第 ${Number(cell.leg_index)+1} 程 · ${esc(leg.origin)} → ${esc(leg.destination)}</h3><p>${esc(leg.departure_date)} · ${esc(person.full_name||`乘机人 ${Number(cell.passenger_index)+1}`)}</p><strong>${labels[state]}</strong>${cell.check_in_opens_at&&state==='CHECK_IN_NOT_OPEN'?`<p>预计开放时间 ${esc(cell.check_in_opens_at)}</p>`:''}<div class="go-travel-actions">${state!=='CHECK_IN_UNVERIFIED'?link(cell.official_check_in_url,'前往航空公司办理'):''}${state==='BOARDING_PASS_AVAILABLE'?link(cell.boarding_pass_reference,'查看这位乘机人的登机牌'):''}</div></article>`;
++    }).join('');
++    return `<h2>值机与登机牌</h2><p>每位乘机人的每一程，分别核对。</p>${rows||'<p>暂无可核实的客票信息，请稍后刷新订单。</p>'}<p class="muted">当前为模拟体验，不能用于实际出行。信息未核实时不会显示为已值机。</p>`;
++  }
++  function rideHTML(result){
++    const b=result.binding,identity=b?.flight_identity||{};
++    return `<h2>航班与接送安排</h2><p>已确认接车时间 <strong>${esc(result.confirmed_pickup_at)}</strong></p>${b?`<p>${esc(identity.flight_no)} · ${esc(identity.departure_date)} · 到达 ${esc(identity.arrival_airport)}</p><p>${b.tracking_enabled?(b.source_current===false?'航班来源暂不可用':'已开启航班跟踪'):'已暂停航班跟踪'} · 包含免费等待 ${Number(b.included_wait_minutes)} 分钟${b.delay_protection_enabled?`；已验证延误时，保护上限 ${Number(b.delay_protection_max_wait_minutes)} 分钟`:''}</p>`:'<p>关联航班后，可跟进抵达时间的变化。</p>'}${(result.events||[]).slice().reverse().map(e=>`<article class="go-travel-cell"><strong>${rideLabels[e.status]||'等待核对'}</strong><p>${e.status==='CONFIRMED'?'该次确认接车时间':'建议接车时间'} ${esc(e.proposed_pickup_at)}</p>${Number.isFinite(e.free_wait_minutes)?`<p>本次规则内免费等待 ${Number(e.free_wait_minutes)} 分钟</p>`:''}${['PENDING','DISPATCHED','UNKNOWN'].includes(e.status)?'<p>请以已确认时间为准，正在与车队核对。</p>':''}${e.status==='HOLD'?'<p>车队结果与当前行程需要重新核对，请联系行程服务。</p>':''}</article>`).join('')}<p class="muted">当前为模拟体验，未连接真实车队。</p>`;
++  }
++  async function configure(order,current){
++    const options=await api(`/v1/mobility/rides/orders/${order.order_id}/flight-tracking/options`);
++    if(!options.available){toast('当前暂无可用的航班跟踪服务，请保留原接送安排。');return null;}
++    const b=current.binding,identity=b?.flight_identity||{};
++    return GOBooking.dialog('关联抵达航班',`<p>请核对出发日期和到达机场。航班有变化时会向车队申请调整，车队确认后才更新接车时间。</p><label>航班来源<select data-source>${options.sources.map(s=>`<option value="${esc(s.authority_id)}" ${b?.authority_id===s.authority_id?'selected':''}>${esc(s.label)} · ${esc(s.provider_id)}（${esc(s.carriers.join(' / '))}）</option>`).join('')}</select></label><label>航空公司代码<input data-carrier maxlength="3" placeholder="MU" required value="${esc(identity.carrier_code)}"></label><label>航班号<input data-flight maxlength="9" placeholder="MU523" required value="${esc(identity.flight_no)}"></label><label>航班出发日期<input data-day type="date" required value="${esc(identity.departure_date)}"></label><label>到达机场代码<input data-airport maxlength="3" placeholder="NRT" required value="${esc(identity.arrival_airport)}"></label><label class="go-consent"><input data-protection type="checkbox" ${b?.delay_protection_enabled?'checked':''}><span>开启规则内延误保护：额外免费等待 ${Number(options.policy.delay_protection_free_wait_minutes)} 分钟，总等待上限 ${Number(options.policy.max_free_wait_minutes)} 分钟。</span></label><label class="go-consent"><input data-consent type="checkbox" required><span>我已核对航班、日期、机场及等待规则，同意开启航班跟踪。</span></label>`,'确认关联',d=>{
++      if(!d.querySelector('[data-consent]').checked)throw Error('请先核对并确认航班安排');
++      const value=k=>d.querySelector(`[data-${k}]`).value.trim().toUpperCase();
++      return api(`/v1/mobility/rides/orders/${order.order_id}/flight-tracking`,{method:'PUT',body:JSON.stringify({authority_id:d.querySelector('[data-source]').value,expected_revision:b?.revision||0,tracking_enabled:true,delay_protection_enabled:d.querySelector('[data-protection]').checked,flight_identity:{carrier_code:value('carrier'),flight_no:value('flight'),departure_date:value('day'),arrival_airport:value('airport')}})});
++    });
++  }
++  const oldFlight=renderFlightOrder;
++  renderFlightOrder=function(){
++    oldFlight();const order=state.flightOrder,host=document.createElement('section');host.className='j-panel go-travel-status';host.setAttribute('aria-live','polite');host.innerHTML='<h2>值机与登机牌</h2><p>正在核对航空公司信息…</p>';
++    (document.querySelector('.journey-main')||document.querySelector('#app')).append(host);
++    const refresh=document.createElement('button');refresh.className='j-select';refresh.textContent='刷新值机状态';
++    async function load(){refresh.disabled=true;try{const result=await api(`/v1/flights/orders/${order.order_id}/check-in`);if(host.isConnected&&state.flightOrder?.order_id===order.order_id){host.innerHTML=flightHTML(order,result);host.append(refresh);}}catch{if(host.isConnected){host.innerHTML='<h2>值机与登机牌</h2><p>暂时未能取得航空公司信息，请稍后刷新。</p>';host.append(refresh);}}finally{refresh.disabled=false;}}
++    refresh.onclick=load;load();
++  };
++  const oldRide=renderMobilityOrder;
++  renderMobilityOrder=function(kind){
++    oldRide(kind);if(kind!=='RIDE')return;
++    const order=state.rideOrder,host=document.createElement('section');host.className='card go-travel-status';host.setAttribute('aria-live','polite');host.innerHTML='<h2>航班与接送安排</h2><p>正在核对安排…</p>';document.querySelector('#app').append(host);
++    api(`/v1/mobility/rides/orders/${order.order_id}/flight-tracking`).then(result=>{
++      if(!host.isConnected||state.rideOrder?.order_id!==order.order_id)return;
++      host.innerHTML=rideHTML(result);
++      const refresh=document.createElement('button');refresh.className='btn ghost';refresh.textContent='刷新接送安排';host.append(refresh);refresh.onclick=async()=>{refresh.disabled=true;try{await mobilityReload('RIDE')}catch{toast('暂时无法刷新，请稍后重试。')}finally{refresh.disabled=false}};
++      if(order.status!=='CONFIRMED')return;
++      const edit=document.createElement('button');edit.className='btn ghost';edit.textContent=result.binding?'核对或更换关联航班':'关联抵达航班';host.append(edit);
++      edit.onclick=async()=>{try{if(await configure(order,result))await mobilityReload('RIDE')}catch{toast('暂未完成航班关联，请刷新安排后重试。')}};
++      if(result.binding?.tracking_enabled){const stop=document.createElement('button');stop.className='btn ghost';stop.textContent='暂停航班跟踪';host.append(stop);stop.onclick=async()=>{try{if(await GOBooking.dialog('暂停航班跟踪','<p>暂停后不再根据航班新信息申请调整接车时间。已经发出的车队申请仍会继续核对。</p>','确认暂停',()=>api(`/v1/mobility/rides/orders/${order.order_id}/flight-tracking`,{method:'PUT',body:JSON.stringify({tracking_enabled:false,expected_revision:result.binding.revision})})))await mobilityReload('RIDE')}catch{toast('暂停结果待核对，请刷新安排。')}};}
++    }).catch(()=>{if(host.isConnected)host.innerHTML='<h2>航班与接送安排</h2><p>暂时无法获取跟踪信息，请以订单已确认的接送安排为准。</p>'});
++  };
++  window.GOTravelStatus={flightHTML,rideHTML,configure};
++})();
+--- DEPTH18/scripts/assemble_depth19_review.py
++++ DEPTH19/scripts/assemble_depth19_review.py
+@@ -0,0 +1,107 @@
++#!/usr/bin/env python3
++"""Restore DEPTH19 from pinned parent + DEPTH17 WORK + reviewed DEPTH19 delta."""
++import argparse
++import hashlib
++import json
++import os
++from pathlib import Path, PurePosixPath
++import shutil
++import stat
++import zipfile
++
++PARENT_SHA = '8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb'
++BASE_SHA = '1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79'
++
++
++def sha(path):
++    h=hashlib.sha256()
++    with path.open('rb') as stream:
++        for block in iter(lambda:stream.read(1024*1024),b''):h.update(block)
++    return h.hexdigest()
++
++
++def safe(name):
++    p=PurePosixPath(name)
++    if not name or p.is_absolute() or '..' in p.parts or '\\' in name or ':' in name:
++        raise ValueError('UNSAFE_ARCHIVE_PATH:'+name)
++    return p
++
++
++def preflight(z):
++    seen=set()
++    for info in z.infolist():
++        safe(info.filename)
++        if info.filename in seen or stat.S_ISLNK(info.external_attr >> 16):
++            raise ValueError('DUPLICATE_OR_LINK_ARCHIVE_ENTRY:'+info.filename)
++        seen.add(info.filename)
++
++
++def verify_entries(z, entries, prefix=''):
++    for f in entries:
++        safe(f['path'])
++        data=z.read(prefix+f['path'])
++        if len(data)!=f['size'] or hashlib.sha256(data).hexdigest()!=f['sha256']:
++            raise ValueError('PAYLOAD_INTEGRITY_FAILURE:'+f['path'])
++
++
++def extract(z, output, prefix=''):
++    for info in z.infolist():
++        if not info.filename.startswith(prefix):continue
++        p=safe(info.filename[len(prefix):])
++        if '__pycache__' in p.parts or p.suffix in {'.pyc','.pyo'}:continue
++        target=output/str(p)
++        if info.is_dir():target.mkdir(parents=True,exist_ok=True);continue
++        target.parent.mkdir(parents=True,exist_ok=True)
++        with z.open(info) as source,target.open('wb') as sink:shutil.copyfileobj(source,sink)
++        if os.name!='nt':target.chmod(0o755 if (info.external_attr>>16)&0o111 else 0o644)
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    for name in ('parent','base-work','delta','output'):parser.add_argument('--'+name,type=Path,required=True)
++    args=parser.parse_args(); output=args.output.resolve()
++    if output.exists():parser.error('Output must be a new directory')
++    if sha(args.parent)!=PARENT_SHA or sha(args.base_work)!=BASE_SHA:
++        parser.error('Locked parent or DEPTH17 WORK SHA256 mismatch')
++    with zipfile.ZipFile(args.parent) as parent,zipfile.ZipFile(args.base_work) as base,zipfile.ZipFile(args.delta) as delta:
++        for z in (parent,base,delta):preflight(z)
++        old=json.loads(base.read('DELIVERY_FILE_MANIFEST.json'))
++        change=json.loads(delta.read('DEPTH19_DELTA_MANIFEST.json'))
++        result_bytes=delta.read('RESULT_FILE_MANIFEST.json')
++        if hashlib.sha256(result_bytes).hexdigest()!=change['result_manifest_sha256']:
++            parser.error('Result manifest fingerprint mismatch')
++        result=json.loads(result_bytes)
++        if change['baseline_work_sha256']!=BASE_SHA or change['parent_sha256']!=PARENT_SHA or change['removed']:
++            parser.error('Unsupported delta lineage or removals')
++        verify_entries(base,old['files']);verify_entries(delta,change['files'],'payload/')
++        known={f['path']:f for f in old['files']}
++        for f in change['files']:
++            before=known.get(f['path'])
++            if (before['sha256'] if before else None)!=f['before_sha256']:
++                parser.error('Delta baseline mismatch: '+f['path'])
++            known[f['path']]={k:f[k] for k in ('path','size','sha256')}
++        expected={f['path']:{k:f[k] for k in ('path','size','sha256')} for f in result['files']}
++        normalized={n:{k:f[k] for k in ('path','size','sha256')} for n,f in known.items()}
++        if expected!=normalized or len(expected)!=len(result['files']):
++            parser.error('Result manifest does not match composed delta')
++        if set(delta.namelist())!={'DEPTH19_DELTA_MANIFEST.json','RESULT_FILE_MANIFEST.json',*('payload/'+f['path'] for f in change['files'])}:
++            parser.error('Unexpected delta entries')
++        output.mkdir(parents=True)
++        try:
++            extract(parent,output);extract(base,output);extract(delta,output,'payload/')
++            (output/'DELIVERY_FILE_MANIFEST.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
++            for f in result['files']:
++                if sha(output/f['path'])!=f['sha256']:raise ValueError('RESTORED_HASH_MISMATCH:'+f['path'])
++            if os.name!='nt':
++                for name in ('python','python3','python3.13'):(output/'gate_runtime/python/bin'/name).chmod(0o755)
++            receipt={'parent_sha256':PARENT_SHA,'base_work_sha256':BASE_SHA,'delta_sha256':sha(args.delta),
++                'verified_files':len(result['files']),'migration_head':'0126_travel_operational_facts','release_gate':'HOLD'}
++            (output/'DEPTH19_RESTORATION.json').write_text(json.dumps(receipt,indent=2)+'\n')
++        except BaseException:
++            shutil.rmtree(output)
++            raise
++    print(json.dumps(receipt,indent=2))
++    print('Read GO_DEPTH19_START_HERE.md; this is an engineering review copy.')
++
++
++if __name__=='__main__':main()
+--- DEPTH18/scripts/build_depth19_delivery.py
++++ DEPTH19/scripts/build_depth19_delivery.py
+@@ -0,0 +1,72 @@
++#!/usr/bin/env python3
++"""Seal a verified DEPTH19 delta against the GitHub-pinned DEPTH17 cumulative WORK."""
++import argparse
++import hashlib
++import json
++from pathlib import Path
++import zipfile
++from build_review_delivery import allowed, digest
++
++ROOT=Path(__file__).resolve().parents[1]
++BASE_SHA='1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79'
++PARENT_SHA='8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb'
++STEM='GO_CP11_DEPTH_19_SIGNED_TRAVEL_FLEET_RECOVERY'
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--baseline-work',required=True,type=Path)
++    parser.add_argument('--output-dir',type=Path,default=ROOT/'deliverables')
++    args=parser.parse_args();out=args.output_dir.resolve();out.mkdir(parents=True,exist_ok=True)
++    if digest(args.baseline_work)!=BASE_SHA:parser.error('DEPTH17 WORK fingerprint mismatch')
++    evidence=ROOT/'verification/current_build/depth19'
++    status=json.loads((evidence/'CURRENT_BUILD_STATUS.json').read_text())
++    assert status['python']['one_clean_full_run'] and not status['python']['failures'] and not status['python']['errors']
++    frozen=json.loads((evidence/'full_run_source_fingerprint.json').read_text())['files']
++    assert all(digest(ROOT/n)==h for n,h in frozen.items()),'FROZEN_SOURCE_CHANGED'
++    with zipfile.ZipFile(args.baseline_work) as base:
++        before={f['path']:f for f in json.loads(base.read('DELIVERY_FILE_MANIFEST.json'))['files']}
++    names=set(before)
++    with zipfile.ZipFile(ROOT/'deliverables/GO_CP11_DEPTH_18_MEDIA_REGIONAL_DURABILITY_DELTA_20260908.zip') as prior:
++        names.update(f['path'] for f in json.loads(prior.read('RESULT_FILE_MANIFEST.json'))['files'])
++    for folder in ('src','frontend','tests','tests_frontend','scripts','acceptance','alembic'):
++        names.update(p.relative_to(ROOT).as_posix() for p in (ROOT/folder).rglob('*') if allowed(p))
++    names.update(p.relative_to(ROOT).as_posix() for p in evidence.rglob('*') if allowed(p) and p.suffix!='.log')
++    names.update({'GO_DEPTH19_START_HERE.md','CURRENT_DEPTH_CANDIDATE.json'})
++    names.discard('DELIVERY_FILE_MANIFEST.json')
++    result={'status':'ENGINEERING_REVIEW_NOT_RELEASE_ACCEPTED','files':[]}
++    changes=[]
++    for name in sorted(names):
++        p=ROOT/name
++        assert allowed(p),name
++        row={'path':name,'size':p.stat().st_size,'sha256':digest(p)}
++        result['files'].append(row)
++        previous=before.get(name)
++        if not previous or previous['sha256']!=row['sha256']:
++            changes.append({**row,'before_sha256':previous['sha256'] if previous else None,'mode':p.stat().st_mode&0o777})
++    result_bytes=json.dumps(result,ensure_ascii=False,indent=2).encode()
++    manifest={'build':status['build'],'parent_sha256':PARENT_SHA,'baseline_work_sha256':BASE_SHA,
++              'baseline_github_commit':'b02f65db7c6ce4212e3a4d678b540fb286c14768',
++              'previous_checkpoint_commit':'0037614a4a8339323b40f1904f10c55869b22e34',
++              'includes_depth18':True,
++              'result_manifest_sha256':hashlib.sha256(result_bytes).hexdigest(),
++              'FINAL_RELEASE_GATE':'HOLD','removed':[],'files':changes}
++    path=out/(STEM+'_DELTA_20260908.zip');temporary=path.with_suffix('.building')
++    with zipfile.ZipFile(temporary,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
++        for f in changes:z.write(ROOT/f['path'],'payload/'+f['path'])
++        z.writestr('DEPTH19_DELTA_MANIFEST.json',json.dumps(manifest,indent=2))
++        z.writestr('RESULT_FILE_MANIFEST.json',result_bytes)
++    with zipfile.ZipFile(temporary) as z:
++        assert z.testzip() is None
++        assert len(z.namelist())==len(changes)+2
++        for f in changes:assert hashlib.sha256(z.read('payload/'+f['path'])).hexdigest()==f['sha256']
++    temporary.replace(path)
++    receipt={'delta':{'path':str(path),'size':path.stat().st_size,'sha256':digest(path),'entries':len(changes)+2},
++             'changed_payload_files':len(changes),'result_files':len(result['files']),
++             'baseline_work_sha256':BASE_SHA,'release_gate':'HOLD','engineering_complete':False}
++    (out/'GO_DEPTH19_DELIVERY.json').write_text(json.dumps(receipt,indent=2)+'\n')
++    (out/'GO_DEPTH19_SHA256SUMS.txt').write_text(f"{digest(path)}  {path.name}\n")
++    print(json.dumps(receipt,indent=2))
++
++
++if __name__=='__main__':main()
+--- DEPTH18/scripts/record_depth19_evidence.py
++++ DEPTH19/scripts/record_depth19_evidence.py
+@@ -0,0 +1,165 @@
++#!/usr/bin/env python3
++"""Record actual DEPTH19 results only; never convert simulations to live acceptance."""
++import difflib
++import hashlib
++import json
++from pathlib import Path
++import xml.etree.ElementTree as ET
++import zipfile
++
++ROOT=Path(__file__).resolve().parents[1]
++OUT=ROOT/'verification/current_build/depth19'
++BASE_COMMIT='0037614a4a8339323b40f1904f10c55869b22e34'
++BASE_DELTA='e730b477e46b6eea3960bf4bb41912ec78988893867d3d7239c1fce4fabcc4ea'
++
++
++def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
++def write(p,value):p.write_text(json.dumps(value,ensure_ascii=False,indent=2)+'\n')
++def count(path):
++    root=ET.parse(path).getroot();cases=list(root.iter('testcase'))
++    result={'tests':len(cases),'failures':sum(c.find('failure') is not None for c in cases),
++        'errors':sum(c.find('error') is not None for c in cases),'skipped':sum(c.find('skipped') is not None for c in cases)}
++    result['passed']=result['tests']-result['failures']-result['errors']-result['skipped']
++    suites=list(root.iter('testsuite'))
++    result['seconds']=sum(float(s.get('time','0')) for s in suites) if suites else sum(float(c.get('time','0')) for c in cases)
++    return root,result
++
++
++def main():
++    frozen=json.loads((OUT/'full_run_source_fingerprint.json').read_text())['files']
++    assert all(sha(ROOT/n)==h for n,h in frozen.items()),'FROZEN_SOURCE_CHANGED'
++    root,total=count(OUT/'full_regression.xml')
++    old_root,old_total=count(ROOT/'verification/current_build/depth18/full_regression.xml')
++    ids=lambda root:{c.get('classname')+'::'+c.get('name') for c in root.iter('testcase')}
++    before,after=ids(old_root),ids(root)
++    assert not before-after,'HISTORICAL_CASE_REMOVED'
++    new=after-before
++    assert len(new)==63 and all('test_depth19_' in n for n in new)
++    assert total['tests']==old_total['tests']+len(new) and total['failures']==total['errors']==0
++    total['one_clean_full_run']=True
++    write(OUT/'regression_case_continuity.json',{'baseline_tests':old_total['tests'],'current_tests':total['tests'],
++        'retained_case_identities':len(before),'new_case_identities':sorted(new),'removed':[],
++        'historical_assertion_changes':'Migration head advances to 0126. Two legacy P0 cases keep their identities but now require signed current-ticket fixtures and distinguish pending fleet proposals from confirmed pickup time.'})
++    _,targeted=count(OUT/'targeted.xml');_,restored=count(OUT/'restored_regression.xml');_,frontend=count(OUT/'frontend_logic.xml')
++    assert targeted['tests']==73 and targeted['passed']==73
++    assert restored['tests']==122 and restored['passed']==122
++    assert frontend['tests']==88 and frontend['passed']==88
++    syntax=json.loads((OUT/'frontend_syntax.json').read_text());assert syntax['passed']==43
++    assert json.loads((OUT/'restored_worker_cli.json').read_text())['passed']
++    assert json.loads((OUT/'restored_demo_check.json').read_text())['passed']
++    restored_root=Path(json.loads((OUT/'restored_source_equivalence.json').read_text())['restored_root'])
++    assert all(sha(restored_root/n)==h for n,h in frozen.items()),'RESTORED_RUNTIME_DIFFERS'
++    immutable=json.loads((OUT/'immutable_baseline.json').read_text())
++    assert all(sha(ROOT/item['path'])==item['sha256'] for g in immutable.values() for item in g['files'])
++    skipped=[{'case':c.get('classname')+'::'+c.get('name'),'reason':c.find('skipped').get('message')} for c in root.iter('testcase') if c.find('skipped') is not None]
++    write(OUT/'skipped_cases.json',skipped)
++    previous=json.loads((ROOT/'verification/current_build/depth18/CURRENT_BUILD_STATUS.json').read_text())
++    fact_scope=('Ed25519 signed facts bind current itinerary, traveler, ticket and leg; current independently reviewed authority, '
++        'carrier/kind scope, exact HTTPS link hosts, provider/event identity, ordered source sequence and validity are checked. '
++        'Reads are owner-scoped and do not create official states. Revocation, amendment or invalid latest evidence removes stale pass links; '
++        'official corrections may move to an earlier state. Legacy unsigned records stay unverified. Only local engineering/sandbox sources are supported; '
++        'registration cannot enable live providers. Check-in is displayed per traveler and leg on the flight order page.')
++    ride_scope=('Server-created immutable engineering offer policy snapshots bound waiting benefits; client rule overrides are rejected. '
++        'Extra waiting applies only to signed DELAYED events; early, landed and corrected facts do not automatically gain the benefit. Explicit version-bound tracking matches carrier/flight/date/arrival airport and excludes closed orders. '
++        'Verified arrivals create proposals without changing confirmed pickup time. Durable dispatch is recorded before the isolated fleet call; '
++        'UNKNOWN/DISPATCHED recovery queries only, including SIGKILL after a separately committed fleet receipt. '
++        'Current authority, binding, fact, order, terms and request hash are rechecked before local confirmation. '
++        'Conflicting confirmed outcomes remain HOLD in the operational queue. Legacy naive pickup times remain opaque comparison values; '
++        'new signed proposed times require offsets. The supplied CLI processes a bounded batch with a disk-backed simulator; '
++        'no real fleet/driver workflow, timeout-fee settlement or automatic manual-HOLD resolution is certified.')
++    status={**previous,'build':'CP11_DEPTH_19_SIGNED_TRAVEL_FLEET_RECOVERY','python':total,
++        'baseline':{**previous['baseline'],'depth18_github_commit':BASE_COMMIT,'depth18_delta_sha256':BASE_DELTA},
++        'new_backend_cases_passed':len(new),'frontend':{'logic':frontend,'syntax':{'passed':43,'node':syntax['node']},
++            'current_iteration_rerun':True,'visual_accepted':False,'frozen_node_22_certified':False},
++        'immutable':{k:{a:v[a] for a in ('count','all_match')} for k,v in immutable.items()},
++        'signed_travel_fact_scope':fact_scope,'ride_flight_recovery_scope':ride_scope,
++        'engineering_gaps':list(dict.fromkeys(previous['engineering_gaps']+[
++            'CHECK_IN_GO_TRIPS_LIST_AND_PREDEPARTURE_UNIFIED_ENTRY',
++            'FLEET_DRIVER_ETA_WAIT_EXPIRY_FEES_AND_MANUAL_HOLD_RECONCILIATION'])),
++        'blocked_gates':list(dict.fromkeys(previous['blocked_gates']+['LIVE_AIRLINE_FLEET_SIGNER_AND_DRIVER_WORKFLOW_ACCEPTANCE'])),
++        'independent_restored_runtime':restored,'targeted_runtime':targeted,
++        'migrations':{**previous['migrations'],'current_head':'0126_travel_operational_facts','prior_125_files_unchanged':True,
++            'added_files':previous['migrations']['added_files']+['alembic/versions/0126_travel_operational_facts.py'],
++            'roundtrip_evidence':previous['migrations']['roundtrip_evidence']+['tests/test_depth19_api_migration.py::test_migration_roundtrip_preserves_legacy_and_refuses_fact_evidence_loss']},
++        'upgrade_replay':{**previous['upgrade_replay'],'current':'0125_TO_0126_RETAINS_LEGACY_AND_BLOCKS_EVIDENCE_LOSS'},
++        'historical_test_change_depth19':'Two legacy P0 cases retain identities but replace unsigned source-string fixtures with signed current-ticket facts and assert proposal/confirmed-time separation. Existing migration-head assertion advances to 0126. Other historical cases remain unchanged.',
++        'validation_scope':f"One clean full run over {len(frozen)} frozen runtime/source/test files. {len(new)} new cases; 73 targeted and 122 independently restored cases overlap. Earlier full runs were interrupted to support legacy naive pickup tokens and to restrict extra wait to verified delays; both are excluded. Final source is independently restored and rechecked. 88 frontend logic and 43 JavaScript syntax checks pass under Node 24.19.0; no visual or Node 22 certification. Isolated worker CLI confirms one request, a second batch does not resend, and production invocation is refused.",
++        'next_vertical_audit':'acceptance/RAIL_ATTRACTION_NEXT_CLOSURE_CONTRACT.md',
++        'FINAL_RELEASE_GATE':'HOLD','engineering_complete':False,'deployed':False}
++    write(OUT/'CURRENT_BUILD_STATUS.json',status)
++    write(ROOT/'CURRENT_DEPTH_CANDIDATE.json',{'build':status['build'],'report':'acceptance/GO_DEPTH19_REVIEW.md','status':'verification/current_build/depth19/CURRENT_BUILD_STATUS.json','FINAL_RELEASE_GATE':'HOLD','deployed':False})
++    register=json.loads((ROOT/'acceptance/MASTER_CLOSURE_REGISTER.json').read_text())
++    for item in register['requirements']:
++        if item['id']=='FLIGHT-02':item.update(status='SIGNED_PER_LEG_TRAVELER_FACTS_TESTED_TRIPS_ENTRY_OPEN',fully_accepted=False,
++            master_clause='V7 2.6 / P06 / P13',implementation='src/go_hotel/services/travel_operational_facts.py',
++            current_evidence=['tests/test_depth19_travel_facts.py','tests/test_depth19_api_migration.py','tests_frontend/travel_status.test.mjs'],
++            source_ids=['V7-P06-10','V7-P13-02'],scope_note=fact_scope)
++        if item['id']=='RIDE-01':item.update(status='SIGNED_EXACT_FLIGHT_DURABLE_ISOLATED_FLEET_TESTED_DRIVER_SETTLEMENT_OPEN',fully_accepted=False,
++            master_clause='V7 4.6 / P22',implementation='src/go_hotel/mobility/ride/flight_sync.py',
++            current_evidence=['tests/test_depth19_ride_sync.py','verification/current_build/depth19/restored_worker_cli.json','tests_frontend/travel_status.test.mjs'],
++            source_ids=['V7-P06-11','V7-P22-03','V7-P44-05'],scope_note=ride_scope,
++            source_correction='The former V5.2-9 label is superseded by the current V7 4.6 clause.')
++    write(ROOT/'acceptance/MASTER_CLOSURE_REGISTER.json',register)
++    report=f'''# GO DEPTH19 工程审阅记录
++
++**状态：HOLD；尚未全面完工，未部署。** 从已保存的 DEPTH18 提交 `{BASE_COMMIT}` 继续，按 V7 第 2.6、4.6 节及 P06/P13/P22/P44 相关条款完成本轮实现与隔离实测。
++
++## 本轮变化
++
++- 值机改为逐航段、逐乘机人、逐客票事实。登记的公钥验证完整正文签名；来源权限、当前授权、有效时间及顺序均须通过核对。
++- 读取不再把缺少事实显示为“值机未开放”。旧无签名记录保留为未验证；正常来源更正可以撤回过时状态。改签、更换客票、乘机人变更或授权撤销后不继续展示旧登机牌。
++- 接送规则来自下单时服务器保存的模拟产品条款；客户只能选择条款内的保护，不能自己填写已授权等待上限。
++- 航班按航司、航班号、出发日期及到达机场匹配。已关闭订单隔离。事实只产生建议时间；确认前保留原接送安排。
++- 外部申请意图先落库。车队模拟器在独立数据库保存回执，断线和 SIGKILL 后只查询原申请。执行和确认均复验当前状态；冲突结果进入待人工核对队列。
++- 客户订单页增加值机/登机牌和航班接送面板；明确显示建议时间、已确认时间和未知结果。关联、保护选择及暂停均有明确确认。
++
++## 运行证据
++
++| 检查 | 实测结果 |
++| --- | --- |
++| 完整 Python 回归 | {total['tests']} 项：{total['passed']} 通过，{total['skipped']} PostgreSQL 跳过，0 失败/错误 |
++| 新增后端用例 | {len(new)} 项，包含签名、并发、进程终止与恢复 |
++| 专项检查 | 73 项通过，与完整回归重叠 |
++| 独立恢复副本 | 122 项通过；原有隔离演示启动检查通过 |
++| 隔离车队 CLI | 首批确认一笔，第二批不重发；生产环境调用被拒绝 |
++| 前端逻辑 / JavaScript 语法 | 88 / 43 项通过，Node {syntax['node']} |
++| 冻结源文件 | {len(frozen)} 个，复测副本逐个指纹相同 |
++| 不变基线 | 125 个历史迁移、3 个母版文件、23 个品牌素材 |
++
++旧测试身份全部保留。两项旧 P0 测试替换了无授权来源字符串与直接改时间的旧预期，使用实际签名事实和独立车队确认；详见差异。前两次完整测试为修复旧订单时间兼容和延误保护触发条件而主动中止，不计入通过证据。
++
++## 交付和边界
++
++增量相对 GitHub 中的 DEPTH17 WORK 累计封装，包含 DEPTH18；无需再叠加 DEPTH18。恢复命令见 `GO_DEPTH19_START_HERE.md`。新迁移 `0126_travel_operational_facts` 有数据时禁止直接降级。
++
++本轮签名由隔离供应商真实执行 Ed25519 算法，但不等于实际航司授权已接入。私钥不存入应用。算法接口依据 [cryptography 官方文档](https://cryptography.io/en/latest/hazmat/primitives/asymmetric/ed25519/)。
++
++当前模拟规则的到达至接车偏移为 0；不代表真实机场通关或车队等待承诺。历史无时区接车值作为原始比较条件保留，不推断其时区。车队确认前始终不改订单时间。
++
++隔离创建检查还复现铁路两位成人仍使用一人报价、同一 prebook 跨账号复用，以及门票人数与自由场次缺少绑定。检查未扣款；详见 `next_vertical_audit.json` 与 `acceptance/RAIL_ATTRACTION_NEXT_CLOSURE_CONTRACT.md`，这些缺口尚未关闭。
++
++仍待继续：GO Trips 列表及出发前统一值机入口、司机/ETA 流程、等待超时的费用与取消、未知结果人工核对闭环；六品类高级售后、完整费用结算、14 细胞业务执行与母版完整需求分解。真实供应商、PostgreSQL、Redis 切换、跨设备视觉及冻结 Node 22 工具链均未验收。不得将本轮测试数量、源文索引或工程模拟当作全面完工。
++'''
++    (ROOT/'acceptance/GO_DEPTH19_REVIEW.md').write_text(report)
++    # Baseline the source diff against the sealed DEPTH18 payload, not an earlier scratch copy.
++    work=ROOT/'deliverables/GO_CP11_DEPTH_17_DURABLE_CATALOG_CONSOLIDATION_WORK_20260908.zip'
++    delta=ROOT/'deliverables/GO_CP11_DEPTH_18_MEDIA_REGIONAL_DURABILITY_DELTA_20260908.zip'
++    assert sha(delta)==BASE_DELTA
++    patch=[];changes=[]
++    with zipfile.ZipFile(work) as w,zipfile.ZipFile(delta) as d:
++        old={f['path']:f for f in json.loads(d.read('RESULT_FILE_MANIFEST.json'))['files']}
++        dn=set(d.namelist())
++        for name in sorted(set(old)|set(frozen)|{'scripts/assemble_depth19_review.py','scripts/build_depth19_delivery.py','scripts/record_depth19_evidence.py','GO_DEPTH19_START_HERE.md','acceptance/GO_DEPTH19_REVIEW.md','acceptance/DEPTH19_IMPLEMENTATION_BOUNDARY.md','acceptance/RAIL_ATTRACTION_NEXT_CLOSURE_CONTRACT.md','CURRENT_DEPTH_CANDIDATE.json','acceptance/MASTER_CLOSURE_REGISTER.json'}):
++            p=ROOT/name
++            if not p.is_file():continue
++            current=sha(p);prior=old.get(name)
++            if prior and current==prior['sha256']:continue
++            changes.append({'path':name,'before_sha256':prior['sha256'] if prior else None,'after_sha256':current})
++            if p.suffix not in {'.py','.js','.css','.md','.html','.json'}:continue
++            original=(d.read('payload/'+name) if 'payload/'+name in dn else w.read(name)) if prior else b''
++            patch.extend(difflib.unified_diff(original.decode().splitlines(keepends=True),p.read_text().splitlines(keepends=True),fromfile='DEPTH18/'+name,tofile='DEPTH19/'+name))
++    (OUT/'SOURCE_DIFF.patch').write_text(''.join(patch));write(OUT/'SOURCE_CHANGES.json',{'baseline_commit':BASE_COMMIT,'files':changes})
++    print(json.dumps({'full':total,'new':len(new),'restored':restored,'release_gate':'HOLD'},indent=2))
++
++
++if __name__=='__main__':main()
+--- DEPTH18/scripts/run_flight_ride_sync.py
++++ DEPTH19/scripts/run_flight_ride_sync.py
+@@ -0,0 +1,20 @@
++#!/usr/bin/env python3
++"""Run one bounded batch using only the explicit isolated fleet simulator."""
++import argparse
++import json
++from go_hotel.mobility.ride.flight_sync import flight_ride_sync
++from go_hotel.mobility.ride.isolated_fleet import IsolatedFleetAdapter
++
++
++def main():
++    p = argparse.ArgumentParser(description=__doc__)
++    p.add_argument('--simulate', action='store_true', required=True)
++    p.add_argument('--receipt-db', required=True, help='Persistent isolated fleet receipt database path')
++    p.add_argument('--limit', type=int, default=100)
++    args = p.parse_args()
++    adapter = IsolatedFleetAdapter(args.receipt_db)
++    results = [flight_ride_sync.process(x, adapter) for x in flight_ride_sync.pending(args.limit)]
++    print(json.dumps({'data_mode': 'SIMULATION', 'external_live': False, 'results': results}, ensure_ascii=False))
++
++
++if __name__ == '__main__': main()
+--- DEPTH18/src/go_hotel/api/routes/mobility.py
++++ DEPTH19/src/go_hotel/api/routes/mobility.py
+@@ -16,6 +16,7 @@
+   raise HTTPException(code,detail=str(e))
+ class RideSearch(BaseModel):pickup:str;dropoff:str;pickup_at:str;currency:str="CNY"
+ class RideBook(RideSearch):
++ flight_identity:dict|None=None;flight_authority_id:str|None=None
+  offer_id:str;flight_no:str|None=None;passengers:list[dict]=Field(default_factory=list);traveler_ids:list[str]=Field(default_factory=list);flight_tracking_enabled:bool=False;delay_protection_enabled:bool=False;delay_protection_free_wait_minutes:int=0;max_free_wait_minutes:int|None=None;supplier_rule_snapshot:dict=Field(default_factory=dict)
+ class RentalSearch(BaseModel):pickup_location:str;return_location:str;pickup_at:str;return_at:str;currency:str="CNY"
+ class RentalBook(RentalSearch):offer_id:str;drivers:list[dict]=Field(default_factory=list);traveler_ids:list[str]=Field(default_factory=list)
+--- DEPTH18/src/go_hotel/api/routes/mother_plan_p0.py
++++ DEPTH19/src/go_hotel/api/routes/mother_plan_p0.py
+@@ -1,23 +1,68 @@
+-from fastapi import APIRouter,Depends,HTTPException
+-from pydantic import BaseModel
++from fastapi import APIRouter,Depends,HTTPException,Response
++from pydantic import BaseModel,Field,ConfigDict
++from typing import Literal
++from go_hotel.services.travel_operational_facts import travel_facts
+ from go_hotel.security.deps import consumer_principal,admin_principal,supplier_principal
+ from go_hotel.security.service import Principal
+ from go_hotel.services.mother_plan_p0 import mother_plan_p0_service as svc
+ router=APIRouter(tags=['mother-plan-p0-product-compliance'])
+ class P(BaseModel):model_config={'extra':'allow'}
++class SignedFact(BaseModel):
++ model_config=ConfigDict(extra='forbid')
++ fact:dict
++ signature_hex:str=Field(min_length=128,max_length=128,pattern='^[0-9a-f]+$')
++class AuthorityDraft(BaseModel):
++ model_config=ConfigDict(extra='forbid')
++ provider_id:str
++ environment:Literal['ENGINEERING','SANDBOX']
++ source_type:Literal['AIRLINE_OFFICIAL','AUTHORIZED_AIRLINE_PROVIDER']
++ contract:dict
++ public_key_hex:str=Field(min_length=64,max_length=64)
++ valid_from_ms:int
++ valid_until_ms:int
++class AuthorityReview(BaseModel):
++ model_config=ConfigDict(extra='forbid')
++ expected_revision:int=Field(ge=1)
++ action:Literal['APPROVE','REVOKE']
++class RideTracking(BaseModel):
++ model_config=ConfigDict(extra='forbid')
++ flight_identity:dict|None=None
++ authority_id:str|None=None
++ tracking_enabled:bool=True
++ delay_protection_enabled:bool=False
++ expected_revision:int=Field(ge=0)
++def travel_admin(p:Principal=Depends(admin_principal)):
++ if 'admin:rules' not in p.permissions:raise HTTPException(403,detail='PERMISSION_DENIED')
++ return p
+ def call(fn,*a):
+  try:return {'data':fn(*a)}
+  except ValueError as e:raise HTTPException(409,detail=str(e))
+ @router.get('/v1/flights/orders/{order_id}/check-in')
+-def checkin(order_id:str,p:Principal=Depends(consumer_principal)):return call(svc.checkin,p.user_id,order_id)
++def checkin(order_id:str,response:Response,p:Principal=Depends(consumer_principal)):
++ response.headers['Cache-Control']='no-store'
++ return call(svc.checkin,p.user_id,order_id)
+ @router.post('/internal/v1/flights/orders/{order_id}/check-in/facts')
+-def checkin_fact(order_id:str,b:P,p:Principal=Depends(admin_principal)):return call(svc.ingest_checkin,order_id,b.model_dump(exclude_none=True),p.user_id)
++def checkin_fact(order_id:str,b:SignedFact,p:Principal=Depends(travel_admin)):return call(svc.ingest_checkin,order_id,b.model_dump(exclude_none=True),p.user_id)
+ @router.put('/v1/mobility/rides/orders/{ride_id}/flight-tracking')
+-def bind(ride_id:str,b:P,p:Principal=Depends(consumer_principal)):return call(svc.bind_ride,p.user_id,ride_id,b.model_dump(exclude_none=True))
++def bind(ride_id:str,b:RideTracking,p:Principal=Depends(consumer_principal)):return call(svc.bind_ride,p.user_id,ride_id,b.model_dump(exclude_none=True))
+ @router.get('/v1/mobility/rides/orders/{ride_id}/flight-tracking')
+ def tracking(ride_id:str,p:Principal=Depends(consumer_principal)):return call(svc.ride_tracking,p.user_id,ride_id)
++@router.get('/v1/mobility/rides/orders/{ride_id}/flight-tracking/options')
++def tracking_options(ride_id:str,p:Principal=Depends(consumer_principal)):
++ from go_hotel.mobility.ride.flight_sync import flight_ride_sync
++ return call(flight_ride_sync.options,p.user_id,ride_id)
++@router.get('/internal/v1/mobility/flight-adjustments')
++def flight_adjustments(p:Principal=Depends(travel_admin)):
++ from go_hotel.mobility.ride.flight_sync import flight_ride_sync
++ return call(flight_ride_sync.operations)
+ @router.post('/internal/v1/mobility/flight-events/verified')
+-def flight_event(b:P,p:Principal=Depends(admin_principal)):return call(svc.ingest_flight_event,b.model_dump(exclude_none=True),p.user_id)
++def flight_event(b:SignedFact,p:Principal=Depends(travel_admin)):return call(svc.ingest_flight_event,b.model_dump(exclude_none=True),p.user_id)
++@router.post('/internal/v1/travel-fact-authorities',status_code=201)
++def authority_draft(b:AuthorityDraft,p:Principal=Depends(travel_admin)):
++ return call(travel_facts.register,b.model_dump(),p.user_id)
++@router.post('/internal/v1/travel-fact-authorities/{authority_id}/review')
++def authority_review(authority_id:str,b:AuthorityReview,p:Principal=Depends(travel_admin)):
++ return call(travel_facts.review,authority_id,p.user_id,b.expected_revision,b.action)
+ @router.post('/v1/go-offer/requirements',status_code=201)
+ def requirement(b:P,p:Principal=Depends(consumer_principal)):return call(svc.create_requirement,p.user_id,b.model_dump(exclude_none=True))
+ @router.get('/v1/go-offer/requirements/{requirement_id}')
+--- DEPTH18/src/go_hotel/db/models.py
++++ DEPTH19/src/go_hotel/db/models.py
+@@ -5,6 +5,96 @@
+ 
+ class Base(DeclarativeBase):
+     pass
++
++class TravelFactAuthorityRow(Base):
++    __tablename__ = 'travel_fact_authority'
++    authority_id: Mapped[str] = mapped_column(String(64), primary_key=True)
++    provider_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
++    environment: Mapped[str] = mapped_column(String(24), nullable=False)
++    source_type: Mapped[str] = mapped_column(String(48), nullable=False)
++    contract_json: Mapped[dict] = mapped_column(JSON, nullable=False)
++    contract_hash: Mapped[str] = mapped_column(String(64), nullable=False)
++    public_key_hex: Mapped[str] = mapped_column(String(64), nullable=False)
++    status: Mapped[str] = mapped_column(String(16), nullable=False)
++    created_by: Mapped[str] = mapped_column(String(64), nullable=False)
++    approved_by: Mapped[str | None] = mapped_column(String(64))
++    valid_from_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    valid_until_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    updated_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    revision: Mapped[int] = mapped_column(Integer, nullable=False)
++    __table_args__ = (CheckConstraint("status IN ('DRAFT','ACTIVE','REVOKED')", name='ck_travel_fact_authority_status'),)
++
++
++class TravelOperationalFactRow(Base):
++    __tablename__ = 'travel_operational_fact'
++    fact_id: Mapped[str] = mapped_column(String(64), primary_key=True)
++    authority_id: Mapped[str] = mapped_column(ForeignKey('travel_fact_authority.authority_id'), nullable=False)
++    provider_id: Mapped[str] = mapped_column(String(64), nullable=False)
++    event_id: Mapped[str] = mapped_column(String(128), nullable=False)
++    kind: Mapped[str] = mapped_column(String(24), nullable=False)
++    stream_key: Mapped[str] = mapped_column(String(64), nullable=False)
++    order_id: Mapped[str | None] = mapped_column(String(64), index=True)
++    source_sequence: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    payload_json: Mapped[dict] = mapped_column(JSON, nullable=False)
++    payload_hash: Mapped[str] = mapped_column(String(64), nullable=False)
++    signature_hex: Mapped[str] = mapped_column(String(128), nullable=False)
++    observed_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    __table_args__ = (
++        UniqueConstraint('provider_id','event_id',name='uq_travel_fact_event'),
++        UniqueConstraint('provider_id','stream_key','source_sequence',name='uq_travel_fact_sequence'),
++        Index('ix_travel_fact_stream','kind','stream_key','created_ms'),
++    )
++
++
++class RideServicePolicyRow(Base):
++    __tablename__ = 'ride_service_policy_snapshot'
++    ride_order_id: Mapped[str] = mapped_column(String(64), primary_key=True)
++    policy_json: Mapped[dict] = mapped_column(JSON, nullable=False)
++    policy_hash: Mapped[str] = mapped_column(String(64), nullable=False)
++    accepted_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++
++
++class RideFlightBindingV2Row(Base):
++    __tablename__ = 'ride_flight_binding_v2'
++    ride_order_id: Mapped[str] = mapped_column(String(64), primary_key=True)
++    account_id: Mapped[str] = mapped_column(String(64), nullable=False)
++    flight_key: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
++    identity_json: Mapped[dict] = mapped_column(JSON, nullable=False)
++    authority_id: Mapped[str] = mapped_column(ForeignKey('travel_fact_authority.authority_id'), nullable=False)
++    policy_hash: Mapped[str] = mapped_column(String(64), nullable=False)
++    tracking_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
++    delay_protection_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
++    original_pickup_at: Mapped[str] = mapped_column(String(48), nullable=False)
++    current_pickup_at: Mapped[str] = mapped_column(String(48), nullable=False)
++    revision: Mapped[int] = mapped_column(Integer, nullable=False)
++    last_fact_id: Mapped[str | None] = mapped_column(String(64))
++    updated_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++
++
++class RideFlightAdjustmentRow(Base):
++    __tablename__ = 'ride_flight_adjustment'
++    adjustment_id: Mapped[str] = mapped_column(String(64), primary_key=True)
++    ride_order_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
++    fact_id: Mapped[str] = mapped_column(ForeignKey('travel_operational_fact.fact_id'), nullable=False)
++    binding_revision: Mapped[int] = mapped_column(Integer, nullable=False)
++    policy_hash: Mapped[str] = mapped_column(String(64), nullable=False)
++    expected_pickup_at: Mapped[str] = mapped_column(String(48), nullable=False)
++    proposed_pickup_at: Mapped[str] = mapped_column(String(48), nullable=False)
++    free_wait_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
++    status: Mapped[str] = mapped_column(String(24), nullable=False)
++    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
++    provider_reference: Mapped[str | None] = mapped_column(String(256))
++    result_json: Mapped[dict | None] = mapped_column(JSON)
++    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    updated_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    __table_args__ = (
++        UniqueConstraint('ride_order_id','fact_id','binding_revision',name='uq_ride_flight_adjustment_fact'),
++        CheckConstraint("status IN ('PENDING','DISPATCHED','UNKNOWN','CONFIRMED','REJECTED','SUPERSEDED','HOLD')",name='ck_ride_flight_adjustment_status'),
++    )
++
+ 
+ class RegionalQueueRow(Base):
+     __tablename__ = 'regional_build_queue'
+--- DEPTH18/src/go_hotel/mobility/ride/flight_sync.py
++++ DEPTH19/src/go_hotel/mobility/ride/flight_sync.py
+@@ -0,0 +1,305 @@
++"""Versioned flight tracking and durable fleet intents; confirmed times stay distinct.
++
++Only the explicit isolated adapter is supplied in this build. UNKNOWN/DISPATCHED
++intents can be queried, never resent. Real fleet credentials are not accepted here.
++"""
++from datetime import datetime, timezone
++import uuid
++from sqlalchemy import select
++
++from go_hotel.autonomy.durable import db_now_ms, digest
++from go_hotel.db.models import (MobilityRideOrderRow as Ride, RideServicePolicyRow as Policy,
++    RideFlightBindingV2Row as Binding, RideFlightAdjustmentRow as Adjustment,
++    TravelOperationalFactRow as Fact, TravelFactAuthorityRow as Authority)
++from go_hotel.db.session import SessionLocal
++from go_hotel.services.travel_operational_facts import (TravelFacts, travel_transaction,
++    flight_identity, instant, environment_allowed)
++
++
++# These are versioned server-side engineering offer terms, not real fleet terms.
++def engineering_policy(offer_id):
++    included = {'ride_standard': 60, 'ride_premium': 90}.get(offer_id)
++    if included is None:
++        raise ValueError('RIDE_OFFER_NOT_FOUND')
++    return {'version': 'engineering-ride-19.1', 'offer_id': offer_id, 'data_mode': 'SIMULATION',
++        'fleet_adapter': 'isolated-fleet-v1', 'included_wait_minutes': included,
++        'delay_protection_free_wait_minutes': 30, 'max_free_wait_minutes': included+30,
++        'arrival_to_pickup_minutes': 0, 'extra_fees_authorized': False, 'delay_protection_triggers': ['DELAYED']}
++
++
++def reject_client_rules(body):
++    if any(body.get(k) not in (None, 0, {}) for k in ('included_wait_minutes',
++            'delay_protection_free_wait_minutes', 'max_free_wait_minutes', 'supplier_rule_snapshot')):
++        raise ValueError('CLIENT_SUPPLIER_RULE_OVERRIDE_FORBIDDEN')
++
++
++def snapshot_policy(s, ride, offer_id):
++    policy = engineering_policy(offer_id)
++    s.add(Policy(ride_order_id=ride.order_id, policy_json=policy, policy_hash=digest(policy), accepted_ms=db_now_ms(s)))
++    s.flush()
++
++
++def adjustment_out(a):
++    return {k:getattr(a,k) for k in ('adjustment_id', 'ride_order_id', 'fact_id', 'binding_revision',
++        'expected_pickup_at', 'proposed_pickup_at', 'free_wait_minutes', 'status', 'created_ms', 'updated_ms')}
++
++
++class FlightRideSync:
++    def __init__(self, factory=SessionLocal):
++        self.factory, self.facts = factory, TravelFacts(factory)
++
++    @staticmethod
++    def policy(s, ride_id):
++        p = s.get(Policy, ride_id)
++        if not p or p.policy_hash != digest(p.policy_json):
++            raise ValueError('SERVER_RIDE_POLICY_REQUIRED')
++        if p.policy_json != engineering_policy(p.policy_json.get('offer_id')):
++            raise ValueError('RIDE_POLICY_VERSION_NOT_SUPPORTED')
++        return p
++
++    @staticmethod
++    def owned(s, account, ride_id):
++        ride = s.scalar(select(Ride).where(Ride.order_id == ride_id).with_for_update())
++        if not ride or ride.account_id != account:
++            raise ValueError('MOBILITY_ORDER_NOT_FOUND')
++        return ride
++
++    def bind_in(self, s, account, ride_id, body, *, creating=False):
++        reject_client_rules(body)
++        ride = self.owned(s, account, ride_id)
++        if ride.status not in ({'PAYMENT_PENDING'} if creating else {'CONFIRMED'}):
++            raise ValueError('RIDE_TRACKING_ORDER_NOT_ACTIVE')
++        p = self.policy(s, ride_id)
++        old = s.get(Binding, ride_id)
++        expected = body.get('expected_revision', 0)
++        if type(expected) is not int or expected != (old.revision if old else 0):
++            raise ValueError('RIDE_TRACKING_REVISION_CONFLICT')
++        enabled = body.get('tracking_enabled', True)
++        protection = body.get('delay_protection_enabled', False)
++        if type(enabled) is not bool or type(protection) is not bool:
++            raise ValueError('RIDE_TRACKING_OPTION_INVALID')
++        if not enabled:
++            if not old:
++                raise ValueError('RIDE_TRACKING_NOT_BOUND')
++            old.tracking_enabled = False; old.revision += 1; old.updated_ms = db_now_ms(s)
++            return self.binding_out(old, p)
++        identity = flight_identity(body.get('flight_identity'))
++        # Linking is explicit consumer consent; the date/airport cannot be inferred
++        # from a free-text pickup label. Flight identity remains visible for review.
++        authority_id = body.get('authority_id')
++        self.facts.authority(s, authority_id, 'FLIGHT_ARRIVAL', identity['carrier_code'])
++        # Legacy local pickup values remain opaque comparison tokens. Do not
++        # guess their timezone or rewrite them while merely enabling tracking.
++        try:
++            if len(ride.pickup_at)<16:raise ValueError()
++            pickup_day=datetime.fromisoformat(ride.pickup_at.replace('Z','+00:00')).date()
++        except (TypeError,ValueError,AttributeError):
++            raise ValueError('RIDE_PICKUP_TIME_INVALID') from None
++        if abs((pickup_day-datetime.fromisoformat(identity['departure_date']).date()).days) > 3:
++            raise ValueError('RIDE_FLIGHT_DATE_MISMATCH')
++        values = dict(account_id=account, flight_key=digest(['FLIGHT_ARRIVAL', identity]), identity_json=identity,
++            authority_id=authority_id, policy_hash=p.policy_hash, tracking_enabled=enabled,
++            delay_protection_enabled=protection, current_pickup_at=ride.pickup_at,
++            revision=expected+1, last_fact_id=None, updated_ms=db_now_ms(s))
++        if old:
++            for key, value in values.items(): setattr(old, key, value)
++        else:
++            old = Binding(ride_order_id=ride_id, original_pickup_at=ride.pickup_at, **values); s.add(old)
++        ride.flight_no = identity['flight_no']
++        s.flush()
++        return self.binding_out(old, p)
++
++    def bind(self, account, ride_id, body):
++        with travel_transaction(self.factory) as s:
++            return self.bind_in(s, account, ride_id, body)
++
++    @staticmethod
++    def binding_out(b, p):
++        policy = p.policy_json
++        free = min(policy['max_free_wait_minutes'], policy['included_wait_minutes']+
++            (policy['delay_protection_free_wait_minutes'] if b.delay_protection_enabled else 0))
++        return {'ride_order_id': b.ride_order_id, 'flight_identity': b.identity_json,
++            'authority_id': b.authority_id, 'tracking_enabled': b.tracking_enabled,
++            'delay_protection_enabled': b.delay_protection_enabled, 'revision': b.revision,
++            'original_pickup_at': b.original_pickup_at, 'confirmed_pickup_at': b.current_pickup_at,
++            'included_wait_minutes': policy['included_wait_minutes'], 'delay_protection_max_wait_minutes': free, 'policy': policy}
++
++    @staticmethod
++    def free_for_fact(binding, policy, fact):
++        rules=policy.policy_json
++        eligible=binding.delay_protection_enabled and fact.payload_json['data']['event_type'] in rules['delay_protection_triggers']
++        return min(rules['max_free_wait_minutes'], rules['included_wait_minutes']+(rules['delay_protection_free_wait_minutes'] if eligible else 0))
++
++    @staticmethod
++    def request(ride, a, policy):
++        return {'adjustment_id': a.adjustment_id, 'ride_order_id': ride.order_id,
++            'supplier_reference': ride.supplier_reference, 'fact_id': a.fact_id,
++            'binding_revision': a.binding_revision, 'policy_hash': a.policy_hash,
++            'expected_pickup_at': a.expected_pickup_at, 'proposed_pickup_at': a.proposed_pickup_at,
++            'free_wait_minutes': a.free_wait_minutes, 'fleet_adapter': policy['fleet_adapter']}
++
++    def ingest(self, envelope, actor):
++        body=envelope.get('fact') if isinstance(envelope,dict) else None
++        if not isinstance(body,dict) or body.get('kind') != 'FLIGHT_ARRIVAL':
++            raise ValueError('SIGNED_FLIGHT_ARRIVAL_REQUIRED')
++        with travel_transaction(self.factory) as s:
++            fact, created = self.facts.ingest_in(s, envelope)
++            if not created:
++                existing = s.scalars(select(Adjustment).where(Adjustment.fact_id == fact.fact_id)).all()
++                return {'fact_id': fact.fact_id, 'events': [adjustment_out(x) for x in existing], 'matched_rides': len(existing), 'external_live': False, 'duplicate': True}
++            bindings = s.scalars(select(Binding).where(Binding.flight_key == fact.stream_key,
++                Binding.authority_id == fact.authority_id, Binding.tracking_enabled.is_(True))).all()
++            events = []
++            for b in bindings:
++                ride = s.scalar(select(Ride).where(Ride.order_id == b.ride_order_id).with_for_update())
++                if not ride or ride.status != 'CONFIRMED' or ride.account_id != b.account_id:
++                    continue
++                try:
++                    p = self.policy(s, ride.order_id)
++                    if b.policy_hash != p.policy_hash: continue
++                except ValueError:
++                    continue
++                proposed = instant(fact.payload_json['data']['verified_arrival_at'])
++                free = self.free_for_fact(b,p,fact)
++                # Current engineering policy has a zero pickup offset. Do not
++                # silently apply a future policy until that version is supported.
++                a = Adjustment(adjustment_id='rfa_'+uuid.uuid4().hex, ride_order_id=ride.order_id,
++                    fact_id=fact.fact_id, binding_revision=b.revision, policy_hash=p.policy_hash,
++                    expected_pickup_at=ride.pickup_at, proposed_pickup_at=proposed,
++                    free_wait_minutes=free, status='PENDING', request_hash='',
++                    provider_reference=None, result_json=None, created_ms=db_now_ms(s), updated_ms=db_now_ms(s))
++                a.request_hash = digest(self.request(ride, a, p.policy_json))
++                s.add(a); b.last_fact_id = fact.fact_id; b.updated_ms = db_now_ms(s)
++                events.append(adjustment_out(a))
++            s.flush()
++            return {'fact_id': fact.fact_id, 'events': events, 'matched_rides': len(events), 'external_live': False, 'duplicate': False}
++
++    def _current(self, s, ride, a):
++        if not ride or ride.status != 'CONFIRMED' or not ride.supplier_reference:
++            raise ValueError('RIDE_NOT_CONFIRMED')
++        b = s.get(Binding, ride.order_id)
++        if not b or b.account_id != ride.account_id or not b.tracking_enabled or b.revision != a.binding_revision:
++            raise ValueError('RIDE_BINDING_CHANGED')
++        p = self.policy(s, ride.order_id)
++        fact = s.get(Fact, a.fact_id)
++        if not fact or b.authority_id != fact.authority_id or b.flight_key != fact.stream_key or b.last_fact_id != fact.fact_id:
++            raise ValueError('RIDE_FLIGHT_FACT_CHANGED')
++        self.facts.current(s, fact)
++        if p.policy_hash != a.policy_hash or b.policy_hash != p.policy_hash or ride.pickup_at != a.expected_pickup_at:
++            raise ValueError('RIDE_CURRENT_TERMS_CHANGED')
++        request = self.request(ride, a, p.policy_json)
++        if digest(request) != a.request_hash or instant(fact.payload_json['data']['verified_arrival_at']) != a.proposed_pickup_at or self.free_for_fact(b,p,fact) != a.free_wait_minutes:
++            raise ValueError('RIDE_INTENT_INTEGRITY_FAILED')
++        return b, request
++
++    def process(self, adjustment_id, adapter):
++        environment_allowed('ENGINEERING')
++        if getattr(adapter, 'adapter_id', None) != 'isolated-fleet-v1' or getattr(adapter, 'external_live', True) is not False:
++            raise ValueError('ACCEPTED_FLEET_ADAPTER_REQUIRED')
++        with travel_transaction(self.factory) as s:
++            a = s.get(Adjustment, adjustment_id)
++            if not a:
++                raise ValueError('RIDE_ADJUSTMENT_NOT_FOUND')
++            if a.status not in {'PENDING', 'DISPATCHED', 'UNKNOWN'}:
++                return adjustment_out(a)
++            ride = s.scalar(select(Ride).where(Ride.order_id == a.ride_order_id).with_for_update())
++            sending = a.status == 'PENDING'
++            if sending:
++                try:
++                    _, request = self._current(s, ride, a)
++                except ValueError as e:
++                    a.status, a.result_json, a.updated_ms = 'SUPERSEDED', {'code': str(e), 'external_dispatch': False}, db_now_ms(s)
++                    return adjustment_out(a)
++                other = s.scalar(select(Adjustment).where(Adjustment.ride_order_id == a.ride_order_id,
++                    Adjustment.adjustment_id != a.adjustment_id, Adjustment.status.in_(['DISPATCHED', 'UNKNOWN', 'HOLD'])).limit(1))
++                if other:
++                    return adjustment_out(a) | {'blocked_by': other.adjustment_id}
++                a.status = 'DISPATCHED'; a.updated_ms = db_now_ms(s)
++            else:
++                request = None  # Queries need the stable intent identity/hash only.
++            request_hash = a.request_hash
++        # This boundary intentionally persists dispatch before any external call.
++        # A crash immediately here also resumes as query-only, never blind resend.
++        try:
++            result = adapter.execute(request, request_hash) if sending else adapter.query(adjustment_id, request_hash)
++        except Exception:
++            result = {'status': 'UNKNOWN', 'request_hash': request_hash}
++        with travel_transaction(self.factory) as s:
++            a = s.get(Adjustment, adjustment_id)
++            if a.status not in {'DISPATCHED', 'UNKNOWN'}:
++                return adjustment_out(a)
++            if not isinstance(result, dict) or result.get('request_hash') != a.request_hash:
++                a.status = 'UNKNOWN'; a.result_json = {'code': 'FLEET_RECEIPT_MISMATCH'}
++            elif result.get('status') in {'CONFIRMED', 'REJECTED'} and isinstance(result.get('provider_reference'), str) and result['provider_reference']:
++                a.provider_reference = result['provider_reference'][:256]
++                a.result_json = {k:result.get(k) for k in ('status', 'request_hash', 'provider_reference', 'pickup_at')}
++                if result['status'] == 'REJECTED':
++                    a.status = 'REJECTED'
++                else:
++                    ride = s.scalar(select(Ride).where(Ride.order_id == a.ride_order_id).with_for_update())
++                    try:
++                        b, _ = self._current(s, ride, a)
++                        if instant(result.get('pickup_at')) != a.proposed_pickup_at:
++                            raise ValueError('FLEET_CONFIRMED_TIME_MISMATCH')
++                        ride.pickup_at = a.proposed_pickup_at; ride.updated_at = datetime.now(timezone.utc)
++                        b.current_pickup_at = a.proposed_pickup_at; b.updated_ms = db_now_ms(s)
++                        a.status = 'CONFIRMED'
++                    except ValueError as e:
++                        a.status = 'HOLD'; a.result_json = {**a.result_json, 'code': str(e), 'manual_reconciliation_required': True}
++            else:
++                a.status = 'UNKNOWN'; a.result_json = {'code': 'FLEET_OUTCOME_UNKNOWN'}
++            a.updated_ms = db_now_ms(s)
++            return adjustment_out(a)
++
++    def pending(self, limit=100):
++        with self.factory() as s:
++            return list(s.scalars(select(Adjustment.adjustment_id).where(Adjustment.status.in_(['PENDING', 'DISPATCHED', 'UNKNOWN']))
++                .order_by(Adjustment.created_ms, Adjustment.adjustment_id).limit(max(1, min(int(limit), 1000)))))
++
++    def options(self, account, ride_id):
++        with self.factory() as s:
++            ride=s.get(Ride,ride_id)
++            if not ride or ride.account_id!=account:raise ValueError('MOBILITY_ORDER_NOT_FOUND')
++            try:p=self.policy(s,ride_id)
++            except ValueError:return {'sources':[], 'policy':None, 'available':False}
++            sources=[]
++            for a in s.scalars(select(Authority).where(Authority.status=='ACTIVE').order_by(Authority.provider_id,Authority.authority_id)):
++                try:
++                    carriers=[c for c in a.contract_json['carriers'] if self.facts.authority(s,a.authority_id,'FLIGHT_ARRIVAL',c)]
++                    sources.append({'authority_id':a.authority_id,'provider_id':a.provider_id,'carriers':carriers,
++                        'label':'航空公司官方来源' if a.source_type=='AIRLINE_OFFICIAL' else '已授权航班服务'})
++                except ValueError:continue
++            return {'sources':sources,'policy':p.policy_json,'available':ride.status=='CONFIRMED' and bool(sources),'data_mode':'SIMULATION'}
++
++    def operations(self):
++        with self.factory() as s:
++            rows=s.scalars(select(Adjustment).where(Adjustment.status.in_(['PENDING','DISPATCHED','UNKNOWN','HOLD']))
++                .order_by(Adjustment.created_ms).limit(1000)).all()
++            return {'items':[adjustment_out(a)|{'result':a.result_json} for a in rows],
++                'manual_reconciliation_required':sum(a.status=='HOLD' for a in rows),'external_live':False}
++
++    def tracking(self, account, ride_id):
++        with self.factory() as s:
++            ride = s.get(Ride, ride_id)
++            if not ride or ride.account_id != account:
++                raise ValueError('MOBILITY_ORDER_NOT_FOUND')
++            b, p = s.get(Binding, ride_id), s.get(Policy, ride_id)
++            binding = None
++            if b and p:
++                try:
++                    p = self.policy(s, ride_id)
++                    binding = self.binding_out(b, p)
++                    binding['confirmed_pickup_at'] = ride.pickup_at
++                    try:
++                        self.facts.authority(s,b.authority_id,'FLIGHT_ARRIVAL',b.identity_json['carrier_code'])
++                        binding['source_current']=True
++                    except ValueError:
++                        binding['source_current']=False
++                except ValueError:
++                    pass
++            events = s.scalars(select(Adjustment).where(Adjustment.ride_order_id == ride_id).order_by(Adjustment.created_ms, Adjustment.adjustment_id)).all()
++            return {'binding': binding, 'confirmed_pickup_at': ride.pickup_at, 'events': [adjustment_out(x) for x in events],
++                'legacy_binding_verified': False, 'data_mode': 'SIMULATION', 'external_live': False}
++
++
++flight_ride_sync = FlightRideSync()
+--- DEPTH18/src/go_hotel/mobility/ride/isolated_fleet.py
++++ DEPTH19/src/go_hotel/mobility/ride/isolated_fleet.py
+@@ -0,0 +1,52 @@
++"""Explicit disk-backed fleet simulator. No network or real provider side effects."""
++from contextlib import contextmanager
++import json
++import sqlite3
++from pathlib import Path
++from go_hotel.autonomy.durable import canonical, digest
++from go_hotel.services.travel_operational_facts import environment_allowed
++
++
++class IsolatedFleetAdapter:
++    adapter_id = 'isolated-fleet-v1'
++    external_live = False
++
++    def __init__(self, path):
++        environment_allowed('ENGINEERING')
++        self.path = str(Path(path).resolve())
++        Path(self.path).parent.mkdir(parents=True, exist_ok=True)
++        with self.connection() as c:
++            c.execute('CREATE TABLE IF NOT EXISTS requests (intent TEXT PRIMARY KEY, request_hash TEXT NOT NULL, receipt TEXT NOT NULL)')
++
++    @contextmanager
++    def connection(self):
++        c = sqlite3.connect(self.path, timeout=30)
++        try:
++            c.execute('PRAGMA synchronous=FULL')
++            with c:
++                yield c
++        finally:
++            c.close()
++
++    def execute(self, request, request_hash):
++        environment_allowed('ENGINEERING')
++        if not request or digest(request) != request_hash:
++            raise ValueError('ISOLATED_FLEET_REQUEST_INVALID')
++        with self.connection() as c:
++            c.execute('BEGIN IMMEDIATE')
++            old = c.execute('SELECT request_hash,receipt FROM requests WHERE intent=?', (request['adjustment_id'],)).fetchone()
++            if old:
++                if old[0] != request_hash: raise ValueError('ISOLATED_FLEET_REQUEST_CONFLICT')
++                return json.loads(old[1])
++            result = {'status': 'CONFIRMED', 'request_hash': request_hash,
++                'provider_reference': 'isolated-fleet:'+request['adjustment_id'],
++                'pickup_at': request['proposed_pickup_at'], 'external_live': False}
++            c.execute('INSERT INTO requests VALUES (?,?,?)', (request['adjustment_id'], request_hash, canonical(result)))
++            return result
++
++    def query(self, adjustment_id, request_hash):
++        environment_allowed('ENGINEERING')
++        with self.connection() as c:
++            row = c.execute('SELECT request_hash,receipt FROM requests WHERE intent=?', (adjustment_id,)).fetchone()
++            if row and row[0] == request_hash: return json.loads(row[1])
++            return {'status': 'UNKNOWN', 'request_hash': request_hash, 'external_live': False}
+--- DEPTH18/src/go_hotel/mobility/ride/service.py
++++ DEPTH19/src/go_hotel/mobility/ride/service.py
+@@ -5,7 +5,8 @@
+ from sqlalchemy import select
+ 
+ from go_hotel.core.production_truth_gate import production_truth_required
+-from go_hotel.db.models import MobilityRefundRow, MobilityRideOrderRow, RideFlightTrackingBindingRow
++from go_hotel.db.models import MobilityRefundRow, MobilityRideOrderRow
++from go_hotel.mobility.ride.flight_sync import engineering_policy, reject_client_rules, snapshot_policy, flight_ride_sync
+ from go_hotel.db.session import SessionLocal
+ from go_hotel.domain.models import new_id
+ from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence, list_vertical_evidence
+@@ -22,12 +23,13 @@
+     def search(self, pickup: str, dropoff: str, pickup_at: str, currency: str = "CNY"):
+         production_truth_required("RIDE", "SEARCH")
+         return [
+-            {"offer_id": "ride_standard", "vehicle_class": "COMFORT", "total_amount_minor": 16800, "currency": currency, "included_wait_minutes": 60, "meet_and_greet": True, "cancellation": {"free_until_hours": 24, "late_fee_minor": 8400}, "external_live": False},
+-            {"offer_id": "ride_premium", "vehicle_class": "PREMIUM", "total_amount_minor": 26800, "currency": currency, "included_wait_minutes": 90, "meet_and_greet": True, "cancellation": {"free_until_hours": 24, "late_fee_minor": 13400}, "external_live": False},
++            {"offer_id": "ride_standard", "vehicle_class": "COMFORT", "total_amount_minor": 16800, "currency": currency, "included_wait_minutes": 60, "service_policy": engineering_policy("ride_standard"), "meet_and_greet": True, "cancellation": {"free_until_hours": 24, "late_fee_minor": 8400}, "external_live": False},
++            {"offer_id": "ride_premium", "vehicle_class": "PREMIUM", "total_amount_minor": 26800, "currency": currency, "included_wait_minutes": 90, "service_policy": engineering_policy("ride_premium"), "meet_and_greet": True, "cancellation": {"free_until_hours": 24, "late_fee_minor": 13400}, "external_live": False},
+         ]
+ 
+     def create(self, account: str, body: dict):
+         production_truth_required("RIDE", "CREATE_ORDER")
++        reject_client_rules(body)
+         prices = {"ride_standard": 16800, "ride_premium": 26800}
+         total = prices.get(body["offer_id"])
+         if total is None:
+@@ -44,20 +46,14 @@
+             )
+             s.add(o); s.flush()
+             append_vertical_evidence(s, "RIDE", o.order_id, "ORDER_CREATED", o.status, {"offer_id": body["offer_id"], "external_live": False})
+-            if body.get("flight_no") and body.get("flight_tracking_enabled"):
+-                included = 90 if body["offer_id"] == "ride_premium" else 60
+-                extra = max(0, int(body.get("delay_protection_free_wait_minutes", 0)))
+-                cap = max(included, int(body.get("max_free_wait_minutes") or included + extra))
+-                s.add(RideFlightTrackingBindingRow(
+-                    ride_flight_tracking_binding_id=new_id("rftb"), ride_order_id=o.order_id,
+-                    flight_no=body["flight_no"].upper().replace(" ", ""), tracking_enabled=True,
+-                    original_pickup_at=o.pickup_at, current_pickup_at=o.pickup_at,
+-                    included_wait_minutes=included, delay_protection_enabled=bool(body.get("delay_protection_enabled", False)),
+-                    delay_protection_free_wait_minutes=extra, max_free_wait_minutes=cap,
+-                    supplier_rule_snapshot_json=body.get("supplier_rule_snapshot", {}),
+-                    sync_state="TRACKING_ACTIVE", updated_at=now(),
+-                ))
++            snapshot_policy(s, o, body['offer_id'])
++            if body.get('flight_tracking_enabled'):
++                flight_ride_sync.bind_in(s, account, o.order_id, {
++                    'flight_identity': body.get('flight_identity'), 'authority_id': body.get('flight_authority_id'),
++                    'tracking_enabled': True, 'delay_protection_enabled': body.get('delay_protection_enabled', False),
++                    'expected_revision': 0}, creating=True)
+             result=self.out(o)
++            result["service_policy"]=engineering_policy(body["offer_id"])
+         vertical_source_runtime_service.decide("RIDE",result["order_id"],[{"source_id":"ride-engineering-source","source_type":"FLEET_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"ride-offer://{body['offer_id']}"}])
+         return result
+ 
+--- DEPTH18/src/go_hotel/services/mother_plan_p0.py
++++ DEPTH19/src/go_hotel/services/mother_plan_p0.py
+@@ -22,65 +22,20 @@
+   h=digest({'requirement_id':rid,'event_type':event,'actor_id':actor,'payload':payload})
+   s.add(GoOfferLifecycleEventRow(go_offer_lifecycle_event_id=ident('goev'),requirement_id=rid,event_type=event,actor_id=actor,payload_json=payload,evidence_hash=h,occurred_at=now()))
+  def checkin(self,account,order_id):
+-  with SessionLocal.begin() as s:
+-   o=s.get(FlightOrderRow,order_id)
+-   if not o or o.account_id!=account:raise ValueError('FLIGHT_ORDER_NOT_FOUND')
+-   r=s.scalar(select(FlightCheckInStateRow).where(FlightCheckInStateRow.flight_order_id==order_id))
+-   if not r:
+-    r=FlightCheckInStateRow(flight_check_in_state_id=ident('fcis'),flight_order_id=order_id,state='CHECK_IN_NOT_OPEN',check_in_opens_at=None,official_check_in_url=None,boarding_pass_reference=None,source_type='GO_DERIVED_INITIAL',source_authority_reference=None,source_fact_hash=None,updated_at=now());s.add(r);s.flush()
+-   return out(r)|{'external_check_in_only':True,'go_does_not_fabricate_success':True}
++  from go_hotel.services.travel_operational_facts import travel_facts
++  return travel_facts.checkin(account,order_id)
+  def ingest_checkin(self,order_id,b,actor):
+-  state=b['state'];source=b.get('source_type')
+-  if state not in CHECKIN:raise ValueError('INVALID_FLIGHT_CHECK_IN_STATE')
+-  if source not in {'AIRLINE_OFFICIAL','AUTHORIZED_AIRLINE_PROVIDER'} or not b.get('source_authority_reference'):raise ValueError('AUTHORIZED_CHECK_IN_FACT_REQUIRED')
+-  if state=='BOARDING_PASS_AVAILABLE' and not b.get('boarding_pass_reference'):raise ValueError('BOARDING_PASS_REFERENCE_REQUIRED')
+-  payload={k:b.get(k) for k in ('state','check_in_opens_at','official_check_in_url','boarding_pass_reference','source_type','source_authority_reference')}
+-  with SessionLocal.begin() as s:
+-   if not s.get(FlightOrderRow,order_id):raise ValueError('FLIGHT_ORDER_NOT_FOUND')
+-   r=s.scalar(select(FlightCheckInStateRow).where(FlightCheckInStateRow.flight_order_id==order_id));prev=r.state if r else None
+-   if prev and CHECKIN_RANK[state]<CHECKIN_RANK[prev]:raise ValueError('FLIGHT_CHECK_IN_STATE_REGRESSION_FORBIDDEN')
+-   vals=dict(state=state,check_in_opens_at=parse_dt(b['check_in_opens_at']) if b.get('check_in_opens_at') else None,official_check_in_url=b.get('official_check_in_url'),boarding_pass_reference=b.get('boarding_pass_reference'),source_type=source,source_authority_reference=b['source_authority_reference'],source_fact_hash=digest(payload),updated_at=now())
+-   if not r:r=FlightCheckInStateRow(flight_check_in_state_id=ident('fcis'),flight_order_id=order_id,**vals);s.add(r)
+-   else:
+-    for k,v in vals.items():setattr(r,k,v)
+-   s.add(FlightCheckInEventRow(flight_check_in_event_id=ident('fciev'),flight_order_id=order_id,previous_state=prev,current_state=state,payload_hash=digest(payload),source_type=source,source_authority_reference=b['source_authority_reference'],occurred_at=now()));s.flush();return out(r)
++  from go_hotel.services.travel_operational_facts import travel_facts
++  return travel_facts.ingest_checkin(order_id,b,actor)
+  def bind_ride(self,account,ride_id,b):
+-  if not b.get('flight_no'):raise ValueError('FLIGHT_NUMBER_REQUIRED')
+-  included=max(0,int(b.get('included_wait_minutes',60)));extra=max(0,int(b.get('delay_protection_free_wait_minutes',0)));cap=max(included,int(b.get('max_free_wait_minutes',included+extra)))
+-  with SessionLocal.begin() as s:
+-   ride=s.get(MobilityRideOrderRow,ride_id)
+-   if not ride or ride.account_id!=account:raise ValueError('MOBILITY_ORDER_NOT_FOUND')
+-   r=s.scalar(select(RideFlightTrackingBindingRow).where(RideFlightTrackingBindingRow.ride_order_id==ride_id));vals=dict(flight_no=b['flight_no'].upper().replace(' ',''),tracking_enabled=bool(b.get('tracking_enabled',True)),original_pickup_at=ride.pickup_at,current_pickup_at=ride.pickup_at,included_wait_minutes=included,delay_protection_enabled=bool(b.get('delay_protection_enabled',False)),delay_protection_free_wait_minutes=extra,max_free_wait_minutes=cap,supplier_rule_snapshot_json=b.get('supplier_rule_snapshot',{}),sync_state='TRACKING_ACTIVE',updated_at=now())
+-   if not r:r=RideFlightTrackingBindingRow(ride_flight_tracking_binding_id=ident('rftb'),ride_order_id=ride_id,**vals);s.add(r)
+-   else:
+-    for k,v in vals.items():setattr(r,k,v)
+-   s.flush();return out(r)
++  from go_hotel.mobility.ride.flight_sync import flight_ride_sync
++  return flight_ride_sync.bind(account,ride_id,b)
+  def ingest_flight_event(self,b,actor):
+-  typ=b['event_type'];authority=b.get('source_authority_reference');flight=b['flight_no'].upper().replace(' ','')
+-  if typ not in FLIGHT_EVENTS:raise ValueError('INVALID_VERIFIED_FLIGHT_EVENT')
+-  if not authority:raise ValueError('VERIFIED_FLIGHT_AUTHORITY_REQUIRED')
+-  verified=b.get('verified_arrival_at')
+-  if not verified:raise ValueError('VERIFIED_ARRIVAL_TIME_REQUIRED')
+-  idem=b.get('idempotency_key') or digest({'flight':flight,'type':typ,'at':verified,'authority':authority})
+-  with SessionLocal.begin() as s:
+-   bindings=s.scalars(select(RideFlightTrackingBindingRow).where(RideFlightTrackingBindingRow.flight_no==flight,RideFlightTrackingBindingRow.tracking_enabled.is_(True))).all();events=[]
+-   for x in bindings:
+-    event_key=idem+':'+x.ride_order_id
+-    existing=s.scalar(select(RideFlightSyncEventRow).where(RideFlightSyncEventRow.idempotency_key==event_key))
+-    if existing:events.append(out(existing));continue
+-    ride=s.get(MobilityRideOrderRow,x.ride_order_id);previous=ride.pickup_at
+-    adjusted=verified if typ in {'DELAYED','EARLY','LANDED'} else previous
+-    ride.pickup_at=adjusted;ride.updated_at=now();x.current_pickup_at=adjusted;x.sync_state='PENDING_EXTERNAL_CONFIRMATION';x.updated_at=now()
+-    free=min(x.max_free_wait_minutes,x.included_wait_minutes+(x.delay_protection_free_wait_minutes if x.delay_protection_enabled else 0))
+-    evidence={'flight_no':flight,'event_type':typ,'verified_arrival_at':verified,'previous_pickup_at':previous,'adjusted_pickup_at':adjusted,'authority':authority,'rule_snapshot':x.supplier_rule_snapshot_json}
+-    e=RideFlightSyncEventRow(ride_flight_sync_event_id=ident('rfse'),ride_order_id=ride.order_id,flight_event_type=typ,verified_flight_time=verified,previous_pickup_at=previous,adjusted_pickup_at=adjusted,free_wait_minutes=free,external_mutation_invoked=False,external_confirmation_state='PENDING_EXTERNAL_CONFIRMATION',source_authority_reference=authority,idempotency_key=event_key,evidence_hash=digest(evidence),created_at=now());s.add(e);s.flush();events.append(out(e))
+-   return {'events':events,'matched_rides':len(events),'production_fleet_mutation_live':False,'supplier_confirmation_required':True}
++  from go_hotel.mobility.ride.flight_sync import flight_ride_sync
++  return flight_ride_sync.ingest(b,actor)
+  def ride_tracking(self,account,ride_id):
+-  with SessionLocal() as s:
+-   ride=s.get(MobilityRideOrderRow,ride_id)
+-   if not ride or ride.account_id!=account:raise ValueError('MOBILITY_ORDER_NOT_FOUND')
+-   b=s.scalar(select(RideFlightTrackingBindingRow).where(RideFlightTrackingBindingRow.ride_order_id==ride_id));ev=s.scalars(select(RideFlightSyncEventRow).where(RideFlightSyncEventRow.ride_order_id==ride_id).order_by(RideFlightSyncEventRow.created_at)).all()
+-   return {'binding':out(b) if b else None,'events':[out(x) for x in ev]}
++  from go_hotel.mobility.ride.flight_sync import flight_ride_sync
++  return flight_ride_sync.tracking(account,ride_id)
+  def create_requirement(self,account,b):
+   if any(k in b for k in ('voice','audio','microphone_input')):raise ValueError('MICROPHONE_FORBIDDEN_ON_REQUIREMENT_BUILDER')
+   required={'destination','check_in','check_out','rooms','adults'}
+--- DEPTH18/src/go_hotel/services/travel_operational_facts.py
++++ DEPTH19/src/go_hotel/services/travel_operational_facts.py
+@@ -0,0 +1,341 @@
++"""Signed, current-order travel facts. ENGINEERING/SANDBOX only until live acceptance.
++
++Public keys are registered by two administrators. No private key is generated or
++stored here. Provider facts are immutable; reads never invent a check-in state.
++"""
++from contextlib import contextmanager
++from datetime import date, datetime, timezone
++import re
++from urllib.parse import urlsplit
++import uuid
++
++from cryptography.exceptions import InvalidSignature
++from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
++from sqlalchemy import select, text
++
++from go_hotel.autonomy.durable import canonical, db_now_ms, digest, transaction
++from go_hotel.core.config import settings
++from go_hotel.db.models import (TravelFactAuthorityRow as Authority,
++    TravelOperationalFactRow as Fact, FlightOrderRow)
++from go_hotel.db.session import SessionLocal
++
++CHECKIN_STATES = {'CHECK_IN_NOT_OPEN', 'CHECK_IN_OPEN', 'CHECKED_IN', 'BOARDING_PASS_AVAILABLE'}
++KINDS = {'CHECK_IN', 'FLIGHT_ARRIVAL'}
++ENVELOPE_KEYS = {'authority_id', 'provider_id', 'event_id', 'kind', 'source_sequence',
++                 'observed_ms', 'expires_ms', 'subject', 'data'}
++
++
++def identifier(value, code='IDENTITY_INVALID', maximum=128):
++    if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,'+str(maximum)+'}', value):
++        raise ValueError(code)
++    return value
++
++
++def integer(value, low, high, code):
++    if type(value) is not int or not low <= value <= high:
++        raise ValueError(code)
++    return value
++
++
++def instant(value):
++    try:
++        dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
++        if dt.utcoffset() is None:
++            raise ValueError()
++        return dt.astimezone(timezone.utc).isoformat()
++    except (ValueError, TypeError, AttributeError):
++        raise ValueError('TIME_WITH_OFFSET_REQUIRED') from None
++
++
++def environment_allowed(environment):
++    # No authority registration can open the real-provider release gate.
++    if settings.app_env.strip().lower() not in {'local', 'test', 'demo'} or environment not in {'ENGINEERING', 'SANDBOX'}:
++        raise ValueError('TRAVEL_LIVE_PROVIDER_ACCEPTANCE_REQUIRED')
++
++
++@contextmanager
++def travel_transaction(factory=SessionLocal):
++    with transaction(factory) as s:
++        # Serialize travel writers across authority/key rotations too. The local
++        # acceptance does not certify PostgreSQL throughput or distributed scale.
++        if s.bind.dialect.name == 'postgresql':
++            s.execute(text('SELECT pg_advisory_xact_lock(126019)'))
++        yield s
++
++
++def authority_hash(provider, environment, source, contract, public_key, start, end):
++    return digest([provider, environment, source, contract, public_key, start, end])
++
++
++def flight_identity(subject):
++    if not isinstance(subject, dict) or set(subject) != {'carrier_code', 'flight_no', 'departure_date', 'arrival_airport'}:
++        raise ValueError('EXACT_FLIGHT_IDENTITY_REQUIRED')
++    carrier = str(subject['carrier_code']).strip().upper()
++    flight = str(subject['flight_no']).replace(' ', '').upper()
++    airport = str(subject['arrival_airport']).strip().upper()
++    try:
++        day = date.fromisoformat(subject['departure_date']).isoformat()
++    except (ValueError, TypeError):
++        raise ValueError('FLIGHT_DATE_INVALID') from None
++    if not re.fullmatch('[A-Z0-9]{2,3}', carrier) or not re.fullmatch('[A-Z]{3}', airport):
++        raise ValueError('FLIGHT_IDENTITY_INVALID')
++    if not re.fullmatch(re.escape(carrier)+r'[0-9]{1,5}[A-Z]?', flight):
++        raise ValueError('FLIGHT_NUMBER_CARRIER_MISMATCH')
++    return {'carrier_code': carrier, 'flight_no': flight, 'departure_date': day, 'arrival_airport': airport}
++
++
++def flight_from_leg(leg):
++    carrier = str(leg.get('carrier_code', '')).upper()
++    number = str(leg.get('flight_number', '')).upper()
++    return flight_identity({'carrier_code': carrier,
++        'flight_no': number if number.startswith(carrier) else carrier+number,
++        'departure_date': leg.get('departure_date'), 'arrival_airport': leg.get('destination')})
++
++
++def checkin_subject(order, leg_index, passenger_index):
++    legs, people, tickets = order.current_itinerary or [], order.passengers or [], order.ticket_numbers or []
++    if order.status != 'TICKETED' or not legs or not people or len(tickets) != len(legs)*len(people):
++        raise ValueError('CURRENT_TICKET_ASSIGNMENT_REQUIRED')
++    integer(leg_index, 0, len(legs)-1, 'FLIGHT_LEG_INVALID')
++    integer(passenger_index, 0, len(people)-1, 'FLIGHT_PASSENGER_INVALID')
++    leg = legs[leg_index]
++    identity = flight_from_leg(leg)
++    origin = leg.get('origin')
++    if not isinstance(origin, str) or not re.fullmatch('[A-Z]{3}', origin):
++        raise ValueError('FLIGHT_ORIGIN_INVALID')
++    # Full current itinerary and current traveler record bind later amendments.
++    return {'order_id': order.order_id, 'leg_index': leg_index, 'passenger_index': passenger_index,
++        'ticket_number': tickets[leg_index*len(people)+passenger_index],
++        'itinerary_hash': digest(legs), 'traveler_hash': digest(people[passenger_index])}, identity
++
++
++class TravelFacts:
++    def __init__(self, factory=SessionLocal):
++        self.factory = factory
++
++    def register(self, body, actor):
++        identifier(actor, maximum=64)
++        required = {'provider_id', 'environment', 'source_type', 'contract', 'public_key_hex', 'valid_from_ms', 'valid_until_ms'}
++        if set(body) != required:
++            raise ValueError('AUTHORITY_FIELDS_INVALID')
++        provider = identifier(body['provider_id'], maximum=64)
++        env, source, contract, key = body['environment'], body['source_type'], body['contract'], body['public_key_hex']
++        environment_allowed(env)
++        if source not in {'AIRLINE_OFFICIAL', 'AUTHORIZED_AIRLINE_PROVIDER'}:
++            raise ValueError('AIRLINE_SOURCE_REQUIRED')
++        if not isinstance(contract, dict) or set(contract) != {'reference', 'kinds', 'carriers', 'link_hosts', 'max_age_ms'}:
++            raise ValueError('AUTHORITY_CONTRACT_INVALID')
++        if not isinstance(contract['reference'], str) or not contract['reference'].strip() or len(contract['reference']) > 512:
++            raise ValueError('AUTHORITY_REFERENCE_REQUIRED')
++        if not isinstance(contract['kinds'], list) or not contract['kinds'] or any(not isinstance(k,str) for k in contract['kinds']) or not set(contract['kinds']) <= KINDS:
++            raise ValueError('AUTHORITY_SCOPE_INVALID')
++        if not isinstance(contract['carriers'], list) or not contract['carriers'] or any(not re.fullmatch('[A-Z0-9]{2,3}', str(x)) for x in contract['carriers']):
++            raise ValueError('AUTHORITY_CARRIER_SCOPE_INVALID')
++        hosts = contract['link_hosts']
++        if not isinstance(hosts, list) or any(not isinstance(h, str) or not re.fullmatch(r'[a-z0-9]+(?:[.-][a-z0-9]+)*\.[a-z]{2,63}', h) for h in hosts):
++            raise ValueError('AUTHORITY_LINK_HOST_INVALID')
++        integer(contract['max_age_ms'], 1000, 86400000, 'FACT_MAX_AGE_INVALID')
++        try:
++            if not isinstance(key, str) or len(key) != 64:
++                raise ValueError()
++            Ed25519PublicKey.from_public_bytes(bytes.fromhex(key))
++        except (TypeError, ValueError):
++            raise ValueError('ED25519_PUBLIC_KEY_INVALID') from None
++        start = integer(body['valid_from_ms'], 0, 2**63-1, 'AUTHORITY_WINDOW_INVALID')
++        end = integer(body['valid_until_ms'], start+1, 2**63-1, 'AUTHORITY_WINDOW_INVALID')
++        with travel_transaction(self.factory) as s:
++            now = db_now_ms(s)
++            if end <= now:
++                raise ValueError('AUTHORITY_EXPIRED')
++            row = Authority(authority_id='tfa_'+uuid.uuid4().hex, provider_id=provider, environment=env,
++                source_type=source, contract_json=contract,
++                contract_hash=authority_hash(provider, env, source, contract, key, start, end),
++                public_key_hex=key, status='DRAFT', created_by=actor, approved_by=None,
++                valid_from_ms=start, valid_until_ms=end, created_ms=now, updated_ms=now, revision=1)
++            s.add(row); s.flush()
++            return self.authority_out(row)
++
++    @staticmethod
++    def authority_out(row):
++        return {k:getattr(row, k) for k in ('authority_id', 'provider_id', 'environment', 'source_type',
++            'status', 'revision', 'created_by', 'approved_by', 'valid_from_ms', 'valid_until_ms', 'contract_hash')}
++
++    def review(self, authority_id, actor, revision, action):
++        identifier(actor, maximum=64)
++        with travel_transaction(self.factory) as s:
++            row = s.get(Authority, authority_id)
++            if not row or row.revision != revision:
++                raise ValueError('AUTHORITY_REVISION_CONFLICT')
++            self._integrity(row)
++            if action == 'APPROVE':
++                if row.status != 'DRAFT' or row.created_by == actor:
++                    raise ValueError('INDEPENDENT_AUTHORITY_REVIEW_REQUIRED')
++                if not row.valid_from_ms <= db_now_ms(s) < row.valid_until_ms:
++                    raise ValueError('AUTHORITY_NOT_CURRENT')
++                row.status, row.approved_by = 'ACTIVE', actor
++            elif action == 'REVOKE':
++                if row.status != 'ACTIVE':
++                    raise ValueError('AUTHORITY_NOT_ACTIVE')
++                row.status = 'REVOKED'
++            else:
++                raise ValueError('AUTHORITY_ACTION_INVALID')
++            row.revision += 1; row.updated_ms = db_now_ms(s)
++            return self.authority_out(row)
++
++    @staticmethod
++    def _integrity(a):
++        environment_allowed(a.environment)
++        if a.contract_hash != authority_hash(a.provider_id, a.environment, a.source_type,
++                a.contract_json, a.public_key_hex, a.valid_from_ms, a.valid_until_ms):
++            raise ValueError('AUTHORITY_INTEGRITY_FAILED')
++
++    def authority(self, s, authority_id, kind, carrier):
++        a = s.get(Authority, authority_id)
++        if not a:
++            raise ValueError('FACT_AUTHORITY_NOT_FOUND')
++        self._integrity(a)
++        now = db_now_ms(s)
++        if a.status != 'ACTIVE' or not a.approved_by or a.approved_by == a.created_by or not a.valid_from_ms <= now < a.valid_until_ms:
++            raise ValueError('FACT_AUTHORITY_NOT_CURRENT')
++        if kind not in a.contract_json['kinds'] or carrier not in a.contract_json['carriers']:
++            raise ValueError('FACT_AUTHORITY_SCOPE_MISMATCH')
++        return a
++
++    @staticmethod
++    def _link(value, a):
++        if value is None:
++            return None
++        try:
++            u = urlsplit(value)
++            if not isinstance(value, str) or len(value) > 2048 or any(ord(x) < 33 for x in value) or '\\' in value or u.scheme != 'https' or u.username or u.password or u.port not in {None, 443} or u.hostname not in a.contract_json['link_hosts']:
++                raise ValueError()
++        except (TypeError, ValueError, AttributeError):
++            raise ValueError('OFFICIAL_LINK_NOT_AUTHORIZED') from None
++        return value
++
++    def validate(self, s, body, signature):
++        if not isinstance(body, dict) or set(body) != ENVELOPE_KEYS or not isinstance(body['kind'],str) or body['kind'] not in KINDS:
++            raise ValueError('SIGNED_FACT_ENVELOPE_REQUIRED')
++        identifier(body['authority_id'], maximum=64); identifier(body['provider_id'], maximum=64)
++        identifier(body['event_id'])
++        integer(body['source_sequence'], 1, 2**63-1, 'FACT_SEQUENCE_INVALID')
++        if not isinstance(body['subject'], dict) or not isinstance(body['data'], dict):
++            raise ValueError('FACT_CONTENT_INVALID')
++        if body['kind'] == 'CHECK_IN':
++            subject = body['subject']
++            identifier(subject.get('order_id'), 'FLIGHT_ORDER_ID_INVALID', maximum=64)
++            order = s.get(FlightOrderRow, subject['order_id'])
++            if not order:
++                raise ValueError('FLIGHT_ORDER_NOT_FOUND')
++            expected, identity = checkin_subject(order, subject.get('leg_index'), subject.get('passenger_index'))
++            if subject != expected:
++                raise ValueError('FACT_CURRENT_TICKET_MISMATCH')
++        else:
++            identity = flight_identity(body['subject'])
++            if identity != body['subject']:
++                raise ValueError('FACT_IDENTITY_NOT_CANONICAL')
++        a = self.authority(s, body['authority_id'], body['kind'], identity['carrier_code'])
++        if a.provider_id != body['provider_id']:
++            raise ValueError('FACT_PROVIDER_MISMATCH')
++        try:
++            if not isinstance(signature, str) or len(signature) != 128:
++                raise ValueError()
++            Ed25519PublicKey.from_public_bytes(bytes.fromhex(a.public_key_hex)).verify(bytes.fromhex(signature), canonical(body).encode())
++        except (ValueError, TypeError, InvalidSignature):
++            raise ValueError('FACT_SIGNATURE_INVALID') from None
++        now = db_now_ms(s)
++        observed = integer(body['observed_ms'], 0, 2**63-1, 'FACT_TIME_INVALID')
++        expires = integer(body['expires_ms'], observed+1, 2**63-1, 'FACT_TIME_INVALID')
++        if not a.valid_from_ms <= observed <= now or now-observed > a.contract_json['max_age_ms'] or expires <= now or expires > min(a.valid_until_ms, observed+a.contract_json['max_age_ms']):
++            raise ValueError('FACT_NOT_CURRENT')
++        data = body['data']
++        if body['kind'] == 'CHECK_IN':
++            if set(data) - {'state', 'check_in_opens_at', 'official_check_in_url', 'boarding_pass_reference'} or not isinstance(data.get('state'),str) or data.get('state') not in CHECKIN_STATES:
++                raise ValueError('CHECK_IN_STATE_INVALID')
++            self._link(data.get('official_check_in_url'), a)
++            self._link(data.get('boarding_pass_reference'), a)
++            if data.get('check_in_opens_at'):
++                instant(data['check_in_opens_at'])
++            if data['state'] == 'BOARDING_PASS_AVAILABLE' and not data.get('boarding_pass_reference'):
++                raise ValueError('BOARDING_PASS_REFERENCE_REQUIRED')
++            if data['state'] != 'BOARDING_PASS_AVAILABLE' and data.get('boarding_pass_reference'):
++                raise ValueError('BOARDING_PASS_STATE_MISMATCH')
++        else:
++            if set(data) != {'event_type', 'verified_arrival_at'} or not isinstance(data['event_type'],str) or data['event_type'] not in {'DELAYED', 'EARLY', 'LANDED', 'CORRECTED'}:
++                raise ValueError('FLIGHT_ARRIVAL_DATA_INVALID')
++            arrival = instant(data['verified_arrival_at'])
++            # Prevent identity-date accidents; international date-line crossings fit.
++            if abs((date.fromisoformat(arrival[:10])-date.fromisoformat(identity['departure_date'])).days) > 3:
++                raise ValueError('FLIGHT_ARRIVAL_DATE_MISMATCH')
++        return a
++
++    def ingest_in(self, s, envelope):
++        if not isinstance(envelope, dict) or set(envelope) != {'fact', 'signature_hex'}:
++            raise ValueError('SIGNED_FACT_ENVELOPE_REQUIRED')
++        body, signature = envelope['fact'], envelope['signature_hex']
++        a = self.validate(s, body, signature)
++        hashed, stream = digest(body), digest([body['kind'], body['subject']])
++        existing = s.scalar(select(Fact).where(Fact.provider_id == a.provider_id, Fact.event_id == body['event_id']))
++        if existing:
++            if existing.payload_hash != hashed or existing.signature_hex != signature:
++                raise ValueError('FACT_EVENT_CONTENT_CONFLICT')
++            return existing, False
++        last = s.scalar(select(Fact).where(Fact.stream_key == stream).order_by(Fact.source_sequence.desc()).limit(1))
++        if last and last.provider_id != a.provider_id:
++            raise ValueError('FACT_PROVIDER_SWITCH_REVIEW_REQUIRED')
++        if last and (body['source_sequence'] <= last.source_sequence or body['observed_ms'] < last.observed_ms):
++            raise ValueError('FACT_OUT_OF_ORDER')
++        row = Fact(fact_id='tf_'+uuid.uuid4().hex, authority_id=a.authority_id, provider_id=a.provider_id,
++            event_id=body['event_id'], kind=body['kind'], stream_key=stream, order_id=body['subject'].get('order_id'),
++            source_sequence=body['source_sequence'], payload_json=body, payload_hash=hashed, signature_hex=signature,
++            observed_ms=body['observed_ms'], expires_ms=body['expires_ms'], created_ms=db_now_ms(s))
++        s.add(row); s.flush()
++        return row, True
++
++    def current(self, s, row):
++        if row.payload_hash != digest(row.payload_json):
++            raise ValueError('FACT_INTEGRITY_FAILED')
++        body = row.payload_json
++        if (row.authority_id, row.provider_id, row.event_id, row.kind, row.stream_key, row.source_sequence, row.observed_ms, row.expires_ms) != (body['authority_id'], body['provider_id'], body['event_id'], body['kind'], digest([body['kind'], body['subject']]), body['source_sequence'], body['observed_ms'], body['expires_ms']):
++            raise ValueError('FACT_INDEX_INTEGRITY_FAILED')
++        self.validate(s, body, row.signature_hex)
++        latest = s.scalar(select(Fact).where(Fact.stream_key == row.stream_key).order_by(Fact.source_sequence.desc()).limit(1))
++        if not latest or latest.fact_id != row.fact_id:
++            raise ValueError('FACT_SUPERSEDED')
++        return body
++
++    def ingest_checkin(self, order_id, envelope, actor):
++        body = envelope.get('fact', {}) if isinstance(envelope,dict) else {}
++        if not isinstance(body,dict) or body.get('kind') != 'CHECK_IN' or not isinstance(body.get('subject'),dict) or body['subject'].get('order_id') != order_id:
++            raise ValueError('SIGNED_CHECK_IN_ORDER_REQUIRED')
++        with travel_transaction(self.factory) as s:
++            row, created = self.ingest_in(s, envelope)
++            return {'fact_id': row.fact_id, 'created': created, 'state': row.payload_json['data']['state'], 'external_live': False}
++
++    def checkin(self, account, order_id):
++        with self.factory() as s:
++            order = s.get(FlightOrderRow, order_id)
++            if not order or order.account_id != account:
++                raise ValueError('FLIGHT_ORDER_NOT_FOUND')
++            cells = []
++            for leg_i, leg in enumerate(order.current_itinerary or []):
++                for person_i, person in enumerate(order.passengers or []):
++                    cell = {'leg_index': leg_i, 'passenger_index': person_i, 'state': 'CHECK_IN_UNVERIFIED',
++                        'official_check_in_url': None, 'boarding_pass_reference': None}
++                    try:
++                        subject, _ = checkin_subject(order, leg_i, person_i)
++                        stream = digest(['CHECK_IN', subject])
++                        row = s.scalar(select(Fact).where(Fact.stream_key == stream).order_by(Fact.source_sequence.desc()).limit(1))
++                        if row:
++                            body = self.current(s, row)
++                            cell.update(body['data']); cell.update(fact_id=row.fact_id, observed_ms=row.observed_ms, expires_ms=row.expires_ms)
++                    except ValueError:
++                        pass  # No stale URL, pass, or inferred state is exposed.
++                    cells.append(cell)
++            states = {c['state'] for c in cells}
++            return {'flight_order_id': order_id, 'state': next(iter(states)) if len(states) == 1 else 'MIXED' if states else 'CHECK_IN_UNVERIFIED',
++                'items': cells, 'external_check_in_only': True, 'external_live': False,
++                'data_mode': 'SIMULATION', 'go_does_not_fabricate_success': True}
++
++
++travel_facts = TravelFacts()
+--- DEPTH18/tests/test_depth19_api_migration.py
++++ DEPTH19/tests/test_depth19_api_migration.py
+@@ -0,0 +1,110 @@
++from copy import deepcopy
++import sqlite3
++import time
++
++import pytest
++from fastapi import FastAPI
++from fastapi.testclient import TestClient
++from sqlalchemy import select
++from go_hotel.api.routes import mother_plan_p0 as routes
++from go_hotel.security.deps import current_principal
++from go_hotel.security.service import Principal
++from go_hotel.db.session import SessionLocal
++from go_hotel.db.models import TravelFactAuthorityRow as Authority, RideFlightAdjustmentRow as Adjustment
++from test_depth19_travel_facts import seed_flight, authority, checkin, signed
++from test_depth19_ride_sync import seed_ride, proposal
++
++
++@pytest.fixture
++def http():
++    app=FastAPI();app.include_router(routes.router)
++    role={'value':Principal('u19','test','CONSUMER',None,[],'session',set())}
++    app.dependency_overrides[current_principal]=lambda:role['value']
++    with TestClient(app) as client:yield client,role
++
++
++def principal(role,actor='GO_ADMIN',permissions=None,uid='admin19'):
++    role['value']=Principal(uid,'test',actor,None,[],'session',set(permissions or []))
++
++
++def test_http_read_no_store_and_owner_isolation(http):
++    seed_flight();client,role=http
++    response=client.get('/v1/flights/orders/flight19/check-in')
++    assert response.status_code==200 and response.headers['cache-control']=='no-store'
++    assert response.json()['data']['state']=='CHECK_IN_UNVERIFIED'
++    principal(role,'CONSUMER',uid='other')
++    assert client.get('/v1/flights/orders/flight19/check-in').status_code==409
++
++
++def test_http_fact_write_requires_go_admin_and_rule_permission(http):
++    seed_flight();auth=authority();client,role=http;path='/internal/v1/flights/orders/flight19/check-in/facts';body=checkin(auth)
++    assert client.post(path,json=body).status_code==403
++    principal(role)
++    assert client.post(path,json=body).status_code==403
++    principal(role,permissions=['admin:rules'])
++    assert client.post(path,json=body).status_code==200
++    bad=deepcopy(body);bad['fact']['subject']=[]
++    assert client.post(path,json=bad).status_code==409
++    assert client.post(path,json={'state':'CHECKED_IN'}).status_code==422
++
++
++def test_http_binding_options_revision_and_customer_rules(http):
++    auth=authority();ride,identity=seed_ride(auth);client,role=http
++    path=f"/v1/mobility/rides/orders/{ride['order_id']}/flight-tracking"
++    opts=client.get(path+'/options').json()['data']
++    assert opts['available'] and opts['sources'][0]['authority_id']==auth[0]
++    assert client.put(path,json={'expected_revision':1,'tracking_enabled':False,'max_free_wait_minutes':999}).status_code==422
++    assert client.put(path,json={'expected_revision':1,'tracking_enabled':False}).status_code==200
++    assert client.put(path,json={'expected_revision':1,'tracking_enabled':False}).status_code==409
++
++
++def test_authority_api_two_reviewers_and_ops_hold_queue(http):
++    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
++    client,role=http;principal(role,permissions=['admin:rules'],uid='maker')
++    now=int(time.time()*1000)
++    draft={'provider_id':'api19','environment':'ENGINEERING','source_type':'AIRLINE_OFFICIAL',
++        'contract':{'reference':'isolated-api','kinds':['FLIGHT_ARRIVAL'],'carriers':['MU'],'link_hosts':[],'max_age_ms':60000},
++        'public_key_hex':Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex(),'valid_from_ms':now-1000,'valid_until_ms':now+100000}
++    response=client.post('/internal/v1/travel-fact-authorities',json=draft)
++    assert response.status_code==201
++    aid=response.json()['data']['authority_id'];path=f'/internal/v1/travel-fact-authorities/{aid}/review'
++    assert client.post(path,json={'expected_revision':1,'action':'APPROVE'}).status_code==409
++    principal(role,permissions=['admin:rules'],uid='checker')
++    assert client.post(path,json={'expected_revision':1,'action':'APPROVE'}).status_code==200
++    auth=authority();ride,identity=seed_ride(auth);adjustment=proposal(auth,ride,identity)
++    with SessionLocal.begin() as s:s.get(Adjustment,adjustment).status='HOLD'
++    ops=client.get('/internal/v1/mobility/flight-adjustments').json()['data']
++    assert ops['manual_reconciliation_required']==1 and ops['items'][0]['adjustment_id']==adjustment
++
++
++@pytest.mark.no_db
++def test_migration_roundtrip_preserves_legacy_and_refuses_fact_evidence_loss(tmp_path,monkeypatch):
++    from alembic import command
++    from alembic.config import Config
++    from go_hotel.core.config import settings
++    db=tmp_path/'migration.sqlite3'
++    with sqlite3.connect(db) as c:
++        c.execute('CREATE TABLE original_booking (id text, amount integer)')
++        c.execute("INSERT INTO original_booking VALUES ('paid',18800)")
++    monkeypatch.setattr(settings,'database_url','sqlite+pysqlite:///'+str(db))
++    config=Config('alembic.ini')
++    command.stamp(config,'0125_regional_queue');command.upgrade(config,'0126_travel_operational_facts')
++    command.downgrade(config,'0125_regional_queue');command.upgrade(config,'0126_travel_operational_facts')
++    with sqlite3.connect(db) as c:
++        c.execute("INSERT INTO ride_service_policy_snapshot VALUES ('ride','{}','hash',123)")
++        assert c.execute('SELECT * FROM original_booking').fetchone()==('paid',18800)
++    with pytest.raises(RuntimeError,match='TRAVEL_FACT_DATA_PRESENT'):
++        command.downgrade(config,'0125_regional_queue')
++    with sqlite3.connect(db) as c:
++        assert c.execute('SELECT version_num FROM alembic_version').fetchone()[0]=='0126_travel_operational_facts'
++        assert c.execute('SELECT count(*) FROM ride_service_policy_snapshot').fetchone()[0]==1
++
++
++@pytest.mark.parametrize('field,value',[('kind',[]),('subject',[]),('data',[]),('data',{'state':[]})])
++def test_malformed_signed_fact_fields_return_controlled_errors(http,field,value):
++    seed_flight();auth=authority();client,role=http
++    principal(role,permissions=['admin:rules']);body=checkin(auth)
++    body['fact'][field]=value
++    from go_hotel.autonomy.durable import canonical
++    body['signature_hex']=auth[1].sign(canonical(body['fact']).encode()).hex()
++    assert client.post('/internal/v1/flights/orders/flight19/check-in/facts',json=body).status_code==409
+--- DEPTH18/tests/test_depth19_ride_sync.py
++++ DEPTH19/tests/test_depth19_ride_sync.py
+@@ -0,0 +1,272 @@
++"""Server waiting policy, exact-flight matching, and actual disk-backed fleet recovery."""
++from concurrent.futures import ThreadPoolExecutor
++from copy import deepcopy
++from datetime import datetime, timezone, timedelta
++import multiprocessing
++import os
++import signal
++import sqlite3
++
++import pytest
++from sqlalchemy import select, func, create_engine
++from sqlalchemy.orm import sessionmaker
++from go_hotel.db.session import SessionLocal
++from go_hotel.db.models import (MobilityRideOrderRow as Ride, RideFlightAdjustmentRow as Adjustment,
++    RideFlightBindingV2Row as Binding, RideServicePolicyRow as Policy)
++from go_hotel.mobility.ride.service import ride_service
++from go_hotel.mobility.ride.flight_sync import FlightRideSync
++from go_hotel.mobility.ride.isolated_fleet import IsolatedFleetAdapter
++from go_hotel.services.travel_operational_facts import TravelFacts, instant
++from test_depth19_travel_facts import authority, signed
++
++svc=FlightRideSync()
++
++
++def seed_ride(auth, account='u19', day_offset=0, airport='NRT', enabled=True, protection=False):
++    time=datetime.now(timezone.utc).replace(microsecond=0)+timedelta(days=day_offset)
++    ride=ride_service.create(account,{'offer_id':'ride_standard','pickup':airport,'dropoff':'City','pickup_at':time.isoformat(),'passengers':[{'full_name':'TEST RIDER'}]})
++    with SessionLocal.begin() as s:
++        row=s.get(Ride,ride['order_id']);row.status='CONFIRMED';row.supplier_reference='isolated:'+row.order_id
++    identity={'carrier_code':'MU','flight_no':'MU523','departure_date':time.date().isoformat(),'arrival_airport':airport}
++    if enabled:svc.bind(account,ride['order_id'],{'flight_identity':identity,'authority_id':auth[0],'expected_revision':0,'delay_protection_enabled':protection})
++    return ride,identity
++
++
++def arrival(auth, identity, seq=1):
++    return signed(auth,identity,{'event_type':'DELAYED','verified_arrival_at':identity['departure_date']+'T20:30:00+00:00'},kind='FLIGHT_ARRIVAL',seq=seq)
++
++
++def proposal(auth, ride, identity):
++    result=svc.ingest(arrival(auth,identity),'admin')
++    return next(x['adjustment_id'] for x in result['events'] if x['ride_order_id']==ride['order_id'])
++
++
++def test_exact_date_airport_closed_and_disabled_rides_are_isolated():
++    auth=authority();r,identity=seed_ride(auth)
++    tomorrow,_=seed_ride(auth,day_offset=1);other,_=seed_ride(auth,airport='HND')
++    closed,_=seed_ride(auth);disabled,_=seed_ride(auth)
++    with SessionLocal.begin() as s:s.get(Ride,closed['order_id']).status='COMPLETED'
++    svc.bind('u19',disabled['order_id'],{'tracking_enabled':False,'expected_revision':1})
++    result=svc.ingest(arrival(auth,identity),'admin')
++    assert result['matched_rides']==1 and result['events'][0]['ride_order_id']==r['order_id']
++    with SessionLocal() as s:
++        for x in [r,tomorrow,other,closed,disabled]:assert s.get(Ride,x['order_id']).pickup_at==x['pickup_at']
++
++
++@pytest.mark.parametrize('field,value',[('included_wait_minutes',999),('delay_protection_free_wait_minutes',999),('max_free_wait_minutes',999),('supplier_rule_snapshot',{'max_wait':999})])
++def test_customer_cannot_authorize_waiting_terms(field,value):
++    auth=authority();ride,identity=seed_ride(auth)
++    with pytest.raises(ValueError,match='OVERRIDE_FORBIDDEN'):
++        svc.bind('u19',ride['order_id'],{'flight_identity':identity,'authority_id':auth[0],'expected_revision':1,field:value})
++    with pytest.raises(ValueError,match='OVERRIDE_FORBIDDEN'):
++        ride_service.create('u19',{'offer_id':'ride_standard','pickup':'NRT','dropoff':'City','pickup_at':ride['pickup_at'],field:value})
++    with SessionLocal() as s:assert s.scalar(select(func.count()).select_from(Ride))==1
++
++
++def test_policy_opt_in_is_bounded_and_proposal_does_not_change_confirmed_time(tmp_path):
++    auth=authority();ride,identity=seed_ride(auth,protection=True)
++    aid=proposal(auth,ride,identity)
++    before=svc.tracking('u19',ride['order_id'])
++    assert before['binding']['included_wait_minutes']==60 and before['binding']['delay_protection_max_wait_minutes']==90
++    assert before['confirmed_pickup_at']==ride['pickup_at'] and before['events'][0]['status']=='PENDING'
++    result=svc.process(aid,IsolatedFleetAdapter(tmp_path/'fleet.db'))
++    assert result['status']=='CONFIRMED'
++    after=svc.tracking('u19',ride['order_id'])
++    assert after['confirmed_pickup_at']==after['events'][0]['proposed_pickup_at']
++    assert svc.process(aid,IsolatedFleetAdapter(tmp_path/'fleet.db'))['status']=='CONFIRMED'
++
++
++def test_policy_missing_or_changed_cannot_become_authorized():
++    auth=authority();ride,identity=seed_ride(auth,enabled=False)
++    with SessionLocal.begin() as s:s.delete(s.get(Policy,ride['order_id']))
++    with pytest.raises(ValueError,match='SERVER_RIDE_POLICY_REQUIRED'):
++        svc.bind('u19',ride['order_id'],{'flight_identity':identity,'authority_id':auth[0],'expected_revision':0})
++
++
++def test_unknown_after_fleet_acceptance_reopens_receipt_and_queries_only(tmp_path):
++    auth=authority();ride,identity=seed_ride(auth);aid=proposal(auth,ride,identity)
++    class LostReply(IsolatedFleetAdapter):
++        def execute(self,*args):
++            super().execute(*args)
++            raise TimeoutError('reply lost')
++    assert svc.process(aid,LostReply(tmp_path/'fleet.db'))['status']=='UNKNOWN'
++    assert svc.tracking('u19',ride['order_id'])['confirmed_pickup_at']==ride['pickup_at']
++    class QueryOnly(IsolatedFleetAdapter):
++        def execute(self,*args):raise AssertionError('MUST NOT RESEND')
++    assert svc.process(aid,QueryOnly(tmp_path/'fleet.db'))['status']=='CONFIRMED'
++    with sqlite3.connect(tmp_path/'fleet.db') as c:assert c.execute('SELECT count(*) FROM requests').fetchone()[0]==1
++
++
++def _kill_after_fleet_acceptance(url,aid,path):
++    class Crash(IsolatedFleetAdapter):
++        def execute(self,*args):
++            super().execute(*args)
++            os.kill(os.getpid(),signal.SIGKILL)
++    engine=create_engine(url,connect_args={'timeout':30})
++    local=FlightRideSync(sessionmaker(bind=engine,expire_on_commit=False))
++    local.process(aid,Crash(path))
++
++
++def test_sigkill_after_committed_provider_receipt_recovers_without_resend(tmp_path):
++    auth=authority();ride,identity=seed_ride(auth);aid=proposal(auth,ride,identity)
++    with SessionLocal() as s:url=str(s.bind.url)
++    process=multiprocessing.get_context('fork').Process(target=_kill_after_fleet_acceptance,args=(url,aid,str(tmp_path/'crash.db')))
++    process.start();process.join(15)
++    assert process.exitcode==-signal.SIGKILL
++    with SessionLocal() as s:assert s.get(Adjustment,aid).status=='DISPATCHED'
++    class QueryOnly(IsolatedFleetAdapter):
++        def execute(self,*a):raise AssertionError('RESEND')
++    assert svc.process(aid,QueryOnly(tmp_path/'crash.db'))['status']=='CONFIRMED'
++
++
++def test_crash_before_dispatch_keeps_unknown_without_blind_resend(tmp_path):
++    auth=authority();ride,identity=seed_ride(auth);aid=proposal(auth,ride,identity)
++    class Crash(IsolatedFleetAdapter):
++        def execute(self,*args):raise SystemExit('process lost before outbound call')
++    with pytest.raises(SystemExit):svc.process(aid,Crash(tmp_path/'fleet.db'))
++    adapter=IsolatedFleetAdapter(tmp_path/'fleet.db')
++    for _ in range(2):assert svc.process(aid,adapter)['status']=='UNKNOWN'
++    with sqlite3.connect(tmp_path/'fleet.db') as c:assert c.execute('SELECT count(*) FROM requests').fetchone()[0]==0
++
++
++def test_parallel_processors_never_send_same_intent_twice(tmp_path):
++    auth=authority();ride,identity=seed_ride(auth);aid=proposal(auth,ride,identity)
++    from threading import Lock
++    class Count(IsolatedFleetAdapter):
++        calls=0
++        lock=Lock()
++        def execute(self,*args):
++            with self.lock:self.calls+=1
++            return super().execute(*args)
++    adapter=Count(tmp_path/'fleet.db')
++    with ThreadPoolExecutor(max_workers=6) as pool:list(pool.map(lambda _:svc.process(aid,adapter),range(12)))
++    assert adapter.calls==1
++    assert svc.process(aid,adapter)['status']=='CONFIRMED'
++
++
++def test_fleet_rejection_and_wrong_confirmation_do_not_change_customer_time(tmp_path):
++    auth=authority();ride,identity=seed_ride(auth);aid=proposal(auth,ride,identity)
++    class Reject(IsolatedFleetAdapter):
++        def execute(self,request,h):return {'status':'REJECTED','request_hash':h,'provider_reference':'isolated:rejected'}
++    assert svc.process(aid,Reject(tmp_path/'fleet.db'))['status']=='REJECTED'
++    assert svc.tracking('u19',ride['order_id'])['confirmed_pickup_at']==ride['pickup_at']
++
++
++@pytest.mark.parametrize('change',['revoke','disable','manual_time','close','policy'])
++def test_current_authority_binding_order_and_policy_rechecked_before_dispatch(tmp_path,change):
++    auth=authority();ride,identity=seed_ride(auth);aid=proposal(auth,ride,identity)
++    if change=='revoke':TravelFacts().review(auth[0],'checker19',2,'REVOKE')
++    if change=='disable':svc.bind('u19',ride['order_id'],{'tracking_enabled':False,'expected_revision':1})
++    with SessionLocal.begin() as s:
++        if change=='manual_time':s.get(Ride,ride['order_id']).pickup_at='2026-01-01T00:00:00+00:00'
++        if change=='close':s.get(Ride,ride['order_id']).status='REFUNDED'
++        if change=='policy':s.get(Policy,ride['order_id']).policy_hash='0'*64
++    class NeverSend(IsolatedFleetAdapter):
++        def execute(self,*args):raise AssertionError('NO DISPATCH AUTHORIZED')
++    assert svc.process(aid,NeverSend(tmp_path/'fleet.db'))['status']=='SUPERSEDED'
++
++
++def test_revoked_during_external_call_records_hold_without_fabricated_local_success(tmp_path):
++    auth=authority();ride,identity=seed_ride(auth);aid=proposal(auth,ride,identity)
++    class Revoke(IsolatedFleetAdapter):
++        def execute(self,*args):
++            result=super().execute(*args)
++            TravelFacts().review(auth[0],'checker19',2,'REVOKE')
++            return result
++    assert svc.process(aid,Revoke(tmp_path/'fleet.db'))['status']=='HOLD'
++    assert svc.tracking('u19',ride['order_id'])['confirmed_pickup_at']==ride['pickup_at']
++
++
++def test_new_fact_supersedes_pending_and_event_replay_cannot_match_later_bindings(tmp_path):
++    auth=authority();ride,identity=seed_ride(auth);old=arrival(auth,identity)
++    aid=svc.ingest(old,'admin')['events'][0]['adjustment_id']
++    another,_=seed_ride(auth)
++    assert svc.ingest(old,'admin')['matched_rides']==1
++    newer=svc.ingest(arrival(auth,identity,seq=2),'admin')
++    assert newer['matched_rides']==2
++    assert svc.process(aid,IsolatedFleetAdapter(tmp_path/'fleet.db'))['status']=='SUPERSEDED'
++
++
++def test_customer_binding_revision_and_ownership_isolation():
++    auth=authority();ride,identity=seed_ride(auth)
++    with pytest.raises(ValueError,match='NOT_FOUND'):svc.tracking('other',ride['order_id'])
++    body={'flight_identity':identity,'authority_id':auth[0],'expected_revision':1}
++    with pytest.raises(ValueError,match='NOT_FOUND'):svc.bind('other',ride['order_id'],body)
++    svc.bind('u19',ride['order_id'],body)
++    with pytest.raises(ValueError,match='REVISION_CONFLICT'):svc.bind('u19',ride['order_id'],body)
++
++
++@pytest.mark.parametrize('fault',['hash','time','reference'])
++def test_unbound_or_inconsistent_fleet_receipt_never_confirms(tmp_path,fault):
++    auth=authority();ride,identity=seed_ride(auth);aid=proposal(auth,ride,identity)
++    class Wrong(IsolatedFleetAdapter):
++        def execute(self,request,h):
++            result={'status':'CONFIRMED','request_hash':h,'provider_reference':'isolated:wrong','pickup_at':request['proposed_pickup_at']}
++            if fault=='hash':result['request_hash']='0'*64
++            if fault=='time':result['pickup_at']='2000-01-01T00:00:00+00:00'
++            if fault=='reference':result['provider_reference']=''
++            return result
++    assert svc.process(aid,Wrong(tmp_path/'fleet.db'))['status']==('HOLD' if fault=='time' else 'UNKNOWN')
++    assert svc.tracking('u19',ride['order_id'])['confirmed_pickup_at']==ride['pickup_at']
++
++
++def test_booking_entry_saves_server_policy_and_tracking_together():
++    auth=authority();now=datetime.now(timezone.utc).replace(microsecond=0)
++    identity={'carrier_code':'MU','flight_no':'MU523','departure_date':now.date().isoformat(),'arrival_airport':'NRT'}
++    body={'offer_id':'ride_premium','pickup':'NRT','dropoff':'City','pickup_at':now.isoformat(),
++        'passengers':[{'full_name':'ISOLATED RIDER'}],'flight_tracking_enabled':True,
++        'flight_identity':identity,'flight_authority_id':auth[0],'delay_protection_enabled':True}
++    ride=ride_service.create('u19',body)
++    with SessionLocal() as s:
++        assert s.get(Ride,ride['order_id']).status=='PAYMENT_PENDING'
++        assert s.get(Policy,ride['order_id']).policy_json['max_free_wait_minutes']==120
++        assert s.get(Binding,ride['order_id']).delay_protection_enabled
++    body['flight_identity']={}
++    with pytest.raises(ValueError):ride_service.create('u19',body)
++    with SessionLocal() as s:assert s.scalar(select(func.count()).select_from(Ride))==1
++
++
++def test_revoked_source_is_visible_as_unavailable_without_mutating_binding():
++    auth=authority();ride,identity=seed_ride(auth)
++    TravelFacts().review(auth[0],'checker19',2,'REVOKE')
++    data=svc.tracking('u19',ride['order_id'])
++    assert data['binding']['source_current'] is False and data['binding']['revision']==1
++    assert svc.options('u19',ride['order_id'])['sources']==[]
++
++
++def test_legacy_local_pickup_is_opaque_until_explicit_fleet_confirmation(tmp_path):
++    auth=authority();ride,identity=seed_ride(auth,enabled=False)
++    original=identity['departure_date']+'T08:00'
++    with SessionLocal.begin() as s:s.get(Ride,ride['order_id']).pickup_at=original
++    svc.bind('u19',ride['order_id'],{'flight_identity':identity,'authority_id':auth[0],'expected_revision':0})
++    aid=proposal(auth,ride,identity)
++    before=svc.tracking('u19',ride['order_id'])
++    assert before['confirmed_pickup_at']==original
++    assert before['events'][0]['expected_pickup_at']==original
++    assert before['events'][0]['proposed_pickup_at'].endswith('+00:00')
++    assert svc.process(aid,IsolatedFleetAdapter(tmp_path/'fleet.db'))['status']=='CONFIRMED'
++    assert svc.tracking('u19',ride['order_id'])['confirmed_pickup_at'].endswith('+00:00')
++
++
++@pytest.mark.parametrize('event_type',['EARLY','LANDED','CORRECTED'])
++def test_delay_protection_does_not_grant_extra_wait_for_non_delay_facts(tmp_path,event_type):
++    from go_hotel.autonomy.durable import canonical
++    auth=authority();ride,identity=seed_ride(auth,protection=True)
++    envelope=arrival(auth,identity);envelope['fact']['data']['event_type']=event_type
++    envelope['signature_hex']=auth[1].sign(canonical(envelope['fact']).encode()).hex()
++    proposal=svc.ingest(envelope,'admin')['events'][0]
++    assert proposal['free_wait_minutes']==60
++    assert svc.process(proposal['adjustment_id'],IsolatedFleetAdapter(tmp_path/'fleet.db'))['status']=='CONFIRMED'
++
++
++def test_correction_withdraws_previous_delay_protection_before_dispatch(tmp_path):
++    from go_hotel.autonomy.durable import canonical
++    auth=authority();ride,identity=seed_ride(auth,protection=True)
++    first=svc.ingest(arrival(auth,identity),'admin')['events'][0]
++    assert first['free_wait_minutes']==90
++    correction=arrival(auth,identity,seq=2);correction['fact']['data']['event_type']='CORRECTED'
++    correction['signature_hex']=auth[1].sign(canonical(correction['fact']).encode()).hex()
++    second=svc.ingest(correction,'admin')['events'][0]
++    adapter=IsolatedFleetAdapter(tmp_path/'fleet.db')
++    assert svc.process(first['adjustment_id'],adapter)['status']=='SUPERSEDED'
++    assert svc.process(second['adjustment_id'],adapter)['free_wait_minutes']==60
+--- DEPTH18/tests/test_depth19_travel_facts.py
++++ DEPTH19/tests/test_depth19_travel_facts.py
+@@ -0,0 +1,169 @@
++"""Signed source facts, current ownership, and per-traveler/per-leg check-in."""
++from copy import deepcopy
++from datetime import datetime, timezone, timedelta
++import time
++
++import pytest
++from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
++from sqlalchemy import select, func
++from go_hotel.autonomy.durable import canonical
++from go_hotel.db.models import (FlightOrderRow, TravelOperationalFactRow as Fact,
++    TravelFactAuthorityRow as Authority, FlightCheckInStateRow)
++from go_hotel.db.session import SessionLocal
++from go_hotel.services.travel_operational_facts import TravelFacts, checkin_subject
++
++svc=TravelFacts()
++
++
++def seed_flight(order_id='flight19', account='u19'):
++    now=datetime.now(timezone.utc); day=now.date().isoformat()
++    legs=[{'origin':'PVG','destination':'NRT','carrier_code':'MU','flight_number':'523','departure_date':day},
++          {'origin':'NRT','destination':'PVG','carrier_code':'MU','flight_number':'524','departure_date':(now.date()+timedelta(days=7)).isoformat()}]
++    with SessionLocal.begin() as s:
++        s.add(FlightOrderRow(order_id=order_id,account_id=account,prebook_id='pb19',status='TICKETED',
++            total_amount_minor=10000,currency='CNY',passengers=[{'full_name':'ONE TEST'},{'full_name':'TWO TEST'}],
++            payment_method_id=None,pnr='ISOLATED19',ticket_numbers=['T1','T2','T3','T4'],current_itinerary=legs,created_at=now,updated_at=now))
++    return legs
++
++
++def authority(provider='provider19', **overrides):
++    key=Ed25519PrivateKey.generate(); now=int(time.time()*1000)
++    body={'provider_id':provider,'environment':'ENGINEERING','source_type':'AUTHORIZED_AIRLINE_PROVIDER',
++        'contract':{'reference':'isolated-test-contract','kinds':['CHECK_IN','FLIGHT_ARRIVAL'],'carriers':['MU'],
++            'link_hosts':['airline.example'],'max_age_ms':3600000},
++        'public_key_hex':key.public_key().public_bytes_raw().hex(),'valid_from_ms':now-10000,'valid_until_ms':now+7200000}
++    body.update(overrides)
++    row=svc.register(body,'maker19')
++    svc.review(row['authority_id'],'checker19',1,'APPROVE')
++    return row['authority_id'],key,body
++
++
++def signed(auth, subject, data, kind='CHECK_IN', seq=1, event=None, **overrides):
++    aid,key,registered=auth; now=int(time.time()*1000)-10
++    fact={'authority_id':aid,'provider_id':registered['provider_id'],'event_id':event or f'event{seq}',
++        'kind':kind,'source_sequence':seq,'observed_ms':now,'expires_ms':now+300000,
++        'subject':subject,'data':data}
++    fact.update(overrides)
++    return {'fact':fact,'signature_hex':key.sign(canonical(fact).encode()).hex()}
++
++
++def checkin(auth, leg=0, passenger=0, state='CHECK_IN_OPEN', seq=1, **overrides):
++    with SessionLocal() as s:
++        subject,_=checkin_subject(s.get(FlightOrderRow,'flight19'),leg,passenger)
++    return signed(auth,subject,{'state':state,**overrides},seq=seq,event=f'cell-{leg}-{passenger}-{seq}')
++
++
++def test_read_is_owner_scoped_and_does_not_invent_or_write_fact():
++    seed_flight()
++    with pytest.raises(ValueError,match='NOT_FOUND'):svc.checkin('other','flight19')
++    result=svc.checkin('u19','flight19')
++    assert result['state']=='CHECK_IN_UNVERIFIED' and len(result['items'])==4
++    with SessionLocal() as s:
++        assert s.scalar(select(func.count()).select_from(FlightCheckInStateRow))==0
++        assert s.scalar(select(func.count()).select_from(Fact))==0
++
++
++def test_four_cells_and_official_correction_use_source_order_not_state_rank():
++    seed_flight(); auth=authority()
++    for leg in range(2):
++        for passenger in range(2):
++            svc.ingest_checkin('flight19',checkin(auth,leg,passenger,state='BOARDING_PASS_AVAILABLE',boarding_pass_reference=f'https://airline.example/pass/{leg}/{passenger}'),'admin')
++    result=svc.checkin('u19','flight19')
++    assert result['state']=='BOARDING_PASS_AVAILABLE'
++    assert len({x['boarding_pass_reference'] for x in result['items']})==4
++    svc.ingest_checkin('flight19',checkin(auth,1,1,state='CHECK_IN_NOT_OPEN',seq=2),'admin')
++    result=svc.checkin('u19','flight19')
++    assert result['state']=='MIXED' and result['items'][3]['state']=='CHECK_IN_NOT_OPEN'
++    assert result['items'][3]['boarding_pass_reference'] is None
++
++
++def test_unsigned_legacy_source_string_is_not_authority():
++    seed_flight()
++    with pytest.raises(ValueError,match='SIGNED_CHECK_IN'):svc.ingest_checkin('flight19',{'state':'CHECKED_IN','source_type':'AIRLINE_OFFICIAL','source_authority_reference':'anything'},'admin')
++
++
++def test_signature_binds_exact_body_and_event_identity():
++    seed_flight(); auth=authority(); value=checkin(auth)
++    wrong=deepcopy(value);wrong['fact']['data']['state']='CHECKED_IN'
++    with pytest.raises(ValueError,match='SIGNATURE'):svc.ingest_checkin('flight19',wrong,'admin')
++    assert svc.ingest_checkin('flight19',value,'admin')['created']
++    assert not svc.ingest_checkin('flight19',value,'admin')['created']
++    wrong['signature_hex']=auth[1].sign(canonical(wrong['fact']).encode()).hex()
++    with pytest.raises(ValueError,match='CONTENT_CONFLICT'):svc.ingest_checkin('flight19',wrong,'admin')
++
++
++@pytest.mark.parametrize('url',['javascript:alert(1)','http://airline.example/pass','https://airline.example.evil.test/pass',
++    'https://user@airline.example/pass','https://airline.example:8080/pass','https://airline.example/\npass','https://evil.example/pass'])
++def test_untrusted_links_cannot_become_official(url):
++    seed_flight();auth=authority()
++    with pytest.raises(ValueError,match='LINK_NOT_AUTHORIZED'):
++        svc.ingest_checkin('flight19',checkin(auth,official_check_in_url=url),'admin')
++
++
++def test_independent_review_revision_and_revocation_remove_pass_on_read():
++    seed_flight(); auth=authority()
++    with pytest.raises(ValueError,match='REVISION'):svc.review(auth[0],'checker19',1,'REVOKE')
++    svc.ingest_checkin('flight19',checkin(auth,state='BOARDING_PASS_AVAILABLE',boarding_pass_reference='https://airline.example/pass'),'admin')
++    svc.review(auth[0],'checker19',2,'REVOKE')
++    result=svc.checkin('u19','flight19')['items'][0]
++    assert result['state']=='CHECK_IN_UNVERIFIED' and result['boarding_pass_reference'] is None
++    with pytest.raises(ValueError,match='NOT_CURRENT'):svc.ingest_checkin('flight19',checkin(auth,seq=2),'admin')
++
++
++def test_maker_cannot_approve_and_registered_key_cannot_silently_change():
++    seed_flight(); auth=authority()
++    with SessionLocal.begin() as s:
++        a=s.get(Authority,auth[0]);a.status='DRAFT';a.approved_by=None
++    with pytest.raises(ValueError,match='INDEPENDENT'):svc.review(auth[0],'maker19',2,'APPROVE')
++    with SessionLocal.begin() as s:s.get(Authority,auth[0]).public_key_hex=Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex()
++    with pytest.raises(ValueError,match='INTEGRITY'):svc.review(auth[0],'checker19',2,'APPROVE')
++
++
++@pytest.mark.parametrize('change',['ticket','itinerary','traveler','refund'])
++def test_changed_order_never_reuses_prior_pass(change):
++    seed_flight(); auth=authority()
++    original=checkin(auth,state='BOARDING_PASS_AVAILABLE',boarding_pass_reference='https://airline.example/pass')
++    svc.ingest_checkin('flight19',original,'admin')
++    with SessionLocal.begin() as s:
++        o=s.get(FlightOrderRow,'flight19')
++        if change=='ticket':o.ticket_numbers=['NEW','T2','T3','T4']
++        if change=='itinerary':o.current_itinerary=[dict(o.current_itinerary[0],flight_number='525'),o.current_itinerary[1]]
++        if change=='traveler':o.passengers=[{'full_name':'OTHER TEST'},o.passengers[1]]
++        if change=='refund':o.status='REFUNDED'
++    assert svc.checkin('u19','flight19')['items'][0]['boarding_pass_reference'] is None
++    with pytest.raises(ValueError):svc.ingest_checkin('flight19',original,'admin')
++
++
++@pytest.mark.parametrize('time_case',['expired','future','too_old','beyond_authority'])
++def test_fact_validity_window(time_case):
++    seed_flight(); auth=authority(); value=checkin(auth); body=value['fact']; now=int(time.time()*1000)
++    if time_case=='expired':body['expires_ms']=now-100
++    if time_case=='future':body['observed_ms']=now+60000
++    if time_case=='too_old':body['observed_ms']=now-3700000
++    if time_case=='beyond_authority':body['expires_ms']=now+9000000
++    value['signature_hex']=auth[1].sign(canonical(body).encode()).hex()
++    with pytest.raises(ValueError,match='FACT_(NOT_CURRENT|TIME_INVALID)'):svc.ingest_checkin('flight19',value,'admin')
++
++
++def test_no_fallback_to_older_fact_when_newest_is_expired_or_corrupt():
++    seed_flight();auth=authority()
++    svc.ingest_checkin('flight19',checkin(auth,state='CHECKED_IN'),'admin')
++    last=svc.ingest_checkin('flight19',checkin(auth,seq=2),'admin')
++    with SessionLocal.begin() as s:s.get(Fact,last['fact_id']).payload_hash='0'*64
++    assert svc.checkin('u19','flight19')['items'][0]['state']=='CHECK_IN_UNVERIFIED'
++
++
++def test_sequence_and_provider_switch_are_explicit():
++    seed_flight();auth=authority()
++    svc.ingest_checkin('flight19',checkin(auth,seq=2),'admin')
++    with pytest.raises(ValueError,match='OUT_OF_ORDER'):svc.ingest_checkin('flight19',checkin(auth,seq=1),'admin')
++    other=authority('other19')
++    with pytest.raises(ValueError,match='PROVIDER_SWITCH'):svc.ingest_checkin('flight19',checkin(other,seq=3),'admin')
++
++
++def test_carrier_scope_and_production_gate(monkeypatch):
++    seed_flight();auth=authority(contract={'reference':'x','kinds':['CHECK_IN'],'carriers':['CA'],'link_hosts':[],'max_age_ms':1000})
++    with pytest.raises(ValueError,match='SCOPE_MISMATCH'):svc.ingest_checkin('flight19',checkin(auth),'admin')
++    from go_hotel.core.config import settings
++    monkeypatch.setattr(settings,'app_env','production')
++    with pytest.raises(ValueError,match='LIVE_PROVIDER_ACCEPTANCE'):authority('production19')
+--- DEPTH18/tests/test_mother_plan_p0_product_patch.py
++++ DEPTH19/tests/test_mother_plan_p0_product_patch.py
+@@ -12,17 +12,24 @@
+  with SessionLocal() as s:s.add(MobilityRideOrderRow(order_id='r1',account_id=account,status='CONFIRMED',pickup='NRT',dropoff='Tokyo',pickup_at='2026-09-01T14:00:00+09:00',vehicle_class='COMFORT',total_amount_minor=100,currency='CNY',passengers=[],flight_no='MU523',supplier_reference='R1',created_at=t,updated_at=t));s.commit()
+ 
+ def test_checkin_four_states_require_authorized_fact_and_boarding_pass():
+- seed_flight();assert svc.checkin('u1','f1')['state']=='CHECK_IN_NOT_OPEN'
+- with pytest.raises(ValueError,match='AUTHORIZED'):svc.ingest_checkin('f1',{'state':'CHECK_IN_OPEN','source_type':'UNVERIFIED'},'admin')
+- x=svc.ingest_checkin('f1',{'state':'CHECK_IN_OPEN','source_type':'AIRLINE_OFFICIAL','source_authority_reference':'airline://MU','official_check_in_url':'https://airline.example/checkin'},'admin');assert x['state']=='CHECK_IN_OPEN'
+- with pytest.raises(ValueError,match='BOARDING_PASS_REFERENCE'):svc.ingest_checkin('f1',{'state':'BOARDING_PASS_AVAILABLE','source_type':'AIRLINE_OFFICIAL','source_authority_reference':'airline://MU'},'admin')
+- assert svc.ingest_checkin('f1',{'state':'BOARDING_PASS_AVAILABLE','source_type':'AIRLINE_OFFICIAL','source_authority_reference':'airline://MU','boarding_pass_reference':'https://airline.example/pass'},'admin')['state']=='BOARDING_PASS_AVAILABLE'
++ from test_depth19_travel_facts import seed_flight as seed_current, authority, checkin
++ seed_current();auth=authority()
++ assert svc.checkin('u19','flight19')['state']=='CHECK_IN_UNVERIFIED'
++ for seq,state in enumerate(['CHECK_IN_NOT_OPEN','CHECK_IN_OPEN','CHECKED_IN','BOARDING_PASS_AVAILABLE'],1):
++  options={'boarding_pass_reference':'https://airline.example/pass'} if state=='BOARDING_PASS_AVAILABLE' else {}
++  result=svc.ingest_checkin('flight19',checkin(auth,state=state,seq=seq,**options),'admin')
++  assert result['state']==state
++ with pytest.raises(ValueError,match='BOARDING_PASS_REFERENCE_REQUIRED'):
++  svc.ingest_checkin('flight19',checkin(auth,state='BOARDING_PASS_AVAILABLE',seq=5),'admin')
+ 
+ def test_verified_flight_event_adjusts_go_pickup_with_bounded_free_wait_and_no_fake_fleet_confirmation():
+- seed_ride();b=svc.bind_ride('u1','r1',{'flight_no':'MU523','tracking_enabled':True,'included_wait_minutes':60,'delay_protection_enabled':True,'delay_protection_free_wait_minutes':45,'max_free_wait_minutes':90,'supplier_rule_snapshot':{'overtime_fee_minor':5000}});assert b['max_free_wait_minutes']==90
+- result=svc.ingest_flight_event({'flight_no':'MU523','event_type':'DELAYED','verified_arrival_at':'2026-09-01T15:30:00+09:00','source_authority_reference':'flight-feed://certified','idempotency_key':'evt-1'},'admin');e=result['events'][0]
+- assert e['adjusted_pickup_at'].startswith('2026-09-01T15:30') and e['free_wait_minutes']==90 and e['external_mutation_invoked'] is False and e['external_confirmation_state']=='PENDING_EXTERNAL_CONFIRMATION'
+- assert svc.ingest_flight_event({'flight_no':'MU523','event_type':'DELAYED','verified_arrival_at':'2026-09-01T15:30:00+09:00','source_authority_reference':'flight-feed://certified','idempotency_key':'evt-1'},'admin')['matched_rides']==1
++ from test_depth19_travel_facts import authority
++ from test_depth19_ride_sync import seed_ride as seed_current, arrival
++ auth=authority();ride,identity=seed_current(auth,protection=True)
++ result=svc.ingest_flight_event(arrival(auth,identity),'admin');e=result['events'][0]
++ assert e['free_wait_minutes']==90 and e['status']=='PENDING'
++ assert svc.ride_tracking('u19',ride['order_id'])['confirmed_pickup_at']==ride['pickup_at']
++ assert svc.ingest_flight_event(arrival(auth,identity,seq=2),'admin')['matched_rides']==1
+ 
+ def test_requirement_builder_forbids_second_page_microphone_and_keeps_types_independent_of_quote_mode():
+  with pytest.raises(ValueError,match='MICROPHONE_FORBIDDEN'):svc.create_requirement('u1',{'destination':'SHA','check_in':'2026-09-01','check_out':'2026-09-02','rooms':1,'adults':2,'voice':'hello'})
+--- DEPTH18/tests/test_parent_implementation_code_review_debt_closure.py
++++ DEPTH19/tests/test_parent_implementation_code_review_debt_closure.py
+@@ -148,7 +148,7 @@
+ 
+     heads = subprocess.run([sys.executable, "-m", "alembic", "heads"], env=env, text=True, capture_output=True, check=True)
+     head_lines = [line.strip() for line in heads.stdout.splitlines() if line.strip().endswith("(head)")]
+-    assert head_lines == ["0125_regional_queue (head)"]
++    assert head_lines == ["0126_travel_operational_facts (head)"]
+ 
+     subprocess.run([sys.executable, "-m", "alembic", "upgrade", "0114_ext_truth_incident_hard"], env=env, text=True, capture_output=True, check=True)
+     conn = sqlite3.connect(db)
