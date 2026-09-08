@@ -1,0 +1,26 @@
+{
+  "data_mode": "ISOLATED_CONTRACT_SIMULATOR",
+  "external_live": false,
+  "refund_redemption_race": {
+    "redemption_rejected": "ATTRACTION_ILLEGAL_STATE_TRANSITION",
+    "final_order_status": "REFUNDED",
+    "refund_status": "REFUND_COMPLETED"
+  },
+  "split_original_refund_resume": {
+    "interruption": "INTERRUPTED_BEFORE_SECOND_ORIGINAL_CAPTURE_REFUND",
+    "status_after_interruption": "REFUND_PENDING",
+    "confirmed_refunds": [
+      {
+        "amount_minor": 14700,
+        "state": "CONFIRMED"
+      },
+      {
+        "amount_minor": 4400,
+        "state": "CONFIRMED"
+      }
+    ],
+    "status_after_resume": "REFUNDED",
+    "replay_same_receipt": true
+  },
+  "passed": true
+}

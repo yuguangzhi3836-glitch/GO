@@ -1,0 +1,939 @@
+--- a/alembic/versions/0128_vertical_refund_recovery.py
++++ b/alembic/versions/0128_vertical_refund_recovery.py
+@@ -0,0 +1,34 @@
++"""Durable rail/attraction refund claims; preserve existing order history."""
++from alembic import op
++import sqlalchemy as sa
++
++revision = '0128_vertical_refund_recovery'
++down_revision = '0127_vertical_prebook_contract'
++branch_labels = None
++depends_on = None
++
++
++def upgrade():
++    op.create_table('vertical_refund_operation',
++        sa.Column('vertical', sa.String(16), primary_key=True),
++        sa.Column('order_id', sa.String(64), primary_key=True),
++        sa.Column('account_id', sa.String(64), nullable=False),
++        sa.Column('state', sa.String(16), nullable=False),
++        sa.Column('quote_json', sa.JSON(), nullable=False),
++        sa.Column('adjustment_ids_json', sa.JSON(), nullable=False),
++        sa.Column('request_hash', sa.String(64), nullable=False),
++        sa.Column('result_json', sa.JSON()),
++        sa.Column('lease_token', sa.String(64)),
++        sa.Column('lease_until_ms', sa.BigInteger(), nullable=False),
++        sa.Column('attempt', sa.Integer(), nullable=False),
++        sa.Column('created_ms', sa.BigInteger(), nullable=False),
++        sa.Column('completed_ms', sa.BigInteger()),
++        sa.CheckConstraint("vertical IN ('RAIL','ATTRACTION')", name='ck_refund_operation_vertical'),
++        sa.CheckConstraint("state IN ('PENDING','COMPLETED')", name='ck_refund_operation_state'),
++        sa.CheckConstraint('attempt >= 0 AND lease_until_ms >= 0', name='ck_refund_operation_lease'))
++
++
++def downgrade():
++    if op.get_bind().scalar(sa.text('SELECT count(*) FROM vertical_refund_operation')):
++        raise RuntimeError('REFUND_OPERATION_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE')
++    op.drop_table('vertical_refund_operation')
+--- a/frontend/consumer/app.js
++++ b/frontend/consumer/app.js
+@@ -92,10 +92,21 @@
+ function showRailSearch(){setVerticalVIMode(true);state.screen='rail';$('#app').innerHTML=shell(`<section class="go-page-head"><button class="go-back" id="railBack" aria-label="返回">‹</button><div><span>火车票</span><h1>搜索车次</h1></div></section><section class="go-form-card"><div class="route-row"><div class="field"><label>出发站</label><input id="ro" placeholder="上海 / SHA"></div><span>→</span><div class="field"><label>到达站</label><input id="rd" placeholder="杭州 / HZH"></div></div><div class="field wide"><label>出发日期</label><input id="rdate" type="date"></div><button class="btn primary" id="rgo">查询车次</button></section>`,'home');bindNav();$('#railBack').onclick=showHome;$('#rgo').onclick=railSearch}
+ async function railSearch(){try{const b={origin_station:$('#ro').value||'SHA',destination_station:$('#rd').value||'HZH',travel_date:$('#rdate').value,currency:'CNY'};if(!b.travel_date){toast('请选择日期');return}state.railCriteria=b;const d=await api('/v1/rail/search',{method:'POST',body:JSON.stringify(b)});state.railSearch=d.items||[];$('#app').innerHTML=shell(`<h1 class="screen-title">车次结果</h1>${state.railSearch.map(x=>`<section class="card" data-rail="${x.offer_id}"><div class="row"><h3>${safe(x.train_no)} · ${safe(x.seat_class)}</h3><b>${money(x.total_amount_minor,x.currency)} / 成人</b></div><div class="kv"><span>${safe(x.departure_time)} → ${safe(x.arrival_time)}</span><span>余票 ${x.inventory_left}</span></div><button class="btn primary">选择</button></section>`).join('')}`,'search');bindNav();document.querySelectorAll('[data-rail]').forEach(x=>x.onclick=()=>railSelect(x.dataset.rail))}catch(e){toast(e.message)}}
+ async function railSelect(id){toast('火车票预订组件尚未就绪，请刷新后重试。')}
+-function renderRailOrder(){const o=state.railOrder||{},j=o.journey||{};$('#app').innerHTML=shell(`<h1 class="screen-title">火车票订单</h1><section class="card"><div class="kv"><span>状态</span><b>${consumerLabel(o.status)}</b></div><div class="kv"><span>车次</span><b>${safe(j.train_no)}</b></div><div class="kv"><span>席别</span><span>${safe(j.seat_class)}</span></div><div class="kv"><span>预订号</span><span>${safe(o.booking_reference)}</span></div><div class="kv"><span>人数 / 含税总价</span><span>${o.passenger_count||0} 人 · ${money(o.total_amount_minor,o.currency)}</span></div><p class="muted">隔离测试订单，不能用于实际乘车。</p></section><section class="card"><button class="btn ghost" id="rchg" ${o.status!=='TICKETED'?'disabled':''}>改签</button><button class="btn danger" id="rref" ${o.status!=='TICKETED'?'disabled':''}>退票</button><button class="btn ghost" id="rtrips">GO Trips</button></section><section class="card"><h3>证据链</h3>${evHtml(o.evidence)}</section>`,'trips');bindNav();$('#rchg').onclick=railChange;$('#rref').onclick=railRefund;$('#rtrips').onclick=showUnifiedTrips}
++function renderRailOrder(){const o=state.railOrder||{},j=o.journey||{};$('#app').innerHTML=shell(`<h1 class="screen-title">火车票订单</h1><section class="card"><div class="kv"><span>状态</span><b>${consumerLabel(o.status)}</b></div><div class="kv"><span>车次</span><b>${safe(j.train_no)}</b></div><div class="kv"><span>席别</span><span>${safe(j.seat_class)}</span></div><div class="kv"><span>预订号</span><span>${safe(o.booking_reference)}</span></div><div class="kv"><span>人数 / 含税总价</span><span>${o.passenger_count||0} 人 · ${money(o.total_amount_minor,o.currency)}</span></div><p class="muted">隔离测试订单，不能用于实际乘车。</p></section><section class="card"><button class="btn ghost" id="rchg" ${o.status!=='TICKETED'?'disabled':''}>改签</button><button class="btn danger" id="rref" ${!['TICKETED','REFUND_PENDING'].includes(o.status)?'disabled':''}>${o.status==='REFUND_PENDING'?'继续核对原退款':'退票'}</button>${o.status==='CHANGE_PENDING'?'<button class="btn ghost" id="rresume">继续原改签申请</button>':''}<button class="btn ghost" id="rtrips">GO Trips</button></section><section class="card"><h3>证据链</h3>${evHtml(o.evidence)}</section>`,'trips');bindNav();$('#rchg').onclick=railChange;$('#rref').onclick=railRefund;$('#rtrips').onclick=showUnifiedTrips;if($('#rresume'))$('#rresume').onclick=railResumeChange}
++async function railResumeChange(){const o=state.railOrder,q=(o.change_quotes||[]).find(x=>x.status==='PREPARING');if(!q){toast('正在核对原改签申请，请稍后刷新。');return}uxConfirm({title:'继续原改签申请',description:'将继续处理已经提交的日期、席别和补款方案。',confirmLabel:'继续核对',onConfirm:async()=>{try{await api(`/v1/rail/orders/${encodeURIComponent(o.order_id)}/execute-change/${encodeURIComponent(q.quote_id)}`,{method:'POST',headers:{'Idempotency-Key':crypto.randomUUID()}})}finally{await railReload()}}})}
+ async function railReload(){state.railOrder=await api(`/v1/rail/orders/${state.railOrder.order_id}`);renderRailOrder()}
+-function railChange(){uxSheet({title:'铁路改签',fields:[{id:'newTravelDate',label:'新出发日期',type:'date'}],confirmLabel:'查看改签费用',onConfirm:async v=>{const q=await api(`/v1/rail/orders/${state.railOrder.order_id}/change-quote`,{method:'POST',body:JSON.stringify({new_travel_date:v.newTravelDate,new_seat_class:state.railOrder.journey?.seat_class})});uxConfirm({title:'确认铁路改签',summary:`<div class="kv"><span>改签费用</span><b>${money(q.total_due_minor,q.currency)}</b></div>`,confirmLabel:'确认改签',onConfirm:async()=>{await api(`/v1/rail/orders/${state.railOrder.order_id}/execute-change/${q.quote_id}`,{method:'POST'});await railReload()}})}})}
+-async function railRefund(){try{const q=await api(`/v1/rail/orders/${state.railOrder.order_id}/refund-quote`);uxConfirm({title:'申请铁路退款',summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div>`,confirmLabel:'确认退款',danger:true,onConfirm:async()=>{await api(`/v1/rail/orders/${state.railOrder.order_id}/refund`,{method:'POST'});await railReload()}})}catch(e){toast(e.message)}}
++function railChange(){uxSheet({title:'铁路改签',fields:[{id:'newTravelDate',label:'新出发日期',type:'date'}],confirmLabel:'查看改签费用',onConfirm:async v=>{const q=await api(`/v1/rail/orders/${state.railOrder.order_id}/change-quote`,{method:'POST',body:JSON.stringify({new_travel_date:v.newTravelDate,new_seat_class:state.railOrder.journey?.seat_class})});uxConfirm({title:'确认铁路改签',summary:`<div class="kv"><span>改签费用</span><b>${money(q.total_due_minor,q.currency)}</b></div>`,confirmLabel:'确认改签',onConfirm:async()=>{try{await api(`/v1/rail/orders/${state.railOrder.order_id}/execute-change/${q.quote_id}`,{method:'POST'})}finally{await railReload()}}})}})}
++async function submitVerticalRefund(vertical,orderId){
++ const group=vertical==='RAIL'?'rail':'attractions';
++ try{return await api(`/v1/${group}/orders/${encodeURIComponent(orderId)}/refund`,{method:'POST',headers:{'Idempotency-Key':crypto.randomUUID()}})}
++ catch(e){if(/REFUND_ALREADY_PROCESSING|REFUND_LEASE_LOST/.test(e.message))throw new Error('原退款正在核对，请稍后刷新订单。');throw e}
++ finally{const fresh=await api(`/v1/${group}/orders/${encodeURIComponent(orderId)}`);if(vertical==='RAIL'){state.railOrder=fresh;renderRailOrder()}else{state.attractionOrder=fresh;renderAttractionOrder()}}
++}
++function resumeVerticalRefund(vertical){
++ const o=vertical==='RAIL'?state.railOrder:state.attractionOrder;
++ return uxConfirm({title:'继续核对原退款',description:'原申请已受理。我们会继续核对同一笔退款，处理中暂不办理改签或核销。',confirmLabel:'核对退款进度',onConfirm:()=>submitVerticalRefund(vertical,o.order_id)});
++}
++async function railRefund(){if(state.railOrder?.status==='REFUND_PENDING')return resumeVerticalRefund('RAIL');try{const q=await api(`/v1/rail/orders/${state.railOrder.order_id}/refund-quote`);uxConfirm({title:'申请铁路退款',summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div>`,confirmLabel:'确认退款',danger:true,onConfirm:async()=>{await submitVerticalRefund('RAIL',state.railOrder.order_id)}})}catch(e){toast(e.message)}}
+ 
+ function showRideSearch(){showMobilitySearch('RIDE')}
+ function showRentalSearch(){showMobilitySearch('RENTAL')}
+@@ -111,10 +122,10 @@
+ function showAttractionSearch(){setVerticalVIMode(true);state.screen='attraction';$('#app').innerHTML=shell(`<section class="go-page-head"><button class="go-back" id="attrBack" aria-label="返回">‹</button><div><span>景点玩乐</span><h1>景点门票与体验</h1></div></section><section class="go-form-card"><div class="field"><label>目的地</label><input id="adest" placeholder="东京"></div><div class="field"><label>游玩日期</label><input id="adate" type="date"></div><button class="btn primary" id="ago">查询</button></section>`,'home');bindNav();$('#attrBack').onclick=showHome;$('#ago').onclick=attractionSearch}
+ async function attractionSearch(){try{const b={destination:$('#adest').value||'东京',visit_date:$('#adate').value,currency:'CNY'};if(!b.visit_date){toast('请选择日期');return}state.attractionCriteria=b;const d=await api('/v1/attractions/search',{method:'POST',body:JSON.stringify(b)});state.attractionSearch=d.items||[];$('#app').innerHTML=shell(`<h1 class="screen-title">门票与体验</h1>${state.attractionSearch.map(x=>`<section class="card" data-attr="${x.offer_id}"><div class="row"><h3>${safe(x.product_name)}</h3><b>${money(x.total_amount_minor,x.currency)} / 张</b></div><div class="kv"><span>场次</span><span>${safe(x.session_time)}</span></div><div class="kv"><span>库存</span><span>${x.inventory_units}</span></div><div class="kv"><span>凭证</span><span>${safe(x.voucher_type)}</span></div><button class="btn primary">选择</button></section>`).join('')}`,'search');bindNav();document.querySelectorAll('[data-attr]').forEach(x=>x.onclick=()=>attractionBook(x.dataset.attr))}catch(e){toast(e.message)}}
+ async function attractionBook(id){toast('门票预订组件尚未就绪，请刷新后重试。')}
+-function renderAttractionOrder(){const o=state.attractionOrder||{};$('#app').innerHTML=shell(`<h1 class="screen-title">门票 / 体验订单</h1><section class="card"><div class="kv"><span>状态</span><b>${consumerLabel(o.status)}</b></div><div class="kv"><span>产品</span><b>${safe(o.product_name)}</b></div><div class="kv"><span>日期 / 场次</span><span>${safe(o.visit_date)} ${safe(o.session_time,'')}</span></div><div class="kv"><span>人数 / 含税总价</span><span>${o.quantity||0} 人 · ${money(o.total_amount_minor,o.currency)}</span></div><div class="kv"><span>核销凭证</span><b>${safe(o.voucher_code)}</b></div></section><section class="card"><button class="btn ghost" id="achg" ${o.status!=='CONFIRMED'?'disabled':''}>改期</button><button class="btn ghost" id="ared" ${o.status!=='CONFIRMED'?'disabled':''}>确认核销</button><button class="btn danger" id="aref" ${o.status!=='CONFIRMED'?'disabled':''}>退款</button></section><section class="card"><h3>证据链</h3>${evHtml(o.evidence)}</section>`,'trips');bindNav();$('#achg').onclick=attractionChange;$('#ared').onclick=attractionRedeem;$('#aref').onclick=attractionRefund}
++function renderAttractionOrder(){const o=state.attractionOrder||{};$('#app').innerHTML=shell(`<h1 class="screen-title">门票 / 体验订单</h1><section class="card"><div class="kv"><span>状态</span><b>${consumerLabel(o.status)}</b></div><div class="kv"><span>产品</span><b>${safe(o.product_name)}</b></div><div class="kv"><span>日期 / 场次</span><span>${safe(o.visit_date)} ${safe(o.session_time,'')}</span></div><div class="kv"><span>人数 / 含税总价</span><span>${o.quantity||0} 人 · ${money(o.total_amount_minor,o.currency)}</span></div><div class="kv"><span>核销凭证</span><b>${safe(o.voucher_code)}</b></div></section><section class="card"><button class="btn ghost" id="achg" ${o.status!=='CONFIRMED'?'disabled':''}>改期</button><button class="btn ghost" id="ared" ${o.status!=='CONFIRMED'?'disabled':''}>确认核销</button><button class="btn danger" id="aref" ${!['CONFIRMED','REFUND_PENDING'].includes(o.status)?'disabled':''}>${o.status==='REFUND_PENDING'?'继续核对原退款':'退款'}</button></section><section class="card"><h3>证据链</h3>${evHtml(o.evidence)}</section>`,'trips');bindNav();$('#achg').onclick=attractionChange;$('#ared').onclick=attractionRedeem;$('#aref').onclick=attractionRefund}
+ async function attractionReload(){state.attractionOrder=await api(`/v1/attractions/orders/${state.attractionOrder.order_id}`);renderAttractionOrder()}
+ function attractionChange(){uxSheet({title:'修改游玩日期',fields:[{id:'newVisitDate',label:'新游玩日期',type:'date'}],confirmLabel:'查看改期方案',onConfirm:async v=>{const q=await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/change-quote`,{method:'POST',body:JSON.stringify({new_visit_date:v.newVisitDate})});uxConfirm({title:'确认改期',description:'请确认新的日期与当前规则。',confirmLabel:'确认改期',onConfirm:async()=>{await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/execute-change/${q.quote_id}`,{method:'POST'});await attractionReload()}})}})}
+ async function attractionRedeem(){try{await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/redeem`,{method:'POST',body:JSON.stringify({evidence_reference:'CONSUMER_UI_REDEMPTION'})});await attractionReload()}catch(e){toast(e.message)}}
+-async function attractionRefund(){try{const q=await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/refund-quote`);if(!q.refundable){toast('该产品不可退款');return}uxConfirm({title:'申请门票退款',summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div>`,confirmLabel:'确认退款',danger:true,onConfirm:async()=>{await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/refund`,{method:'POST'});await attractionReload()}})}catch(e){toast(e.message)}}
++async function attractionRefund(){if(state.attractionOrder?.status==='REFUND_PENDING')return resumeVerticalRefund('ATTRACTION');try{const q=await api(`/v1/attractions/orders/${state.attractionOrder.order_id}/refund-quote`);if(!q.refundable){toast('该产品不可退款');return}uxConfirm({title:'申请门票退款',summary:`<div class="kv"><span>预计退款</span><b>${money(q.refund_amount_minor,q.currency)}</b></div>`,confirmLabel:'确认退款',danger:true,onConfirm:async()=>{await submitVerticalRefund('ATTRACTION',state.attractionOrder.order_id)}})}catch(e){toast(e.message)}}
+ 
+ bootstrapConsumer().finally(showHome);
+--- a/scripts/assemble_depth21_review.py
++++ b/scripts/assemble_depth21_review.py
+@@ -0,0 +1,107 @@
++#!/usr/bin/env python3
++"""Restore DEPTH21 from pinned parent + DEPTH17 WORK + reviewed DEPTH21 delta."""
++import argparse
++import hashlib
++import json
++import os
++from pathlib import Path, PurePosixPath
++import shutil
++import stat
++import zipfile
++
++PARENT_SHA = '8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb'
++BASE_SHA = '1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79'
++
++
++def sha(path):
++    h=hashlib.sha256()
++    with path.open('rb') as stream:
++        for block in iter(lambda:stream.read(1024*1024),b''):h.update(block)
++    return h.hexdigest()
++
++
++def safe(name):
++    p=PurePosixPath(name)
++    if not name or p.is_absolute() or '..' in p.parts or '\\' in name or ':' in name:
++        raise ValueError('UNSAFE_ARCHIVE_PATH:'+name)
++    return p
++
++
++def preflight(z):
++    seen=set()
++    for info in z.infolist():
++        safe(info.filename)
++        if info.filename in seen or stat.S_ISLNK(info.external_attr >> 16):
++            raise ValueError('DUPLICATE_OR_LINK_ARCHIVE_ENTRY:'+info.filename)
++        seen.add(info.filename)
++
++
++def verify_entries(z, entries, prefix=''):
++    for f in entries:
++        safe(f['path'])
++        data=z.read(prefix+f['path'])
++        if len(data)!=f['size'] or hashlib.sha256(data).hexdigest()!=f['sha256']:
++            raise ValueError('PAYLOAD_INTEGRITY_FAILURE:'+f['path'])
++
++
++def extract(z, output, prefix=''):
++    for info in z.infolist():
++        if not info.filename.startswith(prefix):continue
++        p=safe(info.filename[len(prefix):])
++        if '__pycache__' in p.parts or p.suffix in {'.pyc','.pyo'}:continue
++        target=output/str(p)
++        if info.is_dir():target.mkdir(parents=True,exist_ok=True);continue
++        target.parent.mkdir(parents=True,exist_ok=True)
++        with z.open(info) as source,target.open('wb') as sink:shutil.copyfileobj(source,sink)
++        if os.name!='nt':target.chmod(0o755 if (info.external_attr>>16)&0o111 else 0o644)
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    for name in ('parent','base-work','delta','output'):parser.add_argument('--'+name,type=Path,required=True)
++    args=parser.parse_args(); output=args.output.resolve()
++    if output.exists():parser.error('Output must be a new directory')
++    if sha(args.parent)!=PARENT_SHA or sha(args.base_work)!=BASE_SHA:
++        parser.error('Locked parent or DEPTH17 WORK SHA256 mismatch')
++    with zipfile.ZipFile(args.parent) as parent,zipfile.ZipFile(args.base_work) as base,zipfile.ZipFile(args.delta) as delta:
++        for z in (parent,base,delta):preflight(z)
++        old=json.loads(base.read('DELIVERY_FILE_MANIFEST.json'))
++        change=json.loads(delta.read('DEPTH21_DELTA_MANIFEST.json'))
++        result_bytes=delta.read('RESULT_FILE_MANIFEST.json')
++        if hashlib.sha256(result_bytes).hexdigest()!=change['result_manifest_sha256']:
++            parser.error('Result manifest fingerprint mismatch')
++        result=json.loads(result_bytes)
++        if change['baseline_work_sha256']!=BASE_SHA or change['parent_sha256']!=PARENT_SHA or change['removed']:
++            parser.error('Unsupported delta lineage or removals')
++        verify_entries(base,old['files']);verify_entries(delta,change['files'],'payload/')
++        known={f['path']:f for f in old['files']}
++        for f in change['files']:
++            before=known.get(f['path'])
++            if (before['sha256'] if before else None)!=f['before_sha256']:
++                parser.error('Delta baseline mismatch: '+f['path'])
++            known[f['path']]={k:f[k] for k in ('path','size','sha256')}
++        expected={f['path']:{k:f[k] for k in ('path','size','sha256')} for f in result['files']}
++        normalized={n:{k:f[k] for k in ('path','size','sha256')} for n,f in known.items()}
++        if expected!=normalized or len(expected)!=len(result['files']):
++            parser.error('Result manifest does not match composed delta')
++        if set(delta.namelist())!={'DEPTH21_DELTA_MANIFEST.json','RESULT_FILE_MANIFEST.json',*('payload/'+f['path'] for f in change['files'])}:
++            parser.error('Unexpected delta entries')
++        output.mkdir(parents=True)
++        try:
++            extract(parent,output);extract(base,output);extract(delta,output,'payload/')
++            (output/'DELIVERY_FILE_MANIFEST.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
++            for f in result['files']:
++                if sha(output/f['path'])!=f['sha256']:raise ValueError('RESTORED_HASH_MISMATCH:'+f['path'])
++            if os.name!='nt':
++                for name in ('python','python3','python3.13'):(output/'gate_runtime/python/bin'/name).chmod(0o755)
++            receipt={'parent_sha256':PARENT_SHA,'base_work_sha256':BASE_SHA,'delta_sha256':sha(args.delta),
++                'verified_files':len(result['files']),'migration_head':'0128_vertical_refund_recovery','release_gate':'HOLD'}
++            (output/'DEPTH21_RESTORATION.json').write_text(json.dumps(receipt,indent=2)+'\n')
++        except BaseException:
++            shutil.rmtree(output)
++            raise
++    print(json.dumps(receipt,indent=2))
++    print('Read GO_DEPTH21_START_HERE.md; this is an engineering review copy.')
++
++
++if __name__=='__main__':main()
+--- a/scripts/build_depth21_delivery.py
++++ b/scripts/build_depth21_delivery.py
+@@ -0,0 +1,77 @@
++#!/usr/bin/env python3
++"""Seal a verified DEPTH21 delta against the GitHub-pinned DEPTH17 cumulative WORK."""
++import argparse
++import hashlib
++import json
++from pathlib import Path
++import zipfile
++from build_review_delivery import allowed, digest
++
++ROOT=Path(__file__).resolve().parents[1]
++BASE_SHA='1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79'
++PARENT_SHA='8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb'
++STEM='GO_CP11_DEPTH_21_REFUND_RECOVERY'
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--baseline-work',required=True,type=Path)
++    parser.add_argument('--output-dir',type=Path,default=ROOT/'deliverables')
++    parser.add_argument('--previous-delta',required=True,type=Path)
++    parser.add_argument('--preseal',action='store_true',help='Prepare a restoration candidate; does not certify delivery')
++    args=parser.parse_args();out=args.output_dir.resolve();out.mkdir(parents=True,exist_ok=True)
++    if digest(args.baseline_work)!=BASE_SHA:parser.error('DEPTH17 WORK fingerprint mismatch')
++    evidence=ROOT/'verification/current_build/depth21'
++    status={'build':'CP11_DEPTH_21_REFUND_RECOVERY'} if args.preseal else json.loads((evidence/'CURRENT_BUILD_STATUS.json').read_text())
++    if not args.preseal:
++        assert status['python']['one_clean_full_run'] and not status['python']['failures'] and not status['python']['errors']
++        assert status['independent_restored_runtime']['passed']==status['independent_restored_runtime']['tests']
++    frozen=json.loads((evidence/'source_fingerprint.json').read_text())['files']
++    assert all(digest(ROOT/n)==h for n,h in frozen.items()),'FROZEN_SOURCE_CHANGED'
++    with zipfile.ZipFile(args.baseline_work) as base:
++        before={f['path']:f for f in json.loads(base.read('DELIVERY_FILE_MANIFEST.json'))['files']}
++    names=set(before)
++    assert digest(args.previous_delta)=='f59dc37a09cd103b04d82b9fc06c0443bd6b79d346acb304dd47fe17365089f4'
++    with zipfile.ZipFile(args.previous_delta) as prior:
++        names.update(f['path'] for f in json.loads(prior.read('RESULT_FILE_MANIFEST.json'))['files'])
++    for folder in ('src','frontend','tests','tests_frontend','scripts','acceptance','alembic'):
++        names.update(p.relative_to(ROOT).as_posix() for p in (ROOT/folder).rglob('*') if allowed(p))
++    names.update(p.relative_to(ROOT).as_posix() for p in evidence.rglob('*') if allowed(p) and p.suffix!='.log')
++    names.update({'GO_DEPTH21_START_HERE.md','CURRENT_DEPTH_CANDIDATE.json'})
++    names.discard('DELIVERY_FILE_MANIFEST.json')
++    result={'status':'ENGINEERING_REVIEW_NOT_RELEASE_ACCEPTED','files':[]}
++    changes=[]
++    for name in sorted(names):
++        p=ROOT/name
++        assert allowed(p),name
++        row={'path':name,'size':p.stat().st_size,'sha256':digest(p)}
++        result['files'].append(row)
++        previous=before.get(name)
++        if not previous or previous['sha256']!=row['sha256']:
++            changes.append({**row,'before_sha256':previous['sha256'] if previous else None,'mode':p.stat().st_mode&0o777})
++    result_bytes=json.dumps(result,ensure_ascii=False,indent=2).encode()
++    manifest={'build':status['build'],'parent_sha256':PARENT_SHA,'baseline_work_sha256':BASE_SHA,
++              'baseline_github_commit':'b02f65db7c6ce4212e3a4d678b540fb286c14768',
++              'previous_checkpoint_commit':'fadcdcaf00ebfa84d56ebbff0c2cd448a68aa263',
++              'includes_depth18':True,'includes_depth19':True,'includes_depth20':True,'preseal':args.preseal,
++              'result_manifest_sha256':hashlib.sha256(result_bytes).hexdigest(),
++              'FINAL_RELEASE_GATE':'HOLD','removed':[],'files':changes}
++    path=out/(STEM+'_DELTA_20260908.zip');temporary=path.with_suffix('.building')
++    with zipfile.ZipFile(temporary,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
++        for f in changes:z.write(ROOT/f['path'],'payload/'+f['path'])
++        z.writestr('DEPTH21_DELTA_MANIFEST.json',json.dumps(manifest,indent=2))
++        z.writestr('RESULT_FILE_MANIFEST.json',result_bytes)
++    with zipfile.ZipFile(temporary) as z:
++        assert z.testzip() is None
++        assert len(z.namelist())==len(changes)+2
++        for f in changes:assert hashlib.sha256(z.read('payload/'+f['path'])).hexdigest()==f['sha256']
++    temporary.replace(path)
++    receipt={'delta':{'path':str(path),'size':path.stat().st_size,'sha256':digest(path),'entries':len(changes)+2},
++             'changed_payload_files':len(changes),'result_files':len(result['files']),
++             'baseline_work_sha256':BASE_SHA,'release_gate':'HOLD','engineering_complete':False}
++    (out/'GO_DEPTH21_DELIVERY.json').write_text(json.dumps(receipt,indent=2)+'\n')
++    (out/'GO_DEPTH21_SHA256SUMS.txt').write_text(f"{digest(path)}  {path.name}\n")
++    print(json.dumps(receipt,indent=2))
++
++
++if __name__=='__main__':main()
+--- a/src/go_hotel/api/routes/attractions.py
++++ b/src/go_hotel/api/routes/attractions.py
+@@ -11,7 +11,9 @@
+ def w(fn,*x):
+  try:return {"data":fn(*x)}
+  except ValueError as e:
+-  msg=str(e); code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(k in msg for k in ("ILLEGAL_STATE","CHANGEABLE","REFUNDABLE","INVALID","RECONCILIATION")) else (400 if "NON_REFUNDABLE" in msg else 404))
++  msg=str(e)
++  if msg in {'REFUND_ALREADY_PROCESSING','REFUND_LEASE_LOST'}:raise HTTPException(409,detail=msg)
++  code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(k in msg for k in ("ILLEGAL_STATE","CHANGEABLE","REFUNDABLE","INVALID","RECONCILIATION")) else (400 if "NON_REFUNDABLE" in msg else 404))
+   raise HTTPException(code,detail=str(e))
+ class Search(BaseModel):destination:str;visit_date:str;product_type:str|None=None;currency:str="CNY"
+ class Prebook(BaseModel):offer_id:str;visit_date:str;quantity:int=Field(default=1,ge=1,le=100,strict=True);currency:str="CNY";session_time:str|None=None
+--- a/src/go_hotel/api/routes/rail.py
++++ b/src/go_hotel/api/routes/rail.py
+@@ -25,7 +25,9 @@
+ def wrap(fn,*args):
+     try:return {"data":fn(*args)}
+     except ValueError as e:
+-        msg=str(e); code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(x in msg for x in ("INVALID","CHANGEABLE","REFUNDABLE","SOLD_OUT")) else 404); raise HTTPException(code,detail=msg)
++        msg=str(e)
++        if msg in {'REFUND_ALREADY_PROCESSING','REFUND_LEASE_LOST'}:raise HTTPException(409,detail=msg)
++        code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(x in msg for x in ("INVALID","CHANGEABLE","REFUNDABLE","SOLD_OUT")) else 404); raise HTTPException(code,detail=msg)
+ 
+ @router.post('/v1/rail/search')
+ def search(body:SearchBody):
+--- a/src/go_hotel/attractions/service.py
++++ b/src/go_hotel/attractions/service.py
+@@ -10,6 +10,7 @@
+ from go_hotel.core.production_truth_gate import production_truth_required
+ from go_hotel.autonomy.durable import transaction,digest
+ from go_hotel.services import vertical_prebook_contract as contracts
++from go_hotel.services import vertical_refund_recovery
+ from go_hotel.db.models import VerticalPrebookContractRow
+ 
+ def now(): return datetime.now(UTC).replace(tzinfo=None)
+@@ -89,7 +90,7 @@
+  def out(self,o): return {"vertical":"ATTRACTION","order_id":o.order_id,"status":o.status,"product_id":o.product_id,"product_name":o.product_name,"product_type":o.product_type,"destination":o.destination,"visit_date":o.visit_date,"session_time":o.session_time,"ticket_type":o.ticket_type,"quantity":o.quantity,"eligibility":o.eligibility,"voucher_type":o.voucher_type,"voucher_code":o.voucher_code if o.status=="CONFIRMED" else None,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"attendees":o.attendees,"supplier_reference":o.supplier_reference if o.status=="CONFIRMED" else None,"external_live":False}
+  def get(self,account,order_id):
+   with SessionLocal() as s:
+-   o=s.get(AttractionOrderRow,order_id)
++   o=s.get(AttractionOrderRow,order_id,with_for_update=True)
+    if not o or o.account_id!=account: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
+    out=self.out(o);out["evidence"]=list_vertical_evidence(s,"ATTRACTION",order_id);return out
+  def trips(self,account):
+@@ -101,37 +102,33 @@
+   self._catalog(order["product_id"],new_visit_date,new_session_time or order["session_time"],order["currency"])
+   if order["status"]!="CONFIRMED": raise ValueError("ATTRACTION_ORDER_NOT_CHANGEABLE")
+   if not x["changeable"]: raise ValueError("ATTRACTION_NOT_CHANGEABLE")
+-  with SessionLocal.begin() as s:
++  with transaction(SessionLocal) as s:
+    q=AttractionChangeQuoteRow(quote_id=new_id("attr_chg"),order_id=order_id,new_visit_date=new_visit_date,new_session_time=new_session_time or order["session_time"],change_fee_minor=0,total_due_minor=0,currency=order["currency"],status="QUOTED",expires_at=now()+timedelta(minutes=10),created_at=now());s.add(q);s.flush();return {"quote_id":q.quote_id,"order_id":order_id,"new_visit_date":q.new_visit_date,"new_session_time":q.new_session_time,"change_fee_minor":0,"total_due_minor":0,"currency":q.currency,"expires_at":q.expires_at.isoformat()}
+  def execute_change(self,account,order_id,quote_id):
+   production_truth_required("ATTRACTION", "EXECUTE_CHANGE")
+   self.get(account,order_id)
+-  with SessionLocal.begin() as s:
+-   q=s.get(AttractionChangeQuoteRow,quote_id);o=s.get(AttractionOrderRow,order_id)
++  with transaction(SessionLocal) as s:
++   o=s.get(AttractionOrderRow,order_id,with_for_update=True);q=s.get(AttractionChangeQuoteRow,quote_id,with_for_update=True)
+    if not o or o.account_id!=account or o.status!="CONFIRMED" or not q or q.order_id!=order_id or q.status!="QUOTED" or q.expires_at<now(): raise ValueError("ATTRACTION_CHANGE_QUOTE_NOT_FOUND")
+    q.status='PENDING_SUPPLIER';o.status='UNKNOWN_EXTERNAL_STATE';o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",o.order_id,"CHANGE_SUBMITTED_AWAITING_SUPPLIER",o.status,{"quote_id":quote_id,"previous_voucher_code":o.voucher_code,"previous_supplier_reference":o.supplier_reference});project_vertical_lifecycle(s,"ATTRACTION",o,"change-pending:"+quote_id,facts={"quote_id":quote_id});return self.out(o)
++ def _refund_quote_in(self,s,o):
++  x=self._order_terms(s,o.order_id)
++  fee=0 if x['refundable'] else o.total_amount_minor
++  return {'order_id':o.order_id,'refund_fee_minor':fee,'refund_amount_minor':o.total_amount_minor-fee,'currency':o.currency,'refund_to':'ORIGINAL_PAYMENT_METHOD','refundable':x['refundable']}
+  def refund_quote(self,account,order_id):
+-  production_truth_required("ATTRACTION", "REFUND_QUOTE")
+-  o=self.get(account,order_id)
+-  if o["status"]!="CONFIRMED": raise ValueError("ATTRACTION_ORDER_NOT_REFUNDABLE")
+-  with SessionLocal() as read:x=self._order_terms(read,order_id)
+-  fee=0 if x["refundable"] else o["total_amount_minor"];return {"order_id":order_id,"refund_fee_minor":fee,"refund_amount_minor":o["total_amount_minor"]-fee,"currency":o["currency"],"refund_to":"ORIGINAL_PAYMENT_METHOD","refundable":x["refundable"]}
++  production_truth_required('ATTRACTION','REFUND_QUOTE')
++  with transaction(SessionLocal) as s:
++   o=s.get(AttractionOrderRow,order_id,with_for_update=True)
++   if not o or o.account_id!=account or o.status!='CONFIRMED':raise ValueError('ATTRACTION_ORDER_NOT_REFUNDABLE')
++   return self._refund_quote_in(s,o)
+  def refund(self,account,order_id):
+-  production_truth_required("ATTRACTION", "REFUND")
+-  quote=self.refund_quote(account,order_id)
+-  if quote["refund_amount_minor"]<=0: raise ValueError("ATTRACTION_NON_REFUNDABLE")
+-  movement=vertical_money_bridge.refund('ATTRACTION',order_id,quote['refund_amount_minor'],f'attraction-refund://{order_id}',f'attraction-refund:{order_id}')
+-  if movement['state']!='CONFIRMED': raise ValueError('ATTRACTION_REFUND_MONEY_NOT_CONFIRMED')
+-  with SessionLocal.begin() as s:
+-   o=s.get(AttractionOrderRow,order_id);existing=s.scalar(select(AttractionRefundRow).where(AttractionRefundRow.order_id==order_id,AttractionRefundRow.status=='REFUND_COMPLETED').order_by(AttractionRefundRow.created_at.desc()))
+-   if existing:return {"refund_id":existing.refund_id,"order_id":order_id,"status":existing.status,"refund_amount_minor":existing.refund_amount_minor,"currency":existing.currency}
+-   if not o or o.account_id!=account or o.status!="CONFIRMED":raise ValueError("ATTRACTION_ORDER_NOT_REFUNDABLE")
+-   o.status="REFUNDED";o.updated_at=now();r=AttractionRefundRow(refund_id=new_id("attr_ref"),order_id=order_id,refund_fee_minor=quote["refund_fee_minor"],refund_amount_minor=quote["refund_amount_minor"],currency=o.currency,status="REFUND_COMPLETED",created_at=now(),completed_at=now());s.add(r);append_vertical_evidence(s,"ATTRACTION",o.order_id,"REFUND_COMPLETED",o.status,{"refund_id":r.refund_id,"refund_amount_minor":r.refund_amount_minor,"money_movement_id":movement['money_movement_id']});project_vertical_lifecycle(s,"ATTRACTION",o,"refund:"+r.refund_id,facts={"refund_id":r.refund_id,"refund_amount_minor":r.refund_amount_minor,"money_movement_id":movement['money_movement_id']});s.flush();return {"refund_id":r.refund_id,"order_id":order_id,"status":r.status,"refund_amount_minor":r.refund_amount_minor,"currency":r.currency}
++  production_truth_required('ATTRACTION','REFUND')
++  return vertical_refund_recovery.refund('ATTRACTION',account,order_id,self._refund_quote_in)
+  def redeem(self,account,order_id,evidence_reference):
+   if not str(evidence_reference or '').strip(): raise ValueError('FULFILLMENT_EVIDENCE_REQUIRED')
+   production_truth_required("ATTRACTION", "REDEEM")
+-  with SessionLocal.begin() as s:
+-   o=s.get(AttractionOrderRow,order_id)
++  with transaction(SessionLocal) as s:
++   o=s.get(AttractionOrderRow,order_id,with_for_update=True)
+    if not o or o.account_id!=account: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
+    if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
+    voucher_code=o.voucher_code; supplier_reference=o.supplier_reference
+@@ -139,8 +136,8 @@
+  def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,voucher_code=None):
+   if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
+   state=state.upper()
+-  with SessionLocal.begin() as s:
+-   o=s.get(AttractionOrderRow,order_id)
++  with transaction(SessionLocal) as s:
++   o=s.get(AttractionOrderRow,order_id,with_for_update=True)
+    if not o: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
+    pending=s.scalar(select(AttractionChangeQuoteRow).where(AttractionChangeQuoteRow.order_id==order_id,AttractionChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(AttractionChangeQuoteRow.created_at.desc()))
+    if state=="UNKNOWN_EXTERNAL_STATE":
+--- a/src/go_hotel/db/models.py
++++ b/src/go_hotel/db/models.py
+@@ -5,6 +5,27 @@
+ 
+ class Base(DeclarativeBase):
+     pass
++
++class VerticalRefundOperationRow(Base):
++    __tablename__ = 'vertical_refund_operation'
++    vertical: Mapped[str] = mapped_column(String(16), primary_key=True)
++    order_id: Mapped[str] = mapped_column(String(64), primary_key=True)
++    account_id: Mapped[str] = mapped_column(String(64), nullable=False)
++    state: Mapped[str] = mapped_column(String(16), nullable=False)
++    quote_json: Mapped[dict] = mapped_column(JSON, nullable=False)
++    adjustment_ids_json: Mapped[list] = mapped_column(JSON, nullable=False)
++    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
++    result_json: Mapped[dict | None] = mapped_column(JSON)
++    lease_token: Mapped[str | None] = mapped_column(String(64))
++    lease_until_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    attempt: Mapped[int] = mapped_column(Integer, nullable=False)
++    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
++    completed_ms: Mapped[int | None] = mapped_column(BigInteger)
++    __table_args__ = (
++        CheckConstraint("vertical IN ('RAIL','ATTRACTION')", name='ck_refund_operation_vertical'),
++        CheckConstraint("state IN ('PENDING','COMPLETED')", name='ck_refund_operation_state'),
++        CheckConstraint('attempt >= 0 AND lease_until_ms >= 0', name='ck_refund_operation_lease'),
++    )
+ 
+ class VerticalPrebookContractRow(Base):
+     __tablename__ = 'vertical_prebook_contract'
+--- a/src/go_hotel/rail/service.py
++++ b/src/go_hotel/rail/service.py
+@@ -11,6 +11,7 @@
+ from go_hotel.services.vertical_transaction_bridge import vertical_transaction_bridge
+ from go_hotel.autonomy.durable import transaction,db_now_ms
+ from go_hotel.services import vertical_prebook_contract as contracts
++from go_hotel.services import vertical_refund_recovery
+ from go_hotel.db.models import VerticalPrebookContractRow
+ 
+ def now(): return datetime.now(UTC).replace(tzinfo=None)
+@@ -139,42 +140,44 @@
+             q=RailChangeQuoteRow(quote_id=new_id("rail_chq"),order_id=order_id,new_travel_date=new_travel_date,new_train_no="G7319",new_seat_class=seat,fare_difference_minor=max(0,fare_diff),change_fee_minor=fee,total_due_minor=max(0,fare_diff)+fee,currency=o.currency,status="QUOTED",expires_at=now()+timedelta(minutes=10),created_at=now())
+             s.add(q); s.flush(); return {"quote_id":q.quote_id,"order_id":order_id,"new_travel_date":q.new_travel_date,"new_train_no":q.new_train_no,"new_seat_class":q.new_seat_class,"fare_difference_minor":q.fare_difference_minor,"change_fee_minor":q.change_fee_minor,"total_due_minor":q.total_due_minor,"currency":q.currency,"expires_at":q.expires_at.isoformat()}
+     def execute_change(self,account_id,order_id,quote_id):
+-        production_truth_required("RAIL", "EXECUTE_CHANGE")
+-        with SessionLocal() as s:
+-            o=s.get(RailOrderRow,order_id);q=s.get(RailChangeQuoteRow,quote_id)
+-            if not o or o.account_id!=account_id or o.status!="TICKETED" or not q or q.order_id!=order_id or q.status!="QUOTED" or q.expires_at<now(): raise ValueError("RAIL_CHANGE_QUOTE_INVALID")
++        production_truth_required('RAIL','EXECUTE_CHANGE')
++        with transaction(SessionLocal) as s:
++            o=s.get(RailOrderRow,order_id,with_for_update=True);q=s.get(RailChangeQuoteRow,quote_id,with_for_update=True)
++            if not o or o.account_id!=account_id or not q or q.order_id!=order_id:raise ValueError('RAIL_CHANGE_QUOTE_INVALID')
++            if q.status=='PENDING_SUPPLIER' and o.status=='UNKNOWN_EXTERNAL_STATE':return self._order(o)
++            if not (q.status=='PREPARING' and o.status=='CHANGE_PENDING'):
++                if o.status!='TICKETED' or q.status!='QUOTED' or q.expires_at.replace(tzinfo=q.expires_at.tzinfo or UTC).timestamp()*1000<=db_now_ms(s):raise ValueError('RAIL_CHANGE_QUOTE_INVALID')
++                q.status='PREPARING';o.status='CHANGE_PENDING';o.updated_at=now()
++                append_vertical_evidence(s,'RAIL',order_id,'CHANGE_PAYMENT_PREPARING',o.status,{'quote_id':quote_id})
++                project_vertical_lifecycle(s,'RAIL',o,'change-preparing:'+quote_id,facts={'quote_id':quote_id})
+             due=q.total_due_minor
+         adjustment=vertical_money_bridge.prepare_adjustment('RAIL',order_id,quote_id,due,f'rail-change://{quote_id}')
+-        with SessionLocal.begin() as s:
+-            o=s.get(RailOrderRow,order_id);q=s.get(RailChangeQuoteRow,quote_id)
+-            if not o or o.account_id!=account_id or o.status!="TICKETED" or not q or q.status!="QUOTED": raise ValueError("RAIL_CHANGE_QUOTE_INVALID")
+-            q.status="PENDING_SUPPLIER";o.status="UNKNOWN_EXTERNAL_STATE";o.updated_at=now();append_vertical_evidence(s,"RAIL",o.order_id,"CHANGE_SUBMITTED_AWAITING_SUPPLIER",o.status,{"quote_id":quote_id,"authorization_id":(adjustment or {}).get('authorization_id'),"previous_booking_reference":o.booking_reference,"previous_ticket_numbers":o.ticket_numbers});project_vertical_lifecycle(s,"RAIL",o,"change-pending:"+quote_id,facts={"quote_id":quote_id,"authorization_id":(adjustment or {}).get('authorization_id')});return self._order(o)
++        with transaction(SessionLocal) as s:
++            o=s.get(RailOrderRow,order_id,with_for_update=True);q=s.get(RailChangeQuoteRow,quote_id,with_for_update=True)
++            if not o or o.account_id!=account_id or not q or q.order_id!=order_id:raise ValueError('RAIL_CHANGE_QUOTE_INVALID')
++            if q.status=='PENDING_SUPPLIER' and o.status=='UNKNOWN_EXTERNAL_STATE':return self._order(o)
++            if o.status!='CHANGE_PENDING' or q.status!='PREPARING':raise ValueError('RAIL_CHANGE_QUOTE_INVALID')
++            q.status='PENDING_SUPPLIER';o.status='UNKNOWN_EXTERNAL_STATE';o.updated_at=now()
++            facts={'quote_id':quote_id,'authorization_id':(adjustment or {}).get('authorization_id'),'previous_booking_reference':o.booking_reference,'previous_ticket_numbers':o.ticket_numbers}
++            append_vertical_evidence(s,'RAIL',order_id,'CHANGE_SUBMITTED_AWAITING_SUPPLIER',o.status,facts)
++            project_vertical_lifecycle(s,'RAIL',o,'change-pending:'+quote_id,facts=facts)
++            return self._order(o)
++    def _refund_quote_in(self,s,o):
++        count=contracts.party_count(len(o.passengers or []))
++        terms=self._terms(s,o)
++        if not terms['refund_policy']['allowed']:raise ValueError('RAIL_ORDER_NOT_REFUNDABLE')
++        retained=sum(q.change_fee_minor for q in s.scalars(select(RailChangeQuoteRow).where(RailChangeQuoteRow.order_id==o.order_id,RailChangeQuoteRow.status=='EXECUTED')))
++        fee=terms['refund_policy']['fee_minor']*count+retained
++        return {'order_id':o.order_id,'refund_fee_minor':fee,'refund_amount_minor':max(0,o.total_amount_minor-fee),'currency':o.currency,'refund_to':'ORIGINAL_PAYMENT_METHOD'}
+     def refund_quote(self,account_id,order_id):
+-        production_truth_required("RAIL", "REFUND_QUOTE")
+-        with SessionLocal() as s:
+-            o=s.get(RailOrderRow,order_id)
+-            if not o or o.account_id!=account_id or o.status!="TICKETED": raise ValueError("RAIL_ORDER_NOT_REFUNDABLE")
+-            count=contracts.party_count(len(o.passengers or []))
+-            terms=self._terms(s,o)
+-            if not terms['refund_policy']['allowed']:raise ValueError('RAIL_ORDER_NOT_REFUNDABLE')
+-            retained=sum(q.change_fee_minor for q in s.scalars(select(RailChangeQuoteRow).where(RailChangeQuoteRow.order_id==order_id,RailChangeQuoteRow.status=='EXECUTED')))
+-            fee=terms['refund_policy']['fee_minor']*count+retained; amount=max(0,o.total_amount_minor-fee)
+-            return {"order_id":order_id,"refund_fee_minor":fee,"refund_amount_minor":amount,"currency":o.currency,"refund_to":"ORIGINAL_PAYMENT_METHOD"}
++        production_truth_required('RAIL','REFUND_QUOTE')
++        with transaction(SessionLocal) as s:
++            o=s.get(RailOrderRow,order_id,with_for_update=True)
++            if not o or o.account_id!=account_id or o.status!='TICKETED':raise ValueError('RAIL_ORDER_NOT_REFUNDABLE')
++            return self._refund_quote_in(s,o)
+     def refund(self,account_id,order_id):
+-        production_truth_required("RAIL", "REFUND")
+-        quote=self.refund_quote(account_id,order_id)
+-        with SessionLocal() as s:
+-            adjustment_ids=list(s.scalars(select(RailChangeQuoteRow.quote_id).where(RailChangeQuoteRow.order_id==order_id,RailChangeQuoteRow.status=='EXECUTED').order_by(RailChangeQuoteRow.created_at,RailChangeQuoteRow.quote_id)))
+-        movement=vertical_money_bridge.refund_with_adjustments('RAIL',order_id,adjustment_ids,quote['refund_amount_minor'],f'rail-refund://{order_id}',f'rail-refund:{order_id}')
+-        if movement['state']!='CONFIRMED': raise ValueError('RAIL_REFUND_MONEY_NOT_CONFIRMED')
+-        with SessionLocal.begin() as s:
+-            o=s.get(RailOrderRow,order_id)
+-            existing=s.scalar(select(RailRefundRow).where(RailRefundRow.order_id==order_id,RailRefundRow.status=='REFUND_COMPLETED').order_by(RailRefundRow.created_at.desc()))
+-            if existing:return {"refund_id":existing.refund_id,"order_id":order_id,"status":existing.status,"refund_fee_minor":existing.refund_fee_minor,"refund_amount_minor":existing.refund_amount_minor,"currency":existing.currency}
+-            if not o or o.account_id!=account_id or o.status!="TICKETED": raise ValueError("RAIL_ORDER_NOT_REFUNDABLE")
+-            r=RailRefundRow(refund_id=new_id("rail_ref"),order_id=order_id,refund_fee_minor=quote['refund_fee_minor'],refund_amount_minor=quote['refund_amount_minor'],currency=o.currency,status="REFUND_COMPLETED",created_at=now(),completed_at=now())
+-            o.status="REFUNDED"; o.updated_at=now(); s.add(r); append_vertical_evidence(s,"RAIL",o.order_id,"REFUND_COMPLETED",o.status,{"refund_id":r.refund_id,"refund_amount_minor":r.refund_amount_minor,"money_movement_id":movement['money_movement_id']}); project_vertical_lifecycle(s,"RAIL",o,"refund:"+r.refund_id,facts={"refund_id":r.refund_id,"refund_amount_minor":r.refund_amount_minor,"money_movement_id":movement['money_movement_id']}); s.flush()
+-            return {"refund_id":r.refund_id,"order_id":order_id,"status":r.status,"refund_fee_minor":r.refund_fee_minor,"refund_amount_minor":r.refund_amount_minor,"currency":o.currency}
++        production_truth_required('RAIL','REFUND')
++        return vertical_refund_recovery.refund('RAIL',account_id,order_id,self._refund_quote_in)
+     def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,ticket_numbers=None):
+         if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
+         state=state.upper();ticket_numbers=ticket_numbers or []
+@@ -198,8 +201,8 @@
+                 movement=s.get(OmnichannelMoneyMovementRow,money[key]) if money and money.get(key) else None
+                 if not root or not movement or movement.root_payment_intent_id!=root.payment_intent_id or movement.state!='CONFIRMED' or movement.amount_minor!=due or movement.movement_type!=('CAPTURE' if state=='TICKETED' else 'RELEASE'):
+                     raise ValueError('RAIL_CHANGE_MONEY_NOT_CONFIRMED')
+-        with SessionLocal.begin() as sess:
+-            o=sess.get(RailOrderRow,order_id);pending=sess.scalar(select(RailChangeQuoteRow).where(RailChangeQuoteRow.order_id==order_id,RailChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(RailChangeQuoteRow.created_at.desc()))
++        with transaction(SessionLocal) as sess:
++            o=sess.get(RailOrderRow,order_id,with_for_update=True);pending=sess.scalar(select(RailChangeQuoteRow).where(RailChangeQuoteRow.order_id==order_id,RailChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(RailChangeQuoteRow.created_at.desc()))
+             if not o: raise ValueError("RAIL_ORDER_NOT_FOUND")
+             if state=="UNKNOWN_EXTERNAL_STATE":
+                 if o.status!="TICKETED":raise ValueError("RAIL_ILLEGAL_STATE_TRANSITION")
+--- a/src/go_hotel/services/vertical_refund_recovery.py
++++ b/src/go_hotel/services/vertical_refund_recovery.py
+@@ -0,0 +1,177 @@
++"""Durable whole-order refunds for the isolated rail and attraction executors.
++
++Freeze the amount and capture list before money moves. A short database lease
++limits concurrent retries; provider idempotency remains the money-side fence.
++Unknown money outcomes stay pending and never restore a changeable order.
++"""
++from datetime import UTC, datetime
++from uuid import uuid4
++
++from sqlalchemy import select
++
++from go_hotel.autonomy.durable import db_now_ms, digest, transaction
++from go_hotel.db.session import SessionLocal
++from go_hotel.db.models import (
++    VerticalRefundOperationRow as Operation, RailOrderRow, AttractionOrderRow,
++    RailRefundRow, AttractionRefundRow, RailChangeQuoteRow,
++    OmnichannelMoneyMovementRow as Movement, OmnichannelPaymentIntentRow as Intent,
++    PaymentOrderRootRow as Root,
++)
++from go_hotel.domain.models import new_id
++from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence
++from go_hotel.services.vertical_lifecycle_projection import project_vertical_lifecycle
++from go_hotel.services.vertical_money_bridge import vertical_money_bridge
++
++MODELS = {'RAIL': (RailOrderRow, RailRefundRow, 'TICKETED'),
++          'ATTRACTION': (AttractionOrderRow, AttractionRefundRow, 'CONFIRMED')}
++LEASE_MS = 30000
++
++
++def _now():
++    return datetime.now(UTC).replace(tzinfo=None)
++
++
++def _identity(row):
++    return {'vertical': row.vertical, 'order_id': row.order_id, 'account_id': row.account_id,
++            'quote': row.quote_json, 'adjustments': row.adjustment_ids_json}
++
++
++def _locked_order(s, vertical, order_id, account):
++    model = MODELS[vertical][0]
++    order = s.scalar(select(model).where(model.order_id == order_id).with_for_update())
++    if not order or order.account_id != account:
++        raise ValueError(f'{vertical}_ORDER_NOT_FOUND')
++    return order
++
++
++def _operation(s, vertical, order_id):
++    return s.scalar(select(Operation).where(Operation.vertical == vertical,
++                    Operation.order_id == order_id).with_for_update())
++
++
++def _verify(row, account):
++    if row.account_id != account or row.request_hash != digest(_identity(row)):
++        raise ValueError('REFUND_OPERATION_INTEGRITY_INVALID')
++
++
++def _confirmed_money_in(s, row, result):
++    ids = result.get('money_movement_ids') or [result.get('money_movement_id')]
++    if not ids or any(not x for x in ids) or len(set(ids)) != len(ids):
++        raise ValueError('REFUND_MONEY_NOT_CONFIRMED')
++    roots = [(row.vertical + '_ORDER', row.order_id)]
++    roots += [(row.vertical + '_CHANGE', x) for x in row.adjustment_ids_json]
++    allowed = set()
++    for business_type, business_id in roots:
++        root = s.scalar(select(Root).where(Root.business_type == business_type,
++                                           Root.business_id == business_id))
++        intent = s.get(Intent, root.payment_intent_id) if root else None
++        if not intent or intent.payer_id != row.account_id or intent.currency != row.quote_json['currency']:
++            raise ValueError('REFUND_PAYMENT_OWNER_OR_CURRENCY_INVALID')
++        allowed.add(root.payment_intent_id)
++    total = 0
++    for mid in ids:
++        money = s.get(Movement, mid)
++        parent = s.get(Movement, money.parent_movement_id) if money else None
++        if (not money or money.state != 'CONFIRMED' or money.movement_type != 'REFUND'
++                or money.root_payment_intent_id not in allowed or not parent
++                or parent.movement_type != 'CAPTURE' or parent.state != 'CONFIRMED'
++                or parent.root_payment_intent_id != money.root_payment_intent_id
++                or money.currency != row.quote_json['currency']):
++            raise ValueError('REFUND_MONEY_NOT_CONFIRMED')
++        total += money.amount_minor
++    if total != row.quote_json['refund_amount_minor']:
++        raise ValueError('REFUND_CONFIRMED_AMOUNT_MISMATCH')
++    return ids
++
++
++def refund(vertical, account, order_id, quote_in):
++    """quote_in receives the same locked session/order used to start the refund."""
++    if vertical not in MODELS:
++        raise ValueError('REFUND_VERTICAL_INVALID')
++    with transaction(SessionLocal) as s:
++        order = _locked_order(s, vertical, order_id, account)
++        op = _operation(s, vertical, order_id)
++        if op:
++            _verify(op, account)
++            if op.state == 'COMPLETED':
++                if order.status != 'REFUNDED':
++                    raise ValueError('REFUND_ORDER_STATE_INVALID')
++                return dict(op.result_json)
++            if order.status != 'REFUND_PENDING':
++                raise ValueError('REFUND_ORDER_STATE_INVALID')
++        else:
++            if order.status != MODELS[vertical][2]:
++                raise ValueError(f'{vertical}_ORDER_NOT_REFUNDABLE')
++            quote = quote_in(s, order)
++            if type(quote['refund_amount_minor']) is not int or quote['refund_amount_minor'] <= 0:
++                raise ValueError(f'{vertical}_NON_REFUNDABLE')
++            adjustments = list(s.scalars(select(RailChangeQuoteRow.quote_id).where(
++                RailChangeQuoteRow.order_id == order_id, RailChangeQuoteRow.status == 'EXECUTED'
++            ).order_by(RailChangeQuoteRow.created_at, RailChangeQuoteRow.quote_id))) if vertical == 'RAIL' else []
++            op = Operation(vertical=vertical, order_id=order_id, account_id=account,
++                           state='PENDING', quote_json=quote, adjustment_ids_json=adjustments,
++                           request_hash='', result_json=None, lease_token=None, lease_until_ms=0,
++                           attempt=0, created_ms=db_now_ms(s), completed_ms=None)
++            op.request_hash = digest(_identity(op))
++            s.add(op)
++            order.status = 'REFUND_PENDING'
++            order.updated_at = _now()
++            append_vertical_evidence(s, vertical, order_id, 'REFUND_REQUESTED', order.status,
++                                     {'amount_minor': quote['refund_amount_minor'], 'request_hash': op.request_hash})
++            project_vertical_lifecycle(s, vertical, order, f'{vertical.lower()}-refund-pending://{order_id}')
++        now = db_now_ms(s)
++        if op.lease_token and op.lease_until_ms > now:
++            raise ValueError('REFUND_ALREADY_PROCESSING')
++        token = uuid4().hex
++        op.lease_token = token
++        op.lease_until_ms = now + LEASE_MS
++        op.attempt += 1
++        quote = dict(op.quote_json)
++        adjustments = list(op.adjustment_ids_json)
++    try:
++        prefix = 'rail' if vertical == 'RAIL' else 'attraction'
++        movement = vertical_money_bridge.refund_with_adjustments(
++            vertical, order_id, adjustments, quote['refund_amount_minor'],
++            f'{prefix}-refund://{order_id}', f'{prefix}-refund:{order_id}')
++        if movement.get('state') != 'CONFIRMED':
++            raise ValueError(f'{vertical}_REFUND_MONEY_NOT_CONFIRMED')
++        with transaction(SessionLocal) as s:
++            order = _locked_order(s, vertical, order_id, account)
++            op = _operation(s, vertical, order_id)
++            _verify(op, account)
++            if op.state == 'COMPLETED':
++                return dict(op.result_json)
++            if op.lease_token != token or op.lease_until_ms <= db_now_ms(s):
++                raise ValueError('REFUND_LEASE_LOST')
++            if order.status != 'REFUND_PENDING':
++                raise ValueError('REFUND_ORDER_STATE_INVALID')
++            ids = _confirmed_money_in(s, op, movement)
++            record = MODELS[vertical][1](refund_id=new_id('rail_ref' if vertical == 'RAIL' else 'attr_ref'),
++                order_id=order_id, refund_fee_minor=quote['refund_fee_minor'],
++                refund_amount_minor=quote['refund_amount_minor'], currency=quote['currency'],
++                status='REFUND_COMPLETED', created_at=_now(), completed_at=_now())
++            s.add(record)
++            result = {'refund_id': record.refund_id, 'order_id': order_id, 'status': record.status,
++                      'refund_fee_minor': record.refund_fee_minor, 'refund_amount_minor': record.refund_amount_minor,
++                      'currency': record.currency}
++            order.status = 'REFUNDED'
++            order.updated_at = _now()
++            op.state = 'COMPLETED'
++            op.result_json = result
++            op.completed_ms = db_now_ms(s)
++            op.lease_token = None
++            op.lease_until_ms = 0
++            facts = {**result, 'money_movement_ids': ids, 'money_movement_id': ids[0]}
++            append_vertical_evidence(s, vertical, order_id, 'REFUND_COMPLETED', order.status, facts)
++            project_vertical_lifecycle(s, vertical, order, 'refund:' + record.refund_id, facts=facts)
++            return result
++    except Exception:
++        # Keep the frozen refund and REFUND_PENDING state. An ambiguous money
++        # result is reconciled by the money ledger, never replaced with a new key.
++        with transaction(SessionLocal) as s:
++            _locked_order(s, vertical, order_id, account)
++            op = _operation(s, vertical, order_id)
++            if op and op.state == 'PENDING' and op.lease_token == token:
++                op.lease_token = None
++                op.lease_until_ms = 0
++        raise
+--- a/tests/test_depth21_refund_recovery.py
++++ b/tests/test_depth21_refund_recovery.py
+@@ -0,0 +1,200 @@
++import os
++import sqlite3
++import subprocess
++import sys
++from concurrent.futures import ThreadPoolExecutor
++from threading import Event
++
++import pytest
++from sqlalchemy import select
++from go_hotel.db.session import SessionLocal, engine
++from go_hotel.db.models import (VerticalRefundOperationRow as Operation, RailOrderRow, AttractionOrderRow,
++    RailRefundRow, AttractionRefundRow, OmnichannelMoneyMovementRow as Movement, RailChangeQuoteRow)
++from go_hotel.rail.service import rail_service
++from go_hotel.attractions.service import attraction_service
++from go_hotel.services import vertical_refund_recovery as recovery
++from go_hotel.services.vertical_transaction_bridge import vertical_transaction_bridge
++from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as supplier
++
++
++def booked(vertical, owner='refund-owner'):
++    if vertical == 'RAIL':
++        offer=rail_service.search('SHA','HZH','2026-09-15')[0]
++        q=rail_service.prebook(offer['offer_id'],2)
++        order=rail_service.create_order(owner,q['prebook_id'],[{'full_name':'A'},{'full_name':'B'}])
++        rail_service.checkout(owner,order['order_id'],'isolated')
++        service=rail_service
++    else:
++        q=attraction_service.prebook('tokyo_skytree','2026-09-15',2)
++        order=attraction_service.create_order(owner,{'prebook_id':q['prebook_id'],'offer_id':'tokyo_skytree',
++            'visit_date':'2026-09-15','quantity':2,'attendees':[{'full_name':'A'},{'full_name':'B'}]})
++        service=attraction_service
++    tx=vertical_transaction_bridge.checkout_contract(vertical,order['order_id'],owner,'test-source','isolated://refund')
++    supplier.record_supplier_fact(tx['supplier_fulfillment_id'],{'state':'SUPPLIER_CONFIRMED',
++        'external_operation_id':'op-'+order['order_id'],'supplier_confirmation_reference':'booking-'+order['order_id'],
++        'ticket_numbers':['T-A','T-B'],'voucher_code':'V-'+order['order_id'],'evidence_reference':'isolated://confirmed'})
++    return service,owner,order['order_id']
++
++
++def row_state(vertical,oid):
++    with SessionLocal() as s:
++        return s.get(RailOrderRow if vertical=='RAIL' else AttractionOrderRow,oid).status
++
++
++def refunded_movements():
++    with SessionLocal() as s:return list(s.scalars(select(Movement).where(Movement.movement_type=='REFUND')))
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_refund_retry_returns_same_receipt_and_one_money_movement(vertical):
++    svc,owner,oid=booked(vertical)
++    first=svc.refund(owner,oid)
++    assert svc.refund(owner,oid)==first
++    assert len(refunded_movements())==1
++    with SessionLocal() as s:
++        op=s.get(Operation,(vertical,oid))
++        assert op.state=='COMPLETED' and op.attempt==1 and op.lease_token is None
++        model=RailRefundRow if vertical=='RAIL' else AttractionRefundRow
++        assert len(list(s.scalars(select(model).where(model.order_id==oid))))==1
++    with pytest.raises(ValueError,match='NOT_FOUND'):svc.refund('other-owner',oid)
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_money_confirmed_then_order_commit_failure_recovers_without_refund_resend(vertical,monkeypatch):
++    svc,owner,oid=booked(vertical)
++    original=recovery.project_vertical_lifecycle
++    def fail(s,v,o,*args,**kw):
++        if o.status=='REFUNDED':raise RuntimeError('CRASH_AFTER_MONEY')
++        return original(s,v,o,*args,**kw)
++    monkeypatch.setattr(recovery,'project_vertical_lifecycle',fail)
++    with pytest.raises(RuntimeError,match='CRASH_AFTER_MONEY'):svc.refund(owner,oid)
++    assert row_state(vertical,oid)=='REFUND_PENDING'
++    assert len(refunded_movements())==1
++    monkeypatch.setattr(recovery,'project_vertical_lifecycle',original)
++    assert svc.refund(owner,oid)['status']=='REFUND_COMPLETED'
++    assert len(refunded_movements())==1
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem(vertical,monkeypatch):
++    svc,owner,oid=booked(vertical)
++    q=svc.change_quote(owner,oid,'2026-09-16')
++    entered=Event();finish=Event();original=recovery.vertical_money_bridge.refund_with_adjustments
++    def paused(*args,**kw):
++        entered.set();assert finish.wait(10)
++        return original(*args,**kw)
++    monkeypatch.setattr(recovery.vertical_money_bridge,'refund_with_adjustments',paused)
++    with ThreadPoolExecutor(max_workers=2) as pool:
++        task=pool.submit(svc.refund,owner,oid)
++        try:
++            assert entered.wait(10)
++            with pytest.raises(ValueError,match='ALREADY_PROCESSING'):svc.refund(owner,oid)
++            with pytest.raises(ValueError):svc.execute_change(owner,oid,q['quote_id'])
++            if vertical=='ATTRACTION':
++                with pytest.raises(ValueError):svc.redeem(owner,oid,'isolated://entry')
++        finally:finish.set()
++        assert task.result()['status']=='REFUND_COMPLETED'
++    assert len(refunded_movements())==1
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_unknown_money_remains_pending_and_cannot_change(vertical,monkeypatch):
++    svc,owner,oid=booked(vertical)
++    monkeypatch.setattr(recovery.vertical_money_bridge,'refund_with_adjustments',lambda *a,**kw:{'state':'UNKNOWN_EXTERNAL_STATE'})
++    with pytest.raises(ValueError,match='MONEY_NOT_CONFIRMED'):svc.refund(owner,oid)
++    assert row_state(vertical,oid)=='REFUND_PENDING'
++    with pytest.raises(ValueError):svc.change_quote(owner,oid,'2026-09-16')
++    assert not refunded_movements()
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_fabricated_confirmation_cannot_complete_refund(vertical,monkeypatch):
++    svc,owner,oid=booked(vertical)
++    monkeypatch.setattr(recovery.vertical_money_bridge,'refund_with_adjustments',lambda *a,**kw:{'state':'CONFIRMED','money_movement_id':'absent'})
++    with pytest.raises(ValueError,match='MONEY_NOT_CONFIRMED'):svc.refund(owner,oid)
++    assert row_state(vertical,oid)=='REFUND_PENDING'
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_refund_receipt_for_another_order_cannot_complete_this_order(vertical,monkeypatch):
++    svc,owner,oid=booked(vertical)
++    svc2,owner2,oid2=booked(vertical,'different-owner')
++    svc2.refund(owner2,oid2)
++    mid=refunded_movements()[0].money_movement_id
++    monkeypatch.setattr(recovery.vertical_money_bridge,'refund_with_adjustments',lambda *a,**kw:{'state':'CONFIRMED','money_movement_id':mid})
++    with pytest.raises(ValueError,match='MONEY_NOT_CONFIRMED'):svc.refund(owner,oid)
++    assert row_state(vertical,oid)=='REFUND_PENDING'
++
++
++@pytest.mark.parametrize('vertical',['RAIL','ATTRACTION'])
++def test_process_exit_after_money_can_resume_only_after_lease_expiry(vertical):
++    svc,owner,oid=booked(vertical)
++    code='''import os
++from go_hotel.services import vertical_refund_recovery as r
++from go_hotel.rail.service import rail_service
++from go_hotel.attractions.service import attraction_service
++original=r.vertical_money_bridge.refund_with_adjustments
++def crash(*a,**kw):
++ original(*a,**kw)
++ os._exit(71)
++r.vertical_money_bridge.refund_with_adjustments=crash
++(rail_service if os.environ['CASE_VERTICAL']=='RAIL' else attraction_service).refund(os.environ['CASE_OWNER'],os.environ['CASE_ORDER'])
++'''
++    env={**os.environ,'PYTHONPATH':os.path.abspath('src'),'DATABASE_URL':str(engine.url),
++        'CASE_VERTICAL':vertical,'CASE_OWNER':owner,'CASE_ORDER':oid}
++    proc=subprocess.run([sys.executable,'-c',code],env=env,capture_output=True,timeout=30)
++    assert proc.returncode==71,proc.stderr.decode()
++    assert row_state(vertical,oid)=='REFUND_PENDING' and len(refunded_movements())==1
++    with pytest.raises(ValueError,match='ALREADY_PROCESSING'):svc.refund(owner,oid)
++    # Advance the isolated persisted lease, not wall-clock sleep or a production clock.
++    with SessionLocal.begin() as s:s.get(Operation,(vertical,oid)).lease_until_ms=1
++    assert svc.refund(owner,oid)['status']=='REFUND_COMPLETED'
++    assert len(refunded_movements())==1
++
++
++def test_rail_change_reserves_order_before_authorization_and_resumes_after_crash(monkeypatch):
++    svc,owner,oid=booked('RAIL');q=svc.change_quote(owner,oid,'2026-09-16')
++    original=recovery.vertical_money_bridge.prepare_adjustment
++    def crash(*args,**kw):
++        original(*args,**kw);raise RuntimeError('AUTHORIZATION_COMMITTED')
++    monkeypatch.setattr(recovery.vertical_money_bridge,'prepare_adjustment',crash)
++    with pytest.raises(RuntimeError,match='AUTHORIZATION_COMMITTED'):svc.execute_change(owner,oid,q['quote_id'])
++    assert row_state('RAIL',oid)=='CHANGE_PENDING'
++    with pytest.raises(ValueError,match='NOT_REFUNDABLE'):svc.refund(owner,oid)
++    monkeypatch.setattr(recovery.vertical_money_bridge,'prepare_adjustment',original)
++    assert svc.execute_change(owner,oid,q['quote_id'])['status']=='UNKNOWN_EXTERNAL_STATE'
++    assert svc.execute_change(owner,oid,q['quote_id'])['status']=='UNKNOWN_EXTERNAL_STATE'
++    with SessionLocal() as s:
++        assert len(list(s.scalars(select(Movement).where(Movement.movement_type=='AUTHORIZATION'))))==2
++        assert s.get(RailChangeQuoteRow,q['quote_id']).status=='PENDING_SUPPLIER'
++
++
++def test_mutated_frozen_quote_is_rejected_before_more_money_moves(monkeypatch):
++    svc,owner,oid=booked('RAIL');original=recovery.vertical_money_bridge.refund_with_adjustments
++    monkeypatch.setattr(recovery.vertical_money_bridge,'refund_with_adjustments',lambda *a,**kw:(_ for _ in ()).throw(RuntimeError('offline')))
++    with pytest.raises(RuntimeError):svc.refund(owner,oid)
++    with SessionLocal.begin() as s:
++        row=s.get(Operation,('RAIL',oid));row.quote_json=dict(row.quote_json,refund_amount_minor=1)
++    monkeypatch.setattr(recovery.vertical_money_bridge,'refund_with_adjustments',original)
++    with pytest.raises(ValueError,match='INTEGRITY'):svc.refund(owner,oid)
++    assert not refunded_movements()
++
++
++@pytest.mark.no_db
++def test_migration_roundtrip_preserves_prior_history_and_blocks_journal_loss(tmp_path,monkeypatch):
++    from alembic import command
++    from alembic.config import Config
++    from go_hotel.core.config import settings
++    db=tmp_path/'recovery.sqlite3';url='sqlite+pysqlite:///'+str(db)
++    monkeypatch.setattr(settings,'database_url',url)
++    config=Config('alembic.ini');config.set_main_option('sqlalchemy.url',url)
++    with sqlite3.connect(db) as c:c.execute('CREATE TABLE old_record (id TEXT)');c.execute("INSERT INTO old_record VALUES ('keep')")
++    command.stamp(config,'0127_vertical_prebook_contract');command.upgrade(config,'0128_vertical_refund_recovery')
++    command.downgrade(config,'0127_vertical_prebook_contract');command.upgrade(config,'0128_vertical_refund_recovery')
++    with sqlite3.connect(db) as c:
++        c.execute("INSERT INTO vertical_refund_operation (vertical,order_id,account_id,state,quote_json,adjustment_ids_json,request_hash,lease_until_ms,attempt,created_ms) VALUES ('RAIL','order','owner','PENDING','{}','[]','hash',0,0,0)")
++    with pytest.raises(RuntimeError,match='DATA_PRESENT'):command.downgrade(config,'0127_vertical_prebook_contract')
++    with sqlite3.connect(db) as c:
++        assert c.execute('SELECT id FROM old_record').fetchone()[0]=='keep'
++        assert c.execute('SELECT version_num FROM alembic_version').fetchone()[0]=='0128_vertical_refund_recovery'
++        assert c.execute('SELECT count(*) FROM vertical_refund_operation').fetchone()[0]==1
+--- a/tests/test_parent_implementation_code_review_debt_closure.py
++++ b/tests/test_parent_implementation_code_review_debt_closure.py
+@@ -148,7 +148,7 @@
+ 
+     heads = subprocess.run([sys.executable, "-m", "alembic", "heads"], env=env, text=True, capture_output=True, check=True)
+     head_lines = [line.strip() for line in heads.stdout.splitlines() if line.strip().endswith("(head)")]
+-    assert head_lines == ["0127_vertical_prebook_contract (head)"]
++    assert head_lines == ["0128_vertical_refund_recovery (head)"]
+ 
+     subprocess.run([sys.executable, "-m", "alembic", "upgrade", "0114_ext_truth_incident_hard"], env=env, text=True, capture_output=True, check=True)
+     conn = sqlite3.connect(db)
+--- a/tests_frontend/vertical_refund_recovery.test.mjs
++++ b/tests_frontend/vertical_refund_recovery.test.mjs
+@@ -0,0 +1,37 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import vm from 'node:vm';
++const code=fs.readFileSync('frontend/consumer/app.js','utf8');
++const helpers=code.slice(code.indexOf('async function submitVerticalRefund('),code.indexOf('async function railRefund('));
++function setup(vertical='RAIL',error=null){
++ const calls=[],order={order_id:'owned-order',status:'REFUND_PENDING'};
++ const c={state:{railOrder:order,attractionOrder:order},crypto:{randomUUID:()=> 'request-21'},Error,
++  api:async(path,options)=>{calls.push({path,options});if(options&&error)throw Error(error);return options?{status:'REFUND_COMPLETED'}:{...order,status:'REFUNDED'}},
++  renderRailOrder:()=>calls.push({render:'RAIL'}),renderAttractionOrder:()=>calls.push({render:'ATTRACTION'}),
++  uxConfirm:options=>options};
++ vm.createContext(c);vm.runInContext(helpers,c);return {c,calls,order};
++}
++for(const vertical of ['RAIL','ATTRACTION']){
++ test(`${vertical}: opening recovery does not send a refund until confirmed`,async()=>{
++  const s=setup(vertical),dialog=s.c.resumeVerticalRefund(vertical);assert.equal(s.calls.length,0);
++  await dialog.onConfirm();assert.equal(s.calls.filter(x=>x.options?.method==='POST').length,1);
++  assert.equal(s.calls[0].options.headers['Idempotency-Key'],'request-21');
++  assert.match(s.calls[0].path,/owned-order\/refund$/);assert.equal(s.calls.at(-1).render,vertical);
++ });
++ test(`${vertical}: failed response still reloads persisted order state`,async()=>{
++  const s=setup(vertical,'connection lost');await assert.rejects(s.c.submitVerticalRefund(vertical,'owned-order'),/connection lost/);
++  assert.equal(s.calls[1].options,undefined);assert.equal(s.calls.at(-1).render,vertical);
++ });
++}
++test('busy recovery gives a customer message and refreshes the existing order',async()=>{
++ const s=setup('RAIL','REFUND_ALREADY_PROCESSING');await assert.rejects(s.c.submitVerticalRefund('RAIL','owned-order'),/原退款正在核对/);
++ assert.equal(s.c.state.railOrder.status,'REFUNDED');
++});
++test('rail interrupted change confirms the original quote instead of creating another',async()=>{
++ const start=code.indexOf('async function railResumeChange('),end=code.indexOf('async function railReload(',start);
++ let dialog;const calls=[];const c={state:{railOrder:{order_id:'order21',change_quotes:[{quote_id:'quote21',status:'PREPARING'}]}},
++  toast:()=>{},uxConfirm:x=>{dialog=x},crypto:{randomUUID:()=> 'resume21'},api:async(p,b)=>calls.push({p,b}),railReload:async()=>calls.push({reload:true})};
++ vm.createContext(c);vm.runInContext(code.slice(start,end),c);await c.railResumeChange();assert.equal(calls.length,0);
++ await dialog.onConfirm();assert.match(calls[0].p,/execute-change\/quote21$/);assert.equal(calls.at(-1).reload,true);
++});

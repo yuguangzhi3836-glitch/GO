@@ -1,0 +1,76 @@
+{
+  "baseline_tests": 1487,
+  "current_tests": 1504,
+  "removed": [],
+  "added": [
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem[ATTRACTION]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem[RAIL]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_fabricated_confirmation_cannot_complete_refund[ATTRACTION]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_fabricated_confirmation_cannot_complete_refund[RAIL]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_migration_roundtrip_preserves_prior_history_and_blocks_journal_loss"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_money_confirmed_then_order_commit_failure_recovers_without_refund_resend[ATTRACTION]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_money_confirmed_then_order_commit_failure_recovers_without_refund_resend[RAIL]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_mutated_frozen_quote_is_rejected_before_more_money_moves"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_process_exit_after_money_can_resume_only_after_lease_expiry[ATTRACTION]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_process_exit_after_money_can_resume_only_after_lease_expiry[RAIL]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_rail_change_reserves_order_before_authorization_and_resumes_after_crash"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_refund_receipt_for_another_order_cannot_complete_this_order[ATTRACTION]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_refund_receipt_for_another_order_cannot_complete_this_order[RAIL]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_refund_retry_returns_same_receipt_and_one_money_movement[ATTRACTION]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_refund_retry_returns_same_receipt_and_one_money_movement[RAIL]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_unknown_money_remains_pending_and_cannot_change[ATTRACTION]"
+    ],
+    [
+      "tests.test_depth21_refund_recovery",
+      "test_unknown_money_remains_pending_and_cannot_change[RAIL]"
+    ]
+  ],
+  "all_prior_cases_retained": true
+}

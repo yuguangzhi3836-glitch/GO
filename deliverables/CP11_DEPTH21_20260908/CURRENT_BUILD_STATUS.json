@@ -1,0 +1,78 @@
+{
+  "build": "CP11_DEPTH_21_REFUND_RECOVERY",
+  "FINAL_RELEASE_GATE": "HOLD",
+  "engineering_complete": false,
+  "deployed": false,
+  "baseline": {
+    "parent_sha256": "8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb",
+    "depth17_work_sha256": "1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79",
+    "depth20_delta_sha256": "f59dc37a09cd103b04d82b9fc06c0443bd6b79d346acb304dd47fe17365089f4",
+    "depth20_commit": "fadcdcaf00ebfa84d56ebbff0c2cd448a68aa263"
+  },
+  "python": {
+    "tests": 1504,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 6,
+    "passed": 1498,
+    "seconds": 635.432,
+    "one_clean_full_run": true,
+    "source_unchanged": true,
+    "report": "full_regression_final.xml"
+  },
+  "targeted_runtime": {
+    "tests": 42,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 42,
+    "seconds": 17.741
+  },
+  "independent_restored_runtime": {
+    "tests": 42,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 42,
+    "seconds": 19.442
+  },
+  "frontend": {
+    "logic": {
+      "tests": 105,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 105,
+      "seconds": 0.363
+    },
+    "syntax": {
+      "node": "v24.19.0",
+      "passed": 44,
+      "failures": []
+    },
+    "real_browser": "BLOCKED_BY_CLIENT",
+    "visual_accepted": false,
+    "frozen_node_22_certified": false
+  },
+  "migration_head": "0128_vertical_refund_recovery",
+  "historical_tests_changed": [
+    "Expected migration head advanced from 0127 to 0128; no business assertions weakened or removed."
+  ],
+  "workspace_repair": "Initial local copy omitted 5 inherited release workflow files; all restored byte for byte. Initial failing run retained; a new full run passes.",
+  "scope": "Whole-order rail and attraction refund journals freeze amounts, owner and adjustment sources before money. Database-time leases, fencing, exact request identity, durable capture verification and money idempotency protect retries. Both process-exit and multi-capture partial completion recover. Rail authorization preparation reserves the original order and resumes the same quote. Customer recovery controls require confirmation and refresh persisted state after lost responses.",
+  "remaining": [
+    "PostgreSQL execution and interruption recovery (6 checks skipped; local PostgreSQL and Docker unavailable)",
+    "Shared provider capacity reservation/release across quotes",
+    "Actual supplier cancellation/refund evidence and partial-passenger after-sales",
+    "Broader rail change reconciliation races and manual exception resolution",
+    "Complete six-vertical advanced fulfillment, driver/ETA/deposit workflows",
+    "14 autonomy cells currently have aggregate observation adapters, not all business execution",
+    "Real Redis acceptance and frozen Node 22.22 acceptance",
+    "Cross-device real browser and master visual acceptance",
+    "Full decomposition and acceptance of all V7 master requirements"
+  ],
+  "scope_exclusions": [
+    "No Hong Kong deployment, database migration or live money movement performed",
+    "Isolated executor behavior does not certify live suppliers or payment channels"
+  ]
+}
