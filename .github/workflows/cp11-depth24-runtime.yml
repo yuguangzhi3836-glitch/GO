@@ -1,5 +1,8 @@
 name: CP11 DEPTH24 isolated runtime acceptance
-on: create
+on:
+  push:
+    branches: [acceptance/cp11-depth24-runtime]
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
@@ -7,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   isolated-runtime:
-    if: github.event.ref_type == 'branch' && startsWith(github.event.ref, 'acceptance/cp11-depth24-runtime')
+    if: startsWith(github.ref, 'refs/heads/acceptance/cp11-depth24-runtime')
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     services:
