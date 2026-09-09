@@ -1,0 +1,47 @@
+name: depth31-pinned-source-preparation
+on:
+  pull_request:
+    branches: ['deliverables/cp11-depth30-native-payment']
+    paths:
+      - '.github/workflows/depth31-source-preparation.yml'
+      - 'ci/depth31/**'
+permissions:
+  contents: read
+jobs:
+  source-preparation:
+    if: github.head_ref == 'preparation/cp11-depth31-source'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: tooling
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: c495ca6547a667b9a4eb94a02e296231f9b88e79
+          path: candidate
+          persist-credentials: false
+      - name: Restore exact source chain without application execution
+        shell: bash
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = c495ca6547a667b9a4eb94a02e296231f9b88e79
+          python3 tooling/ci/depth31/materialize_parent.py \
+            --depth26 candidate/deliverables/CP11_DEPTH26_20260909 \
+            --depth27 candidate/deliverables/CP11_DEPTH27_20260909 \
+            --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 \
+            --output "$GITHUB_WORKSPACE/restored-parent"
+          python3 candidate/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/restore_depth29.py \
+            --parent "$GITHUB_WORKSPACE/restored-parent" --output "$GITHUB_WORKSPACE/restored-depth29"
+          python3 candidate/deliverables/CP11_DEPTH30_NATIVE_PAYMENT_20260909/restore_depth30.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth29" --output "$GITHUB_WORKSPACE/restored"
+      - name: Verify and export only fingerprinted source
+        shell: bash
+        run: python3 tooling/ci/depth31/export_source.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DEPTH30-verified-source-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
