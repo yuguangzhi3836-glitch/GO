@@ -1,0 +1,35 @@
+{
+  "build": "DEPTH26",
+  "actual_desktop_browser": "PASS_SCOPED",
+  "viewport": {
+    "width": 1363,
+    "height": 936
+  },
+  "checks": [
+    "Consumer homepage and updated equal-size logo rendered",
+    "All consumer img elements loaded",
+    "No whole-page horizontal overflow",
+    "Clean card images and visible DOM text verified",
+    "Hotel discovery opens hotel search",
+    "Rail SHA to HZH search returns three engineering offers",
+    "Attraction Tokyo search returns three engineering products with explicit simulation notice",
+    "Unlogged attraction selection opens login before booking",
+    "Supplier and admin login pages render equal-size logo and labelled fields"
+  ],
+  "evidence": "home-desktop-final-cards.jpg",
+  "cross_device_acceptance": "HOLD",
+  "authenticated_e2e": "HOLD",
+  "blocked_attempt": {
+    "requested_widths": [
+      375,
+      390,
+      430,
+      1024
+    ],
+    "cause": "Browser advertises no viewport-resize capability; iframe experiment rejected by existing CSP frame-ancestors none and X-Frame-Options DENY",
+    "evidence": "responsive-frame-hold.jpg"
+  },
+  "legacy_images_replaced": true,
+  "master_visual_score": null,
+  "FINAL_RELEASE_GATE": "HOLD"
+}

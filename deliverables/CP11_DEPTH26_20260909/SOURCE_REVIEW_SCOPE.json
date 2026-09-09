@@ -1,0 +1,62 @@
+{
+  "action": "Original source archive upload rejected by automatic approval review",
+  "stated_reason": "Historical staging credential-related files and other potentially sensitive operational material",
+  "resolution": "Create a distinct reviewed source archive omitting historical environment association, infrastructure, credential inventory and local status files; do not change original archive or any frozen code",
+  "excluded_files": [
+    {
+      "path": "staging/bringup/association.local.json",
+      "size": 193,
+      "sha256": "0aa79dcd08c2bf84e9c7cbde07e089435eff384caee8014f1a90ae8d44e0fca1"
+    },
+    {
+      "path": "staging/bringup/credentials.yaml",
+      "size": 2610,
+      "sha256": "b98771a37d14351e29a0a6bd9cec749ce579e99b71bf04b6cd272ee382489d0a"
+    },
+    {
+      "path": "staging/bringup/current_gap_report.md",
+      "size": 868,
+      "sha256": "743beddc898b6527270308a28440e6205757bfdc4f199bad675b34db1bc82aad"
+    },
+    {
+      "path": "staging/bringup/evidence-template.json",
+      "size": 274,
+      "sha256": "20d1a11584549ca46d811105d714c005ec99ef81bc1e2dde86b4dbd25f45ce07"
+    },
+    {
+      "path": "staging/bringup/infra.local.json",
+      "size": 227,
+      "sha256": "34fde30ec8dc08e6304e035ae03089489097e1d3e49ebcc272ee5a37a0e82143"
+    },
+    {
+      "path": "staging/bringup/preflight.local.json",
+      "size": 1934,
+      "sha256": "047ac4010ae55d6601e5a4386a2ffcc2314baf6a5aaf7b6e8bdf94a3689de70e"
+    },
+    {
+      "path": "staging/certification/status.local.json",
+      "size": 1581,
+      "sha256": "18def5cbdea04926158d4d7382dbd69b5b78a625159fc9c80ab5f6a391450032"
+    },
+    {
+      "path": "staging/certification/status.sprint2d.json",
+      "size": 926,
+      "sha256": "9e28a492e35f04a252e684a5684d9817e1fe45d069b5e4ec0bc9746305deb299"
+    }
+  ],
+  "original_archive_sha256": "4d094260b25199cebcab79fa115e8f637b270c9cfa0bff00ba78eecf2ff38014",
+  "frozen_source_files_preserved": 1077,
+  "secret_pattern_scan": {
+    "scanned_archive": "GO_CP11_DEPTH26_SOURCE_20260909.zip",
+    "patterns": [
+      "private_key",
+      "github_token",
+      "aws_access_key",
+      "stripe_live"
+    ],
+    "findings": [],
+    "scope": "High confidence patterns only; no claim of exhaustive secret detection"
+  },
+  "runtime_files_kept_locally": true,
+  "note": "This is a code-complete source package with historical local-environment records excluded. No claim of exhaustive secret detection."
+}

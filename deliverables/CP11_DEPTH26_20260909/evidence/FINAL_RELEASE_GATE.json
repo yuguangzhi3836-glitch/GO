@@ -1,0 +1,48 @@
+{
+  "build": "DEPTH26",
+  "FINAL_RELEASE_GATE": "HOLD",
+  "new_backend_runtime": "PASS",
+  "affected_python": {
+    "tests": 72,
+    "failures": 0,
+    "skipped": 0
+  },
+  "frontend": {
+    "tests": 115,
+    "failures": 0,
+    "skipped": 0
+  },
+  "scoped_browser": "PASS",
+  "holds": [
+    {
+      "id": "HK_DIRECT",
+      "reason": "Missing approved HTTPS endpoint, node credentials, CA and approved target config",
+      "evidence": "hk_readiness.json"
+    },
+    {
+      "id": "HK_RDS",
+      "reason": "Approved RDS read-only probe wrapper and actual HK migration-head evidence unavailable"
+    },
+    {
+      "id": "CROSS_DEVICE",
+      "reason": "No advertised viewport resizing; anti-framing headers reject embedded viewport test",
+      "evidence": "BROWSER_ACCEPTANCE.json"
+    },
+    {
+      "id": "FULL_PRODUCT_E2E",
+      "reason": "Authenticated cross-role flows and real provider/payment fulfilment not certified by this scoped browser run"
+    },
+    {
+      "id": "MASTER_CLOSURE",
+      "reason": "Earlier critical requirements and source-paragraph decomposition remain open",
+      "critical_count": 30,
+      "unassessed_paragraph_count": 725
+    },
+    {
+      "id": "VI_10_SCORE",
+      "reason": "No independent complete cross-device design acceptance; no 10/10 claim"
+    }
+  ],
+  "engineered_complete": false,
+  "deployed": false
+}

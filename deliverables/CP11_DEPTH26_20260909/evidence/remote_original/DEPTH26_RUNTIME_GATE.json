@@ -1,0 +1,23 @@
+{
+  "build": "DEPTH26",
+  "runtime_gate": "PASS",
+  "checks": {
+    "attraction_postgres.xml": {
+      "passed": true,
+      "tests": 8,
+      "bad": [],
+      "sha256": "2f9065b679cff8c1d818982defe349bd396324b7c14ec9cae89c3dc520757921"
+    },
+    "control_bridge.xml": {
+      "passed": true,
+      "tests": 24,
+      "bad": [],
+      "sha256": "6227088504515f90d9cd594c676ae04f10d8aa321d61b562592c890295b92a83"
+    }
+  },
+  "postgres": "disposable PostgreSQL 16.4",
+  "control_transport": "isolated TestClient, not HK HTTPS",
+  "FINAL_RELEASE_GATE": "HOLD",
+  "hk_connected": false,
+  "commit": "b82b8fca4f93201ebde25425e831a9602e910137"
+}
