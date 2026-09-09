@@ -1,0 +1,34 @@
+{
+  "source_tree_sha256": "f576c976bfe8f34d3182ba232fe1290c374346106c602a4fffe4935366f7a961",
+  "source_files": 1222,
+  "parent_verified_files": 1207,
+  "restored_source_verified_before_and_after_tests": true,
+  "python_junit": {
+    "tests": 172,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "node24_junit": {
+    "tests": 194,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "native_syntax": {
+    "parsed": 101,
+    "scope": "TS/TSX syntax parsing only; no typecheck, Metro, browser or device execution",
+    "parser": "bundled Babel parser",
+    "started_source": "/workspace/scratch/f016e17148d8/go-depth30-restored",
+    "completed_at_utc": "2026-09-09T15:34:37.632Z"
+  },
+  "limitations": [
+    "One pytest case drives all six native domain paths through stdio/TestClient; not six separate full UI journeys.",
+    "SQLite local fixtures only; no PostgreSQL or queue validation in this batch.",
+    "TSX parse is not typecheck/build/device acceptance.",
+    "Nonhotel refund quote is rechecked on the client but not atomically bound by expected hash on the server.",
+    "Four ordered release gates remain HOLD."
+  ],
+  "release_approved": false,
+  "deployed": false
+}
