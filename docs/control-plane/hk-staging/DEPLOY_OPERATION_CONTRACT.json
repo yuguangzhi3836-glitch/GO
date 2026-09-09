@@ -13,8 +13,14 @@
     "judgment-worker"
   ],
   "target_count": 8,
-  "same_image_force_recreate": true,
+  "same_image_force_recreate": {
+    "proven_formal_e2e_scenario": true,
+    "required_for_all_future_deploys": false,
+    "description": "The Executor owns fixed force-recreate semantics; callers cannot control the flag. The proven formal E2E used a same-image candidate."
+  },
   "force_recreate_caller_controlled": false,
+  "different_image_candidate_implementation_support": "MECHANICALLY_ACCEPTED_WHEN_CANDIDATE_IMAGE_AND_REPOSITORY_DIGEST_VALIDATE_AND_CURRENT_IMAGE_MATCHES_EXPECTED_CURRENT_IMAGE",
+  "different_image_candidate_formal_e2e": "NOT_PROVEN",
   "runtime_env_file": "/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env",
   "runtime_env_file_caller_controlled": false,
   "migration_allowed": false,

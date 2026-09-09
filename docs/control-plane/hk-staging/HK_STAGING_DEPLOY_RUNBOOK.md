@@ -30,9 +30,11 @@ installed artifact, durable record, and Signed Evidence remain authoritative.
    `sudo`/Executor invocation for the formal path.
 8. The narrow Executor creates the durable previous-state record **before**
    any Docker mutation. Failure to create this record rejects the action.
-9. The Executor uses its fixed deployment scope and performs same-image
-   `--force-recreate` for exactly the eight target services. `force_recreate`
-   is not a caller parameter.
+9. The Executor uses its fixed deployment scope and owns `--force-recreate`
+   for exactly the eight target services. `force_recreate` is not a caller
+   parameter. The completed formal E2E proved this behavior for a same-image
+   candidate; it does not make same-image a required scenario for every future
+   `HK_STAGING_DEPLOY`.
 10. `GO_RUNTIME_ENV_FILE` is injected by the Executor as a fixed subprocess
     environment input; it is not caller-controlled.
 11. The Executor waits for bounded API readiness, then performs complete
@@ -66,3 +68,14 @@ record. Never extend, re-sign, or replay an old Task.
 - No automatic rollback.
 - No Production action.
 - No caller-controlled force-recreate or runtime environment path.
+
+## Candidate-image evidence boundary
+
+R4 mechanically validates the candidate image and its repository digest, and
+separately validates that the current live image matches
+`expected_current_image_id`; it does not require those two image IDs to be
+identical. It then writes the validated candidate image into the fixed
+eight-service override. This is implementation-level support for a
+different-image candidate, subject to those validations. A formal
+different-image DEPLOY E2E is **NOT_PROVEN** and must not be claimed from the
+same-image E2E.

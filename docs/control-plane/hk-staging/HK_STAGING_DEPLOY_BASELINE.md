@@ -4,6 +4,11 @@
 
 - Environment: `HK-STAGING-01`
 - Proven Agent version: `0.5.4-rebuilt`
+- Agent source commit: `27f7f7f5b1b0d295c3f721c5c0728ceb9f69d9c8`
+- Agent artifact SHA-256:
+  `6387efc36237979c7590caec3da59b129deb9b132ded7a75139055b4b93f514e`
+- Agent manifest SHA-256:
+  `1a797755878d902e39fdd61a1948b70c03e8a77f9e9a911fd6eb930cc2e4f1ba`
 - Proven Executor version: `0.3.0-verify-canary-deploy-runtime`
 - Executor revision: `R4-fixed-post-deploy-api-readiness`
 - Executor source commit: `2aedc3af8d8368d6a66f87a7117df61577a28fd6`

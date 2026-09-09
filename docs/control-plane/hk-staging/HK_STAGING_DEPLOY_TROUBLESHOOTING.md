@@ -8,9 +8,11 @@ not permission to run commands or retry a Task.
 **Symptom:** a normal Compose operation may not recreate services when the
 image is unchanged.
 
-**Proven resolution:** the narrow Executor owns the fixed
-same-image `--force-recreate` semantic for exactly eight target services.
-It is not a caller-provided option.
+**Proven resolution:** the narrow Executor owns fixed `--force-recreate`
+semantics for exactly eight target services. The formal E2E proved this for a
+same-image candidate. It is not a caller-provided option, and the same-image
+scenario must not be generalized as a required condition for every future
+deployment.
 
 ## `GO_RUNTIME_ENV_FILE` missing
 
