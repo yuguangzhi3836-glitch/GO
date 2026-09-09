@@ -1,0 +1,686 @@
+﻿2026-09-09T11:06:03.5495455Z Current runner version: '2.337.0'
+2026-09-09T11:06:03.5533011Z ##[group]Runner Image Provisioner
+2026-09-09T11:06:03.5534585Z Hosted Compute Agent
+2026-09-09T11:06:03.5535747Z Version: 20260828.587
+2026-09-09T11:06:03.5536949Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-09T11:06:03.5538401Z Build Date: 2026-08-28T16:44:25Z
+2026-09-09T11:06:03.5539875Z Worker ID: {d2739796-f52b-49f0-9f2b-e66fda36ca1d}
+2026-09-09T11:06:03.5541173Z Azure Region: westus
+2026-09-09T11:06:03.5542601Z ##[endgroup]
+2026-09-09T11:06:03.5545335Z ##[group]Operating System
+2026-09-09T11:06:03.5546505Z Ubuntu
+2026-09-09T11:06:03.5547606Z 22.04.5
+2026-09-09T11:06:03.5548585Z LTS
+2026-09-09T11:06:03.5549533Z ##[endgroup]
+2026-09-09T11:06:03.5550758Z ##[group]Runner Image
+2026-09-09T11:06:03.5552188Z Image: ubuntu-22.04
+2026-09-09T11:06:03.5553413Z Version: 20260831.284.1
+2026-09-09T11:06:03.5555751Z Included Software: https://github.com/actions/runner-images/blob/ubuntu22/20260831.284/images/ubuntu/Ubuntu2204-Readme.md
+2026-09-09T11:06:03.5558755Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu22%2F20260831.284
+2026-09-09T11:06:03.5560600Z ##[endgroup]
+2026-09-09T11:06:03.5563253Z ##[group]GITHUB_TOKEN Permissions
+2026-09-09T11:06:03.5565987Z Contents: read
+2026-09-09T11:06:03.5567302Z Metadata: read
+2026-09-09T11:06:03.5568370Z ##[endgroup]
+2026-09-09T11:06:03.5571953Z Secret source: Actions
+2026-09-09T11:06:03.5573945Z Prepare workflow directory
+2026-09-09T11:06:03.6319217Z Prepare all required actions
+2026-09-09T11:06:03.6393978Z Getting action download info
+2026-09-09T11:06:04.0833789Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-09T11:06:04.1817377Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-09T11:06:04.2754619Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-09T11:06:04.3863377Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-09T11:06:04.7129414Z Complete job name: sealed-vi-and-restore
+2026-09-09T11:06:04.7983371Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T11:06:04.7992792Z ##[group]Run actions/checkout@v4
+2026-09-09T11:06:04.7993594Z with:
+2026-09-09T11:06:04.7994110Z   ref: 30de597dc53ef34c88709dcbd98eb88105cc22e7
+2026-09-09T11:06:04.7994746Z   path: tooling
+2026-09-09T11:06:04.7995226Z   persist-credentials: false
+2026-09-09T11:06:04.7995791Z   repository: yuguangzhi3836-glitch/GO
+2026-09-09T11:06:04.7999824Z   token: ***
+2026-09-09T11:06:04.8000290Z   ssh-strict: true
+2026-09-09T11:06:04.8000756Z   ssh-user: git
+2026-09-09T11:06:04.8001204Z   clean: true
+2026-09-09T11:06:04.8002136Z   sparse-checkout-cone-mode: true
+2026-09-09T11:06:04.8003100Z   fetch-depth: 1
+2026-09-09T11:06:04.8003987Z   fetch-tags: false
+2026-09-09T11:06:04.8004796Z   show-progress: true
+2026-09-09T11:06:04.8005649Z   lfs: false
+2026-09-09T11:06:04.8006503Z   submodules: false
+2026-09-09T11:06:04.8007382Z   set-safe-directory: true
+2026-09-09T11:06:04.8008430Z   allow-unsafe-pr-checkout: false
+2026-09-09T11:06:04.8009999Z env:
+2026-09-09T11:06:04.8011031Z   SEALED_CANDIDATE: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:04.8012572Z   EXPECTED_SOURCE_TREE: 3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f
+2026-09-09T11:06:04.8013486Z ##[endgroup]
+2026-09-09T11:06:04.9310112Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-09T11:06:04.9316062Z ##[group]Getting Git version info
+2026-09-09T11:06:04.9318035Z Working directory is '/home/runner/work/GO/GO/tooling'
+2026-09-09T11:06:04.9320649Z [command]/usr/bin/git version
+2026-09-09T11:06:04.9409467Z git version 2.55.0
+2026-09-09T11:06:04.9608533Z ##[endgroup]
+2026-09-09T11:06:04.9617820Z Temporarily overriding HOME='/home/runner/work/_temp/0710490d-5457-4fa2-9ec8-bd89d1e0f5d4' before making global git config changes
+2026-09-09T11:06:04.9620607Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-09T11:06:04.9639182Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/tooling
+2026-09-09T11:06:04.9656252Z ##[group]Initializing the repository
+2026-09-09T11:06:04.9657705Z [command]/usr/bin/git init /home/runner/work/GO/GO/tooling
+2026-09-09T11:06:04.9783080Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-09T11:06:04.9802323Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-09T11:06:04.9815600Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-09T11:06:04.9817266Z hint: call:
+2026-09-09T11:06:04.9818215Z hint:
+2026-09-09T11:06:04.9819360Z hint: 	git config --global init.defaultBranch <name>
+2026-09-09T11:06:04.9820836Z hint:
+2026-09-09T11:06:04.9822293Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-09T11:06:04.9824319Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-09T11:06:04.9825890Z hint:
+2026-09-09T11:06:04.9826799Z hint: 	git branch -m <name>
+2026-09-09T11:06:04.9828122Z hint:
+2026-09-09T11:06:04.9829495Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-09T11:06:04.9831711Z Initialized empty Git repository in /home/runner/work/GO/GO/tooling/.git/
+2026-09-09T11:06:04.9835865Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-09T11:06:04.9890730Z ##[endgroup]
+2026-09-09T11:06:04.9892606Z ##[group]Disabling automatic garbage collection
+2026-09-09T11:06:04.9894063Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-09T11:06:04.9959894Z ##[endgroup]
+2026-09-09T11:06:04.9961790Z ##[group]Setting up auth
+2026-09-09T11:06:04.9963438Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T11:06:05.0028657Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-09T11:06:05.0664761Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T11:06:05.0744520Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-09T11:06:05.1100785Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T11:06:05.1147662Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-09T11:06:05.1432299Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-09T11:06:05.1477370Z ##[endgroup]
+2026-09-09T11:06:05.1479411Z ##[group]Fetching the repository
+2026-09-09T11:06:05.1488184Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 30de597dc53ef34c88709dcbd98eb88105cc22e7
+2026-09-09T11:06:09.5336382Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-09T11:06:09.5350928Z  * branch            30de597dc53ef34c88709dcbd98eb88105cc22e7 -> FETCH_HEAD
+2026-09-09T11:06:09.5354786Z ##[endgroup]
+2026-09-09T11:06:09.5355775Z ##[group]Determining the checkout info
+2026-09-09T11:06:09.5356862Z ##[endgroup]
+2026-09-09T11:06:09.5357642Z [command]/usr/bin/git sparse-checkout disable
+2026-09-09T11:06:09.5402456Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-09T11:06:09.5447007Z ##[group]Checking out the ref
+2026-09-09T11:06:09.5452178Z [command]/usr/bin/git checkout --progress --force 30de597dc53ef34c88709dcbd98eb88105cc22e7
+2026-09-09T11:06:09.9243322Z Note: switching to '30de597dc53ef34c88709dcbd98eb88105cc22e7'.
+2026-09-09T11:06:09.9244209Z 
+2026-09-09T11:06:09.9244982Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-09T11:06:09.9246320Z changes and commit them, and you can discard any commits you make in this
+2026-09-09T11:06:09.9256150Z state without impacting any branches by switching back to a branch.
+2026-09-09T11:06:09.9257021Z 
+2026-09-09T11:06:09.9272336Z If you want to create a new branch to retain commits you create, you may
+2026-09-09T11:06:09.9292211Z do so (now or later) by using -c with the switch command. Example:
+2026-09-09T11:06:09.9302193Z 
+2026-09-09T11:06:09.9302683Z   git switch -c <new-branch-name>
+2026-09-09T11:06:09.9303298Z 
+2026-09-09T11:06:09.9303732Z Or undo this operation with:
+2026-09-09T11:06:09.9304407Z 
+2026-09-09T11:06:09.9304821Z   git switch -
+2026-09-09T11:06:09.9306268Z 
+2026-09-09T11:06:09.9307006Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-09T11:06:09.9307903Z 
+2026-09-09T11:06:09.9308736Z HEAD is now at 30de597 Fix DEPTH28 isolated acceptance: restore archives and bind frozen source lineage
+2026-09-09T11:06:09.9318015Z ##[endgroup]
+2026-09-09T11:06:09.9394816Z [command]/usr/bin/git log -1 --format=%H
+2026-09-09T11:06:09.9462110Z 30de597dc53ef34c88709dcbd98eb88105cc22e7
+2026-09-09T11:06:09.9482962Z ##[group]Removing auth
+2026-09-09T11:06:09.9483701Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T11:06:09.9557182Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-09T11:06:09.9936995Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T11:06:09.9971847Z http.https://github.com/.extraheader
+2026-09-09T11:06:10.0001559Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-09T11:06:10.0065194Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-09T11:06:10.0413511Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T11:06:10.0459421Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-09T11:06:10.0822789Z ##[endgroup]
+2026-09-09T11:06:10.1083761Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T11:06:10.1085528Z ##[group]Run actions/checkout@v4
+2026-09-09T11:06:10.1085791Z with:
+2026-09-09T11:06:10.1086019Z   ref: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:10.1086304Z   path: candidate
+2026-09-09T11:06:10.1086518Z   persist-credentials: false
+2026-09-09T11:06:10.1086774Z   repository: yuguangzhi3836-glitch/GO
+2026-09-09T11:06:10.1089419Z   token: ***
+2026-09-09T11:06:10.1089621Z   ssh-strict: true
+2026-09-09T11:06:10.1089820Z   ssh-user: git
+2026-09-09T11:06:10.1090008Z   clean: true
+2026-09-09T11:06:10.1090214Z   sparse-checkout-cone-mode: true
+2026-09-09T11:06:10.1090466Z   fetch-depth: 1
+2026-09-09T11:06:10.1090696Z   fetch-tags: false
+2026-09-09T11:06:10.1090900Z   show-progress: true
+2026-09-09T11:06:10.1091104Z   lfs: false
+2026-09-09T11:06:10.1091285Z   submodules: false
+2026-09-09T11:06:10.1091669Z   set-safe-directory: true
+2026-09-09T11:06:10.1091916Z   allow-unsafe-pr-checkout: false
+2026-09-09T11:06:10.1092152Z env:
+2026-09-09T11:06:10.1092398Z   SEALED_CANDIDATE: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:10.1093109Z   EXPECTED_SOURCE_TREE: 3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f
+2026-09-09T11:06:10.1093533Z ##[endgroup]
+2026-09-09T11:06:10.2067464Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-09T11:06:10.2103352Z ##[group]Getting Git version info
+2026-09-09T11:06:10.2124984Z Working directory is '/home/runner/work/GO/GO/candidate'
+2026-09-09T11:06:10.2170747Z [command]/usr/bin/git version
+2026-09-09T11:06:10.2257550Z git version 2.55.0
+2026-09-09T11:06:10.2294260Z ##[endgroup]
+2026-09-09T11:06:10.2332836Z Temporarily overriding HOME='/home/runner/work/_temp/e82f0fd8-b04a-48dd-ad07-b2fbc5c9d4d6' before making global git config changes
+2026-09-09T11:06:10.2334625Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-09T11:06:10.2352481Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/candidate
+2026-09-09T11:06:10.2412929Z ##[group]Initializing the repository
+2026-09-09T11:06:10.2432269Z [command]/usr/bin/git init /home/runner/work/GO/GO/candidate
+2026-09-09T11:06:10.2492388Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-09T11:06:10.2493621Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-09T11:06:10.2513652Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-09T11:06:10.2521962Z hint: call:
+2026-09-09T11:06:10.2532355Z hint:
+2026-09-09T11:06:10.2553072Z hint: 	git config --global init.defaultBranch <name>
+2026-09-09T11:06:10.2571879Z hint:
+2026-09-09T11:06:10.2602313Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-09T11:06:10.2603613Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-09T11:06:10.2622096Z hint:
+2026-09-09T11:06:10.2642075Z hint: 	git branch -m <name>
+2026-09-09T11:06:10.2646346Z hint:
+2026-09-09T11:06:10.2658071Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-09T11:06:10.2659240Z Initialized empty Git repository in /home/runner/work/GO/GO/candidate/.git/
+2026-09-09T11:06:10.2661735Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-09T11:06:10.2681399Z ##[endgroup]
+2026-09-09T11:06:10.2682793Z ##[group]Disabling automatic garbage collection
+2026-09-09T11:06:10.2683875Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-09T11:06:10.2686051Z ##[endgroup]
+2026-09-09T11:06:10.2686985Z ##[group]Setting up auth
+2026-09-09T11:06:10.2688136Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T11:06:10.2692359Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-09T11:06:10.3134890Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T11:06:10.3202864Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-09T11:06:10.3642331Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T11:06:10.3712552Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-09T11:06:10.4091181Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-09T11:06:10.4169936Z ##[endgroup]
+2026-09-09T11:06:10.4182436Z ##[group]Fetching the repository
+2026-09-09T11:06:10.4184275Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:14.7167633Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-09T11:06:14.7168820Z  * branch            6c85c64fe77ce7637a001ddbd8050ffa24f639a3 -> FETCH_HEAD
+2026-09-09T11:06:14.7173092Z ##[endgroup]
+2026-09-09T11:06:14.7174023Z ##[group]Determining the checkout info
+2026-09-09T11:06:14.7175950Z ##[endgroup]
+2026-09-09T11:06:14.7183854Z [command]/usr/bin/git sparse-checkout disable
+2026-09-09T11:06:14.7236467Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-09T11:06:14.7287606Z ##[group]Checking out the ref
+2026-09-09T11:06:14.7292195Z [command]/usr/bin/git checkout --progress --force 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:15.0954702Z Note: switching to '6c85c64fe77ce7637a001ddbd8050ffa24f639a3'.
+2026-09-09T11:06:15.0958900Z 
+2026-09-09T11:06:15.0959590Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-09T11:06:15.0960688Z changes and commit them, and you can discard any commits you make in this
+2026-09-09T11:06:15.0961978Z state without impacting any branches by switching back to a branch.
+2026-09-09T11:06:15.0962665Z 
+2026-09-09T11:06:15.0963165Z If you want to create a new branch to retain commits you create, you may
+2026-09-09T11:06:15.0964162Z do so (now or later) by using -c with the switch command. Example:
+2026-09-09T11:06:15.0964785Z 
+2026-09-09T11:06:15.0965141Z   git switch -c <new-branch-name>
+2026-09-09T11:06:15.0966268Z 
+2026-09-09T11:06:15.0966665Z Or undo this operation with:
+2026-09-09T11:06:15.0967151Z 
+2026-09-09T11:06:15.0967492Z   git switch -
+2026-09-09T11:06:15.0967898Z 
+2026-09-09T11:06:15.0968489Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-09T11:06:15.0969244Z 
+2026-09-09T11:06:15.0969855Z HEAD is now at 6c85c64 Seal DEPTH28 locked V14 VI and recessive GO subbrand hierarchy
+2026-09-09T11:06:15.1033603Z ##[endgroup]
+2026-09-09T11:06:15.1081174Z [command]/usr/bin/git log -1 --format=%H
+2026-09-09T11:06:15.1115601Z 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:15.1127080Z ##[group]Removing auth
+2026-09-09T11:06:15.1132445Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T11:06:15.1176416Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-09T11:06:15.1456546Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T11:06:15.1486872Z http.https://github.com/.extraheader
+2026-09-09T11:06:15.1504011Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-09T11:06:15.1543237Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-09T11:06:15.1822026Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T11:06:15.1864260Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-09T11:06:15.2152008Z ##[endgroup]
+2026-09-09T11:06:15.2335903Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T11:06:15.2337199Z ##[group]Run actions/setup-python@v5
+2026-09-09T11:06:15.2337457Z with:
+2026-09-09T11:06:15.2337659Z   python-version: 3.13.5
+2026-09-09T11:06:15.2337882Z   check-latest: false
+2026-09-09T11:06:15.2340435Z   token: ***
+2026-09-09T11:06:15.2340643Z   update-environment: true
+2026-09-09T11:06:15.2340884Z   allow-prereleases: false
+2026-09-09T11:06:15.2341108Z   freethreaded: false
+2026-09-09T11:06:15.2341319Z env:
+2026-09-09T11:06:15.2341944Z   SEALED_CANDIDATE: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:15.2342436Z   EXPECTED_SOURCE_TREE: 3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f
+2026-09-09T11:06:15.2343097Z ##[endgroup]
+2026-09-09T11:06:15.3838766Z ##[group]Installed versions
+2026-09-09T11:06:15.3864745Z Version 3.13.5 was not found in the local cache
+2026-09-09T11:06:15.3979988Z (node:2046) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-09T11:06:15.3981746Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-09T11:06:16.1431204Z Version 3.13.5 is available for downloading
+2026-09-09T11:06:16.1433738Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-22.04-x64.tar.gz"
+2026-09-09T11:06:17.1416922Z Extract downloaded archive
+2026-09-09T11:06:17.1572817Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/2389e2c6-14e5-4783-9551-e70a0c4de06a -f /home/runner/work/_temp/a2439b8f-e86f-4b88-a7df-05d82a50a450
+2026-09-09T11:06:19.6009835Z Execute installation script
+2026-09-09T11:06:19.6136502Z Check if Python hostedtoolcache folder exist...
+2026-09-09T11:06:19.6150708Z Create Python 3.13.5 folder
+2026-09-09T11:06:19.6159836Z Copy Python binaries to hostedtoolcache folder
+2026-09-09T11:06:20.4990718Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-09T11:06:20.5042072Z Upgrading pip...
+2026-09-09T11:06:23.3923314Z Looking in links: /tmp/tmpkc25gwfc
+2026-09-09T11:06:23.3925831Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-09T11:06:24.5890018Z Collecting pip
+2026-09-09T11:06:24.6224493Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-09T11:06:24.6392299Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-09T11:06:24.6903274Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 54.2 MB/s eta 0:00:00
+2026-09-09T11:06:24.6922679Z 
+2026-09-09T11:06:24.7128650Z Installing collected packages: pip
+2026-09-09T11:06:24.7146383Z Attempting uninstall: pip
+2026-09-09T11:06:24.7154381Z Found existing installation: pip 25.1.1
+2026-09-09T11:06:24.7552398Z Uninstalling pip-25.1.1:
+2026-09-09T11:06:24.7614557Z Successfully uninstalled pip-25.1.1
+2026-09-09T11:06:25.7608755Z Successfully installed pip-26.2.1
+2026-09-09T11:06:25.8142653Z Create complete file
+2026-09-09T11:06:25.8176701Z Successfully set up CPython (3.13.5)
+2026-09-09T11:06:25.8177805Z ##[endgroup]
+2026-09-09T11:06:25.8389982Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T11:06:25.8391265Z ##[group]Run actions/setup-node@v4
+2026-09-09T11:06:25.8391700Z with:
+2026-09-09T11:06:25.8391887Z   node-version: 22.22.0
+2026-09-09T11:06:25.8392103Z   always-auth: false
+2026-09-09T11:06:25.8392322Z   check-latest: false
+2026-09-09T11:06:25.8394892Z   token: ***
+2026-09-09T11:06:25.8395079Z env:
+2026-09-09T11:06:25.8395327Z   SEALED_CANDIDATE: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:25.8395808Z   EXPECTED_SOURCE_TREE: 3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f
+2026-09-09T11:06:25.8396297Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:25.8396755Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T11:06:25.8397187Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:25.8397563Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:25.8397924Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:25.8398288Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T11:06:25.8398597Z ##[endgroup]
+2026-09-09T11:06:25.9991077Z Attempting to download 22.22.0...
+2026-09-09T11:06:26.0103510Z (node:2095) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-09T11:06:26.0106341Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-09T11:06:26.7253198Z Acquiring 22.22.0 - x64 from https://github.com/actions/node-versions/releases/download/22.22.0-20981702931/node-22.22.0-linux-x64.tar.gz
+2026-09-09T11:06:27.4462096Z Extracting ...
+2026-09-09T11:06:27.4600977Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/49da1248-48a4-4591-88b1-51222f5faa22 -f /home/runner/work/_temp/fac817c8-90ab-4cae-92cf-1cf8b6963929
+2026-09-09T11:06:28.8183540Z Adding to the cache ...
+2026-09-09T11:06:31.8174545Z ##[group]Environment details
+2026-09-09T11:06:32.1362627Z node: v22.22.0
+2026-09-09T11:06:32.1363079Z npm: 10.9.4
+2026-09-09T11:06:32.1363416Z yarn: 1.22.22
+2026-09-09T11:06:32.1364111Z ##[endgroup]
+2026-09-09T11:06:32.1556969Z ##[group]Run mkdir -p evidence
+2026-09-09T11:06:32.1557380Z [36;1mmkdir -p evidence[0m
+2026-09-09T11:06:32.1557755Z [36;1mgit -C candidate rev-parse HEAD | tee evidence/candidate-commit.txt[0m
+2026-09-09T11:06:32.1558249Z [36;1mtest "$(git -C candidate rev-parse HEAD)" = "$SEALED_CANDIDATE"[0m
+2026-09-09T11:06:32.1558620Z [36;1mcd candidate/deliverables[0m
+2026-09-09T11:06:32.1559273Z [36;1mprintf '%s  %s\n' f95e9541757f0051815373611b0230ee1bcc58201a451e6b99261754110e98ab CP11_DEPTH27_20260909/GO_CP11_DEPTH27_DELTA_20260909.zip | sha256sum -c -[0m
+2026-09-09T11:06:32.1560406Z [36;1mprintf '%s  %s\n' 98f006935a421b99aa4ea35c1f43ec0186b04bfc262e01b46f3d4f341d13a109 CP11_DEPTH28_V14_INTEGRATION_20260909/GO_CP11_DEPTH28_V14_DELTA_20260909.zip | sha256sum -c -[0m
+2026-09-09T11:06:32.1561168Z [36;1mcd CP11_DEPTH28_V14_INTEGRATION_20260909[0m
+2026-09-09T11:06:32.1561911Z [36;1msha256sum -c SHA256SUMS | tee ../../../evidence/package-checksums.log[0m
+2026-09-09T11:06:32.2232663Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-09T11:06:32.2233046Z env:
+2026-09-09T11:06:32.2233315Z   SEALED_CANDIDATE: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:32.2233805Z   EXPECTED_SOURCE_TREE: 3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f
+2026-09-09T11:06:32.2234310Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:32.2234722Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T11:06:32.2235152Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:32.2235533Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:32.2235907Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:32.2236288Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T11:06:32.2236611Z ##[endgroup]
+2026-09-09T11:06:32.2413862Z 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:32.2462603Z CP11_DEPTH27_20260909/GO_CP11_DEPTH27_DELTA_20260909.zip: OK
+2026-09-09T11:06:32.2490587Z CP11_DEPTH28_V14_INTEGRATION_20260909/GO_CP11_DEPTH28_V14_DELTA_20260909.zip: OK
+2026-09-09T11:06:32.2532277Z GO_CP11_DEPTH28_V14_DELTA_20260909.zip: OK
+2026-09-09T11:06:32.2532918Z PACKAGE_STATUS.json: OK
+2026-09-09T11:06:32.2533842Z PARENT_SOURCE_FINGERPRINT.json: OK
+2026-09-09T11:06:32.2534571Z README.md: OK
+2026-09-09T11:06:32.2535546Z SOURCE_FINGERPRINT.json: OK
+2026-09-09T11:06:32.2542402Z SOURCE_MANIFEST.json: OK
+2026-09-09T11:06:32.2543173Z evidence/BROWSER_ACCEPTANCE.json: OK
+2026-09-09T11:06:32.2544077Z evidence/CURRENT_BUILD_STATUS.json: OK
+2026-09-09T11:06:32.2544896Z evidence/RESTORE_ATTEMPTS.json: OK
+2026-09-09T11:06:32.2545579Z evidence/affected-python.log: OK
+2026-09-09T11:06:32.2546245Z evidence/affected-python.xml: OK
+2026-09-09T11:06:32.2547153Z evidence/apply-v14-subbrand.log: OK
+2026-09-09T11:06:32.2547951Z evidence/apply-v14.log: OK
+2026-09-09T11:06:32.2548561Z evidence/frontend-errors.log: OK
+2026-09-09T11:06:32.2549286Z evidence/frontend-subbrand.log: OK
+2026-09-09T11:06:32.2549894Z evidence/frontend.log: OK
+2026-09-09T11:06:32.2550723Z evidence/frontend.xml: OK
+2026-09-09T11:06:32.2551626Z evidence/restore-verification.log: OK
+2026-09-09T11:06:32.2553028Z evidence/restored-affected-python.log: OK
+2026-09-09T11:06:32.2554025Z evidence/restored-affected-python.xml: OK
+2026-09-09T11:06:32.2555337Z evidence/restored-frontend.log: OK
+2026-09-09T11:06:32.2556199Z evidence/subbrand-proof/go-ai.png: OK
+2026-09-09T11:06:32.2557392Z evidence/subbrand-proof/go-offer.png: OK
+2026-09-09T11:06:32.2558133Z restore_depth28.py: OK
+2026-09-09T11:06:32.2559486Z source_changes/design/brand/depth28/SUBBRAND_HIERARCHY.json: OK
+2026-09-09T11:06:32.2560543Z source_changes/frontend/admin/index.html: OK
+2026-09-09T11:06:32.2562159Z source_changes/frontend/consumer/app.js: OK
+2026-09-09T11:06:32.2563079Z source_changes/frontend/consumer/assets/go-ai.svg: OK
+2026-09-09T11:06:32.2564137Z source_changes/frontend/consumer/assets/go-compact-lockup-v14.svg: OK
+2026-09-09T11:06:32.2565464Z source_changes/frontend/consumer/assets/go-main-lockup-v14.svg: OK
+2026-09-09T11:06:32.2568528Z source_changes/frontend/consumer/assets/go-main-lockup.svg: OK
+2026-09-09T11:06:32.2570151Z source_changes/frontend/consumer/assets/go-mark.svg: OK
+2026-09-09T11:06:32.2571030Z source_changes/frontend/consumer/assets/go-offer.svg: OK
+2026-09-09T11:06:32.2572341Z source_changes/frontend/consumer/assets/go-symbol-on-color.svg: OK
+2026-09-09T11:06:32.2573643Z source_changes/frontend/consumer/assets/go-symbol-v14-reverse.svg: OK
+2026-09-09T11:06:32.2582397Z source_changes/frontend/consumer/assets/go-symbol-v14.svg: OK
+2026-09-09T11:06:32.2583492Z source_changes/frontend/consumer/assets/go-symbol.svg: OK
+2026-09-09T11:06:32.2584349Z source_changes/frontend/consumer/direct.html: OK
+2026-09-09T11:06:32.2585329Z source_changes/frontend/consumer/flight-journeys.js: OK
+2026-09-09T11:06:32.2586445Z source_changes/frontend/consumer/index.html: OK
+2026-09-09T11:06:32.2587523Z source_changes/frontend/consumer/vi-reference-10.css: OK
+2026-09-09T11:06:32.2588369Z source_changes/frontend/shared/app.js: OK
+2026-09-09T11:06:32.2589475Z source_changes/frontend/shared/go-compact-v14-reverse.svg: OK
+2026-09-09T11:06:32.2590599Z source_changes/frontend/shared/go-mark-inverse.svg: OK
+2026-09-09T11:06:32.2595359Z source_changes/frontend/shared/go-mark.svg: OK
+2026-09-09T11:06:32.2596208Z source_changes/frontend/shared/go-symbol-v14-reverse.svg: OK
+2026-09-09T11:06:32.2598439Z source_changes/frontend/shared/go-symbol-v14.svg: OK
+2026-09-09T11:06:32.2599045Z source_changes/frontend/shared/styles.css: OK
+2026-09-09T11:06:32.2599445Z source_changes/frontend/supplier/index.html: OK
+2026-09-09T11:06:32.2599858Z source_changes/scripts/apply_depth28_v14_vi.py: OK
+2026-09-09T11:06:32.2600261Z source_changes/scripts/package_depth28_v14.py: OK
+2026-09-09T11:06:32.2600710Z source_changes/scripts/preview_network_interfaces.cjs: OK
+2026-09-09T11:06:32.2601177Z source_changes/tests_frontend/brand_v14.test.mjs: OK
+2026-09-09T11:06:32.2632922Z ##[group]Run python tooling/ci/depth28-preparation/materialize.py \
+2026-09-09T11:06:32.2633823Z [36;1mpython tooling/ci/depth28-preparation/materialize.py \[0m
+2026-09-09T11:06:32.2634594Z [36;1m  --depth26 candidate/deliverables/CP11_DEPTH26_20260909 \[0m
+2026-09-09T11:06:32.2635206Z [36;1m  --depth27 candidate/deliverables/CP11_DEPTH27_20260909 \[0m
+2026-09-09T11:06:32.2635667Z [36;1m  --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 \[0m
+2026-09-09T11:06:32.2636177Z [36;1m  --output "$GITHUB_WORKSPACE/restored" | tee evidence/restore.log[0m
+2026-09-09T11:06:32.2711138Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-09T11:06:32.2711789Z env:
+2026-09-09T11:06:32.2712051Z   SEALED_CANDIDATE: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:32.2712535Z   EXPECTED_SOURCE_TREE: 3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f
+2026-09-09T11:06:32.2713061Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:32.2713478Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T11:06:32.2714082Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:32.2714446Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:32.2714814Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:32.2715203Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T11:06:32.2715527Z ##[endgroup]
+2026-09-09T11:06:33.0515034Z {
+2026-09-09T11:06:33.0516178Z   "restored_files_verified": 1081,
+2026-09-09T11:06:33.0516983Z   "parent_files_verified": 1077,
+2026-09-09T11:06:33.0517981Z   "source_tree_sha256": "7f8be7894c15f42e311610cccaaf8590402cd9ae1facca77956379a5aec43952",
+2026-09-09T11:06:33.0519265Z   "delta_sha256": "f95e9541757f0051815373611b0230ee1bcc58201a451e6b99261754110e98ab",
+2026-09-09T11:06:33.0520325Z   "output": "/tmp/go-offline-lineage-n1kqtrwm/depth27",
+2026-09-09T11:06:33.0521163Z   "FINAL_RELEASE_GATE": "HOLD"
+2026-09-09T11:06:33.0522165Z }
+2026-09-09T11:06:33.5134109Z {
+2026-09-09T11:06:33.5135293Z   "restored_files_verified": 1093,
+2026-09-09T11:06:33.5136168Z   "parent_files_verified": 1081,
+2026-09-09T11:06:33.5140382Z   "source_tree_sha256": "3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f",
+2026-09-09T11:06:33.5142031Z   "delta_sha256": "98f006935a421b99aa4ea35c1f43ec0186b04bfc262e01b46f3d4f341d13a109",
+2026-09-09T11:06:33.5143106Z   "output": "/home/runner/work/GO/GO/restored",
+2026-09-09T11:06:33.5147120Z   "FINAL_RELEASE_GATE": "HOLD"
+2026-09-09T11:06:33.5147763Z }
+2026-09-09T11:06:33.6504415Z {"verified_files": 1093, "result": "PASS", "scope": "offline archive materialization only", "independent_ci": false, "release_gate": "HOLD"}
+2026-09-09T11:06:33.6618023Z ##[group]Run python - <<'PY'
+2026-09-09T11:06:33.6618355Z [36;1mpython - <<'PY'[0m
+2026-09-09T11:06:33.6618670Z [36;1mimport hashlib, json, os, pathlib, subprocess, sys[0m
+2026-09-09T11:06:33.6619186Z [36;1mpackage = pathlib.Path('candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909')[0m
+2026-09-09T11:06:33.6619793Z [36;1mfingerprint = json.loads((package / 'SOURCE_FINGERPRINT.json').read_text())[0m
+2026-09-09T11:06:33.6620198Z [36;1mactual = {}[0m
+2026-09-09T11:06:33.6620450Z [36;1mfor name, expected in fingerprint.items():[0m
+2026-09-09T11:06:33.6620942Z [36;1m    actual[name] = hashlib.sha256((pathlib.Path('restored') / name).read_bytes()).hexdigest()[0m
+2026-09-09T11:06:33.6621813Z [36;1m    assert actual[name] == expected, name[0m
+2026-09-09T11:06:33.6622312Z [36;1mbody = b''.join(name.encode() + b'\0' + actual[name].encode() + b'\n' for name in sorted(actual))[0m
+2026-09-09T11:06:33.6622785Z [36;1mtree = hashlib.sha256(body).hexdigest()[0m
+2026-09-09T11:06:33.6623184Z [36;1massert tree == os.environ['EXPECTED_SOURCE_TREE'], tree[0m
+2026-09-09T11:06:33.6623524Z [36;1massert len(actual) == 1093[0m
+2026-09-09T11:06:33.6623916Z [36;1mdata = {'candidate': os.environ['SEALED_CANDIDATE'], 'source_tree_sha256': tree,[0m
+2026-09-09T11:06:33.6624409Z [36;1m        'verified_files': len(actual), 'python': sys.version,[0m
+2026-09-09T11:06:33.6624888Z [36;1m        'node': subprocess.check_output(['node', '--version'], text=True).strip(),[0m
+2026-09-09T11:06:33.6625444Z [36;1m        'environment': 'GitHub disposable runner; no database, no service credentials',[0m
+2026-09-09T11:06:33.6625970Z [36;1m        'scope': 'archive restoration and frontend component contracts',[0m
+2026-09-09T11:06:33.6626476Z [36;1m        'THREE_END_REAL_UX_LOGIN': 'HOLD', 'SIX_VERTICAL_REAL_CLOSED_LOOP_E2E': 'HOLD',[0m
+2026-09-09T11:06:33.6626934Z [36;1m        'SEALED_NODE_GATE': 'HOLD', 'FINAL_RELEASE': 'HOLD'}[0m
+2026-09-09T11:06:33.6627455Z [36;1mpathlib.Path('evidence/source-lineage.json').write_text(json.dumps(data, indent=2) + '\n')[0m
+2026-09-09T11:06:33.6627921Z [36;1mprint(json.dumps(data))[0m
+2026-09-09T11:06:33.6628156Z [36;1mPY[0m
+2026-09-09T11:06:33.6700179Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-09T11:06:33.6700524Z env:
+2026-09-09T11:06:33.6700789Z   SEALED_CANDIDATE: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:33.6701889Z   EXPECTED_SOURCE_TREE: 3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f
+2026-09-09T11:06:33.6702393Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:33.6702801Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T11:06:33.6703221Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:33.6703608Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:33.6703983Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:33.6704370Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T11:06:33.6704683Z ##[endgroup]
+2026-09-09T11:06:33.7629270Z {"candidate": "6c85c64fe77ce7637a001ddbd8050ffa24f639a3", "source_tree_sha256": "3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f", "verified_files": 1093, "python": "3.13.5 (main, Jun 12 2025, 03:51:15) [GCC 11.4.0]", "node": "v22.22.0", "environment": "GitHub disposable runner; no database, no service credentials", "scope": "archive restoration and frontend component contracts", "THREE_END_REAL_UX_LOGIN": "HOLD", "SIX_VERTICAL_REAL_CLOSED_LOOP_E2E": "HOLD", "SEALED_NODE_GATE": "HOLD", "FINAL_RELEASE": "HOLD"}
+2026-09-09T11:06:33.7735227Z ##[group]Run node --test --test-reporter=spec --test-reporter-destination=../evidence/frontend.log \
+2026-09-09T11:06:33.7736562Z [36;1mnode --test --test-reporter=spec --test-reporter-destination=../evidence/frontend.log \[0m
+2026-09-09T11:06:33.7737768Z [36;1m  --test-reporter=junit --test-reporter-destination=../evidence/frontend.xml tests_frontend/*.test.mjs[0m
+2026-09-09T11:06:33.7738299Z [36;1mcat ../evidence/frontend.log[0m
+2026-09-09T11:06:33.7810365Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-09T11:06:33.7810700Z env:
+2026-09-09T11:06:33.7810959Z   SEALED_CANDIDATE: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:33.7811768Z   EXPECTED_SOURCE_TREE: 3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f
+2026-09-09T11:06:33.7812300Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:33.7812713Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T11:06:33.7813155Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:33.7813523Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:33.7813895Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:33.7814272Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T11:06:33.7814587Z ##[endgroup]
+2026-09-09T11:06:35.4695017Z ✔ HTTP helper retains CSRF together with idempotency header (3.553291ms)
+2026-09-09T11:06:35.4696798Z ✔ Escape cancels traveler selection without authorizing or creating an order (10.681554ms)
+2026-09-09T11:06:35.4698339Z ✔ rental consent is bound to the selected traveler, field and purpose (3.663997ms)
+2026-09-09T11:06:35.4699458Z ✔ payment is cancelled without any checkout mutation (2.460789ms)
+2026-09-09T11:06:35.4700553Z ✔ a failed confirmed payment stays visible and can be retried (2.534818ms)
+2026-09-09T11:06:35.4702115Z ✔ cancelling a party selection creates no order or grant (2.213387ms)
+2026-09-09T11:06:35.4703297Z ✔ a party must contain the exact number of different travelers (3.057484ms)
+2026-09-09T11:06:35.4704629Z ✔ party confirmation returns only the explicitly selected traveler references (3.077505ms)
+2026-09-09T11:06:35.4706034Z ✔ party selection cannot submit without confirming adult travelers and purpose (3.626568ms)
+2026-09-09T11:06:35.4707488Z ✔ consumer uses locked V14 main and compact artwork with responsive selection (2.887066ms)
+2026-09-09T11:06:35.4708746Z ✔ supplier and admin share the locked reverse V14 compact lockup (1.94728ms)
+2026-09-09T11:06:35.4709976Z ✔ all three entry documents advance cache tokens together (0.380301ms)
+2026-09-09T11:06:35.4711229Z ✔ GO subbrands use V14 geometry with a deliberately recessive GO tier (0.471352ms)
+2026-09-09T11:06:35.4713221Z ✔ legacy runtime asset names also resolve to locked V14 geometry (0.551732ms)
+2026-09-09T11:06:35.4714707Z ✔ cancel review shows every cash component and exact fee basis before submission (18.817589ms)
+2026-09-09T11:06:35.4716274Z ✔ closing cancel review never sends cancellation or reloads as completed (0.844909ms)
+2026-09-09T11:06:35.4717552Z ✔ unchecked money confirmation cannot submit a cash action (1.285823ms)
+2026-09-09T11:06:35.4718912Z ✔ change confirmation keeps paid room value, incremental difference and fee separate (1.130573ms)
+2026-09-09T11:06:35.4720300Z ✔ cancelled date selection does not request new inventory or a payment (0.828619ms)
+2026-09-09T11:06:35.4722032Z ✔ displayed quote hash stays bound across asynchronous source mutation (0.880335ms)
+2026-09-09T11:06:35.4723530Z ✔ unknown supplier progress offers query only and binds the saved operation (1.093404ms)
+2026-09-09T11:06:35.4725143Z ✔ cancel confirmed and refund pending remain distinct in the customer progress card (0.727831ms)
+2026-09-09T11:06:35.4727045Z ✔ credit conversion waits for explicit quoted consent and does not claim an unknown cancellation succeeded (4.393311ms)
+2026-09-09T11:06:35.4729037Z ✔ canceling traveler selection sends no redemption or automatic identity (1.054972ms)
+2026-09-09T11:06:35.4730637Z ✔ redemption network retry binds the same quote and explicitly selected traveler (2.276094ms)
+2026-09-09T11:06:35.4732644Z ✔ unknown booking and pending refund remain distinct from completed credit restoration (0.874535ms)
+2026-09-09T11:06:35.4734114Z ✔ canceling a supplementary payment dialog re-enables the action (16.318349ms)
+2026-09-09T11:06:35.4735541Z ✔ conversion separates prior cash refunds and forfeiture from retained credit (2.074928ms)
+2026-09-09T11:06:35.4737263Z ✔ forfeiture conversion confirmation stays bound to the displayed quote after source object changes (0.984339ms)
+2026-09-09T11:06:35.4738956Z ✔ credit detail keeps original excluded value visible after redemption changes (0.920741ms)
+2026-09-09T11:06:35.4740572Z ✔ historical credit without a forfeiture breakdown never renders invalid amounts (1.260105ms)
+2026-09-09T11:06:35.4742064Z ✔ fare confirmation separates fee tiers, cooling, change and property credit terms (2.300309ms)
+2026-09-09T11:06:35.4743206Z ✔ cancelling fare confirmation has no accepted contract (1.783784ms)
+2026-09-09T11:06:35.4743962Z ✔ accepted hash remains bound to the rules displayed before asynchronous state changes (0.834329ms)
+2026-09-09T11:06:35.4744775Z ✔ declining hotel rules never selects or authorizes a traveler or creates an order (1.614447ms)
+2026-09-09T11:06:35.4745636Z ✔ accepted hotel contract is included with selected traveler and stable booking request identity (1.142255ms)
+2026-09-09T11:06:35.4746376Z ✔ supplier money and percentage inputs use exact minor units (1.146813ms)
+2026-09-09T11:06:35.4747127Z ✔ supplier lost-response retry keeps request identity and sends only the claimed cause (4.214807ms)
+2026-09-09T11:06:35.4747949Z ✔ supplier duplicate clicks while a request is pending cannot create another request (1.10222ms)
+2026-09-09T11:06:35.4748861Z ✔ unknown supplier cancellation shows approved refund waiting for confirmation, without a resend button (15.213063ms)
+2026-09-09T11:06:35.4749718Z ✔ hotel funds distinguish frozen, charged, released and refunded cent amounts (26.669545ms)
+2026-09-09T11:06:35.4750484Z ✔ only approved pending refunds expose retry and all server labels are escaped (0.550098ms)
+2026-09-09T11:06:35.4751209Z ✔ unknown funding shows reconciliation instead of a false payment claim (0.483984ms)
+2026-09-09T11:06:35.4752901Z ✔ trip links only open the exact canonical owned direct-reservation path (0.442898ms)
+2026-09-09T11:06:35.4754140Z ✔ closing a stay complaint form makes no request (1.172321ms)
+2026-09-09T11:06:35.4755574Z ✔ complaint retries reuse the same request identity and have no refund approval fields (2.163944ms)
+2026-09-09T11:06:35.4757214Z ✔ blank complaints and duplicate submission clicks cannot send extra requests (1.409524ms)
+2026-09-09T11:06:35.4758866Z ✔ closing hotel authorization leaves funds untouched (2.189913ms)
+2026-09-09T11:06:35.4760155Z ✔ hotel checkout requires confirmation and binds the complete stay amount (2.551338ms)
+2026-09-09T11:06:35.4761997Z ✔ a second click cannot create another hotel authorization while the first is pending (0.92569ms)
+2026-09-09T11:06:35.4763463Z ✔ a failed hotel authorization remains visible and can be retried (0.853585ms)
+2026-09-09T11:06:35.4764809Z ✔ conversion clearly shows capture and value and closing does not convert (22.201294ms)
+2026-09-09T11:06:35.4766169Z ✔ conversion retry keeps original quote, amount and original expiry (2.404584ms)
+2026-09-09T11:06:35.4767556Z ✔ redemption uses server quote policy and displays forfeiture before consent (1.478313ms)
+2026-09-09T11:06:35.4768983Z ✔ redemption confirms a fresh traveler and only releases hotel fields (1.771451ms)
+2026-09-09T11:06:35.4770388Z ✔ double click and Escape cannot duplicate or dismiss pending redemption (10.501547ms)
+2026-09-09T11:06:35.4772317Z ✔ credit list filters property and disables frozen, expired or reconciliation credits (1.253122ms)
+2026-09-09T11:06:35.4773574Z ✔ a cancellation quote never cancels a booking and closing preserves it (21.399595ms)
+2026-09-09T11:06:35.4774778Z ✔ fee consent binds the server quote and keeps frozen release separate from cash refund (1.92588ms)
+2026-09-09T11:06:35.4776246Z ✔ interrupted cancellation retry uses exactly the same quote and fee (1.297955ms)
+2026-09-09T11:06:35.4776956Z ✔ double clicks cannot settle twice while a cancellation is pending (1.228246ms)
+2026-09-09T11:06:35.4777691Z ✔ unavailable fare actions have no executable buttons and rule text is escaped (1.14522ms)
+2026-09-09T11:06:35.4778407Z ✔ date changes quote first and require fresh consent after editing dates (2.381991ms)
+2026-09-09T11:06:35.4779119Z ✔ extension keeps check-in fixed and explains replacement authorization (2.224808ms)
+2026-09-09T11:06:35.4779850Z ✔ independent review requires an explicit checked attestation and chosen proof (2.284389ms)
+2026-09-09T11:06:35.4780602Z ✔ review submits the exact evidence snapshot and no caller-selected money (0.833066ms)
+2026-09-09T11:06:35.4781646Z ✔ customer sees completed original refund separately from pending extra payment (14.652936ms)
+2026-09-09T11:06:35.4782556Z ✔ unapproved guest liability is a review hold without a refund promise or pay button (0.259836ms)
+2026-09-09T11:06:35.4783388Z ✔ zero captured payment explains authorization release and completed case has no retry (0.404326ms)
+2026-09-09T11:06:35.4784210Z ✔ finance entry converts decimal currency without fractional cents or silent rounding (0.490948ms)
+2026-09-09T11:06:35.4785078Z ✔ rail order preserves party, immutable prebook and original total through payment cancellation (4.014022ms)
+2026-09-09T11:06:35.4785913Z ✔ attraction order uses the quoted slot, quantity and prebook and shows eligibility (0.573592ms)
+2026-09-09T11:06:35.4786628Z ✔ cancelling confirmation step 1 never creates an order or payment (0.230691ms)
+2026-09-09T11:06:35.4787293Z ✔ cancelling confirmation step 2 never creates an order or payment (0.368829ms)
+2026-09-09T11:06:35.4787895Z ✔ cancelled party selection cannot reach order creation (0.360484ms)
+2026-09-09T11:06:35.4788573Z ✔ quote that expires during traveler selection cannot create or pay an order (0.844929ms)
+2026-09-09T11:06:35.4789166Z ✔ missing final consent never creates an order (0.46046ms)
+2026-09-09T11:06:35.4789704Z ✔ different people are required for every quoted place (0.461192ms)
+2026-09-09T11:06:35.4790307Z ✔ an uncertain payment still opens the existing order for recovery (1.670442ms)
+2026-09-09T11:06:35.4791001Z ✔ repeated clicks cannot start a second booking while confirmation is open (0.528648ms)
+2026-09-09T11:06:35.4792024Z ✔ mismatched total, journey or slot is refused before any traveler consent (0.404436ms)
+2026-09-09T11:06:35.4792693Z ✔ cancelling date selection never requests a quote or payment (2.250216ms)
+2026-09-09T11:06:35.4793859Z ✔ ride changes continue to use their separate workflow (1.699957ms)
+2026-09-09T11:06:35.4794413Z ✔ viewing a rental quote does not execute the change (0.905352ms)
+2026-09-09T11:06:35.4795058Z ✔ confirmed refund difference retains its sign and server quote identity (1.666946ms)
+2026-09-09T11:06:35.4795725Z ✔ unchecked amount consent blocks executing a displayed quote (1.302414ms)
+2026-09-09T11:06:35.4796389Z ✔ the shared amount formatter preserves cents on confirmation screens (15.225767ms)
+2026-09-09T11:06:35.4797111Z ✔ consumer: concurrent expired reads refresh once and preserve namespace (12.165286ms)
+2026-09-09T11:06:35.4797831Z ✔ consumer: a mutation without idempotency is never replayed after renewal (1.436174ms)
+2026-09-09T11:06:35.4798505Z ✔ consumer: an idempotent retry retains the original key and body (0.933705ms)
+2026-09-09T11:06:35.4799146Z ✔ consumer: failed refresh stops without retrying the operation (0.979521ms)
+2026-09-09T11:06:35.4799807Z ✔ console: concurrent expired reads refresh once and preserve namespace (5.090942ms)
+2026-09-09T11:06:35.4800516Z ✔ console: a mutation without idempotency is never replayed after renewal (0.841042ms)
+2026-09-09T11:06:35.4801219Z ✔ console: an idempotent retry retains the original key and body (0.853556ms)
+2026-09-09T11:06:35.4802306Z ✔ console: failed refresh stops without retrying the operation (0.703755ms)
+2026-09-09T11:06:35.4803103Z ✔ consumer logout failure preserves account and current page; success clears all private state (1.383586ms)
+2026-09-09T11:06:35.4803891Z ✔ console logout failure is surfaced instead of silently reporting success (1.843856ms)
+2026-09-09T11:06:35.4804600Z ✔ console requests work when randomUUID is unavailable in an HTTP preview (1.035966ms)
+2026-09-09T11:06:35.4805326Z ✔ console login binds the requested account type before establishing a session (0.858224ms)
+2026-09-09T11:06:35.4806050Z ✔ a changed console actor clears the stale UI and never refreshes or retries (0.821705ms)
+2026-09-09T11:06:35.4806731Z ✔ consumer: expired access can renew once to revoke its own session (1.459508ms)
+2026-09-09T11:06:35.4807388Z ✔ console: expired access can renew once to revoke its own session (0.771471ms)
+2026-09-09T11:06:35.4808016Z ✔ unverified check-in never exposes links or boarding passes (4.355807ms)
+2026-09-09T11:06:35.4808732Z ✔ per-traveler boarding pass appears only for the verified pass state (1.628303ms)
+2026-09-09T11:06:35.4809391Z ✔ invalid URL schemes and credentials do not become customer links (1.271166ms)
+2026-09-09T11:06:35.4810055Z ✔ unknown fleet outcome clearly separates confirmed and proposed times (1.235109ms)
+2026-09-09T11:06:35.4810688Z ✔ cancelled tracking confirmation sends no binding mutation (2.979819ms)
+2026-09-09T11:06:35.4811574Z ✔ checked consent sends exact displayed revision and server authority, never wait overrides (1.41256ms)
+2026-09-09T11:06:35.4812229Z ✔ missing consent prevents any tracking write (1.739481ms)
+2026-09-09T11:06:35.4812818Z ✔ no authorized source does not open an unusable confirmation dialog (0.870186ms)
+2026-09-09T11:06:35.4813507Z ✔ waiting protection is conditional and shows the actual event allowance (1.388956ms)
+2026-09-09T11:06:35.4814146Z ✔ late check-in response cannot populate a detached screen (18.617606ms)
+2026-09-09T11:06:35.4814777Z ✔ closing permission confirmation sends no permission mutation (4.378093ms)
+2026-09-09T11:06:35.4815457Z ✔ source disconnect remains explicit and retains server-directed semantics (2.376852ms)
+2026-09-09T11:06:35.4816211Z ✔ person edit binds the displayed revision and leaves a blank birth date untouched (1.174064ms)
+2026-09-09T11:06:35.4817102Z ✔ sensitive import inspection happens only after explicit confirmation, with no implicit acceptance (8.248807ms)
+2026-09-09T11:06:35.4817823Z ✔ untrusted imported content is escaped before display (1.849147ms)
+2026-09-09T11:06:35.4818468Z ✔ duplicate submits during a pending mutation call the server once (1.752465ms)
+2026-09-09T11:06:35.4819204Z ✔ import reassignment binds traveler and item revision and does not accept content (1.499643ms)
+2026-09-09T11:06:35.4820000Z ✔ RAIL cancellation requires explicit confirmation (3.029131ms)
+2026-09-09T11:06:35.4820526Z ✔ RAIL response loss still reloads persisted order (2.697923ms)
+2026-09-09T11:06:35.4821105Z ✔ RAIL paid or uncertain orders cannot open unpaid cancellation (2.643921ms)
+2026-09-09T11:06:35.4821838Z ✔ ATTRACTION cancellation requires explicit confirmation (0.760652ms)
+2026-09-09T11:06:35.4822417Z ✔ ATTRACTION response loss still reloads persisted order (0.849117ms)
+2026-09-09T11:06:35.4823036Z ✔ ATTRACTION paid or uncertain orders cannot open unpaid cancellation (2.425433ms)
+2026-09-09T11:06:35.4823653Z ✔ new unpaid reservation displays its frozen UTC deadline (1.195644ms)
+2026-09-09T11:06:35.4824203Z ✔ legacy orders never receive a fabricated deadline (0.220503ms)
+2026-09-09T11:06:35.4824836Z ✔ expiry display relies on persisted server state instead of browser clock (0.166391ms)
+2026-09-09T11:06:35.4825480Z ✔ started and uncertain payment keeps its reservation message (1.00604ms)
+2026-09-09T11:06:35.4826139Z ✔ RAIL: opening recovery does not send a refund until confirmed (2.175866ms)
+2026-09-09T11:06:35.4826764Z ✔ RAIL: failed response still reloads persisted order state (2.034703ms)
+2026-09-09T11:06:35.4827562Z ✔ ATTRACTION: opening recovery does not send a refund until confirmed (0.864415ms)
+2026-09-09T11:06:35.4828233Z ✔ ATTRACTION: failed response still reloads persisted order state (0.986364ms)
+2026-09-09T11:06:35.4828910Z ✔ busy recovery gives a customer message and refreshes the existing order (0.836333ms)
+2026-09-09T11:06:35.4829655Z ✔ rail interrupted change confirms the original quote instead of creating another (1.066383ms)
+2026-09-09T11:06:35.4830118Z ℹ tests 135
+2026-09-09T11:06:35.4830319Z ℹ suites 0
+2026-09-09T11:06:35.4830519Z ℹ pass 135
+2026-09-09T11:06:35.4830712Z ℹ fail 0
+2026-09-09T11:06:35.4830909Z ℹ cancelled 0
+2026-09-09T11:06:35.4831115Z ℹ skipped 0
+2026-09-09T11:06:35.4831443Z ℹ todo 0
+2026-09-09T11:06:35.4831689Z ℹ duration_ms 1549.011464
+2026-09-09T11:06:35.4896970Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T11:06:35.4898261Z ##[group]Run actions/upload-artifact@v4
+2026-09-09T11:06:35.4898520Z with:
+2026-09-09T11:06:35.4898757Z   name: GO-DEPTH28-isolated-acceptance-34343745354
+2026-09-09T11:06:35.4899062Z   path: evidence/
+2026-09-09T11:06:35.4899267Z   if-no-files-found: error
+2026-09-09T11:06:35.4899490Z   retention-days: 90
+2026-09-09T11:06:35.4899695Z   compression-level: 6
+2026-09-09T11:06:35.4899905Z   overwrite: false
+2026-09-09T11:06:35.4900109Z   include-hidden-files: false
+2026-09-09T11:06:35.4900329Z env:
+2026-09-09T11:06:35.4900575Z   SEALED_CANDIDATE: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+2026-09-09T11:06:35.4901140Z   EXPECTED_SOURCE_TREE: 3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f
+2026-09-09T11:06:35.4901956Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:35.4902381Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T11:06:35.4902803Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:35.4903170Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:35.4903531Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T11:06:35.4903915Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T11:06:35.4904228Z ##[endgroup]
+2026-09-09T11:06:35.7104706Z (node:2294) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-09T11:06:35.7152391Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-09T11:06:35.7800778Z With the provided path, there will be 6 files uploaded
+2026-09-09T11:06:35.7802009Z Artifact name is valid!
+2026-09-09T11:06:35.7802988Z Root directory input is valid!
+2026-09-09T11:06:36.1632364Z Beginning upload of artifact content to blob storage
+2026-09-09T11:06:36.1921656Z (node:2294) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-09T11:06:36.4517040Z Uploaded bytes 10837
+2026-09-09T11:06:36.5341047Z Finished uploading artifact content to blob storage!
+2026-09-09T11:06:36.5346504Z SHA256 digest of uploaded artifact zip is d518ac9db77904253be466b6650f72b69f5d7d5e012a70e09674dfbb68ed1950
+2026-09-09T11:06:36.5350639Z Finalizing artifact upload
+2026-09-09T11:06:36.8421008Z Artifact GO-DEPTH28-isolated-acceptance-34343745354.zip successfully finalized. Artifact ID 10100816575
+2026-09-09T11:06:36.8423363Z Artifact GO-DEPTH28-isolated-acceptance-34343745354 has been successfully uploaded! Final size is 10837 bytes. Artifact ID is 10100816575
+2026-09-09T11:06:36.8425619Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34343745354/artifacts/10100816575
+2026-09-09T11:06:36.8552918Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T11:06:36.8554188Z Post job cleanup.
+2026-09-09T11:06:37.0075345Z (node:2306) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-09T11:06:37.0077155Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-09T11:06:37.0297234Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T11:06:37.0299473Z Post job cleanup.
+2026-09-09T11:06:37.2096347Z (node:2314) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-09T11:06:37.2112693Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-09T11:06:37.2553811Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T11:06:37.2556189Z Post job cleanup.
+2026-09-09T11:06:37.3752517Z [command]/usr/bin/git version
+2026-09-09T11:06:37.3810628Z git version 2.55.0
+2026-09-09T11:06:37.3873289Z Temporarily overriding HOME='/home/runner/work/_temp/5b0dcbd3-90dc-4442-89de-d775aefd171e' before making global git config changes
+2026-09-09T11:06:37.3882348Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-09T11:06:37.3902598Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/candidate
+2026-09-09T11:06:37.3963862Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T11:06:37.4023492Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-09T11:06:37.4443420Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T11:06:37.4523274Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-09T11:06:37.5042774Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T11:06:37.5086796Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-09T11:06:37.6786676Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T11:06:37.6789091Z Post job cleanup.
+2026-09-09T11:06:37.7833687Z [command]/usr/bin/git version
+2026-09-09T11:06:37.7900438Z git version 2.55.0
+2026-09-09T11:06:37.7968194Z Temporarily overriding HOME='/home/runner/work/_temp/9ebe901d-6578-4517-b4b6-1db514fa566f' before making global git config changes
+2026-09-09T11:06:37.7970855Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-09T11:06:37.7972661Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/tooling
+2026-09-09T11:06:37.8062344Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T11:06:37.8116227Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-09T11:06:37.8572889Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T11:06:37.8633873Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-09T11:06:37.9047144Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T11:06:37.9112390Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-09T11:06:37.9723301Z Cleaning up orphan processes
+2026-09-09T11:06:38.0092030Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
