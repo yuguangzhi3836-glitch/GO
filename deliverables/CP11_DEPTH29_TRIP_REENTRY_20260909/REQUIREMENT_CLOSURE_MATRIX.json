@@ -1,0 +1,200 @@
+{
+  "acceptance_dimensions": [
+    "明确需求及模块边界",
+    "消费者/供应商/管理员角色及权限",
+    "网页桌面与移动视口、适用原生端",
+    "主流程与取消/退款/失败/超时/幂等/并发恢复",
+    "官方内容来源与隔离库存价格支付标识",
+    "精确源码及包可还原",
+    "独立验收原始输出"
+  ],
+  "completion_percentage": null,
+  "current_unassessed_source_paragraph_count": null,
+  "historical_source": "DEPTH26 CURRENT_BUILD_STATUS.json; historical claims, not rerun results",
+  "predeployment_complete": false,
+  "requirements": [
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "VISUAL_QA_REQUIRED",
+      "id": "BRAND-01",
+      "requirement": "GO 主标及子品牌比例锁定"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "VISUAL_QA_REQUIRED",
+      "id": "BRAND-02",
+      "requirement": "GO AI / GO Offer 同权，三张 Navy 卡无图标渐变阴影"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "SIX_VERTICAL_SIMULATED_PAYMENT_REFUND_TESTED",
+      "id": "ALL-01",
+      "requirement": "六品类均完成搜索、下单、支付、确认、售后、退款、关闭"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN",
+      "id": "ALL-02",
+      "requirement": "取消与退款分别显示连续状态"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_DURABLE_MEDIA_REGIONAL_RECOVERY_TESTED_REPLICATION_OPEN",
+      "id": "HOTEL-01",
+      "requirement": "房型按官网事实；价格库存与内容来源分开"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_HOSTED_AND_CATALOG_CASH_SUPPLIER_REMEDY_TESTED",
+      "id": "HOTEL-02",
+      "requirement": "逐夜库存价格及并发不超卖"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN",
+      "id": "HOTEL-03",
+      "requirement": "取消阶梯、改期高补低不退、原酒店住宿额度"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_PARTY_AND_ORIGINAL_REFUND_TESTED_EXTERNAL_ACCEPTANCE_PENDING",
+      "id": "FLIGHT-01",
+      "requirement": "单程、往返、多程与专业条件"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "SIGNED_PER_LEG_TRAVELER_FACTS_TESTED_TRIPS_ENTRY_OPEN",
+      "id": "FLIGHT-02",
+      "requirement": "值机开放、已值机、登机牌状态以官方证据为准"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "SQLITE_AND_POSTGRES_SHARED_CAPACITY_EXPIRY_RECOVERY_TESTED_PARTIAL_AFTERSALES_OPEN",
+      "id": "RAIL-01",
+      "requirement": "铁路席别、站点、改签退票闭环"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_RENTAL_SETTLEMENT_AND_DIRECT_AUTHORIZATION_TESTED",
+      "id": "RENTAL-01",
+      "requirement": "租期计价、保险里程押金及退款"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "SIGNED_EXACT_FLIGHT_DURABLE_ISOLATED_FLEET_TESTED_DRIVER_SETTLEMENT_OPEN",
+      "id": "RIDE-01",
+      "requirement": "航班绑定延误同步及供应商规则内免费等待"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "SQLITE_AND_POSTGRES_SHARED_CAPACITY_EXPIRY_RECOVERY_TESTED_PARTIAL_AFTERSALES_OPEN",
+      "id": "ATTRACTION-01",
+      "requirement": "场次、资格、库存、凭证与改退"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING",
+      "id": "VAULT-01",
+      "requirement": "敏感候选必须确认，来源不可自授可信"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING",
+      "id": "VAULT-02",
+      "requirement": "同名不可静默合并，冲突须明确选择"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING",
+      "id": "VAULT-03",
+      "requirement": "查看修改删除导出断开撤回"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING",
+      "id": "VAULT-04",
+      "requirement": "逐旅行者、逐目的最小字段释放与审计"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "DURABLE_CURRENT_AUTHORITY_AND_OBSERVATIONS_TESTED_FULL_BUSINESS_INTEGRATION_OPEN",
+      "id": "GOV-01",
+      "requirement": "每个动作100%经过C14权限门禁"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "DURABLE_CURRENT_AUTHORITY_AND_OBSERVATIONS_TESTED_FULL_BUSINESS_INTEGRATION_OPEN",
+      "id": "GOV-02",
+      "requirement": "自治资格持续有效；禁止自我扩权"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "DURABLE_CURRENT_AUTHORITY_AND_OBSERVATIONS_TESTED_FULL_BUSINESS_INTEGRATION_OPEN",
+      "id": "GOV-03",
+      "requirement": "外部法律暴露动态判定，缺少规则则保持关闭"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN",
+      "id": "PAY-01",
+      "requirement": "持牌支付机构受控资金、原路退款、账单对账"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_SIMULATOR_PRODUCTION_BLOCK_TESTED",
+      "id": "TRUTH-01",
+      "requirement": "工程、沙箱、灰度、生产状态分开"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "SOURCE_SELECTION_CONTRACT_TESTED",
+      "id": "DIRECT-01",
+      "requirement": "Direct First；合法多渠道Fallback不以佣金优化"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "TEST_REQUIRED",
+      "id": "RECOMMEND-01",
+      "requirement": "Recommendation和Value永久隔离；商业利益不购买推荐"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "E2E_REQUIRED",
+      "id": "OFFER-01",
+      "requirement": "第二页结构化需求；房间与会议分别授权报价"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN",
+      "id": "TRIPS-01",
+      "requirement": "统一旅行事实与销售方收款方履约方及售后状态"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "E2E_REQUIRED",
+      "id": "SUPPLIER-01",
+      "requirement": "供应商移动运营完整闭环"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "TEST_REQUIRED",
+      "id": "INTELLIGENCE-01",
+      "requirement": "Model Gateway五维成本治理与单向信息边界"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "TEST_REQUIRED",
+      "id": "BUSINESS-01",
+      "requirement": "官方直订0%佣金与T20后固定订阅"
+    },
+    {
+      "current_whole_requirement_verdict": "HOLD_REASSESSMENT_REQUIRED",
+      "historical_depth26_claim": "E2E_REQUIRED",
+      "id": "MEMBER-01",
+      "requirement": "Staff自动核验失效；Owner互斥权益与认可"
+    }
+  ],
+  "source_tree_sha256": "ffcea37a3d2ce626026571c1d16eb7be190bd1b048b6b8dfd0d6c8164f2b556c",
+  "unassessed_source_paragraph_count_historical": 725,
+  "user_scope": "先完成全系统各模块；部署后的真实订单数据后置。不得将模拟库存价格支付标为真实。酒店房型内容仍须官网事实证据。"
+}

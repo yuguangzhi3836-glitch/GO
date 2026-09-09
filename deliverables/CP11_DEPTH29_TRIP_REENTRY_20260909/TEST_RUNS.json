@@ -1,0 +1,58 @@
+{
+  "recorded_at_utc": "2026-09-09T12:31:02.541729+00:00",
+  "candidate_source_tree_sha256": "ffcea37a3d2ce626026571c1d16eb7be190bd1b048b6b8dfd0d6c8164f2b556c",
+  "runs": [
+    {
+      "name": "backend",
+      "tests": 171,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "result": "PASS_SCOPED",
+      "source_tree_sha256": "ffcea37a3d2ce626026571c1d16eb7be190bd1b048b6b8dfd0d6c8164f2b556c",
+      "environment": "local Python 3.13.5, disposable SQLite, FastAPI TestClient, synthetic suppliers/payments",
+      "timestamps_from_junit": [
+        "2026-09-09T20:27:54.167226+08:00"
+      ],
+      "artifact_timestamp_utc": "2026-09-09T12:28:44.276570+00:00",
+      "raw_xml": "evidence/restored-backend.xml",
+      "raw_xml_sha256": "b656a612e4c01e90ccf1d27c1bcb6161760b435dd843e40e557562043fec9d00",
+      "raw_log": "evidence/restored-backend.log",
+      "raw_log_sha256": "437081e1814a99c8113caa6fce9fc94369e73c867d74da71e3043a4ac807c15a",
+      "working_directory": "/workspace/scratch/af00ce8c656d/go-depth29-restored-final"
+    },
+    {
+      "name": "frontend",
+      "tests": 158,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "result": "PASS_SCOPED",
+      "source_tree_sha256": "ffcea37a3d2ce626026571c1d16eb7be190bd1b048b6b8dfd0d6c8164f2b556c",
+      "environment": "local Node 22.22.0, VM/request stubs and TypeScript native pure functions; no browser/device",
+      "timestamps_from_junit": [],
+      "artifact_timestamp_utc": "2026-09-09T12:27:54.357682+00:00",
+      "raw_xml": "evidence/restored-frontend.xml",
+      "raw_xml_sha256": "2a030d1c59d29480ecfba462aa656b6443ab8fe930d930508b6d300b7cc2ae0d",
+      "raw_log": "evidence/restored-frontend.log",
+      "raw_log_sha256": "5b57fa03a95cdabec6f31102d9e6cb816113bd18f5c4388aa29a9221e19c88e2",
+      "working_directory": "/workspace/scratch/af00ce8c656d/go-depth29-restored-final"
+    }
+  ],
+  "not_summed": true,
+  "independent_ci": false,
+  "full_python_regression_rerun": false,
+  "postgres_validation_for_this_tree": false,
+  "browser_acceptance": false,
+  "native_full_typecheck": false,
+  "native_build": false,
+  "native_device_acceptance": false,
+  "release_approved": false,
+  "deployed": false,
+  "notes": [
+    "171 affected Python tests and 158 frontend/native helper tests are separate suites on the same final restored source tree.",
+    "Intermediate outputs preserved under evidence/intermediate and before-root-config; excluded from current acceptance.",
+    "11 collection errors in first strict restore were a packaging/input omission, corrected by fingerprinting the original root configs. No product/production regression is inferred.",
+    "Prior DEPTH28 independent CI 34343745354 remains history for its own 1093-file source scope."
+  ]
+}

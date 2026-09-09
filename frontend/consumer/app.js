@@ -93,7 +93,61 @@ function renderPay(){const o=state.order;$('#app').innerHTML=shell(`<button clas
 async function checkout(){try{const channels=['ALIPAY','WECHAT_PAY','UNIONPAY_QUICKPASS','VISA','MASTERCARD','AMEX','JCB','UNIONPAY_CARD','APPLE_PAY','GOOGLE_PAY'];const i=await api('/v1/payments/intents',{method:'POST',headers:{'Idempotency-Key':`hotel:${state.order.order_id}:authorize`},body:JSON.stringify({business_type:'HOTEL_ORDER',business_id:state.order.order_id,payee_id:state.order.supplier_id||'GO_HOTEL_CLEARING',operation:'AUTHORIZE',amount_minor:state.order.total_amount_minor,currency:state.order.currency,channel_priority:channels})});state.paymentIntent=await api(`/v1/payments/intents/${i.payment_intent_id}/channel`,{method:'POST',body:JSON.stringify({channel:$('#payChannel').value})});const r=await api(`/v1/payments/intents/${i.payment_intent_id}/checkout-readiness`);renderPaymentReadiness(r)}catch(e){toast(e.message)}}
 function renderPaymentReadiness(r){$('#app').innerHTML=shell(`<h1 class="screen-title">支付渠道尚未启用</h1><section class="card"><div class="kv"><span>当前支付</span><b>尚未完成</b></div><div class="kv"><span>渠道</span><span>${consumerLabel(r.channel)}</span></div><div class="kv"><span>状态</span><b>${consumerLabel(r.state)}</b></div><p class="muted">未产生扣款，未确认预订。请稍后重试或选择其他已认证渠道。</p><button class="btn ghost" id="retry">返回选择渠道</button></section>`,'search');bindNav();$('#retry').onclick=renderPay}
 function renderSuccess(){$('#app').innerHTML=shell(`<section class="card" style="text-align:center;padding:36px 22px"><div style="font-size:58px;color:#176b45">✓</div><h1>预订成功</h1><p class="muted">酒店已确认，支付已完成 确认扣款。</p><div class="kv"><span>确认号</span><b>${state.order.supplier_confirmation_no}</b></div><div class="kv"><span>订单号</span><span>${state.order.order_id}</span></div><button class="btn primary" id="trip">查看 GO Trips</button></section>`,'trips');bindNav();$('#trip').onclick=showUnifiedTrips}
-async function showUnifiedTrips(){setVerticalVIMode(false);try{const d=await api('/v1/consumer/unified-trips'),rows=d.items||[];$('#app').innerHTML=shell(`<h1 class="screen-title">GO Trips</h1><div class="sub">航班、铁路、酒店、用车、租车与景点统一事实入口</div>${rows.map(x=>`<section class="card"><div class="row"><h3>${safe(x.title)}</h3><span class="status">${safe(consumerLabel(x.lifecycle_state))}</span></div><div class="kv"><span>品类</span><b>${safe(consumerLabel(x.vertical))}</b></div><div class="kv"><span>支付</span><span>${safe(consumerLabel(x.payment_state))}</span></div><div class="kv"><span>退款</span><span>${safe(consumerLabel(x.refund_state))}</span></div>${window.GODirectAfterSales.tripLink(x)?`<a class="btn ghost" href="${safe(window.GODirectAfterSales.tripLink(x))}">查看入住与售后</a>`:''}</section>`).join('')||consumerEmpty('还没有可验证的行程','完成预订后，酒店、机票、铁路、用车、租车与门票会统一进入 GO Trips。','返回首页','emptyHome')}`,'trips');bindNav()}catch(e){$('#app').innerHTML=shell(`<h1 class="screen-title">GO Trips</h1><div class="empty">行程加载失败。<button class="btn ghost" id="tripRetry">重试</button></div>`,'trips');bindNav();$('#tripRetry').onclick=showUnifiedTrips}}
+async function showUnifiedTrips(){
+  setVerticalVIMode(false);
+  $('#app').innerHTML=shell('<h1 class="screen-title">GO Trips</h1><div id="tripListLoading" role="status">正在读取行程…</div>','trips');
+  bindNav();
+  const loading=$('#tripListLoading');
+  try {
+    const d=await api('/v1/consumer/unified-trips');
+    if(!loading.isConnected)return;
+    const rows=d.items||[];
+    $('#app').innerHTML=shell(`<h1 class="screen-title">GO Trips</h1><div class="sub">酒店、机票、铁路、接送、租车与景点的订单和后续安排</div>${window.GOTrips.cards(rows,consumerLabel,money)||consumerEmpty('还没有行程','预订后可在这里查看订单，继续付款或处理退改。','返回首页','emptyHome')}`,'trips');
+    bindNav();
+    document.querySelectorAll('[data-go-trip-index]').forEach(button=>button.onclick=()=>openUnifiedTrip(rows[Number(button.dataset.goTripIndex)]));
+    if($('#emptyHome'))$('#emptyHome').onclick=showHome;
+  } catch(e) {
+    if(!loading.isConnected)return;
+    $('#app').innerHTML=shell('<h1 class="screen-title">GO Trips</h1><div class="empty" role="alert">行程加载失败。<button class="btn ghost" id="tripRetry">重试</button></div>','trips');
+    bindNav();$('#tripRetry').onclick=showUnifiedTrips;
+  }
+}
+async function openUnifiedTrip(item){
+  setVerticalVIMode(false);
+  $('#app').innerHTML=shell('<h1 class="screen-title">订单详情</h1><div id="tripDetailLoading" role="status">正在核对最新订单状态…</div>','trips');
+  bindNav();const loading=$('#tripDetailLoading');
+  try {
+    await window.GOTrips.open(item,{
+      api,current:()=>loading.isConnected,navigate:url=>location.assign(url),
+      render:renderUnifiedOrder
+    });
+  } catch(e) {
+    if(!loading.isConnected)return;
+    $('#app').innerHTML=shell('<h1 class="screen-title">订单详情</h1><p role="alert">暂时无法读取这笔订单，请返回行程列表核对。</p><button class="btn ghost" id="tripDetailRetry">重试</button><button class="btn ghost" id="tripDetailBack">返回全部行程</button>','trips');
+    bindNav();$('#tripDetailRetry').onclick=()=>openUnifiedTrip(item);$('#tripDetailBack').onclick=showUnifiedTrips;
+  }
+}
+function renderUnifiedOrder(kind,value){
+  if(kind==='HOTEL_CATALOG'){state.detail=value;renderTrip();}
+  else if(kind==='FLIGHT'){state.flightOrder=value;renderFlightOrder();}
+  else if(kind==='RAIL'){state.railOrder=value;renderRailOrder();}
+  else if(kind==='RIDE'){state.rideOrder=value;renderMobilityOrder('RIDE');}
+  else if(kind==='RENTAL'){state.rentalOrder=value;renderMobilityOrder('RENTAL');}
+  else if(kind==='ATTRACTION'){state.attractionOrder=value;renderAttractionOrder();}
+  const order=kind==='HOTEL_CATALOG'?value.order:value;
+  if(!['PAYMENT_PENDING','PAYMENT_AUTHORIZED'].includes(order.status))return;
+  const host=document.createElement('section');host.className='card';
+  const button=document.createElement('button');button.className='btn primary';button.textContent='核对金额并继续付款';host.append(button);
+  (document.querySelector('.journey-main')||$('#app')).append(host);
+  const vertical=kind==='HOTEL_CATALOG'?'HOTEL':kind;
+  const item={vertical,order_id:order.order_id,navigation:{kind,order_id:order.order_id}};
+  button.onclick=async()=>{
+    if(button.disabled)return;button.disabled=true;
+    try{await window.GOTrips.resumePayment(item,{api,current:()=>host.isConnected,pay:window.GOBooking.pay,render:renderUnifiedOrder});}
+    catch{if(host.isConnected)toast('付款结果仍需核对，请刷新原订单后再操作。');}
+    finally{button.disabled=false;}
+  };
+}
 async function showTrips(){try{const d=await api('/v1/consumer/trips');state.trips=d.items;const cards=state.trips.map(t=>`<section class="card" data-trip="${t.order_id}"><div class="row"><h3 style="margin:0">${t.hotel_name}</h3><span class="status">${consumerLabel(t.status)}</span></div><div class="muted" style="font-size:12px;margin:7px 0">${t.order_id}</div><div class="row"><b>${money(t.total_amount_minor,t.currency)}</b><span class="muted">${t.refund?`退款 ${consumerLabel(t.refund.status)}`:t.stay_credit?`住宿额度 ${consumerLabel(t.stay_credit.status)}`:'查看详情 →'}</span></div></section>`).join('');$('#app').innerHTML=shell(`<h1 class="screen-title">GO Trips</h1><div class="sub">预订、退改、退款与Credit统一事实入口</div>${cards||consumerEmpty('还没有订单','完成一次预订后，订单会出现在这里。','返回首页','tripHome')}`,'trips');bindNav();document.querySelectorAll('[data-trip]').forEach(x=>x.onclick=()=>showTrip(x.dataset.trip));if($('#tripHome'))$('#tripHome').onclick=showHome}catch(e){toast(e.message)}}
 async function showTrip(id){try{state.detail=await api(`/v1/consumer/orders/${id}/detail`);renderTrip()}catch(e){toast(e.message)}}
 function renderTrip(){const d=state.detail,o=d.order;const manageable=['CONFIRMED'].includes(o.status)&&!d.supplier_remedy&&!d.credit_redemption&&!d.stay_credits.length;$('#app').innerHTML=shell(`<button class="back" id="back">← GO Trips</button><section class="card"><div class="row"><h2 style="margin:0">${o.hotel_name||'酒店名称待返回'}</h2><span class="status">${consumerLabel(o.status)}</span></div><div class="kv"><span>订单号</span><span>${o.order_id}</span></div><div class="kv"><span>确认号</span><b>${o.supplier_confirmation_no||'等待供应商确认'}</b></div><div class="kv"><span>金额</span><b>${money(o.total_amount_minor,o.currency)}</b></div>${d.stay?`<div class="kv"><span>入住</span><span>${d.stay.check_in} → ${d.stay.check_out}</span></div>`:''}</section>${window.GOCatalogFare?.card(d.fare_rule,o,money)||''}${window.GOCatalogCashFare?.progress(d.cash_after_sales,money)||''}${window.GODirectAfterSales?.disruption(d.supplier_remedy,o.currency)||''}<section class="card actions"><h3>管理订单</h3><button class="btn ghost" id="change" ${!manageable?'disabled':''}>改期 + 补差价</button><button class="btn ghost" id="credit" ${!manageable?'disabled':''}>查看本店住宿额度转换</button><button class="btn danger" id="cancel" ${!manageable?'disabled':''}>取消 / 查看退款</button></section>${d.refunds.length&&d.cash_after_sales?.action!=='CANCEL'?`<section class="card"><h3>退款</h3>${d.refunds.map(r=>`<div class="kv"><span>${consumerLabel(r.status)}</span><b>${money(r.amount_minor,r.currency)}</b></div>`).join('')}</section>`:''}${window.GOCatalogCredit?.cards(d.stay_credits,o.currency)||''}${window.GOCatalogCredit?.redemptionCard(d.credit_redemption)||''}<section class="card"><h3>订单时间线</h3><div class="timeline">${d.timeline.slice(-12).map(e=>`<div><b>${consumerLabel(e.event_type)}</b><br><span class="muted">${new Date(e.occurred_at).toLocaleString()}</span></div>`).join('')}</div></section>`,'trips');bindNav();$('#back').onclick=showTrips;window.GOCatalogCredit?.bind(catalogCreditContext());window.GOCatalogCashFare?.bind(cashFareContext(),d.cash_after_sales);if($('#change'))$('#change').onclick=changeFlow;if($('#cancel'))$('#cancel').onclick=cancelFlow;if($('#credit'))$('#credit').onclick=creditFlow;const remedy=$('#retrySupplierRemedy');if(remedy)remedy.onclick=async()=>{if(remedy.disabled)return;remedy.disabled=true;try{await api(`/v1/consumer/orders/${encodeURIComponent(o.order_id)}/supplier-cancellation-remedy/retry`,{method:'POST'});await showTrip(o.order_id)}catch(e){toast(e.message);remedy.disabled=false}}}

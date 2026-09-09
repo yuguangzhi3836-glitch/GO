@@ -1,0 +1,133 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.5, pytest-9.0.2, pluggy-1.6.0
+rootdir: /workspace/scratch/af00ce8c656d/go-depth29-restore-check
+plugins: asyncio-1.3.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 11 items / 11 errors
+
+==================================== ERRORS ====================================
+_____________ ERROR collecting tests/test_depth29_trip_reentry.py ______________
+ImportError while importing test module '/workspace/scratch/af00ce8c656d/go-depth29-restore-check/tests/test_depth29_trip_reentry.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../go-depth28-restore-manual-check/gate_runtime/python/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_depth29_trip_reentry.py:7: in <module>
+    from go_hotel.db.session import SessionLocal, engine
+E   ModuleNotFoundError: No module named 'go_hotel'
+__________ ERROR collecting tests/test_consumer_unified_lifecycle.py ___________
+ImportError while importing test module '/workspace/scratch/af00ce8c656d/go-depth29-restore-check/tests/test_consumer_unified_lifecycle.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../go-depth28-restore-manual-check/gate_runtime/python/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_consumer_unified_lifecycle.py:4: in <module>
+    from go_hotel.db.models import Base
+E   ModuleNotFoundError: No module named 'go_hotel'
+_______________ ERROR collecting tests/test_master03_closure.py ________________
+ImportError while importing test module '/workspace/scratch/af00ce8c656d/go-depth29-restore-check/tests/test_master03_closure.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../go-depth28-restore-manual-check/gate_runtime/python/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_master03_closure.py:6: in <module>
+    from go_hotel.core.config import settings
+E   ModuleNotFoundError: No module named 'go_hotel'
+____________ ERROR collecting tests/test_sprint3e_unified_trips.py _____________
+ImportError while importing test module '/workspace/scratch/af00ce8c656d/go-depth29-restore-check/tests/test_sprint3e_unified_trips.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../go-depth28-restore-manual-check/gate_runtime/python/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_sprint3e_unified_trips.py:2: in <module>
+    from go_hotel.db.session import SessionLocal
+E   ModuleNotFoundError: No module named 'go_hotel'
+_____________ ERROR collecting tests/test_depth05_money_retries.py _____________
+ImportError while importing test module '/workspace/scratch/af00ce8c656d/go-depth29-restore-check/tests/test_depth05_money_retries.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../go-depth28-restore-manual-check/gate_runtime/python/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_depth05_money_retries.py:5: in <module>
+    from go_hotel.db.models import OmnichannelPaymentIntentRow as Intent,OmnichannelMoneyMovementRow as Movement
+E   ModuleNotFoundError: No module named 'go_hotel'
+_____________ ERROR collecting tests/test_depth19_travel_facts.py ______________
+ImportError while importing test module '/workspace/scratch/af00ce8c656d/go-depth29-restore-check/tests/test_depth19_travel_facts.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../go-depth28-restore-manual-check/gate_runtime/python/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_depth19_travel_facts.py:9: in <module>
+    from go_hotel.autonomy.durable import canonical
+E   ModuleNotFoundError: No module named 'go_hotel'
+____________ ERROR collecting tests/test_depth20_api_fulfillment.py ____________
+ImportError while importing test module '/workspace/scratch/af00ce8c656d/go-depth29-restore-check/tests/test_depth20_api_fulfillment.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../go-depth28-restore-manual-check/gate_runtime/python/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_depth20_api_fulfillment.py:6: in <module>
+    from go_hotel.db.session import SessionLocal
+E   ModuleNotFoundError: No module named 'go_hotel'
+____________ ERROR collecting tests/test_depth21_refund_recovery.py ____________
+ImportError while importing test module '/workspace/scratch/af00ce8c656d/go-depth29-restore-check/tests/test_depth21_refund_recovery.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../go-depth28-restore-manual-check/gate_runtime/python/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_depth21_refund_recovery.py:10: in <module>
+    from go_hotel.db.session import SessionLocal, engine
+E   ModuleNotFoundError: No module named 'go_hotel'
+____________ ERROR collecting tests/test_depth22_rail_resolution.py ____________
+ImportError while importing test module '/workspace/scratch/af00ce8c656d/go-depth29-restore-check/tests/test_depth22_rail_resolution.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../go-depth28-restore-manual-check/gate_runtime/python/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_depth22_rail_resolution.py:8: in <module>
+    from go_hotel.db.session import SessionLocal, engine
+E   ModuleNotFoundError: No module named 'go_hotel'
+_______________ ERROR collecting tests/test_depth23_capacity.py ________________
+ImportError while importing test module '/workspace/scratch/af00ce8c656d/go-depth29-restore-check/tests/test_depth23_capacity.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../go-depth28-restore-manual-check/gate_runtime/python/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_depth23_capacity.py:6: in <module>
+    from go_hotel.db.session import SessionLocal,engine
+E   ModuleNotFoundError: No module named 'go_hotel'
+________________ ERROR collecting tests/test_depth24_expiry.py _________________
+ImportError while importing test module '/workspace/scratch/af00ce8c656d/go-depth29-restore-check/tests/test_depth24_expiry.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../go-depth28-restore-manual-check/gate_runtime/python/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_depth24_expiry.py:9: in <module>
+    from go_hotel.autonomy.durable import db_now_ms, digest
+E   ModuleNotFoundError: No module named 'go_hotel'
+- generated xml file: /workspace/scratch/af00ce8c656d/go-depth29/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/evidence/restored-backend.xml -
+=========================== short test summary info ============================
+ERROR tests/test_depth29_trip_reentry.py
+ERROR tests/test_consumer_unified_lifecycle.py
+ERROR tests/test_master03_closure.py
+ERROR tests/test_sprint3e_unified_trips.py
+ERROR tests/test_depth05_money_retries.py
+ERROR tests/test_depth19_travel_facts.py
+ERROR tests/test_depth20_api_fulfillment.py
+ERROR tests/test_depth21_refund_recovery.py
+ERROR tests/test_depth22_rail_resolution.py
+ERROR tests/test_depth23_capacity.py
+ERROR tests/test_depth24_expiry.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 11 errors during collection !!!!!!!!!!!!!!!!!!!
+============================== 11 errors in 0.68s ==============================
