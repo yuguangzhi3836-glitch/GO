@@ -1,16 +1,16 @@
-name: CP11 DEPTH24 isolated runtime acceptance
+name: CP11 DEPTH25 isolated runtime acceptance
 on:
   push:
-    branches: [acceptance/cp11-depth24-runtime]
+    branches: [acceptance/cp11-depth25-runtime]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: cp11-depth24-runtime
+  group: cp11-depth25-runtime
   cancel-in-progress: false
 jobs:
   isolated-runtime:
-    if: startsWith(github.ref, 'refs/heads/acceptance/cp11-depth24-runtime')
+    if: startsWith(github.ref, 'refs/heads/acceptance/cp11-depth25-runtime')
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     services:
@@ -46,6 +46,8 @@ jobs:
           node-version: '22.22.0'
       - name: Verify and materialize immutable source and dependencies
         run: python ci/materialize_depth24.py
+      - name: Verify and apply the reviewed DEPTH25 migration delta
+        run: python ci/apply_depth25_overlay.py
       - name: Install frozen offline dependencies
         run: python -m pip install --no-index --find-links dependencies/wheelhouse -r source/gate_runtime/requirements.lock
       - name: Apply complete PostgreSQL migration chain
@@ -54,6 +56,9 @@ jobs:
           DATABASE_URL: postgresql+psycopg://go@localhost:5432/go
           PYTHONPATH: src
         run: python -m alembic upgrade head
+      - name: Migration history regression
+        working-directory: source
+        run: python -m pytest tests/test_depth25_migration_history.py tests/test_parent_implementation_code_review_debt_closure.py::test_current_source_head_and_upgrade_downgrade_roundtrip --junitxml=../evidence/migration_history.xml
       - name: Original six PostgreSQL concurrency cases
         working-directory: source
         run: python -m pytest tests/test_p0_0100_postgres_concurrency.py tests/test_p0_0101_postgres_race_matrix.py --junitxml=../evidence/postgres_existing.xml
@@ -89,7 +94,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: GO-CP11-DEPTH24-runtime-evidence
+          name: GO-CP11-DEPTH25-runtime-evidence
           path: evidence/
           if-no-files-found: error
           retention-days: 90
