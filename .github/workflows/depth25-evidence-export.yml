@@ -1,0 +1,19 @@
+name: Preserve immutable DEPTH25 original acceptance evidence
+on:
+  push:
+    branches: [acceptance/cp11-depth25-evidence-export]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  export-one-passed-run:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify and persist the exact original evidence
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 ci/export_depth25_evidence.py
