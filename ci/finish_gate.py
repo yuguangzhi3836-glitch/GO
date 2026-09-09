@@ -5,7 +5,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 results={}
-for name,minimum in [('migration_history',4),('postgres_existing',6),('postgres_expiry',30),('frontend_node22',115)]:
+for name,minimum in [('migration_history',5),('postgres_existing',6),('postgres_expiry',53),('frontend_node22',115)]:
     path=Path('evidence',name+'.xml')
     if not path.exists():results[name]={'accepted':False,'reason':'MISSING_REPORT'};continue
     root=ET.parse(path).getroot()

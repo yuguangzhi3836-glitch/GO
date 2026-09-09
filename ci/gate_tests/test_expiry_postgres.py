@@ -1,2 +1,3 @@
-"""The unchanged 30 DEPTH24 cases against PostgreSQL row locks and process death."""
+"""Unchanged capacity and expiry tests against actual PostgreSQL transactions."""
+from test_depth23_capacity import *
 from test_depth24_expiry import *

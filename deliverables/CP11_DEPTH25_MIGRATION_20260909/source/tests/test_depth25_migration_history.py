@@ -61,3 +61,18 @@ def test_migration_does_not_depend_on_current_business_metadata(tmp_path, monkey
         created = {r[0] for r in s.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert {'connector_runtime_authorization', 'connector_runtime_operation', 'connector_webhook_receipt',
             'connector_runtime_observation', 'connector_runtime_reconciliation', 'connector_runtime_safety_event'} <= created
+
+
+def test_rail_response_timestamps_survive_database_timezone_roundtrip():
+    from datetime import datetime, UTC, timezone, timedelta
+    from go_hotel.db.models import RailOrderRow
+    from go_hotel.rail.service import rail_service
+    instant=datetime(2026,9,9,3,0,0,123456)
+    order=RailOrderRow(order_id='time-order',account_id='owner',status='PAYMENT_PENDING',
+        total_amount_minor=100,currency='CNY',passengers=[],current_journey={},
+        created_at=instant,updated_at=instant)
+    before=rail_service._order(order)
+    order.created_at=instant.replace(tzinfo=UTC)
+    order.updated_at=instant.replace(tzinfo=UTC).astimezone(timezone(timedelta(hours=8)))
+    assert rail_service._order(order)==before
+    assert before['created_at']==before['updated_at']=='2026-09-09T03:00:00.123456+00:00'
