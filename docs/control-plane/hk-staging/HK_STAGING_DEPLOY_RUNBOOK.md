@@ -8,8 +8,9 @@ verify current live state. The live state, Human Approval, Signed Task,
 installed artifact, durable record, and Signed Evidence remain authoritative.
 
 1. Obtain explicit Human Approval for the exact environment, fixed eight
-   targets, same-image force-recreate scope, and the absence of migration,
-   Production access, and automatic rollback.
+   targets, and the absence of migration, Production access, and automatic
+   rollback. `--force-recreate` is a fixed Executor semantic, not a caller
+   parameter.
 2. Validate current signed CANARY Evidence against its original signed Task.
    Candidate image and repository digest may bind transitively through the
    signed Task when the Evidence binds the task ID, nonce, action, and
@@ -30,29 +31,35 @@ installed artifact, durable record, and Signed Evidence remain authoritative.
    `sudo`/Executor invocation for the formal path.
 8. The narrow Executor creates the durable previous-state record **before**
    any Docker mutation. Failure to create this record rejects the action.
-9. The Executor uses its fixed deployment scope and performs same-image
-   `--force-recreate` for exactly the eight target services. `force_recreate`
-   is not a caller parameter.
-10. `GO_RUNTIME_ENV_FILE` is injected by the Executor as a fixed subprocess
-    environment input; it is not caller-controlled.
-11. The Executor waits for bounded API readiness, then performs complete
-    post-deploy checks: API health, worker process-liveness, Alembic
-    current/head, immutable target-image binding, Compose/environment
-    integrity, and non-target integrity.
-12. On success, the HK Agent creates and pushes Signed DEPLOY Evidence.
-    Command Center independently verifies the signature and binding.
-13. Observe subsequent formal pickup cycles. Completion/replay protection must
-    prevent another dispatch and another successful Evidence record.
+9. The Executor uses its fixed deployment scope and performs `--force-recreate`
+   for exactly the eight target services. `force_recreate` is not a caller
+   parameter. The just-completed Formal R4 DEPLOY E2E proved this semantic in a
+   **same-image** scenario. Same-image is therefore a proven E2E scenario, not
+   a mandatory condition for every future `HK_STAGING_DEPLOY`.
+10. No Formal R4 different-image DEPLOY E2E is claimed. Whether the installed
+    R4 Executor supports a different-image candidate is `NOT_PROVEN` until the
+    installed R4 implementation and a formal signed E2E result are mechanically
+    verified; do not infer support or lack of support from this runbook.
+11. `GO_RUNTIME_ENV_FILE` is injected by the Executor as a fixed subprocess
+   environment input; it is not caller-controlled.
+12. The Executor waits for bounded API readiness, then performs complete
+   post-deploy checks: API health, worker process-liveness, Alembic
+   current/head, immutable target-image binding, Compose/environment
+   integrity, and non-target integrity.
+13. On success, the HK Agent creates and pushes Signed DEPLOY Evidence.
+   Command Center independently verifies the signature and binding.
+14. Observe subsequent formal pickup cycles. Completion/replay protection must
+   prevent another dispatch and another successful Evidence record.
 
 ## Formal post-deploy verification
 
-14. Create a separate fresh signed `HK_STAGING_VERIFY` Task; do not reuse the
-    DEPLOY Task.
-15. Let the formal timer invoke the narrow VERIFY Executor once. VERIFY is
-    read-only: it must not force-recreate, migrate, roll back, or mutate
-    business runtime.
-16. Verify the Signed VERIFY Evidence in Command Center and observe replay
-    protection through subsequent formal pickup cycles.
+15. Create a separate fresh signed `HK_STAGING_VERIFY` Task; do not reuse the
+   DEPLOY Task.
+16. Let the formal timer invoke the narrow VERIFY Executor once. VERIFY is
+   read-only: it must not force-recreate, migrate, roll back, or mutate
+   business runtime.
+17. Verify the Signed VERIFY Evidence in Command Center and observe replay
+   protection through subsequent formal pickup cycles.
 
 ## Non-negotiable retry rule
 

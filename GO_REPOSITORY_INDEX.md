@@ -10,3 +10,9 @@ DEPTH09 在 DEPTH08 上增加酒店身份、明确官网房型关系采集、逐
 批次真实完成统计和管理写权限。更广一键建库流水线仍待完成。
 
 FINAL_RELEASE_GATE=HOLD；HOTEL_REPLICATION_GATE=HOLD。以上均为工程复核归档，未部署香港。
+
+## HK-STAGING operations
+
+Before any HK-STAGING deployment planning or execution, read
+[`docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md`](docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md).
+Do not reconstruct deployment procedure from AI memory or prior chats.
