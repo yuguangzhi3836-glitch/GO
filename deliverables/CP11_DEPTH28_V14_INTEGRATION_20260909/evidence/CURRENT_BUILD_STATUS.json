@@ -1,0 +1,33 @@
+{
+  "boundary": "No HK connection, deployment, RDS/Redis/Caddy/schema/worker/order/payment change.",
+  "build": "DEPTH28_V14_THREE_SURFACE_INTEGRATION",
+  "deployed": false,
+  "earliest_blocker": "Cloud browser could not access the isolated local preview; post-login desktop and mobile journeys remain unobserved.",
+  "gate_chain": {
+    "FINAL_RELEASE": "HOLD",
+    "SEALED_NODE_GATE": "HOLD",
+    "SIX_VERTICAL_REAL_CLOSED_LOOP_E2E": "HOLD",
+    "THREE_END_REAL_UX_LOGIN": "HOLD"
+  },
+  "implemented": true,
+  "independently_tested": false,
+  "locally_tested": true,
+  "release_approved": false,
+  "tests": {
+    "affected_python": {
+      "failed": 0,
+      "passed": 59
+    },
+    "frontend_node": {
+      "failed": 0,
+      "passed": 135
+    }
+  },
+  "verified_in_hk": false,
+  "vi": {
+    "primary_v14": "LOCKED_UNCHANGED",
+    "subbrand_go_opacity": 0.78,
+    "subbrand_go_scale_vs_previous": 0.8333333333,
+    "subbrand_go_tier": "RECESSIVE"
+  }
+}

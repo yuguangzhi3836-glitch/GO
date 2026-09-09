@@ -1,0 +1,21 @@
+{
+  "attempts": [
+    {
+      "result": "REJECTED",
+      "scope": "manual staging-directory overlay check",
+      "reason": "A reused extraction directory left five earlier file versions in the target; SHA256 verification rejected the target before acceptance."
+    },
+    {
+      "result": "PASS",
+      "scope": "packaged restore_depth28.py into a new output directory",
+      "restored_files_verified": 1093,
+      "parent_files_verified": 1081,
+      "source_tree_sha256": "3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f",
+      "delta_sha256": "98f006935a421b99aa4ea35c1f43ec0186b04bfc262e01b46f3d4f341d13a109",
+      "restored_node_tests": {"passed": 135, "failed": 0},
+      "restored_python_tests": {"passed": 59, "failed": 0}
+    }
+  ],
+  "accepted_restore": 2,
+  "final_release_gate": "HOLD"
+}
