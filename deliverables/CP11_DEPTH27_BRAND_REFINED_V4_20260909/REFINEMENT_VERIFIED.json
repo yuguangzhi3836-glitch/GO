@@ -1,0 +1,162 @@
+{
+  "parent_commit": "e250091a782148b45a776d3f2af2fa27e9596539",
+  "parent_svg_sha256": "87710c03858f7caba0d3a08761cb1aef9fe31702350ca69fd92235dc053ef186",
+  "new_svg_sha256": "b838793ce832012d78e686b906f94bb3d994af24a802232a7dfcb366a8f7306f",
+  "unchanged": [
+    "G/O exact outlines and geometry",
+    "central red block geometry and color",
+    "English glyph outlines",
+    "all 12 Chinese glyph outlines, including complete 订"
+  ],
+  "refined": {
+    "english_letter_height": 500,
+    "plus_size": 200.0,
+    "plus_position": "upper right",
+    "english_word_space": 200.0,
+    "english_pair_gaps": [
+      105.62709306164825,
+      200.0,
+      100.34573840856585,
+      100.34573840856585,
+      95.06438375548343,
+      95.06438375548343,
+      89.78302910240102
+    ],
+    "chinese_painted_height": 280,
+    "chinese_uniform_scale": 2.0663372672920257,
+    "chinese_local_stroke_addition": 2.4,
+    "chinese_regular_gap": 30.978619615004224,
+    "chinese_phrase_extra_gap": 75.0,
+    "line_gap": 160,
+    "previous_line_gap_approx": 295.226,
+    "divider_centered_between_blocks": true
+  },
+  "measured_page_bounds_xywh": {
+    "go-mark": [
+      240.0,
+      120.0,
+      2050.0,
+      1000.0
+    ],
+    "right-block": [
+      2710.0,
+      120.0,
+      3640.0,
+      1000.0
+    ],
+    "english-line": [
+      2710.0,
+      120.0,
+      3640.0,
+      560.0
+    ],
+    "chinese-line": [
+      2710.0,
+      840.0,
+      3640.0,
+      280.0
+    ],
+    "chinese-11": [
+      6075.85,
+      842.341,
+      274.148,
+      272.978
+    ]
+  },
+  "equal_line_left_and_right_edges": true,
+  "equal_block_top_and_bottom_edges": true,
+  "final_character_inside_safe_area": true,
+  "renders": {
+    "GO_REFINED_V4.png": {
+      "pixels": [
+        1600,
+        301
+      ],
+      "ink_bbox": [
+        58,
+        29,
+        1542,
+        272
+      ],
+      "right_blank_pixels": 58,
+      "subtitle_nominal_height_px": 67.98
+    },
+    "QA_320.png": {
+      "pixels": [
+        320,
+        60
+      ],
+      "ink_bbox": [
+        11,
+        5,
+        309,
+        55
+      ],
+      "right_blank_pixels": 11,
+      "subtitle_nominal_height_px": 13.6
+    },
+    "QA_375.png": {
+      "pixels": [
+        375,
+        71
+      ],
+      "ink_bbox": [
+        13,
+        7,
+        362,
+        64
+      ],
+      "right_blank_pixels": 13,
+      "subtitle_nominal_height_px": 15.93
+    },
+    "QA_430.png": {
+      "pixels": [
+        430,
+        81
+      ],
+      "ink_bbox": [
+        15,
+        7,
+        415,
+        73
+      ],
+      "right_blank_pixels": 15,
+      "subtitle_nominal_height_px": 18.27
+    },
+    "QA_240_LIMIT.png": {
+      "pixels": [
+        240,
+        45
+      ],
+      "ink_bbox": [
+        8,
+        4,
+        232,
+        41
+      ],
+      "right_blank_pixels": 8,
+      "subtitle_nominal_height_px": 10.2
+    },
+    "QA_SECOND_RENDERER.png": {
+      "pixels": [
+        1600,
+        302
+      ],
+      "ink_bbox": [
+        58,
+        29,
+        1542,
+        272
+      ],
+      "right_blank_pixels": 58,
+      "subtitle_nominal_height_px": 67.98
+    }
+  },
+  "minimum_full_lockup_width_guidance_px": 320,
+  "limitations": [
+    "Static SVG geometry and two independent renderers only; not live browser or device acceptance.",
+    "At 240px the full Chinese tagline is too small for confident readability; do not treat no clipping as readable.",
+    "No business code change beyond the single header asset reference; no historical tests rerun, deployment or release-gate promotion.",
+    "10/10 is a design target, not an objective test result."
+  ]
+}
