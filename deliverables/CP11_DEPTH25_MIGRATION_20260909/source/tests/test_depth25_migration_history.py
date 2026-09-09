@@ -20,7 +20,7 @@ def test_fresh_database_can_apply_entire_chain_without_stamp(tmp_path, monkeypat
     db, cfg = config(tmp_path, monkeypatch)
     command.upgrade(cfg, 'head')
     with sqlite3.connect(db) as s:
-        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0131_vertical_payment_deadline'
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0132_rail_runtime_field_widths'
         columns = {r[1] for r in s.execute('PRAGMA table_info(connector_runtime_reconciliation)')}
         assert {'claimed_by', 'lease_expires_at', 'resolution_payload_json', 'superseded_reason'} <= columns
         assert s.execute("SELECT name FROM sqlite_master WHERE name='vertical_payment_deadline'").fetchone()
@@ -76,3 +76,33 @@ def test_rail_response_timestamps_survive_database_timezone_roundtrip():
     order.updated_at=instant.replace(tzinfo=UTC).astimezone(timezone(timedelta(hours=8)))
     assert rail_service._order(order)==before
     assert before['created_at']==before['updated_at']=='2026-09-09T03:00:00.123456+00:00'
+
+
+def test_rail_width_upgrade_preserves_history_and_refuses_lossy_downgrade(tmp_path, monkeypatch):
+    db, cfg = config(tmp_path, monkeypatch)
+    with sqlite3.connect(db) as s:
+        s.execute('CREATE TABLE rail_order_runtime (order_id VARCHAR(64) PRIMARY KEY, '
+                  'status VARCHAR(32) NOT NULL, booking_reference VARCHAR(24))')
+        s.execute('CREATE INDEX rail_ref_index ON rail_order_runtime(booking_reference)')
+        s.execute("INSERT INTO rail_order_runtime VALUES ('old','TICKETED','old-reference')")
+    command.stamp(cfg, '0131_vertical_payment_deadline')
+    command.upgrade(cfg, 'head')
+    state = 'PAYMENT_CONFIRMED_AWAITING_SUPPLIER'
+    reference = 'provider-' + 'r' * 110
+    with sqlite3.connect(db) as s:
+        assert s.execute('SELECT status,booking_reference FROM rail_order_runtime').fetchone() == ('TICKETED','old-reference')
+        columns = {r[1]: r[2] for r in s.execute('PRAGMA table_info(rail_order_runtime)')}
+        assert columns['status']=='VARCHAR(64)' and columns['booking_reference']=='VARCHAR(128)'
+        s.execute('INSERT INTO rail_order_runtime VALUES (?,?,?)', ('long',state,reference))
+    with pytest.raises(RuntimeError, match='RAIL_RUNTIME_DOWNGRADE_WOULD_TRUNCATE_HISTORY'):
+        command.downgrade(cfg, '0131_vertical_payment_deadline')
+    with sqlite3.connect(db) as s:
+        assert s.execute("SELECT status,booking_reference FROM rail_order_runtime WHERE order_id='long'").fetchone() == (state,reference)
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0]=='0132_rail_runtime_field_widths'
+        s.execute("DELETE FROM rail_order_runtime WHERE order_id='long'")
+    command.downgrade(cfg, '0131_vertical_payment_deadline')
+    with sqlite3.connect(db) as s:
+        assert s.execute('SELECT status,booking_reference FROM rail_order_runtime').fetchone() == ('TICKETED','old-reference')
+        assert s.execute("SELECT name FROM sqlite_master WHERE type='index' AND name='rail_ref_index'").fetchone()
+        columns = {r[1]: r[2] for r in s.execute('PRAGMA table_info(rail_order_runtime)')}
+        assert columns['status']=='VARCHAR(32)' and columns['booking_reference']=='VARCHAR(24)'

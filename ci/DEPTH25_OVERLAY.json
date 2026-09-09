@@ -13,8 +13,8 @@
       "path": "tests/test_depth25_migration_history.py",
       "source": "deliverables/CP11_DEPTH25_MIGRATION_20260909/source/tests/test_depth25_migration_history.py",
       "before_sha256": null,
-      "sha256": "5d91587518d198bc80dc5fe4b40b10e64e850f7e8d15cd8e43050319738c0221",
-      "size": 4455
+      "sha256": "0dc0e1f38ff8d611c42684d48a44f27520828494e3569553cc661bfcc441fb21",
+      "size": 6656
     },
     {
       "path": "src/go_hotel/rail/service.py",
@@ -22,7 +22,28 @@
       "before_sha256": "663b62d0bfd6bdefcf0c9dd5b51daf354d4fc070a437deb8f1f37e58bfb3d912",
       "sha256": "fd197bee12585c1fd45d89cc2d53e33e51211413345b57b9b171767e71b58adc",
       "size": 18141
+    },
+    {
+      "path": "src/go_hotel/db/models.py",
+      "source": "deliverables/CP11_DEPTH25_MIGRATION_20260909/source/src/go_hotel/db/models.py",
+      "before_sha256": "33b709d84c92d561ff9daf587ffbea62b4a6f6dd93b09daa433982c05d438a92",
+      "sha256": "1372dad74b1ca8e2fca9d6a95860837e6c8051ac4268865d8dddf1b74d46ffcd",
+      "size": 569600
+    },
+    {
+      "path": "alembic/versions/0132_rail_runtime_field_widths.py",
+      "source": "deliverables/CP11_DEPTH25_MIGRATION_20260909/source/alembic/versions/0132_rail_runtime_field_widths.py",
+      "before_sha256": null,
+      "sha256": "5ee523e49ac5140a264136a55cc3d8ce7c3678abf2876c4bbd1427d1b4744e36",
+      "size": 1324
+    },
+    {
+      "path": "tests/test_parent_implementation_code_review_debt_closure.py",
+      "source": "deliverables/CP11_DEPTH25_MIGRATION_20260909/source/tests/test_parent_implementation_code_review_debt_closure.py",
+      "before_sha256": "933c1153577fe1591006ec7d42628665513c9b158e4e15d2a5fa9c1509342fdc",
+      "sha256": "0f7691c5530513df0c0168ca7dc52a8a3f39051ffca35a23964b4d6c33c7f81f",
+      "size": 9382
     }
   ],
-  "scope": "DEPTH25 historical0076 schema, canonical rail UTC response and regression"
+  "scope": "Freeze historical0076, canonical UTC rail response, lossless0132 rail field expansion"
 }
