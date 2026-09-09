@@ -1,48 +1,99 @@
 name: depth28-v14-acceptance
 on:
   pull_request:
+    branches: ['deliverables/cp11-depth28-v14-integration']
     paths:
+      - '.github/workflows/depth28-v14-acceptance.yml'
+      - 'ci/depth28-preparation/**'
       - 'frontend/**'
       - 'design/brand/depth28/**'
       - 'tests_frontend/**'
-      - 'scripts/apply_depth28_v14_vi.py'
       - 'deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909/**'
 permissions:
   contents: read
 jobs:
   sealed-vi-and-restore:
-    runs-on: ubuntu-latest
+    if: github.head_ref == 'acceptance/cp11-depth28-v14-ci'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      SEALED_CANDIDATE: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
+      EXPECTED_SOURCE_TREE: 3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f
     steps:
-      - name: Checkout acceptance head
+      - name: Checkout acceptance tooling head
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: tooling
+          persist-credentials: false
+      - name: Checkout sealed candidate archives
+        uses: actions/checkout@v4
+        with:
+          ref: 6c85c64fe77ce7637a001ddbd8050ffa24f639a3
           path: candidate
-      - name: Checkout exact DEPTH27 parent
-        uses: actions/checkout@v4
+          persist-credentials: false
+      - uses: actions/setup-python@v5
         with:
-          ref: 9b3e03f62a7e808a979c154e7bb1e7435069df88
-          path: parent
-      - name: Set up Node 22.22.0
-        uses: actions/setup-node@v4
+          python-version: '3.13.5'
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22.22.0
-      - name: Verify sealed package checksums
-        working-directory: candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909
-        run: sha256sum -c SHA256SUMS
-      - name: Verify locked primary VI bytes
-        working-directory: candidate
+          node-version: '22.22.0'
+      - name: Verify archived checksums and pinned deltas
+        shell: bash
         run: |
-          printf '%s  %s\n' 'ad492e6e4bd8c29ff541b155f02e061ae0cb4f2cc971126047e3589c267c513d' 'frontend/consumer/assets/go-main-lockup-v14.svg' | sha256sum -c -
-          printf '%s  %s\n' '2d1fad1032acadcb9ff03e19c35c6dc249586942381546893292220156bd114b' 'frontend/consumer/assets/go-compact-lockup-v14.svg' | sha256sum -c -
-      - name: Run frontend and VI contracts
-        working-directory: candidate
-        run: node --test tests_frontend/*.test.mjs
-      - name: Restore delta from exact parent
+          mkdir -p evidence
+          git -C candidate rev-parse HEAD | tee evidence/candidate-commit.txt
+          test "$(git -C candidate rev-parse HEAD)" = "$SEALED_CANDIDATE"
+          cd candidate/deliverables
+          printf '%s  %s\n' f95e9541757f0051815373611b0230ee1bcc58201a451e6b99261754110e98ab CP11_DEPTH27_20260909/GO_CP11_DEPTH27_DELTA_20260909.zip | sha256sum -c -
+          printf '%s  %s\n' 98f006935a421b99aa4ea35c1f43ec0186b04bfc262e01b46f3d4f341d13a109 CP11_DEPTH28_V14_INTEGRATION_20260909/GO_CP11_DEPTH28_V14_DELTA_20260909.zip | sha256sum -c -
+          cd CP11_DEPTH28_V14_INTEGRATION_20260909
+          sha256sum -c SHA256SUMS | tee ../../../evidence/package-checksums.log
+      - name: Materialize exact DEPTH26 to DEPTH28 source chain
+        shell: bash
         run: |
-          python candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909/restore_depth28.py \
-            --parent parent \
-            --delta candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909/GO_CP11_DEPTH28_V14_DELTA_20260909.zip \
-            --output restored
-      - name: Run restored frontend and VI contracts
+          python tooling/ci/depth28-preparation/materialize.py \
+            --depth26 candidate/deliverables/CP11_DEPTH26_20260909 \
+            --depth27 candidate/deliverables/CP11_DEPTH27_20260909 \
+            --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 \
+            --output "$GITHUB_WORKSPACE/restored" | tee evidence/restore.log
+      - name: Bind complete source fingerprint and runtime versions
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, sys
+          package = pathlib.Path('candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909')
+          fingerprint = json.loads((package / 'SOURCE_FINGERPRINT.json').read_text())
+          actual = {}
+          for name, expected in fingerprint.items():
+              actual[name] = hashlib.sha256((pathlib.Path('restored') / name).read_bytes()).hexdigest()
+              assert actual[name] == expected, name
+          body = b''.join(name.encode() + b'\0' + actual[name].encode() + b'\n' for name in sorted(actual))
+          tree = hashlib.sha256(body).hexdigest()
+          assert tree == os.environ['EXPECTED_SOURCE_TREE'], tree
+          assert len(actual) == 1093
+          data = {'candidate': os.environ['SEALED_CANDIDATE'], 'source_tree_sha256': tree,
+                  'verified_files': len(actual), 'python': sys.version,
+                  'node': subprocess.check_output(['node', '--version'], text=True).strip(),
+                  'environment': 'GitHub disposable runner; no database, no service credentials',
+                  'scope': 'archive restoration and frontend component contracts',
+                  'THREE_END_REAL_UX_LOGIN': 'HOLD', 'SIX_VERTICAL_REAL_CLOSED_LOOP_E2E': 'HOLD',
+                  'SEALED_NODE_GATE': 'HOLD', 'FINAL_RELEASE': 'HOLD'}
+          pathlib.Path('evidence/source-lineage.json').write_text(json.dumps(data, indent=2) + '\n')
+          print(json.dumps(data))
+          PY
+      - name: Run restored frontend contracts once with two original reporters
         working-directory: restored
-        run: node --test tests_frontend/*.test.mjs
+        shell: bash
+        run: |
+          node --test --test-reporter=spec --test-reporter-destination=../evidence/frontend.log \
+            --test-reporter=junit --test-reporter-destination=../evidence/frontend.xml tests_frontend/*.test.mjs
+          cat ../evidence/frontend.log
+      - name: Archive original acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH28-isolated-acceptance-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 90
