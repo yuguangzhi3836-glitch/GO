@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="HTTP helper retains CSRF together with idempotency header" time="0.002786" classname="test"/>
+	<testcase name="Escape cancels traveler selection without authorizing or creating an order" time="0.005686" classname="test"/>
+	<testcase name="rental consent is bound to the selected traveler, field and purpose" time="0.002361" classname="test"/>
+	<testcase name="payment is cancelled without any checkout mutation" time="0.001478" classname="test"/>
+	<testcase name="a failed confirmed payment stays visible and can be retried" time="0.001557" classname="test"/>
+	<testcase name="cancelling a party selection creates no order or grant" time="0.001549" classname="test"/>
+	<testcase name="a party must contain the exact number of different travelers" time="0.001879" classname="test"/>
+	<testcase name="party confirmation returns only the explicitly selected traveler references" time="0.001425" classname="test"/>
+	<testcase name="party selection cannot submit without confirming adult travelers and purpose" time="0.003007" classname="test"/>
+	<testcase name="cancel review shows every cash component and exact fee basis before submission" time="0.020342" classname="test"/>
+	<testcase name="closing cancel review never sends cancellation or reloads as completed" time="0.000950" classname="test"/>
+	<testcase name="unchecked money confirmation cannot submit a cash action" time="0.001442" classname="test"/>
+	<testcase name="change confirmation keeps paid room value, incremental difference and fee separate" time="0.001229" classname="test"/>
+	<testcase name="cancelled date selection does not request new inventory or a payment" time="0.000889" classname="test"/>
+	<testcase name="displayed quote hash stays bound across asynchronous source mutation" time="0.000941" classname="test"/>
+	<testcase name="unknown supplier progress offers query only and binds the saved operation" time="0.001160" classname="test"/>
+	<testcase name="cancel confirmed and refund pending remain distinct in the customer progress card" time="0.000750" classname="test"/>
+	<testcase name="credit conversion waits for explicit quoted consent and does not claim an unknown cancellation succeeded" time="0.003605" classname="test"/>
+	<testcase name="canceling traveler selection sends no redemption or automatic identity" time="0.001111" classname="test"/>
+	<testcase name="redemption network retry binds the same quote and explicitly selected traveler" time="0.002462" classname="test"/>
+	<testcase name="unknown booking and pending refund remain distinct from completed credit restoration" time="0.000828" classname="test"/>
+	<testcase name="canceling a supplementary payment dialog re-enables the action" time="0.017338" classname="test"/>
+	<testcase name="conversion separates prior cash refunds and forfeiture from retained credit" time="0.001343" classname="test"/>
+	<testcase name="forfeiture conversion confirmation stays bound to the displayed quote after source object changes" time="0.001119" classname="test"/>
+	<testcase name="credit detail keeps original excluded value visible after redemption changes" time="0.001100" classname="test"/>
+	<testcase name="historical credit without a forfeiture breakdown never renders invalid amounts" time="0.001423" classname="test"/>
+	<testcase name="fare confirmation separates fee tiers, cooling, change and property credit terms" time="0.001690" classname="test"/>
+	<testcase name="cancelling fare confirmation has no accepted contract" time="0.000645" classname="test"/>
+	<testcase name="accepted hash remains bound to the rules displayed before asynchronous state changes" time="0.000557" classname="test"/>
+	<testcase name="declining hotel rules never selects or authorizes a traveler or creates an order" time="0.001838" classname="test"/>
+	<testcase name="accepted hotel contract is included with selected traveler and stable booking request identity" time="0.001491" classname="test"/>
+	<testcase name="supplier money and percentage inputs use exact minor units" time="0.000917" classname="test"/>
+	<testcase name="supplier lost-response retry keeps request identity and sends only the claimed cause" time="0.002628" classname="test"/>
+	<testcase name="supplier duplicate clicks while a request is pending cannot create another request" time="0.000807" classname="test"/>
+	<testcase name="unknown supplier cancellation shows approved refund waiting for confirmation, without a resend button" time="0.012745" classname="test"/>
+	<testcase name="hotel funds distinguish frozen, charged, released and refunded cent amounts" time="0.017344" classname="test"/>
+	<testcase name="only approved pending refunds expose retry and all server labels are escaped" time="0.000557" classname="test"/>
+	<testcase name="unknown funding shows reconciliation instead of a false payment claim" time="0.000535" classname="test"/>
+	<testcase name="trip links only open the exact canonical owned direct-reservation path" time="0.000353" classname="test"/>
+	<testcase name="closing a stay complaint form makes no request" time="0.001381" classname="test"/>
+	<testcase name="complaint retries reuse the same request identity and have no refund approval fields" time="0.001816" classname="test"/>
+	<testcase name="blank complaints and duplicate submission clicks cannot send extra requests" time="0.001014" classname="test"/>
+	<testcase name="closing hotel authorization leaves funds untouched" time="0.001589" classname="test"/>
+	<testcase name="hotel checkout requires confirmation and binds the complete stay amount" time="0.001172" classname="test"/>
+	<testcase name="a second click cannot create another hotel authorization while the first is pending" time="0.000978" classname="test"/>
+	<testcase name="a failed hotel authorization remains visible and can be retried" time="0.000673" classname="test"/>
+	<testcase name="conversion clearly shows capture and value and closing does not convert" time="0.019736" classname="test"/>
+	<testcase name="conversion retry keeps original quote, amount and original expiry" time="0.001636" classname="test"/>
+	<testcase name="redemption uses server quote policy and displays forfeiture before consent" time="0.001107" classname="test"/>
+	<testcase name="redemption confirms a fresh traveler and only releases hotel fields" time="0.001288" classname="test"/>
+	<testcase name="double click and Escape cannot duplicate or dismiss pending redemption" time="0.003993" classname="test"/>
+	<testcase name="credit list filters property and disables frozen, expired or reconciliation credits" time="0.001473" classname="test"/>
+	<testcase name="a cancellation quote never cancels a booking and closing preserves it" time="0.023340" classname="test"/>
+	<testcase name="fee consent binds the server quote and keeps frozen release separate from cash refund" time="0.002048" classname="test"/>
+	<testcase name="interrupted cancellation retry uses exactly the same quote and fee" time="0.001339" classname="test"/>
+	<testcase name="double clicks cannot settle twice while a cancellation is pending" time="0.001094" classname="test"/>
+	<testcase name="unavailable fare actions have no executable buttons and rule text is escaped" time="0.000910" classname="test"/>
+	<testcase name="date changes quote first and require fresh consent after editing dates" time="0.002365" classname="test"/>
+	<testcase name="extension keeps check-in fixed and explains replacement authorization" time="0.001281" classname="test"/>
+	<testcase name="independent review requires an explicit checked attestation and chosen proof" time="0.001462" classname="test"/>
+	<testcase name="review submits the exact evidence snapshot and no caller-selected money" time="0.000868" classname="test"/>
+	<testcase name="customer sees completed original refund separately from pending extra payment" time="0.016789" classname="test"/>
+	<testcase name="unapproved guest liability is a review hold without a refund promise or pay button" time="0.000287" classname="test"/>
+	<testcase name="zero captured payment explains authorization release and completed case has no retry" time="0.000393" classname="test"/>
+	<testcase name="finance entry converts decimal currency without fractional cents or silent rounding" time="0.000575" classname="test"/>
+	<testcase name="rail order preserves party, immutable prebook and original total through payment cancellation" time="0.002997" classname="test"/>
+	<testcase name="attraction order uses the quoted slot, quantity and prebook and shows eligibility" time="0.000524" classname="test"/>
+	<testcase name="cancelling confirmation step 1 never creates an order or payment" time="0.000231" classname="test"/>
+	<testcase name="cancelling confirmation step 2 never creates an order or payment" time="0.000285" classname="test"/>
+	<testcase name="cancelled party selection cannot reach order creation" time="0.000335" classname="test"/>
+	<testcase name="quote that expires during traveler selection cannot create or pay an order" time="0.000760" classname="test"/>
+	<testcase name="missing final consent never creates an order" time="0.000352" classname="test"/>
+	<testcase name="different people are required for every quoted place" time="0.000421" classname="test"/>
+	<testcase name="an uncertain payment still opens the existing order for recovery" time="0.000808" classname="test"/>
+	<testcase name="repeated clicks cannot start a second booking while confirmation is open" time="0.000549" classname="test"/>
+	<testcase name="mismatched total, journey or slot is refused before any traveler consent" time="0.000458" classname="test"/>
+	<testcase name="cancelling date selection never requests a quote or payment" time="0.003317" classname="test"/>
+	<testcase name="ride changes continue to use their separate workflow" time="0.000776" classname="test"/>
+	<testcase name="viewing a rental quote does not execute the change" time="0.000977" classname="test"/>
+	<testcase name="confirmed refund difference retains its sign and server quote identity" time="0.001801" classname="test"/>
+	<testcase name="unchecked amount consent blocks executing a displayed quote" time="0.001393" classname="test"/>
+	<testcase name="the shared amount formatter preserves cents on confirmation screens" time="0.015931" classname="test"/>
+	<testcase name="consumer: concurrent expired reads refresh once and preserve namespace" time="0.005919" classname="test"/>
+	<testcase name="consumer: a mutation without idempotency is never replayed after renewal" time="0.001412" classname="test"/>
+	<testcase name="consumer: an idempotent retry retains the original key and body" time="0.000972" classname="test"/>
+	<testcase name="consumer: failed refresh stops without retrying the operation" time="0.000932" classname="test"/>
+	<testcase name="console: concurrent expired reads refresh once and preserve namespace" time="0.003703" classname="test"/>
+	<testcase name="console: a mutation without idempotency is never replayed after renewal" time="0.001255" classname="test"/>
+	<testcase name="console: an idempotent retry retains the original key and body" time="0.001013" classname="test"/>
+	<testcase name="console: failed refresh stops without retrying the operation" time="0.000873" classname="test"/>
+	<testcase name="consumer logout failure preserves account and current page; success clears all private state" time="0.001438" classname="test"/>
+	<testcase name="console logout failure is surfaced instead of silently reporting success" time="0.001170" classname="test"/>
+	<testcase name="unverified check-in never exposes links or boarding passes" time="0.002422" classname="test"/>
+	<testcase name="per-traveler boarding pass appears only for the verified pass state" time="0.001048" classname="test"/>
+	<testcase name="invalid URL schemes and credentials do not become customer links" time="0.000870" classname="test"/>
+	<testcase name="unknown fleet outcome clearly separates confirmed and proposed times" time="0.000942" classname="test"/>
+	<testcase name="cancelled tracking confirmation sends no binding mutation" time="0.001043" classname="test"/>
+	<testcase name="checked consent sends exact displayed revision and server authority, never wait overrides" time="0.001032" classname="test"/>
+	<testcase name="missing consent prevents any tracking write" time="0.001385" classname="test"/>
+	<testcase name="no authorized source does not open an unusable confirmation dialog" time="0.000779" classname="test"/>
+	<testcase name="waiting protection is conditional and shows the actual event allowance" time="0.001093" classname="test"/>
+	<testcase name="late check-in response cannot populate a detached screen" time="0.011058" classname="test"/>
+	<testcase name="closing permission confirmation sends no permission mutation" time="0.003470" classname="test"/>
+	<testcase name="source disconnect remains explicit and retains server-directed semantics" time="0.002296" classname="test"/>
+	<testcase name="person edit binds the displayed revision and leaves a blank birth date untouched" time="0.001146" classname="test"/>
+	<testcase name="sensitive import inspection happens only after explicit confirmation, with no implicit acceptance" time="0.006234" classname="test"/>
+	<testcase name="untrusted imported content is escaped before display" time="0.002129" classname="test"/>
+	<testcase name="duplicate submits during a pending mutation call the server once" time="0.001593" classname="test"/>
+	<testcase name="import reassignment binds traveler and item revision and does not accept content" time="0.001549" classname="test"/>
+	<testcase name="RAIL cancellation requires explicit confirmation" time="0.001559" classname="test"/>
+	<testcase name="RAIL response loss still reloads persisted order" time="0.000766" classname="test"/>
+	<testcase name="RAIL paid or uncertain orders cannot open unpaid cancellation" time="0.001887" classname="test"/>
+	<testcase name="ATTRACTION cancellation requires explicit confirmation" time="0.000585" classname="test"/>
+	<testcase name="ATTRACTION response loss still reloads persisted order" time="0.000528" classname="test"/>
+	<testcase name="ATTRACTION paid or uncertain orders cannot open unpaid cancellation" time="0.001613" classname="test"/>
+	<testcase name="new unpaid reservation displays its frozen UTC deadline" time="0.000959" classname="test"/>
+	<testcase name="legacy orders never receive a fabricated deadline" time="0.000161" classname="test"/>
+	<testcase name="expiry display relies on persisted server state instead of browser clock" time="0.000107" classname="test"/>
+	<testcase name="started and uncertain payment keeps its reservation message" time="0.000108" classname="test"/>
+	<testcase name="RAIL: opening recovery does not send a refund until confirmed" time="0.001612" classname="test"/>
+	<testcase name="RAIL: failed response still reloads persisted order state" time="0.000801" classname="test"/>
+	<testcase name="ATTRACTION: opening recovery does not send a refund until confirmed" time="0.000610" classname="test"/>
+	<testcase name="ATTRACTION: failed response still reloads persisted order state" time="0.000513" classname="test"/>
+	<testcase name="busy recovery gives a customer message and refreshes the existing order" time="0.000667" classname="test"/>
+	<testcase name="rail interrupted change confirms the original quote instead of creating another" time="0.000772" classname="test"/>
+	<!-- tests 125 -->
+	<!-- suites 0 -->
+	<!-- pass 125 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 272.090184 -->
+</testsuites>

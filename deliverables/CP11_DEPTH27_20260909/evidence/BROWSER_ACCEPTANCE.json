@@ -1,0 +1,29 @@
+{
+  "created_at_utc": "2026-09-09T06:06:44.520269+00:00",
+  "environment": "Isolated supervised preview / desktop Chromium 1363x936",
+  "observed": [
+    "Consumer home loaded corrected go-main-lockup.svg?v=20260909-depth27 without page overflow",
+    "Consumer login has semantic submit form, required email/password fields and alert region",
+    "Admin login policy loaded from isolated backend after request-ID compatibility repair",
+    "Supplier login page and registration entry rendered"
+  ],
+  "screenshot": "consumer-logo-final.jpg",
+  "frontend_source_hashes": {
+    "frontend/supplier/index.html": "e963df1973fcb4ef8e4e3e225232b4d8d52cfb7e633e8ba162d664232111b0f1",
+    "frontend/consumer/direct.js": "75b9a3c4b7fdb65bbb1fe1fad1210eebf535638fb3b8ea95a3b11429fbb23031",
+    "frontend/consumer/index.html": "77d5ce525fa3e482704f4c975a022caea34e949d07171122fdf50616a08ebabe",
+    "frontend/consumer/app.js": "476af9bd9a78b2275038890a7f69af84b0c3a666ede2836f21baace7c127e32c",
+    "frontend/shared/api.js": "ed52e4604fddf007d844d9d41af98c9606daa6a4a8d0abf4aaa941e2b3043759",
+    "frontend/shared/app.js": "0ae847d52e7dde7f38caa133e452442d6fc3252b5bea338477034b0da8cd699a",
+    "frontend/admin/index.html": "0ca630826a12129e711e26993c078737739b1fe26f58902c0ec4a02aa195acc3",
+    "frontend/consumer/assets/go-main-lockup.svg": "787ca334e6587dd98d0154c12822d3d62214263dc2e8b58cd251ec873ceb3a2e"
+  },
+  "limitations": [
+    "No credential entry or authenticated browser journey",
+    "No mobile viewport resizing",
+    "Preview API was started before the final actor-context backend patch; browser evidence certifies the listed public frontend observations only",
+    "Generated PNG is an SVG renderer preview, not browser or device evidence"
+  ],
+  "authenticated_e2e": "HOLD",
+  "cross_device": "HOLD"
+}

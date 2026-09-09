@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="9" time="8.463" timestamp="2026-09-09T13:51:29.195742+08:00" hostname="localhost"><testcase classname="tests.test_depth27_session_isolation" name="test_consumer_and_console_can_coexist_and_logout_independently[supplier_owner-change-me-supplier]" time="6.071"><failure message="AssertionError: {&quot;detail&quot;:&quot;CONSUMER_IDENTITY_REQUIRED&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7fa55dff6660&gt;
+actor = 'supplier_owner', password = 'change-me-supplier'
+
+    @pytest.mark.parametrize('actor,password', [
+        ('supplier_owner', 'change-me-supplier'), ('go_admin', 'change-me-admin'),
+    ])
+    def test_consumer_and_console_can_coexist_and_logout_independently(client, actor, password):
+        user = identities(client, actor, password)
+        r = client.get('/v1/consumer/me')
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"CONSUMER_IDENTITY_REQUIRED"}
+E       assert 403 == 200
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+
+tests/test_depth27_session_isolation.py:23: AssertionError</failure></testcase><testcase classname="tests.test_depth27_session_isolation" name="test_consumer_and_console_can_coexist_and_logout_independently[go_admin-change-me-admin]" time="0.308"><failure message="AssertionError: {&quot;detail&quot;:&quot;CONSUMER_IDENTITY_REQUIRED&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7fa56291e210&gt;
+actor = 'go_admin', password = 'change-me-admin'
+
+    @pytest.mark.parametrize('actor,password', [
+        ('supplier_owner', 'change-me-supplier'), ('go_admin', 'change-me-admin'),
+    ])
+    def test_consumer_and_console_can_coexist_and_logout_independently(client, actor, password):
+        user = identities(client, actor, password)
+        r = client.get('/v1/consumer/me')
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"CONSUMER_IDENTITY_REQUIRED"}
+E       assert 403 == 200
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+
+tests/test_depth27_session_isolation.py:23: AssertionError</failure></testcase><testcase classname="tests.test_depth27_session_isolation" name="test_console_logout_does_not_fall_back_to_consumer_session" time="0.276"><failure message="AssertionError: assert 200 == 401&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code&#10; +    where &lt;Response [200 OK]&gt; = get('/bff/auth/me')&#10; +      where get = &lt;starlette.testclient.TestClient object at 0x7fa55d066210&gt;.get">client = &lt;starlette.testclient.TestClient object at 0x7fa55d066210&gt;
+
+    def test_console_logout_does_not_fall_back_to_consumer_session(client):
+        user = identities(client)
+        r = client.post('/bff/auth/logout', headers={'X-CSRF-Token': client.cookies.get('go_csrf')})
+        assert r.status_code == 200, r.text
+&gt;       assert client.get('/bff/auth/me').status_code == 401
+E       AssertionError: assert 200 == 401
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+E        +    where &lt;Response [200 OK]&gt; = get('/bff/auth/me')
+E        +      where get = &lt;starlette.testclient.TestClient object at 0x7fa55d066210&gt;.get
+
+tests/test_depth27_session_isolation.py:38: AssertionError</failure></testcase><testcase classname="tests.test_depth27_session_isolation" name="test_consumer_refresh_uses_own_csrf_with_console_cookie_present" time="0.253"><failure message="AssertionError: {&quot;detail&quot;:&quot;CSRF_VALIDATION_FAILED&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7fa55d04b6f0&gt;
+
+    def test_consumer_refresh_uses_own_csrf_with_console_cookie_present(client):
+        identities(client)
+        console_cookie = client.cookies.get('go_access')
+        old = client.cookies.get('go_consumer_refresh')
+        r = client.post('/v1/consumer/auth/refresh', headers={
+            'X-CSRF-Token': client.cookies.get('go_consumer_csrf'),
+        })
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"CSRF_VALIDATION_FAILED"}
+E       assert 403 == 200
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+
+tests/test_depth27_session_isolation.py:49: AssertionError</failure></testcase><testcase classname="tests.test_depth27_session_isolation" name="test_other_scope_csrf_cannot_logout_consumer" time="0.260"><failure message="AssertionError: assert 403 == 200&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10; +    where &lt;Response [403 Forbidden]&gt; = get('/v1/consumer/me')&#10; +      where get = &lt;starlette.testclient.TestClient object at 0x7fa55d04b360&gt;.get">client = &lt;starlette.testclient.TestClient object at 0x7fa55d04b360&gt;
+
+    def test_other_scope_csrf_cannot_logout_consumer(client):
+        identities(client)
+        r = client.post('/v1/consumer/auth/logout', headers={
+            'X-GO-Session': 'consumer', 'X-CSRF-Token': client.cookies.get('go_csrf'),
+        })
+        assert r.status_code == 403
+&gt;       assert client.get('/v1/consumer/me').status_code == 200
+E       AssertionError: assert 403 == 200
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E        +    where &lt;Response [403 Forbidden]&gt; = get('/v1/consumer/me')
+E        +      where get = &lt;starlette.testclient.TestClient object at 0x7fa55d04b360&gt;.get
+
+tests/test_depth27_session_isolation.py:60: AssertionError</failure></testcase><testcase classname="tests.test_depth27_session_isolation" name="test_shared_endpoint_uses_explicit_scope_and_rejects_ambiguity" time="0.273"><failure message="AssertionError: assert 'usr_6f3290dc...205f78fe8c490' == 'usr_d29a9d44...c0a80e0c49486'&#10;  &#10;  - usr_d29a9d447ea44afb919c0a80e0c49486&#10;  + usr_6f3290dc2a3b4e92bec205f78fe8c490">client = &lt;starlette.testclient.TestClient object at 0x7fa55d03bd10&gt;
+
+    def test_shared_endpoint_uses_explicit_scope_and_rejects_ambiguity(client):
+        user = identities(client)
+        r = client.get('/v1/auth/me', headers={'X-GO-Session': 'consumer'})
+        assert r.status_code == 200, r.text
+&gt;       assert r.json()['data']['user_id'] == user
+E       AssertionError: assert 'usr_6f3290dc...205f78fe8c490' == 'usr_d29a9d44...c0a80e0c49486'
+E         
+E         - usr_d29a9d447ea44afb919c0a80e0c49486
+E         + usr_6f3290dc2a3b4e92bec205f78fe8c490
+
+tests/test_depth27_session_isolation.py:67: AssertionError</failure></testcase><testcase classname="tests.test_depth27_session_isolation" name="test_header_cannot_change_fixed_route_scope_or_grant_permissions" time="0.280"><failure message="AssertionError: assert 403 == 400&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10; +    where &lt;Response [403 Forbidden]&gt; = get('/v1/consumer/me', headers={'X-GO-Session': 'console'})&#10; +      where get = &lt;starlette.testclient.TestClient object at 0x7fa55d1dfac0&gt;.get">client = &lt;starlette.testclient.TestClient object at 0x7fa55d1dfac0&gt;
+
+    def test_header_cannot_change_fixed_route_scope_or_grant_permissions(client):
+        identities(client)
+&gt;       assert client.get('/v1/consumer/me', headers={'X-GO-Session': 'console'}).status_code == 400
+E       AssertionError: assert 403 == 400
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E        +    where &lt;Response [403 Forbidden]&gt; = get('/v1/consumer/me', headers={'X-GO-Session': 'console'})
+E        +      where get = &lt;starlette.testclient.TestClient object at 0x7fa55d1dfac0&gt;.get
+
+tests/test_depth27_session_isolation.py:74: AssertionError</failure></testcase><testcase classname="tests.test_depth27_session_isolation" name="test_expired_console_access_does_not_shadow_consumer" time="0.340"><failure message="AssertionError: {&quot;detail&quot;:&quot;INVALID_TOKEN&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7fa55d080270&gt;
+
+    def test_expired_console_access_does_not_shadow_consumer(client):
+        user = identities(client)
+        for cookie in list(client.cookies.jar):
+            if cookie.name == 'go_access':
+                cookie.value = 'expired-isolated-fixture'
+        r = client.get('/v1/consumer/me')
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"INVALID_TOKEN"}
+E       assert 401 == 200
+E        +  where 401 = &lt;Response [401 Unauthorized]&gt;.status_code
+
+tests/test_depth27_session_isolation.py:85: AssertionError</failure></testcase><testcase classname="tests.test_depth27_session_isolation" name="test_bearer_identity_stays_authoritative" time="0.290" /></testsuite></testsuites>

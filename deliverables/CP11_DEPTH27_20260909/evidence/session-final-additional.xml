@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="consumer: concurrent expired reads refresh once and preserve namespace" time="0.005206" classname="test"/>
+	<testcase name="consumer: a mutation without idempotency is never replayed after renewal" time="0.001000" classname="test"/>
+	<testcase name="consumer: an idempotent retry retains the original key and body" time="0.000980" classname="test"/>
+	<testcase name="consumer: failed refresh stops without retrying the operation" time="0.001130" classname="test"/>
+	<testcase name="console: concurrent expired reads refresh once and preserve namespace" time="0.003652" classname="test"/>
+	<testcase name="console: a mutation without idempotency is never replayed after renewal" time="0.001389" classname="test"/>
+	<testcase name="console: an idempotent retry retains the original key and body" time="0.000746" classname="test"/>
+	<testcase name="console: failed refresh stops without retrying the operation" time="0.000831" classname="test"/>
+	<testcase name="consumer logout failure preserves account and current page; success clears all private state" time="0.001304" classname="test"/>
+	<testcase name="console logout failure is surfaced instead of silently reporting success" time="0.000886" classname="test"/>
+	<testcase name="console requests work when randomUUID is unavailable in an HTTP preview" time="0.001326" classname="test"/>
+	<testcase name="console login binds the requested account type before establishing a session" time="0.000806" classname="test"/>
+	<testcase name="a changed console actor clears the stale UI and never refreshes or retries" time="0.001799" classname="test"/>
+	<testcase name="consumer: expired access can renew once to revoke its own session" time="0.001581" classname="test"/>
+	<testcase name="console: expired access can renew once to revoke its own session" time="0.000730" classname="test"/>
+	<!-- tests 15 -->
+	<!-- suites 0 -->
+	<!-- pass 15 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 106.424934 -->
+</testsuites>

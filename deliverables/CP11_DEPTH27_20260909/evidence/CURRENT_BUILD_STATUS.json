@@ -1,0 +1,95 @@
+{
+  "build": "DEPTH27",
+  "created_at_utc": "2026-09-09T06:06:44.520269+00:00",
+  "parent_commit": "cfc8e07192fc6842e066ec17f960f6492e75864c",
+  "implemented": [
+    "Consumer/console cookie and CSRF namespaces",
+    "Wrong-platform login rejection without replacing session",
+    "Console actor switch detection",
+    "Single-flight refresh and idempotency-preserving replay",
+    "Logout failures remain visible; successful logout clears private UI state",
+    "Preview BFF/internal routing and secure-random request IDs",
+    "Native vector plus aligned at upper right of DIRECT"
+  ],
+  "locally_tested": {
+    "backend": {
+      "tests": 59,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "f342c284ca187de35af3e55ec4a2b69dc07191663ac1c9ee317a4692d5c4d757"
+    },
+    "frontend": {
+      "tests": 130,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "7bb8997b88d0e7e250bebf4077c578fa8ddb81bac0009b5446b037ecaeeb3417"
+    },
+    "backend_environment": "Python 3.13.5 / isolated SQLite / TestClient; payments and providers use explicit test fixtures",
+    "frontend_environment": "Pinned Node v22.22.0 / VM and request stubs, not browser E2E"
+  },
+  "independently_tested_new_backend": false,
+  "release_approved": false,
+  "deployed": false,
+  "hong_kong_runtime_verified": false,
+  "prior_evidence_preserved": {
+    "DEPTH23_passes": 1542,
+    "DEPTH25_passes": 1577,
+    "not_combined_with_this_run": true
+  },
+  "gate_chain": [
+    {
+      "gate": "THREE-END REAL UX/LOGIN",
+      "status": "HOLD",
+      "reason": "HTTP session acceptance is tested; authenticated three-role browser journeys and mobile viewports remain unverified"
+    },
+    {
+      "gate": "SIX-VERTICAL REAL CLOSED-LOOP E2E",
+      "status": "HOLD",
+      "reason": "Existing isolated component/journey results do not certify all six complete user journeys on this source tree"
+    },
+    {
+      "gate": "SEALED NODE GATE",
+      "status": "HOLD",
+      "reason": "Node 22.22.0 frontend tests passed; full frozen toolchain/release gate not executed or promoted"
+    },
+    {
+      "gate": "FINAL RELEASE",
+      "status": "HOLD",
+      "reason": "Earlier gates remain unmet"
+    }
+  ],
+  "prerequisites": [
+    {
+      "id": "HK_READONLY_TRANSPORT",
+      "status": "HOLD",
+      "reason": "No usable approved endpoint, node credentials, CA or signed HK evidence roundtrip supplied; no direct HK inspection attempted"
+    },
+    {
+      "id": "BROWSER_AUTH",
+      "status": "HOLD",
+      "reason": "Browser requires secure user-mediated authentication; no authenticated browser testing performed; isolated HTTP login tests are separate"
+    },
+    {
+      "id": "MOBILE_VIEWPORT",
+      "status": "HOLD",
+      "reason": "Browser advertises no viewport-resizing capability; no iframe/header bypass performed"
+    },
+    {
+      "id": "REQUIREMENT_CLOSURE",
+      "status": "HOLD",
+      "reason": "DEPTH26 critical requirements register and full official-content parity remain open"
+    }
+  ],
+  "locked_acceptance_scope": "Clearly marked isolated inventory, pricing and payment data are acceptable; absent production inventory/pricing sync/payments alone are not blockers",
+  "next_allowed_action": "Prepare the isolated three-role authenticated browser acceptance path with exact candidate/source binding and supported mobile viewports; do not alter Hong Kong or production.",
+  "boundaries": {
+    "no_hk_deploy": true,
+    "no_production_bookings_or_payments": true,
+    "no_rds_redis_caddy_changes": true,
+    "no_locked_worker_started": true,
+    "frozen_parent_unchanged": true
+  },
+  "FINAL_RELEASE_GATE": "HOLD"
+}

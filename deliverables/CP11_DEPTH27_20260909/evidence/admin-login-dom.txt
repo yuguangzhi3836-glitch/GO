@@ -1,0 +1,14 @@
+- main:
+  - img "GO"
+  - heading "GO 全生态运营管理系统" [level=1]
+  - paragraph: 系统自动运行 · 人只处理异常
+  - generic: 用户名
+  - textbox "用户名"
+  - generic: 密码
+  - textbox "密码"
+  - generic: MFA 动态码（已绑定账号填写）
+  - textbox "MFA 动态码（已绑定账号填写）"
+  - generic: 当前环境暂未强制 MFA。测试期间可使用用户名和密码登录；正式启用后将要求完成 MFA 绑定与动态码验证。
+  - button "安全登录"
+  - link "企业 SSO 登录":
+    - /url: /bff/auth/sso/start
