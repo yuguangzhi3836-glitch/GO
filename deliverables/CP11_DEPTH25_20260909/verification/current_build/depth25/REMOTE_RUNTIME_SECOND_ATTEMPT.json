@@ -1,0 +1,19 @@
+{
+  "run_id": 34306250063,
+  "job_id": 102323444104,
+  "commit": "26192b66b8f77101a56ee554cb6b68d2486435b2",
+  "status": "FAILED",
+  "migration_history_passed": 5,
+  "postgres_existing_passed": 6,
+  "postgres_capacity_expiry": {
+    "tests": 53,
+    "passed": 49,
+    "failures": 4
+  },
+  "causes": {
+    "rail_status_varchar32": 3,
+    "rail_reference_varchar24": 1
+  },
+  "original_log": "REMOTE_POSTGRES_SECOND.log",
+  "resolution": "0132 rail state64 and provider reference128; downgrade refuses history truncation"
+}

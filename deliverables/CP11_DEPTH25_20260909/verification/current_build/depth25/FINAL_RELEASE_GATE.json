@@ -1,0 +1,211 @@
+{
+  "build": "CP11_DEPTH_25_POSTGRES_RUNTIME",
+  "FINAL_RELEASE_GATE": "HOLD",
+  "engineering_complete": false,
+  "deployed": false,
+  "technical_runtime_checks": {
+    "frozen_source": true,
+    "complete_previous_test_inventory": true,
+    "full_run_no_failures": true,
+    "local_skips_are_six_isolated_postgres_cases": true,
+    "exact_skipped_cases_passed_in_postgres": true,
+    "actual_postgres_and_redis_and_frozen_node": true,
+    "migration_history": true,
+    "runtime_source_binding": true
+  },
+  "whole_system_acceptance": {
+    "critical_master_requirements": false,
+    "complete_master_decomposition": false,
+    "actual_browser": false,
+    "cross_device_visual": false
+  },
+  "test_counts_are_separate_runs": true,
+  "local_skipped_test_ids": [
+    [
+      "tests.test_p0_0100_postgres_concurrency",
+      "test_order_payment_root_unique_under_postgres_race"
+    ],
+    [
+      "tests.test_p0_0101_postgres_race_matrix",
+      "test_0101_order_payment_root_exactly_once_postgres"
+    ],
+    [
+      "tests.test_p0_0101_postgres_race_matrix",
+      "test_0101_webhook_delivery_replay_unique_postgres"
+    ],
+    [
+      "tests.test_p0_0101_postgres_race_matrix",
+      "test_0101_capture_refund_serialization_postgres"
+    ],
+    [
+      "tests.test_p0_0101_postgres_race_matrix",
+      "test_0101_finance_close_approval_race_postgres"
+    ],
+    [
+      "tests.test_p0_0101_postgres_race_matrix",
+      "test_0101_postgres_server_is_real_postgres"
+    ]
+  ],
+  "open_critical_requirements": [
+    {
+      "id": "BRAND-01",
+      "requirement": "GO 主标及子品牌比例锁定",
+      "status": "VISUAL_QA_REQUIRED"
+    },
+    {
+      "id": "BRAND-02",
+      "requirement": "GO AI / GO Offer 同权，三张 Navy 卡无图标渐变阴影",
+      "status": "VISUAL_QA_REQUIRED"
+    },
+    {
+      "id": "ALL-01",
+      "requirement": "六品类均完成搜索、下单、支付、确认、售后、退款、关闭",
+      "status": "SIX_VERTICAL_SIMULATED_PAYMENT_REFUND_TESTED"
+    },
+    {
+      "id": "ALL-02",
+      "requirement": "取消与退款分别显示连续状态",
+      "status": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN"
+    },
+    {
+      "id": "HOTEL-01",
+      "requirement": "房型按官网事实；价格库存与内容来源分开",
+      "status": "LOCAL_DURABLE_MEDIA_REGIONAL_RECOVERY_TESTED_REPLICATION_OPEN"
+    },
+    {
+      "id": "HOTEL-02",
+      "requirement": "逐夜库存价格及并发不超卖",
+      "status": "LOCAL_HOSTED_AND_CATALOG_CASH_SUPPLIER_REMEDY_TESTED"
+    },
+    {
+      "id": "HOTEL-03",
+      "requirement": "取消阶梯、改期高补低不退、原酒店住宿额度",
+      "status": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN"
+    },
+    {
+      "id": "FLIGHT-01",
+      "requirement": "单程、往返、多程与专业条件",
+      "status": "LOCAL_PARTY_AND_ORIGINAL_REFUND_TESTED_EXTERNAL_ACCEPTANCE_PENDING"
+    },
+    {
+      "id": "FLIGHT-02",
+      "requirement": "值机开放、已值机、登机牌状态以官方证据为准",
+      "status": "SIGNED_PER_LEG_TRAVELER_FACTS_TESTED_TRIPS_ENTRY_OPEN"
+    },
+    {
+      "id": "RAIL-01",
+      "requirement": "铁路席别、站点、改签退票闭环",
+      "status": "SQLITE_AND_POSTGRES_SHARED_CAPACITY_EXPIRY_RECOVERY_TESTED_PARTIAL_AFTERSALES_OPEN"
+    },
+    {
+      "id": "RENTAL-01",
+      "requirement": "租期计价、保险里程押金及退款",
+      "status": "LOCAL_RENTAL_SETTLEMENT_AND_DIRECT_AUTHORIZATION_TESTED"
+    },
+    {
+      "id": "RIDE-01",
+      "requirement": "航班绑定延误同步及供应商规则内免费等待",
+      "status": "SIGNED_EXACT_FLIGHT_DURABLE_ISOLATED_FLEET_TESTED_DRIVER_SETTLEMENT_OPEN"
+    },
+    {
+      "id": "ATTRACTION-01",
+      "requirement": "场次、资格、库存、凭证与改退",
+      "status": "SQLITE_AND_POSTGRES_SHARED_CAPACITY_EXPIRY_RECOVERY_TESTED_PARTIAL_AFTERSALES_OPEN"
+    },
+    {
+      "id": "VAULT-01",
+      "requirement": "敏感候选必须确认，来源不可自授可信",
+      "status": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING"
+    },
+    {
+      "id": "VAULT-02",
+      "requirement": "同名不可静默合并，冲突须明确选择",
+      "status": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING"
+    },
+    {
+      "id": "VAULT-03",
+      "requirement": "查看修改删除导出断开撤回",
+      "status": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING"
+    },
+    {
+      "id": "VAULT-04",
+      "requirement": "逐旅行者、逐目的最小字段释放与审计",
+      "status": "LOCAL_FUNCTIONAL_TESTED_BROWSER_ACCEPTANCE_PENDING"
+    },
+    {
+      "id": "GOV-01",
+      "requirement": "每个动作100%经过C14权限门禁",
+      "status": "DURABLE_CURRENT_AUTHORITY_AND_OBSERVATIONS_TESTED_FULL_BUSINESS_INTEGRATION_OPEN"
+    },
+    {
+      "id": "GOV-02",
+      "requirement": "自治资格持续有效；禁止自我扩权",
+      "status": "DURABLE_CURRENT_AUTHORITY_AND_OBSERVATIONS_TESTED_FULL_BUSINESS_INTEGRATION_OPEN"
+    },
+    {
+      "id": "GOV-03",
+      "requirement": "外部法律暴露动态判定，缺少规则则保持关闭",
+      "status": "DURABLE_CURRENT_AUTHORITY_AND_OBSERVATIONS_TESTED_FULL_BUSINESS_INTEGRATION_OPEN"
+    },
+    {
+      "id": "PAY-01",
+      "requirement": "持牌支付机构受控资金、原路退款、账单对账",
+      "status": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN"
+    },
+    {
+      "id": "TRUTH-01",
+      "requirement": "工程、沙箱、灰度、生产状态分开",
+      "status": "LOCAL_SIMULATOR_PRODUCTION_BLOCK_TESTED"
+    },
+    {
+      "id": "DIRECT-01",
+      "requirement": "Direct First；合法多渠道Fallback不以佣金优化",
+      "status": "SOURCE_SELECTION_CONTRACT_TESTED"
+    },
+    {
+      "id": "RECOMMEND-01",
+      "requirement": "Recommendation和Value永久隔离；商业利益不购买推荐",
+      "status": "TEST_REQUIRED"
+    },
+    {
+      "id": "OFFER-01",
+      "requirement": "第二页结构化需求；房间与会议分别授权报价",
+      "status": "E2E_REQUIRED"
+    },
+    {
+      "id": "TRIPS-01",
+      "requirement": "统一旅行事实与销售方收款方履约方及售后状态",
+      "status": "LOCAL_SPLIT_CREDIT_SOURCES_TESTED_ADVANCED_FULFILLMENT_OPEN"
+    },
+    {
+      "id": "SUPPLIER-01",
+      "requirement": "供应商移动运营完整闭环",
+      "status": "E2E_REQUIRED"
+    },
+    {
+      "id": "INTELLIGENCE-01",
+      "requirement": "Model Gateway五维成本治理与单向信息边界",
+      "status": "TEST_REQUIRED"
+    },
+    {
+      "id": "BUSINESS-01",
+      "requirement": "官方直订0%佣金与T20后固定订阅",
+      "status": "TEST_REQUIRED"
+    },
+    {
+      "id": "MEMBER-01",
+      "requirement": "Staff自动核验失效；Owner互斥权益与认可",
+      "status": "E2E_REQUIRED"
+    }
+  ],
+  "unassessed_source_paragraph_count": 725,
+  "source_paragraph_note": "Source paragraphs are not automatically equivalent to executable requirements.",
+  "browser_blocker": "net::ERR_BLOCKED_BY_CLIENT",
+  "evidence_sha256": {
+    "CURRENT_BUILD_STATUS.json": "9784032eb2a5b62eeaf1bd1e6055656eb24460f8854a98eeb197ab41b1dc682d",
+    "full_regression.xml": "17828e46ccef6b79b5b5bab54b5712d7f741bb050e42e1e4c4adf33f312cc248",
+    "source_fingerprint.json": "c18d3232b859786a952453a137d676220b0c325a37088325816cba3a55aea89d",
+    "REMOTE_RUNTIME_FINAL.log": "26ffbc2b1567c010874d3a8d0431dd32238a6d94146cc2ec9110038fe9d35675",
+    "BROWSER_ACCEPTANCE.json": "082e94d64745d7763c1c1fa9835794ab3098312e50a013abe83fc2d2f30b76cb"
+  }
+}

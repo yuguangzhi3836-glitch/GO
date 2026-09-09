@@ -1,0 +1,54 @@
+{
+  "repository": "yuguangzhi3836-glitch/GO",
+  "branch": "acceptance/cp11-depth25-runtime",
+  "commit": "a680d586248dd9106a19d25f7ff1b7140f77f3d5",
+  "run_id": 34306784341,
+  "job_id": 102325026317,
+  "run_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34306784341",
+  "runtime_acceptance": "PASS",
+  "checks": {
+    "migration_history": {
+      "tests": 6,
+      "failures_errors_skips": 0,
+      "accepted": true
+    },
+    "postgres_existing": {
+      "tests": 6,
+      "failures_errors_skips": 0,
+      "accepted": true
+    },
+    "postgres_expiry": {
+      "tests": 53,
+      "failures_errors_skips": 0,
+      "accepted": true
+    },
+    "frontend_node22": {
+      "tests": 115,
+      "failures_errors_skips": 0,
+      "accepted": true
+    },
+    "redis_queue": {
+      "accepted": true
+    },
+    "prior_steps": {
+      "accepted": true
+    }
+  },
+  "verified_source_files": 1051,
+  "migration_head": "0132_rail_runtime_field_widths",
+  "frontend_syntax_files": 44,
+  "source_binding": "SHA256-verified DEPTH24 baseline plus six exact overlay files; full1051-source hash loop in CI before execution",
+  "full_postgres_migration_chain": true,
+  "actual_redis": true,
+  "evidence_kind": "Original Actions ZIP and XML recovered; SHA256 matches GitHub artifact digest",
+  "original_log": "REMOTE_RUNTIME_FINAL.log",
+  "original_log_sha256": "26ffbc2b1567c010874d3a8d0431dd32238a6d94146cc2ec9110038fe9d35675",
+  "FINAL_RELEASE_GATE": "HOLD",
+  "original_artifact_sha256": "c7afd030cb34aa6d5d0b128d0adfa593f399da627b497d8b7dbd956e90cc46ad",
+  "original_junit_reports": [
+    "frontend_node22.xml",
+    "migration_history.xml",
+    "postgres_existing.xml",
+    "postgres_expiry.xml"
+  ]
+}

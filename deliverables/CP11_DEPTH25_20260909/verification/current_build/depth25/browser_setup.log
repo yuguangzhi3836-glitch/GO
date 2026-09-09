@@ -1,0 +1,230 @@
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001_sprint1d, Sprint 1D runtime persistence tables.
+INFO  [alembic.runtime.migration] Running upgrade 0001_sprint1d -> 0002_sprint1e, Sprint 1E concurrency, saga recovery, outbox DLQ and webhook inbox.
+INFO  [alembic.runtime.migration] Running upgrade 0002_sprint1e -> 0003_sprint1f, Sprint 1F connector framework, certification and reconciliation
+Revision ID: 0003_sprint1f
+Revises: 0002_sprint1e
+INFO  [alembic.runtime.migration] Running upgrade 0003_sprint1f -> 0004_sprint1g, Sprint 1G first supplier identity mapping
+INFO  [alembic.runtime.migration] Running upgrade 0004_sprint1g -> 0005_sprint1h, Sprint 1H supplier onboarding, credential vault metadata, property mapping and activation workflow.
+INFO  [alembic.runtime.migration] Running upgrade 0005_sprint1h -> 0006_sprint1i, Sprint 1I traffic router, SLA scoring, routing audit
+INFO  [alembic.runtime.migration] Running upgrade 0006_sprint1i -> 0007_sprint1j, sprint 1j multi-source dedup merge and drift
+Revision ID: 0007_sprint1j
+Revises: 0006_sprint1i
+INFO  [alembic.runtime.migration] Running upgrade 0007_sprint1j -> 0008_sprint1k, Sprint 1K prebook revalidation and booking consistency
+Revision ID: 0008_sprint1k
+Revises: 0007_sprint1j
+INFO  [alembic.runtime.migration] Running upgrade 0008_sprint1k -> 0009_sprint1l, Sprint 1L payment authorization/book/capture orchestration
+INFO  [alembic.runtime.migration] Running upgrade 0009_sprint1l -> 0010_sprint1m, Sprint 1M persistent cancellation/refund/change/stay-credit runtime
+INFO  [alembic.runtime.migration] Running upgrade 0010_sprint1m -> 0011_sprint1n, Sprint 1N supplier fault compensation and financial recovery runtime
+INFO  [alembic.runtime.migration] Running upgrade 0011_sprint1n -> 0012_sprint1o, Sprint 1O GO Truth Quick Review, risk evidence and judgment hook runtime
+INFO  [alembic.runtime.migration] Running upgrade 0012_sprint1o -> 0013_sprint1p, Sprint 1P GO Judgment runtime, GO Score, Recommendation and Evidence Package
+INFO  [alembic.runtime.migration] Running upgrade 0013_sprint1p -> 0014_sprint1q, Sprint 1Q operational dashboard supplier identity and indexes.
+INFO  [alembic.runtime.migration] Running upgrade 0014_sprint1q -> 0015_sprint1r, Sprint 1R identity RBAC tenant isolation approval audit
+INFO  [alembic.runtime.migration] Running upgrade 0015_sprint1r -> 0016_sprint1u, Sprint 1U production BFF security hardening.
+INFO  [alembic.runtime.migration] Running upgrade 0016_sprint1u -> 0017_sprint1v, Sprint 1V observability and incident control.
+Revision ID: 0017_sprint1v
+Revises: 0016_sprint1u
+INFO  [alembic.runtime.migration] Running upgrade 0017_sprint1v -> 0018_sprint1y, Sprint 1Y consumer identity, GO ID, travelers and tokenized payment references.
+Revision ID: 0018_sprint1y
+Revises: 0017_sprint1v
+INFO  [alembic.runtime.migration] Running upgrade 0018_sprint1y -> 0019_sprint1z, Sprint 1Z native mobile device and push registration runtime.
+Revision ID: 0019_sprint1z
+Revises: 0018_sprint1y
+INFO  [alembic.runtime.migration] Running upgrade 0019_sprint1z -> 0020_sprint2a, Sprint 2A native consumer UI and push event orchestration.
+Revision ID: 0020_sprint2a
+Revises: 0019_sprint1z
+INFO  [alembic.runtime.migration] Running upgrade 0020_sprint2a -> 0021_sprint2b, Sprint 2B real-device QA, push receipt lifecycle and mobile release hardening.
+INFO  [alembic.runtime.migration] Running upgrade 0021_sprint2b -> 0022_sprint3a, Sprint 3A flight complete golden path.
+INFO  [alembic.runtime.migration] Running upgrade 0022_sprint3a -> 0023_sprint3b, Sprint 3B rail complete golden path.
+INFO  [alembic.runtime.migration] Running upgrade 0023_sprint3b -> 0024_sprint3c, Sprint 3C mobility: ride + rent-a-car.
+Revision ID: 0024_sprint3c
+Revises: 0023_sprint3b
+INFO  [alembic.runtime.migration] Running upgrade 0024_sprint3c -> 0025_sprint3d, Sprint 3D attractions and experiences vertical
+Revision ID: 0025_sprint3d
+Revises: 0024_sprint3c
+INFO  [alembic.runtime.migration] Running upgrade 0025_sprint3d -> 0026_sprint3e, Sprint 3E unified GO Trips and multi-vertical journey
+Revision ID: 0026_sprint3e
+Revises: 0025_sprint3d
+INFO  [alembic.runtime.migration] Running upgrade 0026_sprint3e -> 0027_sprint3f, Sprint 3F journey intelligence and disruption orchestration
+Revision ID: 0027_sprint3f
+Revises: 0026_sprint3e
+INFO  [alembic.runtime.migration] Running upgrade 0027_sprint3f -> 0028_sprint3g, Sprint 3G proactive journey recovery and option comparison
+Revision ID: 0028_sprint3g
+Revises: 0027_sprint3f
+INFO  [alembic.runtime.migration] Running upgrade 0028_sprint3g -> 0029_sprint3h, Sprint 3H one-click recovery orchestrator and atomic user intent
+Revision ID: 0029_sprint3h
+Revises: 0028_sprint3g
+INFO  [alembic.runtime.migration] Running upgrade 0029_sprint3h -> 0030_sprint3i, Sprint 3I durable recovery reconciliation and supplier adapter contract
+Revision ID: 0030_sprint3i
+Revises: 0029_sprint3h
+INFO  [alembic.runtime.migration] Running upgrade 0030_sprint3i -> 0031_sprint3j, Sprint 3J recovery command ledger, supplier evidence chain and operational control plane
+Revision ID: 0031_sprint3j
+Revises: 0030_sprint3i
+INFO  [alembic.runtime.migration] Running upgrade 0031_sprint3j -> 0032_sprint3k, Sprint 3K recovery SLA engine, escalation policy and human ops workflow
+Revision ID: 0032_sprint3k
+Revises: 0031_sprint3j
+INFO  [alembic.runtime.migration] Running upgrade 0032_sprint3k -> 0033_sprint3l, Sprint 3L recovery incident intelligence and reliability memory
+Revision ID: 0033_sprint3l
+Revises: 0032_sprint3k
+INFO  [alembic.runtime.migration] Running upgrade 0033_sprint3l -> 0034_sprint3m, Sprint 3M adaptive strategy governance
+Revision ID: 0034_sprint3m
+Revises: 0033_sprint3l
+INFO  [alembic.runtime.migration] Running upgrade 0034_sprint3m -> 0035_sprint3n, Sprint 3N recovery experimentation and production calibration
+Revision ID: 0035_sprint3n
+Revises: 0034_sprint3m
+INFO  [alembic.runtime.migration] Running upgrade 0035_sprint3n -> 0036_sprint3o, Sprint 3O production learning registry provenance benchmark governance
+Revision ID: 0036_sprint3o
+Revises: 0035_sprint3n
+INFO  [alembic.runtime.migration] Running upgrade 0036_sprint3o -> 0037_sprint3p, Sprint 3P recovery data quality benchmark privacy learning kill switch
+Revision ID: 0037_sprint3p
+Revises: 0036_sprint3o
+INFO  [alembic.runtime.migration] Running upgrade 0037_sprint3p -> 0038_sprint3q, Sprint 3Q recovery learning incident response safe rollback change control
+Revision ID: 0038_sprint3q
+Revises: 0037_sprint3p
+INFO  [alembic.runtime.migration] Running upgrade 0038_sprint3q -> 0039_sprint3r, Sprint 3R recovery production release governance and environment promotion
+Revision ID: 0039_sprint3r
+Revises: 0038_sprint3q
+INFO  [alembic.runtime.migration] Running upgrade 0039_sprint3r -> 0040_sprint3s, Sprint 3S runtime deployment attestation and health gate
+Revision ID: 0040_sprint3s
+Revises: 0039_sprint3r
+INFO  [alembic.runtime.migration] Running upgrade 0040_sprint3s -> 0041_sprint3t, Sprint 3T runtime observability burn rate and release safety controller
+Revision ID: 0041_sprint3t
+Revises: 0040_sprint3s
+INFO  [alembic.runtime.migration] Running upgrade 0041_sprint3t -> 0042_sprint3u, Sprint 3U runtime telemetry provenance multi-window SLO and incident correlation
+Revision ID: 0042_sprint3u
+Revises: 0041_sprint3t
+INFO  [alembic.runtime.migration] Running upgrade 0042_sprint3u -> 0043_sprint3v, Sprint 3V telemetry trust chain signed runtime identity and automation policy
+Revision ID: 0043_sprint3v
+Revises: 0042_sprint3u
+INFO  [alembic.runtime.migration] Running upgrade 0043_sprint3v -> 0044_sprint3w, Sprint 3W runtime identity rotation trust revocation and telemetry key lifecycle
+Revision ID: 0044_sprint3w
+Revises: 0043_sprint3v
+INFO  [alembic.runtime.migration] Running upgrade 0044_sprint3w -> 0045_sprint3x, Sprint 3X runtime identity reissuance hardware trust attestation and credential recovery governance
+Revision ID: 0045_sprint3x
+Revises: 0044_sprint3w
+INFO  [alembic.runtime.migration] Running upgrade 0045_sprint3x -> 0046_sprint3y, Sprint 3Y credential issuance authority attestation policy registry and hardware trust federation
+Revision ID: 0046_sprint3y
+Revises: 0045_sprint3x
+INFO  [alembic.runtime.migration] Running upgrade 0046_sprint3y -> 0047_sprint3z, Sprint 3Z certificate transparency, status distribution and federated trust enforcement.
+INFO  [alembic.runtime.migration] Running upgrade 0047_sprint3z -> 0048_sprint4a, Sprint 4A Merkle transparency, external witness, multi-region trust consensus.
+INFO  [alembic.runtime.migration] Running upgrade 0048_sprint4a -> 0049_sprint4b, Sprint 4B transparency gossip, witness federation, trust recovery.
+Revision ID: 0049_sprint4b
+Revises: 0048_sprint4a
+INFO  [alembic.runtime.migration] Running upgrade 0049_sprint4b -> 0050_sprint4c, Sprint 4C witness independence governance and trust plane disaster recovery.
+Revision ID: 0050_sprint4c
+Revises: 0049_sprint4b
+INFO  [alembic.runtime.migration] Running upgrade 0050_sprint4c -> 0051_sprint4d, Sprint 4D trust plane chaos engineering and production readiness gate.
+Revision ID: 0051_sprint4d
+Revises: 0050_sprint4c
+INFO  [alembic.runtime.migration] Running upgrade 0051_sprint4d -> 0052_sprint4e, Sprint 4E continuous chaos scheduler, readiness trend and waiver governance.
+Revision ID: 0052_sprint4e
+Revises: 0051_sprint4d
+INFO  [alembic.runtime.migration] Running upgrade 0052_sprint4e -> 0053_sprint4f, Sprint 4F waiver exposure budget, exception debt and remediation SLA.
+Revision ID: 0053_sprint4f
+Revises: 0052_sprint4e
+INFO  [alembic.runtime.migration] Running upgrade 0053_sprint4f -> 0054_sprint4g, Sprint 4G exception debt burn-down, waiver freeze and executive risk acceptance.
+Revision ID: 0054_sprint4g
+Revises: 0053_sprint4f
+INFO  [alembic.runtime.migration] Running upgrade 0054_sprint4g -> 0055_sprint4h, Sprint 4H executive risk portfolio and enterprise risk limits.
+Revision ID: 0055_sprint4h
+Revises: 0054_sprint4g
+INFO  [alembic.runtime.migration] Running upgrade 0055_sprint4h -> 0056_sprint4i, Sprint 4I enterprise risk appetite and stress testing.
+Revision ID: 0056_sprint4i
+Revises: 0055_sprint4h
+INFO  [alembic.runtime.migration] Running upgrade 0056_sprint4i -> 0057_sprint4j, Sprint 4J enterprise risk forecast and dynamic capacity.
+Revision ID: 0057_sprint4j
+Revises: 0056_sprint4i
+INFO  [alembic.runtime.migration] Running upgrade 0057_sprint4j -> 0058_sprint4k, Sprint 4K forecast calibration, accuracy and capacity governance.
+Revision ID: 0058_sprint4k
+Revises: 0057_sprint4j
+INFO  [alembic.runtime.migration] Running upgrade 0058_sprint4k -> 0059_sprint4l, Sprint 4L forecast champion/challenger, backtesting and promotion governance.
+Revision ID: 0059_sprint4l
+Revises: 0058_sprint4k
+INFO  [alembic.runtime.migration] Running upgrade 0059_sprint4l -> 0060_sprint4m, Sprint 4M statistical significance, promotion stability and automated rollback governance.
+Revision ID: 0060_sprint4m
+Revises: 0059_sprint4l
+INFO  [alembic.runtime.migration] Running upgrade 0060_sprint4m -> 0061_sprint4n, Sprint 4N forecast drift detection, population stability and governed model refresh.
+Revision ID: 0061_sprint4n
+Revises: 0060_sprint4m
+INFO  [alembic.runtime.migration] Running upgrade 0061_sprint4n -> 0062_sprint4o, Sprint 4O model training lineage, feature registry and reproducible build governance.
+Revision ID: 0062_sprint4o
+Revises: 0061_sprint4n
+INFO  [alembic.runtime.migration] Running upgrade 0062_sprint4o -> 0063_sprint4p, Sprint 4P model artifact registry, signed build attestation and supply-chain integrity governance.
+Revision ID: 0063_sprint4p
+Revises: 0062_sprint4o
+INFO  [alembic.runtime.migration] Running upgrade 0063_sprint4p -> 0064_sprint4q, Sprint 4Q artifact deployment provenance and model serving attestation.
+Revision ID: 0064_sprint4q
+Revises: 0063_sprint4p
+INFO  [alembic.runtime.migration] Running upgrade 0064_sprint4q -> 0065_sprint4r, Sprint 4R runtime model traffic governance. Revision ID: 0065_sprint4r Revises: 0064_sprint4q
+INFO  [alembic.runtime.migration] Running upgrade 0065_sprint4r -> 0066_sprint4s, Sprint 4S online prediction outcome attribution and serving auto-degrade. Revision ID: 0066_sprint4s Revises: 0065_sprint4r
+INFO  [alembic.runtime.migration] Running upgrade 0066_sprint4s -> 0067_sprint4t, Sprint 4T online segment performance and automatic challenger refresh. Revision ID: 0067_sprint4t Revises: 0066_sprint4s
+INFO  [alembic.runtime.migration] Running upgrade 0067_sprint4t -> 0068_sprint4u, Sprint 4U segment-targeted challenger remediation governance. Revision ID: 0068_sprint4u Revises: 0067_sprint4t
+INFO  [alembic.runtime.migration] Running upgrade 0068_sprint4u -> 0069_sprint4v, Sprint 4V remediation generalization and post-promotion proof. Revision ID: 0069_sprint4v Revises: 0068_sprint4u
+INFO  [alembic.runtime.migration] Running upgrade 0069_sprint4v -> 0070_sprint4w, Sprint 4W multi-segment remediation portfolio and unified promotion governance.
+Revision ID: 0070_sprint4w
+Revises: 0069_sprint4v
+INFO  [alembic.runtime.migration] Running upgrade 0070_sprint4w -> 0071_sprint4x, Sprint 4X portfolio champion continuity and safe replacement.
+Revision ID: 0071_sprint4x
+Revises: 0070_sprint4w
+INFO  [alembic.runtime.migration] Running upgrade 0071_sprint4x -> 0072_partner_core, Hotel Partner Self-Operating Core (Mother Plan Production Build 1).
+INFO  [alembic.runtime.migration] Running upgrade 0072_partner_core -> 0073_commercial_os, Commercial Constitution Policy Engine + GO Admin Commercial OS.
+INFO  [alembic.runtime.migration] Running upgrade 0073_commercial_os -> 0074_good_hotel_standard, GO Good Hotel Standard Registry + Judgment binding.
+INFO  [alembic.runtime.migration] Running upgrade 0074_good_hotel_standard -> 0075_442bc0d513d1, Production Connector Registry + Certification + Live Gate.
+INFO  [alembic.runtime.migration] Running upgrade 0075_442bc0d513d1 -> 0076_126e14322d21, Production connector runtime enforcement, webhook and reconciliation.
+INFO  [alembic.runtime.migration] Running upgrade 0076_126e14322d21 -> 0077_0ab7798c5638, First real connector activation readiness.
+INFO  [alembic.runtime.migration] Running upgrade 0077_0ab7798c5638 -> 0078_e79db192807d, First paired Hotel + PSP connector pilot integration.
+INFO  [alembic.runtime.migration] Running upgrade 0078_e79db192807d -> 0079_3211684dd25f, External supplier credentialed sandbox certification and evidence import.
+INFO  [alembic.runtime.migration] Running upgrade 0079_3211684dd25f -> 0080_2cb588879e4e, Named supplier adapters and external sandbox execution gate.
+INFO  [alembic.runtime.migration] Running upgrade 0080_2cb588879e4e -> 0081_d921b0671c22, First GO-hosted hotel direct-booking pilot.
+INFO  [alembic.runtime.migration] Running upgrade 0081_d921b0671c22 -> 0082_452aa445e8f7
+INFO  [alembic.runtime.migration] Running upgrade 0082_452aa445e8f7 -> 0083_396ac652da7a
+INFO  [alembic.runtime.migration] Running upgrade 0083_396ac652da7a -> 0084_bee2eab998ec
+INFO  [alembic.runtime.migration] Running upgrade 0084_bee2eab998ec -> 0085_bfa53313a4e7
+INFO  [alembic.runtime.migration] Running upgrade 0085_bfa53313a4e7 -> 0086_01748f3984db
+INFO  [alembic.runtime.migration] Running upgrade 0086_01748f3984db -> 0087_c049d2c650d7
+INFO  [alembic.runtime.migration] Running upgrade 0087_c049d2c650d7 -> 0088_226558bdb985
+INFO  [alembic.runtime.migration] Running upgrade 0088_226558bdb985 -> 0089_24184f9074aa
+INFO  [alembic.runtime.migration] Running upgrade 0089_24184f9074aa -> 0090_go_identity_entitlements
+INFO  [alembic.runtime.migration] Running upgrade 0090_go_identity_entitlements -> 0091_go_offer_order_handoff
+INFO  [alembic.runtime.migration] Running upgrade 0091_go_offer_order_handoff -> 0092_d6ac03c98590
+INFO  [alembic.runtime.migration] Running upgrade 0092_d6ac03c98590 -> 0093_f656e2fd0f65
+INFO  [alembic.runtime.migration] Running upgrade 0093_f656e2fd0f65 -> 0094_c3116e73c367
+INFO  [alembic.runtime.migration] Running upgrade 0094_c3116e73c367 -> 0095_59ac5a29f1d5
+INFO  [alembic.runtime.migration] Running upgrade 0095_59ac5a29f1d5 -> 0096_e63794766c0d
+INFO  [alembic.runtime.migration] Running upgrade 0096_e63794766c0d -> 0097_vertical_source_runtime
+INFO  [alembic.runtime.migration] Running upgrade 0097_vertical_source_runtime -> 0098_1372d8c45b6f
+INFO  [alembic.runtime.migration] Running upgrade 0098_1372d8c45b6f -> 0099_e9ab838ca46d
+INFO  [alembic.runtime.migration] Running upgrade 0099_e9ab838ca46d -> 0100_159ffd29a7f8, P0 0100 real external execution and certified sandbox closure evidence.
+INFO  [alembic.runtime.migration] Running upgrade 0100_159ffd29a7f8 -> 0101_7ae44f334cf0, P0 0101 named provider certification evidence and PostgreSQL race proof registry.
+INFO  [alembic.runtime.migration] Running upgrade 0101_7ae44f334cf0 -> 0102_p0_final_closure_program, P0 Final Closure Program: immutable requirement-to-code-to-runtime evidence registry.
+INFO  [alembic.runtime.migration] Running upgrade 0102_p0_final_closure_program -> 0103_p0_design_code_freeze, P0 design/code freeze marker.
+INFO  [alembic.runtime.migration] Running upgrade 0103_p0_design_code_freeze -> 0104_529182b87c94, GO AI multi-model aggregation audit registry.
+INFO  [alembic.runtime.migration] Running upgrade 0104_529182b87c94 -> 0105_hotel_autopage_factory, GO Hotel AutoPage Factory: multi-source content graph, prebuilt pages, contacts and claims.
+INFO  [alembic.runtime.migration] Running upgrade 0105_hotel_autopage_factory -> 0106_449aeedcd91d, Replace hotel claim terminology with registration + official association.
+INFO  [alembic.runtime.migration] Running upgrade 0106_449aeedcd91d -> 0107_166151c9cc6e, Replace official-association vocabulary with official-direct lifecycle.
+INFO  [alembic.runtime.migration] Running upgrade 0107_166151c9cc6e -> 0108_hotel_go_direct_semantics, Make GO Direct the single product vocabulary for hotel registration lifecycle.
+INFO  [alembic.runtime.migration] Running upgrade 0108_hotel_go_direct_semantics -> 0109_bf96588075fe, GO Personal Travel Vault + Universal Import master baseline.
+INFO  [alembic.runtime.migration] Running upgrade 0109_bf96588075fe -> 0110_7012f1955180, GO Consumer Growth + Official Direct Value Constitution V5.3.
+INFO  [alembic.runtime.migration] Running upgrade 0110_7012f1955180 -> 0111_test_account_expiry, R7 compatibility lineage node for staging test-account expiry.
+INFO  [alembic.runtime.migration] Running upgrade 0111_test_account_expiry -> 0112_ti_p0_20260829, Travel Intelligence Layer 1.0 P0 implementation.
+INFO  [alembic.runtime.migration] Running upgrade 0112_ti_p0_20260829 -> 0113_ext_truth_ops_20260901, External truth operator workflow governance.
+INFO  [alembic.runtime.migration] Running upgrade 0113_ext_truth_ops_20260901 -> 0114_ext_truth_incident_hard, External truth incident evidence and replay hardening.
+INFO  [alembic.runtime.migration] Running upgrade 0114_ext_truth_incident_hard -> 0115_rental_change_settlement, Durable rental reprice quotes and original-payment refund plans.
+INFO  [alembic.runtime.migration] Running upgrade 0115_rental_change_settlement -> 0116_hosted_fare_snapshot, Versioned hotel rules, immutable order snapshots and executable fare quotes.
+INFO  [alembic.runtime.migration] Running upgrade 0116_hosted_fare_snapshot -> 0117_hosted_stay_credit, Funded property credit, allocation/value ledger and original-source refund plans.
+INFO  [alembic.runtime.migration] Running upgrade 0117_hosted_stay_credit -> 0118_hosted_supplier_disruption, Independent hotel disruption decisions and scoped fault debit mandates.
+INFO  [alembic.runtime.migration] Running upgrade 0118_hosted_supplier_disruption -> 0119_catalog_supplier_remedy, Independent legacy hotel remedy execution; preserve historical cases and hosted data.
+INFO  [alembic.runtime.migration] Running upgrade 0119_catalog_supplier_remedy -> 0120_catalog_stay_credit, Funded catalog credit contracts; do not manufacture facts for historical credits.
+INFO  [alembic.runtime.migration] Running upgrade 0120_catalog_stay_credit -> 0121_catalog_fare_snapshot, Versioned catalog rules and new order acceptance; no invented historical acceptance.
+INFO  [alembic.runtime.migration] Running upgrade 0121_catalog_fare_snapshot -> 0122_catalog_cash_fare, Durable ordinary cash after-sales; historical quotes remain unaccepted.
+INFO  [alembic.runtime.migration] Running upgrade 0122_catalog_cash_fare -> 0123_catalog_credit_exclusion, Separate previously forfeited cash value from prepaid credit source budgets.
+INFO  [alembic.runtime.migration] Running upgrade 0123_catalog_credit_exclusion -> 0124_autonomy_durable, Durable governed task execution; existing business schema remains intact.
+INFO  [alembic.runtime.migration] Running upgrade 0124_autonomy_durable -> 0125_regional_queue, Durable regional queue; retain old Redis data until reviewed import.
+INFO  [alembic.runtime.migration] Running upgrade 0125_regional_queue -> 0126_travel_operational_facts, Signed travel facts and versioned flight-linked ride adjustments; no legacy facts are upgraded.
+INFO  [alembic.runtime.migration] Running upgrade 0126_travel_operational_facts -> 0127_vertical_prebook_contract, Bind quoted parties and terms to one consumer order; no fabricated legacy backfill.
+INFO  [alembic.runtime.migration] Running upgrade 0127_vertical_prebook_contract -> 0128_vertical_refund_recovery, Durable rail/attraction refund claims; preserve existing order history.
+INFO  [alembic.runtime.migration] Running upgrade 0128_vertical_refund_recovery -> 0129_rail_change_resolution, Durable supplier decisions for rail changes; do not alter historical rows.
+INFO  [alembic.runtime.migration] Running upgrade 0129_rail_change_resolution -> 0130_vertical_capacity, Shared isolated rail/attraction capacity; legacy orders are not fabricated.
+INFO  [alembic.runtime.migration] Running upgrade 0130_vertical_capacity -> 0131_vertical_payment_deadline, Frozen deadlines for newly created unpaid rail and attraction reservations.
+INFO  [alembic.runtime.migration] Running upgrade 0131_vertical_payment_deadline -> 0132_rail_runtime_field_widths, Allow complete canonical rail payment states and provider references.

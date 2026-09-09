@@ -1,0 +1,24 @@
+{
+  "run_id": 34305371934,
+  "job_id": 102320849077,
+  "commit": "0bec3ea1c50efee666a5a466a0ef294de6dd5145",
+  "branch": "acceptance/cp11-depth25-runtime",
+  "run_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34305371934",
+  "status": "FAILED",
+  "historical_pg_duplicate_column_blocker": "MIGRATION_STEP_NOW_SUCCESS",
+  "full_postgres_chain": true,
+  "existing_pg_concurrency_step": "SUCCESS",
+  "application_runtime_source_unchanged": true,
+  "FINAL_RELEASE_GATE": "HOLD",
+  "conclusion": "failure",
+  "failed_step": "Native expiry and process recovery with PostgreSQL",
+  "migration_history_passed": 4,
+  "postgres_existing_passed": 6,
+  "postgres_expiry": {
+    "passed": 29,
+    "failures": 1,
+    "skipped": 0
+  },
+  "failure_reason": "Rail cancel response timestamp was naive before commit and UTC-aware after PostgreSQL reload",
+  "original_log": "REMOTE_POSTGRES_FIRST.log"
+}

@@ -1,0 +1,39 @@
+{
+  "commit": "a680d586248dd9106a19d25f7ff1b7140f77f3d5",
+  "runtime_acceptance": "PASS",
+  "checks": {
+    "migration_history": {
+      "tests": 6,
+      "failures_errors_skips": 0,
+      "accepted": true
+    },
+    "postgres_existing": {
+      "tests": 6,
+      "failures_errors_skips": 0,
+      "accepted": true
+    },
+    "postgres_expiry": {
+      "tests": 53,
+      "failures_errors_skips": 0,
+      "accepted": true
+    },
+    "frontend_node22": {
+      "tests": 115,
+      "failures_errors_skips": 0,
+      "accepted": true
+    },
+    "redis_queue": {
+      "accepted": true
+    },
+    "prior_steps": {
+      "accepted": true
+    }
+  },
+  "FINAL_RELEASE_GATE": "HOLD",
+  "engineering_complete": false,
+  "remaining": [
+    "Whole-system business depth",
+    "Full master requirement acceptance",
+    "Actual browser and cross-device visual acceptance"
+  ]
+}
