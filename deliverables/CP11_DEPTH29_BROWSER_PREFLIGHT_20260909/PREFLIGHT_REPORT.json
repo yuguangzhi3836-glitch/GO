@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-09-09T13:54:28.494Z",
+  "environment": "local source inspection; selected cloud browser preflight",
+  "candidate_commit": "0451fb095c6fe4a185dcf30931166cebdf27e381",
+  "source_tree_sha256": "ffcea37a3d2ce626026571c1d16eb7be190bd1b048b6b8dfd0d6c8164f2b556c",
+  "source_file_count": 1207,
+  "source_manifest_url": "https://github.com/yuguangzhi3836-glitch/GO/blob/0451fb095c6fe4a185dcf30931166cebdf27e381/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/SOURCE_MANIFEST.json",
+  "verified_evidence": [
+    {
+      "kind": "source_integrity",
+      "observed_at_utc": "2026-09-09T13:51:48.355167+00:00",
+      "result": "PASS_FOR_MANIFESTED_FILES",
+      "verified_file_count": 1207,
+      "missing": [],
+      "mismatched": [],
+      "fingerprint_git_blob_sha1": "513c1def4f238ddb6a4695794dc34798c79963d7",
+      "primary_output": "source_verification.log",
+      "limits": "No running-server, dependency, browser, or Hong Kong runtime attestation."
+    },
+    {
+      "kind": "browser_policy",
+      "observed_date": "2026-09-09",
+      "action": "Read existing preview tab DOM snapshot",
+      "result": "POLICY_BLOCKED",
+      "primary_output": "browser_policy_result.json",
+      "limits": "The action was rejected before a page DOM was returned. No retry, alternative route or browser surface was used after this rejection."
+    },
+    {
+      "kind": "browser_capability_documentation",
+      "observed_date": "2026-09-09",
+      "browser_capabilities": [],
+      "tab_capabilities": [
+        "botDetection",
+        "browserAuth",
+        "webmcp"
+      ],
+      "mobile_viewport_control_advertised": false,
+      "limits": "No viewport emulation API is advertised by the selected browser; this is not a product failure."
+    },
+    {
+      "kind": "source_inspection",
+      "paths": [
+        "vite.config.js",
+        "scripts/preview_api.py",
+        "frontend/shared/api.js",
+        "frontend/shared/app.js",
+        "frontend/consumer/app.js",
+        "frontend/admin/config.js",
+        "frontend/supplier/config.js"
+      ],
+      "result": "INSPECTED_NOT_EXECUTED",
+      "findings": [
+        "Preview configuration selects local SQLite, sets GO_PREVIEW_ONLY=1, and disables the two named expiry workers.",
+        "Bootstrap admin and supplier passwords are generated randomly in the preview process environment; this inspected configuration does not provide a user-facing secure handoff.",
+        "Supplier expected actor is SUPPLIER_USER; admin expected actor is GO_ADMIN; consumer uses a separate auth endpoint and CSRF name."
+      ]
+    }
+  ],
+  "claims_and_unknowns": {
+    "approved_usable_acceptance_url": null,
+    "server_process_to_candidate_binding": "UNKNOWN",
+    "three_role_test_account_readiness": "UNKNOWN",
+    "personal_context": "Search returned no relevant GO approval or environment material; unrelated output was excluded.",
+    "browser_journeys_executed": 0,
+    "screenshots_of_candidate_obtained": 0,
+    "post_login_result": "NOT_RUN",
+    "mobile_viewport_result": "NOT_RUN",
+    "hong_kong_running_version": "UNKNOWN",
+    "previous_ci": "Historical independent run 34352506603 is preserved with its original component-test scope; not rerun or counted as browser evidence."
+  },
+  "gate_states": {
+    "THREE_END_REAL_UX_LOGIN": "HOLD",
+    "SIX_VERTICAL_REAL_CLOSED_LOOP_E2E": "HOLD",
+    "SEALED_NODE_GATE": "HOLD",
+    "FINAL_RELEASE": "HOLD"
+  },
+  "next_allowed_action": "Provide the already-approved, policy-permitted isolated acceptance environment entry and its DEPTH29 runtime binding, with supported desktop/mobile viewport capability and secure three-role test-account handoff; then resume the saved journeys.",
+  "boundaries": {
+    "candidate_modified": false,
+    "services_started": false,
+    "ci_triggered": false,
+    "merged": false,
+    "deployed": false,
+    "production_contacted": false,
+    "credential_values_collected": false
+  },
+  "completion_percentage": null
+}
+
