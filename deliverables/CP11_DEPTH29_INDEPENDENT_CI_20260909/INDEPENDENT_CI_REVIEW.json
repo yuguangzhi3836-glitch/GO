@@ -1,0 +1,77 @@
+{
+  "reviewed_at_utc": "2026-09-09T12:47:40.614589+00:00",
+  "run_id": 34352506603,
+  "job_id": 102468974211,
+  "job_started_at_utc": "2026-09-09T12:41:40Z",
+  "job_completed_at_utc": "2026-09-09T12:43:54Z",
+  "run_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34352506603",
+  "pull_request": 4,
+  "pull_request_is_draft": true,
+  "candidate_commit": "0451fb095c6fe4a185dcf30931166cebdf27e381",
+  "tooling_commit": "72fc4bd9533377b4be6ebdaed52ca950daf05fe0",
+  "source_tree_sha256": "ffcea37a3d2ce626026571c1d16eb7be190bd1b048b6b8dfd0d6c8164f2b556c",
+  "verified_source_files": 1207,
+  "environment": "GitHub disposable runner; SQLite TestClient and VM/native pure functions; no service credentials",
+  "python": "3.13.5 (main, Jun 12 2025, 03:51:15) [GCC 11.4.0]",
+  "node": "v22.22.0",
+  "VERIFIED_EVIDENCE": {
+    "raw_log_path": "workflow_job.log",
+    "raw_log_sha256": "57ca2d68af0b26aacf026c8674d3067ff8f5ff26e41bb43c57bcd53ee82c8463",
+    "source_binding": {
+      "candidate": "0451fb095c6fe4a185dcf30931166cebdf27e381",
+      "source_tree_sha256": "ffcea37a3d2ce626026571c1d16eb7be190bd1b048b6b8dfd0d6c8164f2b556c",
+      "verified_files": 1207,
+      "python": "3.13.5 (main, Jun 12 2025, 03:51:15) [GCC 11.4.0]",
+      "node": "v22.22.0",
+      "environment": "GitHub disposable runner; SQLite TestClient and VM/native pure functions; no service credentials",
+      "three_end_real_ux_login": "HOLD",
+      "six_vertical_real_e2e": "HOLD",
+      "sealed_node_gate": "HOLD",
+      "final_release": "HOLD",
+      "deployed": false
+    },
+    "backend": {
+      "passed": 171,
+      "failures_reported": 0,
+      "skips_reported": 0,
+      "warnings": 25,
+      "method": "directly inspected pytest stdout and successful test step; artifact JUnit not inspected"
+    },
+    "frontend_native_pure_functions": {
+      "passed": 158,
+      "failures": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "method": "directly inspected Node original spec stdout"
+    },
+    "restoration": "DEPTH26→27→28→29 and exact 1207-file digest verified in original output",
+    "scope_result": "INDEPENDENT_COMPONENT_ACCEPTANCE_PASS"
+  },
+  "REPORTED_CLAIMS_AND_UNKNOWN": {
+    "artifact_id": 10104378355,
+    "github_reported_artifact_sha256": "a4a94df08fec65ddb608fac54e7861de4ce5b57b467177a57e902aa7928314a2",
+    "download_status": "HTTP 403 error code 1010 from supplied download URL",
+    "artifact_bytes_inspected": false,
+    "artifact_checksum_independently_verified": false,
+    "artifact_junit_inspected": false,
+    "three_end_browser": "HOLD",
+    "native_typecheck_build_device": "HOLD",
+    "hong_kong_runtime": "UNKNOWN_HOLD",
+    "full_system_complete": false
+  },
+  "BOUNDARIES": {
+    "merged": false,
+    "deployed": false,
+    "production_changed": false,
+    "browser_policy_bypass_attempted": false,
+    "live_orders_payments_executed": false,
+    "frozen_candidate_modified": false
+  },
+  "GATES": {
+    "THREE_END_REAL_UX_LOGIN": "HOLD",
+    "SIX_VERTICAL_REAL_CLOSED_LOOP_E2E": "HOLD",
+    "SEALED_NODE_GATE": "HOLD",
+    "FINAL_RELEASE": "HOLD"
+  },
+  "remaining_implementation_and_evidence": "See candidate deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/KNOWN_GAPS.json. Only INDEPENDENT-DEPTH29 component acceptance advanced, subject to artifact-download limitation; no other whole requirement promoted to PASS."
+}
