@@ -1,0 +1,48 @@
+name: depth28-v14-acceptance
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'design/brand/depth28/**'
+      - 'tests_frontend/**'
+      - 'scripts/apply_depth28_v14_vi.py'
+      - 'deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909/**'
+permissions:
+  contents: read
+jobs:
+  sealed-vi-and-restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout acceptance head
+        uses: actions/checkout@v4
+        with:
+          path: candidate
+      - name: Checkout exact DEPTH27 parent
+        uses: actions/checkout@v4
+        with:
+          ref: 9b3e03f62a7e808a979c154e7bb1e7435069df88
+          path: parent
+      - name: Set up Node 22.22.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.0
+      - name: Verify sealed package checksums
+        working-directory: candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909
+        run: sha256sum -c SHA256SUMS
+      - name: Verify locked primary VI bytes
+        working-directory: candidate
+        run: |
+          printf '%s  %s\n' 'ad492e6e4bd8c29ff541b155f02e061ae0cb4f2cc971126047e3589c267c513d' 'frontend/consumer/assets/go-main-lockup-v14.svg' | sha256sum -c -
+          printf '%s  %s\n' '2d1fad1032acadcb9ff03e19c35c6dc249586942381546893292220156bd114b' 'frontend/consumer/assets/go-compact-lockup-v14.svg' | sha256sum -c -
+      - name: Run frontend and VI contracts
+        working-directory: candidate
+        run: node --test tests_frontend/*.test.mjs
+      - name: Restore delta from exact parent
+        run: |
+          python candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909/restore_depth28.py \
+            --parent parent \
+            --delta candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909/GO_CP11_DEPTH28_V14_DELTA_20260909.zip \
+            --output restored
+      - name: Run restored frontend and VI contracts
+        working-directory: restored
+        run: node --test tests_frontend/*.test.mjs
