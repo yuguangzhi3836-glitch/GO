@@ -1,0 +1,968 @@
+﻿2026-09-09T02:36:44.9612147Z Current runner version: '2.337.0'
+2026-09-09T02:36:44.9639662Z ##[group]Runner Image Provisioner
+2026-09-09T02:36:44.9640549Z Hosted Compute Agent
+2026-09-09T02:36:44.9641223Z Version: 20260828.587
+2026-09-09T02:36:44.9641927Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-09T02:36:44.9642714Z Build Date: 2026-08-28T16:44:25Z
+2026-09-09T02:36:44.9643528Z Worker ID: {17d8861a-b4f7-431f-90af-20dbbd75180e}
+2026-09-09T02:36:44.9644262Z Azure Region: westus
+2026-09-09T02:36:44.9644885Z ##[endgroup]
+2026-09-09T02:36:44.9646553Z ##[group]Operating System
+2026-09-09T02:36:44.9647222Z Ubuntu
+2026-09-09T02:36:44.9647870Z 22.04.5
+2026-09-09T02:36:44.9648759Z LTS
+2026-09-09T02:36:44.9649297Z ##[endgroup]
+2026-09-09T02:36:44.9649995Z ##[group]Runner Image
+2026-09-09T02:36:44.9650672Z Image: ubuntu-22.04
+2026-09-09T02:36:44.9651336Z Version: 20260831.284.1
+2026-09-09T02:36:44.9652675Z Included Software: https://github.com/actions/runner-images/blob/ubuntu22/20260831.284/images/ubuntu/Ubuntu2204-Readme.md
+2026-09-09T02:36:44.9654386Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu22%2F20260831.284
+2026-09-09T02:36:44.9655415Z ##[endgroup]
+2026-09-09T02:36:44.9656575Z ##[group]GITHUB_TOKEN Permissions
+2026-09-09T02:36:44.9658970Z Contents: read
+2026-09-09T02:36:44.9659732Z Metadata: read
+2026-09-09T02:36:44.9660315Z ##[endgroup]
+2026-09-09T02:36:44.9662501Z Secret source: Actions
+2026-09-09T02:36:44.9663748Z Prepare workflow directory
+2026-09-09T02:36:45.0200573Z Prepare all required actions
+2026-09-09T02:36:45.0250801Z Getting action download info
+2026-09-09T02:36:45.3634778Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-09T02:36:45.4754501Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-09T02:36:45.5674450Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-09T02:36:45.7139840Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-09T02:36:46.0494995Z Complete job name: isolated-runtime
+2026-09-09T02:36:46.1046511Z ##[group]Checking docker version
+2026-09-09T02:36:46.1060188Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-09-09T02:36:46.1944275Z '1.48'
+2026-09-09T02:36:46.1957180Z Docker daemon API version: '1.48'
+2026-09-09T02:36:46.1958127Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-09-09T02:36:46.2191162Z '1.48'
+2026-09-09T02:36:46.2209899Z Docker client API version: '1.48'
+2026-09-09T02:36:46.2216685Z ##[endgroup]
+2026-09-09T02:36:46.2222384Z ##[group]Clean up resources from previous jobs
+2026-09-09T02:36:46.2229061Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=69ec33"
+2026-09-09T02:36:46.2426016Z ##[command]/usr/bin/docker network prune --force --filter "label=69ec33"
+2026-09-09T02:36:46.2617017Z ##[endgroup]
+2026-09-09T02:36:46.2617550Z ##[group]Create local container network
+2026-09-09T02:36:46.2627978Z ##[command]/usr/bin/docker network create --label 69ec33 github_network_6f399a5561274eaa9f1ab9b4e1174c85
+2026-09-09T02:36:46.3361732Z a6d7da3f253635e675c045c480926076c676884ab6b9abd68d5e452440aec653
+2026-09-09T02:36:46.3375548Z ##[endgroup]
+2026-09-09T02:36:46.3401644Z ##[group]Starting postgres service container
+2026-09-09T02:36:46.3423532Z ##[command]/usr/bin/docker pull postgres:16.4
+2026-09-09T02:36:47.2382189Z 16.4: Pulling from library/postgres
+2026-09-09T02:36:47.5013588Z 2d429b9e73a6: Pulling fs layer
+2026-09-09T02:36:47.5023608Z 46eab5b44a35: Pulling fs layer
+2026-09-09T02:36:47.5025111Z c4d302cc468d: Pulling fs layer
+2026-09-09T02:36:47.5030861Z 01e0882c90d9: Pulling fs layer
+2026-09-09T02:36:47.5037288Z 531ee2cf3c0c: Pulling fs layer
+2026-09-09T02:36:47.5038641Z ed54a7dee1d8: Pulling fs layer
+2026-09-09T02:36:47.5039661Z 12c5c803443f: Pulling fs layer
+2026-09-09T02:36:47.5040617Z e27c75a98748: Pulling fs layer
+2026-09-09T02:36:47.5041574Z e73cb4a42719: Pulling fs layer
+2026-09-09T02:36:47.5042644Z a83b68436f09: Pulling fs layer
+2026-09-09T02:36:47.5043240Z 787d6bee9571: Pulling fs layer
+2026-09-09T02:36:47.5043820Z 13ff0988aaea: Pulling fs layer
+2026-09-09T02:36:47.5044386Z 4b82842ab819: Pulling fs layer
+2026-09-09T02:36:47.5044961Z 7e568a0dc8fb: Pulling fs layer
+2026-09-09T02:36:47.5045526Z e27c75a98748: Waiting
+2026-09-09T02:36:47.5046017Z e73cb4a42719: Waiting
+2026-09-09T02:36:47.5046498Z a83b68436f09: Waiting
+2026-09-09T02:36:47.5046978Z 787d6bee9571: Waiting
+2026-09-09T02:36:47.5047483Z 13ff0988aaea: Waiting
+2026-09-09T02:36:47.5047961Z 4b82842ab819: Waiting
+2026-09-09T02:36:47.5048814Z 01e0882c90d9: Waiting
+2026-09-09T02:36:47.5049561Z 7e568a0dc8fb: Waiting
+2026-09-09T02:36:47.5050066Z 531ee2cf3c0c: Waiting
+2026-09-09T02:36:47.5050549Z ed54a7dee1d8: Waiting
+2026-09-09T02:36:47.5051041Z 12c5c803443f: Waiting
+2026-09-09T02:36:47.7277225Z 46eab5b44a35: Verifying Checksum
+2026-09-09T02:36:47.7294342Z 46eab5b44a35: Download complete
+2026-09-09T02:36:47.7759651Z c4d302cc468d: Verifying Checksum
+2026-09-09T02:36:47.7769303Z c4d302cc468d: Download complete
+2026-09-09T02:36:47.8662636Z 2d429b9e73a6: Verifying Checksum
+2026-09-09T02:36:47.8664265Z 2d429b9e73a6: Download complete
+2026-09-09T02:36:47.9597555Z 01e0882c90d9: Verifying Checksum
+2026-09-09T02:36:47.9602927Z 01e0882c90d9: Download complete
+2026-09-09T02:36:48.0817029Z 531ee2cf3c0c: Verifying Checksum
+2026-09-09T02:36:48.0821957Z 531ee2cf3c0c: Download complete
+2026-09-09T02:36:48.1008067Z ed54a7dee1d8: Verifying Checksum
+2026-09-09T02:36:48.1014284Z ed54a7dee1d8: Download complete
+2026-09-09T02:36:48.1759981Z 12c5c803443f: Verifying Checksum
+2026-09-09T02:36:48.1765633Z 12c5c803443f: Download complete
+2026-09-09T02:36:48.3131834Z e27c75a98748: Verifying Checksum
+2026-09-09T02:36:48.3137586Z e27c75a98748: Download complete
+2026-09-09T02:36:48.4026432Z a83b68436f09: Verifying Checksum
+2026-09-09T02:36:48.4038631Z a83b68436f09: Download complete
+2026-09-09T02:36:48.5358135Z 787d6bee9571: Verifying Checksum
+2026-09-09T02:36:48.5368720Z 787d6bee9571: Download complete
+2026-09-09T02:36:48.6479251Z 13ff0988aaea: Verifying Checksum
+2026-09-09T02:36:48.6481232Z 13ff0988aaea: Download complete
+2026-09-09T02:36:48.7776174Z 4b82842ab819: Verifying Checksum
+2026-09-09T02:36:48.7783177Z 4b82842ab819: Download complete
+2026-09-09T02:36:48.8680504Z 7e568a0dc8fb: Verifying Checksum
+2026-09-09T02:36:48.8686223Z 7e568a0dc8fb: Download complete
+2026-09-09T02:36:49.0656604Z e73cb4a42719: Verifying Checksum
+2026-09-09T02:36:49.0669513Z e73cb4a42719: Download complete
+2026-09-09T02:36:49.8040253Z 2d429b9e73a6: Pull complete
+2026-09-09T02:36:50.5912249Z 46eab5b44a35: Pull complete
+2026-09-09T02:36:50.7454662Z c4d302cc468d: Pull complete
+2026-09-09T02:36:50.7930557Z 01e0882c90d9: Pull complete
+2026-09-09T02:36:51.1707478Z 531ee2cf3c0c: Pull complete
+2026-09-09T02:36:51.2455856Z ed54a7dee1d8: Pull complete
+2026-09-09T02:36:51.2603177Z 12c5c803443f: Pull complete
+2026-09-09T02:36:51.2709283Z e27c75a98748: Pull complete
+2026-09-09T02:36:54.3175164Z e73cb4a42719: Pull complete
+2026-09-09T02:36:55.7029478Z a83b68436f09: Pull complete
+2026-09-09T02:36:55.7224842Z 787d6bee9571: Pull complete
+2026-09-09T02:36:55.7361677Z 13ff0988aaea: Pull complete
+2026-09-09T02:36:55.7520599Z 4b82842ab819: Pull complete
+2026-09-09T02:36:55.7633897Z 7e568a0dc8fb: Pull complete
+2026-09-09T02:36:55.7679258Z Digest: sha256:e62fbf9d3e2b49816a32c400ed2dba83e3b361e6833e624024309c35d334b412
+2026-09-09T02:36:55.7697948Z Status: Downloaded newer image for postgres:16.4
+2026-09-09T02:36:55.7735529Z docker.io/library/postgres:16.4
+2026-09-09T02:36:55.7811459Z ##[command]/usr/bin/docker create --name d0df09fe8d7e4d509994263febd4933a_postgres164_d9fb54 --label 69ec33 --network github_network_6f399a5561274eaa9f1ab9b4e1174c85 --network-alias postgres -p 5432:5432 --health-cmd="pg_isready -U go" --health-interval=5s --health-timeout=5s --health-retries=20 -e "POSTGRES_USER=go" -e "POSTGRES_PASSWORD=[DISPOSABLE_CI_PASSWORD]" -e "POSTGRES_DB=go" -e GITHUB_ACTIONS=true -e CI=true postgres:16.4
+2026-09-09T02:36:55.8132610Z 05224facbbb2abaeb5c4affaf7c629dd3fb3129f0021db2b9d3f25a37de2ac50
+2026-09-09T02:36:55.8164743Z ##[command]/usr/bin/docker start 05224facbbb2abaeb5c4affaf7c629dd3fb3129f0021db2b9d3f25a37de2ac50
+2026-09-09T02:36:56.2082942Z 05224facbbb2abaeb5c4affaf7c629dd3fb3129f0021db2b9d3f25a37de2ac50
+2026-09-09T02:36:56.2124892Z ##[command]/usr/bin/docker ps --all --filter id=05224facbbb2abaeb5c4affaf7c629dd3fb3129f0021db2b9d3f25a37de2ac50 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-09-09T02:36:56.2378500Z 05224facbbb2abaeb5c4affaf7c629dd3fb3129f0021db2b9d3f25a37de2ac50 Up Less than a second (health: starting)
+2026-09-09T02:36:56.2424905Z ##[command]/usr/bin/docker port 05224facbbb2abaeb5c4affaf7c629dd3fb3129f0021db2b9d3f25a37de2ac50
+2026-09-09T02:36:56.2660152Z 5432/tcp -> 0.0.0.0:5432
+2026-09-09T02:36:56.2792907Z 5432/tcp -> [::]:5432
+2026-09-09T02:36:56.2842896Z ##[endgroup]
+2026-09-09T02:36:56.2844839Z ##[group]Starting redis service container
+2026-09-09T02:36:56.2846400Z ##[command]/usr/bin/docker pull redis:7.4
+2026-09-09T02:36:57.2093276Z 7.4: Pulling from library/redis
+2026-09-09T02:36:57.4722382Z a8ac7f6c67ab: Pulling fs layer
+2026-09-09T02:36:57.4723801Z 3f4e1fadfed1: Pulling fs layer
+2026-09-09T02:36:57.4725111Z 4c75d4fe7471: Pulling fs layer
+2026-09-09T02:36:57.4725707Z f4f69793eb55: Pulling fs layer
+2026-09-09T02:36:57.4726971Z d4044243cab2: Pulling fs layer
+2026-09-09T02:36:57.4727379Z 4f4fb700ef54: Pulling fs layer
+2026-09-09T02:36:57.4727776Z f4dd325b0baf: Pulling fs layer
+2026-09-09T02:36:57.4728174Z d4044243cab2: Waiting
+2026-09-09T02:36:57.4728803Z 4f4fb700ef54: Waiting
+2026-09-09T02:36:57.4729149Z f4dd325b0baf: Waiting
+2026-09-09T02:36:57.4729467Z f4f69793eb55: Waiting
+2026-09-09T02:36:57.6883937Z 4c75d4fe7471: Verifying Checksum
+2026-09-09T02:36:57.6884455Z 4c75d4fe7471: Download complete
+2026-09-09T02:36:57.6903956Z 3f4e1fadfed1: Download complete
+2026-09-09T02:36:57.7965458Z a8ac7f6c67ab: Verifying Checksum
+2026-09-09T02:36:57.7969738Z a8ac7f6c67ab: Download complete
+2026-09-09T02:36:57.9093720Z d4044243cab2: Verifying Checksum
+2026-09-09T02:36:57.9096809Z d4044243cab2: Download complete
+2026-09-09T02:36:57.9783940Z f4f69793eb55: Verifying Checksum
+2026-09-09T02:36:57.9784528Z f4f69793eb55: Download complete
+2026-09-09T02:36:58.0095617Z 4f4fb700ef54: Verifying Checksum
+2026-09-09T02:36:58.0096336Z 4f4fb700ef54: Download complete
+2026-09-09T02:36:58.1252286Z f4dd325b0baf: Verifying Checksum
+2026-09-09T02:36:58.1252835Z f4dd325b0baf: Download complete
+2026-09-09T02:36:59.1222550Z a8ac7f6c67ab: Pull complete
+2026-09-09T02:36:59.3971087Z 3f4e1fadfed1: Pull complete
+2026-09-09T02:36:59.4160134Z 4c75d4fe7471: Pull complete
+2026-09-09T02:36:59.7105345Z f4f69793eb55: Pull complete
+2026-09-09T02:36:59.7186028Z d4044243cab2: Pull complete
+2026-09-09T02:36:59.7424582Z 4f4fb700ef54: Pull complete
+2026-09-09T02:36:59.7522640Z f4dd325b0baf: Pull complete
+2026-09-09T02:36:59.7566331Z Digest: sha256:71da9275c5f3fcb97d0fa0c8c5b36cc995327265420f17a04bfd544f458059f7
+2026-09-09T02:36:59.7585577Z Status: Downloaded newer image for redis:7.4
+2026-09-09T02:36:59.7595839Z docker.io/library/redis:7.4
+2026-09-09T02:36:59.7617682Z ##[command]/usr/bin/docker create --name 18d4447afa7d48c9b9a1b00b7447a2d1_redis74_cc3693 --label 69ec33 --network github_network_6f399a5561274eaa9f1ab9b4e1174c85 --network-alias redis -p 6379:6379 --health-cmd="redis-cli ping" --health-interval=5s --health-timeout=5s --health-retries=20 -e GITHUB_ACTIONS=true -e CI=true redis:7.4
+2026-09-09T02:36:59.7918542Z 7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5
+2026-09-09T02:36:59.7937170Z ##[command]/usr/bin/docker start 7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5
+2026-09-09T02:37:00.0039907Z 7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5
+2026-09-09T02:37:00.0059026Z ##[command]/usr/bin/docker ps --all --filter id=7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-09-09T02:37:00.0297088Z 7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5 Up Less than a second (health: starting)
+2026-09-09T02:37:00.0319532Z ##[command]/usr/bin/docker port 7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5
+2026-09-09T02:37:00.0484068Z 6379/tcp -> 0.0.0.0:6379
+2026-09-09T02:37:00.0489016Z 6379/tcp -> [::]:6379
+2026-09-09T02:37:00.0501993Z ##[endgroup]
+2026-09-09T02:37:00.0514502Z ##[group]Waiting for all services to be ready
+2026-09-09T02:37:00.0529051Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 05224facbbb2abaeb5c4affaf7c629dd3fb3129f0021db2b9d3f25a37de2ac50
+2026-09-09T02:37:00.0723613Z starting
+2026-09-09T02:37:00.0747993Z postgres service is starting, waiting 2 seconds before checking again.
+2026-09-09T02:37:02.0752349Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 05224facbbb2abaeb5c4affaf7c629dd3fb3129f0021db2b9d3f25a37de2ac50
+2026-09-09T02:37:02.0925712Z healthy
+2026-09-09T02:37:02.0949772Z postgres service is healthy.
+2026-09-09T02:37:02.0950698Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5
+2026-09-09T02:37:02.1115736Z starting
+2026-09-09T02:37:02.1132339Z redis service is starting, waiting 2 seconds before checking again.
+2026-09-09T02:37:04.1128222Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5
+2026-09-09T02:37:04.1307136Z starting
+2026-09-09T02:37:04.1325302Z redis service is starting, waiting 3 seconds before checking again.
+2026-09-09T02:37:07.8531884Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5
+2026-09-09T02:37:07.8719281Z healthy
+2026-09-09T02:37:07.8727935Z redis service is healthy.
+2026-09-09T02:37:07.8729198Z ##[endgroup]
+2026-09-09T02:37:07.9025815Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T02:37:07.9034145Z ##[group]Run actions/checkout@v4
+2026-09-09T02:37:07.9034588Z with:
+2026-09-09T02:37:07.9034796Z   persist-credentials: false
+2026-09-09T02:37:07.9035076Z   repository: yuguangzhi3836-glitch/GO
+2026-09-09T02:37:07.9037597Z   token: ***
+2026-09-09T02:37:07.9037807Z   ssh-strict: true
+2026-09-09T02:37:07.9038006Z   ssh-user: git
+2026-09-09T02:37:07.9038199Z   clean: true
+2026-09-09T02:37:07.9038766Z   sparse-checkout-cone-mode: true
+2026-09-09T02:37:07.9039017Z   fetch-depth: 1
+2026-09-09T02:37:07.9039209Z   fetch-tags: false
+2026-09-09T02:37:07.9039411Z   show-progress: true
+2026-09-09T02:37:07.9039627Z   lfs: false
+2026-09-09T02:37:07.9039859Z   submodules: false
+2026-09-09T02:37:07.9040056Z   set-safe-directory: true
+2026-09-09T02:37:07.9040292Z   allow-unsafe-pr-checkout: false
+2026-09-09T02:37:07.9040804Z env:
+2026-09-09T02:37:07.9041147Z   POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go@localhost:5432/go
+2026-09-09T02:37:07.9041564Z   PGPASSWORD: [DISPOSABLE_CI_PASSWORD]
+2026-09-09T02:37:07.9041837Z   REDIS_URL: redis://localhost:6379/0
+2026-09-09T02:37:07.9042376Z   DEPTH24_DELTA_PATH: deliverables/CP11_DEPTH24_RUNTIME_CANDIDATE_20260909/GO_CP11_DEPTH_24_UNPAID_EXPIRY_DELTA_20260909.zip
+2026-09-09T02:37:07.9043068Z   DEPTH24_DELTA_SHA256: ee71bc8257f75dee49aa77f33816cfb4d07fd45af1fba85e51b4faf6a7f0b03c
+2026-09-09T02:37:07.9043488Z ##[endgroup]
+2026-09-09T02:37:08.0367821Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-09T02:37:08.0373897Z ##[group]Getting Git version info
+2026-09-09T02:37:08.0374692Z Working directory is '/home/runner/work/GO/GO'
+2026-09-09T02:37:08.0376349Z [command]/usr/bin/git version
+2026-09-09T02:37:08.0484586Z git version 2.55.0
+2026-09-09T02:37:08.0531185Z ##[endgroup]
+2026-09-09T02:37:08.0543819Z Temporarily overriding HOME='/home/runner/work/_temp/acfb9a11-8e53-4786-8306-c567cf9edbbb' before making global git config changes
+2026-09-09T02:37:08.0553302Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-09T02:37:08.0574140Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-09T02:37:08.0664356Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-09T02:37:08.0684978Z ##[group]Initializing the repository
+2026-09-09T02:37:08.0685755Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-09T02:37:08.0849577Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-09T02:37:08.0869002Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-09T02:37:08.0879768Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-09T02:37:08.0880613Z hint: call:
+2026-09-09T02:37:08.0881019Z hint:
+2026-09-09T02:37:08.0881678Z hint: 	git config --global init.defaultBranch <name>
+2026-09-09T02:37:08.0882310Z hint:
+2026-09-09T02:37:08.0882922Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-09T02:37:08.0883849Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-09T02:37:08.0884602Z hint:
+2026-09-09T02:37:08.0885035Z hint: 	git branch -m <name>
+2026-09-09T02:37:08.0885527Z hint:
+2026-09-09T02:37:08.0886117Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-09T02:37:08.0887061Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-09T02:37:08.0919827Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-09T02:37:08.0956093Z ##[endgroup]
+2026-09-09T02:37:08.0956903Z ##[group]Disabling automatic garbage collection
+2026-09-09T02:37:08.0957666Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-09T02:37:08.1015631Z ##[endgroup]
+2026-09-09T02:37:08.1016386Z ##[group]Setting up auth
+2026-09-09T02:37:08.1017180Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T02:37:08.1099797Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-09T02:37:08.1686367Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T02:37:08.1750258Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-09T02:37:08.2150196Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T02:37:08.2210189Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-09T02:37:08.2482865Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-09T02:37:08.2530213Z ##[endgroup]
+2026-09-09T02:37:08.2531195Z ##[group]Fetching the repository
+2026-09-09T02:37:08.2542541Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +60e24a29aac40642d532316dd4797c9c4a5c55f3:refs/remotes/origin/acceptance/cp11-depth24-runtime
+2026-09-09T02:37:16.6700545Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-09T02:37:16.6709690Z  * [new ref]         60e24a29aac40642d532316dd4797c9c4a5c55f3 -> origin/acceptance/cp11-depth24-runtime
+2026-09-09T02:37:16.6719758Z ##[endgroup]
+2026-09-09T02:37:16.6721076Z ##[group]Determining the checkout info
+2026-09-09T02:37:16.6722121Z ##[endgroup]
+2026-09-09T02:37:16.6723213Z [command]/usr/bin/git sparse-checkout disable
+2026-09-09T02:37:16.6790408Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-09T02:37:16.6820034Z ##[group]Checking out the ref
+2026-09-09T02:37:16.6825216Z [command]/usr/bin/git checkout --progress --force -B acceptance/cp11-depth24-runtime refs/remotes/origin/acceptance/cp11-depth24-runtime
+2026-09-09T02:37:16.8926542Z Switched to a new branch 'acceptance/cp11-depth24-runtime'
+2026-09-09T02:37:16.8928078Z branch 'acceptance/cp11-depth24-runtime' set up to track 'origin/acceptance/cp11-depth24-runtime'.
+2026-09-09T02:37:16.8999374Z ##[endgroup]
+2026-09-09T02:37:16.9039313Z [command]/usr/bin/git log -1 --format=%H
+2026-09-09T02:37:16.9066682Z 60e24a29aac40642d532316dd4797c9c4a5c55f3
+2026-09-09T02:37:16.9089011Z ##[group]Removing auth
+2026-09-09T02:37:16.9090017Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T02:37:16.9142089Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-09T02:37:16.9546694Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T02:37:16.9548048Z http.https://github.com/.extraheader
+2026-09-09T02:37:16.9556123Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-09T02:37:16.9558672Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-09T02:37:16.9831311Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T02:37:16.9973001Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-09T02:37:17.0222989Z ##[endgroup]
+2026-09-09T02:37:17.0471317Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T02:37:17.0473265Z ##[group]Run actions/setup-python@v5
+2026-09-09T02:37:17.0473533Z with:
+2026-09-09T02:37:17.0473726Z   python-version: 3.13.5
+2026-09-09T02:37:17.0473962Z   check-latest: false
+2026-09-09T02:37:17.0476383Z   token: ***
+2026-09-09T02:37:17.0476592Z   update-environment: true
+2026-09-09T02:37:17.0476838Z   allow-prereleases: false
+2026-09-09T02:37:17.0477063Z   freethreaded: false
+2026-09-09T02:37:17.0477267Z env:
+2026-09-09T02:37:17.0477569Z   POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go@localhost:5432/go
+2026-09-09T02:37:17.0477980Z   PGPASSWORD: [DISPOSABLE_CI_PASSWORD]
+2026-09-09T02:37:17.0478612Z   REDIS_URL: redis://localhost:6379/0
+2026-09-09T02:37:17.0479249Z   DEPTH24_DELTA_PATH: deliverables/CP11_DEPTH24_RUNTIME_CANDIDATE_20260909/GO_CP11_DEPTH_24_UNPAID_EXPIRY_DELTA_20260909.zip
+2026-09-09T02:37:17.0480004Z   DEPTH24_DELTA_SHA256: ee71bc8257f75dee49aa77f33816cfb4d07fd45af1fba85e51b4faf6a7f0b03c
+2026-09-09T02:37:17.0480431Z ##[endgroup]
+2026-09-09T02:37:17.2032302Z ##[group]Installed versions
+2026-09-09T02:37:17.2092951Z Version 3.13.5 was not found in the local cache
+2026-09-09T02:37:17.2213645Z (node:2532) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-09T02:37:17.2215079Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-09T02:37:18.0799360Z Version 3.13.5 is available for downloading
+2026-09-09T02:37:18.0800091Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-22.04-x64.tar.gz"
+2026-09-09T02:37:20.2481942Z Extract downloaded archive
+2026-09-09T02:37:20.2643411Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/e822a89f-094e-4bbf-8891-e2edd01abce9 -f /home/runner/work/_temp/463587ac-c857-413f-a424-16a1afd2c5b9
+2026-09-09T02:37:22.7242353Z Execute installation script
+2026-09-09T02:37:22.7363049Z Check if Python hostedtoolcache folder exist...
+2026-09-09T02:37:22.7369282Z Create Python 3.13.5 folder
+2026-09-09T02:37:22.7386962Z Copy Python binaries to hostedtoolcache folder
+2026-09-09T02:37:23.4032107Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-09T02:37:23.4099375Z Upgrading pip...
+2026-09-09T02:37:26.5869636Z Looking in links: /tmp/tmpiwr8g6mm
+2026-09-09T02:37:26.5871198Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-09T02:37:28.2887355Z Collecting pip
+2026-09-09T02:37:28.3152843Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-09T02:37:28.3249585Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-09T02:37:28.3434494Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 134.3 MB/s eta 0:00:00
+2026-09-09T02:37:28.3449052Z 
+2026-09-09T02:37:28.3649376Z Installing collected packages: pip
+2026-09-09T02:37:28.3650077Z Attempting uninstall: pip
+2026-09-09T02:37:28.3699731Z Found existing installation: pip 25.1.1
+2026-09-09T02:37:28.4069985Z Uninstalling pip-25.1.1:
+2026-09-09T02:37:28.4133241Z Successfully uninstalled pip-25.1.1
+2026-09-09T02:37:29.7193097Z Successfully installed pip-26.2.1
+2026-09-09T02:37:29.7951600Z Create complete file
+2026-09-09T02:37:29.7992175Z Successfully set up CPython (3.13.5)
+2026-09-09T02:37:29.7993545Z ##[endgroup]
+2026-09-09T02:37:29.8212663Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T02:37:29.8213947Z ##[group]Run actions/setup-node@v4
+2026-09-09T02:37:29.8214227Z with:
+2026-09-09T02:37:29.8214416Z   node-version: 22.22.0
+2026-09-09T02:37:29.8214632Z   always-auth: false
+2026-09-09T02:37:29.8214846Z   check-latest: false
+2026-09-09T02:37:29.8217231Z   token: ***
+2026-09-09T02:37:29.8217427Z env:
+2026-09-09T02:37:29.8217738Z   POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go@localhost:5432/go
+2026-09-09T02:37:29.8218152Z   PGPASSWORD: [DISPOSABLE_CI_PASSWORD]
+2026-09-09T02:37:29.8218820Z   REDIS_URL: redis://localhost:6379/0
+2026-09-09T02:37:29.8219422Z   DEPTH24_DELTA_PATH: deliverables/CP11_DEPTH24_RUNTIME_CANDIDATE_20260909/GO_CP11_DEPTH_24_UNPAID_EXPIRY_DELTA_20260909.zip
+2026-09-09T02:37:29.8220137Z   DEPTH24_DELTA_SHA256: ee71bc8257f75dee49aa77f33816cfb4d07fd45af1fba85e51b4faf6a7f0b03c
+2026-09-09T02:37:29.8220632Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:29.8221069Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T02:37:29.8221489Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:29.8221871Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:29.8222237Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:29.8222607Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T02:37:29.8222924Z ##[endgroup]
+2026-09-09T02:37:30.6429721Z Attempting to download 22.22.0...
+2026-09-09T02:37:30.6552923Z (node:2662) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-09T02:37:30.6554541Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-09T02:37:31.3717511Z Acquiring 22.22.0 - x64 from https://github.com/actions/node-versions/releases/download/22.22.0-20981702931/node-22.22.0-linux-x64.tar.gz
+2026-09-09T02:37:32.0290765Z Extracting ...
+2026-09-09T02:37:32.0491796Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/94c6d3a9-b2f9-4f23-9483-8a18136c46fd -f /home/runner/work/_temp/65680d62-4682-43c2-80a2-89cd7dc63ee4
+2026-09-09T02:37:33.4254975Z Adding to the cache ...
+2026-09-09T02:37:36.0503845Z ##[group]Environment details
+2026-09-09T02:37:36.3590093Z node: v22.22.0
+2026-09-09T02:37:36.3611579Z npm: 10.9.4
+2026-09-09T02:37:36.3612077Z yarn: 1.22.22
+2026-09-09T02:37:36.3612916Z ##[endgroup]
+2026-09-09T02:37:36.3800116Z ##[group]Run python ci/materialize_depth24.py
+2026-09-09T02:37:36.3800721Z [36;1mpython ci/materialize_depth24.py[0m
+2026-09-09T02:37:36.3892029Z shell: /usr/bin/bash -e {0}
+2026-09-09T02:37:36.3892326Z env:
+2026-09-09T02:37:36.3892696Z   POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go@localhost:5432/go
+2026-09-09T02:37:36.3893172Z   PGPASSWORD: [DISPOSABLE_CI_PASSWORD]
+2026-09-09T02:37:36.3893491Z   REDIS_URL: redis://localhost:6379/0
+2026-09-09T02:37:36.3894098Z   DEPTH24_DELTA_PATH: deliverables/CP11_DEPTH24_RUNTIME_CANDIDATE_20260909/GO_CP11_DEPTH_24_UNPAID_EXPIRY_DELTA_20260909.zip
+2026-09-09T02:37:36.3894894Z   DEPTH24_DELTA_SHA256: ee71bc8257f75dee49aa77f33816cfb4d07fd45af1fba85e51b4faf6a7f0b03c
+2026-09-09T02:37:36.3895468Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:36.3895943Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T02:37:36.3896407Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:36.3896856Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:36.3897265Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:36.3897672Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T02:37:36.3898029Z ##[endgroup]
+2026-09-09T02:37:37.6930917Z Immutable source and frozen dependency wheelhouse verified
+2026-09-09T02:37:37.7097138Z ##[group]Run python -m pip install --no-index --find-links dependencies/wheelhouse -r source/gate_runtime/requirements.lock
+2026-09-09T02:37:37.7098075Z [36;1mpython -m pip install --no-index --find-links dependencies/wheelhouse -r source/gate_runtime/requirements.lock[0m
+2026-09-09T02:37:37.7174287Z shell: /usr/bin/bash -e {0}
+2026-09-09T02:37:37.7174584Z env:
+2026-09-09T02:37:37.7174962Z   POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go@localhost:5432/go
+2026-09-09T02:37:37.7175453Z   PGPASSWORD: [DISPOSABLE_CI_PASSWORD]
+2026-09-09T02:37:37.7175789Z   REDIS_URL: redis://localhost:6379/0
+2026-09-09T02:37:37.7176453Z   DEPTH24_DELTA_PATH: deliverables/CP11_DEPTH24_RUNTIME_CANDIDATE_20260909/GO_CP11_DEPTH_24_UNPAID_EXPIRY_DELTA_20260909.zip
+2026-09-09T02:37:37.7177306Z   DEPTH24_DELTA_SHA256: ee71bc8257f75dee49aa77f33816cfb4d07fd45af1fba85e51b4faf6a7f0b03c
+2026-09-09T02:37:37.7177895Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:37.7178767Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T02:37:37.7179262Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:37.7179704Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:37.7180140Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:37.7180591Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T02:37:37.7180964Z ##[endgroup]
+2026-09-09T02:37:38.5717254Z Looking in links: dependencies/wheelhouse
+2026-09-09T02:37:38.5920518Z Processing ./dependencies/wheelhouse/alembic-1.16.5-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 1))
+2026-09-09T02:37:38.6010084Z Processing ./dependencies/wheelhouse/annotated_doc-0.0.4-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 2))
+2026-09-09T02:37:38.6050146Z Processing ./dependencies/wheelhouse/annotated_types-0.7.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 3))
+2026-09-09T02:37:38.6100070Z Processing ./dependencies/wheelhouse/anyio-4.13.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 4))
+2026-09-09T02:37:38.6149923Z Processing ./dependencies/wheelhouse/certifi-2026.5.20-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 5))
+2026-09-09T02:37:38.6179746Z Processing ./dependencies/wheelhouse/cffi-2.0.0-cp313-cp313-manylinux_2_17_x86_64.whl (from -r source/gate_runtime/requirements.lock (line 6))
+2026-09-09T02:37:38.6213201Z Processing ./dependencies/wheelhouse/click-8.5.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 7))
+2026-09-09T02:37:38.6246826Z Processing ./dependencies/wheelhouse/cryptography-46.0.4-cp311-abi3-manylinux_2_34_x86_64.whl (from -r source/gate_runtime/requirements.lock (line 8))
+2026-09-09T02:37:38.6352547Z Processing ./dependencies/wheelhouse/fastapi-0.128.2-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 9))
+2026-09-09T02:37:38.6442503Z Processing ./dependencies/wheelhouse/greenlet-3.5.1-cp313-cp313-manylinux_2_24_x86_64.whl (from -r source/gate_runtime/requirements.lock (line 10))
+2026-09-09T02:37:38.6489305Z Processing ./dependencies/wheelhouse/h11-0.16.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 11))
+2026-09-09T02:37:38.6520599Z Processing ./dependencies/wheelhouse/httpcore-1.0.9-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 12))
+2026-09-09T02:37:38.6564419Z Processing ./dependencies/wheelhouse/httpx-0.28.1-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 13))
+2026-09-09T02:37:38.6603706Z Processing ./dependencies/wheelhouse/idna-3.17-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 14))
+2026-09-09T02:37:38.6637341Z Processing ./dependencies/wheelhouse/iniconfig-2.3.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 15))
+2026-09-09T02:37:38.6665639Z Processing ./dependencies/wheelhouse/mako-1.3.10-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 16))
+2026-09-09T02:37:38.6698730Z Processing ./dependencies/wheelhouse/markupsafe-3.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from -r source/gate_runtime/requirements.lock (line 17))
+2026-09-09T02:37:38.6725695Z Processing ./dependencies/wheelhouse/packaging-25.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 18))
+2026-09-09T02:37:38.6757566Z Processing ./dependencies/wheelhouse/pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.whl (from -r source/gate_runtime/requirements.lock (line 19))
+2026-09-09T02:37:38.6929899Z Processing ./dependencies/wheelhouse/pluggy-1.6.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 20))
+2026-09-09T02:37:38.6953478Z Processing ./dependencies/wheelhouse/psycopg_binary-3.2.10-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from -r source/gate_runtime/requirements.lock (line 21))
+2026-09-09T02:37:38.7026039Z Processing ./dependencies/wheelhouse/psycopg-3.2.10-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 22))
+2026-09-09T02:37:38.7092351Z Processing ./dependencies/wheelhouse/pycparser-3.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 23))
+2026-09-09T02:37:38.7123237Z Processing ./dependencies/wheelhouse/pydantic_settings-2.14.1-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 24))
+2026-09-09T02:37:38.7159299Z Processing ./dependencies/wheelhouse/pydantic-2.13.4-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 25))
+2026-09-09T02:37:38.7249794Z Processing ./dependencies/wheelhouse/pydantic_core-2.46.4-cp313-cp313-manylinux_2_17_x86_64.whl (from -r source/gate_runtime/requirements.lock (line 26))
+2026-09-09T02:37:38.7307934Z Processing ./dependencies/wheelhouse/Pygments-2.20.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 27))
+2026-09-09T02:37:38.7405808Z Processing ./dependencies/wheelhouse/PyJWT-2.13.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 28))
+2026-09-09T02:37:38.7437348Z Processing ./dependencies/wheelhouse/pytest_asyncio-1.3.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 29))
+2026-09-09T02:37:38.7476202Z Processing ./dependencies/wheelhouse/pytest-9.0.2-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 30))
+2026-09-09T02:37:38.7536823Z Processing ./dependencies/wheelhouse/python_dotenv-1.2.2-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 31))
+2026-09-09T02:37:38.7580011Z Processing ./dependencies/wheelhouse/redis-5.2.1-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 32))
+2026-09-09T02:37:38.7619470Z Processing ./dependencies/wheelhouse/SQLAlchemy-2.0.50-cp313-cp313-manylinux_2_17_x86_64.whl (from -r source/gate_runtime/requirements.lock (line 33))
+2026-09-09T02:37:38.7787623Z Processing ./dependencies/wheelhouse/starlette-0.50.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 34))
+2026-09-09T02:37:38.7836225Z Processing ./dependencies/wheelhouse/typing_inspection-0.4.2-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 35))
+2026-09-09T02:37:38.7864586Z Processing ./dependencies/wheelhouse/typing_extensions-4.16.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 36))
+2026-09-09T02:37:38.7893596Z Processing ./dependencies/wheelhouse/uvicorn-0.35.0-py3-none-any.whl (from -r source/gate_runtime/requirements.lock (line 37))
+2026-09-09T02:37:38.9228745Z Installing collected packages: typing_extensions, redis, python-dotenv, PyJWT, Pygments, pycparser, psycopg-binary, psycopg, pluggy, Pillow, packaging, MarkupSafe, iniconfig, idna, h11, greenlet, click, certifi, annotated-types, annotated-doc, uvicorn, typing-inspection, SQLAlchemy, pytest, pydantic_core, Mako, httpcore, cffi, anyio, starlette, pytest-asyncio, pydantic, httpx, cryptography, alembic, pydantic-settings, fastapi
+2026-09-09T02:37:44.6997446Z 
+2026-09-09T02:37:44.7054153Z Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 Pillow-12.3.0 PyJWT-2.13.0 Pygments-2.20.0 SQLAlchemy-2.0.50 alembic-1.16.5 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 certifi-2026.5.20 cffi-2.0.0 click-8.5.0 cryptography-46.0.4 fastapi-0.128.2 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.17 iniconfig-2.3.0 packaging-25.0 pluggy-1.6.0 psycopg-3.2.10 psycopg-binary-3.2.10 pycparser-3.0 pydantic-2.13.4 pydantic-settings-2.14.1 pydantic_core-2.46.4 pytest-9.0.2 pytest-asyncio-1.3.0 python-dotenv-1.2.2 redis-5.2.1 starlette-0.50.0 typing-inspection-0.4.2 typing_extensions-4.16.0 uvicorn-0.35.0
+2026-09-09T02:37:44.7621607Z ##[group]Run python -m alembic upgrade head
+2026-09-09T02:37:44.7621984Z [36;1mpython -m alembic upgrade head[0m
+2026-09-09T02:37:44.7696032Z shell: /usr/bin/bash -e {0}
+2026-09-09T02:37:44.7696351Z env:
+2026-09-09T02:37:44.7696769Z   POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go@localhost:5432/go
+2026-09-09T02:37:44.7697313Z   PGPASSWORD: [DISPOSABLE_CI_PASSWORD]
+2026-09-09T02:37:44.7697685Z   REDIS_URL: redis://localhost:6379/0
+2026-09-09T02:37:44.7698685Z   DEPTH24_DELTA_PATH: deliverables/CP11_DEPTH24_RUNTIME_CANDIDATE_20260909/GO_CP11_DEPTH_24_UNPAID_EXPIRY_DELTA_20260909.zip
+2026-09-09T02:37:44.7699618Z   DEPTH24_DELTA_SHA256: ee71bc8257f75dee49aa77f33816cfb4d07fd45af1fba85e51b4faf6a7f0b03c
+2026-09-09T02:37:44.7700277Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:44.7700810Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T02:37:44.7701344Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:44.7701857Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:44.7702330Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:44.7702811Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T02:37:44.7703312Z   DATABASE_URL: postgresql+psycopg://go@localhost:5432/go
+2026-09-09T02:37:44.7703727Z   PYTHONPATH: src
+2026-09-09T02:37:44.7703979Z ##[endgroup]
+2026-09-09T02:37:47.5997328Z INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+2026-09-09T02:37:47.6009472Z INFO  [alembic.runtime.migration] Will assume transactional DDL.
+2026-09-09T02:37:47.8286091Z INFO  [alembic.runtime.migration] Running upgrade  -> 0001_sprint1d, Sprint 1D runtime persistence tables.
+2026-09-09T02:37:48.1371705Z INFO  [alembic.runtime.migration] Running upgrade 0001_sprint1d -> 0002_sprint1e, Sprint 1E concurrency, saga recovery, outbox DLQ and webhook inbox.
+2026-09-09T02:37:49.2576586Z INFO  [alembic.runtime.migration] Running upgrade 0002_sprint1e -> 0003_sprint1f, Sprint 1F connector framework, certification and reconciliation
+2026-09-09T02:37:49.2579073Z Revision ID: 0003_sprint1f
+2026-09-09T02:37:49.2580055Z Revises: 0002_sprint1e
+2026-09-09T02:37:49.2722330Z INFO  [alembic.runtime.migration] Running upgrade 0003_sprint1f -> 0004_sprint1g, Sprint 1G first supplier identity mapping
+2026-09-09T02:37:49.2865534Z INFO  [alembic.runtime.migration] Running upgrade 0004_sprint1g -> 0005_sprint1h, Sprint 1H supplier onboarding, credential vault metadata, property mapping and activation workflow.
+2026-09-09T02:37:49.3194655Z INFO  [alembic.runtime.migration] Running upgrade 0005_sprint1h -> 0006_sprint1i, Sprint 1I traffic router, SLA scoring, routing audit
+2026-09-09T02:37:49.3352731Z INFO  [alembic.runtime.migration] Running upgrade 0006_sprint1i -> 0007_sprint1j, sprint 1j multi-source dedup merge and drift
+2026-09-09T02:37:49.3382674Z Revision ID: 0007_sprint1j
+2026-09-09T02:37:49.3383280Z Revises: 0006_sprint1i
+2026-09-09T02:37:49.3590383Z INFO  [alembic.runtime.migration] Running upgrade 0007_sprint1j -> 0008_sprint1k, Sprint 1K prebook revalidation and booking consistency
+2026-09-09T02:37:49.3593701Z Revision ID: 0008_sprint1k
+2026-09-09T02:37:49.3594509Z Revises: 0007_sprint1j
+2026-09-09T02:37:49.3717547Z INFO  [alembic.runtime.migration] Running upgrade 0008_sprint1k -> 0009_sprint1l, Sprint 1L payment authorization/book/capture orchestration
+2026-09-09T02:37:49.3790563Z INFO  [alembic.runtime.migration] Running upgrade 0009_sprint1l -> 0010_sprint1m, Sprint 1M persistent cancellation/refund/change/stay-credit runtime
+2026-09-09T02:37:49.4126517Z INFO  [alembic.runtime.migration] Running upgrade 0010_sprint1m -> 0011_sprint1n, Sprint 1N supplier fault compensation and financial recovery runtime
+2026-09-09T02:37:49.4420551Z INFO  [alembic.runtime.migration] Running upgrade 0011_sprint1n -> 0012_sprint1o, Sprint 1O GO Truth Quick Review, risk evidence and judgment hook runtime
+2026-09-09T02:37:49.4726252Z INFO  [alembic.runtime.migration] Running upgrade 0012_sprint1o -> 0013_sprint1p, Sprint 1P GO Judgment runtime, GO Score, Recommendation and Evidence Package
+2026-09-09T02:37:49.4905787Z INFO  [alembic.runtime.migration] Running upgrade 0013_sprint1p -> 0014_sprint1q, Sprint 1Q operational dashboard supplier identity and indexes.
+2026-09-09T02:37:49.5032996Z INFO  [alembic.runtime.migration] Running upgrade 0014_sprint1q -> 0015_sprint1r, Sprint 1R identity RBAC tenant isolation approval audit
+2026-09-09T02:37:49.5352008Z INFO  [alembic.runtime.migration] Running upgrade 0015_sprint1r -> 0016_sprint1u, Sprint 1U production BFF security hardening.
+2026-09-09T02:37:49.5517127Z INFO  [alembic.runtime.migration] Running upgrade 0016_sprint1u -> 0017_sprint1v, Sprint 1V observability and incident control.
+2026-09-09T02:37:49.5518783Z Revision ID: 0017_sprint1v
+2026-09-09T02:37:49.5519575Z Revises: 0016_sprint1u
+2026-09-09T02:37:49.5704464Z INFO  [alembic.runtime.migration] Running upgrade 0017_sprint1v -> 0018_sprint1y, Sprint 1Y consumer identity, GO ID, travelers and tokenized payment references.
+2026-09-09T02:37:49.5706367Z Revision ID: 0018_sprint1y
+2026-09-09T02:37:49.5707638Z Revises: 0017_sprint1v
+2026-09-09T02:37:49.5954045Z INFO  [alembic.runtime.migration] Running upgrade 0018_sprint1y -> 0019_sprint1z, Sprint 1Z native mobile device and push registration runtime.
+2026-09-09T02:37:49.5955156Z Revision ID: 0019_sprint1z
+2026-09-09T02:37:49.5955905Z Revises: 0018_sprint1y
+2026-09-09T02:37:49.6114257Z INFO  [alembic.runtime.migration] Running upgrade 0019_sprint1z -> 0020_sprint2a, Sprint 2A native consumer UI and push event orchestration.
+2026-09-09T02:37:49.6116131Z Revision ID: 0020_sprint2a
+2026-09-09T02:37:49.6117411Z Revises: 0019_sprint1z
+2026-09-09T02:37:49.6249068Z INFO  [alembic.runtime.migration] Running upgrade 0020_sprint2a -> 0021_sprint2b, Sprint 2B real-device QA, push receipt lifecycle and mobile release hardening.
+2026-09-09T02:37:49.6357191Z INFO  [alembic.runtime.migration] Running upgrade 0021_sprint2b -> 0022_sprint3a, Sprint 3A flight complete golden path.
+2026-09-09T02:37:49.6532572Z INFO  [alembic.runtime.migration] Running upgrade 0022_sprint3a -> 0023_sprint3b, Sprint 3B rail complete golden path.
+2026-09-09T02:37:49.6667687Z INFO  [alembic.runtime.migration] Running upgrade 0023_sprint3b -> 0024_sprint3c, Sprint 3C mobility: ride + rent-a-car.
+2026-09-09T02:37:49.6676200Z Revision ID: 0024_sprint3c
+2026-09-09T02:37:49.6677281Z Revises: 0023_sprint3b
+2026-09-09T02:37:49.6753879Z INFO  [alembic.runtime.migration] Running upgrade 0024_sprint3c -> 0025_sprint3d, Sprint 3D attractions and experiences vertical
+2026-09-09T02:37:49.6755324Z Revision ID: 0025_sprint3d
+2026-09-09T02:37:49.6756070Z Revises: 0024_sprint3c
+2026-09-09T02:37:49.6920477Z INFO  [alembic.runtime.migration] Running upgrade 0025_sprint3d -> 0026_sprint3e, Sprint 3E unified GO Trips and multi-vertical journey
+2026-09-09T02:37:49.6922557Z Revision ID: 0026_sprint3e
+2026-09-09T02:37:49.6923897Z Revises: 0025_sprint3d
+2026-09-09T02:37:49.7119007Z INFO  [alembic.runtime.migration] Running upgrade 0026_sprint3e -> 0027_sprint3f, Sprint 3F journey intelligence and disruption orchestration
+2026-09-09T02:37:49.7120813Z Revision ID: 0027_sprint3f
+2026-09-09T02:37:49.7122195Z Revises: 0026_sprint3e
+2026-09-09T02:37:49.7500083Z INFO  [alembic.runtime.migration] Running upgrade 0027_sprint3f -> 0028_sprint3g, Sprint 3G proactive journey recovery and option comparison
+2026-09-09T02:37:49.7501896Z Revision ID: 0028_sprint3g
+2026-09-09T02:37:49.7503224Z Revises: 0027_sprint3f
+2026-09-09T02:37:49.7823447Z INFO  [alembic.runtime.migration] Running upgrade 0028_sprint3g -> 0029_sprint3h, Sprint 3H one-click recovery orchestrator and atomic user intent
+2026-09-09T02:37:49.7828500Z Revision ID: 0029_sprint3h
+2026-09-09T02:37:49.7829027Z Revises: 0028_sprint3g
+2026-09-09T02:37:49.8178651Z INFO  [alembic.runtime.migration] Running upgrade 0029_sprint3h -> 0030_sprint3i, Sprint 3I durable recovery reconciliation and supplier adapter contract
+2026-09-09T02:37:49.8180912Z Revision ID: 0030_sprint3i
+2026-09-09T02:37:49.8186947Z Revises: 0029_sprint3h
+2026-09-09T02:37:49.8603848Z INFO  [alembic.runtime.migration] Running upgrade 0030_sprint3i -> 0031_sprint3j, Sprint 3J recovery command ledger, supplier evidence chain and operational control plane
+2026-09-09T02:37:49.8605890Z Revision ID: 0031_sprint3j
+2026-09-09T02:37:49.8607339Z Revises: 0030_sprint3i
+2026-09-09T02:37:49.9175780Z INFO  [alembic.runtime.migration] Running upgrade 0031_sprint3j -> 0032_sprint3k, Sprint 3K recovery SLA engine, escalation policy and human ops workflow
+2026-09-09T02:37:49.9176824Z Revision ID: 0032_sprint3k
+2026-09-09T02:37:49.9177605Z Revises: 0031_sprint3j
+2026-09-09T02:37:49.9576854Z INFO  [alembic.runtime.migration] Running upgrade 0032_sprint3k -> 0033_sprint3l, Sprint 3L recovery incident intelligence and reliability memory
+2026-09-09T02:37:49.9578913Z Revision ID: 0033_sprint3l
+2026-09-09T02:37:49.9581542Z Revises: 0032_sprint3k
+2026-09-09T02:37:49.9772998Z INFO  [alembic.runtime.migration] Running upgrade 0033_sprint3l -> 0034_sprint3m, Sprint 3M adaptive strategy governance
+2026-09-09T02:37:49.9774689Z Revision ID: 0034_sprint3m
+2026-09-09T02:37:49.9775969Z Revises: 0033_sprint3l
+2026-09-09T02:37:49.9948187Z INFO  [alembic.runtime.migration] Running upgrade 0034_sprint3m -> 0035_sprint3n, Sprint 3N recovery experimentation and production calibration
+2026-09-09T02:37:49.9950164Z Revision ID: 0035_sprint3n
+2026-09-09T02:37:49.9951545Z Revises: 0034_sprint3m
+2026-09-09T02:37:50.0340374Z INFO  [alembic.runtime.migration] Running upgrade 0035_sprint3n -> 0036_sprint3o, Sprint 3O production learning registry provenance benchmark governance
+2026-09-09T02:37:50.0342233Z Revision ID: 0036_sprint3o
+2026-09-09T02:37:50.0343188Z Revises: 0035_sprint3n
+2026-09-09T02:37:50.0870630Z INFO  [alembic.runtime.migration] Running upgrade 0036_sprint3o -> 0037_sprint3p, Sprint 3P recovery data quality benchmark privacy learning kill switch
+2026-09-09T02:37:50.0872480Z Revision ID: 0037_sprint3p
+2026-09-09T02:37:50.0877252Z Revises: 0036_sprint3o
+2026-09-09T02:37:50.1450552Z INFO  [alembic.runtime.migration] Running upgrade 0037_sprint3p -> 0038_sprint3q, Sprint 3Q recovery learning incident response safe rollback change control
+2026-09-09T02:37:50.1452391Z Revision ID: 0038_sprint3q
+2026-09-09T02:37:50.1455065Z Revises: 0037_sprint3p
+2026-09-09T02:37:50.1960078Z INFO  [alembic.runtime.migration] Running upgrade 0038_sprint3q -> 0039_sprint3r, Sprint 3R recovery production release governance and environment promotion
+2026-09-09T02:37:50.1961942Z Revision ID: 0039_sprint3r
+2026-09-09T02:37:50.1963075Z Revises: 0038_sprint3q
+2026-09-09T02:37:50.2647585Z INFO  [alembic.runtime.migration] Running upgrade 0039_sprint3r -> 0040_sprint3s, Sprint 3S runtime deployment attestation and health gate
+2026-09-09T02:37:50.2648854Z Revision ID: 0040_sprint3s
+2026-09-09T02:37:50.2649685Z Revises: 0039_sprint3r
+2026-09-09T02:37:50.2991608Z INFO  [alembic.runtime.migration] Running upgrade 0040_sprint3s -> 0041_sprint3t, Sprint 3T runtime observability burn rate and release safety controller
+2026-09-09T02:37:50.2993242Z Revision ID: 0041_sprint3t
+2026-09-09T02:37:50.2994601Z Revises: 0040_sprint3s
+2026-09-09T02:37:50.3387025Z INFO  [alembic.runtime.migration] Running upgrade 0041_sprint3t -> 0042_sprint3u, Sprint 3U runtime telemetry provenance multi-window SLO and incident correlation
+2026-09-09T02:37:50.3388930Z Revision ID: 0042_sprint3u
+2026-09-09T02:37:50.3390319Z Revises: 0041_sprint3t
+2026-09-09T02:37:50.3825935Z INFO  [alembic.runtime.migration] Running upgrade 0042_sprint3u -> 0043_sprint3v, Sprint 3V telemetry trust chain signed runtime identity and automation policy
+2026-09-09T02:37:50.3827636Z Revision ID: 0043_sprint3v
+2026-09-09T02:37:50.3829126Z Revises: 0042_sprint3u
+2026-09-09T02:37:50.4267577Z INFO  [alembic.runtime.migration] Running upgrade 0043_sprint3v -> 0044_sprint3w, Sprint 3W runtime identity rotation trust revocation and telemetry key lifecycle
+2026-09-09T02:37:50.4269605Z Revision ID: 0044_sprint3w
+2026-09-09T02:37:50.4271231Z Revises: 0043_sprint3v
+2026-09-09T02:37:50.4774229Z INFO  [alembic.runtime.migration] Running upgrade 0044_sprint3w -> 0045_sprint3x, Sprint 3X runtime identity reissuance hardware trust attestation and credential recovery governance
+2026-09-09T02:37:50.4776077Z Revision ID: 0045_sprint3x
+2026-09-09T02:37:50.4777325Z Revises: 0044_sprint3w
+2026-09-09T02:37:50.5705599Z INFO  [alembic.runtime.migration] Running upgrade 0045_sprint3x -> 0046_sprint3y, Sprint 3Y credential issuance authority attestation policy registry and hardware trust federation
+2026-09-09T02:37:50.5707489Z Revision ID: 0046_sprint3y
+2026-09-09T02:37:50.5708120Z Revises: 0045_sprint3x
+2026-09-09T02:37:50.6628763Z INFO  [alembic.runtime.migration] Running upgrade 0046_sprint3y -> 0047_sprint3z, Sprint 3Z certificate transparency, status distribution and federated trust enforcement.
+2026-09-09T02:37:50.6896033Z INFO  [alembic.runtime.migration] Running upgrade 0047_sprint3z -> 0048_sprint4a, Sprint 4A Merkle transparency, external witness, multi-region trust consensus.
+2026-09-09T02:37:50.7157428Z INFO  [alembic.runtime.migration] Running upgrade 0048_sprint4a -> 0049_sprint4b, Sprint 4B transparency gossip, witness federation, trust recovery.
+2026-09-09T02:37:50.7159188Z Revision ID: 0049_sprint4b
+2026-09-09T02:37:50.7159949Z Revises: 0048_sprint4a
+2026-09-09T02:37:50.7374329Z INFO  [alembic.runtime.migration] Running upgrade 0049_sprint4b -> 0050_sprint4c, Sprint 4C witness independence governance and trust plane disaster recovery.
+2026-09-09T02:37:50.7375971Z Revision ID: 0050_sprint4c
+2026-09-09T02:37:50.7376926Z Revises: 0049_sprint4b
+2026-09-09T02:37:50.7764251Z INFO  [alembic.runtime.migration] Running upgrade 0050_sprint4c -> 0051_sprint4d, Sprint 4D trust plane chaos engineering and production readiness gate.
+2026-09-09T02:37:50.7766293Z Revision ID: 0051_sprint4d
+2026-09-09T02:37:50.7767121Z Revises: 0050_sprint4c
+2026-09-09T02:37:50.7989600Z INFO  [alembic.runtime.migration] Running upgrade 0051_sprint4d -> 0052_sprint4e, Sprint 4E continuous chaos scheduler, readiness trend and waiver governance.
+2026-09-09T02:37:50.7994848Z Revision ID: 0052_sprint4e
+2026-09-09T02:37:50.7995806Z Revises: 0051_sprint4d
+2026-09-09T02:37:50.8157681Z INFO  [alembic.runtime.migration] Running upgrade 0052_sprint4e -> 0053_sprint4f, Sprint 4F waiver exposure budget, exception debt and remediation SLA.
+2026-09-09T02:37:50.8159428Z Revision ID: 0053_sprint4f
+2026-09-09T02:37:50.8160152Z Revises: 0052_sprint4e
+2026-09-09T02:37:50.8319438Z INFO  [alembic.runtime.migration] Running upgrade 0053_sprint4f -> 0054_sprint4g, Sprint 4G exception debt burn-down, waiver freeze and executive risk acceptance.
+2026-09-09T02:37:50.8321062Z Revision ID: 0054_sprint4g
+2026-09-09T02:37:50.8321974Z Revises: 0053_sprint4f
+2026-09-09T02:37:50.8602378Z INFO  [alembic.runtime.migration] Running upgrade 0054_sprint4g -> 0055_sprint4h, Sprint 4H executive risk portfolio and enterprise risk limits.
+2026-09-09T02:37:50.8603819Z Revision ID: 0055_sprint4h
+2026-09-09T02:37:50.8604627Z Revises: 0054_sprint4g
+2026-09-09T02:37:50.8840061Z INFO  [alembic.runtime.migration] Running upgrade 0055_sprint4h -> 0056_sprint4i, Sprint 4I enterprise risk appetite and stress testing.
+2026-09-09T02:37:50.8841551Z Revision ID: 0056_sprint4i
+2026-09-09T02:37:50.8842254Z Revises: 0055_sprint4h
+2026-09-09T02:37:50.9065730Z INFO  [alembic.runtime.migration] Running upgrade 0056_sprint4i -> 0057_sprint4j, Sprint 4J enterprise risk forecast and dynamic capacity.
+2026-09-09T02:37:50.9067198Z Revision ID: 0057_sprint4j
+2026-09-09T02:37:50.9067962Z Revises: 0056_sprint4i
+2026-09-09T02:37:50.9351552Z INFO  [alembic.runtime.migration] Running upgrade 0057_sprint4j -> 0058_sprint4k, Sprint 4K forecast calibration, accuracy and capacity governance.
+2026-09-09T02:37:50.9353145Z Revision ID: 0058_sprint4k
+2026-09-09T02:37:50.9354092Z Revises: 0057_sprint4j
+2026-09-09T02:37:50.9644897Z INFO  [alembic.runtime.migration] Running upgrade 0058_sprint4k -> 0059_sprint4l, Sprint 4L forecast champion/challenger, backtesting and promotion governance.
+2026-09-09T02:37:50.9646567Z Revision ID: 0059_sprint4l
+2026-09-09T02:37:50.9647294Z Revises: 0058_sprint4k
+2026-09-09T02:37:50.9835661Z INFO  [alembic.runtime.migration] Running upgrade 0059_sprint4l -> 0060_sprint4m, Sprint 4M statistical significance, promotion stability and automated rollback governance.
+2026-09-09T02:37:50.9837332Z Revision ID: 0060_sprint4m
+2026-09-09T02:37:50.9838462Z Revises: 0059_sprint4l
+2026-09-09T02:37:51.0020713Z INFO  [alembic.runtime.migration] Running upgrade 0060_sprint4m -> 0061_sprint4n, Sprint 4N forecast drift detection, population stability and governed model refresh.
+2026-09-09T02:37:51.0022289Z Revision ID: 0061_sprint4n
+2026-09-09T02:37:51.0023047Z Revises: 0060_sprint4m
+2026-09-09T02:37:51.0226474Z INFO  [alembic.runtime.migration] Running upgrade 0061_sprint4n -> 0062_sprint4o, Sprint 4O model training lineage, feature registry and reproducible build governance.
+2026-09-09T02:37:51.0228068Z Revision ID: 0062_sprint4o
+2026-09-09T02:37:51.0229038Z Revises: 0061_sprint4n
+2026-09-09T02:37:51.0630920Z INFO  [alembic.runtime.migration] Running upgrade 0062_sprint4o -> 0063_sprint4p, Sprint 4P model artifact registry, signed build attestation and supply-chain integrity governance.
+2026-09-09T02:37:51.0632947Z Revision ID: 0063_sprint4p
+2026-09-09T02:37:51.0633743Z Revises: 0062_sprint4o
+2026-09-09T02:37:51.0988683Z INFO  [alembic.runtime.migration] Running upgrade 0063_sprint4p -> 0064_sprint4q, Sprint 4Q artifact deployment provenance and model serving attestation.
+2026-09-09T02:37:51.0990406Z Revision ID: 0064_sprint4q
+2026-09-09T02:37:51.0991366Z Revises: 0063_sprint4p
+2026-09-09T02:37:51.1301188Z INFO  [alembic.runtime.migration] Running upgrade 0064_sprint4q -> 0065_sprint4r, Sprint 4R runtime model traffic governance. Revision ID: 0065_sprint4r Revises: 0064_sprint4q
+2026-09-09T02:37:51.1549574Z INFO  [alembic.runtime.migration] Running upgrade 0065_sprint4r -> 0066_sprint4s, Sprint 4S online prediction outcome attribution and serving auto-degrade. Revision ID: 0066_sprint4s Revises: 0065_sprint4r
+2026-09-09T02:37:51.1702476Z INFO  [alembic.runtime.migration] Running upgrade 0066_sprint4s -> 0067_sprint4t, Sprint 4T online segment performance and automatic challenger refresh. Revision ID: 0067_sprint4t Revises: 0066_sprint4s
+2026-09-09T02:37:51.1899915Z INFO  [alembic.runtime.migration] Running upgrade 0067_sprint4t -> 0068_sprint4u, Sprint 4U segment-targeted challenger remediation governance. Revision ID: 0068_sprint4u Revises: 0067_sprint4t
+2026-09-09T02:37:51.2100189Z INFO  [alembic.runtime.migration] Running upgrade 0068_sprint4u -> 0069_sprint4v, Sprint 4V remediation generalization and post-promotion proof. Revision ID: 0069_sprint4v Revises: 0068_sprint4u
+2026-09-09T02:37:51.2265821Z INFO  [alembic.runtime.migration] Running upgrade 0069_sprint4v -> 0070_sprint4w, Sprint 4W multi-segment remediation portfolio and unified promotion governance.
+2026-09-09T02:37:51.2267426Z Revision ID: 0070_sprint4w
+2026-09-09T02:37:51.2268500Z Revises: 0069_sprint4v
+2026-09-09T02:37:51.2497821Z INFO  [alembic.runtime.migration] Running upgrade 0070_sprint4w -> 0071_sprint4x, Sprint 4X portfolio champion continuity and safe replacement.
+2026-09-09T02:37:51.2499530Z Revision ID: 0071_sprint4x
+2026-09-09T02:37:51.2500441Z Revises: 0070_sprint4w
+2026-09-09T02:37:51.2731342Z INFO  [alembic.runtime.migration] Running upgrade 0071_sprint4x -> 0072_partner_core, Hotel Partner Self-Operating Core (Mother Plan Production Build 1).
+2026-09-09T02:37:51.3557210Z INFO  [alembic.runtime.migration] Running upgrade 0072_partner_core -> 0073_commercial_os, Commercial Constitution Policy Engine + GO Admin Commercial OS.
+2026-09-09T02:37:51.4137209Z INFO  [alembic.runtime.migration] Running upgrade 0073_commercial_os -> 0074_good_hotel_standard, GO Good Hotel Standard Registry + Judgment binding.
+2026-09-09T02:37:51.5458681Z INFO  [alembic.runtime.migration] Running upgrade 0074_good_hotel_standard -> 0075_442bc0d513d1, Production Connector Registry + Certification + Live Gate.
+2026-09-09T02:37:51.6092816Z INFO  [alembic.runtime.migration] Running upgrade 0075_442bc0d513d1 -> 0076_126e14322d21, Production connector runtime enforcement, webhook and reconciliation.
+2026-09-09T02:37:51.6516357Z INFO  [alembic.runtime.migration] Running upgrade 0076_126e14322d21 -> 0077_0ab7798c5638, First real connector activation readiness.
+2026-09-09T02:37:51.6985478Z INFO  [alembic.runtime.migration] Running upgrade 0077_0ab7798c5638 -> 0078_e79db192807d, First paired Hotel + PSP connector pilot integration.
+2026-09-09T02:37:51.7458736Z INFO  [alembic.runtime.migration] Running upgrade 0078_e79db192807d -> 0079_3211684dd25f, External supplier credentialed sandbox certification and evidence import.
+2026-09-09T02:37:51.7858936Z INFO  [alembic.runtime.migration] Running upgrade 0079_3211684dd25f -> 0080_2cb588879e4e, Named supplier adapters and external sandbox execution gate.
+2026-09-09T02:37:51.8197092Z INFO  [alembic.runtime.migration] Running upgrade 0080_2cb588879e4e -> 0081_d921b0671c22, First GO-hosted hotel direct-booking pilot.
+2026-09-09T02:37:51.8457864Z INFO  [alembic.runtime.migration] Running upgrade 0081_d921b0671c22 -> 0082_452aa445e8f7
+2026-09-09T02:37:51.8594217Z INFO  [alembic.runtime.migration] Running upgrade 0082_452aa445e8f7 -> 0083_396ac652da7a
+2026-09-09T02:37:51.8782640Z INFO  [alembic.runtime.migration] Running upgrade 0083_396ac652da7a -> 0084_bee2eab998ec
+2026-09-09T02:37:51.9099750Z INFO  [alembic.runtime.migration] Running upgrade 0084_bee2eab998ec -> 0085_bfa53313a4e7
+2026-09-09T02:37:51.9536483Z INFO  [alembic.runtime.migration] Running upgrade 0085_bfa53313a4e7 -> 0086_01748f3984db
+2026-09-09T02:37:51.9902266Z INFO  [alembic.runtime.migration] Running upgrade 0086_01748f3984db -> 0087_c049d2c650d7
+2026-09-09T02:37:52.0211131Z INFO  [alembic.runtime.migration] Running upgrade 0087_c049d2c650d7 -> 0088_226558bdb985
+2026-09-09T02:37:52.0578200Z INFO  [alembic.runtime.migration] Running upgrade 0088_226558bdb985 -> 0089_24184f9074aa
+2026-09-09T02:37:52.0984911Z INFO  [alembic.runtime.migration] Running upgrade 0089_24184f9074aa -> 0090_go_identity_entitlements
+2026-09-09T02:37:52.1297197Z INFO  [alembic.runtime.migration] Running upgrade 0090_go_identity_entitlements -> 0091_go_offer_order_handoff
+2026-09-09T02:37:52.1534292Z INFO  [alembic.runtime.migration] Running upgrade 0091_go_offer_order_handoff -> 0092_d6ac03c98590
+2026-09-09T02:37:52.1920946Z INFO  [alembic.runtime.migration] Running upgrade 0092_d6ac03c98590 -> 0093_f656e2fd0f65
+2026-09-09T02:37:52.2573175Z INFO  [alembic.runtime.migration] Running upgrade 0093_f656e2fd0f65 -> 0094_c3116e73c367
+2026-09-09T02:37:52.2862590Z INFO  [alembic.runtime.migration] Running upgrade 0094_c3116e73c367 -> 0095_59ac5a29f1d5
+2026-09-09T02:37:52.3122338Z INFO  [alembic.runtime.migration] Running upgrade 0095_59ac5a29f1d5 -> 0096_e63794766c0d
+2026-09-09T02:37:52.3314685Z INFO  [alembic.runtime.migration] Running upgrade 0096_e63794766c0d -> 0097_vertical_source_runtime
+2026-09-09T02:37:52.3467665Z INFO  [alembic.runtime.migration] Running upgrade 0097_vertical_source_runtime -> 0098_1372d8c45b6f
+2026-09-09T02:37:52.3791590Z INFO  [alembic.runtime.migration] Running upgrade 0098_1372d8c45b6f -> 0099_e9ab838ca46d
+2026-09-09T02:37:52.4531774Z INFO  [alembic.runtime.migration] Running upgrade 0099_e9ab838ca46d -> 0100_159ffd29a7f8, P0 0100 real external execution and certified sandbox closure evidence.
+2026-09-09T02:37:52.4813403Z INFO  [alembic.runtime.migration] Running upgrade 0100_159ffd29a7f8 -> 0101_7ae44f334cf0, P0 0101 named provider certification evidence and PostgreSQL race proof registry.
+2026-09-09T02:37:52.5004943Z INFO  [alembic.runtime.migration] Running upgrade 0101_7ae44f334cf0 -> 0102_p0_final_closure_program, P0 Final Closure Program: immutable requirement-to-code-to-runtime evidence registry.
+2026-09-09T02:37:52.5230174Z INFO  [alembic.runtime.migration] Running upgrade 0102_p0_final_closure_program -> 0103_p0_design_code_freeze, P0 design/code freeze marker.
+2026-09-09T02:37:52.5238695Z INFO  [alembic.runtime.migration] Running upgrade 0103_p0_design_code_freeze -> 0104_529182b87c94, GO AI multi-model aggregation audit registry.
+2026-09-09T02:37:52.5430248Z INFO  [alembic.runtime.migration] Running upgrade 0104_529182b87c94 -> 0105_hotel_autopage_factory, GO Hotel AutoPage Factory: multi-source content graph, prebuilt pages, contacts and claims.
+2026-09-09T02:37:52.6022282Z INFO  [alembic.runtime.migration] Running upgrade 0105_hotel_autopage_factory -> 0106_449aeedcd91d, Replace hotel claim terminology with registration + official association.
+2026-09-09T02:37:52.6059530Z INFO  [alembic.runtime.migration] Running upgrade 0106_449aeedcd91d -> 0107_166151c9cc6e, Replace official-association vocabulary with official-direct lifecycle.
+2026-09-09T02:37:52.6096490Z INFO  [alembic.runtime.migration] Running upgrade 0107_166151c9cc6e -> 0108_hotel_go_direct_semantics, Make GO Direct the single product vocabulary for hotel registration lifecycle.
+2026-09-09T02:37:52.6125641Z INFO  [alembic.runtime.migration] Running upgrade 0108_hotel_go_direct_semantics -> 0109_bf96588075fe, GO Personal Travel Vault + Universal Import master baseline.
+2026-09-09T02:37:52.7216136Z INFO  [alembic.runtime.migration] Running upgrade 0109_bf96588075fe -> 0110_7012f1955180, GO Consumer Growth + Official Direct Value Constitution V5.3.
+2026-09-09T02:37:52.8516059Z INFO  [alembic.runtime.migration] Running upgrade 0110_7012f1955180 -> 0111_test_account_expiry, R7 compatibility lineage node for staging test-account expiry.
+2026-09-09T02:37:52.8522667Z INFO  [alembic.runtime.migration] Running upgrade 0111_test_account_expiry -> 0112_ti_p0_20260829, Travel Intelligence Layer 1.0 P0 implementation.
+2026-09-09T02:37:52.9109777Z INFO  [alembic.runtime.migration] Running upgrade 0112_ti_p0_20260829 -> 0113_ext_truth_ops_20260901, External truth operator workflow governance.
+2026-09-09T02:37:53.0760325Z Traceback (most recent call last):
+2026-09-09T02:37:53.0766635Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+2026-09-09T02:37:53.0768105Z     self.dialect.do_execute(
+2026-09-09T02:37:53.0769137Z     ~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-09T02:37:53.0770484Z         cursor, str_statement, effective_parameters, context
+2026-09-09T02:37:53.0771584Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0772832Z     )
+2026-09-09T02:37:53.0773559Z     ^
+2026-09-09T02:37:53.0775418Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+2026-09-09T02:37:53.0777017Z     cursor.execute(statement, parameters)
+2026-09-09T02:37:53.0778703Z     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0780290Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py", line 97, in execute
+2026-09-09T02:37:53.0782132Z     raise ex.with_traceback(None)
+2026-09-09T02:37:53.0783733Z psycopg.errors.DuplicateColumn: column "claimed_by" of relation "connector_runtime_reconciliation" already exists
+2026-09-09T02:37:53.0785274Z 
+2026-09-09T02:37:53.0786159Z The above exception was the direct cause of the following exception:
+2026-09-09T02:37:53.0787381Z 
+2026-09-09T02:37:53.0787964Z Traceback (most recent call last):
+2026-09-09T02:37:53.0808533Z   File "<frozen runpy>", line 198, in _run_module_as_main
+2026-09-09T02:37:53.0812091Z   File "<frozen runpy>", line 88, in _run_code
+2026-09-09T02:37:53.0813112Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/__main__.py", line 4, in <module>
+2026-09-09T02:37:53.0813950Z     main(prog="alembic")
+2026-09-09T02:37:53.0814290Z     ~~~~^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0815123Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/config.py", line 1022, in main
+2026-09-09T02:37:53.0816217Z     CommandLine(prog=prog).main(argv=argv)
+2026-09-09T02:37:53.0816695Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+2026-09-09T02:37:53.0817985Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/config.py", line 1012, in main
+2026-09-09T02:37:53.0819040Z     self.run_cmd(cfg, options)
+2026-09-09T02:37:53.0819431Z     ~~~~~~~~~~~~^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0820267Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/config.py", line 946, in run_cmd
+2026-09-09T02:37:53.0821014Z     fn(
+2026-09-09T02:37:53.0821284Z     ~~^
+2026-09-09T02:37:53.0821536Z         config,
+2026-09-09T02:37:53.0821822Z         ^^^^^^^
+2026-09-09T02:37:53.0822222Z         *[getattr(options, k, None) for k in positional],
+2026-09-09T02:37:53.0822764Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0823270Z         **{k: getattr(options, k, None) for k in kwarg},
+2026-09-09T02:37:53.0823786Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0824179Z     )
+2026-09-09T02:37:53.0824428Z     ^
+2026-09-09T02:37:53.0825209Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/command.py", line 483, in upgrade
+2026-09-09T02:37:53.0825986Z     script.run_env()
+2026-09-09T02:37:53.0826288Z     ~~~~~~~~~~~~~~^^
+2026-09-09T02:37:53.0827132Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/script/base.py", line 549, in run_env
+2026-09-09T02:37:53.0828025Z     util.load_python_file(self.dir, "env.py")
+2026-09-09T02:37:53.0831119Z     ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0832203Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+2026-09-09T02:37:53.0833170Z     module = load_module_py(module_id, path)
+2026-09-09T02:37:53.0834215Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+2026-09-09T02:37:53.0835472Z     spec.loader.exec_module(module)  # type: ignore
+2026-09-09T02:37:53.0835962Z     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+2026-09-09T02:37:53.0836599Z   File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+2026-09-09T02:37:53.0837472Z   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-09-09T02:37:53.0838587Z   File "/home/runner/work/GO/GO/source/alembic/env.py", line 22, in <module>
+2026-09-09T02:37:53.0839509Z     run_migrations_offline() if context.is_offline_mode() else run_migrations_online()
+2026-09-09T02:37:53.0840259Z                                                                ~~~~~~~~~~~~~~~~~~~~~^^
+2026-09-09T02:37:53.0841056Z   File "/home/runner/work/GO/GO/source/alembic/env.py", line 20, in run_migrations_online
+2026-09-09T02:37:53.0841841Z     with context.begin_transaction(): context.run_migrations()
+2026-09-09T02:37:53.0842502Z                                       ~~~~~~~~~~~~~~~~~~~~~~^^
+2026-09-09T02:37:53.0843032Z   File "<string>", line 8, in run_migrations
+2026-09-09T02:37:53.0844050Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/runtime/environment.py", line 946, in run_migrations
+2026-09-09T02:37:53.0844992Z     self.get_context().run_migrations(**kw)
+2026-09-09T02:37:53.0845437Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+2026-09-09T02:37:53.0846431Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/runtime/migration.py", line 627, in run_migrations
+2026-09-09T02:37:53.0847376Z     step.migration_fn(**kw)
+2026-09-09T02:37:53.0847729Z     ~~~~~~~~~~~~~~~~~^^^^^^
+2026-09-09T02:37:53.0848817Z   File "/home/runner/work/GO/GO/source/alembic/versions/0113_ext_truth_ops_20260901.py", line 16, in upgrade
+2026-09-09T02:37:53.0850002Z     op.add_column("connector_runtime_reconciliation", sa.Column("claimed_by", sa.String(64), nullable=True))
+2026-09-09T02:37:53.0850932Z     ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0851531Z   File "<string>", line 8, in add_column
+2026-09-09T02:37:53.0852013Z   File "<string>", line 3, in add_column
+2026-09-09T02:37:53.0853218Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/operations/ops.py", line 2186, in add_column
+2026-09-09T02:37:53.0854128Z     return operations.invoke(op)
+2026-09-09T02:37:53.0854519Z            ~~~~~~~~~~~~~~~~~^^^^
+2026-09-09T02:37:53.0855419Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/operations/base.py", line 441, in invoke
+2026-09-09T02:37:53.0856287Z     return fn(self, operation)
+2026-09-09T02:37:53.0857381Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/operations/toimpl.py", line 175, in add_column
+2026-09-09T02:37:53.0858502Z     operations.impl.add_column(
+2026-09-09T02:37:53.0858912Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-09T02:37:53.0859259Z         table_name,
+2026-09-09T02:37:53.0859546Z         ^^^^^^^^^^^
+2026-09-09T02:37:53.0859834Z     ...<3 lines>...
+2026-09-09T02:37:53.0860107Z         **kw,
+2026-09-09T02:37:53.0860381Z         ^^^^^
+2026-09-09T02:37:53.0860657Z     )
+2026-09-09T02:37:53.0860915Z     ^
+2026-09-09T02:37:53.0861745Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/ddl/impl.py", line 378, in add_column
+2026-09-09T02:37:53.0862563Z     self._exec(
+2026-09-09T02:37:53.0862840Z     ~~~~~~~~~~^
+2026-09-09T02:37:53.0863119Z         base.AddColumn(
+2026-09-09T02:37:53.0863435Z         ^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0863732Z     ...<4 lines>...
+2026-09-09T02:37:53.0864008Z         )
+2026-09-09T02:37:53.0864273Z         ^
+2026-09-09T02:37:53.0864527Z     )
+2026-09-09T02:37:53.0864775Z     ^
+2026-09-09T02:37:53.0865556Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/ddl/impl.py", line 246, in _exec
+2026-09-09T02:37:53.0866409Z     return conn.execute(construct, params)
+2026-09-09T02:37:53.0867078Z            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0868012Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+2026-09-09T02:37:53.0869125Z     return meth(
+2026-09-09T02:37:53.0869416Z         self,
+2026-09-09T02:37:53.0869717Z         distilled_parameters,
+2026-09-09T02:37:53.0870129Z         execution_options or NO_OPTIONS,
+2026-09-09T02:37:53.0870506Z     )
+2026-09-09T02:37:53.0871410Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/sql/ddl.py", line 188, in _execute_on_connection
+2026-09-09T02:37:53.0872342Z     return connection._execute_ddl(
+2026-09-09T02:37:53.0872755Z            ~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-09T02:37:53.0873201Z         self, distilled_params, execution_options
+2026-09-09T02:37:53.0873715Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0874086Z     )
+2026-09-09T02:37:53.0874351Z     ^
+2026-09-09T02:37:53.0875225Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1532, in _execute_ddl
+2026-09-09T02:37:53.0876131Z     ret = self._execute_context(
+2026-09-09T02:37:53.0876488Z         dialect,
+2026-09-09T02:37:53.0876773Z     ...<4 lines>...
+2026-09-09T02:37:53.0877071Z         compiled,
+2026-09-09T02:37:53.0877342Z     )
+2026-09-09T02:37:53.0878499Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+2026-09-09T02:37:53.0879534Z     return self._exec_single_context(
+2026-09-09T02:37:53.0879961Z            ~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-09T02:37:53.0880414Z         dialect, context, statement, parameters
+2026-09-09T02:37:53.0880908Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0881275Z     )
+2026-09-09T02:37:53.0881531Z     ^
+2026-09-09T02:37:53.0882526Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+2026-09-09T02:37:53.0883511Z     self._handle_dbapi_exception(
+2026-09-09T02:37:53.0883914Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-09T02:37:53.0884628Z         e, str_statement, effective_parameters, cursor, context
+2026-09-09T02:37:53.0885221Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0885619Z     )
+2026-09-09T02:37:53.0885864Z     ^
+2026-09-09T02:37:53.0886818Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2365, in _handle_dbapi_exception
+2026-09-09T02:37:53.0887969Z     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+2026-09-09T02:37:53.0889448Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+2026-09-09T02:37:53.0890439Z     self.dialect.do_execute(
+2026-09-09T02:37:53.0890853Z     ~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-09T02:37:53.0891395Z         cursor, str_statement, effective_parameters, context
+2026-09-09T02:37:53.0891971Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0892403Z     )
+2026-09-09T02:37:53.0892666Z     ^
+2026-09-09T02:37:53.0893560Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+2026-09-09T02:37:53.0894506Z     cursor.execute(statement, parameters)
+2026-09-09T02:37:53.0894951Z     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-09T02:37:53.0895831Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py", line 97, in execute
+2026-09-09T02:37:53.0896653Z     raise ex.with_traceback(None)
+2026-09-09T02:37:53.0897884Z sqlalchemy.exc.ProgrammingError: (psycopg.errors.DuplicateColumn) column "claimed_by" of relation "connector_runtime_reconciliation" already exists
+2026-09-09T02:37:53.0899521Z [SQL: ALTER TABLE connector_runtime_reconciliation ADD COLUMN claimed_by VARCHAR(64)]
+2026-09-09T02:37:53.0900834Z (Background on this error at: https://sqlalche.me/e/20/f405)
+2026-09-09T02:37:53.4856733Z ##[error]Process completed with exit code 1.
+2026-09-09T02:37:53.4928737Z ##[group]Run python ci/finish_gate.py
+2026-09-09T02:37:53.4929100Z [36;1mpython ci/finish_gate.py[0m
+2026-09-09T02:37:53.5003278Z shell: /usr/bin/bash -e {0}
+2026-09-09T02:37:53.5003535Z env:
+2026-09-09T02:37:53.5003876Z   POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go@localhost:5432/go
+2026-09-09T02:37:53.5004340Z   PGPASSWORD: [DISPOSABLE_CI_PASSWORD]
+2026-09-09T02:37:53.5004647Z   REDIS_URL: redis://localhost:6379/0
+2026-09-09T02:37:53.5005260Z   DEPTH24_DELTA_PATH: deliverables/CP11_DEPTH24_RUNTIME_CANDIDATE_20260909/GO_CP11_DEPTH_24_UNPAID_EXPIRY_DELTA_20260909.zip
+2026-09-09T02:37:53.5006054Z   DEPTH24_DELTA_SHA256: ee71bc8257f75dee49aa77f33816cfb4d07fd45af1fba85e51b4faf6a7f0b03c
+2026-09-09T02:37:53.5006605Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:53.5007075Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T02:37:53.5007550Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:53.5008006Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:53.5008741Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:53.5009157Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T02:37:53.5009518Z   PRIOR_STEPS_STATUS: failure
+2026-09-09T02:37:53.5009772Z ##[endgroup]
+2026-09-09T02:37:53.5576020Z {"postgres_existing": {"accepted": false, "reason": "MISSING_REPORT"}, "postgres_expiry": {"accepted": false, "reason": "MISSING_REPORT"}, "frontend_node22": {"accepted": false, "reason": "MISSING_REPORT"}, "redis_queue": {"accepted": false}, "prior_steps": {"accepted": false}}
+2026-09-09T02:37:53.5625279Z ##[error]Process completed with exit code 1.
+2026-09-09T02:37:53.5668565Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T02:37:53.5669948Z ##[group]Run actions/upload-artifact@v4
+2026-09-09T02:37:53.5670217Z with:
+2026-09-09T02:37:53.5670429Z   name: GO-CP11-DEPTH24-runtime-evidence
+2026-09-09T02:37:53.5670700Z   path: evidence/
+2026-09-09T02:37:53.5670918Z   if-no-files-found: error
+2026-09-09T02:37:53.5671157Z   retention-days: 90
+2026-09-09T02:37:53.5671379Z   compression-level: 6
+2026-09-09T02:37:53.5671588Z   overwrite: false
+2026-09-09T02:37:53.5671796Z   include-hidden-files: false
+2026-09-09T02:37:53.5672020Z env:
+2026-09-09T02:37:53.5672327Z   POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go@localhost:5432/go
+2026-09-09T02:37:53.5672777Z   PGPASSWORD: [DISPOSABLE_CI_PASSWORD]
+2026-09-09T02:37:53.5673056Z   REDIS_URL: redis://localhost:6379/0
+2026-09-09T02:37:53.5673597Z   DEPTH24_DELTA_PATH: deliverables/CP11_DEPTH24_RUNTIME_CANDIDATE_20260909/GO_CP11_DEPTH_24_UNPAID_EXPIRY_DELTA_20260909.zip
+2026-09-09T02:37:53.5674306Z   DEPTH24_DELTA_SHA256: ee71bc8257f75dee49aa77f33816cfb4d07fd45af1fba85e51b4faf6a7f0b03c
+2026-09-09T02:37:53.5674798Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:53.5675201Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-09T02:37:53.5675616Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:53.5675984Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:53.5676347Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-09T02:37:53.5676716Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-09T02:37:53.5677029Z ##[endgroup]
+2026-09-09T02:37:53.7955066Z (node:2914) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-09T02:37:53.7979625Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-09T02:37:53.8099201Z With the provided path, there will be 2 files uploaded
+2026-09-09T02:37:53.8138961Z Artifact name is valid!
+2026-09-09T02:37:53.8139835Z Root directory input is valid!
+2026-09-09T02:37:54.2196281Z Beginning upload of artifact content to blob storage
+2026-09-09T02:37:54.2413733Z (node:2914) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-09T02:37:59.5346916Z Uploaded bytes 857
+2026-09-09T02:37:59.6157407Z Finished uploading artifact content to blob storage!
+2026-09-09T02:37:59.6159824Z SHA256 digest of uploaded artifact zip is 2eb3c71517e4018769888ece2a9f53880fa60d3ee882400b7c0d7a775e87e545
+2026-09-09T02:37:59.6162314Z Finalizing artifact upload
+2026-09-09T02:38:00.0394312Z Artifact GO-CP11-DEPTH24-runtime-evidence.zip successfully finalized. Artifact ID 10085953052
+2026-09-09T02:38:00.0397113Z Artifact GO-CP11-DEPTH24-runtime-evidence has been successfully uploaded! Final size is 857 bytes. Artifact ID is 10085953052
+2026-09-09T02:38:00.0403939Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34303899175/artifacts/10085953052
+2026-09-09T02:38:00.0665415Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-09T02:38:00.0667540Z Post job cleanup.
+2026-09-09T02:38:00.1723515Z [command]/usr/bin/git version
+2026-09-09T02:38:00.1809407Z git version 2.55.0
+2026-09-09T02:38:00.1927106Z Temporarily overriding HOME='/home/runner/work/_temp/c54b0bf0-fec6-41c6-a2cd-856db715df2f' before making global git config changes
+2026-09-09T02:38:00.1932044Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-09T02:38:00.1980260Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-09T02:38:00.1999309Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T02:38:00.2270219Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-09T02:38:00.2411162Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T02:38:00.2500559Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-09T02:38:00.3200146Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T02:38:00.3259504Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-09T02:38:00.3833162Z Print service container logs: d0df09fe8d7e4d509994263febd4933a_postgres164_d9fb54
+2026-09-09T02:38:00.3876638Z ##[command]/usr/bin/docker logs --details 05224facbbb2abaeb5c4affaf7c629dd3fb3129f0021db2b9d3f25a37de2ac50
+2026-09-09T02:38:00.4158921Z  initdb: warning: enabling "trust" authentication for local connections
+2026-09-09T02:38:00.4160343Z  The files belonging to this database system will be owned by user "postgres".
+2026-09-09T02:38:00.4161234Z  This user must also own the server process.
+2026-09-09T02:38:00.4161777Z  
+2026-09-09T02:38:00.4162348Z  The database cluster will be initialized with locale "en_US.utf8".
+2026-09-09T02:38:00.4163075Z  The default database encoding has accordingly been set to "UTF8".
+2026-09-09T02:38:00.4163770Z  The default text search configuration will be set to "english".
+2026-09-09T02:38:00.4164342Z  
+2026-09-09T02:38:00.4164730Z  Data page checksums are disabled.
+2026-09-09T02:38:00.4165401Z  
+2026-09-09T02:38:00.4166036Z  fixing permissions on existing directory /var/lib/postgresql/data ... ok
+2026-09-09T02:38:00.4166747Z  creating subdirectories ... ok
+2026-09-09T02:38:00.4167935Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+2026-09-09T02:38:00.4169267Z  selecting dynamic shared memory implementation ... posix
+2026-09-09T02:38:00.4170571Z  2026-09-09 02:36:57.381 UTC [1] LOG:  starting PostgreSQL 16.4 (Debian 16.4-1.pgdg120+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+2026-09-09T02:38:00.4187249Z  2026-09-09 02:36:57.382 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-09-09T02:38:00.4187913Z  2026-09-09 02:36:57.382 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-09-09T02:38:00.4188719Z  2026-09-09 02:36:57.383 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-09T02:38:00.4189322Z  2026-09-09 02:36:57.387 UTC [62] LOG:  database system was shut down at 2026-09-09 02:36:57 UTC
+2026-09-09T02:38:00.4189843Z  2026-09-09 02:36:57.397 UTC [1] LOG:  database system is ready to accept connections
+2026-09-09T02:38:00.4190447Z  2026-09-09 02:37:52.911 UTC [144] ERROR:  column "claimed_by" of relation "connector_runtime_reconciliation" already exists
+2026-09-09T02:38:00.4191202Z  2026-09-09 02:37:52.911 UTC [144] STATEMENT:  ALTER TABLE connector_runtime_reconciliation ADD COLUMN claimed_by VARCHAR(64)
+2026-09-09T02:38:00.4191739Z  selecting default max_connections ... 100
+2026-09-09T02:38:00.4192039Z  selecting default shared_buffers ... 128MB
+2026-09-09T02:38:00.4192329Z  selecting default time zone ... Etc/UTC
+2026-09-09T02:38:00.4192614Z  creating configuration files ... ok
+2026-09-09T02:38:00.4192884Z  running bootstrap script ... ok
+2026-09-09T02:38:00.4193196Z  performing post-bootstrap initialization ... ok
+2026-09-09T02:38:00.4193516Z  syncing data to disk ... ok
+2026-09-09T02:38:00.4193750Z  
+2026-09-09T02:38:00.4193914Z  
+2026-09-09T02:38:00.4194155Z  Success. You can now start the database server using:
+2026-09-09T02:38:00.4194449Z  
+2026-09-09T02:38:00.4194695Z      pg_ctl -D /var/lib/postgresql/data -l logfile start
+2026-09-09T02:38:00.4195002Z  
+2026-09-09T02:38:00.4195664Z  waiting for server to start....2026-09-09 02:36:57.053 UTC [46] LOG:  starting PostgreSQL 16.4 (Debian 16.4-1.pgdg120+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+2026-09-09T02:38:00.4196558Z  2026-09-09 02:36:57.055 UTC [46] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-09T02:38:00.4197131Z  2026-09-09 02:36:57.058 UTC [49] LOG:  database system was shut down at 2026-09-09 02:36:56 UTC
+2026-09-09T02:38:00.4197655Z  2026-09-09 02:36:57.062 UTC [46] LOG:  database system is ready to accept connections
+2026-09-09T02:38:00.4198028Z   done
+2026-09-09T02:38:00.4199018Z  server started
+2026-09-09T02:38:00.4199368Z  CREATE DATABASE
+2026-09-09T02:38:00.4199705Z  
+2026-09-09T02:38:00.4199991Z  
+2026-09-09T02:38:00.4200826Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+2026-09-09T02:38:00.4201531Z  
+2026-09-09T02:38:00.4201827Z  2026-09-09 02:36:57.251 UTC [46] LOG:  received fast shutdown request
+2026-09-09T02:38:00.4202369Z  waiting for server to shut down....2026-09-09 02:36:57.252 UTC [46] LOG:  aborting any active transactions
+2026-09-09T02:38:00.4203066Z  2026-09-09 02:36:57.256 UTC [46] LOG:  background worker "logical replication launcher" (PID 52) exited with exit code 1
+2026-09-09T02:38:00.4203604Z  2026-09-09 02:36:57.256 UTC [47] LOG:  shutting down
+2026-09-09T02:38:00.4203991Z  2026-09-09 02:36:57.257 UTC [47] LOG:  checkpoint starting: shutdown immediate
+2026-09-09T02:38:00.4205119Z  2026-09-09 02:36:57.276 UTC [47] LOG:  checkpoint complete: wrote 922 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.016 s, sync=0.002 s, total=0.020 s; sync files=301, longest=0.001 s, average=0.001 s; distance=4255 kB, estimate=4255 kB; lsn=0/19120F8, redo lsn=0/19120F8
+2026-09-09T02:38:00.4206367Z  2026-09-09 02:36:57.283 UTC [46] LOG:  database system is shut down
+2026-09-09T02:38:00.4206695Z   done
+2026-09-09T02:38:00.4206933Z  server stopped
+2026-09-09T02:38:00.4207137Z  
+2026-09-09T02:38:00.4207375Z  PostgreSQL init process complete; ready for start up.
+2026-09-09T02:38:00.4207677Z  
+2026-09-09T02:38:00.4213928Z Stop and remove container: d0df09fe8d7e4d509994263febd4933a_postgres164_d9fb54
+2026-09-09T02:38:00.4219593Z ##[command]/usr/bin/docker rm --force 05224facbbb2abaeb5c4affaf7c629dd3fb3129f0021db2b9d3f25a37de2ac50
+2026-09-09T02:38:00.6387824Z 05224facbbb2abaeb5c4affaf7c629dd3fb3129f0021db2b9d3f25a37de2ac50
+2026-09-09T02:38:00.6420103Z Print service container logs: 18d4447afa7d48c9b9a1b00b7447a2d1_redis74_cc3693
+2026-09-09T02:38:00.6421637Z ##[command]/usr/bin/docker logs --details 7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5
+2026-09-09T02:38:00.6667321Z  1:C 09 Sep 2026 02:37:00.019 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+2026-09-09T02:38:00.6670930Z  1:C 09 Sep 2026 02:37:00.019 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+2026-09-09T02:38:00.6671831Z  1:C 09 Sep 2026 02:37:00.019 * Redis version=7.4.11, bits=64, commit=00000000, modified=0, pid=1, just started
+2026-09-09T02:38:00.6673190Z  1:C 09 Sep 2026 02:37:00.019 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+2026-09-09T02:38:00.6674355Z  1:M 09 Sep 2026 02:37:00.020 * monotonic clock: POSIX clock_gettime
+2026-09-09T02:38:00.6675138Z  1:M 09 Sep 2026 02:37:00.022 * Running mode=standalone, port=6379.
+2026-09-09T02:38:00.6675744Z  1:M 09 Sep 2026 02:37:00.022 * Server initialized
+2026-09-09T02:38:00.6676303Z  1:M 09 Sep 2026 02:37:00.022 * Ready to accept connections tcp
+2026-09-09T02:38:00.6691675Z Stop and remove container: 18d4447afa7d48c9b9a1b00b7447a2d1_redis74_cc3693
+2026-09-09T02:38:00.6692506Z ##[command]/usr/bin/docker rm --force 7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5
+2026-09-09T02:38:00.8327226Z 7b069f0785e6f4d18447a2493a775f2bc5603b9ec606f2ede468c8b2413356f5
+2026-09-09T02:38:00.8422840Z Remove container network: github_network_6f399a5561274eaa9f1ab9b4e1174c85
+2026-09-09T02:38:00.8432219Z ##[command]/usr/bin/docker network rm github_network_6f399a5561274eaa9f1ab9b4e1174c85
+2026-09-09T02:38:00.9369173Z github_network_6f399a5561274eaa9f1ab9b4e1174c85
+2026-09-09T02:38:00.9452601Z Cleaning up orphan processes
+2026-09-09T02:38:00.9860116Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

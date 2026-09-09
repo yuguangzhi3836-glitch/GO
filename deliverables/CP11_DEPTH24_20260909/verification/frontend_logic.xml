@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="HTTP helper retains CSRF together with idempotency header" time="0.003480" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/booking_intent.test.mjs"/>
+	<testcase name="Escape cancels traveler selection without authorizing or creating an order" time="0.008161" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/booking_intent.test.mjs"/>
+	<testcase name="rental consent is bound to the selected traveler, field and purpose" time="0.002714" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/booking_intent.test.mjs"/>
+	<testcase name="payment is cancelled without any checkout mutation" time="0.001604" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/booking_intent.test.mjs"/>
+	<testcase name="a failed confirmed payment stays visible and can be retried" time="0.001571" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/booking_intent.test.mjs"/>
+	<testcase name="cancelling a party selection creates no order or grant" time="0.001633" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/booking_intent.test.mjs"/>
+	<testcase name="a party must contain the exact number of different travelers" time="0.001668" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/booking_intent.test.mjs"/>
+	<testcase name="party confirmation returns only the explicitly selected traveler references" time="0.001614" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/booking_intent.test.mjs"/>
+	<testcase name="party selection cannot submit without confirming adult travelers and purpose" time="0.001710" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/booking_intent.test.mjs"/>
+	<testcase name="cancel review shows every cash component and exact fee basis before submission" time="0.023921" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_cash_fare.test.mjs"/>
+	<testcase name="closing cancel review never sends cancellation or reloads as completed" time="0.001701" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_cash_fare.test.mjs"/>
+	<testcase name="unchecked money confirmation cannot submit a cash action" time="0.002303" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_cash_fare.test.mjs"/>
+	<testcase name="change confirmation keeps paid room value, incremental difference and fee separate" time="0.001202" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_cash_fare.test.mjs"/>
+	<testcase name="cancelled date selection does not request new inventory or a payment" time="0.000787" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_cash_fare.test.mjs"/>
+	<testcase name="displayed quote hash stays bound across asynchronous source mutation" time="0.001763" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_cash_fare.test.mjs"/>
+	<testcase name="unknown supplier progress offers query only and binds the saved operation" time="0.001135" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_cash_fare.test.mjs"/>
+	<testcase name="cancel confirmed and refund pending remain distinct in the customer progress card" time="0.000884" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_cash_fare.test.mjs"/>
+	<testcase name="credit conversion waits for explicit quoted consent and does not claim an unknown cancellation succeeded" time="0.003104" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_credit.test.mjs"/>
+	<testcase name="canceling traveler selection sends no redemption or automatic identity" time="0.000843" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_credit.test.mjs"/>
+	<testcase name="redemption network retry binds the same quote and explicitly selected traveler" time="0.002966" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_credit.test.mjs"/>
+	<testcase name="unknown booking and pending refund remain distinct from completed credit restoration" time="0.000864" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_credit.test.mjs"/>
+	<testcase name="canceling a supplementary payment dialog re-enables the action" time="0.017675" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_credit.test.mjs"/>
+	<testcase name="conversion separates prior cash refunds and forfeiture from retained credit" time="0.000944" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_credit.test.mjs"/>
+	<testcase name="forfeiture conversion confirmation stays bound to the displayed quote after source object changes" time="0.002139" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_credit.test.mjs"/>
+	<testcase name="credit detail keeps original excluded value visible after redemption changes" time="0.000782" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_credit.test.mjs"/>
+	<testcase name="historical credit without a forfeiture breakdown never renders invalid amounts" time="0.001147" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_credit.test.mjs"/>
+	<testcase name="fare confirmation separates fee tiers, cooling, change and property credit terms" time="0.002867" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_fare.test.mjs"/>
+	<testcase name="cancelling fare confirmation has no accepted contract" time="0.001067" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_fare.test.mjs"/>
+	<testcase name="accepted hash remains bound to the rules displayed before asynchronous state changes" time="0.000888" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_fare.test.mjs"/>
+	<testcase name="declining hotel rules never selects or authorizes a traveler or creates an order" time="0.001739" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_fare.test.mjs"/>
+	<testcase name="accepted hotel contract is included with selected traveler and stable booking request identity" time="0.001342" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_fare.test.mjs"/>
+	<testcase name="supplier money and percentage inputs use exact minor units" time="0.002221" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_fare.test.mjs"/>
+	<testcase name="supplier lost-response retry keeps request identity and sends only the claimed cause" time="0.004487" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_remedy.test.mjs"/>
+	<testcase name="supplier duplicate clicks while a request is pending cannot create another request" time="0.001218" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_remedy.test.mjs"/>
+	<testcase name="unknown supplier cancellation shows approved refund waiting for confirmation, without a resend button" time="0.019887" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/catalog_remedy.test.mjs"/>
+	<testcase name="hotel funds distinguish frozen, charged, released and refunded cent amounts" time="0.025838" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_after_sales.test.mjs"/>
+	<testcase name="only approved pending refunds expose retry and all server labels are escaped" time="0.000866" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_after_sales.test.mjs"/>
+	<testcase name="unknown funding shows reconciliation instead of a false payment claim" time="0.000537" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_after_sales.test.mjs"/>
+	<testcase name="trip links only open the exact canonical owned direct-reservation path" time="0.000296" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_after_sales.test.mjs"/>
+	<testcase name="closing a stay complaint form makes no request" time="0.001942" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_after_sales.test.mjs"/>
+	<testcase name="complaint retries reuse the same request identity and have no refund approval fields" time="0.002259" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_after_sales.test.mjs"/>
+	<testcase name="blank complaints and duplicate submission clicks cannot send extra requests" time="0.001234" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_after_sales.test.mjs"/>
+	<testcase name="closing hotel authorization leaves funds untouched" time="0.003090" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_authorization.test.mjs"/>
+	<testcase name="hotel checkout requires confirmation and binds the complete stay amount" time="0.001921" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_authorization.test.mjs"/>
+	<testcase name="a second click cannot create another hotel authorization while the first is pending" time="0.001038" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_authorization.test.mjs"/>
+	<testcase name="a failed hotel authorization remains visible and can be retried" time="0.001060" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_authorization.test.mjs"/>
+	<testcase name="conversion clearly shows capture and value and closing does not convert" time="0.020983" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_credit.test.mjs"/>
+	<testcase name="conversion retry keeps original quote, amount and original expiry" time="0.003009" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_credit.test.mjs"/>
+	<testcase name="redemption uses server quote policy and displays forfeiture before consent" time="0.001969" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_credit.test.mjs"/>
+	<testcase name="redemption confirms a fresh traveler and only releases hotel fields" time="0.002180" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_credit.test.mjs"/>
+	<testcase name="double click and Escape cannot duplicate or dismiss pending redemption" time="0.009546" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_credit.test.mjs"/>
+	<testcase name="credit list filters property and disables frozen, expired or reconciliation credits" time="0.001623" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_credit.test.mjs"/>
+	<testcase name="a cancellation quote never cancels a booking and closing preserves it" time="0.023003" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_fare.test.mjs"/>
+	<testcase name="fee consent binds the server quote and keeps frozen release separate from cash refund" time="0.002334" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_fare.test.mjs"/>
+	<testcase name="interrupted cancellation retry uses exactly the same quote and fee" time="0.001544" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_fare.test.mjs"/>
+	<testcase name="double clicks cannot settle twice while a cancellation is pending" time="0.001460" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_fare.test.mjs"/>
+	<testcase name="unavailable fare actions have no executable buttons and rule text is escaped" time="0.001530" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_fare.test.mjs"/>
+	<testcase name="date changes quote first and require fresh consent after editing dates" time="0.002588" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_fare.test.mjs"/>
+	<testcase name="extension keeps check-in fixed and explains replacement authorization" time="0.001424" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/direct_fare.test.mjs"/>
+	<testcase name="independent review requires an explicit checked attestation and chosen proof" time="0.001070" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/hosted_disruption.test.mjs"/>
+	<testcase name="review submits the exact evidence snapshot and no caller-selected money" time="0.000739" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/hosted_disruption.test.mjs"/>
+	<testcase name="customer sees completed original refund separately from pending extra payment" time="0.012035" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/hosted_disruption.test.mjs"/>
+	<testcase name="unapproved guest liability is a review hold without a refund promise or pay button" time="0.000226" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/hosted_disruption.test.mjs"/>
+	<testcase name="zero captured payment explains authorization release and completed case has no retry" time="0.000281" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/hosted_disruption.test.mjs"/>
+	<testcase name="finance entry converts decimal currency without fractional cents or silent rounding" time="0.000353" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/hosted_disruption.test.mjs"/>
+	<testcase name="rail order preserves party, immutable prebook and original total through payment cancellation" time="0.003677" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rail_attraction_booking.test.mjs"/>
+	<testcase name="attraction order uses the quoted slot, quantity and prebook and shows eligibility" time="0.000438" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rail_attraction_booking.test.mjs"/>
+	<testcase name="cancelling confirmation step 1 never creates an order or payment" time="0.000247" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rail_attraction_booking.test.mjs"/>
+	<testcase name="cancelling confirmation step 2 never creates an order or payment" time="0.000266" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rail_attraction_booking.test.mjs"/>
+	<testcase name="cancelled party selection cannot reach order creation" time="0.000387" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rail_attraction_booking.test.mjs"/>
+	<testcase name="quote that expires during traveler selection cannot create or pay an order" time="0.000669" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rail_attraction_booking.test.mjs"/>
+	<testcase name="missing final consent never creates an order" time="0.000314" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rail_attraction_booking.test.mjs"/>
+	<testcase name="different people are required for every quoted place" time="0.000396" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rail_attraction_booking.test.mjs"/>
+	<testcase name="an uncertain payment still opens the existing order for recovery" time="0.001723" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rail_attraction_booking.test.mjs"/>
+	<testcase name="repeated clicks cannot start a second booking while confirmation is open" time="0.000403" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rail_attraction_booking.test.mjs"/>
+	<testcase name="mismatched total, journey or slot is refused before any traveler consent" time="0.000258" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rail_attraction_booking.test.mjs"/>
+	<testcase name="cancelling date selection never requests a quote or payment" time="0.003307" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rental_after_sales.test.mjs"/>
+	<testcase name="ride changes continue to use their separate workflow" time="0.000823" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rental_after_sales.test.mjs"/>
+	<testcase name="viewing a rental quote does not execute the change" time="0.001039" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rental_after_sales.test.mjs"/>
+	<testcase name="confirmed refund difference retains its sign and server quote identity" time="0.002136" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rental_after_sales.test.mjs"/>
+	<testcase name="unchecked amount consent blocks executing a displayed quote" time="0.001449" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rental_after_sales.test.mjs"/>
+	<testcase name="the shared amount formatter preserves cents on confirmation screens" time="0.022867" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/rental_after_sales.test.mjs"/>
+	<testcase name="unverified check-in never exposes links or boarding passes" time="0.003213" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/travel_status.test.mjs"/>
+	<testcase name="per-traveler boarding pass appears only for the verified pass state" time="0.000931" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/travel_status.test.mjs"/>
+	<testcase name="invalid URL schemes and credentials do not become customer links" time="0.000795" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/travel_status.test.mjs"/>
+	<testcase name="unknown fleet outcome clearly separates confirmed and proposed times" time="0.000680" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/travel_status.test.mjs"/>
+	<testcase name="cancelled tracking confirmation sends no binding mutation" time="0.001005" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/travel_status.test.mjs"/>
+	<testcase name="checked consent sends exact displayed revision and server authority, never wait overrides" time="0.000798" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/travel_status.test.mjs"/>
+	<testcase name="missing consent prevents any tracking write" time="0.001363" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/travel_status.test.mjs"/>
+	<testcase name="no authorized source does not open an unusable confirmation dialog" time="0.000617" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/travel_status.test.mjs"/>
+	<testcase name="waiting protection is conditional and shows the actual event allowance" time="0.000607" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/travel_status.test.mjs"/>
+	<testcase name="late check-in response cannot populate a detached screen" time="0.009565" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/travel_status.test.mjs"/>
+	<testcase name="closing permission confirmation sends no permission mutation" time="0.003082" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vault_management.test.mjs"/>
+	<testcase name="source disconnect remains explicit and retains server-directed semantics" time="0.002141" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vault_management.test.mjs"/>
+	<testcase name="person edit binds the displayed revision and leaves a blank birth date untouched" time="0.001075" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vault_management.test.mjs"/>
+	<testcase name="sensitive import inspection happens only after explicit confirmation, with no implicit acceptance" time="0.013211" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vault_management.test.mjs"/>
+	<testcase name="untrusted imported content is escaped before display" time="0.001875" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vault_management.test.mjs"/>
+	<testcase name="duplicate submits during a pending mutation call the server once" time="0.001771" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vault_management.test.mjs"/>
+	<testcase name="import reassignment binds traveler and item revision and does not accept content" time="0.001794" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vault_management.test.mjs"/>
+	<testcase name="RAIL cancellation requires explicit confirmation" time="0.001960" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_capacity.test.mjs"/>
+	<testcase name="RAIL response loss still reloads persisted order" time="0.000893" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_capacity.test.mjs"/>
+	<testcase name="RAIL paid or uncertain orders cannot open unpaid cancellation" time="0.002029" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_capacity.test.mjs"/>
+	<testcase name="ATTRACTION cancellation requires explicit confirmation" time="0.000563" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_capacity.test.mjs"/>
+	<testcase name="ATTRACTION response loss still reloads persisted order" time="0.000602" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_capacity.test.mjs"/>
+	<testcase name="ATTRACTION paid or uncertain orders cannot open unpaid cancellation" time="0.001950" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_capacity.test.mjs"/>
+	<testcase name="new unpaid reservation displays its frozen UTC deadline" time="0.001120" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_expiry.test.mjs"/>
+	<testcase name="legacy orders never receive a fabricated deadline" time="0.000176" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_expiry.test.mjs"/>
+	<testcase name="expiry display relies on persisted server state instead of browser clock" time="0.000122" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_expiry.test.mjs"/>
+	<testcase name="started and uncertain payment keeps its reservation message" time="0.000148" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_expiry.test.mjs"/>
+	<testcase name="RAIL: opening recovery does not send a refund until confirmed" time="0.002100" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_refund_recovery.test.mjs"/>
+	<testcase name="RAIL: failed response still reloads persisted order state" time="0.001021" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_refund_recovery.test.mjs"/>
+	<testcase name="ATTRACTION: opening recovery does not send a refund until confirmed" time="0.000698" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_refund_recovery.test.mjs"/>
+	<testcase name="ATTRACTION: failed response still reloads persisted order state" time="0.000581" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_refund_recovery.test.mjs"/>
+	<testcase name="busy recovery gives a customer message and refreshes the existing order" time="0.000625" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_refund_recovery.test.mjs"/>
+	<testcase name="rail interrupted change confirms the original quote instead of creating another" time="0.000873" classname="test" file="/workspace/scratch/1f504ced3f58/go-depth24/tests_frontend/vertical_refund_recovery.test.mjs"/>
+	<!-- tests 115 -->
+	<!-- suites 0 -->
+	<!-- pass 115 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 385.913622 -->
+</testsuites>

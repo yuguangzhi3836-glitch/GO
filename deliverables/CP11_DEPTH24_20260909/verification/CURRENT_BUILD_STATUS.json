@@ -1,0 +1,127 @@
+{
+  "build": "CP11_DEPTH_24_UNPAID_EXPIRY",
+  "FINAL_RELEASE_GATE": "HOLD",
+  "engineering_complete": false,
+  "deployed": false,
+  "baseline": {
+    "previous_commit": "7c5a2e54e1243a8d6c1c297ef9cf8e2f2960a33b",
+    "previous_delta_sha256": "1c237a7f800081497fc3b993fd6b8a73281593b51440cfe0dcb90487489fdb15",
+    "parent_sha256": "8fccf16481e886f0e2925b727be3a35be41a53a8334bf95c7047e26176f746eb",
+    "depth17_work_sha256": "1b1af66dfdb71f350d5aba81544c90c95e51b7f54a380a10e3bdec6778032d79"
+  },
+  "python": {
+    "tests": 1578,
+    "passed": 1572,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 6,
+    "exit_code": 0,
+    "wall_seconds": 679.949,
+    "source_unchanged": true,
+    "frozen_files": 1049,
+    "parent_inputs_verified": 289,
+    "parent_inputs_unchanged": true,
+    "run_directory": "/workspace/scratch/1f504ced3f58/go-depth24-restored-acceptance",
+    "independent_restored_full_run": true,
+    "one_clean_full_run": true,
+    "report": "full_regression.xml"
+  },
+  "targeted_runtime": {
+    "tests": 139,
+    "passed": 139,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "report": "targeted.xml"
+  },
+  "independent_restored_runtime": {
+    "tests": 139,
+    "passed": 139,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "report": "restored_targeted_from_full.xml",
+    "derived_subset_of_full_run": true,
+    "separate_execution": false
+  },
+  "frontend": {
+    "logic": {
+      "tests": 115,
+      "passed": 115,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "syntax": {
+      "node": "v22.22.0",
+      "passed": 44,
+      "failures": [],
+      "upstream_sha256": "9aa8e9d2298ab68c600bd6fb86a6c13bce11a4eca1ba9b39d79fa021755d7c37",
+      "node_binary_sha256": "1bec56ef7cfa9a76f3e0b7c0a87f220eb73f23102b9c0b4c7529a3f7c3ce7c31",
+      "max_required_glibc": "2.28",
+      "target_glibc_max": "2.35"
+    },
+    "real_browser": "NOT_ACCEPTED",
+    "visual_accepted": false,
+    "frozen_node_22_verified": true
+  },
+  "migration_head": "0131_vertical_payment_deadline",
+  "frozen_source_files": 1049,
+  "restored_parent_inputs": 289,
+  "remote_runtime": {
+    "repository": "yuguangzhi3836-glitch/GO",
+    "branch": "acceptance/cp11-depth24-runtime",
+    "original_commit": "cdd1c67d9db9494359d21197a0727237ae84489d",
+    "execution_commit": "60e24a29aac40642d532316dd4797c9c4a5c55f3",
+    "verified_original_files": 30,
+    "workflow_git_sha": "738bdc794530feace29ff9d8622ab9e468e540bc",
+    "run_id": 34303899175,
+    "run_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34303899175",
+    "status": "FAILED",
+    "source_candidate_sha256": "ee71bc8257f75dee49aa77f33816cfb4d07fd45af1fba85e51b4faf6a7f0b03c",
+    "release_gate": "HOLD",
+    "job_id": 102316462095,
+    "failed_step": "Apply complete PostgreSQL migration chain",
+    "error": "0113 duplicate claimed_by column in connector_runtime_reconciliation",
+    "postgres_cases_executed": 0,
+    "redis_executed": false
+  },
+  "initial_regression": {
+    "initial_full_run": {
+      "passed": 1562,
+      "failures": 10,
+      "errors": 0,
+      "skipped": 6,
+      "report": "initial_full_regression.xml"
+    },
+    "causes": [
+      {
+        "type": "MISSING_ORIGINAL_PARENT_INPUTS",
+        "failing_cases": 9,
+        "restored_original_files": 289,
+        "overwritten_files": []
+      },
+      {
+        "type": "EXACT_MIGRATION_HEAD_EXPECTATION",
+        "failing_cases": 1,
+        "old": "0130_vertical_capacity",
+        "new": "0131_vertical_payment_deadline",
+        "assertion_relaxed": false
+      }
+    ],
+    "affected_group_rerun": {
+      "passed": 33,
+      "failed": 0,
+      "report": "parent_recovery_regression.xml"
+    },
+    "all_historical_test_names_preserved": true
+  },
+  "remaining": [
+    "PostgreSQL clean migration chain fails at0113 duplicate claimed_by; remote six concurrency and expiry cases not executed",
+    "Actual Redis queue acceptance not executed because migration gate stopped workflow",
+    "Partial-passenger advanced after-sales and broader six-vertical fulfillment completeness",
+    "Legacy capacity import/reconciliation; provider seat-map segment reuse; other vertical shared capacity",
+    "14 autonomous cells still use aggregate observation adapters",
+    "Real browser, cross-device visual and complete V7 master requirement acceptance"
+  ]
+}

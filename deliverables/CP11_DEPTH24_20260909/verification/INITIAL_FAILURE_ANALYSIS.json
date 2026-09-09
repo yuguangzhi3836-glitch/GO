@@ -1,0 +1,30 @@
+{
+  "initial_full_run": {
+    "passed": 1562,
+    "failures": 10,
+    "errors": 0,
+    "skipped": 6,
+    "report": "initial_full_regression.xml"
+  },
+  "causes": [
+    {
+      "type": "MISSING_ORIGINAL_PARENT_INPUTS",
+      "failing_cases": 9,
+      "restored_original_files": 289,
+      "overwritten_files": []
+    },
+    {
+      "type": "EXACT_MIGRATION_HEAD_EXPECTATION",
+      "failing_cases": 1,
+      "old": "0130_vertical_capacity",
+      "new": "0131_vertical_payment_deadline",
+      "assertion_relaxed": false
+    }
+  ],
+  "affected_group_rerun": {
+    "passed": 33,
+    "failed": 0,
+    "report": "parent_recovery_regression.xml"
+  },
+  "all_historical_test_names_preserved": true
+}

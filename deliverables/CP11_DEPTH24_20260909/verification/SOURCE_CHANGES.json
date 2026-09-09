@@ -1,0 +1,30 @@
+{
+  "previous_commit": "7c5a2e54e1243a8d6c1c297ef9cf8e2f2960a33b",
+  "changed": [
+    "src/go_hotel/main.py",
+    "src/go_hotel/workers/vertical_expiry_worker.py",
+    "src/go_hotel/attractions/service.py",
+    "src/go_hotel/rail/service.py",
+    "src/go_hotel/services/vertical_capacity.py",
+    "src/go_hotel/services/vertical_reservation_expiry.py",
+    "src/go_hotel/services/omnichannel_payment.py",
+    "src/go_hotel/core/config.py",
+    "src/go_hotel/db/models.py",
+    "frontend/consumer/booking-travelers.js",
+    "frontend/consumer/app.js",
+    "tests/test_depth24_expiry.py",
+    "tests/test_parent_implementation_code_review_debt_closure.py",
+    "tests_frontend/vertical_expiry.test.mjs",
+    "scripts/assemble_depth24_review.py",
+    "scripts/build_depth24_delivery.py",
+    "alembic/versions/0131_vertical_payment_deadline.py"
+  ],
+  "removed": [],
+  "existing_test_names_preserved": true,
+  "updated_test_expectation": {
+    "path": "tests/test_parent_implementation_code_review_debt_closure.py",
+    "old": "0130_vertical_capacity (head)",
+    "new": "0131_vertical_payment_deadline (head)",
+    "assertion_still_exact": true
+  }
+}

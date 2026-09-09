@@ -1,0 +1,46 @@
+........................................................................ [  4%]
+........................................................................ [  9%]
+........................................................................ [ 13%]
+........................................................................ [ 18%]
+........................................................................ [ 22%]
+........................................................................ [ 27%]
+........................................................................ [ 31%]
+........................................................................ [ 36%]
+........................................................................ [ 41%]
+........................................................................ [ 45%]
+........................................................................ [ 50%]
+........................................................................ [ 54%]
+........................................................................ [ 59%]
+........s....sssss...................................................... [ 63%]
+........................................................................ [ 68%]
+........................................................................ [ 73%]
+........................................................................ [ 77%]
+........................................................................ [ 82%]
+........................................................................ [ 86%]
+........................................................................ [ 91%]
+........................................................................ [ 95%]
+..................................................................       [100%]
+=============================== warnings summary ===============================
+tests/test_commercial_constitution_admin_os.py::test_admin_cannot_create_recommendation_without_independent_judgment
+  /workspace/scratch/1f504ced3f58/go-depth24-restored-acceptance/src/go_hotel/services/commercial_constitution.py:29: SAWarning: fully NULL primary key identity cannot load any object.  This condition may raise an error in a future release.
+    rec=s.get(RecommendationDecisionRow,judgment_decision_id)
+
+tests/test_depth08_api_and_migration.py: 5 warnings
+tests/test_depth18_regional_queue.py: 5 warnings
+tests/test_depth19_api_migration.py: 5 warnings
+tests/test_depth20_api_fulfillment.py: 5 warnings
+tests/test_depth21_refund_recovery.py: 5 warnings
+tests/test_depth22_rail_resolution.py: 5 warnings
+tests/test_depth23_capacity.py: 5 warnings
+tests/test_depth24_expiry.py: 5 warnings
+  /workspace/scratch/1f504ced3f58/go-depth24-restored-acceptance/gate_runtime/python/lib/python3.13/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+tests/test_depth09_hotel_replication.py: 175 warnings
+tests/test_depth18_media_durability.py: 33 warnings
+tests/test_v61_media_harvester_rights_gate.py: 5 warnings
+  /workspace/scratch/1f504ced3f58/go-depth24-restored-acceptance/src/go_hotel/services/media_harvester.py:79: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    px=list(g.getdata())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1572 passed, 6 skipped, 254 warnings in 670.88s (0:11:10)

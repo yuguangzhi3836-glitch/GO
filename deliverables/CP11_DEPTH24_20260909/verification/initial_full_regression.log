@@ -1,0 +1,357 @@
+........................................................................ [  4%]
+........................................................................ [  9%]
+........................................................................ [ 13%]
+........................................................................ [ 18%]
+........................................................................ [ 22%]
+........................................................................ [ 27%]
+........................................................................ [ 31%]
+........................................................................ [ 36%]
+........................................................................ [ 41%]
+........................................................................ [ 45%]
+........................................................................ [ 50%]
+........................................................................ [ 54%]
+........................................................................ [ 59%]
+........s....sssss...................................................... [ 63%]
+..F...................................................................FF [ 68%]
+........................................................................ [ 73%]
+..................F..F.................................................. [ 77%]
+........................................................................ [ 82%]
+........................................................................ [ 86%]
+........................................................................ [ 91%]
+........................................................................ [ 95%]
+.....FF....F............................F............F............       [100%]
+=================================== FAILURES ===================================
+___________ test_current_source_head_and_upgrade_downgrade_roundtrip ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-3/test_current_source_head_and_u0')
+
+    @pytest.mark.no_db
+    def test_current_source_head_and_upgrade_downgrade_roundtrip(tmp_path):
+        db = tmp_path / "ti_migration_roundtrip.db"
+        conn = sqlite3.connect(db)
+        conn.execute("create table alembic_version (version_num varchar(32) not null)")
+        conn.execute("insert into alembic_version(version_num) values (?)", ("0111_test_account_expiry",))
+        # Synthetic pre-0112 database must include the pre-0113 reconciliation table
+        # because 0113/0114 are additive governance migrations over that existing schema.
+        conn.execute(
+            "create table connector_runtime_reconciliation ("
+            "reconciliation_id varchar(64) primary key, "
+            "runtime_operation_id varchar(64) not null unique, "
+            "state varchar(32) not null, "
+            "attempt_count integer not null default 0, "
+            "max_attempts integer not null default 8, "
+            "next_attempt_at datetime, "
+            "manual_review_reason varchar(256), "
+            "updated_at datetime not null"
+            ")"
+        )
+        conn.commit(); conn.close()
+    
+        env = os.environ.copy()
+        env["DATABASE_URL"] = f"sqlite+pysqlite:///{db}"
+        env["PYTHONPATH"] = "src"
+    
+        heads = subprocess.run([sys.executable, "-m", "alembic", "heads"], env=env, text=True, capture_output=True, check=True)
+        head_lines = [line.strip() for line in heads.stdout.splitlines() if line.strip().endswith("(head)")]
+>       assert head_lines == ["0130_vertical_capacity (head)"]
+E       AssertionError: assert ['0131_vertic...dline (head)'] == ['0130_vertic...acity (head)']
+E         
+E         At index 0 diff: '0131_vertical_payment_deadline (head)' != '0130_vertical_capacity (head)'
+E         Use -v to get more diff
+
+tests/test_parent_implementation_code_review_debt_closure.py:151: AssertionError
+____ test_review_completion_is_submission_final_but_governance_nonterminal _____
+
+    def test_review_completion_is_submission_final_but_governance_nonterminal():
+>       rows = review_rows()
+               ^^^^^^^^^^^^^
+
+tests/test_review_governance_terminal_semantics.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_review_governance_terminal_semantics.py:8: in review_rows
+    with MATRIX.open(newline='', encoding='utf-8') as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/workspace/scratch/1f504ced3f58/go-depth24/specs/state_machine_matrix.csv')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = ''
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/workspace/scratch/1f504ced3f58/go-depth24/specs/state_machine_matrix.csv'
+
+gate_runtime/python/lib/python3.13/pathlib/_local.py:537: FileNotFoundError
+___________ test_completed_review_governance_chain_remains_reachable ___________
+
+    def test_completed_review_governance_chain_remains_reachable():
+>       rows = review_rows()
+               ^^^^^^^^^^^^^
+
+tests/test_review_governance_terminal_semantics.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_review_governance_terminal_semantics.py:8: in review_rows
+    with MATRIX.open(newline='', encoding='utf-8') as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/workspace/scratch/1f504ced3f58/go-depth24/specs/state_machine_matrix.csv')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = ''
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/workspace/scratch/1f504ced3f58/go-depth24/specs/state_machine_matrix.csv'
+
+gate_runtime/python/lib/python3.13/pathlib/_local.py:537: FileNotFoundError
+___________ test_mobile_release_artifacts_and_offline_contract_exist ___________
+
+    def test_mobile_release_artifacts_and_offline_contract_exist():
+>       assert (ROOT/'mobile/go-app/eas.json').exists()
+E       AssertionError: assert False
+E        +  where False = exists()
+E        +    where exists = (PosixPath('/workspace/scratch/1f504ced3f58/go-depth24') / 'mobile/go-app/eas.json').exists
+
+tests/test_sprint2b_mobile_release.py:39: AssertionError
+___________________ test_static_store_check_passes_structure ___________________
+
+    def test_static_store_check_passes_structure():
+        r=subprocess.run([sys.executable,str(ROOT/'scripts/store_release_static_check.py')],capture_output=True,text=True)
+>       assert r.returncode==0, r.stdout+r.stderr
+E       AssertionError: Traceback (most recent call last):
+E           File "/workspace/scratch/1f504ced3f58/go-depth24/scripts/store_release_static_check.py", line 4, in <module>
+E             app=json.loads((root/'mobile/go-app/app.json').read_text())['expo']
+E                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+E           File "/workspace/scratch/1f504ced3f58/go-depth24/gate_runtime/python/lib/python3.13/pathlib/_local.py", line 546, in read_text
+E             return PathBase.read_text(self, encoding, errors, newline)
+E                    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/workspace/scratch/1f504ced3f58/go-depth24/gate_runtime/python/lib/python3.13/pathlib/_abc.py", line 632, in read_text
+E             with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+E                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/workspace/scratch/1f504ced3f58/go-depth24/gate_runtime/python/lib/python3.13/pathlib/_local.py", line 537, in open
+E             return io.open(self, mode, buffering, encoding, errors, newline)
+E                    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         FileNotFoundError: [Errno 2] No such file or directory: '/workspace/scratch/1f504ced3f58/go-depth24/mobile/go-app/app.json'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/workspace/scratch/1f504ced3f58/go-depth24/gate_runtime/python/bin/python', '/workspace/scratc...ndError: [Errno 2] No such file or directory: \'/workspace/scratch/1f504ced3f58/go-depth24/mobile/go-app/app.json\'\n').returncode
+
+tests/test_sprint2c_release_gate.py:9: AssertionError
+____________ test_consumer_hotel_has_compare_before_booking_review _____________
+
+    def test_consumer_hotel_has_compare_before_booking_review():
+>       app=text('mobile/go-app/App.tsx')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_v61_operations_console_completion.py:21: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_v61_operations_console_completion.py:5: in text
+    def text(path): return (ROOT/path).read_text(encoding='utf-8')
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+gate_runtime/python/lib/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+gate_runtime/python/lib/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/workspace/scratch/1f504ced3f58/go-depth24/mobile/go-app/App.tsx')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/workspace/scratch/1f504ced3f58/go-depth24/mobile/go-app/App.tsx'
+
+gate_runtime/python/lib/python3.13/pathlib/_local.py:537: FileNotFoundError
+______________ test_mobility_has_explicit_payment_before_success _______________
+
+    def test_mobility_has_explicit_payment_before_success():
+>       app=text('mobile/go-app/App.tsx')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_v61_operations_console_completion.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_v61_operations_console_completion.py:5: in text
+    def text(path): return (ROOT/path).read_text(encoding='utf-8')
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+gate_runtime/python/lib/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+gate_runtime/python/lib/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/workspace/scratch/1f504ced3f58/go-depth24/mobile/go-app/App.tsx')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/workspace/scratch/1f504ced3f58/go-depth24/mobile/go-app/App.tsx'
+
+gate_runtime/python/lib/python3.13/pathlib/_local.py:537: FileNotFoundError
+____________ test_wave03_contract_registry_keeps_c09_as_final_owner ____________
+
+    def test_wave03_contract_registry_keeps_c09_as_final_owner():
+        import json
+        from pathlib import Path
+>       data=json.loads(Path("governance/workbench/waves/PARALLEL_WAVE_03_20260831/C07_C09_AUTHORITY_CONTRACT.json").read_text())
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_wave03_c07_c09_authority_contract.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+gate_runtime/python/lib/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+gate_runtime/python/lib/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('governance/workbench/waves/PARALLEL_WAVE_03_20260831/C07_C09_AUTHORITY_CONTRACT.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'governance/workbench/waves/PARALLEL_WAVE_03_20260831/C07_C09_AUTHORITY_CONTRACT.json'
+
+gate_runtime/python/lib/python3.13/pathlib/_local.py:537: FileNotFoundError
+_ test_c04_c05_owned_paths_are_isolated_and_shared_facade_has_no_business_truth _
+
+    def test_c04_c05_owned_paths_are_isolated_and_shared_facade_has_no_business_truth():
+        root = Path(__file__).resolve().parents[2]
+>       c04 = json.loads((root / "governance/workbench/cell_charters/C04_CELL_CHARTER.json").read_text())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/workbench/test_wave02_truth_gate_and_mobility_ownership.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+gate_runtime/python/lib/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+gate_runtime/python/lib/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/workspace/scratch/1f504ced3f58/go-depth24/governance/workbench/cell_charters/C04_CELL_CHARTER.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/workspace/scratch/1f504ced3f58/go-depth24/governance/workbench/cell_charters/C04_CELL_CHARTER.json'
+
+gate_runtime/python/lib/python3.13/pathlib/_local.py:537: FileNotFoundError
+_______________ test_ownership_contract_matches_machine_registry _______________
+
+    def test_ownership_contract_matches_machine_registry():
+>       data=json.loads(Path('governance/workbench/WAVE07_ONBOARDING_INTEGRATION_OWNERSHIP_CONTRACT_20260831.json').read_text())
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/workbench/test_wave07_mc01_owned_path_closure.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+gate_runtime/python/lib/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+gate_runtime/python/lib/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('governance/workbench/WAVE07_ONBOARDING_INTEGRATION_OWNERSHIP_CONTRACT_20260831.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'governance/workbench/WAVE07_ONBOARDING_INTEGRATION_OWNERSHIP_CONTRACT_20260831.json'
+
+gate_runtime/python/lib/python3.13/pathlib/_local.py:537: FileNotFoundError
+=============================== warnings summary ===============================
+tests/test_commercial_constitution_admin_os.py::test_admin_cannot_create_recommendation_without_independent_judgment
+  /workspace/scratch/1f504ced3f58/go-depth24/src/go_hotel/services/commercial_constitution.py:29: SAWarning: fully NULL primary key identity cannot load any object.  This condition may raise an error in a future release.
+    rec=s.get(RecommendationDecisionRow,judgment_decision_id)
+
+tests/test_depth08_api_and_migration.py: 5 warnings
+tests/test_depth18_regional_queue.py: 5 warnings
+tests/test_depth19_api_migration.py: 5 warnings
+tests/test_depth20_api_fulfillment.py: 5 warnings
+tests/test_depth21_refund_recovery.py: 5 warnings
+tests/test_depth22_rail_resolution.py: 5 warnings
+tests/test_depth23_capacity.py: 5 warnings
+tests/test_depth24_expiry.py: 5 warnings
+  /workspace/scratch/1f504ced3f58/go-depth24/gate_runtime/python/lib/python3.13/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+tests/test_depth09_hotel_replication.py: 175 warnings
+tests/test_depth18_media_durability.py: 33 warnings
+tests/test_v61_media_harvester_rights_gate.py: 5 warnings
+  /workspace/scratch/1f504ced3f58/go-depth24/src/go_hotel/services/media_harvester.py:79: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    px=list(g.getdata())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_parent_implementation_code_review_debt_closure.py::test_current_source_head_and_upgrade_downgrade_roundtrip
+FAILED tests/test_review_governance_terminal_semantics.py::test_review_completion_is_submission_final_but_governance_nonterminal
+FAILED tests/test_review_governance_terminal_semantics.py::test_completed_review_governance_chain_remains_reachable
+FAILED tests/test_sprint2b_mobile_release.py::test_mobile_release_artifacts_and_offline_contract_exist
+FAILED tests/test_sprint2c_release_gate.py::test_static_store_check_passes_structure
+FAILED tests/test_v61_operations_console_completion.py::test_consumer_hotel_has_compare_before_booking_review
+FAILED tests/test_v61_operations_console_completion.py::test_mobility_has_explicit_payment_before_success
+FAILED tests/test_wave03_c07_c09_authority_contract.py::test_wave03_contract_registry_keeps_c09_as_final_owner
+FAILED tests/workbench/test_wave02_truth_gate_and_mobility_ownership.py::test_c04_c05_owned_paths_are_isolated_and_shared_facade_has_no_business_truth
+FAILED tests/workbench/test_wave07_mc01_owned_path_closure.py::test_ownership_contract_matches_machine_registry
+10 failed, 1562 passed, 6 skipped, 254 warnings in 651.43s (0:10:51)
