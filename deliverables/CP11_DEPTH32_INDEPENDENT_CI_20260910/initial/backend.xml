@@ -1,0 +1,1559 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="187" time="82.449" timestamp="2026-09-10T01:55:25.707909+00:00" hostname="runnervm9xg2d"><testcase classname="tests.test_depth29_trip_reentry" name="test_six_created_orders_remain_reachable_before_and_after_checkout" time="10.718" /><testcase classname="tests.test_depth29_trip_reentry" name="test_hosted_reservation_uses_owner_binding_and_direct_navigation" time="0.828" /><testcase classname="tests.test_depth29_trip_reentry" name="test_trip_reads_do_not_write_or_turn_injected_urls_into_navigation" time="0.410" /><testcase classname="tests.test_depth29_trip_reentry" name="test_stale_lifecycle_does_not_mask_new_native_state_or_infer_payment" time="0.570" /><testcase classname="tests.test_depth29_trip_reentry" name="test_trip_read_cannot_bypass_existing_production_truth_gate" time="0.567" /><testcase classname="tests.test_depth27_session_isolation" name="test_consumer_and_console_can_coexist_and_logout_independently[supplier_owner-change-me-supplier]" time="0.430" /><testcase classname="tests.test_depth27_session_isolation" name="test_consumer_and_console_can_coexist_and_logout_independently[go_admin-change-me-admin]" time="0.430" /><testcase classname="tests.test_depth27_session_isolation" name="test_console_logout_does_not_fall_back_to_consumer_session" time="0.444" /><testcase classname="tests.test_depth27_session_isolation" name="test_consumer_refresh_uses_own_csrf_with_console_cookie_present" time="0.433" /><testcase classname="tests.test_depth27_session_isolation" name="test_other_scope_csrf_cannot_logout_consumer" time="0.410" /><testcase classname="tests.test_depth27_session_isolation" name="test_shared_endpoint_uses_explicit_scope_and_rejects_ambiguity" time="0.409" /><testcase classname="tests.test_depth27_session_isolation" name="test_header_cannot_change_fixed_route_scope_or_grant_permissions" time="0.411" /><testcase classname="tests.test_depth27_session_isolation" name="test_expired_console_access_does_not_shadow_consumer" time="0.403" /><testcase classname="tests.test_depth27_session_isolation" name="test_bearer_identity_stays_authoritative" time="0.404" /><testcase classname="tests.test_depth27_session_isolation" name="test_wrong_console_login_does_not_replace_existing_session" time="0.483" /><testcase classname="tests.test_depth27_session_isolation" name="test_other_console_tab_identity_change_is_detected_before_action" time="0.498" /><testcase classname="tests.test_consumer_unified_lifecycle" name="test_each_vertical_requires_complete_evidenced_fact" time="0.127" /><testcase classname="tests.test_consumer_unified_lifecycle" name="test_missing_evidence_and_invalid_state_fail_closed" time="0.086" /><testcase classname="tests.test_consumer_unified_lifecycle" name="test_stale_vertical_fact_cannot_overwrite_newer_truth_and_account_isolated" time="0.114" /><testcase classname="tests.test_master03_closure" name="test_export_is_explicit_owner_scoped_and_companion_permission_bound" time="0.218" /><testcase classname="tests.test_master03_closure" name="test_traveler_delete_erases_reusable_sensitive_data_and_revokes_consent" time="0.158" /><testcase classname="tests.test_master03_closure" name="test_same_name_does_not_merge_distinct_people" time="0.152" /><testcase classname="tests.test_master03_closure" name="test_unusable_sensitive_fact_is_never_released[past]" time="0.147" /><testcase classname="tests.test_master03_closure" name="test_unusable_sensitive_fact_is_never_released[future]" time="0.143" /><testcase classname="tests.test_master03_closure" name="test_unusable_sensitive_fact_is_never_released[malformed]" time="0.145" /><testcase classname="tests.test_master03_closure" name="test_autonomy_without_qualification_registry_is_denied" time="0.086" /><testcase classname="tests.test_master03_closure" name="test_all_six_explicit_checkouts_bind_amount_and_capture_once" time="1.223"><failure message="sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical&#10;[SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]&#10;[parameters: ('FLIGHT', 'flt_ord_abafd8e6c2164abf', 'usr_abe7c49f8656460281e60ec210536d52', 'PENDING', '{&quot;order_id&quot;: &quot;flt_ord_abafd8e6c2164abf&quot;, &quot;refund_fee_minor&quot;: 20000, &quot;refund_amount_minor&quot;: 448000, &quot;currency&quot;: &quot;CNY&quot;, &quot;refund_to&quot;: &quot;ORIGINAL_PAYMENT_METHOD&quot;, &quot;quote_hash&quot;: &quot;cc8d785a28d5a875564a62e6d164d8989ad189721a08cad293fe0b34c49eed9e&quot;}', '[]', '853ef38d465c46d1227fd4a6f88a8db91ba6858bffe4810d6ed1970fbcb7ac58', '{&quot;refund_id&quot;: &quot;flt_ref_5a3af6cc9a184e31&quot;}', None, 0, 0, 1789005349443, None)]&#10;(Background on this error at: https://sqlalche.me/e/20/gkpj)">self = &lt;sqlalchemy.engine.base.Connection object at 0x7f338d00d310&gt;
+dialect = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f338d00f350&gt;
+statement = &lt;sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f338d0f0e20&gt;
+parameters = [('FLIGHT', 'flt_ord_abafd8e6c2164abf', 'usr_abe7c49f8656460281e60ec210536d52', 'PENDING', '{"order_id": "flt_ord_abaf...IGINAL_PAYMENT_METHOD", "quote_hash": "cc8d785a28d5a875564a62e6d164d8989ad189721a08cad293fe0b34c49eed9e"}', '[]', ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -&gt; CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+&gt;                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f338cf28dc0&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_abafd8e6c2164abf', 'usr_abe7c49f8656460281e60ec210536d52', 'PENDING', '{"order_id": "flt_ord_abafd...RIGINAL_PAYMENT_METHOD", "quote_hash": "cc8d785a28d5a875564a62e6d164d8989ad189721a08cad293fe0b34c49eed9e"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f338d00f350&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: CHECK constraint failed: ck_refund_operation_vertical
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+client = &lt;starlette.testclient.TestClient object at 0x7f3386c967a0&gt;
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f338e4d2d70&gt;
+
+    def test_all_six_explicit_checkouts_bind_amount_and_capture_once(client,monkeypatch):
+        headers,orders=book_all(client)
+        for vertical,order in orders.items():
+            path=f"/v1/consumer/checkout/{vertical}/{order['order_id']}"
+            body={'mode':'CONTRACT_SIMULATOR','expected_amount_minor':order['total_amount_minor'],'currency':order['currency']}
+            key={'Idempotency-Key':f'pay:{vertical}',**headers}
+            assert client.post(path,headers=key,json={**body,'expected_amount_minor':1}).status_code==409
+            assert client.post(path,headers={'Idempotency-Key':'unauthorized'},json=body).status_code==401
+            first=client.post(path,headers=key,json=body);assert first.status_code==200,first.text
+            assert first.json()['data']['external_live'] is False
+            assert first.json()['data']['status'] in {'CONFIRMED','TICKETED'}
+            for retry_key in [f'pay:{vertical}',f'new-device:{vertical}']:
+                retry=client.post(path,headers={**headers,'Idempotency-Key':retry_key},json=body)
+                assert retry.status_code==200,retry.text
+            with SessionLocal() as s:
+                root=s.scalar(select(PaymentOrderRootRow).where(PaymentOrderRootRow.business_type==f'{vertical}_ORDER',PaymentOrderRootRow.business_id==order['order_id']))
+                captures=s.scalars(select(OmnichannelMoneyMovementRow).where(OmnichannelMoneyMovementRow.root_payment_intent_id==root.payment_intent_id,OmnichannelMoneyMovementRow.movement_type=='CAPTURE')).all()
+                assert len(captures)==1 and captures[0].amount_minor==body['expected_amount_minor']
+            if vertical=='HOTEL':
+                q=client.post(f"/v1/orders/{order['order_id']}/cancellation-quote",headers=headers).json()['data']
+                refunded=client.post(f"/v1/orders/{order['order_id']}/cancel",headers={**headers,'Idempotency-Key':f'refund:{vertical}'},json={'cancellation_quote_id':q['quote_id'],'quote_hash':q['quote_hash'],'confirmed':True})
+            else:
+                route={'FLIGHT':'flights','RAIL':'rail','RENTAL':'mobility','RIDE':'mobility','ATTRACTION':'attractions'}[vertical]
+                action='cancel' if vertical in {'RENTAL','RIDE'} else 'refund'
+&gt;               refunded=client.post(f"/v1/{route}/orders/{order['order_id']}/{action}",headers={**headers,'Idempotency-Key':f'refund:{vertical}'})
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_master03_closure.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../isolated-runtime/lib/python3.13/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+../isolated-runtime/lib/python3.13/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+../isolated-runtime/lib/python3.13/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+../isolated-runtime/lib/python3.13/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+../isolated-runtime/lib/python3.13/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+../isolated-runtime/lib/python3.13/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../isolated-runtime/lib/python3.13/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/fastapi/applications.py:1138: in __call__
+    await super().__call__(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/applications.py:107: in __call__
+    await self.middleware_stack(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/contextlib.py:162: in __exit__
+    self.gen.throw(value)
+../isolated-runtime/lib/python3.13/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:282: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/contextlib.py:162: in __exit__
+    self.gen.throw(value)
+../isolated-runtime/lib/python3.13/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:253: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/contextlib.py:162: in __exit__
+    self.gen.throw(value)
+../isolated-runtime/lib/python3.13/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:207: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../isolated-runtime/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/routing.py:716: in __call__
+    await self.middleware_stack(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/routing.py:736: in app
+    await route.handle(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/routing.py:290: in handle
+    await self.app(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/fastapi/routing.py:115: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../isolated-runtime/lib/python3.13/site-packages/fastapi/routing.py:101: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/fastapi/routing.py:355: in app
+    raw_response = await run_endpoint_function(
+../isolated-runtime/lib/python3.13/site-packages/fastapi/routing.py:245: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/starlette/concurrency.py:32: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/anyio/to_thread.py:63: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+../isolated-runtime/lib/python3.13/site-packages/anyio/_backends/_asyncio.py:2518: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/anyio/_backends/_asyncio.py:1002: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/api/routes/flight.py:74: in refund
+    return run_idempotent('FLIGHT_REFUND',idempotency_key,payload,lambda:wrap(flight_service.refund,p.user_id,order_id))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/api/idempotency.py:26: in run_idempotent
+    response = fn()
+               ^^^^
+src/go_hotel/api/routes/flight.py:74: in &lt;lambda&gt;
+    return run_idempotent('FLIGHT_REFUND',idempotency_key,payload,lambda:wrap(flight_service.refund,p.user_id,order_id))
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/api/routes/flight.py:26: in wrap
+    try:return {"data":fn(*args)}
+                       ^^^^^^^^^
+src/go_hotel/flight/service.py:176: in refund
+    s.add(row);order.status='REFUND_PENDING';order.updated_at=now();s.flush()
+                                                                    ^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4352: in flush
+    self._flush(objects)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4487: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4448: in _flush
+    flush_context.execute()
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f338cf28dc0&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_abafd8e6c2164abf', 'usr_abe7c49f8656460281e60ec210536d52', 'PENDING', '{"order_id": "flt_ord_abafd...RIGINAL_PAYMENT_METHOD", "quote_hash": "cc8d785a28d5a875564a62e6d164d8989ad189721a08cad293fe0b34c49eed9e"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f338d00f350&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical
+E       [SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('FLIGHT', 'flt_ord_abafd8e6c2164abf', 'usr_abe7c49f8656460281e60ec210536d52', 'PENDING', '{"order_id": "flt_ord_abafd8e6c2164abf", "refund_fee_minor": 20000, "refund_amount_minor": 448000, "currency": "CNY", "refund_to": "ORIGINAL_PAYMENT_METHOD", "quote_hash": "cc8d785a28d5a875564a62e6d164d8989ad189721a08cad293fe0b34c49eed9e"}', '[]', '853ef38d465c46d1227fd4a6f88a8db91ba6858bffe4810d6ed1970fbcb7ac58', '{"refund_id": "flt_ref_5a3af6cc9a184e31"}', None, 0, 0, 1789005349443, None)]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError</failure></testcase><testcase classname="tests.test_sprint3e_unified_trips" name="test_unified_go_trips_six_verticals" time="0.445" /><testcase classname="tests.test_sprint3e_unified_trips" name="test_cross_account_journey_isolation" time="0.661" /><testcase classname="tests.test_depth05_money_retries" name="test_released_authorization_cannot_be_captured_later" time="0.116" /><testcase classname="tests.test_depth05_money_retries" name="test_captured_authorization_cannot_be_released_as_unused" time="0.116" /><testcase classname="tests.test_depth05_money_retries" name="test_idempotency_key_cannot_be_reused_for_a_different_money_instruction[root]" time="0.120" /><testcase classname="tests.test_depth05_money_retries" name="test_idempotency_key_cannot_be_reused_for_a_different_money_instruction[amount]" time="0.118" /><testcase classname="tests.test_depth05_money_retries" name="test_idempotency_key_cannot_be_reused_for_a_different_money_instruction[type]" time="0.121" /><testcase classname="tests.test_depth05_money_retries" name="test_idempotency_key_cannot_be_reused_for_a_different_money_instruction[parent]" time="0.120" /><testcase classname="tests.test_depth05_money_retries" name="test_simultaneous_refunds_preserve_budget_and_retry_identity[False]" time="0.143" /><testcase classname="tests.test_depth05_money_retries" name="test_simultaneous_refunds_preserve_budget_and_retry_identity[True]" time="0.137" /><testcase classname="tests.test_depth19_travel_facts" name="test_read_is_owner_scoped_and_does_not_invent_or_write_fact" time="0.114" /><testcase classname="tests.test_depth19_travel_facts" name="test_four_cells_and_official_correction_use_source_order_not_state_rank" time="0.165" /><testcase classname="tests.test_depth19_travel_facts" name="test_unsigned_legacy_source_string_is_not_authority" time="0.111" /><testcase classname="tests.test_depth19_travel_facts" name="test_signature_binds_exact_body_and_event_identity" time="0.127" /><testcase classname="tests.test_depth19_travel_facts" name="test_untrusted_links_cannot_become_official[javascript:alert(1)]" time="0.118" /><testcase classname="tests.test_depth19_travel_facts" name="test_untrusted_links_cannot_become_official[http://airline.example/pass]" time="0.119" /><testcase classname="tests.test_depth19_travel_facts" name="test_untrusted_links_cannot_become_official[https://airline.example.evil.test/pass]" time="0.116" /><testcase classname="tests.test_depth19_travel_facts" name="test_untrusted_links_cannot_become_official[https://user@airline.example/pass]" time="0.117" /><testcase classname="tests.test_depth19_travel_facts" name="test_untrusted_links_cannot_become_official[https://airline.example:8080/pass]" time="0.116" /><testcase classname="tests.test_depth19_travel_facts" name="test_untrusted_links_cannot_become_official[https://airline.example/\npass]" time="0.114" /><testcase classname="tests.test_depth19_travel_facts" name="test_untrusted_links_cannot_become_official[https://evil.example/pass]" time="0.118" /><testcase classname="tests.test_depth19_travel_facts" name="test_independent_review_revision_and_revocation_remove_pass_on_read" time="0.126" /><testcase classname="tests.test_depth19_travel_facts" name="test_maker_cannot_approve_and_registered_key_cannot_silently_change" time="0.120" /><testcase classname="tests.test_depth19_travel_facts" name="test_changed_order_never_reuses_prior_pass[ticket]" time="0.123" /><testcase classname="tests.test_depth19_travel_facts" name="test_changed_order_never_reuses_prior_pass[itinerary]" time="0.339" /><testcase classname="tests.test_depth19_travel_facts" name="test_changed_order_never_reuses_prior_pass[traveler]" time="0.127" /><testcase classname="tests.test_depth19_travel_facts" name="test_changed_order_never_reuses_prior_pass[refund]" time="0.123" /><testcase classname="tests.test_depth19_travel_facts" name="test_fact_validity_window[expired]" time="0.120" /><testcase classname="tests.test_depth19_travel_facts" name="test_fact_validity_window[future]" time="0.118" /><testcase classname="tests.test_depth19_travel_facts" name="test_fact_validity_window[too_old]" time="0.132" /><testcase classname="tests.test_depth19_travel_facts" name="test_fact_validity_window[beyond_authority]" time="0.121" /><testcase classname="tests.test_depth19_travel_facts" name="test_no_fallback_to_older_fact_when_newest_is_expired_or_corrupt" time="0.129" /><testcase classname="tests.test_depth19_travel_facts" name="test_sequence_and_provider_switch_are_explicit" time="0.130" /><testcase classname="tests.test_depth19_travel_facts" name="test_carrier_scope_and_production_gate" time="0.473" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities[tickets0]" time="0.493" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities[tickets1]" time="0.497" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities[tickets2]" time="0.502" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities[tickets3]" time="0.498" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities[tickets4]" time="0.507" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_confirmed_rail_tickets_replay_exactly_and_cannot_be_replaced" time="0.503" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_multi_person_change_refund_returns_to_original_and_adjustment_captures" time="0.590" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_business_class_change_uses_quoted_zero_fee" time="0.506" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_wrong_reissued_party_cannot_capture_adjustment" time="0.525" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_missing_confirmed_adjustment_cannot_mark_change_executed" time="0.532" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_signed_in_prebook_cannot_be_claimed_by_another_consumer" time="0.698" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_rail_http_rejects_ambiguous_or_unsupported_quantities[True]" time="0.184" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_rail_http_rejects_ambiguous_or_unsupported_quantities[1.2]" time="0.186" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_rail_http_rejects_ambiguous_or_unsupported_quantities[2]" time="0.184" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_rail_http_rejects_ambiguous_or_unsupported_quantities[0]" time="0.188" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_rail_http_rejects_ambiguous_or_unsupported_quantities[10]" time="0.184" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_invalid_authentication_never_falls_back_to_anonymous_quote" time="0.163" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_changed_vault_identity_with_same_name_cannot_reuse_prebook" time="0.130" /><testcase classname="tests.test_depth20_api_fulfillment" name="test_migration_roundtrip_preserves_history_and_refuses_prebook_evidence_loss" time="0.428" /><testcase classname="tests.test_depth21_refund_recovery" name="test_refund_retry_returns_same_receipt_and_one_money_movement[RAIL]" time="0.213" /><testcase classname="tests.test_depth21_refund_recovery" name="test_refund_retry_returns_same_receipt_and_one_money_movement[ATTRACTION]" time="0.182" /><testcase classname="tests.test_depth21_refund_recovery" name="test_money_confirmed_then_order_commit_failure_recovers_without_refund_resend[RAIL]" time="0.214" /><testcase classname="tests.test_depth21_refund_recovery" name="test_money_confirmed_then_order_commit_failure_recovers_without_refund_resend[ATTRACTION]" time="0.196" /><testcase classname="tests.test_depth21_refund_recovery" name="test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem[RAIL]" time="0.202" /><testcase classname="tests.test_depth21_refund_recovery" name="test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem[ATTRACTION]" time="0.188" /><testcase classname="tests.test_depth21_refund_recovery" name="test_unknown_money_remains_pending_and_cannot_change[RAIL]" time="0.185" /><testcase classname="tests.test_depth21_refund_recovery" name="test_unknown_money_remains_pending_and_cannot_change[ATTRACTION]" time="0.172" /><testcase classname="tests.test_depth21_refund_recovery" name="test_fabricated_confirmation_cannot_complete_refund[RAIL]" time="0.187" /><testcase classname="tests.test_depth21_refund_recovery" name="test_fabricated_confirmation_cannot_complete_refund[ATTRACTION]" time="0.169" /><testcase classname="tests.test_depth21_refund_recovery" name="test_refund_receipt_for_another_order_cannot_complete_this_order[RAIL]" time="0.277" /><testcase classname="tests.test_depth21_refund_recovery" name="test_refund_receipt_for_another_order_cannot_complete_this_order[ATTRACTION]" time="0.233" /><testcase classname="tests.test_depth21_refund_recovery" name="test_process_exit_after_money_can_resume_only_after_lease_expiry[RAIL]" time="2.618" /><testcase classname="tests.test_depth21_refund_recovery" name="test_process_exit_after_money_can_resume_only_after_lease_expiry[ATTRACTION]" time="2.632" /><testcase classname="tests.test_depth21_refund_recovery" name="test_rail_change_reserves_order_before_authorization_and_resumes_after_crash" time="0.211" /><testcase classname="tests.test_depth21_refund_recovery" name="test_mutated_frozen_quote_is_rejected_before_more_money_moves" time="0.190" /><testcase classname="tests.test_depth21_refund_recovery" name="test_migration_roundtrip_preserves_prior_history_and_blocks_journal_loss" time="0.210" /><testcase classname="tests.test_depth22_rail_resolution" name="test_exact_replay_and_conflicting_decision[TICKETED]" time="0.233" /><testcase classname="tests.test_depth22_rail_resolution" name="test_exact_replay_and_conflicting_decision[FAILED]" time="0.230" /><testcase classname="tests.test_depth22_rail_resolution" name="test_commit_failure_after_money_recovers[TICKETED]" time="0.243" /><testcase classname="tests.test_depth22_rail_resolution" name="test_commit_failure_after_money_recovers[FAILED]" time="0.239" /><testcase classname="tests.test_depth22_rail_resolution" name="test_concurrent_opposite_decision_never_dispatches_money[TICKETED]" time="0.226" /><testcase classname="tests.test_depth22_rail_resolution" name="test_concurrent_opposite_decision_never_dispatches_money[FAILED]" time="0.226" /><testcase classname="tests.test_depth22_rail_resolution" name="test_process_exit_after_money_recovers[TICKETED]" time="2.630" /><testcase classname="tests.test_depth22_rail_resolution" name="test_process_exit_after_money_recovers[FAILED]" time="2.635" /><testcase classname="tests.test_depth22_rail_resolution" name="test_prior_replay_cannot_modify_next_change" time="0.253" /><testcase classname="tests.test_depth22_rail_resolution" name="test_frozen_identity_cannot_be_replaced[ticket]" time="0.215" /><testcase classname="tests.test_depth22_rail_resolution" name="test_frozen_identity_cannot_be_replaced[quote]" time="0.222" /><testcase classname="tests.test_depth22_rail_resolution" name="test_frozen_identity_cannot_be_replaced[owner]" time="0.217" /><testcase classname="tests.test_depth22_rail_resolution" name="test_frozen_identity_cannot_be_replaced[hash]" time="0.217" /><testcase classname="tests.test_depth22_rail_resolution" name="test_fabricated_money_stays_pending[TICKETED]" time="0.220" /><testcase classname="tests.test_depth22_rail_resolution" name="test_fabricated_money_stays_pending[FAILED]" time="0.219" /><testcase classname="tests.test_depth22_rail_resolution" name="test_stale_worker_cannot_commit" time="0.238" /><testcase classname="tests.test_depth22_rail_resolution" name="test_migration_retains_nonempty_journal" time="0.214" /><testcase classname="tests.test_depth22_rail_resolution" name="test_quote_id_required_when_delayed_response_is_ambiguous" time="0.260" /><testcase classname="tests.test_depth22_rail_resolution" name="test_money_receipt_from_other_order_rejected" time="0.326" /><testcase classname="tests.test_depth22_rail_resolution" name="test_quote_id_from_other_order_cannot_dispatch_money" time="0.289" /><testcase classname="tests.test_depth22_rail_resolution" name="test_admin_route_requires_auth_and_conflicts_are_409" time="0.163" /><testcase classname="tests.test_depth23_capacity" name="test_concurrent_distinct_quotes_share_one_capacity[RAIL-9-2]" time="0.207" /><testcase classname="tests.test_depth23_capacity" name="test_concurrent_distinct_quotes_share_one_capacity[ATTRACTION-12-2]" time="0.179" /><testcase classname="tests.test_depth23_capacity" name="test_cancel_unpaid_releases_once_and_blocks_later_payment[RAIL]" time="0.147" /><testcase classname="tests.test_depth23_capacity" name="test_cancel_unpaid_releases_once_and_blocks_later_payment[ATTRACTION]" time="0.135" /><testcase classname="tests.test_depth23_capacity" name="test_payment_started_cannot_release_capacity[RAIL]" time="0.161" /><testcase classname="tests.test_depth23_capacity" name="test_payment_started_cannot_release_capacity[ATTRACTION]" time="0.152" /><testcase classname="tests.test_depth23_capacity" name="test_refund_only_releases_after_confirmed_money[RAIL]" time="0.208" /><testcase classname="tests.test_depth23_capacity" name="test_refund_only_releases_after_confirmed_money[ATTRACTION]" time="0.183" /><testcase classname="tests.test_depth23_capacity" name="test_rail_change_holds_both_dates_until_result_then_releases_correct_pool[TICKETED]" time="0.257" /><testcase classname="tests.test_depth23_capacity" name="test_rail_change_holds_both_dates_until_result_then_releases_correct_pool[FAILED]" time="0.249" /><testcase classname="tests.test_depth23_capacity" name="test_attraction_change_and_redemption_retain_current_session_capacity" time="0.198" /><testcase classname="tests.test_depth23_capacity" name="test_attraction_same_session_change_does_not_double_reserve" time="0.196" /><testcase classname="tests.test_depth23_capacity" name="test_date_and_session_pools_are_isolated" time="0.152" /><testcase classname="tests.test_depth23_capacity" name="test_same_prebook_replay_does_not_allocate_twice" time="0.133" /><testcase classname="tests.test_depth23_capacity" name="test_train_capacity_is_shared_across_overlapping_station_queries" time="0.138" /><testcase classname="tests.test_depth23_capacity" name="test_migration_blocks_allocated_history_loss" time="0.229" /><testcase classname="tests.test_depth23_capacity" name="test_legacy_orders_are_not_silently_ignored[RAIL]" time="0.140" /><testcase classname="tests.test_depth23_capacity" name="test_legacy_orders_are_not_silently_ignored[ATTRACTION]" time="0.129" /><testcase classname="tests.test_depth23_capacity" name="test_order_commit_failure_rolls_back_capacity" time="0.141" /><testcase classname="tests.test_depth23_capacity" name="test_capacity_survives_process_exit" time="2.723" /><testcase classname="tests.test_depth23_capacity" name="test_started_payment_wins_race_against_unpaid_cancellation" time="0.160" /><testcase classname="tests.test_depth23_capacity" name="test_attraction_change_cannot_reserve_full_target" time="0.199" /><testcase classname="tests.test_depth23_capacity" name="test_rail_change_target_full_rejects_before_supplemental_authorization" time="0.279" /><testcase classname="tests.test_depth24_expiry" name="test_new_deadline_is_frozen_and_legacy_has_none[RAIL]" time="0.145" /><testcase classname="tests.test_depth24_expiry" name="test_new_deadline_is_frozen_and_legacy_has_none[ATTRACTION]" time="0.131" /><testcase classname="tests.test_depth24_expiry" name="test_expiration_releases_once_with_native_evidence[RAIL]" time="0.152" /><testcase classname="tests.test_depth24_expiry" name="test_expiration_releases_once_with_native_evidence[ATTRACTION]" time="0.139" /><testcase classname="tests.test_depth24_expiry" name="test_due_payment_rejected_before_worker_runs[RAIL]" time="0.148" /><testcase classname="tests.test_depth24_expiry" name="test_due_payment_rejected_before_worker_runs[ATTRACTION]" time="0.147" /><testcase classname="tests.test_depth24_expiry" name="test_exact_deadline_uses_database_time" time="0.143" /><testcase classname="tests.test_depth24_expiry" name="test_any_started_payment_retains_capacity[REQUIRES_CHANNEL_SELECTION-RAIL]" time="0.148" /><testcase classname="tests.test_depth24_expiry" name="test_any_started_payment_retains_capacity[REQUIRES_CHANNEL_SELECTION-ATTRACTION]" time="0.144" /><testcase classname="tests.test_depth24_expiry" name="test_any_started_payment_retains_capacity[UNKNOWN_EXTERNAL_STATE-RAIL]" time="0.151" /><testcase classname="tests.test_depth24_expiry" name="test_any_started_payment_retains_capacity[UNKNOWN_EXTERNAL_STATE-ATTRACTION]" time="0.142" /><testcase classname="tests.test_depth24_expiry" name="test_any_started_payment_retains_capacity[FAILED-RAIL]" time="0.155" /><testcase classname="tests.test_depth24_expiry" name="test_any_started_payment_retains_capacity[FAILED-ATTRACTION]" time="0.147" /><testcase classname="tests.test_depth24_expiry" name="test_manual_cancel_finalizes_deadline[RAIL]" time="0.147" /><testcase classname="tests.test_depth24_expiry" name="test_manual_cancel_finalizes_deadline[ATTRACTION]" time="0.136" /><testcase classname="tests.test_depth24_expiry" name="test_two_expiry_workers_release_once[RAIL]" time="0.158" /><testcase classname="tests.test_depth24_expiry" name="test_two_expiry_workers_release_once[ATTRACTION]" time="0.152" /><testcase classname="tests.test_depth24_expiry" name="test_payment_root_wins_before_sweep_and_capture_resumes" time="0.165" /><testcase classname="tests.test_depth24_expiry" name="test_expiry_wins_order_lock_against_payment" time="0.178" /><testcase classname="tests.test_depth24_expiry" name="test_expiry_recovers_from_actual_process_exit[False]" time="2.700" /><testcase classname="tests.test_depth24_expiry" name="test_expiry_recovers_from_actual_process_exit[True]" time="2.702" /><testcase classname="tests.test_depth24_expiry" name="test_broken_deadline_is_quarantined_without_starving_good_order" time="0.171" /><testcase classname="tests.test_depth24_expiry" name="test_missing_claim_is_not_reported_as_successful_release" time="0.138" /><testcase classname="tests.test_depth24_expiry" name="test_rail_checkout_does_not_fabricate_authorized_state_on_pre_root_failure" time="0.146" /><testcase classname="tests.test_depth24_expiry" name="test_one_shot_worker_runs_against_durable_database" time="3.172" /><testcase classname="tests.test_depth24_expiry" name="test_worker_rechecks_existing_intent_even_if_deadline_is_open" time="0.152" /><testcase classname="tests.test_depth24_expiry" name="test_failed_expiry_rolls_back_and_does_not_block_next_candidate" time="0.182" /><testcase classname="tests.test_depth24_expiry" name="test_worker_batch_is_bounded_and_restarts_from_unfinished_orders" time="0.171" /><testcase classname="tests.test_depth24_expiry" name="test_application_lifespan_starts_expiry_worker" time="0.171" /><testcase classname="tests.test_depth24_expiry" name="test_migration_preserves_all_deadline_history" time="0.214" /><testcase classname="tests.test_depth30_native_api_contract" name="test_native_six_vertical_creation_payment_and_refund_contracts" time="2.326"><failure message="sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical&#10;[SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]&#10;[parameters: ('FLIGHT', 'flt_ord_0badbc7f7c3043d4', 'usr_573630d719d240cfbad01f8545d345cd', 'PENDING', '{&quot;order_id&quot;: &quot;flt_ord_0badbc7f7c3043d4&quot;, &quot;refund_fee_minor&quot;: 20000, &quot;refund_amount_minor&quot;: 448000, &quot;currency&quot;: &quot;CNY&quot;, &quot;refund_to&quot;: &quot;ORIGINAL_PAYMENT_METHOD&quot;, &quot;quote_hash&quot;: &quot;cec3f3e67cde09a1771db474d6d8fb525a142a4c5712904fb82e25131e66453d&quot;}', '[]', '9e6616c85a013e98c6226cdc33d6c52a229f1a6910f5f47f7cb293c7d08fa641', '{&quot;refund_id&quot;: &quot;flt_ref_c78109a20da94b28&quot;}', None, 0, 0, 1789005403314, None)]&#10;(Background on this error at: https://sqlalche.me/e/20/gkpj)">self = &lt;sqlalchemy.engine.base.Connection object at 0x7f337bfedc10&gt;
+dialect = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f337bfee450&gt;
+statement = &lt;sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f338d0f0e20&gt;
+parameters = [('FLIGHT', 'flt_ord_0badbc7f7c3043d4', 'usr_573630d719d240cfbad01f8545d345cd', 'PENDING', '{"order_id": "flt_ord_0bad...IGINAL_PAYMENT_METHOD", "quote_hash": "cec3f3e67cde09a1771db474d6d8fb525a142a4c5712904fb82e25131e66453d"}', '[]', ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -&gt; CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+&gt;                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f3384b16a40&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_0badbc7f7c3043d4', 'usr_573630d719d240cfbad01f8545d345cd', 'PENDING', '{"order_id": "flt_ord_0badb...RIGINAL_PAYMENT_METHOD", "quote_hash": "cec3f3e67cde09a1771db474d6d8fb525a142a4c5712904fb82e25131e66453d"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f337bfee450&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: CHECK constraint failed: ck_refund_operation_vertical
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+client = &lt;starlette.testclient.TestClient object at 0x7f337bfc4160&gt;
+
+    def test_native_six_vertical_creation_payment_and_refund_contracts(client):
+        email='native-depth30@example.test'
+        registered=client.post('/v1/consumer/auth/register',json={'email':email,'password':'StrongPass123!','display_name':'ISOLATED NATIVE TEST'})
+        assert registered.status_code==200,registered.text
+        uid=registered.json()['data']['profile']['user_id']
+        token=client.post('/v1/mobile/auth/login',json={'email':email,'password':'StrongPass123!'}).json()['data']['access_token']
+        client.cookies.clear();headers={'Authorization':'Bearer '+token}
+        tid=profile(uid,name='ISOLATED TEST TRAVELER')
+        vault.grant_consent(uid,{'traveler_id':tid,'purpose':'RENTAL_BOOKING','scope':['DRIVER_LICENSE_NUMBER']})
+        day=(date.today()+timedelta(days=10)).isoformat();end=(date.today()+timedelta(days=13)).isoformat()
+        def post(path,body=None):
+            r=client.post(path,headers=headers,json=body);assert r.status_code==200,r.text;return r.json()['data']
+        tasks={}
+        hotel=post('/v1/search/hotels',{'destination':{'city_code':'TYO'},'stay':{'check_in':day,'check_out':end},'occupancy':{'rooms':1,'adults':1,'children':0},'currency':'CNY'})['hotels'][0]
+        pb=post(f"/v1/offers/{hotel['best_offer']['offer_id']}/prebook",{'currency':'CNY'})
+        tasks['HOTEL']={'prebook':pb}
+        for v,base,body in [('FLIGHT','/v1/flights',{'origin':'PVG','destination':'NRT','departure_date':day}),('RAIL','/v1/rail',{'origin_station':'SHA','destination_station':'HZH','travel_date':day})]:
+            offer=post(base+'/search',body)['items'][0];pb=post(f"{base}/offers/{offer['offer_id']}/prebook")
+            tasks[v]={'prebook':pb,'offer':offer}
+        for v,base,body in [('RIDE','/v1/mobility/rides',{'pickup':'PVG','dropoff':'Bund','pickup_at':day+'T10:00:00','currency':'CNY'}),('RENTAL','/v1/mobility/rentals',{'pickup_location':'NRT','return_location':'NRT','pickup_at':day+'T10:00:00','return_at':end+'T10:00:00','currency':'CNY'})]:
+            tasks[v]={'search':body,'offer':post(base+'/search',body)['items'][0]}
+        offer=post('/v1/attractions/search',{'destination':'东京','visit_date':day})['items'][0]
+        pb=post('/v1/attractions/prebook',{'offer_id':offer['offer_id'],'visit_date':day,'session_time':offer.get('session_time'),'quantity':1,'currency':'CNY'})
+        tasks['ATTRACTION']={'offer':{**offer,'visit_date':day},'prebook':pb,'quantity':1}
+        for v,params in tasks.items():
+            create={'action':'create','vertical':v,'params':params,'userId':uid,'travelerId':tid}
+            order=bridge(client,headers,create)['data']
+            assert order['status']=='PAYMENT_PENDING',(v,order)
+            assert bridge(client,headers,create)['data']['order_id']==order['order_id']
+            task={'vertical':v,'orderId':order['order_id']}
+            paid=bridge(client,headers,{**task,'action':'pay'})
+            assert paid['order']['status'] in {'CONFIRMED','TICKETED'},(v,paid)
+            assert paid['order']['order_id']==order['order_id']
+&gt;           refunded=bridge(client,headers,{**task,'action':'refund'})
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_depth30_native_api_contract.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_depth30_native_api_contract.py:31: in bridge
+    response=client.request(call['method'],call['path'],headers={**headers,**call['headers']},json=call['body'])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+../isolated-runtime/lib/python3.13/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+../isolated-runtime/lib/python3.13/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+../isolated-runtime/lib/python3.13/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../isolated-runtime/lib/python3.13/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/fastapi/applications.py:1138: in __call__
+    await super().__call__(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/applications.py:107: in __call__
+    await self.middleware_stack(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/contextlib.py:162: in __exit__
+    self.gen.throw(value)
+../isolated-runtime/lib/python3.13/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:282: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/contextlib.py:162: in __exit__
+    self.gen.throw(value)
+../isolated-runtime/lib/python3.13/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:253: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/contextlib.py:162: in __exit__
+    self.gen.throw(value)
+../isolated-runtime/lib/python3.13/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:207: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../isolated-runtime/lib/python3.13/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../isolated-runtime/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/routing.py:716: in __call__
+    await self.middleware_stack(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/routing.py:736: in app
+    await route.handle(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/routing.py:290: in handle
+    await self.app(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/fastapi/routing.py:115: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+../isolated-runtime/lib/python3.13/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../isolated-runtime/lib/python3.13/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../isolated-runtime/lib/python3.13/site-packages/fastapi/routing.py:101: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/fastapi/routing.py:355: in app
+    raw_response = await run_endpoint_function(
+../isolated-runtime/lib/python3.13/site-packages/fastapi/routing.py:245: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/starlette/concurrency.py:32: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/anyio/to_thread.py:63: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+../isolated-runtime/lib/python3.13/site-packages/anyio/_backends/_asyncio.py:2518: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/anyio/_backends/_asyncio.py:1002: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/api/routes/flight.py:84: in refund_confirmed
+    return run_idempotent('FLIGHT_REFUND_CONFIRMED',idempotency_key,payload,
+src/go_hotel/api/idempotency.py:26: in run_idempotent
+    response = fn()
+               ^^^^
+src/go_hotel/api/routes/flight.py:85: in &lt;lambda&gt;
+    lambda:wrap(flight_service.refund,p.user_id,order_id,body.quote_hash))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/api/routes/flight.py:26: in wrap
+    try:return {"data":fn(*args)}
+                       ^^^^^^^^^
+src/go_hotel/flight/service.py:176: in refund
+    s.add(row);order.status='REFUND_PENDING';order.updated_at=now();s.flush()
+                                                                    ^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4352: in flush
+    self._flush(objects)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4487: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4448: in _flush
+    flush_context.execute()
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f3384b16a40&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_0badbc7f7c3043d4', 'usr_573630d719d240cfbad01f8545d345cd', 'PENDING', '{"order_id": "flt_ord_0badb...RIGINAL_PAYMENT_METHOD", "quote_hash": "cec3f3e67cde09a1771db474d6d8fb525a142a4c5712904fb82e25131e66453d"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f337bfee450&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical
+E       [SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('FLIGHT', 'flt_ord_0badbc7f7c3043d4', 'usr_573630d719d240cfbad01f8545d345cd', 'PENDING', '{"order_id": "flt_ord_0badbc7f7c3043d4", "refund_fee_minor": 20000, "refund_amount_minor": 448000, "currency": "CNY", "refund_to": "ORIGINAL_PAYMENT_METHOD", "quote_hash": "cec3f3e67cde09a1771db474d6d8fb525a142a4c5712904fb82e25131e66453d"}', '[]', '9e6616c85a013e98c6226cdc33d6c52a229f1a6910f5f47f7cb293c7d08fa641', '{"refund_id": "flt_ref_c78109a20da94b28"}', None, 0, 0, 1789005403314, None)]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError</failure></testcase><testcase classname="tests.test_depth31_refund_consent" name="test_confirmed_refund_binds_owner_order_terms_and_replay[RAIL]" time="0.204" /><testcase classname="tests.test_depth31_refund_consent" name="test_confirmed_refund_binds_owner_order_terms_and_replay[ATTRACTION]" time="0.182" /><testcase classname="tests.test_depth31_refund_consent" name="test_quote_is_rechecked_inside_order_lock_before_money[RAIL]" time="0.181" /><testcase classname="tests.test_depth31_refund_consent" name="test_quote_is_rechecked_inside_order_lock_before_money[ATTRACTION]" time="0.164" /><testcase classname="tests.test_depth31_refund_consent" name="test_confirmed_endpoint_body_is_strict[body0]" time="0.084" /><testcase classname="tests.test_depth31_refund_consent" name="test_confirmed_endpoint_body_is_strict[body1]" time="0.085" /><testcase classname="tests.test_depth31_refund_consent" name="test_confirmed_endpoint_body_is_strict[body2]" time="0.086" /><testcase classname="tests.test_depth31_refund_consent" name="test_confirmed_endpoint_body_is_strict[body3]" time="0.086" /><testcase classname="tests.test_depth31_refund_consent" name="test_confirmed_endpoint_body_is_strict[body4]" time="0.086" /><testcase classname="tests.test_depth32_flight_refund_consent" name="test_flight_refund_consent_and_replay_have_one_money_identity" time="0.155"><failure message="sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical&#10;[SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]&#10;[parameters: ('FLIGHT', 'flt_ord_5ad015aab5db48c1', 'flight-consent-owner', 'PENDING', '{&quot;order_id&quot;: &quot;flt_ord_5ad015aab5db48c1&quot;, &quot;refund_fee_minor&quot;: 20000, &quot;refund_amount_minor&quot;: 448000, &quot;currency&quot;: &quot;CNY&quot;, &quot;refund_to&quot;: &quot;ORIGINAL_PAYMENT_METHOD&quot;, &quot;quote_hash&quot;: &quot;fe620e8af0b230b6dc33d3a08df9b13086d0ac66f9fb0754b335bb0e495d8a94&quot;}', '[]', '252a6cb86ef81b52064cc3065794b564cbcd43b0ac208d93f71b70134d67c97e', '{&quot;refund_id&quot;: &quot;flt_ref_ad13ea11b7cd426a&quot;}', None, 0, 0, 1789005405434, None)]&#10;(Background on this error at: https://sqlalche.me/e/20/gkpj)">self = &lt;sqlalchemy.engine.base.Connection object at 0x7f3384948890&gt;
+dialect = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f33849a6810&gt;
+statement = &lt;sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f338d0f0e20&gt;
+parameters = [('FLIGHT', 'flt_ord_5ad015aab5db48c1', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_5ad015aab5db48c1", "...IGINAL_PAYMENT_METHOD", "quote_hash": "fe620e8af0b230b6dc33d3a08df9b13086d0ac66f9fb0754b335bb0e495d8a94"}', '[]', ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -&gt; CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+&gt;                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f33858bc2c0&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_5ad015aab5db48c1', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_5ad015aab5db48c1", "r...RIGINAL_PAYMENT_METHOD", "quote_hash": "fe620e8af0b230b6dc33d3a08df9b13086d0ac66f9fb0754b335bb0e495d8a94"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f33849a6810&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: CHECK constraint failed: ck_refund_operation_vertical
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+    def test_flight_refund_consent_and_replay_have_one_money_identity():
+        owner,oid=booked();q=svc.refund_quote(owner,oid)
+        with pytest.raises(ValueError,match='RECONFIRM'):svc.refund(owner,oid,'f'*64)
+        with pytest.raises(ValueError,match='NOT_FOUND'):svc.refund('other',oid,q['quote_hash'])
+        assert not refunded_movements()
+&gt;       first=svc.refund(owner,oid,q['quote_hash'])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_depth32_flight_refund_consent.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/flight/service.py:176: in refund
+    s.add(row);order.status='REFUND_PENDING';order.updated_at=now();s.flush()
+                                                                    ^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4352: in flush
+    self._flush(objects)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4487: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4448: in _flush
+    flush_context.execute()
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f33858bc2c0&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_5ad015aab5db48c1', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_5ad015aab5db48c1", "r...RIGINAL_PAYMENT_METHOD", "quote_hash": "fe620e8af0b230b6dc33d3a08df9b13086d0ac66f9fb0754b335bb0e495d8a94"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f33849a6810&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical
+E       [SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('FLIGHT', 'flt_ord_5ad015aab5db48c1', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_5ad015aab5db48c1", "refund_fee_minor": 20000, "refund_amount_minor": 448000, "currency": "CNY", "refund_to": "ORIGINAL_PAYMENT_METHOD", "quote_hash": "fe620e8af0b230b6dc33d3a08df9b13086d0ac66f9fb0754b335bb0e495d8a94"}', '[]', '252a6cb86ef81b52064cc3065794b564cbcd43b0ac208d93f71b70134d67c97e', '{"refund_id": "flt_ref_ad13ea11b7cd426a"}', None, 0, 0, 1789005405434, None)]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError</failure></testcase><testcase classname="tests.test_depth32_flight_refund_consent" name="test_changed_order_invalidates_old_flight_refund_quote[amount]" time="0.152" /><testcase classname="tests.test_depth32_flight_refund_consent" name="test_changed_order_invalidates_old_flight_refund_quote[revision]" time="0.154" /><testcase classname="tests.test_depth32_flight_refund_consent" name="test_flight_timeout_keeps_frozen_consent_and_resumes_original_money_key" time="0.156"><failure message="sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical&#10;[SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]&#10;[parameters: ('FLIGHT', 'flt_ord_43c9c6bd29494264', 'flight-consent-owner', 'PENDING', '{&quot;order_id&quot;: &quot;flt_ord_43c9c6bd29494264&quot;, &quot;refund_fee_minor&quot;: 20000, &quot;refund_amount_minor&quot;: 448000, &quot;currency&quot;: &quot;CNY&quot;, &quot;refund_to&quot;: &quot;ORIGINAL_PAYMENT_METHOD&quot;, &quot;quote_hash&quot;: &quot;b8fe12ad7d6afd6b402138757e59ba5907dc56f597cff2f8af5396637db3ff4e&quot;}', '[]', 'b59ad331d8f2097946e672e47651522a13e7d8e55f4e7c0ab0fb7eb2f33e9996', '{&quot;refund_id&quot;: &quot;flt_ref_9932d2144f994245&quot;}', None, 0, 0, 1789005406274, None)]&#10;(Background on this error at: https://sqlalche.me/e/20/gkpj)">self = &lt;sqlalchemy.engine.base.Connection object at 0x7f3384949a90&gt;
+dialect = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f337bfec050&gt;
+statement = &lt;sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f338d0f0e20&gt;
+parameters = [('FLIGHT', 'flt_ord_43c9c6bd29494264', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_43c9c6bd29494264", "...IGINAL_PAYMENT_METHOD", "quote_hash": "b8fe12ad7d6afd6b402138757e59ba5907dc56f597cff2f8af5396637db3ff4e"}', '[]', ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -&gt; CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+&gt;                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f3385a484c0&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_43c9c6bd29494264', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_43c9c6bd29494264", "r...RIGINAL_PAYMENT_METHOD", "quote_hash": "b8fe12ad7d6afd6b402138757e59ba5907dc56f597cff2f8af5396637db3ff4e"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f337bfec050&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: CHECK constraint failed: ck_refund_operation_vertical
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f33849dbee0&gt;
+
+    def test_flight_timeout_keeps_frozen_consent_and_resumes_original_money_key(monkeypatch):
+        owner,oid=booked();q=svc.refund_quote(owner,oid);original=money.refund_with_adjustments
+        def lost(*a,**kw):
+            original(*a,**kw);raise RuntimeError('AFTER_MONEY')
+        monkeypatch.setattr(money,'refund_with_adjustments',lost)
+&gt;       with pytest.raises(RuntimeError,match='AFTER_MONEY'):svc.refund(owner,oid,q['quote_hash'])
+                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_depth32_flight_refund_consent.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/flight/service.py:176: in refund
+    s.add(row);order.status='REFUND_PENDING';order.updated_at=now();s.flush()
+                                                                    ^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4352: in flush
+    self._flush(objects)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4487: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4448: in _flush
+    flush_context.execute()
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f3385a484c0&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_43c9c6bd29494264', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_43c9c6bd29494264", "r...RIGINAL_PAYMENT_METHOD", "quote_hash": "b8fe12ad7d6afd6b402138757e59ba5907dc56f597cff2f8af5396637db3ff4e"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f337bfec050&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical
+E       [SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('FLIGHT', 'flt_ord_43c9c6bd29494264', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_43c9c6bd29494264", "refund_fee_minor": 20000, "refund_amount_minor": 448000, "currency": "CNY", "refund_to": "ORIGINAL_PAYMENT_METHOD", "quote_hash": "b8fe12ad7d6afd6b402138757e59ba5907dc56f597cff2f8af5396637db3ff4e"}', '[]', 'b59ad331d8f2097946e672e47651522a13e7d8e55f4e7c0ab0fb7eb2f33e9996', '{"refund_id": "flt_ref_9932d2144f994245"}', None, 0, 0, 1789005406274, None)]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError</failure></testcase><testcase classname="tests.test_depth32_flight_refund_consent" name="test_mutated_consent_record_blocks_recovery" time="0.155"><failure message="sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical&#10;[SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]&#10;[parameters: ('FLIGHT', 'flt_ord_c8c90a3577a64019', 'flight-consent-owner', 'PENDING', '{&quot;order_id&quot;: &quot;flt_ord_c8c90a3577a64019&quot;, &quot;refund_fee_minor&quot;: 20000, &quot;refund_amount_minor&quot;: 448000, &quot;currency&quot;: &quot;CNY&quot;, &quot;refund_to&quot;: &quot;ORIGINAL_PAYMENT_METHOD&quot;, &quot;quote_hash&quot;: &quot;dd80c3797e2b1b5d612248084b3dbe668c7e334c974f9d5a5131379d3d57f71b&quot;}', '[]', '9ecb78f455dada80bf4a2111d0c981856a71e6a5673f51ed4b500ffd1f4676c8', '{&quot;refund_id&quot;: &quot;flt_ref_389f37e3f364428e&quot;}', None, 0, 0, 1789005407219, None)]&#10;(Background on this error at: https://sqlalche.me/e/20/gkpj)">self = &lt;sqlalchemy.engine.base.Connection object at 0x7f338494a990&gt;
+dialect = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f338494a090&gt;
+statement = &lt;sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f338d0f0e20&gt;
+parameters = [('FLIGHT', 'flt_ord_c8c90a3577a64019', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_c8c90a3577a64019", "...IGINAL_PAYMENT_METHOD", "quote_hash": "dd80c3797e2b1b5d612248084b3dbe668c7e334c974f9d5a5131379d3d57f71b"}', '[]', ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -&gt; CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+&gt;                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f3385b43840&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_c8c90a3577a64019', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_c8c90a3577a64019", "r...RIGINAL_PAYMENT_METHOD", "quote_hash": "dd80c3797e2b1b5d612248084b3dbe668c7e334c974f9d5a5131379d3d57f71b"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f338494a090&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: CHECK constraint failed: ck_refund_operation_vertical
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3384bd5080&gt;
+
+    def test_mutated_consent_record_blocks_recovery(monkeypatch):
+        owner,oid=booked();q=svc.refund_quote(owner,oid)
+        monkeypatch.setattr(money,'refund_with_adjustments',lambda *a,**kw:(_ for _ in ()).throw(RuntimeError('OFFLINE')))
+&gt;       with pytest.raises(RuntimeError):svc.refund(owner,oid,q['quote_hash'])
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_depth32_flight_refund_consent.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/flight/service.py:176: in refund
+    s.add(row);order.status='REFUND_PENDING';order.updated_at=now();s.flush()
+                                                                    ^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4352: in flush
+    self._flush(objects)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4487: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4448: in _flush
+    flush_context.execute()
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f3385b43840&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_c8c90a3577a64019', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_c8c90a3577a64019", "r...RIGINAL_PAYMENT_METHOD", "quote_hash": "dd80c3797e2b1b5d612248084b3dbe668c7e334c974f9d5a5131379d3d57f71b"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f338494a090&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical
+E       [SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('FLIGHT', 'flt_ord_c8c90a3577a64019', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_c8c90a3577a64019", "refund_fee_minor": 20000, "refund_amount_minor": 448000, "currency": "CNY", "refund_to": "ORIGINAL_PAYMENT_METHOD", "quote_hash": "dd80c3797e2b1b5d612248084b3dbe668c7e334c974f9d5a5131379d3d57f71b"}', '[]', '9ecb78f455dada80bf4a2111d0c981856a71e6a5673f51ed4b500ffd1f4676c8', '{"refund_id": "flt_ref_389f37e3f364428e"}', None, 0, 0, 1789005407219, None)]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError</failure></testcase><testcase classname="tests.test_depth32_flight_refund_consent" name="test_historical_pending_refund_does_not_invent_consent" time="0.156"><failure message="sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical&#10;[SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]&#10;[parameters: ('FLIGHT', 'flt_ord_8161d21cc9e74b19', 'flight-consent-owner', 'PENDING', '{&quot;order_id&quot;: &quot;flt_ord_8161d21cc9e74b19&quot;, &quot;refund_fee_minor&quot;: 20000, &quot;refund_amount_minor&quot;: 448000, &quot;currency&quot;: &quot;CNY&quot;, &quot;refund_to&quot;: &quot;ORIGINAL_PAYMENT_METHOD&quot;, &quot;quote_hash&quot;: &quot;de70544ceef7b4835b16567254f3fdc124fea56644670d267188b72b3cff4b48&quot;}', '[]', '61166ae27f57a69edd48c3beb1d0043cc4221134a4c0f42e3ede103028f3ba1d', '{&quot;refund_id&quot;: &quot;flt_ref_691e924708054eed&quot;}', None, 0, 0, 1789005407774, None)]&#10;(Background on this error at: https://sqlalche.me/e/20/gkpj)">self = &lt;sqlalchemy.engine.base.Connection object at 0x7f3384948890&gt;
+dialect = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3384948110&gt;
+statement = &lt;sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f338d0f0e20&gt;
+parameters = [('FLIGHT', 'flt_ord_8161d21cc9e74b19', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_8161d21cc9e74b19", "...IGINAL_PAYMENT_METHOD", "quote_hash": "de70544ceef7b4835b16567254f3fdc124fea56644670d267188b72b3cff4b48"}', '[]', ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -&gt; CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+&gt;                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f3384bf32c0&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_8161d21cc9e74b19', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_8161d21cc9e74b19", "r...RIGINAL_PAYMENT_METHOD", "quote_hash": "de70544ceef7b4835b16567254f3fdc124fea56644670d267188b72b3cff4b48"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3384948110&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: CHECK constraint failed: ck_refund_operation_vertical
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3384bd4c20&gt;
+
+    def test_historical_pending_refund_does_not_invent_consent(monkeypatch):
+        owner,oid=booked();q=svc.refund_quote(owner,oid);original=money.refund_with_adjustments
+        monkeypatch.setattr(money,'refund_with_adjustments',lambda *a,**kw:(_ for _ in ()).throw(RuntimeError('OFFLINE')))
+&gt;       with pytest.raises(RuntimeError):svc.refund(owner,oid)
+                                         ^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_depth32_flight_refund_consent.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/flight/service.py:176: in refund
+    s.add(row);order.status='REFUND_PENDING';order.updated_at=now();s.flush()
+                                                                    ^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4352: in flush
+    self._flush(objects)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4487: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4448: in _flush
+    flush_context.execute()
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f339405ea50&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f3384bf32c0&gt;
+statement = 'INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, reques...t_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('FLIGHT', 'flt_ord_8161d21cc9e74b19', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_8161d21cc9e74b19", "r...RIGINAL_PAYMENT_METHOD", "quote_hash": "de70544ceef7b4835b16567254f3fdc124fea56644670d267188b72b3cff4b48"}', '[]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3384948110&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) CHECK constraint failed: ck_refund_operation_vertical
+E       [SQL: INSERT INTO vertical_refund_operation (vertical, order_id, account_id, state, quote_json, adjustment_ids_json, request_hash, result_json, lease_token, lease_until_ms, attempt, created_ms, completed_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('FLIGHT', 'flt_ord_8161d21cc9e74b19', 'flight-consent-owner', 'PENDING', '{"order_id": "flt_ord_8161d21cc9e74b19", "refund_fee_minor": 20000, "refund_amount_minor": 448000, "currency": "CNY", "refund_to": "ORIGINAL_PAYMENT_METHOD", "quote_hash": "de70544ceef7b4835b16567254f3fdc124fea56644670d267188b72b3cff4b48"}', '[]', '61166ae27f57a69edd48c3beb1d0043cc4221134a4c0f42e3ede103028f3ba1d', '{"refund_id": "flt_ref_691e924708054eed"}', None, 0, 0, 1789005407774, None)]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../isolated-runtime/lib/python3.13/site-packages/sqlalchemy/engine/default.py:952: IntegrityError</failure></testcase></testsuite></testsuites>
