@@ -1,0 +1,24 @@
+{
+  "candidate": "a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4",
+  "acceptance_head": "608cb3f260b0d794cc28fdefc2ef48e01d9e7c1e",
+  "run": 34440381225,
+  "backend_files": [
+    "tests/test_depth35_refresh_scope.py",
+    "tests/test_depth27_session_isolation.py",
+    "tests/test_sprint1r_identity_security.py",
+    "tests/test_sprint1u_production_bff.py",
+    "tests/test_sprint1y_consumer_identity.py",
+    "tests/test_sprint1z_mobile.py",
+    "tests/test_depth30_native_api_contract.py"
+  ],
+  "frontend_command": "node --experimental-strip-types --test tests_frontend/*.test.mjs",
+  "not_executed": [
+    "real browser login",
+    "React Native TSX build or physical device",
+    "PostgreSQL/Redis runtime",
+    "payment institution sandbox",
+    "HK signed task or runtime call",
+    "sealed runtime gate or deployment"
+  ],
+  "source_files": 1243
+}

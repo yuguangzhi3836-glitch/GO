@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="38" time="31.954" timestamp="2026-09-10T05:07:33.510276+00:00" hostname="runnervm9xg2d"><testcase classname="tests.test_depth35_refresh_scope" name="test_wrong_consumer_end_does_not_consume_console_refresh_or_csrf[/v1/mobile/auth/refresh-SUPPLIER_USER]" time="9.416" /><testcase classname="tests.test_depth35_refresh_scope" name="test_wrong_consumer_end_does_not_consume_console_refresh_or_csrf[/v1/mobile/auth/refresh-GO_ADMIN]" time="0.260" /><testcase classname="tests.test_depth35_refresh_scope" name="test_wrong_consumer_end_does_not_consume_console_refresh_or_csrf[/v1/consumer/auth/refresh-SUPPLIER_USER]" time="0.259" /><testcase classname="tests.test_depth35_refresh_scope" name="test_wrong_consumer_end_does_not_consume_console_refresh_or_csrf[/v1/consumer/auth/refresh-GO_ADMIN]" time="0.266" /><testcase classname="tests.test_depth35_refresh_scope" name="test_console_end_does_not_consume_consumer_refresh" time="0.408" /><testcase classname="tests.test_depth35_refresh_scope" name="test_matching_end_rotates_once_and_old_refresh_cannot_be_reused[CONSUMER]" time="0.396" /><testcase classname="tests.test_depth35_refresh_scope" name="test_matching_end_rotates_once_and_old_refresh_cannot_be_reused[SUPPLIER_USER]" time="0.272"><failure message="httpx.CookieConflict: Multiple cookies exist with name=go_access">client = &lt;starlette.testclient.TestClient object at 0x7fba06da8f30&gt;
+actor = 'SUPPLIER_USER'
+
+    @pytest.mark.parametrize('actor',['CONSUMER','SUPPLIER_USER','GO_ADMIN'])
+    def test_matching_end_rotates_once_and_old_refresh_cannot_be_reused(client,actor):
+        t=tokens(client,actor)
+        if actor=='CONSUMER':
+            r=client.post('/v1/mobile/auth/refresh',json={'refresh_token':t['refresh_token']})
+            assert r.status_code==200,r.text
+            current=r.json()['data'];assert 'csrf_token' not in current
+        else:
+            for name,key in [('go_access','access_token'),('go_refresh','refresh_token'),('go_csrf','csrf_token')]:
+                client.cookies.set(name,t[key])
+            r=client.post('/bff/auth/refresh',headers={'X-CSRF-Token':t['csrf_token']})
+            assert r.status_code==200,r.text
+&gt;           current={'access_token':client.cookies.get('go_access'),'refresh_token':client.cookies.get('go_refresh')}
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_depth35_refresh_scope.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;Cookies[&lt;Cookie go_access=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiU1VQUExJRVJfVVNFUiIsImV4cCI6MTc4OT...local /&gt;, &lt;Cookie go_refresh=u6QmopMbWxsp2MdgfbYpyopzJ-vEqZsR_GNy4sMrVWC0TAdqREPk8GyR2-3UsMVK for testserver.local /&gt;]&gt;
+name = 'go_access', default = None, domain = None, path = None
+
+    def get(  # type: ignore
+        self,
+        name: str,
+        default: str | None = None,
+        domain: str | None = None,
+        path: str | None = None,
+    ) -&gt; str | None:
+        """
+        Get a cookie by name. May optionally include domain and path
+        in order to specify exactly which cookie to retrieve.
+        """
+        value = None
+        for cookie in self.jar:
+            if cookie.name == name:
+                if domain is None or cookie.domain == domain:
+                    if path is None or cookie.path == path:
+                        if value is not None:
+                            message = f"Multiple cookies exist with name={name}"
+&gt;                           raise CookieConflict(message)
+E                           httpx.CookieConflict: Multiple cookies exist with name=go_access
+
+../isolated-runtime/lib/python3.13/site-packages/httpx/_models.py:1161: CookieConflict</failure></testcase><testcase classname="tests.test_depth35_refresh_scope" name="test_matching_end_rotates_once_and_old_refresh_cannot_be_reused[GO_ADMIN]" time="0.274"><failure message="httpx.CookieConflict: Multiple cookies exist with name=go_access">client = &lt;starlette.testclient.TestClient object at 0x7fba06db4270&gt;
+actor = 'GO_ADMIN'
+
+    @pytest.mark.parametrize('actor',['CONSUMER','SUPPLIER_USER','GO_ADMIN'])
+    def test_matching_end_rotates_once_and_old_refresh_cannot_be_reused(client,actor):
+        t=tokens(client,actor)
+        if actor=='CONSUMER':
+            r=client.post('/v1/mobile/auth/refresh',json={'refresh_token':t['refresh_token']})
+            assert r.status_code==200,r.text
+            current=r.json()['data'];assert 'csrf_token' not in current
+        else:
+            for name,key in [('go_access','access_token'),('go_refresh','refresh_token'),('go_csrf','csrf_token')]:
+                client.cookies.set(name,t[key])
+            r=client.post('/bff/auth/refresh',headers={'X-CSRF-Token':t['csrf_token']})
+            assert r.status_code==200,r.text
+&gt;           current={'access_token':client.cookies.get('go_access'),'refresh_token':client.cookies.get('go_refresh')}
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_depth35_refresh_scope.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;Cookies[&lt;Cookie go_access=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJleHAiOjE3ODkwMTc3Nj...local /&gt;, &lt;Cookie go_refresh=A_R2-d_ot1hEOnsNPCGGDWOAvsMDcjxCakpqmmrzGMlncmST9-ya5BkQXPDlcx9s for testserver.local /&gt;]&gt;
+name = 'go_access', default = None, domain = None, path = None
+
+    def get(  # type: ignore
+        self,
+        name: str,
+        default: str | None = None,
+        domain: str | None = None,
+        path: str | None = None,
+    ) -&gt; str | None:
+        """
+        Get a cookie by name. May optionally include domain and path
+        in order to specify exactly which cookie to retrieve.
+        """
+        value = None
+        for cookie in self.jar:
+            if cookie.name == name:
+                if domain is None or cookie.domain == domain:
+                    if path is None or cookie.path == path:
+                        if value is not None:
+                            message = f"Multiple cookies exist with name={name}"
+&gt;                           raise CookieConflict(message)
+E                           httpx.CookieConflict: Multiple cookies exist with name=go_access
+
+../isolated-runtime/lib/python3.13/site-packages/httpx/_models.py:1161: CookieConflict</failure></testcase><testcase classname="tests.test_depth35_refresh_scope" name="test_mobile_logout_revokes_only_its_bearer_session_and_refresh" time="0.860" /><testcase classname="tests.test_depth27_session_isolation" name="test_consumer_and_console_can_coexist_and_logout_independently[supplier_owner-change-me-supplier]" time="0.416" /><testcase classname="tests.test_depth27_session_isolation" name="test_consumer_and_console_can_coexist_and_logout_independently[go_admin-change-me-admin]" time="0.417" /><testcase classname="tests.test_depth27_session_isolation" name="test_console_logout_does_not_fall_back_to_consumer_session" time="0.420" /><testcase classname="tests.test_depth27_session_isolation" name="test_consumer_refresh_uses_own_csrf_with_console_cookie_present" time="0.397" /><testcase classname="tests.test_depth27_session_isolation" name="test_other_scope_csrf_cannot_logout_consumer" time="0.401" /><testcase classname="tests.test_depth27_session_isolation" name="test_shared_endpoint_uses_explicit_scope_and_rejects_ambiguity" time="0.401" /><testcase classname="tests.test_depth27_session_isolation" name="test_header_cannot_change_fixed_route_scope_or_grant_permissions" time="0.408" /><testcase classname="tests.test_depth27_session_isolation" name="test_expired_console_access_does_not_shadow_consumer" time="0.392" /><testcase classname="tests.test_depth27_session_isolation" name="test_bearer_identity_stays_authoritative" time="0.554" /><testcase classname="tests.test_depth27_session_isolation" name="test_wrong_console_login_does_not_replace_existing_session" time="0.486" /><testcase classname="tests.test_depth27_session_isolation" name="test_other_console_tab_identity_change_is_detected_before_action" time="0.484" /><testcase classname="tests.test_sprint1r_identity_security" name="test_supplier_dashboard_requires_auth_and_tenant_comes_from_token" time="0.251" /><testcase classname="tests.test_sprint1r_identity_security" name="test_admin_rbac_separates_finance_from_trust" time="0.375" /><testcase classname="tests.test_sprint1r_identity_security" name="test_refresh_and_session_revocation" time="0.256" /><testcase classname="tests.test_sprint1r_identity_security" name="test_dual_control_requires_distinct_second_admin" time="0.503" /><testcase classname="tests.test_sprint1r_identity_security" name="test_mutating_authenticated_request_writes_audit" time="0.242" /><testcase classname="tests.test_sprint1u_production_bff" name="test_bff_uses_http_only_cookies_and_no_tokens_in_payload" time="0.241" /><testcase classname="tests.test_sprint1u_production_bff" name="test_csrf_blocks_cookie_authenticated_mutation" time="0.252" /><testcase classname="tests.test_sprint1u_production_bff" name="test_security_headers_are_present" time="0.153" /><testcase classname="tests.test_sprint1u_production_bff" name="test_mfa_enrollment_and_login_enforcement" time="0.416" /><testcase classname="tests.test_sprint1u_production_bff" name="test_frontend_has_no_localstorage_auth_tokens" time="0.085" /><testcase classname="tests.test_sprint1y_consumer_identity" name="test_register_secure_cookie_go_id_and_session" time="0.320" /><testcase classname="tests.test_sprint1y_consumer_identity" name="test_traveler_and_payment_tokenization_no_pan_readback" time="0.355" /><testcase classname="tests.test_sprint1y_consumer_identity" name="test_authenticated_order_ownership_and_tokenized_checkout" time="0.754" /><testcase classname="tests.test_sprint1y_consumer_identity" name="test_refresh_rotation_and_logout" time="0.404" /><testcase classname="tests.test_sprint1z_mobile" name="test_native_bearer_session_device_push_and_refresh" time="0.423" /><testcase classname="tests.test_sprint1z_mobile" name="test_deep_links_are_allowlisted" time="0.412" /><testcase classname="tests.test_sprint1z_mobile" name="test_push_token_not_returned_and_device_is_user_scoped" time="0.666" /><testcase classname="tests.test_depth30_native_api_contract" name="test_native_six_vertical_creation_payment_and_refund_contracts" time="6.042" /></testsuite></testsuites>

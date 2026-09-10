@@ -1,0 +1,115 @@
+{
+  "candidate": "a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4",
+  "source_tree_sha256": "d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe",
+  "verified_files": 1243,
+  "acceptance_commit": "608cb3f260b0d794cc28fdefc2ef48e01d9e7c1e",
+  "final_run": 34440381225,
+  "final_job": 102753992853,
+  "run_conclusion": "success",
+  "environment": {
+    "candidate": "a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4",
+    "source_tree_sha256": "d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe",
+    "verified_files": 1243,
+    "python": "3.13.5 (main, Jun 12 2025, 03:51:15) [GCC 11.4.0]",
+    "node": "v22.22.0",
+    "environment": "GitHub disposable runner; SQLite TestClient and VM/native pure functions; no service credentials",
+    "three_end_real_ux_login": "HOLD",
+    "six_vertical_real_e2e": "HOLD",
+    "sealed_node_gate": "HOLD",
+    "final_release": "HOLD",
+    "deployed": false
+  },
+  "scoped_result": {
+    "backend_passed": 38,
+    "frontend_native_pure_functions_passed": 239,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "prior_runs": [
+    {
+      "candidate": "0dd0bdca784ece89eb7600d38b5210ed4436c88a",
+      "run": 34439772418,
+      "conclusion": "failure",
+      "backend_passed": 36,
+      "backend_failed": 2,
+      "reason": "test fixture CookieConflict",
+      "frontend": "NOT_RUN"
+    },
+    {
+      "candidate": "a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4",
+      "acceptance_commit": "66a12bdc64cb53636fabfbe4e0d6eaa10be75d96",
+      "run": 34440165675,
+      "conclusion": "failure",
+      "backend_collected": 0,
+      "reason": "workflow test filename incorrect",
+      "frontend": "NOT_RUN"
+    }
+  ],
+  "raw_records": [
+    {
+      "file": "initial/backend.xml",
+      "bytes": 10611,
+      "sha256": "e4fd1850f69d3ee539011061bd63e8e710153a0b4b4d37d6bfd3cc5c53257c76",
+      "tests": 38,
+      "failures": 2,
+      "errors": 0,
+      "skips": 0
+    },
+    {
+      "file": "initial/source-lineage.json",
+      "bytes": 534,
+      "sha256": "2d7778d942d7d41366ec6957e9c9ef86d72dbce1e50e51fd3abcb4c12392cfc7"
+    },
+    {
+      "file": "revision2/backend.xml",
+      "bytes": 239,
+      "sha256": "7181a8aaef157eb8278d28a9562a74d1c87d1fd2da2505693cb4fb78019326c9",
+      "tests": 0,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    {
+      "file": "revision2/source-lineage.json",
+      "bytes": 534,
+      "sha256": "6ef2a1fc372c4ef9d4d905876ac3f7ba81211f82cc4cb791a3190e0e5aac130f"
+    },
+    {
+      "file": "final/backend.xml",
+      "bytes": 5580,
+      "sha256": "f5011686b04e645b8416f74b553498b73d3ff7fdf2b468005a4d3179d869950e",
+      "tests": 38,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    {
+      "file": "final/frontend.xml",
+      "bytes": 29762,
+      "sha256": "267504db9c4576a044c598b03dabdd35bf4e8b45b79ac948a44397566dc0aaee",
+      "tests": 239,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    {
+      "file": "final/source-lineage.json",
+      "bytes": 534,
+      "sha256": "6ef2a1fc372c4ef9d4d905876ac3f7ba81211f82cc4cb791a3190e0e5aac130f"
+    }
+  ],
+  "evidence_validation": "Each JUnit decoded from original job log only after declared length and SHA256 matched; parsed testcase outcomes; source lineage independently checked",
+  "local_regression": "local-before.log: 10 additional DEPTH34R2 transport cases, 8 reproduced failures and 2 passes; fixture refinements and 2 more cases followed; local-restored-frontend files: Node24.19.0 DEPTH35 source only, separate from independent CI",
+  "gates": {
+    "three_end_real_ux_login": "HOLD",
+    "six_vertical_real_e2e": "HOLD",
+    "sealed_node_gate": "HOLD",
+    "final_release": "HOLD"
+  },
+  "deployed": false,
+  "merged": false,
+  "hk_running_candidate": "UNKNOWN",
+  "run_completed_at_utc": "2026-09-10T05:17:43Z",
+  "inspected_at_utc": "2026-09-10T05:19:46.318496+00:00"
+}

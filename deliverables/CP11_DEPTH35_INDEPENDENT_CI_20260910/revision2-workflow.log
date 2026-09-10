@@ -1,0 +1,598 @@
+﻿2026-09-10T05:12:55.2339590Z Current runner version: '2.337.0'
+2026-09-10T05:12:55.2356648Z ##[group]Runner Image Provisioner
+2026-09-10T05:12:55.2357160Z Hosted Compute Agent
+2026-09-10T05:12:55.2357489Z Version: 20260828.587
+2026-09-10T05:12:55.2357869Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-10T05:12:55.2358317Z Build Date: 2026-08-28T16:44:25Z
+2026-09-10T05:12:55.2358709Z Worker ID: {8535badb-a46d-4772-8009-935b6ed2af12}
+2026-09-10T05:12:55.2359110Z Azure Region: westus3
+2026-09-10T05:12:55.2359420Z ##[endgroup]
+2026-09-10T05:12:55.2360137Z ##[group]Operating System
+2026-09-10T05:12:55.2360465Z Ubuntu
+2026-09-10T05:12:55.2360738Z 22.04.5
+2026-09-10T05:12:55.2361261Z LTS
+2026-09-10T05:12:55.2361563Z ##[endgroup]
+2026-09-10T05:12:55.2361881Z ##[group]Runner Image
+2026-09-10T05:12:55.2362210Z Image: ubuntu-22.04
+2026-09-10T05:12:55.2362530Z Version: 20260907.292.1
+2026-09-10T05:12:55.2363263Z Included Software: https://github.com/actions/runner-images/blob/ubuntu22/20260907.292/images/ubuntu/Ubuntu2204-Readme.md
+2026-09-10T05:12:55.2364090Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu22%2F20260907.292
+2026-09-10T05:12:55.2364610Z ##[endgroup]
+2026-09-10T05:12:55.2365218Z ##[group]GITHUB_TOKEN Permissions
+2026-09-10T05:12:55.2366365Z Contents: read
+2026-09-10T05:12:55.2366673Z Metadata: read
+2026-09-10T05:12:55.2367008Z ##[endgroup]
+2026-09-10T05:12:55.2368274Z Secret source: Actions
+2026-09-10T05:12:55.2368798Z Cache mode: write
+2026-09-10T05:12:55.2369194Z Prepare workflow directory
+2026-09-10T05:12:55.2595035Z Prepare all required actions
+2026-09-10T05:12:55.2624551Z Getting action download info
+2026-09-10T05:12:55.6082129Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-10T05:12:55.7802409Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-10T05:12:55.9334141Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-10T05:12:56.0966617Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-10T05:12:56.4327400Z Complete job name: isolated
+2026-09-10T05:12:56.4807930Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T05:12:56.4814335Z ##[group]Run actions/checkout@v4
+2026-09-10T05:12:56.4814990Z with:
+2026-09-10T05:12:56.4815506Z   ref: 66a12bdc64cb53636fabfbe4e0d6eaa10be75d96
+2026-09-10T05:12:56.4816160Z   path: tooling
+2026-09-10T05:12:56.4816666Z   persist-credentials: false
+2026-09-10T05:12:56.4817258Z   repository: yuguangzhi3836-glitch/GO
+2026-09-10T05:12:56.4821914Z   token: ***
+2026-09-10T05:12:56.4822380Z   ssh-strict: true
+2026-09-10T05:12:56.4822868Z   ssh-user: git
+2026-09-10T05:12:56.4823334Z   clean: true
+2026-09-10T05:12:56.4823861Z   sparse-checkout-cone-mode: true
+2026-09-10T05:12:56.4824438Z   fetch-depth: 1
+2026-09-10T05:12:56.4824941Z   fetch-tags: false
+2026-09-10T05:12:56.4825447Z   show-progress: true
+2026-09-10T05:12:56.4825942Z   lfs: false
+2026-09-10T05:12:56.4826395Z   submodules: false
+2026-09-10T05:12:56.4826895Z   set-safe-directory: true
+2026-09-10T05:12:56.4827464Z   allow-unsafe-pr-checkout: false
+2026-09-10T05:12:56.4828125Z env:
+2026-09-10T05:12:56.4828692Z   SEALED_CANDIDATE: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:12:56.4829740Z   EXPECTED_SOURCE_TREE: d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe
+2026-09-10T05:12:56.4830654Z ##[endgroup]
+2026-09-10T05:12:56.5584466Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-10T05:12:56.5587536Z ##[group]Getting Git version info
+2026-09-10T05:12:56.5589095Z Working directory is '/home/runner/work/GO/GO/tooling'
+2026-09-10T05:12:56.5591449Z [command]/usr/bin/git version
+2026-09-10T05:12:56.5592818Z git version 2.55.0
+2026-09-10T05:12:56.5599373Z ##[endgroup]
+2026-09-10T05:12:56.5646254Z Temporarily overriding HOME='/home/runner/work/_temp/b71366a4-079d-4c55-b155-eb5c4ba02e13' before making global git config changes
+2026-09-10T05:12:56.5650258Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-10T05:12:56.5653510Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/tooling
+2026-09-10T05:12:56.5665154Z ##[group]Initializing the repository
+2026-09-10T05:12:56.5668006Z [command]/usr/bin/git init /home/runner/work/GO/GO/tooling
+2026-09-10T05:12:56.5769995Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-10T05:12:56.5772327Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-10T05:12:56.5774106Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-10T05:12:56.5775647Z hint: call:
+2026-09-10T05:12:56.5776468Z hint:
+2026-09-10T05:12:56.5777635Z hint: 	git config --global init.defaultBranch <name>
+2026-09-10T05:12:56.5778775Z hint:
+2026-09-10T05:12:56.5779973Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-10T05:12:56.5782026Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-10T05:12:56.5783518Z hint:
+2026-09-10T05:12:56.5784301Z hint: 	git branch -m <name>
+2026-09-10T05:12:56.5785342Z hint:
+2026-09-10T05:12:56.5786579Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-10T05:12:56.5788577Z Initialized empty Git repository in /home/runner/work/GO/GO/tooling/.git/
+2026-09-10T05:12:56.5791941Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-10T05:12:56.5814575Z ##[endgroup]
+2026-09-10T05:12:56.5815964Z ##[group]Disabling automatic garbage collection
+2026-09-10T05:12:56.5817421Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-10T05:12:56.5842952Z ##[endgroup]
+2026-09-10T05:12:56.5844486Z ##[group]Setting up auth
+2026-09-10T05:12:56.5845831Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T05:12:56.5874074Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T05:12:56.6141867Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T05:12:56.6208628Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T05:12:56.6312757Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T05:12:56.6321301Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T05:12:56.6425419Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-10T05:12:56.6444479Z ##[endgroup]
+2026-09-10T05:12:56.6446078Z ##[group]Fetching the repository
+2026-09-10T05:12:56.6451058Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 66a12bdc64cb53636fabfbe4e0d6eaa10be75d96
+2026-09-10T05:12:59.9649992Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-10T05:12:59.9650632Z  * branch            66a12bdc64cb53636fabfbe4e0d6eaa10be75d96 -> FETCH_HEAD
+2026-09-10T05:12:59.9652608Z ##[endgroup]
+2026-09-10T05:12:59.9653053Z ##[group]Determining the checkout info
+2026-09-10T05:12:59.9653491Z ##[endgroup]
+2026-09-10T05:12:59.9669064Z [command]/usr/bin/git sparse-checkout disable
+2026-09-10T05:12:59.9696411Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-10T05:12:59.9714748Z ##[group]Checking out the ref
+2026-09-10T05:12:59.9717134Z [command]/usr/bin/git checkout --progress --force 66a12bdc64cb53636fabfbe4e0d6eaa10be75d96
+2026-09-10T05:13:00.1638880Z Note: switching to '66a12bdc64cb53636fabfbe4e0d6eaa10be75d96'.
+2026-09-10T05:13:00.1641219Z 
+2026-09-10T05:13:00.1643595Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-10T05:13:00.1644399Z changes and commit them, and you can discard any commits you make in this
+2026-09-10T05:13:00.1644913Z state without impacting any branches by switching back to a branch.
+2026-09-10T05:13:00.1645277Z 
+2026-09-10T05:13:00.1645574Z If you want to create a new branch to retain commits you create, you may
+2026-09-10T05:13:00.1646102Z do so (now or later) by using -c with the switch command. Example:
+2026-09-10T05:13:00.1646606Z 
+2026-09-10T05:13:00.1646817Z   git switch -c <new-branch-name>
+2026-09-10T05:13:00.1647072Z 
+2026-09-10T05:13:00.1647293Z Or undo this operation with:
+2026-09-10T05:13:00.1647528Z 
+2026-09-10T05:13:00.1647698Z   git switch -
+2026-09-10T05:13:00.1648129Z 
+2026-09-10T05:13:00.1648458Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-10T05:13:00.1648812Z 
+2026-09-10T05:13:00.1649088Z HEAD is now at 66a12bd CI: verify corrected DEPTH35R2 scoped session acceptance
+2026-09-10T05:13:00.1650594Z ##[endgroup]
+2026-09-10T05:13:00.1671273Z [command]/usr/bin/git log -1 --format=%H
+2026-09-10T05:13:00.1684840Z 66a12bdc64cb53636fabfbe4e0d6eaa10be75d96
+2026-09-10T05:13:00.1691040Z ##[group]Removing auth
+2026-09-10T05:13:00.1694192Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T05:13:00.1712737Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T05:13:00.1818367Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T05:13:00.1841407Z http.https://github.com/.extraheader
+2026-09-10T05:13:00.1846966Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-10T05:13:00.1870597Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T05:13:00.2073583Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T05:13:00.2094602Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T05:13:00.2292391Z ##[endgroup]
+2026-09-10T05:13:00.2453020Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T05:13:00.2454073Z ##[group]Run actions/checkout@v4
+2026-09-10T05:13:00.2454228Z with:
+2026-09-10T05:13:00.2454368Z   ref: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:00.2454527Z   path: candidate
+2026-09-10T05:13:00.2454651Z   persist-credentials: false
+2026-09-10T05:13:00.2454799Z   repository: yuguangzhi3836-glitch/GO
+2026-09-10T05:13:00.2456128Z   token: ***
+2026-09-10T05:13:00.2456239Z   ssh-strict: true
+2026-09-10T05:13:00.2456349Z   ssh-user: git
+2026-09-10T05:13:00.2456456Z   clean: true
+2026-09-10T05:13:00.2456576Z   sparse-checkout-cone-mode: true
+2026-09-10T05:13:00.2456718Z   fetch-depth: 1
+2026-09-10T05:13:00.2456865Z   fetch-tags: false
+2026-09-10T05:13:00.2456979Z   show-progress: true
+2026-09-10T05:13:00.2457095Z   lfs: false
+2026-09-10T05:13:00.2457199Z   submodules: false
+2026-09-10T05:13:00.2457316Z   set-safe-directory: true
+2026-09-10T05:13:00.2457454Z   allow-unsafe-pr-checkout: false
+2026-09-10T05:13:00.2457591Z env:
+2026-09-10T05:13:00.2457734Z   SEALED_CANDIDATE: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:00.2458097Z   EXPECTED_SOURCE_TREE: d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe
+2026-09-10T05:13:00.2458330Z ##[endgroup]
+2026-09-10T05:13:00.2978235Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-10T05:13:00.2978892Z ##[group]Getting Git version info
+2026-09-10T05:13:00.2979294Z Working directory is '/home/runner/work/GO/GO/candidate'
+2026-09-10T05:13:00.3031163Z [command]/usr/bin/git version
+2026-09-10T05:13:00.3091245Z git version 2.55.0
+2026-09-10T05:13:00.3102014Z ##[endgroup]
+2026-09-10T05:13:00.3109706Z Temporarily overriding HOME='/home/runner/work/_temp/06d9eac8-10c7-4300-bef0-5d5777fe7ae3' before making global git config changes
+2026-09-10T05:13:00.3115777Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-10T05:13:00.3116486Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/candidate
+2026-09-10T05:13:00.3161659Z ##[group]Initializing the repository
+2026-09-10T05:13:00.3178057Z [command]/usr/bin/git init /home/runner/work/GO/GO/candidate
+2026-09-10T05:13:00.4320495Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-10T05:13:00.4321343Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-10T05:13:00.4323554Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-10T05:13:00.4332255Z hint: call:
+2026-09-10T05:13:00.4332614Z hint:
+2026-09-10T05:13:00.4332938Z hint: 	git config --global init.defaultBranch <name>
+2026-09-10T05:13:00.4333294Z hint:
+2026-09-10T05:13:00.4333663Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-10T05:13:00.4334235Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-10T05:13:00.4334677Z hint:
+2026-09-10T05:13:00.4334941Z hint: 	git branch -m <name>
+2026-09-10T05:13:00.4335249Z hint:
+2026-09-10T05:13:00.4335679Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-10T05:13:00.4336322Z Initialized empty Git repository in /home/runner/work/GO/GO/candidate/.git/
+2026-09-10T05:13:00.4342364Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-10T05:13:00.4367241Z ##[endgroup]
+2026-09-10T05:13:00.4367719Z ##[group]Disabling automatic garbage collection
+2026-09-10T05:13:00.4372304Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-10T05:13:00.4408236Z ##[endgroup]
+2026-09-10T05:13:00.4408684Z ##[group]Setting up auth
+2026-09-10T05:13:00.4409128Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T05:13:00.4428742Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T05:13:00.4621833Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T05:13:00.4652409Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T05:13:00.4808668Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T05:13:00.4841185Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T05:13:00.5021866Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-10T05:13:00.5051578Z ##[endgroup]
+2026-09-10T05:13:00.5052103Z ##[group]Fetching the repository
+2026-09-10T05:13:00.5052770Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:03.8661314Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-10T05:13:03.8661899Z  * branch            a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4 -> FETCH_HEAD
+2026-09-10T05:13:03.8665259Z ##[endgroup]
+2026-09-10T05:13:03.8665669Z ##[group]Determining the checkout info
+2026-09-10T05:13:03.8667269Z ##[endgroup]
+2026-09-10T05:13:03.8671887Z [command]/usr/bin/git sparse-checkout disable
+2026-09-10T05:13:03.8693950Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-10T05:13:03.8722015Z ##[group]Checking out the ref
+2026-09-10T05:13:03.8722498Z [command]/usr/bin/git checkout --progress --force a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:04.0597065Z Note: switching to 'a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4'.
+2026-09-10T05:13:04.0601297Z 
+2026-09-10T05:13:04.0601593Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-10T05:13:04.0602216Z changes and commit them, and you can discard any commits you make in this
+2026-09-10T05:13:04.0602764Z state without impacting any branches by switching back to a branch.
+2026-09-10T05:13:04.0603106Z 
+2026-09-10T05:13:04.0603361Z If you want to create a new branch to retain commits you create, you may
+2026-09-10T05:13:04.0603873Z do so (now or later) by using -c with the switch command. Example:
+2026-09-10T05:13:04.0604198Z 
+2026-09-10T05:13:04.0604389Z   git switch -c <new-branch-name>
+2026-09-10T05:13:04.0604632Z 
+2026-09-10T05:13:04.0604822Z Or undo this operation with:
+2026-09-10T05:13:04.0605053Z 
+2026-09-10T05:13:04.0605220Z   git switch -
+2026-09-10T05:13:04.0605418Z 
+2026-09-10T05:13:04.0605793Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-10T05:13:04.0606274Z 
+2026-09-10T05:13:04.0621522Z HEAD is now at a758f4d DEPTH35R2: correct isolated refresh cookie fixture; preserve original failed evidence
+2026-09-10T05:13:04.0625378Z ##[endgroup]
+2026-09-10T05:13:04.0657024Z [command]/usr/bin/git log -1 --format=%H
+2026-09-10T05:13:04.0674733Z a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:04.0682257Z ##[group]Removing auth
+2026-09-10T05:13:04.0683090Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T05:13:04.0723242Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T05:13:04.0815792Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T05:13:04.0827178Z http.https://github.com/.extraheader
+2026-09-10T05:13:04.0830963Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-10T05:13:04.0847464Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T05:13:04.0952188Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T05:13:04.0967417Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T05:13:04.1071951Z ##[endgroup]
+2026-09-10T05:13:04.1177478Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T05:13:04.1178140Z ##[group]Run actions/setup-python@v5
+2026-09-10T05:13:04.1178286Z with:
+2026-09-10T05:13:04.1178405Z   python-version: 3.13.5
+2026-09-10T05:13:04.1178535Z   check-latest: false
+2026-09-10T05:13:04.1179731Z   token: ***
+2026-09-10T05:13:04.1179846Z   update-environment: true
+2026-09-10T05:13:04.1179980Z   allow-prereleases: false
+2026-09-10T05:13:04.1180105Z   freethreaded: false
+2026-09-10T05:13:04.1180221Z env:
+2026-09-10T05:13:04.1180363Z   SEALED_CANDIDATE: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:04.1180627Z   EXPECTED_SOURCE_TREE: d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe
+2026-09-10T05:13:04.1181183Z ##[endgroup]
+2026-09-10T05:13:04.1951491Z ##[group]Installed versions
+2026-09-10T05:13:04.1963873Z Version 3.13.5 was not found in the local cache
+2026-09-10T05:13:04.2032810Z (node:1953) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-10T05:13:04.2033523Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-10T05:13:05.1857879Z Version 3.13.5 is available for downloading
+2026-09-10T05:13:05.1858528Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-22.04-x64.tar.gz"
+2026-09-10T05:13:05.9811525Z Extract downloaded archive
+2026-09-10T05:13:05.9887932Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/28b68223-cc77-44c2-a2e6-91dbef6fe7d9 -f /home/runner/work/_temp/2bd04924-1bc2-49ac-82a9-c47e31d5bacc
+2026-09-10T05:13:07.6013571Z Execute installation script
+2026-09-10T05:13:07.6067413Z Check if Python hostedtoolcache folder exist...
+2026-09-10T05:13:07.6073946Z Create Python 3.13.5 folder
+2026-09-10T05:13:07.6079698Z Copy Python binaries to hostedtoolcache folder
+2026-09-10T05:13:08.1159939Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-10T05:13:08.1179430Z Upgrading pip...
+2026-09-10T05:13:13.7653946Z Looking in links: /tmp/tmpbjp5hmix
+2026-09-10T05:13:13.7655321Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-10T05:13:15.4763151Z Collecting pip
+2026-09-10T05:13:15.5001135Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-10T05:13:15.5074548Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-10T05:13:15.5222127Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 191.3 MB/s eta 0:00:00
+2026-09-10T05:13:15.5222559Z 
+2026-09-10T05:13:15.5331022Z Installing collected packages: pip
+2026-09-10T05:13:15.5332215Z Attempting uninstall: pip
+2026-09-10T05:13:15.5350992Z Found existing installation: pip 25.1.1
+2026-09-10T05:13:15.5504037Z Uninstalling pip-25.1.1:
+2026-09-10T05:13:15.5533090Z Successfully uninstalled pip-25.1.1
+2026-09-10T05:13:16.2162659Z Successfully installed pip-26.2.1
+2026-09-10T05:13:16.2562069Z Create complete file
+2026-09-10T05:13:16.2581401Z Successfully set up CPython (3.13.5)
+2026-09-10T05:13:16.2581984Z ##[endgroup]
+2026-09-10T05:13:16.2682104Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T05:13:16.2682770Z ##[group]Run actions/setup-node@v4
+2026-09-10T05:13:16.2682912Z with:
+2026-09-10T05:13:16.2683028Z   node-version: 22.22.0
+2026-09-10T05:13:16.2683170Z   always-auth: false
+2026-09-10T05:13:16.2683290Z   check-latest: false
+2026-09-10T05:13:16.2684497Z   token: ***
+2026-09-10T05:13:16.2684606Z env:
+2026-09-10T05:13:16.2684751Z   SEALED_CANDIDATE: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:16.2685024Z   EXPECTED_SOURCE_TREE: d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe
+2026-09-10T05:13:16.2685297Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:16.2685557Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T05:13:16.2685788Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:16.2685993Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:16.2686198Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:16.2686407Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T05:13:16.2686586Z ##[endgroup]
+2026-09-10T05:13:16.3536831Z Attempting to download 22.22.0...
+2026-09-10T05:13:16.3607786Z (node:2000) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-10T05:13:16.3608529Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-10T05:13:17.2772389Z Acquiring 22.22.0 - x64 from https://github.com/actions/node-versions/releases/download/22.22.0-20981702931/node-22.22.0-linux-x64.tar.gz
+2026-09-10T05:13:17.8702420Z Extracting ...
+2026-09-10T05:13:17.8780358Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/64fb8630-10ef-4919-b752-9ddfc78a860b -f /home/runner/work/_temp/82c195a5-963c-4d60-8d84-d8223bc9b3c9
+2026-09-10T05:13:18.7691978Z Adding to the cache ...
+2026-09-10T05:13:23.9862327Z ##[group]Environment details
+2026-09-10T05:13:24.1532014Z node: v22.22.0
+2026-09-10T05:13:24.1532584Z npm: 10.9.4
+2026-09-10T05:13:24.1532874Z yarn: 1.22.22
+2026-09-10T05:13:24.1533482Z ##[endgroup]
+2026-09-10T05:13:24.1632540Z ##[group]Run mkdir -p evidence
+2026-09-10T05:13:24.1632774Z [36;1mmkdir -p evidence[0m
+2026-09-10T05:13:24.1632996Z [36;1mgit -C candidate rev-parse HEAD | tee evidence/candidate-commit.txt[0m
+2026-09-10T05:13:24.1633264Z [36;1mtest "$(git -C candidate rev-parse HEAD)" = "$SEALED_CANDIDATE"[0m
+2026-09-10T05:13:24.1633843Z [36;1mpython -c 'import hashlib,json,pathlib;p=pathlib.Path("candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910");m=json.loads((p/"MANIFEST.json").read_text());assert hashlib.sha256((p/"DELTA.json").read_bytes()).hexdigest()==m["delta_sha256"]'[0m
+2026-09-10T05:13:24.2828863Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T05:13:24.2829091Z env:
+2026-09-10T05:13:24.2829271Z   SEALED_CANDIDATE: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:24.2829545Z   EXPECTED_SOURCE_TREE: d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe
+2026-09-10T05:13:24.2829888Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:24.2830130Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T05:13:24.2830359Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:24.2830564Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:24.2830960Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:24.2831188Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T05:13:24.2831376Z ##[endgroup]
+2026-09-10T05:13:24.2933039Z a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:24.3134764Z ##[group]Run python tooling/ci/depth35r2/materialize_parent.py \
+2026-09-10T05:13:24.3135062Z [36;1mpython tooling/ci/depth35r2/materialize_parent.py \[0m
+2026-09-10T05:13:24.3135297Z [36;1m  --depth26 candidate/deliverables/CP11_DEPTH26_20260909 \[0m
+2026-09-10T05:13:24.3135528Z [36;1m  --depth27 candidate/deliverables/CP11_DEPTH27_20260909 \[0m
+2026-09-10T05:13:24.3135782Z [36;1m  --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 \[0m
+2026-09-10T05:13:24.3136098Z [36;1m  --output "$GITHUB_WORKSPACE/restored-parent" | tee evidence/parent-restore.log[0m
+2026-09-10T05:13:24.3136418Z [36;1mpython candidate/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/restore_depth29.py \[0m
+2026-09-10T05:13:24.3136687Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-parent" \[0m
+2026-09-10T05:13:24.3136940Z [36;1m  --output "$GITHUB_WORKSPACE/restored-depth29" | tee evidence/depth29-restore.log[0m
+2026-09-10T05:13:24.3137276Z [36;1mpython candidate/deliverables/CP11_DEPTH30_NATIVE_PAYMENT_20260909/restore_depth30.py \[0m
+2026-09-10T05:13:24.3137546Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-depth29" \[0m
+2026-09-10T05:13:24.3137793Z [36;1m  --output "$GITHUB_WORKSPACE/restored-depth30" | tee evidence/depth30-restore.log[0m
+2026-09-10T05:13:24.3138108Z [36;1mpython candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910/restore_delta.py \[0m
+2026-09-10T05:13:24.3138369Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-depth30" \[0m
+2026-09-10T05:13:24.3138698Z [36;1m  --package candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910 \[0m
+2026-09-10T05:13:24.3138992Z [36;1m  --output "$GITHUB_WORKSPACE/restored-depth31" | tee evidence/depth31-restore.log[0m
+2026-09-10T05:13:24.3139319Z [36;1mpython candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910/restore_delta.py \[0m
+2026-09-10T05:13:24.3139594Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-depth31" \[0m
+2026-09-10T05:13:24.3139841Z [36;1m  --package candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910 \[0m
+2026-09-10T05:13:24.3140154Z [36;1m  --output "$GITHUB_WORKSPACE/restored-depth32r2" | tee evidence/depth32r2-restore.log[0m
+2026-09-10T05:13:24.3140477Z [36;1mpython candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910/restore_delta.py \[0m
+2026-09-10T05:13:24.3140747Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-depth32r2" \[0m
+2026-09-10T05:13:24.3141195Z [36;1m  --package candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910 \[0m
+2026-09-10T05:13:24.3141491Z [36;1m  --output "$GITHUB_WORKSPACE/restored-depth33" | tee evidence/depth33-restore.log[0m
+2026-09-10T05:13:24.3141822Z [36;1mpython candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910/restore_delta.py \[0m
+2026-09-10T05:13:24.3142097Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-depth33" \[0m
+2026-09-10T05:13:24.3142344Z [36;1m  --package candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910 \[0m
+2026-09-10T05:13:24.3142657Z [36;1m  --output "$GITHUB_WORKSPACE/restored-depth34r2" | tee evidence/depth34r2-restore.log[0m
+2026-09-10T05:13:24.3142995Z [36;1mpython candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910/restore_delta.py \[0m
+2026-09-10T05:13:24.3143271Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-depth34r2" \[0m
+2026-09-10T05:13:24.3143519Z [36;1m  --package candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910 \[0m
+2026-09-10T05:13:24.3143796Z [36;1m  --output "$GITHUB_WORKSPACE/restored" | tee evidence/restore.log[0m
+2026-09-10T05:13:24.3175945Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T05:13:24.3176125Z env:
+2026-09-10T05:13:24.3176274Z   SEALED_CANDIDATE: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:24.3176537Z   EXPECTED_SOURCE_TREE: d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe
+2026-09-10T05:13:24.3176804Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:24.3177096Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T05:13:24.3177322Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:24.3177524Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:24.3177725Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:24.3177931Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T05:13:24.3178106Z ##[endgroup]
+2026-09-10T05:13:25.1272054Z {
+2026-09-10T05:13:25.1291341Z   "restored_files_verified": 1081,
+2026-09-10T05:13:25.1291651Z   "parent_files_verified": 1077,
+2026-09-10T05:13:25.1292059Z   "source_tree_sha256": "7f8be7894c15f42e311610cccaaf8590402cd9ae1facca77956379a5aec43952",
+2026-09-10T05:13:25.1292579Z   "delta_sha256": "f95e9541757f0051815373611b0230ee1bcc58201a451e6b99261754110e98ab",
+2026-09-10T05:13:25.1292995Z   "output": "/tmp/go-offline-lineage-qdn9ydyr/depth27",
+2026-09-10T05:13:25.1293292Z   "FINAL_RELEASE_GATE": "HOLD"
+2026-09-10T05:13:25.1293493Z }
+2026-09-10T05:13:25.5554142Z {
+2026-09-10T05:13:25.5554682Z   "restored_files_verified": 1093,
+2026-09-10T05:13:25.5555173Z   "parent_files_verified": 1081,
+2026-09-10T05:13:25.5561453Z   "source_tree_sha256": "3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f",
+2026-09-10T05:13:25.5562119Z   "delta_sha256": "98f006935a421b99aa4ea35c1f43ec0186b04bfc262e01b46f3d4f341d13a109",
+2026-09-10T05:13:25.5565619Z   "output": "/home/runner/work/GO/GO/restored-parent",
+2026-09-10T05:13:25.5566001Z   "FINAL_RELEASE_GATE": "HOLD"
+2026-09-10T05:13:25.5566535Z }
+2026-09-10T05:13:25.6063767Z {"verified_files": 1093, "result": "PASS", "scope": "offline archive materialization only", "independent_ci": false, "release_gate": "HOLD"}
+2026-09-10T05:13:25.7391650Z {
+2026-09-10T05:13:25.7392255Z   "parent_files_verified": 1201,
+2026-09-10T05:13:25.7392699Z   "restored_files_verified": 1207,
+2026-09-10T05:13:25.7393295Z   "source_tree_sha256": "ffcea37a3d2ce626026571c1d16eb7be190bd1b048b6b8dfd0d6c8164f2b556c",
+2026-09-10T05:13:25.7393980Z   "delta_sha256": "df32a08b8e330e36c95a53d576bad00f22203cfec566145dd830856d2da5540b",
+2026-09-10T05:13:25.7394483Z   "scope": "offline source materialization only",
+2026-09-10T05:13:25.7394842Z   "independent_ci": false,
+2026-09-10T05:13:25.7395165Z   "FINAL_RELEASE_GATE": "HOLD"
+2026-09-10T05:13:25.7395455Z }
+2026-09-10T05:13:25.8861335Z {
+2026-09-10T05:13:25.8862042Z   "parent_files_verified": 1207,
+2026-09-10T05:13:25.8862485Z   "restored_files_verified": 1222,
+2026-09-10T05:13:25.8863146Z   "source_tree_sha256": "f576c976bfe8f34d3182ba232fe1290c374346106c602a4fffe4935366f7a961",
+2026-09-10T05:13:25.8863826Z   "delta_sha256": "6803c349f241feae33a879d91243bc6bb1ff23c77701f98d69a0ec06d9b5d107",
+2026-09-10T05:13:25.8869324Z   "scope": "offline source materialization only",
+2026-09-10T05:13:25.8869742Z   "independent_ci": false,
+2026-09-10T05:13:25.8870056Z   "FINAL_RELEASE_GATE": "HOLD"
+2026-09-10T05:13:25.8870340Z }
+2026-09-10T05:13:26.0439833Z {"verified_files": 1232, "source_tree_sha256": "2b9095df2e9a58f8f5ac6861c514163cbbc9e135def204c4e2d5edb65b3f68e0", "parent_verified_files": 1222, "changed_files": 28, "environment": "offline restoration only", "release_gate": "HOLD"}
+2026-09-10T05:13:26.1802396Z {"verified_files": 1236, "source_tree_sha256": "a309bdda03e0621a7be5622463a92bcfe728238f28c4ea6c212c6be43c875c11", "parent_verified_files": 1232, "changed_files": 11, "environment": "offline restoration only", "release_gate": "HOLD"}
+2026-09-10T05:13:26.3648881Z {"verified_files": 1239, "source_tree_sha256": "a67a70cd2442e67ece9c9b2795b049c6aea2ba4d882448b912eb7eb996d4459c", "parent_verified_files": 1236, "changed_files": 9, "environment": "offline restoration only", "release_gate": "HOLD"}
+2026-09-10T05:13:26.5233663Z {"verified_files": 1241, "source_tree_sha256": "e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5", "parent_verified_files": 1239, "changed_files": 6, "environment": "offline restoration only", "release_gate": "HOLD"}
+2026-09-10T05:13:26.6541203Z {"verified_files": 1243, "source_tree_sha256": "d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe", "parent_verified_files": 1241, "changed_files": 7, "environment": "offline restoration only", "release_gate": "HOLD"}
+2026-09-10T05:13:26.6609578Z ##[group]Run python tooling/ci/depth35r2/dependencies.py --repository candidate --output dependencies | tee evidence/dependencies.json
+2026-09-10T05:13:26.6610114Z [36;1mpython tooling/ci/depth35r2/dependencies.py --repository candidate --output dependencies | tee evidence/dependencies.json[0m
+2026-09-10T05:13:26.6610450Z [36;1mpython -m venv isolated-runtime[0m
+2026-09-10T05:13:26.6610978Z [36;1misolated-runtime/bin/python -m pip install --no-index --no-deps --find-links dependencies/wheelhouse -r tooling/ci/depth35r2/requirements.lock[0m
+2026-09-10T05:13:26.6611490Z [36;1misolated-runtime/bin/python -m pip freeze > evidence/pip-freeze.txt[0m
+2026-09-10T05:13:26.6641982Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T05:13:26.6642173Z env:
+2026-09-10T05:13:26.6642323Z   SEALED_CANDIDATE: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:26.6642594Z   EXPECTED_SOURCE_TREE: d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe
+2026-09-10T05:13:26.6642905Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:26.6643135Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T05:13:26.6643359Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:26.6643667Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:26.6643866Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:26.6644075Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T05:13:26.6644260Z ##[endgroup]
+2026-09-10T05:13:26.9073440Z {"archive_sha256": "b13a76ab9351f81da70e8e2c8873c20141abe953cd3f96aeb181ef86a34b58dd", "verified_wheels": 37, "source": "pinned GO repository ci/dependency_parts only", "application_source_restored": false}
+2026-09-10T05:13:29.6670677Z Looking in links: dependencies/wheelhouse
+2026-09-10T05:13:29.6731981Z Processing ./dependencies/wheelhouse/alembic-1.16.5-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 1))
+2026-09-10T05:13:29.6764366Z Processing ./dependencies/wheelhouse/annotated_doc-0.0.4-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 2))
+2026-09-10T05:13:29.6780372Z Processing ./dependencies/wheelhouse/annotated_types-0.7.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 3))
+2026-09-10T05:13:29.6797810Z Processing ./dependencies/wheelhouse/anyio-4.13.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 4))
+2026-09-10T05:13:29.6820919Z Processing ./dependencies/wheelhouse/certifi-2026.5.20-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 5))
+2026-09-10T05:13:29.6835091Z Processing ./dependencies/wheelhouse/cffi-2.0.0-cp313-cp313-manylinux_2_17_x86_64.whl (from -r tooling/ci/depth35r2/requirements.lock (line 6))
+2026-09-10T05:13:29.6850358Z Processing ./dependencies/wheelhouse/click-8.5.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 7))
+2026-09-10T05:13:29.6863688Z Processing ./dependencies/wheelhouse/cryptography-46.0.4-cp311-abi3-manylinux_2_34_x86_64.whl (from -r tooling/ci/depth35r2/requirements.lock (line 8))
+2026-09-10T05:13:29.6932215Z Processing ./dependencies/wheelhouse/fastapi-0.128.2-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 9))
+2026-09-10T05:13:29.6986503Z Processing ./dependencies/wheelhouse/greenlet-3.5.1-cp313-cp313-manylinux_2_24_x86_64.whl (from -r tooling/ci/depth35r2/requirements.lock (line 10))
+2026-09-10T05:13:29.7011133Z Processing ./dependencies/wheelhouse/h11-0.16.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 11))
+2026-09-10T05:13:29.7026387Z Processing ./dependencies/wheelhouse/httpcore-1.0.9-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 12))
+2026-09-10T05:13:29.7051008Z Processing ./dependencies/wheelhouse/httpx-0.28.1-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 13))
+2026-09-10T05:13:29.7075201Z Processing ./dependencies/wheelhouse/idna-3.17-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 14))
+2026-09-10T05:13:29.7100412Z Processing ./dependencies/wheelhouse/iniconfig-2.3.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 15))
+2026-09-10T05:13:29.7114583Z Processing ./dependencies/wheelhouse/mako-1.3.10-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 16))
+2026-09-10T05:13:29.7143874Z Processing ./dependencies/wheelhouse/markupsafe-3.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from -r tooling/ci/depth35r2/requirements.lock (line 17))
+2026-09-10T05:13:29.7149595Z Processing ./dependencies/wheelhouse/packaging-25.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 18))
+2026-09-10T05:13:29.7166272Z Processing ./dependencies/wheelhouse/pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.whl (from -r tooling/ci/depth35r2/requirements.lock (line 19))
+2026-09-10T05:13:29.7252641Z Processing ./dependencies/wheelhouse/pluggy-1.6.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 20))
+2026-09-10T05:13:29.7270423Z Processing ./dependencies/wheelhouse/psycopg_binary-3.2.10-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from -r tooling/ci/depth35r2/requirements.lock (line 21))
+2026-09-10T05:13:29.7317232Z Processing ./dependencies/wheelhouse/psycopg-3.2.10-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 22))
+2026-09-10T05:13:29.7361693Z Processing ./dependencies/wheelhouse/pycparser-3.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 23))
+2026-09-10T05:13:29.7377768Z Processing ./dependencies/wheelhouse/pydantic_settings-2.14.1-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 24))
+2026-09-10T05:13:29.7398636Z Processing ./dependencies/wheelhouse/pydantic-2.13.4-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 25))
+2026-09-10T05:13:29.7449937Z Processing ./dependencies/wheelhouse/pydantic_core-2.46.4-cp313-cp313-manylinux_2_17_x86_64.whl (from -r tooling/ci/depth35r2/requirements.lock (line 26))
+2026-09-10T05:13:29.7488667Z Processing ./dependencies/wheelhouse/Pygments-2.20.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 27))
+2026-09-10T05:13:29.7544775Z Processing ./dependencies/wheelhouse/PyJWT-2.13.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 28))
+2026-09-10T05:13:29.7561111Z Processing ./dependencies/wheelhouse/pytest_asyncio-1.3.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 29))
+2026-09-10T05:13:29.7585081Z Processing ./dependencies/wheelhouse/pytest-9.0.2-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 30))
+2026-09-10T05:13:29.7620332Z Processing ./dependencies/wheelhouse/python_dotenv-1.2.2-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 31))
+2026-09-10T05:13:29.7643403Z Processing ./dependencies/wheelhouse/redis-5.2.1-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 32))
+2026-09-10T05:13:29.7664986Z Processing ./dependencies/wheelhouse/SQLAlchemy-2.0.50-cp313-cp313-manylinux_2_17_x86_64.whl (from -r tooling/ci/depth35r2/requirements.lock (line 33))
+2026-09-10T05:13:29.7782407Z Processing ./dependencies/wheelhouse/starlette-0.50.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 34))
+2026-09-10T05:13:29.7807124Z Processing ./dependencies/wheelhouse/typing_inspection-0.4.2-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 35))
+2026-09-10T05:13:29.7821507Z Processing ./dependencies/wheelhouse/typing_extensions-4.16.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 36))
+2026-09-10T05:13:29.7836260Z Processing ./dependencies/wheelhouse/uvicorn-0.35.0-py3-none-any.whl (from -r tooling/ci/depth35r2/requirements.lock (line 37))
+2026-09-10T05:13:29.8053982Z Installing collected packages: uvicorn, typing-inspection, typing_extensions, starlette, SQLAlchemy, redis, python-dotenv, pytest-asyncio, pytest, PyJWT, Pygments, pydantic-settings, pydantic_core, pydantic, pycparser, psycopg-binary, psycopg, pluggy, Pillow, packaging, MarkupSafe, Mako, iniconfig, idna, httpx, httpcore, h11, greenlet, fastapi, cryptography, click, cffi, certifi, anyio, annotated-types, annotated-doc, alembic
+2026-09-10T05:13:35.7429037Z 
+2026-09-10T05:13:35.7461024Z Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 Pillow-12.3.0 PyJWT-2.13.0 Pygments-2.20.0 SQLAlchemy-2.0.50 alembic-1.16.5 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 certifi-2026.5.20 cffi-2.0.0 click-8.5.0 cryptography-46.0.4 fastapi-0.128.2 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.17 iniconfig-2.3.0 packaging-25.0 pluggy-1.6.0 psycopg-3.2.10 psycopg-binary-3.2.10 pycparser-3.0 pydantic-2.13.4 pydantic-settings-2.14.1 pydantic_core-2.46.4 pytest-9.0.2 pytest-asyncio-1.3.0 python-dotenv-1.2.2 redis-5.2.1 starlette-0.50.0 typing-inspection-0.4.2 typing_extensions-4.16.0 uvicorn-0.35.0
+2026-09-10T05:13:35.9400432Z ##[group]Run isolated-runtime/bin/python - <<'PY'
+2026-09-10T05:13:35.9400675Z [36;1misolated-runtime/bin/python - <<'PY'[0m
+2026-09-10T05:13:35.9401040Z [36;1mimport hashlib,json,os,pathlib,subprocess,sys[0m
+2026-09-10T05:13:35.9401400Z [36;1mfp=json.loads(pathlib.Path('candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910/SOURCE_FINGERPRINT.json').read_text())[0m
+2026-09-10T05:13:35.9401897Z [36;1mfor name,expected in fp.items():[0m
+2026-09-10T05:13:35.9402164Z [36;1m    assert hashlib.sha256((pathlib.Path('restored')/name).read_bytes()).hexdigest()==expected,name[0m
+2026-09-10T05:13:35.9402516Z [36;1mtree=hashlib.sha256(''.join(f'{k}\0{v}\n' for k,v in sorted(fp.items())).encode()).hexdigest()[0m
+2026-09-10T05:13:35.9402807Z [36;1massert tree==os.environ['EXPECTED_SOURCE_TREE'] and len(fp)==1243[0m
+2026-09-10T05:13:35.9403689Z [36;1mresult={'candidate':os.environ['SEALED_CANDIDATE'],'source_tree_sha256':tree,'verified_files':len(fp),'python':sys.version,'node':subprocess.check_output(['node','--version'],text=True).strip(),'environment':'GitHub disposable runner; SQLite TestClient and VM/native pure functions; no service credentials','three_end_real_ux_login':'HOLD','six_vertical_real_e2e':'HOLD','sealed_node_gate':'HOLD','final_release':'HOLD','deployed':False}[0m
+2026-09-10T05:13:35.9404586Z [36;1mpathlib.Path('evidence/source-lineage.json').write_text(json.dumps(result,indent=2)+'\n')[0m
+2026-09-10T05:13:35.9404844Z [36;1mprint(json.dumps(result))[0m
+2026-09-10T05:13:35.9404987Z [36;1mPY[0m
+2026-09-10T05:13:35.9435153Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T05:13:35.9435335Z env:
+2026-09-10T05:13:35.9435485Z   SEALED_CANDIDATE: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:35.9435752Z   EXPECTED_SOURCE_TREE: d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe
+2026-09-10T05:13:35.9436024Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:35.9436254Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T05:13:35.9436479Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:35.9436681Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:35.9436881Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:35.9437088Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T05:13:35.9437273Z ##[endgroup]
+2026-09-10T05:13:35.9884227Z {"candidate": "a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4", "source_tree_sha256": "d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe", "verified_files": 1243, "python": "3.13.5 (main, Jun 12 2025, 03:51:15) [GCC 11.4.0]", "node": "v22.22.0", "environment": "GitHub disposable runner; SQLite TestClient and VM/native pure functions; no service credentials", "three_end_real_ux_login": "HOLD", "six_vertical_real_e2e": "HOLD", "sealed_node_gate": "HOLD", "final_release": "HOLD", "deployed": false}
+2026-09-10T05:13:35.9933683Z ##[group]Run ../isolated-runtime/bin/python -m pytest tests/test_depth35r2_refresh_scope.py tests/test_depth27_session_isolation.py tests/test_sprint1r_identity_security.py tests/test_sprint1u_production_bff.py tests/test_sprint1y_consumer_identity.py tests/test_sprint1z_mobile.py tests/test_depth30_native_api_contract.py --junitxml=../evidence/backend.xml | tee ../evidence/backend.log
+2026-09-10T05:13:35.9935006Z [36;1m../isolated-runtime/bin/python -m pytest tests/test_depth35r2_refresh_scope.py tests/test_depth27_session_isolation.py tests/test_sprint1r_identity_security.py tests/test_sprint1u_production_bff.py tests/test_sprint1y_consumer_identity.py tests/test_sprint1z_mobile.py tests/test_depth30_native_api_contract.py --junitxml=../evidence/backend.xml | tee ../evidence/backend.log[0m
+2026-09-10T05:13:35.9963350Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T05:13:35.9963539Z env:
+2026-09-10T05:13:35.9963708Z   SEALED_CANDIDATE: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:35.9963973Z   EXPECTED_SOURCE_TREE: d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe
+2026-09-10T05:13:35.9964244Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:35.9964469Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T05:13:35.9964693Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:35.9964982Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:35.9965184Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:35.9965387Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T05:13:35.9965562Z ##[endgroup]
+2026-09-10T05:13:36.4207564Z ERROR: file or directory not found: tests/test_depth35r2_refresh_scope.py
+2026-09-10T05:13:36.4207922Z 
+2026-09-10T05:13:36.4218362Z 
+2026-09-10T05:13:36.4218609Z no tests ran in 0.00s
+2026-09-10T05:13:36.4428113Z ##[error]Process completed with exit code 4.
+2026-09-10T05:13:36.4459011Z ##[group]Run python tooling/ci/depth35r2/export_evidence.py
+2026-09-10T05:13:36.4459255Z [36;1mpython tooling/ci/depth35r2/export_evidence.py[0m
+2026-09-10T05:13:36.4489855Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T05:13:36.4490036Z env:
+2026-09-10T05:13:36.4490181Z   SEALED_CANDIDATE: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:36.4490457Z   EXPECTED_SOURCE_TREE: d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe
+2026-09-10T05:13:36.4490743Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:36.4491106Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T05:13:36.4491331Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:36.4491537Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:36.4491738Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:36.4491965Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T05:13:36.4492140Z ##[endgroup]
+2026-09-10T05:13:36.4881019Z SOURCE_VERIFIED_AFTER_TESTS 1243
+2026-09-10T05:13:36.4881758Z GO_EVIDENCE_FILE_BEGIN source-lineage.json 534 6ef2a1fc372c4ef9d4d905876ac3f7ba81211f82cc4cb791a3190e0e5aac130f
+2026-09-10T05:13:36.4885108Z GO_EVIDENCE_B64 ewogICJjYW5kaWRhdGUiOiAiYTc1OGY0ZDdiMmY4Y2M5NDM3YTJhOGM0YjMxNWNhNDFhMTkzMjBmNCIsCiAgInNvdXJjZV90cmVlX3NoYTI1NiI6ICJkODY1OTI1OTM4OGFjY2M4YzA1MzY1ZTZlODJlZThjNjZiNDg2MTU2MWY5NmFmMTViNWZlZWExZDIxNjA2NmZlIiwKICAidmVyaWZpZWRfZmlsZXMiOiAxMjQzLAogICJweXRob24iOiAiMy4xMy41IChtYWluLCBKdW4gMTIgMjAyNSwgMDM6NTE6MTUpIFtHQ0MgMTEuNC4wXSIsCiAgIm5vZGUiOiAidjIyLjIyLjAiLAogICJlbnZpcm9ubWVudCI6ICJHaXRIdWIgZGlzcG9zYWJs
+2026-09-10T05:13:36.4889996Z GO_EVIDENCE_B64 ZSBydW5uZXI7IFNRTGl0ZSBUZXN0Q2xpZW50IGFuZCBWTS9uYXRpdmUgcHVyZSBmdW5jdGlvbnM7IG5vIHNlcnZpY2UgY3JlZGVudGlhbHMiLAogICJ0aHJlZV9lbmRfcmVhbF91eF9sb2dpbiI6ICJIT0xEIiwKICAic2l4X3ZlcnRpY2FsX3JlYWxfZTJlIjogIkhPTEQiLAogICJzZWFsZWRfbm9kZV9nYXRlIjogIkhPTEQiLAogICJmaW5hbF9yZWxlYXNlIjogIkhPTEQiLAogICJkZXBsb3llZCI6IGZhbHNlCn0K
+2026-09-10T05:13:36.4892193Z GO_EVIDENCE_FILE_END source-lineage.json
+2026-09-10T05:13:36.4892874Z GO_EVIDENCE_FILE_BEGIN backend.xml 239 7181a8aaef157eb8278d28a9562a74d1c87d1fd2da2505693cb4fb78019326c9
+2026-09-10T05:13:36.4895464Z GO_EVIDENCE_B64 PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48dGVzdHN1aXRlcyBuYW1lPSJweXRlc3QgdGVzdHMiPjx0ZXN0c3VpdGUgbmFtZT0icHl0ZXN0IiBlcnJvcnM9IjAiIGZhaWx1cmVzPSIwIiBza2lwcGVkPSIwIiB0ZXN0cz0iMCIgdGltZT0iMC4wMDIiIHRpbWVzdGFtcD0iMjAyNi0wOS0xMFQwNToxMzozNi4zOTYzNTYrMDA6MDAiIGhvc3RuYW1lPSJydW5uZXJ2bTdnNTJpIiAvPjwvdGVzdHN1aXRlcz4=
+2026-09-10T05:13:36.4897655Z GO_EVIDENCE_FILE_END backend.xml
+2026-09-10T05:13:36.4898021Z GO_EVIDENCE_MISSING frontend.xml
+2026-09-10T05:13:36.4953070Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T05:13:36.4953730Z ##[group]Run actions/upload-artifact@v4
+2026-09-10T05:13:36.4953877Z with:
+2026-09-10T05:13:36.4954005Z   name: GO-DEPTH35R2-isolated-34440165675
+2026-09-10T05:13:36.4954154Z   path: evidence/
+2026-09-10T05:13:36.4954273Z   if-no-files-found: error
+2026-09-10T05:13:36.4954406Z   retention-days: 90
+2026-09-10T05:13:36.4954637Z   compression-level: 6
+2026-09-10T05:13:36.4954757Z   overwrite: false
+2026-09-10T05:13:36.4954878Z   include-hidden-files: false
+2026-09-10T05:13:36.4955011Z env:
+2026-09-10T05:13:36.4955155Z   SEALED_CANDIDATE: a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4
+2026-09-10T05:13:36.4955436Z   EXPECTED_SOURCE_TREE: d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe
+2026-09-10T05:13:36.4955711Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:36.4955935Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T05:13:36.4956158Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:36.4956359Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:36.4956562Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T05:13:36.4956768Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T05:13:36.4956940Z ##[endgroup]
+2026-09-10T05:13:36.5976107Z (node:2092) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-10T05:13:36.5976980Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-10T05:13:36.6142235Z With the provided path, there will be 14 files uploaded
+2026-09-10T05:13:36.6176716Z Artifact name is valid!
+2026-09-10T05:13:36.6177116Z Root directory input is valid!
+2026-09-10T05:13:36.9514652Z Beginning upload of artifact content to blob storage
+2026-09-10T05:13:36.9762278Z (node:2092) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-10T05:13:37.2066330Z Uploaded bytes 5032
+2026-09-10T05:13:37.2691690Z Finished uploading artifact content to blob storage!
+2026-09-10T05:13:37.2693538Z SHA256 digest of uploaded artifact zip is 5ade73333301b4366d693bcdc184aaa839ca85017031b2dd4279c4713647af39
+2026-09-10T05:13:37.2694960Z Finalizing artifact upload
+2026-09-10T05:13:37.5204296Z Artifact GO-DEPTH35R2-isolated-34440165675.zip successfully finalized. Artifact ID 10137641184
+2026-09-10T05:13:37.5205262Z Artifact GO-DEPTH35R2-isolated-34440165675 has been successfully uploaded! Final size is 5032 bytes. Artifact ID is 10137641184
+2026-09-10T05:13:37.5208900Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34440165675/artifacts/10137641184
+2026-09-10T05:13:37.5317781Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T05:13:37.5318420Z Post job cleanup.
+2026-09-10T05:13:37.5841504Z [command]/usr/bin/git version
+2026-09-10T05:13:37.5867657Z git version 2.55.0
+2026-09-10T05:13:37.5925651Z Temporarily overriding HOME='/home/runner/work/_temp/66b1e8a1-b63d-4df1-b732-b3e9bd91580c' before making global git config changes
+2026-09-10T05:13:37.5943683Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-10T05:13:37.5944431Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/candidate
+2026-09-10T05:13:37.5971261Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T05:13:37.5992585Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T05:13:37.6186398Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T05:13:37.6220164Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T05:13:37.6389248Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T05:13:37.6411082Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T05:13:37.6693400Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T05:13:37.6694048Z Post job cleanup.
+2026-09-10T05:13:37.7235164Z [command]/usr/bin/git version
+2026-09-10T05:13:37.7241978Z git version 2.55.0
+2026-09-10T05:13:37.7327948Z Temporarily overriding HOME='/home/runner/work/_temp/b9cfc6e0-724b-49f4-a1bd-9ce72a4b5a00' before making global git config changes
+2026-09-10T05:13:37.7347581Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-10T05:13:37.7368804Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/tooling
+2026-09-10T05:13:37.7425094Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T05:13:37.7491908Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T05:13:37.7598070Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T05:13:37.7617138Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T05:13:37.7949130Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T05:13:37.7991599Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T05:13:37.8259705Z Cleaning up orphan processes
+2026-09-10T05:13:37.8381964Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
