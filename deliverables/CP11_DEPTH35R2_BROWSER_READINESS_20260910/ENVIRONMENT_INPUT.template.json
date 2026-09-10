@@ -1,0 +1,81 @@
+{
+  "schema": "go.three-end-browser-input.v1",
+  "status": "INCOMPLETE",
+  "candidate_commit": "a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4",
+  "source_tree_sha256": "d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe",
+  "source_file_count": 1243,
+  "environment": {
+    "id": null,
+    "approved_scope_reference": null,
+    "isolated": null,
+    "synthetic_data_only": null,
+    "external_provider_calls_disabled": null,
+    "policy_allowed_entry_reference": null
+  },
+  "runtime": {
+    "started_at_utc": null,
+    "process_or_image_identity": null,
+    "installed_package_sha256": null,
+    "observed_source_fingerprint_evidence": null,
+    "served_frontend_asset_evidence": null
+  },
+  "surfaces": {
+    "consumer": {
+      "absolute_url": null,
+      "expected_route": "/go-app/",
+      "expected_actor_type": "CONSUMER",
+      "identity_endpoint": "/v1/consumer/me",
+      "test_account_alias": null,
+      "expected_identity_reference": null,
+      "test_supplier_ownership_reference": "NOT_APPLICABLE",
+      "synthetic_fixture_reference": null,
+      "secure_login_method": "browserAuth"
+    },
+    "supplier": {
+      "absolute_url": null,
+      "expected_route": "/supplier-console/",
+      "expected_actor_type": "SUPPLIER_USER",
+      "identity_endpoint": "/bff/auth/me",
+      "test_account_alias": null,
+      "expected_identity_reference": null,
+      "test_supplier_ownership_reference": null,
+      "synthetic_fixture_reference": null,
+      "secure_login_method": "browserAuth"
+    },
+    "admin": {
+      "absolute_url": null,
+      "expected_route": "/go-admin/",
+      "expected_actor_type": "GO_ADMIN",
+      "identity_endpoint": "/bff/auth/me",
+      "test_account_alias": null,
+      "expected_identity_reference": null,
+      "test_supplier_ownership_reference": "NOT_APPLICABLE",
+      "synthetic_fixture_reference": null,
+      "secure_login_method": "browserAuth"
+    }
+  },
+  "browser": {
+    "version": null,
+    "desktop_actual_viewport": null,
+    "mobile_actual_viewports": [],
+    "requested_desktop": {
+      "width": 1440,
+      "height": 900
+    },
+    "requested_mobile": [
+      {
+        "width": 375,
+        "height": 812
+      },
+      {
+        "width": 390,
+        "height": 844
+      },
+      {
+        "width": 430,
+        "height": 932
+      }
+    ]
+  },
+  "note": "Nonsecret references only. Do not insert passwords, OTPs, cookies, tokens, private keys or production data. Input completion is not proof of runtime binding or browser PASS."
+}

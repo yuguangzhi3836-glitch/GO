@@ -1,0 +1,46 @@
+{
+  "checked_at_utc": "2026-09-10T05:52:23.805073+00:00",
+  "candidate_commit": "a758f4d7b2f8cc9437a2a8c4b315ca41a19320f4",
+  "source_tree_sha256": "d8659259388accc8c05365e6e82ee8c66b4861561f96af15b5feea1d216066fe",
+  "preflight_only": true,
+  "browser_journeys_executed": 0,
+  "journeys": {
+    "consumer-desktop": "NOT_RUN",
+    "consumer-mobile": "NOT_RUN",
+    "supplier-desktop": "NOT_RUN",
+    "supplier-mobile": "NOT_RUN",
+    "admin-desktop": "NOT_RUN",
+    "admin-mobile": "NOT_RUN"
+  },
+  "additional_checks": {
+    "consumer_console_coexistence": "NOT_RUN",
+    "wrong_console_role": "NOT_RUN",
+    "cross_tab_identity_change": "NOT_RUN",
+    "logout_expired_session_recovery": "NOT_RUN",
+    "v14_direct_authenticated_reentry": "NOT_RUN"
+  },
+  "blockers": [
+    "No approved, policy-allowed DEPTH35R2 runtime-bound acceptance URL was found in inspected material.",
+    "Only about:blank is open in the selected browser; no candidate page was inspected.",
+    "No viewport-setting capability is advertised by the selected browser.",
+    "No runtime-bound synthetic account/fixture references and secure login entry have been supplied."
+  ],
+  "historical_browser_denial": "Preserved DEPTH29 denial; no repeat or alternate access attempt in this turn.",
+  "prior_scoped_ci": {
+    "run_id": 34440381225,
+    "backend_passed": 38,
+    "frontend_native_pure_functions_passed": 239,
+    "scope": "Historical isolated component/API acceptance. Not rerun; not browser evidence."
+  },
+  "gates": {
+    "three_end_real_ux_login": "HOLD",
+    "six_vertical_real_e2e": "HOLD",
+    "sealed_node_gate": "HOLD",
+    "final_release": "HOLD"
+  },
+  "business_source_modified": false,
+  "server_started": false,
+  "merged": false,
+  "deployed": false,
+  "hong_kong_contacted": false
+}
