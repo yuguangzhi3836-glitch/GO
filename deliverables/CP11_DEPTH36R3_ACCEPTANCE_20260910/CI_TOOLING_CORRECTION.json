@@ -1,0 +1,17 @@
+{
+  "schema": "go.depth36r2.ci-tooling-correction.v1",
+  "candidate": "32712e9629254fea87f50ff218bc76d5906e7cc2",
+  "source_tree_sha256": "a68f5f02e3f194d00d3e794bdafa08982be8c0ccb54d0a824c3008ffeb53f284",
+  "failed_run": 34451371424,
+  "failed_ci_commit": "3235aad07c84eef8448f21a570e76100711ff447",
+  "failure": "Each shard stopped during collection at 25 ModuleNotFoundError exceptions importing tests helpers. The external runner script did not put the restored source working directory on sys.path.",
+  "correction": "Add resolved working directory to sys.path before invoking pytest, matching python -m pytest behavior.",
+  "corrected_ci_commit": "ff88a0fe881953de540547f83d0c2d34c341fff8",
+  "corrected_ci_tree": "6bcc278110b15ca671248ac69620854b9954e5d5",
+  "corrected_run": 34451882079,
+  "candidate_changed": false,
+  "test_exclusions_added": false,
+  "source_fingerprint_changed": false,
+  "original_failure_evidence": "attempt-1/",
+  "release_gate": "HOLD"
+}

@@ -1,0 +1,189 @@
+{
+  "comparison": "Exact multiset of original and current JUnit class/name identities",
+  "original_run": 34447413327,
+  "original_junit_sha256": "91f00f3ec68d00bebe246c0678cfba45f4f740497770d6e39cea42a354ada76c",
+  "current_run": 34453179558,
+  "same_1679_test_identities": true,
+  "fixed": [
+    {
+      "class": "tests.test_rc19_national_throughput_product_completeness",
+      "name": "test_rc19_regional_throughput_contract",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_review_governance_terminal_semantics",
+      "name": "test_review_completion_is_submission_final_but_governance_nonterminal",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_review_governance_terminal_semantics",
+      "name": "test_completed_review_governance_chain_remains_reachable",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_sprint2b_mobile_release",
+      "name": "test_mobile_release_artifacts_and_offline_contract_exist",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_sprint2b_mobile_release",
+      "name": "test_push_receipt_internal_api_is_not_public",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_sprint2c_release_gate",
+      "name": "test_release_artifacts_exist",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_sprint2d_bringup",
+      "name": "test_credential_manifest_has_15_gate_dependencies",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_sprint2d_bringup",
+      "name": "test_gate_ledger_starts_fail_closed",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_sprint2d_bringup",
+      "name": "test_release_workflow_waits_for_store_build_and_submit",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_sprint2d_bringup",
+      "name": "test_evidence_template_forbids_secrets",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_wave03_c07_c09_authority_contract",
+      "name": "test_wave03_contract_registry_keeps_c09_as_final_owner",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_wave04_v70_release_gate_contract",
+      "name": "test_v70_is_unique_controlling_solution_master",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_wave04_v70_release_gate_contract",
+      "name": "test_source_candidate_head_is_0114_and_not_staging_fact",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_wave04_v70_release_gate_contract",
+      "name": "test_release_candidate_manifest_has_same_migration_truth_split",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_wave04_v70_release_gate_contract",
+      "name": "test_wave07_frg02_release_identity_binds_wave07_parent_sha",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_wave04_v70_release_gate_contract",
+      "name": "test_wave07_frg02_binding_is_not_deployed_and_has_source_sha",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_wave04_v70_release_gate_contract",
+      "name": "test_v70_gate_is_authoritative_and_present",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.workbench.test_wave02_truth_gate_and_mobility_ownership",
+      "name": "test_c04_c05_owned_paths_are_isolated_and_shared_facade_has_no_business_truth",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.workbench.test_wave07_mc01_owned_path_closure",
+      "name": "test_ownership_contract_matches_machine_registry",
+      "previous": "FAIL",
+      "current": "PASS"
+    }
+  ],
+  "previous_full_run": 34451882079,
+  "last_run_failures_resolved": [
+    {
+      "class": "tests.autonomy.test_depth08_durable",
+      "name": "test_sigkill_recovery_uses_database_not_process_memory[after_claim]",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.autonomy.test_depth08_durable",
+      "name": "test_sigkill_recovery_uses_database_not_process_memory[inside_transaction]",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.autonomy.test_depth08_durable",
+      "name": "test_sigkill_recovery_uses_database_not_process_memory[after_checkpoint]",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.autonomy.test_depth08_durable",
+      "name": "test_process_dies_after_provider_effect_never_redispatches",
+      "previous": "FAIL",
+      "current": "PASS"
+    },
+    {
+      "class": "tests.test_sprint2b_mobile_release",
+      "name": "test_mobile_release_artifacts_and_offline_contract_exist",
+      "previous": "FAIL",
+      "current": "PASS"
+    }
+  ],
+  "remaining_skips": [
+    {
+      "class": "tests.test_p0_0101_postgres_race_matrix",
+      "name": "test_0101_order_payment_root_exactly_once_postgres",
+      "message": "POSTGRES_TEST_DATABASE_URL not configured"
+    },
+    {
+      "class": "tests.test_p0_0101_postgres_race_matrix",
+      "name": "test_0101_webhook_delivery_replay_unique_postgres",
+      "message": "POSTGRES_TEST_DATABASE_URL not configured"
+    },
+    {
+      "class": "tests.test_p0_0101_postgres_race_matrix",
+      "name": "test_0101_capture_refund_serialization_postgres",
+      "message": "POSTGRES_TEST_DATABASE_URL not configured"
+    },
+    {
+      "class": "tests.test_p0_0101_postgres_race_matrix",
+      "name": "test_0101_finance_close_approval_race_postgres",
+      "message": "POSTGRES_TEST_DATABASE_URL not configured"
+    },
+    {
+      "class": "tests.test_p0_0101_postgres_race_matrix",
+      "name": "test_0101_postgres_server_is_real_postgres",
+      "message": "POSTGRES_TEST_DATABASE_URL not configured"
+    },
+    {
+      "class": "tests.test_p0_0100_postgres_concurrency",
+      "name": "test_order_payment_root_unique_under_postgres_race",
+      "message": "POSTGRES_TEST_DATABASE_URL not configured"
+    }
+  ],
+  "skipped_tests_counted_as_passed": false
+}

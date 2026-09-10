@@ -1,0 +1,216 @@
+{
+  "raw_job_log_sha256": "dbf8860832a17c8d7fdc875bb8573f9182caf155fd6b50a86bdcf4b0a8fad01b",
+  "records": {
+    "source-lineage.json": {
+      "bytes": 730,
+      "sha256": "1b2129d03378c26c55f781becd2ee0f64b7f2538945753b969abb0e652e8eee7"
+    },
+    "post-test-source.json": {
+      "bytes": 134,
+      "sha256": "519a5329478f7433b87871c873a3f24a30f2da13eead9b12162f6408f3f21f6d"
+    },
+    "backend-full.xml": {
+      "bytes": 20125,
+      "sha256": "12876d5e86cdc21157a87d0aab4030adf87924391053b0c690c9460fd23f6d05"
+    },
+    "backend-inventory.json": {
+      "bytes": 279,
+      "sha256": "95fe0335bebd659bbba5bf3c72a8d5faf4b073beb015e4236d836bf47dba0f0c"
+    },
+    "bundle-build.json": {
+      "bytes": 263,
+      "sha256": "d49afbc2467cd5330ac91527b19f87ae214045a28f42ff4688063d65aa5ea96e"
+    },
+    "bundle-restore.json": {
+      "bytes": 275,
+      "sha256": "0ed28d023aa585ab10270a85e6afee1b67b9657cf5ab9e3bb21ab28790889177"
+    },
+    "http-runtime-binding.json": {
+      "bytes": 1513,
+      "sha256": "42141b79e5b39e9a55a2d72951d22c28f521440bfba9d8a619172eba8f9f1eb1"
+    },
+    "http-checks.json": {
+      "bytes": 42301,
+      "sha256": "48dd74ee89724e83fea8f61bac2a6c4e560858c23782f9640c915c030286c09f"
+    },
+    "http-result.json": {
+      "bytes": 117,
+      "sha256": "1bf88fcba8b3828e3baa336a833936bfe60c4b1cf4fdc2c75548d20b3eff2a05"
+    },
+    "packaging-tests.log": {
+      "bytes": 1533,
+      "sha256": "7fa4d3521e4fb923eb1f790cdb534632e4ea4dfe8abb1fd4fbd645af60a8e3aa"
+    }
+  },
+  "explicitly_missing": [],
+  "backend": {
+    "tests": 25,
+    "passed": 0,
+    "failures": [],
+    "errors": [
+      {
+        "class": "",
+        "name": "tests.test_depth05_flight_parties",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth05_flight_parties.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth05_flight_parties.py:10: in <module>\n    from tests.test_flight_journey_depth import criteria\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth06_direct_checkout",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth06_direct_checkout.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth06_direct_checkout.py:15: in <module>\n    from tests.test_sprint3a_flight import auth\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth06_rental_settlement",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth06_rental_settlement.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth06_rental_settlement.py:12: in <module>\n    from tests.test_sprint3a_flight import auth\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth07_hosted_money",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth07_hosted_money.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth07_hosted_money.py:11: in <module>\n    from tests.test_depth06_direct_checkout import reservation,freeze,inventory,Reservation,Stay,Authorization,ops,payment\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth08_hosted_change",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth08_hosted_change.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth08_hosted_change.py:8: in <module>\n    from tests.test_depth08_hosted_fare import booked,quote,execute as cancel,RULES\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth08_hosted_fare",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth08_hosted_fare.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth08_hosted_fare.py:12: in <module>\n    from tests.test_depth07_hosted_money import reservation,freeze,inventory,summary,ops,payment,guest,dispute,after,approve,funds,money,Reservation,Stay,Authorization,Ledger,trips\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth09_credit_api",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth09_credit_api.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth09_credit_api.py:5: in <module>\n    from tests.test_depth09_stay_credit import issued,redemption,credit,summary,Reservation,Allocation\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth09_credit_boundaries",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth09_credit_boundaries.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth09_credit_boundaries.py:9: in <module>\n    from tests.test_depth09_stay_credit import issued,redemption,redeem,booked,RULES,credit,value,fare,rate,summary,inventory,guest,payment,PROOF,Reservation,Ledger,Authorization,ops,trips,Credit,Allocation,CreditEvent,Quote\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth09_stay_credit",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth09_stay_credit.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth09_stay_credit.py:8: in <module>\n    from tests.test_depth08_hosted_fare import booked,RULES,quote as cancel_quote,execute as cancel_execute\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth10_disruption_api",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth10_disruption_api.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth10_disruption_api.py:4: in <module>\n    from tests.test_sprint1n_supplier_compensation import admin_headers,supplier_headers\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth10_disruption_recovery",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth10_disruption_recovery.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth10_disruption_recovery.py:1: in <module>\n    from tests.test_depth10_hosted_disruption import (datetime,timedelta,timezone,ThreadPoolExecutor,pytest,select,SessionLocal,Disruption,Account,Liability,Compensation,Intent,Mandate,Offer,fault,funding,legacy_finance,booked,credited,approved,start,EVIDENCE,summary,inventory,Reservation,Ledger,Authorization,money)\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth10_hosted_disruption",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth10_hosted_disruption.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth10_hosted_disruption.py:12: in <module>\n    from tests.test_depth09_stay_credit import booked,issued,redemption,redeem,summary,inventory,Credit,value,Reservation,Ledger,Authorization\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth11_catalog_api",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth11_catalog_api.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth11_catalog_api.py:1: in <module>\n    from tests.test_depth11_catalog_supplier_remedy import (booked_order,admin_headers,supplier_headers,EVIDENCE,remedy,configure,funding,SessionLocal,OrderRow,select,Plan,Case,Movement,Intent,Root,connector)\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth11_catalog_money_facts",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth11_catalog_money_facts.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth11_catalog_money_facts.py:9: in <module>\n    from tests.test_depth11_catalog_supplier_remedy import booked_order,approved,configure,run,remedy,money,bridge,connector,movements\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth11_catalog_supplier_remedy",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth11_catalog_supplier_remedy.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth11_catalog_supplier_remedy.py:15: in <module>\n    from tests.test_sprint1n_supplier_compensation import booked_order,admin_headers,supplier_headers\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth12_credit_api",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth12_credit_api.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth12_credit_api.py:8: in <module>\n    from tests.test_sprint3a_flight import auth\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth12_credit_remedy",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth12_credit_remedy.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth12_credit_remedy.py:9: in <module>\n    from test_depth11_catalog_supplier_remedy import approved,configure\ntests/test_depth11_catalog_supplier_remedy.py:15: in <module>\n    from tests.test_sprint1n_supplier_compensation import booked_order,admin_headers,supplier_headers\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth13_catalog_fare_api",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth13_catalog_fare_api.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth13_catalog_fare_api.py:8: in <module>\n    from test_depth11_catalog_supplier_remedy import supplier_headers\ntests/test_depth11_catalog_supplier_remedy.py:15: in <module>\n    from tests.test_sprint1n_supplier_compensation import booked_order,admin_headers,supplier_headers\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth14_cash_fare_api",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth14_cash_fare_api.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth14_cash_fare_api.py:7: in <module>\n    from test_sprint3a_flight import auth\ntests/test_sprint3a_flight.py:2: in <module>\n    from tests.vertical_transaction_helpers import confirm_existing_fulfillment\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth15_credit_exclusion",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth15_credit_exclusion.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth15_credit_exclusion.py:16: in <module>\n    from test_depth11_catalog_supplier_remedy import approved,configure\ntests/test_depth11_catalog_supplier_remedy.py:15: in <module>\n    from tests.test_sprint1n_supplier_compensation import booked_order,admin_headers,supplier_headers\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth20_api_fulfillment",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth20_api_fulfillment.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth20_api_fulfillment.py:11: in <module>\n    from tests.test_sprint3b_rail import auth\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth29_trip_reentry",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth29_trip_reentry.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth29_trip_reentry.py:11: in <module>\n    from tests.test_sprint3a_flight import auth\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth30_native_api_contract",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth30_native_api_contract.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth30_native_api_contract.py:10: in <module>\n    from tests.test_master03_closure import profile\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_depth34_hotel_quote_read",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_depth34_hotel_quote_read.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_depth34_hotel_quote_read.py:6: in <module>\n    from test_depth14_cash_fare_api import signed_booking\ntests/test_depth14_cash_fare_api.py:7: in <module>\n    from test_sprint3a_flight import auth\ntests/test_sprint3a_flight.py:2: in <module>\n    from tests.vertical_transaction_helpers import confirm_existing_fulfillment\nE   ModuleNotFoundError: No module named 'tests'"
+      },
+      {
+        "class": "",
+        "name": "tests.test_final_depth_terminal_hardening",
+        "message": "collection failure",
+        "text": "ImportError while importing test module '/home/runner/work/GO/GO/restored/tests/test_final_depth_terminal_hardening.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_final_depth_terminal_hardening.py:1: in <module>\n    from tests.attraction_fixtures import quoted_attraction\nE   ModuleNotFoundError: No module named 'tests'"
+      }
+    ],
+    "skipped": [],
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "25",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "25",
+        "time": "13.153",
+        "timestamp": "2026-09-10T07:44:25.183456+00:00",
+        "hostname": "runnervm9xg2d"
+      }
+    ]
+  }
+}

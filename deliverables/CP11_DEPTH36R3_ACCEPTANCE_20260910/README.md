@@ -1,0 +1,17 @@
+# DEPTH36R3 isolated acceptance evidence
+
+The complete SQLite backend collection passed: 1,673 passed, 6 PostgreSQL tests skipped, no failures or errors. All 1,679 original test identities are preserved and assigned to exactly one of four shards. The 19 failures from the previous full run now pass individually.
+
+Candidate: `7bd98db21ee950aeb91c12b296b1864b5a758c3f` (1,267 source files). CI: `9725334a729f9ea43b6cb62c63bf52539511f312`. Accepted run: [34453179558](https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34453179558), draft [PR #20](https://github.com/yuguangzhi3836-glitch/GO/pull/20).
+
+Each shard also passed the same 148 live loopback HTTP checks (87 requests), 10 packaging safeguards, independent bundle restoration, and unchanged-source verification. Repeated checks are not added together as distinct test coverage. Python 3.13.5 and Node 22.22.0 are recorded with the Node binary hash; the separately sealed Node gate remains open.
+
+The user explicitly authorized the 19 historical support files and source fingerprints in the review package. They are restored byte-for-byte from the documented historical archive and included in candidate package `deliverables/CP11_DEPTH36R2_SUPPORT_RESTORE_20260910`. Historical deployment/governance documents are provenance, not evidence of a current Hong Kong deployment. The previous blocked review remains preserved as approval history.
+
+`attempt-1` preserves the collection failure. `attempt-2` preserves the complete 1,668-pass / 5-fail / 6-skip run. `CI_TOOLING_CORRECTION.json` and `R3_CORRECTIONS.json` explain the source-root import, guarded process entry and mobile contract repairs. `attempt-3` preserves the final raw job logs as deterministic gzip and the original exported records. Candidate package `deliverables/CP11_DEPTH36R3_MOBILE_CONTRACT_20260910` changes only the existing mobile release test, while inheriting all 19 authorized support files unchanged. `EXTRACTION_VERIFICATION.json` files bind each recovered record to its byte count and SHA-256. `coverage.json` is verified equal to the CI coverage output. `REGRESSION_RESOLUTION.json` binds every old failure to its current passing result. Artifact IDs, archive digests and expiration dates are recorded alongside each run.
+
+Previous evidence remains at [8a8a9cb](https://github.com/yuguangzhi3836-glitch/GO/tree/8a8a9cb070f5ee52235e2314f6b6c64912b1e10e/deliverables/CP11_DEPTH36_ACCEPTANCE_20260910). This status supersedes its open support-export and full-backend failure status for this new candidate. The candidate package's original PENDING release record is preserved as the pre-run snapshot; STATUS.json here is the post-run acceptance record bound to that immutable candidate.
+
+Final release remains HOLD. Real-browser three-surface and six-vertical E2E, PostgreSQL, native build/device, sealed Node runtime and provider certification gates are not closed by this run. No merge, deployment or live database operation was performed.
+
+The complete raw evidence is also preserved in `RAW_EVIDENCE.tar.gz`; `ARCHIVE_BINDING.json` records its hash and verified member count. Large test inventories and compressed job logs are available inside that archive. Readable JUnit, lineage, HTTP and extraction records are also published directly. `SHA256SUMS.json` verifies both archived members and the archive itself.

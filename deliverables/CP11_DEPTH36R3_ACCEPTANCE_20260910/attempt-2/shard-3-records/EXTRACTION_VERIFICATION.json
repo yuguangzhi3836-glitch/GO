@@ -1,0 +1,72 @@
+{
+  "raw_job_log_sha256": "9828fc990282e1b509e8b9ef3903cb38e78e08d18940edafd2cba4a432eaca1a",
+  "records": {
+    "source-lineage.json": {
+      "bytes": 730,
+      "sha256": "1b2129d03378c26c55f781becd2ee0f64b7f2538945753b969abb0e652e8eee7"
+    },
+    "post-test-source.json": {
+      "bytes": 134,
+      "sha256": "519a5329478f7433b87871c873a3f24a30f2da13eead9b12162f6408f3f21f6d"
+    },
+    "backend-full.xml": {
+      "bytes": 68431,
+      "sha256": "d49dec74ce8aca132389126c0bd70134ff82152b8077009bde7f839990f8eebb"
+    },
+    "backend-inventory.json": {
+      "bytes": 394405,
+      "sha256": "4363e0329bece177d8c9d74174c7f289bb4ca19444ec297ed84a615e5f63cc90"
+    },
+    "bundle-build.json": {
+      "bytes": 263,
+      "sha256": "d49afbc2467cd5330ac91527b19f87ae214045a28f42ff4688063d65aa5ea96e"
+    },
+    "bundle-restore.json": {
+      "bytes": 275,
+      "sha256": "0ed28d023aa585ab10270a85e6afee1b67b9657cf5ab9e3bb21ab28790889177"
+    },
+    "http-runtime-binding.json": {
+      "bytes": 1513,
+      "sha256": "42141b79e5b39e9a55a2d72951d22c28f521440bfba9d8a619172eba8f9f1eb1"
+    },
+    "http-checks.json": {
+      "bytes": 42301,
+      "sha256": "1a1f9dfd5ea05844f038f8ed899f5bb7387cbd3da2db4ba517f0bc38509001e5"
+    },
+    "http-result.json": {
+      "bytes": 117,
+      "sha256": "1bf88fcba8b3828e3baa336a833936bfe60c4b1cf4fdc2c75548d20b3eff2a05"
+    },
+    "packaging-tests.log": {
+      "bytes": 1533,
+      "sha256": "edc95a9f5c7d9eb4eed9751283f9c9748f405135b1d1627332c9017c365d6b58"
+    }
+  },
+  "explicitly_missing": [],
+  "backend": {
+    "tests": 457,
+    "passed": 456,
+    "failures": [],
+    "errors": [],
+    "skipped": [
+      {
+        "class": "tests.test_p0_0100_postgres_concurrency",
+        "name": "test_order_payment_root_unique_under_postgres_race",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0100_postgres_concurrency.py:10: POSTGRES_TEST_DATABASE_URL not configured"
+      }
+    ],
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "1",
+        "tests": "457",
+        "time": "489.304",
+        "timestamp": "2026-09-10T07:50:18.309124+00:00",
+        "hostname": "runnervm7g52i"
+      }
+    ]
+  }
+}

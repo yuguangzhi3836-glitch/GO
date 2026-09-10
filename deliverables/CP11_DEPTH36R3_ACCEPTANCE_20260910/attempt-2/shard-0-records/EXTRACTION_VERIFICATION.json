@@ -1,0 +1,121 @@
+{
+  "raw_job_log_sha256": "8048110b9154103b71a096b4cb6b3e325c8386cb87d431d47c6b9a127c631d43",
+  "records": {
+    "source-lineage.json": {
+      "bytes": 730,
+      "sha256": "1b2129d03378c26c55f781becd2ee0f64b7f2538945753b969abb0e652e8eee7"
+    },
+    "post-test-source.json": {
+      "bytes": 134,
+      "sha256": "519a5329478f7433b87871c873a3f24a30f2da13eead9b12162f6408f3f21f6d"
+    },
+    "backend-full.xml": {
+      "bytes": 63661,
+      "sha256": "76fd2b0310962246a99730273dca50562a4948d78c5721cf89636a3c292fbb4b"
+    },
+    "backend-inventory.json": {
+      "bytes": 363457,
+      "sha256": "56cf5e71116f191e1f981f8a405f62e3e10e43b9a7bebd0149e7aca30917e08f"
+    },
+    "bundle-build.json": {
+      "bytes": 263,
+      "sha256": "d49afbc2467cd5330ac91527b19f87ae214045a28f42ff4688063d65aa5ea96e"
+    },
+    "bundle-restore.json": {
+      "bytes": 275,
+      "sha256": "0ed28d023aa585ab10270a85e6afee1b67b9657cf5ab9e3bb21ab28790889177"
+    },
+    "http-runtime-binding.json": {
+      "bytes": 1513,
+      "sha256": "42141b79e5b39e9a55a2d72951d22c28f521440bfba9d8a619172eba8f9f1eb1"
+    },
+    "http-checks.json": {
+      "bytes": 42301,
+      "sha256": "398dab5d4536e8daef4fae8c1d698fef84cdd54a29cdf66129dda75b88c4af3b"
+    },
+    "http-result.json": {
+      "bytes": 117,
+      "sha256": "1bf88fcba8b3828e3baa336a833936bfe60c4b1cf4fdc2c75548d20b3eff2a05"
+    },
+    "packaging-tests.log": {
+      "bytes": 1533,
+      "sha256": "97e556a54fe657824f490f5c173458b8ba2670aa0dd163411f263931e3344730"
+    }
+  },
+  "explicitly_missing": [],
+  "backend": {
+    "tests": 396,
+    "passed": 387,
+    "failures": [
+      {
+        "class": "tests.autonomy.test_depth08_durable",
+        "name": "test_sigkill_recovery_uses_database_not_process_memory[after_claim]",
+        "message": "AssertionError: child did not reach fault point\nassert False\n +  where False = wait(15)\n +    where wait = <Event at 0x7fd3f39b7a10 unset>.wait",
+        "text": "db_url = 'sqlite+pysqlite:////tmp/pytest-of-runner/pytest-0/test_sigkill_recovery_uses_dat0/execution.db'\nstage = 'after_claim'\n\n    @pytest.mark.parametrize('stage', ['after_claim', 'inside_transaction', 'after_checkpoint'])\n    def test_sigkill_recovery_uses_database_not_process_memory(db_url, stage):\n        rt = make_runtime(db_url)\n        # For the transaction fault point keep the same one-step handler contract.\n        if stage == 'inside_transaction':\n            h = next(iter(rt.handlers.values()))\n            rt = make_runtime(db_url, steps=(h.steps[0],))\n        task = submit(rt)\n        ctx = multiprocessing.get_context('spawn')\n        ready = ctx.Event()\n        proc = ctx.Process(target=_killed_worker, args=(db_url, ready, stage))\n        proc.start()\n        try:\n>           assert ready.wait(15), 'child did not reach fault point'\nE           AssertionError: child did not reach fault point\nE           assert False\nE            +  where False = wait(15)\nE            +    where wait = <Event at 0x7fd3f39b7a10 unset>.wait\n\ntests/autonomy/test_depth08_durable.py:390: AssertionError"
+      },
+      {
+        "class": "tests.autonomy.test_depth08_durable",
+        "name": "test_sigkill_recovery_uses_database_not_process_memory[inside_transaction]",
+        "message": "AssertionError: child did not reach fault point\nassert False\n +  where False = wait(15)\n +    where wait = <Event at 0x7fd3f2a6d1d0 unset>.wait",
+        "text": "db_url = 'sqlite+pysqlite:////tmp/pytest-of-runner/pytest-0/test_sigkill_recovery_uses_dat1/execution.db'\nstage = 'inside_transaction'\n\n    @pytest.mark.parametrize('stage', ['after_claim', 'inside_transaction', 'after_checkpoint'])\n    def test_sigkill_recovery_uses_database_not_process_memory(db_url, stage):\n        rt = make_runtime(db_url)\n        # For the transaction fault point keep the same one-step handler contract.\n        if stage == 'inside_transaction':\n            h = next(iter(rt.handlers.values()))\n            rt = make_runtime(db_url, steps=(h.steps[0],))\n        task = submit(rt)\n        ctx = multiprocessing.get_context('spawn')\n        ready = ctx.Event()\n        proc = ctx.Process(target=_killed_worker, args=(db_url, ready, stage))\n        proc.start()\n        try:\n>           assert ready.wait(15), 'child did not reach fault point'\nE           AssertionError: child did not reach fault point\nE           assert False\nE            +  where False = wait(15)\nE            +    where wait = <Event at 0x7fd3f2a6d1d0 unset>.wait\n\ntests/autonomy/test_depth08_durable.py:390: AssertionError"
+      },
+      {
+        "class": "tests.autonomy.test_depth08_durable",
+        "name": "test_sigkill_recovery_uses_database_not_process_memory[after_checkpoint]",
+        "message": "AssertionError: child did not reach fault point\nassert False\n +  where False = wait(15)\n +    where wait = <Event at 0x7fd3f2a6e850 unset>.wait",
+        "text": "db_url = 'sqlite+pysqlite:////tmp/pytest-of-runner/pytest-0/test_sigkill_recovery_uses_dat2/execution.db'\nstage = 'after_checkpoint'\n\n    @pytest.mark.parametrize('stage', ['after_claim', 'inside_transaction', 'after_checkpoint'])\n    def test_sigkill_recovery_uses_database_not_process_memory(db_url, stage):\n        rt = make_runtime(db_url)\n        # For the transaction fault point keep the same one-step handler contract.\n        if stage == 'inside_transaction':\n            h = next(iter(rt.handlers.values()))\n            rt = make_runtime(db_url, steps=(h.steps[0],))\n        task = submit(rt)\n        ctx = multiprocessing.get_context('spawn')\n        ready = ctx.Event()\n        proc = ctx.Process(target=_killed_worker, args=(db_url, ready, stage))\n        proc.start()\n        try:\n>           assert ready.wait(15), 'child did not reach fault point'\nE           AssertionError: child did not reach fault point\nE           assert False\nE            +  where False = wait(15)\nE            +    where wait = <Event at 0x7fd3f2a6e850 unset>.wait\n\ntests/autonomy/test_depth08_durable.py:390: AssertionError"
+      },
+      {
+        "class": "tests.autonomy.test_depth08_durable",
+        "name": "test_process_dies_after_provider_effect_never_redispatches",
+        "message": "assert False\n +  where False = wait(15)\n +    where wait = <Event at 0x7fd3f043a780 unset>.wait",
+        "text": "db_url = 'sqlite+pysqlite:////tmp/pytest-of-runner/pytest-0/test_process_dies_after_provid0/execution.db'\n\n    def test_process_dies_after_provider_effect_never_redispatches(db_url):\n        calls = []\n        def dispatch(ctx):\n            calls.append(ctx.operation_key)\n            return {}\n        def reconcile(ctx):\n            return ReconciledResult('SUCCEEDED', ctx.operation_key, 'test://persisted-provider', {'provider': 'applied'})\n        rt = make_runtime(db_url, mode='EXTERNAL', steps=(), dispatch=dispatch, reconcile=reconcile)\n        task = submit(rt)\n        ctx = multiprocessing.get_context('spawn')\n        ready = ctx.Event()\n        proc = ctx.Process(target=_external_crash, args=(db_url, ready))\n        proc.start()\n        try:\n>           assert ready.wait(15)\nE           assert False\nE            +  where False = wait(15)\nE            +    where wait = <Event at 0x7fd3f043a780 unset>.wait\n\ntests/autonomy/test_depth08_durable.py:433: AssertionError"
+      }
+    ],
+    "errors": [],
+    "skipped": [
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_order_payment_root_exactly_once_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:23: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_webhook_delivery_replay_unique_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:34: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_capture_refund_serialization_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:45: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_finance_close_approval_race_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:61: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_postgres_server_is_real_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:75: POSTGRES_TEST_DATABASE_URL not configured"
+      }
+    ],
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "4",
+        "skipped": "5",
+        "tests": "396",
+        "time": "460.313",
+        "timestamp": "2026-09-10T07:50:20.284506+00:00",
+        "hostname": "runnervm9xg2d"
+      }
+    ]
+  }
+}

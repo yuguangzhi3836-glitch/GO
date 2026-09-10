@@ -1,0 +1,96 @@
+{
+  "raw_job_log_sha256": "82b73b5a2c2b12832e7899a26238c0a5faf4d7498847ff01a7d1af1136cf05c3",
+  "records": {
+    "source-lineage.json": {
+      "bytes": 730,
+      "sha256": "9cd8d440c059b7aea327c9555833b6140c095be044f7d1365c6bc80b41e053ec"
+    },
+    "post-test-source.json": {
+      "bytes": 134,
+      "sha256": "519a5329478f7433b87871c873a3f24a30f2da13eead9b12162f6408f3f21f6d"
+    },
+    "backend-full.xml": {
+      "bytes": 58548,
+      "sha256": "940843e855492d8b4017d6a4286d62c2605969ca8e42b404dec6665b9ebf1a04"
+    },
+    "backend-inventory.json": {
+      "bytes": 363457,
+      "sha256": "76c6319e3dd141a60edf0b2455fdb3f8e16660c504a25fa358bd90598aa6cb2d"
+    },
+    "bundle-build.json": {
+      "bytes": 263,
+      "sha256": "08ab2b0dbaff4312115483a98e3c721676ab55c7e0aae71a8fbbab316ce9e4a3"
+    },
+    "bundle-restore.json": {
+      "bytes": 275,
+      "sha256": "dbc60429e0f45902195b95d3861a6170cd52800da086e98ce7140d2a79ca2bb3"
+    },
+    "http-runtime-binding.json": {
+      "bytes": 1513,
+      "sha256": "493191b38e65a7895544ec9726278eafead98bf2e1e562319d9810a5af7e2744"
+    },
+    "http-checks.json": {
+      "bytes": 42301,
+      "sha256": "8bfbd42c33c368aea33753b2779de493edf8b1d5bd300bffa9ba39b61fc3ff7f"
+    },
+    "http-result.json": {
+      "bytes": 117,
+      "sha256": "1bf88fcba8b3828e3baa336a833936bfe60c4b1cf4fdc2c75548d20b3eff2a05"
+    },
+    "packaging-tests.log": {
+      "bytes": 1533,
+      "sha256": "1da2086edec26f3cc317d846316822583b54cc5bf8e8f9220b33d43b5de1b8d9"
+    }
+  },
+  "explicitly_missing": [],
+  "backend": {
+    "tests": 396,
+    "passed": 391,
+    "failures": [],
+    "errors": [],
+    "skipped": [
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_order_payment_root_exactly_once_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:23: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_webhook_delivery_replay_unique_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:34: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_capture_refund_serialization_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:45: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_finance_close_approval_race_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:61: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_postgres_server_is_real_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:75: POSTGRES_TEST_DATABASE_URL not configured"
+      }
+    ],
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "5",
+        "tests": "396",
+        "time": "346.687",
+        "timestamp": "2026-09-10T08:05:18.705714+00:00",
+        "hostname": "runnervm9xg2d"
+      }
+    ]
+  }
+}

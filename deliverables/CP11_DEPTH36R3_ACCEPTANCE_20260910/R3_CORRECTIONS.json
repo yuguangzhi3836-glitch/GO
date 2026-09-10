@@ -1,0 +1,29 @@
+{
+  "failed_run": 34451882079,
+  "failed_source_candidate": "32712e9629254fea87f50ff218bc76d5906e7cc2",
+  "failed_counts": {
+    "passed": 1668,
+    "failed": 5,
+    "skipped": 6
+  },
+  "source_repair": {
+    "file": "tests/test_sprint2b_mobile_release.py",
+    "reason": "Legacy client.ts string check was masked by missing release artifacts; current transport.ts owns offline and idempotency behavior.",
+    "change": "Existing test executes shared transport; checks zero offline fetches, no replay, caller key/body preservation and generated idempotency key.",
+    "local_targeted_result": "PASS",
+    "local_node": "v24.19.0; development check only"
+  },
+  "runner_repair": {
+    "file": "ci/depth36/run_backend.py",
+    "reason": "Unguarded script entry launched pytest inside spawned crash-recovery workers.",
+    "change": "Move argument parsing and pytest execution inside guarded main; inject args into inventory instance.",
+    "local_spawn_import_check": "PASS: __mp_main__ import neither parses arguments nor re-enters pytest."
+  },
+  "accepted_candidate_pending": "7bd98db21ee950aeb91c12b296b1864b5a758c3f",
+  "ci_commit": "9725334a729f9ea43b6cb62c63bf52539511f312",
+  "new_run": 34453179558,
+  "runtime_business_files_changed": 0,
+  "test_exclusions_added": false,
+  "historical_files_changed": false,
+  "release_gate": "HOLD"
+}
