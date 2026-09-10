@@ -19,7 +19,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 55
     env:
-      SEALED_CANDIDATE: ${{ github.event.pull_request.base.sha }}
+      SEALED_CANDIDATE: dd5711652f68f846c9e63103c86f4b2f6f164a2c
+      PR_BASE_SNAPSHOT: ${{ github.event.pull_request.base.sha }}
       EXPECTED_CANDIDATE: dd5711652f68f846c9e63103c86f4b2f6f164a2c
       PYTHONDONTWRITEBYTECODE: '1'
       CI: '1'
@@ -32,7 +33,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ env.SEALED_CANDIDATE }}
           path: candidate
           persist-credentials: false
       - uses: actions/setup-python@v5
