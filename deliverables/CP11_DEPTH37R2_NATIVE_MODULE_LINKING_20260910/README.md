@@ -1,5 +1,5 @@
-# DEPTH37R2 native module linking
+# DEPTH37R2 native startup repair
 
-The prior iOS build compiled, but delayed startup logs proved a runtime failure: Cannot find native module ExpoAsset. SDK 53 autolinking searched the app node_modules but missed four Expo modules installed under node_modules/expo/node_modules. This delta adds that exact installed directory to autolinking searchPaths and adds a real installed-module discovery check. The dependency lock, dependency versions, backend and business UI remain unchanged.
+The prior DEPTH37 simulator build launched to a white screen with missing ExpoAsset. Four SDK-compatible Expo runtime dependencies are now pinned directly at the app root using npm-generated lock output from isolated run 34476105766. Custom cwd-sensitive searchPaths are removed. The checker verifies Expo core and runtime modules from app and native working directories. Native builds and rendered-login startup evidence are required on this exact candidate.
 
-Original failure: run 34471255577, candidate cb81f9ea32c88c4d349ed43d48c5b9d7027615ab. Documentation: https://docs.expo.dev/modules/autolinking/#searchpaths . Both native binaries must be rebuilt and startup must be verified before passing this fix. No deployment or production operation is authorized.
+Parent source remains DEPTH37. All previous attempts and failures remain preserved. Physical devices and genuine supplier certification are NOT RUN. Three-role browser operations and six-category live E2E are deferred until after deployment by user decision. Final release HOLD; no deployment performed.
