@@ -20,6 +20,10 @@ class ReserveBody(BaseModel):
     idempotency_key: str = Field(min_length=1)
 
 
+class ReleaseBody(BaseModel):
+    idempotency_key: str = Field(min_length=1)
+
+
 class CommitBody(BaseModel):
     reserve_id: str = Field(min_length=1)
     payment_intent_id: str = Field(min_length=1)
@@ -68,7 +72,7 @@ def build_agent_router(gateway: AgentTransactionGateway, authorize: AgentAuthori
         return invoke(lambda: gateway.commit(ctx, CommitRequest(body.reserve_id, body.payment_intent_id, body.idempotency_key)))
 
     @router.post("/reserves/{reserve_id}/release")
-    def release(reserve_id: str, body: ReserveBody, ctx: AgentContext = Depends(principal)):
+    def release(reserve_id: str, body: ReleaseBody, ctx: AgentContext = Depends(principal)):
         return invoke(lambda: gateway.release(ctx, reserve_id, body.idempotency_key))
 
     @router.get("/orders/{order_id}")
