@@ -1,0 +1,44 @@
+name: depth37-provider-input-readiness
+on:
+  pull_request:
+    branches: ['deliverables/cp11-depth37r2-native-linking']
+    paths: ['.github/workflows/depth37-provider-inputs.yml', 'ci/depth37-provider/**']
+permissions:
+  contents: read
+jobs:
+  preflight:
+    if: github.head_ref == 'acceptance/cp11-depth37-provider-inputs'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: tooling
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: da6897706793fafd73d09cb56013586089733f4d
+          path: candidate
+          persist-credentials: false
+      - name: Check configured sandbox inputs without external calls
+        env:
+          STRIPE_TEST_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
+          SITEMINDER_CHANNELS_PLUS_BASE_URL: ${{ secrets.SITEMINDER_CHANNELS_PLUS_BASE_URL }}
+          SITEMINDER_CHANNELS_PLUS_API_ID: ${{ secrets.SITEMINDER_CHANNELS_PLUS_API_ID }}
+          SITEMINDER_CHANNELS_PLUS_API_KEY: ${{ secrets.SITEMINDER_CHANNELS_PLUS_API_KEY }}
+          SITEMINDER_CERT_PROPERTIES_QUERY_JSON: ${{ secrets.SITEMINDER_CERT_PROPERTIES_QUERY_JSON }}
+          SITEMINDER_CERT_PROPERTY_UUID: ${{ secrets.SITEMINDER_CERT_PROPERTY_UUID }}
+          SITEMINDER_CERT_LOCK_BODY_JSON: ${{ secrets.SITEMINDER_CERT_LOCK_BODY_JSON }}
+          SITEMINDER_CERT_CONFIRM_BODY_JSON: ${{ secrets.SITEMINDER_CERT_CONFIRM_BODY_JSON }}
+        run: python tooling/ci/depth37-provider/check.py
+      - name: Export non-secret evidence
+        if: always()
+        run: python tooling/ci/depth37-provider/export.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: GO-DEPTH37-PROVIDER-INPUTS-${{ github.run_id }}
+          path: evidence/
+          retention-days: 90
+          if-no-files-found: error
