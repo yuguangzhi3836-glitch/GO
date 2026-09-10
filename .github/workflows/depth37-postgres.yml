@@ -1,0 +1,111 @@
+name: depth37-postgres-races
+on:
+  pull_request:
+    branches: ['deliverables/cp11-depth37r2-native-linking']
+    paths: ['.github/workflows/depth37-postgres.yml', 'ci/depth37-pg/**']
+permissions:
+  contents: read
+jobs:
+  postgres:
+    if: github.head_ref == 'acceptance/cp11-depth37-postgres'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16.4
+        env:
+          POSTGRES_USER: go
+          POSTGRES_PASSWORD: go_ci_disposable
+          POSTGRES_DB: go_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U go -d go_test" --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      SEALED_CANDIDATE: da6897706793fafd73d09cb56013586089733f4d
+      EXPECTED_CANDIDATE: da6897706793fafd73d09cb56013586089733f4d
+      PYTHONDONTWRITEBYTECODE: '1'
+      DATABASE_URL: postgresql+psycopg://go:go_ci_disposable@localhost:5432/go_test
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go:go_ci_disposable@localhost:5432/go_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: tooling
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SEALED_CANDIDATE }}
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Restore exact accepted candidate
+        shell: bash
+        run: |
+          mkdir -p evidence
+          test "$SEALED_CANDIDATE" = "$EXPECTED_CANDIDATE"
+          test "$(git -C candidate rev-parse HEAD)" = "$SEALED_CANDIDATE"
+          python tooling/ci/depth37-pg/materialize_parent.py \
+            --depth26 candidate/deliverables/CP11_DEPTH26_20260909 \
+            --depth27 candidate/deliverables/CP11_DEPTH27_20260909 \
+            --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 \
+            --output "$GITHUB_WORKSPACE/restored-parent" | tee evidence/parent-restore.log
+          python candidate/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/restore_depth29.py \
+            --parent "$GITHUB_WORKSPACE/restored-parent" \
+            --output "$GITHUB_WORKSPACE/restored-depth29" | tee evidence/depth29-restore.log
+          python candidate/deliverables/CP11_DEPTH30_NATIVE_PAYMENT_20260909/restore_depth30.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth29" \
+            --output "$GITHUB_WORKSPACE/restored-depth30" | tee evidence/depth30-restore.log
+          python candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth30" \
+            --package candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth31" | tee evidence/depth31-restore.log
+          python candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth31" \
+            --package candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth32r2" | tee evidence/depth32r2-restore.log
+          python candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth32r2" \
+            --package candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth33" | tee evidence/depth33-restore.log
+          python candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth33" \
+            --package candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth34r2" | tee evidence/depth34r2-restore.log
+          python candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth34r2" \
+            --package candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth35r2" | tee evidence/depth35r2-restore.log
+          python candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth35r2" \
+            --package candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth36" | tee evidence/depth36-restore.log
+          python candidate/deliverables/CP11_DEPTH36R2_SUPPORT_RESTORE_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth36" \
+            --package candidate/deliverables/CP11_DEPTH36R2_SUPPORT_RESTORE_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth36r2" | tee evidence/depth36r2-restore.log
+          python candidate/deliverables/CP11_DEPTH36R3_MOBILE_CONTRACT_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth36r2" \
+            --package candidate/deliverables/CP11_DEPTH36R3_MOBILE_CONTRACT_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth36r3" | tee evidence/depth36r3-restore.log
+          python candidate/deliverables/CP11_DEPTH37_NODE_NATIVE_PROVIDER_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth36r3" \
+            --package candidate/deliverables/CP11_DEPTH37_NODE_NATIVE_PROVIDER_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth37" | tee evidence/depth37-restore.log
+          python candidate/deliverables/CP11_DEPTH37R2_NATIVE_MODULE_LINKING_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth37" \
+            --package candidate/deliverables/CP11_DEPTH37R2_NATIVE_MODULE_LINKING_20260910 \
+            --output "$GITHUB_WORKSPACE/restored" | tee evidence/restore.log
+      - name: Migrate isolated database and run six real PostgreSQL tests
+        run: python tooling/ci/depth37-pg/accept.py
+      - name: Export exact evidence
+        if: always()
+        run: python tooling/ci/depth37-pg/export.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: GO-DEPTH37-POSTGRES-${{ github.run_id }}
+          path: evidence/
+          retention-days: 90
+          if-no-files-found: error
