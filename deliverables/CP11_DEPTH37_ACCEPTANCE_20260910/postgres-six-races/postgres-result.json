@@ -1,0 +1,17 @@
+{
+  "tests": 6,
+  "pass": 6,
+  "skip": 0,
+  "fail": 0,
+  "migration": "PASS",
+  "server": "PostgreSQL 16.4 isolated service",
+  "cases": [
+    "test_order_payment_root_unique_under_postgres_race",
+    "test_0101_order_payment_root_exactly_once_postgres",
+    "test_0101_webhook_delivery_replay_unique_postgres",
+    "test_0101_capture_refund_serialization_postgres",
+    "test_0101_finance_close_approval_race_postgres",
+    "test_0101_postgres_server_is_real_postgres"
+  ],
+  "production_database_proof": false
+}

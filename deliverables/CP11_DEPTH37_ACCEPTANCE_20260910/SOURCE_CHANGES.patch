@@ -1,0 +1,566 @@
+--- DEPTH36R3/gate_toolchain/NODE_SOURCE.json
++++ DEPTH37R2/gate_toolchain/NODE_SOURCE.json
+@@ -0,0 +1,12 @@
++{
++  "toolchain_release": "R3.1.7-V7",
++  "component": "node",
++  "version": "v22.22.0",
++  "platform": "linux-x64",
++  "target_os_contract": "Ubuntu 22.04",
++  "target_glibc_max": "2.35",
++  "artifact_name": "node-v22.22.0-linux-x64.tar.xz",
++  "upstream_url": "https://nodejs.org/dist/v22.22.0/node-v22.22.0-linux-x64.tar.xz",
++  "expected_sha256": "9aa8e9d2298ab68c600bd6fb86a6c13bce11a4eca1ba9b39d79fa021755d7c37",
++  "source_status": "PINNED_OFFICIAL_NODEJS_BINARY"
++}
+--- DEPTH36R3/mobile/go-app/app.config.js
++++ DEPTH37R2/mobile/go-app/app.config.js
+@@ -1,8 +1,26 @@
+-const base=require('./app.json').expo;
+-const env=process.env.EXPO_PUBLIC_ENV||'development';
+-const apiByEnv={
+-  development:process.env.EXPO_PUBLIC_API_URL||'http://localhost:8000',
+-  staging:process.env.EXPO_PUBLIC_API_URL||'https://staging-api.go.travel',
+-  production:process.env.EXPO_PUBLIC_API_URL||'https://api.go.travel'
++// Build-time API binding. Local development retains the existing loopback API.
++module.exports = ({ config }) => {
++  const profile = process.env.EAS_BUILD_PROFILE || '';
++  const environment = process.env.EXPO_PUBLIC_ENV || '';
++  const externalBuild = ['preview', 'production'].includes(profile) ||
++    ['staging', 'production'].includes(environment);
++  const supplied = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_API_BASE_URL;
++  if (externalBuild && !supplied) throw new Error('GO_BUILD_API_BASE_URL_REQUIRED');
++  const apiBaseUrl = supplied || config.extra?.apiBaseUrl || 'http://localhost:8000';
++  let url;
++  try { url = new URL(apiBaseUrl); } catch { throw new Error('GO_BUILD_API_BASE_URL_INVALID'); }
++  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash)
++    throw new Error('GO_BUILD_API_BASE_URL_INVALID');
++  const host = url.hostname.toLowerCase();
++  if (externalBuild && (url.protocol !== 'https:' || host === 'localhost' ||
++      host.endsWith('.localhost') || host === '[::1]' || /^127\./.test(host) ||
++      host === '0.0.0.0' || host === 'invalid' || host.endsWith('.invalid')))
++    throw new Error('GO_BUILD_API_BASE_URL_NOT_DEPLOYABLE');
++  return { ...config, version: '1.1.0', runtimeVersion: {policy: 'appVersion'},
++    updates: {fallbackToCacheTimeout: 0},
++    extra: { ...config.extra, environment: environment || 'development',
++      apiBaseUrl: url.href.replace(/\/$/, ''),
++      eas: {projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || 'REPLACE_WITH_EAS_PROJECT_ID'} },
++    ios: {...config.ios, buildNumber: process.env.IOS_BUILD_NUMBER || '1'},
++    android: {...config.android, versionCode: Number(process.env.ANDROID_VERSION_CODE || 1)} };
+ };
+-module.exports={expo:{...base,version:'1.1.0',runtimeVersion:{policy:'appVersion'},updates:{fallbackToCacheTimeout:0},extra:{...base.extra,environment:env,apiBaseUrl:apiByEnv[env],eas:{projectId:process.env.EXPO_PUBLIC_EAS_PROJECT_ID||'REPLACE_WITH_EAS_PROJECT_ID'}},ios:{...base.ios,buildNumber:process.env.IOS_BUILD_NUMBER||'1'},android:{...base.android,versionCode:Number(process.env.ANDROID_VERSION_CODE||1)}}};
+--- DEPTH36R3/mobile/go-app/package.json
++++ DEPTH37R2/mobile/go-app/package.json
+@@ -32,7 +32,11 @@
+     "react-native-safe-area-context": "5.4.0",
+     "react-native-screens": "~4.11.0",
+     "@react-native-community/netinfo": "^11.4.1",
+-    "@react-native-async-storage/async-storage": "^2.1.2"
++    "@react-native-async-storage/async-storage": "^2.1.2",
++    "expo-asset": "11.1.7",
++    "expo-file-system": "18.1.11",
++    "expo-font": "13.3.2",
++    "expo-keep-awake": "14.1.4"
+   },
+   "devDependencies": {
+     "@types/react": "~19.0.0",
+--- DEPTH36R3/mobile/go-app/scripts/native-modules-check.mjs
++++ DEPTH37R2/mobile/go-app/scripts/native-modules-check.mjs
+@@ -0,0 +1,31 @@
++// Verify SDK 53 autolinking from both JS and generated native working directories.
++import {createRequire} from 'node:module';
++import {dirname, resolve, relative, isAbsolute} from 'node:path';
++import {fileURLToPath} from 'node:url';
++import {spawnSync} from 'node:child_process';
++import {existsSync} from 'node:fs';
++const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
++const require=createRequire(resolve(root,'package.json'));
++const manifest=require.resolve('expo-modules-autolinking/package.json');
++const pkg=require(manifest);
++const bin=typeof pkg.bin==='string'?pkg.bin:pkg.bin['expo-modules-autolinking'];
++const required=['expo','expo-modules-core','expo-asset','expo-file-system','expo-font','expo-keep-awake'];
++const native=process.argv.includes('--native');
++for (const platform of ['apple','android']) {
++  const nativeDir=resolve(root,platform==='apple'?'ios':'android');
++  const contexts=[root];
++  if(native && existsSync(nativeDir)) contexts.push(nativeDir);
++  for(const cwd of contexts) {
++    const p=spawnSync(process.execPath,[resolve(dirname(manifest),bin),'search','--json','--platform',platform],{cwd,encoding:'utf8'});
++    if(p.status!==0)throw new Error('NATIVE_MODULE_SEARCH_FAILED: '+p.stderr);
++    const found=JSON.parse(p.stdout);
++    const missing=required.filter(name=>!found[name]);
++    const outside=required.filter(name=>found[name]).filter(name=>{
++      const path=relative(resolve(root,'node_modules'),found[name].path);
++      return path==='..'||path.startsWith('../')||isAbsolute(path);
++    });
++    console.log(JSON.stringify({platform,cwd:relative(root,cwd)||'.',required,missing,outside,modules:Object.fromEntries(required.filter(name=>found[name]).map(name=>[name,{version:found[name].version,path:found[name].path}]))},null,2));
++    if(missing.length||outside.length)throw new Error('INVALID_NATIVE_MODULE_GRAPH: '+platform+': '+JSON.stringify({missing,outside}));
++  }
++}
++if(native && !existsSync(resolve(root,'ios')) && !existsSync(resolve(root,'android')))throw new Error('NATIVE_DIRECTORIES_REQUIRED');
+--- DEPTH36R3/mobile/go-app/src/design.ts
++++ DEPTH37R2/mobile/go-app/src/design.ts
+@@ -34,4 +34,5 @@
+   row:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
+   divider:{height:1,backgroundColor:GO.line,marginVertical:16}, section:{marginTop:24},
+   label:{...type.captionS,fontWeight:'500',color:GO.slate,textTransform:'uppercase',letterSpacing:.7},
++  input:{...type.bodyM,color:GO.navy,backgroundColor:GO.white,borderWidth:1,borderColor:GO.line,borderRadius:GO.radius.m,paddingHorizontal:14,paddingVertical:12,marginTop:8},
+ });
+--- DEPTH36R3/mobile/go-app/src/navigation/linking.ts
++++ DEPTH37R2/mobile/go-app/src/navigation/linking.ts
+@@ -1,5 +1,18 @@
+ import * as Linking from 'expo-linking';
+-export const linking={
++import type {LinkingOptions, NavigatorScreenParams} from '@react-navigation/native';
++
++type MainTabParams = {Home: undefined; Search: undefined; Trips: undefined; Wallet: undefined; Profile: undefined};
++type LinkedRootParams = {
++  Main: NavigatorScreenParams<MainTabParams>;
++  HotelDetail: {hotelId: string};
++  DirectValue: {hotelId: string};
++  OrderDetail: {orderId: string};
++  QuickReview: {reviewId: string};
++  Notifications: undefined;
++  TravelProfileVault: undefined;
++  TravelProfileImport: undefined;
++};
++export const linking: LinkingOptions<LinkedRootParams> = {
+   prefixes:[Linking.createURL('/'),'go://','https://go.travel/app'],
+   config:{screens:{
+     Main:{screens:{Home:'home',Search:'search',Trips:'trips',Wallet:'wallet',Profile:'profile'}},
+--- DEPTH36R3/mobile/go-app/src/screens/JourneyRecoveryScreen.tsx
++++ DEPTH37R2/mobile/go-app/src/screens/JourneyRecoveryScreen.tsx
+@@ -1,3 +1,3 @@
+ import React,{useEffect,useState}from'react';import{ActivityIndicator,ScrollView,Text,View,Pressable}from'react-native';import{GO,screen}from'../design';import{TopBar,StatusPill}from'../components/GO';import{api}from'../api/client';
+-export default function JourneyRecovery({navigation,route}:any){const[d,setD]=useState<any>(null),[error,setError]=useState(''),[selected,setSelected]=useState<any>({});useEffect(()=>{const jid=route.params?.journeyId;if(!jid){setError('JOURNEY_ID_REQUIRED');return}api(`/v1/trips/journeys/${jid}/recovery-plans`,{method:'POST',body:JSON.stringify({advice_id:route.params?.adviceId})}).then(r=>setD(r.data)).catch(e=>setError(e.message))},[]);return <View style={screen.root}><TopBar title="恢复方案" onBack={()=>navigation.goBack()}/><ScrollView contentContainerStyle={screen.content}>{!d&&!error?<ActivityIndicator color={GO.navy}/>:error?<View style={screen.card}><Text style={screen.h2}>恢复方案生成失败</Text><Text style={screen.sub}>{error}</Text></View>:<><Text style={screen.h1}>可执行恢复备选</Text>{(d.options||[]).length===0?<View style={screen.card}><Text style={screen.sub}>当前没有通过实时校验的恢复方案。</Text></View>:(d.options||[]).map((o:any)=><Pressable key={o.option_id} onPress={()=>setSelected((x:any)=>({...x,[o.impact_id]:o.option_id}))} style={screen.card}><View style={screen.row}><Text style={screen.h2}>{o.title}</Text><StatusPill text={selected[o.impact_id]===o.option_id?'已选择':'可选'} tone="blue"/></View><Text style={screen.sub}>{o.subtitle}</Text><Text style={screen.sub}>费用变化：{o.total_delta_minor} {o.currency||'CNY'}</Text></Pressable>)}<Pressable onPress={()=>navigation.navigate('JourneyRecoveryReview',{journeyId:route.params.journeyId,planId:d.plan_id,optionIds:Object.values(selected),quotedDeltaMinor:d.total_delta_minor})} style={{backgroundColor:GO.navy,borderRadius:16,padding:16}}><Text style={{color:'white',textAlign:'center',fontWeight:'900'}}>比较并确认</Text></Pressable></>}</ScrollView></View>}
++export default function JourneyRecovery({navigation,route}:any){const[d,setD]=useState<any>(null),[error,setError]=useState(''),[selected,setSelected]=useState<any>({});useEffect(()=>{const jid=route.params?.journeyId;if(!jid){setError('JOURNEY_ID_REQUIRED');return}api(`/v1/trips/journeys/${jid}/recovery-plans`,{method:'POST',body:JSON.stringify({advice_id:route.params?.adviceId})}).then(r=>setD(r.data)).catch(e=>setError(e.message))},[]);return <View style={screen.root}><TopBar title="恢复方案" onBack={()=>navigation.goBack()}/><ScrollView contentContainerStyle={screen.content}>{!d&&!error?<ActivityIndicator color={GO.navy}/>:error?<View style={screen.card}><Text style={screen.h2}>恢复方案生成失败</Text><Text style={screen.sub}>{error}</Text></View>:<><Text style={screen.h1}>可执行恢复备选</Text>{(d.options||[]).length===0?<View style={screen.card}><Text style={screen.sub}>当前没有通过实时校验的恢复方案。</Text></View>:(d.options||[]).map((o:any)=><Pressable key={o.option_id} onPress={()=>setSelected((x:any)=>({...x,[o.impact_id]:o.option_id}))} style={screen.card}><View style={screen.row}><Text style={screen.h2}>{o.title}</Text><StatusPill text={selected[o.impact_id]===o.option_id?'已选择':'可选'} tone="navy"/></View><Text style={screen.sub}>{o.subtitle}</Text><Text style={screen.sub}>费用变化：{o.total_delta_minor} {o.currency||'CNY'}</Text></Pressable>)}<Pressable onPress={()=>navigation.navigate('JourneyRecoveryReview',{journeyId:route.params.journeyId,planId:d.plan_id,optionIds:Object.values(selected),quotedDeltaMinor:d.total_delta_minor})} style={{backgroundColor:GO.navy,borderRadius:16,padding:16}}><Text style={{color:'white',textAlign:'center',fontWeight:'900'}}>比较并确认</Text></Pressable></>}</ScrollView></View>}
+ 
+--- DEPTH36R3/scripts/p0_0101_named_provider_certification.py
++++ DEPTH37R2/scripts/p0_0101_named_provider_certification.py
+@@ -15,6 +15,7 @@
+ from datetime import datetime, timezone
+ from pathlib import Path
+ import httpx
++from provider_certification_preflight import inspect_inputs
+ 
+ OUT=Path(os.getenv('P0_0101_EVIDENCE_PATH','verification/p0_0101_named_provider_external_evidence.json'))
+ 
+@@ -88,6 +89,11 @@
+     result={'sprint':'P0 0101','named_psp':'Stripe Test Mode','named_hotel_supplier':'SiteMinder Channels Plus Test Environment','started_at':datetime.now(timezone.utc).isoformat(),'missing_required_inputs':missing,'evidence':[],'gate':'BLOCK'}
+     if missing:
+         result['reason']='NAMED_PROVIDER_CREDENTIAL_OR_TEST_DATA_MISSING';write(result);print(json.dumps(result,indent=2));return 2
++    preflight=inspect_inputs(os.environ)
++    if not preflight['ready']:
++        result['reason']='NAMED_PROVIDER_SANDBOX_INPUT_INVALID'
++        result['invalid_input_codes']=preflight['invalid_input_codes']
++        write(result);print(json.dumps(result,indent=2));return 2
+     try:
+         result['stripe']=stripe_run(result['evidence']);result['siteminder']=siteminder_run(result['evidence']);result['gate']='NAMED_PROVIDER_EXTERNAL_CALLS_PASS'
+         result['reason']='EXTERNAL_CALLS_EXECUTED; CALLBACK/SETTLEMENT/BANK/POSTGRES PROOFS STILL SEPARATE'
+--- DEPTH36R3/scripts/provider_certification_preflight.py
++++ DEPTH37R2/scripts/provider_certification_preflight.py
+@@ -0,0 +1,49 @@
++"""Inspect named sandbox inputs locally; never make a network request."""
++import argparse
++import json
++import os
++from pathlib import Path
++from urllib.parse import urlsplit
++
++REQUIRED = ('STRIPE_TEST_SECRET_KEY', 'SITEMINDER_CHANNELS_PLUS_BASE_URL',
++    'SITEMINDER_CHANNELS_PLUS_API_ID', 'SITEMINDER_CHANNELS_PLUS_API_KEY',
++    'SITEMINDER_CERT_PROPERTIES_QUERY_JSON', 'SITEMINDER_CERT_PROPERTY_UUID',
++    'SITEMINDER_CERT_LOCK_BODY_JSON', 'SITEMINDER_CERT_CONFIRM_BODY_JSON')
++
++def inspect_inputs(values):
++    missing = [name for name in REQUIRED if not values.get(name)]
++    invalid = []
++    key = values.get('STRIPE_TEST_SECRET_KEY', '')
++    if key and not key.startswith(('sk_test_', 'rk_test_')):
++        invalid.append('STRIPE_TEST_KEY_REQUIRED')
++    if values.get('STRIPE_API_BASE', 'https://api.stripe.com').rstrip('/') != 'https://api.stripe.com':
++        invalid.append('STRIPE_OFFICIAL_API_REQUIRED')
++    base = values.get('SITEMINDER_CHANNELS_PLUS_BASE_URL')
++    if base:
++        try:
++            url = urlsplit(base); host = (url.hostname or '').lower()
++            if (url.scheme != 'https' or not host or url.username or url.password or
++                url.query or url.fragment or host in ('localhost','::1','0.0.0.0') or
++                host.startswith('127.') or host.endswith(('.invalid','.example','.test','.localhost'))):
++                invalid.append('SITEMINDER_EXTERNAL_HTTPS_ENDPOINT_REQUIRED')
++        except ValueError:
++            invalid.append('SITEMINDER_EXTERNAL_HTTPS_ENDPOINT_REQUIRED')
++    for name in ('SITEMINDER_CERT_PROPERTIES_QUERY_JSON', 'SITEMINDER_CERT_LOCK_BODY_JSON', 'SITEMINDER_CERT_CONFIRM_BODY_JSON'):
++        if values.get(name):
++            try:
++                if not isinstance(json.loads(values[name]), dict): raise ValueError()
++            except (ValueError, TypeError): invalid.append(name + '_OBJECT_REQUIRED')
++    ready = not missing and not invalid
++    return {'gate': 'INPUTS_READY_NOT_CERTIFIED' if ready else 'BLOCK',
++        'ready': ready, 'missing_required_inputs': missing, 'invalid_input_codes': invalid,
++        'external_calls': 0, 'credential_values_recorded': False,
++        'external_certification': 'NOT_RUN', 'final_release': 'HOLD'}
++
++def main():
++    parser=argparse.ArgumentParser();parser.add_argument('--evidence',type=Path,required=True)
++    args=parser.parse_args();result=inspect_inputs(os.environ)
++    args.evidence.parent.mkdir(parents=True,exist_ok=True)
++    args.evidence.write_text(json.dumps(result,indent=2)+'\n')
++    print(json.dumps(result,indent=2));return 0 if result['ready'] else 2
++
++if __name__ == '__main__': raise SystemExit(main())
+--- DEPTH36R3/specs/provider_adapters/agoda_sandbox_template.json
++++ DEPTH37R2/specs/provider_adapters/agoda_sandbox_template.json
+@@ -0,0 +1,102 @@
++{
++  "schema": "go.hotel-supply-provider-adapter-contract.v1",
++  "template_status": "INCOMPLETE_UNTIL_SIGNED_SUPPLIER_DOCUMENTATION",
++  "provider": {
++    "provider_code": "AGODA",
++    "supplier_legal_name": "__REQUIRED_FROM_CONTRACT__",
++    "environment": "SANDBOX"
++  },
++  "contract_source": {
++    "authority": "SIGNED_SUPPLIER_DOCUMENTATION",
++    "documentation_reference": "__REQUIRED__",
++    "documentation_version": "__REQUIRED__",
++    "documentation_hash": "__REQUIRED_SHA256__"
++  },
++  "transport": {
++    "base_url": "__REQUIRED_HTTPS_SANDBOX_BASE_URL__",
++    "auth": {
++      "method": "__REQUIRED_FROM_SIGNED_DOCS__",
++      "credential_reference": "vault://__REQUIRED__"
++    },
++    "ip_allowlist_reference": "__REQUIRED__"
++  },
++  "operations": {
++    "availability": {
++      "method": "__REQUIRED__",
++      "path": "__REQUIRED__",
++      "headers_template": {},
++      "request_mapping": {},
++      "response_mapping": {}
++    },
++    "quote": {
++      "method": "__REQUIRED__",
++      "path": "__REQUIRED__",
++      "headers_template": {},
++      "request_mapping": {},
++      "response_mapping": {}
++    },
++    "book": {
++      "method": "__REQUIRED__",
++      "path": "__REQUIRED__",
++      "headers_template": {},
++      "request_mapping": {},
++      "response_mapping": {}
++    },
++    "query": {
++      "method": "__REQUIRED__",
++      "path": "__REQUIRED__",
++      "headers_template": {},
++      "request_mapping": {},
++      "response_mapping": {}
++    },
++    "cancel": {
++      "method": "__REQUIRED__",
++      "path": "__REQUIRED__",
++      "headers_template": {},
++      "request_mapping": {},
++      "response_mapping": {}
++    }
++  },
++  "canonical_mapping": {
++    "property": {},
++    "room": {},
++    "rate_plan": {},
++    "availability": {},
++    "quote": {},
++    "booking": {},
++    "cancellation": {}
++  },
++  "webhook": {
++    "callback_path": "/internal/v1/hotel-supply/webhooks/agoda",
++    "event_mapping": {},
++    "signature": {
++      "scheme": "__REQUIRED_FROM_SIGNED_DOCS__",
++      "signature_header": "__REQUIRED__",
++      "timestamp_header": "__REQUIRED__",
++      "replay_tolerance_seconds": 300,
++      "secret_reference": "vault://__REQUIRED__"
++    }
++  },
++  "error_mapping": {
++    "supplier_to_go": {},
++    "unknown_error_policy": "FAIL_CLOSED"
++  },
++  "limits": {
++    "requests_per_second": "__REQUIRED__",
++    "max_concurrency": "__REQUIRED__",
++    "connect_timeout_ms": "__REQUIRED__",
++    "read_timeout_ms": "__REQUIRED__",
++    "max_attempts": "__REQUIRED__",
++    "retryable_go_errors": []
++  },
++  "attestation": {
++    "contract_reference": "__REQUIRED__",
++    "sandbox_account_reference": "__REQUIRED__",
++    "test_property_reference": "__REQUIRED__",
++    "authorized_scope": "HOTEL_SUPPLY_SANDBOX_CERTIFICATION",
++    "evidence_references": [],
++    "prepared_by": "__REQUIRED__",
++    "prepared_at": "__REQUIRED_ISO8601__",
++    "external_transport_verified": false
++  }
++}--- DEPTH36R3/specs/provider_adapters/generic_named_supplier_sandbox_template.json
++++ DEPTH37R2/specs/provider_adapters/generic_named_supplier_sandbox_template.json
+@@ -0,0 +1,102 @@
++{
++  "schema": "go.hotel-supply-provider-adapter-contract.v1",
++  "template_status": "INCOMPLETE_UNTIL_SIGNED_SUPPLIER_DOCUMENTATION",
++  "provider": {
++    "provider_code": "__NAMED_SUPPLIER_CODE__",
++    "supplier_legal_name": "__REQUIRED_FROM_CONTRACT__",
++    "environment": "SANDBOX"
++  },
++  "contract_source": {
++    "authority": "SIGNED_SUPPLIER_DOCUMENTATION",
++    "documentation_reference": "__REQUIRED__",
++    "documentation_version": "__REQUIRED__",
++    "documentation_hash": "__REQUIRED_SHA256__"
++  },
++  "transport": {
++    "base_url": "__REQUIRED_HTTPS_SANDBOX_BASE_URL__",
++    "auth": {
++      "method": "__REQUIRED_FROM_SIGNED_DOCS__",
++      "credential_reference": "vault://__REQUIRED__"
++    },
++    "ip_allowlist_reference": "__REQUIRED__"
++  },
++  "operations": {
++    "availability": {
++      "method": "__REQUIRED__",
++      "path": "__REQUIRED__",
++      "headers_template": {},
++      "request_mapping": {},
++      "response_mapping": {}
++    },
++    "quote": {
++      "method": "__REQUIRED__",
++      "path": "__REQUIRED__",
++      "headers_template": {},
++      "request_mapping": {},
++      "response_mapping": {}
++    },
++    "book": {
++      "method": "__REQUIRED__",
++      "path": "__REQUIRED__",
++      "headers_template": {},
++      "request_mapping": {},
++      "response_mapping": {}
++    },
++    "query": {
++      "method": "__REQUIRED__",
++      "path": "__REQUIRED__",
++      "headers_template": {},
++      "request_mapping": {},
++      "response_mapping": {}
++    },
++    "cancel": {
++      "method": "__REQUIRED__",
++      "path": "__REQUIRED__",
++      "headers_template": {},
++      "request_mapping": {},
++      "response_mapping": {}
++    }
++  },
++  "canonical_mapping": {
++    "property": {},
++    "room": {},
++    "rate_plan": {},
++    "availability": {},
++    "quote": {},
++    "booking": {},
++    "cancellation": {}
++  },
++  "webhook": {
++    "callback_path": "/internal/v1/hotel-supply/webhooks/__provider_code__",
++    "event_mapping": {},
++    "signature": {
++      "scheme": "__REQUIRED_FROM_SIGNED_DOCS__",
++      "signature_header": "__REQUIRED__",
++      "timestamp_header": "__REQUIRED__",
++      "replay_tolerance_seconds": 300,
++      "secret_reference": "vault://__REQUIRED__"
++    }
++  },
++  "error_mapping": {
++    "supplier_to_go": {},
++    "unknown_error_policy": "FAIL_CLOSED"
++  },
++  "limits": {
++    "requests_per_second": "__REQUIRED__",
++    "max_concurrency": "__REQUIRED__",
++    "connect_timeout_ms": "__REQUIRED__",
++    "read_timeout_ms": "__REQUIRED__",
++    "max_attempts": "__REQUIRED__",
++    "retryable_go_errors": []
++  },
++  "attestation": {
++    "contract_reference": "__REQUIRED__",
++    "sandbox_account_reference": "__REQUIRED__",
++    "test_property_reference": "__REQUIRED__",
++    "authorized_scope": "HOTEL_SUPPLY_SANDBOX_CERTIFICATION",
++    "evidence_references": [],
++    "prepared_by": "__REQUIRED__",
++    "prepared_at": "__REQUIRED_ISO8601__",
++    "external_transport_verified": false
++  }
++}--- DEPTH36R3/specs/provider_adapters/tongcheng_sandbox_template.json
++++ DEPTH37R2/specs/provider_adapters/tongcheng_sandbox_template.json
+@@ -0,0 +1,66 @@
++{
++  "schema": "go.hotel-supply-provider-adapter-contract.v1",
++  "template_status": "INCOMPLETE_UNTIL_SIGNED_SUPPLIER_DOCUMENTATION",
++  "provider": {
++    "provider_code": "TONGCHENG",
++    "supplier_legal_name": "__REQUIRED_FROM_CONTRACT__",
++    "environment": "SANDBOX"
++  },
++  "contract_source": {
++    "authority": "SIGNED_SUPPLIER_DOCUMENTATION",
++    "documentation_reference": "__REQUIRED__",
++    "documentation_version": "__REQUIRED__",
++    "documentation_hash": "__REQUIRED_SHA256__"
++  },
++  "transport": {
++    "base_url": "__REQUIRED_HTTPS_SANDBOX_BASE_URL__",
++    "auth": {
++      "method": "__REQUIRED_FROM_SIGNED_DOCS__",
++      "credential_reference": "vault://__REQUIRED__"
++    },
++    "ip_allowlist_reference": "__REQUIRED__"
++  },
++  "operations": {
++    "availability": {"method": "__REQUIRED__", "path": "__REQUIRED__", "headers_template": {}, "request_mapping": {}, "response_mapping": {}},
++    "quote": {"method": "__REQUIRED__", "path": "__REQUIRED__", "headers_template": {}, "request_mapping": {}, "response_mapping": {}},
++    "book": {"method": "__REQUIRED__", "path": "__REQUIRED__", "headers_template": {}, "request_mapping": {}, "response_mapping": {}},
++    "query": {"method": "__REQUIRED__", "path": "__REQUIRED__", "headers_template": {}, "request_mapping": {}, "response_mapping": {}},
++    "cancel": {"method": "__REQUIRED__", "path": "__REQUIRED__", "headers_template": {}, "request_mapping": {}, "response_mapping": {}}
++  },
++  "canonical_mapping": {
++    "property": {}, "room": {}, "rate_plan": {}, "availability": {}, "quote": {}, "booking": {}, "cancellation": {}
++  },
++  "webhook": {
++    "callback_path": "/internal/v1/hotel-supply/webhooks/tongcheng",
++    "event_mapping": {},
++    "signature": {
++      "scheme": "__REQUIRED_FROM_SIGNED_DOCS__",
++      "signature_header": "__REQUIRED__",
++      "timestamp_header": "__REQUIRED__",
++      "replay_tolerance_seconds": 300,
++      "secret_reference": "vault://__REQUIRED__"
++    }
++  },
++  "error_mapping": {
++    "supplier_to_go": {},
++    "unknown_error_policy": "FAIL_CLOSED"
++  },
++  "limits": {
++    "requests_per_second": "__REQUIRED__",
++    "max_concurrency": "__REQUIRED__",
++    "connect_timeout_ms": "__REQUIRED__",
++    "read_timeout_ms": "__REQUIRED__",
++    "max_attempts": "__REQUIRED__",
++    "retryable_go_errors": []
++  },
++  "attestation": {
++    "contract_reference": "__REQUIRED__",
++    "sandbox_account_reference": "__REQUIRED__",
++    "test_property_reference": "__REQUIRED__",
++    "authorized_scope": "HOTEL_SUPPLY_SANDBOX_CERTIFICATION",
++    "evidence_references": [],
++    "prepared_by": "__REQUIRED__",
++    "prepared_at": "__REQUIRED_ISO8601__",
++    "external_transport_verified": false
++  }
++}
+--- DEPTH36R3/tests/test_depth37_provider_preflight.py
++++ DEPTH37R2/tests/test_depth37_provider_preflight.py
+@@ -0,0 +1,37 @@
++import importlib.util
++from pathlib import Path
++import unittest
++
++spec=importlib.util.spec_from_file_location('provider_preflight',Path(__file__).resolve().parents[1]/'scripts/provider_certification_preflight.py')
++module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
++
++class ProviderInputTests(unittest.TestCase):
++    def inputs(self):
++        return dict(zip(module.REQUIRED, ['sk_test_fixture_only','https://sandbox.siteminder.com','fixture-id','fixture-secret','{}','fixture-property','{}','{}']))
++
++    def test_missing_inputs_never_certify(self):
++        result=module.inspect_inputs({})
++        self.assertFalse(result['ready']);self.assertEqual(len(result['missing_required_inputs']),8)
++        self.assertEqual(result['external_calls'],0)
++
++    def test_live_payment_key_is_rejected_without_exposing_it(self):
++        data=self.inputs();data['STRIPE_TEST_SECRET_KEY']='sk_live_do_not_use'
++        result=module.inspect_inputs(data)
++        self.assertFalse(result['ready']);self.assertNotIn('sk_live_do_not_use',str(result))
++
++    def test_credential_redirect_and_nonexternal_endpoints_are_rejected(self):
++        for field,value in [('STRIPE_API_BASE','https://other.invalid'),
++                            ('SITEMINDER_CHANNELS_PLUS_BASE_URL','http://sandbox.siteminder.com'),
++                            ('SITEMINDER_CHANNELS_PLUS_BASE_URL','https://key:secret@sandbox.siteminder.com'),
++                            ('SITEMINDER_CHANNELS_PLUS_BASE_URL','https://supplier.invalid')]:
++            data=self.inputs();data[field]=value;self.assertFalse(module.inspect_inputs(data)['ready'])
++
++    def test_request_fixtures_must_be_json_objects(self):
++        for value in ['[1]','null','{invalid']:
++            data=self.inputs();data['SITEMINDER_CERT_LOCK_BODY_JSON']=value
++            self.assertFalse(module.inspect_inputs(data)['ready'])
++
++    def test_valid_input_structure_remains_uncertified(self):
++        result=module.inspect_inputs(self.inputs())
++        self.assertTrue(result['ready']);self.assertEqual(result['gate'],'INPUTS_READY_NOT_CERTIFIED')
++        self.assertEqual(result['external_certification'],'NOT_RUN');self.assertEqual(result['external_calls'],0)
+--- DEPTH36R3/tests_frontend/mobile_build_config.test.mjs
++++ DEPTH37R2/tests_frontend/mobile_build_config.test.mjs
+@@ -0,0 +1,35 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import {createRequire} from 'node:module';
++const configure=createRequire(import.meta.url)('../mobile/go-app/app.config.js');
++function build(env){
++  const names=['EAS_BUILD_PROFILE','EXPO_PUBLIC_ENV','EXPO_PUBLIC_API_BASE_URL','EXPO_PUBLIC_API_URL','EXPO_PUBLIC_EAS_PROJECT_ID','IOS_BUILD_NUMBER','ANDROID_VERSION_CODE'];
++  const old=Object.fromEntries(names.map(n=>[n,process.env[n]]));
++  try{
++    for(const n of names){if(env[n]===undefined)delete process.env[n];else process.env[n]=env[n];}
++    return configure({config:{name:'GO',extra:{apiBaseUrl:'http://localhost:8000',retained:true}}});
++  }finally{for(const n of names){if(old[n]===undefined)delete process.env[n];else process.env[n]=old[n];}}
++}
++test('local build preserves development API and unrelated Expo config',()=>{
++  const c=build({});assert.equal(c.extra.apiBaseUrl,'http://localhost:8000');assert.equal(c.name,'GO');assert.equal(c.extra.retained,true);
++});
++test('preview and production require an explicit API binding',()=>{
++  for(const profile of ['preview','production'])assert.throws(()=>build({EAS_BUILD_PROFILE:profile}),/GO_BUILD_API_BASE_URL_REQUIRED/);
++  assert.throws(()=>build({EXPO_PUBLIC_ENV:'staging'}),/GO_BUILD_API_BASE_URL_REQUIRED/);
++});
++test('external builds reject loopback, placeholder, plaintext and credential URLs',()=>{
++  for(const url of ['http://api.example.test','https://localhost','https://127.0.0.1','https://[::1]','https://0.0.0.0','https://isolated.invalid','https://name:password@api.example.test','https://api.example.test?token=x'])
++    assert.throws(()=>build({EAS_BUILD_PROFILE:'preview',EXPO_PUBLIC_API_BASE_URL:url}));
++});
++test('explicit HTTPS build API reaches the same extra field consumed by client.ts',()=>{
++  const c=build({EAS_BUILD_PROFILE:'preview',EXPO_PUBLIC_API_BASE_URL:'https://api.example.test/'});
++  assert.equal(c.extra.apiBaseUrl,'https://api.example.test');
++});
++test('existing environment names and release metadata remain compatible',()=>{
++  const c=build({EXPO_PUBLIC_ENV:'staging',EXPO_PUBLIC_API_URL:'https://api.example.test',
++    EXPO_PUBLIC_EAS_PROJECT_ID:'fixture-project',IOS_BUILD_NUMBER:'17',ANDROID_VERSION_CODE:'23'});
++  assert.equal(c.extra.apiBaseUrl,'https://api.example.test');assert.equal(c.extra.environment,'staging');
++  assert.equal(c.extra.eas.projectId,'fixture-project');assert.equal(c.version,'1.1.0');
++  assert.deepEqual(c.runtimeVersion,{policy:'appVersion'});assert.equal(c.updates.fallbackToCacheTimeout,0);
++  assert.equal(c.ios.buildNumber,'17');assert.equal(c.android.versionCode,23);
++});

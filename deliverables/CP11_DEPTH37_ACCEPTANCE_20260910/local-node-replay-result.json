@@ -1,0 +1,27 @@
+{
+  "archive_sha256": "9aa8e9d2298ab68c600bd6fb86a6c13bce11a4eca1ba9b39d79fa021755d7c37",
+  "node_tree_sha256": "e744dfe9bddd2e2c63d92199ab97a428fd2c17203d8a84c120ea96a4bc76c469",
+  "node_version": "v22.22.0",
+  "max_required_glibc": "2.28",
+  "offline_replay": "PASS",
+  "checks": [
+    {
+      "check": "tamper",
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "pass": true
+    },
+    {
+      "check": "restored",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true
+    },
+    {
+      "check": "host-precedence",
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "pass": true
+    }
+  ]
+}

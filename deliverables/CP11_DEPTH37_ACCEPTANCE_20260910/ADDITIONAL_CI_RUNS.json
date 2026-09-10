@@ -1,0 +1,20 @@
+{
+  "duplicate_build": {
+    "run": 34476892601,
+    "ci_commit": "46d31cc66bee2b09bb3768da9b779a54eeb6b8f2",
+    "source_candidate": "da6897706793fafd73d09cb56013586089733f4d",
+    "ios_job": 102869736439,
+    "android_job": 102869736742,
+    "conclusions": {
+      "ios": "success",
+      "android": "success"
+    },
+    "reason": "PR cumulative file filter triggered a duplicate build when adding standalone Android startup workflow",
+    "selected_for_delivery": false,
+    "raw_logs_not_collected": "Authoritative build and delivered binaries remain run 34476573746"
+  },
+  "later_native_build_skipped": {
+    "run": 34478592207,
+    "reason": "Explicit original-build SHA guard prevents rebuilding unchanged source during startup-only CI updates"
+  }
+}

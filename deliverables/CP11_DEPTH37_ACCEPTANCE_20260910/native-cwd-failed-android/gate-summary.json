@@ -1,0 +1,129 @@
+{
+  "commands": [
+    {
+      "name": "node-provision",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 5.83
+    },
+    {
+      "name": "node-integrity",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 0.93
+    },
+    {
+      "name": "node-offline-replay",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 0.93
+    },
+    {
+      "name": "node-reject-tampering",
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "pass": true,
+      "seconds": 0.87
+    },
+    {
+      "name": "node-reject-host-precedence",
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "pass": true,
+      "seconds": 0.18
+    },
+    {
+      "name": "node-replay-restored",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 0.94
+    },
+    {
+      "name": "frontend-tests",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 3.15
+    },
+    {
+      "name": "provider-contract",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 0.22
+    },
+    {
+      "name": "provider-input-tests",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 0.33
+    },
+    {
+      "name": "provider-input-preflight",
+      "exit_code": 2,
+      "expected_exit_code": 2,
+      "pass": true,
+      "seconds": 0.19
+    },
+    {
+      "name": "mobile-install",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 11.61
+    },
+    {
+      "name": "native-module-discovery",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 0.95
+    },
+    {
+      "name": "mobile-typecheck",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 5.76
+    },
+    {
+      "name": "mobile-contract",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 0.03
+    },
+    {
+      "name": "mobile-export",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 26.24
+    },
+    {
+      "name": "native-prebuild",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "pass": true,
+      "seconds": 1.54
+    },
+    {
+      "name": "android-bundled-build",
+      "exit_code": 1,
+      "expected_exit_code": 0,
+      "pass": false,
+      "seconds": 227.15
+    }
+  ],
+  "physical_devices": "NOT_RUN_MISSING_DEVICE_ENVIRONMENT",
+  "provider_external_certification": "NOT_RUN_MISSING_SANDBOX_INPUTS",
+  "browser": "DEFERRED_POST_DEPLOYMENT",
+  "six_vertical_e2e": "DEFERRED_POST_DEPLOYMENT",
+  "final_release": "HOLD",
+  "source_unchanged": true
+}
