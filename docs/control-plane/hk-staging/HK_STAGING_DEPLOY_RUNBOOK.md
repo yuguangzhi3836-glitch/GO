@@ -30,8 +30,12 @@ installed artifact, durable record, and Signed Evidence remain authoritative.
    `task_id`, nonce, `release_id`, timestamps, and Ed25519 signature.
 6. Publish it through the authorized Command Center Tasks Writer to the
    private tasks repository. Read back and verify the committed Task.
-7. Let the formal HK Agent timer pick it up. Do not substitute direct
-   `sudo`/Executor invocation for the formal path.
+7. Let the formal HK Agent timer pick it up. The timer nominally polls every
+   60 seconds; a short observed pickup does not indicate a shorter configured
+   interval. Allow the normal polling window before diagnosing a pickup
+   failure, and do not substitute direct `sudo`/Executor invocation for the
+   formal path merely because pickup is not immediate. Timer timing is
+   operational behavior, not Execution Authority.
 8. The narrow Executor creates the durable previous-state record **before**
    any Docker mutation. Failure to create this record rejects the action.
 9. The Executor uses its fixed deployment scope and owns `--force-recreate`
