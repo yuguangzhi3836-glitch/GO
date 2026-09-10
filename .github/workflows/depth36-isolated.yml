@@ -1,0 +1,190 @@
+name: depth36r2-predeployment-acceptance
+on:
+  pull_request:
+    branches: ['deliverables/cp11-depth36r2-support-restore']
+    paths:
+      - '.github/workflows/depth36-isolated.yml'
+      - 'ci/depth36/**'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  isolated:
+    if: github.head_ref == 'acceptance/cp11-depth36r2-isolated'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    env:
+      ACCEPTANCE_SHARD: ${{ matrix.shard }}
+      SEALED_CANDIDATE: ${{ github.event.pull_request.base.sha }}
+      EXPECTED_SOURCE_TREE: a68f5f02e3f194d00d3e794bdafa08982be8c0ccb54d0a824c3008ffeb53f284
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout isolated acceptance tooling
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: tooling
+          persist-credentials: false
+      - name: Checkout exact candidate archive
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Select existing Node contract version
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Verify candidate and archive checksums
+        shell: bash
+        run: |
+          mkdir -p evidence
+          git -C candidate rev-parse HEAD | tee evidence/candidate-commit.txt
+          test "$(git -C candidate rev-parse HEAD)" = "$SEALED_CANDIDATE"
+          python -c 'import hashlib,json,pathlib;p=pathlib.Path("candidate/deliverables/CP11_DEPTH36R2_SUPPORT_RESTORE_20260910");m=json.loads((p/"MANIFEST.json").read_text());assert hashlib.sha256((p/"DELTA.json").read_bytes()).hexdigest()==m["delta_sha256"]'
+      - name: Restore pinned parent chain and DEPTH30 including native and root configs
+        shell: bash
+        run: |
+          python tooling/ci/depth36/materialize_parent.py \
+            --depth26 candidate/deliverables/CP11_DEPTH26_20260909 \
+            --depth27 candidate/deliverables/CP11_DEPTH27_20260909 \
+            --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 \
+            --output "$GITHUB_WORKSPACE/restored-parent" | tee evidence/parent-restore.log
+          python candidate/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/restore_depth29.py \
+            --parent "$GITHUB_WORKSPACE/restored-parent" \
+            --output "$GITHUB_WORKSPACE/restored-depth29" | tee evidence/depth29-restore.log
+          python candidate/deliverables/CP11_DEPTH30_NATIVE_PAYMENT_20260909/restore_depth30.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth29" \
+            --output "$GITHUB_WORKSPACE/restored-depth30" | tee evidence/depth30-restore.log
+          python candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth30" \
+            --package candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth31" | tee evidence/depth31-restore.log
+          python candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth31" \
+            --package candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth32r2" | tee evidence/depth32r2-restore.log
+          python candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth32r2" \
+            --package candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth33" | tee evidence/depth33-restore.log
+          python candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth33" \
+            --package candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth34r2" | tee evidence/depth34r2-restore.log
+          python candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth34r2" \
+            --package candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth35r2" | tee evidence/depth35r2-restore.log
+          python candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth35r2" \
+            --package candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth36" | tee evidence/depth36-restore.log
+          python candidate/deliverables/CP11_DEPTH36R2_SUPPORT_RESTORE_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth36" \
+            --package candidate/deliverables/CP11_DEPTH36R2_SUPPORT_RESTORE_20260910 \
+            --output "$GITHUB_WORKSPACE/restored" | tee evidence/restore.log
+      - name: Install exact frozen repository wheelhouse into disposable virtualenv
+        shell: bash
+        run: |
+          python tooling/ci/depth36/dependencies.py --repository candidate --output dependencies | tee evidence/dependencies.json
+          python -m venv isolated-runtime
+          isolated-runtime/bin/python -m pip install --no-index --no-deps --find-links dependencies/wheelhouse -r tooling/ci/depth36/requirements.lock
+          isolated-runtime/bin/python -m pip check
+          isolated-runtime/bin/python -m pip freeze > evidence/pip-freeze.txt
+      - name: Bind complete candidate source and runtime versions
+        shell: bash
+        run: |
+          isolated-runtime/bin/python - <<'PY'
+          import hashlib,json,os,pathlib,shutil,subprocess,sys
+          fp=json.loads(pathlib.Path('candidate/deliverables/CP11_DEPTH36R2_SUPPORT_RESTORE_20260910/SOURCE_FINGERPRINT.json').read_text())
+          for name,expected in fp.items():
+              assert hashlib.sha256((pathlib.Path('restored')/name).read_bytes()).hexdigest()==expected,name
+          tree=hashlib.sha256(''.join(f'{k}\0{v}\n' for k,v in sorted(fp.items())).encode()).hexdigest()
+          assert tree==os.environ['EXPECTED_SOURCE_TREE'] and len(fp)==1267
+          node_path=pathlib.Path(shutil.which('node')).resolve()
+          node_version=subprocess.check_output([str(node_path),'--version'],text=True).strip()
+          assert node_version=='v22.22.0',node_version
+          with open(os.environ['GITHUB_ENV'],'a') as env_file: env_file.write('GO_NATIVE_NODE='+str(node_path)+'\n')
+          result={'candidate':os.environ['SEALED_CANDIDATE'],'source_tree_sha256':tree,'verified_files':len(fp),'python':sys.version,'node':node_version,'node_binary_sha256':hashlib.sha256(node_path.read_bytes()).hexdigest(),'node_usage':'backend suite native API bridge; no device or native build','environment':'GitHub disposable runner; synthetic loopback HTTP, SQLite regression and offline packaging; no browser or Hong Kong access','three_end_real_ux_login':'HOLD','six_vertical_real_e2e':'HOLD','sealed_node_gate':'HOLD','final_release':'HOLD','deployed':False}
+          pathlib.Path('evidence/source-lineage.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps(result))
+          PY
+      - name: Offline packaging safeguards
+        working-directory: restored
+        shell: bash
+        run: |
+          ../isolated-runtime/bin/python -m unittest discover -s tests -p test_depth36_acceptance_packaging.py -v 2>&1 | tee ../evidence/packaging-tests.log
+      - name: Build exact source bundle and independently restore it
+        shell: bash
+        run: |
+          isolated-runtime/bin/python restored/scripts/acceptance_bundle.py --source restored --fingerprint candidate/deliverables/CP11_DEPTH36R2_SUPPORT_RESTORE_20260910/SOURCE_FINGERPRINT.json --expected-tree "$EXPECTED_SOURCE_TREE" --output evidence/GO_DEPTH36R2_SOURCE_20260910.zip | tee evidence/bundle-build.json
+          isolated-runtime/bin/python -B - <<'PY'
+          import hashlib,json,pathlib,sys
+          sys.path.insert(0,'restored/scripts')
+          from acceptance_bundle import verify
+          p=pathlib.Path('evidence/GO_DEPTH36R2_SOURCE_20260910.zip')
+          result=verify(p,hashlib.sha256(p.read_bytes()).hexdigest(),'a68f5f02e3f194d00d3e794bdafa08982be8c0ccb54d0a824c3008ffeb53f284',pathlib.Path('bundle-restore'))
+          pathlib.Path('evidence/bundle-restore.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+      - name: Real disposable HTTP runtime and three-surface identity checks
+        shell: bash
+        run: |
+          isolated-runtime/bin/python bundle-restore/source/scripts/acceptance_smoke.py --source bundle-restore/source --fingerprint bundle-restore/SOURCE_FINGERPRINT.json --expected-tree "$EXPECTED_SOURCE_TREE" --evidence evidence | tee evidence/http-result.json
+      - name: Complete backend collection, isolated SQLite shard
+        working-directory: restored
+        shell: bash
+        run: |
+          ../isolated-runtime/bin/python ../tooling/ci/depth36/run_backend.py --shard "$ACCEPTANCE_SHARD" --total 4 --evidence ../evidence | tee ../evidence/backend-full.log
+      - name: Verify source after tests and export nonsecret raw test records
+        if: always()
+        shell: bash
+        run: |
+          python tooling/ci/depth36/export_evidence.py
+      - name: Archive original scoped evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH36-predeployment-${{ github.run_id }}-shard-${{ matrix.shard }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 90
+
+  coverage:
+    needs: isolated
+    if: always() && github.head_ref == 'acceptance/cp11-depth36r2-isolated'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    env:
+      SEALED_CANDIDATE: ${{ github.event.pull_request.base.sha }}
+      EXPECTED_SOURCE_TREE: a68f5f02e3f194d00d3e794bdafa08982be8c0ccb54d0a824c3008ffeb53f284
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: tooling
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: GO-DEPTH36-predeployment-${{ github.run_id }}-shard-*
+          path: all-evidence
+      - name: Prove all collected tests executed exactly once across shards
+        run: python tooling/ci/depth36/verify_coverage.py
+      - name: Archive aggregate coverage proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH36R2-coverage-${{ github.run_id }}
+          path: coverage.json
+          if-no-files-found: error
+          retention-days: 90
