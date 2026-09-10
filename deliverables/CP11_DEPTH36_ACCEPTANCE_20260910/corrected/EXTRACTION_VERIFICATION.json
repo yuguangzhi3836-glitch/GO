@@ -1,0 +1,213 @@
+{
+  "raw_job_log_sha256": "03eb7dd11f3504d947efe6fe18abefaf9e8de86697a7772ee8766b61cfbf8433",
+  "records": {
+    "source-lineage.json": {
+      "bytes": 730,
+      "sha256": "a979ac293c83387b58a535876b36c560f24801481dbf4f185bd7a8b69a88afe2"
+    },
+    "post-test-source.json": {
+      "bytes": 134,
+      "sha256": "6c5007bebebad28f6ab60d4585f868dca5b585e4a549f0d0ba066cdb58682b77"
+    },
+    "backend-full.xml": {
+      "bytes": 279469,
+      "sha256": "91f00f3ec68d00bebe246c0678cfba45f4f740497770d6e39cea42a354ada76c"
+    },
+    "bundle-build.json": {
+      "bytes": 263,
+      "sha256": "20373ae32266869c1e9511357539fb33404851fdbae561b5bcda12fe1184573a"
+    },
+    "bundle-restore.json": {
+      "bytes": 275,
+      "sha256": "6568091b236031184cf5e661de27f6cf4e0e11b5e0cccb141096a96417f0c075"
+    },
+    "http-runtime-binding.json": {
+      "bytes": 1513,
+      "sha256": "0600749755fbcf488ae6712c0ece2aca01ad7a999e8601396483e6588e6afb8a"
+    },
+    "http-checks.json": {
+      "bytes": 42301,
+      "sha256": "7385b01d93c74ea06e0d4db30834338ce9db3f265d7f55fddf5a91018706845c"
+    },
+    "http-result.json": {
+      "bytes": 117,
+      "sha256": "1bf88fcba8b3828e3baa336a833936bfe60c4b1cf4fdc2c75548d20b3eff2a05"
+    },
+    "packaging-tests.log": {
+      "bytes": 1533,
+      "sha256": "1bb66477872884a73fa88cde51d4fac836867761b613eb77cc37fef0388f0ab3"
+    }
+  },
+  "explicitly_missing": [],
+  "backend": {
+    "tests": 1679,
+    "passed": 1654,
+    "failures": [
+      {
+        "class": "tests.test_rc19_national_throughput_product_completeness",
+        "name": "test_rc19_regional_throughput_contract",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/docker-compose.staging.yml'",
+        "text": "def test_rc19_regional_throughput_contract():\n        root=Path(__file__).resolve().parents[1]\n        regional=(root/'src/go_hotel/services/regional_hotel_build.py').read_text('utf-8')\n        discovery=(root/'src/go_hotel/services/hotel_discovery_orchestrator.py').read_text('utf-8')\n        worker=(root/'src/go_hotel/workers/regional_hotel_build_worker.py').read_text('utf-8')\n>       compose=(root/'docker-compose.staging.yml').read_text('utf-8')\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_rc19_national_throughput_product_completeness.py:12: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/docker-compose.staging.yml')\nmode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/docker-compose.staging.yml'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_review_governance_terminal_semantics",
+        "name": "test_review_completion_is_submission_final_but_governance_nonterminal",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/specs/state_machine_matrix.csv'",
+        "text": "def test_review_completion_is_submission_final_but_governance_nonterminal():\n>       rows = review_rows()\n               ^^^^^^^^^^^^^\n\ntests/test_review_governance_terminal_semantics.py:13: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \ntests/test_review_governance_terminal_semantics.py:8: in review_rows\n    with MATRIX.open(newline='', encoding='utf-8') as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/specs/state_machine_matrix.csv')\nmode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = ''\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/specs/state_machine_matrix.csv'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_review_governance_terminal_semantics",
+        "name": "test_completed_review_governance_chain_remains_reachable",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/specs/state_machine_matrix.csv'",
+        "text": "def test_completed_review_governance_chain_remains_reachable():\n>       rows = review_rows()\n               ^^^^^^^^^^^^^\n\ntests/test_review_governance_terminal_semantics.py:22: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \ntests/test_review_governance_terminal_semantics.py:8: in review_rows\n    with MATRIX.open(newline='', encoding='utf-8') as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/specs/state_machine_matrix.csv')\nmode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = ''\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/specs/state_machine_matrix.csv'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_sprint2b_mobile_release",
+        "name": "test_mobile_release_artifacts_and_offline_contract_exist",
+        "message": "AssertionError: assert False\n +  where False = exists()\n +    where exists = (PosixPath('/home/runner/work/GO/GO/restored') / '.github/workflows/mobile-release.yml').exists",
+        "text": "def test_mobile_release_artifacts_and_offline_contract_exist():\n        assert (ROOT/'mobile/go-app/eas.json').exists()\n>       assert (ROOT/'.github/workflows/mobile-release.yml').exists()\nE       AssertionError: assert False\nE        +  where False = exists()\nE        +    where exists = (PosixPath('/home/runner/work/GO/GO/restored') / '.github/workflows/mobile-release.yml').exists\n\ntests/test_sprint2b_mobile_release.py:40: AssertionError"
+      },
+      {
+        "class": "tests.test_sprint2b_mobile_release",
+        "name": "test_push_receipt_internal_api_is_not_public",
+        "message": "AssertionError: assert 401 == 403\n +  where 401 = <Response [401 Unauthorized]>.status_code\n +    where <Response [401 Unauthorized]> = post('/internal/v1/mobile/push-receipts/process')\n +      where post = <starlette.testclient.TestClient object at 0x7f13b309a7a0>.post",
+        "text": "client = <starlette.testclient.TestClient object at 0x7f13b309a7a0>\n\n    def test_push_receipt_internal_api_is_not_public(client):\n        auth(client,'2bapi@example.com')\n>       assert client.post('/internal/v1/mobile/push-receipts/process').status_code==403\nE       AssertionError: assert 401 == 403\nE        +  where 401 = <Response [401 Unauthorized]>.status_code\nE        +    where <Response [401 Unauthorized]> = post('/internal/v1/mobile/push-receipts/process')\nE        +      where post = <starlette.testclient.TestClient object at 0x7f13b309a7a0>.post\n\ntests/test_sprint2b_mobile_release.py:50: AssertionError"
+      },
+      {
+        "class": "tests.test_sprint2c_release_gate",
+        "name": "test_release_artifacts_exist",
+        "message": "AssertionError: assert False\n +  where False = exists()\n +    where exists = (PosixPath('/home/runner/work/GO/GO/restored') / 'staging/certification/gates.yaml').exists",
+        "text": "def test_release_artifacts_exist():\n        for p in ['staging/certification/gates.yaml','staging/certification/real_device_e2e_matrix.csv','docs/release/STORE_SUBMISSION_CHECKLIST.md','.github/workflows/release-certification.yml']:\n>           assert (ROOT/p).exists()\nE           AssertionError: assert False\nE            +  where False = exists()\nE            +    where exists = (PosixPath('/home/runner/work/GO/GO/restored') / 'staging/certification/gates.yaml').exists\n\ntests/test_sprint2c_release_gate.py:6: AssertionError"
+      },
+      {
+        "class": "tests.test_sprint2d_bringup",
+        "name": "test_credential_manifest_has_15_gate_dependencies",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/staging/bringup/credentials.yaml'",
+        "text": "def test_credential_manifest_has_15_gate_dependencies():\n>       text=(ROOT/'staging/bringup/credentials.yaml').read_text()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_sprint2d_bringup.py:5: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/staging/bringup/credentials.yaml')\nmode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/staging/bringup/credentials.yaml'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_sprint2d_bringup",
+        "name": "test_gate_ledger_starts_fail_closed",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/staging/certification/status.sprint2d.json'",
+        "text": "def test_gate_ledger_starts_fail_closed():\n>       d=json.loads((ROOT/'staging/certification/status.sprint2d.json').read_text())\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_sprint2d_bringup.py:10: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/staging/certification/status.sprint2d.json')\nmode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/staging/certification/status.sprint2d.json'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_sprint2d_bringup",
+        "name": "test_release_workflow_waits_for_store_build_and_submit",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/.github/workflows/real-environment-bringup.yml'",
+        "text": "def test_release_workflow_waits_for_store_build_and_submit():\n>       s=(ROOT/'.github/workflows/real-environment-bringup.yml').read_text()\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_sprint2d_bringup.py:25: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/.github/workflows/real-environment-bringup.yml')\nmode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/.github/workflows/real-environment-bringup.yml'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_sprint2d_bringup",
+        "name": "test_evidence_template_forbids_secrets",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/staging/bringup/evidence-template.json'",
+        "text": "def test_evidence_template_forbids_secrets():\n>       d=json.loads((ROOT/'staging/bringup/evidence-template.json').read_text())\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_sprint2d_bringup.py:31: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/staging/bringup/evidence-template.json')\nmode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/staging/bringup/evidence-template.json'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_wave03_c07_c09_authority_contract",
+        "name": "test_wave03_contract_registry_keeps_c09_as_final_owner",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: 'governance/workbench/waves/PARALLEL_WAVE_03_20260831/C07_C09_AUTHORITY_CONTRACT.json'",
+        "text": "def test_wave03_contract_registry_keeps_c09_as_final_owner():\n        import json\n        from pathlib import Path\n>       data=json.loads(Path(\"governance/workbench/waves/PARALLEL_WAVE_03_20260831/C07_C09_AUTHORITY_CONTRACT.json\").read_text())\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_wave03_c07_c09_authority_contract.py:43: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('governance/workbench/waves/PARALLEL_WAVE_03_20260831/C07_C09_AUTHORITY_CONTRACT.json')\nmode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: 'governance/workbench/waves/PARALLEL_WAVE_03_20260831/C07_C09_AUTHORITY_CONTRACT.json'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_wave04_v70_release_gate_contract",
+        "name": "test_v70_is_unique_controlling_solution_master",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/CURRENT_CONTROL_VERSION.md'",
+        "text": "def test_v70_is_unique_controlling_solution_master():\n>       t=(ROOT/'CURRENT_CONTROL_VERSION.md').read_text(encoding='utf-8')\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_wave04_v70_release_gate_contract.py:8: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/CURRENT_CONTROL_VERSION.md')\nmode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/CURRENT_CONTROL_VERSION.md'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_wave04_v70_release_gate_contract",
+        "name": "test_source_candidate_head_is_0114_and_not_staging_fact",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/CURRENT_RELEASE_MANIFEST.json'",
+        "text": "def test_source_candidate_head_is_0114_and_not_staging_fact():\n>       d=load('CURRENT_RELEASE_MANIFEST.json'); m=d['migration']\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_wave04_v70_release_gate_contract.py:13: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \ntests/test_wave04_v70_release_gate_contract.py:5: in load\n    def load(name): return json.loads((ROOT/name).read_text(encoding='utf-8'))\n                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/CURRENT_RELEASE_MANIFEST.json')\nmode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/CURRENT_RELEASE_MANIFEST.json'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_wave04_v70_release_gate_contract",
+        "name": "test_release_candidate_manifest_has_same_migration_truth_split",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/RELEASE_CANDIDATE_MANIFEST.json'",
+        "text": "def test_release_candidate_manifest_has_same_migration_truth_split():\n>       d=load('RELEASE_CANDIDATE_MANIFEST.json'); m=d['migration']\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_wave04_v70_release_gate_contract.py:21: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \ntests/test_wave04_v70_release_gate_contract.py:5: in load\n    def load(name): return json.loads((ROOT/name).read_text(encoding='utf-8'))\n                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/RELEASE_CANDIDATE_MANIFEST.json')\nmode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/RELEASE_CANDIDATE_MANIFEST.json'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_wave04_v70_release_gate_contract",
+        "name": "test_wave07_frg02_release_identity_binds_wave07_parent_sha",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/CURRENT_RELEASE_MANIFEST.json'",
+        "text": "def test_wave07_frg02_release_identity_binds_wave07_parent_sha():\n>       d=load('CURRENT_RELEASE_MANIFEST.json')['wave07_frg02_release_control']\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_wave04_v70_release_gate_contract.py:28: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \ntests/test_wave04_v70_release_gate_contract.py:5: in load\n    def load(name): return json.loads((ROOT/name).read_text(encoding='utf-8'))\n                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/CURRENT_RELEASE_MANIFEST.json')\nmode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/CURRENT_RELEASE_MANIFEST.json'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_wave04_v70_release_gate_contract",
+        "name": "test_wave07_frg02_binding_is_not_deployed_and_has_source_sha",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/WAVE07_FRG02_RELEASE_BINDING_20260831.json'",
+        "text": "def test_wave07_frg02_binding_is_not_deployed_and_has_source_sha():\n>       d=load('WAVE07_FRG02_RELEASE_BINDING_20260831.json')\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_wave04_v70_release_gate_contract.py:34: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \ntests/test_wave04_v70_release_gate_contract.py:5: in load\n    def load(name): return json.loads((ROOT/name).read_text(encoding='utf-8'))\n                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/WAVE07_FRG02_RELEASE_BINDING_20260831.json')\nmode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/WAVE07_FRG02_RELEASE_BINDING_20260831.json'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.test_wave04_v70_release_gate_contract",
+        "name": "test_v70_gate_is_authoritative_and_present",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/CURRENT_RELEASE_MANIFEST.json'",
+        "text": "def test_v70_gate_is_authoritative_and_present():\n>       d=load('CURRENT_RELEASE_MANIFEST.json')['wave07_frg02_release_control']\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_wave04_v70_release_gate_contract.py:40: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \ntests/test_wave04_v70_release_gate_contract.py:5: in load\n    def load(name): return json.loads((ROOT/name).read_text(encoding='utf-8'))\n                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/CURRENT_RELEASE_MANIFEST.json')\nmode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/CURRENT_RELEASE_MANIFEST.json'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.workbench.test_wave02_truth_gate_and_mobility_ownership",
+        "name": "test_c04_c05_owned_paths_are_isolated_and_shared_facade_has_no_business_truth",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/governance/workbench/cell_charters/C04_CELL_CHARTER.json'",
+        "text": "def test_c04_c05_owned_paths_are_isolated_and_shared_facade_has_no_business_truth():\n        root = Path(__file__).resolve().parents[2]\n>       c04 = json.loads((root / \"governance/workbench/cell_charters/C04_CELL_CHARTER.json\").read_text())\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/workbench/test_wave02_truth_gate_and_mobility_ownership.py:36: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/home/runner/work/GO/GO/restored/governance/workbench/cell_charters/C04_CELL_CHARTER.json')\nmode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/GO/GO/restored/governance/workbench/cell_charters/C04_CELL_CHARTER.json'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      },
+      {
+        "class": "tests.workbench.test_wave07_mc01_owned_path_closure",
+        "name": "test_ownership_contract_matches_machine_registry",
+        "message": "FileNotFoundError: [Errno 2] No such file or directory: 'governance/workbench/WAVE07_ONBOARDING_INTEGRATION_OWNERSHIP_CONTRACT_20260831.json'",
+        "text": "def test_ownership_contract_matches_machine_registry():\n>       data=json.loads(Path('governance/workbench/WAVE07_ONBOARDING_INTEGRATION_OWNERSHIP_CONTRACT_20260831.json').read_text())\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/workbench/test_wave07_mc01_owned_path_closure.py:56: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:546: in read_text\n    return PathBase.read_text(self, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_abc.py:632: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('governance/workbench/WAVE07_ONBOARDING_INTEGRATION_OWNERSHIP_CONTRACT_20260831.json')\nmode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: 'governance/workbench/WAVE07_ONBOARDING_INTEGRATION_OWNERSHIP_CONTRACT_20260831.json'\n\n/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/pathlib/_local.py:537: FileNotFoundError"
+      }
+    ],
+    "errors": [],
+    "skipped": [
+      {
+        "class": "tests.test_p0_0100_postgres_concurrency",
+        "name": "test_order_payment_root_unique_under_postgres_race",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0100_postgres_concurrency.py:10: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_order_payment_root_exactly_once_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:23: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_webhook_delivery_replay_unique_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:34: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_capture_refund_serialization_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:45: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_finance_close_approval_race_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:61: POSTGRES_TEST_DATABASE_URL not configured"
+      },
+      {
+        "class": "tests.test_p0_0101_postgres_race_matrix",
+        "name": "test_0101_postgres_server_is_real_postgres",
+        "message": "POSTGRES_TEST_DATABASE_URL not configured",
+        "text": "/home/runner/work/GO/GO/restored/tests/test_p0_0101_postgres_race_matrix.py:75: POSTGRES_TEST_DATABASE_URL not configured"
+      }
+    ],
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "19",
+        "skipped": "6",
+        "tests": "1679",
+        "time": "1161.051",
+        "timestamp": "2026-09-10T06:56:09.989637+00:00",
+        "hostname": "runnervm9xg2d"
+      }
+    ]
+  }
+}

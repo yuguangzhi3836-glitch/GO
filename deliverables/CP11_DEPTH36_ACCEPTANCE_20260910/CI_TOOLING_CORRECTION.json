@@ -1,0 +1,17 @@
+{
+  "candidate_commit": "f35093cbcb99bd2e7a9acbf38490d7a79b1c82ea",
+  "source_changed": false,
+  "initial_ci_commit": "23f95afa5f52c1e6a40c7f9e7ff3d7b3557b546c",
+  "corrected_ci_commit": "ff13ca334acfcec61d6463f30ca94d7964086635",
+  "initial_run": 34446465299,
+  "corrected_run": 34447413327,
+  "corrected_job": 102775146533,
+  "discovery": "Full backend suite includes tests/test_depth30_native_api_contract.py, whose bridge invokes node --experimental-strip-types. Initial workflow had no Node version selection and incorrectly recorded node=NOT_USED.",
+  "correction": "Reuse prior DEPTH35R2 actions/setup-node@v4 version 22.22.0; bind GO_NATIVE_NODE to its resolved executable; record actual Node version and executable SHA256; add slow-test duration diagnostics.",
+  "source_of_version": "Existing DEPTH35R2 acceptance workflow, not a newly selected project runtime version.",
+  "original_evidence_policy": "Keep original run and records; its Node NOT_USED field is invalid and superseded. Other original results retain their recorded scope.",
+  "sealed_node_gate": "HOLD",
+  "native_build_or_device_test": false,
+  "merged": false,
+  "deployed": false
+}
