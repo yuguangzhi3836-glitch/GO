@@ -66,6 +66,7 @@ if installed:
     if exported:
         with tarfile.open(evidence/(platform+'-metro-bundle.tar.gz'),'w:gz') as tar:tar.add(mobile/'dist',arcname='dist')
     prebuilt=run('native-prebuild',cli+['prebuild','--platform',platform,'--no-install'],mobile,env)
+    if prebuilt and not run('native-directory-module-discovery',[str(node),'scripts/native-modules-check.mjs','--native'],mobile,env):raise SystemExit(1)
     if prebuilt and platform=='android':
         built=run('android-bundled-build',['bash','./gradlew',':app:assembleRelease','--no-daemon','-PreactNativeArchitectures=x86_64'],mobile/'android',env,timeout=1500)
         if built:
