@@ -100,7 +100,7 @@ jobs:
         working-directory: restored
         shell: bash
         run: |
-          ../isolated-runtime/bin/python -m pytest tests/test_depth35r2_refresh_scope.py tests/test_depth27_session_isolation.py tests/test_sprint1r_identity_security.py tests/test_sprint1u_production_bff.py tests/test_sprint1y_consumer_identity.py tests/test_sprint1z_mobile.py tests/test_depth30_native_api_contract.py --junitxml=../evidence/backend.xml | tee ../evidence/backend.log
+          ../isolated-runtime/bin/python -m pytest tests/test_depth35_refresh_scope.py tests/test_depth27_session_isolation.py tests/test_sprint1r_identity_security.py tests/test_sprint1u_production_bff.py tests/test_sprint1y_consumer_identity.py tests/test_sprint1z_mobile.py tests/test_depth30_native_api_contract.py --junitxml=../evidence/backend.xml | tee ../evidence/backend.log
       - name: Run frontend and native pure-function contracts
         working-directory: restored
         shell: bash
