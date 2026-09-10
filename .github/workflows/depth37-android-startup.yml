@@ -1,0 +1,53 @@
+name: depth37-android-startup
+on:
+  pull_request:
+    branches: ['deliverables/cp11-depth37r2-native-linking']
+    paths: ['.github/workflows/depth37-android-startup.yml', 'ci/depth37-android/**']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  startup:
+    if: github.head_ref == 'acceptance/cp11-depth37r2-native-build'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Wait for fixed accepted native build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python ci/depth37-android/wait_build.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: GO-DEPTH37R2-android-34476573746
+          run-id: 34476573746
+          github-token: ${{ github.token }}
+          path: original
+      - name: Prepare clean isolated Android emulator
+        run: |
+          mkdir -p evidence
+          sudo setfacl -m u:$USER:rw /dev/kvm
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' > evidence/sdk-install.log 2>&1
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd -n go_depth37 -k 'system-images;android-35;google_apis;x86_64' --device pixel_6 > evidence/avd-create.log 2>&1
+      - name: Install and verify rendered login
+        run: python ci/depth37-android/startup.py
+      - name: Export exact evidence
+        if: always()
+        run: python ci/depth37/export.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: GO-DEPTH37-ANDROID-STARTUP-${{ github.run_id }}
+          path: evidence/
+          retention-days: 90
+          if-no-files-found: error
