@@ -1,0 +1,32 @@
+{
+  "candidate": "2dab537722cda3675231102eb013280796068401",
+  "source_tree_sha256": "e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5",
+  "verified_files": 1241,
+  "status": "PREPARATION_ONLY_NOT_EXECUTED",
+  "observed_browser": "Chrome connected; sole tab about:blank; no candidate service inspected",
+  "missing_prerequisite": "Reachable approved isolated acceptance address with candidate/runtime binding",
+  "required_before_testing": [
+    "Verify the served code and running build are the exact candidate and match the source/package manifest",
+    "Verify no production credentials, real bookings/payments, Hong Kong writes or external messaging are enabled",
+    "Use the advertised secure browserAuth login path; no credentials in logs or chat",
+    "Keep official hotel facts separately verified; mark inventory, price and payment fixtures as isolated"
+  ],
+  "journeys_to_record": [
+    "Consumer: login, authenticated identity, owned trips/detail, logout, expired-session recovery",
+    "Supplier: login, assigned supplier identity and authorized order visibility, logout",
+    "Administrator: login, role-scoped console and order visibility, logout",
+    "Cross-role isolation: unauthorized role/session rejected and no data from previous account visible",
+    "Repeat the applicable authenticated journey at the supported desktop and mobile viewports",
+    "Capture quote display, exact customer acceptance, pending/unknown states and subsequent order reread within isolated data scope"
+  ],
+  "required_evidence": [
+    "UTC timestamp, exact candidate SHA, source fingerprint, image/runtime identity and environment",
+    "Browser/version and viewport dimensions for each journey",
+    "Original step outcomes and redacted screenshots with a SHA256 manifest",
+    "Separate implemented, component-tested, browser-tested, device-tested and deployed states"
+  ],
+  "three_end_real_ux_login": "HOLD",
+  "six_vertical_real_e2e": "HOLD",
+  "sealed_node_gate": "HOLD",
+  "final_release": "HOLD"
+}

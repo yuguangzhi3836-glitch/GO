@@ -1,0 +1,47 @@
+{
+  "initial": {
+    "candidate": "ab9f39518de107e05c95b800839bd5f7c229ea23",
+    "source_tree_sha256": "5983df038740e93936256da389f828488572dce5bbabc732326796a2c5c26356",
+    "run_id": 34433623433,
+    "job_id": 102734087754,
+    "backend": {
+      "tests": 9,
+      "passed": 4,
+      "failures": 5
+    },
+    "cause": "Missing SessionLocal import in new hotel quote reader",
+    "frontend": "NOT_RUN"
+  },
+  "corrected": {
+    "candidate": "2dab537722cda3675231102eb013280796068401",
+    "source_tree_sha256": "e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5",
+    "verified_files": 1241,
+    "acceptance_commit": "058c7a0ab4684761e428a0c1eb28d9ac159e2635",
+    "run_id": 34434039448,
+    "job_id": 102735318115,
+    "completed_at": "2026-09-10T03:38:52Z",
+    "backend": {
+      "passed": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frontend_native_pure_functions": {
+      "passed": 227,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "source_verified_before_and_after": true
+  },
+  "environment": "GitHub disposable runner; Python3.13.5 frozen repository wheelhouse/SQLite TestClient; Node22.22.0 VM/native pure functions",
+  "raw_junit_length_and_sha256_verified": true,
+  "limitations": [
+    "9 backend cases are the changed hotel API scope including native helper compatibility with all six verticals; not full backend regression",
+    "Prior DEPTH33 237 Python passes remain on their own candidate and are not merged into this count",
+    "No native TSX build/device or three-role browser acceptance",
+    "No real PSP sandbox, PostgreSQL/Redis or Hong Kong runtime verification",
+    "All four release gates HOLD",
+    "No merge or deployment"
+  ]
+}

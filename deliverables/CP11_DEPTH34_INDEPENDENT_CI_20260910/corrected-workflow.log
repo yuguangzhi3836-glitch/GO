@@ -1,0 +1,976 @@
+﻿2026-09-10T03:37:34.9147676Z Current runner version: '2.337.0'
+2026-09-10T03:37:34.9185627Z ##[group]Runner Image Provisioner
+2026-09-10T03:37:34.9186965Z Hosted Compute Agent
+2026-09-10T03:37:34.9187943Z Version: 20260828.587
+2026-09-10T03:37:34.9189670Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-10T03:37:34.9190956Z Build Date: 2026-08-28T16:44:25Z
+2026-09-10T03:37:34.9192072Z Worker ID: {1827226b-11e3-454e-af46-7c3f84c93dab}
+2026-09-10T03:37:34.9193570Z Azure Region: centralus
+2026-09-10T03:37:34.9194651Z ##[endgroup]
+2026-09-10T03:37:34.9197907Z ##[group]Operating System
+2026-09-10T03:37:34.9199447Z Ubuntu
+2026-09-10T03:37:34.9200483Z 22.04.5
+2026-09-10T03:37:34.9201431Z LTS
+2026-09-10T03:37:34.9202353Z ##[endgroup]
+2026-09-10T03:37:34.9203448Z ##[group]Runner Image
+2026-09-10T03:37:34.9204506Z Image: ubuntu-22.04
+2026-09-10T03:37:34.9205482Z Version: 20260831.284.1
+2026-09-10T03:37:34.9207846Z Included Software: https://github.com/actions/runner-images/blob/ubuntu22/20260831.284/images/ubuntu/Ubuntu2204-Readme.md
+2026-09-10T03:37:34.9210881Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu22%2F20260831.284
+2026-09-10T03:37:34.9212639Z ##[endgroup]
+2026-09-10T03:37:34.9214666Z ##[group]GITHUB_TOKEN Permissions
+2026-09-10T03:37:34.9217779Z Contents: read
+2026-09-10T03:37:34.9219480Z Metadata: read
+2026-09-10T03:37:34.9220520Z ##[endgroup]
+2026-09-10T03:37:34.9223781Z Secret source: Actions
+2026-09-10T03:37:34.9225502Z Cache mode: write
+2026-09-10T03:37:34.9227123Z Prepare workflow directory
+2026-09-10T03:37:35.0180097Z Prepare all required actions
+2026-09-10T03:37:35.0332035Z Getting action download info
+2026-09-10T03:37:35.3735634Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-10T03:37:35.4939594Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-10T03:37:35.6036687Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-10T03:37:35.7091239Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-10T03:37:35.9992464Z Complete job name: isolated
+2026-09-10T03:37:36.1021598Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T03:37:36.1033362Z ##[group]Run actions/checkout@v4
+2026-09-10T03:37:36.1034556Z with:
+2026-09-10T03:37:36.1035452Z   ref: 058c7a0ab4684761e428a0c1eb28d9ac159e2635
+2026-09-10T03:37:36.1036567Z   path: tooling
+2026-09-10T03:37:36.1037438Z   persist-credentials: false
+2026-09-10T03:37:36.1038451Z   repository: yuguangzhi3836-glitch/GO
+2026-09-10T03:37:36.1046706Z   token: ***
+2026-09-10T03:37:36.1047506Z   ssh-strict: true
+2026-09-10T03:37:36.1048339Z   ssh-user: git
+2026-09-10T03:37:36.1049407Z   clean: true
+2026-09-10T03:37:36.1050459Z   sparse-checkout-cone-mode: true
+2026-09-10T03:37:36.1051739Z   fetch-depth: 1
+2026-09-10T03:37:36.1052832Z   fetch-tags: false
+2026-09-10T03:37:36.1053863Z   show-progress: true
+2026-09-10T03:37:36.1055181Z   lfs: false
+2026-09-10T03:37:36.1056417Z   submodules: false
+2026-09-10T03:37:36.1057614Z   set-safe-directory: true
+2026-09-10T03:37:36.1059298Z   allow-unsafe-pr-checkout: false
+2026-09-10T03:37:36.1061398Z env:
+2026-09-10T03:37:36.1062768Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:37:36.1065443Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:37:36.1067280Z ##[endgroup]
+2026-09-10T03:37:36.2812562Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-10T03:37:36.2816814Z ##[group]Getting Git version info
+2026-09-10T03:37:36.2840236Z Working directory is '/home/runner/work/GO/GO/tooling'
+2026-09-10T03:37:36.2890390Z [command]/usr/bin/git version
+2026-09-10T03:37:36.2906443Z git version 2.55.0
+2026-09-10T03:37:36.2963417Z ##[endgroup]
+2026-09-10T03:37:36.2976908Z Temporarily overriding HOME='/home/runner/work/_temp/1dc3ea93-0b94-47d7-bdf9-e15b92b95f12' before making global git config changes
+2026-09-10T03:37:36.2984314Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-10T03:37:36.2987914Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/tooling
+2026-09-10T03:37:36.2997881Z ##[group]Initializing the repository
+2026-09-10T03:37:36.3002021Z [command]/usr/bin/git init /home/runner/work/GO/GO/tooling
+2026-09-10T03:37:36.3049952Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-10T03:37:36.3071148Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-10T03:37:36.3086261Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-10T03:37:36.3089016Z hint: call:
+2026-09-10T03:37:36.3090330Z hint:
+2026-09-10T03:37:36.3092003Z hint: 	git config --global init.defaultBranch <name>
+2026-09-10T03:37:36.3093898Z hint:
+2026-09-10T03:37:36.3095804Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-10T03:37:36.3099063Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-10T03:37:36.3101372Z hint:
+2026-09-10T03:37:36.3103078Z hint: 	git branch -m <name>
+2026-09-10T03:37:36.3104526Z hint:
+2026-09-10T03:37:36.3106444Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-10T03:37:36.3109621Z Initialized empty Git repository in /home/runner/work/GO/GO/tooling/.git/
+2026-09-10T03:37:36.3114453Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-10T03:37:36.3178715Z ##[endgroup]
+2026-09-10T03:37:36.3181314Z ##[group]Disabling automatic garbage collection
+2026-09-10T03:37:36.3199770Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-10T03:37:36.3254700Z ##[endgroup]
+2026-09-10T03:37:36.3256884Z ##[group]Setting up auth
+2026-09-10T03:37:36.3280350Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T03:37:36.3351145Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T03:37:36.4066747Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T03:37:36.4076822Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T03:37:36.4443498Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T03:37:36.4499012Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T03:37:36.4843492Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-10T03:37:36.4889716Z ##[endgroup]
+2026-09-10T03:37:36.4892890Z ##[group]Fetching the repository
+2026-09-10T03:37:36.4902286Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 058c7a0ab4684761e428a0c1eb28d9ac159e2635
+2026-09-10T03:37:38.9574976Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-10T03:37:38.9590477Z  * branch            058c7a0ab4684761e428a0c1eb28d9ac159e2635 -> FETCH_HEAD
+2026-09-10T03:37:38.9605142Z ##[endgroup]
+2026-09-10T03:37:38.9606576Z ##[group]Determining the checkout info
+2026-09-10T03:37:38.9607710Z ##[endgroup]
+2026-09-10T03:37:38.9614302Z [command]/usr/bin/git sparse-checkout disable
+2026-09-10T03:37:38.9680253Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-10T03:37:38.9771519Z ##[group]Checking out the ref
+2026-09-10T03:37:38.9772375Z [command]/usr/bin/git checkout --progress --force 058c7a0ab4684761e428a0c1eb28d9ac159e2635
+2026-09-10T03:37:39.3870843Z Note: switching to '058c7a0ab4684761e428a0c1eb28d9ac159e2635'.
+2026-09-10T03:37:39.3876386Z 
+2026-09-10T03:37:39.3880539Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-10T03:37:39.3899321Z changes and commit them, and you can discard any commits you make in this
+2026-09-10T03:37:39.3904988Z state without impacting any branches by switching back to a branch.
+2026-09-10T03:37:39.3925143Z 
+2026-09-10T03:37:39.3925882Z If you want to create a new branch to retain commits you create, you may
+2026-09-10T03:37:39.3926928Z do so (now or later) by using -c with the switch command. Example:
+2026-09-10T03:37:39.3949450Z 
+2026-09-10T03:37:39.3960177Z   git switch -c <new-branch-name>
+2026-09-10T03:37:39.3968988Z 
+2026-09-10T03:37:39.3970598Z Or undo this operation with:
+2026-09-10T03:37:39.3971134Z 
+2026-09-10T03:37:39.3971413Z   git switch -
+2026-09-10T03:37:39.3974178Z 
+2026-09-10T03:37:39.3975159Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-10T03:37:39.3975860Z 
+2026-09-10T03:37:39.3976656Z HEAD is now at 058c7a0 Prepare corrected DEPTH34R2 isolated hotel/native acceptance with unchanged tests
+2026-09-10T03:37:39.3979852Z ##[endgroup]
+2026-09-10T03:37:39.4028163Z [command]/usr/bin/git log -1 --format=%H
+2026-09-10T03:37:39.4068181Z 058c7a0ab4684761e428a0c1eb28d9ac159e2635
+2026-09-10T03:37:39.4081094Z ##[group]Removing auth
+2026-09-10T03:37:39.4083890Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T03:37:39.4133081Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T03:37:39.4476635Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T03:37:39.4504850Z http.https://github.com/.extraheader
+2026-09-10T03:37:39.4516196Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-10T03:37:39.4573829Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T03:37:39.4928448Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T03:37:39.4991638Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T03:37:39.5599883Z ##[endgroup]
+2026-09-10T03:37:39.5882198Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T03:37:39.5883925Z ##[group]Run actions/checkout@v4
+2026-09-10T03:37:39.5884178Z with:
+2026-09-10T03:37:39.5884425Z   ref: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:37:39.5884714Z   path: candidate
+2026-09-10T03:37:39.5884937Z   persist-credentials: false
+2026-09-10T03:37:39.5885204Z   repository: yuguangzhi3836-glitch/GO
+2026-09-10T03:37:39.5887566Z   token: ***
+2026-09-10T03:37:39.5887775Z   ssh-strict: true
+2026-09-10T03:37:39.5887983Z   ssh-user: git
+2026-09-10T03:37:39.5888180Z   clean: true
+2026-09-10T03:37:39.5888402Z   sparse-checkout-cone-mode: true
+2026-09-10T03:37:39.5888931Z   fetch-depth: 1
+2026-09-10T03:37:39.5889197Z   fetch-tags: false
+2026-09-10T03:37:39.5889424Z   show-progress: true
+2026-09-10T03:37:39.5889639Z   lfs: false
+2026-09-10T03:37:39.5889838Z   submodules: false
+2026-09-10T03:37:39.5890049Z   set-safe-directory: true
+2026-09-10T03:37:39.5890298Z   allow-unsafe-pr-checkout: false
+2026-09-10T03:37:39.5890539Z env:
+2026-09-10T03:37:39.5890794Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:37:39.5891513Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:37:39.5891942Z ##[endgroup]
+2026-09-10T03:37:39.6976844Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-10T03:37:39.6977917Z ##[group]Getting Git version info
+2026-09-10T03:37:39.6978471Z Working directory is '/home/runner/work/GO/GO/candidate'
+2026-09-10T03:37:39.7049822Z [command]/usr/bin/git version
+2026-09-10T03:37:39.7137862Z git version 2.55.0
+2026-09-10T03:37:39.7209730Z ##[endgroup]
+2026-09-10T03:37:39.7253003Z Temporarily overriding HOME='/home/runner/work/_temp/3b037142-4bf4-456b-98a1-d73096c3cf82' before making global git config changes
+2026-09-10T03:37:39.7269341Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-10T03:37:39.7281222Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/candidate
+2026-09-10T03:37:39.7332363Z ##[group]Initializing the repository
+2026-09-10T03:37:39.7333047Z [command]/usr/bin/git init /home/runner/work/GO/GO/candidate
+2026-09-10T03:37:39.7340812Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-10T03:37:39.7341823Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-10T03:37:39.7342753Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-10T03:37:39.7343428Z hint: call:
+2026-09-10T03:37:39.7343856Z hint:
+2026-09-10T03:37:39.7344337Z hint: 	git config --global init.defaultBranch <name>
+2026-09-10T03:37:39.7369015Z hint:
+2026-09-10T03:37:39.7369941Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-10T03:37:39.7384059Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-10T03:37:39.7404328Z hint:
+2026-09-10T03:37:39.7422897Z hint: 	git branch -m <name>
+2026-09-10T03:37:39.7429053Z hint:
+2026-09-10T03:37:39.7446939Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-10T03:37:39.7469879Z Initialized empty Git repository in /home/runner/work/GO/GO/candidate/.git/
+2026-09-10T03:37:39.7520058Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-10T03:37:39.7533065Z ##[endgroup]
+2026-09-10T03:37:39.7549624Z ##[group]Disabling automatic garbage collection
+2026-09-10T03:37:39.7566136Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-10T03:37:39.7629572Z ##[endgroup]
+2026-09-10T03:37:39.7669348Z ##[group]Setting up auth
+2026-09-10T03:37:39.7699124Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T03:37:39.7760893Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T03:37:39.8020721Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T03:37:39.8100324Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T03:37:39.8519142Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T03:37:39.8589826Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T03:37:39.9007442Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-10T03:37:39.9070756Z ##[endgroup]
+2026-09-10T03:37:39.9071834Z ##[group]Fetching the repository
+2026-09-10T03:37:39.9075215Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:37:42.2434254Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-10T03:37:42.2436861Z  * branch            2dab537722cda3675231102eb013280796068401 -> FETCH_HEAD
+2026-09-10T03:37:42.2442392Z ##[endgroup]
+2026-09-10T03:37:42.2443196Z ##[group]Determining the checkout info
+2026-09-10T03:37:42.2445583Z ##[endgroup]
+2026-09-10T03:37:42.2454111Z [command]/usr/bin/git sparse-checkout disable
+2026-09-10T03:37:42.2512275Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-10T03:37:42.2569410Z ##[group]Checking out the ref
+2026-09-10T03:37:42.2574121Z [command]/usr/bin/git checkout --progress --force 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:37:42.6603510Z Note: switching to '2dab537722cda3675231102eb013280796068401'.
+2026-09-10T03:37:42.6609453Z 
+2026-09-10T03:37:42.6610100Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-10T03:37:42.6611151Z changes and commit them, and you can discard any commits you make in this
+2026-09-10T03:37:42.6612162Z state without impacting any branches by switching back to a branch.
+2026-09-10T03:37:42.6612834Z 
+2026-09-10T03:37:42.6613342Z If you want to create a new branch to retain commits you create, you may
+2026-09-10T03:37:42.6614223Z do so (now or later) by using -c with the switch command. Example:
+2026-09-10T03:37:42.6614796Z 
+2026-09-10T03:37:42.6615168Z   git switch -c <new-branch-name>
+2026-09-10T03:37:42.6615610Z 
+2026-09-10T03:37:42.6615953Z Or undo this operation with:
+2026-09-10T03:37:42.6616391Z 
+2026-09-10T03:37:42.6616727Z   git switch -
+2026-09-10T03:37:42.6617102Z 
+2026-09-10T03:37:42.6617617Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-10T03:37:42.6618289Z 
+2026-09-10T03:37:42.6619288Z HEAD is now at 2dab537 Archive DEPTH34R2 correcting hotel quote reader session import; preserve original failed candidate
+2026-09-10T03:37:42.6673024Z ##[endgroup]
+2026-09-10T03:37:42.6735636Z [command]/usr/bin/git log -1 --format=%H
+2026-09-10T03:37:42.6778457Z 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:37:42.6794398Z ##[group]Removing auth
+2026-09-10T03:37:42.6795335Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T03:37:42.6845288Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T03:37:42.7165310Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T03:37:42.7203885Z http.https://github.com/.extraheader
+2026-09-10T03:37:42.7246205Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-10T03:37:42.7297613Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T03:37:42.7632716Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T03:37:42.7681293Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T03:37:42.8048912Z ##[endgroup]
+2026-09-10T03:37:42.8284566Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T03:37:42.8285806Z ##[group]Run actions/setup-python@v5
+2026-09-10T03:37:42.8286096Z with:
+2026-09-10T03:37:42.8286340Z   python-version: 3.13.5
+2026-09-10T03:37:42.8286597Z   check-latest: false
+2026-09-10T03:37:42.8289256Z   token: ***
+2026-09-10T03:37:42.8289507Z   update-environment: true
+2026-09-10T03:37:42.8289800Z   allow-prereleases: false
+2026-09-10T03:37:42.8290050Z   freethreaded: false
+2026-09-10T03:37:42.8290298Z env:
+2026-09-10T03:37:42.8290577Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:37:42.8291374Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:37:42.8291883Z ##[endgroup]
+2026-09-10T03:37:42.9939216Z ##[group]Installed versions
+2026-09-10T03:37:42.9943885Z Version 3.13.5 was not found in the local cache
+2026-09-10T03:37:43.0065955Z (node:2030) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-10T03:37:43.0067453Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-10T03:37:43.7977437Z Version 3.13.5 is available for downloading
+2026-09-10T03:37:43.7980092Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-22.04-x64.tar.gz"
+2026-09-10T03:37:44.8098322Z Extract downloaded archive
+2026-09-10T03:37:44.8274064Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/9f69a6be-b7b3-47ab-8f40-423918e92c49 -f /home/runner/work/_temp/8b606dcc-90df-4b69-8e52-10724c611341
+2026-09-10T03:37:47.6861101Z Execute installation script
+2026-09-10T03:37:47.7010079Z Check if Python hostedtoolcache folder exist...
+2026-09-10T03:37:47.7011144Z Create Python 3.13.5 folder
+2026-09-10T03:37:47.7401711Z Copy Python binaries to hostedtoolcache folder
+2026-09-10T03:37:48.4893949Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-10T03:37:48.4952581Z Upgrading pip...
+2026-09-10T03:37:51.7682461Z Looking in links: /tmp/tmpsd807a3c
+2026-09-10T03:37:51.7689884Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-10T03:37:53.0308207Z Collecting pip
+2026-09-10T03:37:53.1099593Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-10T03:37:53.1316086Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-10T03:37:53.2100451Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 36.7 MB/s eta 0:00:00
+2026-09-10T03:37:53.2119536Z 
+2026-09-10T03:37:53.2305122Z Installing collected packages: pip
+2026-09-10T03:37:53.2306132Z Attempting uninstall: pip
+2026-09-10T03:37:53.2340300Z Found existing installation: pip 25.1.1
+2026-09-10T03:37:53.2693431Z Uninstalling pip-25.1.1:
+2026-09-10T03:37:53.2758751Z Successfully uninstalled pip-25.1.1
+2026-09-10T03:37:54.3169869Z Successfully installed pip-26.2.1
+2026-09-10T03:37:54.3816926Z Create complete file
+2026-09-10T03:37:54.3862535Z Successfully set up CPython (3.13.5)
+2026-09-10T03:37:54.3863523Z ##[endgroup]
+2026-09-10T03:37:54.4117945Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T03:37:54.4119492Z ##[group]Run actions/setup-node@v4
+2026-09-10T03:37:54.4119760Z with:
+2026-09-10T03:37:54.4119984Z   node-version: 22.22.0
+2026-09-10T03:37:54.4120214Z   always-auth: false
+2026-09-10T03:37:54.4120430Z   check-latest: false
+2026-09-10T03:37:54.4122644Z   token: ***
+2026-09-10T03:37:54.4122841Z env:
+2026-09-10T03:37:54.4123096Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:37:54.4123586Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:37:54.4124073Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:37:54.4124528Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T03:37:54.4124940Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:37:54.4125307Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:37:54.4125666Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:37:54.4126031Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T03:37:54.4126354Z ##[endgroup]
+2026-09-10T03:37:54.8046017Z Attempting to download 22.22.0...
+2026-09-10T03:37:54.8109011Z (node:2081) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-10T03:37:54.8110718Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-10T03:37:55.5154324Z Acquiring 22.22.0 - x64 from https://github.com/actions/node-versions/releases/download/22.22.0-20981702931/node-22.22.0-linux-x64.tar.gz
+2026-09-10T03:37:56.4850568Z Extracting ...
+2026-09-10T03:37:56.5004448Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/1e876ea0-870d-4ee3-a45a-3d9a9e411dc0 -f /home/runner/work/_temp/4cd3379f-6923-4662-a65d-c7c3fccf2281
+2026-09-10T03:37:57.9539167Z Adding to the cache ...
+2026-09-10T03:38:01.0671958Z ##[group]Environment details
+2026-09-10T03:38:01.3780461Z node: v22.22.0
+2026-09-10T03:38:01.3784405Z npm: 10.9.4
+2026-09-10T03:38:01.3810078Z yarn: 1.22.22
+2026-09-10T03:38:01.3812494Z ##[endgroup]
+2026-09-10T03:38:01.3997866Z ##[group]Run mkdir -p evidence
+2026-09-10T03:38:01.3998295Z [36;1mmkdir -p evidence[0m
+2026-09-10T03:38:01.3998985Z [36;1mgit -C candidate rev-parse HEAD | tee evidence/candidate-commit.txt[0m
+2026-09-10T03:38:01.3999495Z [36;1mtest "$(git -C candidate rev-parse HEAD)" = "$SEALED_CANDIDATE"[0m
+2026-09-10T03:38:01.4000569Z [36;1mpython -c 'import hashlib,json,pathlib;p=pathlib.Path("candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910");m=json.loads((p/"MANIFEST.json").read_text());assert hashlib.sha256((p/"DELTA.json").read_bytes()).hexdigest()==m["delta_sha256"]'[0m
+2026-09-10T03:38:01.4465501Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T03:38:01.4465878Z env:
+2026-09-10T03:38:01.4466160Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:38:01.4466663Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:38:01.4467243Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:01.4467681Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T03:38:01.4468088Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:01.4468457Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:01.4469345Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:01.4469869Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T03:38:01.4470222Z ##[endgroup]
+2026-09-10T03:38:01.4662949Z 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:38:01.5072899Z ##[group]Run python tooling/ci/depth34r2/materialize_parent.py \
+2026-09-10T03:38:01.5073434Z [36;1mpython tooling/ci/depth34r2/materialize_parent.py \[0m
+2026-09-10T03:38:01.5073866Z [36;1m  --depth26 candidate/deliverables/CP11_DEPTH26_20260909 \[0m
+2026-09-10T03:38:01.5074313Z [36;1m  --depth27 candidate/deliverables/CP11_DEPTH27_20260909 \[0m
+2026-09-10T03:38:01.5074770Z [36;1m  --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 \[0m
+2026-09-10T03:38:01.5075341Z [36;1m  --output "$GITHUB_WORKSPACE/restored-parent" | tee evidence/parent-restore.log[0m
+2026-09-10T03:38:01.5075951Z [36;1mpython candidate/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/restore_depth29.py \[0m
+2026-09-10T03:38:01.5076441Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-parent" \[0m
+2026-09-10T03:38:01.5076891Z [36;1m  --output "$GITHUB_WORKSPACE/restored-depth29" | tee evidence/depth29-restore.log[0m
+2026-09-10T03:38:01.5077511Z [36;1mpython candidate/deliverables/CP11_DEPTH30_NATIVE_PAYMENT_20260909/restore_depth30.py \[0m
+2026-09-10T03:38:01.5077998Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-depth29" \[0m
+2026-09-10T03:38:01.5078435Z [36;1m  --output "$GITHUB_WORKSPACE/restored-depth30" | tee evidence/depth30-restore.log[0m
+2026-09-10T03:38:01.5079285Z [36;1mpython candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910/restore_delta.py \[0m
+2026-09-10T03:38:01.5079757Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-depth30" \[0m
+2026-09-10T03:38:01.5080410Z [36;1m  --package candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910 \[0m
+2026-09-10T03:38:01.5080935Z [36;1m  --output "$GITHUB_WORKSPACE/restored-depth31" | tee evidence/depth31-restore.log[0m
+2026-09-10T03:38:01.5081530Z [36;1mpython candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910/restore_delta.py \[0m
+2026-09-10T03:38:01.5082031Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-depth31" \[0m
+2026-09-10T03:38:01.5082465Z [36;1m  --package candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910 \[0m
+2026-09-10T03:38:01.5083027Z [36;1m  --output "$GITHUB_WORKSPACE/restored-depth32r2" | tee evidence/depth32r2-restore.log[0m
+2026-09-10T03:38:01.5083603Z [36;1mpython candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910/restore_delta.py \[0m
+2026-09-10T03:38:01.5084084Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-depth32r2" \[0m
+2026-09-10T03:38:01.5084515Z [36;1m  --package candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910 \[0m
+2026-09-10T03:38:01.5085049Z [36;1m  --output "$GITHUB_WORKSPACE/restored-depth33" | tee evidence/depth33-restore.log[0m
+2026-09-10T03:38:01.5085647Z [36;1mpython candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910/restore_delta.py \[0m
+2026-09-10T03:38:01.5086158Z [36;1m  --parent "$GITHUB_WORKSPACE/restored-depth33" \[0m
+2026-09-10T03:38:01.5086597Z [36;1m  --package candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910 \[0m
+2026-09-10T03:38:01.5087108Z [36;1m  --output "$GITHUB_WORKSPACE/restored" | tee evidence/restore.log[0m
+2026-09-10T03:38:01.5170735Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T03:38:01.5171095Z env:
+2026-09-10T03:38:01.5171386Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:38:01.5171877Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:38:01.5172373Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:01.5172806Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T03:38:01.5173222Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:01.5173586Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:01.5173937Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:01.5174293Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T03:38:01.5174612Z ##[endgroup]
+2026-09-10T03:38:02.2644019Z {
+2026-09-10T03:38:02.2660580Z   "restored_files_verified": 1081,
+2026-09-10T03:38:02.2661644Z   "parent_files_verified": 1077,
+2026-09-10T03:38:02.2663072Z   "source_tree_sha256": "7f8be7894c15f42e311610cccaaf8590402cd9ae1facca77956379a5aec43952",
+2026-09-10T03:38:02.2664480Z   "delta_sha256": "f95e9541757f0051815373611b0230ee1bcc58201a451e6b99261754110e98ab",
+2026-09-10T03:38:02.2665898Z   "output": "/tmp/go-offline-lineage-9n_mi9qb/depth27",
+2026-09-10T03:38:02.2666781Z   "FINAL_RELEASE_GATE": "HOLD"
+2026-09-10T03:38:02.2667761Z }
+2026-09-10T03:38:02.5995212Z {
+2026-09-10T03:38:02.5995628Z   "restored_files_verified": 1093,
+2026-09-10T03:38:02.5996093Z   "parent_files_verified": 1081,
+2026-09-10T03:38:02.5996832Z   "source_tree_sha256": "3a8440e2d74e1dc4f86509686968683f98bec4b78c9f0ca0e43a02dedeac285f",
+2026-09-10T03:38:02.5997764Z   "delta_sha256": "98f006935a421b99aa4ea35c1f43ec0186b04bfc262e01b46f3d4f341d13a109",
+2026-09-10T03:38:02.5998713Z   "output": "/home/runner/work/GO/GO/restored-parent",
+2026-09-10T03:38:02.5999703Z   "FINAL_RELEASE_GATE": "HOLD"
+2026-09-10T03:38:02.6000067Z }
+2026-09-10T03:38:02.7509572Z {"verified_files": 1093, "result": "PASS", "scope": "offline archive materialization only", "independent_ci": false, "release_gate": "HOLD"}
+2026-09-10T03:38:03.1275912Z {
+2026-09-10T03:38:03.1276861Z   "parent_files_verified": 1201,
+2026-09-10T03:38:03.1277443Z   "restored_files_verified": 1207,
+2026-09-10T03:38:03.1278296Z   "source_tree_sha256": "ffcea37a3d2ce626026571c1d16eb7be190bd1b048b6b8dfd0d6c8164f2b556c",
+2026-09-10T03:38:03.1279988Z   "delta_sha256": "df32a08b8e330e36c95a53d576bad00f22203cfec566145dd830856d2da5540b",
+2026-09-10T03:38:03.1280832Z   "scope": "offline source materialization only",
+2026-09-10T03:38:03.1281397Z   "independent_ci": false,
+2026-09-10T03:38:03.1281896Z   "FINAL_RELEASE_GATE": "HOLD"
+2026-09-10T03:38:03.1282337Z }
+2026-09-10T03:38:03.4684364Z {
+2026-09-10T03:38:03.4685214Z   "parent_files_verified": 1207,
+2026-09-10T03:38:03.4687503Z   "restored_files_verified": 1222,
+2026-09-10T03:38:03.4688809Z   "source_tree_sha256": "f576c976bfe8f34d3182ba232fe1290c374346106c602a4fffe4935366f7a961",
+2026-09-10T03:38:03.4689734Z   "delta_sha256": "6803c349f241feae33a879d91243bc6bb1ff23c77701f98d69a0ec06d9b5d107",
+2026-09-10T03:38:03.4690426Z   "scope": "offline source materialization only",
+2026-09-10T03:38:03.4690864Z   "independent_ci": false,
+2026-09-10T03:38:03.4691232Z   "FINAL_RELEASE_GATE": "HOLD"
+2026-09-10T03:38:03.4691583Z }
+2026-09-10T03:38:03.8239174Z {"verified_files": 1232, "source_tree_sha256": "2b9095df2e9a58f8f5ac6861c514163cbbc9e135def204c4e2d5edb65b3f68e0", "parent_verified_files": 1222, "changed_files": 28, "environment": "offline restoration only", "release_gate": "HOLD"}
+2026-09-10T03:38:04.2118242Z {"verified_files": 1236, "source_tree_sha256": "a309bdda03e0621a7be5622463a92bcfe728238f28c4ea6c212c6be43c875c11", "parent_verified_files": 1232, "changed_files": 11, "environment": "offline restoration only", "release_gate": "HOLD"}
+2026-09-10T03:38:04.5557892Z {"verified_files": 1239, "source_tree_sha256": "a67a70cd2442e67ece9c9b2795b049c6aea2ba4d882448b912eb7eb996d4459c", "parent_verified_files": 1236, "changed_files": 9, "environment": "offline restoration only", "release_gate": "HOLD"}
+2026-09-10T03:38:05.0745417Z {"verified_files": 1241, "source_tree_sha256": "e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5", "parent_verified_files": 1239, "changed_files": 6, "environment": "offline restoration only", "release_gate": "HOLD"}
+2026-09-10T03:38:05.0834784Z ##[group]Run python tooling/ci/depth34r2/dependencies.py --repository candidate --output dependencies | tee evidence/dependencies.json
+2026-09-10T03:38:05.0835753Z [36;1mpython tooling/ci/depth34r2/dependencies.py --repository candidate --output dependencies | tee evidence/dependencies.json[0m
+2026-09-10T03:38:05.0836354Z [36;1mpython -m venv isolated-runtime[0m
+2026-09-10T03:38:05.0837005Z [36;1misolated-runtime/bin/python -m pip install --no-index --no-deps --find-links dependencies/wheelhouse -r tooling/ci/depth34r2/requirements.lock[0m
+2026-09-10T03:38:05.0837806Z [36;1misolated-runtime/bin/python -m pip freeze > evidence/pip-freeze.txt[0m
+2026-09-10T03:38:05.0924679Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T03:38:05.0925197Z env:
+2026-09-10T03:38:05.0925587Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:38:05.0926345Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:38:05.0927202Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:05.0927823Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T03:38:05.0928452Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:05.0929259Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:05.0929793Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:05.0930347Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T03:38:05.0930846Z ##[endgroup]
+2026-09-10T03:38:05.3790558Z {"archive_sha256": "b13a76ab9351f81da70e8e2c8873c20141abe953cd3f96aeb181ef86a34b58dd", "verified_wheels": 37, "source": "pinned GO repository ci/dependency_parts only", "application_source_restored": false}
+2026-09-10T03:38:08.8043322Z Looking in links: dependencies/wheelhouse
+2026-09-10T03:38:08.8159794Z Processing ./dependencies/wheelhouse/alembic-1.16.5-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 1))
+2026-09-10T03:38:08.8215860Z Processing ./dependencies/wheelhouse/annotated_doc-0.0.4-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 2))
+2026-09-10T03:38:08.8244365Z Processing ./dependencies/wheelhouse/annotated_types-0.7.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 3))
+2026-09-10T03:38:08.8276136Z Processing ./dependencies/wheelhouse/anyio-4.13.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 4))
+2026-09-10T03:38:08.8321508Z Processing ./dependencies/wheelhouse/certifi-2026.5.20-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 5))
+2026-09-10T03:38:08.8348274Z Processing ./dependencies/wheelhouse/cffi-2.0.0-cp313-cp313-manylinux_2_17_x86_64.whl (from -r tooling/ci/depth34r2/requirements.lock (line 6))
+2026-09-10T03:38:08.8385668Z Processing ./dependencies/wheelhouse/click-8.5.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 7))
+2026-09-10T03:38:08.8410541Z Processing ./dependencies/wheelhouse/cryptography-46.0.4-cp311-abi3-manylinux_2_34_x86_64.whl (from -r tooling/ci/depth34r2/requirements.lock (line 8))
+2026-09-10T03:38:08.8531925Z Processing ./dependencies/wheelhouse/fastapi-0.128.2-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 9))
+2026-09-10T03:38:08.8626900Z Processing ./dependencies/wheelhouse/greenlet-3.5.1-cp313-cp313-manylinux_2_24_x86_64.whl (from -r tooling/ci/depth34r2/requirements.lock (line 10))
+2026-09-10T03:38:08.8674569Z Processing ./dependencies/wheelhouse/h11-0.16.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 11))
+2026-09-10T03:38:08.8704487Z Processing ./dependencies/wheelhouse/httpcore-1.0.9-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 12))
+2026-09-10T03:38:08.8776306Z Processing ./dependencies/wheelhouse/httpx-0.28.1-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 13))
+2026-09-10T03:38:08.8803681Z Processing ./dependencies/wheelhouse/idna-3.17-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 14))
+2026-09-10T03:38:08.8838689Z Processing ./dependencies/wheelhouse/iniconfig-2.3.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 15))
+2026-09-10T03:38:08.8864368Z Processing ./dependencies/wheelhouse/mako-1.3.10-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 16))
+2026-09-10T03:38:08.8896407Z Processing ./dependencies/wheelhouse/markupsafe-3.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from -r tooling/ci/depth34r2/requirements.lock (line 17))
+2026-09-10T03:38:08.8922002Z Processing ./dependencies/wheelhouse/packaging-25.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 18))
+2026-09-10T03:38:08.8952338Z Processing ./dependencies/wheelhouse/pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.whl (from -r tooling/ci/depth34r2/requirements.lock (line 19))
+2026-09-10T03:38:08.9089936Z Processing ./dependencies/wheelhouse/pluggy-1.6.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 20))
+2026-09-10T03:38:08.9124663Z Processing ./dependencies/wheelhouse/psycopg_binary-3.2.10-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from -r tooling/ci/depth34r2/requirements.lock (line 21))
+2026-09-10T03:38:08.9203616Z Processing ./dependencies/wheelhouse/psycopg-3.2.10-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 22))
+2026-09-10T03:38:08.9279243Z Processing ./dependencies/wheelhouse/pycparser-3.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 23))
+2026-09-10T03:38:08.9308809Z Processing ./dependencies/wheelhouse/pydantic_settings-2.14.1-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 24))
+2026-09-10T03:38:08.9349892Z Processing ./dependencies/wheelhouse/pydantic-2.13.4-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 25))
+2026-09-10T03:38:08.9445834Z Processing ./dependencies/wheelhouse/pydantic_core-2.46.4-cp313-cp313-manylinux_2_17_x86_64.whl (from -r tooling/ci/depth34r2/requirements.lock (line 26))
+2026-09-10T03:38:08.9510768Z Processing ./dependencies/wheelhouse/Pygments-2.20.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 27))
+2026-09-10T03:38:08.9612130Z Processing ./dependencies/wheelhouse/PyJWT-2.13.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 28))
+2026-09-10T03:38:08.9642428Z Processing ./dependencies/wheelhouse/pytest_asyncio-1.3.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 29))
+2026-09-10T03:38:08.9679020Z Processing ./dependencies/wheelhouse/pytest-9.0.2-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 30))
+2026-09-10T03:38:08.9746252Z Processing ./dependencies/wheelhouse/python_dotenv-1.2.2-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 31))
+2026-09-10T03:38:08.9789977Z Processing ./dependencies/wheelhouse/redis-5.2.1-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 32))
+2026-09-10T03:38:08.9831148Z Processing ./dependencies/wheelhouse/SQLAlchemy-2.0.50-cp313-cp313-manylinux_2_17_x86_64.whl (from -r tooling/ci/depth34r2/requirements.lock (line 33))
+2026-09-10T03:38:09.0036213Z Processing ./dependencies/wheelhouse/starlette-0.50.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 34))
+2026-09-10T03:38:09.0079130Z Processing ./dependencies/wheelhouse/typing_inspection-0.4.2-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 35))
+2026-09-10T03:38:09.0105081Z Processing ./dependencies/wheelhouse/typing_extensions-4.16.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 36))
+2026-09-10T03:38:09.0130588Z Processing ./dependencies/wheelhouse/uvicorn-0.35.0-py3-none-any.whl (from -r tooling/ci/depth34r2/requirements.lock (line 37))
+2026-09-10T03:38:09.0480789Z Installing collected packages: uvicorn, typing-inspection, typing_extensions, starlette, SQLAlchemy, redis, python-dotenv, pytest-asyncio, pytest, PyJWT, Pygments, pydantic-settings, pydantic_core, pydantic, pycparser, psycopg-binary, psycopg, pluggy, Pillow, packaging, MarkupSafe, Mako, iniconfig, idna, httpx, httpcore, h11, greenlet, fastapi, cryptography, click, cffi, certifi, anyio, annotated-types, annotated-doc, alembic
+2026-09-10T03:38:15.0159496Z 
+2026-09-10T03:38:15.0201739Z Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 Pillow-12.3.0 PyJWT-2.13.0 Pygments-2.20.0 SQLAlchemy-2.0.50 alembic-1.16.5 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 certifi-2026.5.20 cffi-2.0.0 click-8.5.0 cryptography-46.0.4 fastapi-0.128.2 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.17 iniconfig-2.3.0 packaging-25.0 pluggy-1.6.0 psycopg-3.2.10 psycopg-binary-3.2.10 pycparser-3.0 pydantic-2.13.4 pydantic-settings-2.14.1 pydantic_core-2.46.4 pytest-9.0.2 pytest-asyncio-1.3.0 python-dotenv-1.2.2 redis-5.2.1 starlette-0.50.0 typing-inspection-0.4.2 typing_extensions-4.16.0 uvicorn-0.35.0
+2026-09-10T03:38:15.4038426Z ##[group]Run isolated-runtime/bin/python - <<'PY'
+2026-09-10T03:38:15.4039629Z [36;1misolated-runtime/bin/python - <<'PY'[0m
+2026-09-10T03:38:15.4040067Z [36;1mimport hashlib,json,os,pathlib,subprocess,sys[0m
+2026-09-10T03:38:15.4040744Z [36;1mfp=json.loads(pathlib.Path('candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910/SOURCE_FINGERPRINT.json').read_text())[0m
+2026-09-10T03:38:15.4041391Z [36;1mfor name,expected in fp.items():[0m
+2026-09-10T03:38:15.4041898Z [36;1m    assert hashlib.sha256((pathlib.Path('restored')/name).read_bytes()).hexdigest()==expected,name[0m
+2026-09-10T03:38:15.4042539Z [36;1mtree=hashlib.sha256(''.join(f'{k}\0{v}\n' for k,v in sorted(fp.items())).encode()).hexdigest()[0m
+2026-09-10T03:38:15.4043064Z [36;1massert tree==os.environ['EXPECTED_SOURCE_TREE'] and len(fp)==1241[0m
+2026-09-10T03:38:15.4044685Z [36;1mresult={'candidate':os.environ['SEALED_CANDIDATE'],'source_tree_sha256':tree,'verified_files':len(fp),'python':sys.version,'node':subprocess.check_output(['node','--version'],text=True).strip(),'environment':'GitHub disposable runner; SQLite TestClient and VM/native pure functions; no service credentials','three_end_real_ux_login':'HOLD','six_vertical_real_e2e':'HOLD','sealed_node_gate':'HOLD','final_release':'HOLD','deployed':False}[0m
+2026-09-10T03:38:15.4047416Z [36;1mpathlib.Path('evidence/source-lineage.json').write_text(json.dumps(result,indent=2)+'\n')[0m
+2026-09-10T03:38:15.4047912Z [36;1mprint(json.dumps(result))[0m
+2026-09-10T03:38:15.4048173Z [36;1mPY[0m
+2026-09-10T03:38:15.4132144Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T03:38:15.4132519Z env:
+2026-09-10T03:38:15.4132810Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:38:15.4133303Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:38:15.4133817Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:15.4134241Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T03:38:15.4134665Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:15.4135052Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:15.4135430Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:15.4135795Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T03:38:15.4136128Z ##[endgroup]
+2026-09-10T03:38:15.5213199Z {"candidate": "2dab537722cda3675231102eb013280796068401", "source_tree_sha256": "e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5", "verified_files": 1241, "python": "3.13.5 (main, Jun 12 2025, 03:51:15) [GCC 11.4.0]", "node": "v22.22.0", "environment": "GitHub disposable runner; SQLite TestClient and VM/native pure functions; no service credentials", "three_end_real_ux_login": "HOLD", "six_vertical_real_e2e": "HOLD", "sealed_node_gate": "HOLD", "final_release": "HOLD", "deployed": false}
+2026-09-10T03:38:15.5300510Z ##[group]Run ../isolated-runtime/bin/python -m pytest tests/test_depth34_hotel_quote_read.py tests/test_depth14_cash_fare_api.py tests/test_depth30_native_api_contract.py --junitxml=../evidence/backend.xml | tee ../evidence/backend.log
+2026-09-10T03:38:15.5302976Z [36;1m../isolated-runtime/bin/python -m pytest tests/test_depth34_hotel_quote_read.py tests/test_depth14_cash_fare_api.py tests/test_depth30_native_api_contract.py --junitxml=../evidence/backend.xml | tee ../evidence/backend.log[0m
+2026-09-10T03:38:15.5394683Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T03:38:15.5395046Z env:
+2026-09-10T03:38:15.5395323Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:38:15.5395819Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:38:15.5396325Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:15.5396810Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T03:38:15.5397218Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:15.5397620Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:15.5397994Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:15.5398361Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T03:38:15.5398822Z ##[endgroup]
+2026-09-10T03:38:41.5756541Z .........                                                                [100%]
+2026-09-10T03:38:41.5757880Z 9 passed in 22.89s
+2026-09-10T03:38:43.6097289Z ##[group]Run node --experimental-strip-types --test --test-reporter=spec --test-reporter-destination=../evidence/frontend.log --test-reporter=junit --test-reporter-destination=../evidence/frontend.xml tests_frontend/*.test.mjs
+2026-09-10T03:38:43.6100697Z [36;1mnode --experimental-strip-types --test --test-reporter=spec --test-reporter-destination=../evidence/frontend.log --test-reporter=junit --test-reporter-destination=../evidence/frontend.xml tests_frontend/*.test.mjs[0m
+2026-09-10T03:38:43.6102617Z [36;1mcat ../evidence/frontend.log[0m
+2026-09-10T03:38:43.6182038Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T03:38:43.6182412Z env:
+2026-09-10T03:38:43.6182693Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:38:43.6183188Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:38:43.6183705Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:43.6184168Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T03:38:43.6184584Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:43.6184952Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:43.6185336Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:43.6185706Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T03:38:43.6186027Z ##[endgroup]
+2026-09-10T03:38:46.5445392Z ✔ HTTP helper retains CSRF together with idempotency header (4.965624ms)
+2026-09-10T03:38:46.5446737Z ✔ Escape cancels traveler selection without authorizing or creating an order (9.407509ms)
+2026-09-10T03:38:46.5447790Z ✔ rental consent is bound to the selected traveler, field and purpose (2.427744ms)
+2026-09-10T03:38:46.5448829Z ✔ payment is cancelled without any checkout mutation (1.72074ms)
+2026-09-10T03:38:46.5452245Z ✔ a failed confirmed payment stays visible and can be retried (1.903856ms)
+2026-09-10T03:38:46.5453259Z ✔ cancelling a party selection creates no order or grant (2.284779ms)
+2026-09-10T03:38:46.5454177Z ✔ a party must contain the exact number of different travelers (2.559183ms)
+2026-09-10T03:38:46.5455252Z ✔ party confirmation returns only the explicitly selected traveler references (1.901462ms)
+2026-09-10T03:38:46.5456466Z ✔ party selection cannot submit without confirming adult travelers and purpose (2.902578ms)
+2026-09-10T03:38:46.5457660Z ✔ consumer uses locked V14 main and compact artwork with responsive selection (2.075524ms)
+2026-09-10T03:38:46.5463034Z ✔ supplier and admin share the locked reverse V14 compact lockup (1.357854ms)
+2026-09-10T03:38:46.5464144Z ✔ all three entry documents advance cache tokens together (0.309886ms)
+2026-09-10T03:38:46.5465203Z ✔ GO subbrands use V14 geometry with a deliberately recessive GO tier (0.334223ms)
+2026-09-10T03:38:46.5466261Z ✔ legacy runtime asset names also resolve to locked V14 geometry (0.455486ms)
+2026-09-10T03:38:46.5467446Z ✔ cancel review shows every cash component and exact fee basis before submission (22.806859ms)
+2026-09-10T03:38:46.5470736Z ✔ closing cancel review never sends cancellation or reloads as completed (1.085033ms)
+2026-09-10T03:38:46.5471860Z ✔ unchecked money confirmation cannot submit a cash action (1.39504ms)
+2026-09-10T03:38:46.5473049Z ✔ change confirmation keeps paid room value, incremental difference and fee separate (1.251374ms)
+2026-09-10T03:38:46.5474277Z ✔ cancelled date selection does not request new inventory or a payment (0.895297ms)
+2026-09-10T03:38:46.5475444Z ✔ displayed quote hash stays bound across asynchronous source mutation (0.933845ms)
+2026-09-10T03:38:46.5476597Z ✔ unknown supplier progress offers query only and binds the saved operation (1.209661ms)
+2026-09-10T03:38:46.5477853Z ✔ cancel confirmed and refund pending remain distinct in the customer progress card (0.793915ms)
+2026-09-10T03:38:46.5480176Z ✔ credit conversion waits for explicit quoted consent and does not claim an unknown cancellation succeeded (5.009701ms)
+2026-09-10T03:38:46.5481542Z ✔ canceling traveler selection sends no redemption or automatic identity (1.240317ms)
+2026-09-10T03:38:46.5482346Z ✔ redemption network retry binds the same quote and explicitly selected traveler (2.556928ms)
+2026-09-10T03:38:46.5483189Z ✔ unknown booking and pending refund remain distinct from completed credit restoration (0.97018ms)
+2026-09-10T03:38:46.5483926Z ✔ canceling a supplementary payment dialog re-enables the action (16.723573ms)
+2026-09-10T03:38:46.5484639Z ✔ conversion separates prior cash refunds and forfeiture from retained credit (2.439652ms)
+2026-09-10T03:38:46.5486117Z ✔ forfeiture conversion confirmation stays bound to the displayed quote after source object changes (1.065714ms)
+2026-09-10T03:38:46.5487477Z ✔ credit detail keeps original excluded value visible after redemption changes (0.994387ms)
+2026-09-10T03:38:46.5488926Z ✔ historical credit without a forfeiture breakdown never renders invalid amounts (1.319246ms)
+2026-09-10T03:38:46.5490231Z ✔ fare confirmation separates fee tiers, cooling, change and property credit terms (2.575947ms)
+2026-09-10T03:38:46.5491019Z ✔ cancelling fare confirmation has no accepted contract (2.161164ms)
+2026-09-10T03:38:46.5491718Z ✔ accepted hash remains bound to the rules displayed before asynchronous state changes (0.881857ms)
+2026-09-10T03:38:46.5492485Z ✔ declining hotel rules never selects or authorizes a traveler or creates an order (1.740941ms)
+2026-09-10T03:38:46.5493309Z ✔ accepted hotel contract is included with selected traveler and stable booking request identity (1.205224ms)
+2026-09-10T03:38:46.5494040Z ✔ supplier money and percentage inputs use exact minor units (1.197402ms)
+2026-09-10T03:38:46.5494767Z ✔ supplier lost-response retry keeps request identity and sends only the claimed cause (4.681307ms)
+2026-09-10T03:38:46.5495551Z ✔ supplier duplicate clicks while a request is pending cannot create another request (1.265936ms)
+2026-09-10T03:38:46.5496439Z ✔ unknown supplier cancellation shows approved refund waiting for confirmation, without a resend button (15.527592ms)
+2026-09-10T03:38:46.5497277Z ✔ hotel funds distinguish frozen, charged, released and refunded cent amounts (17.655325ms)
+2026-09-10T03:38:46.5498008Z ✔ only approved pending refunds expose retry and all server labels are escaped (0.665602ms)
+2026-09-10T03:38:46.5499143Z ✔ unknown funding shows reconciliation instead of a false payment claim (0.467523ms)
+2026-09-10T03:38:46.5499839Z ✔ trip links only open the exact canonical owned direct-reservation path (0.476678ms)
+2026-09-10T03:38:46.5500428Z ✔ closing a stay complaint form makes no request (1.222601ms)
+2026-09-10T03:38:46.5501096Z ✔ complaint retries reuse the same request identity and have no refund approval fields (1.762563ms)
+2026-09-10T03:38:46.5501862Z ✔ blank complaints and duplicate submission clicks cannot send extra requests (0.972223ms)
+2026-09-10T03:38:46.5502483Z ✔ closing hotel authorization leaves funds untouched (2.300032ms)
+2026-09-10T03:38:46.5503116Z ✔ hotel checkout requires confirmation and binds the complete stay amount (2.864802ms)
+2026-09-10T03:38:46.5503860Z ✔ a second click cannot create another hotel authorization while the first is pending (1.027697ms)
+2026-09-10T03:38:46.5504542Z ✔ a failed hotel authorization remains visible and can be retried (0.925733ms)
+2026-09-10T03:38:46.5505218Z ✔ conversion clearly shows capture and value and closing does not convert (24.046494ms)
+2026-09-10T03:38:46.5505884Z ✔ conversion retry keeps original quote, amount and original expiry (2.274855ms)
+2026-09-10T03:38:46.5506578Z ✔ redemption uses server quote policy and displays forfeiture before consent (1.633669ms)
+2026-09-10T03:38:46.5507253Z ✔ redemption confirms a fresh traveler and only releases hotel fields (1.857716ms)
+2026-09-10T03:38:46.5507906Z ✔ double click and Escape cannot duplicate or dismiss pending redemption (9.250313ms)
+2026-09-10T03:38:46.5508975Z ✔ credit list filters property and disables frozen, expired or reconciliation credits (1.607249ms)
+2026-09-10T03:38:46.5509961Z ✔ a cancellation quote never cancels a booking and closing preserves it (23.467203ms)
+2026-09-10T03:38:46.5510720Z ✔ fee consent binds the server quote and keeps frozen release separate from cash refund (2.330368ms)
+2026-09-10T03:38:46.5511440Z ✔ interrupted cancellation retry uses exactly the same quote and fee (1.454449ms)
+2026-09-10T03:38:46.5512117Z ✔ double clicks cannot settle twice while a cancellation is pending (1.370072ms)
+2026-09-10T03:38:46.5512805Z ✔ unavailable fare actions have no executable buttons and rule text is escaped (1.247537ms)
+2026-09-10T03:38:46.5513656Z ✔ date changes quote first and require fresh consent after editing dates (2.395445ms)
+2026-09-10T03:38:46.5514318Z ✔ extension keeps check-in fixed and explains replacement authorization (2.535727ms)
+2026-09-10T03:38:46.5515018Z ✔ independent review requires an explicit checked attestation and chosen proof (2.53796ms)
+2026-09-10T03:38:46.5515821Z ✔ review submits the exact evidence snapshot and no caller-selected money (0.917571ms)
+2026-09-10T03:38:46.5516596Z ✔ customer sees completed original refund separately from pending extra payment (15.369354ms)
+2026-09-10T03:38:46.5517372Z ✔ unapproved guest liability is a review hold without a refund promise or pay button (0.335174ms)
+2026-09-10T03:38:46.5518159Z ✔ zero captured payment explains authorization release and completed case has no retry (0.396447ms)
+2026-09-10T03:38:46.5519258Z ✔ finance entry converts decimal currency without fractional cents or silent rounding (0.588025ms)
+2026-09-10T03:38:46.5520446Z (node:2467) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/restored/mobile/go-app/src/domain/changeActions.ts is not specified and it doesn't parse as CommonJS.
+2026-09-10T03:38:46.5521458Z Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-10T03:38:46.5522216Z To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/restored/mobile/go-app/package.json.
+2026-09-10T03:38:46.5522880Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-10T03:38:46.5523563Z ✔ HOTEL: explicit confirmation consumes one quote and reads original order (11.743355ms)
+2026-09-10T03:38:46.5524225Z ✔ HOTEL: expiry, edit and session changes prevent submission (1.166126ms)
+2026-09-10T03:38:46.5524860Z ✔ HOTEL: wrong identity or unavailable isolated channel cannot execute (0.722186ms)
+2026-09-10T03:38:46.5525439Z ✔ HOTEL: timeout is unknown and never auto-retried (0.653254ms)
+2026-09-10T03:38:46.5526082Z ✔ FLIGHT: explicit confirmation consumes one quote and reads original order (0.715828ms)
+2026-09-10T03:38:46.5526716Z ✔ FLIGHT: expiry, edit and session changes prevent submission (0.659222ms)
+2026-09-10T03:38:46.5527382Z ✔ FLIGHT: wrong identity or unavailable isolated channel cannot execute (0.333081ms)
+2026-09-10T03:38:46.5527958Z ✔ FLIGHT: timeout is unknown and never auto-retried (0.287242ms)
+2026-09-10T03:38:46.5528788Z ✔ RAIL: explicit confirmation consumes one quote and reads original order (0.6114ms)
+2026-09-10T03:38:46.5529461Z ✔ RAIL: expiry, edit and session changes prevent submission (0.85669ms)
+2026-09-10T03:38:46.5530073Z ✔ RAIL: wrong identity or unavailable isolated channel cannot execute (0.549648ms)
+2026-09-10T03:38:46.5530632Z ✔ RAIL: timeout is unknown and never auto-retried (0.324609ms)
+2026-09-10T03:38:46.5531266Z ✔ ATTRACTION: explicit confirmation consumes one quote and reads original order (0.426883ms)
+2026-09-10T03:38:46.5531947Z ✔ ATTRACTION: expiry, edit and session changes prevent submission (0.460102ms)
+2026-09-10T03:38:46.5532634Z ✔ ATTRACTION: wrong identity or unavailable isolated channel cannot execute (0.340633ms)
+2026-09-10T03:38:46.5533238Z ✔ ATTRACTION: timeout is unknown and never auto-retried (0.254843ms)
+2026-09-10T03:38:46.5533874Z ✔ RENTAL: explicit confirmation consumes one quote and reads original order (0.582417ms)
+2026-09-10T03:38:46.5534496Z ✔ RENTAL: expiry, edit and session changes prevent submission (0.509517ms)
+2026-09-10T03:38:46.5535349Z ✔ RENTAL: wrong identity or unavailable isolated channel cannot execute (0.322315ms)
+2026-09-10T03:38:46.5535929Z ✔ RENTAL: timeout is unknown and never auto-retried (0.283657ms)
+2026-09-10T03:38:46.5536529Z ✔ invalid replacement quote destroys old consent; dates are canonical (0.54461ms)
+2026-09-10T03:38:46.5537058Z ✔ double submit makes only one mutation (1.200757ms)
+2026-09-10T03:38:46.5538053Z (node:2474) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/restored/mobile/go-app/src/domain/changeTerms.ts is not specified and it doesn't parse as CommonJS.
+2026-09-10T03:38:46.5539507Z Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-10T03:38:46.5540286Z To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/restored/mobile/go-app/package.json.
+2026-09-10T03:38:46.5540942Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-10T03:38:46.5541615Z ✔ hotel lower price still discloses the nonrefundable loss and separate fee (1.44203ms)
+2026-09-10T03:38:46.5542302Z ✔ missing or inconsistent hotel financial terms are not confirmable (0.659203ms)
+2026-09-10T03:38:46.5543014Z ✔ flight and rail disclose transport identity and reject inconsistent fee sums (0.558901ms)
+2026-09-10T03:38:46.5543771Z ✔ rental lower cost specifies original payment and validates the rate calculation (0.404649ms)
+2026-09-10T03:38:46.5544502Z ✔ attraction free change never silently accepts a newly introduced charge (0.236266ms)
+2026-09-10T03:38:46.5545606Z (node:2481) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/restored/mobile/go-app/src/domain/tripFacts.ts is not specified and it doesn't parse as CommonJS.
+2026-09-10T03:38:46.5546591Z Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-10T03:38:46.5547334Z To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/restored/mobile/go-app/package.json.
+2026-09-10T03:38:46.5547966Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-10T03:38:46.5548769Z ✔ Direct navigation preserves the owned reservation identity (2.111769ms)
+2026-09-10T03:38:46.5549446Z ✔ Direct details read only the canonical reservation and matching events (0.509707ms)
+2026-09-10T03:38:46.5550103Z ✔ Direct mismatched or missing records cannot display confirmation (0.797961ms)
+2026-09-10T03:38:46.5551167Z (node:2488) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/restored/mobile/go-app/src/domain/orderActions.ts is not specified and it doesn't parse as CommonJS.
+2026-09-10T03:38:46.5552172Z Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-10T03:38:46.5552923Z To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/restored/mobile/go-app/package.json.
+2026-09-10T03:38:46.5553532Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-10T03:38:46.5554288Z ✔ hotel cancellation sends the displayed quote identity without silently creating another quote (3.734871ms)
+2026-09-10T03:38:46.5555151Z ✔ hotel server rejects a stale accepted quote without replacing it or retrying cancellation (1.24915ms)
+2026-09-10T03:38:46.5555932Z ✔ hotel malformed, expired or foreign accepted quote cannot send cancellation (1.177853ms)
+2026-09-10T03:38:46.5557035Z (node:2495) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/restored/mobile/go-app/src/domain/orderActions.ts is not specified and it doesn't parse as CommonJS.
+2026-09-10T03:38:46.5558037Z Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-10T03:38:46.5558985Z To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/restored/mobile/go-app/package.json.
+2026-09-10T03:38:46.5559612Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-10T03:38:46.5560515Z ✔ HOTEL: payment binds fresh amount and re-reads the same order after lost response (3.712879ms)
+2026-09-10T03:38:46.5561229Z ✔ HOTEL: changed amount and unavailable channel cannot execute payment (0.993265ms)
+2026-09-10T03:38:46.5561966Z ✔ HOTEL: refund confirms quoted amount, submits once and does not invent refunded state (1.866149ms)
+2026-09-10T03:38:46.5562702Z ✔ HOTEL: changed refund terms need reconfirmation before any cancellation (0.533964ms)
+2026-09-10T03:38:46.5563430Z ✔ FLIGHT: payment binds fresh amount and re-reads the same order after lost response (0.349165ms)
+2026-09-10T03:38:46.5564321Z ✔ FLIGHT: changed amount and unavailable channel cannot execute payment (0.31856ms)
+2026-09-10T03:38:46.5565060Z ✔ FLIGHT: refund confirms quoted amount, submits once and does not invent refunded state (0.779423ms)
+2026-09-10T03:38:46.5565794Z ✔ FLIGHT: changed refund terms need reconfirmation before any cancellation (0.307142ms)
+2026-09-10T03:38:46.5566541Z ✔ RAIL: payment binds fresh amount and re-reads the same order after lost response (0.692933ms)
+2026-09-10T03:38:46.5567230Z ✔ RAIL: changed amount and unavailable channel cannot execute payment (0.822337ms)
+2026-09-10T03:38:46.5567946Z ✔ RAIL: refund confirms quoted amount, submits once and does not invent refunded state (1.383202ms)
+2026-09-10T03:38:46.5568753Z ✔ RAIL: changed refund terms need reconfirmation before any cancellation (0.3389ms)
+2026-09-10T03:38:46.5569473Z ✔ RENTAL: payment binds fresh amount and re-reads the same order after lost response (1.480388ms)
+2026-09-10T03:38:46.5570184Z ✔ RENTAL: changed amount and unavailable channel cannot execute payment (0.341704ms)
+2026-09-10T03:38:46.5570915Z ✔ RENTAL: refund confirms quoted amount, submits once and does not invent refunded state (0.377308ms)
+2026-09-10T03:38:46.5571629Z ✔ RENTAL: changed refund terms need reconfirmation before any cancellation (0.177627ms)
+2026-09-10T03:38:46.5572335Z ✔ RIDE: payment binds fresh amount and re-reads the same order after lost response (0.406762ms)
+2026-09-10T03:38:46.5573022Z ✔ RIDE: changed amount and unavailable channel cannot execute payment (0.215645ms)
+2026-09-10T03:38:46.5573733Z ✔ RIDE: refund confirms quoted amount, submits once and does not invent refunded state (0.446322ms)
+2026-09-10T03:38:46.5574428Z ✔ RIDE: changed refund terms need reconfirmation before any cancellation (0.208464ms)
+2026-09-10T03:38:46.5575155Z ✔ ATTRACTION: payment binds fresh amount and re-reads the same order after lost response (0.173391ms)
+2026-09-10T03:38:46.5575892Z ✔ ATTRACTION: changed amount and unavailable channel cannot execute payment (0.249515ms)
+2026-09-10T03:38:46.5576704Z ✔ ATTRACTION: refund confirms quoted amount, submits once and does not invent refunded state (0.307203ms)
+2026-09-10T03:38:46.5577461Z ✔ ATTRACTION: changed refund terms need reconfirmation before any cancellation (0.99661ms)
+2026-09-10T03:38:46.5578153Z ✔ identity substitution and concurrent payment submission are blocked (0.655777ms)
+2026-09-10T03:38:46.5578920Z ✔ screen/session change prevents a mutation after read-only preflight (0.268254ms)
+2026-09-10T03:38:46.5579712Z ✔ all six booking intents use explicit vault identities with stable keys and no fabricated people (4.814567ms)
+2026-09-10T03:38:46.5580555Z ✔ portable request fingerprint matches standard SHA-256 for Unicode and block boundaries (2.646623ms)
+2026-09-10T03:38:46.5581675Z (node:2502) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/restored/mobile/go-app/src/api/transport.ts is not specified and it doesn't parse as CommonJS.
+2026-09-10T03:38:46.5582694Z Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-10T03:38:46.5583447Z To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/restored/mobile/go-app/package.json.
+2026-09-10T03:38:46.5584091Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-10T03:38:46.5585004Z ✔ concurrent expired mutations share one refresh and retain each original idempotency key/body (37.65587ms)
+2026-09-10T03:38:46.5585796Z ✔ a mutation with lost response is uncertain and is never automatically retried (1.36842ms)
+2026-09-10T03:38:46.5586523Z ✔ account change discards pending reads and refresh tokens from the old account (2.17225ms)
+2026-09-10T03:38:46.5587209Z ✔ refresh rejection invalidates current session and notifies the UI (2.035193ms)
+2026-09-10T03:38:46.5587905Z ✔ logout revokes remotely and still clears locally after a transport failure (0.57139ms)
+2026-09-10T03:38:46.5588640Z ✔ a previous logout cannot clear a newly logged-in account (1.726369ms)
+2026-09-10T03:38:46.5589549Z ✔ only chosen API-relative paths are requested and caller auth cannot override the session (1.173306ms)
+2026-09-10T03:38:46.5590425Z ✔ aborted mutations before dispatch are known not sent; malformed successful responses are uncertain (1.135078ms)
+2026-09-10T03:38:46.5591612Z (node:2509) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/restored/mobile/go-app/src/domain/tripFacts.ts is not specified and it doesn't parse as CommonJS.
+2026-09-10T03:38:46.5592613Z Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-10T03:38:46.5593351Z To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/restored/mobile/go-app/package.json.
+2026-09-10T03:38:46.5593973Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-10T03:38:46.5594612Z ✔ native navigation binds all six verticals to an owned canonical identity (2.429477ms)
+2026-09-10T03:38:46.5595270Z ✔ native check-in renders each passenger and leg independently (0.71787ms)
+2026-09-10T03:38:46.5595970Z ✔ missing, stale, duplicate, future or wrong-order check-in evidence is unverified (0.588475ms)
+2026-09-10T03:38:46.5596604Z ✔ only safe HTTPS links are offered by native travel facts (0.259421ms)
+2026-09-10T03:38:46.5597142Z ✔ native rental details never request ride tracking (0.412441ms)
+2026-09-10T03:38:46.5597708Z ✔ ride tracking failure cannot hide the existing ride order (0.297638ms)
+2026-09-10T03:38:46.5598338Z ✔ tracking and order identity mismatches cannot render another order (0.796599ms)
+2026-09-10T03:38:46.5599240Z ✔ rail order preserves party, immutable prebook and original total through payment cancellation (4.788929ms)
+2026-09-10T03:38:46.5600049Z ✔ attraction order uses the quoted slot, quantity and prebook and shows eligibility (0.586764ms)
+2026-09-10T03:38:46.5600745Z ✔ cancelling confirmation step 1 never creates an order or payment (0.247001ms)
+2026-09-10T03:38:46.5601392Z ✔ cancelling confirmation step 2 never creates an order or payment (0.360082ms)
+2026-09-10T03:38:46.5601987Z ✔ cancelled party selection cannot reach order creation (0.340403ms)
+2026-09-10T03:38:46.5602629Z ✔ quote that expires during traveler selection cannot create or pay an order (0.98285ms)
+2026-09-10T03:38:46.5603209Z ✔ missing final consent never creates an order (0.470097ms)
+2026-09-10T03:38:46.5603740Z ✔ different people are required for every quoted place (0.438811ms)
+2026-09-10T03:38:46.5604334Z ✔ an uncertain payment still opens the existing order for recovery (1.877406ms)
+2026-09-10T03:38:46.5604995Z ✔ repeated clicks cannot start a second booking while confirmation is open (0.529327ms)
+2026-09-10T03:38:46.5605686Z ✔ mismatched total, journey or slot is refused before any traveler consent (0.434023ms)
+2026-09-10T03:38:46.5606310Z ✔ cancelling date selection never requests a quote or payment (2.321654ms)
+2026-09-10T03:38:46.5606878Z ✔ ride changes continue to use their separate workflow (2.039901ms)
+2026-09-10T03:38:46.5607419Z ✔ viewing a rental quote does not execute the change (0.964341ms)
+2026-09-10T03:38:46.5608032Z ✔ confirmed refund difference retains its sign and server quote identity (1.785918ms)
+2026-09-10T03:38:46.5608761Z ✔ unchecked amount consent blocks executing a displayed quote (1.272896ms)
+2026-09-10T03:38:46.5609410Z ✔ the shared amount formatter preserves cents on confirmation screens (16.213985ms)
+2026-09-10T03:38:46.5610269Z ✔ consumer: concurrent expired reads refresh once and preserve namespace (11.287219ms)
+2026-09-10T03:38:46.5610973Z ✔ consumer: a mutation without idempotency is never replayed after renewal (1.490313ms)
+2026-09-10T03:38:46.5611674Z ✔ consumer: an idempotent retry retains the original key and body (0.935448ms)
+2026-09-10T03:38:46.5612293Z ✔ consumer: failed refresh stops without retrying the operation (1.05575ms)
+2026-09-10T03:38:46.5612940Z ✔ console: concurrent expired reads refresh once and preserve namespace (3.9462ms)
+2026-09-10T03:38:46.5613774Z ✔ console: a mutation without idempotency is never replayed after renewal (1.114328ms)
+2026-09-10T03:38:46.5614419Z ✔ console: an idempotent retry retains the original key and body (0.873595ms)
+2026-09-10T03:38:46.5615018Z ✔ console: failed refresh stops without retrying the operation (0.897381ms)
+2026-09-10T03:38:46.5615756Z ✔ consumer logout failure preserves account and current page; success clears all private state (1.359426ms)
+2026-09-10T03:38:46.5616517Z ✔ console logout failure is surfaced instead of silently reporting success (2.11955ms)
+2026-09-10T03:38:46.5617211Z ✔ console requests work when randomUUID is unavailable in an HTTP preview (1.120547ms)
+2026-09-10T03:38:46.5617903Z ✔ console login binds the requested account type before establishing a session (0.916509ms)
+2026-09-10T03:38:46.5618713Z ✔ a changed console actor clears the stale UI and never refreshes or retries (0.78409ms)
+2026-09-10T03:38:46.5619369Z ✔ consumer: expired access can renew once to revoke its own session (1.58074ms)
+2026-09-10T03:38:46.5619999Z ✔ console: expired access can renew once to revoke its own session (0.795066ms)
+2026-09-10T03:38:46.5620613Z ✔ unverified check-in never exposes links or boarding passes (3.717025ms)
+2026-09-10T03:38:46.5621252Z ✔ per-traveler boarding pass appears only for the verified pass state (1.111503ms)
+2026-09-10T03:38:46.5621904Z ✔ invalid URL schemes and credentials do not become customer links (0.971312ms)
+2026-09-10T03:38:46.5622555Z ✔ unknown fleet outcome clearly separates confirmed and proposed times (0.91661ms)
+2026-09-10T03:38:46.5623177Z ✔ cancelled tracking confirmation sends no binding mutation (1.033986ms)
+2026-09-10T03:38:46.5623904Z ✔ checked consent sends exact displayed revision and server authority, never wait overrides (1.050401ms)
+2026-09-10T03:38:46.5624526Z ✔ missing consent prevents any tracking write (1.36171ms)
+2026-09-10T03:38:46.5625101Z ✔ no authorized source does not open an unusable confirmation dialog (0.814726ms)
+2026-09-10T03:38:46.5625762Z ✔ waiting protection is conditional and shows the actual event allowance (1.351214ms)
+2026-09-10T03:38:46.5626402Z ✔ late check-in response cannot populate a detached screen (12.534607ms)
+2026-09-10T03:38:46.5627051Z ✔ HOTEL_CATALOG: reopen the existing order without a new order or payment (3.798448ms)
+2026-09-10T03:38:46.5627715Z ✔ HOTEL_DIRECT: reopen the existing order without a new order or payment (1.594039ms)
+2026-09-10T03:38:46.5628360Z ✔ FLIGHT: reopen the existing order without a new order or payment (0.774706ms)
+2026-09-10T03:38:46.5629068Z ✔ RAIL: reopen the existing order without a new order or payment (0.779713ms)
+2026-09-10T03:38:46.5629664Z ✔ RIDE: reopen the existing order without a new order or payment (0.683349ms)
+2026-09-10T03:38:46.5630276Z ✔ RENTAL: reopen the existing order without a new order or payment (0.725672ms)
+2026-09-10T03:38:46.5630914Z ✔ ATTRACTION: reopen the existing order without a new order or payment (0.775858ms)
+2026-09-10T03:38:46.5631609Z ✔ untrusted evidence URLs and unsupported identities never select an endpoint (1.05626ms)
+2026-09-10T03:38:46.5632283Z ✔ card output escapes content and uses current canonical status (1.14217ms)
+2026-09-10T03:38:46.5632891Z ✔ an order response cannot populate a different order or vertical (3.06298ms)
+2026-09-10T03:38:46.5633460Z ✔ late order response cannot overwrite a new screen (0.835067ms)
+2026-09-10T03:38:46.5634066Z ✔ continuing payment re-reads amount and uses the original order only (0.906013ms)
+2026-09-10T03:38:46.5634896Z ✔ already paid or expired orders cannot invoke payment from a stale card (1.736364ms)
+2026-09-10T03:38:46.5635541Z ✔ payment timeout reads the same order and never silently resends (0.846334ms)
+2026-09-10T03:38:46.5636149Z ✔ leaving before the fresh order read prevents a payment dialog (0.67767ms)
+2026-09-10T03:38:46.5636755Z ✔ real app dispatch uses every existing enriched order renderer (4.002875ms)
+2026-09-10T03:38:46.5637359Z ✔ closing permission confirmation sends no permission mutation (4.77021ms)
+2026-09-10T03:38:46.5638233Z ✔ source disconnect remains explicit and retains server-directed semantics (2.514996ms)
+2026-09-10T03:38:46.5639132Z ✔ person edit binds the displayed revision and leaves a blank birth date untouched (1.208269ms)
+2026-09-10T03:38:46.5639982Z ✔ sensitive import inspection happens only after explicit confirmation, with no implicit acceptance (8.235776ms)
+2026-09-10T03:38:46.5640683Z ✔ untrusted imported content is escaped before display (1.987792ms)
+2026-09-10T03:38:46.5641297Z ✔ duplicate submits during a pending mutation call the server once (1.860691ms)
+2026-09-10T03:38:46.5642009Z ✔ import reassignment binds traveler and item revision and does not accept content (1.477053ms)
+2026-09-10T03:38:46.5642631Z ✔ RAIL cancellation requires explicit confirmation (2.259771ms)
+2026-09-10T03:38:46.5643135Z ✔ RAIL response loss still reloads persisted order (2.377779ms)
+2026-09-10T03:38:46.5643696Z ✔ RAIL paid or uncertain orders cannot open unpaid cancellation (2.762979ms)
+2026-09-10T03:38:46.5644284Z ✔ ATTRACTION cancellation requires explicit confirmation (0.855427ms)
+2026-09-10T03:38:46.5644864Z ✔ ATTRACTION response loss still reloads persisted order (0.932504ms)
+2026-09-10T03:38:46.5645468Z ✔ ATTRACTION paid or uncertain orders cannot open unpaid cancellation (2.96285ms)
+2026-09-10T03:38:46.5646077Z ✔ new unpaid reservation displays its frozen UTC deadline (1.299146ms)
+2026-09-10T03:38:46.5646621Z ✔ legacy orders never receive a fabricated deadline (0.229655ms)
+2026-09-10T03:38:46.5647244Z ✔ expiry display relies on persisted server state instead of browser clock (0.187382ms)
+2026-09-10T03:38:46.5647886Z ✔ started and uncertain payment keeps its reservation message (1.317863ms)
+2026-09-10T03:38:46.5648590Z ✔ RAIL: opening recovery does not send a refund until confirmed (2.394475ms)
+2026-09-10T03:38:46.5649181Z ✔ RAIL: failed response still reloads persisted order state (2.380133ms)
+2026-09-10T03:38:46.5649812Z ✔ ATTRACTION: opening recovery does not send a refund until confirmed (0.94334ms)
+2026-09-10T03:38:46.5650459Z ✔ ATTRACTION: failed response still reloads persisted order state (0.833885ms)
+2026-09-10T03:38:46.5651118Z ✔ busy recovery gives a customer message and refreshes the existing order (0.862818ms)
+2026-09-10T03:38:46.5651846Z ✔ rail interrupted change confirms the original quote instead of creating another (1.186326ms)
+2026-09-10T03:38:46.5652305Z ℹ tests 227
+2026-09-10T03:38:46.5652526Z ℹ suites 0
+2026-09-10T03:38:46.5652742Z ℹ pass 227
+2026-09-10T03:38:46.5652948Z ℹ fail 0
+2026-09-10T03:38:46.5653169Z ℹ cancelled 0
+2026-09-10T03:38:46.5653394Z ℹ skipped 0
+2026-09-10T03:38:46.5653594Z ℹ todo 0
+2026-09-10T03:38:46.5653834Z ℹ duration_ms 2859.316979
+2026-09-10T03:38:46.5709324Z ##[group]Run python tooling/ci/depth34r2/export_evidence.py
+2026-09-10T03:38:46.5709809Z [36;1mpython tooling/ci/depth34r2/export_evidence.py[0m
+2026-09-10T03:38:46.5787026Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-10T03:38:46.5787400Z env:
+2026-09-10T03:38:46.5787675Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:38:46.5788204Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:38:46.5788926Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:46.5789330Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T03:38:46.5789732Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:46.5790097Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:46.5790459Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:46.5790883Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T03:38:46.5791206Z ##[endgroup]
+2026-09-10T03:38:46.6692351Z SOURCE_VERIFIED_AFTER_TESTS 1241
+2026-09-10T03:38:46.6693902Z GO_EVIDENCE_FILE_BEGIN source-lineage.json 534 e89606dd47376126c474f5f44b48f2322f29c5259a8d03ad793e6ae3fc2f45cf
+2026-09-10T03:38:46.6700291Z GO_EVIDENCE_B64 ewogICJjYW5kaWRhdGUiOiAiMmRhYjUzNzcyMmNkYTM2NzUyMzExMDJlYjAxMzI4MDc5NjA2ODQwMSIsCiAgInNvdXJjZV90cmVlX3NoYTI1NiI6ICJlOTRiYjc0OWE2ODBjNGFlYzNmOTQ2ZGMyY2U2ZDI4NGNkNDhiNjAzNjFkYzdkNmVmODVmZmNmNmYyOTQ1N2I1IiwKICAidmVyaWZpZWRfZmlsZXMiOiAxMjQxLAogICJweXRob24iOiAiMy4xMy41IChtYWluLCBKdW4gMTIgMjAyNSwgMDM6NTE6MTUpIFtHQ0MgMTEuNC4wXSIsCiAgIm5vZGUiOiAidjIyLjIyLjAiLAogICJlbnZpcm9ubWVudCI6ICJHaXRIdWIgZGlzcG9zYWJs
+2026-09-10T03:38:46.6710287Z GO_EVIDENCE_B64 ZSBydW5uZXI7IFNRTGl0ZSBUZXN0Q2xpZW50IGFuZCBWTS9uYXRpdmUgcHVyZSBmdW5jdGlvbnM7IG5vIHNlcnZpY2UgY3JlZGVudGlhbHMiLAogICJ0aHJlZV9lbmRfcmVhbF91eF9sb2dpbiI6ICJIT0xEIiwKICAic2l4X3ZlcnRpY2FsX3JlYWxfZTJlIjogIkhPTEQiLAogICJzZWFsZWRfbm9kZV9nYXRlIjogIkhPTEQiLAogICJmaW5hbF9yZWxlYXNlIjogIkhPTEQiLAogICJkZXBsb3llZCI6IGZhbHNlCn0K
+2026-09-10T03:38:46.6714100Z GO_EVIDENCE_FILE_END source-lineage.json
+2026-09-10T03:38:46.6715332Z GO_EVIDENCE_FILE_BEGIN backend.xml 1577 72632a222288c6f9dcef06dc2982a04bcd9f69414d9e66579a774d2021edd0f2
+2026-09-10T03:38:46.6721724Z GO_EVIDENCE_B64 PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48dGVzdHN1aXRlcyBuYW1lPSJweXRlc3QgdGVzdHMiPjx0ZXN0c3VpdGUgbmFtZT0icHl0ZXN0IiBlcnJvcnM9IjAiIGZhaWx1cmVzPSIwIiBza2lwcGVkPSIwIiB0ZXN0cz0iOSIgdGltZT0iMjIuODkzIiB0aW1lc3RhbXA9IjIwMjYtMDktMTBUMDM6Mzg6MTYuMjk2OTM0KzAwOjAwIiBob3N0bmFtZT0icnVubmVydm05eGcyZCI+PHRlc3RjYXNlIGNsYXNzbmFtZT0idGVzdHMudGVzdF9kZXB0aDM0X2hvdGVsX3F1b3RlX3JlYWQiIG5hbWU9InRlc3RfZXhhY3Rf
+2026-09-10T03:38:46.6732214Z GO_EVIDENCE_B64 cXVvdGVfcmVhZF9pc19pbW11dGFibGVfYW5kX2RvZXNfbm90X2NyZWF0ZV9uZXdfcXVvdGVfb3JfZXhlY3V0ZSIgdGltZT0iOS4zODgiIC8+PHRlc3RjYXNlIGNsYXNzbmFtZT0idGVzdHMudGVzdF9kZXB0aDM0X2hvdGVsX3F1b3RlX3JlYWQiIG5hbWU9InRlc3RfbmV3X3F1b3RlX2RvZXNfbm90X3JlcGxhY2Vfb3JpZ2luYWxfYWNjZXB0ZWRfaWRlbnRpdHkiIHRpbWU9IjAuNTgwIiAvPjx0ZXN0Y2FzZSBjbGFzc25hbWU9InRlc3RzLnRlc3RfZGVwdGgzNF9ob3RlbF9xdW90ZV9yZWFkIiBuYW1lPSJ0ZXN0X2NvcnJ1cHRlZF9z
+2026-09-10T03:38:46.6742855Z GO_EVIDENCE_B64 dG9yZWRfcXVvdGVfY2Fubm90X2JlX3JlYWRfYXNfY3VzdG9tZXJfdGVybXMiIHRpbWU9IjAuNTA5IiAvPjx0ZXN0Y2FzZSBjbGFzc25hbWU9InRlc3RzLnRlc3RfZGVwdGgzNF9ob3RlbF9xdW90ZV9yZWFkIiBuYW1lPSJ0ZXN0X2N1cnJlbnRfb3JkZXJfcmV2aXNpb25fc3RpbGxfcmVjaGVja2VkX2F0X2V4ZWN1dGlvbl93aXRoX3NhbWVfYW1vdW50IiB0aW1lPSIwLjUyNCIgLz48dGVzdGNhc2UgY2xhc3NuYW1lPSJ0ZXN0cy50ZXN0X2RlcHRoMTRfY2FzaF9mYXJlX2FwaSIgbmFtZT0idGVzdF9tb2JpbGVfY2FzaF9jYW5jZWxf
+2026-09-10T03:38:46.6753366Z GO_EVIDENCE_B64 cmVxdWlyZXNfb3duZWRfcXVvdGVfYW5kX3JlcGxheXNfc2FtZV93ZWJfcmVxdWVzdCIgdGltZT0iMC44NDYiIC8+PHRlc3RjYXNlIGNsYXNzbmFtZT0idGVzdHMudGVzdF9kZXB0aDE0X2Nhc2hfZmFyZV9hcGkiIG5hbWU9InRlc3RfbmF0aXZlX2FuZF93ZWJfY2hhbmdlX3NoYXJlX29wZXJhdGlvbl9yZWNvdmVyeV9hbmRfb3JkZXJfcHJvZ3Jlc3MiIHRpbWU9IjAuNjM1IiAvPjx0ZXN0Y2FzZSBjbGFzc25hbWU9InRlc3RzLnRlc3RfZGVwdGgxNF9jYXNoX2ZhcmVfYXBpIiBuYW1lPSJ0ZXN0X3N0YXR1c19hbmRfcmVzdW1lX2Rv
+2026-09-10T03:38:46.6764477Z GO_EVIDENCE_B64 X25vdF9hY2NlcHRfYW5vdGhlcl9vcmRlcl9vcGVyYXRpb25faWQiIHRpbWU9IjAuODA0IiAvPjx0ZXN0Y2FzZSBjbGFzc25hbWU9InRlc3RzLnRlc3RfZGVwdGgxNF9jYXNoX2ZhcmVfYXBpIiBuYW1lPSJ0ZXN0X21vYmlsZV9wYXltZW50X3JldHJ5X3JlcXVpcmVzX2Jvb2xlYW5fY29uZmlybWF0aW9uX2FuZF9vcmlnaW5hbF9oYXNoIiB0aW1lPSIwLjYwMCIgLz48dGVzdGNhc2UgY2xhc3NuYW1lPSJ0ZXN0cy50ZXN0X2RlcHRoMzBfbmF0aXZlX2FwaV9jb250cmFjdCIgbmFtZT0idGVzdF9uYXRpdmVfc2l4X3ZlcnRpY2FsX2Ny
+2026-09-10T03:38:46.6770880Z GO_EVIDENCE_B64 ZWF0aW9uX3BheW1lbnRfYW5kX3JlZnVuZF9jb250cmFjdHMiIHRpbWU9IjYuMjk0IiAvPjwvdGVzdHN1aXRlPjwvdGVzdHN1aXRlcz4=
+2026-09-10T03:38:46.6776517Z GO_EVIDENCE_FILE_END backend.xml
+2026-09-10T03:38:46.6777530Z GO_EVIDENCE_FILE_BEGIN frontend.xml 28240 d248d5f5c568f1dc7c21507527ef194493c2b3ac6ac824337868657f4b7a8eb3
+2026-09-10T03:38:46.6784165Z GO_EVIDENCE_B64 PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHRlc3RzdWl0ZXM+Cgk8dGVzdGNhc2UgbmFtZT0iSFRUUCBoZWxwZXIgcmV0YWlucyBDU1JGIHRvZ2V0aGVyIHdpdGggaWRlbXBvdGVuY3kgaGVhZGVyIiB0aW1lPSIwLjAwNDk2NiIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iRXNjYXBlIGNhbmNlbHMgdHJhdmVsZXIgc2VsZWN0aW9uIHdpdGhvdXQgYXV0aG9yaXppbmcgb3IgY3JlYXRpbmcgYW4gb3JkZXIiIHRpbWU9IjAuMDA5NDA4IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2Fz
+2026-09-10T03:38:46.6792411Z GO_EVIDENCE_B64 ZSBuYW1lPSJyZW50YWwgY29uc2VudCBpcyBib3VuZCB0byB0aGUgc2VsZWN0ZWQgdHJhdmVsZXIsIGZpZWxkIGFuZCBwdXJwb3NlIiB0aW1lPSIwLjAwMjQyOCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0icGF5bWVudCBpcyBjYW5jZWxsZWQgd2l0aG91dCBhbnkgY2hlY2tvdXQgbXV0YXRpb24iIHRpbWU9IjAuMDAxNzIxIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJhIGZhaWxlZCBjb25maXJtZWQgcGF5bWVudCBzdGF5cyB2aXNpYmxlIGFuZCBjYW4gYmUgcmV0cmllZCIgdGltZT0i
+2026-09-10T03:38:46.6798881Z GO_EVIDENCE_B64 MC4wMDE5MDQiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNhbmNlbGxpbmcgYSBwYXJ0eSBzZWxlY3Rpb24gY3JlYXRlcyBubyBvcmRlciBvciBncmFudCIgdGltZT0iMC4wMDIyODUiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImEgcGFydHkgbXVzdCBjb250YWluIHRoZSBleGFjdCBudW1iZXIgb2YgZGlmZmVyZW50IHRyYXZlbGVycyIgdGltZT0iMC4wMDI1NTkiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InBhcnR5IGNvbmZpcm1hdGlvbiByZXR1cm5zIG9ubHkg
+2026-09-10T03:38:46.6805204Z GO_EVIDENCE_B64 dGhlIGV4cGxpY2l0bHkgc2VsZWN0ZWQgdHJhdmVsZXIgcmVmZXJlbmNlcyIgdGltZT0iMC4wMDE5MDEiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InBhcnR5IHNlbGVjdGlvbiBjYW5ub3Qgc3VibWl0IHdpdGhvdXQgY29uZmlybWluZyBhZHVsdCB0cmF2ZWxlcnMgYW5kIHB1cnBvc2UiIHRpbWU9IjAuMDAyOTAzIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjb25zdW1lciB1c2VzIGxvY2tlZCBWMTQgbWFpbiBhbmQgY29tcGFjdCBhcnR3b3JrIHdpdGggcmVzcG9uc2l2ZSBzZWxlY3Rp
+2026-09-10T03:38:46.6811250Z GO_EVIDENCE_B64 b24iIHRpbWU9IjAuMDAyMDc2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJzdXBwbGllciBhbmQgYWRtaW4gc2hhcmUgdGhlIGxvY2tlZCByZXZlcnNlIFYxNCBjb21wYWN0IGxvY2t1cCIgdGltZT0iMC4wMDEzNTgiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImFsbCB0aHJlZSBlbnRyeSBkb2N1bWVudHMgYWR2YW5jZSBjYWNoZSB0b2tlbnMgdG9nZXRoZXIiIHRpbWU9IjAuMDAwMzEwIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJHTyBzdWJicmFuZHMgdXNlIFYx
+2026-09-10T03:38:46.6816996Z GO_EVIDENCE_B64 NCBnZW9tZXRyeSB3aXRoIGEgZGVsaWJlcmF0ZWx5IHJlY2Vzc2l2ZSBHTyB0aWVyIiB0aW1lPSIwLjAwMDMzNCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0ibGVnYWN5IHJ1bnRpbWUgYXNzZXQgbmFtZXMgYWxzbyByZXNvbHZlIHRvIGxvY2tlZCBWMTQgZ2VvbWV0cnkiIHRpbWU9IjAuMDAwNDU1IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjYW5jZWwgcmV2aWV3IHNob3dzIGV2ZXJ5IGNhc2ggY29tcG9uZW50IGFuZCBleGFjdCBmZWUgYmFzaXMgYmVmb3JlIHN1Ym1pc3Npb24iIHRp
+2026-09-10T03:38:46.6823031Z GO_EVIDENCE_B64 bWU9IjAuMDIyODA3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjbG9zaW5nIGNhbmNlbCByZXZpZXcgbmV2ZXIgc2VuZHMgY2FuY2VsbGF0aW9uIG9yIHJlbG9hZHMgYXMgY29tcGxldGVkIiB0aW1lPSIwLjAwMTA4NSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0idW5jaGVja2VkIG1vbmV5IGNvbmZpcm1hdGlvbiBjYW5ub3Qgc3VibWl0IGEgY2FzaCBhY3Rpb24iIHRpbWU9IjAuMDAxMzk1IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjaGFuZ2UgY29uZmlybWF0
+2026-09-10T03:38:46.6829144Z GO_EVIDENCE_B64 aW9uIGtlZXBzIHBhaWQgcm9vbSB2YWx1ZSwgaW5jcmVtZW50YWwgZGlmZmVyZW5jZSBhbmQgZmVlIHNlcGFyYXRlIiB0aW1lPSIwLjAwMTI1MSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iY2FuY2VsbGVkIGRhdGUgc2VsZWN0aW9uIGRvZXMgbm90IHJlcXVlc3QgbmV3IGludmVudG9yeSBvciBhIHBheW1lbnQiIHRpbWU9IjAuMDAwODk1IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJkaXNwbGF5ZWQgcXVvdGUgaGFzaCBzdGF5cyBib3VuZCBhY3Jvc3MgYXN5bmNocm9ub3VzIHNvdXJj
+2026-09-10T03:38:46.6835119Z GO_EVIDENCE_B64 ZSBtdXRhdGlvbiIgdGltZT0iMC4wMDA5MzQiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InVua25vd24gc3VwcGxpZXIgcHJvZ3Jlc3Mgb2ZmZXJzIHF1ZXJ5IG9ubHkgYW5kIGJpbmRzIHRoZSBzYXZlZCBvcGVyYXRpb24iIHRpbWU9IjAuMDAxMjEwIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjYW5jZWwgY29uZmlybWVkIGFuZCByZWZ1bmQgcGVuZGluZyByZW1haW4gZGlzdGluY3QgaW4gdGhlIGN1c3RvbWVyIHByb2dyZXNzIGNhcmQiIHRpbWU9IjAuMDAwNzk0IiBjbGFzc25hbWU9
+2026-09-10T03:38:46.6841237Z GO_EVIDENCE_B64 InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjcmVkaXQgY29udmVyc2lvbiB3YWl0cyBmb3IgZXhwbGljaXQgcXVvdGVkIGNvbnNlbnQgYW5kIGRvZXMgbm90IGNsYWltIGFuIHVua25vd24gY2FuY2VsbGF0aW9uIHN1Y2NlZWRlZCIgdGltZT0iMC4wMDUwMTAiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNhbmNlbGluZyB0cmF2ZWxlciBzZWxlY3Rpb24gc2VuZHMgbm8gcmVkZW1wdGlvbiBvciBhdXRvbWF0aWMgaWRlbnRpdHkiIHRpbWU9IjAuMDAxMjQwIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2Fz
+2026-09-10T03:38:46.6847021Z GO_EVIDENCE_B64 ZSBuYW1lPSJyZWRlbXB0aW9uIG5ldHdvcmsgcmV0cnkgYmluZHMgdGhlIHNhbWUgcXVvdGUgYW5kIGV4cGxpY2l0bHkgc2VsZWN0ZWQgdHJhdmVsZXIiIHRpbWU9IjAuMDAyNTU3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJ1bmtub3duIGJvb2tpbmcgYW5kIHBlbmRpbmcgcmVmdW5kIHJlbWFpbiBkaXN0aW5jdCBmcm9tIGNvbXBsZXRlZCBjcmVkaXQgcmVzdG9yYXRpb24iIHRpbWU9IjAuMDAwOTcwIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjYW5jZWxpbmcgYSBzdXBwbGVtZW50
+2026-09-10T03:38:46.6853293Z GO_EVIDENCE_B64 YXJ5IHBheW1lbnQgZGlhbG9nIHJlLWVuYWJsZXMgdGhlIGFjdGlvbiIgdGltZT0iMC4wMTY3MjQiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNvbnZlcnNpb24gc2VwYXJhdGVzIHByaW9yIGNhc2ggcmVmdW5kcyBhbmQgZm9yZmVpdHVyZSBmcm9tIHJldGFpbmVkIGNyZWRpdCIgdGltZT0iMC4wMDI0NDAiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImZvcmZlaXR1cmUgY29udmVyc2lvbiBjb25maXJtYXRpb24gc3RheXMgYm91bmQgdG8gdGhlIGRpc3BsYXllZCBxdW90ZSBhZnRlciBz
+2026-09-10T03:38:46.6859332Z GO_EVIDENCE_B64 b3VyY2Ugb2JqZWN0IGNoYW5nZXMiIHRpbWU9IjAuMDAxMDY2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjcmVkaXQgZGV0YWlsIGtlZXBzIG9yaWdpbmFsIGV4Y2x1ZGVkIHZhbHVlIHZpc2libGUgYWZ0ZXIgcmVkZW1wdGlvbiBjaGFuZ2VzIiB0aW1lPSIwLjAwMDk5NCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iaGlzdG9yaWNhbCBjcmVkaXQgd2l0aG91dCBhIGZvcmZlaXR1cmUgYnJlYWtkb3duIG5ldmVyIHJlbmRlcnMgaW52YWxpZCBhbW91bnRzIiB0aW1lPSIwLjAwMTMxOSIg
+2026-09-10T03:38:46.6865028Z GO_EVIDENCE_B64 Y2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iZmFyZSBjb25maXJtYXRpb24gc2VwYXJhdGVzIGZlZSB0aWVycywgY29vbGluZywgY2hhbmdlIGFuZCBwcm9wZXJ0eSBjcmVkaXQgdGVybXMiIHRpbWU9IjAuMDAyNTc2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjYW5jZWxsaW5nIGZhcmUgY29uZmlybWF0aW9uIGhhcyBubyBhY2NlcHRlZCBjb250cmFjdCIgdGltZT0iMC4wMDIxNjEiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImFjY2VwdGVkIGhhc2ggcmVtYWlucyBi
+2026-09-10T03:38:46.6871001Z GO_EVIDENCE_B64 b3VuZCB0byB0aGUgcnVsZXMgZGlzcGxheWVkIGJlZm9yZSBhc3luY2hyb25vdXMgc3RhdGUgY2hhbmdlcyIgdGltZT0iMC4wMDA4ODIiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImRlY2xpbmluZyBob3RlbCBydWxlcyBuZXZlciBzZWxlY3RzIG9yIGF1dGhvcml6ZXMgYSB0cmF2ZWxlciBvciBjcmVhdGVzIGFuIG9yZGVyIiB0aW1lPSIwLjAwMTc0MSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iYWNjZXB0ZWQgaG90ZWwgY29udHJhY3QgaXMgaW5jbHVkZWQgd2l0aCBzZWxlY3RlZCB0
+2026-09-10T03:38:46.6876765Z GO_EVIDENCE_B64 cmF2ZWxlciBhbmQgc3RhYmxlIGJvb2tpbmcgcmVxdWVzdCBpZGVudGl0eSIgdGltZT0iMC4wMDEyMDUiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InN1cHBsaWVyIG1vbmV5IGFuZCBwZXJjZW50YWdlIGlucHV0cyB1c2UgZXhhY3QgbWlub3IgdW5pdHMiIHRpbWU9IjAuMDAxMTk3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJzdXBwbGllciBsb3N0LXJlc3BvbnNlIHJldHJ5IGtlZXBzIHJlcXVlc3QgaWRlbnRpdHkgYW5kIHNlbmRzIG9ubHkgdGhlIGNsYWltZWQgY2F1c2UiIHRpbWU9
+2026-09-10T03:38:46.6882811Z GO_EVIDENCE_B64 IjAuMDA0NjgxIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJzdXBwbGllciBkdXBsaWNhdGUgY2xpY2tzIHdoaWxlIGEgcmVxdWVzdCBpcyBwZW5kaW5nIGNhbm5vdCBjcmVhdGUgYW5vdGhlciByZXF1ZXN0IiB0aW1lPSIwLjAwMTI2NiIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0idW5rbm93biBzdXBwbGllciBjYW5jZWxsYXRpb24gc2hvd3MgYXBwcm92ZWQgcmVmdW5kIHdhaXRpbmcgZm9yIGNvbmZpcm1hdGlvbiwgd2l0aG91dCBhIHJlc2VuZCBidXR0b24iIHRpbWU9IjAuMDE1NTI4
+2026-09-10T03:38:46.6888610Z GO_EVIDENCE_B64 IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJob3RlbCBmdW5kcyBkaXN0aW5ndWlzaCBmcm96ZW4sIGNoYXJnZWQsIHJlbGVhc2VkIGFuZCByZWZ1bmRlZCBjZW50IGFtb3VudHMiIHRpbWU9IjAuMDE3NjU1IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJvbmx5IGFwcHJvdmVkIHBlbmRpbmcgcmVmdW5kcyBleHBvc2UgcmV0cnkgYW5kIGFsbCBzZXJ2ZXIgbGFiZWxzIGFyZSBlc2NhcGVkIiB0aW1lPSIwLjAwMDY2NiIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0idW5r
+2026-09-10T03:38:46.6894276Z GO_EVIDENCE_B64 bm93biBmdW5kaW5nIHNob3dzIHJlY29uY2lsaWF0aW9uIGluc3RlYWQgb2YgYSBmYWxzZSBwYXltZW50IGNsYWltIiB0aW1lPSIwLjAwMDQ2OCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0idHJpcCBsaW5rcyBvbmx5IG9wZW4gdGhlIGV4YWN0IGNhbm9uaWNhbCBvd25lZCBkaXJlY3QtcmVzZXJ2YXRpb24gcGF0aCIgdGltZT0iMC4wMDA0NzciIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNsb3NpbmcgYSBzdGF5IGNvbXBsYWludCBmb3JtIG1ha2VzIG5vIHJlcXVlc3QiIHRpbWU9IjAu
+2026-09-10T03:38:46.6900049Z GO_EVIDENCE_B64 MDAxMjIzIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjb21wbGFpbnQgcmV0cmllcyByZXVzZSB0aGUgc2FtZSByZXF1ZXN0IGlkZW50aXR5IGFuZCBoYXZlIG5vIHJlZnVuZCBhcHByb3ZhbCBmaWVsZHMiIHRpbWU9IjAuMDAxNzYzIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJibGFuayBjb21wbGFpbnRzIGFuZCBkdXBsaWNhdGUgc3VibWlzc2lvbiBjbGlja3MgY2Fubm90IHNlbmQgZXh0cmEgcmVxdWVzdHMiIHRpbWU9IjAuMDAwOTcyIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0
+2026-09-10T03:38:46.6905944Z GO_EVIDENCE_B64 Y2FzZSBuYW1lPSJjbG9zaW5nIGhvdGVsIGF1dGhvcml6YXRpb24gbGVhdmVzIGZ1bmRzIHVudG91Y2hlZCIgdGltZT0iMC4wMDIzMDAiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImhvdGVsIGNoZWNrb3V0IHJlcXVpcmVzIGNvbmZpcm1hdGlvbiBhbmQgYmluZHMgdGhlIGNvbXBsZXRlIHN0YXkgYW1vdW50IiB0aW1lPSIwLjAwMjg2NSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iYSBzZWNvbmQgY2xpY2sgY2Fubm90IGNyZWF0ZSBhbm90aGVyIGhvdGVsIGF1dGhvcml6YXRpb24gd2hp
+2026-09-10T03:38:46.6911808Z GO_EVIDENCE_B64 bGUgdGhlIGZpcnN0IGlzIHBlbmRpbmciIHRpbWU9IjAuMDAxMDI4IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJhIGZhaWxlZCBob3RlbCBhdXRob3JpemF0aW9uIHJlbWFpbnMgdmlzaWJsZSBhbmQgY2FuIGJlIHJldHJpZWQiIHRpbWU9IjAuMDAwOTI2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjb252ZXJzaW9uIGNsZWFybHkgc2hvd3MgY2FwdHVyZSBhbmQgdmFsdWUgYW5kIGNsb3NpbmcgZG9lcyBub3QgY29udmVydCIgdGltZT0iMC4wMjQwNDYiIGNsYXNzbmFtZT0idGVzdCIv
+2026-09-10T03:38:46.6917533Z GO_EVIDENCE_B64 PgoJPHRlc3RjYXNlIG5hbWU9ImNvbnZlcnNpb24gcmV0cnkga2VlcHMgb3JpZ2luYWwgcXVvdGUsIGFtb3VudCBhbmQgb3JpZ2luYWwgZXhwaXJ5IiB0aW1lPSIwLjAwMjI3NSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0icmVkZW1wdGlvbiB1c2VzIHNlcnZlciBxdW90ZSBwb2xpY3kgYW5kIGRpc3BsYXlzIGZvcmZlaXR1cmUgYmVmb3JlIGNvbnNlbnQiIHRpbWU9IjAuMDAxNjM0IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJyZWRlbXB0aW9uIGNvbmZpcm1zIGEgZnJlc2ggdHJhdmVs
+2026-09-10T03:38:46.6923366Z GO_EVIDENCE_B64 ZXIgYW5kIG9ubHkgcmVsZWFzZXMgaG90ZWwgZmllbGRzIiB0aW1lPSIwLjAwMTg1OCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iZG91YmxlIGNsaWNrIGFuZCBFc2NhcGUgY2Fubm90IGR1cGxpY2F0ZSBvciBkaXNtaXNzIHBlbmRpbmcgcmVkZW1wdGlvbiIgdGltZT0iMC4wMDkyNTAiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNyZWRpdCBsaXN0IGZpbHRlcnMgcHJvcGVydHkgYW5kIGRpc2FibGVzIGZyb3plbiwgZXhwaXJlZCBvciByZWNvbmNpbGlhdGlvbiBjcmVkaXRzIiB0aW1l
+2026-09-10T03:38:46.6929186Z GO_EVIDENCE_B64 PSIwLjAwMTYwNyIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iYSBjYW5jZWxsYXRpb24gcXVvdGUgbmV2ZXIgY2FuY2VscyBhIGJvb2tpbmcgYW5kIGNsb3NpbmcgcHJlc2VydmVzIGl0IiB0aW1lPSIwLjAyMzQ2NyIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iZmVlIGNvbnNlbnQgYmluZHMgdGhlIHNlcnZlciBxdW90ZSBhbmQga2VlcHMgZnJvemVuIHJlbGVhc2Ugc2VwYXJhdGUgZnJvbSBjYXNoIHJlZnVuZCIgdGltZT0iMC4wMDIzMzAiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3Rj
+2026-09-10T03:38:46.6935156Z GO_EVIDENCE_B64 YXNlIG5hbWU9ImludGVycnVwdGVkIGNhbmNlbGxhdGlvbiByZXRyeSB1c2VzIGV4YWN0bHkgdGhlIHNhbWUgcXVvdGUgYW5kIGZlZSIgdGltZT0iMC4wMDE0NTQiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImRvdWJsZSBjbGlja3MgY2Fubm90IHNldHRsZSB0d2ljZSB3aGlsZSBhIGNhbmNlbGxhdGlvbiBpcyBwZW5kaW5nIiB0aW1lPSIwLjAwMTM3MCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0idW5hdmFpbGFibGUgZmFyZSBhY3Rpb25zIGhhdmUgbm8gZXhlY3V0YWJsZSBidXR0b25z
+2026-09-10T03:38:46.6941109Z GO_EVIDENCE_B64 IGFuZCBydWxlIHRleHQgaXMgZXNjYXBlZCIgdGltZT0iMC4wMDEyNDgiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImRhdGUgY2hhbmdlcyBxdW90ZSBmaXJzdCBhbmQgcmVxdWlyZSBmcmVzaCBjb25zZW50IGFmdGVyIGVkaXRpbmcgZGF0ZXMiIHRpbWU9IjAuMDAyMzk1IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJleHRlbnNpb24ga2VlcHMgY2hlY2staW4gZml4ZWQgYW5kIGV4cGxhaW5zIHJlcGxhY2VtZW50IGF1dGhvcml6YXRpb24iIHRpbWU9IjAuMDAyNTM2IiBjbGFzc25hbWU9
+2026-09-10T03:38:46.6946924Z GO_EVIDENCE_B64 InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJpbmRlcGVuZGVudCByZXZpZXcgcmVxdWlyZXMgYW4gZXhwbGljaXQgY2hlY2tlZCBhdHRlc3RhdGlvbiBhbmQgY2hvc2VuIHByb29mIiB0aW1lPSIwLjAwMjUzOCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0icmV2aWV3IHN1Ym1pdHMgdGhlIGV4YWN0IGV2aWRlbmNlIHNuYXBzaG90IGFuZCBubyBjYWxsZXItc2VsZWN0ZWQgbW9uZXkiIHRpbWU9IjAuMDAwOTE4IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjdXN0b21lciBzZWVzIGNvbXBs
+2026-09-10T03:38:46.6952786Z GO_EVIDENCE_B64 ZXRlZCBvcmlnaW5hbCByZWZ1bmQgc2VwYXJhdGVseSBmcm9tIHBlbmRpbmcgZXh0cmEgcGF5bWVudCIgdGltZT0iMC4wMTUzNjkiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InVuYXBwcm92ZWQgZ3Vlc3QgbGlhYmlsaXR5IGlzIGEgcmV2aWV3IGhvbGQgd2l0aG91dCBhIHJlZnVuZCBwcm9taXNlIG9yIHBheSBidXR0b24iIHRpbWU9IjAuMDAwMzM1IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJ6ZXJvIGNhcHR1cmVkIHBheW1lbnQgZXhwbGFpbnMgYXV0aG9yaXphdGlvbiByZWxlYXNl
+2026-09-10T03:38:46.6958855Z GO_EVIDENCE_B64 IGFuZCBjb21wbGV0ZWQgY2FzZSBoYXMgbm8gcmV0cnkiIHRpbWU9IjAuMDAwMzk2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJmaW5hbmNlIGVudHJ5IGNvbnZlcnRzIGRlY2ltYWwgY3VycmVuY3kgd2l0aG91dCBmcmFjdGlvbmFsIGNlbnRzIG9yIHNpbGVudCByb3VuZGluZyIgdGltZT0iMC4wMDA1ODgiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkhPVEVMOiBleHBsaWNpdCBjb25maXJtYXRpb24gY29uc3VtZXMgb25lIHF1b3RlIGFuZCByZWFkcyBvcmlnaW5hbCBvcmRlciIgdGlt
+2026-09-10T03:38:46.6964560Z GO_EVIDENCE_B64 ZT0iMC4wMTE3NDMiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkhPVEVMOiBleHBpcnksIGVkaXQgYW5kIHNlc3Npb24gY2hhbmdlcyBwcmV2ZW50IHN1Ym1pc3Npb24iIHRpbWU9IjAuMDAxMTY2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJIT1RFTDogd3JvbmcgaWRlbnRpdHkgb3IgdW5hdmFpbGFibGUgaXNvbGF0ZWQgY2hhbm5lbCBjYW5ub3QgZXhlY3V0ZSIgdGltZT0iMC4wMDA3MjIiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkhPVEVMOiB0aW1lb3V0IGlz
+2026-09-10T03:38:46.6970365Z GO_EVIDENCE_B64 IHVua25vd24gYW5kIG5ldmVyIGF1dG8tcmV0cmllZCIgdGltZT0iMC4wMDA2NTMiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkZMSUdIVDogZXhwbGljaXQgY29uZmlybWF0aW9uIGNvbnN1bWVzIG9uZSBxdW90ZSBhbmQgcmVhZHMgb3JpZ2luYWwgb3JkZXIiIHRpbWU9IjAuMDAwNzE2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJGTElHSFQ6IGV4cGlyeSwgZWRpdCBhbmQgc2Vzc2lvbiBjaGFuZ2VzIHByZXZlbnQgc3VibWlzc2lvbiIgdGltZT0iMC4wMDA2NTkiIGNsYXNzbmFtZT0i
+2026-09-10T03:38:46.6976121Z GO_EVIDENCE_B64 dGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkZMSUdIVDogd3JvbmcgaWRlbnRpdHkgb3IgdW5hdmFpbGFibGUgaXNvbGF0ZWQgY2hhbm5lbCBjYW5ub3QgZXhlY3V0ZSIgdGltZT0iMC4wMDAzMzMiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkZMSUdIVDogdGltZW91dCBpcyB1bmtub3duIGFuZCBuZXZlciBhdXRvLXJldHJpZWQiIHRpbWU9IjAuMDAwMjg3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJSQUlMOiBleHBsaWNpdCBjb25maXJtYXRpb24gY29uc3VtZXMgb25lIHF1b3RlIGFu
+2026-09-10T03:38:46.6982019Z GO_EVIDENCE_B64 ZCByZWFkcyBvcmlnaW5hbCBvcmRlciIgdGltZT0iMC4wMDA2MTEiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IlJBSUw6IGV4cGlyeSwgZWRpdCBhbmQgc2Vzc2lvbiBjaGFuZ2VzIHByZXZlbnQgc3VibWlzc2lvbiIgdGltZT0iMC4wMDA4NTciIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IlJBSUw6IHdyb25nIGlkZW50aXR5IG9yIHVuYXZhaWxhYmxlIGlzb2xhdGVkIGNoYW5uZWwgY2Fubm90IGV4ZWN1dGUiIHRpbWU9IjAuMDAwNTUwIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2Fz
+2026-09-10T03:38:46.6988030Z GO_EVIDENCE_B64 ZSBuYW1lPSJSQUlMOiB0aW1lb3V0IGlzIHVua25vd24gYW5kIG5ldmVyIGF1dG8tcmV0cmllZCIgdGltZT0iMC4wMDAzMjUiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkFUVFJBQ1RJT046IGV4cGxpY2l0IGNvbmZpcm1hdGlvbiBjb25zdW1lcyBvbmUgcXVvdGUgYW5kIHJlYWRzIG9yaWdpbmFsIG9yZGVyIiB0aW1lPSIwLjAwMDQyNyIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iQVRUUkFDVElPTjogZXhwaXJ5LCBlZGl0IGFuZCBzZXNzaW9uIGNoYW5nZXMgcHJldmVudCBzdWJtaXNz
+2026-09-10T03:38:46.6993824Z GO_EVIDENCE_B64 aW9uIiB0aW1lPSIwLjAwMDQ2MCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iQVRUUkFDVElPTjogd3JvbmcgaWRlbnRpdHkgb3IgdW5hdmFpbGFibGUgaXNvbGF0ZWQgY2hhbm5lbCBjYW5ub3QgZXhlY3V0ZSIgdGltZT0iMC4wMDAzNDEiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkFUVFJBQ1RJT046IHRpbWVvdXQgaXMgdW5rbm93biBhbmQgbmV2ZXIgYXV0by1yZXRyaWVkIiB0aW1lPSIwLjAwMDI1NSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iUkVOVEFMOiBl
+2026-09-10T03:38:46.6999648Z GO_EVIDENCE_B64 eHBsaWNpdCBjb25maXJtYXRpb24gY29uc3VtZXMgb25lIHF1b3RlIGFuZCByZWFkcyBvcmlnaW5hbCBvcmRlciIgdGltZT0iMC4wMDA1ODIiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IlJFTlRBTDogZXhwaXJ5LCBlZGl0IGFuZCBzZXNzaW9uIGNoYW5nZXMgcHJldmVudCBzdWJtaXNzaW9uIiB0aW1lPSIwLjAwMDUxMCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iUkVOVEFMOiB3cm9uZyBpZGVudGl0eSBvciB1bmF2YWlsYWJsZSBpc29sYXRlZCBjaGFubmVsIGNhbm5vdCBleGVjdXRl
+2026-09-10T03:38:46.7005360Z GO_EVIDENCE_B64 IiB0aW1lPSIwLjAwMDMyMiIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iUkVOVEFMOiB0aW1lb3V0IGlzIHVua25vd24gYW5kIG5ldmVyIGF1dG8tcmV0cmllZCIgdGltZT0iMC4wMDAyODQiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImludmFsaWQgcmVwbGFjZW1lbnQgcXVvdGUgZGVzdHJveXMgb2xkIGNvbnNlbnQ7IGRhdGVzIGFyZSBjYW5vbmljYWwiIHRpbWU9IjAuMDAwNTQ1IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJkb3VibGUgc3VibWl0IG1ha2VzIG9u
+2026-09-10T03:38:46.7011106Z GO_EVIDENCE_B64 bHkgb25lIG11dGF0aW9uIiB0aW1lPSIwLjAwMTIwMSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iaG90ZWwgbG93ZXIgcHJpY2Ugc3RpbGwgZGlzY2xvc2VzIHRoZSBub25yZWZ1bmRhYmxlIGxvc3MgYW5kIHNlcGFyYXRlIGZlZSIgdGltZT0iMC4wMDE0NDIiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9Im1pc3Npbmcgb3IgaW5jb25zaXN0ZW50IGhvdGVsIGZpbmFuY2lhbCB0ZXJtcyBhcmUgbm90IGNvbmZpcm1hYmxlIiB0aW1lPSIwLjAwMDY1OSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8
+2026-09-10T03:38:46.7016964Z GO_EVIDENCE_B64 dGVzdGNhc2UgbmFtZT0iZmxpZ2h0IGFuZCByYWlsIGRpc2Nsb3NlIHRyYW5zcG9ydCBpZGVudGl0eSBhbmQgcmVqZWN0IGluY29uc2lzdGVudCBmZWUgc3VtcyIgdGltZT0iMC4wMDA1NTkiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InJlbnRhbCBsb3dlciBjb3N0IHNwZWNpZmllcyBvcmlnaW5hbCBwYXltZW50IGFuZCB2YWxpZGF0ZXMgdGhlIHJhdGUgY2FsY3VsYXRpb24iIHRpbWU9IjAuMDAwNDA1IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJhdHRyYWN0aW9uIGZyZWUgY2hhbmdl
+2026-09-10T03:38:46.7022883Z GO_EVIDENCE_B64 IG5ldmVyIHNpbGVudGx5IGFjY2VwdHMgYSBuZXdseSBpbnRyb2R1Y2VkIGNoYXJnZSIgdGltZT0iMC4wMDAyMzYiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkRpcmVjdCBuYXZpZ2F0aW9uIHByZXNlcnZlcyB0aGUgb3duZWQgcmVzZXJ2YXRpb24gaWRlbnRpdHkiIHRpbWU9IjAuMDAyMTEyIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJEaXJlY3QgZGV0YWlscyByZWFkIG9ubHkgdGhlIGNhbm9uaWNhbCByZXNlcnZhdGlvbiBhbmQgbWF0Y2hpbmcgZXZlbnRzIiB0aW1lPSIwLjAwMDUx
+2026-09-10T03:38:46.7028781Z GO_EVIDENCE_B64 MCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iRGlyZWN0IG1pc21hdGNoZWQgb3IgbWlzc2luZyByZWNvcmRzIGNhbm5vdCBkaXNwbGF5IGNvbmZpcm1hdGlvbiIgdGltZT0iMC4wMDA3OTgiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImhvdGVsIGNhbmNlbGxhdGlvbiBzZW5kcyB0aGUgZGlzcGxheWVkIHF1b3RlIGlkZW50aXR5IHdpdGhvdXQgc2lsZW50bHkgY3JlYXRpbmcgYW5vdGhlciBxdW90ZSIgdGltZT0iMC4wMDM3MzUiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5h
+2026-09-10T03:38:46.7034473Z GO_EVIDENCE_B64 bWU9ImhvdGVsIHNlcnZlciByZWplY3RzIGEgc3RhbGUgYWNjZXB0ZWQgcXVvdGUgd2l0aG91dCByZXBsYWNpbmcgaXQgb3IgcmV0cnlpbmcgY2FuY2VsbGF0aW9uIiB0aW1lPSIwLjAwMTI0OSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iaG90ZWwgbWFsZm9ybWVkLCBleHBpcmVkIG9yIGZvcmVpZ24gYWNjZXB0ZWQgcXVvdGUgY2Fubm90IHNlbmQgY2FuY2VsbGF0aW9uIiB0aW1lPSIwLjAwMTE3OCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iSE9URUw6IHBheW1lbnQgYmluZHMgZnJl
+2026-09-10T03:38:46.7040280Z GO_EVIDENCE_B64 c2ggYW1vdW50IGFuZCByZS1yZWFkcyB0aGUgc2FtZSBvcmRlciBhZnRlciBsb3N0IHJlc3BvbnNlIiB0aW1lPSIwLjAwMzcxMyIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iSE9URUw6IGNoYW5nZWQgYW1vdW50IGFuZCB1bmF2YWlsYWJsZSBjaGFubmVsIGNhbm5vdCBleGVjdXRlIHBheW1lbnQiIHRpbWU9IjAuMDAwOTkzIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJIT1RFTDogcmVmdW5kIGNvbmZpcm1zIHF1b3RlZCBhbW91bnQsIHN1Ym1pdHMgb25jZSBhbmQgZG9lcyBub3QgaW52
+2026-09-10T03:38:46.7046083Z GO_EVIDENCE_B64 ZW50IHJlZnVuZGVkIHN0YXRlIiB0aW1lPSIwLjAwMTg2NiIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iSE9URUw6IGNoYW5nZWQgcmVmdW5kIHRlcm1zIG5lZWQgcmVjb25maXJtYXRpb24gYmVmb3JlIGFueSBjYW5jZWxsYXRpb24iIHRpbWU9IjAuMDAwNTM0IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJGTElHSFQ6IHBheW1lbnQgYmluZHMgZnJlc2ggYW1vdW50IGFuZCByZS1yZWFkcyB0aGUgc2FtZSBvcmRlciBhZnRlciBsb3N0IHJlc3BvbnNlIiB0aW1lPSIwLjAwMDM0OSIgY2xh
+2026-09-10T03:38:46.7051855Z GO_EVIDENCE_B64 c3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iRkxJR0hUOiBjaGFuZ2VkIGFtb3VudCBhbmQgdW5hdmFpbGFibGUgY2hhbm5lbCBjYW5ub3QgZXhlY3V0ZSBwYXltZW50IiB0aW1lPSIwLjAwMDMxOSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iRkxJR0hUOiByZWZ1bmQgY29uZmlybXMgcXVvdGVkIGFtb3VudCwgc3VibWl0cyBvbmNlIGFuZCBkb2VzIG5vdCBpbnZlbnQgcmVmdW5kZWQgc3RhdGUiIHRpbWU9IjAuMDAwNzc5IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJGTElH
+2026-09-10T03:38:46.7057547Z GO_EVIDENCE_B64 SFQ6IGNoYW5nZWQgcmVmdW5kIHRlcm1zIG5lZWQgcmVjb25maXJtYXRpb24gYmVmb3JlIGFueSBjYW5jZWxsYXRpb24iIHRpbWU9IjAuMDAwMzA3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJSQUlMOiBwYXltZW50IGJpbmRzIGZyZXNoIGFtb3VudCBhbmQgcmUtcmVhZHMgdGhlIHNhbWUgb3JkZXIgYWZ0ZXIgbG9zdCByZXNwb25zZSIgdGltZT0iMC4wMDA2OTMiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IlJBSUw6IGNoYW5nZWQgYW1vdW50IGFuZCB1bmF2YWlsYWJsZSBjaGFubmVs
+2026-09-10T03:38:46.7063406Z GO_EVIDENCE_B64 IGNhbm5vdCBleGVjdXRlIHBheW1lbnQiIHRpbWU9IjAuMDAwODIyIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJSQUlMOiByZWZ1bmQgY29uZmlybXMgcXVvdGVkIGFtb3VudCwgc3VibWl0cyBvbmNlIGFuZCBkb2VzIG5vdCBpbnZlbnQgcmVmdW5kZWQgc3RhdGUiIHRpbWU9IjAuMDAxMzgzIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJSQUlMOiBjaGFuZ2VkIHJlZnVuZCB0ZXJtcyBuZWVkIHJlY29uZmlybWF0aW9uIGJlZm9yZSBhbnkgY2FuY2VsbGF0aW9uIiB0aW1lPSIwLjAwMDMz
+2026-09-10T03:38:46.7069439Z GO_EVIDENCE_B64 OSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iUkVOVEFMOiBwYXltZW50IGJpbmRzIGZyZXNoIGFtb3VudCBhbmQgcmUtcmVhZHMgdGhlIHNhbWUgb3JkZXIgYWZ0ZXIgbG9zdCByZXNwb25zZSIgdGltZT0iMC4wMDE0ODAiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IlJFTlRBTDogY2hhbmdlZCBhbW91bnQgYW5kIHVuYXZhaWxhYmxlIGNoYW5uZWwgY2Fubm90IGV4ZWN1dGUgcGF5bWVudCIgdGltZT0iMC4wMDAzNDIiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IlJF
+2026-09-10T03:38:46.7075141Z GO_EVIDENCE_B64 TlRBTDogcmVmdW5kIGNvbmZpcm1zIHF1b3RlZCBhbW91bnQsIHN1Ym1pdHMgb25jZSBhbmQgZG9lcyBub3QgaW52ZW50IHJlZnVuZGVkIHN0YXRlIiB0aW1lPSIwLjAwMDM3NyIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iUkVOVEFMOiBjaGFuZ2VkIHJlZnVuZCB0ZXJtcyBuZWVkIHJlY29uZmlybWF0aW9uIGJlZm9yZSBhbnkgY2FuY2VsbGF0aW9uIiB0aW1lPSIwLjAwMDE3OCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iUklERTogcGF5bWVudCBiaW5kcyBmcmVzaCBhbW91bnQgYW5k
+2026-09-10T03:38:46.7080903Z GO_EVIDENCE_B64 IHJlLXJlYWRzIHRoZSBzYW1lIG9yZGVyIGFmdGVyIGxvc3QgcmVzcG9uc2UiIHRpbWU9IjAuMDAwNDA3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJSSURFOiBjaGFuZ2VkIGFtb3VudCBhbmQgdW5hdmFpbGFibGUgY2hhbm5lbCBjYW5ub3QgZXhlY3V0ZSBwYXltZW50IiB0aW1lPSIwLjAwMDIxNiIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iUklERTogcmVmdW5kIGNvbmZpcm1zIHF1b3RlZCBhbW91bnQsIHN1Ym1pdHMgb25jZSBhbmQgZG9lcyBub3QgaW52ZW50IHJlZnVuZGVkIHN0
+2026-09-10T03:38:46.7086666Z GO_EVIDENCE_B64 YXRlIiB0aW1lPSIwLjAwMDQ0NiIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iUklERTogY2hhbmdlZCByZWZ1bmQgdGVybXMgbmVlZCByZWNvbmZpcm1hdGlvbiBiZWZvcmUgYW55IGNhbmNlbGxhdGlvbiIgdGltZT0iMC4wMDAyMDgiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkFUVFJBQ1RJT046IHBheW1lbnQgYmluZHMgZnJlc2ggYW1vdW50IGFuZCByZS1yZWFkcyB0aGUgc2FtZSBvcmRlciBhZnRlciBsb3N0IHJlc3BvbnNlIiB0aW1lPSIwLjAwMDE3MyIgY2xhc3NuYW1lPSJ0ZXN0
+2026-09-10T03:38:46.7092507Z GO_EVIDENCE_B64 Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iQVRUUkFDVElPTjogY2hhbmdlZCBhbW91bnQgYW5kIHVuYXZhaWxhYmxlIGNoYW5uZWwgY2Fubm90IGV4ZWN1dGUgcGF5bWVudCIgdGltZT0iMC4wMDAyNTAiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkFUVFJBQ1RJT046IHJlZnVuZCBjb25maXJtcyBxdW90ZWQgYW1vdW50LCBzdWJtaXRzIG9uY2UgYW5kIGRvZXMgbm90IGludmVudCByZWZ1bmRlZCBzdGF0ZSIgdGltZT0iMC4wMDAzMDciIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkFUVFJBQ1RJ
+2026-09-10T03:38:46.7098337Z GO_EVIDENCE_B64 T046IGNoYW5nZWQgcmVmdW5kIHRlcm1zIG5lZWQgcmVjb25maXJtYXRpb24gYmVmb3JlIGFueSBjYW5jZWxsYXRpb24iIHRpbWU9IjAuMDAwOTk3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJpZGVudGl0eSBzdWJzdGl0dXRpb24gYW5kIGNvbmN1cnJlbnQgcGF5bWVudCBzdWJtaXNzaW9uIGFyZSBibG9ja2VkIiB0aW1lPSIwLjAwMDY1NiIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0ic2NyZWVuL3Nlc3Npb24gY2hhbmdlIHByZXZlbnRzIGEgbXV0YXRpb24gYWZ0ZXIgcmVhZC1vbmx5
+2026-09-10T03:38:46.7104441Z GO_EVIDENCE_B64 IHByZWZsaWdodCIgdGltZT0iMC4wMDAyNjgiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImFsbCBzaXggYm9va2luZyBpbnRlbnRzIHVzZSBleHBsaWNpdCB2YXVsdCBpZGVudGl0aWVzIHdpdGggc3RhYmxlIGtleXMgYW5kIG5vIGZhYnJpY2F0ZWQgcGVvcGxlIiB0aW1lPSIwLjAwNDgxNSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0icG9ydGFibGUgcmVxdWVzdCBmaW5nZXJwcmludCBtYXRjaGVzIHN0YW5kYXJkIFNIQS0yNTYgZm9yIFVuaWNvZGUgYW5kIGJsb2NrIGJvdW5kYXJpZXMi
+2026-09-10T03:38:46.7110609Z GO_EVIDENCE_B64 IHRpbWU9IjAuMDAyNjQ3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjb25jdXJyZW50IGV4cGlyZWQgbXV0YXRpb25zIHNoYXJlIG9uZSByZWZyZXNoIGFuZCByZXRhaW4gZWFjaCBvcmlnaW5hbCBpZGVtcG90ZW5jeSBrZXkvYm9keSIgdGltZT0iMC4wMzc2NTYiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImEgbXV0YXRpb24gd2l0aCBsb3N0IHJlc3BvbnNlIGlzIHVuY2VydGFpbiBhbmQgaXMgbmV2ZXIgYXV0b21hdGljYWxseSByZXRyaWVkIiB0aW1lPSIwLjAwMTM2OCIgY2xhc3Nu
+2026-09-10T03:38:46.7116349Z GO_EVIDENCE_B64 YW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iYWNjb3VudCBjaGFuZ2UgZGlzY2FyZHMgcGVuZGluZyByZWFkcyBhbmQgcmVmcmVzaCB0b2tlbnMgZnJvbSB0aGUgb2xkIGFjY291bnQiIHRpbWU9IjAuMDAyMTcyIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJyZWZyZXNoIHJlamVjdGlvbiBpbnZhbGlkYXRlcyBjdXJyZW50IHNlc3Npb24gYW5kIG5vdGlmaWVzIHRoZSBVSSIgdGltZT0iMC4wMDIwMzUiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImxvZ291dCByZXZva2VzIHJlbW90
+2026-09-10T03:38:46.7122454Z GO_EVIDENCE_B64 ZWx5IGFuZCBzdGlsbCBjbGVhcnMgbG9jYWxseSBhZnRlciBhIHRyYW5zcG9ydCBmYWlsdXJlIiB0aW1lPSIwLjAwMDU3MSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iYSBwcmV2aW91cyBsb2dvdXQgY2Fubm90IGNsZWFyIGEgbmV3bHkgbG9nZ2VkLWluIGFjY291bnQiIHRpbWU9IjAuMDAxNzI2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJvbmx5IGNob3NlbiBBUEktcmVsYXRpdmUgcGF0aHMgYXJlIHJlcXVlc3RlZCBhbmQgY2FsbGVyIGF1dGggY2Fubm90IG92ZXJyaWRlIHRoZSBz
+2026-09-10T03:38:46.7128150Z GO_EVIDENCE_B64 ZXNzaW9uIiB0aW1lPSIwLjAwMTE3MyIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iYWJvcnRlZCBtdXRhdGlvbnMgYmVmb3JlIGRpc3BhdGNoIGFyZSBrbm93biBub3Qgc2VudDsgbWFsZm9ybWVkIHN1Y2Nlc3NmdWwgcmVzcG9uc2VzIGFyZSB1bmNlcnRhaW4iIHRpbWU9IjAuMDAxMTM1IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJuYXRpdmUgbmF2aWdhdGlvbiBiaW5kcyBhbGwgc2l4IHZlcnRpY2FscyB0byBhbiBvd25lZCBjYW5vbmljYWwgaWRlbnRpdHkiIHRpbWU9IjAuMDAyNDI5
+2026-09-10T03:38:46.7133963Z GO_EVIDENCE_B64 IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJuYXRpdmUgY2hlY2staW4gcmVuZGVycyBlYWNoIHBhc3NlbmdlciBhbmQgbGVnIGluZGVwZW5kZW50bHkiIHRpbWU9IjAuMDAwNzE4IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJtaXNzaW5nLCBzdGFsZSwgZHVwbGljYXRlLCBmdXR1cmUgb3Igd3Jvbmctb3JkZXIgY2hlY2staW4gZXZpZGVuY2UgaXMgdW52ZXJpZmllZCIgdGltZT0iMC4wMDA1ODgiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9Im9ubHkgc2FmZSBIVFRQ
+2026-09-10T03:38:46.7139845Z GO_EVIDENCE_B64 UyBsaW5rcyBhcmUgb2ZmZXJlZCBieSBuYXRpdmUgdHJhdmVsIGZhY3RzIiB0aW1lPSIwLjAwMDI1OSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0ibmF0aXZlIHJlbnRhbCBkZXRhaWxzIG5ldmVyIHJlcXVlc3QgcmlkZSB0cmFja2luZyIgdGltZT0iMC4wMDA0MTIiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InJpZGUgdHJhY2tpbmcgZmFpbHVyZSBjYW5ub3QgaGlkZSB0aGUgZXhpc3RpbmcgcmlkZSBvcmRlciIgdGltZT0iMC4wMDAyOTgiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3Rj
+2026-09-10T03:38:46.7145665Z GO_EVIDENCE_B64 YXNlIG5hbWU9InRyYWNraW5nIGFuZCBvcmRlciBpZGVudGl0eSBtaXNtYXRjaGVzIGNhbm5vdCByZW5kZXIgYW5vdGhlciBvcmRlciIgdGltZT0iMC4wMDA3OTciIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InJhaWwgb3JkZXIgcHJlc2VydmVzIHBhcnR5LCBpbW11dGFibGUgcHJlYm9vayBhbmQgb3JpZ2luYWwgdG90YWwgdGhyb3VnaCBwYXltZW50IGNhbmNlbGxhdGlvbiIgdGltZT0iMC4wMDQ3ODkiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImF0dHJhY3Rpb24gb3JkZXIgdXNlcyB0
+2026-09-10T03:38:46.7151728Z GO_EVIDENCE_B64 aGUgcXVvdGVkIHNsb3QsIHF1YW50aXR5IGFuZCBwcmVib29rIGFuZCBzaG93cyBlbGlnaWJpbGl0eSIgdGltZT0iMC4wMDA1ODciIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNhbmNlbGxpbmcgY29uZmlybWF0aW9uIHN0ZXAgMSBuZXZlciBjcmVhdGVzIGFuIG9yZGVyIG9yIHBheW1lbnQiIHRpbWU9IjAuMDAwMjQ3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjYW5jZWxsaW5nIGNvbmZpcm1hdGlvbiBzdGVwIDIgbmV2ZXIgY3JlYXRlcyBhbiBvcmRlciBvciBwYXltZW50IiB0aW1l
+2026-09-10T03:38:46.7157477Z GO_EVIDENCE_B64 PSIwLjAwMDM2MCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iY2FuY2VsbGVkIHBhcnR5IHNlbGVjdGlvbiBjYW5ub3QgcmVhY2ggb3JkZXIgY3JlYXRpb24iIHRpbWU9IjAuMDAwMzQwIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJxdW90ZSB0aGF0IGV4cGlyZXMgZHVyaW5nIHRyYXZlbGVyIHNlbGVjdGlvbiBjYW5ub3QgY3JlYXRlIG9yIHBheSBhbiBvcmRlciIgdGltZT0iMC4wMDA5ODMiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9Im1pc3NpbmcgZmluYWwgY29u
+2026-09-10T03:38:46.7163303Z GO_EVIDENCE_B64 c2VudCBuZXZlciBjcmVhdGVzIGFuIG9yZGVyIiB0aW1lPSIwLjAwMDQ3MCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iZGlmZmVyZW50IHBlb3BsZSBhcmUgcmVxdWlyZWQgZm9yIGV2ZXJ5IHF1b3RlZCBwbGFjZSIgdGltZT0iMC4wMDA0MzkiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImFuIHVuY2VydGFpbiBwYXltZW50IHN0aWxsIG9wZW5zIHRoZSBleGlzdGluZyBvcmRlciBmb3IgcmVjb3ZlcnkiIHRpbWU9IjAuMDAxODc3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBu
+2026-09-10T03:38:46.7169118Z GO_EVIDENCE_B64 YW1lPSJyZXBlYXRlZCBjbGlja3MgY2Fubm90IHN0YXJ0IGEgc2Vjb25kIGJvb2tpbmcgd2hpbGUgY29uZmlybWF0aW9uIGlzIG9wZW4iIHRpbWU9IjAuMDAwNTI5IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJtaXNtYXRjaGVkIHRvdGFsLCBqb3VybmV5IG9yIHNsb3QgaXMgcmVmdXNlZCBiZWZvcmUgYW55IHRyYXZlbGVyIGNvbnNlbnQiIHRpbWU9IjAuMDAwNDM0IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjYW5jZWxsaW5nIGRhdGUgc2VsZWN0aW9uIG5ldmVyIHJlcXVlc3RzIGEg
+2026-09-10T03:38:46.7175006Z GO_EVIDENCE_B64 cXVvdGUgb3IgcGF5bWVudCIgdGltZT0iMC4wMDIzMjIiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InJpZGUgY2hhbmdlcyBjb250aW51ZSB0byB1c2UgdGhlaXIgc2VwYXJhdGUgd29ya2Zsb3ciIHRpbWU9IjAuMDAyMDQwIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJ2aWV3aW5nIGEgcmVudGFsIHF1b3RlIGRvZXMgbm90IGV4ZWN1dGUgdGhlIGNoYW5nZSIgdGltZT0iMC4wMDA5NjQiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNvbmZpcm1lZCByZWZ1bmQgZGlm
+2026-09-10T03:38:46.7180866Z GO_EVIDENCE_B64 ZmVyZW5jZSByZXRhaW5zIGl0cyBzaWduIGFuZCBzZXJ2ZXIgcXVvdGUgaWRlbnRpdHkiIHRpbWU9IjAuMDAxNzg2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJ1bmNoZWNrZWQgYW1vdW50IGNvbnNlbnQgYmxvY2tzIGV4ZWN1dGluZyBhIGRpc3BsYXllZCBxdW90ZSIgdGltZT0iMC4wMDEyNzMiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InRoZSBzaGFyZWQgYW1vdW50IGZvcm1hdHRlciBwcmVzZXJ2ZXMgY2VudHMgb24gY29uZmlybWF0aW9uIHNjcmVlbnMiIHRpbWU9IjAuMDE2MjE0
+2026-09-10T03:38:46.7186553Z GO_EVIDENCE_B64 IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjb25zdW1lcjogY29uY3VycmVudCBleHBpcmVkIHJlYWRzIHJlZnJlc2ggb25jZSBhbmQgcHJlc2VydmUgbmFtZXNwYWNlIiB0aW1lPSIwLjAxMTI4NyIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iY29uc3VtZXI6IGEgbXV0YXRpb24gd2l0aG91dCBpZGVtcG90ZW5jeSBpcyBuZXZlciByZXBsYXllZCBhZnRlciByZW5ld2FsIiB0aW1lPSIwLjAwMTQ5MCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iY29uc3VtZXI6IGFu
+2026-09-10T03:38:46.7192323Z GO_EVIDENCE_B64 IGlkZW1wb3RlbnQgcmV0cnkgcmV0YWlucyB0aGUgb3JpZ2luYWwga2V5IGFuZCBib2R5IiB0aW1lPSIwLjAwMDkzNSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iY29uc3VtZXI6IGZhaWxlZCByZWZyZXNoIHN0b3BzIHdpdGhvdXQgcmV0cnlpbmcgdGhlIG9wZXJhdGlvbiIgdGltZT0iMC4wMDEwNTYiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNvbnNvbGU6IGNvbmN1cnJlbnQgZXhwaXJlZCByZWFkcyByZWZyZXNoIG9uY2UgYW5kIHByZXNlcnZlIG5hbWVzcGFjZSIgdGltZT0iMC4w
+2026-09-10T03:38:46.7198021Z GO_EVIDENCE_B64 MDM5NDYiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNvbnNvbGU6IGEgbXV0YXRpb24gd2l0aG91dCBpZGVtcG90ZW5jeSBpcyBuZXZlciByZXBsYXllZCBhZnRlciByZW5ld2FsIiB0aW1lPSIwLjAwMTExNCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iY29uc29sZTogYW4gaWRlbXBvdGVudCByZXRyeSByZXRhaW5zIHRoZSBvcmlnaW5hbCBrZXkgYW5kIGJvZHkiIHRpbWU9IjAuMDAwODc0IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjb25zb2xlOiBmYWlsZWQg
+2026-09-10T03:38:46.7204206Z GO_EVIDENCE_B64 cmVmcmVzaCBzdG9wcyB3aXRob3V0IHJldHJ5aW5nIHRoZSBvcGVyYXRpb24iIHRpbWU9IjAuMDAwODk3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjb25zdW1lciBsb2dvdXQgZmFpbHVyZSBwcmVzZXJ2ZXMgYWNjb3VudCBhbmQgY3VycmVudCBwYWdlOyBzdWNjZXNzIGNsZWFycyBhbGwgcHJpdmF0ZSBzdGF0ZSIgdGltZT0iMC4wMDEzNTkiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNvbnNvbGUgbG9nb3V0IGZhaWx1cmUgaXMgc3VyZmFjZWQgaW5zdGVhZCBvZiBzaWxlbnRseSBy
+2026-09-10T03:38:46.7210093Z GO_EVIDENCE_B64 ZXBvcnRpbmcgc3VjY2VzcyIgdGltZT0iMC4wMDIxMjAiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNvbnNvbGUgcmVxdWVzdHMgd29yayB3aGVuIHJhbmRvbVVVSUQgaXMgdW5hdmFpbGFibGUgaW4gYW4gSFRUUCBwcmV2aWV3IiB0aW1lPSIwLjAwMTEyMSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iY29uc29sZSBsb2dpbiBiaW5kcyB0aGUgcmVxdWVzdGVkIGFjY291bnQgdHlwZSBiZWZvcmUgZXN0YWJsaXNoaW5nIGEgc2Vzc2lvbiIgdGltZT0iMC4wMDA5MTciIGNsYXNzbmFtZT0i
+2026-09-10T03:38:46.7215847Z GO_EVIDENCE_B64 dGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImEgY2hhbmdlZCBjb25zb2xlIGFjdG9yIGNsZWFycyB0aGUgc3RhbGUgVUkgYW5kIG5ldmVyIHJlZnJlc2hlcyBvciByZXRyaWVzIiB0aW1lPSIwLjAwMDc4NCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iY29uc3VtZXI6IGV4cGlyZWQgYWNjZXNzIGNhbiByZW5ldyBvbmNlIHRvIHJldm9rZSBpdHMgb3duIHNlc3Npb24iIHRpbWU9IjAuMDAxNTgxIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjb25zb2xlOiBleHBpcmVkIGFjY2VzcyBjYW4g
+2026-09-10T03:38:46.7221709Z GO_EVIDENCE_B64 cmVuZXcgb25jZSB0byByZXZva2UgaXRzIG93biBzZXNzaW9uIiB0aW1lPSIwLjAwMDc5NSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0idW52ZXJpZmllZCBjaGVjay1pbiBuZXZlciBleHBvc2VzIGxpbmtzIG9yIGJvYXJkaW5nIHBhc3NlcyIgdGltZT0iMC4wMDM3MTciIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InBlci10cmF2ZWxlciBib2FyZGluZyBwYXNzIGFwcGVhcnMgb25seSBmb3IgdGhlIHZlcmlmaWVkIHBhc3Mgc3RhdGUiIHRpbWU9IjAuMDAxMTEyIiBjbGFzc25hbWU9InRl
+2026-09-10T03:38:46.7227555Z GO_EVIDENCE_B64 c3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJpbnZhbGlkIFVSTCBzY2hlbWVzIGFuZCBjcmVkZW50aWFscyBkbyBub3QgYmVjb21lIGN1c3RvbWVyIGxpbmtzIiB0aW1lPSIwLjAwMDk3MSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0idW5rbm93biBmbGVldCBvdXRjb21lIGNsZWFybHkgc2VwYXJhdGVzIGNvbmZpcm1lZCBhbmQgcHJvcG9zZWQgdGltZXMiIHRpbWU9IjAuMDAwOTE3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjYW5jZWxsZWQgdHJhY2tpbmcgY29uZmlybWF0aW9uIHNlbmRz
+2026-09-10T03:38:46.7233372Z GO_EVIDENCE_B64 IG5vIGJpbmRpbmcgbXV0YXRpb24iIHRpbWU9IjAuMDAxMDM0IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJjaGVja2VkIGNvbnNlbnQgc2VuZHMgZXhhY3QgZGlzcGxheWVkIHJldmlzaW9uIGFuZCBzZXJ2ZXIgYXV0aG9yaXR5LCBuZXZlciB3YWl0IG92ZXJyaWRlcyIgdGltZT0iMC4wMDEwNTAiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9Im1pc3NpbmcgY29uc2VudCBwcmV2ZW50cyBhbnkgdHJhY2tpbmcgd3JpdGUiIHRpbWU9IjAuMDAxMzYyIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0
+2026-09-10T03:38:46.7239176Z GO_EVIDENCE_B64 ZXN0Y2FzZSBuYW1lPSJubyBhdXRob3JpemVkIHNvdXJjZSBkb2VzIG5vdCBvcGVuIGFuIHVudXNhYmxlIGNvbmZpcm1hdGlvbiBkaWFsb2ciIHRpbWU9IjAuMDAwODE1IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJ3YWl0aW5nIHByb3RlY3Rpb24gaXMgY29uZGl0aW9uYWwgYW5kIHNob3dzIHRoZSBhY3R1YWwgZXZlbnQgYWxsb3dhbmNlIiB0aW1lPSIwLjAwMTM1MSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0ibGF0ZSBjaGVjay1pbiByZXNwb25zZSBjYW5ub3QgcG9wdWxhdGUgYSBk
+2026-09-10T03:38:46.7244931Z GO_EVIDENCE_B64 ZXRhY2hlZCBzY3JlZW4iIHRpbWU9IjAuMDEyNTM1IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJIT1RFTF9DQVRBTE9HOiByZW9wZW4gdGhlIGV4aXN0aW5nIG9yZGVyIHdpdGhvdXQgYSBuZXcgb3JkZXIgb3IgcGF5bWVudCIgdGltZT0iMC4wMDM3OTgiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkhPVEVMX0RJUkVDVDogcmVvcGVuIHRoZSBleGlzdGluZyBvcmRlciB3aXRob3V0IGEgbmV3IG9yZGVyIG9yIHBheW1lbnQiIHRpbWU9IjAuMDAxNTk0IiBjbGFzc25hbWU9InRlc3QiLz4K
+2026-09-10T03:38:46.7250718Z GO_EVIDENCE_B64 CTx0ZXN0Y2FzZSBuYW1lPSJGTElHSFQ6IHJlb3BlbiB0aGUgZXhpc3Rpbmcgb3JkZXIgd2l0aG91dCBhIG5ldyBvcmRlciBvciBwYXltZW50IiB0aW1lPSIwLjAwMDc3NSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iUkFJTDogcmVvcGVuIHRoZSBleGlzdGluZyBvcmRlciB3aXRob3V0IGEgbmV3IG9yZGVyIG9yIHBheW1lbnQiIHRpbWU9IjAuMDAwNzgwIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJSSURFOiByZW9wZW4gdGhlIGV4aXN0aW5nIG9yZGVyIHdpdGhvdXQgYSBuZXcgb3Jk
+2026-09-10T03:38:46.7256636Z GO_EVIDENCE_B64 ZXIgb3IgcGF5bWVudCIgdGltZT0iMC4wMDA2ODMiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IlJFTlRBTDogcmVvcGVuIHRoZSBleGlzdGluZyBvcmRlciB3aXRob3V0IGEgbmV3IG9yZGVyIG9yIHBheW1lbnQiIHRpbWU9IjAuMDAwNzI2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJBVFRSQUNUSU9OOiByZW9wZW4gdGhlIGV4aXN0aW5nIG9yZGVyIHdpdGhvdXQgYSBuZXcgb3JkZXIgb3IgcGF5bWVudCIgdGltZT0iMC4wMDA3NzYiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNl
+2026-09-10T03:38:46.7262559Z GO_EVIDENCE_B64 IG5hbWU9InVudHJ1c3RlZCBldmlkZW5jZSBVUkxzIGFuZCB1bnN1cHBvcnRlZCBpZGVudGl0aWVzIG5ldmVyIHNlbGVjdCBhbiBlbmRwb2ludCIgdGltZT0iMC4wMDEwNTYiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNhcmQgb3V0cHV0IGVzY2FwZXMgY29udGVudCBhbmQgdXNlcyBjdXJyZW50IGNhbm9uaWNhbCBzdGF0dXMiIHRpbWU9IjAuMDAxMTQyIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJhbiBvcmRlciByZXNwb25zZSBjYW5ub3QgcG9wdWxhdGUgYSBkaWZmZXJlbnQgb3Jk
+2026-09-10T03:38:46.7268342Z GO_EVIDENCE_B64 ZXIgb3IgdmVydGljYWwiIHRpbWU9IjAuMDAzMDYzIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJsYXRlIG9yZGVyIHJlc3BvbnNlIGNhbm5vdCBvdmVyd3JpdGUgYSBuZXcgc2NyZWVuIiB0aW1lPSIwLjAwMDgzNSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iY29udGludWluZyBwYXltZW50IHJlLXJlYWRzIGFtb3VudCBhbmQgdXNlcyB0aGUgb3JpZ2luYWwgb3JkZXIgb25seSIgdGltZT0iMC4wMDA5MDYiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImFscmVhZHkg
+2026-09-10T03:38:46.7274218Z GO_EVIDENCE_B64 cGFpZCBvciBleHBpcmVkIG9yZGVycyBjYW5ub3QgaW52b2tlIHBheW1lbnQgZnJvbSBhIHN0YWxlIGNhcmQiIHRpbWU9IjAuMDAxNzM2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJwYXltZW50IHRpbWVvdXQgcmVhZHMgdGhlIHNhbWUgb3JkZXIgYW5kIG5ldmVyIHNpbGVudGx5IHJlc2VuZHMiIHRpbWU9IjAuMDAwODQ2IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJsZWF2aW5nIGJlZm9yZSB0aGUgZnJlc2ggb3JkZXIgcmVhZCBwcmV2ZW50cyBhIHBheW1lbnQgZGlhbG9nIiB0aW1l
+2026-09-10T03:38:46.7280235Z GO_EVIDENCE_B64 PSIwLjAwMDY3OCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0icmVhbCBhcHAgZGlzcGF0Y2ggdXNlcyBldmVyeSBleGlzdGluZyBlbnJpY2hlZCBvcmRlciByZW5kZXJlciIgdGltZT0iMC4wMDQwMDMiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImNsb3NpbmcgcGVybWlzc2lvbiBjb25maXJtYXRpb24gc2VuZHMgbm8gcGVybWlzc2lvbiBtdXRhdGlvbiIgdGltZT0iMC4wMDQ3NzAiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InNvdXJjZSBkaXNjb25uZWN0IHJlbWFp
+2026-09-10T03:38:46.7286067Z GO_EVIDENCE_B64 bnMgZXhwbGljaXQgYW5kIHJldGFpbnMgc2VydmVyLWRpcmVjdGVkIHNlbWFudGljcyIgdGltZT0iMC4wMDI1MTUiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InBlcnNvbiBlZGl0IGJpbmRzIHRoZSBkaXNwbGF5ZWQgcmV2aXNpb24gYW5kIGxlYXZlcyBhIGJsYW5rIGJpcnRoIGRhdGUgdW50b3VjaGVkIiB0aW1lPSIwLjAwMTIwOCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0ic2Vuc2l0aXZlIGltcG9ydCBpbnNwZWN0aW9uIGhhcHBlbnMgb25seSBhZnRlciBleHBsaWNpdCBjb25maXJt
+2026-09-10T03:38:46.7291938Z GO_EVIDENCE_B64 YXRpb24sIHdpdGggbm8gaW1wbGljaXQgYWNjZXB0YW5jZSIgdGltZT0iMC4wMDgyMzYiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9InVudHJ1c3RlZCBpbXBvcnRlZCBjb250ZW50IGlzIGVzY2FwZWQgYmVmb3JlIGRpc3BsYXkiIHRpbWU9IjAuMDAxOTg4IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJkdXBsaWNhdGUgc3VibWl0cyBkdXJpbmcgYSBwZW5kaW5nIG11dGF0aW9uIGNhbGwgdGhlIHNlcnZlciBvbmNlIiB0aW1lPSIwLjAwMTg2MSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVz
+2026-09-10T03:38:46.7297705Z GO_EVIDENCE_B64 dGNhc2UgbmFtZT0iaW1wb3J0IHJlYXNzaWdubWVudCBiaW5kcyB0cmF2ZWxlciBhbmQgaXRlbSByZXZpc2lvbiBhbmQgZG9lcyBub3QgYWNjZXB0IGNvbnRlbnQiIHRpbWU9IjAuMDAxNDc3IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJSQUlMIGNhbmNlbGxhdGlvbiByZXF1aXJlcyBleHBsaWNpdCBjb25maXJtYXRpb24iIHRpbWU9IjAuMDAyMjYwIiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJSQUlMIHJlc3BvbnNlIGxvc3Mgc3RpbGwgcmVsb2FkcyBwZXJzaXN0ZWQgb3JkZXIiIHRp
+2026-09-10T03:38:46.7303521Z GO_EVIDENCE_B64 bWU9IjAuMDAyMzc4IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJSQUlMIHBhaWQgb3IgdW5jZXJ0YWluIG9yZGVycyBjYW5ub3Qgb3BlbiB1bnBhaWQgY2FuY2VsbGF0aW9uIiB0aW1lPSIwLjAwMjc2MyIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iQVRUUkFDVElPTiBjYW5jZWxsYXRpb24gcmVxdWlyZXMgZXhwbGljaXQgY29uZmlybWF0aW9uIiB0aW1lPSIwLjAwMDg1NSIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iQVRUUkFDVElPTiByZXNwb25zZSBsb3NzIHN0
+2026-09-10T03:38:46.7309316Z GO_EVIDENCE_B64 aWxsIHJlbG9hZHMgcGVyc2lzdGVkIG9yZGVyIiB0aW1lPSIwLjAwMDkzMyIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iQVRUUkFDVElPTiBwYWlkIG9yIHVuY2VydGFpbiBvcmRlcnMgY2Fubm90IG9wZW4gdW5wYWlkIGNhbmNlbGxhdGlvbiIgdGltZT0iMC4wMDI5NjMiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9Im5ldyB1bnBhaWQgcmVzZXJ2YXRpb24gZGlzcGxheXMgaXRzIGZyb3plbiBVVEMgZGVhZGxpbmUiIHRpbWU9IjAuMDAxMjk5IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0
+2026-09-10T03:38:46.7315198Z GO_EVIDENCE_B64 Y2FzZSBuYW1lPSJsZWdhY3kgb3JkZXJzIG5ldmVyIHJlY2VpdmUgYSBmYWJyaWNhdGVkIGRlYWRsaW5lIiB0aW1lPSIwLjAwMDIzMCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iZXhwaXJ5IGRpc3BsYXkgcmVsaWVzIG9uIHBlcnNpc3RlZCBzZXJ2ZXIgc3RhdGUgaW5zdGVhZCBvZiBicm93c2VyIGNsb2NrIiB0aW1lPSIwLjAwMDE4NyIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0ic3RhcnRlZCBhbmQgdW5jZXJ0YWluIHBheW1lbnQga2VlcHMgaXRzIHJlc2VydmF0aW9uIG1lc3NhZ2Ui
+2026-09-10T03:38:46.7320977Z GO_EVIDENCE_B64 IHRpbWU9IjAuMDAxMzE4IiBjbGFzc25hbWU9InRlc3QiLz4KCTx0ZXN0Y2FzZSBuYW1lPSJSQUlMOiBvcGVuaW5nIHJlY292ZXJ5IGRvZXMgbm90IHNlbmQgYSByZWZ1bmQgdW50aWwgY29uZmlybWVkIiB0aW1lPSIwLjAwMjM5NCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iUkFJTDogZmFpbGVkIHJlc3BvbnNlIHN0aWxsIHJlbG9hZHMgcGVyc2lzdGVkIG9yZGVyIHN0YXRlIiB0aW1lPSIwLjAwMjM4MCIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0iQVRUUkFDVElPTjogb3BlbmluZyBy
+2026-09-10T03:38:46.7326707Z GO_EVIDENCE_B64 ZWNvdmVyeSBkb2VzIG5vdCBzZW5kIGEgcmVmdW5kIHVudGlsIGNvbmZpcm1lZCIgdGltZT0iMC4wMDA5NDMiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9IkFUVFJBQ1RJT046IGZhaWxlZCByZXNwb25zZSBzdGlsbCByZWxvYWRzIHBlcnNpc3RlZCBvcmRlciBzdGF0ZSIgdGltZT0iMC4wMDA4MzQiIGNsYXNzbmFtZT0idGVzdCIvPgoJPHRlc3RjYXNlIG5hbWU9ImJ1c3kgcmVjb3ZlcnkgZ2l2ZXMgYSBjdXN0b21lciBtZXNzYWdlIGFuZCByZWZyZXNoZXMgdGhlIGV4aXN0aW5nIG9yZGVyIiB0aW1lPSIwLjAw
+2026-09-10T03:38:46.7332564Z GO_EVIDENCE_B64 MDg2MyIgY2xhc3NuYW1lPSJ0ZXN0Ii8+Cgk8dGVzdGNhc2UgbmFtZT0icmFpbCBpbnRlcnJ1cHRlZCBjaGFuZ2UgY29uZmlybXMgdGhlIG9yaWdpbmFsIHF1b3RlIGluc3RlYWQgb2YgY3JlYXRpbmcgYW5vdGhlciIgdGltZT0iMC4wMDExODYiIGNsYXNzbmFtZT0idGVzdCIvPgoJPCEtLSB0ZXN0cyAyMjcgLS0+Cgk8IS0tIHN1aXRlcyAwIC0tPgoJPCEtLSBwYXNzIDIyNyAtLT4KCTwhLS0gZmFpbCAwIC0tPgoJPCEtLSBjYW5jZWxsZWQgMCAtLT4KCTwhLS0gc2tpcHBlZCAwIC0tPgoJPCEtLSB0b2RvIDAgLS0+Cgk8IS0tIGR1
+2026-09-10T03:38:46.7335725Z GO_EVIDENCE_B64 cmF0aW9uX21zIDI4NTkuMzE2OTc5IC0tPgo8L3Rlc3RzdWl0ZXM+Cg==
+2026-09-10T03:38:46.7336177Z GO_EVIDENCE_FILE_END frontend.xml
+2026-09-10T03:38:46.7409225Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T03:38:46.7410471Z ##[group]Run actions/upload-artifact@v4
+2026-09-10T03:38:46.7410751Z with:
+2026-09-10T03:38:46.7410995Z   name: GO-DEPTH34R2-isolated-34434039448
+2026-09-10T03:38:46.7411293Z   path: evidence/
+2026-09-10T03:38:46.7411520Z   if-no-files-found: error
+2026-09-10T03:38:46.7411758Z   retention-days: 90
+2026-09-10T03:38:46.7411987Z   compression-level: 6
+2026-09-10T03:38:46.7412212Z   overwrite: false
+2026-09-10T03:38:46.7412446Z   include-hidden-files: false
+2026-09-10T03:38:46.7412686Z env:
+2026-09-10T03:38:46.7412939Z   SEALED_CANDIDATE: 2dab537722cda3675231102eb013280796068401
+2026-09-10T03:38:46.7413479Z   EXPECTED_SOURCE_TREE: e94bb749a680c4aec3f946dc2ce6d284cd48b60361dc7d6ef85ffcf6f29457b5
+2026-09-10T03:38:46.7413990Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:46.7414405Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-10T03:38:46.7414813Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:46.7415181Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:46.7415547Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-10T03:38:46.7415924Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-10T03:38:46.7416247Z ##[endgroup]
+2026-09-10T03:38:46.9893342Z (node:2586) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-10T03:38:46.9909662Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-10T03:38:47.0440307Z With the provided path, there will be 15 files uploaded
+2026-09-10T03:38:47.0459450Z Artifact name is valid!
+2026-09-10T03:38:47.0498871Z Root directory input is valid!
+2026-09-10T03:38:47.3675957Z Beginning upload of artifact content to blob storage
+2026-09-10T03:38:47.4146736Z (node:2586) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-10T03:38:47.5692661Z Uploaded bytes 18365
+2026-09-10T03:38:47.6069262Z Finished uploading artifact content to blob storage!
+2026-09-10T03:38:47.6070808Z SHA256 digest of uploaded artifact zip is 950ba0017587b5954ec044ae28994d0ec684da4b17fa04132564560554e9a38a
+2026-09-10T03:38:47.6073716Z Finalizing artifact upload
+2026-09-10T03:38:47.8240832Z Artifact GO-DEPTH34R2-isolated-34434039448.zip successfully finalized. Artifact ID 10135536273
+2026-09-10T03:38:47.8242558Z Artifact GO-DEPTH34R2-isolated-34434039448 has been successfully uploaded! Final size is 18365 bytes. Artifact ID is 10135536273
+2026-09-10T03:38:47.8249787Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34434039448/artifacts/10135536273
+2026-09-10T03:38:47.8457357Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T03:38:47.8459080Z Post job cleanup.
+2026-09-10T03:38:47.9945527Z (node:2599) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-10T03:38:47.9947135Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-10T03:38:48.0182480Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T03:38:48.0184493Z Post job cleanup.
+2026-09-10T03:38:48.1972005Z (node:2607) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-10T03:38:48.1973613Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-10T03:38:48.2236917Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T03:38:48.2239175Z Post job cleanup.
+2026-09-10T03:38:48.3687487Z [command]/usr/bin/git version
+2026-09-10T03:38:48.3788339Z git version 2.55.0
+2026-09-10T03:38:48.3891906Z Temporarily overriding HOME='/home/runner/work/_temp/60f02631-df4c-46b9-917a-99c01e03c7a3' before making global git config changes
+2026-09-10T03:38:48.3929782Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-10T03:38:48.3956383Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/candidate
+2026-09-10T03:38:48.4000524Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T03:38:48.4025626Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T03:38:48.4607581Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T03:38:48.4679643Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T03:38:48.5112703Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T03:38:48.5171455Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T03:38:48.6005335Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-10T03:38:48.6007417Z Post job cleanup.
+2026-09-10T03:38:48.7074641Z [command]/usr/bin/git version
+2026-09-10T03:38:48.7184986Z git version 2.55.0
+2026-09-10T03:38:48.7320538Z Temporarily overriding HOME='/home/runner/work/_temp/131562aa-3b55-444b-a2d7-b93d3ce1df1f' before making global git config changes
+2026-09-10T03:38:48.7325691Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-10T03:38:48.7360091Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/tooling
+2026-09-10T03:38:48.7529727Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-10T03:38:48.7640678Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-10T03:38:48.8040792Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-10T03:38:48.8150832Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-10T03:38:48.8589713Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-10T03:38:48.8650550Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-10T03:38:48.9330227Z Cleaning up orphan processes
+2026-09-10T03:38:48.9635423Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
