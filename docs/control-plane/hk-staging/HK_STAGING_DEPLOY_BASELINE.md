@@ -45,6 +45,22 @@ Exactly eight services are in the controlled deployment scope:
 
 Redis and Caddy are not controlled deployment targets.
 
+## HK Agent polling runtime
+
+- Timer unit: `go-hk-agent.timer`
+- Service unit: `go-hk-agent.service`
+- `OnBootSec=60s`
+- `OnUnitActiveSec=60s`
+- `Persistent=false`
+- Polling model: the HK Agent makes an outbound pull from the private GitHub
+  Tasks repository.
+
+The nominal steady-state polling interval is 60 seconds, with the first
+scheduled run 60 seconds after boot. A newly published Task is therefore
+normally discovered within roughly 0–60 seconds, but this is operational
+timing rather than a strict SLA: systemd scheduling, an in-progress Agent run,
+network availability, and GitHub availability can affect pickup time.
+
 ## Proven formal results
 
 - Formal R4 DEPLOY E2E: `PASS`
