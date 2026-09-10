@@ -35,13 +35,34 @@
   },
   "source_after_tests": "PASS_ALL_FOUR_SHARDS",
   "source_archive_sha256": "b4634f9da515a22f95fb740b979c2f77fdce29342eabbb9c54e5c666976f5b86",
-  "three_end_real_browser": "HOLD",
-  "six_vertical_real_e2e": "HOLD",
+  "three_end_real_browser": "DEFERRED_POST_DEPLOYMENT",
+  "six_vertical_real_e2e": "DEFERRED_POST_DEPLOYMENT",
   "postgres": "NOT_RUN; 6 skipped tests",
   "sealed_node_gate": "HOLD",
   "native_build_and_device": "NOT_RUN",
   "provider_certification": "NOT_RUN",
   "final_release": "HOLD",
   "merged": false,
-  "deployed": false
+  "deployed": false,
+  "predeployment_gate": "HOLD_REMAINING_CHECKS",
+  "acceptance_scope_decision": "ACCEPTANCE_SCOPE_DECISION_20260910.json",
+  "post_deployment_required_gates": [
+    "three_end_real_browser",
+    "six_vertical_real_e2e"
+  ],
+  "phase_rules": {
+    "three_end_real_browser": {
+      "phase": "POST_DEPLOYMENT",
+      "evidence_status": "NOT_RUN",
+      "blocks_predeployment": false,
+      "blocks_final_release": true
+    },
+    "six_vertical_real_e2e": {
+      "phase": "POST_DEPLOYMENT",
+      "evidence_status": "NOT_RUN",
+      "blocks_predeployment": false,
+      "blocks_final_release": true
+    }
+  },
+  "deployment_authorized": false
 }
