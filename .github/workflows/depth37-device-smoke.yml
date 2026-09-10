@@ -1,0 +1,40 @@
+name: depth37-existing-ios-artifact-startup
+on:
+  pull_request:
+    branches: ['deliverables/cp11-depth37-node-native-provider']
+    paths: ['.github/workflows/depth37-device-smoke.yml', 'ci/depth37/device_smoke.py']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  startup:
+    if: github.head_ref == 'acceptance/cp11-depth37-device-smoke'
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: tooling
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/download-artifact@v4
+        with:
+          name: GO-DEPTH37-ios-34469458736
+          run-id: 34469458736
+          github-token: ${{ github.token }}
+          path: original
+      - name: Inspect startup without recompiling
+        run: python tooling/ci/depth37/device_smoke.py
+      - name: Export raw startup records
+        if: always()
+        run: python tooling/ci/depth37/export.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: GO-DEPTH37-IOS-STARTUP-${{ github.run_id }}
+          path: evidence/
+          retention-days: 90
+          if-no-files-found: error
