@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   readiness:
-    if: github.head_ref == 'acceptance/cp11-depth37r2-native-build'
+    if: github.head_ref == 'acceptance/cp11-depth37r2-native-build' && github.event.pull_request.head.sha == '43b331460e6ebee6fb5916ffd29cd2a0bbfab204'
     strategy:
       fail-fast: false
       matrix:

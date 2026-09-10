@@ -36,6 +36,8 @@ jobs:
       - name: Prepare clean isolated Android emulator
         run: |
           mkdir -p evidence
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libpulse0
           sudo setfacl -m u:$USER:rw /dev/kvm
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis;x86_64' > evidence/sdk-install.log 2>&1
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd -n go_depth37 -k 'system-images;android-35;google_apis;x86_64' --device pixel_6 > evidence/avd-create.log 2>&1
