@@ -3,7 +3,13 @@ import argparse
 import hashlib
 import json
 import os
+import sys
 from pathlib import Path
+
+# Match `python -m pytest`: tests import shared helpers from the source root.
+# This runner lives in the separate tooling checkout, so script execution does
+# not otherwise put the restored candidate's working directory on sys.path.
+sys.path.insert(0, str(Path.cwd().resolve()))
 import pytest
 
 p=argparse.ArgumentParser()
