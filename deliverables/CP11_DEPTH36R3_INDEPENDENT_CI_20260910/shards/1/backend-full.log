@@ -1,0 +1,38 @@
+........................................................................ [ 16%]
+........................................................................ [ 32%]
+........................................................................ [ 48%]
+........................................................................ [ 64%]
+........................................................................ [ 81%]
+........................................................................ [ 97%]
+............                                                             [100%]
+=============================== warnings summary ===============================
+tests/test_depth18_regional_queue.py: 5 warnings
+tests/test_depth21_refund_recovery.py: 5 warnings
+tests/test_depth23_capacity.py: 5 warnings
+tests/test_depth25_migration_history.py: 12 warnings
+  /home/runner/work/GO/GO/isolated-runtime/lib/python3.13/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============================= slowest 20 durations =============================
+14.40s call     tests/test_depth09_migration.py::test_credit_migration_roundtrip_preserves_fare_rows_and_never_creates_unfunded_credit
+10.78s call     tests/test_parent_implementation_code_review_debt_closure.py::test_current_source_head_and_upgrade_downgrade_roundtrip
+5.48s setup    tests/test_alipay_safeguarded_settlement_activation.py::test_existing_account_is_attested_but_activation_gate_remains_blocked
+4.76s setup    tests/test_sprint4s_online_prediction_feedback.py::test_historical_prediction_and_outcome_remain_after_rollback
+4.76s setup    tests/test_sprint4r_model_traffic_governance.py::test_serving_error_budget_breach_freezes_progression
+4.72s setup    tests/test_sprint4s_online_prediction_feedback.py::test_insufficient_sample_does_not_auto_degrade
+4.72s setup    tests/test_sprint4r_model_traffic_governance.py::test_canary_progression_is_sequential_and_health_gated
+4.72s setup    tests/test_aoluguya_staging_bootstrap_cycle.py::test_bootstrap_refuses_an_unexpected_offer_graph
+4.71s setup    tests/test_sprint4s_online_prediction_feedback.py::test_auto_degrade_cannot_target_champion
+4.62s setup    tests/test_sprint4r_model_traffic_governance.py::test_unattested_candidate_gets_zero_canary_traffic
+4.60s setup    tests/test_good_hotel_standard_governance.py::test_initial_go_good_hotel_standard_is_active_and_versioned
+4.60s setup    tests/test_sprint4r_model_traffic_governance.py::test_rollback_changes_future_routing_not_history
+4.58s setup    tests/test_sprint4j_enterprise_risk_forecast.py::test_breach_creates_early_warning_and_residual_risk_restriction
+4.58s setup    tests/test_sprint4h_enterprise_risk_portfolio.py::test_aggregate_exposure_breach_activates_portfolio_freeze
+4.58s setup    tests/test_sprint4j_enterprise_risk_forecast.py::test_24h_and_7d_forecast_are_explicit_and_forward_looking
+4.57s setup    tests/test_sprint4r_model_traffic_governance.py::test_policy_maker_checker_and_zero_canary_start
+4.57s setup    tests/test_sprint4h_enterprise_risk_portfolio.py::test_board_risk_limit_requires_two_distinct_approvers
+4.55s setup    tests/test_sprint4s_online_prediction_feedback.py::test_degraded_live_performance_auto_rolls_back_canary
+4.55s setup    tests/test_sprint4j_enterprise_risk_forecast.py::test_restriction_release_requires_latest_non_breach_and_evidence
+4.54s setup    tests/test_sprint4j_enterprise_risk_forecast.py::test_active_forecast_restriction_blocks_new_residual_risk
+444 passed, 1235 deselected, 27 warnings in 439.56s (0:07:19)

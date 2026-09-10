@@ -1,0 +1,36 @@
+........................................................................ [ 18%]
+........................................................................ [ 37%]
+........................................................................ [ 56%]
+........................................................................ [ 75%]
+........................................................................ [ 94%]
+......................                                                   [100%]
+=============================== warnings summary ===============================
+tests/test_depth08_api_and_migration.py: 5 warnings
+tests/test_depth19_api_migration.py: 5 warnings
+tests/test_depth24_expiry.py: 5 warnings
+  /home/runner/work/GO/GO/isolated-runtime/lib/python3.13/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============================= slowest 20 durations =============================
+21.79s setup    tests/test_hotel_partner_self_operating_core.py::test_property_low_risk_self_service_and_high_risk_change_request
+16.20s call     tests/test_depth14_migration.py::test_cash_fare_migration_roundtrip_never_backfills_historical_consent
+16.15s setup    tests/test_hotel_partner_self_operating_core.py::test_facility_unknown_is_not_no_and_policy_is_machine_readable
+15.15s setup    tests/test_sprint4u_segment_remediation.py::test_effective_remediation_unlocks_promotion_gate_and_preserves_supplier_fact
+15.15s setup    tests/test_connector_ops.py::test_connector_list_and_certify
+14.47s setup    tests/test_sprint4m_statistical_model_governance.py::test_legacy_promotion_is_blocked_when_4m_policy_active
+13.89s setup    tests/test_sprint4m_statistical_model_governance.py::test_probation_becomes_stable_only_after_window_and_no_regression
+13.06s setup    tests/test_sprint4m_statistical_model_governance.py::test_policy_requires_two_distinct_approvers
+13.06s setup    tests/test_sprint4m_statistical_model_governance.py::test_probation_regression_automatically_rolls_back_previous_champion
+12.77s call     tests/test_depth13_migration.py::test_rule_snapshot_migration_preserves_historical_credit_and_order_without_fabrication
+12.75s setup    tests/test_omnichannel_payment_finance_os.py::test_plain_credentials_and_real_executor_are_blocked
+12.60s setup    tests/test_hotel_partner_self_operating_core.py::test_go_offer_system_generation_requires_isolated_authorized_supply
+12.57s setup    tests/test_sprint4u_segment_remediation.py::test_policy_requires_maker_checker
+12.55s setup    tests/test_hotel_partner_self_operating_core.py::test_ari_separates_sell_status_inventory_and_price_with_date_override
+12.35s setup    tests/test_sprint4u_segment_remediation.py::test_refresh_challenger_cannot_bypass_remediation_gate
+12.27s setup    tests/test_hotel_partner_self_operating_core.py::test_go_offer_and_commercial_value_never_buy_recommendation
+12.10s setup    tests/test_sprint4m_statistical_model_governance.py::test_stability_window_and_segment_consistency_required_before_promotion
+12.00s setup    tests/test_omnichannel_payment_finance_os.py::test_timeout_blocks_resend_and_channel_fallback
+10.92s setup    tests/test_omnichannel_payment_finance_os.py::test_signed_webhook_converges_once_and_replay_is_idempotent
+10.83s setup    tests/test_hotel_partner_self_operating_core.py::test_free_sale_cannot_carry_fake_room_count
+382 passed, 1297 deselected, 15 warnings in 582.52s (0:09:42)

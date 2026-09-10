@@ -1,0 +1,46 @@
+........................................................................ [ 18%]
+........................................................................ [ 36%]
+........................................................................ [ 54%]
+.......................................sssss............................ [ 72%]
+........................................................................ [ 90%]
+....................................                                     [100%]
+=============================== warnings summary ===============================
+tests/test_depth22_rail_resolution.py::test_migration_retains_nonempty_journal
+tests/test_depth22_rail_resolution.py::test_migration_retains_nonempty_journal
+tests/test_depth22_rail_resolution.py::test_migration_retains_nonempty_journal
+tests/test_depth22_rail_resolution.py::test_migration_retains_nonempty_journal
+tests/test_depth22_rail_resolution.py::test_migration_retains_nonempty_journal
+  /home/runner/work/GO/GO/isolated-runtime/lib/python3.13/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+tests/test_v61_media_harvester_rights_gate.py::test_download_cache_room_binding_and_rights_gate
+tests/test_v61_media_harvester_rights_gate.py::test_fail_closed_download_rights_ssrf_dedup_and_integrity
+tests/test_v61_media_harvester_rights_gate.py::test_fail_closed_download_rights_ssrf_dedup_and_integrity
+tests/test_v61_media_harvester_rights_gate.py::test_fail_closed_download_rights_ssrf_dedup_and_integrity
+tests/test_v61_media_harvester_rights_gate.py::test_rights_expiry_and_scope_fail_closed
+  /home/runner/work/GO/GO/restored/src/go_hotel/services/media_harvester.py:79: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    px=list(g.getdata())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============================= slowest 20 durations =============================
+13.06s call     tests/test_depth08_migration.py::test_fare_migration_roundtrip_preserves_prior_tables_and_does_not_fabricate_snapshots
+12.71s call     tests/test_depth06_migration.py::test_rental_settlement_migration_roundtrip_preserves_existing_refunds
+12.62s call     tests/test_depth12_migration.py::test_catalog_credit_migration_preserves_historical_credit_without_invented_funding
+4.69s setup    tests/test_concurrency.py::test_concurrent_payment_has_one_external_authorization
+4.38s setup    tests/test_sprint4f_waiver_exposure_exception_debt.py::test_exception_debt_threshold_blocks_waiver_churn_before_raw_count_limit
+4.28s setup    tests/test_sprint4g_exception_debt_burndown.py::test_milestone_completion_requires_evidence_and_updates_plan_progress
+4.27s setup    tests/test_sprint4k_risk_forecast_calibration.py::test_model_registry_requires_two_distinct_board_approvers
+4.25s setup    tests/test_sprint4t_online_segment_governance.py::test_supplier_fact_boundary
+4.25s setup    tests/test_sprint4f_waiver_exposure_exception_debt.py::test_active_policy_requires_remediation_owner_even_through_legacy_4e_waiver_path
+4.25s setup    tests/test_sprint4g_exception_debt_burndown.py::test_residual_risk_acceptance_does_not_bypass_freeze_and_only_supports_controlled_release_after_plan_complete
+4.24s setup    tests/test_sprint4l_forecast_model_promotion.py::test_shadow_24h_requires_improvement_without_safety_degradation
+4.24s setup    tests/test_sprint4f_waiver_exposure_exception_debt.py::test_waiver_request_opens_mandatory_remediation_with_sla
+4.23s setup    tests/test_sprint4g_exception_debt_burndown.py::test_overdue_burndown_milestone_escalates_automatically
+4.23s setup    tests/test_sprint4f_waiver_exposure_exception_debt.py::test_rolling_waiver_budget_blocks_new_requests_after_limit
+4.23s setup    tests/test_sprint4t_online_segment_governance.py::test_bad_segment_detected_while_other_segment_can_pass
+4.21s setup    tests/test_sprint4k_risk_forecast_calibration.py::test_predicted_vs_actual_outcome_is_version_bound_and_persisted
+4.21s setup    tests/test_sprint4k_risk_forecast_calibration.py::test_conservative_baseline_release_requires_recovered_24h_and_7d_accuracy
+4.20s setup    tests/test_sprint4t_online_segment_governance.py::test_consecutive_segment_breach_triggers_retraining_request
+4.20s setup    tests/test_sprint4f_waiver_exposure_exception_debt.py::test_waiver_release_and_remediation_actions_create_auditable_exposure_events
+4.20s setup    tests/test_sprint4f_waiver_exposure_exception_debt.py::test_risk_exposure_time_budget_is_accounted_and_blocks_new_waiver
+391 passed, 5 skipped, 1283 deselected, 10 warnings in 346.69s (0:05:46)

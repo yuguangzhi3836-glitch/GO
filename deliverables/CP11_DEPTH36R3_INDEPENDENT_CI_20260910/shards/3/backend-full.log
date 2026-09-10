@@ -1,0 +1,48 @@
+........................................................................ [ 15%]
+........................................................................ [ 31%]
+........................................................................ [ 47%]
+........................................................................ [ 63%]
+.........s.............................................................. [ 78%]
+........................................................................ [ 94%]
+.........................                                                [100%]
+=============================== warnings summary ===============================
+tests/test_commercial_constitution_admin_os.py::test_admin_cannot_create_recommendation_without_independent_judgment
+  /home/runner/work/GO/GO/restored/src/go_hotel/services/commercial_constitution.py:29: SAWarning: fully NULL primary key identity cannot load any object.  This condition may raise an error in a future release.
+    rec=s.get(RecommendationDecisionRow,judgment_decision_id)
+
+tests/test_depth09_hotel_replication.py: 175 warnings
+tests/test_depth18_media_durability.py: 33 warnings
+  /home/runner/work/GO/GO/restored/src/go_hotel/services/media_harvester.py:79: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    px=list(g.getdata())
+
+tests/test_depth20_api_fulfillment.py::test_migration_roundtrip_preserves_history_and_refuses_prebook_evidence_loss
+tests/test_depth20_api_fulfillment.py::test_migration_roundtrip_preserves_history_and_refuses_prebook_evidence_loss
+tests/test_depth20_api_fulfillment.py::test_migration_roundtrip_preserves_history_and_refuses_prebook_evidence_loss
+tests/test_depth20_api_fulfillment.py::test_migration_roundtrip_preserves_history_and_refuses_prebook_evidence_loss
+tests/test_depth20_api_fulfillment.py::test_migration_roundtrip_preserves_history_and_refuses_prebook_evidence_loss
+  /home/runner/work/GO/GO/isolated-runtime/lib/python3.13/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============================= slowest 20 durations =============================
+13.62s call     tests/test_depth15_migration.py::test_source_exclusion_migration_roundtrip_preserves_old_full_capture_allocation
+13.56s call     tests/test_depth10_migration.py::test_supplier_fault_migration_roundtrip_preserves_original_credit_and_allocations
+13.46s call     tests/test_depth11_migration.py::test_catalog_remedy_migration_preserves_historical_cases_and_hosted_mandates
+10.45s call     tests/test_depth15_migration.py::test_downgrade_cannot_drop_a_nonzero_exclusion_and_revive_forfeited_source_value
+5.95s call     tests/test_depth30_native_api_contract.py::test_native_six_vertical_creation_payment_and_refund_contracts
+4.75s setup    tests/autonomy/test_depth16_current_authority.py::test_current_independent_qualification_permits_repeated_in_scope_decisions
+4.03s setup    tests/test_commercial_constitution_admin_os.py::test_admin_cannot_create_recommendation_without_independent_judgment
+4.01s setup    tests/test_sprint4x_portfolio_champion_continuity.py::test_candidate_must_be_materially_superior_before_replacement_approval
+3.99s setup    tests/test_sprint4e_continuous_chaos_waiver.py::test_waiver_auto_expires_and_cannot_authorize_release
+3.96s setup    tests/test_sprint4e_continuous_chaos_waiver.py::test_scheduler_runs_due_campaign_and_advances_next_run
+3.96s setup    tests/test_sprint4x_portfolio_champion_continuity.py::test_multi_objective_safety_beats_single_score_gain
+3.93s setup    tests/test_sprint4x_portfolio_champion_continuity.py::test_superior_candidate_gets_approved_but_not_immediate_champion_replacement
+3.93s setup    tests/test_sprint4v_generalization.py::test_holdout_safety_detects_regression
+3.93s setup    tests/test_sprint4i_enterprise_risk_appetite.py::test_stress_assessment_never_changes_supplier_fact
+3.92s setup    tests/test_commercial_constitution_admin_os.py::test_recommendation_and_value_are_independent
+3.91s setup    tests/test_commercial_constitution_admin_os.py::test_t20_is_evidence_driven_fallback_excluded_and_idempotent
+3.91s setup    tests/test_sprint4q_model_serving_attestation.py::test_verified_serving_attestation_allows_forecast_runtime_and_mismatch_stops_it
+3.90s setup    tests/test_sprint4e_continuous_chaos_waiver.py::test_waiver_requires_two_distinct_approvers_and_requester_cannot_approve
+3.90s setup    tests/test_sprint4e_continuous_chaos_waiver.py::test_readiness_trend_detects_rto_regression
+3.90s setup    tests/test_commercial_constitution_admin_os.py::test_recommendation_eligibility_is_derived_only_from_judgment_decision
+456 passed, 1 skipped, 1222 deselected, 214 warnings in 363.43s (0:06:03)
