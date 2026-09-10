@@ -1,0 +1,116 @@
+name: depth37-node-native-readiness
+on:
+  pull_request:
+    branches: ['deliverables/cp11-depth37r2-native-linking']
+    paths: ['.github/workflows/depth37-readiness.yml', 'ci/depth37/**']
+permissions:
+  contents: read
+jobs:
+  readiness:
+    if: github.head_ref == 'acceptance/cp11-depth37r2-native-build'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android
+            runner: ubuntu-22.04
+          - platform: ios
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 55
+    env:
+      SEALED_CANDIDATE: ${{ github.event.pull_request.base.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: tooling
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/setup-node@v4
+        if: matrix.platform == 'ios'
+        with:
+          node-version: '22.22.0'
+      - uses: actions/setup-java@v4
+        if: matrix.platform == 'android'
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Restore exact accepted candidate
+        shell: bash
+        run: |
+          mkdir -p evidence
+          test "$(git -C candidate rev-parse HEAD)" = "$SEALED_CANDIDATE"
+          python tooling/ci/depth37/materialize_parent.py \
+            --depth26 candidate/deliverables/CP11_DEPTH26_20260909 \
+            --depth27 candidate/deliverables/CP11_DEPTH27_20260909 \
+            --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 \
+            --output "$GITHUB_WORKSPACE/restored-parent" | tee evidence/parent-restore.log
+          python candidate/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/restore_depth29.py \
+            --parent "$GITHUB_WORKSPACE/restored-parent" \
+            --output "$GITHUB_WORKSPACE/restored-depth29" | tee evidence/depth29-restore.log
+          python candidate/deliverables/CP11_DEPTH30_NATIVE_PAYMENT_20260909/restore_depth30.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth29" \
+            --output "$GITHUB_WORKSPACE/restored-depth30" | tee evidence/depth30-restore.log
+          python candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth30" \
+            --package candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth31" | tee evidence/depth31-restore.log
+          python candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth31" \
+            --package candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth32r2" | tee evidence/depth32r2-restore.log
+          python candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth32r2" \
+            --package candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth33" | tee evidence/depth33-restore.log
+          python candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth33" \
+            --package candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth34r2" | tee evidence/depth34r2-restore.log
+          python candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth34r2" \
+            --package candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth35r2" | tee evidence/depth35r2-restore.log
+          python candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth35r2" \
+            --package candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth36" | tee evidence/depth36-restore.log
+          python candidate/deliverables/CP11_DEPTH36R2_SUPPORT_RESTORE_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth36" \
+            --package candidate/deliverables/CP11_DEPTH36R2_SUPPORT_RESTORE_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth36r2" | tee evidence/depth36r2-restore.log
+          python candidate/deliverables/CP11_DEPTH36R3_MOBILE_CONTRACT_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth36r2" \
+            --package candidate/deliverables/CP11_DEPTH36R3_MOBILE_CONTRACT_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth36r3" | tee evidence/depth36r3-restore.log
+          python candidate/deliverables/CP11_DEPTH37_NODE_NATIVE_PROVIDER_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth36r3" \
+            --package candidate/deliverables/CP11_DEPTH37_NODE_NATIVE_PROVIDER_20260910 \
+            --output "$GITHUB_WORKSPACE/restored-depth37" | tee evidence/depth37-restore.log
+          python candidate/deliverables/CP11_DEPTH37R2_NATIVE_MODULE_LINKING_20260910/restore_delta.py \
+            --parent "$GITHUB_WORKSPACE/restored-depth37" \
+            --package candidate/deliverables/CP11_DEPTH37R2_NATIVE_MODULE_LINKING_20260910 \
+            --output "$GITHUB_WORKSPACE/restored" | tee evidence/restore.log
+      - name: Verify seal and build exact native candidate
+        run: python tooling/ci/depth37/accept.py ${{ matrix.platform }}
+      - name: Export exact evidence records
+        if: always()
+        run: python tooling/ci/depth37/export.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: GO-DEPTH37R2-${{ matrix.platform }}-${{ github.run_id }}
+          path: evidence/
+          retention-days: 90
+          if-no-files-found: error
