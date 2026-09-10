@@ -32,6 +32,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13.5'
+      - name: Select existing Node contract version
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
       - name: Verify candidate and archive checksums
         shell: bash
         run: |
@@ -89,13 +93,17 @@ jobs:
         shell: bash
         run: |
           isolated-runtime/bin/python - <<'PY'
-          import hashlib,json,os,pathlib,subprocess,sys
+          import hashlib,json,os,pathlib,shutil,subprocess,sys
           fp=json.loads(pathlib.Path('candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910/SOURCE_FINGERPRINT.json').read_text())
           for name,expected in fp.items():
               assert hashlib.sha256((pathlib.Path('restored')/name).read_bytes()).hexdigest()==expected,name
           tree=hashlib.sha256(''.join(f'{k}\0{v}\n' for k,v in sorted(fp.items())).encode()).hexdigest()
           assert tree==os.environ['EXPECTED_SOURCE_TREE'] and len(fp)==1247
-          result={'candidate':os.environ['SEALED_CANDIDATE'],'source_tree_sha256':tree,'verified_files':len(fp),'python':sys.version,'node':'NOT_USED','environment':'GitHub disposable runner; synthetic loopback HTTP, SQLite regression and offline packaging; no browser or Hong Kong access','three_end_real_ux_login':'HOLD','six_vertical_real_e2e':'HOLD','sealed_node_gate':'HOLD','final_release':'HOLD','deployed':False}
+          node_path=pathlib.Path(shutil.which('node')).resolve()
+          node_version=subprocess.check_output([str(node_path),'--version'],text=True).strip()
+          assert node_version=='v22.22.0',node_version
+          with open(os.environ['GITHUB_ENV'],'a') as env_file: env_file.write('GO_NATIVE_NODE='+str(node_path)+'\n')
+          result={'candidate':os.environ['SEALED_CANDIDATE'],'source_tree_sha256':tree,'verified_files':len(fp),'python':sys.version,'node':node_version,'node_binary_sha256':hashlib.sha256(node_path.read_bytes()).hexdigest(),'node_usage':'backend suite native API bridge; no device or native build','environment':'GitHub disposable runner; synthetic loopback HTTP, SQLite regression and offline packaging; no browser or Hong Kong access','three_end_real_ux_login':'HOLD','six_vertical_real_e2e':'HOLD','sealed_node_gate':'HOLD','final_release':'HOLD','deployed':False}
           pathlib.Path('evidence/source-lineage.json').write_text(json.dumps(result,indent=2)+'\n')
           print(json.dumps(result))
           PY
@@ -124,7 +132,7 @@ jobs:
         working-directory: restored
         shell: bash
         run: |
-          ../isolated-runtime/bin/python -m pytest --maxfail=25 --junitxml=../evidence/backend-full.xml | tee ../evidence/backend-full.log
+          ../isolated-runtime/bin/python -m pytest --maxfail=25 --durations=20 --junitxml=../evidence/backend-full.xml | tee ../evidence/backend-full.log
       - name: Verify source after tests and export nonsecret raw test records
         if: always()
         shell: bash
