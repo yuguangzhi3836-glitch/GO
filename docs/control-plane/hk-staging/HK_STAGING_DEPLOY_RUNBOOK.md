@@ -7,9 +7,13 @@ read `README.md`, this runbook, and `HK_STAGING_DEPLOY_BASELINE.md`; then
 verify current live state. The live state, Human Approval, Signed Task,
 installed artifact, durable record, and Signed Evidence remain authoritative.
 
-1. Obtain explicit Human Approval for the exact environment, fixed eight
-   targets, same-image force-recreate scope, and the absence of migration,
-   Production access, and automatic rollback.
+1. Obtain explicit Human Approval for the exact environment, fixed
+   eight-target deployment scope, exact candidate or intended deployment,
+   Docker runtime mutation, and the absence of migration, Production access,
+   and automatic rollback. When the operation is a same-image
+   force-recreate, that specific same-image mutation must be within the
+   approval scope; same-image is not a universal precondition for future
+   HK-STAGING deployments.
 2. Validate current signed CANARY Evidence against its original signed Task.
    Candidate image and repository digest may bind transitively through the
    signed Task when the Evidence binds the task ID, nonce, action, and
