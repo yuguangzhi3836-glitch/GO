@@ -1,0 +1,43 @@
+{
+  "contract_version": "1",
+  "environment": "HK-STAGING-01",
+  "action_id": "HK_STAGING_DEPLOY",
+  "target_services": [
+    "api",
+    "recovery-worker",
+    "outbox-worker",
+    "mobile-push-receipt-worker",
+    "reconciliation-worker",
+    "mobile-push-worker",
+    "mobile-engagement-worker",
+    "judgment-worker"
+  ],
+  "target_count": 8,
+  "same_image_force_recreate": {
+    "proven_formal_e2e_scenario": true,
+    "required_for_all_future_deploys": false,
+    "description": "The Executor owns fixed force-recreate semantics; callers cannot control the flag. The proven formal E2E used a same-image candidate."
+  },
+  "force_recreate_caller_controlled": false,
+  "different_image_candidate_implementation_support": "MECHANICALLY_ACCEPTED_WHEN_CANDIDATE_IMAGE_AND_REPOSITORY_DIGEST_VALIDATE_AND_CURRENT_IMAGE_MATCHES_EXPECTED_CURRENT_IMAGE",
+  "different_image_candidate_formal_e2e": "NOT_PROVEN",
+  "runtime_env_file": "/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env",
+  "runtime_env_file_caller_controlled": false,
+  "migration_allowed": false,
+  "automatic_rollback_allowed": false,
+  "production_allowed": false,
+  "durable_previous_state_required": true,
+  "fresh_task_id_required": true,
+  "fresh_nonce_required": true,
+  "fresh_release_id_required": true,
+  "single_attempt": true,
+  "post_deploy_bounded_api_readiness": {
+    "enabled": true,
+    "attempts": 12,
+    "interval_seconds": 5
+  },
+  "formal_verify_required": true,
+  "proven_executor_version": "0.3.0-verify-canary-deploy-runtime",
+  "proven_executor_revision": "R4-fixed-post-deploy-api-readiness",
+  "documentation_is_execution_authority": false
+}
