@@ -20,6 +20,7 @@ jobs:
     timeout-minutes: 55
     env:
       SEALED_CANDIDATE: ${{ github.event.pull_request.base.sha }}
+      EXPECTED_CANDIDATE: dd5711652f68f846c9e63103c86f4b2f6f164a2c
       PYTHONDONTWRITEBYTECODE: '1'
       CI: '1'
       EXPO_NO_TELEMETRY: '1'
@@ -50,6 +51,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p evidence
+          test "$SEALED_CANDIDATE" = "$EXPECTED_CANDIDATE"
           test "$(git -C candidate rev-parse HEAD)" = "$SEALED_CANDIDATE"
           python tooling/ci/depth37/materialize_parent.py \
             --depth26 candidate/deliverables/CP11_DEPTH26_20260909 \
