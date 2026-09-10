@@ -1,0 +1,22 @@
+{
+  "implemented": [
+    "native logout invalidates local account immediately and revokes only the old token snapshot",
+    "serialize secure credential clearing/reads; stale login and refresh cannot restore old session",
+    "terminal 401 clears local account; permission denial and temporary refresh outage do not",
+    "consumer and console refresh reject wrong actor before token/CSRF mutation"
+  ],
+  "three_end_real_ux_login": "HOLD",
+  "six_vertical_real_e2e": "HOLD",
+  "sealed_node_gate": "HOLD",
+  "final_release": "HOLD",
+  "deployed": false,
+  "hong_kong_runtime": "UNKNOWN",
+  "independent_acceptance": "PENDING",
+  "limitations": [
+    "scope is source and isolated component tests; real browser/native build/device unverified",
+    "remote logout failure/expired access is not claimed as server revocation success; local session remains cleared",
+    "PostgreSQL concurrent refresh behavior is not verified by SQLite tests",
+    "payment provider official contract/delegate and flight professional rules remain incomplete",
+    "candidate-bound browser environment, full sealed runtime and HK signed raw runtime binding remain absent"
+  ]
+}
