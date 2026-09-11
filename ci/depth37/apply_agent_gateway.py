@@ -9,7 +9,7 @@ FILES=[
  'src/go_hotel/agent_gateway/mcp.py','src/go_hotel/agent_gateway/a2a.py',
  'src/go_hotel/agent_gateway/rest.py','src/go_hotel/agent_gateway/protocol_http.py',
  'tests/test_agent_transaction_gateway.py','tests/test_agent_transaction_gateway_real_core.py',
- 'tests/test_agent_transaction_gateway_six_vertical.py',
+ 'tests/test_agent_transaction_gateway_six_vertical.py','tests/test_agent_payment_truth_binding.py',
  'mobile/go-app/native/apple/GOTravelTransactionIntents.swift',
 ]
 IMPORT='from go_hotel.agent_gateway.runtime import install_agent_gateway\n'
