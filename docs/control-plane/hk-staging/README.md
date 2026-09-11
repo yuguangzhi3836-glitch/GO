@@ -3,6 +3,9 @@
 This directory is the descriptive operations entry point for the proven
 HK-STAGING Control Plane as of 2026-09-11. It is not Execution Authority.
 
+The observed 2026-09-11 HK-STAGING source/configuration snapshot is archived at
+[`../../../hk-staging/`](../../../hk-staging/). That archive contains the source recovered from the currently running business image, the current HK Agent and Executor, Compose, systemd/Caddy configuration, sanitized configuration, SHA-256 manifests, and the documented one-file live-vs-host build-context drift. It is evidence and a source reference, not authority to execute.
+
 Read in this order before planning or executing an operation:
 
 1. [Operations guide](HK_STAGING_OPERATIONS_GUIDE.md)
