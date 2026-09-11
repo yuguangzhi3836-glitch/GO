@@ -62,14 +62,10 @@ class Offer:
     evidence: Mapping[str, Any]
 
     def __post_init__(self) -> None:
-        if self.total_minor < 0:
-            raise ValueError("OFFER_TOTAL_MINOR_INVALID")
-        if len(self.currency) != 3 or self.currency.upper() != self.currency:
-            raise ValueError("OFFER_CURRENCY_INVALID")
-        if not self.offer_id or not self.product_type or not self.supplier_id or not self.product_id:
-            raise ValueError("OFFER_IDENTITY_REQUIRED")
-        if not self.quote_hash:
-            raise ValueError("OFFER_QUOTE_HASH_REQUIRED")
+        if self.total_minor < 0: raise ValueError("OFFER_TOTAL_MINOR_INVALID")
+        if len(self.currency) != 3 or self.currency.upper() != self.currency: raise ValueError("OFFER_CURRENCY_INVALID")
+        if not self.offer_id or not self.product_type or not self.supplier_id or not self.product_id: raise ValueError("OFFER_IDENTITY_REQUIRED")
+        if not self.quote_hash: raise ValueError("OFFER_QUOTE_HASH_REQUIRED")
 
 
 @dataclass(frozen=True)
@@ -144,3 +140,28 @@ class AgentEnvelope:
     request_id: str
     trace_id: str
     authority: str = "GO_DETERMINISTIC_CORE"
+
+
+@dataclass(frozen=True)
+class LifecycleQuoteRequest:
+    order_id: str
+    action: str
+    changes: Mapping[str, Any]
+    idempotency_key: str
+
+
+@dataclass(frozen=True)
+class LifecycleExecuteRequest:
+    order_id: str
+    action: str
+    quote_id: str | None
+    quote_hash: str | None
+    changes: Mapping[str, Any]
+    payment_method_id: str | None
+    idempotency_key: str
+
+
+@dataclass(frozen=True)
+class ExpireRequest:
+    reserve_id: str
+    idempotency_key: str
