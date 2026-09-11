@@ -1,0 +1,52 @@
+# REVIEW ONLY. No HK execution or creation is authorized by this template.
+# The image reference must be the exact locally loaded config ID in RUNTIME_MANIFEST.json.
+name: go-depth40-isolated-review
+services:
+  api:
+    image: ${GO_REVIEW_IMAGE_ID:?Exact approved offline image config ID required}
+    pull_policy: never
+    user: '10001:10001'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    pids_limit: 64
+    mem_limit: 768m
+    cpus: 0.5
+    restart: 'no'
+    networks: [acceptance]
+    volumes: ['acceptance-state:/state']
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=64m']
+    logging:
+      driver: json-file
+      options: {max-size: '10m', max-file: '2'}
+    labels:
+      go.scope: isolated-synthetic-review
+      go.source-tree: 64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667
+      go.deployment-authorized: 'false'
+  ingress:
+    image: ${GO_REVIEW_IMAGE_ID:?Exact approved offline image config ID required}
+    pull_policy: never
+    command: ['--ingress-only']
+    user: '10001:10001'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    pids_limit: 32
+    mem_limit: 64m
+    cpus: 0.125
+    restart: 'no'
+    depends_on: [api]
+    ports: ['127.0.0.1:18440:4187']
+    networks: [acceptance, ingress-edge]
+    logging:
+      driver: json-file
+      options: {max-size: '10m', max-file: '2'}
+networks:
+  acceptance:
+    internal: true
+    labels: {go.scope: isolated-synthetic-review}
+  ingress-edge:
+    labels: {go.scope: isolated-loopback-ingress}
+volumes:
+  acceptance-state:
+    labels: {go.scope: isolated-synthetic-review}
