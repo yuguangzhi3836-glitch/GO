@@ -1,0 +1,66 @@
+name: depth39-native-lifecycle-backend
+on:
+  pull_request:
+    branches: [p0-agent-transaction-lifecycle-v0-2]
+    paths:
+      - '.github/workflows/depth39-native-backend.yml'
+      - 'ci/depth39/**'
+      - 'tests/test_agent_native_lifecycle_p03.py'
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout P0.3
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+      - name: Checkout verified DEPTH36 restore tooling
+        uses: actions/checkout@v4
+        with:
+          ref: ff13ca334acfcec61d6463f30ca94d7964086635
+          path: depth36-tooling
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Restore sealed DEPTH36 source
+        shell: bash
+        run: |
+          python depth36-tooling/ci/depth36/materialize_parent.py --depth26 candidate/deliverables/CP11_DEPTH26_20260909 --depth27 candidate/deliverables/CP11_DEPTH27_20260909 --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 --output restored-parent >/dev/null
+          python candidate/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/restore_depth29.py --parent restored-parent --output restored29 >/dev/null
+          python candidate/deliverables/CP11_DEPTH30_NATIVE_PAYMENT_20260909/restore_depth30.py --parent restored29 --output restored30 >/dev/null
+          python candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910/restore_delta.py --parent restored30 --package candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910 --output restored31 >/dev/null
+          python candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910/restore_delta.py --parent restored31 --package candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910 --output restored32 >/dev/null
+          python candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910/restore_delta.py --parent restored32 --package candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910 --output restored33 >/dev/null
+          python candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910/restore_delta.py --parent restored33 --package candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910 --output restored34 >/dev/null
+          python candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910/restore_delta.py --parent restored34 --package candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910 --output restored35 >/dev/null
+          python candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910/restore_delta.py --parent restored35 --package candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910 --output restored >/dev/null
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          python depth36-tooling/ci/depth36/dependencies.py --repository candidate --output dependencies >/dev/null
+          python -m venv isolated-runtime
+          isolated-runtime/bin/python -m pip install --no-index --no-deps --find-links dependencies/wheelhouse -r depth36-tooling/ci/depth36/requirements.lock >/dev/null
+          isolated-runtime/bin/python -m pip check
+      - name: Apply P0.2 then P0.3 overlays
+        shell: bash
+        run: |
+          isolated-runtime/bin/python candidate/ci/depth38/apply_agent_lifecycle.py --source restored --overlay candidate --evidence depth38-overlay.json
+          isolated-runtime/bin/python candidate/ci/depth39/apply_native_closure.py --source restored
+          cp candidate/tests/test_agent_native_lifecycle_p03.py restored/tests/
+          isolated-runtime/bin/python -m py_compile restored/src/go_hotel/connectors/base.py restored/src/go_hotel/connectors/mock_hotel.py restored/src/go_hotel/services/vertical_reservation_expiry.py restored/src/go_hotel/services/hotel_hard_hold_release.py restored/src/go_hotel/services/vertical_transaction_bridge.py restored/src/go_hotel/mobility/ride/service.py restored/src/go_hotel/mobility/rental/service.py restored/src/go_hotel/agent_gateway/lifecycle_core.py
+      - name: P0.3 native lifecycle tests
+        shell: bash
+        working-directory: restored
+        run: PYTHONPATH=.:src ../isolated-runtime/bin/python -m pytest -q tests/test_agent_native_lifecycle_p03.py tests/test_agent_transaction_lifecycle_p02.py
+      - name: P0.2 regression sentinel
+        shell: bash
+        working-directory: restored
+        run: PYTHONPATH=.:src ../isolated-runtime/bin/python -m pytest -q tests/test_agent_transaction_gateway.py tests/test_agent_transaction_gateway_real_core.py tests/test_agent_payment_truth_binding.py
