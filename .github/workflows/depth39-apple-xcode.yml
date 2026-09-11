@@ -1,0 +1,28 @@
+name: depth39-apple-xcode
+on:
+  pull_request:
+    branches: [p0-agent-transaction-lifecycle-v0-2]
+    paths:
+      - 'mobile/go-app/native/apple/**'
+      - '.github/workflows/depth39-apple-xcode.yml'
+permissions:
+  contents: read
+jobs:
+  xcode-simulator:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Record Xcode toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Resolve package
+        working-directory: mobile/go-app/native/apple
+        run: xcodebuild -resolvePackageDependencies -scheme GOAgentTransactionProtocol
+      - name: Compile iOS 18 simulator target
+        working-directory: mobile/go-app/native/apple
+        run: xcodebuild -scheme GOAgentTransactionProtocol -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO SWIFT_TREAT_WARNINGS_AS_ERRORS=YES build
