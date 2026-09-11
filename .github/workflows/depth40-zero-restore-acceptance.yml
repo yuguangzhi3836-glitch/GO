@@ -1,0 +1,122 @@
+name: depth40-independent-zero-restore
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/depth40-zero-restore-acceptance.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  zero-restore:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      EXPECTED_ARTIFACT_ID: '10183058051'
+      EXPECTED_ARTIFACT_ZIP_SHA256: '3416cd104ba5b6bc71424c4fdf3b97854d90b96a8a41e2629de391fde1a868e9'
+      EXPECTED_SOURCE_TREE_SHA256: '64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667'
+      EXPECTED_PARENT_ARCHIVE_SHA256: '2909651f9b644ed56fd6ab833480c9da32b4c5b900df2e5afb192dba49ac2b00'
+      EXPECTED_FILES: '1271'
+    steps:
+      - name: Checkout acceptance only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Download fixed DEPTH40 artifact
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: 10183058051
+          github-token: ${{ github.token }}
+          repository: yuguangzhi3836-glitch/GO
+          run-id: 34557341440
+          path: artifact
+      - name: Inspect package layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          find artifact -maxdepth 3 -type f -print | sort
+          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/MANIFEST.json
+          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/SOURCE_FINGERPRINT.json
+          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/CHECKSUMS.sha256
+          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/LINEAGE.json
+          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/RELEASE_GATE.json
+          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py
+      - name: Verify package metadata and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('artifact/CP11_DEPTH40_P03_PARENT_20260911')
+          m=json.loads((p/'MANIFEST.json').read_text())
+          fp=json.loads((p/'SOURCE_FINGERPRINT.json').read_text())
+          tree=lambda f: hashlib.sha256(''.join(f'{k}\0{v}\n' for k,v in sorted(f.items())).encode()).hexdigest()
+          assert len(fp)==int(__import__('os').environ['EXPECTED_FILES'])
+          assert tree(fp)==__import__('os').environ['EXPECTED_SOURCE_TREE_SHA256']
+          assert m['source_tree_sha256']==__import__('os').environ['EXPECTED_SOURCE_TREE_SHA256']
+          assert m['archive_sha256']==__import__('os').environ['EXPECTED_PARENT_ARCHIVE_SHA256']
+          assert m['deployment_authorized'] is False
+          assert hashlib.sha256((p/m['archive_file']).read_bytes()).hexdigest()==m['archive_sha256']
+          print('DEPTH40_METADATA_GATE=PASS')
+          PY
+          (cd artifact/CP11_DEPTH40_P03_PARENT_20260911 && sha256sum -c CHECKSUMS.sha256)
+      - name: Zero restore from sealed parent only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python artifact/CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py \
+            --package artifact/CP11_DEPTH40_P03_PARENT_20260911 \
+            --output restored | tee zero-restore.json
+          grep -q '"status": "PASS"' zero-restore.json
+          grep -q "${EXPECTED_SOURCE_TREE_SHA256}" zero-restore.json
+          grep -q "${EXPECTED_PARENT_ARCHIVE_SHA256}" zero-restore.json
+      - name: Compile restored critical surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q restored/src/go_hotel/agent_gateway restored/src/go_hotel/services restored/src/go_hotel/mobility
+      - name: Install locked runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q -r restored/requirements.txt
+      - name: Run P0.2 and P0.3 restored-parent regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd restored
+          PYTHONPATH=.:src python -m pytest -q \
+            tests/test_agent_native_lifecycle_p03.py \
+            tests/test_agent_transaction_lifecycle_p02.py \
+            tests/test_agent_transaction_gateway.py \
+            tests/test_agent_transaction_gateway_real_core.py \
+            tests/test_agent_payment_truth_binding.py
+      - name: Verify no deployment authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q '"deployment_authorized": false' artifact/CP11_DEPTH40_P03_PARENT_20260911/MANIFEST.json
+          grep -q '"hong_kong_deployment": "NO"' artifact/CP11_DEPTH40_P03_PARENT_20260911/RELEASE_GATE.json
+      - name: Record acceptance evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > depth40-independent-acceptance.txt <<EOF
+          DEPTH40_INDEPENDENT_ZERO_RESTORE=PASS
+          ARTIFACT_ID=${EXPECTED_ARTIFACT_ID}
+          ARTIFACT_ZIP_SHA256=${EXPECTED_ARTIFACT_ZIP_SHA256}
+          SOURCE_TREE_SHA256=${EXPECTED_SOURCE_TREE_SHA256}
+          PARENT_ARCHIVE_SHA256=${EXPECTED_PARENT_ARCHIVE_SHA256}
+          VERIFIED_FILES=${EXPECTED_FILES}
+          HK_DEPLOYMENT=NO
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH40-INDEPENDENT-ACCEPTANCE-${{ github.sha }}
+          path: |
+            depth40-independent-acceptance.txt
+            zero-restore.json
+          retention-days: 90
