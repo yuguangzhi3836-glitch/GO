@@ -16,6 +16,7 @@ jobs:
     timeout-minutes: 25
     env:
       PYTHONDONTWRITEBYTECODE: '1'
+      DEPTH36_TOOLING_COMMIT: ff13ca334acfcec61d6463f30ca94d7964086635
     steps:
       - name: Checkout acceptance head
         uses: actions/checkout@v4
@@ -29,18 +30,33 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
           path: candidate
           persist-credentials: false
+      - name: Checkout verified DEPTH36 restore tooling
+        uses: actions/checkout@v4
+        with:
+          ref: ff13ca334acfcec61d6463f30ca94d7964086635
+          path: depth36-tooling
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13.5'
       - uses: actions/setup-node@v4
         with:
           node-version: '22.22.0'
+      - name: Verify pinned restore tooling
+        shell: bash
+        run: |
+          test "$(git -C depth36-tooling rev-parse HEAD)" = "$DEPTH36_TOOLING_COMMIT"
+          test -f depth36-tooling/ci/depth36/materialize_parent.py
+          test -f depth36-tooling/ci/depth36/dependencies.py
+          test -f depth36-tooling/ci/depth36/requirements.lock
+          sha256sum depth36-tooling/ci/depth36/materialize_parent.py depth36-tooling/ci/depth36/dependencies.py depth36-tooling/ci/depth36/requirements.lock | tee evidence-depth36-tooling.sha256
       - name: Restore sealed DEPTH36 parent chain
         shell: bash
         run: |
           mkdir -p evidence
+          mv evidence-depth36-tooling.sha256 evidence/depth36-tooling.sha256
           git -C candidate rev-parse HEAD | tee evidence/p0-base-commit.txt
-          python candidate/ci/depth36/materialize_parent.py \
+          python depth36-tooling/ci/depth36/materialize_parent.py \
             --depth26 candidate/deliverables/CP11_DEPTH26_20260909 \
             --depth27 candidate/deliverables/CP11_DEPTH27_20260909 \
             --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 \
@@ -56,9 +72,9 @@ jobs:
       - name: Install frozen repository wheelhouse
         shell: bash
         run: |
-          python candidate/ci/depth36/dependencies.py --repository candidate --output dependencies | tee evidence/dependencies.json
+          python depth36-tooling/ci/depth36/dependencies.py --repository candidate --output dependencies | tee evidence/dependencies.json
           python -m venv isolated-runtime
-          isolated-runtime/bin/python -m pip install --no-index --no-deps --find-links dependencies/wheelhouse -r candidate/ci/depth36/requirements.lock
+          isolated-runtime/bin/python -m pip install --no-index --no-deps --find-links dependencies/wheelhouse -r depth36-tooling/ci/depth36/requirements.lock
           isolated-runtime/bin/python -m pip check
       - name: Apply exact DEPTH37 P0 overlay
         shell: bash
