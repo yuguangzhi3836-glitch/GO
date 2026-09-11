@@ -1,0 +1,92 @@
+name: consolidation-canonical-checkout-validation
+
+on:
+  push:
+    branches:
+      - consolidation/canonical-go-application-baseline-20260912
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'application/**'
+      - 'docs/consolidation/**'
+      - '.github/workflows/consolidation-canonical-checkout-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  canonical-checkout:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Prove self-contained canonical source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, pathlib
+          root = pathlib.Path('application')
+          if not root.is_dir():
+              raise SystemExit('CANONICAL_ROOT_MISSING')
+          files = sorted(p for p in root.rglob('*') if p.is_file() and not p.is_symlink())
+          if len(files) != 1271:
+              raise SystemExit(f'FILE_COUNT_MISMATCH:{len(files)}')
+          fp = {}
+          for p in files:
+              rel = str(p.relative_to(root)).replace('\\','/')
+              fp[rel] = hashlib.sha256(p.read_bytes()).hexdigest()
+          material = ''.join(f'{k}\0{v}\n' for k,v in sorted(fp.items())).encode()
+          tree = hashlib.sha256(material).hexdigest()
+          expected = '64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667'
+          if tree != expected:
+              raise SystemExit(f'TREE_SHA256_MISMATCH:{tree}')
+          print('CANONICAL_APPLICATION_FILE_COUNT=1271')
+          print('CANONICAL_APPLICATION_TREE_SHA256=' + tree)
+          print('HISTORICAL_ARTIFACT_REQUIRED=NO')
+          print('RESTORE_CHAIN_REQUIRED=NO')
+          print('OVERLAY_REQUIRED=NO')
+          PY
+
+      - name: Compile Python application sources without importing runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m compileall -q application/src application/alembic application/scripts
+          echo PYTHON_COMPILE_GATE=PASS
+
+      - name: Fail-closed secret scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, re
+          root = pathlib.Path('application')
+          forbidden_names = {'.env','id_rsa','id_ed25519'}
+          forbidden_suffixes = {'.pem','.key','.p12','.pfx','.dump'}
+          pats = [
+              rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----',
+              rb'ghp_[A-Za-z0-9]{20,}', rb'sk_live_[A-Za-z0-9]{10,}', rb'AKIA[0-9A-Z]{16}'
+          ]
+          for p in root.rglob('*'):
+              if not p.is_file():
+                  continue
+              if p.name in forbidden_names or p.suffix.lower() in forbidden_suffixes:
+                  raise SystemExit('SECRET_FILE_NAME:' + str(p))
+              b = p.read_bytes()
+              for pat in pats:
+                  if re.search(pat, b):
+                      raise SystemExit('SECRET_PATTERN:' + str(p))
+          print('SECRET_SCAN=PASS')
+          PY
+
+      - name: Confirm consolidation boundaries
+        run: |
+          echo MERGE=NO
+          echo DEPLOYMENT=NO
+          echo HK_RUNTIME_MUTATION=NO
+          echo MIGRATION_EXECUTED=NO
+          echo PRODUCTION_ACTION=NO
