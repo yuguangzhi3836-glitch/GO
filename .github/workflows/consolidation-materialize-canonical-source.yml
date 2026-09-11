@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "1d8bebac37fcc6f0360b17891aa49eb6e70b5f96"
+          test "$(git rev-parse HEAD^^)" = "1d8bebac37fcc6f0360b17891aa49eb6e70b5f96"
           test ! -e application
 
       - name: Download fixed DEPTH40 parent artifact from GitHub
@@ -48,7 +48,7 @@ jobs:
           PKG=.consolidation/package/CP11_DEPTH40_P03_PARENT_20260911
           test -f "$PKG/MANIFEST.json"
           python3 - <<'PY'
-          import hashlib, json, pathlib, subprocess, sys
+          import hashlib, json, pathlib
           pkg = pathlib.Path('.consolidation/package/CP11_DEPTH40_P03_PARENT_20260911')
           manifest = json.loads((pkg/'MANIFEST.json').read_text())
           expected = {
@@ -85,8 +85,7 @@ jobs:
           if files != set(fp):
               raise SystemExit('CANONICAL_FILESET_MISMATCH')
           for rel, want in fp.items():
-              got = hashlib.sha256((root/rel).read_bytes()).hexdigest()
-              if got != want:
+              if hashlib.sha256((root/rel).read_bytes()).hexdigest() != want:
                   raise SystemExit('CANONICAL_FILE_HASH_MISMATCH:' + rel)
           forbidden_names = {'.env','id_rsa','id_ed25519'}
           forbidden_suffixes = {'.pem','.key','.p12','.pfx','.dump'}
@@ -139,7 +138,8 @@ jobs:
           rm -rf .consolidation
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add application docs/consolidation/CANONICAL_SOURCE_MANIFEST.json
+          git add -f application
+          git add docs/consolidation/CANONICAL_SOURCE_MANIFEST.json
           test "$(git diff --cached --name-only | grep -c '^application/')" -eq 1271
           git commit -m "consolidation: materialize canonical GO application source"
           git push origin HEAD:consolidation/canonical-go-application-baseline-20260912
