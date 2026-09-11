@@ -1,0 +1,91 @@
+name: depth40-staging-eight-service-build
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/depth40-staging-build.yml'
+      - 'ci/depth40-staging/**'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      IMAGE: go-depth40-staging:ci-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ff13ca334acfcec61d6463f30ca94d7964086635
+          path: dependency-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: 10183252130
+          run-id: 34557878180
+          github-token: ${{ github.token }}
+          repository: yuguangzhi3836-glitch/GO
+          path: parent
+          merge-multiple: true
+      - name: Exact parent restore and frozen dependency verification
+        run: |
+          set -euo pipefail
+          cd parent/CP11_DEPTH40_P03_PARENT_20260911
+          sha256sum -c CHECKSUMS.sha256
+          cd ../..
+          python -B parent/CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py --package parent/CP11_DEPTH40_P03_PARENT_20260911 --output restored
+          python -B dependency-source/ci/depth36/dependencies.py --repository dependency-source --output dependencies
+      - name: Fixed eight-service image build and offline reload
+        id: image
+        run: |
+          set -euo pipefail
+          python -B ci/depth40-staging/build.py --source restored --fingerprint parent/CP11_DEPTH40_P03_PARENT_20260911/SOURCE_FINGERPRINT.json --wheelhouse dependencies/wheelhouse --lock dependency-source/ci/depth36/requirements.lock --output staging-context
+          docker build --network none --tag "$IMAGE" staging-context
+          mkdir -p staging-delivery
+          cp staging-context/ROOTFS_BINDING.json staging-context/ROOTFS_FILES.json staging-delivery/
+          cp -r parent/CP11_DEPTH40_P03_PARENT_20260911 staging-delivery/source-parent
+          docker image inspect "$IMAGE" --format '{{.Id}}' > staging-delivery/IMAGE_ID.txt
+          docker image inspect "$IMAGE" --format '{{.Size}}' > staging-delivery/IMAGE_SIZE_BYTES.txt
+          printenv IMAGE > staging-delivery/IMAGE_TAG.txt
+          docker save "$IMAGE" | gzip -n > staging-delivery/GO_DEPTH40_STAGING_IMAGE.tar.gz
+          docker image rm "$IMAGE"
+          gzip -dc staging-delivery/GO_DEPTH40_STAGING_IMAGE.tar.gz | docker load
+          test "$(docker image inspect "$IMAGE" --format '{{.Id}}')" = "$(cat staging-delivery/IMAGE_ID.txt)"
+          docker run --rm --network none --read-only "$IMAGE" source-check > staging-delivery/CI_SOURCE_CHECK.json
+      - name: Compose contract parsing without runtime mutation
+        run: |
+          set -euo pipefail
+          touch ci-compose-empty.env
+          GO_DEPTH40_IMAGE_ID="$(cat staging-delivery/IMAGE_ID.txt)" GO_RUNTIME_ENV_FILE="$PWD/ci-compose-empty.env" GO_VERIFIED_RUNTIME_NETWORK=ci-contract-review-only docker compose -f ci/depth40-staging/compose.staging.review.yml config --quiet
+      - name: Fresh PostgreSQL migration and eight-service runtime checks
+        run: python -B ci/depth40-staging/ci_exercise.py
+      - name: Seal actual outcome, including failures
+        if: ${{ always() && steps.image.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          python -B ci/depth40-staging/finalize.py --directory staging-delivery --run-id '${{ github.run_id }}' --tooling-sha '${{ github.event.pull_request.head.sha }}'
+          python -B ci/depth40-staging/verify_delivery.py --directory staging-delivery
+      - name: Preserve delivery and raw evidence
+        if: ${{ always() && steps.image.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH40-STAGING-BUILD-${{ github.run_id }}
+          path: staging-delivery
+          retention-days: 90
+      - name: Permanently archive actual package and gates to a new private branch
+        if: ${{ always() && steps.image.outcome == 'success' }}
+        env:
+          GO_ARCHIVE_TOKEN: ${{ github.token }}
+        run: python -B ci/depth40-staging/archive_to_repository.py --directory staging-delivery --run-id '${{ github.run_id }}'
