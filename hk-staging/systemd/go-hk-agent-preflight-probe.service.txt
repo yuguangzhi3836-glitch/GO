@@ -1,0 +1,20 @@
+# /etc/systemd/system/go-hk-agent-preflight-probe.service
+[Unit]
+Description=GO HK Staging fixed read-only preflight probe
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStartPre=/usr/bin/install -d -m 0750 -o root -g go-hk-agent /run/go-hk-agent
+ExecStart=/usr/bin/python3 /usr/local/libexec/go-hk-staging-preflight-probe
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

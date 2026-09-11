@@ -1,0 +1,135 @@
+/* R1.4.1: STRICTLY SCOPED TO body.go-vertical-mode. Home / Trips / Auth are excluded. */
+/* R1.4 Five Vertical Frozen VI Reconstruction
+   Visual source of truth: GO Consumer Design System 1.0 / HOME VISUAL MASTER.
+   Scope: Hotel / Flight / Rail / Mobility (Rental + Ride) / Attraction visual layer only.
+   Business rules, routes, API contracts, state machines and Shared Shell behavior remain unchanged. */
+:root{
+  --go-v-surface:#FFFFFF;
+  --go-v-neutral:#FAFAF8;
+  --go-v-field:#FFFFFF;
+  --go-v-rule:rgba(7,27,85,.08);
+  --go-v-rule-strong:rgba(7,27,85,.14);
+}
+body.go-vertical-mode{background:var(--go-v-neutral);color:var(--go-navy);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","PingFang SC","Helvetica Neue",Arial,sans-serif}
+body.go-vertical-mode .shell{background:#fff;box-shadow:none}
+body.go-vertical-mode .content,body.go-vertical-mode .shared-consumer-content{padding-top:8px;padding-bottom:88px;background:#fff}
+
+/* 01 / Vertical page heading — editorial, quiet, same hierarchy as frozen Home. */
+body.go-vertical-mode .go-page-head{display:flex;align-items:center;gap:12px;padding:12px 0 16px;margin:0}
+body.go-vertical-mode .go-page-head>div{min-width:0}
+body.go-vertical-mode .go-page-head span{display:block;margin:0 0 2px;color:rgba(7,27,85,.50);font-size:11px;line-height:16px;font-weight:500;letter-spacing:0}
+body.go-vertical-mode .go-page-head h1{margin:0;color:var(--go-navy);font-size:22px;line-height:30px;font-weight:600;letter-spacing:0}
+body.go-vertical-mode .go-back,body.go-vertical-mode .plain-back{width:44px;height:44px;min-width:44px;border:1px solid var(--go-v-rule);border-radius:999px;background:#fff;color:var(--go-navy);display:grid;place-items:center;padding:0;box-shadow:none;font-size:26px;line-height:1;font-weight:400}
+body.go-vertical-mode .go-back:active,body.go-vertical-mode .plain-back:active{transform:scale(.98);opacity:.94}
+body.go-vertical-mode .list-head{display:flex;align-items:center;gap:12px;padding:12px 0 16px;border:0;margin:0}
+body.go-vertical-mode .list-head>div{min-width:0}
+body.go-vertical-mode .list-head h1{font-size:20px;line-height:28px;font-weight:600;color:var(--go-navy);margin:0}
+body.go-vertical-mode .list-head p{font-size:12px;line-height:18px;font-weight:400;color:rgba(7,27,85,.50);margin:2px 0 0}
+body.go-vertical-mode .screen-title{font-size:22px;line-height:30px;font-weight:600;color:var(--go-navy);margin:16px 0 4px}
+body.go-vertical-mode .sub{font-size:13px;line-height:20px;color:rgba(7,27,85,.50);margin:0 0 16px}
+
+/* 02 / Search builder — White/Neutral is space. No OTA blue slab. */
+body.go-vertical-mode .go-form-card,body.go-vertical-mode .card.transaction-search{margin:0 0 20px;padding:12px;border:1px solid var(--go-v-rule);border-radius:16px;background:#fff;box-shadow:0 2px 12px rgba(7,27,85,.035)}
+body.go-vertical-mode .field{min-height:60px;padding:10px 12px;margin:0 0 8px;border:1px solid var(--go-v-rule);border-radius:12px;background:#fff;box-shadow:none;display:flex;flex-direction:column;justify-content:center}
+body.go-vertical-mode .field:last-child{margin-bottom:0}
+body.go-vertical-mode .field label{font-size:11px;line-height:16px;font-weight:500;color:rgba(7,27,85,.50);margin:0 0 4px}
+body.go-vertical-mode .field input,body.go-vertical-mode .field select,body.go-vertical-mode .fake-input{font-size:15px;line-height:23px;font-weight:400;color:var(--go-navy);min-height:24px;padding:0;border:0;background:transparent}
+body.go-vertical-mode .field input::placeholder{color:rgba(7,27,85,.30);opacity:1}
+body.go-vertical-mode .date-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+body.go-vertical-mode .route-row{display:grid;grid-template-columns:1fr 32px 1fr;gap:8px;align-items:center}
+body.go-vertical-mode .route-row>span{font-size:18px;line-height:24px;color:rgba(7,27,85,.50);text-align:center}
+body.go-vertical-mode .trip-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:0 0 8px;padding:3px;background:#FAFBFC;border-radius:12px}
+body.go-vertical-mode .trip-tabs button{min-height:36px;padding:6px 8px;border:0;border-radius:8px;background:transparent;color:rgba(7,27,85,.50);font-size:12px;line-height:18px;font-weight:500;box-shadow:none}
+body.go-vertical-mode .trip-tabs button.active{background:#fff;color:var(--go-navy);box-shadow:0 2px 12px rgba(7,27,85,.035);position:relative}
+body.go-vertical-mode .trip-tabs button.active:after{content:"";position:absolute;left:12px;right:12px;bottom:2px;height:2px;border-radius:999px;background:var(--go-blue)}
+body.go-vertical-mode .quick-filters{display:flex;gap:6px;overflow:auto;margin:2px 0 12px;padding:0;scrollbar-width:none}
+body.go-vertical-mode .quick-filters::-webkit-scrollbar{display:none}
+body.go-vertical-mode .quick-filters button,body.go-vertical-mode .sort-row button,body.go-vertical-mode .filter-chips span{padding:6px 10px;border:1px solid var(--go-v-rule);border-radius:999px;background:#fff;color:rgba(7,27,85,.68);font-size:12px;line-height:18px;font-weight:500;white-space:nowrap}
+
+/* 03 / CTA — Blue is a signal, never a page-area color. */
+body.go-vertical-mode .btn{min-height:44px;padding:10px 14px;border-radius:12px;font-size:14px;line-height:22px;font-weight:500;box-shadow:none;transition:transform .12s ease,opacity .12s ease,background .12s ease}
+body.go-vertical-mode .btn.primary{width:100%;background:#fff;color:var(--go-navy);border:1px solid var(--go-v-rule-strong);box-shadow:inset 0 -2px 0 var(--go-blue)}
+body.go-vertical-mode .btn.primary:hover{background:#fff;color:var(--go-navy)}
+body.go-vertical-mode .btn.primary:focus-visible{outline:2px solid rgba(8,120,249,.24);outline-offset:2px}
+body.go-vertical-mode .btn.primary:active{transform:scale(.98);opacity:.94;background:rgba(8,120,249,.02)}
+body.go-vertical-mode .btn.ghost{background:#fff;border:1px solid var(--go-v-rule);color:var(--go-navy)}
+body.go-vertical-mode .btn.danger{background:#fff;border:1px solid rgba(180,35,24,.14);color:#8E2D23}
+body.go-vertical-mode .btn:disabled{opacity:.36;pointer-events:none}
+body.go-vertical-mode .mini-select{min-height:36px;padding:7px 12px;border:1px solid var(--go-v-rule-strong);border-radius:999px;background:#fff;color:var(--go-navy);font-size:12px;line-height:18px;font-weight:500;box-shadow:inset 0 -2px 0 var(--go-blue)}
+body.go-vertical-mode .room-select{margin-top:8px}
+
+/* 04 / Flat result grammar — remove traditional OTA white-card + promo-chip weight. */
+body.go-vertical-mode .hotel-result,body.go-vertical-mode .flight-row,body.go-vertical-mode .content>[data-rail],body.go-vertical-mode .content>[data-mob],body.go-vertical-mode .content>[data-attr]{background:#fff;border:0;border-bottom:1px solid var(--go-v-rule);border-radius:0;box-shadow:none;margin:0;padding:16px 0}
+body.go-vertical-mode .content>[data-rail]:first-of-type,body.go-vertical-mode .content>[data-mob]:first-of-type,body.go-vertical-mode .content>[data-attr]:first-of-type{border-top:1px solid var(--go-v-rule)}
+body.go-vertical-mode .hotel-result{grid-template-columns:112px 1fr;gap:12px}
+body.go-vertical-mode .result-art{width:112px;height:128px;border-radius:12px}
+body.go-vertical-mode .hotel-title-line{align-items:flex-start;gap:6px}
+body.go-vertical-mode .hotel-title-line h3{font-size:16px;line-height:24px;font-weight:600;color:var(--go-navy)}
+body.go-vertical-mode .hotel-location{margin:4px 0 8px;color:rgba(7,27,85,.50);font-size:12px;line-height:18px}
+body.go-vertical-mode .go-score{padding:3px 7px;border-radius:999px;background:rgba(7,27,85,.90);color:#fff;font-size:10px;line-height:14px;font-weight:500}
+body.go-vertical-mode .result-tags,body.go-vertical-mode .policy-badges{display:flex;gap:4px;flex-wrap:wrap}
+body.go-vertical-mode .result-tags span,body.go-vertical-mode .policy-badges span{padding:3px 7px;border:1px solid var(--go-v-rule);border-radius:999px;background:#fff;color:rgba(7,27,85,.50);font-size:10px;line-height:14px;font-weight:400}
+body.go-vertical-mode .result-bottom,body.go-vertical-mode .flight-bottom{margin-top:8px;align-items:flex-end}
+body.go-vertical-mode .result-bottom small,body.go-vertical-mode .flight-meta,body.go-vertical-mode .room-price span{color:rgba(7,27,85,.50);font-size:11px;line-height:16px}
+body.go-vertical-mode .result-bottom strong,body.go-vertical-mode .room-price strong,body.go-vertical-mode .fare-total strong,body.go-vertical-mode .flight-bottom strong{font-size:18px;line-height:26px;font-weight:600;color:var(--go-navy)}
+body.go-vertical-mode .result-bottom em,body.go-vertical-mode .room-price em{font-size:10px;line-height:14px;font-weight:400;color:rgba(7,27,85,.50)}
+
+/* Flight: timetable first, price second, policy third. */
+body.go-vertical-mode .flight-times{grid-template-columns:1fr 72px 1fr;gap:4px}
+body.go-vertical-mode .flight-times b{font-size:20px;line-height:28px;font-weight:600;color:var(--go-navy)}
+body.go-vertical-mode .flight-times small{font-size:11px;line-height:16px;color:rgba(7,27,85,.50)}
+body.go-vertical-mode .flight-line span,body.go-vertical-mode .flight-line small{font-size:10px;line-height:14px;color:rgba(7,27,85,.50)}
+body.go-vertical-mode .flight-line i{height:1px;background:rgba(7,27,85,.18);margin:6px 0}
+body.go-vertical-mode .flight-line i:after{border-left-color:rgba(7,27,85,.18)}
+body.go-vertical-mode .flight-meta{display:flex;gap:0;flex-wrap:wrap;margin-top:8px}
+body.go-vertical-mode .flight-meta span{padding:0 8px;border-right:1px solid var(--go-v-rule)}
+body.go-vertical-mode .flight-meta span:first-child{padding-left:0}
+body.go-vertical-mode .flight-meta span:last-child{border-right:0}
+
+/* 05 / Hotel detail — judgment before commerce, calm image and room list. */
+body.go-vertical-mode .hotel-detail-head{margin:8px 0 12px}
+body.go-vertical-mode .hotel-actions{gap:6px}body.go-vertical-mode .hotel-actions button{min-width:44px;min-height:44px;padding:8px;border:1px solid var(--go-v-rule);border-radius:999px;background:#fff;color:var(--go-navy)}
+body.go-vertical-mode .detail-art{height:200px;border-radius:16px}
+body.go-vertical-mode .hero-pills{left:8px;bottom:8px;gap:4px}body.go-vertical-mode .hero-pills span{padding:4px 8px;border-radius:999px;background:rgba(7,27,85,.88);font-size:10px;line-height:14px;font-weight:500}
+body.go-vertical-mode .hotel-summary-card{padding:16px 0 12px}body.go-vertical-mode .hotel-summary-card h1{font-size:22px;line-height:30px;font-weight:600;color:var(--go-navy)}
+body.go-vertical-mode .hotel-subline{margin-top:4px;font-size:12px;line-height:18px;color:rgba(7,27,85,.50)}
+body.go-vertical-mode .facility-icons{gap:4px;margin:12px 0}body.go-vertical-mode .facility-icons span{padding:5px 8px;border:1px solid var(--go-v-rule);border-radius:999px;background:#fff;color:rgba(7,27,85,.68);font-size:10px;line-height:14px}
+body.go-vertical-mode .hotel-reason{padding:12px;border:1px solid var(--go-v-rule);border-radius:12px;background:#FAFBFC}
+body.go-vertical-mode .hotel-reason b{font-size:12px;line-height:18px;font-weight:600;color:var(--go-navy)}
+body.go-vertical-mode .hotel-reason p{font-size:12px;line-height:18px;color:rgba(7,27,85,.68);margin:4px 0 0}
+body.go-vertical-mode .stay-bar{gap:8px;padding:12px;border:1px solid var(--go-v-rule);border-radius:12px;background:#fff;margin:0 0 12px}
+body.go-vertical-mode .stay-bar small{font-size:10px;line-height:14px;color:rgba(7,27,85,.50)}body.go-vertical-mode .stay-bar b{font-size:13px;line-height:20px;font-weight:500;color:var(--go-navy)}
+body.go-vertical-mode .room-section-head h2{font-size:18px;line-height:26px;font-weight:600;color:var(--go-navy)}body.go-vertical-mode .room-section-head button{min-width:44px;min-height:44px;border:1px solid var(--go-v-rule);border-radius:999px;background:#fff;color:var(--go-navy)}
+body.go-vertical-mode .room-card{grid-template-columns:104px 1fr;gap:12px;padding:16px 0;border-bottom:1px solid var(--go-v-rule)}
+body.go-vertical-mode .room-photo{height:116px;border-radius:12px}body.go-vertical-mode .room-main h3{font-size:16px;line-height:24px;font-weight:600;color:var(--go-navy);margin:0 0 4px}body.go-vertical-mode .room-facts,body.go-vertical-mode .room-policy{font-size:11px;line-height:16px;color:rgba(7,27,85,.50);margin:4px 0}
+
+/* 06 / Order, settlement and evidence — factual, no commercial visual noise. */
+body.go-vertical-mode .card{border:1px solid var(--go-v-rule);border-radius:16px;background:#fff;padding:16px;margin-top:12px;box-shadow:0 2px 12px rgba(7,27,85,.035)}
+body.go-vertical-mode .card h3{font-size:16px;line-height:24px;font-weight:600;color:var(--go-navy)}
+body.go-vertical-mode .kv{grid-template-columns:104px 1fr;gap:8px;padding:8px 0;border-bottom:1px solid var(--go-v-rule);font-size:13px;line-height:20px}
+body.go-vertical-mode .kv:last-child{border-bottom:0}body.go-vertical-mode .kv>span:first-child{color:rgba(7,27,85,.50)}body.go-vertical-mode .kv b{font-weight:500;color:var(--go-navy)}
+body.go-vertical-mode .order-hotel{gap:2px;padding-bottom:8px;border-bottom:1px solid var(--go-v-rule)}
+body.go-vertical-mode .fare-total{padding:12px 0}body.go-vertical-mode .fare-total span{font-size:12px;line-height:18px;color:rgba(7,27,85,.50)}
+body.go-vertical-mode .critical-note{margin:10px 0;padding:10px 12px;border:1px solid rgba(255,75,22,.12);border-left:2px solid var(--go-orange);border-radius:8px;background:#fff;color:rgba(7,27,85,.68);font-size:11px;line-height:16px}
+body.go-vertical-mode .evidence-card,body.go-vertical-mode .comparison-note,body.go-vertical-mode .trust-strip{padding:12px;border:1px solid var(--go-v-rule);border-radius:12px;background:#FAFBFC;color:rgba(7,27,85,.68);font-size:12px;line-height:18px;box-shadow:none}
+body.go-vertical-mode .status{padding:4px 8px;border:1px solid rgba(8,120,249,.16);border-radius:999px;background:#fff;color:var(--go-blue);font-size:10px;line-height:14px;font-weight:500}
+
+/* 07 / Modal / change / refund continuation keeps the same frozen grammar. */
+body.go-vertical-mode .ux-sheet{border-radius:20px 20px 0 0;background:#fff;box-shadow:0 -4px 18px rgba(7,27,85,.045)}
+body.go-vertical-mode .ux-sheet-handle{background:rgba(7,27,85,.14)}
+body.go-vertical-mode .ux-sheet h2{font-size:20px;line-height:28px;font-weight:600;color:var(--go-navy)}
+body.go-vertical-mode .ux-sheet .field{background:#fff}
+
+/* 08 / Responsive: same 375 / 390 / 430 boundaries as Design System 1.0. */
+@media(max-width:374px){
+  body.go-vertical-mode .hotel-result{grid-template-columns:96px 1fr}body.go-vertical-mode .result-art{width:96px;height:116px}
+  body.go-vertical-mode .room-card{grid-template-columns:92px 1fr}body.go-vertical-mode .room-photo{height:108px}
+  body.go-vertical-mode .flight-times{grid-template-columns:1fr 64px 1fr}body.go-vertical-mode .flight-times b{font-size:18px;line-height:26px}
+  body.go-vertical-mode .route-row{grid-template-columns:1fr 28px 1fr}
+}
+@media(min-width:406px) and (max-width:767px){
+  body.go-vertical-mode .go-page-head,body.go-vertical-mode .list-head{padding-top:16px}
+}
+@media(min-width:768px){
+  body.go-vertical-mode .shell{max-width:768px}body.go-vertical-mode .go-form-card,body.go-vertical-mode .card.transaction-search{max-width:620px}body.go-vertical-mode .go-page-head,body.go-vertical-mode .list-head{max-width:620px}
+}

@@ -1,0 +1,1 @@
+if(window.GO_CONSOLE){window.GO_CONSOLE.nav.unshift({route:'/hosted-direct-pilot',label:'GO Hosted Direct Pilot',endpoint:'/internal/v1/hosted-direct/dashboard',kind:'dashboard'},{route:'/hosted-reservations',label:'Hosted Reservation Inbox',endpoint:'/internal/v1/hosted-direct/dashboard'});}
