@@ -1,0 +1,40 @@
+{
+  "reviewed_at_utc": "2026-09-11T20:13:14.642423+00:00",
+  "repository": "yuguangzhi3836-glitch/GO",
+  "pr": 43,
+  "tested_commit": "d49465a56a7768bc4e657858272a597c5d1f05d6",
+  "run_id": 34642554667,
+  "job_id": 103405533919,
+  "run_result": "SUCCESS",
+  "ci_environment": "GitHub Ubuntu 22.04; Python 3.13.5; isolated PostgreSQL 18.4",
+  "local_tests": 34,
+  "independent_ci_tests": 34,
+  "docker_test_scope": "Child image build, source-check and archive reload are real; executor deployment/rollback tests use a command model",
+  "postgres_type_guard": "Four real catalog cases: valid widths, NULL-width integer rejection, unbounded text acceptance, narrow varchar rejection",
+  "artifact_id": 10280363223,
+  "artifact_bytes_reported": 174312027,
+  "artifact_zip_sha256_reported": "6608de4ca772e0617b3d02103ed893df9389ddaa2c5878635594219c32bcb600",
+  "artifact_zip_local_rehash": false,
+  "local_materialization": "HTTP_502; no fabricated byte-verification PASS",
+  "runtime_manifest_origin": "JSON directly extracted from original job output 2026-09-11T20:09:54.0946109Z",
+  "pg_result_origin": "JSON directly extracted from original job output 2026-09-11T20:10:09.5685934Z",
+  "site_bound": false,
+  "hk_installed": false,
+  "hk_deployed": false,
+  "migration_executed_in_hk": false,
+  "three_end_browser_gate": "HOLD",
+  "six_vertical_e2e_gate": "HOLD",
+  "sealed_node_gate": "HOLD",
+  "production": "HOLD",
+  "unresolved": [
+    "Current site binding and installation approval/artifact",
+    "Registry RepoDigest or separately approved offline integration",
+    "Verified backup/restore and signed failure-recovery preparation",
+    "Real installation and signed HK execution evidence"
+  ],
+  "files_sha256": {
+    "POSTGRES_TYPE_GUARD.json": "55a923d07da139c610e132eca6933bdbfe809a524e2b37d5d0e43b3039385ee6",
+    "CI_RUNTIME_MANIFEST.json": "faac1ee80286befcc0960daa058a9c9cd1c018d249059388c4091abfb815d366",
+    "CI_JOB.redacted.log": "43df748b8cd578ef71f3e82b8cfff0af8f07018ad1b791c673ffa0e0f45b4bce"
+  }
+}

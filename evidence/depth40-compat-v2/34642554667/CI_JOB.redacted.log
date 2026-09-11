@@ -1,0 +1,487 @@
+﻿2026-09-11T20:07:48.3049618Z Current runner version: '2.337.0'
+2026-09-11T20:07:48.3077853Z ##[group]Runner Image Provisioner
+2026-09-11T20:07:48.3079026Z Hosted Compute Agent
+2026-09-11T20:07:48.3079793Z Version: 20260828.587
+2026-09-11T20:07:48.3080607Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-11T20:07:48.3081585Z Build Date: 2026-08-28T16:44:25Z
+2026-09-11T20:07:48.3082468Z Worker ID: {cdf19f93-284e-49bf-87e5-200c182ed745}
+2026-09-11T20:07:48.3083350Z Azure Region: mexicocentral
+2026-09-11T20:07:48.3084219Z ##[endgroup]
+2026-09-11T20:07:48.3086093Z ##[group]Operating System
+2026-09-11T20:07:48.3086941Z Ubuntu
+2026-09-11T20:07:48.3087646Z 22.04.5
+2026-09-11T20:07:48.3088313Z LTS
+2026-09-11T20:07:48.3089031Z ##[endgroup]
+2026-09-11T20:07:48.3089717Z ##[group]Runner Image
+2026-09-11T20:07:48.3090555Z Image: ubuntu-22.04
+2026-09-11T20:07:48.3091316Z Version: 20260907.292.1
+2026-09-11T20:07:48.3092997Z Included Software: https://github.com/actions/runner-images/blob/ubuntu22/20260907.292/images/ubuntu/Ubuntu2204-Readme.md
+2026-09-11T20:07:48.3095038Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu22%2F20260907.292
+2026-09-11T20:07:48.3096729Z ##[endgroup]
+2026-09-11T20:07:48.3098273Z ##[group]GITHUB_TOKEN Permissions
+2026-09-11T20:07:48.3100408Z Actions: read
+2026-09-11T20:07:48.3101183Z Contents: read
+2026-09-11T20:07:48.3101876Z Metadata: read
+2026-09-11T20:07:48.3102691Z ##[endgroup]
+2026-09-11T20:07:48.3105033Z Secret source: Actions
+2026-09-11T20:07:48.3106594Z Cache mode: write
+2026-09-11T20:07:48.3107455Z Prepare workflow directory
+2026-09-11T20:07:48.3816181Z Prepare all required actions
+2026-09-11T20:07:48.3871596Z Getting action download info
+2026-09-11T20:07:48.7377133Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-11T20:07:48.8446703Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-11T20:07:48.9970226Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-11T20:07:49.3021494Z Complete job name: verify
+2026-09-11T20:07:49.3612623Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:07:49.3619720Z ##[group]Run actions/checkout@v4
+2026-09-11T20:07:49.3620306Z with:
+2026-09-11T20:07:49.3620697Z   ref: d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:07:49.3621209Z   persist-credentials: false
+2026-09-11T20:07:49.3621663Z   repository: yuguangzhi3836-glitch/GO
+2026-09-11T20:07:49.3625028Z   token: ***
+2026-09-11T20:07:49.3625625Z   ssh-strict: true
+2026-09-11T20:07:49.3626074Z   ssh-user: git
+2026-09-11T20:07:49.3626429Z   clean: true
+2026-09-11T20:07:49.3626799Z   sparse-checkout-cone-mode: true
+2026-09-11T20:07:49.3627244Z   fetch-depth: 1
+2026-09-11T20:07:49.3627623Z   fetch-tags: false
+2026-09-11T20:07:49.3628043Z   show-progress: true
+2026-09-11T20:07:49.3628434Z   lfs: false
+2026-09-11T20:07:49.3628806Z   submodules: false
+2026-09-11T20:07:49.3629184Z   set-safe-directory: true
+2026-09-11T20:07:49.3629602Z   allow-unsafe-pr-checkout: false
+2026-09-11T20:07:49.3630229Z env:
+2026-09-11T20:07:49.3630584Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:07:49.3631067Z   GO_TOOLING_SHA: d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:07:49.3631580Z ##[endgroup]
+2026-09-11T20:07:49.4587181Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-11T20:07:49.4589338Z ##[group]Getting Git version info
+2026-09-11T20:07:49.4590248Z Working directory is '/home/runner/work/GO/GO'
+2026-09-11T20:07:49.4597634Z [command]/usr/bin/git version
+2026-09-11T20:07:49.4697675Z git version 2.55.0
+2026-09-11T20:07:49.4703592Z ##[endgroup]
+2026-09-11T20:07:49.4710346Z Temporarily overriding HOME='/home/runner/work/_temp/bb181154-4930-4e03-82f5-7e6d1cbda909' before making global git config changes
+2026-09-11T20:07:49.4713055Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T20:07:49.4728007Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-11T20:07:49.4809449Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-11T20:07:49.4811196Z ##[group]Initializing the repository
+2026-09-11T20:07:49.4812713Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-11T20:07:49.4943737Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-11T20:07:49.5015635Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-11T20:07:49.5026573Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-11T20:07:49.5027652Z hint: call:
+2026-09-11T20:07:49.5028210Z hint:
+2026-09-11T20:07:49.5028932Z hint: 	git config --global init.defaultBranch <name>
+2026-09-11T20:07:49.5029782Z hint:
+2026-09-11T20:07:49.5030626Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-11T20:07:49.5031962Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-11T20:07:49.5033007Z hint:
+2026-09-11T20:07:49.5033578Z hint: 	git branch -m <name>
+2026-09-11T20:07:49.5034263Z hint:
+2026-09-11T20:07:49.5035137Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-11T20:07:49.5036599Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-11T20:07:49.5038787Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T20:07:49.5041110Z ##[endgroup]
+2026-09-11T20:07:49.5042108Z ##[group]Disabling automatic garbage collection
+2026-09-11T20:07:49.5043004Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-11T20:07:49.5050822Z ##[endgroup]
+2026-09-11T20:07:49.5051924Z ##[group]Setting up auth
+2026-09-11T20:07:49.5055068Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:07:49.5094168Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:07:49.5711631Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:07:49.5731625Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:07:49.5921629Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:07:49.5958762Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:07:49.6188979Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-11T20:07:49.6226253Z ##[endgroup]
+2026-09-11T20:07:49.6228079Z ##[group]Fetching the repository
+2026-09-11T20:07:49.6234796Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:07:51.2634989Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T20:07:51.2640556Z  * branch            d49465a56a7768bc4e657858272a597c5d1f05d6 -> FETCH_HEAD
+2026-09-11T20:07:51.2643025Z ##[endgroup]
+2026-09-11T20:07:51.2643834Z ##[group]Determining the checkout info
+2026-09-11T20:07:51.2644689Z ##[endgroup]
+2026-09-11T20:07:51.2649078Z [command]/usr/bin/git sparse-checkout disable
+2026-09-11T20:07:51.2690470Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-11T20:07:51.3035766Z ##[group]Checking out the ref
+2026-09-11T20:07:51.3038859Z [command]/usr/bin/git checkout --progress --force d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:07:51.4011434Z Note: switching to 'd49465a56a7768bc4e657858272a597c5d1f05d6'.
+2026-09-11T20:07:51.4014194Z 
+2026-09-11T20:07:51.4014683Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-11T20:07:51.4015766Z changes and commit them, and you can discard any commits you make in this
+2026-09-11T20:07:51.4016699Z state without impacting any branches by switching back to a branch.
+2026-09-11T20:07:51.4017285Z 
+2026-09-11T20:07:51.4017752Z If you want to create a new branch to retain commits you create, you may
+2026-09-11T20:07:51.4018572Z do so (now or later) by using -c with the switch command. Example:
+2026-09-11T20:07:51.4019092Z 
+2026-09-11T20:07:51.4019398Z   git switch -c <new-branch-name>
+2026-09-11T20:07:51.4019824Z 
+2026-09-11T20:07:51.4020153Z Or undo this operation with:
+2026-09-11T20:07:51.4020536Z 
+2026-09-11T20:07:51.4020894Z   git switch -
+2026-09-11T20:07:51.4021417Z 
+2026-09-11T20:07:51.4021920Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-11T20:07:51.4022469Z 
+2026-09-11T20:07:51.4022998Z HEAD is now at d49465a fix: add isolated DEPTH40 deployment compatibility repair candidate
+2026-09-11T20:07:51.4035379Z ##[endgroup]
+2026-09-11T20:07:51.4075053Z [command]/usr/bin/git log -1 --format=%H
+2026-09-11T20:07:51.4102396Z d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:07:51.4114064Z ##[group]Removing auth
+2026-09-11T20:07:51.4114793Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:07:51.4147829Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:07:51.4374832Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:07:51.4399908Z http.https://github.com/.extraheader
+2026-09-11T20:07:51.4407989Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-11T20:07:51.4442654Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:07:51.4667892Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:07:51.4788716Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:07:51.4982877Z ##[endgroup]
+2026-09-11T20:07:51.5189633Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:07:51.5191377Z ##[group]Run actions/setup-python@v5
+2026-09-11T20:07:51.5191650Z with:
+2026-09-11T20:07:51.5191869Z   python-version: 3.13.5
+2026-09-11T20:07:51.5192128Z   check-latest: false
+2026-09-11T20:07:51.5194463Z   token: ***
+2026-09-11T20:07:51.5194681Z   update-environment: true
+2026-09-11T20:07:51.5194931Z   allow-prereleases: false
+2026-09-11T20:07:51.5195168Z   freethreaded: false
+2026-09-11T20:07:51.5195554Z env:
+2026-09-11T20:07:51.5195803Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:07:51.5196093Z   GO_TOOLING_SHA: d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:07:51.5196387Z ##[endgroup]
+2026-09-11T20:07:51.6404180Z ##[group]Installed versions
+2026-09-11T20:07:51.7160411Z Version 3.13.5 was not found in the local cache
+2026-09-11T20:07:51.7244747Z (node:1757) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-11T20:07:51.7246308Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-11T20:07:52.7885224Z Version 3.13.5 is available for downloading
+2026-09-11T20:07:52.7886309Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-22.04-x64.tar.gz"
+2026-09-11T20:07:54.1949535Z Extract downloaded archive
+2026-09-11T20:07:54.2053853Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/b33feeab-f39d-4cb9-b548-b1ee009d8d75 -f /home/runner/work/_temp/e48a9d73-8585-4d10-b582-9deccc1152c5
+2026-09-11T20:07:56.2209340Z Execute installation script
+2026-09-11T20:07:56.2310229Z Check if Python hostedtoolcache folder exist...
+2026-09-11T20:07:56.2316364Z Create Python 3.13.5 folder
+2026-09-11T20:07:56.2330869Z Copy Python binaries to hostedtoolcache folder
+2026-09-11T20:07:56.7948915Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-11T20:07:56.8015918Z Upgrading pip...
+2026-09-11T20:07:59.1907647Z Looking in links: /tmp/tmpc34tp62r
+2026-09-11T20:07:59.1916257Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-11T20:08:00.9278682Z Collecting pip
+2026-09-11T20:08:00.9465940Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-11T20:08:00.9578524Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-11T20:08:00.9846968Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 77.9 MB/s eta 0:00:00
+2026-09-11T20:08:00.9847501Z 
+2026-09-11T20:08:00.9991724Z Installing collected packages: pip
+2026-09-11T20:08:00.9996004Z Attempting uninstall: pip
+2026-09-11T20:08:01.0019159Z Found existing installation: pip 25.1.1
+2026-09-11T20:08:01.0287312Z Uninstalling pip-25.1.1:
+2026-09-11T20:08:01.0334336Z Successfully uninstalled pip-25.1.1
+2026-09-11T20:08:01.8362708Z Successfully installed pip-26.2.1
+2026-09-11T20:08:01.8809425Z Create complete file
+2026-09-11T20:08:01.8846388Z Successfully set up CPython (3.13.5)
+2026-09-11T20:08:01.8847759Z ##[endgroup]
+2026-09-11T20:08:01.9002256Z ##[group]Run python -m pip install cryptography==46.0.0 PyYAML==6.0.3
+2026-09-11T20:08:01.9002684Z [36;1mpython -m pip install cryptography==46.0.0 PyYAML==6.0.3[0m
+2026-09-11T20:08:01.9343558Z shell: /usr/bin/bash -e {0}
+2026-09-11T20:08:01.9343791Z env:
+2026-09-11T20:08:01.9343972Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:08:01.9344222Z   GO_TOOLING_SHA: d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:08:01.9344532Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:01.9344876Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:08:01.9345202Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:01.9345638Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:01.9345941Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:01.9346240Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:08:01.9346491Z ##[endgroup]
+2026-09-11T20:08:02.9296365Z Collecting cryptography==46.0.0
+2026-09-11T20:08:02.9560241Z   Downloading cryptography-46.0.0-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (5.7 kB)
+2026-09-11T20:08:03.0419443Z Collecting PyYAML==6.0.3
+2026-09-11T20:08:03.0446227Z   Downloading pyyaml-6.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+2026-09-11T20:08:03.3309902Z Collecting cffi>=1.14 (from cryptography==46.0.0)
+2026-09-11T20:08:03.3336171Z   Downloading cffi-2.1.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.5 kB)
+2026-09-11T20:08:03.4846816Z Collecting pycparser (from cffi>=1.14->cryptography==46.0.0)
+2026-09-11T20:08:03.4869235Z   Downloading pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+2026-09-11T20:08:03.4954630Z Downloading cryptography-46.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.6 MB)
+2026-09-11T20:08:03.6959687Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.6/4.6 MB 22.5 MB/s  0:00:00
+2026-09-11T20:08:03.6982999Z Downloading pyyaml-6.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (801 kB)
+2026-09-11T20:08:03.7046213Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 801.6/801.6 kB 125.3 MB/s  0:00:00
+2026-09-11T20:08:03.7073778Z Downloading cffi-2.1.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+2026-09-11T20:08:03.7130882Z Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+2026-09-11T20:08:03.7660330Z Installing collected packages: PyYAML, pycparser, cffi, cryptography
+2026-09-11T20:08:04.1616037Z 
+2026-09-11T20:08:04.1616963Z Successfully installed PyYAML-6.0.3 cffi-2.1.1 cryptography-46.0.0 pycparser-3.0
+2026-09-11T20:08:04.2111099Z ##[group]Run set -euo pipefail
+2026-09-11T20:08:04.2111406Z [36;1mset -euo pipefail[0m
+2026-09-11T20:08:04.2111683Z [36;1mpython control-plane/depth40-compat-v2/ci/seal_executor.py[0m
+2026-09-11T20:08:04.2112212Z [36;1mgit diff --exit-code -- control-plane/depth40-compat-v2/executor control-plane/depth40-compat-v2/EXECUTOR_MANIFEST.json[0m
+2026-09-11T20:08:04.2112834Z [36;1mpython -m unittest discover -s control-plane/depth40-compat-v2/tests -v 2>&1 | tee compat-unit.log[0m
+2026-09-11T20:08:04.2175330Z shell: /usr/bin/bash -e {0}
+2026-09-11T20:08:04.2175765Z env:
+2026-09-11T20:08:04.2175942Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:08:04.2176193Z   GO_TOOLING_SHA: d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:08:04.2176497Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:04.2176838Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:08:04.2177218Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:04.2177514Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:04.2177813Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:04.2178108Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:08:04.2178361Z ##[endgroup]
+2026-09-11T20:08:05.0610653Z test_collector_uses_bound_candidate_paths_and_head (test_compatibility.Compatibility.test_collector_uses_bound_candidate_paths_and_head) ... ok
+2026-09-11T20:08:05.3624894Z test_consumed_source_cannot_be_replayed (test_compatibility.Compatibility.test_consumed_source_cannot_be_replayed) ... ok
+2026-09-11T20:08:05.3647017Z test_digest_resolving_to_wrong_config_rejected_before_mutation (test_compatibility.Compatibility.test_digest_resolving_to_wrong_config_rejected_before_mutation) ... ok
+2026-09-11T20:08:05.6517115Z test_distinct_config_and_registry_digests_are_accepted (test_compatibility.Compatibility.test_distinct_config_and_registry_digests_are_accepted) ... ok
+2026-09-11T20:08:05.6605672Z test_entrypoint_rejects_unsealed_site_without_docker_call (test_compatibility.Compatibility.test_entrypoint_rejects_unsealed_site_without_docker_call) ... ok
+2026-09-11T20:08:05.6616524Z test_expired_recovery_plan_rejected (test_compatibility.Compatibility.test_expired_recovery_plan_rejected) ... ok
+2026-09-11T20:08:05.6629310Z test_extra_service_rejected (test_compatibility.Compatibility.test_extra_service_rejected) ... ok
+2026-09-11T20:08:05.6989689Z test_failed_deploy_not_promoted_to_successful_rollback_source (test_compatibility.Compatibility.test_failed_deploy_not_promoted_to_successful_rollback_source) ... ok
+2026-09-11T20:08:05.7005817Z test_missing_persistent_media_rejected (test_compatibility.Compatibility.test_missing_persistent_media_rejected) ... ok
+2026-09-11T20:08:05.7026361Z test_missing_restore_evidence_rejected (test_compatibility.Compatibility.test_missing_restore_evidence_rejected) ... ok
+2026-09-11T20:08:05.7207913Z test_modified_source_signature_rejected (test_compatibility.Compatibility.test_modified_source_signature_rejected) ... ok
+2026-09-11T20:08:05.9296198Z test_mutation_failure_retains_previous_state_and_failure_record (test_compatibility.Compatibility.test_mutation_failure_retains_previous_state_and_failure_record) ... ok
+2026-09-11T20:08:05.9309457Z test_old_pythonpath_rejected (test_compatibility.Compatibility.test_old_pythonpath_rejected) ... ok
+2026-09-11T20:08:05.9321947Z test_old_worker_command_rejected (test_compatibility.Compatibility.test_old_worker_command_rejected) ... ok
+2026-09-11T20:08:06.0596552Z test_previous_runtime_record_drift_rejected (test_compatibility.Compatibility.test_previous_runtime_record_drift_rejected) ... ok
+2026-09-11T20:08:06.0616389Z test_production_site_binding_rejected (test_compatibility.Compatibility.test_production_site_binding_rejected) ... ok
+2026-09-11T20:08:06.0798334Z test_profile_drift_rejected (test_compatibility.Compatibility.test_profile_drift_rejected) ... ok
+2026-09-11T20:08:06.0816572Z test_pulling_policy_rejected (test_compatibility.Compatibility.test_pulling_policy_rejected) ... ok
+2026-09-11T20:08:06.0836656Z test_recovery_preparation_signature_and_binding (test_compatibility.Compatibility.test_recovery_preparation_signature_and_binding) ... ok
+2026-09-11T20:08:06.1135770Z test_replaced_protected_container_rejected_before_rollback (test_compatibility.Compatibility.test_replaced_protected_container_rejected_before_rollback) ... ok
+2026-09-11T20:08:06.1819852Z test_rollback_drives_recorded_images_and_checks_identity (test_compatibility.Compatibility.test_rollback_drives_recorded_images_and_checks_identity) ... ok
+2026-09-11T20:08:06.2006215Z test_tampered_recovery_signature_rejected (test_compatibility.Compatibility.test_tampered_recovery_signature_rejected) ... ok
+2026-09-11T20:08:06.2008320Z test_unbound_profile_rejected (test_compatibility.Compatibility.test_unbound_profile_rejected) ... ok
+2026-09-11T20:08:06.3112264Z test_unhealthy_api_cannot_return_rollback_pass (test_compatibility.Compatibility.test_unhealthy_api_cannot_return_rollback_pass) ... ok
+2026-09-11T20:08:06.3133008Z test_unplanned_schema_transition_rejected (test_compatibility.Compatibility.test_unplanned_schema_transition_rejected) ... ok
+2026-09-11T20:08:06.3143528Z test_unsealed_site_binding_rejected (test_compatibility.Compatibility.test_unsealed_site_binding_rejected) ... ok
+2026-09-11T20:08:06.3499090Z test_worker_restart_during_observation_rejected (test_compatibility.Compatibility.test_worker_restart_during_observation_rejected) ... ok
+2026-09-11T20:08:06.6609080Z test_wrong_image_cannot_return_rollback_pass (test_compatibility.Compatibility.test_wrong_image_cannot_return_rollback_pass) ... ok
+2026-09-11T20:08:06.6626350Z test_domain_or_unknown_type_rejected (test_compatibility.CriticalColumns.test_domain_or_unknown_type_rejected) ... ok
+2026-09-11T20:08:06.6652553Z test_exact_widths (test_compatibility.CriticalColumns.test_exact_widths) ... ok
+2026-09-11T20:08:06.6676326Z test_missing_column_rejected (test_compatibility.CriticalColumns.test_missing_column_rejected) ... ok
+2026-09-11T20:08:06.6677491Z test_narrow_varchar_rejected (test_compatibility.CriticalColumns.test_narrow_varchar_rejected) ... ok
+2026-09-11T20:08:06.6678707Z test_non_character_null_width_rejected (test_compatibility.CriticalColumns.test_non_character_null_width_rejected) ... ok
+2026-09-11T20:08:06.6679787Z test_unbounded_text (test_compatibility.CriticalColumns.test_unbounded_text) ... ok
+2026-09-11T20:08:06.6680358Z 
+2026-09-11T20:08:06.6680625Z ----------------------------------------------------------------------
+2026-09-11T20:08:06.6681265Z Ran 34 tests in 1.822s
+2026-09-11T20:08:06.6688827Z 
+2026-09-11T20:08:06.6689058Z OK
+2026-09-11T20:08:06.6845329Z ##[group]Run python -B control-plane/depth40-compat-v2/ci/build_child.py
+2026-09-11T20:08:06.6846179Z [36;1mpython -B control-plane/depth40-compat-v2/ci/build_child.py[0m
+2026-09-11T20:08:06.6909087Z shell: /usr/bin/bash -e {0}
+2026-09-11T20:08:06.6909287Z env:
+2026-09-11T20:08:06.6909461Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:08:06.6909702Z   GO_TOOLING_SHA: d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:08:06.6910006Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:06.6910332Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:08:06.6910658Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:06.6910946Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:06.6911229Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:08:06.6911688Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:08:06.6914092Z   GITHUB_TOKEN: ***
+2026-09-11T20:08:06.6914275Z ##[endgroup]
+2026-09-11T20:09:54.0946109Z {"schema_version": "1", "revision": "DEPTH40_COMPAT_V2", "parent_candidate": "CP11_DEPTH40_P03_PARENT_20260911", "parent_image_id": "sha256:9ec6ebaf962b6f5e880ecaa2e878a2ec1e51bfd0f1f4012b90aa709692d5057b", "parent_zip_sha256": "715b939feb5529fcd97860ed921e5b292a874a2cbfacae0706a4da39023aad4f", "source_tree_sha256": "64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667", "source_files": 1271, "image_tag": "go-depth40-staging:compat-34642554667", "image_config_id": "sha256:cba95a5ac6f061b8196f953f181952fdad94ab520a12cbeb0e7ee49d9a6de150", "image_archive_sha256": "edca0c20cac07950b79814ef2e5ec56d3551430a02ff6943532a9009538395a5", "image_archive_bytes": 175057507, "preflight_sha256": "b56923a5dab9dd6a28c04c3f7c678e3080a5ac662ee6aef4c1c60b2a1afc3dcd", "registry_repo_digest": null, "tooling_commit": "d49465a56a7768bc4e657858272a597c5d1f05d6", "ci_run_id": "34642554667", "image_build": "PASS", "offline_reload": "PASS", "hk_execution": "NOT_RUN", "site_binding": "UNBOUND", "deployment_authorized": false, "final_release": "HOLD"}
+2026-09-11T20:09:54.1102815Z ##[group]Run set -euo pipefail
+2026-09-11T20:09:54.1103074Z [36;1mset -euo pipefail[0m
+2026-09-11T20:09:54.1103317Z [36;1mdocker network create "compat-${GITHUB_RUN_ID}"[0m
+2026-09-11T20:09:54.1104088Z [36;1mdocker run -d --name "compat-pg-${GITHUB_RUN_ID}" --network "compat-${GITHUB_RUN_ID}" --network-alias compat-pg -e POSTGRES_USER=compat_test -e POSTGRES_PASSWORD=isolated-fixture-only -e POSTGRES_DB=compat_guard_test postgres:18.4[0m
+2026-09-11T20:09:54.1104815Z [36;1mfor i in $(seq 1 30); do[0m
+2026-09-11T20:09:54.1105209Z [36;1m  if docker exec "compat-pg-${GITHUB_RUN_ID}" pg_isready -U compat_test -d compat_guard_test; then break; fi[0m
+2026-09-11T20:09:54.1105876Z [36;1m  sleep 1[0m
+2026-09-11T20:09:54.1106046Z [36;1mdone[0m
+2026-09-11T20:09:54.1107035Z [36;1mdocker run --rm --network "compat-${GITHUB_RUN_ID}" --read-only --cap-drop ALL --security-opt no-new-privileges -e GO_COMPAT_ISOLATED_TEST=true --entrypoint /opt/go/python/bin/python3.13 -v "$PWD/control-plane/depth40-compat-v2/ci/postgres_type_probe.py:/test.py:ro" "$COMPAT_IMAGE" -B /test.py | tee compat-delivery/POSTGRES_TYPE_GUARD.json[0m
+2026-09-11T20:09:54.1169152Z shell: /usr/bin/bash -e {0}
+2026-09-11T20:09:54.1169361Z env:
+2026-09-11T20:09:54.1169538Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:09:54.1169785Z   GO_TOOLING_SHA: d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:09:54.1170093Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:09:54.1170432Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:09:54.1170753Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:09:54.1171041Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:09:54.1171327Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:09:54.1171632Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:09:54.1171924Z   COMPAT_IMAGE: go-depth40-staging:compat-34642554667
+2026-09-11T20:09:54.1172170Z ##[endgroup]
+2026-09-11T20:09:54.1782587Z 3a3dee04c451b5b459d7e69872d7ba8d6d6315ace3ba77bdcc882e6e1a43e59d
+2026-09-11T20:09:54.1928373Z Unable to find image 'postgres:18.4' locally
+2026-09-11T20:09:55.0367836Z 18.4: Pulling from library/postgres
+2026-09-11T20:09:55.2702284Z 26c307b5e35a: Pulling fs layer
+2026-09-11T20:09:55.2705012Z 5db2b7edf527: Pulling fs layer
+2026-09-11T20:09:55.2705754Z 130549402290: Pulling fs layer
+2026-09-11T20:09:55.2706374Z 8241f4a14319: Pulling fs layer
+2026-09-11T20:09:55.2706874Z a4dcdc0137d7: Pulling fs layer
+2026-09-11T20:09:55.2707391Z d1052e262c2e: Pulling fs layer
+2026-09-11T20:09:55.2707676Z 39762d0b4bb2: Pulling fs layer
+2026-09-11T20:09:55.2707978Z 38639b9be6a6: Pulling fs layer
+2026-09-11T20:09:55.2708287Z 4e6c52c74256: Pulling fs layer
+2026-09-11T20:09:55.2708919Z f51baa0c6c0d: Pulling fs layer
+2026-09-11T20:09:55.2709232Z 88bb22edda9b: Pulling fs layer
+2026-09-11T20:09:55.2709504Z f7d54729e84b: Pulling fs layer
+2026-09-11T20:09:55.2709807Z f90dd111f2e5: Pulling fs layer
+2026-09-11T20:09:55.2710080Z 8241f4a14319: Waiting
+2026-09-11T20:09:55.2710340Z a4dcdc0137d7: Waiting
+2026-09-11T20:09:55.2710593Z d1052e262c2e: Waiting
+2026-09-11T20:09:55.2710839Z 39762d0b4bb2: Waiting
+2026-09-11T20:09:55.2711096Z 38639b9be6a6: Waiting
+2026-09-11T20:09:55.2711347Z 4e6c52c74256: Waiting
+2026-09-11T20:09:55.2711598Z f51baa0c6c0d: Waiting
+2026-09-11T20:09:55.2711848Z 88bb22edda9b: Waiting
+2026-09-11T20:09:55.2712096Z f7d54729e84b: Waiting
+2026-09-11T20:09:55.2712351Z f90dd111f2e5: Waiting
+2026-09-11T20:09:55.6497630Z 5db2b7edf527: Verifying Checksum
+2026-09-11T20:09:55.6510873Z 5db2b7edf527: Download complete
+2026-09-11T20:09:55.8844481Z 130549402290: Verifying Checksum
+2026-09-11T20:09:55.8845296Z 130549402290: Download complete
+2026-09-11T20:09:56.0557798Z 26c307b5e35a: Verifying Checksum
+2026-09-11T20:09:56.0574712Z 26c307b5e35a: Download complete
+2026-09-11T20:09:56.0697357Z 8241f4a14319: Verifying Checksum
+2026-09-11T20:09:56.0698985Z 8241f4a14319: Download complete
+2026-09-11T20:09:56.3249311Z 39762d0b4bb2: Verifying Checksum
+2026-09-11T20:09:56.3249865Z 39762d0b4bb2: Download complete
+2026-09-11T20:09:56.4015597Z a4dcdc0137d7: Verifying Checksum
+2026-09-11T20:09:56.4016049Z a4dcdc0137d7: Download complete
+2026-09-11T20:09:56.4898257Z d1052e262c2e: Verifying Checksum
+2026-09-11T20:09:56.4899497Z d1052e262c2e: Download complete
+2026-09-11T20:09:56.6001999Z 38639b9be6a6: Verifying Checksum
+2026-09-11T20:09:56.6003705Z 38639b9be6a6: Download complete
+2026-09-11T20:09:56.7649213Z f51baa0c6c0d: Verifying Checksum
+2026-09-11T20:09:56.7651108Z f51baa0c6c0d: Download complete
+2026-09-11T20:09:56.8719617Z 88bb22edda9b: Verifying Checksum
+2026-09-11T20:09:56.8720160Z 88bb22edda9b: Download complete
+2026-09-11T20:09:57.0213866Z f7d54729e84b: Verifying Checksum
+2026-09-11T20:09:57.0214307Z f7d54729e84b: Download complete
+2026-09-11T20:09:57.1341321Z f90dd111f2e5: Verifying Checksum
+2026-09-11T20:09:57.1342307Z f90dd111f2e5: Download complete
+2026-09-11T20:09:57.4378722Z 26c307b5e35a: Pull complete
+2026-09-11T20:09:57.6560592Z 4e6c52c74256: Verifying Checksum
+2026-09-11T20:09:57.6560884Z 4e6c52c74256: Download complete
+2026-09-11T20:09:59.6991939Z 5db2b7edf527: Pull complete
+2026-09-11T20:10:00.0452850Z 130549402290: Pull complete
+2026-09-11T20:10:00.1226958Z 8241f4a14319: Pull complete
+2026-09-11T20:10:00.8954753Z a4dcdc0137d7: Pull complete
+2026-09-11T20:10:01.0565124Z d1052e262c2e: Pull complete
+2026-09-11T20:10:01.0706465Z 39762d0b4bb2: Pull complete
+2026-09-11T20:10:01.0787642Z 38639b9be6a6: Pull complete
+2026-09-11T20:10:06.3637661Z 4e6c52c74256: Pull complete
+2026-09-11T20:10:06.3791279Z f51baa0c6c0d: Pull complete
+2026-09-11T20:10:06.3891922Z 88bb22edda9b: Pull complete
+2026-09-11T20:10:06.3984461Z f7d54729e84b: Pull complete
+2026-09-11T20:10:06.4065852Z f90dd111f2e5: Pull complete
+2026-09-11T20:10:06.4100918Z Digest: sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+2026-09-11T20:10:06.4109367Z Status: Downloaded newer image for postgres:18.4
+2026-09-11T20:10:06.4213941Z 4da537b820937714c84c3315c48b1a14eb24184dba5aadc5471f8aec28330545
+2026-09-11T20:10:06.6516076Z /var/run/postgresql:5432 - no response
+2026-09-11T20:10:07.7309950Z /var/run/postgresql:5432 - no response
+2026-09-11T20:10:08.8063847Z /var/run/postgresql:5432 - accepting connections
+2026-09-11T20:10:09.5685934Z {"exact_widths": "PASS", "integer_null_width_rejected": "DATABASE_CRITICAL_TYPE_MISMATCH", "text_unbounded_accepted": "PASS", "narrow_varchar_rejected": "DATABASE_CRITICAL_WIDTH_MISMATCH", "postgres_version": "18.4 (Debian 18.4-1.pgdg13+1)", "scope": "ISOLATED_TYPE_GUARD_ONLY", "hk_execution": "NOT_RUN"}
+2026-09-11T20:10:09.6730391Z ##[group]Run mkdir -p compat-delivery
+2026-09-11T20:10:09.6730692Z [36;1mmkdir -p compat-delivery[0m
+2026-09-11T20:10:09.6730974Z [36;1mcp compat-unit.log compat-delivery/ 2>/dev/null || true[0m
+2026-09-11T20:10:09.6731543Z [36;1mcp control-plane/depth40-compat-v2/EXECUTOR_MANIFEST.json compat-delivery/[0m
+2026-09-11T20:10:09.6731958Z [36;1mcp -r control-plane/depth40-compat-v2/executor compat-delivery/[0m
+2026-09-11T20:10:09.6732489Z [36;1mcp control-plane/depth40-compat-v2/README.md control-plane/depth40-compat-v2/compose.staging.review.yml compat-delivery/[0m
+2026-09-11T20:10:09.6733564Z [36;1mpython -c "import json,os,pathlib; pathlib.Path('compat-delivery/GATE_REPORT.json').write_text(json.dumps({'ci_status':os.environ['GO_CI_STATUS'],'tooling_commit':os.environ['GO_TOOLING_SHA'],'hk_execution':'NOT_RUN','site_binding':'UNBOUND','deployment':'HOLD','production':'HOLD'},indent=2)+'\n')"[0m
+2026-09-11T20:10:09.6734987Z [36;1mpython -c "import hashlib,pathlib; p=pathlib.Path('compat-delivery'); (p/'SHA256SUMS').write_text(''.join(hashlib.file_digest(f.open('rb'),'sha256').hexdigest()+'  '+f.relative_to(p).as_posix()+'\n' for f in sorted(p.rglob('*')) if f.is_file() and f.name!='SHA256SUMS'))"[0m
+2026-09-11T20:10:09.6797484Z shell: /usr/bin/bash -e {0}
+2026-09-11T20:10:09.6797692Z env:
+2026-09-11T20:10:09.6797873Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:10:09.6798124Z   GO_TOOLING_SHA: d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:10:09.6798434Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:09.6798774Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:10:09.6799096Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:09.6799394Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:09.6799688Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:09.6799976Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:10:09.6800282Z   COMPAT_IMAGE: go-depth40-staging:compat-34642554667
+2026-09-11T20:10:09.6800528Z   GO_CI_STATUS: success
+2026-09-11T20:10:09.6800708Z ##[endgroup]
+2026-09-11T20:10:10.0096531Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:10:10.0097520Z ##[group]Run actions/upload-artifact@v4
+2026-09-11T20:10:10.0097735Z with:
+2026-09-11T20:10:10.0097914Z   name: GO-DEPTH40-COMPAT-V2-34642554667
+2026-09-11T20:10:10.0098137Z   path: compat-delivery
+2026-09-11T20:10:10.0098320Z   retention-days: 90
+2026-09-11T20:10:10.0098495Z   if-no-files-found: warn
+2026-09-11T20:10:10.0098680Z   compression-level: 6
+2026-09-11T20:10:10.0098854Z   overwrite: false
+2026-09-11T20:10:10.0099029Z   include-hidden-files: false
+2026-09-11T20:10:10.0099216Z env:
+2026-09-11T20:10:10.0099386Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:10:10.0099622Z   GO_TOOLING_SHA: d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:10:10.0099963Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:10.0100298Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:10:10.0100619Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:10.0100906Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:10.0101185Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:10.0101468Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:10:10.0101758Z   COMPAT_IMAGE: go-depth40-staging:compat-34642554667
+2026-09-11T20:10:10.0101988Z ##[endgroup]
+2026-09-11T20:10:10.1580850Z (node:2625) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-11T20:10:10.1582021Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-11T20:10:10.1747799Z With the provided path, there will be 19 files uploaded
+2026-09-11T20:10:10.1751206Z Artifact name is valid!
+2026-09-11T20:10:10.1752352Z Root directory input is valid!
+2026-09-11T20:10:10.5148185Z Beginning upload of artifact content to blob storage
+2026-09-11T20:10:10.7834400Z (node:2625) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-11T20:10:11.5296340Z Uploaded bytes 8388608
+2026-09-11T20:10:11.7534340Z Uploaded bytes 16777216
+2026-09-11T20:10:11.9456442Z Uploaded bytes 25165824
+2026-09-11T20:10:11.9865574Z Uploaded bytes 33554432
+2026-09-11T20:10:12.2498814Z Uploaded bytes 41943040
+2026-09-11T20:10:12.2975846Z Uploaded bytes 50331648
+2026-09-11T20:10:12.4343170Z Uploaded bytes 58720256
+2026-09-11T20:10:12.6355188Z Uploaded bytes 67108864
+2026-09-11T20:10:12.8842151Z Uploaded bytes 75497472
+2026-09-11T20:10:13.1083662Z Uploaded bytes 83886080
+2026-09-11T20:10:13.3263352Z Uploaded bytes 92274688
+2026-09-11T20:10:13.5573769Z Uploaded bytes 100663296
+2026-09-11T20:10:13.7496551Z Uploaded bytes 109051904
+2026-09-11T20:10:13.9518489Z Uploaded bytes 117440512
+2026-09-11T20:10:14.2480868Z Uploaded bytes 125829120
+2026-09-11T20:10:14.4924876Z Uploaded bytes 134217728
+2026-09-11T20:10:14.6346776Z Uploaded bytes 142606336
+2026-09-11T20:10:14.8610879Z Uploaded bytes 150994944
+2026-09-11T20:10:15.0579413Z Uploaded bytes 159383552
+2026-09-11T20:10:15.3240109Z Uploaded bytes 167772160
+2026-09-11T20:10:15.5921385Z Uploaded bytes 174312027
+2026-09-11T20:10:15.6558678Z Finished uploading artifact content to blob storage!
+2026-09-11T20:10:15.6561188Z SHA256 digest of uploaded artifact zip is 6608de4ca772e0617b3d02103ed893df9389ddaa2c5878635594219c32bcb600
+2026-09-11T20:10:15.6563434Z Finalizing artifact upload
+2026-09-11T20:10:15.9974093Z Artifact GO-DEPTH40-COMPAT-V2-34642554667.zip successfully finalized. Artifact ID 10280363223
+2026-09-11T20:10:15.9976046Z Artifact GO-DEPTH40-COMPAT-V2-34642554667 has been successfully uploaded! Final size is 174312027 bytes. Artifact ID is 10280363223
+2026-09-11T20:10:15.9981489Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34642554667/artifacts/10280363223
+2026-09-11T20:10:16.0149836Z ##[group]Run docker rm -f "compat-pg-${GITHUB_RUN_ID}" 2>/dev/null || true
+2026-09-11T20:10:16.0150479Z [36;1mdocker rm -f "compat-pg-${GITHUB_RUN_ID}" 2>/dev/null || true[0m
+2026-09-11T20:10:16.0151069Z [36;1mdocker network rm "compat-${GITHUB_RUN_ID}" 2>/dev/null || true[0m
+2026-09-11T20:10:16.0223898Z shell: /usr/bin/bash -e {0}
+2026-09-11T20:10:16.0224118Z env:
+2026-09-11T20:10:16.0224299Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:10:16.0224569Z   GO_TOOLING_SHA: d49465a56a7768bc4e657858272a597c5d1f05d6
+2026-09-11T20:10:16.0224888Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:16.0225232Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:10:16.0225744Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:16.0226067Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:16.0226363Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:10:16.0226810Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:10:16.0227263Z   COMPAT_IMAGE: go-depth40-staging:compat-34642554667
+2026-09-11T20:10:16.0227623Z ##[endgroup]
+2026-09-11T20:10:16.1397918Z compat-pg-34642554667
+2026-09-11T20:10:16.2285990Z compat-34642554667
+2026-09-11T20:10:16.2371042Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:10:16.2372099Z Post job cleanup.
+2026-09-11T20:10:16.3546577Z (node:2716) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-11T20:10:16.3548562Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-11T20:10:16.3698758Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:10:16.3700439Z Post job cleanup.
+2026-09-11T20:10:16.5017593Z [command]/usr/bin/git version
+2026-09-11T20:10:16.5055763Z git version 2.55.0
+2026-09-11T20:10:16.5061391Z Temporarily overriding HOME='/home/runner/work/_temp/612e745c-ee85-4a82-9b20-407ab9f2bbe2' before making global git config changes
+2026-09-11T20:10:16.5062976Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T20:10:16.5076797Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-11T20:10:16.5138355Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:10:16.5347397Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:10:16.5495036Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:10:16.5537978Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:10:16.6198851Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:10:16.6317582Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:10:16.6364591Z Cleaning up orphan processes
+2026-09-11T20:10:16.6632504Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+
