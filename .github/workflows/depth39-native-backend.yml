@@ -54,8 +54,9 @@ jobs:
         run: |
           isolated-runtime/bin/python candidate/ci/depth38/apply_agent_lifecycle.py --source restored --overlay candidate --evidence depth38-overlay.json
           isolated-runtime/bin/python candidate/ci/depth39/apply_native_closure.py --source restored
+          isolated-runtime/bin/python candidate/ci/depth39/apply_native_closure_fix1.py --source restored
           cp candidate/tests/test_agent_native_lifecycle_p03.py restored/tests/
-          isolated-runtime/bin/python -m py_compile restored/src/go_hotel/connectors/base.py restored/src/go_hotel/connectors/mock_hotel.py restored/src/go_hotel/services/vertical_reservation_expiry.py restored/src/go_hotel/services/hotel_hard_hold_release.py restored/src/go_hotel/services/vertical_transaction_bridge.py restored/src/go_hotel/mobility/ride/service.py restored/src/go_hotel/mobility/rental/service.py restored/src/go_hotel/agent_gateway/lifecycle_core.py
+          isolated-runtime/bin/python -m py_compile restored/src/go_hotel/db/models.py restored/src/go_hotel/connectors/base.py restored/src/go_hotel/connectors/mock_hotel.py restored/src/go_hotel/services/vertical_reservation_expiry.py restored/src/go_hotel/services/hotel_hard_hold_release.py restored/src/go_hotel/services/vertical_transaction_bridge.py restored/src/go_hotel/mobility/ride/service.py restored/src/go_hotel/mobility/rental/service.py restored/src/go_hotel/agent_gateway/lifecycle_core.py
       - name: P0.3 native lifecycle tests
         shell: bash
         working-directory: restored
