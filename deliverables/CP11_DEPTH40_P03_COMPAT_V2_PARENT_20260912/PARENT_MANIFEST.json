@@ -1,0 +1,64 @@
+{
+  "business_candidate": "CP11_DEPTH40_P03_PARENT_20260911",
+  "business_parent_commit": "c909af370d55ce7644140a191425a8a66dacec9a",
+  "business_source_changed": false,
+  "canonical_source_commit": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+  "compatibility_artifact_id": 10280363223,
+  "compatibility_artifact_zip_sha256": "6608de4ca772e0617b3d02103ed893df9389ddaa2c5878635594219c32bcb600",
+  "compatibility_commit": "d49465a56a7768bc4e657858272a597c5d1f05d6",
+  "compatibility_evidence_commit": "f4f32cb9230c473471c736840da3f1d552e5ac43",
+  "compatibility_run_id": 34642554667,
+  "compatibility_validation": {
+    "database_scope": "ISOLATED_TYPE_GUARD",
+    "docker_executor_in_unit_tests": "SIMULATED",
+    "postgres_version": "18.4",
+    "real_hk_execution": "NOT_RUN",
+    "run_id": 34642554667,
+    "unit_tests": 34
+  },
+  "created_at": "2026-09-11T20:31:02.833515+00:00",
+  "deployment_authorized": false,
+  "gates": {
+    "FINAL_RELEASE": "HOLD",
+    "SEALED_NODE": "HOLD",
+    "SIX_VERTICAL_REAL_CLOSED_LOOP_E2E": "HOLD",
+    "THREE_END_REAL_UX_LOGIN": "HOLD"
+  },
+  "historical_results": [
+    {
+      "applies_to_new_hk_runtime": false,
+      "reexecuted": false,
+      "run_id": 34565938702,
+      "scope": "20 isolated eight-service checks of OLD runtime image"
+    },
+    {
+      "real_hk_data_restore": "NOT_PROVEN",
+      "reexecuted": false,
+      "run_id": 34571894075,
+      "scope": "25 isolated migration/restore checks including 14 media subchecks"
+    }
+  ],
+  "hk_execution": "NOT_RUN",
+  "identity_note": "Package ID identifies this aggregate. Business candidate labels remain P03. Repaired image/config and executor retain their already-tested identities.",
+  "image_archive_bytes": 175057507,
+  "image_archive_sha256": "edca0c20cac07950b79814ef2e5ec56d3551430a02ff6943532a9009538395a5",
+  "image_config_id": "sha256:cba95a5ac6f061b8196f953f181952fdad94ab520a12cbeb0e7ee49d9a6de150",
+  "image_rebuilt": false,
+  "image_tag": "go-depth40-staging:compat-34642554667",
+  "installed_in_hk": false,
+  "package_candidate": "CP11_DEPTH40_P03_COMPAT_V2_PARENT_20260912",
+  "package_revision": "compat-v2-parent",
+  "packaging_commit": "4c9d24ee37cef02cfef026c41db3dfb38d09b9f0",
+  "packaging_run_id": "34644569516",
+  "preflight_sha256": "b56923a5dab9dd6a28c04c3f7c678e3080a5ac662ee6aef4c1c60b2a1afc3dcd",
+  "previous_parent_preserved": true,
+  "production": "HOLD",
+  "registry_repo_digest": null,
+  "requires_overlay_for_restore": false,
+  "requires_previous_artifact_for_restore": false,
+  "schema_version": "1",
+  "self_contained": true,
+  "site_binding": "UNBOUND",
+  "source_files": 1271,
+  "source_tree_sha256": "64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667"
+}
