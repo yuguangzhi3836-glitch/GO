@@ -1,0 +1,92 @@
+name: depth40-parent-build
+on:
+  pull_request:
+    branches: [p0-agent-transaction-lifecycle-v0-2]
+    paths:
+      - '.github/workflows/depth40-parent-build.yml'
+      - 'ci/depth40/**'
+      - 'ci/depth39/**'
+      - 'ci/depth38/**'
+      - 'src/go_hotel/**'
+      - 'mobile/go-app/native/apple/**'
+permissions:
+  contents: read
+jobs:
+  build-parent:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout parent candidate branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+      - name: Checkout verified DEPTH36 restore tooling
+        uses: actions/checkout@v4
+        with:
+          ref: ff13ca334acfcec61d6463f30ca94d7964086635
+          path: depth36-tooling
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Restore sealed DEPTH36 source
+        shell: bash
+        run: |
+          python depth36-tooling/ci/depth36/materialize_parent.py --depth26 candidate/deliverables/CP11_DEPTH26_20260909 --depth27 candidate/deliverables/CP11_DEPTH27_20260909 --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 --output restored-parent >/dev/null
+          python candidate/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/restore_depth29.py --parent restored-parent --output restored29 >/dev/null
+          python candidate/deliverables/CP11_DEPTH30_NATIVE_PAYMENT_20260909/restore_depth30.py --parent restored29 --output restored30 >/dev/null
+          python candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910/restore_delta.py --parent restored30 --package candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910 --output restored31 >/dev/null
+          python candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910/restore_delta.py --parent restored31 --package candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910 --output restored32 >/dev/null
+          python candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910/restore_delta.py --parent restored32 --package candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910 --output restored33 >/dev/null
+          python candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910/restore_delta.py --parent restored33 --package candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910 --output restored34 >/dev/null
+          python candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910/restore_delta.py --parent restored34 --package candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910 --output restored35 >/dev/null
+          python candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910/restore_delta.py --parent restored35 --package candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910 --output restored >/dev/null
+      - name: Install frozen dependencies
+        shell: bash
+        run: |
+          python depth36-tooling/ci/depth36/dependencies.py --repository candidate --output dependencies >/dev/null
+          python -m venv isolated-runtime
+          isolated-runtime/bin/python -m pip install --no-index --no-deps --find-links dependencies/wheelhouse -r depth36-tooling/ci/depth36/requirements.lock >/dev/null
+          isolated-runtime/bin/python -m pip check
+      - name: Apply P0.2 and P0.3
+        shell: bash
+        run: |
+          isolated-runtime/bin/python candidate/ci/depth38/apply_agent_lifecycle.py --source restored --overlay candidate --evidence depth38-overlay.json
+          isolated-runtime/bin/python candidate/ci/depth39/apply_native_closure.py --source restored
+          isolated-runtime/bin/python candidate/ci/depth39/apply_native_closure_fix1.py --source restored
+          cp candidate/tests/test_agent_native_lifecycle_p03.py restored/tests/
+          PYTHONPATH=restored:restored/src isolated-runtime/bin/python -m pytest -q restored/tests/test_agent_native_lifecycle_p03.py restored/tests/test_agent_transaction_lifecycle_p02.py
+          PYTHONPATH=restored:restored/src isolated-runtime/bin/python -m pytest -q restored/tests/test_agent_transaction_gateway.py restored/tests/test_agent_transaction_gateway_real_core.py restored/tests/test_agent_payment_truth_binding.py
+      - name: Build sealed parent package
+        shell: bash
+        run: |
+          rm -rf CP11_DEPTH40_P03_PARENT_20260911
+          isolated-runtime/bin/python candidate/ci/depth40/build_parent.py \
+            --source restored \
+            --output CP11_DEPTH40_P03_PARENT_20260911 \
+            --base-commit ff13ca334acfcec61d6463f30ca94d7964086635 \
+            --p02-commit b977e2d1d3afd35bb3d39c2e0df0dedd2e4e33d3 \
+            --p03-commit e0742e2168b9a0fc0c1d6391f767c3219efb5e97 | tee depth40-build.json
+          cp candidate/ci/depth40/restore_parent.py CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py
+          sha256sum CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py >> CP11_DEPTH40_P03_PARENT_20260911/CHECKSUMS.sha256
+      - name: Self-restore sanity
+        shell: bash
+        run: |
+          isolated-runtime/bin/python CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py --package CP11_DEPTH40_P03_PARENT_20260911 --output depth40-self-restored | tee depth40-self-restore.json
+      - name: No deployment boundary
+        shell: bash
+        run: |
+          grep -q '"deployment_authorized": false' CP11_DEPTH40_P03_PARENT_20260911/MANIFEST.json
+          grep -q '"hong_kong_deployment": "NO"' CP11_DEPTH40_P03_PARENT_20260911/RELEASE_GATE.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GO-CP11-DEPTH40-P03-PARENT-${{ github.event.pull_request.head.sha }}
+          path: |
+            CP11_DEPTH40_P03_PARENT_20260911
+            depth40-build.json
+            depth40-self-restore.json
+          retention-days: 90
