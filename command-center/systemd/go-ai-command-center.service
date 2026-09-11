@@ -1,0 +1,23 @@
+[Unit]
+Description=GO AI Command Center web application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=goadmin
+Group=goadmin
+WorkingDirectory=/home/goadmin/go-ai-command-center
+EnvironmentFile=/home/goadmin/go-ai-command-center/.env
+ExecStart=/home/goadmin/go-ai-command-center/.venv/bin/gunicorn --workers 2 --worker-class gthread --threads 16 --bind 127.0.0.1:8080 --access-logfile - --error-logfile - --timeout 30 app:app
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/goadmin/go-ai-command-center/data
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

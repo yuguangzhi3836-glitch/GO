@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily GO AI Command Center usage report at 09:00 China time
+
+[Timer]
+OnCalendar=*-*-* 01:00:00 UTC
+Persistent=true
+Unit=go-ai-usage-report.service
+
+[Install]
+WantedBy=timers.target
