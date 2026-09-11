@@ -17,7 +17,11 @@ FINAL_RELEASE_GATE=HOLD；HOTEL_REPLICATION_GATE=HOLD。以上均为工程复核
 
 该目录包含 Web Command Center 源码、现役 Boss Request Bridge 1.2.0、去敏配置、systemd/nginx 基线与源文件 SHA-256；不包含私钥、`.env` 实值、数据库、Token 或密码。
 
-## HK-STAGING operations
+## HK-STAGING
+
+2026-09-11 现役 HK-STAGING 源码与运行配置归档：[`hk-staging/`](hk-staging/)。
+
+该目录区分当前运行镜像中的真实源码与服务器 host-side build context，包含现役 HK Agent、Executor 及四个 runtime、Compose、systemd、Caddy、去敏配置与 SHA-256 基线。它是源码/配置归档，不是 Execution Authority。
 
 Before any HK-STAGING deployment planning or execution, read
 [`docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md`](docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md).
