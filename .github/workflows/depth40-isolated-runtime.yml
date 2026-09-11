@@ -72,7 +72,8 @@ jobs:
         run: |
           set -euo pipefail
           docker network create --internal go-depth40-ci
-          docker run --detach --name go-depth40-ci --read-only --user 10001:10001 --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 768m --cpus 0.5 --network go-depth40-ci --tmpfs /tmp:rw,noexec,nosuid,size=64m --tmpfs /state:rw,noexec,nosuid,size=128m,uid=10001,gid=10001 --publish 127.0.0.1:18440:4187 "$IMAGE"
+          docker volume create go-depth40-ci-state
+          docker run --detach --name go-depth40-ci --read-only --user 10001:10001 --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 768m --cpus 0.5 --network go-depth40-ci --tmpfs /tmp:rw,noexec,nosuid,size=64m --mount type=volume,src=go-depth40-ci-state,dst=/state --publish 127.0.0.1:18440:4187 "$IMAGE"
           docker exec go-depth40-ci /opt/go/python/bin/python3.13 -B /opt/go/tooling/probe.py | tee runtime-delivery/PACKAGED_RUNTIME_SMOKE.json
           curl --fail --silent http://127.0.0.1:18440/__acceptance/binding > runtime-delivery/LIVE_CI_BINDING.json
           test "$(curl --silent -o /dev/null -w '%{http_code}' -H 'Host: outside.invalid' http://127.0.0.1:18440/health)" = 403
@@ -80,6 +81,7 @@ jobs:
           docker stats --no-stream --format '{{json .}}' go-depth40-ci > runtime-delivery/CI_RESOURCE_SAMPLE.json
           docker network inspect go-depth40-ci --format '{{.Internal}}' > runtime-delivery/CI_NETWORK_INTERNAL.txt
           test "$(cat runtime-delivery/CI_NETWORK_INTERNAL.txt)" = true
+          GO_REVIEW_IMAGE_ID="$(cat runtime-delivery/IMAGE_ID.txt)" docker compose -f ci/depth40-runtime/compose.review.yml config --quiet
       - name: Finalize review-only package
         shell: bash
         run: |

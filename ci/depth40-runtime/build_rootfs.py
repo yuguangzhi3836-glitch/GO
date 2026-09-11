@@ -44,12 +44,15 @@ def main():
         shutil.copy2(a.tooling / name, go / 'tooling' / name)
     # Copy the transitive runtime ELF closure, preserving each loader lookup path.
     libs = {}
+    bundled_lib_dirs = [str(p) for p in (go / 'site').rglob('*')
+                        if p.is_dir() and p.name.endswith('.libs')]
+    loader_path = ':'.join([str(go / 'python/lib'), *bundled_lib_dirs])
     for p in list((go / 'python').rglob('*')) + list((go / 'site').rglob('*')):
         if not p.is_file(): continue
         with p.open('rb') as stream:
             if stream.read(4) != b'\x7fELF': continue
         result = subprocess.run(['ldd', str(p)], text=True, capture_output=True,
-                                env={**os.environ, 'LD_LIBRARY_PATH': str(go / 'python/lib')})
+                                env={**os.environ, 'LD_LIBRARY_PATH': loader_path})
         if 'not found' in result.stdout:
             raise RuntimeError('MISSING_ELF_DEPENDENCY:' + str(p) + ':' + result.stdout)
         for path in re.findall(r'(?:=>\s+)?(/[^\s]+)', result.stdout):

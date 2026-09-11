@@ -4,6 +4,8 @@ import http.cookiejar
 import json
 from pathlib import Path
 import time
+import subprocess
+import sys
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener, HTTPCookieProcessor, ProxyHandler
 
@@ -56,6 +58,13 @@ for role, actor in [('supplier', 'SUPPLIER_USER'), ('admin', 'GO_ADMIN')]:
 actual = {p.relative_to('/opt/go/source').as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
           for p in Path('/opt/go/source').rglob('*') if p.is_file()}
 check('source unchanged after boot', actual == fp)
+import psycopg
+check('bundled psycopg extension imports without RDS access', bool(psycopg.__version__))
+repeat = subprocess.run([sys.executable, '-B', '/opt/go/source/scripts/acceptance_runtime.py',
+        '--source','/opt/go/source','--fingerprint','/opt/go/SOURCE_FINGERPRINT.json',
+        '--expected-tree',TREE,'--state','/state/session','--port','4186'],
+        capture_output=True, timeout=20)
+check('existing session refuses reinitialization', repeat.returncode != 0 and b'FileExistsError' in repeat.stderr)
 print(json.dumps({'status': 'PASS', 'checks': checks, 'source_tree_sha256': TREE,
                   'scope': 'PACKAGED_RUNTIME_HTTP_SMOKE', 'browser_gate': 'HOLD',
                   'six_vertical_gate': 'HOLD', 'hong_kong_execution': 'NOT_RUN',

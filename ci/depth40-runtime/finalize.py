@@ -54,7 +54,7 @@ budget = {'schema':'go.isolated-runtime-budget.v1', 'observed_server_source':'us
  'limits':'Single API acceptance session only; no load guarantee, no PG/Redis/workers, no local image build, no existing image/data deletion.'}
 budget['planned_disk_requirement_bytes'] = sum(budget['planning'][k] for k in ['delivery_and_archive_copies','docker_layers_and_import_headroom','private_database_data_logs_quota_bytes','host_disk_reserve_bytes'])
 (root/'RESOURCE_BUDGET.json').write_text(json.dumps(budget, indent=2)+'\n')
-for name in ('ISOLATION_AND_APPROVAL.md', 'compose.review.yml', 'verify_delivery.py'):
+for name in ('ISOLATION_AND_APPROVAL.md', 'compose.review.yml', 'verify_delivery.py', 'HK_PREFLIGHT_REPORTED.json'):
  shutil.copy2(a.tooling/name, root/name)
 # Split only for permanent Git storage. Preserve byte identity on reassembly.
 parts=[]
