@@ -1,0 +1,56 @@
+name: depth40-pg18-upgrade-recovery
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/depth40-upgrade-recovery.yml'
+      - 'ci/depth40-upgrade/**'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  isolated-upgrade:
+    if: github.head_ref == 'acceptance/depth40-pg18-upgrade-recovery'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 18
+    permissions:
+      contents: write
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_REVIEW_HEAD: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: 10186084217
+          run-id: 34565938702
+          repository: yuguangzhi3836-glitch/GO
+          github-token: ${{ github.token }}
+          path: fixed-runtime
+          merge-multiple: true
+      - name: Verify sealed runtime and load exact image in CI only
+        run: |
+          set -euo pipefail
+          python3 -B ci/depth40-upgrade/prepare.py
+          gzip -dc fixed-runtime-image.tar.gz | docker load
+      - name: PostgreSQL 18.4 upgrade failures, recovery and legacy media preservation
+        run: python3 -B ci/depth40-upgrade/exercise.py
+      - name: Seal actual result, including failures
+        if: always()
+        run: python3 -B ci/depth40-upgrade/seal.py
+      - name: Preserve upgrade supplement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH40-UPGRADE-RECOVERY-${{ github.run_id }}
+          path: upgrade-evidence
+          retention-days: 90
+      - name: Archive synthetic evidence permanently
+        if: always()
+        env:
+          GO_ARCHIVE_TOKEN: ${{ github.token }}
+        run: python3 -B ci/depth40-upgrade/archive.py
