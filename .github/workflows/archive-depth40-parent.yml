@@ -1,0 +1,45 @@
+name: archive-depth40-parent-exact-bytes
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packaging/archive-depth40-parent/**'
+      - '.github/workflows/archive-depth40-parent.yml'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: archive-depth40-parent-34644569516
+  cancel-in-progress: false
+jobs:
+  archive:
+    if: github.event.pull_request.head.repo.full_name == 'yuguangzhi3836-glitch/GO' && github.event.pull_request.head.ref == 'archive-tools/depth40-parent-34644569516'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_ARCHIVE_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            packaging/archive-depth40-parent
+            evidence/depth40-parent-compat-v2/34644569516
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Store exact parent parts on one new archive branch and read them back
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -B packaging/archive-depth40-parent/archive.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH40-PARENT-ARCHIVE-RECEIPT-${{ github.run_id }}
+          path: archive-result
+          retention-days: 90
+          if-no-files-found: error

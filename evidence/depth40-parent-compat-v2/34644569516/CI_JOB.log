@@ -1,0 +1,662 @@
+﻿2026-09-11T20:30:26.0953742Z Current runner version: '2.337.0'
+2026-09-11T20:30:26.0992065Z ##[group]Runner Image Provisioner
+2026-09-11T20:30:26.0993672Z Hosted Compute Agent
+2026-09-11T20:30:26.0994896Z Version: 20260828.587
+2026-09-11T20:30:26.0996047Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-11T20:30:26.0997398Z Build Date: 2026-08-28T16:44:25Z
+2026-09-11T20:30:26.0998562Z Worker ID: {27aa0ba9-ab45-4151-b2c6-6750a66bb666}
+2026-09-11T20:30:26.0999773Z Azure Region: westus
+2026-09-11T20:30:26.1000960Z ##[endgroup]
+2026-09-11T20:30:26.1003696Z ##[group]Operating System
+2026-09-11T20:30:26.1004758Z Ubuntu
+2026-09-11T20:30:26.1005342Z 22.04.5
+2026-09-11T20:30:26.1005874Z LTS
+2026-09-11T20:30:26.1006488Z ##[endgroup]
+2026-09-11T20:30:26.1007105Z ##[group]Runner Image
+2026-09-11T20:30:26.1007794Z Image: ubuntu-22.04
+2026-09-11T20:30:26.1008409Z Version: 20260907.292.1
+2026-09-11T20:30:26.1009840Z Included Software: https://github.com/actions/runner-images/blob/ubuntu22/20260907.292/images/ubuntu/Ubuntu2204-Readme.md
+2026-09-11T20:30:26.1011456Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu22%2F20260907.292
+2026-09-11T20:30:26.1012492Z ##[endgroup]
+2026-09-11T20:30:26.1014502Z ##[group]GITHUB_TOKEN Permissions
+2026-09-11T20:30:26.1017284Z Actions: read
+2026-09-11T20:30:26.1018304Z Contents: read
+2026-09-11T20:30:26.1019269Z Metadata: read
+2026-09-11T20:30:26.1020344Z ##[endgroup]
+2026-09-11T20:30:26.1023615Z Secret source: Actions
+2026-09-11T20:30:26.1025373Z Cache mode: write
+2026-09-11T20:30:26.1026555Z Prepare workflow directory
+2026-09-11T20:30:26.1918433Z Prepare all required actions
+2026-09-11T20:30:26.2010745Z Getting action download info
+2026-09-11T20:30:26.6058890Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-11T20:30:26.7137382Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-11T20:30:26.8225907Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-11T20:30:27.0654676Z Complete job name: package
+2026-09-11T20:30:27.1411752Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:30:27.1421244Z ##[group]Run actions/checkout@v4
+2026-09-11T20:30:27.1422022Z with:
+2026-09-11T20:30:27.1422511Z   ref: 4c9d24ee37cef02cfef026c41db3dfb38d09b9f0
+2026-09-11T20:30:27.1423140Z   persist-credentials: false
+2026-09-11T20:30:27.1424128Z   sparse-checkout: packaging/depth40-parent-compat-v2
+2026-09-11T20:30:27.1424801Z   repository: yuguangzhi3836-glitch/GO
+2026-09-11T20:30:27.1428674Z   token: ***
+2026-09-11T20:30:27.1429121Z   ssh-strict: true
+2026-09-11T20:30:27.1429560Z   ssh-user: git
+2026-09-11T20:30:27.1429987Z   clean: true
+2026-09-11T20:30:27.1430437Z   sparse-checkout-cone-mode: true
+2026-09-11T20:30:27.1430993Z   fetch-depth: 1
+2026-09-11T20:30:27.1431463Z   fetch-tags: false
+2026-09-11T20:30:27.1431919Z   show-progress: true
+2026-09-11T20:30:27.1432362Z   lfs: false
+2026-09-11T20:30:27.1432773Z   submodules: false
+2026-09-11T20:30:27.1433501Z   set-safe-directory: true
+2026-09-11T20:30:27.1434185Z   allow-unsafe-pr-checkout: false
+2026-09-11T20:30:27.1435131Z env:
+2026-09-11T20:30:27.1435582Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:30:27.1436205Z   GO_PACKAGING_SHA: 4c9d24ee37cef02cfef026c41db3dfb38d09b9f0
+2026-09-11T20:30:27.1436861Z ##[endgroup]
+2026-09-11T20:30:27.2705792Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-11T20:30:27.2709318Z ##[group]Getting Git version info
+2026-09-11T20:30:27.2711253Z Working directory is '/home/runner/work/GO/GO'
+2026-09-11T20:30:27.2714595Z [command]/usr/bin/git version
+2026-09-11T20:30:27.2892645Z git version 2.55.0
+2026-09-11T20:30:27.2898592Z ##[endgroup]
+2026-09-11T20:30:27.2910558Z Temporarily overriding HOME='/home/runner/work/_temp/e5628bd7-dd0d-4356-8ce0-1af617df05d8' before making global git config changes
+2026-09-11T20:30:27.2934434Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T20:30:27.2936361Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-11T20:30:27.3076811Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-11T20:30:27.3080814Z ##[group]Initializing the repository
+2026-09-11T20:30:27.3083555Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-11T20:30:27.3189943Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-11T20:30:27.3192109Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-11T20:30:27.3220249Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-11T20:30:27.3221601Z hint: call:
+2026-09-11T20:30:27.3254302Z hint:
+2026-09-11T20:30:27.3255966Z hint: 	git config --global init.defaultBranch <name>
+2026-09-11T20:30:27.3257703Z hint:
+2026-09-11T20:30:27.3258962Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-11T20:30:27.3261126Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-11T20:30:27.3262798Z hint:
+2026-09-11T20:30:27.3264689Z hint: 	git branch -m <name>
+2026-09-11T20:30:27.3266077Z hint:
+2026-09-11T20:30:27.3267961Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-11T20:30:27.3270168Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-11T20:30:27.3275226Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T20:30:27.3281129Z ##[endgroup]
+2026-09-11T20:30:27.3282302Z ##[group]Disabling automatic garbage collection
+2026-09-11T20:30:27.3283637Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-11T20:30:27.3337634Z ##[endgroup]
+2026-09-11T20:30:27.3338823Z ##[group]Setting up auth
+2026-09-11T20:30:27.3339987Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:30:27.3421324Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:30:27.4244339Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:30:27.4249016Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:30:27.4614559Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:30:27.4626159Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:30:27.4906323Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-11T20:30:27.4955602Z ##[endgroup]
+2026-09-11T20:30:27.4957382Z ##[group]Fetching the repository
+2026-09-11T20:30:27.4966723Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --filter=blob:none --depth=1 origin 4c9d24ee37cef02cfef026c41db3dfb38d09b9f0
+2026-09-11T20:30:27.8962071Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T20:30:27.8964778Z  * branch            4c9d24ee37cef02cfef026c41db3dfb38d09b9f0 -> FETCH_HEAD
+2026-09-11T20:30:27.8969852Z ##[endgroup]
+2026-09-11T20:30:27.8971760Z ##[group]Determining the checkout info
+2026-09-11T20:30:27.8974119Z ##[endgroup]
+2026-09-11T20:30:27.8977685Z ##[group]Setting up sparse checkout
+2026-09-11T20:30:27.8986473Z [command]/usr/bin/git sparse-checkout set packaging/depth40-parent-compat-v2
+2026-09-11T20:30:27.9086050Z ##[endgroup]
+2026-09-11T20:30:27.9101808Z ##[group]Checking out the ref
+2026-09-11T20:30:27.9103959Z [command]/usr/bin/git checkout --progress --force 4c9d24ee37cef02cfef026c41db3dfb38d09b9f0
+2026-09-11T20:30:28.2627160Z Note: switching to '4c9d24ee37cef02cfef026c41db3dfb38d09b9f0'.
+2026-09-11T20:30:28.2634697Z 
+2026-09-11T20:30:28.2636437Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-11T20:30:28.2640321Z changes and commit them, and you can discard any commits you make in this
+2026-09-11T20:30:28.2644082Z state without impacting any branches by switching back to a branch.
+2026-09-11T20:30:28.2646674Z 
+2026-09-11T20:30:28.2648193Z If you want to create a new branch to retain commits you create, you may
+2026-09-11T20:30:28.2651436Z do so (now or later) by using -c with the switch command. Example:
+2026-09-11T20:30:28.2653623Z 
+2026-09-11T20:30:28.2655011Z   git switch -c <new-branch-name>
+2026-09-11T20:30:28.2656418Z 
+2026-09-11T20:30:28.2657815Z Or undo this operation with:
+2026-09-11T20:30:28.2659286Z 
+2026-09-11T20:30:28.2660558Z   git switch -
+2026-09-11T20:30:28.2661796Z 
+2026-09-11T20:30:28.2664251Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-11T20:30:28.2666869Z 
+2026-09-11T20:30:28.2671027Z HEAD is now at 4c9d24e package: consolidate verified DEPTH40 compatibility repair into a self-contained parent
+2026-09-11T20:30:28.2686418Z ##[endgroup]
+2026-09-11T20:30:28.2706349Z [command]/usr/bin/git log -1 --format=%H
+2026-09-11T20:30:28.2748303Z 4c9d24ee37cef02cfef026c41db3dfb38d09b9f0
+2026-09-11T20:30:28.2765049Z ##[group]Removing auth
+2026-09-11T20:30:28.2776251Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:30:28.2821689Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:30:28.3127900Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:30:28.3165959Z http.https://github.com/.extraheader
+2026-09-11T20:30:28.3181533Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-11T20:30:28.3227893Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:30:28.3542580Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:30:28.3591907Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:30:28.3886580Z ##[endgroup]
+2026-09-11T20:30:28.4330524Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:30:28.4341073Z ##[group]Run actions/setup-python@v5
+2026-09-11T20:30:28.4343081Z with:
+2026-09-11T20:30:28.4344927Z   python-version: 3.13.5
+2026-09-11T20:30:28.4346746Z   check-latest: false
+2026-09-11T20:30:28.4364821Z   token: ***
+2026-09-11T20:30:28.4366258Z   update-environment: true
+2026-09-11T20:30:28.4368110Z   allow-prereleases: false
+2026-09-11T20:30:28.4369964Z   freethreaded: false
+2026-09-11T20:30:28.4371330Z env:
+2026-09-11T20:30:28.4372285Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:30:28.4374116Z   GO_PACKAGING_SHA: 4c9d24ee37cef02cfef026c41db3dfb38d09b9f0
+2026-09-11T20:30:28.4375637Z ##[endgroup]
+2026-09-11T20:30:28.6211053Z (node:1872) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-11T20:30:28.6255404Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-11T20:30:28.6259329Z ##[group]Installed versions
+2026-09-11T20:30:28.6275866Z Version 3.13.5 was not found in the local cache
+2026-09-11T20:30:29.4914264Z Version 3.13.5 is available for downloading
+2026-09-11T20:30:29.4916163Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-22.04-x64.tar.gz"
+2026-09-11T20:30:31.2654425Z Extract downloaded archive
+2026-09-11T20:30:31.2865504Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/dd7039c4-cc29-4c0a-9681-a1460d29de5f -f /home/runner/work/_temp/fdb99cd7-9f71-48ed-a1f5-1eb548becbb0
+2026-09-11T20:30:33.7413684Z Execute installation script
+2026-09-11T20:30:33.7542453Z Check if Python hostedtoolcache folder exist...
+2026-09-11T20:30:33.7557871Z Create Python 3.13.5 folder
+2026-09-11T20:30:33.7572413Z Copy Python binaries to hostedtoolcache folder
+2026-09-11T20:30:34.4699335Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-11T20:30:34.4753887Z Upgrading pip...
+2026-09-11T20:30:37.0518550Z Looking in links: /tmp/tmpinm1knyp
+2026-09-11T20:30:37.0525129Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-11T20:30:38.7258394Z Collecting pip
+2026-09-11T20:30:38.7354582Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-11T20:30:38.7454686Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-11T20:30:38.7635444Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 131.4 MB/s eta 0:00:00
+2026-09-11T20:30:38.7636015Z 
+2026-09-11T20:30:38.7849237Z Installing collected packages: pip
+2026-09-11T20:30:38.7884013Z Attempting uninstall: pip
+2026-09-11T20:30:38.7894157Z Found existing installation: pip 25.1.1
+2026-09-11T20:30:38.8290094Z Uninstalling pip-25.1.1:
+2026-09-11T20:30:38.8355179Z Successfully uninstalled pip-25.1.1
+2026-09-11T20:30:39.8564853Z Successfully installed pip-26.2.1
+2026-09-11T20:30:39.9185250Z Create complete file
+2026-09-11T20:30:39.9251863Z Successfully set up CPython (3.13.5)
+2026-09-11T20:30:39.9253051Z ##[endgroup]
+2026-09-11T20:30:39.9422266Z ##[group]Run python -B -m unittest discover -s packaging/depth40-parent-compat-v2/tests -v
+2026-09-11T20:30:39.9423006Z [36;1mpython -B -m unittest discover -s packaging/depth40-parent-compat-v2/tests -v[0m
+2026-09-11T20:30:39.9990692Z shell: /usr/bin/bash -e {0}
+2026-09-11T20:30:39.9991075Z env:
+2026-09-11T20:30:39.9991321Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:30:39.9991723Z   GO_PACKAGING_SHA: 4c9d24ee37cef02cfef026c41db3dfb38d09b9f0
+2026-09-11T20:30:39.9992179Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:39.9992715Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:30:39.9993433Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:39.9993865Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:39.9994288Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:39.9994712Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:30:39.9995154Z ##[endgroup]
+2026-09-11T20:30:40.4606153Z test_altered_bytes_rejected (test_parent.ParentGuards.test_altered_bytes_rejected) ... ok
+2026-09-11T20:30:40.4639080Z test_archive_symlink_rejected (test_parent.ParentGuards.test_archive_symlink_rejected) ... ok
+2026-09-11T20:30:40.4644431Z test_archive_traversal_rejected_without_extraction (test_parent.ParentGuards.test_archive_traversal_rejected_without_extraction) ... ok
+2026-09-11T20:30:40.4658309Z test_duplicate_archive_member_rejected (test_parent.ParentGuards.test_duplicate_archive_member_rejected) ... ok
+2026-09-11T20:30:40.4671504Z test_duplicate_checksums_rejected (test_parent.ParentGuards.test_duplicate_checksums_rejected) ... ok
+2026-09-11T20:30:40.4683678Z test_extra_file_rejected (test_parent.ParentGuards.test_extra_file_rejected) ... ok
+2026-09-11T20:30:40.4761400Z test_image_config_id_uses_config_bytes (test_parent.ParentGuards.test_image_config_id_uses_config_bytes) ... ok
+2026-09-11T20:30:40.4771660Z test_missing_file_rejected (test_parent.ParentGuards.test_missing_file_rejected) ... ok
+2026-09-11T20:30:40.4802395Z test_nested_checksum_file_is_covered (test_parent.ParentGuards.test_nested_checksum_file_is_covered) ... ok
+2026-09-11T20:30:40.4858948Z test_restore_copies_and_rechecks_bytes (test_parent.ParentGuards.test_restore_copies_and_rechecks_bytes) ... ok
+2026-09-11T20:30:40.4860955Z test_restore_refuses_destination_inside_source (test_parent.ParentGuards.test_restore_refuses_destination_inside_source) ... ok
+2026-09-11T20:30:40.4867154Z test_restore_refuses_existing_empty_destination (test_parent.ParentGuards.test_restore_refuses_existing_empty_destination) ... ok
+2026-09-11T20:30:40.4952747Z test_source_tree_orders_full_paths_lexically (test_parent.ParentGuards.test_source_tree_orders_full_paths_lexically) ... ok
+2026-09-11T20:30:40.4954196Z test_symbolic_link_rejected (test_parent.ParentGuards.test_symbolic_link_rejected) ... ok
+2026-09-11T20:30:40.4954787Z 
+2026-09-11T20:30:40.4955065Z ----------------------------------------------------------------------
+2026-09-11T20:30:40.4955620Z Ran 14 tests in 0.033s
+2026-09-11T20:30:40.4955835Z 
+2026-09-11T20:30:40.4955946Z OK
+2026-09-11T20:30:40.5209489Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:30:40.5211351Z ##[group]Run actions/checkout@v4
+2026-09-11T20:30:40.5211602Z with:
+2026-09-11T20:30:40.5211828Z   ref: b5732c02dd95092a63def7eaa0d2cf332b1e2996
+2026-09-11T20:30:40.5212130Z   path: inputs/canonical
+2026-09-11T20:30:40.5212371Z   persist-credentials: false
+2026-09-11T20:30:40.5212660Z   sparse-checkout: application
+docs/consolidation
+
+2026-09-11T20:30:40.5212988Z   repository: yuguangzhi3836-glitch/GO
+2026-09-11T20:30:40.5215902Z   token: ***
+2026-09-11T20:30:40.5216113Z   ssh-strict: true
+2026-09-11T20:30:40.5216331Z   ssh-user: git
+2026-09-11T20:30:40.5216516Z   clean: true
+2026-09-11T20:30:40.5216722Z   sparse-checkout-cone-mode: true
+2026-09-11T20:30:40.5217020Z   fetch-depth: 1
+2026-09-11T20:30:40.5217215Z   fetch-tags: false
+2026-09-11T20:30:40.5217418Z   show-progress: true
+2026-09-11T20:30:40.5217620Z   lfs: false
+2026-09-11T20:30:40.5217803Z   submodules: false
+2026-09-11T20:30:40.5218012Z   set-safe-directory: true
+2026-09-11T20:30:40.5218256Z   allow-unsafe-pr-checkout: false
+2026-09-11T20:30:40.5218503Z env:
+2026-09-11T20:30:40.5218698Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:30:40.5219018Z   GO_PACKAGING_SHA: 4c9d24ee37cef02cfef026c41db3dfb38d09b9f0
+2026-09-11T20:30:40.5219414Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:40.5219827Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:30:40.5220239Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:40.5220610Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:40.5220980Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:40.5221354Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:30:40.5221669Z ##[endgroup]
+2026-09-11T20:30:40.6314244Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-11T20:30:40.6316582Z ##[group]Getting Git version info
+2026-09-11T20:30:40.6317730Z Working directory is '/home/runner/work/GO/GO/inputs/canonical'
+2026-09-11T20:30:40.6362769Z [command]/usr/bin/git version
+2026-09-11T20:30:40.6476819Z git version 2.55.0
+2026-09-11T20:30:40.6540053Z ##[endgroup]
+2026-09-11T20:30:40.6543734Z Temporarily overriding HOME='/home/runner/work/_temp/1ed5f55e-c55d-4ca3-ac15-6cd356ec3f74' before making global git config changes
+2026-09-11T20:30:40.6545230Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T20:30:40.6546439Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/inputs/canonical
+2026-09-11T20:30:40.6907764Z ##[group]Initializing the repository
+2026-09-11T20:30:40.6909081Z [command]/usr/bin/git init /home/runner/work/GO/GO/inputs/canonical
+2026-09-11T20:30:40.7360203Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-11T20:30:40.7389321Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-11T20:30:40.7413930Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-11T20:30:40.7453987Z hint: call:
+2026-09-11T20:30:40.7463896Z hint:
+2026-09-11T20:30:40.7464693Z hint: 	git config --global init.defaultBranch <name>
+2026-09-11T20:30:40.7465425Z hint:
+2026-09-11T20:30:40.7466146Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-11T20:30:40.7474132Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-11T20:30:40.7480991Z hint:
+2026-09-11T20:30:40.7481553Z hint: 	git branch -m <name>
+2026-09-11T20:30:40.7482155Z hint:
+2026-09-11T20:30:40.7483170Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-11T20:30:40.7485310Z Initialized empty Git repository in /home/runner/work/GO/GO/inputs/canonical/.git/
+2026-09-11T20:30:40.7494129Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T20:30:40.7560705Z ##[endgroup]
+2026-09-11T20:30:40.7615971Z ##[group]Disabling automatic garbage collection
+2026-09-11T20:30:40.7616859Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-11T20:30:40.7828943Z ##[endgroup]
+2026-09-11T20:30:40.7829829Z ##[group]Setting up auth
+2026-09-11T20:30:40.7851213Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:30:40.7941573Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:30:40.8249577Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:30:40.8351815Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:30:40.8689662Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:30:40.8760179Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:30:40.9107291Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-11T20:30:40.9412898Z ##[endgroup]
+2026-09-11T20:30:40.9429787Z ##[group]Fetching the repository
+2026-09-11T20:30:40.9431864Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --filter=blob:none --depth=1 origin b5732c02dd95092a63def7eaa0d2cf332b1e2996
+2026-09-11T20:30:41.7287456Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T20:30:41.7311182Z  * branch            b5732c02dd95092a63def7eaa0d2cf332b1e2996 -> FETCH_HEAD
+2026-09-11T20:30:41.7331459Z ##[endgroup]
+2026-09-11T20:30:41.7332312Z ##[group]Determining the checkout info
+2026-09-11T20:30:41.7333184Z ##[endgroup]
+2026-09-11T20:30:41.7334231Z ##[group]Setting up sparse checkout
+2026-09-11T20:30:41.7335042Z [command]/usr/bin/git sparse-checkout set application docs/consolidation
+2026-09-11T20:30:41.7422254Z ##[endgroup]
+2026-09-11T20:30:41.7423130Z ##[group]Checking out the ref
+2026-09-11T20:30:41.7429667Z [command]/usr/bin/git checkout --progress --force b5732c02dd95092a63def7eaa0d2cf332b1e2996
+2026-09-11T20:30:42.8544516Z Updating files:   0% (1/1281)
+2026-09-11T20:30:42.8551918Z Updating files:   1% (13/1281)
+2026-09-11T20:30:42.8560530Z Updating files:   2% (26/1281)
+2026-09-11T20:30:42.8571322Z Updating files:   3% (39/1281)
+2026-09-11T20:30:42.8581354Z Updating files:   4% (52/1281)
+2026-09-11T20:30:42.8590475Z Updating files:   5% (65/1281)
+2026-09-11T20:30:42.8599949Z Updating files:   6% (77/1281)
+2026-09-11T20:30:42.8609199Z Updating files:   7% (90/1281)
+2026-09-11T20:30:42.8617320Z Updating files:   8% (103/1281)
+2026-09-11T20:30:42.8626602Z Updating files:   9% (116/1281)
+2026-09-11T20:30:42.8634330Z Updating files:  10% (129/1281)
+2026-09-11T20:30:42.8665757Z Updating files:  11% (141/1281)
+2026-09-11T20:30:42.8674309Z Updating files:  12% (154/1281)
+2026-09-11T20:30:42.8816247Z Updating files:  13% (167/1281)
+2026-09-11T20:30:42.8829125Z Updating files:  14% (180/1281)
+2026-09-11T20:30:42.8841339Z Updating files:  15% (193/1281)
+2026-09-11T20:30:42.8855289Z Updating files:  16% (205/1281)
+2026-09-11T20:30:42.8869323Z Updating files:  17% (218/1281)
+2026-09-11T20:30:42.8904850Z Updating files:  18% (231/1281)
+2026-09-11T20:30:42.8925521Z Updating files:  19% (244/1281)
+2026-09-11T20:30:42.8935954Z Updating files:  20% (257/1281)
+2026-09-11T20:30:42.8966983Z Updating files:  21% (270/1281)
+2026-09-11T20:30:42.8978490Z Updating files:  22% (282/1281)
+2026-09-11T20:30:42.8988016Z Updating files:  23% (295/1281)
+2026-09-11T20:30:42.8996683Z Updating files:  24% (308/1281)
+2026-09-11T20:30:42.9004358Z Updating files:  25% (321/1281)
+2026-09-11T20:30:42.9012213Z Updating files:  26% (334/1281)
+2026-09-11T20:30:42.9020521Z Updating files:  27% (346/1281)
+2026-09-11T20:30:42.9027900Z Updating files:  28% (359/1281)
+2026-09-11T20:30:42.9054043Z Updating files:  29% (372/1281)
+2026-09-11T20:30:42.9073817Z Updating files:  30% (385/1281)
+2026-09-11T20:30:42.9097806Z Updating files:  31% (398/1281)
+2026-09-11T20:30:42.9101618Z Updating files:  32% (410/1281)
+2026-09-11T20:30:42.9102948Z Updating files:  33% (423/1281)
+2026-09-11T20:30:42.9103844Z Updating files:  34% (436/1281)
+2026-09-11T20:30:42.9104498Z Updating files:  35% (449/1281)
+2026-09-11T20:30:42.9112537Z Updating files:  36% (462/1281)
+2026-09-11T20:30:42.9121134Z Updating files:  37% (474/1281)
+2026-09-11T20:30:42.9129844Z Updating files:  38% (487/1281)
+2026-09-11T20:30:42.9139478Z Updating files:  39% (500/1281)
+2026-09-11T20:30:42.9148336Z Updating files:  40% (513/1281)
+2026-09-11T20:30:42.9160123Z Updating files:  41% (526/1281)
+2026-09-11T20:30:42.9168134Z Updating files:  42% (539/1281)
+2026-09-11T20:30:42.9176215Z Updating files:  43% (551/1281)
+2026-09-11T20:30:42.9186472Z Updating files:  44% (564/1281)
+2026-09-11T20:30:42.9194666Z Updating files:  45% (577/1281)
+2026-09-11T20:30:42.9203027Z Updating files:  46% (590/1281)
+2026-09-11T20:30:42.9211665Z Updating files:  47% (603/1281)
+2026-09-11T20:30:42.9220013Z Updating files:  48% (615/1281)
+2026-09-11T20:30:42.9227941Z Updating files:  49% (628/1281)
+2026-09-11T20:30:42.9235914Z Updating files:  50% (641/1281)
+2026-09-11T20:30:42.9244225Z Updating files:  51% (654/1281)
+2026-09-11T20:30:42.9251289Z Updating files:  52% (667/1281)
+2026-09-11T20:30:42.9259986Z Updating files:  53% (679/1281)
+2026-09-11T20:30:42.9270850Z Updating files:  54% (692/1281)
+2026-09-11T20:30:42.9279618Z Updating files:  55% (705/1281)
+2026-09-11T20:30:42.9288004Z Updating files:  56% (718/1281)
+2026-09-11T20:30:42.9296094Z Updating files:  57% (731/1281)
+2026-09-11T20:30:42.9319245Z Updating files:  58% (743/1281)
+2026-09-11T20:30:42.9329224Z Updating files:  59% (756/1281)
+2026-09-11T20:30:42.9340444Z Updating files:  60% (769/1281)
+2026-09-11T20:30:42.9354406Z Updating files:  61% (782/1281)
+2026-09-11T20:30:42.9367318Z Updating files:  62% (795/1281)
+2026-09-11T20:30:42.9379577Z Updating files:  63% (808/1281)
+2026-09-11T20:30:42.9390786Z Updating files:  64% (820/1281)
+2026-09-11T20:30:42.9402236Z Updating files:  65% (833/1281)
+2026-09-11T20:30:42.9411484Z Updating files:  66% (846/1281)
+2026-09-11T20:30:42.9420876Z Updating files:  67% (859/1281)
+2026-09-11T20:30:42.9431923Z Updating files:  68% (872/1281)
+2026-09-11T20:30:42.9444322Z Updating files:  69% (884/1281)
+2026-09-11T20:30:42.9454100Z Updating files:  70% (897/1281)
+2026-09-11T20:30:42.9468888Z Updating files:  71% (910/1281)
+2026-09-11T20:30:42.9482223Z Updating files:  72% (923/1281)
+2026-09-11T20:30:42.9495972Z Updating files:  73% (936/1281)
+2026-09-11T20:30:42.9508653Z Updating files:  74% (948/1281)
+2026-09-11T20:30:42.9521841Z Updating files:  75% (961/1281)
+2026-09-11T20:30:42.9529774Z Updating files:  76% (974/1281)
+2026-09-11T20:30:42.9536318Z Updating files:  77% (987/1281)
+2026-09-11T20:30:42.9546659Z Updating files:  78% (1000/1281)
+2026-09-11T20:30:42.9555407Z Updating files:  79% (1012/1281)
+2026-09-11T20:30:42.9567578Z Updating files:  80% (1025/1281)
+2026-09-11T20:30:42.9577893Z Updating files:  81% (1038/1281)
+2026-09-11T20:30:42.9587022Z Updating files:  82% (1051/1281)
+2026-09-11T20:30:42.9598260Z Updating files:  83% (1064/1281)
+2026-09-11T20:30:42.9607574Z Updating files:  84% (1077/1281)
+2026-09-11T20:30:42.9617162Z Updating files:  85% (1089/1281)
+2026-09-11T20:30:42.9626217Z Updating files:  86% (1102/1281)
+2026-09-11T20:30:42.9638765Z Updating files:  87% (1115/1281)
+2026-09-11T20:30:42.9645788Z Updating files:  88% (1128/1281)
+2026-09-11T20:30:42.9653665Z Updating files:  89% (1141/1281)
+2026-09-11T20:30:42.9662560Z Updating files:  90% (1153/1281)
+2026-09-11T20:30:42.9671488Z Updating files:  91% (1166/1281)
+2026-09-11T20:30:42.9690264Z Updating files:  92% (1179/1281)
+2026-09-11T20:30:42.9698723Z Updating files:  93% (1192/1281)
+2026-09-11T20:30:42.9705558Z Updating files:  94% (1205/1281)
+2026-09-11T20:30:42.9714635Z Updating files:  95% (1217/1281)
+2026-09-11T20:30:42.9723587Z Updating files:  96% (1230/1281)
+2026-09-11T20:30:42.9732541Z Updating files:  97% (1243/1281)
+2026-09-11T20:30:42.9741363Z Updating files:  98% (1256/1281)
+2026-09-11T20:30:42.9750894Z Updating files:  99% (1269/1281)
+2026-09-11T20:30:42.9751653Z Updating files: 100% (1281/1281)
+2026-09-11T20:30:42.9752739Z Updating files: 100% (1281/1281), done.
+2026-09-11T20:30:42.9781397Z Note: switching to 'b5732c02dd95092a63def7eaa0d2cf332b1e2996'.
+2026-09-11T20:30:42.9782323Z 
+2026-09-11T20:30:42.9783576Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-11T20:30:42.9784768Z changes and commit them, and you can discard any commits you make in this
+2026-09-11T20:30:42.9786089Z state without impacting any branches by switching back to a branch.
+2026-09-11T20:30:42.9786820Z 
+2026-09-11T20:30:42.9787612Z If you want to create a new branch to retain commits you create, you may
+2026-09-11T20:30:42.9790217Z do so (now or later) by using -c with the switch command. Example:
+2026-09-11T20:30:42.9790631Z 
+2026-09-11T20:30:42.9790795Z   git switch -c <new-branch-name>
+2026-09-11T20:30:42.9791060Z 
+2026-09-11T20:30:42.9791215Z Or undo this operation with:
+2026-09-11T20:30:42.9791459Z 
+2026-09-11T20:30:42.9791591Z   git switch -
+2026-09-11T20:30:42.9791775Z 
+2026-09-11T20:30:42.9792108Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-11T20:30:42.9792615Z 
+2026-09-11T20:30:42.9792957Z HEAD is now at b5732c0 consolidation: validate canonical checkout independently
+2026-09-11T20:30:42.9836218Z ##[endgroup]
+2026-09-11T20:30:42.9867781Z [command]/usr/bin/git log -1 --format=%H
+2026-09-11T20:30:42.9908145Z b5732c02dd95092a63def7eaa0d2cf332b1e2996
+2026-09-11T20:30:42.9917644Z ##[group]Removing auth
+2026-09-11T20:30:42.9922497Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:30:42.9975386Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:30:43.0278623Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:30:43.0313579Z http.https://github.com/.extraheader
+2026-09-11T20:30:43.0326647Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-11T20:30:43.0370270Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:30:43.0715570Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:30:43.0746302Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:30:43.1039164Z ##[endgroup]
+2026-09-11T20:30:43.1229622Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:30:43.1230925Z ##[group]Run actions/checkout@v4
+2026-09-11T20:30:43.1231170Z with:
+2026-09-11T20:30:43.1231385Z   ref: f4f32cb9230c473471c736840da3f1d552e5ac43
+2026-09-11T20:30:43.1231686Z   path: inputs/compatibility
+2026-09-11T20:30:43.1231938Z   persist-credentials: false
+2026-09-11T20:30:43.1232354Z   sparse-checkout: control-plane/depth40-compat-v2
+evidence/depth40-compat-v2/34642554667
+
+2026-09-11T20:30:43.1232830Z   repository: yuguangzhi3836-glitch/GO
+2026-09-11T20:30:43.1235604Z   token: ***
+2026-09-11T20:30:43.1235797Z   ssh-strict: true
+2026-09-11T20:30:43.1235991Z   ssh-user: git
+2026-09-11T20:30:43.1236170Z   clean: true
+2026-09-11T20:30:43.1236409Z   sparse-checkout-cone-mode: true
+2026-09-11T20:30:43.1236655Z   fetch-depth: 1
+2026-09-11T20:30:43.1236842Z   fetch-tags: false
+2026-09-11T20:30:43.1237037Z   show-progress: true
+2026-09-11T20:30:43.1237237Z   lfs: false
+2026-09-11T20:30:43.1237412Z   submodules: false
+2026-09-11T20:30:43.1237616Z   set-safe-directory: true
+2026-09-11T20:30:43.1237853Z   allow-unsafe-pr-checkout: false
+2026-09-11T20:30:43.1238098Z env:
+2026-09-11T20:30:43.1238306Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:30:43.1238610Z   GO_PACKAGING_SHA: 4c9d24ee37cef02cfef026c41db3dfb38d09b9f0
+2026-09-11T20:30:43.1238991Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:43.1239422Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:30:43.1239835Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:43.1240196Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:43.1240556Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:43.1240924Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:30:43.1241243Z ##[endgroup]
+2026-09-11T20:30:43.2303051Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-11T20:30:43.2304505Z ##[group]Getting Git version info
+2026-09-11T20:30:43.2305904Z Working directory is '/home/runner/work/GO/GO/inputs/compatibility'
+2026-09-11T20:30:43.2490094Z [command]/usr/bin/git version
+2026-09-11T20:30:43.2490852Z git version 2.55.0
+2026-09-11T20:30:43.2494189Z ##[endgroup]
+2026-09-11T20:30:43.2496847Z Temporarily overriding HOME='/home/runner/work/_temp/300edbb4-fec7-41ef-b8a8-7e2b891cf5d8' before making global git config changes
+2026-09-11T20:30:43.2498857Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T20:30:43.2524027Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/inputs/compatibility
+2026-09-11T20:30:43.2556084Z ##[group]Initializing the repository
+2026-09-11T20:30:43.2556937Z [command]/usr/bin/git init /home/runner/work/GO/GO/inputs/compatibility
+2026-09-11T20:30:43.2680943Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-11T20:30:43.2713535Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-11T20:30:43.2735181Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-11T20:30:43.2736124Z hint: call:
+2026-09-11T20:30:43.2747519Z hint:
+2026-09-11T20:30:43.2748258Z hint: 	git config --global init.defaultBranch <name>
+2026-09-11T20:30:43.2749525Z hint:
+2026-09-11T20:30:43.2750253Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-11T20:30:43.2752249Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-11T20:30:43.2753665Z hint:
+2026-09-11T20:30:43.2754737Z hint: 	git branch -m <name>
+2026-09-11T20:30:43.2755345Z hint:
+2026-09-11T20:30:43.2756827Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-11T20:30:43.2774056Z Initialized empty Git repository in /home/runner/work/GO/GO/inputs/compatibility/.git/
+2026-09-11T20:30:43.2816576Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T20:30:43.2819436Z ##[endgroup]
+2026-09-11T20:30:43.2820850Z ##[group]Disabling automatic garbage collection
+2026-09-11T20:30:43.2822223Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-11T20:30:43.2855108Z ##[endgroup]
+2026-09-11T20:30:43.2856004Z ##[group]Setting up auth
+2026-09-11T20:30:43.2857172Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:30:43.2887347Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:30:43.3354830Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:30:43.3406952Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:30:43.3860098Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:30:43.4106755Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:30:43.4312087Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-11T20:30:43.4361419Z ##[endgroup]
+2026-09-11T20:30:43.4362619Z ##[group]Fetching the repository
+2026-09-11T20:30:43.4372924Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --filter=blob:none --depth=1 origin f4f32cb9230c473471c736840da3f1d552e5ac43
+2026-09-11T20:30:43.9435416Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T20:30:43.9436901Z  * branch            f4f32cb9230c473471c736840da3f1d552e5ac43 -> FETCH_HEAD
+2026-09-11T20:30:43.9525758Z ##[endgroup]
+2026-09-11T20:30:43.9526383Z ##[group]Determining the checkout info
+2026-09-11T20:30:43.9527075Z ##[endgroup]
+2026-09-11T20:30:43.9527670Z ##[group]Setting up sparse checkout
+2026-09-11T20:30:43.9528621Z [command]/usr/bin/git sparse-checkout set control-plane/depth40-compat-v2 evidence/depth40-compat-v2/34642554667
+2026-09-11T20:30:43.9530267Z ##[endgroup]
+2026-09-11T20:30:43.9530800Z ##[group]Checking out the ref
+2026-09-11T20:30:43.9531495Z [command]/usr/bin/git checkout --progress --force f4f32cb9230c473471c736840da3f1d552e5ac43
+2026-09-11T20:30:44.3380694Z Note: switching to 'f4f32cb9230c473471c736840da3f1d552e5ac43'.
+2026-09-11T20:30:44.3381276Z 
+2026-09-11T20:30:44.3409091Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-11T20:30:44.3411068Z changes and commit them, and you can discard any commits you make in this
+2026-09-11T20:30:44.3412059Z state without impacting any branches by switching back to a branch.
+2026-09-11T20:30:44.3412670Z 
+2026-09-11T20:30:44.3415710Z If you want to create a new branch to retain commits you create, you may
+2026-09-11T20:30:44.3441665Z do so (now or later) by using -c with the switch command. Example:
+2026-09-11T20:30:44.3442552Z 
+2026-09-11T20:30:44.3444446Z   git switch -c <new-branch-name>
+2026-09-11T20:30:44.3445108Z 
+2026-09-11T20:30:44.3446001Z Or undo this operation with:
+2026-09-11T20:30:44.3446604Z 
+2026-09-11T20:30:44.3447451Z   git switch -
+2026-09-11T20:30:44.3447957Z 
+2026-09-11T20:30:44.3449009Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-11T20:30:44.3450150Z 
+2026-09-11T20:30:44.3451488Z HEAD is now at f4f32cb evidence: archive inspected DEPTH40 compatibility CI outcome without rerunning tests
+2026-09-11T20:30:44.3464699Z ##[endgroup]
+2026-09-11T20:30:44.3467227Z [command]/usr/bin/git log -1 --format=%H
+2026-09-11T20:30:44.3495472Z f4f32cb9230c473471c736840da3f1d552e5ac43
+2026-09-11T20:30:44.3507199Z ##[group]Removing auth
+2026-09-11T20:30:44.3512051Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:30:44.3556177Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:30:44.3865695Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:30:44.3898261Z http.https://github.com/.extraheader
+2026-09-11T20:30:44.3901956Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-11T20:30:44.3946761Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:30:44.4245116Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:30:44.4304978Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:30:44.4593030Z ##[endgroup]
+2026-09-11T20:30:44.4719204Z ##[group]Run python -B packaging/depth40-parent-compat-v2/build_parent.py
+2026-09-11T20:30:44.4719783Z [36;1mpython -B packaging/depth40-parent-compat-v2/build_parent.py[0m
+2026-09-11T20:30:44.4794353Z shell: /usr/bin/bash -e {0}
+2026-09-11T20:30:44.4794617Z env:
+2026-09-11T20:30:44.4794831Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:30:44.4795158Z   GO_PACKAGING_SHA: 4c9d24ee37cef02cfef026c41db3dfb38d09b9f0
+2026-09-11T20:30:44.4795584Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:44.4796017Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:30:44.4796448Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:44.4796837Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:44.4797217Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:30:44.4797597Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:30:44.4800474Z   GITHUB_TOKEN: ***
+2026-09-11T20:30:44.4800693Z ##[endgroup]
+2026-09-11T20:31:27.9320453Z PARENT_BUILD_REPORT={"application_tests_rerun": false, "artifact_retention_days": 90, "checksummed_files": 1319, "component_artifact_zip_sha256": "6608de4ca772e0617b3d02103ed893df9389ddaa2c5878635594219c32bcb600", "component_checksummed_files": 18, "created_at": "2026-09-11T20:31:27.805232+00:00", "deployment": "HOLD", "directory_restore": "PASS", "executor_identity": "PASS", "fresh_checkout_commits": ["b5732c02dd95092a63def7eaa0d2cf332b1e2996", "f4f32cb9230c473471c736840da3f1d552e5ac43"], "hk_execution": "NOT_RUN", "image_archive_sha256": "edca0c20cac07950b79814ef2e5ec56d3551430a02ff6943532a9009538395a5", "image_config_id": "sha256:cba95a5ac6f061b8196f953f181952fdad94ab520a12cbeb0e7ee49d9a6de150", "image_loaded": false, "image_rebuilt": false, "network_scope": "GO repository and its fixed artifact only", "network_used": false, "package_candidate": "CP11_DEPTH40_P03_COMPAT_V2_PARENT_20260912", "package_integrity": "PASS", "packaging_ci": "PASS", "packaging_commit": "4c9d24ee37cef02cfef026c41db3dfb38d09b9f0", "packaging_run_id": "34644569516", "production": "HOLD", "source_files": 1271, "source_tree_sha256": "64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667", "zip_bytes": 187168614, "zip_file": "CP11_DEPTH40_P03_COMPAT_V2_PARENT_20260912.zip", "zip_restore": "PASS", "zip_sha256": "421b11f95d0400bdfc69d4053a6d3b54599fa791a0d6b43311b83094bcd51c6a"}
+2026-09-11T20:31:27.9342578Z PARENT_MANIFEST={"business_candidate": "CP11_DEPTH40_P03_PARENT_20260911", "business_parent_commit": "c909af370d55ce7644140a191425a8a66dacec9a", "business_source_changed": false, "canonical_source_commit": "b5732c02dd95092a63def7eaa0d2cf332b1e2996", "compatibility_artifact_id": 10280363223, "compatibility_artifact_zip_sha256": "6608de4ca772e0617b3d02103ed893df9389ddaa2c5878635594219c32bcb600", "compatibility_commit": "d49465a56a7768bc4e657858272a597c5d1f05d6", "compatibility_evidence_commit": "f4f32cb9230c473471c736840da3f1d552e5ac43", "compatibility_run_id": 34642554667, "compatibility_validation": {"database_scope": "ISOLATED_TYPE_GUARD", "docker_executor_in_unit_tests": "SIMULATED", "postgres_version": "18.4", "real_hk_execution": "NOT_RUN", "run_id": 34642554667, "unit_tests": 34}, "created_at": "2026-09-11T20:31:02.833515+00:00", "deployment_authorized": false, "gates": {"FINAL_RELEASE": "HOLD", "SEALED_NODE": "HOLD", "SIX_VERTICAL_REAL_CLOSED_LOOP_E2E": "HOLD", "THREE_END_REAL_UX_LOGIN": "HOLD"}, "historical_results": [{"applies_to_new_hk_runtime": false, "reexecuted": false, "run_id": 34565938702, "scope": "20 isolated eight-service checks of OLD runtime image"}, {"real_hk_data_restore": "NOT_PROVEN", "reexecuted": false, "run_id": 34571894075, "scope": "25 isolated migration/restore checks including 14 media subchecks"}], "hk_execution": "NOT_RUN", "identity_note": "Package ID identifies this aggregate. Business candidate labels remain P03. Repaired image/config and executor retain their already-tested identities.", "image_archive_bytes": 175057507, "image_archive_sha256": "edca0c20cac07950b79814ef2e5ec56d3551430a02ff6943532a9009538395a5", "image_config_id": "sha256:cba95a5ac6f061b8196f953f181952fdad94ab520a12cbeb0e7ee49d9a6de150", "image_rebuilt": false, "image_tag": "go-depth40-staging:compat-34642554667", "installed_in_hk": false, "package_candidate": "CP11_DEPTH40_P03_COMPAT_V2_PARENT_20260912", "package_revision": "compat-v2-parent", "packaging_commit": "4c9d24ee37cef02cfef026c41db3dfb38d09b9f0", "packaging_run_id": "34644569516", "preflight_sha256": "b56923a5dab9dd6a28c04c3f7c678e3080a5ac662ee6aef4c1c60b2a1afc3dcd", "previous_parent_preserved": true, "production": "HOLD", "registry_repo_digest": null, "requires_overlay_for_restore": false, "requires_previous_artifact_for_restore": false, "schema_version": "1", "self_contained": true, "site_binding": "UNBOUND", "source_files": 1271, "source_tree_sha256": "64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667"}
+2026-09-11T20:31:27.9547560Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:31:27.9548901Z ##[group]Run actions/upload-artifact@v4
+2026-09-11T20:31:27.9549183Z with:
+2026-09-11T20:31:27.9549429Z   name: GO-DEPTH40-P03-COMPAT-V2-PARENT-34644569516
+2026-09-11T20:31:27.9549769Z   path: parent-delivery
+2026-09-11T20:31:27.9549998Z   compression-level: 0
+2026-09-11T20:31:27.9550208Z   retention-days: 90
+2026-09-11T20:31:27.9550422Z   if-no-files-found: error
+2026-09-11T20:31:27.9550648Z   overwrite: false
+2026-09-11T20:31:27.9550857Z   include-hidden-files: false
+2026-09-11T20:31:27.9551080Z env:
+2026-09-11T20:31:27.9551267Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T20:31:27.9551631Z   GO_PACKAGING_SHA: 4c9d24ee37cef02cfef026c41db3dfb38d09b9f0
+2026-09-11T20:31:27.9552041Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:31:27.9552456Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T20:31:27.9552887Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:31:27.9553554Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:31:27.9554046Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T20:31:27.9554429Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T20:31:27.9556205Z ##[endgroup]
+2026-09-11T20:31:28.1663987Z (node:2366) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-11T20:31:28.1728057Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-11T20:31:28.2164335Z With the provided path, there will be 6 files uploaded
+2026-09-11T20:31:28.2244354Z Artifact name is valid!
+2026-09-11T20:31:28.2245600Z Root directory input is valid!
+2026-09-11T20:31:28.6331179Z Beginning upload of artifact content to blob storage
+2026-09-11T20:31:28.7156546Z (node:2366) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-11T20:31:29.7159912Z Uploaded bytes 8388608
+2026-09-11T20:31:29.7349215Z Uploaded bytes 16777216
+2026-09-11T20:31:29.7592249Z Uploaded bytes 25165824
+2026-09-11T20:31:29.7699114Z Uploaded bytes 33554432
+2026-09-11T20:31:30.0334480Z Uploaded bytes 41943040
+2026-09-11T20:31:30.0431444Z Uploaded bytes 50331648
+2026-09-11T20:31:30.0694442Z Uploaded bytes 58720256
+2026-09-11T20:31:30.0764335Z Uploaded bytes 67108864
+2026-09-11T20:31:30.3294439Z Uploaded bytes 75497472
+2026-09-11T20:31:30.3368067Z Uploaded bytes 83886080
+2026-09-11T20:31:30.3645400Z Uploaded bytes 92274688
+2026-09-11T20:31:30.4494610Z Uploaded bytes 100663296
+2026-09-11T20:31:30.6044383Z Uploaded bytes 109051904
+2026-09-11T20:31:30.6125822Z Uploaded bytes 117440512
+2026-09-11T20:31:30.6646427Z Uploaded bytes 125829120
+2026-09-11T20:31:30.7276773Z Uploaded bytes 134217728
+2026-09-11T20:31:30.8746528Z Uploaded bytes 142606336
+2026-09-11T20:31:30.8929264Z Uploaded bytes 150994944
+2026-09-11T20:31:30.9353131Z Uploaded bytes 159383552
+2026-09-11T20:31:31.0151116Z Uploaded bytes 167772160
+2026-09-11T20:31:31.1360666Z Uploaded bytes 176160768
+2026-09-11T20:31:31.2024684Z Uploaded bytes 184549376
+2026-09-11T20:31:31.3360105Z Uploaded bytes 187183585
+2026-09-11T20:31:31.4157714Z Finished uploading artifact content to blob storage!
+2026-09-11T20:31:31.4161347Z SHA256 digest of uploaded artifact zip is 3a727c72cfe7d0894936bb066a71abf522a14a6a05943c8f4dc62b4f45cbcfe8
+2026-09-11T20:31:31.4164479Z Finalizing artifact upload
+2026-09-11T20:31:31.7247077Z Artifact GO-DEPTH40-P03-COMPAT-V2-PARENT-34644569516.zip successfully finalized. Artifact ID 10281491262
+2026-09-11T20:31:31.7249654Z Artifact GO-DEPTH40-P03-COMPAT-V2-PARENT-34644569516 has been successfully uploaded! Final size is 187183585 bytes. Artifact ID is 10281491262
+2026-09-11T20:31:31.7264453Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34644569516/artifacts/10281491262
+2026-09-11T20:31:31.7526815Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:31:31.7528095Z Post job cleanup.
+2026-09-11T20:31:31.8564082Z [command]/usr/bin/git version
+2026-09-11T20:31:31.8654192Z git version 2.55.0
+2026-09-11T20:31:31.8724705Z Temporarily overriding HOME='/home/runner/work/_temp/ebda6b7b-9ce3-4418-b21e-16a7fb5ef89f' before making global git config changes
+2026-09-11T20:31:31.8726201Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T20:31:31.8727599Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/inputs/compatibility
+2026-09-11T20:31:31.8805145Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:31:31.8859110Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:31:31.9285905Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:31:31.9369532Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:31:31.9815467Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:31:31.9890147Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:31:32.0986068Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:31:32.0987352Z Post job cleanup.
+2026-09-11T20:31:32.2285049Z [command]/usr/bin/git version
+2026-09-11T20:31:32.2482554Z git version 2.55.0
+2026-09-11T20:31:32.2591590Z Temporarily overriding HOME='/home/runner/work/_temp/b373d764-bf84-44c8-bf59-ba8819795650' before making global git config changes
+2026-09-11T20:31:32.2720558Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T20:31:32.2722916Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/inputs/canonical
+2026-09-11T20:31:32.2745898Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:31:32.2749158Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:31:32.3498722Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:31:32.3501205Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:31:32.3889830Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:31:32.3956619Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:31:32.4408567Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:31:32.4409832Z Post job cleanup.
+2026-09-11T20:31:32.6104247Z (node:2569) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-11T20:31:32.6106045Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-11T20:31:32.6348106Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T20:31:32.6350244Z Post job cleanup.
+2026-09-11T20:31:32.7907844Z [command]/usr/bin/git version
+2026-09-11T20:31:32.8002756Z git version 2.55.0
+2026-09-11T20:31:32.8036207Z Temporarily overriding HOME='/home/runner/work/_temp/2ea12858-0177-4ae0-9d2f-f7f6a3f7cb29' before making global git config changes
+2026-09-11T20:31:32.8037947Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T20:31:32.8039538Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-11T20:31:32.8090747Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T20:31:32.8183747Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T20:31:32.8730968Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T20:31:32.8734649Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T20:31:32.9217274Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T20:31:32.9220092Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T20:31:32.9769417Z Cleaning up orphan processes
+2026-09-11T20:31:33.0153641Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
