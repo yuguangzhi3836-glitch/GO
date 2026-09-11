@@ -17,6 +17,7 @@ jobs:
       EXPECTED_SOURCE_TREE_SHA256: '64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667'
       EXPECTED_PARENT_ARCHIVE_SHA256: '2909651f9b644ed56fd6ab833480c9da32b4c5b900df2e5afb192dba49ac2b00'
       EXPECTED_FILES: '1271'
+      PACKAGE_ROOT: 'artifact/GO-CP11-DEPTH40-P03-PARENT-3477324ab3d595fc2b9d4adffb17de6ee0e89d10/CP11_DEPTH40_P03_PARENT_20260911'
     steps:
       - name: Checkout acceptance only
         uses: actions/checkout@v4
@@ -37,38 +38,38 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          find artifact -maxdepth 3 -type f -print | sort
-          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/MANIFEST.json
-          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/SOURCE_FINGERPRINT.json
-          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/CHECKSUMS.sha256
-          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/LINEAGE.json
-          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/RELEASE_GATE.json
-          test -f artifact/CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py
+          find artifact -maxdepth 4 -type f -print | sort
+          test -f "$PACKAGE_ROOT/MANIFEST.json"
+          test -f "$PACKAGE_ROOT/SOURCE_FINGERPRINT.json"
+          test -f "$PACKAGE_ROOT/CHECKSUMS.sha256"
+          test -f "$PACKAGE_ROOT/LINEAGE.json"
+          test -f "$PACKAGE_ROOT/RELEASE_GATE.json"
+          test -f "$PACKAGE_ROOT/restore_parent.py"
       - name: Verify package metadata and checksums
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import hashlib,json,pathlib
-          p=pathlib.Path('artifact/CP11_DEPTH40_P03_PARENT_20260911')
+          import hashlib,json,pathlib,os
+          p=pathlib.Path(os.environ['PACKAGE_ROOT'])
           m=json.loads((p/'MANIFEST.json').read_text())
           fp=json.loads((p/'SOURCE_FINGERPRINT.json').read_text())
           tree=lambda f: hashlib.sha256(''.join(f'{k}\0{v}\n' for k,v in sorted(f.items())).encode()).hexdigest()
-          assert len(fp)==int(__import__('os').environ['EXPECTED_FILES'])
-          assert tree(fp)==__import__('os').environ['EXPECTED_SOURCE_TREE_SHA256']
-          assert m['source_tree_sha256']==__import__('os').environ['EXPECTED_SOURCE_TREE_SHA256']
-          assert m['archive_sha256']==__import__('os').environ['EXPECTED_PARENT_ARCHIVE_SHA256']
+          assert len(fp)==int(os.environ['EXPECTED_FILES'])
+          assert tree(fp)==os.environ['EXPECTED_SOURCE_TREE_SHA256']
+          assert m['source_tree_sha256']==os.environ['EXPECTED_SOURCE_TREE_SHA256']
+          assert m['archive_sha256']==os.environ['EXPECTED_PARENT_ARCHIVE_SHA256']
           assert m['deployment_authorized'] is False
           assert hashlib.sha256((p/m['archive_file']).read_bytes()).hexdigest()==m['archive_sha256']
           print('DEPTH40_METADATA_GATE=PASS')
           PY
-          (cd artifact/CP11_DEPTH40_P03_PARENT_20260911 && sha256sum -c CHECKSUMS.sha256)
+          (cd "$PACKAGE_ROOT" && sha256sum -c CHECKSUMS.sha256)
       - name: Zero restore from sealed parent only
         shell: bash
         run: |
           set -euo pipefail
-          python artifact/CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py \
-            --package artifact/CP11_DEPTH40_P03_PARENT_20260911 \
+          python "$PACKAGE_ROOT/restore_parent.py" \
+            --package "$PACKAGE_ROOT" \
             --output restored | tee zero-restore.json
           grep -q '"status": "PASS"' zero-restore.json
           grep -q "${EXPECTED_SOURCE_TREE_SHA256}" zero-restore.json
@@ -98,8 +99,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q '"deployment_authorized": false' artifact/CP11_DEPTH40_P03_PARENT_20260911/MANIFEST.json
-          grep -q '"hong_kong_deployment": "NO"' artifact/CP11_DEPTH40_P03_PARENT_20260911/RELEASE_GATE.json
+          grep -q '"deployment_authorized": false' "$PACKAGE_ROOT/MANIFEST.json"
+          grep -q '"hong_kong_deployment": "NO"' "$PACKAGE_ROOT/RELEASE_GATE.json"
       - name: Record acceptance evidence
         shell: bash
         run: |
