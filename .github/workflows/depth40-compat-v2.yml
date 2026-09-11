@@ -1,0 +1,70 @@
+name: depth40-compat-v2-isolated-acceptance
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'control-plane/depth40-compat-v2/**'
+      - '.github/workflows/depth40-compat-v2.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_TOOLING_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install CI-only test dependencies
+        run: python -m pip install cryptography==46.0.0 PyYAML==6.0.3
+      - name: Verify executor sealing and regression tests
+        run: |
+          set -euo pipefail
+          python control-plane/depth40-compat-v2/ci/seal_executor.py
+          git diff --exit-code -- control-plane/depth40-compat-v2/executor control-plane/depth40-compat-v2/EXECUTOR_MANIFEST.json
+          python -m unittest discover -s control-plane/depth40-compat-v2/tests -v 2>&1 | tee compat-unit.log
+      - name: Build and reload new image from exact archived parent
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -B control-plane/depth40-compat-v2/ci/build_child.py
+      - name: Real PostgreSQL 18.4 isolated type-guard regression
+        run: |
+          set -euo pipefail
+          docker network create "compat-${GITHUB_RUN_ID}"
+          docker run -d --name "compat-pg-${GITHUB_RUN_ID}" --network "compat-${GITHUB_RUN_ID}" --network-alias compat-pg -e POSTGRES_USER=compat_test -e POSTGRES_PASSWORD=isolated-fixture-only -e POSTGRES_DB=compat_guard_test postgres:18.4
+          for i in $(seq 1 30); do
+            if docker exec "compat-pg-${GITHUB_RUN_ID}" pg_isready -U compat_test -d compat_guard_test; then break; fi
+            sleep 1
+          done
+          docker run --rm --network "compat-${GITHUB_RUN_ID}" --read-only --cap-drop ALL --security-opt no-new-privileges -e GO_COMPAT_ISOLATED_TEST=true --entrypoint /opt/go/python/bin/python3.13 -v "$PWD/control-plane/depth40-compat-v2/ci/postgres_type_probe.py:/test.py:ro" "$COMPAT_IMAGE" -B /test.py | tee compat-delivery/POSTGRES_TYPE_GUARD.json
+      - name: Seal delivery files and preserve actual result
+        if: always()
+        env:
+          GO_CI_STATUS: ${{ job.status }}
+        run: |
+          mkdir -p compat-delivery
+          cp compat-unit.log compat-delivery/ 2>/dev/null || true
+          cp control-plane/depth40-compat-v2/EXECUTOR_MANIFEST.json compat-delivery/
+          cp -r control-plane/depth40-compat-v2/executor compat-delivery/
+          cp control-plane/depth40-compat-v2/README.md control-plane/depth40-compat-v2/compose.staging.review.yml compat-delivery/
+          python -c "import json,os,pathlib; pathlib.Path('compat-delivery/GATE_REPORT.json').write_text(json.dumps({'ci_status':os.environ['GO_CI_STATUS'],'tooling_commit':os.environ['GO_TOOLING_SHA'],'hk_execution':'NOT_RUN','site_binding':'UNBOUND','deployment':'HOLD','production':'HOLD'},indent=2)+'\n')"
+          python -c "import hashlib,pathlib; p=pathlib.Path('compat-delivery'); (p/'SHA256SUMS').write_text(''.join(hashlib.file_digest(f.open('rb'),'sha256').hexdigest()+'  '+f.relative_to(p).as_posix()+'\n' for f in sorted(p.rglob('*')) if f.is_file() and f.name!='SHA256SUMS'))"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: GO-DEPTH40-COMPAT-V2-${{ github.run_id }}
+          path: compat-delivery
+          retention-days: 90
+      - name: Remove this job's isolated database
+        if: always()
+        run: |
+          docker rm -f "compat-pg-${GITHUB_RUN_ID}" 2>/dev/null || true
+          docker network rm "compat-${GITHUB_RUN_ID}" 2>/dev/null || true
