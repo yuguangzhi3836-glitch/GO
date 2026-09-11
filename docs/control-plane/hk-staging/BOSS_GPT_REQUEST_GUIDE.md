@@ -6,9 +6,7 @@ Execution Authority.
 
 ## Current V1 status
 
-Boss Request Bridge V1 is installed on Command Center in publish-disabled mode
-pending the first controlled live E2E. Request discovery and validation are
-available; formal Task publishing is not yet enabled.
+Boss Request Bridge V1 is installed on Command Center.
 
 The only Boss Request action currently supported is:
 
@@ -17,6 +15,19 @@ The only Boss Request action currently supported is:
 The underlying Control Plane has already proven VERIFY, CANARY, DEPLOY, and
 ROLLBACK, but Boss Request V1 has **not** opened CANARY, DEPLOY, or ROLLBACK.
 Do not invent request formats for those actions.
+
+## First controlled live E2E — currently armed
+
+The Bridge is currently armed for exactly one live Boss-mobile VERIFY request.
+For this controlled E2E, the Request **must** use this exact value:
+
+`request_id = boss-mobile-verify-e2e-20260911-01`
+
+The Bridge will accept at most one formal Task issuance for this gate and will
+automatically disarm after a successful publish. Do not create a second request
+with the same ID and do not substitute another ID for this first live E2E.
+
+For this E2E, use the current UTC time for `requested_at` in ISO 8601 form.
 
 ## Natural-language intent
 
@@ -81,17 +92,13 @@ Bridge V1 uses the following request fields:
 - `environment`
 - `requested_at`
 
-Use a fresh unique `request_id` for every request. Generate `requested_at` from
-the current time in UTC using ISO 8601. The installed Bridge enforces freshness;
-do not reuse an old Request or timestamp.
-
-Example only — replace the two placeholder values and do not reuse this
-example as a live request:
+For the currently armed first live E2E, use the exact request ID shown below.
+Generate `requested_at` from the current time in UTC using ISO 8601.
 
 ```json
 {
   "schema_version": "1",
-  "request_id": "boss-hk-verify-<UNIQUE-ID>",
+  "request_id": "boss-mobile-verify-e2e-20260911-01",
   "action_id": "HK_STAGING_VERIFY",
   "environment": "HK-STAGING-01",
   "requested_at": "<CURRENT-UTC-ISO8601>"
@@ -99,13 +106,17 @@ example as a live request:
 ```
 
 Recommended branch name:
-`boss-request-<request_id>`
+`boss-request-boss-mobile-verify-e2e-20260911-01`
 
 Recommended request path:
-`requests/<request_id>.json`
+`requests/boss-mobile-verify-e2e-20260911-01.json`
 
 Recommended PR title:
-`request: <request_id>`
+`request: boss-mobile-verify-e2e-20260911-01`
+
+After the first controlled E2E is complete, do not reuse this request ID. The
+normal rule is one fresh unique `request_id` per Request, subject to the current
+Command Center policy gate.
 
 ## Hard boundary
 
