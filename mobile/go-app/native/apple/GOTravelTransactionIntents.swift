@@ -185,5 +185,7 @@ struct GOTravelShortcuts: AppShortcutsProvider {
         AppShortcut(intent: ReserveGOOfferIntent(), phrases: ["Reserve my GO offer with \(.applicationName)"], shortTitle: "Reserve GO", systemImageName: "calendar.badge.plus")
         AppShortcut(intent: PrepareGOPaymentTruthIntent(), phrases: ["Authorize my GO travel payment with \(.applicationName)"], shortTitle: "Pay with GO", systemImageName: "creditcard")
         AppShortcut(intent: CommitGOReservationIntent(), phrases: ["Confirm my GO booking with \(.applicationName)"], shortTitle: "Confirm GO", systemImageName: "checkmark.circle")
+        AppShortcut(intent: ReleaseGOReservationIntent(), phrases: ["Release my GO reservation with \(.applicationName)"], shortTitle: "Release GO", systemImageName: "xmark.circle")
+        AppShortcut(intent: QuoteGOAfterSalesIntent(), phrases: ["Review my GO booking options with \(.applicationName)"], shortTitle: "Review GO", systemImageName: "doc.text.magnifyingglass")
     }
 }
