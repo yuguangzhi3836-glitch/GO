@@ -1,0 +1,611 @@
+﻿2026-09-11T05:10:25.2755289Z Current runner version: '2.337.0'
+2026-09-11T05:10:25.2792056Z ##[group]Runner Image Provisioner
+2026-09-11T05:10:25.2793579Z Hosted Compute Agent
+2026-09-11T05:10:25.2794876Z Version: 20260828.587
+2026-09-11T05:10:25.2796108Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-11T05:10:25.2797460Z Build Date: 2026-08-28T16:44:25Z
+2026-09-11T05:10:25.2798933Z Worker ID: {e903f201-fceb-410b-b24e-6115488e0598}
+2026-09-11T05:10:25.2800638Z Azure Region: northcentralus
+2026-09-11T05:10:25.2801950Z ##[endgroup]
+2026-09-11T05:10:25.2804422Z ##[group]Operating System
+2026-09-11T05:10:25.2805579Z Ubuntu
+2026-09-11T05:10:25.2806748Z 22.04.5
+2026-09-11T05:10:25.2807732Z LTS
+2026-09-11T05:10:25.2808733Z ##[endgroup]
+2026-09-11T05:10:25.2810046Z ##[group]Runner Image
+2026-09-11T05:10:25.2811121Z Image: ubuntu-22.04
+2026-09-11T05:10:25.2812239Z Version: 20260907.292.1
+2026-09-11T05:10:25.2814688Z Included Software: https://github.com/actions/runner-images/blob/ubuntu22/20260907.292/images/ubuntu/Ubuntu2204-Readme.md
+2026-09-11T05:10:25.2817795Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu22%2F20260907.292
+2026-09-11T05:10:25.2819905Z ##[endgroup]
+2026-09-11T05:10:25.2822247Z ##[group]GITHUB_TOKEN Permissions
+2026-09-11T05:10:25.2825163Z Actions: read
+2026-09-11T05:10:25.2826317Z Contents: write
+2026-09-11T05:10:25.2827440Z Metadata: read
+2026-09-11T05:10:25.2828442Z ##[endgroup]
+2026-09-11T05:10:25.2831974Z Secret source: Actions
+2026-09-11T05:10:25.2833591Z Cache mode: write
+2026-09-11T05:10:25.2835216Z Prepare workflow directory
+2026-09-11T05:10:25.4464272Z Prepare all required actions
+2026-09-11T05:10:25.4588277Z Getting action download info
+2026-09-11T05:10:25.7833061Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-11T05:10:25.8965505Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-11T05:10:26.1002960Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+2026-09-11T05:10:26.4053084Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-11T05:10:26.7724367Z Complete job name: build-and-verify
+2026-09-11T05:10:26.8623535Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T05:10:26.8634798Z ##[group]Run actions/checkout@v4
+2026-09-11T05:10:26.8636015Z with:
+2026-09-11T05:10:26.8636898Z   ref: 55060484de0d2c47dadfeb9a63fe7bf2df2bea66
+2026-09-11T05:10:26.8638066Z   persist-credentials: false
+2026-09-11T05:10:26.8639079Z   repository: yuguangzhi3836-glitch/GO
+2026-09-11T05:10:26.8648925Z   token: ***
+2026-09-11T05:10:26.8650052Z   ssh-strict: true
+2026-09-11T05:10:26.8650895Z   ssh-user: git
+2026-09-11T05:10:26.8651721Z   clean: true
+2026-09-11T05:10:26.8652564Z   sparse-checkout-cone-mode: true
+2026-09-11T05:10:26.8653569Z   fetch-depth: 1
+2026-09-11T05:10:26.8654383Z   fetch-tags: false
+2026-09-11T05:10:26.8655265Z   show-progress: true
+2026-09-11T05:10:26.8656122Z   lfs: false
+2026-09-11T05:10:26.8656897Z   submodules: false
+2026-09-11T05:10:26.8657761Z   set-safe-directory: true
+2026-09-11T05:10:26.8658739Z   allow-unsafe-pr-checkout: false
+2026-09-11T05:10:26.8660396Z env:
+2026-09-11T05:10:26.8661234Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T05:10:26.8662261Z   IMAGE: go-depth40-staging:ci-34564932969
+2026-09-11T05:10:26.8663304Z ##[endgroup]
+2026-09-11T05:10:26.9971568Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-11T05:10:26.9975964Z ##[group]Getting Git version info
+2026-09-11T05:10:26.9978129Z Working directory is '/home/runner/work/GO/GO'
+2026-09-11T05:10:26.9981844Z [command]/usr/bin/git version
+2026-09-11T05:10:27.0097010Z git version 2.55.0
+2026-09-11T05:10:27.0143110Z ##[endgroup]
+2026-09-11T05:10:27.0177693Z Temporarily overriding HOME='/home/runner/work/_temp/fb3cceea-694d-483c-a503-dab23084674a' before making global git config changes
+2026-09-11T05:10:27.0183016Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T05:10:27.0186798Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-11T05:10:27.0259843Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-11T05:10:27.0263288Z ##[group]Initializing the repository
+2026-09-11T05:10:27.0265482Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-11T05:10:27.0401734Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-11T05:10:27.0405908Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-11T05:10:27.0415317Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-11T05:10:27.0417981Z hint: call:
+2026-09-11T05:10:27.0419748Z hint:
+2026-09-11T05:10:27.0422681Z hint: 	git config --global init.defaultBranch <name>
+2026-09-11T05:10:27.0425002Z hint:
+2026-09-11T05:10:27.0429311Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-11T05:10:27.0433069Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-11T05:10:27.0435484Z hint:
+2026-09-11T05:10:27.0436718Z hint: 	git branch -m <name>
+2026-09-11T05:10:27.0438135Z hint:
+2026-09-11T05:10:27.0461299Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-11T05:10:27.0464548Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-11T05:10:27.0469872Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T05:10:27.0558180Z ##[endgroup]
+2026-09-11T05:10:27.0565857Z ##[group]Disabling automatic garbage collection
+2026-09-11T05:10:27.0600600Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-11T05:10:27.0634068Z ##[endgroup]
+2026-09-11T05:10:27.0637596Z ##[group]Setting up auth
+2026-09-11T05:10:27.0640684Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T05:10:27.0653964Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T05:10:27.1189103Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T05:10:27.1251578Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T05:10:27.1693955Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T05:10:27.1706010Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T05:10:27.1985949Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-11T05:10:27.2031747Z ##[endgroup]
+2026-09-11T05:10:27.2035025Z ##[group]Fetching the repository
+2026-09-11T05:10:27.2044552Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 55060484de0d2c47dadfeb9a63fe7bf2df2bea66
+2026-09-11T05:10:28.3378421Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T05:10:28.3379952Z  * branch            55060484de0d2c47dadfeb9a63fe7bf2df2bea66 -> FETCH_HEAD
+2026-09-11T05:10:28.3402823Z ##[endgroup]
+2026-09-11T05:10:28.3404043Z ##[group]Determining the checkout info
+2026-09-11T05:10:28.3405217Z ##[endgroup]
+2026-09-11T05:10:28.3406088Z [command]/usr/bin/git sparse-checkout disable
+2026-09-11T05:10:28.3437694Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-11T05:10:28.3486937Z ##[group]Checking out the ref
+2026-09-11T05:10:28.3491958Z [command]/usr/bin/git checkout --progress --force 55060484de0d2c47dadfeb9a63fe7bf2df2bea66
+2026-09-11T05:10:28.4221184Z Note: switching to '55060484de0d2c47dadfeb9a63fe7bf2df2bea66'.
+2026-09-11T05:10:28.4223580Z 
+2026-09-11T05:10:28.4224315Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-11T05:10:28.4225890Z changes and commit them, and you can discard any commits you make in this
+2026-09-11T05:10:28.4227320Z state without impacting any branches by switching back to a branch.
+2026-09-11T05:10:28.4228199Z 
+2026-09-11T05:10:28.4228905Z If you want to create a new branch to retain commits you create, you may
+2026-09-11T05:10:28.4230767Z do so (now or later) by using -c with the switch command. Example:
+2026-09-11T05:10:28.4231688Z 
+2026-09-11T05:10:28.4232199Z   git switch -c <new-branch-name>
+2026-09-11T05:10:28.4232900Z 
+2026-09-11T05:10:28.4233478Z Or undo this operation with:
+2026-09-11T05:10:28.4234134Z 
+2026-09-11T05:10:28.4234648Z   git switch -
+2026-09-11T05:10:28.4235263Z 
+2026-09-11T05:10:28.4236039Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-11T05:10:28.4237011Z 
+2026-09-11T05:10:28.4238130Z HEAD is now at 5506048 DEPTH40: package fixed eight-service runtime with read-only schema gate and isolated PostgreSQL acceptance
+2026-09-11T05:10:28.4241928Z ##[endgroup]
+2026-09-11T05:10:28.4280467Z [command]/usr/bin/git log -1 --format=%H
+2026-09-11T05:10:28.4320381Z 55060484de0d2c47dadfeb9a63fe7bf2df2bea66
+2026-09-11T05:10:28.4339010Z ##[group]Removing auth
+2026-09-11T05:10:28.4340423Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T05:10:28.4369102Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T05:10:28.4649136Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T05:10:28.4708749Z http.https://github.com/.extraheader
+2026-09-11T05:10:28.4772346Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-11T05:10:28.4776355Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T05:10:28.5204017Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T05:10:28.5272016Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T05:10:28.5706167Z ##[endgroup]
+2026-09-11T05:10:28.5997006Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T05:10:28.5998740Z ##[group]Run actions/checkout@v4
+2026-09-11T05:10:28.5999043Z with:
+2026-09-11T05:10:28.5999614Z   ref: ff13ca334acfcec61d6463f30ca94d7964086635
+2026-09-11T05:10:28.5999991Z   path: dependency-source
+2026-09-11T05:10:28.6000293Z   persist-credentials: false
+2026-09-11T05:10:28.6000615Z   repository: yuguangzhi3836-glitch/GO
+2026-09-11T05:10:28.6003353Z   token: ***
+2026-09-11T05:10:28.6003614Z   ssh-strict: true
+2026-09-11T05:10:28.6003867Z   ssh-user: git
+2026-09-11T05:10:28.6004108Z   clean: true
+2026-09-11T05:10:28.6004373Z   sparse-checkout-cone-mode: true
+2026-09-11T05:10:28.6004676Z   fetch-depth: 1
+2026-09-11T05:10:28.6004978Z   fetch-tags: false
+2026-09-11T05:10:28.6005238Z   show-progress: true
+2026-09-11T05:10:28.6005495Z   lfs: false
+2026-09-11T05:10:28.6005731Z   submodules: false
+2026-09-11T05:10:28.6005993Z   set-safe-directory: true
+2026-09-11T05:10:28.6006290Z   allow-unsafe-pr-checkout: false
+2026-09-11T05:10:28.6006583Z env:
+2026-09-11T05:10:28.6006830Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T05:10:28.6007356Z   IMAGE: go-depth40-staging:ci-34564932969
+2026-09-11T05:10:28.6007677Z ##[endgroup]
+2026-09-11T05:10:28.7144619Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-11T05:10:28.7172527Z ##[group]Getting Git version info
+2026-09-11T05:10:28.7224501Z Working directory is '/home/runner/work/GO/GO/dependency-source'
+2026-09-11T05:10:28.7300569Z [command]/usr/bin/git version
+2026-09-11T05:10:28.7443948Z git version 2.55.0
+2026-09-11T05:10:28.7536636Z ##[endgroup]
+2026-09-11T05:10:28.7540445Z Temporarily overriding HOME='/home/runner/work/_temp/06e19a8a-2408-411f-ae50-914343e2294f' before making global git config changes
+2026-09-11T05:10:28.7542213Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T05:10:28.7543682Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/dependency-source
+2026-09-11T05:10:28.7590720Z ##[group]Initializing the repository
+2026-09-11T05:10:28.7610435Z [command]/usr/bin/git init /home/runner/work/GO/GO/dependency-source
+2026-09-11T05:10:28.7628903Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-11T05:10:28.7645219Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-11T05:10:28.7664921Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-11T05:10:28.7672363Z hint: call:
+2026-09-11T05:10:28.7673130Z hint:
+2026-09-11T05:10:28.7688680Z hint: 	git config --global init.defaultBranch <name>
+2026-09-11T05:10:28.7690189Z hint:
+2026-09-11T05:10:28.7691113Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-11T05:10:28.7692763Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-11T05:10:28.7693831Z hint:
+2026-09-11T05:10:28.7694558Z hint: 	git branch -m <name>
+2026-09-11T05:10:28.7695300Z hint:
+2026-09-11T05:10:28.7696265Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-11T05:10:28.7697809Z Initialized empty Git repository in /home/runner/work/GO/GO/dependency-source/.git/
+2026-09-11T05:10:28.7700996Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T05:10:28.7703554Z ##[endgroup]
+2026-09-11T05:10:28.7704835Z ##[group]Disabling automatic garbage collection
+2026-09-11T05:10:28.7725641Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-11T05:10:28.7820512Z ##[endgroup]
+2026-09-11T05:10:28.7835682Z ##[group]Setting up auth
+2026-09-11T05:10:28.7854517Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T05:10:28.7858531Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T05:10:28.8248274Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T05:10:28.8308049Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T05:10:28.8691624Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T05:10:28.8791513Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T05:10:28.9211432Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-11T05:10:28.9310339Z ##[endgroup]
+2026-09-11T05:10:28.9330459Z ##[group]Fetching the repository
+2026-09-11T05:10:28.9371013Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ff13ca334acfcec61d6463f30ca94d7964086635
+2026-09-11T05:10:31.0437706Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-11T05:10:31.0438648Z  * branch            ff13ca334acfcec61d6463f30ca94d7964086635 -> FETCH_HEAD
+2026-09-11T05:10:31.0452177Z ##[endgroup]
+2026-09-11T05:10:31.0453203Z ##[group]Determining the checkout info
+2026-09-11T05:10:31.0454186Z ##[endgroup]
+2026-09-11T05:10:31.0454862Z [command]/usr/bin/git sparse-checkout disable
+2026-09-11T05:10:31.0508693Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-11T05:10:31.0560315Z ##[group]Checking out the ref
+2026-09-11T05:10:31.0564469Z [command]/usr/bin/git checkout --progress --force ff13ca334acfcec61d6463f30ca94d7964086635
+2026-09-11T05:10:31.4311369Z Note: switching to 'ff13ca334acfcec61d6463f30ca94d7964086635'.
+2026-09-11T05:10:31.4312116Z 
+2026-09-11T05:10:31.4314405Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-11T05:10:31.4315242Z changes and commit them, and you can discard any commits you make in this
+2026-09-11T05:10:31.4316051Z state without impacting any branches by switching back to a branch.
+2026-09-11T05:10:31.4316521Z 
+2026-09-11T05:10:31.4316846Z If you want to create a new branch to retain commits you create, you may
+2026-09-11T05:10:31.4317581Z do so (now or later) by using -c with the switch command. Example:
+2026-09-11T05:10:31.4318019Z 
+2026-09-11T05:10:31.4318187Z   git switch -c <new-branch-name>
+2026-09-11T05:10:31.4318478Z 
+2026-09-11T05:10:31.4318636Z Or undo this operation with:
+2026-09-11T05:10:31.4318900Z 
+2026-09-11T05:10:31.4319032Z   git switch -
+2026-09-11T05:10:31.4319247Z 
+2026-09-11T05:10:31.4319781Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-11T05:10:31.4320314Z 
+2026-09-11T05:10:31.4320702Z HEAD is now at ff13ca3 ci: bind Node 22.22.0 used by full backend native API contracts
+2026-09-11T05:10:31.4370482Z ##[endgroup]
+2026-09-11T05:10:31.4424209Z [command]/usr/bin/git log -1 --format=%H
+2026-09-11T05:10:31.4458513Z ff13ca334acfcec61d6463f30ca94d7964086635
+2026-09-11T05:10:31.4469141Z ##[group]Removing auth
+2026-09-11T05:10:31.4480259Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T05:10:31.4514314Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T05:10:31.4802108Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T05:10:31.4852271Z http.https://github.com/.extraheader
+2026-09-11T05:10:31.4938145Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-11T05:10:31.4946925Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T05:10:31.5246548Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T05:10:31.5285213Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T05:10:31.5644573Z ##[endgroup]
+2026-09-11T05:10:31.5815667Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T05:10:31.5816927Z ##[group]Run actions/setup-python@v5
+2026-09-11T05:10:31.5817198Z with:
+2026-09-11T05:10:31.5817406Z   python-version: 3.13.5
+2026-09-11T05:10:31.5817645Z   check-latest: false
+2026-09-11T05:10:31.5820699Z   token: ***
+2026-09-11T05:10:31.5820938Z   update-environment: true
+2026-09-11T05:10:31.5821183Z   allow-prereleases: false
+2026-09-11T05:10:31.5821420Z   freethreaded: false
+2026-09-11T05:10:31.5821628Z env:
+2026-09-11T05:10:31.5821820Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T05:10:31.5822077Z   IMAGE: go-depth40-staging:ci-34564932969
+2026-09-11T05:10:31.5822563Z ##[endgroup]
+2026-09-11T05:10:31.7293351Z ##[group]Installed versions
+2026-09-11T05:10:31.7315079Z Version 3.13.5 was not found in the local cache
+2026-09-11T05:10:31.7437577Z (node:2102) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-11T05:10:31.7451174Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-11T05:10:32.4227503Z Version 3.13.5 is available for downloading
+2026-09-11T05:10:32.4229952Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-22.04-x64.tar.gz"
+2026-09-11T05:10:33.4134969Z Extract downloaded archive
+2026-09-11T05:10:33.4321348Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/0f23609b-bffa-4dca-b629-80c9ce7a047f -f /home/runner/work/_temp/c52f0ec4-7566-4ffc-be9b-90fc8be63479
+2026-09-11T05:10:35.8590758Z Execute installation script
+2026-09-11T05:10:35.8717842Z Check if Python hostedtoolcache folder exist...
+2026-09-11T05:10:35.8718828Z Create Python 3.13.5 folder
+2026-09-11T05:10:35.8742649Z Copy Python binaries to hostedtoolcache folder
+2026-09-11T05:10:36.5733892Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-11T05:10:36.5786277Z Upgrading pip...
+2026-09-11T05:10:39.0887756Z Looking in links: /tmp/tmpxzv2ejhu
+2026-09-11T05:10:39.0893519Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-11T05:10:40.6526524Z Collecting pip
+2026-09-11T05:10:40.8152252Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-11T05:10:40.8748195Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-11T05:10:41.1511412Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 10.9 MB/s eta 0:00:00
+2026-09-11T05:10:41.1524714Z 
+2026-09-11T05:10:41.1728352Z Installing collected packages: pip
+2026-09-11T05:10:41.1740458Z Attempting uninstall: pip
+2026-09-11T05:10:41.1767183Z Found existing installation: pip 25.1.1
+2026-09-11T05:10:41.2157649Z Uninstalling pip-25.1.1:
+2026-09-11T05:10:41.2236759Z Successfully uninstalled pip-25.1.1
+2026-09-11T05:10:42.2018221Z Successfully installed pip-26.2.1
+2026-09-11T05:10:42.2552307Z Create complete file
+2026-09-11T05:10:42.2598567Z Successfully set up CPython (3.13.5)
+2026-09-11T05:10:42.2600087Z ##[endgroup]
+2026-09-11T05:10:42.2828987Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T05:10:42.2830585Z ##[group]Run actions/download-artifact@v4
+2026-09-11T05:10:42.2830853Z with:
+2026-09-11T05:10:42.2831047Z   artifact-ids: 10183252130
+2026-09-11T05:10:42.2831272Z   run-id: 34557878180
+2026-09-11T05:10:42.2833905Z   github-token: ***
+2026-09-11T05:10:42.2834170Z   repository: yuguangzhi3836-glitch/GO
+2026-09-11T05:10:42.2834438Z   path: parent
+2026-09-11T05:10:42.2834637Z   merge-multiple: true
+2026-09-11T05:10:42.2834853Z env:
+2026-09-11T05:10:42.2835049Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T05:10:42.2835312Z   IMAGE: go-depth40-staging:ci-34564932969
+2026-09-11T05:10:42.2835681Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:42.2836112Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T05:10:42.2836533Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:42.2836897Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:42.2837259Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:42.2837624Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T05:10:42.2837942Z ##[endgroup]
+2026-09-11T05:10:42.4522549Z Downloading artifacts by ID
+2026-09-11T05:10:42.4528551Z Fetching artifact list for workflow run 34557878180 in repository yuguangzhi3836-glitch/GO
+2026-09-11T05:10:42.4689802Z (node:2151) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-11T05:10:42.4691334Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-11T05:10:42.4954961Z (node:2151) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-11T05:10:42.6602531Z Found 1 artifact(s)
+2026-09-11T05:10:42.6604130Z Preparing to download the following artifacts:
+2026-09-11T05:10:42.6605999Z - GO-CP11-DEPTH40-P03-PARENT-c909af370d55ce7644140a191425a8a66dacec9a (ID: 10183252130, Size: 11119179, Expected Digest: sha256:d0aa4b89ed0655271cf5ef7a12cce354dc8d84704cf57071f581f129458cbaf7)
+2026-09-11T05:10:42.6651208Z Downloading artifact '10183252130' from 'yuguangzhi3836-glitch/GO'
+2026-09-11T05:10:42.8718978Z Redirecting to blob download url: https://productionresultssa7.blob.core.windows.net/actions-results/b52dc385-68be-43f6-85c3-a26b8336333c/workflow-job-run-d165cfcc-7764-5524-998a-ce1e501e4a85/artifacts/57e21e91c0fdca0ea5509837d3d58de1a07c610c8e46603064185b123e893d7a.zip
+2026-09-11T05:10:42.8722168Z Starting download of artifact to: /home/runner/work/GO/GO/parent
+2026-09-11T05:10:43.0185031Z (node:2151) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-09-11T05:10:43.4670859Z SHA256 digest of downloaded artifact is d0aa4b89ed0655271cf5ef7a12cce354dc8d84704cf57071f581f129458cbaf7
+2026-09-11T05:10:43.4671682Z Artifact download completed successfully.
+2026-09-11T05:10:43.4672248Z Total of 1 artifact(s) downloaded
+2026-09-11T05:10:43.4672803Z Download artifact has finished successfully
+2026-09-11T05:10:43.4858876Z ##[group]Run set -euo pipefail
+2026-09-11T05:10:43.4859544Z [36;1mset -euo pipefail[0m
+2026-09-11T05:10:43.4859946Z [36;1mcd parent/CP11_DEPTH40_P03_PARENT_20260911[0m
+2026-09-11T05:10:43.4860281Z [36;1msha256sum -c CHECKSUMS.sha256[0m
+2026-09-11T05:10:43.4860546Z [36;1mcd ../..[0m
+2026-09-11T05:10:43.4861104Z [36;1mpython -B parent/CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py --package parent/CP11_DEPTH40_P03_PARENT_20260911 --output restored[0m
+2026-09-11T05:10:43.4861968Z [36;1mpython -B dependency-source/ci/depth36/dependencies.py --repository dependency-source --output dependencies[0m
+2026-09-11T05:10:44.0878547Z shell: /usr/bin/bash -e {0}
+2026-09-11T05:10:44.0878831Z env:
+2026-09-11T05:10:44.0879043Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T05:10:44.0879697Z   IMAGE: go-depth40-staging:ci-34564932969
+2026-09-11T05:10:44.0880071Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:44.0880556Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T05:10:44.0880982Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:44.0881361Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:44.0881729Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:44.0882099Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T05:10:44.0882406Z ##[endgroup]
+2026-09-11T05:10:44.1458504Z GO_CP11_DEPTH40_P03_PARENT_SOURCE_20260911.tar.gz: OK
+2026-09-11T05:10:44.1459469Z MANIFEST.json: OK
+2026-09-11T05:10:44.1467212Z SOURCE_FINGERPRINT.json: OK
+2026-09-11T05:10:44.1467859Z restore_parent.py: OK
+2026-09-11T05:10:44.8758430Z {"archive_sha256": "2909651f9b644ed56fd6ab833480c9da32b4c5b900df2e5afb192dba49ac2b00", "candidate": "CP11_DEPTH40_P03_PARENT_20260911", "deployment": "NOT_AUTHORIZED", "source_tree_sha256": "64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667", "status": "PASS", "verified_files": 1271}
+2026-09-11T05:10:45.2694306Z {"archive_sha256": "b13a76ab9351f81da70e8e2c8873c20141abe953cd3f96aeb181ef86a34b58dd", "verified_wheels": 37, "source": "pinned GO repository ci/dependency_parts only", "application_source_restored": false}
+2026-09-11T05:10:45.2848837Z ##[group]Run set -euo pipefail
+2026-09-11T05:10:45.2849164Z [36;1mset -euo pipefail[0m
+2026-09-11T05:10:45.2850786Z [36;1mpython -B ci/depth40-staging/build.py --source restored --fingerprint parent/CP11_DEPTH40_P03_PARENT_20260911/SOURCE_FINGERPRINT.json --wheelhouse dependencies/wheelhouse --lock dependency-source/ci/depth36/requirements.lock --output staging-context[0m
+2026-09-11T05:10:45.2851918Z [36;1mdocker build --network none --tag "$IMAGE" staging-context[0m
+2026-09-11T05:10:45.2852285Z [36;1mmkdir -p staging-delivery[0m
+2026-09-11T05:10:45.2852747Z [36;1mcp staging-context/ROOTFS_BINDING.json staging-context/ROOTFS_FILES.json staging-delivery/[0m
+2026-09-11T05:10:45.2853350Z [36;1mcp -r parent/CP11_DEPTH40_P03_PARENT_20260911 staging-delivery/source-parent[0m
+2026-09-11T05:10:45.2853899Z [36;1mdocker image inspect "$IMAGE" --format '{{.Id}}' > staging-delivery/IMAGE_ID.txt[0m
+2026-09-11T05:10:45.2854525Z [36;1mdocker image inspect "$IMAGE" --format '{{.Size}}' > staging-delivery/IMAGE_SIZE_BYTES.txt[0m
+2026-09-11T05:10:45.2855018Z [36;1mprintenv IMAGE > staging-delivery/IMAGE_TAG.txt[0m
+2026-09-11T05:10:45.2855474Z [36;1mdocker save "$IMAGE" | gzip -n > staging-delivery/GO_DEPTH40_STAGING_IMAGE.tar.gz[0m
+2026-09-11T05:10:45.2855889Z [36;1mdocker image rm "$IMAGE"[0m
+2026-09-11T05:10:45.2856270Z [36;1mgzip -dc staging-delivery/GO_DEPTH40_STAGING_IMAGE.tar.gz | docker load[0m
+2026-09-11T05:10:45.2856844Z [36;1mtest "$(docker image inspect "$IMAGE" --format '{{.Id}}')" = "$(cat staging-delivery/IMAGE_ID.txt)"[0m
+2026-09-11T05:10:45.2857524Z [36;1mdocker run --rm --network none --read-only "$IMAGE" source-check > staging-delivery/CI_SOURCE_CHECK.json[0m
+2026-09-11T05:10:45.2930374Z shell: /usr/bin/bash -e {0}
+2026-09-11T05:10:45.2930626Z env:
+2026-09-11T05:10:45.2930835Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T05:10:45.2931117Z   IMAGE: go-depth40-staging:ci-34564932969
+2026-09-11T05:10:45.2931477Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:45.2931900Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T05:10:45.2932308Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:45.2932675Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:45.2933044Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:10:45.2933416Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T05:10:45.2933729Z ##[endgroup]
+2026-09-11T05:10:48.2948818Z Looking in links: dependencies/wheelhouse
+2026-09-11T05:10:48.3061465Z Processing ./dependencies/wheelhouse/alembic-1.16.5-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 1))
+2026-09-11T05:10:48.3148744Z Processing ./dependencies/wheelhouse/annotated_doc-0.0.4-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 2))
+2026-09-11T05:10:48.3178228Z Processing ./dependencies/wheelhouse/annotated_types-0.7.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 3))
+2026-09-11T05:10:48.3210020Z Processing ./dependencies/wheelhouse/anyio-4.13.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 4))
+2026-09-11T05:10:48.3246771Z Processing ./dependencies/wheelhouse/certifi-2026.5.20-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 5))
+2026-09-11T05:10:48.3273949Z Processing ./dependencies/wheelhouse/cffi-2.0.0-cp313-cp313-manylinux_2_17_x86_64.whl (from -r dependency-source/ci/depth36/requirements.lock (line 6))
+2026-09-11T05:10:48.3303304Z Processing ./dependencies/wheelhouse/click-8.5.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 7))
+2026-09-11T05:10:48.3330839Z Processing ./dependencies/wheelhouse/cryptography-46.0.4-cp311-abi3-manylinux_2_34_x86_64.whl (from -r dependency-source/ci/depth36/requirements.lock (line 8))
+2026-09-11T05:10:48.3432012Z Processing ./dependencies/wheelhouse/fastapi-0.128.2-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 9))
+2026-09-11T05:10:48.3501451Z Processing ./dependencies/wheelhouse/greenlet-3.5.1-cp313-cp313-manylinux_2_24_x86_64.whl (from -r dependency-source/ci/depth36/requirements.lock (line 10))
+2026-09-11T05:10:48.3543904Z Processing ./dependencies/wheelhouse/h11-0.16.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 11))
+2026-09-11T05:10:48.3573316Z Processing ./dependencies/wheelhouse/httpcore-1.0.9-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 12))
+2026-09-11T05:10:48.3615601Z Processing ./dependencies/wheelhouse/httpx-0.28.1-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 13))
+2026-09-11T05:10:48.3654321Z Processing ./dependencies/wheelhouse/idna-3.17-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 14))
+2026-09-11T05:10:48.3686072Z Processing ./dependencies/wheelhouse/iniconfig-2.3.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 15))
+2026-09-11T05:10:48.3712325Z Processing ./dependencies/wheelhouse/mako-1.3.10-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 16))
+2026-09-11T05:10:48.3743229Z Processing ./dependencies/wheelhouse/markupsafe-3.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from -r dependency-source/ci/depth36/requirements.lock (line 17))
+2026-09-11T05:10:48.3768544Z Processing ./dependencies/wheelhouse/packaging-25.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 18))
+2026-09-11T05:10:48.3798498Z Processing ./dependencies/wheelhouse/pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.whl (from -r dependency-source/ci/depth36/requirements.lock (line 19))
+2026-09-11T05:10:48.3914920Z Processing ./dependencies/wheelhouse/pluggy-1.6.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 20))
+2026-09-11T05:10:48.3948046Z Processing ./dependencies/wheelhouse/psycopg_binary-3.2.10-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from -r dependency-source/ci/depth36/requirements.lock (line 21))
+2026-09-11T05:10:48.4016755Z Processing ./dependencies/wheelhouse/psycopg-3.2.10-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 22))
+2026-09-11T05:10:48.4078773Z Processing ./dependencies/wheelhouse/pycparser-3.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 23))
+2026-09-11T05:10:48.4107850Z Processing ./dependencies/wheelhouse/pydantic_settings-2.14.1-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 24))
+2026-09-11T05:10:48.4141921Z Processing ./dependencies/wheelhouse/pydantic-2.13.4-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 25))
+2026-09-11T05:10:48.4226118Z Processing ./dependencies/wheelhouse/pydantic_core-2.46.4-cp313-cp313-manylinux_2_17_x86_64.whl (from -r dependency-source/ci/depth36/requirements.lock (line 26))
+2026-09-11T05:10:48.4281658Z Processing ./dependencies/wheelhouse/Pygments-2.20.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 27))
+2026-09-11T05:10:48.4376540Z Processing ./dependencies/wheelhouse/PyJWT-2.13.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 28))
+2026-09-11T05:10:48.4405410Z Processing ./dependencies/wheelhouse/pytest_asyncio-1.3.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 29))
+2026-09-11T05:10:48.4438314Z Processing ./dependencies/wheelhouse/pytest-9.0.2-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 30))
+2026-09-11T05:10:48.4495649Z Processing ./dependencies/wheelhouse/python_dotenv-1.2.2-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 31))
+2026-09-11T05:10:48.4536579Z Processing ./dependencies/wheelhouse/redis-5.2.1-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 32))
+2026-09-11T05:10:48.4574852Z Processing ./dependencies/wheelhouse/SQLAlchemy-2.0.50-cp313-cp313-manylinux_2_17_x86_64.whl (from -r dependency-source/ci/depth36/requirements.lock (line 33))
+2026-09-11T05:10:48.4739937Z Processing ./dependencies/wheelhouse/starlette-0.50.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 34))
+2026-09-11T05:10:48.4777509Z Processing ./dependencies/wheelhouse/typing_inspection-0.4.2-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 35))
+2026-09-11T05:10:48.4803592Z Processing ./dependencies/wheelhouse/typing_extensions-4.16.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 36))
+2026-09-11T05:10:48.4830795Z Processing ./dependencies/wheelhouse/uvicorn-0.35.0-py3-none-any.whl (from -r dependency-source/ci/depth36/requirements.lock (line 37))
+2026-09-11T05:10:48.5378580Z Installing collected packages: uvicorn, typing-inspection, typing_extensions, starlette, SQLAlchemy, redis, python-dotenv, pytest-asyncio, pytest, PyJWT, Pygments, pydantic-settings, pydantic_core, pydantic, pycparser, psycopg-binary, psycopg, pluggy, Pillow, packaging, MarkupSafe, Mako, iniconfig, idna, httpx, httpcore, h11, greenlet, fastapi, cryptography, click, cffi, certifi, anyio, annotated-types, annotated-doc, alembic
+2026-09-11T05:10:51.1754566Z 
+2026-09-11T05:10:51.1810760Z Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 Pillow-12.3.0 PyJWT-2.13.0 Pygments-2.20.0 SQLAlchemy-2.0.50 alembic-1.16.5 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 certifi-2026.5.20 cffi-2.0.0 click-8.5.0 cryptography-46.0.4 fastapi-0.128.2 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.17 iniconfig-2.3.0 packaging-25.0 pluggy-1.6.0 psycopg-3.2.10 psycopg-binary-3.2.10 pycparser-3.0 pydantic-2.13.4 pydantic-settings-2.14.1 pydantic_core-2.46.4 pytest-9.0.2 pytest-asyncio-1.3.0 python-dotenv-1.2.2 redis-5.2.1 starlette-0.50.0 typing-inspection-0.4.2 typing_extensions-4.16.0 uvicorn-0.35.0
+2026-09-11T05:10:54.6111755Z {"source_tree_sha256": "64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667", "libraries": 41, "rootfs_bytes": 521130237}
+2026-09-11T05:10:56.4718190Z {"source_tree_sha256": "64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667", "verified_source_files": 1271, "python": "3.13.5 (main, Jun 12 2025, 03:51:15) [GCC 11.4.0]", "python_provenance": "actions/setup-python 3.13.5 on ubuntu-22.04", "system_elf_libraries": {"/lib/x86_64-linux-gnu/libc.so.6": "e01b1ce7be2987f3b8560e26d0df2623f9dd5cec17be923ae28a785bc0d32d50", "/lib/x86_64-linux-gnu/libm.so.6": "df621c68dbfed7e843434ef2faedb9f4d4b0543ad161e9a55eaf4d4ce2443176", "/lib64/ld-linux-x86-64.so.2": "8d06f393f4a93bcf9b81145a259524d66a95522a646bf8d7e05b6ffdf2e63dcc", "/lib/x86_64-linux-gnu/libtk8.6.so": "468fe0e3d8939757f1c9c66f3aa8ff6e45d09616dd85e02a5ef5e95979cb6f3d", "/lib/x86_64-linux-gnu/libtcl8.6.so": "8aa8d78367d409e0a53ae62608b52a1c3899da60d03c52a2fd3cc94e162db7a8", "/lib/x86_64-linux-gnu/libXft.so.2": "73c9e0d9bb6fcfc943cafc78590034b85bdb2f3d0b071a979c3a852f30fd268d", "/lib/x86_64-linux-gnu/libfontconfig.so.1": "7d688909aab1c566b60832045fef012ea118ff7ee189df87608fbff999d3bd0d", "/lib/x86_64-linux-gnu/libX11.so.6": "34b7869a1ba702462a1aa862fc0afe5b2608a7d5a09552c07796802fcf0c684b", "/lib/x86_64-linux-gnu/libXss.so.1": "2c30b5f8ae4a1a733c70385229fe2143de270f292097a61879f4696abe63545b", "/lib/x86_64-linux-gnu/libz.so.1": "64c206f0146cc58bbddc4f22054436f4ff278f5a554aa3ce6921ddf7e9133370", "/lib/x86_64-linux-gnu/libfreetype.so.6": "ef8908dd08eb7072dd1da355277b069048a86512122592d56b5051796ba62ee2", "/lib/x86_64-linux-gnu/libXrender.so.1": "2415c0b512d332522625bc65bcc5e05dba93c2e3418329ded2855111fb0cf723", "/lib/x86_64-linux-gnu/libexpat.so.1": "5491355459d82059a2e58134c5bf3a890f6f6e1a6fb209f152c25cde7522def0", "/lib/x86_64-linux-gnu/libuuid.so.1": "4472cf91dbc01395761fb45d0f4b25f6241406fe54cbf540c13755a3706a7b17", "/lib/x86_64-linux-gnu/libxcb.so.1": "aabc489094abd96c876d1c989a2da8a8aa6d28f5a676c4a84dd6d0a0c34aec5d", "/lib/x86_64-linux-gnu/libXext.so.6": "d61399986f565c00c090a1f222019db7b40f42eaf2d93834136d6234c16ec465", "/lib/x86_64-linux-gnu/libpng16.so.16": "ca1306d319d9e6a904fe4b0fa21e41952db2b2f2f5384f70a1301fa713300f5b", "/lib/x86_64-linux-gnu/libbrotlidec.so.1": "db9dbda709a46c3ae124433f47c4db71167db8aaba4eafdfd99c8a3a14584463", "/lib/x86_64-linux-gnu/libXau.so.6": "98343a8324ea62ed75a13c923ed5dea96b7a8ad41aeba9f18126c4cbf7178064", "/lib/x86_64-linux-gnu/libXdmcp.so.6": "1dc3ff1269a5ede69ef9a8ec2436d73fccbcd10531055b359292e0bde4e29b46", "/lib/x86_64-linux-gnu/libbrotlicommon.so.1": "abf86ae9362dbb413c740a55b194c74adb09a7bd92d8fbd96a293c797a4a6d08", "/lib/x86_64-linux-gnu/libbsd.so.0": "e4ad21c203d8e8b9b7f49071311339af6b438026e1ad236403e3b379b022f23d", "/lib/x86_64-linux-gnu/libmd.so.0": "bb376813876bb214535bbbdac70f2c0c4b00baecb81557dab78a79518248df06", "/lib/x86_64-linux-gnu/libreadline.so.8": "57419e3b177639246ecf7ffd2eba170bde779b7369d70e68b9b4c5fc3051cbc1", "/lib/x86_64-linux-gnu/libtinfo.so.6": "856b8451914abc2277c3d91c64ba3e72b2e0d519806397afecae92fda1a6b10c", "/lib/x86_64-linux-gnu/libffi.so.8": "247da4d5d34a91cadcdd6282be4c4644fcb8af001334d2b8a82ecda435418cbf", "/lib/x86_64-linux-gnu/libcrypto.so.3": "7be3a37c9d754ec214b30db1d00ce329d22ccebd5654dd7c3f92010a7b1ccf07", "/lib/x86_64-linux-gnu/libgdbm_compat.so.4": "cd77f7a952bc04649ce0608251b5a99d76219b1132c7375921e0c8bf6ff20c80", "/lib/x86_64-linux-gnu/libgdbm.so.6": "ffa9adb042df32f985ca2f1deb9247dfcb61d46fa513de2aa7159ecd55c18d67", "/lib/x86_64-linux-gnu/libncursesw.so.6": "96a5920c1f6d1fd6ff3ac35c03b8fc9725e8fe6964c10e0299f772667d522a6b", "/lib/x86_64-linux-gnu/liblzma.so.5": "7fa51c1500cb9fcc4c7d69b7fe0a6d7203cfe6af64373f6c411c5445ef1b402c", "/lib/x86_64-linux-gnu/libssl.so.3": "3db6aff36baf2ced6dde3f340159edd2504f089c0d735765596ce96d2d835cb1", "/lib/x86_64-linux-gnu/libbz2.so.1.0": "54d16979912ab62282350dd2dc5dceb5b73b13e27bb02792087aff752d16f6e9", "/lib/x86_64-linux-gnu/libpanelw.so.6": "20771997288c90841349f1eef3b66148eac771df02bb94462a9c3463f275fbc5", "/lib/x86_64-linux-gnu/libsqlite3.so.0": "26917e4509991ee5c180c3dcfc39630f1bf81bc7812a5711be0cbaaef1650148", "/lib/x86_64-linux-gnu/libpthread.so.0": "fbed9505adacada2abb37c6b43be2df6de81e742712c6025694ba48de62c7e78", "/lib/x86_64-linux-gnu/libdl.so.2": "d255ba9c9e3a7c35115e578c898147edaba1a2bcf742cc3a76995ceed9d5ac4f", "/lib/x86_64-linux-gnu/libresolv.so.2": "c0724375581c0303a3ea8bcf1d5cfce6b63eca7b99313c6598a721b414634751", "/lib/x86_64-linux-gnu/libstdc++.so.6": "ff0825e113603c3866680d5d52216bc6d8eedf3a59f52a0aef67ff01994db128", "/lib/x86_64-linux-gnu/libgcc_s.so.1": "fc9d43b2f6c20e53b009238f767c5b949d202389e20de9e202ea684b4ba3729a", "/lib/x86_64-linux-gnu/librt.so.1": "83eda8758c8697323bedf48bc0186c006cca2205441a988cb0f5072b96262100"}, "rootfs_bytes": 521312832, "runtime_scope": "STAGING_EIGHT_SERVICE_POSTGRES_REVIEW", "deployment_authorized": false, "source_modified": false, "required_database_head": "0132_rail_runtime_field_widths", "migration_authorized": false, "hk_execution": "NOT_RUN"}
+2026-09-11T05:10:56.9634543Z #0 building with "default" instance using docker driver
+2026-09-11T05:10:56.9642302Z 
+2026-09-11T05:10:56.9647541Z #1 [internal] load build definition from Dockerfile
+2026-09-11T05:10:56.9648650Z #1 transferring dockerfile: 437B done
+2026-09-11T05:10:56.9650206Z #1 DONE 0.0s
+2026-09-11T05:10:56.9651242Z 
+2026-09-11T05:10:56.9652469Z #2 [internal] load .dockerignore
+2026-09-11T05:10:56.9653579Z #2 transferring context: 2B done
+2026-09-11T05:10:56.9655000Z #2 DONE 0.0s
+2026-09-11T05:10:56.9655852Z 
+2026-09-11T05:10:56.9656840Z #3 [internal] load build context
+2026-09-11T05:11:01.3050512Z #3 transferring context: 492.52MB 4.2s done
+2026-09-11T05:11:01.3051647Z #3 DONE 4.3s
+2026-09-11T05:11:01.3052519Z 
+2026-09-11T05:11:01.3052894Z #4 [1/2] COPY rootfs/ /
+2026-09-11T05:11:03.1345884Z #4 DONE 2.0s
+2026-09-11T05:11:03.2845400Z 
+2026-09-11T05:11:03.2846134Z #5 [2/2] WORKDIR /opt/go/source
+2026-09-11T05:11:06.9349244Z #5 DONE 3.8s
+2026-09-11T05:11:07.0890708Z 
+2026-09-11T05:11:07.0891511Z #6 exporting to image
+2026-09-11T05:11:07.0910469Z #6 exporting layers
+2026-09-11T05:11:09.0636780Z #6 exporting layers 2.1s done
+2026-09-11T05:11:09.0834693Z #6 writing image sha256:8201d682cd04f78ec4b3ecde67edf0f3d39b97d5aa003c6ce33006afe0f0f34b done
+2026-09-11T05:11:09.0836422Z #6 naming to docker.io/library/go-depth40-staging:ci-34564932969 done
+2026-09-11T05:11:09.0838449Z #6 DONE 2.1s
+2026-09-11T05:11:33.0155899Z Untagged: go-depth40-staging:ci-34564932969
+2026-09-11T05:11:33.0157277Z Deleted: sha256:8201d682cd04f78ec4b3ecde67edf0f3d39b97d5aa003c6ce33006afe0f0f34b
+2026-09-11T05:11:36.6722435Z Loaded image: go-depth40-staging:ci-34564932969
+2026-09-11T05:11:37.3894123Z ##[group]Run set -euo pipefail
+2026-09-11T05:11:37.3894444Z [36;1mset -euo pipefail[0m
+2026-09-11T05:11:37.3894705Z [36;1mtouch ci-compose-empty.env[0m
+2026-09-11T05:11:37.3895671Z [36;1mGO_DEPTH40_IMAGE_ID="$(cat staging-delivery/IMAGE_ID.txt)" GO_RUNTIME_ENV_FILE="$PWD/ci-compose-empty.env" GO_VERIFIED_RUNTIME_NETWORK=ci-contract-review-only docker compose -f ci/depth40-staging/compose.staging.review.yml config --quiet[0m
+2026-09-11T05:11:37.3968606Z shell: /usr/bin/bash -e {0}
+2026-09-11T05:11:37.3968850Z env:
+2026-09-11T05:11:37.3969060Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T05:11:37.3969668Z   IMAGE: go-depth40-staging:ci-34564932969
+2026-09-11T05:11:37.3970028Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:11:37.3970455Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T05:11:37.3970893Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:11:37.3971330Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:11:37.3971708Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:11:37.3972083Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T05:11:37.3972398Z ##[endgroup]
+2026-09-11T05:11:37.8138952Z ##[group]Run python -B ci/depth40-staging/ci_exercise.py
+2026-09-11T05:11:37.8139999Z [36;1mpython -B ci/depth40-staging/ci_exercise.py[0m
+2026-09-11T05:11:37.8220134Z shell: /usr/bin/bash -e {0}
+2026-09-11T05:11:37.8220386Z env:
+2026-09-11T05:11:37.8220592Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T05:11:37.8220864Z   IMAGE: go-depth40-staging:ci-34564932969
+2026-09-11T05:11:37.8221209Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:11:37.8221619Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T05:11:37.8222030Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:11:37.8222403Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:11:37.8222766Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:11:37.8223132Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T05:11:37.8288072Z ##[endgroup]
+2026-09-11T05:11:50.4762849Z {"check": "fresh_database_empty", "passed": true, "detail": null}
+2026-09-11T05:11:58.7685873Z {"check": "fresh_pg16_migration_to_0132", "passed": true, "detail": null}
+2026-09-11T05:12:08.7344445Z {"check": "read_only_preflight", "passed": true, "detail": null}
+2026-09-11T05:12:08.8263854Z {"check": "preflight_no_identity_write", "passed": true, "detail": null}
+2026-09-11T05:12:13.5802755Z {"check": "old_database_refuses_api_start", "passed": true, "detail": null}
+2026-09-11T05:12:13.6748202Z {"check": "rejection_does_not_migrate", "passed": true, "detail": null}
+2026-09-11T05:12:14.1444497Z {"check": "locked_worker_role_rejected", "passed": true, "detail": null}
+2026-09-11T05:12:15.5977385Z {"check": "production_environment_rejected", "passed": true, "detail": null}
+2026-09-11T05:12:17.0649660Z {"check": "default_credential_rejected", "passed": true, "detail": null}
+2026-09-11T05:13:36.4327985Z Traceback (most recent call last):
+2026-09-11T05:13:36.4492331Z   File "/home/runner/work/GO/GO/ci/depth40-staging/ci_exercise.py", line 124, in <module>
+2026-09-11T05:13:36.4494190Z     p=run_image(['-B','-c', (HERE/'http_probe.py').read_text()],entrypoint=PY,timeout=180)
+2026-09-11T05:13:36.4495690Z   File "/home/runner/work/GO/GO/ci/depth40-staging/ci_exercise.py", line 65, in run_image
+2026-09-11T05:13:36.4496660Z     return cmd(command+[IMAGE]+args, timeout=timeout, check=check)
+2026-09-11T05:13:36.4497678Z   File "/home/runner/work/GO/GO/ci/depth40-staging/ci_exercise.py", line 48, in cmd
+2026-09-11T05:13:36.4498657Z     raise RuntimeError(scrub(p.stdout+'\n'+p.stderr))
+2026-09-11T05:13:36.4499546Z RuntimeError: 
+2026-09-11T05:13:36.4500181Z Traceback (most recent call last):
+2026-09-11T05:13:36.4500826Z   File "<string>", line 17, in <module>
+2026-09-11T05:13:36.4501494Z     else: raise RuntimeError('API_START_TIMEOUT')
+2026-09-11T05:13:36.4502154Z           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-11T05:13:36.4502732Z RuntimeError: API_START_TIMEOUT
+2026-09-11T05:13:36.4503125Z 
+2026-09-11T05:13:36.4580785Z ##[error]Process completed with exit code 1.
+2026-09-11T05:13:36.4635243Z ##[group]Run set -euo pipefail
+2026-09-11T05:13:36.4635567Z [36;1mset -euo pipefail[0m
+2026-09-11T05:13:36.4636207Z [36;1mpython -B ci/depth40-staging/finalize.py --directory staging-delivery --run-id '34564932969' --tooling-sha '55060484de0d2c47dadfeb9a63fe7bf2df2bea66'[0m
+2026-09-11T05:13:36.4637022Z [36;1mpython -B ci/depth40-staging/verify_delivery.py --directory staging-delivery[0m
+2026-09-11T05:13:36.4709054Z shell: /usr/bin/bash -e {0}
+2026-09-11T05:13:36.4709581Z env:
+2026-09-11T05:13:36.4709805Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T05:13:36.4710079Z   IMAGE: go-depth40-staging:ci-34564932969
+2026-09-11T05:13:36.4710418Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:36.4710833Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T05:13:36.4711239Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:36.4711605Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:36.4712014Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:36.4712398Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T05:13:36.4712709Z ##[endgroup]
+2026-09-11T05:13:37.3799765Z {"candidate": "CP11_DEPTH40_P03_PARENT_20260911", "candidate_build_commit": "c909af370d55ce7644140a191425a8a66dacec9a", "parent_artifact_id": 10183252130, "parent_artifact_zip_sha256": "d0aa4b89ed0655271cf5ef7a12cce354dc8d84704cf57071f581f129458cbaf7", "parent_archive_sha256": "2909651f9b644ed56fd6ab833480c9da32b4c5b900df2e5afb192dba49ac2b00", "source_tree_sha256": "64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667", "source_files": 1271, "source_modified": false, "packaging_commit": "55060484de0d2c47dadfeb9a63fe7bf2df2bea66", "packaging_run": "34564932969", "platform": "linux/amd64", "runtime_scope": "STAGING_EIGHT_SERVICE_POSTGRES_REVIEW", "image_config_id": "sha256:8201d682cd04f78ec4b3ecde67edf0f3d39b97d5aa003c6ce33006afe0f0f34b", "image_tag": "go-depth40-staging:ci-34564932969", "registry_repo_digest": null, "registry_status": "NOT_PUSHED_EXECUTOR_INTEGRATION_HOLD", "runtime_archive": "GO_DEPTH40_STAGING_IMAGE.tar.gz", "runtime_archive_sha256": "33d9e33502e6f9b1ac31314cff235a881f410da40f86dbe81fd25b9a9266fe17", "runtime_archive_bytes": 176700691, "image_uncompressed_bytes": 490223426, "required_database_head": "0132_rail_runtime_field_widths", "hk_migration_authorized": false, "offline_image_load": "PASS_CI", "isolated_pg16_eight_service_gate": "HOLD", "hk_database_compatibility": "HOLD_CURRENT_RDS_HEAD_AND_STRUCTURE", "hk_compose_binding": "HOLD_FRESH_RUNTIME_MAPPING", "hk_rollback_ready": "HOLD_LIVE_PREVIOUS_STATE_AND_APPROVED_EXECUTOR_MAPPING", "hk_execution": "NOT_RUN", "three_end_browser_gate": "HOLD", "six_vertical_e2e_gate": "HOLD", "physical_iphone_gate": "HOLD_EXTERNAL_DEVICE_RUNNER", "final_production_release_gate": "HOLD", "deployment_authorized_by_this_package": false}
+2026-09-11T05:13:42.3924646Z {"status": "PASS_INTEGRITY_ONLY", "verified_files": 35, "parts": 9, "runtime_archive_sha256": "33d9e33502e6f9b1ac31314cff235a881f410da40f86dbe81fd25b9a9266fe17", "image_config_id": "sha256:8201d682cd04f78ec4b3ecde67edf0f3d39b97d5aa003c6ce33006afe0f0f34b", "runtime_gate": "HOLD", "hk_execution": "NOT_RUN"}
+2026-09-11T05:13:42.4308495Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T05:13:42.4311101Z ##[group]Run actions/upload-artifact@v4
+2026-09-11T05:13:42.4311545Z with:
+2026-09-11T05:13:42.4311914Z   name: GO-DEPTH40-STAGING-BUILD-34564932969
+2026-09-11T05:13:42.4312419Z   path: staging-delivery
+2026-09-11T05:13:42.4312810Z   retention-days: 90
+2026-09-11T05:13:42.4313179Z   if-no-files-found: warn
+2026-09-11T05:13:42.4313587Z   compression-level: 6
+2026-09-11T05:13:42.4313962Z   overwrite: false
+2026-09-11T05:13:42.4314337Z   include-hidden-files: false
+2026-09-11T05:13:42.4314756Z env:
+2026-09-11T05:13:42.4315090Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T05:13:42.4315547Z   IMAGE: go-depth40-staging:ci-34564932969
+2026-09-11T05:13:42.4316157Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:42.4316877Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T05:13:42.4317623Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:42.4318278Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:42.4318940Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:42.4320006Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T05:13:42.4320586Z ##[endgroup]
+2026-09-11T05:13:42.6293761Z (node:6298) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-11T05:13:42.6295409Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-11T05:13:42.6552115Z With the provided path, there will be 36 files uploaded
+2026-09-11T05:13:42.6553482Z Artifact name is valid!
+2026-09-11T05:13:42.6555031Z Root directory input is valid!
+2026-09-11T05:13:42.9400747Z Beginning upload of artifact content to blob storage
+2026-09-11T05:13:43.2717575Z (node:6298) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-11T05:13:43.5922721Z Uploaded bytes 8388608
+2026-09-11T05:13:43.8780650Z Uploaded bytes 16777216
+2026-09-11T05:13:44.0590210Z Uploaded bytes 25165824
+2026-09-11T05:13:44.3075503Z Uploaded bytes 33554432
+2026-09-11T05:13:44.6447028Z Uploaded bytes 41943040
+2026-09-11T05:13:45.0347291Z Uploaded bytes 50331648
+2026-09-11T05:13:45.2846562Z Uploaded bytes 58720256
+2026-09-11T05:13:45.5224003Z Uploaded bytes 67108864
+2026-09-11T05:13:45.9150815Z Uploaded bytes 75497472
+2026-09-11T05:13:46.0933227Z Uploaded bytes 83886080
+2026-09-11T05:13:46.3262280Z Uploaded bytes 92274688
+2026-09-11T05:13:46.6917248Z Uploaded bytes 100663296
+2026-09-11T05:13:46.8825630Z Uploaded bytes 109051904
+2026-09-11T05:13:47.3667683Z Uploaded bytes 117440512
+2026-09-11T05:13:47.6970287Z Uploaded bytes 125829120
+2026-09-11T05:13:48.0904340Z Uploaded bytes 134217728
+2026-09-11T05:13:48.5544479Z Uploaded bytes 142606336
+2026-09-11T05:13:48.9231783Z Uploaded bytes 150994944
+2026-09-11T05:13:49.3417084Z Uploaded bytes 159383552
+2026-09-11T05:13:49.6840749Z Uploaded bytes 167772160
+2026-09-11T05:13:50.1432785Z Uploaded bytes 176160768
+2026-09-11T05:13:50.5133944Z Uploaded bytes 184549376
+2026-09-11T05:13:50.6313826Z Uploaded bytes 187811799
+2026-09-11T05:13:50.6653586Z Finished uploading artifact content to blob storage!
+2026-09-11T05:13:50.6671521Z SHA256 digest of uploaded artifact zip is c22191601d0a035d09ed939a9baf807460fabdd148f2bb914a87e89b1c3e3b4a
+2026-09-11T05:13:50.6689867Z Finalizing artifact upload
+2026-09-11T05:13:50.9390321Z Artifact GO-DEPTH40-STAGING-BUILD-34564932969.zip successfully finalized. Artifact ID 10185722842
+2026-09-11T05:13:50.9410708Z Artifact GO-DEPTH40-STAGING-BUILD-34564932969 has been successfully uploaded! Final size is 187811799 bytes. Artifact ID is 10185722842
+2026-09-11T05:13:50.9412577Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34564932969/artifacts/10185722842
+2026-09-11T05:13:50.9628134Z ##[group]Run python -B ci/depth40-staging/archive_to_repository.py --directory staging-delivery --run-id '34564932969'
+2026-09-11T05:13:50.9629989Z [36;1mpython -B ci/depth40-staging/archive_to_repository.py --directory staging-delivery --run-id '34564932969'[0m
+2026-09-11T05:13:50.9724220Z shell: /usr/bin/bash -e {0}
+2026-09-11T05:13:50.9724617Z env:
+2026-09-11T05:13:50.9724954Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-11T05:13:50.9725408Z   IMAGE: go-depth40-staging:ci-34564932969
+2026-09-11T05:13:50.9725993Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:50.9726729Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-11T05:13:50.9727458Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:50.9728103Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:50.9728753Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-11T05:13:50.9729626Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-11T05:13:50.9735137Z   GO_ARCHIVE_TOKEN: ***
+2026-09-11T05:13:50.9735527Z ##[endgroup]
+2026-09-11T05:14:40.0958033Z {"archive_commit": "77cd5d8b7d6215604c7ba831b6a526d2747e346a", "branch": "deliverables/depth40-staging-build-34564932969", "path": "deliverables/CP11_DEPTH40_STAGING_BUILD_34564932969", "deployment_authorized": false}
+2026-09-11T05:14:40.1200262Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T05:14:40.1201549Z Post job cleanup.
+2026-09-11T05:14:40.2250976Z [command]/usr/bin/git version
+2026-09-11T05:14:40.2340405Z git version 2.55.0
+2026-09-11T05:14:40.2396124Z Temporarily overriding HOME='/home/runner/work/_temp/70ac16e4-6c04-4986-b7ab-4402aa35e4f1' before making global git config changes
+2026-09-11T05:14:40.2397618Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T05:14:40.2398850Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/dependency-source
+2026-09-11T05:14:40.2471259Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T05:14:40.2526050Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T05:14:40.3002306Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T05:14:40.3075263Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T05:14:40.3969910Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T05:14:40.4075896Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T05:14:40.4834748Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-11T05:14:40.4837044Z Post job cleanup.
+2026-09-11T05:14:40.5901207Z [command]/usr/bin/git version
+2026-09-11T05:14:40.5978332Z git version 2.55.0
+2026-09-11T05:14:40.6054465Z Temporarily overriding HOME='/home/runner/work/_temp/1d95a506-3d4a-40e3-b43c-c7dd3efdd5db' before making global git config changes
+2026-09-11T05:14:40.6055980Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-11T05:14:40.6057146Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-11T05:14:40.6124277Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-11T05:14:40.6214039Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-11T05:14:40.6671906Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-11T05:14:40.6744114Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-11T05:14:40.7200194Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-11T05:14:40.7241134Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-11T05:14:40.7904304Z Cleaning up orphan processes
+2026-09-11T05:14:40.8212588Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/download-artifact@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
