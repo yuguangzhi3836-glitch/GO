@@ -1,0 +1,51 @@
+{
+  "release_id": "GO-AOLUGUYA-MEDIA-DISCOVERY-2.0.2-R3-20260905",
+  "manifest_type": "SEALED_DELTA_FINAL_CANDIDATE_BINDING",
+  "parent_archive": {
+    "filename": "GO_AOLUGUYA_ONE_CLICK_BUILD_2_0_1_RIGHTS_HOTFIX_HK_STAGING_20260904.tar.gz",
+    "size_bytes": 260336590,
+    "sha256": "6696d3247b812ed72724481d3162325f54406e5070d3b3cd85b8dc3d99500491"
+  },
+  "revokes_delta_sha256": "06c88b0bd2091c5985d5a51fe897e9c1b06a38865349960363c852d198ee3545",
+  "revokes_r1_delta_sha256": "750fabc1e7a26627549248e55cd66442e9e5524677040efe346900083d6e03a7",
+  "supersedes_r2_image_id": "sha256:d7a66949c4a06782f30fb76af7c4270fedef49f49cf227ba6b673c7faa35b9f8",
+  "image_packaging_contract": {
+    "runtime_scripts_included": true,
+    "gate_tests_included": true,
+    "final_manifest_included": true,
+    "dockerfile_evidence_included": true,
+    "dev_test_runtime_included": true,
+    "entrypoint_changed": false
+  },
+  "discovery_contract": {
+    "target_candidate_capacity": 160,
+    "per_query_limit": 20,
+    "scene_budgets": {
+      "EXTERIOR": 12,
+      "LOBBY": 12,
+      "ROOM": 30,
+      "DINING": 18,
+      "WELLNESS": 12,
+      "SIGNATURE_SPACE": 16
+    },
+    "flex_capacity": 60,
+    "pre_download_fail_closed": true
+  },
+  "changed_files_sha256": {
+    "src/go_hotel/services/media_harvester.py": "114446f88793961c8daf3c4d49af5ca8c765397c0cf247d9fc5e6534476ad264",
+    "scripts/aoluguya_real_media_harvest_gate.py": "e64b516db26a267d887ccfb83a00d4fe6461158111bcaf266201ceb62366c3f6",
+    "tests/test_aoluguya_multi_source_media_rights.py": "0d4732ef354d2b1a7227e4241f8c47999647bc4b8eed63a8858cb442dd6ad98d",
+    "scripts/aoluguya_firecrawl_media_discovery.py": "41ad092c0ef84d3199dc8451b4f30ef95d42f3f5066886159c687ce8aeba40b2",
+    "scripts/aoluguya_hk_real_media_one_shot.sh": "a7982464038e8adcfdd5a3448fa7fa91bc7e7e75f71489df12c1e57ce03b79c9",
+    "tests/test_aoluguya_media_discovery_202.py": "47ca85052aeb0a3ad0357dbf25ad73d4b7cd816c39aa1da0f0b19ec8aa45dd69"
+    ,
+    "Dockerfile": "a0786e1b8cc4b117117ccacf152eaf6dfb9fb0313ed076bae3ee3353fb05881e"
+  },
+  "expected_changed_file_count": 7,
+  "migration_change": false,
+  "rds_change": false,
+  "redis_change": false,
+  "caddy_change": false,
+  "control_plane_change": false,
+  "deployment_performed": false
+}

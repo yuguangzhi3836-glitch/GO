@@ -1,0 +1,25 @@
+window.GO_CONSOLE={title:'GO 运营管理系统',subtitle:'GO 自运营治理工作台',actorType:'GO_ADMIN',demoUser:'admin',nav:[{route:'/dashboard',label:'全局运行状态',endpoint:'/internal/v1/admin/dashboard',kind:'dashboard'},{route:'/queues',label:'异常队列',endpoint:'/internal/v1/admin/queues'},{route:'/orders',label:'订单控制',endpoint:'/internal/v1/admin/orders'},{route:'/refunds',label:'退款',endpoint:'/internal/v1/admin/refunds'},{route:'/liabilities',label:'赔付责任',endpoint:'/internal/v1/admin/liabilities'},{route:'/risks',label:'风险事件',endpoint:'/internal/v1/admin/risk-cases'},{route:'/judgments',label:'GO 判断证据',custom:'adminJudgments'},{route:'/connectors',label:'供应商连接器',custom:'adminConnectors'},{route:'/settlement',label:'结算明细',custom:'adminSettlement'},{route:'/approvals',label:'双人审批工作流',custom:'approvals'},{route:'/recovery-control',label:'恢复控制',custom:'recoveryControl'},{route:'/recovery-experiments',label:'恢复实验',custom:'recoveryExperiments'},{route:'/recovery-learning',label:'恢复学习',custom:'recoveryLearning'},{route:'/recovery-data-governance',label:'恢复数据治理',custom:'recoveryDataGovernance'},{route:'/recovery-learning-incidents',label:'学习事件控制',custom:'recoveryLearningIncidents'},{route:'/recovery-releases',label:'恢复发布治理',custom:'recoveryReleases'},{route:'/recovery-runtime-safety',label:'运行时发布安全',custom:'recoveryRuntimeSafety'},{route:'/recovery-telemetry-governance',label:'运行遥测治理',custom:'recoveryTelemetryGovernance'},{route:'/recovery-telemetry-trust',label:'运行遥测可信',custom:'recoveryTelemetryTrust'},{route:'/recovery-identity-lifecycle',label:'运行身份生命周期',custom:'recoveryIdentityLifecycle'},{route:'/recovery-identity-reissuance',label:'运行身份重签发',custom:'recoveryIdentityReissuance'},{route:'/recovery-credential-authority',label:'凭证授权',custom:'recoveryCredentialAuthority'},{route:'/recovery-federated-trust',label:'联邦信任执行',custom:'recoveryFederatedTrust'},{route:'/external-trust',label:'外部信任与多地域',custom:'externalTrust'},{route:'/trust-gossip',label:'信任传播与恢复',custom:'trustGossip'},{route:'/trust-plane-dr',label:'信任平面独立与容灾',custom:'trustPlaneDR'},{route:'/trust-chaos-readiness',label:'信任混沌与就绪',custom:'trustChaosReadiness'},{route:'/continuous-chaos-waivers',label:'持续混沌与豁免',custom:'continuousChaosWaivers'},{route:'/waiver-exposure-debt',label:'豁免暴露与技术债',custom:'waiverExposureDebt'},{route:'/exception-debt-burndown',label:'异常债务清理',custom:'exceptionDebtBurndown'},{route:'/enterprise-risk-portfolio',label:'企业风险组合',custom:'enterpriseRiskPortfolio'},{route:'/enterprise-risk-appetite',label:'企业风险偏好',custom:'enterpriseRiskAppetite'},{route:'/enterprise-risk-forecast',label:'企业风险预测',custom:'enterpriseRiskForecast'},{route:'/risk-forecast-calibration',label:'预测校准与准确性',custom:'riskForecastCalibration'},{route:'/forecast-model-governance',label:'预测模型主备治理',custom:'forecastModelGovernance'},{route:'/forecast-model-statistics',label:'预测统计晋级',custom:'forecastModelStatistics'},{route:'/forecast-drift-governance',label:'预测漂移与刷新',custom:'forecastDriftGovernance'},{route:'/forecast-training-governance',label:'预测训练与可复现',custom:'forecastTrainingGovernance'},{route:'/forecast-artifact-governance',label:'预测制品供应链',custom:'forecastArtifactGovernance'},{route:'/forecast-serving-governance',label:'预测服务证明',custom:'forecastServingGovernance'},{route:'/audit',label:'审计日志',custom:'audit'}]};
+window.GO_CONSOLE.demoUser='';window.GO_CONSOLE.nav.splice(6,0,{route:'/go-identity',label:'GO 身份凭证',custom:'adminIdentityQueue'},{route:'/go-offer',label:'GO Offer 治理',custom:'adminGoOffer'},{route:'/t20-finance',label:'T+20 财务审计',custom:'adminT20'},{route:'/supplier-fault',label:'供应商责任与赔付',custom:'adminSupplierFault'});
+window.GO_CONSOLE.nav.splice(10,0,{route:'/payment-operations',label:'支付运营',custom:'adminPaymentOps'},{route:'/finance-reconciliation',label:'财务对账',custom:'financeReconciliation'});
+window.GO_CONSOLE.nav.splice(1,0,{route:'/phase1-closure',label:'一期闭环',custom:'phase1Closure'});
+
+window.GO_CONSOLE.nav.splice(2,0,
+ {route:'/vertical-hotel',label:'酒店运营',custom:'adminVerticalHotel'},
+ {route:'/vertical-flight',label:'机票运营',custom:'adminVerticalFlight'},
+ {route:'/vertical-rail',label:'铁路运营',custom:'adminVerticalRail'},
+ {route:'/vertical-ride',label:'用车运营',custom:'adminVerticalRide'},
+ {route:'/vertical-rental',label:'租车运营',custom:'adminVerticalRental'},
+ {route:'/vertical-attraction',label:'景点门票 / 体验',custom:'adminVerticalAttraction'},
+ {route:'/ecosystem-operations',label:'生态运营',custom:'adminEcosystemOperations'},
+ {route:'/transaction-evidence',label:'交易证据',custom:'adminTransactionEvidence'},
+ {route:'/supplier-registry',label:'供应商管理',custom:'adminSupplierRegistry'},
+ {route:'/go-recommendations',label:'GO 推荐',custom:'adminRecommendations'},
+ {route:'/go-reviews',label:'GO 点评',custom:'adminReviews'},
+ {route:'/go-truth',label:'GO Truth 真实评价',custom:'adminTruth'},
+ {route:'/go-stars',label:'GO 星级',custom:'adminStars'},
+ {route:'/go-trips',label:'GO Trips 行程',custom:'adminTrips'}
+);
+
+window.GO_CONSOLE.nav.splice(1,0,{route:'/r8-readiness',label:'R8 预发布就绪度',custom:'adminR8Readiness'});
+
+window.GO_CONSOLE.nav.splice(2,0,{route:'/hotel-page-factory',label:'酒店数字基础设施',custom:'adminHotelPageFactory'});

@@ -1,0 +1,12 @@
+# /etc/systemd/system/go-hk-agent.timer
+[Unit]
+Description=Schedule GO HK Agent rebuilt read-only polling
+
+[Timer]
+OnBootSec=60s
+OnUnitActiveSec=60s
+Unit=go-hk-agent.service
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+import grp, hashlib, json, os, socket, subprocess
+from pathlib import Path
+
+SOCKET_PATH = '/run/go-hk-agent/preflight-probe.sock'
+REQUEST = b'GET HK_STAGING_DEPLOY_PREFLIGHT_PROBE v1\n'
+COMPOSE = '/home/go-stg/control/r317-five-star-completeness-20260828/compose.r317-cutover.yml'
+RUNTIME_ENV = '/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env'
+API = 'go-822-staging-api-1'
+WORKERS = ('go-822-staging-mobile-push-worker-1','go-822-staging-mobile-push-receipt-worker-1','go-822-staging-judgment-worker-1','go-822-staging-reconciliation-worker-1','go-822-staging-outbox-worker-1','go-822-staging-recovery-worker-1','go-822-staging-mobile-engagement-worker-1')
+
+def call(argv):
+    p = subprocess.run(argv, text=True, capture_output=True, timeout=15, check=False)
+    return p.returncode, p.stdout.strip()
+
+def resolve_local_image(expected_image_id, fixed_reference):
+    if not expected_image_id or not fixed_reference:
+        return False, 'REJECT'
+    ref_rc, ref_id = call(['/usr/bin/docker', 'image', 'inspect', '--format', '{{.Id}}', fixed_reference])
+    if ref_rc != 0 or ref_id != expected_image_id:
+        return False, 'REJECT'
+    raw_rc, raw_id = call(['/usr/bin/docker', 'image', 'inspect', '--format', '{{.Id}}', expected_image_id])
+    if raw_rc == 0 and raw_id == expected_image_id:
+        return True, 'RAW_ID'
+    return True, 'FIXED_REFERENCE_EXACT_ID_MATCH'
+
+def runtime_image_value(template):
+    rc, value = call(['/usr/bin/docker', 'inspect', '--format', template, API])
+    if rc != 0 or not value:
+        raise RuntimeError('runtime_image_state_unavailable')
+    return value
+
+def digest(path):
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for block in iter(lambda: f.read(1024 * 1024), b''):
+            h.update(block)
+    return h.hexdigest()
+
+def probe():
+    canonical_image_id = runtime_image_value('{{.Image}}')
+    runtime_image_reference = runtime_image_value('{{.Config.Image}}')
+    lkg_present, lookup_method = resolve_local_image(canonical_image_id, runtime_image_reference)
+    size_rc, size_out = call(['/usr/bin/docker','image','inspect','--format','{{.Size}}',runtime_image_reference])
+    api_rc, api_status = call(['/usr/bin/docker','exec',API,'python','-c',"import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).status)"])
+    workers = {}
+    for name in WORKERS:
+        rc, state = call(['/usr/bin/docker','inspect','--format','{{.State.Running}}',name])
+        workers[name] = (rc == 0 and state == 'true')
+    current_rc, current = call(['/usr/bin/docker','exec','-w','/app',API,'alembic','current'])
+    heads_rc, heads = call(['/usr/bin/docker','exec','-w','/app',API,'alembic','heads'])
+    fs = os.statvfs('/')
+    return {'current_image_id':canonical_image_id, 'runtime_image_reference':runtime_image_reference, 'compose_sha256': digest(COMPOSE), 'env_sha256': digest(RUNTIME_ENV), 'lkg_present': lkg_present, 'lkg_image_size_bytes': int(size_out) if size_rc == 0 and size_out.isdigit() else None, 'disk_free_bytes': fs.f_bavail * fs.f_frsize, 'api_health': api_rc == 0 and api_status == '200', 'worker_health': workers, 'workers_healthy': all(workers.values()), 'alembic_current': current if current_rc == 0 else None, 'alembic_heads': heads if heads_rc == 0 else None, 'alembic_gate': current_rc == 0 and heads_rc == 0 and '0114_ext_truth_incident_hard' in current and '0114_ext_truth_incident_hard' in heads}
+
+def main():
+    Path('/run/go-hk-agent').mkdir(mode=0o750, parents=True, exist_ok=True)
+    try: os.unlink(SOCKET_PATH)
+    except FileNotFoundError: pass
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as srv:
+        srv.bind(SOCKET_PATH)
+        os.chmod(SOCKET_PATH, 0o660)
+        os.chown(SOCKET_PATH, 0, grp.getgrnam('go-hk-agent').gr_gid)
+        srv.listen(8)
+        while True:
+            conn, _ = srv.accept()
+            with conn:
+                data = conn.recv(128)
+                if data != REQUEST:
+                    conn.sendall(b'{"error":"invalid_request"}\n')
+                    continue
+                try:
+                    conn.sendall(json.dumps(probe(), sort_keys=True, separators=(',',':')).encode() + b'\n')
+                except Exception as exc:
+                    conn.sendall(json.dumps({'error':'probe_failure','type':type(exc).__name__}).encode() + b'\n')
+if __name__ == '__main__': main()

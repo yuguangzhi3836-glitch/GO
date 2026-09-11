@@ -1,0 +1,26 @@
+# /etc/systemd/system/go-hk-agent.service
+[Unit]
+Description=GO HK Agent rebuilt read-only dispatcher
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=go-hk-agent
+Group=go-hk-agent
+WorkingDirectory=/var/lib/go-hk-agent
+Environment=HK_AGENT_HOME=/opt/go-hk-agent-rebuilt
+Environment=HK_AGENT_CONFIG=/etc/go-hk-agent/agent.json
+ExecStart=/usr/local/libexec/go-hk-agent --run-once
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=full
+
+# /etc/systemd/system/go-hk-agent.service.d/10-no-new-privileges.conf
+[Service]
+NoNewPrivileges=no
+
+# /etc/systemd/system/go-hk-agent.service.d/20-protect-home-readonly.conf
+[Service]
+ProtectHome=read-only

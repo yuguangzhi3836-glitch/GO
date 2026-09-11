@@ -12,7 +12,9 @@ The archived 2026-09-11 Command Center source and observed runtime configuration
 
 Operational reference: [`docs/control-plane/command-center/README.md`](docs/control-plane/command-center/README.md).
 
-## HK-STAGING operations
+## HK-STAGING source and operations
+
+The observed 2026-09-11 HK-STAGING runtime source, Agent, Executor, Compose, systemd, Caddy configuration, sanitized configuration, and source/build identity evidence are archived under [`hk-staging/`](hk-staging/). This archive is descriptive evidence only and is not Execution Authority.
 
 Before any HK-STAGING deployment, rollback, verification planning, execution,
 or Boss GPT/mobile control request, read
