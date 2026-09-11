@@ -181,9 +181,9 @@ struct CommitGOReservationIntent: AppIntent {
 @available(iOS 18.0, *)
 struct GOTravelShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
-        AppShortcut(intent: SearchGOTravelOffersIntent(), phrases: ["Search travel with \(.applicationName)"])
-        AppShortcut(intent: ReserveGOOfferIntent(), phrases: ["Reserve my GO offer with \(.applicationName)"])
-        AppShortcut(intent: PrepareGOPaymentTruthIntent(), phrases: ["Authorize my GO travel payment with \(.applicationName)"])
-        AppShortcut(intent: CommitGOReservationIntent(), phrases: ["Confirm my GO booking with \(.applicationName)"])
+        AppShortcut(intent: SearchGOTravelOffersIntent(), phrases: ["Search travel with \(.applicationName)"], shortTitle: "Search GO", systemImageName: "magnifyingglass")
+        AppShortcut(intent: ReserveGOOfferIntent(), phrases: ["Reserve my GO offer with \(.applicationName)"], shortTitle: "Reserve GO", systemImageName: "calendar.badge.plus")
+        AppShortcut(intent: PrepareGOPaymentTruthIntent(), phrases: ["Authorize my GO travel payment with \(.applicationName)"], shortTitle: "Pay with GO", systemImageName: "creditcard")
+        AppShortcut(intent: CommitGOReservationIntent(), phrases: ["Confirm my GO booking with \(.applicationName)"], shortTitle: "Confirm GO", systemImageName: "checkmark.circle")
     }
 }
