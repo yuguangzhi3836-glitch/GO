@@ -43,8 +43,8 @@ def test_hotel_hard_hold_release_is_connector_native_and_idempotent():
     first=run(gw.release(ctx(),r['reserve_id'],'hard-release-key')).data
     second=run(gw.release(ctx(),r['reserve_id'],'hard-release-key')).data
     assert first==second
-    assert first['status']=='CANCELLED'
-    assert first['connector_hold_release']=='RELEASED'
+    assert first['state']=='RELEASED'
+    assert first['order_truth']['status']=='CANCELLED'
     assert connector.release_hold_calls==1
     connector.reset()
 
@@ -86,7 +86,6 @@ def test_mobility_expiry_never_cancels_after_payment_intent_exists():
     r=reserve(gw,'RIDE',{'pickup':'PVG','dropoff':'Hotel','pickup_at':'2026-11-19T10:00:00','currency':'CNY'},
               {'passengers':[{'full_name':'A'}]},'mob-race')
     oid=force_due('RIDE',r['reserve_id'])
-    # A payment root created before the expiry worker wins the native order lock must retain the order for reconciliation.
     from go_hotel.services.omnichannel_payment import omnichannel_payment_service
     omnichannel_payment_service.create_intent({'business_type':'RIDE_ORDER','business_id':oid,'channel_priority':['LOCAL_MARKET']},'p03-race-intent',TRAVELER)
     out=run(gw.expire(ctx(),ExpireRequest(r['reserve_id'],'mob-race-expire'))).data
