@@ -8,7 +8,11 @@
 
 ## HK-STAGING operations
 
-Before any HK-STAGING deployment, rollback, verification planning, or execution,
-read [`docs/control-plane/hk-staging/README.md`](docs/control-plane/hk-staging/README.md)
-and the action-specific runbook it links.
-Do not reconstruct the deployment procedure from AI memory or prior chats.
+Before any HK-STAGING deployment, rollback, verification planning, execution,
+or Boss GPT/mobile control request, read
+[`docs/control-plane/hk-staging/README.md`](docs/control-plane/hk-staging/README.md)
+and the action-specific guidance it links.
+
+Boss ChatGPT/Codex sessions that need to submit an HK-STAGING request should
+follow the linked **Boss GPT / mobile Request Channel** guide there. Do not
+reconstruct the control-plane procedure from AI memory or prior chats.
