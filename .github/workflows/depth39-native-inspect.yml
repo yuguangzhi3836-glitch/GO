@@ -1,0 +1,54 @@
+name: depth39-native-lifecycle-inspect
+on:
+  pull_request:
+    branches: [p0-agent-transaction-lifecycle-v0-2]
+    paths:
+      - '.github/workflows/depth39-native-inspect.yml'
+      - 'ci/depth39/**'
+      - 'src/go_hotel/**'
+      - 'mobile/go-app/native/apple/**'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout P0.3
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+      - name: Checkout verified DEPTH36 restore tooling
+        uses: actions/checkout@v4
+        with:
+          ref: ff13ca334acfcec61d6463f30ca94d7964086635
+          path: depth36-tooling
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Restore sealed native source
+        shell: bash
+        run: |
+          python depth36-tooling/ci/depth36/materialize_parent.py --depth26 candidate/deliverables/CP11_DEPTH26_20260909 --depth27 candidate/deliverables/CP11_DEPTH27_20260909 --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 --output restored-parent >/dev/null
+          python candidate/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/restore_depth29.py --parent restored-parent --output restored29 >/dev/null
+          python candidate/deliverables/CP11_DEPTH30_NATIVE_PAYMENT_20260909/restore_depth30.py --parent restored29 --output restored30 >/dev/null
+          python candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910/restore_delta.py --parent restored30 --package candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910 --output restored31 >/dev/null
+          python candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910/restore_delta.py --parent restored31 --package candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910 --output restored32 >/dev/null
+          python candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910/restore_delta.py --parent restored32 --package candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910 --output restored33 >/dev/null
+          python candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910/restore_delta.py --parent restored33 --package candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910 --output restored34 >/dev/null
+          python candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910/restore_delta.py --parent restored34 --package candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910 --output restored35 >/dev/null
+          python candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910/restore_delta.py --parent restored35 --package candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910 --output restored >/dev/null
+      - name: Inspect native lifecycle boundaries
+        shell: bash
+        run: |
+          echo '=== relevant files ==='
+          find restored/src/go_hotel -type f | grep -E '/(mobility|providers|connectors|services|db)/|booking|prebook' | sort | head -n 260
+          echo '=== lifecycle symbols ==='
+          grep -R -n -E 'inventory_held|hold_type|supplier.*hold|hold.*reference|release.*hold|cancel.*hold|MobilityRideOrderRow|MobilityRentalOrderRow|expires_at|PAYMENT_PENDING' restored/src/go_hotel | head -n 520 || true
+          echo '=== apple project topology ==='
+          find candidate restored -maxdepth 7 \( -name '*.xcodeproj' -o -name '*.xcworkspace' -o -name 'Package.swift' -o -name '*.swift' \) -print | sort | head -n 260
+          echo '=== apple workflows ==='
+          grep -R -n -E 'macos-|self-hosted|xcodebuild|iphoneos|iphonesimulator|CODE_SIGN|AppIntents' candidate/.github candidate/mobile 2>/dev/null | head -n 320 || true
