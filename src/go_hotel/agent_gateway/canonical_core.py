@@ -49,3 +49,12 @@ class GoTransactionCore(_GoTransactionCore):
         if current.quote_hash!=req.quote_hash:raise ValueError('OFFER_CHANGED_RECONFIRM_REQUIRED')
         if not current.machine_bookable:raise ValueError('OFFER_NOT_MACHINE_BOOKABLE')
         return vertical,raw_id,current
+
+    async def _payment_state(self,vertical:str,order_id:str):
+        if vertical=='HOTEL':
+            from go_hotel.repositories.sql import repo
+            captured=repo.get_captured_payment_for_order(order_id)
+            if captured:return str(captured.status),captured.payment_id
+            authorized=repo.get_authorized_payment_for_order(order_id)
+            return (str(authorized.status) if authorized else 'NOT_FOUND',authorized.payment_id if authorized else None)
+        return await super()._payment_state(vertical,order_id)
