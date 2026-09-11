@@ -51,9 +51,9 @@ struct GOLifecycleGatewayClient {
 
 @available(iOS 18.0, *)
 struct ReleaseGOReservationIntent: AppIntent {
-    static var title: LocalizedStringResource = "Release GO Reservation"
-    static var description = IntentDescription("Release an unpaid GO reservation through canonical transaction truth.")
-    static var openAppWhenRun = false
+    static let title: LocalizedStringResource = "Release GO Reservation"
+    static let description = IntentDescription("Release an unpaid GO reservation through canonical transaction truth.")
+    static let openAppWhenRun = false
     @Parameter(title: "Reservation ID") var reservationID: String
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let x = try await GOLifecycleGatewayClient().release(reserveID: reservationID, idempotencyKey: UUID().uuidString)
@@ -63,9 +63,9 @@ struct ReleaseGOReservationIntent: AppIntent {
 
 @available(iOS 18.0, *)
 struct ExpireGOReservationIntent: AppIntent {
-    static var title: LocalizedStringResource = "Check GO Reservation Expiry"
-    static var description = IntentDescription("Apply GO's authoritative expiry gate. The device cannot force an early expiry.")
-    static var openAppWhenRun = false
+    static let title: LocalizedStringResource = "Check GO Reservation Expiry"
+    static let description = IntentDescription("Apply GO's authoritative expiry gate. The device cannot force an early expiry.")
+    static let openAppWhenRun = false
     @Parameter(title: "Reservation ID") var reservationID: String
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let x = try await GOLifecycleGatewayClient().expire(reserveID: reservationID, idempotencyKey: UUID().uuidString)
@@ -75,9 +75,9 @@ struct ExpireGOReservationIntent: AppIntent {
 
 @available(iOS 18.0, *)
 struct QuoteGOAfterSalesIntent: AppIntent {
-    static var title: LocalizedStringResource = "Review GO Booking Options"
-    static var description = IntentDescription("Get the current authoritative cancel, change or refund quote.")
-    static var openAppWhenRun = false
+    static let title: LocalizedStringResource = "Review GO Booking Options"
+    static let description = IntentDescription("Get the current authoritative cancel, change or refund quote.")
+    static let openAppWhenRun = false
     @Parameter(title: "Order ID") var orderID: String
     @Parameter(title: "Action") var action: String
     @Parameter(title: "Changes JSON") var changesJSON: String
@@ -90,9 +90,9 @@ struct QuoteGOAfterSalesIntent: AppIntent {
 
 @available(iOS 18.0, *)
 struct ExecuteGOAfterSalesIntent: AppIntent {
-    static var title: LocalizedStringResource = "Apply GO Booking Change"
-    static var description = IntentDescription("Execute an explicitly accepted GO cancel, change or refund quote.")
-    static var openAppWhenRun = true
+    static let title: LocalizedStringResource = "Apply GO Booking Change"
+    static let description = IntentDescription("Execute an explicitly accepted GO cancel, change or refund quote.")
+    static let openAppWhenRun = true
     @Parameter(title: "Order ID") var orderID: String
     @Parameter(title: "Action") var action: String
     @Parameter(title: "Quote ID") var quoteID: String?
