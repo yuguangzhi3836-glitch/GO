@@ -1,0 +1,55 @@
+name: depth40-parent-compat-v2-package
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packaging/depth40-parent-compat-v2/**'
+      - '.github/workflows/depth40-parent-compat-v2.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  package:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_PACKAGING_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          sparse-checkout: packaging/depth40-parent-compat-v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Reject unsafe archives, corrupt manifests and overwrite restoration
+        run: python -B -m unittest discover -s packaging/depth40-parent-compat-v2/tests -v
+      - uses: actions/checkout@v4
+        with:
+          ref: b5732c02dd95092a63def7eaa0d2cf332b1e2996
+          path: inputs/canonical
+          persist-credentials: false
+          sparse-checkout: |
+            application
+            docs/consolidation
+      - uses: actions/checkout@v4
+        with:
+          ref: f4f32cb9230c473471c736840da3f1d552e5ac43
+          path: inputs/compatibility
+          persist-credentials: false
+          sparse-checkout: |
+            control-plane/depth40-compat-v2
+            evidence/depth40-compat-v2/34642554667
+      - name: Assemble fixed bytes and verify full offline parent restoration
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -B packaging/depth40-parent-compat-v2/build_parent.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH40-P03-COMPAT-V2-PARENT-${{ github.run_id }}
+          path: parent-delivery
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
