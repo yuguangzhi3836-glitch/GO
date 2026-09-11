@@ -41,14 +41,29 @@ jobs:
           python candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910/restore_delta.py --parent restored33 --package candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910 --output restored34 >/dev/null
           python candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910/restore_delta.py --parent restored34 --package candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910 --output restored35 >/dev/null
           python candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910/restore_delta.py --parent restored35 --package candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910 --output restored >/dev/null
-      - name: Inspect native lifecycle boundaries
+      - name: Inspect exact native contracts
         shell: bash
         run: |
-          echo '=== relevant files ==='
-          find restored/src/go_hotel -type f | grep -E '/(mobility|providers|connectors|services|db)/|booking|prebook' | sort | head -n 260
-          echo '=== lifecycle symbols ==='
-          grep -R -n -E 'inventory_held|hold_type|supplier.*hold|hold.*reference|release.*hold|cancel.*hold|MobilityRideOrderRow|MobilityRentalOrderRow|expires_at|PAYMENT_PENDING' restored/src/go_hotel | head -n 520 || true
-          echo '=== apple project topology ==='
-          find candidate restored -maxdepth 7 \( -name '*.xcodeproj' -o -name '*.xcworkspace' -o -name 'Package.swift' -o -name '*.swift' \) -print | sort | head -n 260
-          echo '=== apple workflows ==='
-          grep -R -n -E 'macos-|self-hosted|xcodebuild|iphoneos|iphonesimulator|CODE_SIGN|AppIntents' candidate/.github candidate/mobile 2>/dev/null | head -n 320 || true
+          echo '=== HOTEL connector base ==='
+          sed -n '1,220p' restored/src/go_hotel/connectors/base.py
+          echo '=== HOTEL mock connector ==='
+          sed -n '1,180p' restored/src/go_hotel/connectors/mock_hotel.py
+          echo '=== HOTEL registry ==='
+          sed -n '1,220p' restored/src/go_hotel/connectors/registry.py
+          echo '=== HOTEL booking service ==='
+          sed -n '1,180p' restored/src/go_hotel/services/booking.py
+          echo '=== RIDE model ==='
+          sed -n '1440,1478p' restored/src/go_hotel/db/models.py
+          echo '=== RENTAL model ==='
+          sed -n '1460,1495p' restored/src/go_hotel/db/models.py
+          echo '=== RIDE service ==='
+          sed -n '1,180p' restored/src/go_hotel/mobility/ride/service.py
+          echo '=== RENTAL service ==='
+          sed -n '1,235p' restored/src/go_hotel/mobility/rental/service.py
+          echo '=== VERTICAL expiry ==='
+          sed -n '1,175p' restored/src/go_hotel/services/vertical_reservation_expiry.py
+          echo '=== PAYMENT bridge ==='
+          sed -n '1,150p' restored/src/go_hotel/services/vertical_transaction_bridge.py
+          echo '=== APPLE files/project/workflows ==='
+          find candidate restored -maxdepth 8 \( -name '*.xcodeproj' -o -name '*.xcworkspace' -o -name 'Package.swift' -o -name '*.swift' \) -print | sort
+          grep -R -n -E 'runs-on:.*macos|runs-on:.*self-hosted|xcodebuild|iphoneos|iphonesimulator|CODE_SIGN|DEVELOPMENT_TEAM|AppIntents' candidate/.github candidate/mobile 2>/dev/null || true
