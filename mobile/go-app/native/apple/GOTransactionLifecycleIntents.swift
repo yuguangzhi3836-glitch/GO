@@ -106,11 +106,3 @@ struct ExecuteGOAfterSalesIntent: AppIntent {
         return .result(dialog: "GO \(action.lowercased()) completed: \(String(describing: x["transaction_version"] ?? "UPDATED"))")
     }
 }
-
-@available(iOS 18.0, *)
-struct GOLifecycleShortcuts: AppShortcutsProvider {
-    static var appShortcuts: [AppShortcut] {
-        AppShortcut(intent: ReleaseGOReservationIntent(), phrases: ["Release my GO reservation with \(.applicationName)"], shortTitle: "Release GO", systemImageName: "xmark.circle")
-        AppShortcut(intent: QuoteGOAfterSalesIntent(), phrases: ["Review my GO booking options with \(.applicationName)"], shortTitle: "Review GO", systemImageName: "doc.text.magnifyingglass")
-    }
-}
