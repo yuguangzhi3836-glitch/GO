@@ -31,6 +31,11 @@ class AgentContext:
         if scope not in self.scopes:
             raise PermissionError(f"AGENT_SCOPE_REQUIRED:{scope}")
 
+    def require_traveler(self) -> str:
+        if not self.traveler_ref:
+            raise PermissionError("AGENT_TRAVELER_CONTEXT_REQUIRED")
+        return self.traveler_ref
+
 
 @dataclass(frozen=True)
 class OfferRequest:
@@ -41,16 +46,19 @@ class OfferRequest:
 @dataclass(frozen=True)
 class Offer:
     offer_id: str
+    product_type: str
     supplier_id: str
     product_id: str
     supply_route: SupplyRoute
     total_minor: int
     currency: str
-    expires_at: str
+    expires_at: str | None
     inventory_status: str
     inventory_version: str | None
     machine_bookable: bool
     cancellation: Mapping[str, Any]
+    quote_hash: str
+    reserve_context: Mapping[str, Any]
     evidence: Mapping[str, Any]
 
     def __post_init__(self) -> None:
@@ -58,13 +66,18 @@ class Offer:
             raise ValueError("OFFER_TOTAL_MINOR_INVALID")
         if len(self.currency) != 3 or self.currency.upper() != self.currency:
             raise ValueError("OFFER_CURRENCY_INVALID")
-        if not self.offer_id or not self.supplier_id or not self.product_id:
+        if not self.offer_id or not self.product_type or not self.supplier_id or not self.product_id:
             raise ValueError("OFFER_IDENTITY_REQUIRED")
+        if not self.quote_hash:
+            raise ValueError("OFFER_QUOTE_HASH_REQUIRED")
 
 
 @dataclass(frozen=True)
 class ReserveRequest:
     offer_id: str
+    quote_hash: str
+    search: Mapping[str, Any]
+    booking: Mapping[str, Any]
     idempotency_key: str
 
 
@@ -72,17 +85,42 @@ class ReserveRequest:
 class Reservation:
     reserve_id: str
     offer_id: str
+    product_type: str
     status: str
-    expires_at: str
-    inventory_version: str
+    expires_at: str | None
+    inventory_version: str | None
     total_minor: int
     currency: str
+    order_id: str
+    evidence: Mapping[str, Any]
+
+
+@dataclass(frozen=True)
+class PaymentRequest:
+    reserve_id: str
+    expected_total_minor: int
+    currency: str
+    payment_method_id: str
+    idempotency_key: str
+
+
+@dataclass(frozen=True)
+class PaymentTruth:
+    payment_truth_id: str
+    reserve_id: str
+    product_type: str
+    state: str
+    total_minor: int
+    currency: str
+    captured: bool
+    external_live: bool
+    evidence: Mapping[str, Any]
 
 
 @dataclass(frozen=True)
 class CommitRequest:
     reserve_id: str
-    payment_intent_id: str
+    payment_truth_id: str
     idempotency_key: str
 
 
@@ -90,10 +128,14 @@ class CommitRequest:
 class Order:
     order_id: str
     reserve_id: str
+    product_type: str
     status: str
     supplier_confirmation: str | None
     payment_state: str
     transaction_version: str
+    total_minor: int
+    currency: str
+    evidence: Mapping[str, Any]
 
 
 @dataclass(frozen=True)
