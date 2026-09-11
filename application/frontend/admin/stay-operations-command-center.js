@@ -1,0 +1,1 @@
+if(window.GO_CONSOLE){window.GO_CONSOLE.nav.unshift({route:'/stay-operations-command-center',label:'Stay Operations Command Center',endpoint:'/internal/v1/hosted-direct/dashboard',kind:'dashboard'});}

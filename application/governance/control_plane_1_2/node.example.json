@@ -1,0 +1,7 @@
+{
+  "journal": "/var/lib/go-control/node-execution.db",
+  "targets": {
+    "release": { "action": "file_sha256", "root": "/opt/go/releases", "path": "/opt/go/releases/approved-release.zip" },
+    "api": { "action": "runtime_identity", "container": "go-api" }
+  }
+}
