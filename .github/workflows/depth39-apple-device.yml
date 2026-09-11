@@ -29,9 +29,7 @@ jobs:
         run: xcodebuild -scheme GOAgentTransactionProtocol -destination "$GO_IOS_DEVICE_DESTINATION" CODE_SIGNING_ALLOWED=YES build
       - name: Run signed App Intents lifecycle smoke harness
         shell: bash
-        run: |
-          test -x ci/depth39/apple_physical_device_smoke.sh
-          ci/depth39/apple_physical_device_smoke.sh "$GO_IOS_DEVICE_DESTINATION" "${{ inputs.candidate_sha }}" apple-device-evidence.json
+        run: bash ci/depth39/apple_physical_device_smoke.sh "$GO_IOS_DEVICE_DESTINATION" "${{ inputs.candidate_sha }}" apple-device-evidence.json
       - name: Verify physical-device evidence
         shell: bash
         run: python3 ci/depth39/verify_apple_device_evidence.py --evidence apple-device-evidence.json --candidate-sha "${{ inputs.candidate_sha }}"
