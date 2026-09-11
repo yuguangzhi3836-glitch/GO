@@ -1,88 +1,59 @@
 from __future__ import annotations
-
 from dataclasses import asdict
 from typing import Protocol
-
-from .contracts import (
-    AgentContext,
-    AgentEnvelope,
-    CommitRequest,
-    OfferRequest,
-    PaymentRequest,
-    ReserveRequest,
-)
-
+from .contracts import (AgentContext,AgentEnvelope,CommitRequest,OfferRequest,PaymentRequest,ReserveRequest,
+    LifecycleQuoteRequest,LifecycleExecuteRequest,ExpireRequest)
 
 class TransactionCore(Protocol):
-    async def find_offers(self, ctx: AgentContext, req: OfferRequest): ...
-    async def reserve(self, ctx: AgentContext, req: ReserveRequest): ...
-    async def prepare_payment(self, ctx: AgentContext, req: PaymentRequest): ...
-    async def commit(self, ctx: AgentContext, req: CommitRequest): ...
-    async def release(self, ctx: AgentContext, reserve_id: str, idempotency_key: str): ...
-    async def get_order(self, ctx: AgentContext, order_id: str): ...
-
+    async def find_offers(self,ctx,req): ...
+    async def reserve(self,ctx,req): ...
+    async def prepare_payment(self,ctx,req): ...
+    async def commit(self,ctx,req): ...
+    async def release(self,ctx,reserve_id,idempotency_key): ...
+    async def expire(self,ctx,req): ...
+    async def lifecycle_quote(self,ctx,req): ...
+    async def lifecycle_execute(self,ctx,req): ...
+    async def get_order(self,ctx,order_id): ...
 
 class AgentTransactionGateway:
-    """One protocol-neutral entry to GO transaction truth.
-
-    The gateway owns no inventory, payment, supplier or order truth. It only
-    authorizes a purpose-bound agent request and delegates to the canonical core.
-    """
-
-    def __init__(self, core: TransactionCore):
-        self.core = core
-
-    async def offers(self, ctx: AgentContext, req: OfferRequest) -> AgentEnvelope:
-        ctx.require("offers:read")
-        result = await self.core.find_offers(ctx, req)
-        return AgentEnvelope(
-            data={"items": [asdict(x) for x in result]},
-            request_id=ctx.request_id,
-            trace_id=ctx.trace_id,
-        )
-
-    async def reserve(self, ctx: AgentContext, req: ReserveRequest) -> AgentEnvelope:
-        ctx.require("reserve:write")
-        ctx.require_traveler()
-        if not req.idempotency_key:
-            raise ValueError("IDEMPOTENCY_KEY_REQUIRED")
-        if not req.quote_hash:
-            raise ValueError("ACCEPTED_QUOTE_HASH_REQUIRED")
-        reservation = await self.core.reserve(ctx, req)
-        return AgentEnvelope(data=asdict(reservation), request_id=ctx.request_id, trace_id=ctx.trace_id)
-
-    async def payment(self, ctx: AgentContext, req: PaymentRequest) -> AgentEnvelope:
-        ctx.require("payments:write")
-        ctx.require_traveler()
-        if not req.idempotency_key:
-            raise ValueError("IDEMPOTENCY_KEY_REQUIRED")
-        if not req.payment_method_id:
-            raise ValueError("PAYMENT_METHOD_REQUIRED")
-        truth = await self.core.prepare_payment(ctx, req)
-        return AgentEnvelope(data=asdict(truth), request_id=ctx.request_id, trace_id=ctx.trace_id)
-
-    async def commit(self, ctx: AgentContext, req: CommitRequest) -> AgentEnvelope:
-        ctx.require("commit:write")
-        ctx.require_traveler()
-        if not req.idempotency_key:
-            raise ValueError("IDEMPOTENCY_KEY_REQUIRED")
-        if not req.payment_truth_id:
-            raise ValueError("PAYMENT_TRUTH_REQUIRED")
-        order = await self.core.commit(ctx, req)
-        return AgentEnvelope(data=asdict(order), request_id=ctx.request_id, trace_id=ctx.trace_id)
-
-    async def release(self, ctx: AgentContext, reserve_id: str, idempotency_key: str) -> AgentEnvelope:
-        ctx.require("reserve:write")
-        ctx.require_traveler()
-        if not idempotency_key:
-            raise ValueError("IDEMPOTENCY_KEY_REQUIRED")
-        result = await self.core.release(ctx, reserve_id, idempotency_key)
-        payload = asdict(result) if hasattr(result, "__dataclass_fields__") else result
-        return AgentEnvelope(data=payload, request_id=ctx.request_id, trace_id=ctx.trace_id)
-
-    async def order(self, ctx: AgentContext, order_id: str) -> AgentEnvelope:
-        ctx.require("orders:read")
-        ctx.require_traveler()
-        result = await self.core.get_order(ctx, order_id)
-        payload = asdict(result) if hasattr(result, "__dataclass_fields__") else result
-        return AgentEnvelope(data=payload, request_id=ctx.request_id, trace_id=ctx.trace_id)
+    """Protocol-neutral authorization layer over GO deterministic transaction truth."""
+    def __init__(self,core:TransactionCore): self.core=core
+    async def offers(self,ctx:AgentContext,req:OfferRequest)->AgentEnvelope:
+        ctx.require('offers:read'); result=await self.core.find_offers(ctx,req)
+        return AgentEnvelope({'items':[asdict(x) for x in result]},ctx.request_id,ctx.trace_id)
+    async def reserve(self,ctx:AgentContext,req:ReserveRequest)->AgentEnvelope:
+        ctx.require('reserve:write');ctx.require_traveler()
+        if not req.idempotency_key:raise ValueError('IDEMPOTENCY_KEY_REQUIRED')
+        if not req.quote_hash:raise ValueError('ACCEPTED_QUOTE_HASH_REQUIRED')
+        x=await self.core.reserve(ctx,req);return AgentEnvelope(asdict(x),ctx.request_id,ctx.trace_id)
+    async def payment(self,ctx:AgentContext,req:PaymentRequest)->AgentEnvelope:
+        ctx.require('payments:write');ctx.require_traveler()
+        if not req.idempotency_key:raise ValueError('IDEMPOTENCY_KEY_REQUIRED')
+        if not req.payment_method_id:raise ValueError('PAYMENT_METHOD_REQUIRED')
+        x=await self.core.prepare_payment(ctx,req);return AgentEnvelope(asdict(x),ctx.request_id,ctx.trace_id)
+    async def commit(self,ctx:AgentContext,req:CommitRequest)->AgentEnvelope:
+        ctx.require('commit:write');ctx.require_traveler()
+        if not req.idempotency_key:raise ValueError('IDEMPOTENCY_KEY_REQUIRED')
+        if not req.payment_truth_id:raise ValueError('PAYMENT_TRUTH_REQUIRED')
+        x=await self.core.commit(ctx,req);return AgentEnvelope(asdict(x),ctx.request_id,ctx.trace_id)
+    async def release(self,ctx:AgentContext,reserve_id:str,idempotency_key:str)->AgentEnvelope:
+        ctx.require('reserve:write');ctx.require_traveler()
+        if not idempotency_key:raise ValueError('IDEMPOTENCY_KEY_REQUIRED')
+        x=await self.core.release(ctx,reserve_id,idempotency_key);p=asdict(x) if hasattr(x,'__dataclass_fields__') else x
+        return AgentEnvelope(p,ctx.request_id,ctx.trace_id)
+    async def expire(self,ctx:AgentContext,req:ExpireRequest)->AgentEnvelope:
+        ctx.require('reserve:write');ctx.require_traveler()
+        if not req.idempotency_key:raise ValueError('IDEMPOTENCY_KEY_REQUIRED')
+        return AgentEnvelope(await self.core.expire(ctx,req),ctx.request_id,ctx.trace_id)
+    async def lifecycle_quote(self,ctx:AgentContext,req:LifecycleQuoteRequest)->AgentEnvelope:
+        ctx.require('aftersales:write');ctx.require_traveler()
+        if not req.idempotency_key:raise ValueError('IDEMPOTENCY_KEY_REQUIRED')
+        return AgentEnvelope(await self.core.lifecycle_quote(ctx,req),ctx.request_id,ctx.trace_id)
+    async def lifecycle_execute(self,ctx:AgentContext,req:LifecycleExecuteRequest)->AgentEnvelope:
+        ctx.require('aftersales:write');ctx.require_traveler()
+        if not req.idempotency_key:raise ValueError('IDEMPOTENCY_KEY_REQUIRED')
+        return AgentEnvelope(await self.core.lifecycle_execute(ctx,req),ctx.request_id,ctx.trace_id)
+    async def order(self,ctx:AgentContext,order_id:str)->AgentEnvelope:
+        ctx.require('orders:read');ctx.require_traveler();x=await self.core.get_order(ctx,order_id)
+        p=asdict(x) if hasattr(x,'__dataclass_fields__') else x
+        return AgentEnvelope(p,ctx.request_id,ctx.trace_id)
