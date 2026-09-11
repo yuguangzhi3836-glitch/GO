@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 18
     permissions:
-      contents: write
+      contents: read
       actions: read
     env:
       PYTHONDONTWRITEBYTECODE: '1'
@@ -49,8 +49,3 @@ jobs:
           name: GO-DEPTH40-UPGRADE-RECOVERY-${{ github.run_id }}
           path: upgrade-evidence
           retention-days: 90
-      - name: Archive synthetic evidence permanently
-        if: always()
-        env:
-          GO_ARCHIVE_TOKEN: ${{ github.token }}
-        run: python3 -B ci/depth40-upgrade/archive.py
