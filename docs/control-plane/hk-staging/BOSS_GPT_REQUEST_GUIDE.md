@@ -1,33 +1,24 @@
 # Boss GPT request channel for HK-STAGING
 
-This guide tells a zero-context Boss ChatGPT/Codex session how to submit an
-HK-STAGING request to GO Command Center. It is descriptive only and is **not**
-Execution Authority.
+This guide tells a zero-context Boss ChatGPT/Codex session how to submit a safe
+HK-STAGING verification request to GO Command Center. It is descriptive only
+and is **not** Execution Authority.
 
-## Current V1 status
+## Current status
 
-Boss Request Bridge V1 is installed on Command Center.
+Boss Request Bridge `1.2.0` is installed on Command Center with a persistent
+VERIFY request channel.
+
+The channel is always available for fresh requests. It does **not** require a
+pre-registered request ID, manual arming, or one-shot reconfiguration.
 
 The only Boss Request action currently supported is:
 
 - `HK_STAGING_VERIFY` for environment `HK-STAGING-01`.
 
-The underlying Control Plane has already proven VERIFY, CANARY, DEPLOY, and
-ROLLBACK, but Boss Request V1 has **not** opened CANARY, DEPLOY, or ROLLBACK.
-Do not invent request formats for those actions.
-
-## First controlled live E2E — currently armed
-
-The Bridge is currently armed for exactly one live Boss-mobile VERIFY request.
-For this controlled E2E, the Request **must** use this exact value:
-
-`request_id = boss-mobile-verify-e2e-20260911-01`
-
-The Bridge will accept at most one formal Task issuance for this gate and will
-automatically disarm after a successful publish. Do not create a second request
-with the same ID and do not substitute another ID for this first live E2E.
-
-For this E2E, use the current UTC time for `requested_at` in ISO 8601 form.
+The underlying Control Plane has separately proven VERIFY, CANARY, DEPLOY, and
+ROLLBACK, but the Boss Request channel currently exposes **VERIFY only**. Do not
+invent Request formats for CANARY, DEPLOY, or ROLLBACK.
 
 ## Natural-language intent
 
@@ -38,8 +29,8 @@ Treat requests such as these as `HK_STAGING_VERIFY`:
 - "Verify the current HK-STAGING state."
 
 If the boss asks to deploy, rollback, or run a canary, report that the current
-Boss Request V1 does not support that action. Do not create a guessed Request,
-formal Task, signature, or executor command.
+Boss Request channel does not support that action. Do not create a guessed
+Request, formal Task, signature, or executor command.
 
 ## Request flow
 
@@ -47,15 +38,16 @@ formal Task, signature, or executor command.
    guide, and the current baseline.
 2. Use repository `chenzhenxi1-sudo/go-control-tasks`.
 3. Create a new branch from current `main`.
-4. Add exactly one new JSON file directly under `requests/`.
-5. Commit that file.
-6. Open a Pull Request targeting `main`.
-7. **Do not merge the PR.** Command Center ingests the immutable PR head.
-8. Stop and wait for Command Center processing.
-9. Command Center validates the untrusted Request, derives a fresh formal Task,
-   signs it with the existing Command Center signer, and publishes it only when
-   the local policy gate permits.
-10. HK Agent executes the signed Task and writes Signed Evidence. Use Signed
+4. Generate a fresh unique `request_id` for this Request.
+5. Add exactly one new JSON file directly under `requests/`.
+6. Commit that file.
+7. Open a Pull Request targeting `main`.
+8. **Do not merge the PR.** Command Center ingests the immutable PR head.
+9. Stop and wait for Command Center processing.
+10. Command Center validates the untrusted Request, derives a fresh formal Task,
+    signs it with the existing Command Center signer, and publishes it only when
+    the deterministic policy gate permits.
+11. HK Agent executes the signed Task and writes Signed Evidence. Use Signed
     Evidence, not the Request PR, as the execution result.
 
 A Request PR is an untrusted proposal. It is not a formal Task and it is not
@@ -63,10 +55,11 @@ Execution Authority.
 
 ## Request PR rules
 
-For V1, the PR must:
+The PR must:
 
 - target `main`;
 - contain exactly one added `requests/*.json` file and no other changes;
+- use a fresh unique `request_id` for every new Request;
 - never modify `tasks/` or `permission-test/`;
 - never modify the Evidence repository;
 - never be merged by Boss GPT;
@@ -80,11 +73,12 @@ Command Center logic where applicable.
 
 If Command Center rejects a Request, report the rejection. Do not broaden
 permissions, change protocol rules, retry with guessed fields, or bypass the
-Bridge.
+Bridge. If a corrected Request is needed, create a new Request with a new
+`request_id`.
 
-## Request JSON V1
+## Request JSON
 
-Bridge V1 uses the following request fields:
+The current Request schema uses exactly these fields:
 
 - `schema_version`
 - `request_id`
@@ -92,13 +86,16 @@ Bridge V1 uses the following request fields:
 - `environment`
 - `requested_at`
 
-For the currently armed first live E2E, use the exact request ID shown below.
-Generate `requested_at` from the current time in UTC using ISO 8601.
+Generate `request_id` uniquely for each request. Generate `requested_at` from
+the current UTC time using ISO 8601. Do not reuse an earlier request ID or stale
+timestamp.
+
+Example only — replace the placeholders for every live Request:
 
 ```json
 {
   "schema_version": "1",
-  "request_id": "boss-mobile-verify-e2e-20260911-01",
+  "request_id": "boss-hk-verify-<UNIQUE-ID>",
   "action_id": "HK_STAGING_VERIFY",
   "environment": "HK-STAGING-01",
   "requested_at": "<CURRENT-UTC-ISO8601>"
@@ -106,17 +103,17 @@ Generate `requested_at` from the current time in UTC using ISO 8601.
 ```
 
 Recommended branch name:
-`boss-request-boss-mobile-verify-e2e-20260911-01`
+`boss-request-<request_id>`
 
 Recommended request path:
-`requests/boss-mobile-verify-e2e-20260911-01.json`
+`requests/<request_id>.json`
 
 Recommended PR title:
-`request: boss-mobile-verify-e2e-20260911-01`
+`request: <request_id>`
 
-After the first controlled E2E is complete, do not reuse this request ID. The
-normal rule is one fresh unique `request_id` per Request, subject to the current
-Command Center policy gate.
+The channel is persistent, but every individual Request remains single-use.
+Command Center's durable ledger and replay protection prevent the same
+`request_id` or already-consumed PR head from issuing another formal Task.
 
 ## Hard boundary
 
