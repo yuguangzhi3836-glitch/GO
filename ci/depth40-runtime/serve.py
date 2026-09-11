@@ -10,6 +10,7 @@ import signal
 import subprocess
 import sys
 import threading
+import socket
 
 SOURCE_TREE = '64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667'
 ALLOWED_HOSTS = {'127.0.0.1:18440', 'localhost:18440'}
@@ -19,6 +20,9 @@ HOP = {'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
 
 class Ingress(http.server.BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.0'
+    backend_host = '127.0.0.1'
+    backend_port = 4186
+    backend_authority = '127.0.0.1:4186'
 
     def log_message(self, *args):
         pass  # Never export request bodies, cookies, or credentials.
@@ -40,8 +44,8 @@ class Ingress(http.server.BaseHTTPRequestHandler):
         body = self.rfile.read(length) if length else None
         headers = {k: v for k, v in self.headers.items()
                    if k.lower() not in HOP | {'host', 'content-length'}}
-        headers['Host'] = '127.0.0.1:4186'
-        conn = http.client.HTTPConnection('127.0.0.1', 4186, timeout=20)
+        headers['Host'] = self.backend_authority
+        conn = http.client.HTTPConnection(self.backend_host, self.backend_port, timeout=20)
         try:
             conn.request(self.command, self.path, body, headers)
             response = conn.getresponse()
@@ -65,6 +69,23 @@ class Ingress(http.server.BaseHTTPRequestHandler):
 
 
 def main():
+    if sys.argv[1:] == ['--ingress-only']:
+        target = socket.gethostbyname('api')
+        Ingress.backend_host = target
+        Ingress.backend_port = 4187
+        Ingress.backend_authority = '127.0.0.1:18440'
+        def guard(event, args):
+            if event == 'socket.connect' and args[1] != (target, 4187):
+                raise PermissionError('FIXED_INTERNAL_UPSTREAM_ONLY')
+            if event in {'socket.sendto', 'socket.sendmsg', 'subprocess.Popen', 'os.system', 'os.exec', 'os.posix_spawn'}:
+                raise PermissionError('INGRESS_EXTERNAL_EXECUTION_DISABLED')
+        sys.addaudithook(guard)
+        server = http.server.ThreadingHTTPServer(('0.0.0.0', 4187), Ingress)
+        server.daemon_threads = True
+        server.serve_forever()
+        return
+    if sys.argv[1:]:
+        raise ValueError('UNKNOWN_RUNTIME_MODE')
     command = [sys.executable, '-B', '/opt/go/source/scripts/acceptance_runtime.py',
                '--source', '/opt/go/source', '--fingerprint', '/opt/go/SOURCE_FINGERPRINT.json',
                '--expected-tree', SOURCE_TREE, '--state', '/state/session', '--port', '4186']

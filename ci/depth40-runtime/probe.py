@@ -6,16 +6,19 @@ from pathlib import Path
 import time
 import subprocess
 import sys
+import os
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener, HTTPCookieProcessor, ProxyHandler
 
 TREE = '64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667'
 client = build_opener(ProxyHandler({}), HTTPCookieProcessor(http.cookiejar.CookieJar()))
 checks = []
+BASE = os.environ.get('GO_PROBE_URL', 'http://127.0.0.1:4187')
+assert BASE in {'http://127.0.0.1:4187', 'http://ingress:4187'}
 
 
 def call(path, body=None, host='127.0.0.1:18440'):
-    request = Request('http://127.0.0.1:4187' + path,
+    request = Request(BASE + path,
                       data=None if body is None else json.dumps(body).encode(),
                       headers={'Host': host, 'Content-Type': 'application/json'})
     try: response = client.open(request, timeout=5)

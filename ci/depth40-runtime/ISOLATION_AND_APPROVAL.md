@@ -19,7 +19,7 @@
 具体镜像 ID、镜像归档 SHA256、字节数和包装工具提交以 RUNTIME_MANIFEST.json 为准。
 这是离线 Docker save 镜像；config Image ID 不冒充 registry RepoDigest。
 
-范围仅为 ISOLATED_SQLITE_HTTP：一个 API 验收会话、三个测试账户、合成数据、关闭外呼和后台工作器。
+范围仅为 ISOLATED_SQLITE_HTTP：一个 API 验收会话和一个独立入口转发容器、三个测试账户、合成数据、关闭外呼和后台工作器。
 它不是现有八服务 Staging 的替换包，也不是全工作器、PostgreSQL、供应商认证、原生设备或生产系统交付完成证明。
 DEPTH40 从其封存 DEPTH36+P0.2/P0.3 谱系恢复，不能沿用 DEPTH37R2 da689770 的 Node/原生/PG PASS。
 本次未更改候选业务源码；新增入口和打包工具单独由 packaging_commit 绑定。
@@ -30,14 +30,14 @@ DEPTH40 从其封存 DEPTH36+P0.2/P0.3 谱系恢复，不能沿用 DEPTH37R2 da6
 |---|---|
 | 环境 ID | HK-ISOLATED-DEPTH40-REVIEW，尚未创建 |
 | Compose project | go-depth40-isolated-review，须确认不存在 |
-| 网络 | 此项目独占 internal Docker 网络，无外呼路由；不接现有网络 |
+| 网络 | API 仅接独占 internal 网络，无外呼路由；入口另接独占 edge 网络，程序只允许连接固定 API 上游；不接现有网络 |
 | 数据 | 此项目独占命名卷，SQLite 测试库；首次启动创建新 session |
 | Redis/RDS | 本阶段不用；不复用命名空间、不连接、不迁移、不读写 |
-| 入口 | 仅宿主机 127.0.0.1:18440；容器 4187 转发到候选 loopback 4186 |
+| 入口 | 仅宿主机 127.0.0.1:18440；入口转发至独立 API:4187，再到候选 loopback 4186；入口不挂载测试数据卷 |
 | 浏览器接入 | 需另行批准的工作站到该 loopback 入口的受控隧道；本包不创建隧道、域名、TLS或Caddy配置 |
 | 外部沙箱 | 未接入，凭据未收集、未注入；外呼关闭 |
 | 权限 | UID/GID 10001、只读根、无 capabilities、no-new-privileges、无 Docker socket |
-| 限额 | 0.5 CPU、768 MiB 内存、64 PID；日志 2×10 MiB；数据/备份规划额度 512 MiB |
+| 限额 | API：0.5 CPU、768 MiB、64 PID；入口：0.125 CPU、64 MiB、32 PID；每容器日志 2×10 MiB；数据/备份规划额度 512 MiB |
 
 Compose 不强制命名卷磁盘配额，512 MiB 是待批准的监控/停止阈值，不能当作已实施配额。
 任何命名冲突、端口占用或现网状态漂移都应停止，不能删除旧资源来腾位置。
@@ -51,7 +51,7 @@ RESOURCE_BUDGET.json 记录镜像/压缩包实际字节数，预算采用：
 `2 × 压缩镜像包 + 2 × 解压镜像层 + 512 MiB 数据/日志/备份 + 2 GiB 宿主机保留空间`。
 
 双倍项覆盖下载/合并副本及 Docker 导入暂存；这是保守规划，不是 Docker 的实测峰值。
-内存预算为 768 MiB 容器上限加 768 MiB 现网缓冲；CPU限制只是隔离单会话预算，不是吞吐承诺。
+内存预算为 768 MiB API 加 64 MiB 入口加 768 MiB 现网缓冲；CPU限制只是隔离单会话预算，不是吞吐承诺。
 CI_RESOURCE_SAMPLE.json 是 CI 单次采样，不是香港负载或峰值证据。
 
 用户转交的香港预检：2026-09-11 09:45–09:46 CST，可用磁盘 5,705,682,944 B，
@@ -64,7 +64,7 @@ CI_RESOURCE_SAMPLE.json 是 CI 单次采样，不是香港负载或峰值证据�
 
 仅申请审核以下一次性、独立测试环境提案：接收经完整校验的离线镜像包；验证包与镜像config ID；
 在唯一新目录保留清单与 durable previous-state 记录；加载确切镜像；创建上表唯一独立项目/网络/卷；
-启动一个受限 API；按批准的只读健康及验收操作取证；失败时按同一授权范围停止该独立容器并保留数据。
+启动一个受限 API 和一个固定上游入口；按批准的只读健康及验收操作取证；失败时按同一授权范围停止这两个独立容器并保留数据。
 
 在审批文本确定目标节点、确切 runtime_archive_sha256 / docker_image_config_id、交付工具版本、
 独立资源范围、预算阈值、执行入口和允许的停止操作之前，不上传到 ECS、不 docker load/up、不建卷/网络。

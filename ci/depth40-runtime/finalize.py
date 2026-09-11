@@ -49,7 +49,8 @@ budget = {'schema':'go.isolated-runtime-budget.v1', 'observed_server_source':'us
              'docker_layers_and_import_headroom':2*image_size,
              'private_database_data_logs_quota_bytes':512*1024**2,
              'host_disk_reserve_bytes':2*gib, 'container_memory_cap_bytes':768*1024**2,
-             'host_memory_reserve_bytes':768*1024**2, 'container_cpu_cap':0.5},
+             'ingress_memory_cap_bytes':64*1024**2,
+             'host_memory_reserve_bytes':768*1024**2, 'container_cpu_cap':0.5, 'ingress_cpu_cap':0.125},
  'capacity_gate':'HOLD_FRESH_PREFLIGHT_AND_BUDGET_APPROVAL',
  'limits':'Single API acceptance session only; no load guarantee, no PG/Redis/workers, no local image build, no existing image/data deletion.'}
 budget['planned_disk_requirement_bytes'] = sum(budget['planning'][k] for k in ['delivery_and_archive_copies','docker_layers_and_import_headroom','private_database_data_logs_quota_bytes','host_disk_reserve_bytes'])

@@ -72,12 +72,17 @@ jobs:
         run: |
           set -euo pipefail
           docker network create --internal go-depth40-ci
+          docker network create go-depth40-edge-ci
           docker volume create go-depth40-ci-state
-          docker run --detach --name go-depth40-ci --read-only --user 10001:10001 --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 768m --cpus 0.5 --network go-depth40-ci --tmpfs /tmp:rw,noexec,nosuid,size=64m --mount type=volume,src=go-depth40-ci-state,dst=/state --publish 127.0.0.1:18440:4187 "$IMAGE"
-          docker exec go-depth40-ci /opt/go/python/bin/python3.13 -B /opt/go/tooling/probe.py | tee runtime-delivery/PACKAGED_RUNTIME_SMOKE.json
+          docker run --detach --name go-depth40-ci --read-only --user 10001:10001 --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 768m --cpus 0.5 --network go-depth40-ci --network-alias api --tmpfs /tmp:rw,noexec,nosuid,size=64m --mount type=volume,src=go-depth40-ci-state,dst=/state "$IMAGE"
+          docker create --name go-depth40-ingress-ci --read-only --user 10001:10001 --cap-drop ALL --security-opt no-new-privileges --pids-limit 32 --memory 64m --cpus 0.125 --network go-depth40-edge-ci --publish 127.0.0.1:18440:4187 "$IMAGE" --ingress-only
+          docker network connect --alias ingress go-depth40-ci go-depth40-ingress-ci
+          docker start go-depth40-ingress-ci
+          docker exec -e GO_PROBE_URL=http://ingress:4187 go-depth40-ci /opt/go/python/bin/python3.13 -B /opt/go/tooling/probe.py | tee runtime-delivery/PACKAGED_RUNTIME_SMOKE.json
           curl --fail --silent http://127.0.0.1:18440/__acceptance/binding > runtime-delivery/LIVE_CI_BINDING.json
           test "$(curl --silent -o /dev/null -w '%{http_code}' -H 'Host: outside.invalid' http://127.0.0.1:18440/health)" = 403
           docker inspect go-depth40-ci --format '{{json .HostConfig}}' > runtime-delivery/CI_CONTAINER_LIMITS.json
+          docker inspect go-depth40-ingress-ci --format '{{json .HostConfig}}' > runtime-delivery/CI_INGRESS_LIMITS.json
           docker stats --no-stream --format '{{json .}}' go-depth40-ci > runtime-delivery/CI_RESOURCE_SAMPLE.json
           docker network inspect go-depth40-ci --format '{{.Internal}}' > runtime-delivery/CI_NETWORK_INTERNAL.txt
           test "$(cat runtime-delivery/CI_NETWORK_INTERNAL.txt)" = true
@@ -88,20 +93,23 @@ jobs:
           set -euo pipefail
           python ci/depth40-runtime/finalize.py --directory runtime-delivery --tooling ci/depth40-runtime --run-id '${{ github.run_id }}' --tooling-sha '${{ github.event.pull_request.head.sha }}'
           python ci/depth40-runtime/verify_delivery.py --directory runtime-delivery
-      - name: Persist verified delivery to a new evidence branch
-        env:
-          GO_ARCHIVE_TOKEN: ${{ github.token }}
-        run: python ci/depth40-runtime/archive_to_repository.py --directory runtime-delivery --run-id '${{ github.run_id }}'
       - name: Upload review package copy
         uses: actions/upload-artifact@v4
         with:
           name: GO-DEPTH40-ISOLATED-RUNTIME-${{ github.run_id }}
           path: runtime-delivery
           retention-days: 90
+      - name: Persist verified delivery to a new evidence branch
+        env:
+          GO_ARCHIVE_TOKEN: ${{ github.token }}
+        run: python ci/depth40-runtime/archive_to_repository.py --directory runtime-delivery --run-id '${{ github.run_id }}'
       - name: Preserve failure diagnostics and stop CI container
         if: always()
         shell: bash
         run: |
           docker logs go-depth40-ci 2>/dev/null || true
+          docker logs go-depth40-ingress-ci 2>/dev/null || true
+          docker rm --force go-depth40-ingress-ci 2>/dev/null || true
           docker rm --force go-depth40-ci 2>/dev/null || true
           docker network rm go-depth40-ci 2>/dev/null || true
+          docker network rm go-depth40-edge-ci 2>/dev/null || true
