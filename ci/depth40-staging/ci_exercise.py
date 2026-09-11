@@ -87,10 +87,16 @@ try:
         (PREFIX+'redis','redis',['redis:7.4.1'])]:
         containers.append(name)
         cmd(['docker','run','-d','--name',name,'--network',NET,'--network-alias',alias]+args)
-    for _ in range(45):
-        if cmd(['docker','exec',PREFIX+'pg','pg_isready','-U','go','-d','go_depth40_ci'],check=False).returncode==0:
+    # pg_isready can succeed against initdb's temporary socket server before the target DB exists.
+    # Require an actual SQL query over TCP, which is enabled only by the final server.
+    for _ in range(60):
+        ready=cmd(['docker','exec',PREFIX+'pg','psql','-h','127.0.0.1','-U','go','-d','go_depth40_ci',
+                   '-Atc','SELECT 1'],check=False)
+        if ready.returncode==0 and ready.stdout.strip()=='1':
             break
         time.sleep(1)
+    else:
+        raise RuntimeError('CI_DATABASE_TCP_QUERY_NOT_READY')
     record('fresh_database_empty',sql("SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")=='0')
     p=run_image(['-B','-m','alembic','upgrade','0132_rail_runtime_field_widths'],entrypoint=PY,check=False,timeout=420)
     (OUT/'CI_FRESH_MIGRATION.log').write_text(scrub(p.stdout+'\n'+p.stderr))
