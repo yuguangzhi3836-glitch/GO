@@ -1,0 +1,27 @@
+{
+  "contract_version": "1",
+  "environment": "HK-STAGING-01",
+  "action_id": "HK_STAGING_ROLLBACK",
+  "proven_executor_version": "0.4.3-rollback-runtime",
+  "proven_executor_revision": "R11-release-binding-schema-correction",
+  "source": {
+    "must_be_successful_signed_deploy": true,
+    "requires_deploy_record_v2": true,
+    "requires_task_evidence_record_binding": true,
+    "requires_lineage": true,
+    "consumed_source_rejected": true,
+    "same_image_proves_lineage": false
+  },
+  "task_release_id_path": "parameters.release_id",
+  "target_derivation": "DEPLOY_RECORD_V2 pre-mutation state only",
+  "target_count": 8,
+  "protected_non_targets": ["redis", "caddy"],
+  "caller_controlled_rollback_image": false,
+  "caller_controlled_runtime_env_path": false,
+  "migration_allowed": false,
+  "production_allowed": false,
+  "automatic_retry_allowed": false,
+  "automatic_recovery_allowed": false,
+  "post_rollback_fresh_verify_required": true,
+  "documentation_is_execution_authority": false
+}

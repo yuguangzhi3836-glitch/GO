@@ -4,8 +4,9 @@ Before any `HK_STAGING_DEPLOY`, HK-STAGING deployment planning,
 deployment troubleshooting, or deployment retry, read:
 
 1. `docs/control-plane/hk-staging/README.md`
-2. `docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md`
-3. `docs/control-plane/hk-staging/HK_STAGING_DEPLOY_BASELINE.md`
+2. `docs/control-plane/hk-staging/HK_STAGING_OPERATIONS_GUIDE.md`
+3. the action-specific DEPLOY or ROLLBACK runbook linked there
+4. `docs/control-plane/hk-staging/HK_STAGING_DEPLOY_BASELINE.md`
 
 Do not reconstruct the HK-STAGING deployment procedure from AI memory,
 prior conversations, or historical shell commands. Use the current proven

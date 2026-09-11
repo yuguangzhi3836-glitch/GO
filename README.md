@@ -8,6 +8,7 @@
 
 ## HK-STAGING operations
 
-Before any HK-STAGING deployment planning or execution, read
-[`docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md`](docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md).
+Before any HK-STAGING deployment, rollback, verification planning, or execution,
+read [`docs/control-plane/hk-staging/README.md`](docs/control-plane/hk-staging/README.md)
+and the action-specific runbook it links.
 Do not reconstruct the deployment procedure from AI memory or prior chats.
