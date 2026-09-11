@@ -36,7 +36,7 @@ installed artifact, durable record, and Signed Evidence remain authoritative.
    failure, and do not substitute direct `sudo`/Executor invocation for the
    formal path merely because pickup is not immediate. Timer timing is
    operational behavior, not Execution Authority.
-8. The narrow Executor creates the durable previous-state record **before**
+8. The narrow Executor creates the durable `DEPLOY_RECORD_V2` **before**
    any Docker mutation. Failure to create this record rejects the action.
 9. The Executor uses its fixed deployment scope and owns `--force-recreate`
    for exactly the eight target services. `force_recreate` is not a caller
@@ -49,7 +49,10 @@ installed artifact, durable record, and Signed Evidence remain authoritative.
     post-deploy checks: API health, worker process-liveness, Alembic
     current/head, immutable target-image binding, Compose/environment
     integrity, and non-target integrity.
-12. On success, the HK Agent creates and pushes Signed DEPLOY Evidence.
+12. On success, the HK Agent creates and pushes Signed DEPLOY Evidence. The
+    Task, Evidence, and V2 record form the only possible future Rollback
+    source; they must be mechanically bound and source lineage must remain
+    eligible.
     Command Center independently verifies the signature and binding.
 13. Observe subsequent formal pickup cycles. Completion/replay protection must
     prevent another dispatch and another successful Evidence record.
@@ -63,6 +66,10 @@ installed artifact, durable record, and Signed Evidence remain authoritative.
     business runtime.
 16. Verify the Signed VERIFY Evidence in Command Center and observe replay
     protection through subsequent formal pickup cycles.
+
+An approved future Rollback is a separate operation governed by
+[`HK_STAGING_ROLLBACK_RUNBOOK.md`](HK_STAGING_ROLLBACK_RUNBOOK.md). It must
+derive targets from the eligible V2 source record, not a caller image.
 
 ## Non-negotiable retry rule
 
@@ -79,11 +86,13 @@ record. Never extend, re-sign, or replay an old Task.
 
 ## Candidate-image evidence boundary
 
-R4 mechanically validates the candidate image and its repository digest, and
-separately validates that the current live image matches
+The current installed Executor (`0.4.3-rollback-runtime`,
+`R11-release-binding-schema-correction`) retains the candidate-image and
+repository-digest validation first proven by R4. It separately validates that
+the current live image matches
 `expected_current_image_id`; it does not require those two image IDs to be
-identical. It then writes the validated candidate image into the fixed
-eight-service override. This is implementation-level support for a
+identical. The current Executor then writes the validated candidate image into
+the fixed eight-service override. This is implementation-level support for a
 different-image candidate, subject to those validations. A formal
 different-image DEPLOY E2E is **NOT_PROVEN** and must not be claimed from the
 same-image E2E.

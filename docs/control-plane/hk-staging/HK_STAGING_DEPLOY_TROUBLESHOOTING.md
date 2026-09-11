@@ -1,4 +1,4 @@
-# HK-STAGING DEPLOY troubleshooting
+# HK-STAGING Control Plane troubleshooting
 
 Use this guide only after reading the runbook and verifying live state. It is
 not permission to run commands or retry a Task.
@@ -51,6 +51,33 @@ success representation was `status=SUCCESS` and `executor_result=CANARY_OK`.
 Retry only with a new task ID, nonce, release ID, signature, and durable
 previous-state record. Do not extend expiry, alter, copy, or re-sign the old
 Task.
+
+## `ROLLBACK_OK` but no Signed Evidence
+
+First determine whether a real mutation occurred and whether a durable rollback
+record was written. Do **not** retry. A historical parser defect compared an
+absent Rollback Task `candidate_image_id` with the Executor's empty value using
+DEPLOY-style correlation. A credible durable attempt consumes the source even
+when post-executor processing fails.
+
+## Valid rollback source unexpectedly rejected
+
+Formal Task release identity lives at `task.parameters.release_id`, not
+`task.release_id`. The Evidence and V2 record carry their bound release value
+at their documented record fields. Missing, malformed, top-level-only, or
+mismatched values must reject; do not introduce a permissive fallback.
+
+## Successful mutation followed by processing failure
+
+Preserve durable audit material and fail closed. No automatic retry, recovery,
+or rollback is permitted. A source with a credible durable rollback attempt is
+`AMBIGUOUS_CONSUMED` unless the authoritative record proves otherwise.
+
+## Historical Evidence recovery
+
+Never infer a historical SUCCESS Evidence object from current containers,
+chat, or an operator statement. Only the signed object, durable record, and
+immutable repository history can establish historical success.
 
 ## Unknown condition
 

@@ -1,20 +1,45 @@
-# HK-STAGING deployment control plane
+# HK-STAGING Control Plane operations
 
-This directory records the proven HK-STAGING deployment path as of
-2026-09-09. It is a descriptive recovery and operations reference, not an
-execution authority.
+This directory is the descriptive operations entry point for the proven
+HK-STAGING Control Plane as of 2026-09-11. It is not Execution Authority.
 
-The proven chain is:
+Read in this order before planning or executing an operation:
 
-`Human Approval → CANARY Evidence validation → fresh live drift preflight →
-fresh signed task → private GitHub tasks repository → HK Agent → narrow
-Executor → Signed Evidence → replay proof → fresh formal VERIFY`.
+1. [Operations guide](HK_STAGING_OPERATIONS_GUIDE.md)
+2. [Boss GPT / mobile Request Channel](BOSS_GPT_REQUEST_GUIDE.md) when the request is being initiated from the boss's ChatGPT through GitHub
+3. [Current baseline](HK_STAGING_DEPLOY_BASELINE.md)
+4. The action-specific runbook: [DEPLOY](HK_STAGING_DEPLOY_RUNBOOK.md) or
+   [ROLLBACK](HK_STAGING_ROLLBACK_RUNBOOK.md)
+5. The matching machine-readable contract:
+   [DEPLOY](DEPLOY_OPERATION_CONTRACT.json) or
+   [ROLLBACK](ROLLBACK_OPERATION_CONTRACT.json)
+6. [Troubleshooting](HK_STAGING_DEPLOY_TROUBLESHOOTING.md)
 
-Read the [runbook](HK_STAGING_DEPLOY_RUNBOOK.md) before planning or
-troubleshooting a deployment, and the [baseline](HK_STAGING_DEPLOY_BASELINE.md)
-before comparing live state. The [operation contract](DEPLOY_OPERATION_CONTRACT.json)
-is a machine-readable summary only.
+## Boss GPT / Mobile Request Channel
 
-The current live state is authoritative. Never restore an older documented
-container ID, image reference, Compose file, or environment file over live
-state merely because it appears in this documentation.
+Boss GPT submits an **untrusted Request PR** to
+`chenzhenxi1-sudo/go-control-tasks`. Command Center alone validates that
+request, derives the formal Task, and signs it with the existing Command Center
+signer. The Boss GPT does not create a Signed Task and does not need to merge
+the Request PR.
+
+Current Boss Request Bridge V1 supports only `HK_STAGING_VERIFY` for
+`HK-STAGING-01`. The underlying Control Plane has proven VERIFY, CANARY, DEPLOY,
+and ROLLBACK, but Boss Request V1 has not yet opened CANARY, DEPLOY, or ROLLBACK.
+See [BOSS_GPT_REQUEST_GUIDE.md](BOSS_GPT_REQUEST_GUIDE.md) for the exact current
+request workflow and schema.
+
+## Proven action chain
+
+`Human Approval → Signed Task → HK Agent → narrow Executor → durable record
+where applicable → read-only action or fixed-scope mutation → Signed Evidence
+→ independent verification`
+
+The formal action set proven on HK-STAGING is `VERIFY`, `CANARY`, `DEPLOY`,
+and `ROLLBACK`. DEPLOY and ROLLBACK are fixed eight-service mutations;
+VERIFY is read-only; CANARY is isolated from the business runtime.
+
+Execution Authority remains the current live state, explicit Human Approval,
+the fresh Signed Task, installed runtime bytes, durable records, and Signed
+Evidence. Documentation, chat history, a Request PR, and an AI's memory never
+authorize an operation.
