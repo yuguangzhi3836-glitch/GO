@@ -1,4 +1,16 @@
-# HK-STAGING Control Plane instructions
+# GO repository operating instructions
+
+## GO Command Center
+
+The archived 2026-09-11 Command Center source and observed runtime configuration are under `command-center/`. Before changing the Command Center web app, Boss Request Bridge, Request policy, signing/publishing path, or Command Center service configuration, read:
+
+1. `command-center/README.md`
+2. `command-center/BASELINE_MANIFEST.md`
+3. `docs/control-plane/command-center/CURRENT_RUNTIME_BASELINE_20260911.md`
+
+The repository snapshot contains source and sanitized configuration only. It does not contain private keys, runtime `.env` values, passwords, tokens, or runtime databases. Repository content and historical project context are not execution authority.
+
+## HK-STAGING Control Plane instructions
 
 Before any HK-STAGING Control Plane operation or planning—including
 `HK_STAGING_VERIFY`, `HK_STAGING_CANARY`, `HK_STAGING_DEPLOY`,

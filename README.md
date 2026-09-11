@@ -6,6 +6,12 @@
 
 [累计 DEPTH17 源包与分卷](deliverables/CP11_DEPTH17_20260908/README.md) · [DEPTH18 审阅记录](deliverables/CP11_DEPTH18_20260908/GO_DEPTH18_REVIEW.md)
 
+## GO Command Center source
+
+The archived 2026-09-11 Command Center source and observed runtime configuration are under [`command-center/`](command-center/). This includes the unpacked web source and the exact installed Boss Request Bridge; private keys, runtime `.env` values, databases, and secrets are intentionally excluded.
+
+Operational reference: [`docs/control-plane/command-center/README.md`](docs/control-plane/command-center/README.md).
+
 ## HK-STAGING operations
 
 Before any HK-STAGING deployment, rollback, verification planning, execution,

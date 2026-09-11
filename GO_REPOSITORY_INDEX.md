@@ -11,6 +11,12 @@ DEPTH09 在 DEPTH08 上增加酒店身份、明确官网房型关系采集、逐
 
 FINAL_RELEASE_GATE=HOLD；HOTEL_REPLICATION_GATE=HOLD。以上均为工程复核归档，未部署香港。
 
+## GO Command Center
+
+2026-09-11 现役 Command Center 源码与运行配置归档：[`command-center/`](command-center/)。
+
+该目录包含 Web Command Center 源码、现役 Boss Request Bridge 1.2.0、去敏配置、systemd/nginx 基线与源文件 SHA-256；不包含私钥、`.env` 实值、数据库、Token 或密码。
+
 ## HK-STAGING operations
 
 Before any HK-STAGING deployment planning or execution, read

@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly GO AI Command Center usage report every Monday at 08:05 China time
+
+[Timer]
+OnCalendar=Mon *-*-* 00:05:00 UTC
+Persistent=true
+Unit=go-ai-usage-weekly-report.service
+
+[Install]
+WantedBy=timers.target
