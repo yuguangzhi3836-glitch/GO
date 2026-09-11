@@ -1,0 +1,42 @@
+name: depth39-apple-physical-device
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Exact P0.3 candidate SHA to validate
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  physical-device:
+    runs-on: [self-hosted, macOS, go-ios-device]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          persist-credentials: false
+      - name: Require physical iPhone destination
+        shell: bash
+        run: |
+          test -n "${GO_IOS_DEVICE_DESTINATION:-}"
+          case "$GO_IOS_DEVICE_DESTINATION" in *Simulator*) exit 31;; esac
+          case "$GO_IOS_DEVICE_DESTINATION" in *platform=iOS*) ;; *) exit 32;; esac
+      - name: Build protocol on physical-device toolchain
+        working-directory: mobile/go-app/native/apple
+        shell: bash
+        run: xcodebuild -scheme GOAgentTransactionProtocol -destination "$GO_IOS_DEVICE_DESTINATION" CODE_SIGNING_ALLOWED=YES build
+      - name: Run signed App Intents lifecycle smoke harness
+        shell: bash
+        run: |
+          test -x ci/depth39/apple_physical_device_smoke.sh
+          ci/depth39/apple_physical_device_smoke.sh "$GO_IOS_DEVICE_DESTINATION" "${{ inputs.candidate_sha }}" apple-device-evidence.json
+      - name: Verify physical-device evidence
+        shell: bash
+        run: python3 ci/depth39/verify_apple_device_evidence.py --evidence apple-device-evidence.json --candidate-sha "${{ inputs.candidate_sha }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH39-apple-physical-${{ inputs.candidate_sha }}
+          path: apple-device-evidence.json
+          retention-days: 90
