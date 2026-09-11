@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from go_hotel.agent_gateway.a2a import GO_TRANSACTION_EXTENSION
 from go_hotel.agent_gateway.contracts import AgentContext,AgentProtocol
 from go_hotel.agent_gateway.protocol_http import build_a2a_router,build_mcp_router
-from go_hotel.agent_gateway.real_core import GoTransactionCore
+from go_hotel.agent_gateway.canonical_core import GoTransactionCore
 from go_hotel.agent_gateway.rest import build_agent_router
 from go_hotel.agent_gateway.service import AgentTransactionGateway
 
