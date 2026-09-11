@@ -1,0 +1,145 @@
+name: consolidation-materialize-canonical-source
+
+on:
+  push:
+    branches:
+      - consolidation/canonical-go-application-baseline-20260912
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce immutable base and empty canonical root
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "1d8bebac37fcc6f0360b17891aa49eb6e70b5f96"
+          test ! -e application
+
+      - name: Download fixed DEPTH40 parent artifact from GitHub
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p .consolidation/package
+          curl --fail --location --silent --show-error \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/10183252130/zip" \
+            -o .consolidation/depth40-parent.zip
+          echo "d0aa4b89ed0655271cf5ef7a12cce354dc8d84704cf57071f581f129458cbaf7  .consolidation/depth40-parent.zip" | sha256sum -c -
+          unzip -q .consolidation/depth40-parent.zip -d .consolidation/package
+
+      - name: Verify package identity and materialize exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          PKG=.consolidation/package/CP11_DEPTH40_P03_PARENT_20260911
+          test -f "$PKG/MANIFEST.json"
+          python3 - <<'PY'
+          import hashlib, json, pathlib, subprocess, sys
+          pkg = pathlib.Path('.consolidation/package/CP11_DEPTH40_P03_PARENT_20260911')
+          manifest = json.loads((pkg/'MANIFEST.json').read_text())
+          expected = {
+              'candidate': 'CP11_DEPTH40_P03_PARENT_20260911',
+              'archive_sha256': '2909651f9b644ed56fd6ab833480c9da32b4c5b900df2e5afb192dba49ac2b00',
+              'source_tree_sha256': '64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667',
+              'verified_files': 1271,
+              'p03_commit': 'e0742e2168b9a0fc0c1d6391f767c3219efb5e97',
+          }
+          for k, v in expected.items():
+              if manifest.get(k) != v:
+                  raise SystemExit(f'MANIFEST_IDENTITY_MISMATCH:{k}:{manifest.get(k)!r}')
+          archive = pkg/manifest['archive_file']
+          if hashlib.sha256(archive.read_bytes()).hexdigest() != expected['archive_sha256']:
+              raise SystemExit('ARCHIVE_SHA256_MISMATCH')
+          fp = json.loads((pkg/'SOURCE_FINGERPRINT.json').read_text())
+          material = ''.join(f'{k}\0{v}\n' for k,v in sorted(fp.items())).encode()
+          if hashlib.sha256(material).hexdigest() != expected['source_tree_sha256']:
+              raise SystemExit('SOURCE_TREE_SHA256_MISMATCH')
+          if len(fp) != expected['verified_files']:
+              raise SystemExit('FILE_COUNT_MISMATCH')
+          PY
+          python3 "$PKG/restore_parent.py" --package "$PKG" --output application
+
+      - name: Reverify checked-out canonical application and scan secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, pathlib, re
+          root = pathlib.Path('application')
+          fp = json.loads(pathlib.Path('.consolidation/package/CP11_DEPTH40_P03_PARENT_20260911/SOURCE_FINGERPRINT.json').read_text())
+          files = {str(p.relative_to(root)).replace('\\','/') for p in root.rglob('*') if p.is_file() and not p.is_symlink()}
+          if files != set(fp):
+              raise SystemExit('CANONICAL_FILESET_MISMATCH')
+          for rel, want in fp.items():
+              got = hashlib.sha256((root/rel).read_bytes()).hexdigest()
+              if got != want:
+                  raise SystemExit('CANONICAL_FILE_HASH_MISMATCH:' + rel)
+          forbidden_names = {'.env','id_rsa','id_ed25519'}
+          forbidden_suffixes = {'.pem','.key','.p12','.pfx','.dump'}
+          for p in root.rglob('*'):
+              if p.is_file() and (p.name in forbidden_names or p.suffix.lower() in forbidden_suffixes):
+                  raise SystemExit('SECRET_FILE_NAME:' + str(p))
+          patterns = [
+              rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----',
+              rb'ghp_[A-Za-z0-9]{20,}', rb'sk_live_[A-Za-z0-9]{10,}', rb'AKIA[0-9A-Z]{16}'
+          ]
+          for p in root.rglob('*'):
+              if not p.is_file(): continue
+              b = p.read_bytes()
+              for pat in patterns:
+                  if re.search(pat, b):
+                      raise SystemExit('SECRET_PATTERN:' + str(p))
+          PY
+
+      - name: Write machine-readable canonical manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p docs/consolidation
+          cat > docs/consolidation/CANONICAL_SOURCE_MANIFEST.json <<'JSON'
+          {
+            "schema_version": 1,
+            "canonical_application_root": "application/",
+            "selected_product_candidate": "CP11_DEPTH40_P03_PARENT_20260911",
+            "selected_product_semantic_sha": "e0742e2168b9a0fc0c1d6391f767c3219efb5e97",
+            "sealed_parent_build_head": "c909af370d55ce7644140a191425a8a66dacec9a",
+            "source_artifact_id_used_for_one_time_materialization": 10183252130,
+            "source_artifact_zip_sha256": "d0aa4b89ed0655271cf5ef7a12cce354dc8d84704cf57071f581f129458cbaf7",
+            "source_archive_sha256": "2909651f9b644ed56fd6ab833480c9da32b4c5b900df2e5afb192dba49ac2b00",
+            "canonical_application_file_count": 1271,
+            "canonical_application_tree_sha256": "64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667",
+            "tree_hash_algorithm": "sha256(concat(sorted(path + NUL + file_sha256 + LF)))",
+            "base_main_sha": "1d8bebac37fcc6f0360b17891aa49eb6e70b5f96",
+            "secret_scan": "PASS",
+            "requires_historical_artifact_after_checkout": false,
+            "requires_restore_chain_after_checkout": false,
+            "requires_overlay_after_checkout": false,
+            "deployment_authorized": false
+          }
+          JSON
+
+      - name: Commit materialized canonical application to consolidation branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .consolidation
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add application docs/consolidation/CANONICAL_SOURCE_MANIFEST.json
+          test "$(git diff --cached --name-only | grep -c '^application/')" -eq 1271
+          git commit -m "consolidation: materialize canonical GO application source"
+          git push origin HEAD:consolidation/canonical-go-application-baseline-20260912
