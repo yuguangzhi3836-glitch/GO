@@ -1,0 +1,110 @@
+name: depth38-agent-lifecycle-isolated-acceptance
+on:
+  pull_request:
+    branches: ['p0-agent-transaction-lifecycle-v0-2']
+    paths:
+      - 'ci/depth38/**'
+      - 'src/go_hotel/agent_gateway/**'
+      - 'tests/test_agent_*'
+      - 'mobile/go-app/native/apple/**'
+      - '.github/workflows/depth38-agent-lifecycle.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-agent-lifecycle:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      DEPTH36_TOOLING_COMMIT: ff13ca334acfcec61d6463f30ca94d7964086635
+    steps:
+      - name: Checkout acceptance head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: tooling
+          persist-credentials: false
+      - name: Checkout exact P0.2 base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: candidate
+          persist-credentials: false
+      - name: Checkout verified DEPTH36 restore tooling
+        uses: actions/checkout@v4
+        with:
+          ref: ff13ca334acfcec61d6463f30ca94d7964086635
+          path: depth36-tooling
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Verify pinned restore tooling
+        shell: bash
+        run: |
+          mkdir -p evidence
+          test "$(git -C depth36-tooling rev-parse HEAD)" = "$DEPTH36_TOOLING_COMMIT"
+          sha256sum depth36-tooling/ci/depth36/materialize_parent.py depth36-tooling/ci/depth36/dependencies.py depth36-tooling/ci/depth36/requirements.lock | tee evidence/depth36-tooling.sha256
+      - name: Restore sealed DEPTH36 parent chain
+        shell: bash
+        run: |
+          git -C candidate rev-parse HEAD | tee evidence/p02-base-commit.txt
+          python depth36-tooling/ci/depth36/materialize_parent.py --depth26 candidate/deliverables/CP11_DEPTH26_20260909 --depth27 candidate/deliverables/CP11_DEPTH27_20260909 --depth28 candidate/deliverables/CP11_DEPTH28_V14_INTEGRATION_20260909 --output "$GITHUB_WORKSPACE/restored-parent" | tee evidence/parent-restore.log
+          python candidate/deliverables/CP11_DEPTH29_TRIP_REENTRY_20260909/restore_depth29.py --parent "$GITHUB_WORKSPACE/restored-parent" --output "$GITHUB_WORKSPACE/restored-depth29" | tee evidence/depth29.log
+          python candidate/deliverables/CP11_DEPTH30_NATIVE_PAYMENT_20260909/restore_depth30.py --parent "$GITHUB_WORKSPACE/restored-depth29" --output "$GITHUB_WORKSPACE/restored-depth30" | tee evidence/depth30.log
+          python candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910/restore_delta.py --parent "$GITHUB_WORKSPACE/restored-depth30" --package candidate/deliverables/CP11_DEPTH31_CONSENT_DIRECT_20260910 --output "$GITHUB_WORKSPACE/restored-depth31" | tee evidence/depth31.log
+          python candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910/restore_delta.py --parent "$GITHUB_WORKSPACE/restored-depth31" --package candidate/deliverables/CP11_DEPTH32R2_CHANGE_TERMS_REFUND_20260910 --output "$GITHUB_WORKSPACE/restored-depth32" | tee evidence/depth32.log
+          python candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910/restore_delta.py --parent "$GITHUB_WORKSPACE/restored-depth32" --package candidate/deliverables/CP11_DEPTH33_MOBILITY_REFUND_20260910 --output "$GITHUB_WORKSPACE/restored-depth33" | tee evidence/depth33.log
+          python candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910/restore_delta.py --parent "$GITHUB_WORKSPACE/restored-depth33" --package candidate/deliverables/CP11_DEPTH34R2_HOTEL_QUOTE_IDENTITY_20260910 --output "$GITHUB_WORKSPACE/restored-depth34" | tee evidence/depth34.log
+          python candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910/restore_delta.py --parent "$GITHUB_WORKSPACE/restored-depth34" --package candidate/deliverables/CP11_DEPTH35R2_SESSION_TRANSITIONS_20260910 --output "$GITHUB_WORKSPACE/restored-depth35" | tee evidence/depth35.log
+          python candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910/restore_delta.py --parent "$GITHUB_WORKSPACE/restored-depth35" --package candidate/deliverables/CP11_DEPTH36_ISOLATED_RUNTIME_20260910 --output "$GITHUB_WORKSPACE/restored" | tee evidence/depth36.log
+      - name: Install frozen repository wheelhouse
+        shell: bash
+        run: |
+          python depth36-tooling/ci/depth36/dependencies.py --repository candidate --output dependencies | tee evidence/dependencies.json
+          python -m venv isolated-runtime
+          isolated-runtime/bin/python -m pip install --no-index --no-deps --find-links dependencies/wheelhouse -r depth36-tooling/ci/depth36/requirements.lock
+          isolated-runtime/bin/python -m pip check
+      - name: Apply exact DEPTH38 P0.2 overlay
+        shell: bash
+        run: |
+          isolated-runtime/bin/python candidate/ci/depth38/apply_agent_lifecycle.py --source restored --overlay candidate --evidence evidence/depth38-overlay.json
+          isolated-runtime/bin/python -m py_compile restored/src/go_hotel/agent_gateway/*.py restored/src/go_hotel/main.py
+      - name: Agent transaction and lifecycle truth gate
+        working-directory: restored
+        shell: bash
+        run: |
+          PYTHONPATH=.:src ../isolated-runtime/bin/python -m pytest -q tests/test_agent_transaction_gateway.py tests/test_agent_transaction_gateway_real_core.py tests/test_agent_transaction_gateway_six_vertical.py tests/test_agent_payment_truth_binding.py tests/test_agent_transaction_lifecycle_p02.py --junitxml=../evidence/agent-lifecycle.xml | tee ../evidence/agent-lifecycle.log
+      - name: Native refund consent and recovery gate
+        working-directory: restored
+        shell: bash
+        run: |
+          PYTHONPATH=.:src ../isolated-runtime/bin/python -m pytest -q tests/test_depth31_refund_consent.py tests/test_depth32_flight_refund_consent.py tests/test_depth33_mobility_refund_consent.py --junitxml=../evidence/refund-recovery.xml | tee ../evidence/refund-recovery.log
+      - name: Native expiry and capacity race gate
+        working-directory: restored
+        shell: bash
+        run: |
+          PYTHONPATH=.:src ../isolated-runtime/bin/python -m pytest -q 'tests/test_depth24_expiry.py::test_expiration_releases_once_with_native_evidence' 'tests/test_depth24_expiry.py::test_any_started_payment_retains_capacity' 'tests/test_depth24_expiry.py::test_two_expiry_workers_release_once' 'tests/test_depth23_capacity.py::test_cancel_unpaid_releases_once_and_blocks_later_payment' 'tests/test_depth23_capacity.py::test_payment_started_cannot_release_capacity' 'tests/test_depth23_capacity.py::test_rail_change_holds_both_dates_until_result_then_releases_correct_pool' --junitxml=../evidence/expiry-capacity.xml | tee ../evidence/expiry-capacity.log
+      - name: Existing transaction regression gate
+        working-directory: restored
+        shell: bash
+        run: |
+          PYTHONPATH=.:src ../isolated-runtime/bin/python -m pytest -q tests/test_golden_path.py tests/test_sprint3a_flight.py tests/test_sprint3b_rail.py tests/test_sprint3c_mobility.py tests/test_sprint3d_attractions.py --junitxml=../evidence/native-transaction-regression.xml | tee ../evidence/native-transaction-regression.log
+      - name: Assert lifecycle release boundary
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          pathlib.Path('evidence/depth38-boundary.json').write_text(json.dumps({'deployed':False,'hong_kong_touched':False,'external_live_calls_authorized':False,'apple_xcode_native_build':'HOLD','ride_rental_expire_native_deadline':'HOLD','hotel_hard_hold_release_requires_connector_release':True,'merge_authorized':False},indent=2)+'\n')
+          PY
+      - name: Archive evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH38-agent-lifecycle-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 90
