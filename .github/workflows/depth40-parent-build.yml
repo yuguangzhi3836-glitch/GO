@@ -72,7 +72,8 @@ jobs:
             --p02-commit b977e2d1d3afd35bb3d39c2e0df0dedd2e4e33d3 \
             --p03-commit e0742e2168b9a0fc0c1d6391f767c3219efb5e97 | tee depth40-build.json
           cp candidate/ci/depth40/restore_parent.py CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py
-          sha256sum CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py >> CP11_DEPTH40_P03_PARENT_20260911/CHECKSUMS.sha256
+          (cd CP11_DEPTH40_P03_PARENT_20260911 && sha256sum restore_parent.py >> CHECKSUMS.sha256)
+          (cd CP11_DEPTH40_P03_PARENT_20260911 && sha256sum -c CHECKSUMS.sha256)
       - name: Self-restore sanity
         shell: bash
         run: |
