@@ -86,11 +86,13 @@ record. Never extend, re-sign, or replay an old Task.
 
 ## Candidate-image evidence boundary
 
-R4 mechanically validates the candidate image and its repository digest, and
-separately validates that the current live image matches
+The current installed Executor (`0.4.3-rollback-runtime`,
+`R11-release-binding-schema-correction`) retains the candidate-image and
+repository-digest validation first proven by R4. It separately validates that
+the current live image matches
 `expected_current_image_id`; it does not require those two image IDs to be
-identical. It then writes the validated candidate image into the fixed
-eight-service override. This is implementation-level support for a
+identical. The current Executor then writes the validated candidate image into
+the fixed eight-service override. This is implementation-level support for a
 different-image candidate, subject to those validations. A formal
 different-image DEPLOY E2E is **NOT_PROVEN** and must not be claimed from the
 same-image E2E.

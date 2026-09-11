@@ -1,4 +1,4 @@
-# HK-STAGING DEPLOY troubleshooting
+# HK-STAGING Control Plane troubleshooting
 
 Use this guide only after reading the runbook and verifying live state. It is
 not permission to run commands or retry a Task.

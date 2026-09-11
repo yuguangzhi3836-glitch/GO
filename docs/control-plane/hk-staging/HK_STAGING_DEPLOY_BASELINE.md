@@ -19,7 +19,9 @@ must never be restored over live state.
 
 ## Fixed inputs and scope
 
+- Compose path: `/home/go-stg/releases/r31-5-final-completion-20260906/GO_HYATT_DIRECT_BOOKING_R3_1_5_TEST_BOOTSTRAP_IDENTITY_FIX_20260906/deploy/docker-compose.r31-hk-staging.yml`
 - Compose SHA-256: `7ef4ab181c1250d8cec0e348b29c24bfbb8e5dce4fc2a57f6faaa59363c26895`
+- Runtime environment path: `/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env`
 - Runtime environment SHA-256: `6682ff61f336fb8ff95a6585e9133c88c52a4eaa440a7aea6a6e06f771e607fc`
 - Exactly eight targets: `api`, `recovery-worker`, `outbox-worker`,
   `mobile-push-receipt-worker`, `reconciliation-worker`, `mobile-push-worker`,
@@ -36,13 +38,16 @@ behavior, not a strict SLA or Execution Authority.
 
 ## Final proven E2E chain
 
-- DEPLOY: `go-boss02-final-deploy-20260911T025420Z`; Evidence commit
-  `87dfa03e777159a07e9a44627d4bfb4f6f9aae39`; DEPLOY_RECORD_V2
-  `452c36840f065f5448ed3f077e7830aee40b145504cd3d413a0339aef9a12b7f`.
+- DEPLOY: `go-boss02-final-deploy-20260911T025420Z`; Task commit
+  `824768bb4613c80fef640f72b872f478dc032a90`; Evidence commit
+  `87dfa03e777159a07e9a44627d4bfb4f6f9aae39`; DEPLOY_RECORD_V2 ID
+  `452c36840f065f5448ed3f077e7830aee40b145504cd3d413a0339aef9a12b7f`,
+  SHA-256 `b04cac062f7ec1243798499900473efa80a5b01467593f696db9d9d230af341a`.
 - ROLLBACK: `go-boss02-final-rollback-20260911T071232Z`; Task commit
   `31d0a1ea17734c58461f4e5d855039e62d94db00`; Evidence commit
   `5d2838f0a3a829d7ea049f0c9813793b5c59fcf0`; rollback record
-  `f6f7b64f63723f430e7bab1224abf93842d77ab45fe4f6697ef1bdd8b843131c`.
+  ID `f6f7b64f63723f430e7bab1224abf93842d77ab45fe4f6697ef1bdd8b843131c`,
+  SHA-256 `b0c0d78c5e78e1f73f4fc3acdaba7af504711486ef387359134b3ce249827fce`.
 - Post-rollback VERIFY: `go-boss02-post-rollback-verify-20260911T071429Z`;
   Task commit `8d4b95dc63c6b502c265930f4cc083b2729df154`; Evidence commit
   `2dbbdefaf7996e5f9222669929eee79eefabae56`.
