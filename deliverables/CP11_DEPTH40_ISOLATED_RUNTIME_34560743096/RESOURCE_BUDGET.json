@@ -1,0 +1,22 @@
+{
+  "schema": "go.isolated-runtime-budget.v1",
+  "observed_server_source": "user-transferred HK receipt 2026-09-11 09:45\u201309:46 CST; raw output absent",
+  "reported_free_disk_bytes": 5705682944,
+  "reported_available_memory_bytes": 1822203904,
+  "measured_runtime_archive_bytes": 176602173,
+  "measured_image_bytes": 490040877,
+  "planning": {
+    "delivery_and_archive_copies": 353204346,
+    "docker_layers_and_import_headroom": 980081754,
+    "private_database_data_logs_quota_bytes": 536870912,
+    "host_disk_reserve_bytes": 2147483648,
+    "container_memory_cap_bytes": 805306368,
+    "ingress_memory_cap_bytes": 67108864,
+    "host_memory_reserve_bytes": 805306368,
+    "container_cpu_cap": 0.5,
+    "ingress_cpu_cap": 0.125
+  },
+  "capacity_gate": "HOLD_FRESH_PREFLIGHT_AND_BUDGET_APPROVAL",
+  "limits": "Single API acceptance session only; no load guarantee, no PG/Redis/workers, no local image build, no existing image/data deletion.",
+  "planned_disk_requirement_bytes": 4017640660
+}
