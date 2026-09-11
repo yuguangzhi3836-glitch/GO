@@ -89,5 +89,8 @@ def test_mobility_expiry_never_cancels_after_payment_intent_exists():
     from go_hotel.services.omnichannel_payment import omnichannel_payment_service
     omnichannel_payment_service.create_intent({'business_type':'RIDE_ORDER','business_id':oid,'channel_priority':['LOCAL_MARKET']},'p03-race-intent',TRAVELER)
     out=run(gw.expire(ctx(),ExpireRequest(r['reserve_id'],'mob-race-expire'))).data
-    assert out['state']=='PAYMENT_STARTED'
+    assert out['state']=='UNCHANGED'
     assert out['order_truth']['status']=='PAYMENT_PENDING'
+    with SessionLocal() as s:
+        d=s.get(VerticalPaymentDeadlineRow,('RIDE',oid))
+        assert d.state=='PAYMENT_STARTED'
