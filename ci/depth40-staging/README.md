@@ -42,6 +42,11 @@
 `BOOTSTRAP_SUPPLIER_USERNAME`、`BOOTSTRAP_SUPPLIER_PASSWORD`、`BOOTSTRAP_SUPPLIER_ID`、
 `COOKIE_SECURE`、`MFA_REQUIRED_FOR_ADMIN`、`OUTBOX_TRANSPORT`、`MOBILE_PUSH_MODE`、
 `HOSTED_RESERVATION_EXPIRY_WORKER_ENABLED`、`VERTICAL_RESERVATION_EXPIRY_WORKER_ENABLED`。
+另需 `GO_MEDIA_CACHE_DIR=/state/media` 和经现场核验、备份的持久卷 `GO_VERIFIED_MEDIA_VOLUME`。
+源码中的媒体服务在导入时会打开本地索引，不能把缓存放到只读源码目录或丢失即清空的 tmpfs。
+启动预检只读验证既有 `index.sqlite3` schema=1、files/ 和权限；缺失时拒绝，不自动创建或导入旧 JSON。
+只有隔离 CI 会在全新测试卷生成空索引。香港如只有 legacy JSON，必须先对备份副本验证兼容转换/恢复，再明确处理许可。
+本配置合同的外部卷应以 `/state` 为挂载根、`media/` 为索引目录；若现网使用 bind mount 或不同布局，应由指挥中心根据实际只读材料定版，不在香港重排数据。
 其余原候选配置按现有批准映射核对，不能在香港补开发。
 
 本补件只允许已审核的 Redis/logging outbox 模式和 mock mobile push；如现网值不同，停止并回传配置**名称**及不兼容项。
@@ -71,11 +76,11 @@ CI 迁移失败时保留原始日志，不能改为 create_all/stamp 来宣布�
 备份体积未知，因此完整磁盘需求保持 UNKNOWN。禁止删除旧镜像、清库、清媒体来满足预算。
 内存上限规划为 API 512 MiB + 7×192 MiB = 1856 MiB；另留至少 768 MiB 主机缓冲。
 这是上限预算，不是实测峰值，也不能把替换后释放的现有内存提前计入可用量。
-香港 09:45 回执可用约 1.70 GiB、磁盘约 5.31 GiB，仅为用户转交历史采样；需要当前状态和替换时的峰值预算。
+需要由已批准的只读入口核验当前可用资源和替换时的峰值预算。
 
 香港只读材料仍需：当前 RDS Head/版本、八服务实际配置和环境**名称映射**、Caddy upstream/域名及 TLS 相关映射、
 当前网络标识与挂载、可恢复备份方案与大小、既有正式签名任务入口/允许的镜像来源。
-当前 Image ID `66c540...c324` 与此前 `3a109...c88` 的关系仍需同次脱敏 inspect 原件；不得仅凭不同摘要认定运行已变。
+运行 Image ID 与 RepoDigest 的绑定需同次脱敏 inspect 原件；不得仅凭不同摘要认定运行已变。
 
 ## 停止与回退方案
 

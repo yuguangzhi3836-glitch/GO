@@ -16,6 +16,7 @@ assert IMAGE.startswith('go-depth40-staging:ci-')
 assert os.environ.get('GITHUB_ACTIONS') == 'true'
 NET = 'go-depth40-staging-ci'
 PREFIX = 'go-d40-ci-'
+VOLUME = 'go-d40-ci-media'
 password = secrets.token_urlsafe(32)
 envfile = Path('staging-ci.private.env').resolve()
 ENV = {
@@ -29,6 +30,7 @@ ENV = {
     'HOSTED_RESERVATION_EXPIRY_WORKER_ENABLED': 'false',
     'VERTICAL_RESERVATION_EXPIRY_WORKER_ENABLED': 'true',
     'MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED': 'false', 'TRAVEL_INTELLIGENCE_ENABLED': 'false',
+    'GO_MEDIA_CACHE_DIR': '/state/media',
 }
 envfile.write_text(''.join(f'{k}={v}\n' for k,v in ENV.items())); envfile.chmod(0o600)
 checks = []
@@ -59,7 +61,7 @@ def record(name, passed, detail=None):
 def run_image(args, *, entrypoint=None, extra=None, check=True, timeout=240):
     command=['docker','run','--rm','--network',NET,'--read-only','--cap-drop','ALL',
              '--security-opt','no-new-privileges','--tmpfs','/tmp:rw,nosuid,size=64m',
-             '--env-file',str(envfile)]
+             '--env-file',str(envfile),'--mount','type=volume,src='+VOLUME+',dst=/state']
     if extra: command += extra
     if entrypoint: command += ['--entrypoint',entrypoint]
     return cmd(command+[IMAGE]+args, timeout=timeout, check=check)
@@ -78,6 +80,7 @@ try:
         fixtures[ref]=json.loads(cmd(['docker','image','inspect',ref]).stdout)[0]['RepoDigests']
     (OUT/'CI_FIXTURE_IMAGES.json').write_text(json.dumps(fixtures,indent=2)+'\n')
     cmd(['docker','network','create','--internal',NET])
+    cmd(['docker','volume','create',VOLUME])
     for name,alias,args in [
         (PREFIX+'pg','postgres',['-e','POSTGRES_USER=go','-e','POSTGRES_DB=go_depth40_ci',
              '-e','POSTGRES_PASSWORD='+password,'postgres:16.4']),
@@ -95,6 +98,8 @@ try:
     # This fixture setup is explicitly outside the delivered entrypoint, and only on this empty CI DB.
     seed="from go_hotel.security.service import identity_service; identity_service.bootstrap(); print('CI_PRINCIPALS_CREATED')"
     run_image(['-B','-c',seed],entrypoint=PY)
+    # A NEW isolated media volume only; the delivered launcher never initializes an index.
+    run_image(['-B','-c','from go_hotel.services.media_harvester import media_harvester_service; print("CI_MEDIA_INITIALIZED")'],entrypoint=PY)
     before=sql('SELECT count(*) FROM identity_user')
     p=run_image(['preflight'])
     result=json.loads(p.stdout)
@@ -112,6 +117,8 @@ try:
     record('production_environment_rejected',p.returncode==2 and 'STAGING_ENV_REQUIRED' in p.stdout)
     p=run_image(['preflight'],extra=['-e','JWT_SIGNING_KEY=dev-only-change-me-jwt'],check=False)
     record('default_credential_rejected',p.returncode==2 and 'DEFAULT_CREDENTIAL_REJECTED' in p.stdout)
+    p=run_image(['preflight'],extra=['-e','GO_MEDIA_CACHE_DIR=/opt/go/source/var/media_cache'],check=False)
+    record('source_tree_media_path_rejected',p.returncode==2 and 'FIXED_MEDIA_VOLUME_MAPPING_REQUIRED' in p.stdout)
     workers=['recovery-worker','outbox-worker','mobile-push-receipt-worker','reconciliation-worker',
              'mobile-push-worker','mobile-engagement-worker','judgment-worker']
     for role in ['api']+workers:
@@ -119,7 +126,7 @@ try:
         cmd(['docker','run','-d','--name',name,'--network',NET,'--network-alias',role,
              '--read-only','--cap-drop','ALL','--security-opt','no-new-privileges','--pids-limit','96',
              '--memory','512m' if role=='api' else '192m','--tmpfs','/tmp:rw,noexec,nosuid,size=32m',
-             '--env-file',str(envfile),IMAGE,role])
+             '--env-file',str(envfile),'--mount','type=volume,src='+VOLUME+',dst=/state',IMAGE,role])
     # Probe from the same internal network; no public port or external provider is used.
     p=run_image(['-B','-c', (HERE/'http_probe.py').read_text()],entrypoint=PY,timeout=180)
     (OUT/'CI_HTTP_PROBE.json').write_text(p.stdout)
@@ -144,10 +151,21 @@ try:
         [PREFIX+role for role in ['api']+workers]).stdout)
     print(json.dumps({'status':'PASS','checks':len(checks)}),flush=True)
 finally:
-    (OUT/'CI_RESULT.json').write_text(json.dumps({'status':'PASS' if len(checks)>=19 and all(c['passed'] for c in checks)
+    (OUT/'CI_RESULT.json').write_text(json.dumps({'status':'PASS' if len(checks)>=20 and all(c['passed'] for c in checks)
         else 'HOLD','checks':checks,'scope':'ISOLATED_PG16_REDIS_EIGHT_SERVICES','hk_execution':'NOT_RUN',
         'browser_gate':'HOLD','six_vertical_gate':'HOLD','migration_scope':'DISPOSABLE_CI_DATABASE_ONLY'},indent=2)+'\n')
+    # Preserve app diagnostics even if HTTP readiness fails; never archive container environments.
+    for name in containers:
+        if name in {PREFIX+'pg',PREFIX+'redis'}: continue
+        log=cmd(['docker','logs',name],check=False)
+        raw=scrub(log.stdout+'\n'+log.stderr)
+        (OUT/('CI_'+name+'.log')).write_text(raw)
+        state=cmd(['docker','inspect','--format','{{json .State}}',name],check=False)
+        (OUT/('CI_'+name+'_state.json')).write_text(scrub(state.stdout))
+        if len(checks)<20 or not all(c['passed'] for c in checks):
+            print(name+'\n'+raw[-12000:],flush=True)
     for name in reversed(containers):
         cmd(['docker','rm','--force',name],check=False)
     cmd(['docker','network','rm',NET],check=False)
+    cmd(['docker','volume','rm',VOLUME],check=False)
     envfile.unlink(missing_ok=True)

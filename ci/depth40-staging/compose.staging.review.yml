@@ -15,6 +15,7 @@ x-go-service: &service
   restart: 'no'
   tmpfs: ['/tmp:rw,noexec,nosuid,size=32m']
   networks: [runtime]
+  volumes: ['media-state:/state']
   logging:
     driver: json-file
     options: {max-size: '10m', max-file: '2'}
@@ -59,3 +60,7 @@ networks:
   runtime:
     external: true
     name: ${GO_VERIFIED_RUNTIME_NETWORK:?Exact existing network from fresh approved preflight required}
+volumes:
+  media-state:
+    external: true
+    name: ${GO_VERIFIED_MEDIA_VOLUME:?Existing verified and backed-up media volume required}

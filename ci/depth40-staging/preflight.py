@@ -48,7 +48,8 @@ def config_gate():
                 'BOOTSTRAP_ADMIN_PASSWORD', 'BOOTSTRAP_SUPPLIER_USERNAME',
                 'BOOTSTRAP_SUPPLIER_PASSWORD', 'BOOTSTRAP_SUPPLIER_ID', 'COOKIE_SECURE',
                 'MFA_REQUIRED_FOR_ADMIN', 'OUTBOX_TRANSPORT', 'MOBILE_PUSH_MODE',
-                'HOSTED_RESERVATION_EXPIRY_WORKER_ENABLED', 'VERTICAL_RESERVATION_EXPIRY_WORKER_ENABLED')
+                'HOSTED_RESERVATION_EXPIRY_WORKER_ENABLED', 'VERTICAL_RESERVATION_EXPIRY_WORKER_ENABLED',
+                'GO_MEDIA_CACHE_DIR')
     missing = [k for k in required if not os.environ.get(k)]
     if missing:
         raise Hold('CONFIG_NAMES_MISSING', missing)
@@ -134,8 +135,31 @@ def redis_gate():
         client.close()
 
 
+def media_gate():
+    import sqlite3
+    path=Path(os.environ['GO_MEDIA_CACHE_DIR'])
+    if str(path) != '/state/media' or any(p.is_symlink() for p in (path, path.parent)):
+        raise Hold('FIXED_MEDIA_VOLUME_MAPPING_REQUIRED')
+    db=path/'index.sqlite3'
+    if not path.is_dir() or not (path/'files').is_dir() or not db.is_file() or db.is_symlink():
+        raise Hold('PREEXISTING_DURABLE_MEDIA_INDEX_REQUIRED')
+    if not os.access(path, os.W_OK) or not os.access(path/'files',os.W_OK) or not os.access(db,os.W_OK):
+        raise Hold('MEDIA_VOLUME_PERMISSION_MISMATCH')
+    conn=sqlite3.connect(db.as_uri()+'?mode=ro',uri=True,timeout=5)
+    try:
+        conn.execute('PRAGMA query_only=ON')
+        meta=conn.execute('SELECT id,schema_version FROM media_meta').fetchall()
+        if meta != [(1,1)]:
+            raise Hold('MEDIA_INDEX_SCHEMA_MISMATCH')
+        conn.execute('SELECT asset_id,hotel_id,cache_file,revision,record FROM media_assets LIMIT 0')
+    finally:
+        conn.close()
+    return {'path':'/state/media','schema_version':1,'check_read_only':True,'legacy_import_executed':False}
+
+
 def run():
-    return {'source': verify_source(), 'config': config_gate(), 'database': database_gate(), 'redis': redis_gate()}
+    return {'source': verify_source(), 'config': config_gate(), 'database': database_gate(),
+            'redis': redis_gate(), 'media': media_gate()}
 
 
 def emit_failure(exc):

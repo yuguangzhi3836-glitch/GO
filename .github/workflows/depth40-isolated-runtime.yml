@@ -10,6 +10,7 @@ permissions:
   actions: read
 jobs:
   package:
+    if: ${{ github.head_ref == 'acceptance/depth40-isolated-runtime-review' }}
     runs-on: ubuntu-22.04
     timeout-minutes: 25
     permissions:
