@@ -12,6 +12,8 @@ The repository snapshot contains source and sanitized configuration only. It doe
 
 ## HK-STAGING Control Plane instructions
 
+The observed 2026-09-11 HK-STAGING runtime source and operational snapshot is under `hk-staging/`. Read `hk-staging/README.md` and `hk-staging/BASELINE_MANIFEST.md` when reasoning about the currently archived runtime source, Agent, Executor, Compose, systemd/Caddy configuration, or the documented live-vs-host build drift. This snapshot is evidence, not Execution Authority.
+
 Before any HK-STAGING Control Plane operation or planning—including
 `HK_STAGING_VERIFY`, `HK_STAGING_CANARY`, `HK_STAGING_DEPLOY`,
 `HK_STAGING_ROLLBACK`, troubleshooting, retry, or a Boss/ChatGPT request—read:
