@@ -110,7 +110,7 @@ struct ExecuteGOAfterSalesIntent: AppIntent {
 @available(iOS 18.0, *)
 struct GOLifecycleShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
-        AppShortcut(intent: ReleaseGOReservationIntent(), phrases: ["Release my GO reservation with \(.applicationName)"])
-        AppShortcut(intent: QuoteGOAfterSalesIntent(), phrases: ["Review my GO booking options with \(.applicationName)"])
+        AppShortcut(intent: ReleaseGOReservationIntent(), phrases: ["Release my GO reservation with \(.applicationName)"], shortTitle: "Release GO", systemImageName: "xmark.circle")
+        AppShortcut(intent: QuoteGOAfterSalesIntent(), phrases: ["Review my GO booking options with \(.applicationName)"], shortTitle: "Review GO", systemImageName: "doc.text.magnifyingglass")
     }
 }
