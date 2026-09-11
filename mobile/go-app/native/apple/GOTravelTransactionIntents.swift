@@ -96,8 +96,8 @@ struct GOAgentGatewayClient {
 
 @available(iOS 18.0, *)
 struct GOOfferEntity: AppEntity, Identifiable {
-    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "GO Offer")
-    static var defaultQuery = GOOfferQuery()
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "GO Offer")
+    static let defaultQuery = GOOfferQuery()
     let id: String
     let title: String
     let productType: String
@@ -120,9 +120,9 @@ struct GOOfferQuery: EntityQuery {
 
 @available(iOS 18.0, *)
 struct SearchGOTravelOffersIntent: AppIntent {
-    static var title: LocalizedStringResource = "Search GO Travel Offers"
-    static var description = IntentDescription("Search verified machine-executable travel offers through GO.")
-    static var openAppWhenRun = false
+    static let title: LocalizedStringResource = "Search GO Travel Offers"
+    static let description = IntentDescription("Search verified machine-executable travel offers through GO.")
+    static let openAppWhenRun = false
     @Parameter(title: "Product type") var productType: String
     @Parameter(title: "Search JSON") var searchJSON: String
     func perform() async throws -> some IntentResult & ProvidesDialog {
@@ -139,9 +139,9 @@ struct SearchGOTravelOffersIntent: AppIntent {
 
 @available(iOS 18.0, *)
 struct ReserveGOOfferIntent: AppIntent {
-    static var title: LocalizedStringResource = "Reserve GO Offer"
-    static var description = IntentDescription("Reserve a selected GO quote through the canonical transaction core.")
-    static var openAppWhenRun = false
+    static let title: LocalizedStringResource = "Reserve GO Offer"
+    static let description = IntentDescription("Reserve a selected GO quote through the canonical transaction core.")
+    static let openAppWhenRun = false
     @Parameter(title: "Offer") var offer: GOOfferEntity
     @Parameter(title: "Booking JSON") var bookingJSON: String
     func perform() async throws -> some IntentResult & ProvidesDialog {
@@ -153,9 +153,9 @@ struct ReserveGOOfferIntent: AppIntent {
 
 @available(iOS 18.0, *)
 struct PrepareGOPaymentTruthIntent: AppIntent {
-    static var title: LocalizedStringResource = "Authorize GO Payment"
-    static var description = IntentDescription("Establish GO payment truth using the app's secure payment method.")
-    static var openAppWhenRun = true
+    static let title: LocalizedStringResource = "Authorize GO Payment"
+    static let description = IntentDescription("Establish GO payment truth using the app's secure payment method.")
+    static let openAppWhenRun = true
     @Parameter(title: "Reservation ID") var reservationID: String
     @Parameter(title: "Total minor units") var totalMinor: Int
     @Parameter(title: "Currency") var currency: String
@@ -167,9 +167,9 @@ struct PrepareGOPaymentTruthIntent: AppIntent {
 
 @available(iOS 18.0, *)
 struct CommitGOReservationIntent: AppIntent {
-    static var title: LocalizedStringResource = "Confirm GO Booking"
-    static var description = IntentDescription("Commit a GO reservation only against matching GO payment truth.")
-    static var openAppWhenRun = true
+    static let title: LocalizedStringResource = "Confirm GO Booking"
+    static let description = IntentDescription("Commit a GO reservation only against matching GO payment truth.")
+    static let openAppWhenRun = true
     @Parameter(title: "Reservation ID") var reservationID: String
     @Parameter(title: "Payment truth ID") var paymentTruthID: String
     func perform() async throws -> some IntentResult & ProvidesDialog {
