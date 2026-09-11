@@ -1,0 +1,55 @@
+{
+  "status": "HOLD",
+  "checks": [
+    {
+      "check": "fresh_database_empty",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "fresh_pg16_migration_to_0132",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "read_only_preflight",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "preflight_no_identity_write",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "old_database_refuses_api_start",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "rejection_does_not_migrate",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "locked_worker_role_rejected",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "production_environment_rejected",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "check": "default_credential_rejected",
+      "passed": true,
+      "detail": null
+    }
+  ],
+  "scope": "ISOLATED_PG16_REDIS_EIGHT_SERVICES",
+  "hk_execution": "NOT_RUN",
+  "browser_gate": "HOLD",
+  "six_vertical_gate": "HOLD",
+  "migration_scope": "DISPOSABLE_CI_DATABASE_ONLY"
+}

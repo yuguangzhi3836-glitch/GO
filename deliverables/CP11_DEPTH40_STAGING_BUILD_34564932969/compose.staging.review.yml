@@ -1,0 +1,61 @@
+# REVIEW CONTRACT ONLY. Requires a separately verified HK mapping and formal executor integration.
+# No existing Compose, Caddy/Redis definition, production resource or migration is included.
+name: go-822-staging
+x-go-service: &service
+  image: ${GO_DEPTH40_IMAGE_ID:?Exact approved locally loaded image config ID required}
+  pull_policy: never
+  env_file:
+    - ${GO_RUNTIME_ENV_FILE:?Must be injected by the approved executor}
+  user: '10001:10001'
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  pids_limit: 96
+  mem_limit: 192m
+  restart: 'no'
+  tmpfs: ['/tmp:rw,noexec,nosuid,size=32m']
+  networks: [runtime]
+  logging:
+    driver: json-file
+    options: {max-size: '10m', max-file: '2'}
+  labels:
+    go.candidate: CP11_DEPTH40_P03_PARENT_20260911
+    go.source-tree: 64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667
+    go.migration-authorized: 'false'
+services:
+  api:
+    <<: *service
+    command: ['api']
+    mem_limit: 512m
+    expose: ['8000']
+    healthcheck:
+      test: ['CMD', '/opt/go/python/bin/python3.13', '-B', '-c', "import urllib.request; assert urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=4).status == 200"]
+      interval: 15s
+      timeout: 6s
+      retries: 4
+      start_period: 45s
+  recovery-worker:
+    <<: *service
+    command: ['recovery-worker']
+  outbox-worker:
+    <<: *service
+    command: ['outbox-worker']
+  mobile-push-receipt-worker:
+    <<: *service
+    command: ['mobile-push-receipt-worker']
+  reconciliation-worker:
+    <<: *service
+    command: ['reconciliation-worker']
+  mobile-push-worker:
+    <<: *service
+    command: ['mobile-push-worker']
+  mobile-engagement-worker:
+    <<: *service
+    command: ['mobile-engagement-worker']
+  judgment-worker:
+    <<: *service
+    command: ['judgment-worker']
+networks:
+  runtime:
+    external: true
+    name: ${GO_VERIFIED_RUNTIME_NETWORK:?Exact existing network from fresh approved preflight required}
