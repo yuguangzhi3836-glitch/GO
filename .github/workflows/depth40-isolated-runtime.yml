@@ -1,0 +1,105 @@
+name: depth40-isolated-runtime-package
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/depth40-isolated-runtime.yml'
+      - 'ci/depth40-runtime/**'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  package:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      IMAGE: go-depth40-isolated:review-${{ github.run_id }}
+    steps:
+      - name: Checkout packaging tooling only
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Checkout frozen dependency source
+        uses: actions/checkout@v4
+        with:
+          ref: ff13ca334acfcec61d6463f30ca94d7964086635
+          path: dependency-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Download fixed independently accepted parent
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: 10183252130
+          run-id: 34557878180
+          github-token: ${{ github.token }}
+          repository: yuguangzhi3836-glitch/GO
+          path: parent
+          merge-multiple: true
+      - name: Verify and restore exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd parent/CP11_DEPTH40_P03_PARENT_20260911
+          sha256sum -c CHECKSUMS.sha256
+          cd ../..
+          python parent/CP11_DEPTH40_P03_PARENT_20260911/restore_parent.py --package parent/CP11_DEPTH40_P03_PARENT_20260911 --output restored
+          python dependency-source/ci/depth36/dependencies.py --repository dependency-source --output dependencies
+      - name: Build complete offline root filesystem
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ci/depth40-runtime/build_rootfs.py --source restored --fingerprint parent/CP11_DEPTH40_P03_PARENT_20260911/SOURCE_FINGERPRINT.json --wheelhouse dependencies/wheelhouse --lock dependency-source/ci/depth36/requirements.lock --tooling ci/depth40-runtime --output build-context
+          docker build --network none --tag "$IMAGE" build-context
+          mkdir -p runtime-delivery
+          cp build-context/ROOTFS_BINDING.json runtime-delivery/
+          cp -r parent/CP11_DEPTH40_P03_PARENT_20260911 runtime-delivery/source-parent
+          docker image inspect "$IMAGE" --format '{{.Id}}' > runtime-delivery/IMAGE_ID.txt
+          docker image inspect "$IMAGE" --format '{{.Size}}' > runtime-delivery/IMAGE_SIZE_BYTES.txt
+          docker save "$IMAGE" | gzip -n > runtime-delivery/GO_DEPTH40_ISOLATED_IMAGE.tar.gz
+          sha256sum runtime-delivery/GO_DEPTH40_ISOLATED_IMAGE.tar.gz
+          docker image rm "$IMAGE"
+          gzip -dc runtime-delivery/GO_DEPTH40_ISOLATED_IMAGE.tar.gz | docker load
+          test "$(docker image inspect "$IMAGE" --format '{{.Id}}')" = "$(cat runtime-delivery/IMAGE_ID.txt)"
+      - name: Probe offline-loaded image in isolated CI only
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker network create --internal go-depth40-ci
+          docker run --detach --name go-depth40-ci --read-only --user 10001:10001 --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 768m --cpus 0.5 --network go-depth40-ci --tmpfs /tmp:rw,noexec,nosuid,size=64m --tmpfs /state:rw,noexec,nosuid,size=128m,uid=10001,gid=10001 --publish 127.0.0.1:18440:4187 "$IMAGE"
+          docker exec go-depth40-ci /opt/go/python/bin/python3.13 -B /opt/go/tooling/probe.py | tee runtime-delivery/PACKAGED_RUNTIME_SMOKE.json
+          curl --fail --silent http://127.0.0.1:18440/__acceptance/binding > runtime-delivery/LIVE_CI_BINDING.json
+          test "$(curl --silent -o /dev/null -w '%{http_code}' -H 'Host: outside.invalid' http://127.0.0.1:18440/health)" = 403
+          docker inspect go-depth40-ci --format '{{json .HostConfig}}' > runtime-delivery/CI_CONTAINER_LIMITS.json
+          docker stats --no-stream --format '{{json .}}' go-depth40-ci > runtime-delivery/CI_RESOURCE_SAMPLE.json
+          docker network inspect go-depth40-ci --format '{{.Internal}}' > runtime-delivery/CI_NETWORK_INTERNAL.txt
+          test "$(cat runtime-delivery/CI_NETWORK_INTERNAL.txt)" = true
+      - name: Finalize review-only package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ci/depth40-runtime/finalize.py --directory runtime-delivery --tooling ci/depth40-runtime --run-id '${{ github.run_id }}' --tooling-sha '${{ github.event.pull_request.head.sha }}'
+          python ci/depth40-runtime/verify_delivery.py --directory runtime-delivery
+      - name: Persist verified delivery to a new evidence branch
+        env:
+          GO_ARCHIVE_TOKEN: ${{ github.token }}
+        run: python ci/depth40-runtime/archive_to_repository.py --directory runtime-delivery --run-id '${{ github.run_id }}'
+      - name: Upload review package copy
+        uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH40-ISOLATED-RUNTIME-${{ github.run_id }}
+          path: runtime-delivery
+          retention-days: 90
+      - name: Preserve failure diagnostics and stop CI container
+        if: always()
+        shell: bash
+        run: |
+          docker logs go-depth40-ci 2>/dev/null || true
+          docker rm --force go-depth40-ci 2>/dev/null || true
+          docker network rm go-depth40-ci 2>/dev/null || true
