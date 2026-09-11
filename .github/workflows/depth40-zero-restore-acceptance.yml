@@ -12,12 +12,12 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 25
     env:
-      EXPECTED_ARTIFACT_ID: '10183058051'
-      EXPECTED_ARTIFACT_ZIP_SHA256: '3416cd104ba5b6bc71424c4fdf3b97854d90b96a8a41e2629de391fde1a868e9'
+      EXPECTED_ARTIFACT_ID: '10183252130'
+      EXPECTED_ARTIFACT_ZIP_SHA256: 'd0aa4b89ed0655271cf5ef7a12cce354dc8d84704cf57071f581f129458cbaf7'
       EXPECTED_SOURCE_TREE_SHA256: '64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667'
       EXPECTED_PARENT_ARCHIVE_SHA256: '2909651f9b644ed56fd6ab833480c9da32b4c5b900df2e5afb192dba49ac2b00'
       EXPECTED_FILES: '1271'
-      PACKAGE_ROOT: 'artifact/GO-CP11-DEPTH40-P03-PARENT-3477324ab3d595fc2b9d4adffb17de6ee0e89d10/CP11_DEPTH40_P03_PARENT_20260911'
+      PACKAGE_ROOT: 'artifact/GO-CP11-DEPTH40-P03-PARENT-c909af370d55ce7644140a191425a8a66dacec9a/CP11_DEPTH40_P03_PARENT_20260911'
     steps:
       - name: Checkout acceptance only
         uses: actions/checkout@v4
@@ -29,10 +29,10 @@ jobs:
       - name: Download fixed DEPTH40 artifact
         uses: actions/download-artifact@v4
         with:
-          artifact-ids: 10183058051
+          artifact-ids: 10183252130
           github-token: ${{ github.token }}
           repository: yuguangzhi3836-glitch/GO
-          run-id: 34557341440
+          run-id: 34557878180
           path: artifact
       - name: Inspect package layout
         shell: bash
