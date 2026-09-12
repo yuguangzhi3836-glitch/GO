@@ -1,0 +1,207 @@
+{
+  "schema_version": "1.0",
+  "inventory_date": "2026-09-12",
+  "security": {
+    "metadata_only": true,
+    "private_key_content_recorded": false,
+    "secrets_recorded": false
+  },
+  "workstation": {
+    "id": "Eason-8845",
+    "windows_user": "Eason-8845",
+    "user_profile": "C:\\Users\\Eason-8845",
+    "operating_system": "Windows 11 Enterprise LTSC",
+    "go_repository": {
+      "local_path": "C:\\Users\\Eason-8845\\Documents\\Code\\GO-BOSS",
+      "remote_origin": "https://github.com/yuguangzhi3836-glitch/GO.git",
+      "remote_access_method": "HTTPS",
+      "browser_required_for_source_reading": false,
+      "credential_mechanism": "local Git credential helper (manager); secret not recorded"
+    },
+    "ssh_targets": [
+      {
+        "name": "HK-STAGING-01",
+        "host": "47.239.57.40",
+        "port": 22,
+        "user": "root",
+        "local_private_key_path": "C:\\Users\\Eason-8845\\Downloads\\go-nexus-hk-stg-01-direct-20260903.pem",
+        "public_key_fingerprint_sha256": "SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA",
+        "verified": true,
+        "standard_command": "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i \"C:\\Users\\Eason-8845\\Downloads\\go-nexus-hk-stg-01-direct-20260903.pem\" root@47.239.57.40"
+      },
+      {
+        "name": "GO Command Center",
+        "host": "47.242.94.212",
+        "port": 22,
+        "user": "root",
+        "ssh_alias": "go-command-center-root",
+        "local_private_key_path": "C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519",
+        "public_key_fingerprint_sha256": "SHA256:MN3etVe4N91QpsfZkhZECi5YbW6XocZ0tB8LmVebBTU",
+        "verified": true,
+        "standard_command": "ssh go-command-center-root"
+      }
+    ]
+  },
+  "connection_edges": [
+    {
+      "source": "Eason-8845 / Codex",
+      "destination": "yuguangzhi3836-glitch/GO",
+      "protocol": "HTTPS Git",
+      "credential_path": "local Git credential helper; secret not recorded",
+      "permission": "developer access",
+      "purpose": "local GO source and Git operations"
+    },
+    {
+      "source": "Eason-8845 / Codex",
+      "destination": "HK-STAGING-01",
+      "protocol": "SSH",
+      "credential_path": "C:\\Users\\Eason-8845\\Downloads\\go-nexus-hk-stg-01-direct-20260903.pem",
+      "permission": "server administration",
+      "purpose": "approved HK Control Plane operations"
+    },
+    {
+      "source": "Eason-8845 / Codex",
+      "destination": "GO Command Center",
+      "protocol": "SSH",
+      "credential_path": "C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519",
+      "permission": "server administration",
+      "purpose": "approved Command Center operations"
+    }
+  ],
+  "command_center": {
+    "host": "47.242.94.212",
+    "identities": [
+      {
+        "name": "github-tasks-writer",
+        "purpose": "publish formal tasks",
+        "repository": "chenzhenxi1-sudo/go-control-tasks",
+        "permission": "read/write",
+        "private_key_path": "/etc/go-command-center/keys/github-tasks-writer",
+        "public_key_path": "/etc/go-command-center/keys/github-tasks-writer.pub",
+        "owner": "root:root",
+        "private_mode": "0600",
+        "public_mode": "0644",
+        "public_key_fingerprint_sha256": "SHA256:lbORd4Kax3TYUswvLhk7pUU9Iz608MrlFIA1JoSnurQ"
+      },
+      {
+        "name": "github-evidence-reader",
+        "purpose": "read signed evidence",
+        "repository": "chenzhenxi1-sudo/go-control-evidence",
+        "permission": "read-only",
+        "private_key_path": "/etc/go-command-center/keys/github-evidence-reader",
+        "public_key_path": "/etc/go-command-center/keys/github-evidence-reader.pub",
+        "owner": "root:root",
+        "private_mode": "0600",
+        "public_mode": "0644",
+        "public_key_fingerprint_sha256": "SHA256:+bWFnClf++LZHvzUcGN/2Q2lrhPdWUi0/TtpyIg6DXo"
+      },
+      {
+        "name": "github-go-pr-resolver",
+        "purpose": "resolve refs/pull/<N>/head to immutable commit SHA",
+        "repository": "yuguangzhi3836-glitch/GO",
+        "permission": "read-only",
+        "deploy_key_title": "GO Command Center PR Resolver",
+        "expected_github_identity": "yuguangzhi3836-glitch/GO",
+        "private_key_path": "/etc/go-command-center/keys/github-go-pr-resolver",
+        "public_key_path": "/etc/go-command-center/keys/github-go-pr-resolver.pub",
+        "owner": "root:root",
+        "private_mode": "0600",
+        "public_mode": "0644",
+        "public_key_fingerprint_sha256": "SHA256:0lB7R/eqKeGnXeJyrBWpLIp/d1l1tpHmaH4GHtIi6Dw",
+        "last_verified": {
+          "go_read_access": "PASS",
+          "pr_number": 42,
+          "resolved_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996"
+        }
+      },
+      {
+        "name": "task-manifest-signing",
+        "purpose": "sign Command Center task manifests",
+        "permission": "signing only",
+        "private_key_path": "/etc/go-command-center/keys/task-manifest-signing.pem",
+        "public_key_path": null,
+        "owner": "root:root",
+        "private_mode": "0600",
+        "public_key_fingerprint_sha256": "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns"
+      },
+      {
+        "name": "legacy-github-go-source-reader",
+        "status": "RETIRED_AND_DELETED",
+        "retired_date": "2026-09-12",
+        "reason": "abandoned direct-GO-repository-read design",
+        "do_not_recreate": true,
+        "do_not_use": true,
+        "public_key_fingerprint_sha256": "SHA256:Zvv0eA2aKm3HiTuV7MrWrnPBbVolPBrNjTI1q2s57CA"
+      }
+    ]
+  },
+  "hk_staging": {
+    "name": "HK-STAGING-01",
+    "host": "47.239.57.40",
+    "identities": [
+      {
+        "name": "github-go-source-reader",
+        "purpose": "fetch exact immutable GO commit SHA",
+        "repository": "yuguangzhi3836-glitch/GO",
+        "permission": "read-only",
+        "deploy_key_title": "HK-STAGING-01 GO source reader",
+        "expected_github_identity": "yuguangzhi3836-glitch/GO",
+        "private_key_path": "/etc/go-hk-agent/keys/github-go-source-reader",
+        "public_key_path": "/etc/go-hk-agent/keys/github-go-source-reader.pub",
+        "owner": "go-hk-agent:go-hk-agent",
+        "private_mode": "0600",
+        "public_mode": "0644",
+        "public_key_fingerprint_sha256": "SHA256:XvbkNhs8HWFzkrZrvQFXAEAtBEdnzI0O7Y0nNpO7gLs",
+        "last_verified_go_read_access": "PASS"
+      },
+      {
+        "name": "tasks-read",
+        "purpose": "read formal tasks",
+        "repository": "chenzhenxi1-sudo/go-control-tasks",
+        "permission": "read-only",
+        "private_key_path": "/etc/go-hk-agent/keys/tasks-read",
+        "public_key_path": null,
+        "owner": "go-hk-agent:go-hk-agent",
+        "private_mode": "0600",
+        "public_key_fingerprint_sha256": "SHA256:ONnJNvzDHi9q7JWcoPrYI/Hiw+pzT3kd/Xfht1liYGY"
+      },
+      {
+        "name": "evidence-write",
+        "purpose": "publish signed evidence",
+        "repository": "chenzhenxi1-sudo/go-control-evidence",
+        "permission": "read/write",
+        "private_key_path": "/etc/go-hk-agent/keys/evidence-write",
+        "public_key_path": null,
+        "owner": "go-hk-agent:go-hk-agent",
+        "private_mode": "0600",
+        "public_key_fingerprint_sha256": "SHA256:Pibr/vn6nLpTgk9mN4Anb5vjDkXTyDKuQyxRHYtxQ5c"
+      },
+      {
+        "name": "task-verify",
+        "purpose": "verify Command Center signed tasks",
+        "permission": "verification only",
+        "private_key_path": null,
+        "public_key_path": "/etc/go-hk-agent/keys/task-verify.pub",
+        "owner": "root:go-hk-agent",
+        "public_mode": "0640",
+        "public_key_fingerprint_sha256": "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns"
+      },
+      {
+        "name": "evidence-signing",
+        "purpose": "sign HK execution evidence",
+        "permission": "signing only",
+        "private_key_path": "/etc/go-hk-agent/keys/evidence-signing.pem",
+        "public_key_path": "/etc/go-hk-agent/keys/evidence-signing.pub",
+        "owner": "go-hk-agent:go-hk-agent",
+        "private_mode": "0600",
+        "public_owner": "root:go-hk-agent",
+        "public_mode": "0640",
+        "public_key_fingerprint_sha256": "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw"
+      }
+    ]
+  },
+  "second_workstation": {
+    "id": "Eason-13490",
+    "status": "NOT_YET_DOCUMENTED"
+  }
+}
