@@ -33,19 +33,19 @@ def prebook(client,currency='CNY'):
 
 def test_prebook_terms_survive_publication_and_next_offer_gets_new_version(client):
     oid,pb=prebook(client);first=pb['fare_rule']
-    changed={**first['rules'],'change_fee_minor':55555,'stay_credit_days':80}
+    changed={**first['rules'],'cooling_off_minutes':555,'stay_credit_days':80}
     second=fare.publish(oid,changed,'simulation://new-terms','supplier','sup_mock',first['version_id'])
     order=data(client.post('/v1/orders',json={'prebook_id':pb['prebook_id'],'expected_fare_rule_hash':first['offer_rule_hash'],'fare_confirmed':True}))
     rules=fare.order_rule(order['order_id'])
-    assert rules['change_fee_minor']==10000 and rules['stay_credit_validity_days']==365
+    assert rules['change_fee_minor']==0 and rules['stay_credit_validity_days']==365
     _,new_pb=prebook(client)
-    assert new_pb['fare_rule']['version_id']==second['version_id'] and new_pb['fare_rule']['rules']['change_fee_minor']==55555
+    assert new_pb['fare_rule']['version_id']==second['version_id'] and new_pb['fare_rule']['rules']['cooling_off_minutes']==555
 
 
 def test_original_order_rules_drive_cancellation_and_credit_after_supplier_update(client):
     oid=booked_order(client)
     original=fare.order_rule(oid)
-    publish_for_order(oid,cancellation_tiers=[{'min_hours':0,'fee_basis_points':10000}],stay_credit_days=10,change_fee_minor=99999)
+    publish_for_order(oid,cancellation_tiers=[{'min_hours':0,'fee_basis_points':10000}],stay_credit_days=10,cooling_off_minutes=999)
     assert fare_service.cancellation_quote(oid)['cancellation_fee_minor']==0
     assert credit.conversion_quote(oid)['validity_days']==365
     assert fare.order_rule(oid)['rule_hash']==original['rule_hash']
@@ -99,9 +99,9 @@ def test_changed_rule_evidence_is_rejected_before_any_cancellation(client,target
     with SessionLocal.begin() as s:
         snap=s.get(Snapshot,oid)
         if target=='order_snapshot':
-            body=deepcopy(snap.snapshot_json);body['version']['rules']['change_fee_minor']=0;snap.snapshot_json=body
+            body=deepcopy(snap.snapshot_json);body['version']['rules']['change_fee_minor']=1;snap.snapshot_json=body
         elif target=='source_version':
-            version=s.get(Version,snap.version_id);body=deepcopy(version.contract_json);body['rules']['change_fee_minor']=0;version.contract_json=body
+            version=s.get(Version,snap.version_id);body=deepcopy(version.contract_json);body['rules']['change_fee_minor']=1;version.contract_json=body
         else:s.get(OfferRow,snap.snapshot_json['offer']['offer_id']).check_in='2099-01-01'
     assert client.post(f'/v1/orders/{oid}/cancellation-quote').status_code==409
     assert connector.cancel_calls==0
@@ -110,19 +110,19 @@ def test_changed_rule_evidence_is_rejected_before_any_cancellation(client,target
 def test_publishing_is_owned_version_checked_and_currency_scoped(client):
     oid,pb=prebook(client);v=pb['fare_rule']
     with pytest.raises(ValueError,match='OWN_SUPPLIER'):fare.publish(oid,v['rules'],'doc://wrong','intruder','another_supplier',v['version_id'])
-    next_rule={**v['rules'],'change_fee_minor':10101}
+    next_rule={**v['rules'],'cooling_off_minutes':101}
     second=fare.publish(oid,next_rule,'simulation://new','supplier','sup_mock',v['version_id'])
     assert fare.publish(oid,next_rule,'simulation://new','supplier','sup_mock',v['version_id'])['version_id']==second['version_id']
-    with pytest.raises(ValueError,match='VERSION_CONFLICT'):fare.publish(oid,{**next_rule,'change_fee_minor':20202},'simulation://stale','supplier','sup_mock',v['version_id'])
+    with pytest.raises(ValueError,match='VERSION_CONFLICT'):fare.publish(oid,{**next_rule,'cooling_off_minutes':202},'simulation://stale','supplier','sup_mock',v['version_id'])
     _,usd=prebook(client,'USD')
-    assert usd['fare_rule']['rules']['change_fee_minor']==10000 and usd['fare_rule']['currency']=='USD'
+    assert usd['fare_rule']['rules']['change_fee_minor']==0 and usd['fare_rule']['currency']=='USD'
     assert usd['fare_rule']['version_id']!=second['version_id']
 
 
 def test_concurrent_distinct_publications_cannot_overwrite_the_same_version(client):
     oid,pb=prebook(client);v=pb['fare_rule']
     def attempt(i):
-        try:return fare.publish(oid,{**v['rules'],'change_fee_minor':20000+i},'simulation://competing','supplier','sup_mock',v['version_id'])['version_id']
+        try:return fare.publish(oid,{**v['rules'],'cooling_off_minutes':200+i},'simulation://competing','supplier','sup_mock',v['version_id'])['version_id']
         except ValueError as e:return str(e)
     with ThreadPoolExecutor(max_workers=4) as pool:results=list(pool.map(attempt,range(4)))
     assert results.count('CATALOG_FARE_PUBLISH_VERSION_CONFLICT')==3

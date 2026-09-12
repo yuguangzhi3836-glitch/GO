@@ -1,0 +1,34 @@
+......................F................................................. [ 74%]
+.........................                                                [100%]
+=================================== FAILURES ===================================
+_ test_credit_change_reauthorizes_cash_only_and_cannot_extend_credit_validity __
+
+client = <starlette.testclient.TestClient object at 0x7fb2be5d5250>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb2bdd63020>
+
+    def test_credit_change_reauthorizes_cash_only_and_cannot_extend_credit_validity(client,monkeypatch):
+        r,account,h,a,q,c=issued(client,monkeypatch);q=redemption(r,account,c);new=redeem(r,account,c,q)
+        start=(date.fromisoformat(q['check_in'])+timedelta(days=1)).isoformat();end=(date.fromisoformat(q['check_out'])+timedelta(days=1)).isoformat()
+        rate(r,start,end,100000)
+        cq=change.create_quote(new['reservation_id'],account,'CHANGE_DATE',start,end)
+>       assert cq['new_amount_minor']==201000 and cq['authorization_replacement_minor']==39000 and cq['prepaid_credit_minor']==162000
+E       assert (200000 == 201000)
+
+tests/test_depth09_credit_boundaries.py:125: AssertionError
+=============================== warnings summary ===============================
+tests/test_depth08_api_and_migration.py::test_migration_roundtrip_preserves_prior_data_and_protects_execution_evidence
+tests/test_depth08_api_and_migration.py::test_migration_roundtrip_preserves_prior_data_and_protects_execution_evidence
+tests/test_depth08_api_and_migration.py::test_migration_roundtrip_preserves_prior_data_and_protects_execution_evidence
+tests/test_depth08_api_and_migration.py::test_migration_roundtrip_preserves_prior_data_and_protects_execution_evidence
+tests/test_depth08_api_and_migration.py::test_migration_roundtrip_preserves_prior_data_and_protects_execution_evidence
+  /workspace/scratch/000d6f24d8dd/go-depth-repair/.venv/lib/python3.12/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+tests/test_depth09_hotel_replication.py: 175 warnings
+  /workspace/scratch/000d6f24d8dd/go-depth-repair/application/src/go_hotel/services/media_harvester.py:79: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    px=list(g.getdata())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_depth09_credit_boundaries.py::test_credit_change_reauthorizes_cash_only_and_cannot_extend_credit_validity
+1 failed, 96 passed, 180 warnings in 34.04s

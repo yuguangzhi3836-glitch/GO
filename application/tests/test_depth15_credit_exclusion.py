@@ -26,17 +26,17 @@ def convert(client,delta=-43200):
 
 def test_low_cash_change_converts_only_retained_value_and_preserves_real_refund_facts(client):
     oid,cid,q,change=convert(client)
-    assert q['credit_value_minor']==1410000
+    assert q['credit_value_minor']==1400000
     proof=q['cash_change_forfeiture']
-    assert (proof['gross_paid_minor'],proof['prior_refund_minor'],proof['excluded_minor'],proof['retained_minor'])==(1453200,0,43200,1410000)
+    assert (proof['gross_paid_minor'],proof['prior_refund_minor'],proof['excluded_minor'],proof['retained_minor'])==(1443200,0,43200,1400000)
     assert proof['accepted_changes'][0]['operation_id']==change['operation_id']
     with SessionLocal() as s:
         c,p=value.checked(s,cid)
         sources=s.scalars(select(Source).where(Source.credit_id==cid)).all()
-        assert sum(x.funded_minor for x in sources)==1410000
+        assert sum(x.funded_minor for x in sources)==1400000
         assert sum(x.excluded_minor for x in sources)==43200
         assert sum(x.prior_refund_minor for x in sources)==0
-        assert any(x.funded_minor==0 and x.excluded_minor for x in sources)
+        assert len(sources)==1 and sources[0].excluded_minor==43200
         for source in sources:
             cap=s.get(Movement,source.capture_id)
             assert cap.amount_minor==source.funded_minor+source.prior_refund_minor+source.excluded_minor
@@ -55,18 +55,18 @@ def test_original_full_source_credit_has_no_fabricated_zero_forfeiture_breakdown
 def test_high_redemption_then_customer_cancel_restores_only_retained_credit(client):
     oid,cid,q,_=convert(client);expiry=svc.get_credit(cid)['expires_at']
     rq,r=redeem(cid,156800)
-    assert rq['applied_minor']==1410000 and rq['amount_due_minor']==190000
+    assert rq['applied_minor']==1400000 and rq['amount_due_minor']==200000
     cancel=after.cancellation_quote(r['order_id'])
     done=run(after.cancel(r['order_id'],cancel['quote_id'],cancel['quote_hash'],True,'owner'))
-    assert done['restored_credit_minor']==1410000 and done['cash_refund_minor']==190000
-    assert svc.get_credit(cid)['available_minor']==1410000 and svc.get_credit(cid)['expires_at']==expiry
+    assert done['restored_credit_minor']==1400000 and done['cash_refund_minor']==200000
+    assert svc.get_credit(cid)['available_minor']==1400000 and svc.get_credit(cid)['expires_at']==expiry
     assert not moves(oid,'REFUND')
     with SessionLocal() as s:value.checked(s,cid)
 
 def test_cash_and_redemption_forfeitures_are_separate_and_neither_is_restored(client):
     oid,cid,q,_=convert(client)
     rq,r=redeem(cid,-143200)
-    assert rq['new_value_minor']==1300000 and rq['forfeited_difference_minor']==110000
+    assert rq['new_value_minor']==1300000 and rq['forfeited_difference_minor']==100000
     cancel=after.cancellation_quote(r['order_id'])
     done=run(after.cancel(r['order_id'],cancel['quote_id'],cancel['quote_hash'],True,'owner'))
     assert done['restored_credit_minor']==1300000 and svc.get_credit(cid)['available_minor']==1300000
@@ -80,7 +80,7 @@ def test_supplier_fault_refunds_and_compensates_applied_value_without_original_e
     assert case['actual_paid_minor']==case['refund_due_minor']==case['compensation_due_minor']==1600000
     done=run(remedy.execute(case['case_id'],case['decision_hash']))
     assert done['state']=='COMPLETED'
-    assert sum(x.amount_minor for x in moves(oid,'REFUND'))==1410000
+    assert sum(x.amount_minor for x in moves(oid,'REFUND'))==1400000
     with SessionLocal() as s:
         value.checked(s,cid)
         for source in s.scalars(select(Source).where(Source.credit_id==cid)):
@@ -88,7 +88,11 @@ def test_supplier_fault_refunds_and_compensates_applied_value_without_original_e
             assert sum(x.amount_minor for x in refunds)<=source.funded_minor
 
 def test_zero_funded_capture_stays_reserved_from_generic_refund(client):
-    _,cid,_,_=convert(client)
+    oid=booked_order(client)
+    execute(oid,change_quote(oid,80000,50))
+    execute(oid,change_quote(oid,-43200,60))
+    q=svc.conversion_quote(oid)
+    cid=run(svc.convert(oid,q['quote_id'],q['quote_hash'],True,'owner'))['stay_credit_id']
     with SessionLocal() as s:
         source=s.scalar(select(Source).where(Source.credit_id==cid,Source.funded_minor==0))
         assert source and source.excluded_minor>0
@@ -122,7 +126,7 @@ def test_prior_actual_refund_is_not_confused_with_excluded_change_value(client):
     money.create(cap.root_payment_intent_id,{'movement_type':'REFUND','parent_movement_id':cap.money_movement_id,'amount_minor':10000,
         'mode':'CONTRACT_SIMULATOR','evidence':['simulation://actual-prior-refund']},'actual-prior-refund','owner')
     q=svc.conversion_quote(oid)
-    assert q['credit_value_minor']==1400000
+    assert q['credit_value_minor']==1390000
     assert sum(x['prior_refund_minor'] for x in q['sources'])==10000
     assert sum(x['excluded_minor'] for x in q['sources'])==43200
     c=run(svc.convert(oid,q['quote_id'],q['quote_hash'],True,'owner'))
@@ -152,7 +156,7 @@ def test_split_source_reservation_failure_rolls_back_before_supplier_cancel(clie
         assert not s.scalars(select(Source)).all() and not s.scalars(select(Credit)).all()
     from go_hotel.connectors.mock_hotel import connector
     assert connector.cancel_calls==0
-    assert run(svc.convert(oid,q['quote_id'],q['quote_hash'],True,'owner'))['available_minor']==1410000
+    assert run(svc.convert(oid,q['quote_id'],q['quote_hash'],True,'owner'))['available_minor']==1400000
 
 def test_unknown_conversion_recovery_keeps_original_exclusion_and_does_not_recancel(client,monkeypatch):
     from go_hotel.connectors.mock_hotel import connector
@@ -162,7 +166,7 @@ def test_unknown_conversion_recovery_keeps_original_exclusion_and_does_not_recan
     pending=run(svc.convert(oid,q['quote_id'],q['quote_hash'],True,'owner'))
     assert pending['status']=='UNKNOWN_CANCEL'
     recovered=run(svc.reconcile_conversion(pending['stay_credit_id'],'owner'))
-    assert recovered['available_minor']==1410000 and connector.cancel_calls==1
+    assert recovered['available_minor']==1400000 and connector.cancel_calls==1
     assert recovered['cash_change_forfeiture']['excluded_minor']==43200
 
 def test_late_customer_cancellation_recovery_cannot_extend_split_credit_or_restore_exclusion(client,monkeypatch):

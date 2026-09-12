@@ -94,6 +94,8 @@ def main():
     parser.add_argument('--port', type=int, default=4186)
     parser.add_argument('--journey-suppliers', action='store_true',
                         help='Create separate identities for the built-in synthetic sources')
+    parser.add_argument('--hotel-price-scenarios', action='store_true',
+                        help='Use fixed synthetic hotel price changes for the isolated journey')
     a = parser.parse_args()
     if not 1024 <= a.port <= 65535:
         raise ValueError('UNPRIVILEGED_PORT_REQUIRED')
@@ -135,6 +137,17 @@ def main():
                 'SUPPLIER_USER', supplier_id, ['SUPPLIER_OWNER'])
             fixtures[vertical] = account
         private_json(state / 'suppliers.private.json', fixtures)
+    if a.hotel_price_scenarios:
+        if not a.journey_suppliers:
+            raise ValueError('ISOLATED_JOURNEY_FIXTURES_REQUIRED')
+        from datetime import datetime, timedelta, timezone
+        from go_hotel.connectors.mock_hotel import connector
+        today = datetime.now(timezone.utc).date()
+        connector.date_price_delta.update({(today + timedelta(days=days)).isoformat(): delta
+            for days, delta in [(50, 80000), (60, 120000), (70, -43200)]})
+        private_json(state / 'hotel-price-fixtures.json', {
+            'mode': 'SYNTHETIC_ONLY', 'base_minor': 1443200,
+            'date_delta_minor': connector.date_price_delta})
     consumer = consumer_service.register(credentials['consumer']['username'],
         credentials['consumer']['password'], 'GO 隔离验收账户')
     from go_hotel.main import app

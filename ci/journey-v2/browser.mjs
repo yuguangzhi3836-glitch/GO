@@ -221,9 +221,9 @@ try{
   }
   await hotelDepth({consumer,admin,unrelatedSupplier:supplier,report,origin,read,scenario,home,dialog,day,
     noOverflow,pageFor,login,suppliers,capture,expectedOrders});
-  await scenario(consumer,'DEPTH44-required-journey-completion',async()=>{
-    assert.equal(report.depth44?.complete,true);assert.equal(report.depth44.search_viewports.length,4);
-    assert.equal(report.depth44.payment_viewports.length,4);
+  await scenario(consumer,'DEPTH45-required-journey-completion',async()=>{
+    assert.equal(report.depth45?.complete,true);assert.equal(report.depth45.search_viewports.length,4);
+    assert.equal(report.depth45.payment_viewports.length,4);
     assert.equal(report.cash_journeys.length,1);assert.equal(report.cash_journeys[0].complete,true);
   });
   await scenario(consumer,'no-unhandled-browser-errors',async()=>assert.deepEqual(report.console_errors,[]));

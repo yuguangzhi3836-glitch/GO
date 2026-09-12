@@ -19,6 +19,7 @@ from go_hotel.services.alipay_safeguarded_settlement import transaction
 from go_hotel.services import hosted_money as funds
 from go_hotel.services.unified_money_movement import unified_money_movement_service as money
 from go_hotel.services.omnichannel_payment import digest
+from go_hotel.services import hotel_change_policy
 
 
 def integer(value, low, high, error):
@@ -56,6 +57,7 @@ def validated(body):
 
 def publish(offer_id,body,authority,actor):
     rules=validated(body)
+    hotel_change_policy.require_zero_fee(rules)
     if not isinstance(authority,str) or not 1<=len(authority.strip())<=512:raise ValueError('HOTEL_RULE_AUTHORITY_REFERENCE_REQUIRED')
     with transaction() as s:
         if not s.get(Offer,offer_id,with_for_update=True):raise ValueError('HOSTED_OFFER_NOT_FOUND')

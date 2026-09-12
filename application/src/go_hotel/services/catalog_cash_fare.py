@@ -4,7 +4,7 @@ External uncertainty is queried, never retried as a new supplier instruction.
 Money and final business facts share a transaction in the isolated executor.
 """
 from copy import deepcopy
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from sqlalchemy import select
 
 from go_hotel.core.config import settings
@@ -24,6 +24,7 @@ from go_hotel.services.omnichannel_payment import digest
 from go_hotel.services import hosted_money as funds, catalog_supplier_remedy as remedy
 from go_hotel.services.catalog_fare_snapshot import order_snapshot, cancellation_terms, offer_facts
 from go_hotel.services.hotel_money_bridge import hotel_money_bridge
+from go_hotel.services import hotel_change_policy
 
 POLICY = 'NET_CASH_LESS_FORFEITED_CHANGE_VALUE_INCLUDING_PAID_CHANGE_FEES'
 TERMINAL = {'COMPLETED', 'REJECTED', 'PAYMENT_DECLINED'}
@@ -103,7 +104,8 @@ def base_quote(s, order, offer, snap):
         'currency': order.currency, 'supplier_confirmation_no': order.supplier_confirmation_no,
         'order_snapshot_hash': snap.snapshot_hash, 'rule_hash': snap.snapshot_json['version']['rule_hash'],
         'rule_version_id': snap.version_id, 'rules': deepcopy(rules),
-        'order_created_at': snap.snapshot_json['order_created_at'], 'data_mode': 'SIMULATION'}
+        'order_created_at': snap.snapshot_json['order_created_at'], 'data_mode': 'SIMULATION',
+        **hotel_change_policy.terms(snap.snapshot_json['order_created_at'])}
 
 
 def quote_public(q):
@@ -161,6 +163,8 @@ async def change_quote(oid, check_in, check_out):
         order, old_offer, snap = context(s, oid)
         b = base_quote(s, order, old_offer, snap)
         if not b['rules']['change_allowed']: raise ValueError('CHANGE_NOT_ALLOWED')
+        hotel_change_policy.require_window(b['order_created_at'], check_in, now(),
+            b['rules']['timezone'], b['rules']['check_in_hour'])
         if b['prior_refund_minor']: raise ValueError('REFUNDED_ROOM_VALUE_RECONCILIATION_REQUIRED')
         cancellation_terms(order, b['check_in'], b, now())  # No ordinary amendment after the stay starts.
         if b['rules'].get('cash_cancellation_value_basis') != POLICY:
@@ -176,15 +180,16 @@ async def change_quote(oid, check_in, check_out):
     pb = await conn.prebook_with_key(new_offer, 'cash-change-quote:' + new_offer.offer_id)
     if not pb.price_locked or pb.status.value != 'PREBOOKED' or (pb.total_amount_minor, pb.currency) != (new_offer.total_amount_minor, order.currency):
         raise ValueError('CHANGE_PRICE_OR_INVENTORY_REQUOTE_REQUIRED')
-    exp = min(aware(pb.expires_at), aware(new_offer.expires_at), now() + timedelta(minutes=10))
+    exp = min(aware(pb.expires_at), aware(new_offer.expires_at), now() + timedelta(minutes=10),
+        datetime.fromisoformat(b['change_valid_until']))
     if exp <= now(): raise ValueError('CHANGE_PRICE_LOCK_EXPIRED')
     from go_hotel.repositories.sql import repo
     from go_hotel.domain.models import Event
     repo.save_offer_with_event(new_offer, Event(ident('evt'), 'CHANGE_REPRICE_OFFER_CREATED', 'HOTEL_OFFER', new_offer.offer_id, {'order_id': oid}))
     diff = max(new_offer.total_amount_minor - b['current_room_value_minor'], 0)
     b.update(old_value_minor=b['current_room_value_minor'], new_value_minor=new_offer.total_amount_minor,
-        fare_difference_minor=diff, change_fee_minor=b['rules']['change_fee_minor'],
-        amount_due_minor=diff + b['rules']['change_fee_minor'], lower_price_no_refund=True,
+        fare_difference_minor=diff, change_fee_minor=0,
+        amount_due_minor=diff, lower_price_no_refund=True,
         lower_price_difference_minor=max(b['current_room_value_minor'] - new_offer.total_amount_minor, 0),
         lower_price_rule='FORFEIT_NO_REFUND_NO_FUTURE_OFFSET',
         new_check_in=check_in, new_check_out=check_out, new_offer=offer_facts(new_offer),

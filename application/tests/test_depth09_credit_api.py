@@ -44,10 +44,10 @@ def test_credit_list_and_order_expose_distinct_value_cash_and_terminal_state(cli
 def test_redemption_quote_carries_authoritative_new_rule_after_search_policy_changes(client,monkeypatch):
     from tests.test_depth09_stay_credit import fare,RULES,value
     r,account,h,a,q,c=issued(client,monkeypatch);old=redemption(r,account,c)
-    new=fare.publish(r['hosted_offer_id'],{**RULES,'change_fee_minor':2000,'credit_terms':value.TERMS},'test://new-redemption-policy','hotel')
+    new=fare.publish(r['hosted_offer_id'],{**RULES,'cooling_off_minutes':2000,'credit_terms':value.TERMS},'test://new-redemption-policy','hotel')
     response=client.post('/v1/consumer/stay-credits/'+c['credit_id']+'/quote',headers=h,json={k:old[k] for k in ['hosted_offer_id','check_in','check_out','adults','children']})
     assert response.status_code==200,response.text
-    q=response.json()['data'];assert q['fare_rule']['rule_hash']==new['rule_hash'] and q['fare_rule']['rules']['change_fee_minor']==2000
+    q=response.json()['data'];assert q['fare_rule']['rule_hash']==new['rule_hash'] and q['fare_rule']['rules']['cooling_off_minutes']==2000
 
 
 def test_withdrawn_booking_permission_prevents_credit_redemption_without_value_change(client,monkeypatch):

@@ -8,7 +8,7 @@ const order={order_id:'order-one',currency:'CNY'};
 const quote={quote_id:'quote-one',change_quote_id:'quote-one',quote_hash:hash,currency:'CNY',
   gross_paid_minor:1583200,prior_refund_minor:43200,paid_amount_minor:1540000,paid_change_fees_minor:20000,
   forfeited_change_value_minor:0,lower_price_difference_minor:0,fee_basis_minor:1540000,fee_basis_points:125,cancellation_fee_minor:19250,refund_amount_minor:1520750,
-  old_value_minor:1523200,new_value_minor:1563200,fare_difference_minor:40000,change_fee_minor:10000,amount_due_minor:50000,
+  old_value_minor:1523200,new_value_minor:1563200,fare_difference_minor:40000,change_fee_minor:0,amount_due_minor:40000,change_valid_until:'2027-09-12T00:00:00Z',
   new_check_in:'2026-11-01',new_check_out:'2026-11-05',expires_at:'2026-10-01T10:00:00Z'};
 function setup(dialog){
   const c={window:{},JSON,Date};vm.runInNewContext(code,c);
@@ -43,11 +43,11 @@ test('unchecked money confirmation cannot submit a cash action',async()=>{
   assert.equal(calls.length,1);
 });
 
-test('change confirmation keeps paid room value, incremental difference and fee separate',async()=>{
+test('change confirmation shows positive difference, free change and fixed original deadline',async()=>{
   let step=0;
   const {api,ctx,calls}=setup(async(title,html,label,submit)=>{
     if(step++===0)return {new_check_in:quote.new_check_in,new_check_out:quote.new_check_out};
-    for(const text of ['¥15232.00','¥15632.00','¥400.00','¥100.00','¥500.00','只补本次增量','不形成余额'])assert.ok(html.includes(text),text);
+    for(const text of ['¥15232.00','¥15632.00','¥400.00','改期免手续费','只补本次差价','不形成余额','365 天','连续改期不顺延'])assert.ok(html.includes(text),text);
     return submit(accepted);
   });
   await api.change(ctx,order,{check_in:'2026-10-01',check_out:'2026-10-05'});

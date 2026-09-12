@@ -13,6 +13,7 @@ from go_hotel.services.hosted_reservation_operations import dates,aware,hosted_r
 from go_hotel.services.alipay_safeguarded_settlement import transaction
 from go_hotel.services.omnichannel_payment import digest,legal_entity
 from go_hotel.services.unified_money_movement import unified_money_movement_service as money
+from go_hotel.services import hotel_change_policy
 
 
 def now():return fare.now()
@@ -65,6 +66,10 @@ def priced(s,r,stay,action,start,end):
 def create_quote(rid,account,action,start,end):
     with transaction() as s:
         r,stay,guest,a,snap=context(s,rid,account,action)
+        policy=hotel_change_policy.terms(r.created_at)
+        if action=='CHANGE_DATE':
+            policy=hotel_change_policy.require_window(r.created_at,start,now(),
+                snap.rules_json['timezone'],snap.rules_json['check_in_hour'])
         from go_hotel.services.hosted_credit_value import allocation,Credit,prepaid
         credited=prepaid(s,rid);allocated=allocation(s,rid)
         if allocated:
@@ -77,7 +82,7 @@ def create_quote(rid,account,action,start,end):
         room_total=sum(n['price_minor'] for n in nights)
         # Extension preserves every previous retained amount and adds only new nights.
         quoted=room_total if action=='CHANGE_DATE' else r.amount_minor+sum(n['price_minor'] for n in nights if n['stay_date']>=r.check_out)
-        difference=max(0,quoted-r.amount_minor);fee=snap.rules_json['change_fee_minor'];total=r.amount_minor+difference+fee
+        difference=max(0,quoted-r.amount_minor);fee=0;total=r.amount_minor+difference
         q=Quote(quote_id=ident('hfq'),hosted_reservation_id=rid,action=action,
             order_revision=fare.revision(s,r,stay,guest,a,snap),state='QUOTED',result_json={},
             created_at=now(),expires_at=now()+timedelta(minutes=10),quote_json={},quote_hash='')
@@ -89,7 +94,7 @@ def create_quote(rid,account,action,start,end):
             'old_authorization_release_minor':r.amount_minor-credited if total!=r.amount_minor else 0,
             'prepaid_credit_minor':credited,
             'rule_version_id':snap.rule_version_id,'rule_hash':snap.rule_hash,'expires_at':aware(q.expires_at).isoformat(),
-            'data_mode':'SIMULATION','external_live':False}
+            'data_mode':'SIMULATION','external_live':False,**policy}
         q.quote_json=payload;q.quote_hash=digest(payload);s.add(q);s.flush();return {'quote_id':q.quote_id,**payload}
 
 
@@ -136,6 +141,11 @@ def execute(rid,account,qid,expected_total,expected_additional,currency):
         if type(expected_total) is not int or type(expected_additional) is not int or (expected_total,expected_additional,currency)!=(payload['new_amount_minor'],payload['additional_amount_minor'],r.currency):raise ValueError('FARE_AMOUNT_CHANGED_RECONFIRM_REQUIRED')
         if q.state=='EXECUTED':return deepcopy(q.result_json)
         r,stay,guest,a,snap=context(s,rid,account,q.action)
+        hotel_change_policy.require_zero_fee(payload)
+        if q.action=='CHANGE_DATE':
+            policy=hotel_change_policy.require_window(r.created_at,payload['check_in'],now(),
+                snap.rules_json['timezone'],snap.rules_json['check_in_hour'])
+            if any(payload.get(k)!=v for k,v in policy.items()):raise ValueError('HOTEL_CHANGE_POLICY_REQUOTE_REQUIRED')
         if q.order_revision!=fare.revision(s,r,stay,guest,a,snap):raise ValueError('FARE_ORDER_CHANGED_REQUOTE_REQUIRED')
         nights=priced(s,r,stay,q.action,payload['check_in'],payload['check_out'])
         if nights!=payload['nights']:raise ValueError('DATED_RATE_CHANGED_REQUOTE_REQUIRED')

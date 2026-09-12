@@ -72,8 +72,8 @@ def test_two_changes_then_refund_retains_latest_stay_and_all_paid_money(client):
     cash = row['cash_after_sales']
     assert cash['action'] == 'CANCEL' and cash['state'] == 'COMPLETED'
     assert cash['check_in'] == second['new_check_in']
-    assert cash['gross_paid_minor'] == 1583200
-    assert cash['refunded_minor'] == sum(x.amount_minor for x in moves(oid, 'REFUND')) == 1583200
+    assert cash['gross_paid_minor'] == 1563200
+    assert cash['refunded_minor'] == sum(x.amount_minor for x in moves(oid, 'REFUND')) == 1563200
     assert cash['net_paid_minor'] == 0
     assert len(moves(oid, 'REFUND')) == 3
     common = snapshot('HOTEL', oid, account_id='acct_demo')
@@ -108,10 +108,10 @@ def test_failed_refund_after_change_never_advances_trip_totals(client, monkeypat
     row = trip(oid)
     assert row['refund_state'] == 'REFUND_PROCESSING'
     assert row['cash_after_sales']['refunded_minor'] == 0
-    assert row['cash_after_sales']['gross_paid_minor'] == 1533200
+    assert row['cash_after_sales']['gross_paid_minor'] == 1523200
     assert not moves(oid, 'REFUND')
     reconcile(oid, fare.status(oid))
-    assert trip(oid)['cash_after_sales']['refunded_minor'] == 1533200
+    assert trip(oid)['cash_after_sales']['refunded_minor'] == 1523200
     assert len(moves(oid, 'REFUND')) == 2 and connector.cancel_calls == 1
 
 

@@ -53,7 +53,7 @@ def test_native_and_web_change_share_operation_recovery_and_order_progress(clien
     done=data(client.post(f'/v1/mobile/orders/{oid}/cash-after-sales/{first["operation_id"]}/reconcile',headers=h))
     assert done['state']=='COMPLETED' and connector.change_calls==1
     detail=data(client.get(f'/v1/consumer/orders/{oid}/detail',headers=h))
-    assert detail['stay']['check_in']==day(50) and detail['cash_after_sales']['gross_paid_minor']==1533200
+    assert detail['stay']['check_in']==day(50) and detail['cash_after_sales']['gross_paid_minor']==1523200
     assert detail['cash_after_sales']['state']=='COMPLETED'
 
 def test_status_and_resume_do_not_accept_another_order_operation_id(client):

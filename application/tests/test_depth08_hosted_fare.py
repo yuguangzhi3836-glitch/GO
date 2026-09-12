@@ -13,7 +13,7 @@ from tests.test_depth07_hosted_money import reservation,freeze,inventory,summary
 
 RULES={'fare_family':'ISOLATED TEST','timezone':'Asia/Shanghai','check_in_hour':14,'cooling_off_minutes':30,
     'cancellation_tiers':[{'min_hours':24,'fee_basis_points':0},{'min_hours':0,'fee_basis_points':5000}],
-    'change_allowed':True,'change_fee_minor':1000,'stay_credit_enabled':True,'stay_credit_days':365,
+    'change_allowed':True,'change_fee_minor':0,'stay_credit_enabled':True,'stay_credit_days':365,
     'stay_credit_scope':'PROPERTY_ONLY','no_show_grace_hours':10,'no_show_fee_basis_points':8000}
 
 

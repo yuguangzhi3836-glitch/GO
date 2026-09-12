@@ -32,14 +32,14 @@ def moves(oid, typ):
 def test_two_higher_changes_charge_only_remaining_difference_and_refund_each_capture(client):
     oid=booked_order(client)
     q1=change_quote(oid,80000);r1=execute(oid,q1)
-    assert r1['status']=='CONFIRMED' and r1['amount_paid_minor']==90000
+    assert r1['status']=='CONFIRMED' and r1['amount_paid_minor']==80000
     q2=change_quote(oid,120000,60)
-    assert q2['old_value_minor']==1523200 and q2['fare_difference_minor']==40000 and q2['amount_due_minor']==50000
+    assert q2['old_value_minor']==1523200 and q2['fare_difference_minor']==40000 and q2['amount_due_minor']==40000
     assert execute(oid,q2)['status']=='CONFIRMED'
     q=fare.cancellation_quote(oid)
-    assert q['gross_paid_minor']==1583200 and q['paid_change_fees_minor']==20000
+    assert q['gross_paid_minor']==1563200 and q['paid_change_fees_minor']==0
     result=execute(oid,q)
-    assert result['refund']['amount_minor']==1583200 and result['refund']['status']=='COMPLETED'
+    assert result['refund']['amount_minor']==1563200 and result['refund']['status']=='COMPLETED'
     refunds=moves(oid,'REFUND');caps=moves(oid,'CAPTURE')
     assert len(refunds)==3 and {r.parent_movement_id:r.amount_minor for r in refunds}=={c.money_movement_id:c.amount_minor for c in caps}
     with SessionLocal() as s:
@@ -49,16 +49,16 @@ def test_two_higher_changes_charge_only_remaining_difference_and_refund_each_cap
 
 def test_high_low_high_forfeits_lower_difference_without_future_offset(client):
     oid=booked_order(client)
-    for delta,n,due in [(80000,50,90000),(-43200,60,10000),(100000,70,153200)]:
+    for delta,n,due in [(80000,50,80000),(-43200,60,0),(100000,70,143200)]:
         q=change_quote(oid,delta,n);assert q['amount_due_minor']==due
         assert execute(oid,q)['status']=='CONFIRMED'
     assert not moves(oid,'REFUND')
     q=fare.cancellation_quote(oid)
-    assert q['current_room_value_minor']==1543200 and q['paid_change_fees_minor']==30000
-    assert q['paid_amount_minor']==1696400 and q['forfeited_change_value_minor']==123200
-    assert q['refund_amount_minor']==1573200
+    assert q['current_room_value_minor']==1543200 and q['paid_change_fees_minor']==0
+    assert q['paid_amount_minor']==1666400 and q['forfeited_change_value_minor']==123200
+    assert q['refund_amount_minor']==1543200
     conversion=credit.conversion_quote(oid)
-    assert conversion['credit_value_minor']==1573200
+    assert conversion['credit_value_minor']==1543200
     assert conversion['cash_change_forfeiture']['excluded_minor']==123200
 
 def test_prior_partial_refund_reduces_current_cancel_basis_and_budget(client):
@@ -242,10 +242,10 @@ def test_new_change_after_partial_refund_requires_room_value_allocation(client):
 def test_lower_change_cancellation_cannot_refund_or_spend_the_forfeited_difference(client):
     oid=booked_order(client);execute(oid,change_quote(oid,-43200))
     q=fare.cancellation_quote(oid)
-    assert q['forfeited_change_value_minor']==43200 and q['refund_amount_minor']==1410000
+    assert q['forfeited_change_value_minor']==43200 and q['refund_amount_minor']==1400000
     result=execute(oid,q)
     assert result['state']=='COMPLETED'
-    assert sum(x.amount_minor for x in moves(oid,'REFUND'))==1410000
+    assert sum(x.amount_minor for x in moves(oid,'REFUND'))==1400000
     cap=moves(oid,'CAPTURE')[0]
     with pytest.raises(ValueError,match='CASH_FARE_FUNDS_RESERVED'):
         money.create(cap.root_payment_intent_id,{'movement_type':'REFUND','parent_movement_id':cap.money_movement_id,
@@ -256,4 +256,4 @@ def test_rejected_quote_can_be_replaced_by_new_customer_quote(client):
     assert reconcile(oid,execute(oid,q))['state']=='REJECTED'
     connector.fail_change=False
     assert execute(oid,change_quote(oid,100000,70))['state']=='COMPLETED'
-    assert fare.cancellation_quote(oid)['paid_change_fees_minor']==10000
+    assert fare.cancellation_quote(oid)['paid_change_fees_minor']==0

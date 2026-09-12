@@ -12,9 +12,11 @@ export function changeTerms(vertical:string,q:any):ChangeTerm[] {
   const fee=money('change_fee_minor');
   const rows:ChangeTerm[]=[];
   if(vertical==='HOTEL'){
+    const deadline=fact('change_valid_until');
+    if(fee!==0||q.change_policy!=='GO_HOTEL_FREE_CHANGE_365D_V1'||q.change_validity_days!==365||!Number.isFinite(Date.parse(deadline)))return fail();
     const old=money('old_value_minor'),next=money('new_value_minor'),diff=money('fare_difference_minor'),loss=money('lower_price_difference_minor');
     if(q.lower_price_no_refund!==true||q.lower_price_rule!=='FORFEIT_NO_REFUND_NO_FUTURE_OFFSET'||diff!==Math.max(next-old,0)||loss!==Math.max(old-next,0)||money('amount_due_minor')!==diff+fee)return fail();
-    rows.push({label:'原房费价值',minor:old},{label:'新房费',minor:next},{label:'需补房费差额',minor:diff},{label:'降价差额（不退还）',minor:loss},{label:'降价条款',value:'降价差额不退款，也不能抵扣以后消费。'});
+    rows.push({label:'原房费价值',minor:old},{label:'新房费',minor:next},{label:'需补房费差额',minor:diff},{label:'降价差额（不退还）',minor:loss},{label:'改期规则',value:'改期免手续费，涨价补差，降价不退差额。'},{label:'最晚入住期限',value:new Date(deadline).toLocaleString()},{label:'有效期',value:'原订单创建日起 365 天，连续改期不顺延。'});
   }else if(vertical==='FLIGHT'||vertical==='RAIL'){
     const diff=money('fare_difference_minor');
     if(money('total_due_minor')!==diff+fee)return fail();
@@ -29,6 +31,6 @@ export function changeTerms(vertical:string,q:any):ChangeTerm[] {
     if(fee!==0||money('total_due_minor')!==0)return fail();
     rows.push({label:'费用说明',value:'本次报价无需补款。'});
   }else return fail();
-  rows.push({label:'改签手续费',minor:fee});
+  if(vertical!=='HOTEL')rows.push({label:'改签手续费',minor:fee});
   return rows;
 }

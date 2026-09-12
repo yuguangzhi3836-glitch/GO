@@ -9,6 +9,7 @@ from go_hotel.services.catalog_cash_fare import (
     lock, public, offer_facts, cancellation_terms, TERMINAL,
 )
 from go_hotel.services.catalog_stay_credit import payment_outcome
+from go_hotel.services import hotel_change_policy
 
 def now():
     from go_hotel.services.catalog_cash_fare import now as clock
@@ -97,11 +98,14 @@ async def start(oid, qid, expected_hash, consent, actor, token='pm_success', act
         order, offer, snap = context(s, oid)
         current = base_quote(s, order, offer, snap)
         b = q.payload_json
-        if any(current[k] != b[k] for k in current): raise ValueError('CASH_FARE_QUOTE_STALE')
+        if any(current[k] != b.get(k) for k in current): raise ValueError('CASH_FARE_QUOTE_STALE')
         if q.action == 'CANCEL':
             terms = cancellation_terms(order, b['check_in'], b, now())
             if terms['fee_basis_points'] != b['fee_basis_points']: raise ValueError('CANCELLATION_FEE_CHANGED_REQUOTE_REQUIRED')
         else:
+            hotel_change_policy.require_zero_fee(b)
+            hotel_change_policy.require_window(b['order_created_at'], b['new_check_in'], now(),
+                b['rules']['timezone'], b['rules']['check_in_hour'])
             new_offer = s.get(OfferRow, b['new_offer']['offer_id'])
             if not new_offer or offer_facts(new_offer) != b['new_offer']: raise ValueError('CHANGE_OFFER_FACT_CHANGED')
             if aware(q.expires_at) > aware(new_offer.expires_at): raise ValueError('CHANGE_PRICE_LOCK_CHANGED')

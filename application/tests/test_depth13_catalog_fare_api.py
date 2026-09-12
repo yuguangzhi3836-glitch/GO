@@ -12,7 +12,7 @@ from tests.test_sprint3a_flight import auth
 
 def test_supplier_publishes_only_own_rule_with_explicit_version_confirmation(client):
     oid,pb=prebook(client);h=supplier_headers();v=pb['fare_rule'];path=f'/v1/supplier/catalog-fare/offers/{oid}/publish'
-    rules={**deepcopy(v['rules']),'change_fee_minor':12345}
+    rules={**deepcopy(v['rules']),'cooling_off_minutes':123}
     body={'rules':rules,'authority_reference':'simulation://supplier-published','expected_version_id':v['version_id'],'confirmed':True}
     assert client.post(path,json=body).status_code==401
     assert client.post(path,headers=h,json={**body,'confirmed':False}).status_code==409
@@ -24,7 +24,7 @@ def test_supplier_publishes_only_own_rule_with_explicit_version_confirmation(cli
         assert client.get('/v1/supplier/catalog-fare/offers',headers=limited).status_code==200
         assert client.post(path,headers=limited,json=body).status_code==403
     saved=data(client.post(path,headers=h,json=body))
-    assert saved['version']==2 and saved['rules']['change_fee_minor']==12345
+    assert saved['version']==2 and saved['rules']['cooling_off_minutes']==123
     assert data(client.post(path,headers=h,json=body))['version_id']==saved['version_id']
     assert data(client.get('/v1/supplier/catalog-fare/offers',headers=h))['items'][0]['published_rule']['version_id']==saved['version_id']
     identity_service.create_user('fare_other_supplier','Test-Only-Other123!','SUPPLIER_USER','sup_other',['SUPPLIER_OWNER'])

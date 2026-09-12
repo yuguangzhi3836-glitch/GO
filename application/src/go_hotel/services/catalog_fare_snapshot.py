@@ -17,6 +17,7 @@ from go_hotel.services.hosted_direct_booking import ident, now
 from go_hotel.services.hosted_fare_rules import validated as validate_structure
 from go_hotel.services.hosted_reservation_operations import aware
 from go_hotel.services.omnichannel_payment import digest
+from go_hotel.services import hotel_change_policy
 
 
 def identity(offer):
@@ -63,6 +64,7 @@ def version_checked(s, version_id):
 
 def publish(offer_id, rules, authority_reference, actor, supplier_id, expected_version_id=None):
     rules = validate_rules(rules)
+    hotel_change_policy.require_zero_fee(rules)
     if not isinstance(authority_reference, str) or not 1 <= len(authority_reference.strip()) <= 512:
         raise ValueError('HOTEL_RULE_AUTHORITY_REFERENCE_REQUIRED')
     with transaction() as s:
@@ -112,7 +114,7 @@ def demo_rules():
     # Explicit isolated fixture, never attributed to a real hotel authorization.
     return {'fare_family': 'GO_STANDARD', 'timezone': 'UTC', 'check_in_hour': 0, 'cooling_off_minutes': 0,
         'cancellation_tiers': [{'min_hours': h, 'fee_basis_points': b} for h, b in [(168, 0), (72, 2000), (24, 5000), (0, 8000)]],
-        'change_allowed': True, 'change_fee_minor': 10000, 'stay_credit_enabled': True,
+        'change_allowed': True, 'change_fee_minor': 0, 'stay_credit_enabled': True,
         'stay_credit_days': 365, 'stay_credit_scope': 'PROPERTY_ONLY', 'no_show_grace_hours': 0,
         'no_show_fee_basis_points': 10000, 'credit_retained_value_basis': 'NET_CONFIRMED_CASH_INCLUDING_PAID_CHANGE_FEES',
         'cash_cancellation_value_basis': 'NET_CASH_LESS_FORFEITED_CHANGE_VALUE_INCLUDING_PAID_CHANGE_FEES'}
@@ -224,7 +226,7 @@ def order_rule(order_id):
         version = snap.snapshot_json['version']
         rules = version['rules']
         return {'fare_rule_id': version['fare_rule_id'], 'fare_family': rules['fare_family'],
-            'change_allowed': rules['change_allowed'], 'change_fee_minor': rules['change_fee_minor'],
+            'change_allowed': rules['change_allowed'], **hotel_change_policy.terms(order.created_at),
             'stay_credit_allowed': rules['stay_credit_enabled'], 'stay_credit_validity_days': rules['stay_credit_days'],
             'stay_credit_scope': rules['stay_credit_scope'],
             'tiers': [{'min_hours': t['min_hours'], 'fee_percent': t['fee_basis_points'] // 100 if t['fee_basis_points'] % 100 == 0 else t['fee_basis_points'] / 100, 'fee_basis_points': t['fee_basis_points']} for t in rules['cancellation_tiers']],

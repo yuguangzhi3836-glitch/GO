@@ -51,9 +51,9 @@ def test_change_higher_price_supplement_and_lower_no_refund(client):
     new_ci=(datetime.now(timezone.utc)+timedelta(days=50)).date().isoformat(); new_co=(datetime.now(timezone.utc)+timedelta(days=54)).date().isoformat()
     connector.date_price_delta[new_ci]=80_000
     q=client.post(f'/v1/orders/{oid}/change-quote',json={'new_check_in':new_ci,'new_check_out':new_co}).json()['data']
-    assert q['fare_difference_minor']==80_000 and q['change_fee_minor']==10_000 and q['amount_due_minor']==90_000
+    assert q['fare_difference_minor']==80_000 and q['change_fee_minor']==0 and q['amount_due_minor']==80_000
     r=client.post(f'/v1/orders/{oid}/change',headers={'Idempotency-Key':'chg-high'},json={'change_quote_id':q['change_quote_id'],'payment_method_token':'pm_success'})
-    assert r.status_code==200 and r.json()['data']['amount_paid_minor']==90_000
+    assert r.status_code==200 and r.json()['data']['amount_paid_minor']==80_000
 
     oid2=booked_order(client,idem='change-low')
     low_ci=(datetime.now(timezone.utc)+timedelta(days=60)).date().isoformat(); low_co=(datetime.now(timezone.utc)+timedelta(days=64)).date().isoformat()
@@ -61,7 +61,7 @@ def test_change_higher_price_supplement_and_lower_no_refund(client):
     q2=client.post(f'/v1/orders/{oid2}/change-quote',json={'new_check_in':low_ci,'new_check_out':low_co}).json()['data']
     assert q2['new_value_minor']==1_400_000
     assert q2['fare_difference_minor']==0
-    assert q2['amount_due_minor']==10_000
+    assert q2['amount_due_minor']==0
     assert q2['lower_price_no_refund'] is True
 
 

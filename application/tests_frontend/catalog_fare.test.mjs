@@ -6,7 +6,7 @@ const code=fs.readFileSync('frontend/consumer/catalog-fare.js','utf8');
 const supplierCode=fs.readFileSync('frontend/supplier/catalog-fare.js','utf8');
 const rules={fare_family:'GO_STANDARD',timezone:'Asia/Tokyo',check_in_hour:15,cooling_off_minutes:30,
   cancellation_tiers:[{min_hours:168,fee_basis_points:0},{min_hours:0,fee_basis_points:125}],
-  change_allowed:true,change_fee_minor:10000,stay_credit_enabled:true,stay_credit_days:365,
+  change_allowed:true,change_fee_minor:0,stay_credit_enabled:true,stay_credit_days:365,
   no_show_grace_hours:1,no_show_fee_basis_points:5000};
 const quote=()=>({prebook_id:'prebook-1',total_amount_minor:1443200,currency:'CNY',fare_rule:{rules,offer_rule_hash:'a'.repeat(64)}});
 function setup(){const c={window:{},document:{},JSON};vm.runInNewContext(code,c);vm.runInNewContext(supplierCode,c);return c.window}
@@ -14,8 +14,8 @@ const money=n=>'¥'+(n/100).toFixed(2);
 
 test('fare confirmation separates fee tiers, cooling, change and property credit terms',()=>{
   const w=setup(),html=w.GOCatalogFare.terms(quote(),money);
-  for(const text of ['1.25%','30 分钟','¥100.00','365 天','仅限原酒店','包括','Asia/Tokyo']){
-    if(text==='包括')assert.ok(html.includes('包含已付改期费'));
+  for(const text of ['1.25%','30 分钟','免费','365 天','仅限原酒店','原订单创建日起 365 天','Asia/Tokyo']){
+    if(text==='原订单创建日起 365 天')assert.ok(html.includes('原订单创建日起 365 天'));
     else assert.ok(html.includes(text),text);
   }
   assert.ok(!html.includes('a'.repeat(64)));

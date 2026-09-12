@@ -5,14 +5,14 @@ import assert from 'node:assert/strict';
 export async function hotelDepth(h) {
   const {consumer:p,admin,unrelatedSupplier,report,origin,read,scenario,home,dialog,day,
     noOverflow,pageFor,login,suppliers,capture}=h;
-  report.depth44={scope:'GO_TRIP_SEARCH_AND_HOTEL_TWO_CHANGES',search_viewports:[],
+  report.depth45={scope:'GO_TRIP_FREE_HOTEL_CHANGE_365D_HIGH_SAME_LOW',search_viewports:[],
     fault_injections:[],checkpoints:[],payment_viewports:[],complete:false,
-    limitations:['Same-price hotel changes with separately charged fees; no high/low fare browser coverage',
+    limitations:['Fixed synthetic hotel prices; no live inventory or bank settlement',
       'Capture failure uses the existing simulator token in one outgoing request',
       'Refund response loss occurs after server success; not a partial internal refund failure',
       'Supplier/admin browser inspection and authenticated reads; their money mutations are not exercised']};
   report.cash_journeys=[];
-  const extra=report.depth44;
+  const extra=report.depth45;
   async function trips(query='') {
     await p.goto(origin+'/go-app/');
     await p.locator('[data-nav=trips]').first().click();
@@ -40,7 +40,7 @@ export async function hotelDepth(h) {
   // All six original refunded orders remain available while filtering, clearing
   // and navigating. A filtered card must open its own ID, not an unfiltered index.
   for(const width of [375,390,430,1440]) {
-    const ok=await scenario(p,`DEPTH44-trip-search-${width}`,async()=>{
+    const ok=await scenario(p,`DEPTH45-trip-search-${width}`,async()=>{
       await p.setViewportSize({width,height:940});await trips();
       const rows=(await read(p,'/v1/consumer/unified-trips')).items;
       assert.ok(rows.length>=6);
@@ -54,7 +54,7 @@ export async function hotelDepth(h) {
       assert.equal(await p.locator('[data-go-trip-index]').count(),rows.filter(x=>x.title.includes(title)).length);
       await p.locator('#tripQuery').fill('酒店');
       assert.equal(await p.locator('[data-go-trip-index]').count(),rows.filter(x=>x.vertical==='HOTEL').length);
-      await p.locator('#tripQuery').fill('no-such-order-depth44');
+      await p.locator('#tripQuery').fill('no-such-order-depth45');
       assert.equal(await p.locator('[data-go-trip-index]').count(),0);
       await p.getByText('没有找到匹配订单',{exact:true}).waitFor();
       await p.locator('#tripQuery').fill('');
@@ -77,7 +77,7 @@ export async function hotelDepth(h) {
   const record=(name,snapshot)=>{
     extra.checkpoints.push({name,order_id:oid,snapshot});fixture.stages.push(name);
   };
-  if(!await scenario(p,'DEPTH44-unpaid-order-search-and-resume',async()=>{
+  if(!await scenario(p,'DEPTH45-unpaid-order-search-and-resume',async()=>{
     await home(p,'HOTEL');await p.locator('#city').fill('TYO');
     await p.locator('#cin').fill(day(40));await p.locator('#cout').fill(day(42));
     await p.locator('#searchBtn').click();await p.locator('[data-hotel]').first().click();
@@ -94,7 +94,7 @@ export async function hotelDepth(h) {
     const resume=p.getByRole('button',{name:'核对金额并继续付款',exact:true});
     for(const width of [375,390,430,1440]){
       await p.setViewportSize({width,height:940});await resume.click({trial:true});await noOverflow(p);
-      extra.payment_viewports.push({width,result:'PASS',screenshot:await capture(p,'depth44-unpaid-resume-'+width)});
+      extra.payment_viewports.push({width,result:'PASS',screenshot:await capture(p,'depth45-unpaid-resume-'+width)});
     }
     await p.setViewportSize({width:390,height:940});await resume.click();
     await dialog(p);await p.locator('#change').waitFor();
@@ -105,9 +105,9 @@ export async function hotelDepth(h) {
     assert.equal(matching.length,1,'resuming must not create another order');record('PAID_SAME_ORDER',initial);
   },'journeys'))return;
 
-  owner=await pageFor('supplier-depth44',390);
+  owner=await pageFor('supplier-depth45',390);
   try {
-    if(!await scenario(owner,'DEPTH44-hotel-owner-login',async()=>login(owner,'supplier',suppliers.HOTEL)))return;
+    if(!await scenario(owner,'DEPTH45-hotel-owner-login',async()=>login(owner,'supplier',suppliers.HOTEL)))return;
     async function sameOrder(name,expectedState,dates,paid,refunded=0,requested) {
       const snapshot=await read(p,orderPath()),cash=snapshot.cash_after_sales;
       assert.equal(cash.state,expectedState);assert.equal(cash.check_in,dates[0]);assert.equal(cash.check_out,dates[1]);
@@ -149,7 +149,7 @@ export async function hotelDepth(h) {
       const denied=await unrelatedSupplier.evaluate(async url=>(await fetch(url)).status,'/v1/supplier/transaction-orders/HOTEL/'+oid);
       assert.equal(denied,404);record(name,snapshot);return snapshot;
     }
-    async function change(days,failCapture=false) {
+    async function change(days,failCapture=false,expectedDue=0) {
       await open(oid);await p.locator('#change').click();
       const dates=p.locator('dialog[open]');await dates.locator('[name=cashIn]').fill(day(days));
       await dates.locator('[name=cashOut]').fill(day(days+2));
@@ -157,8 +157,9 @@ export async function hotelDepth(h) {
       await dates.locator('[type=submit]').click();
       const quote=await value(await quoteResponse);fixture.change_quotes.push(quote);
       assert.equal(quote.new_check_in,day(days));assert.equal(quote.new_check_out,day(days+2));
-      assert.equal(quote.fare_difference_minor,0);assert.ok(quote.change_fee_minor>0);
-      assert.equal(quote.amount_due_minor,quote.change_fee_minor);
+      assert.equal(quote.change_fee_minor,0);assert.equal(quote.fare_difference_minor,expectedDue);
+      assert.equal(quote.amount_due_minor,expectedDue);assert.equal(quote.change_validity_days,365);
+      fixture.change_valid_until??=quote.change_valid_until;assert.equal(quote.change_valid_until,fixture.change_valid_until);
       const confirmation=p.locator('dialog[open]');await confirmation.locator('[name=cashConfirmed]').waitFor();
       assert.equal(await confirmation.locator('[name=cashConfirmed]').isChecked(),false);
       await confirmation.locator('[type=submit]').click();assert.equal(await confirmation.count(),1);
@@ -177,11 +178,26 @@ export async function hotelDepth(h) {
         if(failCapture)assert.ok(injected);return {quote,operation};
       }finally{if(failCapture)await p.unroute(endpoint,fault);}
     }
-    if(!await scenario(p,'DEPTH44-capture-failure-keeps-original-trip',async()=>{
-      first=await change(50,true);
-      await sameOrder('CAPTURE_PENDING','CAPTURE_PENDING',[day(40),day(42)],fixture.original_capture_minor,0,[day(50),day(52)]);
+    if(!await scenario(p,'DEPTH45-same-price-change-is-free',async()=>{
+      const same=await change(45);
+      assert.equal(same.operation.amount_paid_minor,0);
+      const checked=await sameOrder('SAME_PRICE_CHANGED','COMPLETED',[day(45),day(47)],fixture.original_capture_minor);
+      assert.equal(checked.cash_after_sales.paid_change_fees_minor,0);
     },'journeys'))return;
-    if(!await scenario(p,'DEPTH44-retry-payment-from-same-order',async()=>{
+    if(!await scenario(p,'DEPTH45-arrival-outside-original-year-rejected',async()=>{
+      await open(oid);await p.locator('#change').click();
+      const d=p.locator('dialog[open]');await d.locator('[name=cashIn]').fill(day(366));await d.locator('[name=cashOut]').fill(day(368));
+      const response=p.waitForResponse(r=>requestAt(r,'/v1/orders/'+oid+'/change-quote'));
+      await d.locator('[type=submit]').click();const failed=await response;
+      assert.equal(failed.status(),409);assert.ok((await failed.text()).includes('ONE_YEAR_VALIDITY'));
+      const after=await read(p,orderPath());assert.equal(after.cash_after_sales.check_in,day(45));
+      assert.equal(after.cash_after_sales.gross_paid_minor,fixture.original_capture_minor);
+    },'journeys'))return;
+    if(!await scenario(p,'DEPTH45-capture-failure-keeps-original-trip',async()=>{
+      first=await change(50,true,80000);
+      await sameOrder('CAPTURE_PENDING','CAPTURE_PENDING',[day(45),day(47)],fixture.original_capture_minor,0,[day(50),day(52)]);
+    },'journeys'))return;
+    if(!await scenario(p,'DEPTH45-retry-payment-from-same-order',async()=>{
       await open(oid);await p.locator('#cashRetryPayment').click();
       const d=p.locator('dialog[open]');await d.locator('[name=cashConfirmed]').waitFor();
       await d.locator('[type=submit]').click();assert.equal(await d.count(),1,'payment consent remains mandatory');
@@ -190,17 +206,26 @@ export async function hotelDepth(h) {
       assert.equal(resumed.state,'COMPLETED');
       await sameOrder('FIRST_CHANGE_COMPLETED','COMPLETED',[day(50),day(52)],fixture.original_capture_minor+first.quote.amount_due_minor);
     },'journeys'))return;
-    if(!await scenario(p,'DEPTH44-second-change-only-charges-new-fee',async()=>{
-      second=await change(60);
+    if(!await scenario(p,'DEPTH45-second-higher-change-only-charges-new-difference',async()=>{
+      second=await change(60,false,40000);
       assert.notEqual(second.operation.operation_id,first.operation.operation_id);
       await sameOrder('SECOND_CHANGE_COMPLETED','COMPLETED',[day(60),day(62)],fixture.original_capture_minor+first.quote.amount_due_minor+second.quote.amount_due_minor);
     },'journeys'))return;
-    if(!await scenario(p,'DEPTH44-refund-response-loss-refresh-and-replay',async()=>{
+    if(!await scenario(p,'DEPTH45-lower-price-change-no-charge-no-refund',async()=>{
+      const lower=await change(70);assert.equal(lower.operation.amount_paid_minor,0);
+      assert.equal(lower.quote.lower_price_difference_minor,163200);
+      const checked=await sameOrder('LOWER_PRICE_CHANGED','COMPLETED',[day(70),day(72)],fixture.original_capture_minor+120000);
+      assert.equal(checked.cash_after_sales.refunded_minor,0);
+      assert.equal(checked.cash_after_sales.paid_change_fees_minor,0);
+      assert.equal(checked.cash_after_sales.forfeited_change_value_minor,163200);
+    },'journeys'))return;
+    if(!await scenario(p,'DEPTH45-refund-response-loss-refresh-and-replay',async()=>{
       await open(oid);
       const quoteResponse=p.waitForResponse(r=>requestAt(r,'/v1/orders/'+oid+'/cancellation-quote'));
       await p.locator('#cancel').click();const quote=await value(await quoteResponse);fixture.cancel_quote=quote;
       const gross=fixture.original_capture_minor+first.quote.amount_due_minor+second.quote.amount_due_minor;
-      assert.equal(quote.gross_paid_minor,gross);assert.equal(quote.refund_amount_minor,gross);
+      assert.equal(quote.gross_paid_minor,gross);assert.equal(quote.refund_amount_minor,1400000);
+      assert.equal(quote.forfeited_change_value_minor,163200);assert.equal(quote.paid_change_fees_minor,0);
       const d=p.locator('dialog[open]');await d.locator('[name=cashConfirmed]').check();
       let request,serverResult;const endpoint=origin+'/v1/orders/'+oid+'/cancel';
       let faultResolve,faultReject;const faultDone=new Promise((resolve,reject)=>{faultResolve=resolve;faultReject=reject;});
@@ -218,12 +243,12 @@ export async function hotelDepth(h) {
       try {
         await d.locator('[type=submit]').click();await faultDone;
         await p.waitForFunction(()=>Boolean(document.querySelector('dialog[open] [role=alert]')?.textContent));
-        extra.checkpoints.push({name:'REFUND_RESPONSE_UNKNOWN_IN_BROWSER',screenshot:await capture(p,'depth44-refund-response-unknown')});
+        extra.checkpoints.push({name:'REFUND_RESPONSE_UNKNOWN_IN_BROWSER',screenshot:await capture(p,'depth45-refund-response-unknown')});
       }finally{await p.unroute(endpoint,loseResponse);}
-      final=await sameOrder('CANCELLED_REFRESHED','COMPLETED',[day(60),day(62)],gross,gross);
+      final=await sameOrder('CANCELLED_REFRESHED','COMPLETED',[day(70),day(72)],gross,quote.refund_amount_minor);
       assert.equal(final.order.status,'CANCELLED');assert.equal(final.cash_after_sales.action,'CANCEL');
       assert.equal(final.original_payment.captured_minor,fixture.original_capture_minor);
-      assert.equal(final.original_payment.refunded_minor,fixture.original_capture_minor);
+      assert.equal(final.original_payment.refunded_minor,quote.refund_amount_minor);
       const replay=await p.evaluate(async req=>{const r=await fetch(req.path,{method:'POST',headers:req.headers,body:req.body,credentials:'same-origin'});return {status:r.status,body:await r.json()}},request);
       assert.equal(replay.status,200);assert.equal((replay.body.data||replay.body).operation_id,serverResult.operation_id);
       assert.deepEqual(await read(p,orderPath()),final,'replay cannot add a refund or change final state');

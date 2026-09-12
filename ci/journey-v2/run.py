@@ -8,7 +8,7 @@ state = pathlib.Path(os.environ['RUNNER_TEMP']) / ('go-journey-' + uuid.uuid4().
 env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1')
 command = [sys.executable, str(root / 'application/scripts/acceptance_runtime.py'),
     '--source', str(root / 'application'), '--fingerprint', str(evidence / 'source-fingerprint.json'),
-    '--expected-tree', binding['source_tree_sha256'], '--state', str(state), '--port', '4186', '--journey-suppliers']
+    '--expected-tree', binding['source_tree_sha256'], '--state', str(state), '--port', '4186', '--journey-suppliers', '--hotel-price-scenarios']
 with (evidence / 'runtime.log').open('w') as log:
     process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, env=env)
     try:
@@ -30,7 +30,7 @@ with (evidence / 'runtime.log').open('w') as log:
             str(state), str(evidence)], env=env)
         hotel_audit = subprocess.run([sys.executable, str(root / 'ci/journey-v2/hotel-ledger.py'),
             str(state), str(evidence)], env=env)
-        for name in ['runtime-binding.json', 'fixture-identities.json']:
+        for name in ['runtime-binding.json', 'fixture-identities.json', 'hotel-price-fixtures.json']:
             shutil.copyfile(state / name, evidence / name)
         sys.exit(result.returncode or audit.returncode or hotel_audit.returncode)
     finally:

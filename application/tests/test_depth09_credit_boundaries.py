@@ -60,7 +60,7 @@ def test_owner_property_currency_amount_and_ledger_boundaries(client,monkeypatch
 def test_expiry_is_check_in_based_and_job_is_idempotent_without_refund(client,monkeypatch):
     r,account,h,a,q,c=issued(client,monkeypatch)
     last=(datetime.fromisoformat(c['expires_at'])+timedelta(days=1)).date().isoformat()
-    with pytest.raises(ValueError,match='WITHIN_VALIDITY'):credit.redemption_quote(c['credit_id'],account,r['hosted_offer_id'],last,(date.fromisoformat(last)+timedelta(days=1)).isoformat())
+    with pytest.raises(ValueError,match='WITHIN_VALIDITY|ONE_YEAR_VALIDITY'):credit.redemption_quote(c['credit_id'],account,r['hosted_offer_id'],last,(date.fromisoformat(last)+timedelta(days=1)).isoformat())
     q=redemption(r,account,c);monkeypatch.setattr(fare,'now',lambda:datetime.fromisoformat(c['expires_at']))
     assert credit.list_credits(account)[0]['state']=='EXPIRED' and not credit.list_credits(account)[0]['can_redeem']
     with pytest.raises(ValueError,match='EXPIRED'):redeem(r,account,c,q)
@@ -122,12 +122,12 @@ def test_credit_change_reauthorizes_cash_only_and_cannot_extend_credit_validity(
     start=(date.fromisoformat(q['check_in'])+timedelta(days=1)).isoformat();end=(date.fromisoformat(q['check_out'])+timedelta(days=1)).isoformat()
     rate(r,start,end,100000)
     cq=change.create_quote(new['reservation_id'],account,'CHANGE_DATE',start,end)
-    assert cq['new_amount_minor']==201000 and cq['authorization_replacement_minor']==39000 and cq['prepaid_credit_minor']==162000
-    change.execute(new['reservation_id'],account,cq['quote_id'],201000,39000,'CNY')
-    x=summary({'hosted_reservation_id':new['reservation_id']});assert x['held_minor']==39000 and x['capture_minor']==0
+    assert cq['new_amount_minor']==200000 and cq['authorization_replacement_minor']==38000 and cq['prepaid_credit_minor']==162000
+    change.execute(new['reservation_id'],account,cq['quote_id'],200000,38000,'CNY')
+    x=summary({'hosted_reservation_id':new['reservation_id']});assert x['held_minor']==38000 and x['capture_minor']==0
     last=(datetime.fromisoformat(c['expires_at'])+timedelta(days=1)).date().isoformat()
-    with pytest.raises(ValueError,match='WITHIN_VALIDITY'):change.create_quote(new['reservation_id'],account,'CHANGE_DATE',last,(date.fromisoformat(last)+timedelta(days=1)).isoformat())
-    finish(new);assert summary({'hosted_reservation_id':new['reservation_id']})['capture_minor']==39000
+    with pytest.raises(ValueError,match='WITHIN_VALIDITY|ONE_YEAR_VALIDITY'):change.create_quote(new['reservation_id'],account,'CHANGE_DATE',last,(date.fromisoformat(last)+timedelta(days=1)).isoformat())
+    finish(new);assert summary({'hosted_reservation_id':new['reservation_id']})['capture_minor']==38000
 
 
 def test_two_capture_refund_failure_is_atomic_and_retry_has_no_duplicate_ledger(client,monkeypatch):
