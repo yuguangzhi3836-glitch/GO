@@ -11,7 +11,6 @@ PREFIX='evidence/depth45-hotel-free-change'
 FAILED_ATTEMPTS={34700777402:'47b6a06cdb63a90d549663cb0a73b99b2d919bdc',34701225984:'35812e087e6501071b2af7cda233b88a91ee2054',34701843097:'4570436f2053b654b59ecdd5ac9df3ed6a963373'}
 SUPERSEDED_RUN=34702254624
 SUPERSEDED_SOURCE='7a0a2628e3c3caee11832d761aade549cdfd4509'
-ARCHIVE_PHASE='BROWSER_EVIDENCE_PENDING_PYTHON'
 HEAD=os.environ['GITHUB_SHA']
 TOKEN=os.environ['GO_ARCHIVE_TOKEN']
 assert os.environ['GITHUB_REPOSITORY']==REPO
@@ -47,10 +46,9 @@ def put_blob(data):
 
 assert request('git/ref/heads/'+BRANCH)['object']['sha']==HEAD,'BRANCH_MOVED'
 pr=request('pulls/47');assert pr['draft'] and pr['head']['sha']==HEAD and not pr['merged']
-run=request('actions/runs/'+str(RUN));assert run['head_sha']==SOURCE
+run=request('actions/runs/'+str(RUN));assert run['head_sha']==SOURCE and run['conclusion']=='success'
 jobs=request('actions/runs/'+str(RUN)+'/jobs?per_page=100')['jobs']
-assert len(jobs)==6
-assert all(next(x for x in jobs if x['name']==name)['conclusion']=='success' for name in ['browser','frontend-http-compat'])
+assert len(jobs)==6 and all(x['conclusion']=='success' for x in jobs)
 source_commit=request('git/commits/'+SOURCE)
 source_tree=request('git/trees/'+source_commit['tree']['sha'])
 assert next(x['sha'] for x in source_tree['tree'] if x['path']=='application')==APP_TREE
@@ -122,15 +120,14 @@ for item in artifacts:
             selected=[n for n in names if n.endswith('-'+suffix)]
             assert len(selected)==1
             files[historical_prefix+'/'+suffix]=z.read(selected[0])
-assert browser is not None
-assert len(reports)==0,'PARTIAL_ARCHIVE_MUST_NOT_CLAIM_PYTHON_COUNTS'
+assert browser is not None and len(reports)==4
 selected=[p for x in inventory for p in x['selected']]
 assert len(selected)==len(set(selected)) and all(set(x['all'])==set(selected) for x in inventory)
 totals={k:sum(x[k] for x in reports) for k in ['tests','passed','skipped','failures','errors']}
-totals=None
+assert totals=={'tests':1757,'passed':1751,'skipped':6,'failures':0,'errors':0}
 summary={'source_commit':SOURCE,'application_git_tree':APP_TREE,'source_tree_sha256':SOURCE_HASH,
  'producer_run':RUN,'archive_workflow_commit':HEAD,'archive_workflow_run':os.environ['GITHUB_RUN_ID'],
- 'archive_phase':ARCHIVE_PHASE,'full_ci':'PENDING','python':totals,'python_files':None,'browser_scenarios':53,'detail_viewports':72,
+ 'archive_phase':'ALL_RECORDED_CI_GATES_PASSED','full_ci':'PASS','python':totals,'python_files':len(selected),'browser_scenarios':53,'detail_viewports':72,
  'hotel_adjustment_orders':1,'hotel_adjustment_payment_roots':3,'hotel_change_count':4,'hotel_change_fee_minor':0,
  'hotel_refunded_minor':1400000,'hotel_forfeited_minor':163200,
  'search_viewports':[375,390,430,1440],'payment_viewports':[375,390,430,1440],
