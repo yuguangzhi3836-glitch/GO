@@ -57,7 +57,8 @@ async function login(p,role,account=credentials[role]){
   }else{
     await p.locator('#user').fill(account.username);await p.locator('#pass').fill(account.password);
     await p.locator('form#login button[type=submit], form#login button.primary').first().click();await p.locator('.shell').waitFor();
-    assert.match(await p.locator('.actor').innerText(),role==='admin'?/GO_ADMIN/:/SUPPLIER_USER/);
+    const identity=await read(p,'/bff/auth/me');assert.equal(identity.actor_type,role==='admin'?'GO_ADMIN':'SUPPLIER_USER');
+    if(account.supplier_id)assert.equal(identity.supplier_id,account.supplier_id);
     if(role==='supplier')await p.getByRole('heading',{name:'订单与售后',exact:true}).waitFor();
   }
 }
@@ -164,6 +165,18 @@ try{
     assert.equal(new Set(orders.map(x=>x.vertical)).size,6,'all six completed checkout records required');
     assert.ok(await consumer.locator('[data-go-trip-index]').count()>=6);await noOverflow(consumer);
   });
+  for(const [vertical,oid] of expectedOrders)await scenario(consumer,vertical+'-consumer-refresh-reentry',async()=>{
+    await consumer.reload();await consumer.locator('[data-nav=trips]').first().click();
+    await consumer.locator('[data-go-trip-index]').first().waitFor();
+    const rows=(await read(consumer,'/v1/consumer/unified-trips')).items;
+    const index=rows.findIndex(x=>x.order_id===oid&&x.vertical===vertical);assert.ok(index>=0);
+    const response=consumer.waitForResponse(r=>r.request().method()==='GET'&&new URL(r.url()).pathname.includes('/'+oid)&&(r.ok()));
+    await consumer.locator('[data-go-trip-index="'+index+'"]').click();const r=await response;
+    const value=(await r.json()).data;assert.equal(value.order?.order_id||value.order_id,oid);
+    await consumer.locator('#tripDetailLoading').waitFor({state:'detached'});await noOverflow(consumer);
+    const tested=report.order_checks.find(x=>x.order_id===oid);assert.ok(tested);
+    assert.deepEqual(await read(consumer,'/v1/consumer/transaction-orders/'+vertical+'/'+oid),tested.final);
+  });
   for(const width of [375,430,1440])for(const [role,p]of [['consumer',consumer],['supplier',supplier],['admin',admin]])await scenario(p,`${role}-viewport-${width}`,async()=>{await p.setViewportSize({width,height:940});await noOverflow(p);});
   for(const [vertical,oid] of expectedOrders){
     const owner=await pageFor('supplier-'+vertical,390);
@@ -192,6 +205,7 @@ try{
     });
     await owner.context().close();
   }
+  await scenario(consumer,'no-unhandled-browser-errors',async()=>assert.deepEqual(report.console_errors,[]));
   await save('business-responses.json',business);
 
 }finally{
