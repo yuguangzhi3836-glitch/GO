@@ -11,6 +11,11 @@
     "windows_user": "Eason-8845",
     "user_profile": "C:\\Users\\Eason-8845",
     "operating_system": "Windows 11 Enterprise LTSC",
+    "codex_github_plugin": {
+      "status": "UNAVAILABLE_UNRESOLVED",
+      "as_of": "2026-09-12",
+      "operational_guidance": "Use the local GO-BOSS working copy over HTTPS Git. Do not repeatedly spend recovery time attempting to install the Codex GitHub plugin unless the limitation is intentionally re-investigated."
+    },
     "go_repository": {
       "local_path": "C:\\Users\\Eason-8845\\Documents\\Code\\GO-BOSS",
       "remote_origin": "https://github.com/yuguangzhi3836-glitch/GO.git",
@@ -35,10 +40,14 @@
         "port": 22,
         "user": "root",
         "ssh_alias": "go-command-center-root",
+        "ssh_config_path": "C:\\Users\\Eason-8845\\.ssh\\config",
+        "user_known_hosts_file": null,
+        "user_known_hosts_file_status": "NOT_YET_RECORDED",
         "local_private_key_path": "C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519",
         "public_key_fingerprint_sha256": "SHA256:MN3etVe4N91QpsfZkhZECi5YbW6XocZ0tB8LmVebBTU",
         "verified": true,
-        "standard_command": "ssh go-command-center-root"
+        "standard_command": "ssh go-command-center-root",
+        "raw_fallback_command": "ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -i \"C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519\" root@47.242.94.212"
       }
     ]
   },
@@ -49,7 +58,8 @@
       "protocol": "HTTPS Git",
       "credential_path": "local Git credential helper; secret not recorded",
       "permission": "developer access",
-      "purpose": "local GO source and Git operations"
+      "purpose": "local GO source and Git operations",
+      "codex_github_plugin_required": false
     },
     {
       "source": "Eason-8845 / Codex",
