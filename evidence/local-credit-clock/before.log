@@ -1,0 +1,81 @@
+test_acceptance_crosses_midnight_before_quote_expiry (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_acceptance_crosses_midnight_before_quote_expiry) ... FAIL
+test_existing_conversion_replay_keeps_accepted_contract (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_existing_conversion_replay_keeps_accepted_contract) ... ok
+test_future_stay_preserves_contract_payload (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_future_stay_preserves_contract_payload) ... ok
+test_latest_confirmed_date_used (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_latest_confirmed_date_used) ... FAIL
+test_same_day_and_past_stay_rejected_before_source_allocation (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_same_day_and_past_stay_rejected_before_source_allocation) ... 
+  test_same_day_and_past_stay_rejected_before_source_allocation (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_same_day_and_past_stay_rejected_before_source_allocation) (check_in='2026-09-13') ... FAIL
+  test_same_day_and_past_stay_rejected_before_source_allocation (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_same_day_and_past_stay_rejected_before_source_allocation) (check_in='2026-09-12') ... FAIL
+test_same_day_and_past_stay_rejected_before_source_allocation (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_same_day_and_past_stay_rejected_before_source_allocation) ... FAIL
+
+======================================================================
+FAIL: test_acceptance_crosses_midnight_before_quote_expiry (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_acceptance_crosses_midnight_before_quote_expiry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/a2172dadc6b6/go-review/application/tests/test_credit_acceptance_clock_unit.py", line 73, in test_acceptance_crosses_midnight_before_quote_expiry
+    asyncio.run(self.ns['convert']('order','quote','hash',True,'owner'))
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/scratch/a2172dadc6b6/go-review/application/src/go_hotel/services/catalog_stay_credit.py", line 97, in convert
+    if aware(q.expires_at)<=now():raise ValueError('STAY_CREDIT_QUOTE_EXPIRED')
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+AssertionError: EXPIRED_STAY_REACHED_SUPPLIER_PREPARATION
+
+======================================================================
+FAIL: test_latest_confirmed_date_used (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_latest_confirmed_date_used)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/a2172dadc6b6/go-review/application/tests/test_credit_acceptance_clock_unit.py", line 59, in test_latest_confirmed_date_used
+    with self.assertRaisesRegex(ValueError,'UNUSED_FUTURE_STAY_REQUIRED'): self.facts()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_same_day_and_past_stay_rejected_before_source_allocation (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_same_day_and_past_stay_rejected_before_source_allocation) (check_in='2026-09-13')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/a2172dadc6b6/go-review/application/tests/test_credit_acceptance_clock_unit.py", line 53, in test_same_day_and_past_stay_rejected_before_source_allocation
+    with self.assertRaisesRegex(ValueError,'UNUSED_FUTURE_STAY_REQUIRED'): self.facts()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_same_day_and_past_stay_rejected_before_source_allocation (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_same_day_and_past_stay_rejected_before_source_allocation) (check_in='2026-09-12')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/a2172dadc6b6/go-review/application/tests/test_credit_acceptance_clock_unit.py", line 53, in test_same_day_and_past_stay_rejected_before_source_allocation
+    with self.assertRaisesRegex(ValueError,'UNUSED_FUTURE_STAY_REQUIRED'): self.facts()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_same_day_and_past_stay_rejected_before_source_allocation (test_credit_acceptance_clock_unit.CreditAcceptanceClock.test_same_day_and_past_stay_rejected_before_source_allocation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/a2172dadc6b6/go-review/application/tests/test_credit_acceptance_clock_unit.py", line 54, in test_same_day_and_past_stay_rejected_before_source_allocation
+    self.remedy.paid_facts.assert_not_called()
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 910, in assert_not_called
+    raise AssertionError(msg)
+AssertionError: Expected 'mock' to not have been called. Called 2 times.
+Calls: [call(<Mock id='140022891008736'>, namespace(status='CONFIRMED', currency='CNY', order_id='order', prebook_id='prebook', version=1, account_id='owner', hotel_id='hotel', supplier_id='supplier', supplier_confirmation_no='confirmed')),
+ call(<Mock id='140022891008736'>, namespace(status='CONFIRMED', currency='CNY', order_id='order', prebook_id='prebook', version=1, account_id='owner', hotel_id='hotel', supplier_id='supplier', supplier_confirmation_no='confirmed'))].
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.030s
+
+FAILED (failures=5)
+

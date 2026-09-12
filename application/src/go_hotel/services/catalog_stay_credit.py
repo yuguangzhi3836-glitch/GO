@@ -45,6 +45,9 @@ def conversion_facts(s,order,rule):
     original_prebook=s.get(PrebookRow,order.prebook_id)
     original_offer=s.get(OfferRow,original_prebook.offer_id)
     cash=cash_facts(s,order,original_offer)
+    # Recheck under the order lock at acceptance as well as quotation.
+    # Use the latest confirmed stay, not the original offer's pre-change dates.
+    if date.fromisoformat(cash['check_in'])<=now().date():raise ValueError('UNUSED_FUTURE_STAY_REQUIRED')
     if not rule.get('stay_credit_allowed') or rule.get('stay_credit_scope')!='PROPERTY_ONLY':raise ValueError('PROPERTY_CREDIT_RULE_REQUIRED')
     days=rule.get('stay_credit_validity_days')
     if type(days) is not int or not 1<=days<=365:raise ValueError('CREDIT_VALIDITY_EXCEEDS_MASTER')
