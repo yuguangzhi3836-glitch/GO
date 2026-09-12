@@ -59,6 +59,11 @@ case "$role" in
    agent_config=${GO_HK_AGENT_CONFIG_PATH:-/etc/go-hk-agent/agent.json}
    test_pr=${GO_HK_TEST_PR_PATH:-/opt/go-hk-agent-rebuilt/hk_agent/test_pr.py}
    dockerfile=${GO_HK_DOCKERFILE_PATH:-/usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1}
+   docker_dropin=${GO_HK_DOCKER_DROPIN_PATH:-/etc/systemd/system/go-hk-agent.service.d/30-test-pr-docker-access.conf}
+   runtime_root=${GO_HK_RUNTIME_ROOT:-/var/lib/go-hk-test-pr}
+   build_root=${GO_HK_BUILD_ROOT:-$runtime_root/builds}
+   agent_unit=${GO_HK_AGENT_UNIT:-go-hk-agent.service}
+   systemctl_bin=${GO_SYSTEMCTL:-systemctl}
    validate() {
      name=$1 path=$2
      existed=$(one_field "$name" 2 "$backup/state.tsv")
@@ -103,21 +108,54 @@ case "$role" in
        test ! -e "$path"
      fi
    }
+   validate_dir() {
+     name=$1 path=$2
+     existed=$(one_field "$name" 2 "$backup/state.tsv")
+     recorded=$(one_field "$name" 3 "$backup/state.tsv")
+     owner=$(one_field "$name" 4 "$backup/state.tsv")
+     mode=$(one_field "$name" 5 "$backup/state.tsv")
+     kind=$(one_field "$name" 2 "$backup/installed.tsv")
+     installed_owner=$(one_field "$name" 3 "$backup/installed.tsv")
+     installed_mode=$(one_field "$name" 4 "$backup/installed.tsv")
+     test "$existed" = absent && test -z "$recorded" && test -z "$owner" && test -z "$mode"
+     test "$kind" = directory && valid_owner "$installed_owner" && valid_mode "$installed_mode"
+     test -d "$path" && test ! -L "$path"
+     test "$(stat -c %u:%g "$path")" = "$installed_owner"
+     test "$(stat -c %a "$path")" = "$installed_mode"
+     if test "$name" = builds; then
+       test -z "$(find "$path" -mindepth 1 -maxdepth 1 -print -quit)"
+     else
+       test -z "$(find "$path" -mindepth 1 -maxdepth 1 ! -name builds -print -quit)"
+     fi
+   }
+   remove_dir() {
+     rmdir -- "$1"
+   }
    test -f "$backup/state.tsv" && test -f "$backup/installed.tsv"
    # Phase 1: validate every target and backup before any mutation.
    validate transport.py "$transport"
    validate agent.json "$agent_config"
    validate test_pr.py "$test_pr"
    validate Dockerfile.go-application-python-v1 "$dockerfile"
+   validate docker-access.conf "$docker_dropin"
+   "$systemctl_bin" is-active --quiet "$agent_unit" && exit 1 || true
+   validate_dir runtime_root "$runtime_root"
+   validate_dir builds "$build_root"
    # Phase 2: all validation passed; restore/remove every target, then verify all.
+   remove_dir "$build_root"
+   remove_dir "$runtime_root"
    restore transport.py "$transport"
    restore agent.json "$agent_config"
    restore test_pr.py "$test_pr"
    restore Dockerfile.go-application-python-v1 "$dockerfile"
+   restore docker-access.conf "$docker_dropin"
    verify_restored transport.py "$transport"
    verify_restored agent.json "$agent_config"
    verify_restored test_pr.py "$test_pr"
    verify_restored Dockerfile.go-application-python-v1 "$dockerfile"
+   verify_restored docker-access.conf "$docker_dropin"
+   test ! -e "$runtime_root" && test ! -e "$build_root"
+   "$systemctl_bin" daemon-reload
    echo "ROLLBACK_STAGED_ONLY: services are not restarted automatically"
    ;;
  *) exit 64 ;;

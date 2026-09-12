@@ -6,10 +6,12 @@ import pathlib
 import os
 import shlex
 import subprocess
+import stat
 import sys
 import tempfile
 import types
 import unittest
+from unittest import mock
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -35,7 +37,7 @@ class IntegrationTests(unittest.TestCase):
         names = (
             ("go-boss-request-bridge", "boss-request-bridge-v1.json")
             if role == "command-center"
-            else ("transport.py", "agent.json", "test_pr.py", "Dockerfile.go-application-python-v1")
+            else ("transport.py", "agent.json", "test_pr.py", "Dockerfile.go-application-python-v1", "docker-access.conf")
         )
         present = names if role == "command-center" else names[:2]
         records, installed, target_paths = [], [], {}
@@ -71,12 +73,38 @@ class IntegrationTests(unittest.TestCase):
                 "GO_CC_CONFIG_PATH": self.bash_path(target_paths["boss-request-bridge-v1.json"]),
             })
         else:
+            runtime_root = targets / "runtime-root"
+            build_root = runtime_root / "builds"
+            runtime_root.mkdir()
+            build_root.mkdir()
+            runtime_root.chmod(0o700)
+            build_root.chmod(0o700)
+            systemctl_mock = root / "systemctl-mock"
+            systemctl_mock.write_text("#!/bin/sh\n[ \"$1\" = is-active ] && exit 3\nexit 0\n", encoding="utf-8")
+            systemctl_mock.chmod(0o700)
+            owner, mode = subprocess.check_output(
+                ["bash", "-lc", f"stat -c '%u:%g %a' {shlex.quote(self.bash_path(runtime_root))}"], text=True,
+            ).strip().split()
+            build_mode = subprocess.check_output(
+                ["bash", "-lc", f"stat -c '%a' {shlex.quote(self.bash_path(build_root))}"], text=True,
+            ).strip()
+            records.extend(("runtime_root|absent|||", "builds|absent|||"))
+            installed.extend((f"runtime_root|directory|{owner}|{mode}", f"builds|directory|{owner}|{build_mode}"))
+            (backup / "state.tsv").write_text("\n".join(records) + "\n", encoding="utf-8")
+            (backup / "installed.tsv").write_text("\n".join(installed) + "\n", encoding="utf-8")
+            target_paths["runtime_root"] = runtime_root
+            target_paths["builds"] = build_root
             env.update({
                 "GO_HK_ROLLBACK_BACKUP": self.bash_path(backup),
                 "GO_HK_TRANSPORT_PATH": self.bash_path(target_paths["transport.py"]),
                 "GO_HK_AGENT_CONFIG_PATH": self.bash_path(target_paths["agent.json"]),
                 "GO_HK_TEST_PR_PATH": self.bash_path(target_paths["test_pr.py"]),
                 "GO_HK_DOCKERFILE_PATH": self.bash_path(target_paths["Dockerfile.go-application-python-v1"]),
+                "GO_HK_DOCKER_DROPIN_PATH": self.bash_path(target_paths["docker-access.conf"]),
+                "GO_HK_RUNTIME_ROOT": self.bash_path(runtime_root),
+                "GO_HK_BUILD_ROOT": self.bash_path(build_root),
+                "GO_HK_AGENT_UNIT": "test-pr-agent-not-active.service",
+                "GO_SYSTEMCTL": self.bash_path(systemctl_mock),
             })
         return raw, backup, target_paths, env
 
@@ -154,6 +182,48 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn('"--network", "none"', source)
         self.assertIn('"--read-only", "--cap-drop", "ALL"', source)
         self.assertNotIn("docker compose", source.lower())
+        self.assertNotIn("root.mkdir", source)
+
+    def test_build_root_validation_rejects_unsafe_state_and_accepts_provisioned_root(self):
+        original = test_pr.BUILD_ROOT
+        try:
+            with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as raw:
+                base = pathlib.Path(raw)
+                test_pr.BUILD_ROOT = str(base / "missing")
+                with self.assertRaisesRegex(test_pr.Reject, "TEST_PR_BUILD_ROOT_REJECT"):
+                    test_pr._build_root()
+                target = base / "target"
+                target.mkdir()
+                uid, gid = 1001, 1002
+                valid = types.SimpleNamespace(st_mode=stat.S_IFDIR | 0o700, st_uid=uid, st_gid=gid)
+                with mock.patch.object(pathlib.Path, "lstat", return_value=types.SimpleNamespace(st_mode=stat.S_IFLNK, st_uid=0, st_gid=0)):
+                    test_pr.BUILD_ROOT = str(target)
+                    with self.assertRaisesRegex(test_pr.Reject, "TEST_PR_BUILD_ROOT_REJECT"):
+                        test_pr._build_root()
+                test_pr.BUILD_ROOT = str(target)
+                with mock.patch.object(pathlib.Path, "lstat", return_value=types.SimpleNamespace(st_mode=stat.S_IFDIR | 0o755, st_uid=uid, st_gid=gid)), \
+                     mock.patch.object(test_pr.os, "geteuid", return_value=uid, create=True), \
+                     mock.patch.object(test_pr.os, "getegid", return_value=gid, create=True):
+                    with self.assertRaisesRegex(test_pr.Reject, "TEST_PR_BUILD_ROOT_REJECT"):
+                        test_pr._build_root()
+                with mock.patch.object(pathlib.Path, "lstat", return_value=valid), \
+                     mock.patch.object(test_pr.os, "geteuid", return_value=uid + 1, create=True), \
+                     mock.patch.object(test_pr.os, "getegid", return_value=gid, create=True):
+                    with self.assertRaisesRegex(test_pr.Reject, "TEST_PR_BUILD_ROOT_REJECT"):
+                        test_pr._build_root()
+                with mock.patch.object(pathlib.Path, "lstat", return_value=valid), \
+                     mock.patch.object(test_pr.os, "geteuid", return_value=uid, create=True), \
+                     mock.patch.object(test_pr.os, "getegid", return_value=gid, create=True), \
+                     mock.patch.object(test_pr.os, "access", return_value=False):
+                    with self.assertRaisesRegex(test_pr.Reject, "TEST_PR_BUILD_ROOT_REJECT"):
+                        test_pr._build_root()
+                with mock.patch.object(pathlib.Path, "lstat", return_value=valid), \
+                     mock.patch.object(test_pr.os, "geteuid", return_value=uid, create=True), \
+                     mock.patch.object(test_pr.os, "getegid", return_value=gid, create=True), \
+                     mock.patch.object(test_pr.os, "access", return_value=True):
+                    self.assertEqual(test_pr._build_root(), target)
+        finally:
+            test_pr.BUILD_ROOT = original
 
     def test_persistent_replay_and_publish_shape_remain_integrated(self):
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as raw:
@@ -206,19 +276,62 @@ class IntegrationTests(unittest.TestCase):
             "record /etc/go-hk-agent/agent.json agent.json",
             "record /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py test_pr.py",
             "record /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1 Dockerfile.go-application-python-v1",
+            "record \"$docker_dropin\" docker-access.conf",
+            "record_dir \"$runtime_root\" runtime_root",
+            "record_dir \"$build_root\" builds",
         ):
             self.assertIn(statement, install)
         self.assertIn("82ab805b921081ec0299ffa20576963476e12f57e711438f46ada2342a7c7b30", preflight)
         self.assertIn("test ! -e /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py", preflight)
         self.assertIn("test ! -e /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1", preflight)
+        self.assertIn('install -d -o root -g root -m 0711 "$runtime_root"', install)
+        self.assertIn('install -d -o "$agent_uid" -g "$agent_gid" -m 0700 "$build_root"', install)
+        self.assertIn("SupplementaryGroups=docker", install)
+        self.assertIn('test ! -e /var/lib/go-hk-test-pr', preflight)
+        self.assertIn('test -S /var/run/docker.sock', preflight)
         self.assertIn('elif test "$existed" = absent; then', rollback)
         self.assertIn('rm -- "$path"', rollback)
         self.assertIn('validate transport.py "$transport"', rollback)
         self.assertIn('validate agent.json "$agent_config"', rollback)
         self.assertIn('validate test_pr.py "$test_pr"', rollback)
         self.assertIn('validate Dockerfile.go-application-python-v1 "$dockerfile"', rollback)
+        self.assertIn('validate docker-access.conf "$docker_dropin"', rollback)
+        self.assertIn('validate_dir runtime_root "$runtime_root"', rollback)
+        self.assertIn('validate_dir builds "$build_root"', rollback)
+        self.assertIn('remove_dir "$build_root"', rollback)
         self.assertIn('test "$(sha256sum "$path" | awk', rollback)
         self.assertLess(rollback.index('test "$(sha256sum "$path" | awk'), rollback.index('rm -- "$path"'))
+
+    def test_hk_directory_rollback_refuses_drift_symlink_or_contents_before_files_change(self):
+        for mutation in ("mode", "symlink", "contents"):
+            raw, backup, targets, env = self.rollback_sandbox("hk-staging")
+            with raw:
+                expected = targets["transport.py"].read_bytes()
+                build = targets["builds"]
+                if mutation == "mode":
+                    lines = (backup / "installed.tsv").read_text(encoding="utf-8").splitlines()
+                    rewritten = []
+                    for line in lines:
+                        if line.startswith("builds|directory|"):
+                            fields = line.split("|")
+                            fields[3] = "700" if fields[3] != "700" else "755"
+                            line = "|".join(fields)
+                        rewritten.append(line)
+                    (backup / "installed.tsv").write_text("\n".join(rewritten) + "\n", encoding="utf-8")
+                elif mutation == "symlink":
+                    build.rmdir()
+                    try:
+                        build.symlink_to(targets["transport.py"])
+                    except OSError:
+                        # Windows developer machines commonly lack symlink privilege; the
+                        # Linux rollback predicate itself remains directly asserted here.
+                        source = (ROOT / "install" / "uninstall.sh").read_text(encoding="utf-8")
+                        self.assertIn('test -d "$path" && test ! -L "$path"', source)
+                        continue
+                else:
+                    (build / "unexpected").write_text("drift", encoding="utf-8")
+                self.assertNotEqual(self.run_rollback("hk-staging", env).returncode, 0)
+                self.assertEqual(targets["transport.py"].read_bytes(), expected)
 
     def test_command_center_two_phase_rollback_refuses_drift_or_corrupt_backup(self):
         raw, backup, targets, env = self.rollback_sandbox("command-center")

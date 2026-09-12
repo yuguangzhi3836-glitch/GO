@@ -4,6 +4,7 @@ import os
 import pathlib
 import re
 import shutil
+import stat
 import subprocess
 import tempfile
 
@@ -57,11 +58,27 @@ def _run(argv, *, cwd=None, env=None, timeout=300):
         raise error from exc
 
 
+def _build_root():
+    """Return the installer-provisioned per-agent build root, or fail closed."""
+    root = pathlib.Path(BUILD_ROOT)
+    try:
+        info = root.lstat()
+    except OSError as exc:
+        raise Reject("TEST_PR_BUILD_ROOT_REJECT") from exc
+    effective_uid = getattr(os, "geteuid", lambda: info.st_uid)()
+    effective_gid = getattr(os, "getegid", lambda: info.st_gid)()
+    if (stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode) or
+            info.st_uid != effective_uid or info.st_gid != effective_gid or
+            stat.S_IMODE(info.st_mode) != 0o700 or
+            not os.access(root, os.W_OK | os.X_OK)):
+        raise Reject("TEST_PR_BUILD_ROOT_REJECT")
+    return root
+
+
 def execute(task, runner=_run):
     source = validate_parameters(task["parameters"])
     commit = source["commit_sha"]
-    root = pathlib.Path(BUILD_ROOT)
-    root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    root = _build_root()
     workspace = pathlib.Path(tempfile.mkdtemp(prefix="source-", dir=root))
     image = "go-hk-test-pr:" + commit
     try:
