@@ -196,14 +196,20 @@ async function supplierCommandCenter(){
   try{
     const d=unwrap(await api.request('/v1/supplier/dashboard'));
     const count=group=>Object.values(group||{}).reduce((n,v)=>n+(Number(v)||0),0);
-    const body=`<section class="card"><h3>订单与售后</h3><p>以下为当前酒店的累计业务记录；空数据不会被视为今天已完成履约。</p><div class="actionbar"><a class="btn primary" href="#/orders">查看订单与履约</a><a class="btn" href="#/refunds">查看取消与退款</a><a class="btn" href="#/finance">查看财务</a></div></section>${metrics({订单状态:d.orders||{},退款状态:d.refunds||{}})}`;
+    const body=`<section class="card"><h3>订单与售后</h3><p>以下为当前供应商的累计业务记录；空数据不会被视为今天已完成履约。</p><div class="actionbar"><a class="btn primary" href="#/orders">查看订单与履约</a><a class="btn" href="#/refunds">查看取消与退款</a><a class="btn" href="#/finance">查看财务</a></div></section>${metrics({订单状态:d.orders||{},退款状态:d.refunds||{}})}`;
     $('#view').innerHTML=supplierStructuredShell('/command',body,{'累计订单':count(d.orders),'退款记录':count(d.refunds),'住宿额度':count(d.stay_credits),'风险记录':count(d.risk_cases)});
   }catch(e){
     $('#view').innerHTML='<section class="card"><h3>经营数据暂时无法读取</h3><p role="alert">请重试；读取失败不代表没有订单。</p><button class="btn primary" id="retryCommand">重试</button></section>';
     $('#retryCommand').onclick=supplierCommandCenter;
   }
 }
-async function supplierOrders(){const data=unwrap(await api.request('/v1/supplier/orders'));const arr=data.items||[];const body=table(arr,true,'订单');$('#view').innerHTML=supplierStructuredShell('/orders',body,{'待确认':arr.filter(x=>String(x.state||x.status).includes('PENDING')).length,'已确认':arr.filter(x=>String(x.state||x.status).includes('CONFIRMED')).length,'履约中':arr.filter(x=>String(x.state||x.status).includes('STAY')).length,'售后中':arr.filter(x=>/CANCEL|REFUND/.test(String(x.state||x.status))).length});bindRows(arr,r=>orderWorkbench(r.order_id))}
+async function supplierOrders(){const data=unwrap(await api.request('/v1/supplier/transaction-orders'));const arr=data.items||[];const body=table(arr,true,'订单');$('#view').innerHTML=supplierStructuredShell('/orders',body,{'待确认':arr.filter(x=>String(x.state||x.status).includes('PENDING')).length,'已确认':arr.filter(x=>String(x.state||x.status).includes('CONFIRMED')).length,'履约中':arr.filter(x=>String(x.state||x.status).includes('STAY')).length,'售后中':arr.filter(x=>/CANCEL|REFUND/.test(String(x.state||x.status))).length});bindRows(arr,r=>r.vertical==='HOTEL'?orderWorkbench(r.order_id):supplierTransactionWorkbench(r.vertical,r.order_id))}
+async function supplierTransactionWorkbench(vertical,id){
+ const d=unwrap(await api.request(`/v1/supplier/transaction-orders/${encodeURIComponent(vertical)}/${encodeURIComponent(id)}`)),p=d.original_payment;
+ currentSupplierRoute='/orders';
+ $('#view').innerHTML=`<button class="btn" id="back">← 返回订单</button><div class="section-head"><h2>订单详情</h2><span class="status">${esc(supplierFriendlyValue(d.order.status))}</span></div>${supplierObjectCard('订单事实',d.order)}<section class="card"><h3>原始付款与退款</h3><p>以下为本订单原始付款的处理记录；改期补款另行核对。</p><div class="kv"><div>已扣款</div><div>${esc(money(p.captured_minor,p.currency))}</div><div>已退款</div><div>${esc(money(p.refunded_minor,p.currency))}</div><div>净付款</div><div>${esc(money(p.net_minor,p.currency))}</div></div><p role="status">${p.binding_state==='BOUND'?'付款记录已关联': '付款记录待核对'}</p></section><h3>退款申请与进度</h3>${table(d.refunds,false,'退款记录')}`;
+ $('#back').onclick=supplierOrders;
+}
 async function orderWorkbench(id){
  const d=unwrap(await api.request(`/v1/supplier/orders/${encodeURIComponent(id)}/workbench`));currentSupplierRoute='/orders';
  $('#view').innerHTML=`<button class="btn" id="back">← 返回订单</button><div class="section-head"><h2>订单详情</h2><span class="status">${esc(supplierFriendlyValue(d.order?.state||d.order?.status||'待处理'))}</span></div>${supplierObjectCard('订单事实',d.order)}<section class="card"><h3>退改与履约协助</h3><p>客户可在自己的 GO 订单中确认改期、取消及费用。酒店无法履约时，请提交申请和证据，由平台独立核实责任。</p><button class="btn primary" id="requestSupplierCancel">提交无法履约申请 / 查看处理进度</button></section><h3>支付</h3>${table(d.payments,false,'支付记录')}<h3>退款</h3>${table(d.refunds,false,'退款记录')}<h3>改期</h3>${table(d.changes,false,'改期记录')}<h3>住宿额度</h3>${table(d.stay_credits,false,'住宿额度')}<h3>事件时间线</h3>${table(d.timeline,false,'订单事件')}`;

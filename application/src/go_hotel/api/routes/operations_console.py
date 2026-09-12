@@ -34,7 +34,8 @@ def vertical_snapshot(vertical: str, p: Principal = Depends(admin_principal)):
     with SessionLocal() as s:
         if v == 'HOTEL':
             orders = _sample(s, OrderRow, ['order_id','supplier_id','hotel_id','status','total_amount_minor','currency','supplier_confirmation_no','updated_at'])
-            refunds = _sample(s, RefundRow, ['refund_id','order_id','status','refund_amount_minor','currency','created_at'])
+            refunds = _sample(s, RefundRow, ['refund_id','order_id','status','amount_minor','currency','created_at'])
+            refunds = [{**x, 'refund_amount_minor': x['amount_minor']} for x in refunds]
             supply = _sample(s, HotelPartnerPropertyRow, ['property_id','supplier_id','name_zh','name_en','property_type','group_name','brand_name','publication_state','updated_at'])
             return {'data': {'vertical': v, 'orders': orders, 'refunds': refunds, 'supply': supply,
                 'metrics': {'orders': _count(s, OrderRow), 'refunds': _count(s, RefundRow), 'properties': _count(s, HotelPartnerPropertyRow)}}}

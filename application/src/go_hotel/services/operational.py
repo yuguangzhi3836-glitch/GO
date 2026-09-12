@@ -23,8 +23,8 @@ class OperationalDashboardService:
     # Supplier Console -------------------------------------------------
     def supplier_dashboard(self, supplier_id:str) -> dict:
         with SessionLocal() as s:
-            order_counts=dict(s.execute(select(OrderRow.status, func.count()).where(OrderRow.supplier_id==supplier_id).group_by(OrderRow.status)).all())
-            refund_counts=dict(s.execute(select(RefundRow.status, func.count()).join(OrderRow, OrderRow.order_id==RefundRow.order_id).where(OrderRow.supplier_id==supplier_id).group_by(RefundRow.status)).all())
+            from go_hotel.services.transaction_order_view import supplier_counts
+            order_counts, refund_counts = supplier_counts(supplier_id)
             credit_counts=dict(s.execute(select(StayCreditRow.status, func.count()).join(OrderRow, OrderRow.order_id==StayCreditRow.original_order_id).where(OrderRow.supplier_id==supplier_id).group_by(StayCreditRow.status)).all())
             risk_counts=dict(s.execute(select(RiskEventRuntimeRow.status, func.count()).join(OrderRow, OrderRow.order_id==RiskEventRuntimeRow.order_id).where(OrderRow.supplier_id==supplier_id).group_by(RiskEventRuntimeRow.status)).all())
             liability=s.scalar(select(func.coalesce(func.sum(SupplierLiabilityRow.negative_balance_minor),0)).where(SupplierLiabilityRow.supplier_id==supplier_id)) or 0
@@ -49,11 +49,8 @@ class OperationalDashboardService:
             return _page([{"order_id":r.order_id,"hotel_id":r.hotel_id,"account_id":r.account_id,"status":r.status,"total_amount_minor":r.total_amount_minor,"currency":r.currency,"supplier_confirmation_no":r.supplier_confirmation_no,"updated_at":_dt(r.updated_at)} for r in rows],limit,offset)
 
     def supplier_refunds(self,supplier_id:str,status:str|None=None,limit:int=50,offset:int=0)->dict:
-        with SessionLocal() as s:
-            q=select(RefundRow,OrderRow.hotel_id).join(OrderRow,OrderRow.order_id==RefundRow.order_id).where(OrderRow.supplier_id==supplier_id)
-            if status:q=q.where(RefundRow.status==status)
-            rows=s.execute(q.order_by(RefundRow.created_at.desc()).offset(offset).limit(limit)).all()
-            return _page([{"refund_id":r.refund_id,"order_id":r.order_id,"hotel_id":hid,"amount_minor":r.amount_minor,"currency":r.currency,"status":r.status,"provider_refund_id":r.provider_refund_id,"created_at":_dt(r.created_at),"completed_at":_dt(r.completed_at)} for r,hid in rows],limit,offset)
+        from go_hotel.services.transaction_order_view import supplier_refunds
+        return supplier_refunds(supplier_id,status,limit,offset)
 
     def supplier_stay_credits(self,supplier_id:str,status:str|None=None,limit:int=50,offset:int=0)->dict:
         with SessionLocal() as s:

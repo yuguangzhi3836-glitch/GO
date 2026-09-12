@@ -92,6 +92,8 @@ def main():
     parser.add_argument('--expected-tree', required=True)
     parser.add_argument('--state', required=True, type=Path)
     parser.add_argument('--port', type=int, default=4186)
+    parser.add_argument('--journey-suppliers', action='store_true',
+                        help='Create separate identities for the built-in synthetic sources')
     a = parser.parse_args()
     if not 1024 <= a.port <= 65535:
         raise ValueError('UNPRIVILEGED_PORT_REQUIRED')
@@ -120,6 +122,19 @@ def main():
     from go_hotel.security.service import identity_service
     from go_hotel.consumer.service import consumer_service
     identity_service.bootstrap()
+    if a.journey_suppliers:
+        # These are the existing simulator source identities, not ownership
+        # rewrites. The original unrelated supplier remains a negative fixture.
+        suppliers = {'HOTEL': 'sup_mock', **{v: v.lower() + '-engineering-source'
+            for v in ('FLIGHT', 'RAIL', 'RIDE', 'RENTAL', 'ATTRACTION')}}
+        fixtures = {}
+        for vertical, supplier_id in suppliers.items():
+            account = {'username': 'acceptance-' + vertical.lower() + '-supplier@example.test',
+                       'password': secrets.token_urlsafe(32), 'supplier_id': supplier_id}
+            identity_service.ensure_user(account['username'], account['password'],
+                'SUPPLIER_USER', supplier_id, ['SUPPLIER_OWNER'])
+            fixtures[vertical] = account
+        private_json(state / 'suppliers.private.json', fixtures)
     consumer = consumer_service.register(credentials['consumer']['username'],
         credentials['consumer']['password'], 'GO 隔离验收账户')
     from go_hotel.main import app

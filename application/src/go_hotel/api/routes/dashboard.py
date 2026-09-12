@@ -5,6 +5,33 @@ from go_hotel.security.service import Principal
 
 router=APIRouter()
 
+# Read-only cross-vertical views. Tenant identifiers are never client inputs.
+from fastapi import HTTPException
+from go_hotel.security.deps import consumer_principal
+from go_hotel.services import transaction_order_view
+
+def transaction_snapshot(vertical, order_id, **scope):
+    try:
+        return {'data': transaction_order_view.snapshot(vertical, order_id, **scope)}
+    except ValueError:
+        raise HTTPException(404, detail='ORDER_NOT_FOUND')
+
+@router.get('/v1/supplier/transaction-orders')
+def supplier_transaction_orders(limit:int=Query(50,ge=1,le=200),offset:int=Query(0,ge=0),p:Principal=Depends(supplier_principal)):
+    return {'data': transaction_order_view.supplier_orders(p.supplier_id, limit, offset)}
+
+@router.get('/v1/supplier/transaction-orders/{vertical}/{order_id}')
+def supplier_transaction_order(vertical:str,order_id:str,p:Principal=Depends(supplier_principal)):
+    return transaction_snapshot(vertical, order_id, supplier_id=p.supplier_id)
+
+@router.get('/v1/consumer/transaction-orders/{vertical}/{order_id}')
+def consumer_transaction_order(vertical:str,order_id:str,p:Principal=Depends(consumer_principal)):
+    return transaction_snapshot(vertical, order_id, account_id=p.user_id)
+
+@router.get('/internal/v1/admin/transaction-orders/{vertical}/{order_id}')
+def admin_transaction_order(vertical:str,order_id:str,p:Principal=Depends(require_permission('admin:finance'))):
+    return transaction_snapshot(vertical, order_id, admin=True)
+
 # Supplier Console: tenant always comes from authenticated identity; frontend supplier_id is not accepted.
 @router.get('/v1/supplier/dashboard')
 def supplier_dashboard(p:Principal=Depends(supplier_principal)): return {'data':svc.supplier_dashboard(p.supplier_id)}
