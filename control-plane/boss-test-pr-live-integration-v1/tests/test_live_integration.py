@@ -3,6 +3,9 @@ import hashlib
 import importlib.machinery
 import importlib.util
 import pathlib
+import os
+import shlex
+import subprocess
 import sys
 import tempfile
 import types
@@ -22,6 +25,73 @@ from hk_agent import test_pr, transport
 
 
 class IntegrationTests(unittest.TestCase):
+    def rollback_sandbox(self, role):
+        raw = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        root = pathlib.Path(raw.name)
+        backup = root / "backup"
+        backup.mkdir()
+        targets = root / "targets"
+        targets.mkdir()
+        names = (
+            ("go-boss-request-bridge", "boss-request-bridge-v1.json")
+            if role == "command-center"
+            else ("transport.py", "agent.json", "test_pr.py", "Dockerfile.go-application-python-v1")
+        )
+        present = names if role == "command-center" else names[:2]
+        records, installed, target_paths = [], [], {}
+        for index, name in enumerate(names):
+            target = targets / name
+            target.write_text(f"candidate-{name}", encoding="utf-8")
+            target.chmod(0o640 if index % 2 == 0 else 0o600)
+            target_paths[name] = target
+            installed.append(f"{name}|{hashlib.sha256(target.read_bytes()).hexdigest()}")
+            if name in present:
+                original = backup / name
+                original.write_text(f"original-{name}", encoding="utf-8")
+                original.chmod(0o640 if index % 2 == 0 else 0o600)
+                owner_mode = subprocess.check_output(
+                    ["bash", "-lc", f"stat -c '%u:%g|%a' {shlex.quote(self.bash_path(original))}"],
+                    text=True,
+                ).strip()
+                if role == "command-center":
+                    records.append(f"{name}|{hashlib.sha256(original.read_bytes()).hexdigest()}|{owner_mode}")
+                else:
+                    records.append(f"{name}|present|{hashlib.sha256(original.read_bytes()).hexdigest()}|{owner_mode}")
+            elif role == "hk-staging":
+                records.append(f"{name}|absent|||")
+            else:
+                raise AssertionError("unexpected command-center state")
+        (backup / "state.tsv").write_text("\n".join(records) + "\n", encoding="utf-8")
+        (backup / "installed.tsv").write_text("\n".join(installed) + "\n", encoding="utf-8")
+        env = os.environ.copy()
+        if role == "command-center":
+            env.update({
+                "GO_CC_ROLLBACK_BACKUP": self.bash_path(backup),
+                "GO_CC_BRIDGE_PATH": self.bash_path(target_paths["go-boss-request-bridge"]),
+                "GO_CC_CONFIG_PATH": self.bash_path(target_paths["boss-request-bridge-v1.json"]),
+            })
+        else:
+            env.update({
+                "GO_HK_ROLLBACK_BACKUP": self.bash_path(backup),
+                "GO_HK_TRANSPORT_PATH": self.bash_path(target_paths["transport.py"]),
+                "GO_HK_AGENT_CONFIG_PATH": self.bash_path(target_paths["agent.json"]),
+                "GO_HK_TEST_PR_PATH": self.bash_path(target_paths["test_pr.py"]),
+                "GO_HK_DOCKERFILE_PATH": self.bash_path(target_paths["Dockerfile.go-application-python-v1"]),
+            })
+        return raw, backup, target_paths, env
+
+    @staticmethod
+    def bash_path(path):
+        return subprocess.check_output(["cygpath", "-u", str(path)], text=True).strip()
+
+    def run_rollback(self, role, env):
+        return subprocess.run(
+            ["bash", self.bash_path(ROOT / "install" / "uninstall.sh"), role],
+            env=env,
+            text=True,
+            capture_output=True,
+        )
+
     def setUp(self):
         self.at = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
         self.request = {
@@ -120,8 +190,10 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn("88880363d761eb924aac1910caa7696619dbbb0b4fcb112b63cf726de3bf1335", preflight)
         self.assertIn('test "$(sha256sum "$path" | awk', rollback)
         self.assertIn('test "$(sha256sum "$backup/$name" | awk', rollback)
-        self.assertIn("restore go-boss-request-bridge /usr/local/libexec/go-boss-request-bridge", rollback)
-        self.assertIn("restore boss-request-bridge-v1.json /etc/go-command-center/boss-request-bridge-v1.json", rollback)
+        self.assertIn('validate go-boss-request-bridge "$bridge"', rollback)
+        self.assertIn('validate boss-request-bridge-v1.json "$config"', rollback)
+        self.assertIn('restore go-boss-request-bridge "$bridge"', rollback)
+        self.assertIn('restore boss-request-bridge-v1.json "$config"', rollback)
         self.assertIn("cp -p", rollback)
         self.assertLess(rollback.index('test "$(sha256sum "$path" | awk'), rollback.index("cp -p"))
 
@@ -141,12 +213,53 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn("test ! -e /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1", preflight)
         self.assertIn('elif test "$existed" = absent; then', rollback)
         self.assertIn('rm -- "$path"', rollback)
-        self.assertIn("restore transport.py /opt/go-hk-agent-rebuilt/hk_agent/transport.py", rollback)
-        self.assertIn("restore agent.json /etc/go-hk-agent/agent.json", rollback)
-        self.assertIn("restore test_pr.py /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py", rollback)
-        self.assertIn("restore Dockerfile.go-application-python-v1 /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1", rollback)
+        self.assertIn('validate transport.py "$transport"', rollback)
+        self.assertIn('validate agent.json "$agent_config"', rollback)
+        self.assertIn('validate test_pr.py "$test_pr"', rollback)
+        self.assertIn('validate Dockerfile.go-application-python-v1 "$dockerfile"', rollback)
         self.assertIn('test "$(sha256sum "$path" | awk', rollback)
         self.assertLess(rollback.index('test "$(sha256sum "$path" | awk'), rollback.index('rm -- "$path"'))
+
+    def test_command_center_two_phase_rollback_refuses_drift_or_corrupt_backup(self):
+        raw, backup, targets, env = self.rollback_sandbox("command-center")
+        with raw:
+            expected = targets["go-boss-request-bridge"].read_bytes()
+            targets["boss-request-bridge-v1.json"].write_text("drift", encoding="utf-8")
+            self.assertNotEqual(self.run_rollback("command-center", env).returncode, 0)
+            self.assertEqual(targets["go-boss-request-bridge"].read_bytes(), expected)
+        raw, backup, targets, env = self.rollback_sandbox("command-center")
+        with raw:
+            expected = targets["go-boss-request-bridge"].read_bytes()
+            (backup / "boss-request-bridge-v1.json").write_text("corrupt", encoding="utf-8")
+            self.assertNotEqual(self.run_rollback("command-center", env).returncode, 0)
+            self.assertEqual(targets["go-boss-request-bridge"].read_bytes(), expected)
+
+    def test_hk_two_phase_rollback_refuses_drift_or_corrupt_backup(self):
+        raw, backup, targets, env = self.rollback_sandbox("hk-staging")
+        with raw:
+            expected = targets["transport.py"].read_bytes()
+            targets["Dockerfile.go-application-python-v1"].write_text("drift", encoding="utf-8")
+            self.assertNotEqual(self.run_rollback("hk-staging", env).returncode, 0)
+            self.assertEqual(targets["transport.py"].read_bytes(), expected)
+        raw, backup, targets, env = self.rollback_sandbox("hk-staging")
+        with raw:
+            expected = targets["transport.py"].read_bytes()
+            (backup / "agent.json").write_text("corrupt", encoding="utf-8")
+            self.assertNotEqual(self.run_rollback("hk-staging", env).returncode, 0)
+            self.assertEqual(targets["transport.py"].read_bytes(), expected)
+
+    def test_two_phase_rollback_restores_complete_preinstall_state(self):
+        for role in ("command-center", "hk-staging"):
+            raw, backup, targets, env = self.rollback_sandbox(role)
+            with raw:
+                result = self.run_rollback(role, env)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                for name, target in targets.items():
+                    backup_file = backup / name
+                    if backup_file.exists():
+                        self.assertEqual(target.read_bytes(), backup_file.read_bytes())
+                    else:
+                        self.assertFalse(target.exists())
 
 
 if __name__ == "__main__":
