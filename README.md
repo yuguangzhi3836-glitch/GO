@@ -1,36 +1,103 @@
-# GO 当前统一父包
-
-**CP11_DEPTH41_UNIFIED_PARENT_V1_20260912** 已完成构建、验证和永久归档。
-
-[完整父包下载](https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34670014293/artifacts/10289943544) · [永久保存及核验](deliverables/CP11_DEPTH41_UNIFIED_PARENT_V1_20260912/README.md) · [源码身份与剩余验收](docs/canonical-baseline/README.md)。
-
-后续统一使用 PR47 的 `application/` 作为开发与待验起点。旧父包及 PR48 历史证据保留；完整跨端闭环与最终发布仍 HOLD。
-
----
-
-# GO 统一新父包
-
-唯一开发待验起点：PR47 的 `application/`。新父包：**CP11_DEPTH41_UNIFIED_PARENT_V1_20260912**，包含完整统一源码、对应的新兼容镜像及审查资料。[父包下载与核验说明](packaging/depth41-unified-parent/README.md) · [逐文件对齐和验收缺口](docs/canonical-baseline/README.md)。PR48 保留为历史证据；最终验收、合入 main 与部署状态分别记录。
-
 # GO
 
-**唯一待验源码：PR47 的 application/**，已与 PR48 逐文件对齐。[来源选择、历史证据与剩余缺口](docs/canonical-baseline/README.md)。PR48 保留历史旅程记录；完整跨端验收仍 HOLD。
+> Status refreshed 2026-09-12. This README is the repository entry point for current product lineage, project operating context, and operational-source boundaries. It is descriptive project context, not Execution Authority.
 
-开发基线修复候选：[`application/`](application/)，从最新父包 `CP11_DEPTH40_P03_COMPAT_V2_PARENT_20260912` 保留并补齐有效历史修订。
+## Project operating context
 
-**当前为候选，尚未完成全部验收，尚未合并或部署。** 状态、遗漏修复与统一开发流程见 [源码基线说明](docs/canonical-baseline/README.md)。历史 PASS 不代表本候选通过；HK-STAGING 运行快照不是这套开发源码。
+Before taking over GO work, read [`docs/project/OPERATING_CONTEXT.md`](docs/project/OPERATING_CONTEXT.md).
 
-历史工程成果：[DEPTH18 · 媒体持久性与区域任务恢复](deliverables/CP11_DEPTH18_20260908/README.md)。
+It defines the current human / AI / workstation responsibilities:
 
-该历史版本状态为 **HOLD**：完整回归 1370 项通过、6 项跳过，尚未全面完工或部署。代码、恢复脚本、母版对照与验收记录按版本保存，历史成果保留。
+- **余总 / Boss** — product owner and final business-direction decision maker.
+- **Boss GPT** — product exploration/development agent that creates candidate designs, branches, and PRs; its output is not automatically canonical or deployment-authorized.
+- **陈震曦 / Eason** — technical operator, integrator, reviewer, and execution coordinator who connects product candidates to real Git, test, packaging, Control Plane, and HK-STAGING work.
+- **Eason's ChatGPT** — technical coordination, context, review, and task-decomposition layer; not product owner or execution authority.
+- **Codex / WorkBuddy** — local execution agents under Eason's control.
+- **Eason-8845** — default Codex main execution workstation; direct SSH paths to HK-STAGING and Command Center are verified.
+- **Eason-13490** (Windows hostname `EASON`) — default WorkBuddy / second development workstation; Alibaba Cloud Workbench CLI is the verified primary ECS path.
 
-[累计 DEPTH17 源包与分卷](deliverables/CP11_DEPTH17_20260908/README.md) · [DEPTH18 审阅记录](deliverables/CP11_DEPTH18_20260908/GO_DEPTH18_REVIEW.md)
+Both fixed workstations are operated by Eason. A workstation or AI agent does not independently own a branch, decide product direction, or gain deployment authority merely because it can execute commands.
 
-## Repository change control
+Detailed connection identities and recovery paths are being maintained through PR #49 and its control-plane access runbook.
 
-All planned permanent changes to product behavior, source, tests, build logic, deployment topology/contracts, Control Plane components, infrastructure configuration, and operational documentation follow [`docs/governance/CHANGE_CONTROL_POLICY.md`](docs/governance/CHANGE_CONTROL_POLICY.md).
+## Important: PR numbers are not DEPTH numbers
 
-Normal workflow: `current main -> short-lived branch -> commits/tests -> Pull Request -> review -> merge`. Direct writes to `main` are prohibited for normal work, including AI-generated changes and probes. Pull Requests are review records, not Execution Authority.
+**PR #40 is not “DEPTH40”.** These are two different numbering systems and must not be treated as equivalent.
+
+- **PR #40** (`archive: add canonical HK-STAGING source snapshot`) is an archive of the observed HK-STAGING runtime/source state. It is **not a new GO product version**.
+- **DEPTH40** is a product-candidate generation in the application lineage. Its sealed P0.3 parent was validated separately and later received deployment-compatibility/package work.
+- The newest active product work has now moved to **DEPTH41**, primarily through PR #47 and PR #48.
+
+Do not infer product generation from a Pull Request number.
+
+## Current product working baseline
+
+The current unified development / repair / acceptance starting point is **DEPTH41 PR #47**:
+
+- PR: [#47 · DEPTH41 unified parent](https://github.com/yuguangzhi3836-glitch/GO/pull/47)
+- Branch: `fix/canonical-parent-retention-20260912`
+- Parent package: `CP11_DEPTH41_UNIFIED_PARENT_V1_20260912`
+- PR head / archive commit: `2d15536d2b65484e5a1c00067871387cefdfb235`
+- Tested source/build commit: `62fdde3cabe72b92fa5dc1b37b7652395fe3aba5`
+- Application Git tree: `a73b9b53a59c88ab995d0f9b123c9fb79e87e60d`
+- Application file count: **1300**
+- Source SHA-256 tree: `928468ed31550195dfa8f121832e91b8d08aa9d5c15cef1381d903f76c9f97b3`
+
+PR #47 consolidates the latest DEPTH40 compatibility parent, retained valid DEPTH36R3 / DEPTH37 / DEPTH37R2 fixes, and the selected supplier-operations fix from PR #48 into one self-contained parent.
+
+Verified on the tested source/build commit:
+
+- Python: 1710 collected; **1704 passed**, 6 PostgreSQL tests skipped, 0 failed, 0 errors.
+- Frontend: **244/244**.
+- Deployment-compatibility regression: **34/34**.
+- Isolated HTTP gate: 148 checks / 87 requests passed.
+- Package restore, image/source identity, dependency binding, and archive reconstruction passed.
+- Mobile type/basic contract/native-module linkage checks passed, but this is **not physical-device journey acceptance**.
+
+### Current hold boundary
+
+DEPTH41 is **not yet the final canonical/release source**.
+
+PR #47 remains Draft and explicitly records `CANONICAL_SOURCE_RECOMMENDATION=REJECT` until the remaining acceptance gaps are closed. Outstanding items include hotel refund/final-ledger confirmation, supplier same-order reconciliation, the remaining vertical refund/final-money and three-end states, complete three-end UX, physical-device coverage, six PostgreSQL checks, Sealed Node coverage, and final release gates.
+
+Therefore:
+
+- `MERGE=NO`
+- `DEPLOYMENT=NO`
+- `PRODUCTION=HOLD`
+- HK-STAGING currently running source is **not identical** to this DEPTH41 parent.
+
+PR [#48 · DEPTH41 cross-end journey acceptance](https://github.com/yuguangzhi3836-glitch/GO/pull/48) remains a Draft acceptance/fix branch. Its selected result has been incorporated into PR #47, while its original evidence remains bound to its own tested commit and must not be promoted into a broader PASS claim.
+
+## PR #40 and later: classification
+
+| PR | Classification | Product-line meaning |
+| --- | --- | --- |
+| [#40](https://github.com/yuguangzhi3836-glitch/GO/pull/40) | HK-STAGING archive | **Not a product version.** Captures observed HK runtime/source/configuration. |
+| [#41](https://github.com/yuguangzhi3836-glitch/GO/pull/41) | Governance / topology | Versioned deployment-topology and change-control proposal; not product-feature progression. |
+| [#42](https://github.com/yuguangzhi3836-glitch/GO/pull/42) | DEPTH40 source consolidation | Materializes the DEPTH40 P0.3 application source directly under `application/`; an earlier consolidation candidate, not a new feature generation by itself. |
+| [#43](https://github.com/yuguangzhi3836-glitch/GO/pull/43) | DEPTH40 deployment compatibility | Runtime/deployment compatibility and rollback-safety repair; business source identity remains DEPTH40. |
+| [#44](https://github.com/yuguangzhi3836-glitch/GO/pull/44) | DEPTH40 packaging | Builds a self-contained DEPTH40 P0.3 compatibility-V2 parent. |
+| [#45](https://github.com/yuguangzhi3836-glitch/GO/pull/45) | Artifact archive | Persists the verified DEPTH40 parent bytes/evidence; not product progression. |
+| [#46](https://github.com/yuguangzhi3836-glitch/GO/pull/46) | Control Plane | Candidate-only `HK_STAGING_TEST_PR` chain; not application product progression. |
+| [#47](https://github.com/yuguangzhi3836-glitch/GO/pull/47) | **DEPTH41 unified product parent** | **Current unified product working baseline**, still Draft/HOLD. |
+| [#48](https://github.com/yuguangzhi3836-glitch/GO/pull/48) | DEPTH41 acceptance / product fix | Cross-end journey acceptance and business-depth repair; selected changes are folded into #47. |
+| [#49](https://github.com/yuguangzhi3836-glitch/GO/pull/49) | Control-plane connection documentation | Workstation / Git / ECS access and identity recovery documentation; not application product progression. |
+
+## `main` is not the latest product tree yet
+
+The current `main` branch contains the merged operational archives and historical repository material, including PR #40. The newest DEPTH41 product parent is still on Draft PR #47 and has **not** been merged into `main`.
+
+For product development/review, do not treat the old root `deliverables/CP11_DEPTH18_20260908` entry as the latest engineering result. DEPTH17/18 remain historical evidence only.
+
+For current product work, begin with PR #47 and its `application/` tree, then verify the exact branch/SHA and current acceptance status before making changes.
+
+## Historical deliverables
+
+Historical DEPTH17/DEPTH18 restoration and evidence remain preserved under `deliverables/` and should not be deleted merely because the product lineage has advanced.
+
+- [DEPTH17 archive](deliverables/CP11_DEPTH17_20260908/README.md)
+- [DEPTH18 archive](deliverables/CP11_DEPTH18_20260908/README.md)
 
 ## GO Command Center source
 
@@ -42,13 +109,6 @@ Operational reference: [`docs/control-plane/command-center/README.md`](docs/cont
 
 The observed 2026-09-11 HK-STAGING runtime source, Agent, Executor, Compose, systemd, Caddy configuration, sanitized configuration, and source/build identity evidence are archived under [`hk-staging/`](hk-staging/). This archive is descriptive evidence only and is not Execution Authority.
 
-The currently proven business deployment topology is versioned as `HK_STAGING_BUSINESS_TOPOLOGY` V1: one shared business image across eight business roles, with Redis and Caddy protected as non-targets. Eight is the current proven topology, not a permanent GO architectural limit. See [`docs/control-plane/hk-staging/DEPLOYMENT_TOPOLOGY_V1.json`](docs/control-plane/hk-staging/DEPLOYMENT_TOPOLOGY_V1.json) and [`docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md`](docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md).
+Before any HK-STAGING deployment, rollback, verification planning, execution, or Boss GPT/mobile control request, read [`docs/control-plane/hk-staging/README.md`](docs/control-plane/hk-staging/README.md) and the action-specific guidance it links.
 
-Before any HK-STAGING deployment, rollback, verification planning, execution,
-or Boss GPT/mobile control request, read
-[`docs/control-plane/hk-staging/README.md`](docs/control-plane/hk-staging/README.md)
-and the action-specific guidance it links.
-
-Boss ChatGPT/Codex sessions that need to submit an HK-STAGING request should
-follow the linked **Boss GPT / mobile Request Channel** guide there. Do not
-reconstruct the control-plane procedure from AI memory or prior chats.
+Boss ChatGPT/Codex sessions that need to submit an HK-STAGING request should follow the linked **Boss GPT / mobile Request Channel** guide there. Do not reconstruct the control-plane procedure from AI memory or prior chats.
