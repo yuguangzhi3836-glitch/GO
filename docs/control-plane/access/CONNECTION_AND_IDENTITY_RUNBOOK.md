@@ -12,6 +12,7 @@ Never add a private-key body, PEM body, token, password, cookie, credential-mana
 - Git remote: `https://github.com/yuguangzhi3836-glitch/GO.git`
 - Git remote access: HTTPS, using the local Git credential helper (`manager`); credentials themselves were not inspected or recorded.
 - Browser required to read the local GO source: **NO**.
+- Codex GitHub plugin/app integration on `Eason-8845`: **UNAVAILABLE / unresolved as of 2026-09-12**. This is a workstation integration limitation, not a GO repository access failure. Routine recovery should use the local `GO-BOSS` working copy over HTTPS Git and should not spend time repeatedly attempting to install the Codex GitHub plugin unless that limitation is intentionally being re-investigated.
 
 ### Quick recovery commands
 
@@ -20,21 +21,25 @@ cd C:\Users\Eason-8845\Documents\Code\GO-BOSS
 git status
 git remote -v
 
-# HK-STAGING-01 (read-only connection probe)
+# HK-STAGING-01 direct SSH connection
 ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i "C:\Users\Eason-8845\Downloads\go-nexus-hk-stg-01-direct-20260903.pem" root@47.239.57.40
 
-# GO Command Center (Windows SSH alias is configured)
+# GO Command Center (preferred: Windows SSH alias; alias carries its dedicated host-key configuration)
 ssh go-command-center-root
+
+# GO Command Center raw target/key diagnostic fallback.
+# This still enforces StrictHostKeyChecking; the alias remains preferred because its exact dedicated UserKnownHostsFile path is not yet recorded here.
+ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -i "C:\Users\Eason-8845\.ssh\go-command-center-codex-root-ed25519" root@47.242.94.212
 ```
 
 ## Workstation direct SSH identities
 
 | Target | SSH target | Local identity | Public fingerprint | Verified |
 | --- | --- | --- | --- | --- |
-| HK-STAGING-01 | `root@47.239.57.40:22` | `C:\Users\Eason-8845\Downloads\go-nexus-hk-stg-01-direct-20260903.pem` | `SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA` | YES, strict-host-key read-only probe on 2026-09-12 |
-| GO Command Center | `root@47.242.94.212:22` | `C:\Users\Eason-8845\.ssh\go-command-center-codex-root-ed25519` | `SHA256:MN3etVe4N91QpsfZkhZECi5YbW6XocZ0tB8LmVebBTU` | YES, alias `go-command-center-root`, strict-host-key read-only probe on 2026-09-12 |
+| HK-STAGING-01 | `root@47.239.57.40:22` | `C:\Users\Eason-8845\Downloads\go-nexus-hk-stg-01-direct-20260903.pem` | `SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA` | YES, strict-host-key connection probe on 2026-09-12 |
+| GO Command Center | `root@47.242.94.212:22` | `C:\Users\Eason-8845\.ssh\go-command-center-codex-root-ed25519` | `SHA256:MN3etVe4N91QpsfZkhZECi5YbW6XocZ0tB8LmVebBTU` | YES, alias `go-command-center-root`, strict-host-key connection probe on 2026-09-12 |
 
-The Command Center SSH alias is defined in `C:\Users\Eason-8845\.ssh\config`. It sets `IdentitiesOnly yes`, strict host-key checking, and a dedicated known-hosts file. Do not copy its private key to a server or repository.
+The Command Center SSH alias is defined in `C:\Users\Eason-8845\.ssh\config`. It sets `IdentitiesOnly yes`, strict host-key checking, and a dedicated known-hosts file. The exact dedicated `UserKnownHostsFile` path is **NOT_YET_RECORDED**; capture it later from this workstation's SSH config rather than rediscovering server credentials. Do not copy its private key to a server or repository.
 
 ## Codex access map
 
@@ -44,6 +49,7 @@ Eason-8845 / Codex
  +-- HTTPS Git --> yuguangzhi3836-glitch/GO
  |                 credential: local Git credential helper
  |                 permission: developer access; browser not required
+ |                 Codex GitHub plugin: unavailable on this workstation; local Git is the supported recovery path
  |
  +-- SSH + local PEM --> HK-STAGING-01 (root@47.239.57.40:22)
  |                       |
