@@ -17,3 +17,11 @@
 原 9ec1de38 的 39 个浏览器场景和 72 个视口检查只作为历史证据；不能直接转给本候选。新 GO Trip 查询交互的完整浏览器、原生设备、复杂改期补款组合、PostgreSQL、Sealed Node 和最终发布仍需各自验收。
 
 未修改 main、PR48、部署兼容文件、香港或 Production；未部署、未改 RDS。
+
+## 本轮源码 CI 结果
+
+测试源码 `800538c1714dd3e50f3abf8c97964a2ee8ba4e72`，Run 34694860505 全部六个 job 成功。Python 1723 PASS、6 PostgreSQL SKIP、0 FAIL／ERROR；前端 246 PASS、兼容单元 34 PASS、隔离 HTTP 148 项检查／87 次请求 PASS。39 个浏览器场景及六单独立 SQLite 原支付退款账本审计通过，结果由本轮重新运行产生。
+
+本地手机源码 `npm run typecheck` 与 `npm run test:contract` 均退出 0；原始输出在 `evidence/depth42-go-trip/local/`。它们不能替代真机旅程。新增订单搜索由实际函数的 Node VM 交互测试覆盖，现有浏览器流程覆盖六品类 GO Trip 列表重入，尚未单独记录搜索输入的真实浏览器流程。
+
+审查／归档后续提交不改变上述 application Git tree。原始 ZIP 将由现有归档流程按固定 artifact ID、大小和 SHA256 读取，验证源码、测试文件分片并回读全部写入字节，保存至独立的 `evidence/depth42-go-trip/`。归档成功以该路径的 ARCHIVE_MANIFEST.json 和归档 Run 为准；旧 depth41 证据保留。
