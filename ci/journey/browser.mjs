@@ -44,11 +44,12 @@ async function login(p,role){
   await p.goto(origin+({consumer:'/go-app/',supplier:'/supplier-console/',admin:'/go-admin/'}[role]));
   if(role==='consumer'){
     await p.locator('#accountBtn').click();await p.locator('#email').fill(credentials.consumer.username);await p.locator('#pwd').fill(credentials.consumer.password);
-    await Promise.all([p.waitForResponse(r=>r.url().includes('/v1/consumer/auth/login')&&r.ok()),p.locator('#login').click()]);await p.locator('#email').waitFor({state:'detached'});await p.locator('#accountBtn').click();await p.locator('#pvAdd').waitFor();
+    await Promise.all([p.waitForResponse(r=>r.url().includes('/v1/consumer/auth/login')&&r.ok()),p.locator('#login').click()]);await p.locator('#email').waitFor({state:'detached'});await p.locator('#accountBtn').click();await p.locator('#vmAdd').waitFor();
   }else{
     await p.locator('#user').fill(credentials[role].username);await p.locator('#pass').fill(credentials[role].password);
     await p.locator('form#login button[type=submit], form#login button.primary').first().click();await p.locator('.shell').waitFor();
     assert.match(await p.locator('.actor').innerText(),role==='admin'?/GO_ADMIN/:/SUPPLIER_USER/);
+    if(role==='supplier')await p.getByRole('heading',{name:'订单与售后',exact:true}).waitFor();
   }
 }
 async function noOverflow(p){
@@ -56,7 +57,7 @@ async function noOverflow(p){
   assert.ok(sizes.document<=sizes.viewport+2,`horizontal overflow ${JSON.stringify(sizes)}`);
 }
 async function traveler(p,name,rel){
-  await p.locator('#pvAdd').click();const d=p.locator('dialog[open]');
+  await p.locator('#vmAdd').click();const d=p.locator('dialog[open]');
   await d.locator('#pvName').fill(name);await d.locator('#pvRel').selectOption(rel);
   await d.locator('#pvPhone').fill('13800000000');await d.locator('#pvLicense').fill('TEST-LICENSE-ISOLATED');
   await d.locator('[data-confirm]').check();await d.locator('button[type=submit]').click();await d.waitFor({state:'detached'});
@@ -71,10 +72,23 @@ async function dialog(p,{party}={}){
   const title=await d.locator('h2').first().innerText();await d.locator('[type=submit]').click();
   await p.waitForFunction(old=>!document.querySelector('dialog[open]')||document.querySelector('dialog[open] h2')?.textContent!==old,title);
 }
-async function home(p,vertical){await p.goto(origin+'/go-app/');await p.locator(`[data-vertical="${vertical}"]`).first().click();}
+async function home(p,vertical){
+  await p.goto(origin+'/go-app/');
+  const mobility=['RIDE','RENTAL'].includes(vertical);
+  await p.locator(`[data-home-vertical="${mobility?'MOBILITY':vertical}"]`).click();
+  if(mobility)await p.locator(vertical==='RIDE'?'#homeRide':'#homeRental').click();
+}
 async function booked(p,vertical,before){
-  await p.waitForResponse(r=>r.url().includes(`/v1/consumer/checkout/${vertical}/`)&&r.ok()).catch(async()=>{await Promise.all(pending);assert.ok(orders.slice(before).some(x=>x.vertical===vertical),'checkout response absent');});
   await Promise.all(pending);assert.ok(orders.slice(before).some(x=>x.vertical===vertical),'paid order missing');await noOverflow(p);
+  await scenario(p,`${vertical}-after-sales-refund`,async()=>{
+    const selectors={HOTEL:'#cancel',FLIGHT:'#jRefund',RAIL:'#rref',RIDE:'#mcancel',RENTAL:'#mcancel',ATTRACTION:'#aref'};
+    await p.locator(selectors[vertical]).click();
+    if(vertical==='HOTEL'){await dialog(p);}
+    else{
+      const response=p.waitForResponse(r=>r.request().method()==='POST'&&/\/(refund|cancel)$/.test(new URL(r.url()).pathname));
+      await p.locator('#uxConfirm').click();const r=await response;assert.ok(r.ok(),`Refund returned ${r.status()}: ${await r.text()}`);
+    }
+  },'journeys');
 }
 const consumer=await pageFor('consumer',390),supplier=await pageFor('supplier',1440),admin=await pageFor('admin',1440);
 try{
