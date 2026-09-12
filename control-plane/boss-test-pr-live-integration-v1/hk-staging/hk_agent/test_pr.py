@@ -17,6 +17,7 @@ BUILD_ROOT = "/var/lib/go-hk-test-pr/builds"
 BUILDER_IMAGE = "go-hotel:aoluguya-direct-r3-1-20260906"
 BUILDER_IMAGE_ID = "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324"
 DEPENDENCY_PROFILE_SHA256 = "904ede5e7ee3408e5f80bc2957d5f4b4d32754be6797bf6a53cff545b2fc94aa"
+PYTHONPYCACHEPREFIX = "/tmp/pycache"
 SHA = re.compile(r"^[0-9a-f]{40}$")
 PR = re.compile(r"^[1-9][0-9]{0,8}$")
 
@@ -137,7 +138,8 @@ def execute(task, runner=_run):
             raise Reject("TEST_PR_IMAGE_ID_REJECT")
         runner(["/usr/bin/docker", "run", "--rm", "--network", "none", "--read-only", "--cap-drop", "ALL",
                 "--security-opt", "no-new-privileges", "--pids-limit", "128", "--memory", "768m", "--cpus", "1.00",
-                "--tmpfs", "/tmp:rw,nosuid,nodev,size=64m", "--entrypoint", "/bin/sh", image, "-c",
+                "--tmpfs", "/tmp:rw,nosuid,nodev,size=64m", "--env", "PYTHONPYCACHEPREFIX=" + PYTHONPYCACHEPREFIX,
+                "--entrypoint", "/bin/sh", image, "-c",
                 "python -m compileall -q /workspace/src && alembic heads"], timeout=180)
         return {
             "schema_version": "1", "executor_version": "test-pr-v1", "action_id": ACTION,

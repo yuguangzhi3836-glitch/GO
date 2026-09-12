@@ -185,6 +185,37 @@ class IntegrationTests(unittest.TestCase):
         self.assertNotIn("docker compose", source.lower())
         self.assertNotIn("root.mkdir", source)
 
+    def test_python_bytecode_cache_is_fixed_and_isolated(self):
+        source = (ROOT / "hk-staging" / "hk_agent" / "test_pr.py").read_text(encoding="utf-8")
+        self.assertIn('PYTHONPYCACHEPREFIX = "/tmp/pycache"', source)
+        self.assertIn('"--env", "PYTHONPYCACHEPREFIX=" + PYTHONPYCACHEPREFIX', source)
+        self.assertIn('"--tmpfs", "/tmp:rw,nosuid,nodev,size=64m"', source)
+        self.assertIn('"--read-only", "--cap-drop", "ALL"', source)
+        self.assertIn('"--network", "none"', source)
+        self.assertIn('"--security-opt", "no-new-privileges"', source)
+        self.assertNotIn('PYTHONPYCACHEPREFIX", task', source)
+
+    def test_compileall_redirects_bytecode_from_read_only_source_and_rejects_invalid_python(self):
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as raw:
+            root = pathlib.Path(raw)
+            source = root / "source"
+            cache = root / "cache"
+            source.mkdir()
+            cache.mkdir()
+            valid = source / "valid.py"
+            valid.write_text("value = 42\n", encoding="utf-8")
+            source.chmod(0o555)
+            env = os.environ.copy()
+            env["PYTHONPYCACHEPREFIX"] = str(cache)
+            result = subprocess.run([sys.executable, "-m", "compileall", "-q", str(source)], env=env, text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertFalse(any(source.rglob("__pycache__")))
+            self.assertTrue(any(cache.rglob("*.pyc")))
+            source.chmod(0o755)
+            (source / "invalid.py").write_text("def broken(:\n", encoding="utf-8")
+            invalid = subprocess.run([sys.executable, "-m", "compileall", "-q", str(source)], env=env, text=True, capture_output=True)
+            self.assertNotEqual(invalid.returncode, 0)
+
     def test_offline_builder_profile_is_pinned_and_non_networked(self):
         dockerfile = (ROOT / "hk-staging" / "Dockerfile.go-application-python-v1").read_text(encoding="utf-8").lower()
         source = (ROOT / "hk-staging" / "hk_agent" / "test_pr.py").read_text(encoding="utf-8")
