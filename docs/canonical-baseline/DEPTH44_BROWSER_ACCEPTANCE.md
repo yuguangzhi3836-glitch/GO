@@ -52,3 +52,7 @@
 新增 9 项后端验证覆盖不同日期和币种、历史记录超过上限、过期／无匹配报价及无效日期参数；新增 5 项前端检查覆盖参数传递、历史报价排除、预订前核对与迟到响应隔离。包含酒店原退改规则的本地相关回归共 31 项通过，前端全量 254 项通过。
 
 当前应用树为 `0458fcee1a6f086906746e75ba22b43b50f33fef`，原 1307 文件保留，修改 2 个应用文件并新增 2 个测试文件，共 1309 个。具体指纹和当前运行绑定以 CURRENT_CANDIDATE.json / DEPTH44_SOURCE_FINGERPRINT.json 为准；以上两个失败尝试按各自源码保留。
+
+## Third run: test navigation correction
+
+Run 34701843097 on 4570436f2053b654b59ecdd5ac9df3ed6a963373 passed both product-fix checks, capture-failure retention and same-operation payment retry. The next supplier list lookup timed out: the script navigated to the same #/orders URL while the workbench retained that hash. Same-document navigation did not redraw the list. The harness now clicks the existing visible 返回订单 button and reloads the admin page when revisiting the same URL. This is a TEST_ONLY correction; application tree 0458fcee1a6f086906746e75ba22b43b50f33fef and its source fingerprint remain unchanged. The failed run is not PASS and its browser ZIP is preserved separately (artifact 10300785100, SHA256 7958c01c74e8ca2608ed68a4f455569826a34adc72c723047883de17482cfd86). Full CI is pending for the next commit.

@@ -125,7 +125,11 @@ export async function hotelDepth(h) {
       }
       if(requested){await kv(list,'申请入住日期',requested[0]);await kv(list,'申请退房日期',requested[1]);}
       await noOverflow(p);extra.checkpoints.push({name:name+'-consumer-list',screenshot:await capture(p,name+'-consumer-list')});
-      await owner.goto(origin+'/supplier-console/#/orders');
+      // Workbench keeps the #/orders hash. Navigating to that same URL does
+      // not re-render the list; use the customer's visible return action.
+      const back=owner.getByRole('button',{name:'← 返回订单',exact:true});
+      if(await back.isVisible())await back.click();
+      else await owner.goto(origin+'/supplier-console/#/orders');
       const tr=owner.locator('tr[data-i]').filter({hasText:oid});await tr.waitFor();await tr.click();
       await owner.getByRole('heading',{name:'当前退改与付款摘要',exact:true}).waitFor();
       const supplierSnapshot=await read(owner,'/v1/supplier/transaction-orders/HOTEL/'+oid);
@@ -135,7 +139,8 @@ export async function hotelDepth(h) {
       assert.ok((await card.innerText()).includes(dates[0]));
       assert.ok((await card.innerText()).replaceAll(',','').includes(amount(paid)));
       await noOverflow(owner);extra.checkpoints.push({name:name+'-supplier-detail',screenshot:await capture(owner,name+'-supplier-detail')});
-      await admin.goto(origin+'/go-admin/#/vertical-hotel');
+      const adminUrl=origin+'/go-admin/#/vertical-hotel';
+      if(admin.url()===adminUrl)await admin.reload();else await admin.goto(adminUrl);
       await admin.locator('#view').getByText(oid,{exact:true}).first().waitFor();
       assert.deepEqual(await read(admin,'/internal/v1/admin/transaction-orders/HOTEL/'+oid),snapshot);
       const operations=await read(admin,'/internal/v1/admin/operations/verticals/HOTEL');
