@@ -25,3 +25,5 @@
 本地手机源码 `npm run typecheck` 与 `npm run test:contract` 均退出 0；原始输出在 `evidence/depth42-go-trip/local/`。它们不能替代真机旅程。新增订单搜索由实际函数的 Node VM 交互测试覆盖，现有浏览器流程覆盖六品类 GO Trip 列表重入，尚未单独记录搜索输入的真实浏览器流程。
 
 审查／归档后续提交不改变上述 application Git tree。原始 ZIP 将由现有归档流程按固定 artifact ID、大小和 SHA256 读取，验证源码、测试文件分片并回读全部写入字节，保存至独立的 `evidence/depth42-go-trip/`。归档成功以该路径的 ARCHIVE_MANIFEST.json 和归档 Run 为准；旧 depth41 证据保留。
+
+归档已完成：提交 `155b8be4e86bf8e25088aeae58b3a948c958ad89`，Run 34695397575 成功；6 个原始 ZIP 加运行记录、可读结果、指纹共 15 个文件逐字节回读 PASS。已另行读取归档的 browser-results.json 与 independent-ledger-audit.json，确认本轮源码的 39 场景、72 详情视口、六单原支付退款核对 PASS。
