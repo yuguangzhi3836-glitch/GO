@@ -1,3 +1,19 @@
+# 当前统一新父包
+
+**CP11_DEPTH41_UNIFIED_PARENT_V1_20260912** 已生成并永久归档，作为 PR47 唯一开发与待验起点。
+
+[完整下载](https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34670014293/artifacts/10289943544) · [永久归档与核验说明](../../deliverables/CP11_DEPTH41_UNIFIED_PARENT_V1_20260912/README.md) · [当前版本清单](CURRENT_PARENT.json) · [尚未完成的验收](REMAINING_GAPS.md)。
+
+源码固定于 `62fdde3cabe72b92fa5dc1b37b7652395fe3aba5`，应用 Git tree `a73b9b53a59c88ab995d0f9b123c9fb79e87e60d`。完整源码与新镜像的身份一致。最后的归档提交只记录分卷、日志和审查资料，应用、兼容代码、依赖与构建工具不变；自动结果始终绑定已测试源码提交，不把归档提交当作重新测试。
+
+本次 Python 1,704 通过、6 跳过、0 失败；前端 244、兼容 34、HTTP 148 检查和手机类型/原生模块连接通过。镜像源码、离线重新加载、ZIP 恢复和 Git 分卷回读通过。三端完整 UX、六品类最终资金闭环、真机、Sealed Node 与最终发布仍 HOLD。
+
+PR47 保持 Draft。先在这一个起点完成剩余验收，经审查和明确合并授权后，再从合并后的 main 按 PR41 开功能分支。香港实际运行代码与本包不同。
+
+以下保留对齐过程及历史说明；时点性 pending 信息以以上 CURRENT_PARENT 和证据索引为准。
+
+---
+
 # 新父包构建
 
 本次将统一候选封装为 **CP11_DEPTH41_UNIFIED_PARENT_V1_20260912**，完整源码与新镜像一并构建。固定输入、离线恢复和永久 Git 分卷归档方法见 [父包说明](../../packaging/depth41-unified-parent/README.md)。实际构建结论以本次提交的 Actions Run 和 PARENT_BUILD_REPORT 为准；不能继承下方历史结果。

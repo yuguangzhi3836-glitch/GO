@@ -1,3 +1,13 @@
+# GO 当前统一父包
+
+**CP11_DEPTH41_UNIFIED_PARENT_V1_20260912** 已完成构建、验证和永久归档。
+
+[完整父包下载](https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34670014293/artifacts/10289943544) · [永久保存及核验](deliverables/CP11_DEPTH41_UNIFIED_PARENT_V1_20260912/README.md) · [源码身份与剩余验收](docs/canonical-baseline/README.md)。
+
+后续统一使用 PR47 的 `application/` 作为开发与待验起点。旧父包及 PR48 历史证据保留；完整跨端闭环与最终发布仍 HOLD。
+
+---
+
 # GO 统一新父包
 
 唯一开发待验起点：PR47 的 `application/`。新父包：**CP11_DEPTH41_UNIFIED_PARENT_V1_20260912**，包含完整统一源码、对应的新兼容镜像及审查资料。[父包下载与核验说明](packaging/depth41-unified-parent/README.md) · [逐文件对齐和验收缺口](docs/canonical-baseline/README.md)。PR48 保留为历史证据；最终验收、合入 main 与部署状态分别记录。
