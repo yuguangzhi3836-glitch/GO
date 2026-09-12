@@ -68,23 +68,30 @@
         "plugin_required_for_normal_work": false
       },
       "go_repository": {
-        "local_path": "C:\\Users\\Eason\\Desktop\\1\\go-ai-webapp\\.tmp-pr5-20260909\\repo",
-        "repository_root": "C:\\Users\\Eason\\Desktop\\1\\go-ai-webapp\\.tmp-pr5-20260909\\repo",
-        "path_status": "TEMPORARY_LOOKING_CURRENT_WORKING_COPY",
-        "selection_basis": "only clone found within approved search scope with origin yuguangzhi3836-glitch/GO",
+        "local_path": "D:\\Code\\Workbuddy\\GO",
+        "repository_root": "D:\\Code\\Workbuddy\\GO",
+        "path_status": "FORMAL_WORKBUDDY_WORKING_COPY",
+        "selection_basis": "fresh verified clone created on 2026-09-12 after native Git was validated with WorkBuddy sandbox disabled",
         "remote_origin": "https://github.com/yuguangzhi3836-glitch/GO.git",
         "remote_access_method": "HTTPS",
         "credential_mechanism": "Git Credential Manager configured by PortableGit; secret not recorded",
         "browser_required_for_source_reading": false,
-        "branch_at_verification": "docs/control-plane-connection-inventory-20260912",
-        "working_tree_status_at_verification": "clean before documentation update"
+        "branch_at_verification": "main",
+        "head_at_verification": "9645c6f522544d0751ee658e0ab9f131043e7df2",
+        "working_tree_status_at_verification": "clean",
+        "workbuddy_sandbox_enabled": false,
+        "native_git_gate": "PASS"
       },
       "primary_ecs_access": {
         "method": "Alibaba Cloud Workbench CLI",
         "tool": "Alibaba Cloud Workbench CLI",
         "executable": "C:\\Users\\Eason\\.workbench\\bin\\workbench.exe",
         "version": "workbench v1.0.1 (commit: 86c0aff, built: 2026-08-24T07:12:39Z)",
-        "credential_mechanism": "AK profile; credential value not read or recorded",
+        "credential_mechanism": "AK profile stored in local Workbench config; credential values are not recorded in this repository",
+        "credential_profile_path": "C:\\Users\\Eason\\.workbench\\config.json",
+        "credential_storage_observation": "access_key_id and access_key_secret fields are stored in plaintext in the local profile; values were not echoed or recorded",
+        "do_not_commit_credential_profile": true,
+        "proxy_note": "Inherited HTTP(S)_PROXY/ALL_PROXY settings may interfere with Workbench CLI; connectivity probe passed after clearing those proxy variables for the invocation",
         "interactive_auth_required_for_existing_codex_invocation": false,
         "codex_can_invoke": true,
         "targets": [
@@ -96,8 +103,8 @@
             "region": "cn-hongkong",
             "user": "root",
             "verified": true,
-            "probe_command": "workbench exec --instance-id i-j6ccs8t04f1p4d8pe69z --region cn-hongkong --command \"hostname; whoami\"",
-            "probe_result": "iZj6ccs8t04f1p4d8pe69zZ / root"
+            "probe_command": "workbench exec --instance-id i-j6ccs8t04f1p4d8pe69z --region cn-hongkong --command \"hostname; whoami; uptime\"",
+            "probe_result": "iZj6ccs8t04f1p4d8pe69zZ / root / up 9 days, 4:24"
           },
           {
             "name": "GO Command Center",
@@ -107,8 +114,8 @@
             "region": "cn-hongkong",
             "user": "root",
             "verified": true,
-            "probe_command": "workbench exec --instance-id i-j6c7k6k01biwlbnwutu5 --region cn-hongkong --command \"hostname; whoami\"",
-            "probe_result": "iZj6c7k6k01biwlbnwutu5Z / root"
+            "probe_command": "workbench exec --instance-id i-j6c7k6k01biwlbnwutu5 --region cn-hongkong --command \"hostname; whoami; uptime\"",
+            "probe_result": "iZj6c7k6k01biwlbnwutu5Z / root / up 8 days, 13:11"
           }
         ]
       },
@@ -126,9 +133,11 @@
           "identities_only": true,
           "strict_host_key_checking": true,
           "user_known_hosts_file": "C:\\Users\\Eason\\.ssh\\known_hosts",
+          "tcp_22_reachable": true,
+          "ssh_banner": "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.17",
           "direct_ssh_status": "CONFIGURED_AUTHORIZATION_FAILED",
           "verified": false,
-          "probe_result": "Permission denied (publickey), 2026-09-12",
+          "probe_result": "Network and SSH banner succeeded; configured key was rejected with Permission denied (publickey), 2026-09-12",
           "operational_impact": "NONE_WHILE_WORKBENCH_AVAILABLE",
           "standard_command": "ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=\"C:\\Users\\Eason\\.ssh\\known_hosts\" -i \"C:\\Users\\Eason\\.ssh\\go-nexus-hk-stg-01\" root@47.239.57.40"
         },
@@ -145,9 +154,12 @@
           "identities_only": null,
           "strict_host_key_checking": null,
           "user_known_hosts_file": "C:\\Users\\Eason\\.ssh\\known_hosts",
+          "user_known_hosts_file_status": "ENTRY_ADDED_BY_NON_STRICT_PROBE_NOT_INDEPENDENTLY_PINNED",
+          "tcp_22_reachable": true,
+          "ssh_banner": "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.17",
           "direct_ssh_status": "NOT_CONFIGURED",
           "verified": false,
-          "probe_result": "No dedicated local identity was found; bounded probe timed out during banner exchange on 2026-09-12",
+          "probe_result": "Network and SSH banner succeeded; no dedicated local identity is configured, so direct SSH authentication is unavailable (Permission denied (publickey)), 2026-09-12",
           "operational_impact": "NONE_WHILE_WORKBENCH_AVAILABLE",
           "standard_command": null,
           "raw_fallback_command": null
@@ -194,7 +206,7 @@
       "source": "Eason-13490 / Codex",
       "destination": "HK-STAGING-01",
       "protocol": "Alibaba Cloud Workbench CLI",
-      "credential_path": "AK profile metadata only; credential value not recorded",
+      "credential_path": "local AK profile; credential values not recorded in repository",
       "permission": "root remote command execution via existing Workbench authorization",
       "purpose": "primary approved HK Control Plane operations from this workstation",
       "instance_id": "i-j6ccs8t04f1p4d8pe69z",
@@ -205,7 +217,7 @@
       "source": "Eason-13490 / Codex",
       "destination": "GO Command Center",
       "protocol": "Alibaba Cloud Workbench CLI",
-      "credential_path": "AK profile metadata only; credential value not recorded",
+      "credential_path": "local AK profile; credential values not recorded in repository",
       "permission": "root remote command execution via existing Workbench authorization",
       "purpose": "primary approved Command Center operations from this workstation",
       "instance_id": "i-j6c7k6k01biwlbnwutu5",
