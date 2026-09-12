@@ -3,12 +3,18 @@
   "application_git_tree": "365b848d419ca5517b2cf711c271694bde346e33",
   "source_tree_sha256": "0b2c140ae8edf532704b022d345da8892e7863947f4ff5b34e3a0a40a7000077",
   "producer_run": 34703772217,
-  "archive_workflow_commit": "c454712dc5a3d045b2149c64ba743adf99194a38",
-  "archive_workflow_run": "34704109701",
-  "archive_phase": "BROWSER_EVIDENCE_PENDING_PYTHON",
-  "full_ci": "PENDING",
-  "python": null,
-  "python_files": null,
+  "archive_workflow_commit": "b84ece4bb4a2a8851c4f6a59dabbe8282ea27fc7",
+  "archive_workflow_run": "34705447306",
+  "archive_phase": "ALL_RECORDED_CI_GATES_PASSED",
+  "full_ci": "PASS",
+  "python": {
+    "tests": 1757,
+    "passed": 1751,
+    "skipped": 6,
+    "failures": 0,
+    "errors": 0
+  },
+  "python_files": 242,
   "browser_scenarios": 53,
   "detail_viewports": 72,
   "hotel_adjustment_orders": 1,
@@ -43,70 +49,6 @@
   "final_release": "HOLD",
   "artifacts": [
     {
-      "id": 10301132361,
-      "run_id": 34703772217,
-      "head_sha": "a09a32e8cc6da10785e8bcf6be025013aec50931",
-      "size": 12516771,
-      "sha256": "c4c81245ab3666b58d8a28597ded392b08baff10323ad1e3d5bf28ce2bcc5d10",
-      "archive_path": "evidence/depth45-hotel-free-change/34703772217/10301132361.zip"
-    },
-    {
-      "id": 10301042305,
-      "run_id": 34703772217,
-      "head_sha": "a09a32e8cc6da10785e8bcf6be025013aec50931",
-      "size": 85901,
-      "sha256": "2b0bc4e4ef4750dd9e2e6b215860891a81daa3f2041ae37ab8c70f2449ee51d0",
-      "archive_path": "evidence/depth45-hotel-free-change/34703772217/10301042305.zip"
-    },
-    {
-      "id": 10301570946,
-      "run_id": 34702254624,
-      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
-      "size": 77811,
-      "sha256": "93fc3dfbb053bb30ea36cd18df99b82387310a74570c9f357e5533e2fc81a09e",
-      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10301570946.zip"
-    },
-    {
-      "id": 10301445891,
-      "run_id": 34702254624,
-      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
-      "size": 10706051,
-      "sha256": "132528f8e3fc1447bf5e542b8a7678f2e2c4440f4ed571e5d6950903fc9e1c70",
-      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10301445891.zip"
-    },
-    {
-      "id": 10301351354,
-      "run_id": 34702254624,
-      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
-      "size": 79765,
-      "sha256": "dcc5e1b9268d24f2904fc2209358ec08b01c1e04e71f6d6fb6ac99aae1c13cd4",
-      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10301351354.zip"
-    },
-    {
-      "id": 10300911107,
-      "run_id": 34702254624,
-      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
-      "size": 85802,
-      "sha256": "daf901b4f22eff5c4cfa3925728eedc73e5c116df9da401a13b4001507ea9c23",
-      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10300911107.zip"
-    },
-    {
-      "id": 10300891340,
-      "run_id": 34702254624,
-      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
-      "size": 79039,
-      "sha256": "6edb3aac7e7edb8d3551052beb7254d874bbc7e6dc20b7e7c815a6068ae8cef1",
-      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10300891340.zip"
-    },
-    {
-      "id": 10300514793,
-      "run_id": 34702254624,
-      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
-      "size": 79991,
-      "sha256": "90fc205c8d6f052c8412d7a0203c4f76aae91c6b2acba97660c5baad505e937b",
-      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10300514793.zip"
-    },
-    {
       "id": 10300187754,
       "run_id": 34700777402,
       "head_sha": "47b6a06cdb63a90d549663cb0a73b99b2d919bdc",
@@ -129,6 +71,102 @@
       "size": 8599277,
       "sha256": "7958c01c74e8ca2608ed68a4f455569826a34adc72c723047883de17482cfd86",
       "archive_path": "evidence/depth45-hotel-free-change/historical/34701843097/10300785100.zip"
+    },
+    {
+      "id": 10300514793,
+      "run_id": 34702254624,
+      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
+      "size": 79991,
+      "sha256": "90fc205c8d6f052c8412d7a0203c4f76aae91c6b2acba97660c5baad505e937b",
+      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10300514793.zip"
+    },
+    {
+      "id": 10300891340,
+      "run_id": 34702254624,
+      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
+      "size": 79039,
+      "sha256": "6edb3aac7e7edb8d3551052beb7254d874bbc7e6dc20b7e7c815a6068ae8cef1",
+      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10300891340.zip"
+    },
+    {
+      "id": 10300911107,
+      "run_id": 34702254624,
+      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
+      "size": 85802,
+      "sha256": "daf901b4f22eff5c4cfa3925728eedc73e5c116df9da401a13b4001507ea9c23",
+      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10300911107.zip"
+    },
+    {
+      "id": 10301351354,
+      "run_id": 34702254624,
+      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
+      "size": 79765,
+      "sha256": "dcc5e1b9268d24f2904fc2209358ec08b01c1e04e71f6d6fb6ac99aae1c13cd4",
+      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10301351354.zip"
+    },
+    {
+      "id": 10301445891,
+      "run_id": 34702254624,
+      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
+      "size": 10706051,
+      "sha256": "132528f8e3fc1447bf5e542b8a7678f2e2c4440f4ed571e5d6950903fc9e1c70",
+      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10301445891.zip"
+    },
+    {
+      "id": 10301570946,
+      "run_id": 34702254624,
+      "head_sha": "7a0a2628e3c3caee11832d761aade549cdfd4509",
+      "size": 77811,
+      "sha256": "93fc3dfbb053bb30ea36cd18df99b82387310a74570c9f357e5533e2fc81a09e",
+      "archive_path": "evidence/depth45-hotel-free-change/historical/34702254624/10301570946.zip"
+    },
+    {
+      "id": 10300823400,
+      "run_id": 34703772217,
+      "head_sha": "a09a32e8cc6da10785e8bcf6be025013aec50931",
+      "size": 80909,
+      "sha256": "da8eb34a5f599f57728a4797331642136d80f0d9f9bc08b04c5509f82c7fba4b",
+      "archive_path": "evidence/depth45-hotel-free-change/34703772217/10300823400.zip"
+    },
+    {
+      "id": 10300857173,
+      "run_id": 34703772217,
+      "head_sha": "a09a32e8cc6da10785e8bcf6be025013aec50931",
+      "size": 80278,
+      "sha256": "244cde113653c86d731db811470caa8af4dd4de90574c8ea374371e70e727f00",
+      "archive_path": "evidence/depth45-hotel-free-change/34703772217/10300857173.zip"
+    },
+    {
+      "id": 10301027796,
+      "run_id": 34703772217,
+      "head_sha": "a09a32e8cc6da10785e8bcf6be025013aec50931",
+      "size": 78524,
+      "sha256": "ce3834f7e252c9ad07901a76412a62d0c1b88ba5711d255e1cb555618eaa96b5",
+      "archive_path": "evidence/depth45-hotel-free-change/34703772217/10301027796.zip"
+    },
+    {
+      "id": 10301042305,
+      "run_id": 34703772217,
+      "head_sha": "a09a32e8cc6da10785e8bcf6be025013aec50931",
+      "size": 85901,
+      "sha256": "2b0bc4e4ef4750dd9e2e6b215860891a81daa3f2041ae37ab8c70f2449ee51d0",
+      "archive_path": "evidence/depth45-hotel-free-change/34703772217/10301042305.zip"
+    },
+    {
+      "id": 10301132361,
+      "run_id": 34703772217,
+      "head_sha": "a09a32e8cc6da10785e8bcf6be025013aec50931",
+      "size": 12516771,
+      "sha256": "c4c81245ab3666b58d8a28597ded392b08baff10323ad1e3d5bf28ce2bcc5d10",
+      "archive_path": "evidence/depth45-hotel-free-change/34703772217/10301132361.zip"
+    },
+    {
+      "id": 10301601891,
+      "run_id": 34703772217,
+      "head_sha": "a09a32e8cc6da10785e8bcf6be025013aec50931",
+      "size": 78415,
+      "sha256": "c130c96a94f293a1346c92df3e59b7ba44759b33c06412fae9cc7a65210dc46e",
+      "archive_path": "evidence/depth45-hotel-free-change/34703772217/10301601891.zip"
     }
   ]
 }
