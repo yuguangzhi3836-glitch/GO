@@ -3,11 +3,11 @@ import base64, hashlib, io, json, os, pathlib, subprocess, urllib.parse, urllib.
 
 REPO='yuguangzhi3836-glitch/GO'
 BRANCH='fix/canonical-parent-retention-20260912'
-SOURCE='800538c1714dd3e50f3abf8c97964a2ee8ba4e72'
-APP_TREE='219e4ca8a7176e3ff4c32af5524e322635c2d845'
-SOURCE_HASH='be152b85b7b55ae6cc661446b20a309fc4c004c1c0c25f7b0c74fe0ea1c664da'
-RUN=34694860505
-PREFIX='evidence/depth42-go-trip'
+SOURCE='abc28494bae06bff60b1f4597009198d0875b444'
+APP_TREE='60b254702a53b3f78180db6934e8cdaf1566d2e3'
+SOURCE_HASH='530086b348bdc8e935d32bae738e8b201f249e1085a09ae9bd0742139a3b2964'
+RUN=34696763146
+PREFIX='evidence/depth43-hotel-change'
 HEAD=os.environ['GITHUB_SHA']
 TOKEN=os.environ['GO_ARCHIVE_TOKEN']
 assert os.environ['GITHUB_REPOSITORY']==REPO
@@ -85,7 +85,7 @@ assert browser is not None and len(reports)==4
 selected=[p for x in inventory for p in x['selected']]
 assert len(selected)==len(set(selected)) and all(set(x['all'])==set(selected) for x in inventory)
 totals={k:sum(x[k] for x in reports) for k in ['tests','passed','skipped','failures','errors']}
-assert totals=={'tests':1729,'passed':1723,'skipped':6,'failures':0,'errors':0}
+assert totals=={'tests':1739,'passed':1733,'skipped':6,'failures':0,'errors':0}
 summary={'source_commit':SOURCE,'application_git_tree':APP_TREE,'source_tree_sha256':SOURCE_HASH,
  'producer_run':RUN,'archive_workflow_commit':HEAD,'archive_workflow_run':os.environ['GITHUB_RUN_ID'],
  'python':totals,'python_files':len(selected),'browser_scenarios':39,'detail_viewports':72,

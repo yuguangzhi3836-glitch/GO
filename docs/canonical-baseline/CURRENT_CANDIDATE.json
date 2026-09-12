@@ -19,31 +19,7 @@
     "native_contract": "PASS",
     "database": "ISOLATED_SQLITE"
   },
-  "ci": {
-    "browser": "PASS_39_RECORDED_SCENARIOS",
-    "frontend": "249_PASS",
-    "compatibility": "34_PASS",
-    "http": "148_CHECKS_87_REQUESTS_PASS",
-    "python_completed_shards": [
-      {
-        "shard": 0,
-        "passed": 436,
-        "skipped": 0
-      },
-      {
-        "shard": 1,
-        "passed": 452,
-        "skipped": 0
-      },
-      {
-        "shard": 2,
-        "passed": 406,
-        "skipped": 5
-      }
-    ],
-    "python_shard_3": "IN_PROGRESS",
-    "full_regression": "HOLD"
-  },
+  "ci": "PASS_WITH_EXPLICIT_POSTGRESQL_SKIPS",
   "browser_search": "HOLD_LOOPBACK_ERR_BLOCKED_BY_CLIENT",
   "historical_results_transferred": false,
   "full_three_end_ux": "HOLD",
@@ -56,7 +32,7 @@
   "production": "HOLD",
   "candidate_commit": "abc28494bae06bff60b1f4597009198d0875b444",
   "candidate_branch": "fix/canonical-parent-retention-20260912",
-  "current_status": "HOTEL_CHANGE_REPAIRS_ONE_CI_SHARD_PENDING",
+  "current_status": "HOTEL_CHANGE_REPAIRS_RECORDED_SCOPE_PASS",
   "new_changes": "docs/canonical-baseline/DEPTH43_HOTEL_CHANGE_REPAIRS.json",
   "deployment_package": "NOT_RESEALED",
   "historical_tested_source": "800538c1714dd3e50f3abf8c97964a2ee8ba4e72",
@@ -68,5 +44,27 @@
     "seconds": 122.4,
     "replaces_github_job": false
   },
-  "full_feature_retention": "HOLD_APPROVAL_BLOCKED_PROVIDER_GUARD"
+  "full_feature_retention": "HOLD_APPROVAL_BLOCKED_PROVIDER_GUARD",
+  "python": {
+    "tests": 1739,
+    "passed": 1733,
+    "skipped": 6,
+    "failures": 0,
+    "errors": 0
+  },
+  "frontend": {
+    "passed": 249,
+    "failed": 0
+  },
+  "compatibility": {
+    "passed": 34
+  },
+  "http": {
+    "checks_passed": 148,
+    "requests": 87
+  },
+  "browser_scenarios": 39,
+  "independent_original_payment_ledger_orders": 6,
+  "evidence_archive": "evidence/depth43-hotel-change/ARCHIVE_MANIFEST.json",
+  "evidence_archive_status": "PENDING_BOUND_ARCHIVE_WORKFLOW"
 }

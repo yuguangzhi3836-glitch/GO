@@ -28,3 +28,9 @@ CI 尚未完成；全量及浏览器结果必须绑定新源码。未取得本�
 当前应用源码 abc28494bae06bff60b1f4597009198d0875b444 的 39 个既有浏览器场景、六单独立账本核对、前端 249 项、兼容 34 项、隔离 HTTP 148 项检查均已通过。三个 Python 分片已完成，最后 shard 3 仍在运行，完整回归仍 HOLD。
 
 为排查异常耗时，在同一应用源码的隔离本地环境按完全相同的 shard 3 文件清单复查：439 PASS、1 PostgreSQL SKIP、0 FAIL／ERROR，122.40 秒、退出 0。该复查不替代 GitHub 的 Python 3.13 分片结果。原始输出与范围绑定在 evidence/depth43-hotel-change/local/。
+
+## 本轮 CI 最终结果
+
+Run 34696763146 全部六个任务成功，测试提交 abc28494bae06bff60b1f4597009198d0875b444。240 个 Python 测试文件按四分片覆盖，1733 PASS、6 PostgreSQL SKIP、0 FAIL／ERROR；前端 249、兼容 34、隔离 HTTP 148 项／87 次请求通过。既有 39 个浏览器场景及六单原支付退款独立 SQLite 审计通过。慢分片最终报告 439 PASS、1 SKIP、1573.20 秒，未将本地结果替换为 CI 结果。
+
+本轮新搜索与酒店复杂改期仍缺单独真实浏览器／原生设备旅程。原始 ZIP 按固定 artifact ID、大小、SHA256 和源码绑定，由原有归档工作流写入 evidence/depth43-hotel-change/；完成以 ARCHIVE_MANIFEST.json 与归档 Run 为准。
