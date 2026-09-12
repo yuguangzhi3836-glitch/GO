@@ -1,0 +1,23 @@
+name: GO read-only CI receipt index
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/go-ci-receipt-index.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  receipt-index:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner, repo = context.repo.repo;
+            const branch = context.payload.pull_request.head.ref;
+            const runs = await github.rest.actions.listWorkflowRunsForRepo({owner, repo, branch, per_page: 15});
+            console.log('RUN_INDEX=' + JSON.stringify(runs.data.workflow_runs.map(r => ({id:r.id,name:r.name,head_sha:r.head_sha,status:r.status,conclusion:r.conclusion,event:r.event,html_url:r.html_url}))));
+            const main = await github.rest.repos.getBranch({owner,repo,branch:'main'});
+            console.log('MAIN_BINDING=' + JSON.stringify({sha:main.data.commit.sha,tree:main.data.commit.commit.tree.sha}));

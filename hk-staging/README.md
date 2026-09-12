@@ -21,6 +21,8 @@ This directory archives the source and operational configuration observed on **H
 
 All eight business targets use this same image. Redis and Caddy are protected non-target services.
 
+These eight business roles are now documented as the current proven `HK_STAGING_BUSINESS_TOPOLOGY` version `1`. They are a versioned baseline rather than a permanent architectural limit. See [`../docs/control-plane/hk-staging/DEPLOYMENT_TOPOLOGY_V1.json`](../docs/control-plane/hk-staging/DEPLOYMENT_TOPOLOGY_V1.json) and [`../docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md`](../docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md). The installed Executor still enforces the fixed eight-service scope; no dynamic topology loading is claimed.
+
 ## Runtime source identity
 
 `source/runtime/` contains 577 files. Its deterministic sorted SHA-256 manifest digest is:
@@ -48,6 +50,10 @@ The Executor's four runtime modules are included under `source/executor/runtime/
 This archive does **not** contain private/signing/SSH key material, runtime `.env` values, passwords, API tokens, database contents, cookies/sessions, container logs, caches, or virtual environments. Runtime environment metadata records only the file SHA-256 and variable names in the audit/baseline documentation.
 
 One secret scan hit in `source/agent/hk_agent/agent053_regression.py` is an intentional test fixture containing only a private-key **header marker**; a complete private-key block is absent. It was classified as a false positive and retained because modifying it would alter the Agent regression source.
+
+## Change control
+
+Planned permanent changes are governed by [`../docs/governance/CHANGE_CONTROL_POLICY.md`](../docs/governance/CHANGE_CONTROL_POLICY.md): use a short-lived branch and Pull Request; normal work must not write directly to `main`. A topology change requires a new reviewed topology version rather than silent expansion of the current eight-service deployment scope.
 
 ## Authority
 

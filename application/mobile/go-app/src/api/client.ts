@@ -1,0 +1,12 @@
+import Constants from 'expo-constants';
+import {accessToken,refreshToken,saveTokens,clearTokens} from '../storage/secureSession';
+import {online,idempotencyKey} from './network';
+import {createTransport} from './transport';
+const API=String(Constants.expoConfig?.extra?.apiBaseUrl || 'http://localhost:8000').replace(/\/$/,'');
+const transport=createTransport({baseUrl:API,fetch:(...args)=>fetch(...args),online,accessToken,refreshToken,saveTokens,clearTokens,newKey:()=>idempotencyKey('go')});
+export const api=transport.request;
+export const login=transport.login;
+export const logout=transport.logout;
+export const sessionVersion=transport.version;
+export const onSessionChange=transport.subscribe;
+export {API};

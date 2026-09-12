@@ -1,10 +1,12 @@
 # GO 候选归档索引
 
+当前唯一待验源码：[PR47 / application](application/)。[PR47 与 PR48 的逐文件对齐及剩余缺口](docs/canonical-baseline/README.md)。PR48 是历史旅程记录，后续验收集中到 PR47。完整验收与最终发布仍 HOLD。
+
 用户于 2026-09-07 指定后续 GO 工作优先保存到 yuguangzhi3836-glitch/GO。
 
-当前候选：[DEPTH09 · 酒店建库准确性与复制复核](deliverables/CP11_DEPTH09_20260907/README.md)。
+历史候选：[DEPTH09 · 酒店建库准确性与复制复核](deliverables/CP11_DEPTH09_20260907/README.md)。
 
-上一冻结候选：[DEPTH08 · 14 单元持久执行与恢复](deliverables/CP11_DEPTH08_20260907/README.md)。
+其前一历史冻结候选：[DEPTH08 · 14 单元持久执行与恢复](deliverables/CP11_DEPTH08_20260907/README.md)。
 
 DEPTH09 在 DEPTH08 上增加酒店身份、明确官网房型关系采集、逐房型照片核对、可靠页面版本切换、
 批次真实完成统计和管理写权限。更广一键建库流水线仍待完成。

@@ -1,0 +1,169 @@
+name: Canonical parent retention
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/**
+      - ci/retention/**
+      - packaging/depth41-unified-parent/**
+      - control-plane/depth40-compat-v2/**
+      - .github/workflows/canonical-parent-retention.yml
+defaults:
+  run:
+    shell: bash
+permissions:
+  contents: read
+concurrency:
+  group: canonical-retention-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Bind exact source and preserved compatibility files
+        run: |
+          python ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"
+          python ci/retention/verify_alignment.py "$RUNNER_TEMP/evidence/source/ALIGNMENT_RESULT.json"
+      - name: Install verified frozen dependencies only
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Run isolated Python test shard
+        run: |
+          export GO_NATIVE_NODE="$(command -v node)"
+          python ci/retention/run_suite.py --shard ${{ matrix.shard }} --evidence "$RUNNER_TEMP/evidence/tests"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-retention-shard-${{ matrix.shard }}-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/evidence
+          if-no-files-found: error
+  frontend-http-compat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Bind exact source
+        run: |
+          python ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"
+          python ci/retention/verify_alignment.py "$RUNNER_TEMP/evidence/source/ALIGNMENT_RESULT.json"
+      - name: Install verified frozen dependencies only
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Frontend regression
+        working-directory: application
+        run: node --test tests_frontend/*.test.mjs | tee "$RUNNER_TEMP/evidence/frontend.log"
+      - name: Compatibility unit regression only
+        if: ${{ !cancelled() }}
+        run: python -B -m unittest discover -s control-plane/depth40-compat-v2/tests -v 2>&1 | tee "$RUNNER_TEMP/evidence/compatibility.log"
+      - name: Disposable loopback HTTP journeys
+        if: ${{ !cancelled() }}
+        run: |
+          tree=$(python -c 'import json,os; print(json.load(open(os.environ["RUNNER_TEMP"]+"/evidence/source/RETENTION_RESULT.json"))["source_tree_sha256"])')
+          python -B application/scripts/acceptance_smoke.py --source application --fingerprint "$RUNNER_TEMP/evidence/source/SOURCE_FINGERPRINT.json" --expected-tree "$tree" --evidence "$RUNNER_TEMP/evidence/http"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-frontend-http-compat-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/evidence
+          if-no-files-found: error
+  parent-package:
+    if: ${{ github.event.pull_request.head.sha == '62fdde3cabe72b92fa5dc1b37b7652395fe3aba5' && github.event.pull_request.number == 47 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'fix/canonical-parent-retention-20260912' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: b65a07c2aea9ac1e79013540d9cf28a69a190935
+          path: inputs/previous-parent
+          sparse-checkout: deliverables/CP11_DEPTH40_P03_COMPAT_V2_PARENT_20260912
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify archive rejection and restore behavior
+        run: python -B -m unittest discover -s packaging/depth41-unified-parent -p test_package_safety.py -v
+      - name: Build complete unified parent and verify exact image source and offline restore
+        env:
+          GO_READ_TOKEN: ${{ github.token }}
+        run: python -B packaging/depth41-unified-parent/build_parent.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: GO-DEPTH41-UNIFIED-PARENT-${{ github.event.pull_request.head.sha }}
+          path: parent-delivery
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  archive-parent-objects:
+    needs: [regression, frontend-http-compat, parent-package]
+    if: ${{ github.event.pull_request.head.sha == '62fdde3cabe72b92fa5dc1b37b7652395fe3aba5' && github.event.pull_request.number == 47 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'fix/canonical-parent-retention-20260912' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/download-artifact@v4
+        with:
+          name: GO-DEPTH41-UNIFIED-PARENT-${{ github.event.pull_request.head.sha }}
+          path: parent-delivery
+      - name: Write and read back immutable Git archive objects only; never create or move a branch
+        env:
+          GO_ARCHIVE_TOKEN: ${{ github.token }}
+        run: python -B packaging/depth41-unified-parent/archive_objects.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH41-ARCHIVE-RECEIPT-${{ github.event.pull_request.head.sha }}
+          path: ARCHIVE_OBJECTS.json
+          if-no-files-found: error
+          retention-days: 90

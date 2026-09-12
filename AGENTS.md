@@ -82,3 +82,20 @@ Documentation is **not** Execution Authority. Execution Authority remains:
 
 This documentation does not authorize deployment, rollback, migration,
 production access, signing, or changes to runtime credentials.
+
+## Repository change control
+
+All planned permanent changes to GO are subject to [`docs/governance/CHANGE_CONTROL_POLICY.md`](docs/governance/CHANGE_CONTROL_POLICY.md). This rule applies equally to humans, ChatGPT, Codex, and other automation.
+
+For normal work, use:
+
+`current main -> short-lived branch -> commits/tests -> Pull Request -> review -> merge`
+
+Do not write directly to `main`, including for probes, convenience edits, temporary test files, documentation fixes, product changes, deployment-contract changes, or AI-generated changes. A Pull Request is a proposal/review boundary and is not Execution Authority. Do not merge unless explicitly authorized by the responsible human.
+
+Any change that adds/removes/renames runtime service roles, introduces another business image family, changes protected non-targets, or otherwise alters HK-STAGING deployment topology must be classified as a topology change and follow [`docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md`](docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md). Normal DEPLOY must not accept an arbitrary caller-supplied service list or silently expand topology.
+
+
+## Unified application source
+
+PR47 preserves the DEPTH45 application and its accepted product rules. On 2026-09-13 the user explicitly authorized uploading the new parent, source, workflows and subsequent fixes to this repository, running isolated CI, and merging the PR. Perform the source review, exact-source validation and conflict resolution before merging. This source-merge authorization does not authorize installation or Hong Kong/Production deployment. After merge, start subsequent work from application/ on current main using short-lived branches and reviewable PRs. Historical evidence remains bound to its original commit and scope.
