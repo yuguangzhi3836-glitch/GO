@@ -1,0 +1,51 @@
+name: DEPTH41 verified parent archive
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/depth41-parent-archive.yml
+      - packaging/depth41-unified-parent/archive_objects.py
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  archive-tested-parent:
+    if: ${{ github.event.pull_request.number == 47 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'fix/canonical-parent-retention-20260912' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+      pull-requests: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_SOURCE_SHA: 62fdde3cabe72b92fa5dc1b37b7652395fe3aba5
+      GO_ARCHIVE_HEAD: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: 10289943544
+          run-id: 34670014293
+          repository: yuguangzhi3836-glitch/GO
+          github-token: ${{ github.token }}
+          path: parent-delivery
+          merge-multiple: true
+      - name: Verify successful producer jobs, preserve exact ZIP, write and read back Git objects
+        env:
+          GO_ARCHIVE_TOKEN: ${{ github.token }}
+        run: python -B packaging/depth41-unified-parent/archive_objects.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH41-ARCHIVE-RECEIPT-${{ github.event.pull_request.head.sha }}
+          path: ARCHIVE_OBJECTS.json
+          if-no-files-found: error
+          retention-days: 90

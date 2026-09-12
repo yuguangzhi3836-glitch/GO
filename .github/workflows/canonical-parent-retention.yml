@@ -97,7 +97,7 @@ jobs:
           path: ${{ runner.temp }}/evidence
           if-no-files-found: error
   parent-package:
-    if: ${{ github.event.pull_request.number == 47 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'fix/canonical-parent-retention-20260912' }}
+    if: ${{ github.event.pull_request.head.sha == '62fdde3cabe72b92fa5dc1b37b7652395fe3aba5' && github.event.pull_request.number == 47 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'fix/canonical-parent-retention-20260912' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -136,7 +136,7 @@ jobs:
           compression-level: 0
   archive-parent-objects:
     needs: [regression, frontend-http-compat, parent-package]
-    if: ${{ github.event.pull_request.number == 47 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'fix/canonical-parent-retention-20260912' }}
+    if: ${{ github.event.pull_request.head.sha == '62fdde3cabe72b92fa5dc1b37b7652395fe3aba5' && github.event.pull_request.number == 47 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'fix/canonical-parent-retention-20260912' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:

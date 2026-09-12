@@ -24,9 +24,23 @@ def api(path, body=None):
 def main():
     require(os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('GITHUB_REPOSITORY') == REPO, 'GO_CI_ONLY')
     source = os.environ['GO_SOURCE_SHA']
+    archive_head = os.environ.get('GO_ARCHIVE_HEAD', source)
     pr = api('pulls/47')
-    require(pr['head']['sha'] == source and pr['head']['ref'] == 'fix/canonical-parent-retention-20260912'
+    require(pr['head']['sha'] == archive_head and pr['head']['ref'] == 'fix/canonical-parent-retention-20260912'
             and pr['head']['repo']['full_name'] == REPO and pr['draft'] is True and pr['state'] == 'open', 'PR47_MOVED')
+    # The repair archives the already tested ZIP; source and tooling commits are separate identities.
+    source_tree = api('git/commits/' + source)['tree']['sha']
+    archive_tree = api('git/commits/' + archive_head)['tree']['sha']
+    before = {x['path']: x['sha'] for x in api('git/trees/' + source_tree)['tree']}
+    current = {x['path']: x['sha'] for x in api('git/trees/' + archive_tree)['tree']}
+    for name in ('application', 'control-plane', 'ci'):
+        require(before[name] == current[name], 'ARCHIVE_CHANGED_SOURCE:' + name)
+    producer = api('actions/runs/34670014293')
+    require(producer['head_sha'] == source, 'PRODUCER_SOURCE')
+    jobs = api('actions/runs/34670014293/jobs?per_page=100')['jobs']
+    required_jobs = {'parent-package', 'frontend-http-compat', *('regression (' + str(i) + ')' for i in range(4))}
+    selected = [j for j in jobs if j['name'] in required_jobs]
+    require(len(selected) == len(required_jobs) and all(j['conclusion'] == 'success' for j in selected), 'PRODUCER_GATES_NOT_PASSED')
     delivery = Path('parent-delivery')
     report = json.loads((delivery / 'PARENT_BUILD_REPORT.json').read_text())
     manifest = json.loads((delivery / 'PARENT_MANIFEST.json').read_text())
@@ -64,12 +78,13 @@ def main():
             blob(path.name, path.read_bytes())
     for name in ('reconstruct_parent.py', 'README.md'):
         blob(name, (Path(__file__).parent / name).read_bytes())
-    receipt = {'archive_readback': 'PASS', 'source_commit': source, 'zip_sha256': report['zip_sha256'],
+    receipt = {'archive_readback': 'PASS', 'source_commit': source, 'archive_tooling_commit': archive_head,
+               'producer_run': 34670014293, 'producer_required_jobs': sorted(required_jobs), 'zip_sha256': report['zip_sha256'],
                'zip_bytes': archive.stat().st_size, 'parts': len(parts), 'each_git_blob_read_back': True,
                'git_ref_modified': False, 'main_modified': False, 'deployment': 'NOT_RUN',
                'build_run_id': os.environ['GITHUB_RUN_ID']}
     blob('ARCHIVE_RECEIPT.json', (json.dumps(receipt, indent=2) + '\n').encode())
-    base = api('git/commits/' + source)['tree']['sha']
+    base = archive_tree
     tree = api('git/trees', {'base_tree': base, 'tree': elements})
     result = {**receipt, 'base_tree': base, 'archive_tree': tree['sha'], 'path': PREFIX, 'entries': elements}
     Path('ARCHIVE_OBJECTS.json').write_text(json.dumps(result, indent=2) + '\n')
