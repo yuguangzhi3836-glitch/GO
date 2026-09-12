@@ -6,6 +6,10 @@
 .mfa-setup-card{margin:14px 0;background:#f8fafc}.mfa-secret,.mfa-uri{padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;overflow-wrap:anywhere}.muted{color:var(--muted)!important;font-size:12px!important}
 @media(max-width:980px){.sidebar{height:auto!important;min-height:0!important;position:static!important;padding:16px 14px!important}.brand{margin-bottom:2px}.subbrand{margin:0 8px 12px!important}.nav{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(132px,1fr))!important;overflow:visible!important;white-space:normal!important;align-items:stretch!important;gap:6px!important;padding-bottom:4px}.nav a{min-width:0!important;white-space:normal!important;padding:9px 11px!important;line-height:1.25!important}.sidebar-footer{display:none!important}.main{width:100%}.topbar{position:sticky;top:0}}
 
+/* Order facts retain complete identifiers within the available card width. */
+.supplier-shell .kv,.admin-shell .kv{grid-template-columns:minmax(92px,35%) minmax(0,1fr)}
+.supplier-shell .kv>div,.admin-shell .kv>div{min-width:0;overflow-wrap:anywhere}
+
 /* R8.2 Supplier Mobile Operations Completion: additive mobile IA only. */
 .supplier-mobile-bottom,.supplier-mobile-sheet{display:none}
 @media(max-width:620px){

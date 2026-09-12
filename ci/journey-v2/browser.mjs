@@ -66,6 +66,15 @@ async function noOverflow(p){
   const sizes=await p.evaluate(()=>({viewport:innerWidth,document:document.documentElement.scrollWidth}));
   assert.ok(sizes.document<=sizes.viewport+2,`horizontal overflow ${JSON.stringify(sizes)}`);
 }
+async function detailViewports(p,role,vertical){
+  report.detail_viewports??=[];
+  for(const width of [375,390,430,1440]){
+    await p.setViewportSize({width,height:940});await noOverflow(p);
+    const item={role,vertical,width,result:'PASS'};
+    if(width===375||width===1440)item.screenshot=await capture(p,`${vertical}-${role}-detail-${width}`);
+    report.detail_viewports.push(item);
+  }
+}
 async function traveler(p,name,rel){
   await p.locator('#vmAdd').click();const d=p.locator('dialog[open]');
   await d.locator('#pvName').fill(name);await d.locator('#pvRel').selectOption(rel);
@@ -176,6 +185,7 @@ try{
     await consumer.locator('#tripDetailLoading').waitFor({state:'detached'});await noOverflow(consumer);
     const tested=report.order_checks.find(x=>x.order_id===oid);assert.ok(tested);
     assert.deepEqual(await read(consumer,'/v1/consumer/transaction-orders/'+vertical+'/'+oid),tested.final);
+    await detailViewports(consumer,'consumer',vertical);
   });
   for(const width of [375,430,1440])for(const [role,p]of [['consumer',consumer],['supplier',supplier],['admin',admin]])await scenario(p,`${role}-viewport-${width}`,async()=>{await p.setViewportSize({width,height:940});await noOverflow(p);});
   for(const [vertical,oid] of expectedOrders){
@@ -193,14 +203,14 @@ try{
       const adminData=await read(admin,'/internal/v1/admin/transaction-orders/'+vertical+'/'+oid);
       assert.deepEqual(supplierData,consumerData);assert.deepEqual(adminData,consumerData);
       const tested=report.order_checks.find(x=>x.order_id===oid);assert.ok(tested,'refund final-state check must pass');assert.deepEqual(tested.final,consumerData);
-      for(const width of [375,430,1440]){await owner.setViewportSize({width,height:940});await noOverflow(owner);}
+      await detailViewports(owner,'supplier',vertical);
       await owner.reload();await owner.locator('tr[data-i]').filter({hasText:oid}).waitFor();await noOverflow(owner);
       await admin.goto(origin+'/go-admin/#/vertical-'+vertical.toLowerCase());
       await admin.locator('#view').getByText(oid,{exact:true}).first().waitFor();
       const adminVertical=await read(admin,'/internal/v1/admin/operations/verticals/'+vertical);
       assert.equal(adminVertical.orders.find(x=>x.order_id===oid).status,consumerData.order.status);
       assert.equal(adminVertical.refunds.find(x=>x.order_id===oid).refund_amount_minor,consumerData.refunds[0].amount_minor);
-      await noOverflow(admin);
+      await detailViewports(admin,'admin',vertical);
       const denied=await supplier.evaluate(async url=>(await fetch(url)).status,'/v1/supplier/transaction-orders/'+vertical+'/'+oid);
       assert.equal(denied,404,'unrelated supplier must remain denied');
       tested.cross_surface='PASS';
@@ -212,9 +222,8 @@ try{
 
 }finally{
   await Promise.allSettled(pending);report.finished_at=new Date().toISOString();report.failed=report.browser_tests.concat(report.journeys).filter(x=>x.result!=='PASS').map(x=>x.name);
-  report.result=report.failed.length?'GAPS_FOUND':'SCOPED_CHECKS_PASS';report.three_end_real_ux_login=report.failed.some(x=>/login|viewport/.test(x))?'HOLD':'ISOLATED_WEB_SCOPED_PASS';
+  report.result=report.failed.length?'GAPS_FOUND':'SCOPED_CHECKS_PASS';report.three_end_real_ux_login=report.failed.length?'HOLD':'ISOLATED_WEB_SCOPED_PASS';
   report.six_vertical_closed_loop=report.order_checks.length===6&&report.order_checks.every(x=>x.cross_surface==='PASS')&&!report.failed.length?'ISOLATED_WEB_SIMULATOR_PASS':'HOLD';
   await save('browser-results.json',report);await save('synthetic-orders.json',orders);await save('business-responses.json',business);await browser.close();
 }
 process.exitCode=report.failed.length?1:0;
-
