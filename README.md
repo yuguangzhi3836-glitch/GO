@@ -1,6 +1,24 @@
 # GO
 
-> Status refreshed 2026-09-12. This README is the repository entry point for current product lineage and operational-source boundaries. It is descriptive project context, not Execution Authority.
+> Status refreshed 2026-09-12. This README is the repository entry point for current product lineage, project operating context, and operational-source boundaries. It is descriptive project context, not Execution Authority.
+
+## Project operating context
+
+Before taking over GO work, read [`docs/project/OPERATING_CONTEXT.md`](docs/project/OPERATING_CONTEXT.md).
+
+It defines the current human / AI / workstation responsibilities:
+
+- **余总 / Boss** — product owner and final business-direction decision maker.
+- **Boss GPT** — product exploration/development agent that creates candidate designs, branches, and PRs; its output is not automatically canonical or deployment-authorized.
+- **陈震曦 / Eason** — technical operator, integrator, reviewer, and execution coordinator who connects product candidates to real Git, test, packaging, Control Plane, and HK-STAGING work.
+- **Eason's ChatGPT** — technical coordination, context, review, and task-decomposition layer; not product owner or execution authority.
+- **Codex / WorkBuddy** — local execution agents under Eason's control.
+- **Eason-8845** — default Codex main execution workstation; direct SSH paths to HK-STAGING and Command Center are verified.
+- **Eason-13490** (Windows hostname `EASON`) — default WorkBuddy / second development workstation; Alibaba Cloud Workbench CLI is the verified primary ECS path.
+
+Both fixed workstations are operated by Eason. A workstation or AI agent does not independently own a branch, decide product direction, or gain deployment authority merely because it can execute commands.
+
+Detailed connection identities and recovery paths are being maintained through PR #49 and its control-plane access runbook.
 
 ## Important: PR numbers are not DEPTH numbers
 
