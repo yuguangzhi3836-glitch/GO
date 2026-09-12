@@ -32,3 +32,21 @@ def require_window(created_at, check_in, at, hotel_timezone='UTC', check_in_hour
 def require_zero_fee(rules):
     if rules['change_fee_minor'] != 0:
         raise ValueError('HOTEL_CHANGE_FEE_MUST_BE_ZERO')
+
+
+def credit_window(created_at, quoted_at, validity_days):
+    """New credit cannot renew the original booking's one-year deadline."""
+    if type(validity_days) is not int or not 1 <= validity_days <= 365:
+        raise ValueError('CREDIT_VALIDITY_EXCEEDS_MASTER')
+    quoted = datetime.fromisoformat(quoted_at) if isinstance(quoted_at, str) else quoted_at
+    if quoted.tzinfo is None:
+        quoted = quoted.replace(tzinfo=timezone.utc)
+    quoted = quoted.astimezone(timezone.utc)
+    original = terms(created_at)
+    expiry = min(datetime.fromisoformat(original['change_valid_until']),
+                 quoted + timedelta(days=validity_days))
+    if quoted >= expiry:
+        raise ValueError('HOTEL_CHANGE_ONE_YEAR_VALIDITY_EXCEEDED')
+    return {'credit_policy': POLICY, 'credit_validity_basis': 'ORIGINAL_ORDER_365D_CAP',
+            'credit_original_created_at': original['change_valid_from'],
+            'credit_quoted_at': quoted.isoformat(), 'credit_expires_at': expiry.isoformat()}

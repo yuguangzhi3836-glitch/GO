@@ -23,7 +23,7 @@
   async function convert(r,api,onComplete){
     const path='/v1/direct/reservations/'+encodeURIComponent(r.hosted_reservation_id)+'/fare';
     const q=await api(path+'/credit-quote',{});
-    return form('这次先留作下次入住',`<p>${esc(r.check_in)} → ${esc(r.check_out)}</p><dl class="fare-breakdown">${[['本次从冻结授权中扣取',q.funding_capture_minor],['获得原酒店住宿额度',q.retained_value_minor],['转换取消费',q.cancellation_fee_minor],['现金退款',q.cash_refund_minor]].map(([label,n])=>`<div><dt>${label}</dt><dd>${money(n,q.currency)}</dd></div>`).join('')}</dl><p>转换后取消本次入住安排，保留的价值用于原酒店新预订。需要在 ${esc(date(q.credit_expires_at))} 前入住，不可跨酒店、提现或转入钱包。</p><p>兑换低价住宿的差额不退、不保留。新预订取消或部分履约后，未使用额度按锁定规则返还同一份额度，原到期日不延长。现金退款须经独立售后复核；未兑换额度须在原有效期内获准退款，获准时整份关闭。</p><p class="fine">本报价有效至 ${esc(date(q.expires_at))}。</p>`,
+    return form('这次先留作下次入住',`<p>${esc(r.check_in)} → ${esc(r.check_out)}</p><dl class="fare-breakdown">${[['本次从冻结授权中扣取',q.funding_capture_minor],['获得原酒店住宿额度',q.retained_value_minor],['转换取消费',q.cancellation_fee_minor],['现金退款',q.cash_refund_minor]].map(([label,n])=>`<div><dt>${label}</dt><dd>${money(n,q.currency)}</dd></div>`).join('')}</dl><p>转换后取消本次入住安排，保留的价值用于原酒店新预订。额度到期不晚于原订单创建后 365 天，转换不会重新起算一年。需要在 ${esc(date(q.credit_expires_at))} 前入住，不可跨酒店、提现或转入钱包。</p><p>兑换低价住宿的差额不退、不保留。新预订取消或部分履约后，未使用额度按锁定规则返还同一份额度，原到期日不延长。现金退款须经独立售后复核；未兑换额度须在原有效期内获准退款，获准时整份关闭。</p><p class="fine">本报价有效至 ${esc(date(q.expires_at))}。</p>`,
       '我已核对扣取金额、原酒店限制和有效期，同意取消这次入住并转换为住宿额度。',
       ()=>api(path+'/convert-credit',{quote_id:q.quote_id,expected_value_minor:q.retained_value_minor,currency:q.currency}),onComplete);
   }

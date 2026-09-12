@@ -82,3 +82,9 @@ test('historical credit without a forfeiture breakdown never renders invalid amo
   assert.ok(!f.html.includes('NaN'));assert.ok(!f.html.includes('原订单价值如何保留'));
  }
 });
+
+test('conversion displays the fixed credit deadline instead of promising a fresh year',async()=>{
+ const f=fixture();f.q.credit_expires_at='2027-01-05T08:15:00Z';await f.ui.convert(f.ctx,{order_id:'order-one'});
+ const html=f.dialogs[0][1];assert.ok(html.includes(new Date(f.q.credit_expires_at).toLocaleString('zh-CN')));
+ assert.ok(html.includes('转换不会重新起算一年'));assert.ok(!html.includes('有效期 365 天'));
+});
