@@ -2,6 +2,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import { hotelDepth } from './hotel-depth.mjs';
 
 const out=process.env.GO_JOURNEY_EVIDENCE, origin='http://127.0.0.1:4186';
 const credentials=JSON.parse(await fs.readFile(path.join(process.env.GO_JOURNEY_STATE,'credentials.private.json'),'utf8'));
@@ -12,6 +13,7 @@ const report={schema:'go.real-browser-journeys.v1',started_at:new Date().toISOSt
   hong_kong:'NOT_RUN',production:'HOLD',sealed_node_gate:'HOLD',final_release:'HOLD'};
 const browser=await chromium.launch({headless:true});
 report.browser_version=browser.version();report.node_version=process.version;
+report.ci={run_id:process.env.GITHUB_RUN_ID||'UNKNOWN',attempt:process.env.GITHUB_RUN_ATTEMPT||'UNKNOWN',job:process.env.GITHUB_JOB||'UNKNOWN',runner_os:process.env.RUNNER_OS||'UNKNOWN'};
 let seq=0; const orders=[]; const pending=[]; const business=[]; const refundRequests=new Map(); const expectedOrders=new Map();
 const suppliers=JSON.parse(await fs.readFile(path.join(process.env.GO_JOURNEY_STATE,'suppliers.private.json'),'utf8'));
 report.order_checks=[];
@@ -217,6 +219,12 @@ try{
     });
     await owner.context().close();
   }
+  await hotelDepth({consumer,admin,unrelatedSupplier:supplier,report,origin,read,scenario,home,dialog,day,
+    noOverflow,pageFor,login,suppliers,capture,expectedOrders});
+  await scenario(consumer,'DEPTH44-required-journey-completion',async()=>{
+    assert.equal(report.depth44?.complete,true);assert.equal(report.depth44.search_viewports.length,4);
+    assert.equal(report.cash_journeys.length,1);assert.equal(report.cash_journeys[0].complete,true);
+  });
   await scenario(consumer,'no-unhandled-browser-errors',async()=>assert.deepEqual(report.console_errors,[]));
   await save('business-responses.json',business);
 

@@ -28,9 +28,11 @@ with (evidence / 'runtime.log').open('w') as log:
             GO_JOURNEY_STATE=str(state), GO_JOURNEY_EVIDENCE=str(evidence)))
         audit = subprocess.run([sys.executable, str(root / 'ci/journey-v2/ledger.py'),
             str(state), str(evidence)], env=env)
+        hotel_audit = subprocess.run([sys.executable, str(root / 'ci/journey-v2/hotel-ledger.py'),
+            str(state), str(evidence)], env=env)
         for name in ['runtime-binding.json', 'fixture-identities.json']:
             shutil.copyfile(state / name, evidence / name)
-        sys.exit(result.returncode or audit.returncode)
+        sys.exit(result.returncode or audit.returncode or hotel_audit.returncode)
     finally:
         process.terminate()
         try: process.wait(timeout=15)
