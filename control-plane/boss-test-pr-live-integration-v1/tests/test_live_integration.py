@@ -109,6 +109,45 @@ class IntegrationTests(unittest.TestCase):
             finally:
                 bridge.read_pr, bridge.derive_formal_task, bridge.publish_task, bridge.remote_task = original
 
+    def test_command_center_backup_and_rollback_guard_set_is_complete(self):
+        install = (ROOT / "install" / "install-command-center.sh").read_text(encoding="utf-8")
+        rollback = (ROOT / "install" / "uninstall.sh").read_text(encoding="utf-8")
+        preflight = (ROOT / "install" / "preflight.sh").read_text(encoding="utf-8")
+        self.assertIn("sha256sum -c SHA256SUMS", install)
+        self.assertIn("record /usr/local/libexec/go-boss-request-bridge go-boss-request-bridge", install)
+        self.assertIn("record /etc/go-command-center/boss-request-bridge-v1.json boss-request-bridge-v1.json", install)
+        self.assertIn('test ! -e "$backup/state.tsv"', install)
+        self.assertIn("88880363d761eb924aac1910caa7696619dbbb0b4fcb112b63cf726de3bf1335", preflight)
+        self.assertIn('test "$(sha256sum "$path" | awk', rollback)
+        self.assertIn('test "$(sha256sum "$backup/$name" | awk', rollback)
+        self.assertIn("restore go-boss-request-bridge /usr/local/libexec/go-boss-request-bridge", rollback)
+        self.assertIn("restore boss-request-bridge-v1.json /etc/go-command-center/boss-request-bridge-v1.json", rollback)
+        self.assertIn("cp -p", rollback)
+        self.assertLess(rollback.index('test "$(sha256sum "$path" | awk'), rollback.index("cp -p"))
+
+    def test_hk_backup_and_rollback_guard_set_is_complete(self):
+        install = (ROOT / "install" / "install-hk-agent.sh").read_text(encoding="utf-8")
+        rollback = (ROOT / "install" / "uninstall.sh").read_text(encoding="utf-8")
+        preflight = (ROOT / "install" / "preflight.sh").read_text(encoding="utf-8")
+        for statement in (
+            "record /opt/go-hk-agent-rebuilt/hk_agent/transport.py transport.py",
+            "record /etc/go-hk-agent/agent.json agent.json",
+            "record /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py test_pr.py",
+            "record /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1 Dockerfile.go-application-python-v1",
+        ):
+            self.assertIn(statement, install)
+        self.assertIn("82ab805b921081ec0299ffa20576963476e12f57e711438f46ada2342a7c7b30", preflight)
+        self.assertIn("test ! -e /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py", preflight)
+        self.assertIn("test ! -e /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1", preflight)
+        self.assertIn('elif test "$existed" = absent; then', rollback)
+        self.assertIn('rm -- "$path"', rollback)
+        self.assertIn("restore transport.py /opt/go-hk-agent-rebuilt/hk_agent/transport.py", rollback)
+        self.assertIn("restore agent.json /etc/go-hk-agent/agent.json", rollback)
+        self.assertIn("restore test_pr.py /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py", rollback)
+        self.assertIn("restore Dockerfile.go-application-python-v1 /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1", rollback)
+        self.assertIn('test "$(sha256sum "$path" | awk', rollback)
+        self.assertLess(rollback.index('test "$(sha256sum "$path" | awk'), rollback.index('rm -- "$path"'))
+
 
 if __name__ == "__main__":
     unittest.main()
