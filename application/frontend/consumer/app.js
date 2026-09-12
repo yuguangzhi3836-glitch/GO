@@ -144,7 +144,9 @@ function renderUnifiedOrder(kind,value){
   if(!['PAYMENT_PENDING','PAYMENT_AUTHORIZED'].includes(order.status))return;
   const host=document.createElement('section');host.className='card';
   const button=document.createElement('button');button.className='btn primary';button.textContent='核对金额并继续付款';host.append(button);
-  (document.querySelector('.journey-main')||$('#app')).append(host);
+  const paymentContainer=document.querySelector('#app .journey-main, #app main.content');
+  if(!paymentContainer)throw Error('ORDER_CONTENT_UNAVAILABLE');
+  paymentContainer.append(host);
   const vertical=kind==='HOTEL_CATALOG'?'HOTEL':kind;
   const item={vertical,order_id:order.order_id,navigation:{kind,order_id:order.order_id}};
   button.onclick=async()=>{

@@ -6,7 +6,7 @@ export async function hotelDepth(h) {
   const {consumer:p,admin,unrelatedSupplier,report,origin,read,scenario,home,dialog,day,
     noOverflow,pageFor,login,suppliers,capture}=h;
   report.depth44={scope:'GO_TRIP_SEARCH_AND_HOTEL_TWO_CHANGES',search_viewports:[],
-    fault_injections:[],checkpoints:[],complete:false,
+    fault_injections:[],checkpoints:[],payment_viewports:[],complete:false,
     limitations:['Same-price hotel changes with separately charged fees; no high/low fare browser coverage',
       'Capture failure uses the existing simulator token in one outgoing request',
       'Refund response loss occurs after server success; not a partial internal refund failure',
@@ -89,7 +89,12 @@ export async function hotelDepth(h) {
     await open(oid);
     const pending=await read(p,orderPath());assert.equal(pending.order.status,'PAYMENT_PENDING');
     assert.equal(pending.original_payment.capture_count,0);record('UNPAID_QUERYABLE',pending);
-    await p.getByRole('button',{name:'核对金额并继续付款',exact:true}).click();
+    const resume=p.getByRole('button',{name:'核对金额并继续付款',exact:true});
+    for(const width of [375,390,430,1440]){
+      await p.setViewportSize({width,height:940});await resume.click({trial:true});await noOverflow(p);
+      extra.payment_viewports.push({width,result:'PASS',screenshot:await capture(p,'depth44-unpaid-resume-'+width)});
+    }
+    await p.setViewportSize({width:390,height:940});await resume.click();
     await dialog(p);await p.locator('#change').waitFor();
     initial=await read(p,orderPath());assert.equal(initial.order.status,'CONFIRMED');
     assert.equal(initial.original_payment.capture_count,1);

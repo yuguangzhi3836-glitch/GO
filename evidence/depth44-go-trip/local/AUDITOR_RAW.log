@@ -1,0 +1,13 @@
+{"ts":"2026-09-12T14:59:41.390800+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_eedb5684d0e94692ada453695c609713","trace_id":"tr_db64e5c9026846fa81722d49772b3855","path":"/v1/search/hotels","method":"POST","status_code":200,"duration_ms":33.13}
+{"ts":"2026-09-12T14:59:41.391608+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/search/hotels \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-12T14:59:41.401333+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_694036bb68b0410d969290656772d8c4","trace_id":"tr_38dfb017ee6d44abb45f6efc782cd53a","path":"/v1/offers/off_90c46024b71c4a36/prebook","method":"POST","status_code":200,"duration_ms":9.11}
+{"ts":"2026-09-12T14:59:41.401696+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/offers/off_90c46024b71c4a36/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-12T14:59:41.413348+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_0e017e9d53ff4a51a095b36b621dd615","trace_id":"tr_1e755ae000884e2283651795d942ed68","path":"/v1/orders","method":"POST","status_code":200,"duration_ms":11.17}
+{"ts":"2026-09-12T14:59:41.413746+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-12T14:59:41.428431+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_f338cfe2b0de4d75b3c7317bd76d918d","trace_id":"tr_83bd068e74ae4db389caf62626308557","path":"/v1/orders/ord_c164ea91687f4092/payments","method":"POST","status_code":200,"duration_ms":14.21}
+{"ts":"2026-09-12T14:59:41.428795+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/orders/ord_c164ea91687f4092/payments \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-12T14:59:41.462409+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_fa56b8ae3a9947cbab6147664897a312","trace_id":"tr_01d6a14a11424deaa3f68755e1f0d6c3","path":"/internal/v1/orders/ord_c164ea91687f4092/confirm","method":"POST","status_code":200,"duration_ms":33.06}
+{"ts":"2026-09-12T14:59:41.462840+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/orders/ord_c164ea91687f4092/confirm \"HTTP/1.1 200 OK\""}
+{"hotel_auditor_local_positive": "PASS", "corruptions_rejected": ["missing_ledger_pair", "wrong_currency", "wrong_refund_parent", "wrong_change_amount"]}
+.
+1 passed in 6.20s

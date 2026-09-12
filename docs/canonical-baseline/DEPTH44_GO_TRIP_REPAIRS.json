@@ -1,0 +1,35 @@
+{
+  "change_classes": [
+    "PRODUCT_FIX",
+    "TEST_ONLY",
+    "DOCUMENTATION"
+  ],
+  "parent_commit": "47b6a06cdb63a90d549663cb0a73b99b2d919bdc",
+  "application_git_tree": "af2df84ebf7e5ad66f27b3ee5d2bf0219eec8336",
+  "source_tree_sha256": "554bf6cd1775f8524027bc0bb928e98f3a7d0967cf63d215d9b7cb6eede4017a",
+  "source_files": 1307,
+  "file_sha256": "6b4cba903b680944b2695b582630bb959292fd9ba967be42eb94e07c756d9ce6",
+  "blob": "f86846f4eac39edf624f0ed199af89738cb793d7",
+  "changes": [
+    {
+      "path": "application/frontend/consumer/app.js",
+      "before_git_blob": "f9532186ace6f0ed5c0903aef269a14efcf064bd",
+      "after_git_blob": "f86846f4eac39edf624f0ed199af89738cb793d7",
+      "problem": "UNPAID_RESUME_BUTTON_OBSCURED_BY_FIXED_MOBILE_NAV",
+      "repair": "Place resumed payment inside the existing padded order-content container"
+    }
+  ],
+  "first_browser_run": 34700777402,
+  "first_browser_source": "47b6a06cdb63a90d549663cb0a73b99b2d919bdc",
+  "first_browser_result": "FAIL_UNPAID_RESUME_POINTER_INTERCEPTION",
+  "prior_search_viewports_passed": [
+    375,
+    390,
+    430,
+    1440
+  ],
+  "prior_search_pass_transferred": false,
+  "ci": "PENDING",
+  "hong_kong": "NOT_ACCESSED",
+  "production": "HOLD"
+}

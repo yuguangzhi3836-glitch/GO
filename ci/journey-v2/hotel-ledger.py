@@ -24,7 +24,11 @@ def audit_order(db, check):
     assert order['status'] == check['final']['order']['status'] == 'CANCELLED'
     operations = rows('SELECT * FROM catalog_cash_fare_operation WHERE order_id=?', oid)
     assert len(operations) == 3 and all(x['state'] == 'COMPLETED' for x in operations)
-    assert not rows('SELECT * FROM catalog_cash_fare_claim WHERE order_id=?', oid)
+    # Completed cancellation deliberately retains its claim so the fee remainder
+    # cannot be refunded again through another path.
+    claim = one('SELECT * FROM catalog_cash_fare_claim WHERE order_id=?', oid)
+    cancelled = [x for x in operations if json.loads(x['plan_json'])['quote']['action'] == 'CANCEL']
+    assert len(cancelled) == 1 and claim['operation_id'] == cancelled[0]['operation_id']
     changes = rows('SELECT * FROM order_change_runtime WHERE order_id=? ORDER BY created_at', oid)
     assert len(changes) == 2 and all(x['status'] == 'CONFIRMED' for x in changes)
     assert len(check['change_quotes']) == 2
