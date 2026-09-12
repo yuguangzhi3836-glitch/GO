@@ -1,0 +1,66 @@
+[
+  {
+    "id": "GO-ER-01",
+    "priority": "P1",
+    "kind": "BUSINESS_RULE_DEFECT",
+    "status": "REPRODUCED",
+    "title": "GO Direct retains forfeited room-price value for later changes and credit conversion",
+    "affected_paths": [
+      "application/src/go_hotel/services/hosted_fare_change.py",
+      "application/src/go_hotel/services/hosted_stay_credit.py"
+    ],
+    "policy": "zero change fee, fixed original 365 days, pay each positive current-room-price difference, lower difference forfeited",
+    "examples": [
+      {
+        "original_minor": 162000,
+        "lower_room_minor": 140000,
+        "next_room_minor": 150000,
+        "expected_additional_minor": 10000,
+        "actual_additional_minor": 0
+      },
+      {
+        "original_minor": 162000,
+        "lower_room_minor": 140000,
+        "expected_issued_credit_minor": 140000,
+        "actual_issued_credit_minor": 162000
+      }
+    ],
+    "scope": "reproduced on PR52; retained-floor algorithm also verified in DEPTH46 source. No live monetary loss claimed."
+  },
+  {
+    "id": "GO-ER-02",
+    "priority": "P1",
+    "kind": "MISSING_FUNCTIONALITY",
+    "status": "REPRODUCED",
+    "title": "Round-trip and multi-city order changes are explicitly unimplemented",
+    "affected_paths": [
+      "application/src/go_hotel/flight/service.py",
+      "application/tests/test_flight_journey_depth.py"
+    ],
+    "actual": "HTTP 422 FLIGHT_ORDER_NOT_CHANGEABLE:MULTI_LEG_CHANGE_NOT_IMPLEMENTED",
+    "probe": "Two changeable GO Flex legs, outbound day+10 and return day+14, change request day+12",
+    "scope": "Round-trip reproduced; source guard rejects every itinerary whose leg count is not 1."
+  },
+  {
+    "id": "GO-ER-03",
+    "priority": "P2",
+    "kind": "STALE_DOCUMENTATION",
+    "status": "VERIFIED_REMOTE",
+    "title": "Main entrypoint still identifies DEPTH41 and Draft PR47",
+    "verified_main_commit": "1c9847c82725b888d239686572f1f44b6dafc2cc",
+    "affected_paths": [
+      "README.md"
+    ],
+    "actual": "DEPTH41 / 1300 application files / PR47 Draft / MERGE=NO",
+    "expected": "PR47 merged; DEPTH46 parent with 1311 application files; PR52 separate pending candidate",
+    "note": "PR52 already carries a README correction, not yet on main."
+  },
+  {
+    "id": "GO-ER-04",
+    "priority": "P1_ACCEPTANCE",
+    "kind": "UNVERIFIED_SCOPE",
+    "status": "OPEN",
+    "title": "No new PostgreSQL, full three-end visual or physical-device acceptance for PR52",
+    "note": "Not an observed code failure. User reports GitHub quota exhaustion; API corroborates only before-step startup failure. Local isolated development can continue."
+  }
+]

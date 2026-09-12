@@ -1,0 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="6.180" timestamp="2026-09-13T01:03:57.557846+03:00" hostname="localhost"><testcase classname="review-probes.test_expert_review" name="test_round_trip_with_changeable_fares_can_request_change_quote" time="4.545"><failure message="AssertionError: {&quot;detail&quot;:&quot;FLIGHT_ORDER_NOT_CHANGEABLE:MULTI_LEG_CHANGE_NOT_IMPLEMENTED&quot;}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code">AssertionError: {"detail":"FLIGHT_ORDER_NOT_CHANGEABLE:MULTI_LEG_CHANGE_NOT_IMPLEMENTED"}
+assert 422 == 200
+ +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code</failure></testcase></testsuite></testsuites>
