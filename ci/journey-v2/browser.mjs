@@ -11,7 +11,7 @@ const report={schema:'go.real-browser-journeys.v1',started_at:new Date().toISOSt
   browser_tests:[],journeys:[],network:[],console_errors:[],limitations:['SQLite; independent PostgreSQL acceptance recorded separately','Simulator payment and supplier adapters; no live inventory, real payments or Hong Kong','Mobile viewport is mobile web, not a native device or Expo build'],
   hong_kong:'NOT_RUN',production:'HOLD',sealed_node_gate:'HOLD',final_release:'HOLD'};
 const browser=await chromium.launch({headless:true});
-report.browser_version=browser.version();
+report.browser_version=browser.version();report.node_version=process.version;
 let seq=0; const orders=[]; const pending=[]; const business=[]; const refundRequests=new Map(); const expectedOrders=new Map();
 const suppliers=JSON.parse(await fs.readFile(path.join(process.env.GO_JOURNEY_STATE,'suppliers.private.json'),'utf8'));
 report.order_checks=[];
@@ -182,6 +182,8 @@ try{
     const owner=await pageFor('supplier-'+vertical,390);
     await scenario(owner,vertical+'-supplier-admin-consumer-same-order',async()=>{
       await login(owner,'supplier',suppliers[vertical]);
+      const metric=owner.locator('.structured-metric').filter({hasText:'累计订单'});assert.equal(await metric.locator('.metric-value').innerText(),'1');
+      assert.ok(!(await owner.locator('#view').innerText()).includes('REFUND_COMPLETED'));
       await owner.goto(origin+'/supplier-console/#/orders');
       await owner.locator('tr[data-i]').filter({hasText:oid}).waitFor();
       await owner.locator('tr[data-i]').filter({hasText:oid}).click();
