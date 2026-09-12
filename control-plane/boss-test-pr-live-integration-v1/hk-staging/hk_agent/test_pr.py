@@ -1,6 +1,5 @@
 """Fixed, isolated HK_STAGING_TEST_PR executor; no Compose or runtime bindings."""
 import hashlib
-import json
 import os
 import pathlib
 import re
@@ -8,7 +7,6 @@ import shutil
 import stat
 import subprocess
 import tempfile
-import tomllib
 
 ACTION = "HK_STAGING_TEST_PR"
 PROFILE = "go-application-python-v1"
@@ -80,14 +78,30 @@ def _build_root():
     return root
 
 
-def _dependency_profile(path):
+PROFILE_PROGRAM = (
+    "import tomllib,json,hashlib;"
+    "p=tomllib.load(open('/input/pyproject.toml','rb'))['project'];"
+    "v={'requires-python':p['requires-python'],'dependencies':p['dependencies'],"
+    "'optional-dependencies':{'dev':p.get('optional-dependencies',{})['dev']}};"
+    "print(hashlib.sha256(json.dumps(v,sort_keys=True,separators=(',',':')).encode()).hexdigest())"
+)
+
+
+def _dependency_profile(path, workspace, runner):
     try:
-        project = tomllib.loads(path.read_text(encoding="utf-8"))["project"]
-        value = {"requires-python": project["requires-python"], "dependencies": project["dependencies"],
-                 "optional-dependencies": {"dev": project.get("optional-dependencies", {})["dev"]}}
-    except (OSError, KeyError, TypeError, tomllib.TOMLDecodeError) as exc:
+        resolved = path.resolve(strict=True)
+        root = workspace.resolve(strict=True)
+    except OSError as exc:
         raise Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT") from exc
-    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if path.is_symlink() or not resolved.is_file() or root not in resolved.parents:
+        raise Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT")
+    result = runner(["/usr/bin/docker", "run", "--rm", "--network", "none", "--read-only", "--cap-drop", "ALL",
+                     "--security-opt", "no-new-privileges", "--pids-limit", "32", "--memory", "128m", "--cpus", "0.25",
+                     "--mount", "type=bind,src=%s,dst=/input/pyproject.toml,readonly" % resolved,
+                     "--entrypoint", "python", BUILDER_IMAGE, "-c", PROFILE_PROGRAM], timeout=60).stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{64}", result):
+        raise Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT")
+    return result
 
 
 def _builder_image(runner):
@@ -114,9 +128,9 @@ def execute(task, runner=_run):
         context = workspace / "application"
         if not (context / "pyproject.toml").is_file():
             raise Reject("TEST_PR_SOURCE_LAYOUT_REJECT")
-        if _dependency_profile(context / "pyproject.toml") != DEPENDENCY_PROFILE_SHA256:
-            raise Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT")
         _builder_image(runner)
+        if _dependency_profile(context / "pyproject.toml", context, runner) != DEPENDENCY_PROFILE_SHA256:
+            raise Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT")
         runner(["/usr/bin/docker", "build", "--network", "none", "--pull=false", "--file", DOCKERFILE, "--tag", image, str(context)], timeout=900)
         image_id = runner(["/usr/bin/docker", "image", "inspect", image, "--format", "{{.Id}}"], timeout=30).stdout.strip()
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", image_id):

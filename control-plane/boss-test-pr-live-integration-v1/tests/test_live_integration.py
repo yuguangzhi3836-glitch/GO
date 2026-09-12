@@ -1,4 +1,5 @@
 import datetime as dt
+import ast
 import hashlib
 import importlib.machinery
 import importlib.util
@@ -194,6 +195,13 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn('"--entrypoint", "/bin/sh"', source)
         self.assertIn("TEST_PR_BUILDER_IMAGE_REJECT", source)
         self.assertIn("TEST_PR_DEPENDENCY_PROFILE_REJECT", source)
+
+    def test_host_agent_has_no_tomllib_import(self):
+        source = (ROOT / "hk-staging" / "hk_agent" / "test_pr.py").read_text(encoding="utf-8")
+        imports = [node.names[0].name for node in ast.walk(ast.parse(source)) if isinstance(node, ast.Import)]
+        self.assertNotIn("tomllib", imports)
+        self.assertIn('"--network", "none"', source)
+        self.assertIn('"--entrypoint", "python"', source)
 
     def test_build_root_validation_rejects_unsafe_state_and_accepts_provisioned_root(self):
         original = test_pr.BUILD_ROOT
