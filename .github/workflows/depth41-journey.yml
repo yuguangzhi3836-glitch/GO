@@ -1,0 +1,49 @@
+name: DEPTH41 isolated cross-end journey acceptance
+on:
+  push:
+    branches: [acceptance/depth41-cross-end-journeys-20260912]
+permissions:
+  contents: read
+concurrency:
+  group: depth41-isolated-journey
+  cancel-in-progress: false
+jobs:
+  real-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch immutable canonical parent
+        run: git fetch --no-tags origin b5732c02dd95092a63def7eaa0d2cf332b1e2996
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Verify exact parent and retained revisions
+        run: python ci/journey/prepare.py
+      - name: Install isolated acceptance dependencies
+        run: |
+          python -m pip install 'fastapi==0.115.12' 'uvicorn==0.34.3' 'pydantic==2.11.7' 'pydantic-settings==2.10.1' 'SQLAlchemy==2.0.41' 'alembic==1.16.2' 'psycopg[binary]==3.2.9' 'httpx==0.28.1' 'Pillow==11.2.1' 'cryptography==45.0.4' 'PyJWT[crypto]==2.10.1' 'redis==6.2.0' 'pytest==8.4.1' 'pytest-asyncio==1.0.0'
+          npm install --no-save --ignore-scripts playwright@1.55.1
+          npx playwright install --with-deps chromium
+      - name: Real Chromium journeys against verified source
+        run: python ci/journey/run.py
+      - name: Hash public evidence only
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('journey-evidence');p.mkdir(exist_ok=True)
+          files={str(x.relative_to(p)):hashlib.sha256(x.read_bytes()).hexdigest() for x in sorted(p.rglob('*')) if x.is_file() and x.name!='SHA256.json'}
+          (p/'SHA256.json').write_text(json.dumps(files,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: depth41-real-browser-${{ github.sha }}
+          path: journey-evidence/
+          retention-days: 90

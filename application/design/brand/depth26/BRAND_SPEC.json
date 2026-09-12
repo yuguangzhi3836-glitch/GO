@@ -1,0 +1,24 @@
+{
+  "revision": "DEPTH26",
+  "reference": "user-reference.jpeg",
+  "request": "G and O same size; retain central red block connection",
+  "geometry": {
+    "G_outer_diameter": 1000,
+    "O_outer_diameter": 1000,
+    "inner_diameter": 630,
+    "stroke_width": 185,
+    "red_block": { "x": 1050, "y": 420, "width": 160, "height": 160 },
+    "viewBox": "0 0 2050 1000"
+  },
+  "colors": { "navy": "#061B3A", "connector": "#FF3B24" },
+  "canonical_vector": "frontend/consumer/assets/go-mark.svg",
+  "raster_preview": "go-equal-letter-preview.png",
+  "raster_preview_role": "Visual exploration; production uses exact native vector geometry",
+  "clean_card_assets": {
+    "method": "imagegen edit, one request per supplied photo card, remove all embedded UI and text",
+    "paths": ["frontend/consumer/assets/clean-depth26/kyoto.png", "frontend/consumer/assets/clean-depth26/maldives.png", "frontend/consumer/assets/clean-depth26/lisbon.png"],
+    "truth": "Editorial illustrative scenery, no verified named property depiction or rating"
+  },
+  "visual_master_score": null,
+  "cross_device_acceptance": "HOLD"
+}
