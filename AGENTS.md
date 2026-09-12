@@ -65,3 +65,7 @@ production access, signing, or changes to runtime credentials.
 ## Canonical application candidate
 
 For application development, start from `application/` at the approved canonical baseline on main. This repair branch is an acceptance-pending candidate; see `docs/canonical-baseline/README.md`. Until this candidate is approved and merged, keep baseline repairs on this branch. Do not start new product work from historical ZIPs, deliverables, hk-staging, or unmerged feature branches. Historical application manifests and embedded workflow files are supporting snapshots, not current authorization or acceptance evidence.
+
+## PR47 / PR48 source alignment
+
+The unique pending application candidate is PR47 on `fix/canonical-parent-retention-20260912`; see `docs/canonical-baseline/PR47_PR48_ALIGNMENT.json` and `REMAINING_GAPS.md`. PR48 is retained as historical journey evidence. Keep subsequent acceptance fixes on the unique candidate and do not resume parallel development from the frozen PR48 source. Historical passes bind only their recorded commit and environment; never transfer or combine them into a current full-journey PASS. This does not authorize merge, deployment, Hong Kong access or external provider operations.

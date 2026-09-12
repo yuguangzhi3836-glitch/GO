@@ -1,3 +1,29 @@
+# 新父包构建
+
+本次将统一候选封装为 **CP11_DEPTH41_UNIFIED_PARENT_V1_20260912**，完整源码与新镜像一并构建。固定输入、离线恢复和永久 Git 分卷归档方法见 [父包说明](../../packaging/depth41-unified-parent/README.md)。实际构建结论以本次提交的 Actions Run 和 PARENT_BUILD_REPORT 为准；不能继承下方历史结果。
+
+# GO 唯一待验源码
+
+当前唯一候选位于 **PR47 / fix/canonical-parent-retention-20260912 / application/**。
+应用 Git tree：`a73b9b53a59c88ab995d0f9b123c9fb79e87e60d`。状态：**UNIQUE_CANDIDATE_PENDING_ACCEPTANCE**，尚未合并或部署。
+
+已逐文件对齐 PR47 `3091d912a991cd78bc21f102d6e7a390a6caaf8a` 与 PR48 `c8d2b8021dce80388b8f548257db6a86d227c98a`：
+1,264 个文件完全一致；PR47 独有的 27 个文件全部保留；9 个不同文件中，8 个保留 PR47 有效修订，1 个采用 PR48 的供应商经营中心修复。最终仍为 1,300 个文件，PR47 没有文件被删除，应用仅变更 frontend/shared/app.js。
+
+- [完整逐文件选择表](PR47_PR48_FILES.csv) / [机器可核验清单](PR47_PR48_ALIGNMENT.json)
+- [非应用目录的差异处理](PR47_PR48_NON_APPLICATION_DIFF.json)
+- [历史证据及其版本绑定](EVIDENCE_INDEX.json)
+- [剩余缺口及所需验收证据](REMAINING_GAPS.md)
+- [PR48 原始日志和历史工具](../../evidence/canonical-alignment/pr48-c8d2b802/README.md)
+
+PR48 保留为历史旅程记录；后续补齐与验收集中在 PR47。归档的旧旅程工具不会作为活动 workflow 启动，也不能直接用于新源码的来源校验。两个历史候选的 PASS 不合并、不转移。源代码身份与验收结果必须分别记录。
+
+继续遵循 PR41：当前 main → 短期分支 → 提交/测试 → PR → 审查 → 明确授权后合并。完成统一候选的验收并获准合并后，才从 resulting main 的 application/ 开新功能分支。代码收敛不授予合并或部署权限；HK-STAGING 运行快照与本源码不同。
+
+---
+
+以下为 PR47 修复起点和历史修订说明，历史 pending/测试信息应结合上方证据索引阅读。
+
 # GO unified source candidate — retention repair
 
 Status: **ACCEPTANCE_PENDING / NOT_DEPLOYED / NOT_CANONICAL_YET**.

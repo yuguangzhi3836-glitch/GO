@@ -191,6 +191,18 @@ function metrics(data){const flat=[];for(const [k,v] of Object.entries(data||{})
 function jsonCard(title,obj){return `<details class="card tech-diagnostics"><summary>${esc(title)} · 技术信息</summary><pre class="mono pre">${esc(JSON.stringify(obj,null,2))}</pre></details>`}
 function supplierObjectCard(title,obj){const entries=Object.entries(obj||{}).filter(([k])=>!/(secret|token|fingerprint|hash|raw_|payload|metadata)/i.test(k)).slice(0,12);if(!entries.length)return supplierStructuredEmpty(currentSupplierRoute,title);return `<section class="card"><h3>${esc(title)}</h3><div class="kv">${entries.map(([k,v])=>`<div>${esc(supplierFriendlyLabel(k))}</div><div>${esc(typeof v==='object'?'查看结构化子项':supplierFriendlyValue(v))}</div>`).join('')}</div></section>`}
 async function generic(item){$('#view').innerHTML='<div class="card">加载中...</div>';try{const r=unwrap(await api.request(item.endpoint));const rendered=item.kind==='dashboard'?metrics(r):table(r);$('#view').innerHTML=`<section class="productized-admin-head"><div><h2>${esc(item.label)}</h2><p>当前状态 → 核心指标 → 业务对象 → 待办异常 → 可执行动作 → 状态与审计</p></div><span class="status">运营工作台</span></section>${rendered}${adminOpsBar()}${jsonCard('技术信息 / 原始运行事实',r)}`;adminProductizeView(item.route,item.label);bindAdminOps()}catch(e){notice(e.message,true)}}
+async function supplierCommandCenter(){
+  $('#view').innerHTML='<p role="status">正在读取经营数据…</p>';
+  try{
+    const d=unwrap(await api.request('/v1/supplier/dashboard'));
+    const count=group=>Object.values(group||{}).reduce((n,v)=>n+(Number(v)||0),0);
+    const body=`<section class="card"><h3>订单与售后</h3><p>以下为当前酒店的累计业务记录；空数据不会被视为今天已完成履约。</p><div class="actionbar"><a class="btn primary" href="#/orders">查看订单与履约</a><a class="btn" href="#/refunds">查看取消与退款</a><a class="btn" href="#/finance">查看财务</a></div></section>${metrics({订单状态:d.orders||{},退款状态:d.refunds||{}})}`;
+    $('#view').innerHTML=supplierStructuredShell('/command',body,{'累计订单':count(d.orders),'退款记录':count(d.refunds),'住宿额度':count(d.stay_credits),'风险记录':count(d.risk_cases)});
+  }catch(e){
+    $('#view').innerHTML='<section class="card"><h3>经营数据暂时无法读取</h3><p role="alert">请重试；读取失败不代表没有订单。</p><button class="btn primary" id="retryCommand">重试</button></section>';
+    $('#retryCommand').onclick=supplierCommandCenter;
+  }
+}
 async function supplierOrders(){const data=unwrap(await api.request('/v1/supplier/orders'));const arr=data.items||[];const body=table(arr,true,'订单');$('#view').innerHTML=supplierStructuredShell('/orders',body,{'待确认':arr.filter(x=>String(x.state||x.status).includes('PENDING')).length,'已确认':arr.filter(x=>String(x.state||x.status).includes('CONFIRMED')).length,'履约中':arr.filter(x=>String(x.state||x.status).includes('STAY')).length,'售后中':arr.filter(x=>/CANCEL|REFUND/.test(String(x.state||x.status))).length});bindRows(arr,r=>orderWorkbench(r.order_id))}
 async function orderWorkbench(id){
  const d=unwrap(await api.request(`/v1/supplier/orders/${encodeURIComponent(id)}/workbench`));currentSupplierRoute='/orders';

@@ -1,4 +1,10 @@
+# GO 统一新父包
+
+唯一开发待验起点：PR47 的 `application/`。新父包：**CP11_DEPTH41_UNIFIED_PARENT_V1_20260912**，包含完整统一源码、对应的新兼容镜像及审查资料。[父包下载与核验说明](packaging/depth41-unified-parent/README.md) · [逐文件对齐和验收缺口](docs/canonical-baseline/README.md)。PR48 保留为历史证据；最终验收、合入 main 与部署状态分别记录。
+
 # GO
+
+**唯一待验源码：PR47 的 application/**，已与 PR48 逐文件对齐。[来源选择、历史证据与剩余缺口](docs/canonical-baseline/README.md)。PR48 保留历史旅程记录；完整跨端验收仍 HOLD。
 
 开发基线修复候选：[`application/`](application/)，从最新父包 `CP11_DEPTH40_P03_COMPAT_V2_PARENT_20260912` 保留并补齐有效历史修订。
 
