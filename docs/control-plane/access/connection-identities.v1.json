@@ -6,7 +6,8 @@
     "private_key_content_recorded": false,
     "secrets_recorded": false
   },
-  "workstation": {
+  "workstations": {
+    "Eason-8845": {
     "id": "Eason-8845",
     "windows_user": "Eason-8845",
     "user_profile": "C:\\Users\\Eason-8845",
@@ -50,6 +51,69 @@
         "raw_fallback_command": "ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -i \"C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519\" root@47.242.94.212"
       }
     ]
+    },
+    "Eason-13490": {
+      "id": "Eason-13490",
+      "observed_hostname": "EASON",
+      "hostname_matches_expected_label": false,
+      "hostname_status": "MISMATCH_RECORDED_PENDING_USER_CONFIRMATION",
+      "windows_user": "EASON\\Eason",
+      "user_profile": "C:\\Users\\Eason",
+      "operating_system": "Windows 10 Enterprise LTSC 2021 21H2 build 19044.7725",
+      "codex_github_plugin": {
+        "status": "UNAVAILABLE",
+        "scope": "current Codex session",
+        "plugin_required_for_normal_work": false
+      },
+      "go_repository": {
+        "local_path": "C:\\Users\\Eason\\Desktop\\1\\go-ai-webapp\\.tmp-pr5-20260909\\repo",
+        "repository_root": "C:\\Users\\Eason\\Desktop\\1\\go-ai-webapp\\.tmp-pr5-20260909\\repo",
+        "selection_basis": "only clone found within approved search scope with origin yuguangzhi3836-glitch/GO",
+        "remote_origin": "https://github.com/yuguangzhi3836-glitch/GO.git",
+        "remote_access_method": "HTTPS",
+        "credential_mechanism": "Git Credential Manager configured by PortableGit; secret not recorded",
+        "browser_required_for_source_reading": false,
+        "branch_at_verification": "docs/control-plane-connection-inventory-20260912",
+        "working_tree_status_at_verification": "clean before this documentation update"
+      },
+      "ssh_targets": [
+        {
+          "name": "HK-STAGING-01",
+          "host": "47.239.57.40",
+          "port": 22,
+          "user": "root",
+          "ssh_alias": null,
+          "ssh_config_path": null,
+          "local_private_key_path": "C:\\Users\\Eason\\.ssh\\go-nexus-hk-stg-01",
+          "public_key_fingerprint_sha256": "SHA256:jIcdy7HEdhsBREuoECUOrnLbLR51oqLS46lF4/jEPk4",
+          "identities_only": true,
+          "strict_host_key_checking": true,
+          "user_known_hosts_file": "C:\\Users\\Eason\\.ssh\\known_hosts",
+          "direct_ssh_status": "CONFIGURED_AUTHORIZATION_FAILED",
+          "verified": false,
+          "probe_result": "Permission denied (publickey), 2026-09-12",
+          "standard_command": "ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=\"C:\\Users\\Eason\\.ssh\\known_hosts\" -i \"C:\\Users\\Eason\\.ssh\\go-nexus-hk-stg-01\" root@47.239.57.40"
+        },
+        {
+          "name": "GO Command Center",
+          "host": "47.242.94.212",
+          "port": 22,
+          "user": "root",
+          "ssh_alias": null,
+          "ssh_config_path": null,
+          "local_private_key_path": null,
+          "public_key_fingerprint_sha256": null,
+          "identities_only": null,
+          "strict_host_key_checking": null,
+          "user_known_hosts_file": "C:\\Users\\Eason\\.ssh\\known_hosts",
+          "direct_ssh_status": "NOT_CONFIGURED",
+          "verified": false,
+          "probe_result": "No dedicated local identity was found; bounded probe timed out during banner exchange on 2026-09-12",
+          "standard_command": null,
+          "raw_fallback_command": null
+        }
+      ]
+    }
   },
   "connection_edges": [
     {
@@ -76,6 +140,15 @@
       "credential_path": "C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519",
       "permission": "server administration",
       "purpose": "approved Command Center operations"
+    },
+    {
+      "source": "Eason-13490 / Codex",
+      "destination": "yuguangzhi3836-glitch/GO",
+      "protocol": "HTTPS Git",
+      "credential_path": "Git Credential Manager; secret not recorded",
+      "permission": "repository read verified; write authorization not tested",
+      "purpose": "local GO source and Git operations",
+      "codex_github_plugin_required": false
     }
   ],
   "command_center": {
@@ -209,9 +282,5 @@
         "public_key_fingerprint_sha256": "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw"
       }
     ]
-  },
-  "second_workstation": {
-    "id": "Eason-13490",
-    "status": "NOT_YET_DOCUMENTED"
   }
 }

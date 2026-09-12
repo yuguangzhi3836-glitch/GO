@@ -32,6 +32,38 @@ ssh go-command-center-root
 ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -i "C:\Users\Eason-8845\.ssh\go-command-center-codex-root-ed25519" root@47.242.94.212
 ```
 
+## Workstation: Eason-13490
+
+- Observed Windows hostname: `EASON`. It does not exactly match the expected workstation label `Eason-13490`; the hostname was not changed and this discrepancy requires user confirmation.
+- Windows user/profile: `EASON\Eason`, `C:\Users\Eason`
+- Operating system: Windows 10 Enterprise LTSC 2021, 21H2, build 19044.7725.
+- GO working copy: `C:\Users\Eason\Desktop\1\go-ai-webapp\.tmp-pr5-20260909\repo`. It was the only clone found within the approved search scope whose `origin` is `https://github.com/yuguangzhi3836-glitch/GO.git`; it tracks this PR branch.
+- Git remote access: HTTPS, using Git Credential Manager configured by PortableGit. Credentials themselves were not inspected or recorded.
+- Browser required for normal GO source access: **NO**. HTTPS `git ls-remote` succeeded.
+- Codex GitHub plugin/app integration: **UNAVAILABLE** in this Codex session. Normal work does not require it because local HTTPS Git access is available.
+
+### SSH status
+
+| Target | SSH target | Local identity / alias | Host-key configuration | Probe result |
+| --- | --- | --- | --- | --- |
+| HK-STAGING-01 | `root@47.239.57.40:22` | `C:\Users\Eason\.ssh\go-nexus-hk-stg-01`; no alias or SSH config entry | Default `C:\Users\Eason\.ssh\known_hosts`; probe used `IdentitiesOnly=yes` and `StrictHostKeyChecking=yes` | **NO** — existing key was rejected with `Permission denied (publickey)` on 2026-09-12. Fingerprint: `SHA256:jIcdy7HEdhsBREuoECUOrnLbLR51oqLS46lF4/jEPk4`. |
+| GO Command Center | `root@47.242.94.212:22` | **NOT_CONFIGURED** — no dedicated local identity, alias, or SSH config entry found | Default `C:\Users\Eason\.ssh\known_hosts` exists, but no Command Center-specific mapping is configured | **NO** — no direct identity is available; a bounded probe timed out during banner exchange on 2026-09-12. |
+
+### Quick recovery commands
+
+```powershell
+cd C:\Users\Eason\Desktop\1\go-ai-webapp\.tmp-pr5-20260909\repo
+git status
+git remote -v
+
+# HK-STAGING-01 diagnostic only. This was verified to fail authorization on 2026-09-12;
+# do not create a replacement key or copy a key from another workstation.
+ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="C:\Users\Eason\.ssh\known_hosts" -i "C:\Users\Eason\.ssh\go-nexus-hk-stg-01" root@47.239.57.40
+
+# GO Command Center has no configured direct SSH identity on this workstation.
+# Do not infer or copy a key, alias, or command from Eason-8845.
+```
+
 ## Workstation direct SSH identities
 
 | Target | SSH target | Local identity | Public fingerprint | Verified |
@@ -103,7 +135,3 @@ All paths below are server-local paths on HK-STAGING-01. The Agent configuration
 | Evidence Signer | Sign HK execution evidence | signing only | `/etc/go-hk-agent/keys/evidence-signing.pem` | `/etc/go-hk-agent/keys/evidence-signing.pub` | `go-hk-agent:go-hk-agent`, `0600` private; `root:go-hk-agent`, `0640` public | `SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw` |
 
 The HK GO Source Reader Deploy Key title is `HK-STAGING-01 GO source reader`. Its known verified result is `GO_SOURCE_READ_ACCESS=PASS` as `yuguangzhi3836-glitch/GO`.
-
-## Second workstation
-
-`Eason-13490`: `NOT_YET_DOCUMENTED`. Do not infer its user name, repository path, SSH configuration, or identity locations from this workstation.
