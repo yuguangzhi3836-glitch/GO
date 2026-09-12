@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import date, datetime, timezone
 from fastapi import APIRouter, Header, Request, Depends, HTTPException
 from go_hotel.security.deps import legacy_order_access
 from go_hotel.core.config import settings
@@ -79,9 +80,21 @@ def consumer_home():
 
 
 @router.get("/v1/consumer/hotels/{hotel_id}")
-def consumer_hotel_detail(hotel_id: str):
+def consumer_hotel_detail(hotel_id: str, check_in: date | None = None,
+                          check_out: date | None = None, currency: str | None = None):
+    if (check_in is None) != (check_out is None) or (check_in and check_out <= check_in):
+        raise HTTPException(status_code=422, detail='VALID_STAY_FILTER_REQUIRED')
+    if currency is not None and not (len(currency) == 3 and currency.isascii() and currency.isalpha() and currency.isupper()):
+        raise HTTPException(status_code=422, detail='VALID_CURRENCY_FILTER_REQUIRED')
     with SessionLocal() as s:
-        offers = s.scalars(select(OfferRow).where(OfferRow.hotel_id == hotel_id).order_by(OfferRow.created_at.desc()).limit(20)).all()
+        query = select(OfferRow).where(OfferRow.hotel_id == hotel_id)
+        if check_in is not None:
+            query = query.where(OfferRow.check_in == check_in.isoformat(),
+                                OfferRow.check_out == check_out.isoformat(),
+                                OfferRow.expires_at > datetime.now(timezone.utc))
+        if currency is not None:
+            query = query.where(OfferRow.currency == currency)
+        offers = s.scalars(query.order_by(OfferRow.created_at.desc()).limit(20)).all()
         room_ids = {o.room_type_id for o in offers if o.room_type_id}
         room_rows = s.scalars(select(HotelPartnerRoomTypeRow).where(HotelPartnerRoomTypeRow.room_type_id.in_(room_ids))).all() if room_ids else []
         room_by_id = {r.room_type_id: r for r in room_rows}
@@ -111,6 +124,8 @@ def consumer_hotel_detail(hotel_id: str):
             "offer_id": o.offer_id,
             "room_type_id": o.room_type_id,
             "rate_plan_id": o.rate_plan_id,
+            "check_in": o.check_in,
+            "check_out": o.check_out,
             "room_type_name": rr.name_zh if rr else None,
             "room_type_name_en": rr.name_en if rr else None,
             "room_attributes": dict(rr.attributes_json or {}) if rr else {},

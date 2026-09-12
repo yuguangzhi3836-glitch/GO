@@ -4,31 +4,53 @@
     "TEST_ONLY",
     "DOCUMENTATION"
   ],
-  "parent_commit": "47b6a06cdb63a90d549663cb0a73b99b2d919bdc",
-  "application_git_tree": "af2df84ebf7e5ad66f27b3ee5d2bf0219eec8336",
-  "source_tree_sha256": "554bf6cd1775f8524027bc0bb928e98f3a7d0967cf63d215d9b7cb6eede4017a",
-  "source_files": 1307,
-  "file_sha256": "6b4cba903b680944b2695b582630bb959292fd9ba967be42eb94e07c756d9ce6",
-  "blob": "f86846f4eac39edf624f0ed199af89738cb793d7",
+  "parent_commit": "35812e087e6501071b2af7cda233b88a91ee2054",
+  "application_git_tree": "0458fcee1a6f086906746e75ba22b43b50f33fef",
+  "source_tree_sha256": "dcd014e4f65cd60a1221f4b89139bbf17552425ece8fb38425683ba5a75162f3",
+  "source_files": 1309,
+  "retained_parent_files": 1307,
   "changes": [
     {
       "path": "application/frontend/consumer/app.js",
-      "before_git_blob": "f9532186ace6f0ed5c0903aef269a14efcf064bd",
-      "after_git_blob": "f86846f4eac39edf624f0ed199af89738cb793d7",
-      "problem": "UNPAID_RESUME_BUTTON_OBSCURED_BY_FIXED_MOBILE_NAV",
-      "repair": "Place resumed payment inside the existing padded order-content container"
+      "before_git_blob": "f86846f4eac39edf624f0ed199af89738cb793d7",
+      "after_git_blob": "6b89756896b09638ba4acabeffdcdecab3210343",
+      "sha256": "f2e2a7926b33a0b88ba3d704141ee9dbf69087d165a61ffb6bda33ad17e3a4ee"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/consumer.py",
+      "before_git_blob": "1abbc75a1ddfdc681a33b663ea6e0c87f8226ca4",
+      "after_git_blob": "25ccf5d7472ce3b60e58a5c7c107beacd3e5f6b7",
+      "sha256": "2df9a9709377bdcab48ef14b00c66ae97293467d84ef31e2da5f4594fd4b1baf"
+    },
+    {
+      "path": "application/tests/test_depth44_hotel_date_binding.py",
+      "before_git_blob": null,
+      "after_git_blob": "1c825a7d0016ef3473f008c300735d0fd62e75cd",
+      "sha256": "cf00e0355dac84330e1d82f4ca71291adb1b27278fefd27aecb847728d692c37"
+    },
+    {
+      "path": "application/tests_frontend/hotel_date_binding.test.mjs",
+      "before_git_blob": null,
+      "after_git_blob": "ffbad3b956dc8acd3cb8d708b569acea6a17d6ea",
+      "sha256": "b5605f031c4a772635c8cd686b6586d9963d57a37f51ffe5f066d728ae3d5f6a"
     }
   ],
-  "first_browser_run": 34700777402,
-  "first_browser_source": "47b6a06cdb63a90d549663cb0a73b99b2d919bdc",
-  "first_browser_result": "FAIL_UNPAID_RESUME_POINTER_INTERCEPTION",
-  "prior_search_viewports_passed": [
-    375,
-    390,
-    430,
-    1440
+  "problems": [
+    "UNPAID_RESUME_BUTTON_OBSCURED_BY_FIXED_MOBILE_NAV",
+    "HOTEL_OFFERS_NOT_BOUND_TO_SEARCH_STAY_AND_CURRENCY"
   ],
-  "prior_search_pass_transferred": false,
+  "failed_attempts": [
+    {
+      "commit": "47b6a06cdb63a90d549663cb0a73b99b2d919bdc",
+      "run": 34700777402,
+      "reason": "UNPAID_BUTTON_POINTER_INTERCEPTION"
+    },
+    {
+      "commit": "35812e087e6501071b2af7cda233b88a91ee2054",
+      "run": 34701225984,
+      "reason": "BOOKED_STAY_DIFFERS_FROM_SEARCH_STAY"
+    }
+  ],
   "ci": "PENDING",
   "hong_kong": "NOT_ACCESSED",
   "production": "HOLD"

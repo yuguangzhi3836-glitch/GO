@@ -1,0 +1,14 @@
+.....................F.........                                          [100%]
+=================================== FAILURES ===================================
+_ test_current_quote_consent_is_required_before_authenticated_profile_release __
+
+client = <starlette.testclient.TestClient object at 0x7f633a102d80>
+
+    def test_current_quote_consent_is_required_before_authenticated_profile_release(client):
+>       from tests.test_sprint3a_flight import auth
+E       ModuleNotFoundError: No module named 'tests'
+
+application/tests/test_depth13_catalog_fare.py:55: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED application/tests/test_depth13_catalog_fare.py::test_current_quote_consent_is_required_before_authenticated_profile_release
+1 failed, 30 passed in 10.50s

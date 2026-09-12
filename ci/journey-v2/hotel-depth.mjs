@@ -88,6 +88,8 @@ export async function hotelDepth(h) {
     assert.equal(order.status,'PAYMENT_PENDING');await p.locator('#goHotelPay').waitFor();
     await open(oid);
     const pending=await read(p,orderPath());assert.equal(pending.order.status,'PAYMENT_PENDING');
+    const detail=await read(p,'/v1/consumer/orders/'+oid+'/detail');
+    assert.equal(detail.stay.check_in,day(40));assert.equal(detail.stay.check_out,day(42));
     assert.equal(pending.original_payment.capture_count,0);record('UNPAID_QUERYABLE',pending);
     const resume=p.getByRole('button',{name:'核对金额并继续付款',exact:true});
     for(const width of [375,390,430,1440]){
