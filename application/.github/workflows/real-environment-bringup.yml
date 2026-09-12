@@ -1,0 +1,112 @@
+name: sprint-2d-real-environment-bringup
+on:
+  workflow_dispatch:
+    inputs:
+      execute_store_builds:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  credential-preflight:
+    runs-on: ubuntu-latest
+    environment: staging-certification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e '.[test]'
+      - name: Materialize file credentials
+        run: python scripts/sprint2d_materialize_ci_secrets.py
+        env:
+          ASC_API_KEY_B64: ${{ secrets.ASC_API_KEY_B64 }}
+          APNS_AUTH_KEY_B64: ${{ secrets.APNS_AUTH_KEY_B64 }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64 }}
+          FIREBASE_SERVICE_ACCOUNT_JSON_B64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_B64 }}
+      - run: python scripts/sprint2d_preflight.py
+        env:
+          STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          STAGING_REDIS_URL: ${{ secrets.STAGING_REDIS_URL }}
+          PSP_PROVIDER: ${{ secrets.PSP_PROVIDER }}
+          PSP_SANDBOX_API_KEY: ${{ secrets.PSP_SANDBOX_API_KEY }}
+          REAL_CONNECTOR_ID: ${{ secrets.REAL_CONNECTOR_ID }}
+          REAL_CONNECTOR_BASE_URL: ${{ secrets.REAL_CONNECTOR_BASE_URL }}
+          REAL_CONNECTOR_CREDENTIAL: ${{ secrets.REAL_CONNECTOR_CREDENTIAL }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_EAS_PROJECT_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          ASC_API_KEY_PATH: ${{ env.ASC_API_KEY_PATH }}
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_AUTH_KEY_PATH: ${{ env.APNS_AUTH_KEY_PATH }}
+          GOOGLE_PLAY_PACKAGE_NAME: ${{ secrets.GOOGLE_PLAY_PACKAGE_NAME }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ env.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          GO_APP_DOMAIN: ${{ vars.GO_APP_DOMAIN }}
+          IOS_BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID }}
+          ANDROID_PACKAGE_NAME: ${{ vars.ANDROID_PACKAGE_NAME }}
+          ANDROID_SHA256_CERT_FINGERPRINT: ${{ secrets.ANDROID_SHA256_CERT_FINGERPRINT }}
+          APPLE_ASSOCIATION_URL: ${{ vars.APPLE_ASSOCIATION_URL }}
+          ANDROID_ASSOCIATION_URL: ${{ vars.ANDROID_ASSOCIATION_URL }}
+  live-infra:
+    needs: credential-preflight
+    runs-on: ubuntu-latest
+    environment: staging-certification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e '.[test]'
+      - run: python scripts/sprint2d_live_infra_gate.py
+        env:
+          STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          STAGING_REDIS_URL: ${{ secrets.STAGING_REDIS_URL }}
+      - run: DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}' alembic upgrade head
+      - run: pytest -q tests_postgres
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          REDIS_URL: ${{ secrets.STAGING_REDIS_URL }}
+      - run: REDIS_URL='${{ secrets.STAGING_REDIS_URL }}' python scripts/queue_smoke.py
+  association-files:
+    needs: credential-preflight
+    runs-on: ubuntu-latest
+    environment: staging-certification
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/sprint2d_association_gate.py
+        env:
+          APPLE_ASSOCIATION_URL: ${{ vars.APPLE_ASSOCIATION_URL }}
+          ANDROID_ASSOCIATION_URL: ${{ vars.ANDROID_ASSOCIATION_URL }}
+  store-builds:
+    if: ${{ inputs.execute_store_builds }}
+    needs: [live-infra, association-files]
+    runs-on: ubuntu-latest
+    environment: store-release
+    defaults: {run: {working-directory: mobile/go-app}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '20'}
+      - run: npm ci
+      - run: npx expo-doctor
+      - name: Build iOS and wait
+        run: npx eas-cli build --platform ios --profile production --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_EAS_PROJECT_ID }}
+          EXPO_PUBLIC_API_URL: ${{ vars.STAGING_API_URL }}
+      - name: Submit latest iOS build to TestFlight and wait
+        run: npx eas-cli submit --platform ios --profile production --latest --non-interactive --wait
+        env: {EXPO_TOKEN: '${{ secrets.EXPO_TOKEN }}'}
+      - name: Build Android AAB and wait
+        run: npx eas-cli build --platform android --profile production --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_EAS_PROJECT_ID }}
+          EXPO_PUBLIC_API_URL: ${{ vars.STAGING_API_URL }}
+      - name: Submit latest Android build to Play Internal and wait
+        run: npx eas-cli submit --platform android --profile production --latest --non-interactive --wait
+        env: {EXPO_TOKEN: '${{ secrets.EXPO_TOKEN }}'}

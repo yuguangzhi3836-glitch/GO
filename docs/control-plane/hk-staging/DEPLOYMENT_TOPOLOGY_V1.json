@@ -1,0 +1,84 @@
+{
+  "schema_version": "1",
+  "topology_id": "HK_STAGING_BUSINESS_TOPOLOGY",
+  "topology_version": 1,
+  "environment": "HK-STAGING-01",
+  "status": "CURRENT_PROVEN_BASELINE",
+  "description": "Versioned description of the currently proven HK-STAGING business-service topology. This is not Execution Authority.",
+  "application_image_policy": {
+    "mode": "single_business_image",
+    "current_proven_tag": "go-hotel:aoluguya-direct-r3-1-20260906",
+    "all_business_services_share_candidate_image": true,
+    "multi_image_release_supported": false
+  },
+  "business_services": [
+    {
+      "name": "api",
+      "role": "api",
+      "replicas": 1,
+      "command": "image_default"
+    },
+    {
+      "name": "recovery-worker",
+      "role": "recovery",
+      "replicas": 1,
+      "command": ["python", "-m", "go_hotel.workers.recovery_worker"]
+    },
+    {
+      "name": "outbox-worker",
+      "role": "outbox",
+      "replicas": 1,
+      "command": ["python", "-m", "go_hotel.workers.outbox_worker"]
+    },
+    {
+      "name": "mobile-push-receipt-worker",
+      "role": "mobile_push_receipt",
+      "replicas": 1,
+      "command": ["python", "-m", "go_hotel.workers.mobile_push_receipt_worker"]
+    },
+    {
+      "name": "reconciliation-worker",
+      "role": "reconciliation",
+      "replicas": 1,
+      "command": ["python", "-m", "go_hotel.workers.reconciliation_worker"]
+    },
+    {
+      "name": "mobile-push-worker",
+      "role": "mobile_push",
+      "replicas": 1,
+      "command": ["python", "-m", "go_hotel.workers.mobile_push_worker"]
+    },
+    {
+      "name": "mobile-engagement-worker",
+      "role": "mobile_engagement",
+      "replicas": 1,
+      "command": ["python", "-m", "go_hotel.workers.mobile_engagement_worker"]
+    },
+    {
+      "name": "judgment-worker",
+      "role": "judgment",
+      "replicas": 1,
+      "command": ["python", "-m", "go_hotel.workers.judgment_worker"]
+    }
+  ],
+  "business_service_count": 8,
+  "protected_non_targets": ["redis", "caddy"],
+  "compose_reference": {
+    "repository_path": "hk-staging/compose/docker-compose.r31-hk-staging.yml",
+    "observed_live_sha256": "7ef4ab181c1250d8cec0e348b29c24bfbb8e5dce4fc2a57f6faaa59363c26895"
+  },
+  "normal_deploy_policy": {
+    "requires_exact_topology_version_match": true,
+    "requires_exact_business_service_set_match": true,
+    "caller_supplied_service_list_allowed": false,
+    "topology_change_via_normal_deploy_allowed": false,
+    "on_mismatch": "TOPOLOGY_CHANGE_REQUIRED"
+  },
+  "current_runtime_enforcement": {
+    "executor_behavior": "FIXED_EIGHT_SERVICE_SET",
+    "dynamic_topology_loading_implemented": false,
+    "dynamic_topology_loading_proven": false
+  },
+  "scoped_deployment": "NOT_IMPLEMENTED",
+  "documentation_is_execution_authority": false
+}

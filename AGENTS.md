@@ -1,5 +1,17 @@
 # GO repository operating instructions
 
+## Repository change control
+
+All planned permanent changes to GO are subject to [`docs/governance/CHANGE_CONTROL_POLICY.md`](docs/governance/CHANGE_CONTROL_POLICY.md). This rule applies equally to humans, ChatGPT, Codex, and other automation.
+
+For normal work, use:
+
+`current main -> short-lived branch -> commits/tests -> Pull Request -> review -> merge`
+
+Do not write directly to `main`, including for probes, convenience edits, temporary test files, documentation fixes, product changes, deployment-contract changes, or AI-generated changes. A Pull Request is a proposal/review boundary and is not Execution Authority. Do not merge unless explicitly authorized by the responsible human.
+
+Any change that adds/removes/renames runtime service roles, introduces another business image family, changes protected non-targets, or otherwise alters HK-STAGING deployment topology must be classified as a topology change and follow [`docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md`](docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md). Normal DEPLOY must not accept an arbitrary caller-supplied service list or silently expand topology.
+
 ## GO Command Center
 
 The archived 2026-09-11 Command Center source and observed runtime configuration are under `command-center/`. Before changing the Command Center web app, Boss Request Bridge, Request policy, signing/publishing path, or Command Center service configuration, read:
@@ -23,6 +35,7 @@ Before any HK-STAGING Control Plane operation or planning—including
 3. `docs/control-plane/hk-staging/BOSS_GPT_REQUEST_GUIDE.md` when the request is being submitted through the Boss GPT / mobile GitHub Request Channel
 4. the action-specific VERIFY, CANARY, DEPLOY, or ROLLBACK runbook linked there, when one exists for the requested action
 5. `docs/control-plane/hk-staging/HK_STAGING_DEPLOY_BASELINE.md`
+6. `docs/control-plane/hk-staging/DEPLOYMENT_TOPOLOGY_V1.json` and `docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md` when reasoning about deployment scope or service topology
 
 Do not reconstruct the HK-STAGING Control Plane procedure from AI memory,
 prior conversations, or historical shell commands. Use the current proven
@@ -48,3 +61,7 @@ Documentation is **not** Execution Authority. Execution Authority remains:
 
 This documentation does not authorize deployment, rollback, migration,
 production access, signing, or changes to runtime credentials.
+
+## Canonical application candidate
+
+For application development, start from `application/` at the approved canonical baseline on main. This repair branch is an acceptance-pending candidate; see `docs/canonical-baseline/README.md`. Until this candidate is approved and merged, keep baseline repairs on this branch. Do not start new product work from historical ZIPs, deliverables, hk-staging, or unmerged feature branches. Historical application manifests and embedded workflow files are supporting snapshots, not current authorization or acceptance evidence.

@@ -1,0 +1,90 @@
+name: Canonical parent retention
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/**
+      - ci/retention/**
+      - control-plane/depth40-compat-v2/**
+      - .github/workflows/canonical-parent-retention.yml
+permissions:
+  contents: read
+concurrency:
+  group: canonical-retention-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Bind exact source and preserved compatibility files
+        run: python ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"
+      - name: Install verified frozen dependencies only
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Run isolated Python test shard
+        run: |
+          export GO_NATIVE_NODE="$(command -v node)"
+          python ci/retention/run_suite.py --shard ${{ matrix.shard }} --evidence "$RUNNER_TEMP/evidence/tests"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-retention-shard-${{ matrix.shard }}-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/evidence
+          if-no-files-found: error
+  frontend-http-compat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Bind exact source
+        run: python ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"
+      - name: Install verified frozen dependencies only
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Frontend regression
+        working-directory: application
+        run: node --test tests_frontend/*.test.mjs | tee "$RUNNER_TEMP/evidence/frontend.log"
+      - name: Compatibility unit regression only
+        if: ${{ !cancelled() }}
+        run: python -B -m unittest discover -s control-plane/depth40-compat-v2/tests -v 2>&1 | tee "$RUNNER_TEMP/evidence/compatibility.log"
+      - name: Disposable loopback HTTP journeys
+        if: ${{ !cancelled() }}
+        run: |
+          tree=$(python -c 'import json,os; print(json.load(open(os.environ["RUNNER_TEMP"]+"/evidence/source/RETENTION_RESULT.json"))["source_tree_sha256"])')
+          python -B application/scripts/acceptance_smoke.py --source application --fingerprint "$RUNNER_TEMP/evidence/source/SOURCE_FINGERPRINT.json" --expected-tree "$tree" --evidence "$RUNNER_TEMP/evidence/http"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-frontend-http-compat-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/evidence
+          if-no-files-found: error

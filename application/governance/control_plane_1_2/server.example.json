@@ -1,0 +1,10 @@
+{
+  "ledger": "/var/lib/go-control/tasks.db",
+  "nodes": {
+    "hk-staging": {
+      "token_env": "GO_CP_HK_NODE_TOKEN",
+      "hmac_key_env": "GO_CP_HK_HMAC_KEY",
+      "targets": { "release": "file_sha256", "api": "runtime_identity" }
+    }
+  }
+}

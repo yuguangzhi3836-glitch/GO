@@ -1,0 +1,1 @@
+if(window.GO_CONSOLE){window.GO_CONSOLE.nav.splice(3,0,{route:'/direct-value-governance',label:'官方直连价值',endpoint:'/internal/v1/admin/direct-value/overview'},{route:'/consumer-cellular-growth',label:'消费者增长',endpoint:'/internal/v1/admin/consumer-growth/metrics'});}
