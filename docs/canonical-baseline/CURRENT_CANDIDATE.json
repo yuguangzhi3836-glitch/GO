@@ -19,7 +19,31 @@
     "native_contract": "PASS",
     "database": "ISOLATED_SQLITE"
   },
-  "ci": "PENDING",
+  "ci": {
+    "browser": "PASS_39_RECORDED_SCENARIOS",
+    "frontend": "249_PASS",
+    "compatibility": "34_PASS",
+    "http": "148_CHECKS_87_REQUESTS_PASS",
+    "python_completed_shards": [
+      {
+        "shard": 0,
+        "passed": 436,
+        "skipped": 0
+      },
+      {
+        "shard": 1,
+        "passed": 452,
+        "skipped": 0
+      },
+      {
+        "shard": 2,
+        "passed": 406,
+        "skipped": 5
+      }
+    ],
+    "python_shard_3": "IN_PROGRESS",
+    "full_regression": "HOLD"
+  },
   "browser_search": "HOLD_LOOPBACK_ERR_BLOCKED_BY_CLIENT",
   "historical_results_transferred": false,
   "full_three_end_ux": "HOLD",
@@ -30,10 +54,19 @@
   "final_release": "HOLD",
   "hong_kong": "NOT_ACCESSED",
   "production": "HOLD",
-  "candidate_commit": null,
+  "candidate_commit": "abc28494bae06bff60b1f4597009198d0875b444",
   "candidate_branch": "fix/canonical-parent-retention-20260912",
-  "current_status": "HOTEL_CHANGE_TRIP_REPAIRS_CI_PENDING",
+  "current_status": "HOTEL_CHANGE_REPAIRS_ONE_CI_SHARD_PENDING",
   "new_changes": "docs/canonical-baseline/DEPTH43_HOTEL_CHANGE_REPAIRS.json",
   "deployment_package": "NOT_RESEALED",
-  "historical_tested_source": "800538c1714dd3e50f3abf8c97964a2ee8ba4e72"
+  "historical_tested_source": "800538c1714dd3e50f3abf8c97964a2ee8ba4e72",
+  "tested_source_commit": "abc28494bae06bff60b1f4597009198d0875b444",
+  "producer_run": 34696763146,
+  "local_shard_3_diagnostic": {
+    "passed": 439,
+    "skipped": 1,
+    "seconds": 122.4,
+    "replaces_github_job": false
+  },
+  "full_feature_retention": "HOLD_APPROVAL_BLOCKED_PROVIDER_GUARD"
 }

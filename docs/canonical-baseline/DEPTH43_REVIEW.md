@@ -22,3 +22,9 @@
 CI 尚未完成；全量及浏览器结果必须绑定新源码。未取得本次搜索或改期流程的真实浏览器、原生真机结论；PostgreSQL、全品类复杂调整资金组合、完整 UX、Sealed Node 与发布仍 HOLD。
 
 未 merge、未创建新分支或 PR、未部署、未访问 HK-STAGING／Production、未改 RDS、未执行 migration。
+
+## GitHub 与慢分片复查
+
+当前应用源码 abc28494bae06bff60b1f4597009198d0875b444 的 39 个既有浏览器场景、六单独立账本核对、前端 249 项、兼容 34 项、隔离 HTTP 148 项检查均已通过。三个 Python 分片已完成，最后 shard 3 仍在运行，完整回归仍 HOLD。
+
+为排查异常耗时，在同一应用源码的隔离本地环境按完全相同的 shard 3 文件清单复查：439 PASS、1 PostgreSQL SKIP、0 FAIL／ERROR，122.40 秒、退出 0。该复查不替代 GitHub 的 Python 3.13 分片结果。原始输出与范围绑定在 evidence/depth43-hotel-change/local/。
