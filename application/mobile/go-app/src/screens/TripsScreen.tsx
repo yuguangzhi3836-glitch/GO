@@ -1,5 +1,5 @@
 import React,{useCallback,useRef,useState} from 'react';
-import {ActivityIndicator,ScrollView,Text,View,Pressable} from 'react-native';
+import {ActivityIndicator,ScrollView,Text,View,Pressable,TextInput} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import {GO,screen} from '../design';
 import {TopBar,StatusPill,Btn} from '../components/GO';
@@ -9,6 +9,8 @@ import {tripRoute} from '../domain/tripFacts';
 export default function Trips({navigation}:any) {
   const [journeys,setJourneys]=useState<any[]>([]),[orders,setOrders]=useState<any[]>([]);
   const [loading,setLoading]=useState(true),[error,setError]=useState('');
+  const [query,setQuery]=useState('');
+  const visibleOrders=orders.filter(o=>!query.trim()||[o.order_id,o.title,o.vertical].join(' ').toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
   const sequence=useRef(0);
   const load=useCallback(async()=>{
     const ticket=++sequence.current,session=sessionVersion();
@@ -22,11 +24,12 @@ export default function Trips({navigation}:any) {
   },[]);
   useFocusEffect(useCallback(()=>{void load();return()=>{sequence.current++}},[load]));
   return <View style={screen.root}><TopBar title="GO Trips"/><ScrollView contentContainerStyle={screen.content}>
-    <Text style={screen.h1}>我的订单与行程</Text>
+    <Text style={screen.h1}>我的订单与行程</Text><Text style={screen.sub}>全部订单，包含待付款、已取消、退款中与已完成</Text><TextInput accessibilityLabel="查找订单" placeholder="搜索订单号或名称" value={query} onChangeText={setQuery} style={[screen.card,{color:GO.navy}]}/>
     {loading?<ActivityIndicator color={GO.navy}/>:<>
       {!!error&&<View style={screen.card}><Text style={screen.sub}>{error}</Text><Btn title="重试" onPress={()=>{void load()}}/></View>}
       {!error&&orders.length===0&&journeys.length===0&&<View style={screen.card}><Text style={screen.h2}>还没有行程</Text><Text style={screen.sub}>已创建的订单会显示在这里，待付款订单也会保留。</Text></View>}
-      {orders.map((o:any)=>{const target=tripRoute(o);return <View key={`${o.vertical}:${o.order_id}`} style={screen.card}>
+      {!loading&&orders.length>0&&visibleOrders.length===0&&<Text style={screen.sub}>没有匹配订单，清空搜索可查看全部订单。</Text>}
+      {visibleOrders.map((o:any)=>{const target=tripRoute(o);return <View key={`${o.vertical}:${o.order_id}`} style={screen.card}>
         <Text style={screen.h2}>{o.title||'订单'}</Text><Text style={screen.sub}>{o.vertical} · {o.order_id}</Text>
         <StatusPill text={o.native_status||o.lifecycle_state||'状态待核对'} tone="navy"/>
         <Text style={screen.sub}>支付：{o.payment_state||'待核对'} · 退款：{o.refund_state||'待核对'}</Text>

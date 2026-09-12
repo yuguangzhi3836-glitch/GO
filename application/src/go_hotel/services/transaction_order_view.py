@@ -144,6 +144,16 @@ def snapshot(vertical, order_id, *, supplier_id=None, account_id=None, admin=Fal
         refunded = sum(x.amount_minor for x in confirmed if x.movement_type == 'REFUND')
         debit = sum(x.amount_minor for x in ledger if x.direction == 'DEBIT')
         credit = sum(x.amount_minor for x in ledger if x.direction == 'CREDIT')
+        # Equal totals alone can hide a missing pair, wrong currency or an
+        # uncertain movement. Check each actual posted financial movement.
+        balanced = bool(ledger) and debit == credit and valid and intent.state == 'SUCCEEDED'
+        balanced = balanced and all(x.currency == order.currency and x.state == 'CONFIRMED' for x in moves)
+        balanced = balanced and all(x.currency == order.currency for x in ledger)
+        for movement in [x for x in confirmed if x.movement_type not in {'AUTHORIZATION', 'RELEASE'}]:
+            entries = [x for x in ledger if x.transaction_id == movement.money_movement_id]
+            balanced = balanced and len(entries) == 2 and {x.direction for x in entries} == {'DEBIT', 'CREDIT'}
+            balanced = balanced and all((x.amount_minor, x.currency, x.entry_type) ==
+                (movement.amount_minor, movement.currency, movement.movement_type) for x in entries)
         return {'order': summary(vertical, order), 'refunds': refunds,
                 'original_payment': {'payment_intent_id': intent.payment_intent_id if valid else None,
                     'binding_state': 'BOUND' if valid else 'RECONCILIATION_REQUIRED',
@@ -152,6 +162,7 @@ def snapshot(vertical, order_id, *, supplier_id=None, account_id=None, admin=Fal
                     'currency': order.currency, 'capture_count': sum(x.movement_type == 'CAPTURE' for x in confirmed),
                     'refund_count': sum(x.movement_type == 'REFUND' for x in confirmed),
                     'ledger_debit_minor': debit, 'ledger_credit_minor': credit,
-                    'ledger_entries': len(ledger), 'ledger_balanced': bool(ledger) and debit == credit},
+                    'ledger_entries': len(ledger), 'ledger_balanced': bool(balanced),
+                    'reconciliation_required': not balanced},
                 'movements': movements, 'scope': 'ORIGINAL_PAYMENT_ROOT',
                 'bank_settlement_verified': False}
