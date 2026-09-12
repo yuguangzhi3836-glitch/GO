@@ -125,3 +125,33 @@ def test_all_six_explicit_checkouts_bind_amount_and_capture_once(client,monkeypa
             assert 0<refunds[0].amount_minor<=body['expected_amount_minor']
     monkeypatch.setattr(settings,'app_env','production')
     assert client.post(path,headers=key,json=body).status_code==403
+
+
+@pytest.mark.parametrize('vertical', ['RIDE', 'RENTAL'])
+def test_confirmed_mobility_replay_requires_durable_capture_evidence(client, vertical):
+    headers, orders = book_all(client)
+    order = orders[vertical]
+    path = f"/v1/consumer/checkout/{vertical}/{order['order_id']}"
+    body = {'mode': 'CONTRACT_SIMULATOR', 'expected_amount_minor': order['total_amount_minor'], 'currency': order['currency']}
+    first = client.post(path, headers={**headers, 'Idempotency-Key': 'initial-capture'}, json=body)
+    assert first.status_code == 200, first.text
+    with SessionLocal.begin() as s:
+        root = s.scalar(select(PaymentOrderRootRow).where(
+            PaymentOrderRootRow.business_type == f'{vertical}_ORDER',
+            PaymentOrderRootRow.business_id == order['order_id']))
+        payment_intent_id = root.payment_intent_id
+        captures = list(s.scalars(select(OmnichannelMoneyMovementRow).where(
+            OmnichannelMoneyMovementRow.root_payment_intent_id == payment_intent_id,
+            OmnichannelMoneyMovementRow.movement_type == 'CAPTURE')))
+        assert len(captures) == 1
+        capture_id = captures[0].money_movement_id
+        captures[0].state = 'UNKNOWN_EXTERNAL_STATE'
+    replay = client.post(path, headers={**headers, 'Idempotency-Key': 'another-device'}, json=body)
+    assert replay.status_code == 409
+    assert replay.json()['detail'] == 'PAYMENT_RECONCILIATION_REQUIRED'
+    with SessionLocal() as s:
+        captures = list(s.scalars(select(OmnichannelMoneyMovementRow).where(
+            OmnichannelMoneyMovementRow.root_payment_intent_id == payment_intent_id,
+            OmnichannelMoneyMovementRow.movement_type == 'CAPTURE')))
+        assert [r.money_movement_id for r in captures] == [capture_id]
+        assert captures[0].state == 'UNKNOWN_EXTERNAL_STATE'

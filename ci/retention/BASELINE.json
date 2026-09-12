@@ -1314,6 +1314,13 @@
   "parent_archive_commit": "b65a07c2aea9ac1e79013540d9cf28a69a190935",
   "parent_package": "CP11_DEPTH40_P03_COMPAT_V2_PARENT_20260912",
   "parent_zip_sha256": "421b11f95d0400bdfc69d4053a6d3b54599fa791a0d6b43311b83094bcd51c6a",
+  "post_regression_corrections": {
+    "src/go_hotel/api/routes/consumer_checkout.py": "Read-only confirmed mobility replay requires matching payer, fulfillment and one durable confirmed capture; unpaid expiry guard unchanged.",
+    "staging/bringup/evidence-template.json": "NOT_RUN template retains original secret-prohibition wording.",
+    "tests/test_depth08_api_and_migration.py": "Bind CLI queue environment to API fixture instead of hardcoded local.",
+    "tests/test_master03_closure.py": "Add negative replay tests for missing confirmed capture, in addition to existing six-vertical capture-once journey.",
+    "tests/test_wave04_v70_release_gate_contract.py": "Assert current source identity and absence of inherited authority; preserve other historical assertions."
+  },
   "production": "HOLD",
   "repair_source_commit": "da6897706793fafd73d09cb56013586089733f4d",
   "repaired_source_sha256": {
@@ -1344,13 +1351,17 @@
     "specs/provider_adapters/generic_named_supplier_sandbox_template.json": "88b4257d9a6fda2a946dfd4b10a7875f1c43f11a545b5356c90cff550202af8b",
     "specs/provider_adapters/tongcheng_sandbox_template.json": "29770a587d9cb5bc60241ab6f79cdd0a126e5743eb1ce4cc713cca0dbb79a274",
     "specs/state_machine_matrix.csv": "3e9123cd291f46bbf2f23a12ee3bdc53c04bd3a08f53e3b2739ebe2d022364eb",
+    "src/go_hotel/api/routes/consumer_checkout.py": "90a79306628ff3b8eed526628359f3102cbdc4837e1c5ab668c90632c402848a",
     "staging/bringup/credentials.yaml": "b98771a37d14351e29a0a6bd9cec749ce579e99b71bf04b6cd272ee382489d0a",
-    "staging/bringup/evidence-template.json": "b9222ce9b4ac4f6f3694d27af9acd59138c8255a7b6febb66c6f23c9210fcd68",
+    "staging/bringup/evidence-template.json": "1fe6c44c7d9487eff69fc5acb70e557bf0fbf9fc5e90a70fbc9f65249bedb356",
     "staging/certification/gates.yaml": "d3b0329c4cc943304539fdc47ab296956cfae11ed3b404a3b3df34fdbcf447f2",
     "staging/certification/real_device_e2e_matrix.csv": "4fa7310b5efc26d0586b45c13966c5e59d63d46d2b1aa1110ebba5c802c75567",
     "staging/certification/status.sprint2d.json": "9e28a492e35f04a252e684a5684d9817e1fe45d069b5e4ec0bc9746305deb299",
+    "tests/test_depth08_api_and_migration.py": "b8eeff48ccd553638230faff3ab2a24d2956fa6456846a6fa701d457c433c488",
     "tests/test_depth37_provider_preflight.py": "7b7dad9327b50c0f6d5f8502ea4d4fbf3692146794027238ac3d68a2fa2afc2d",
+    "tests/test_master03_closure.py": "33d5f94283b97b5334ec494aedcc428a660db61c3fe1978ef02c0f965200b36c",
     "tests/test_sprint2b_mobile_release.py": "ae02a298c1596cbe4caf50b2304ee40d965f74151b4989676af41fd93f993c22",
+    "tests/test_wave04_v70_release_gate_contract.py": "a4988d3c06db697a4a821b2a44be96c632f159b152f48ba42320923752675ec8",
     "tests_frontend/mobile_build_config.test.mjs": "838504efbf53abdcad6c31388e213cc673540d21342c53b7675f76efa9526550"
   }
 }

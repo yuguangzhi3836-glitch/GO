@@ -4,10 +4,15 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def load(name): return json.loads((ROOT/name).read_text(encoding='utf-8'))
 
-def test_v70_is_unique_controlling_solution_master():
+def test_current_source_identity_does_not_inherit_historical_authority():
     t=(ROOT/'CURRENT_CONTROL_VERSION.md').read_text(encoding='utf-8')
-    assert 'Unique controlling solution master:' in t
-    assert 'GO Ultimate Master Plan V7.0' in t
+    assert 'GO_CANONICAL_PARENT_RETENTION_20260912' in t
+    assert 'Application source: application/' in t
+    assert 'ACCEPTANCE_PENDING / NOT_DEPLOYED' in t
+    assert 'It grants no operational, organizational, legal, signing, merge, migration, or deployment authority.' in t
+    assert 'Historical content SHA256: 3e4ca4f958746d81214e896e240c910d5e1e62d53e3e4f667083935eea03e097' in t
+    assert 'Unique controlling solution master:' not in t
+    assert 'HK-STAGING runtime is separately archived' in t
 
 def test_source_candidate_head_is_0114_and_not_staging_fact():
     d=load('CURRENT_RELEASE_MANIFEST.json'); m=d['migration']

@@ -117,7 +117,9 @@ def test_worker_cli_process_consumes_persisted_queue(client):
     from go_hotel.db.session import engine
     # Legacy test modules overwrite DATABASE_URL during collection. Bind the
     # child to this fixture's actual engine, not the process-wide last writer.
-    env = {**os.environ, 'PYTHONPATH': 'src', 'APP_ENV': 'local',
+    from go_hotel.core.config import settings
+    # The CLI must consume the same environment's queue as this API fixture.
+    env = {**os.environ, 'PYTHONPATH': 'src', 'APP_ENV': settings.app_env,
            'DATABASE_URL': engine.url.render_as_string(hide_password=False)}
     worker = subprocess.run([sys.executable, '-m', 'go_hotel.workers.autonomy_worker', '--once'],
                              env=env, capture_output=True, text=True, timeout=30)

@@ -12,7 +12,15 @@ The original DEPTH40 parent build used the initial DEPTH36 source and omitted la
 
 `ci/retention/BASELINE.json` enumerates every inherited Git blob, each repaired file's SHA256, and every preserved compatibility blob. Verification rejects deletions, unexpected additions and changes to inherited files. This establishes byte retention, not proof of full behavior.
 
-Two deliberate safety corrections differ from the historical repair bytes: `CURRENT_CONTROL_VERSION.md` now identifies the candidate without inheriting old authority/runtime claims; the bring-up evidence template is `NOT_RUN`, with no invented PASS or execution time. Older release/governance manifests, staging templates, and `application/.github/workflows/` are historical support snapshots. They are not current release evidence, operational authority, or active root workflows.
+Initial deliberate safety corrections differ from the historical repair bytes: `CURRENT_CONTROL_VERSION.md` now identifies the candidate without inheriting old authority/runtime claims; the bring-up evidence template is `NOT_RUN`, with no invented PASS or execution time. Older release/governance manifests, staging templates, and `application/.github/workflows/` are historical support snapshots. They are not current release evidence, operational authority, or active root workflows.
+
+## Regression corrections found in this candidate
+
+The first full isolated run found four failures: a confirmed mobility checkout replay wrongly entered the unpaid deadline guard; the worker CLI test consumed the hardcoded LOCAL queue instead of the API fixture's TEST queue; a historical control-document test asserted obsolete authority; and the safe evidence template differed from the expected secret-prohibition wording.
+
+The candidate now returns a confirmed mobility replay only after verifying the matching payer, supplier fulfillment and a single confirmed capture with the accepted amount/currency. It performs no new payment or supplier operation on that replay and leaves unpaid expiry guards unchanged. Negative tests reject uncertain capture evidence. Tests now bind worker/API environments consistently and assert source identity without inherited authority; the evidence template retains NOT_RUN and the expected secret-prohibition phrase. These intentional new corrections are separately enumerated in BASELINE.json and require new regression evidence.
+
+Full-suite CI uses disposable SQLite databases, including historical schema round-trip tests on temporary files. It does not connect to HK-STAGING, RDS or Production, and does not apply operational migrations.
 
 ## Outstanding gates
 

@@ -5,6 +5,7 @@ import os
 import pathlib
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 
 p=argparse.ArgumentParser()
 p.add_argument('--shard',type=int,required=True)
@@ -23,9 +24,15 @@ env={k:v for k,v in os.environ.items() if k in ('PATH','LANG','LC_ALL','TZ','GO_
 env.update({'PYTHONPATH':str(root/'ci/retention/guard')+os.pathsep+str(app)+os.pathsep+str(app/'src'),
             'PYTHONDONTWRITEBYTECODE':'1','PYTEST_DISABLE_PLUGIN_AUTOLOAD':'1',
             'APP_ENV':'test','MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED':'false'})
-cmd=[sys.executable,'-m','pytest','-p','pytest_asyncio.plugin','-p','no:cacheprovider','-q',*selected,'--junitxml='+str(a.evidence/'junit.xml')]
+cmd=[sys.executable,'-m','pytest','-p','pytest_asyncio.plugin','-p','no:cacheprovider','-o','addopts=','-q',*selected,'--junitxml='+str(a.evidence/'junit.xml')]
 with (a.evidence/'pytest.log').open('w') as log:
     r=subprocess.run(cmd,cwd=app,env=env,stdout=log,stderr=subprocess.STDOUT)
-(a.evidence/'RESULT.json').write_text(json.dumps({'exit_code':r.returncode,'selected_files':len(selected),'shard':a.shard,'real_providers':'NOT_RUN','hong_kong':'NOT_ACCESSED'})+'\n')
+report={'exit_code':r.returncode,'selected_files':len(selected),'shard':a.shard,'real_providers':'NOT_RUN','hong_kong':'NOT_ACCESSED'}
+if (a.evidence/'junit.xml').exists():
+    suites=ET.parse(a.evidence/'junit.xml').getroot().findall('testsuite')
+    report.update({k:sum(int(s.attrib.get(k,0)) for s in suites) for k in ('tests','failures','errors','skipped')})
+    report['passed']=report['tests']-report['failures']-report['errors']-report['skipped']
+(a.evidence/'RESULT.json').write_text(json.dumps(report)+'\n')
 print((a.evidence/'pytest.log').read_text()[-14000:])
+print(json.dumps(report))
 raise SystemExit(r.returncode)

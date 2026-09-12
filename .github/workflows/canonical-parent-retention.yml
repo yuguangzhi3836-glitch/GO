@@ -14,7 +14,7 @@ permissions:
   contents: read
 concurrency:
   group: canonical-retention-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   regression:
     runs-on: ubuntu-24.04

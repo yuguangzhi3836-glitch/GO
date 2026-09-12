@@ -11,7 +11,7 @@ from go_hotel.api.idempotency import run_idempotent_async
 from go_hotel.core.config import settings
 from go_hotel.db.models import (OrderRow, FlightOrderRow, RailOrderRow,
     MobilityRentalOrderRow, MobilityRideOrderRow, AttractionOrderRow,
-    OrderSupplierFulfillmentRow)
+    OrderSupplierFulfillmentRow, OmnichannelPaymentIntentRow, OmnichannelMoneyMovementRow)
 from go_hotel.db.session import SessionLocal
 from go_hotel.security.deps import consumer_principal
 from go_hotel.security.service import Principal
@@ -72,6 +72,26 @@ async def checkout(vertical: str, order_id: str, body: CheckoutConfirmation,
                     OrderSupplierFulfillmentRow.business_id==order_id))
                 if fulfillment and fulfillment.state in {'UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'}:
                     raise ValueError('SUPPLIER_RECONCILIATION_REQUIRED')
+                # A confirmed mobility order is a read-only replay. Re-entering
+                # the unpaid deadline guard would reject a second device's key.
+                current = s.get(model, order_id)
+                if vertical in {'RIDE', 'RENTAL'} and current.status == 'CONFIRMED':
+                    intent = s.scalar(select(OmnichannelPaymentIntentRow).where(
+                        OmnichannelPaymentIntentRow.business_type == f'{vertical}_ORDER',
+                        OmnichannelPaymentIntentRow.business_id == order_id,
+                        OmnichannelPaymentIntentRow.payer_id == p.user_id))
+                    if not intent or not fulfillment or fulfillment.payment_intent_id != intent.payment_intent_id or fulfillment.state != 'SUPPLIER_CONFIRMED':
+                        raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+                    captures = list(s.scalars(select(OmnichannelMoneyMovementRow).where(
+                        OmnichannelMoneyMovementRow.root_payment_intent_id == intent.payment_intent_id,
+                        OmnichannelMoneyMovementRow.movement_type == 'CAPTURE',
+                        OmnichannelMoneyMovementRow.state == 'CONFIRMED')))
+                    if len(captures) != 1 or captures[0].amount_minor != body.expected_amount_minor or captures[0].currency != body.currency:
+                        raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+                    return {'data': {'order_id': order_id, 'status': current.status,
+                        'payment_intent_id': intent.payment_intent_id,
+                        'supplier_fulfillment_id': fulfillment.order_supplier_fulfillment_id,
+                        'data_mode': 'SIMULATION', 'external_live': False}}
             tx=vertical_transaction_bridge.checkout_contract(vertical, order_id, p.user_id,
                 f'{vertical.lower()}-engineering-source', f'contract-simulator://{vertical}/{order_id}')
             ref=f'SIM-{order_id}'
