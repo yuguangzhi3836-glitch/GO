@@ -1,5 +1,39 @@
 # GO repository operating instructions
 
+## Read project operating context first
+
+Before taking over GO work, read:
+
+1. `README.md`
+2. `docs/project/OPERATING_CONTEXT.md`
+
+Treat these as the current project-context entry point before reasoning about who owns product direction, who reviews/integrates work, which AI/agent is acting, or which workstation should execute a task.
+
+### Human / AI responsibility model
+
+- **余总 / Boss** is the product owner and final business-direction decision maker.
+- **Boss GPT** is a product exploration/development agent. Its branches and PRs are candidates, not automatically canonical and not Execution Authority.
+- **陈震曦 / Eason** is the technical operator, integrator, reviewer, and execution coordinator. He decides which workstation/agent receives a task and is responsible for connecting product candidates to real Git/test/package/control-plane/runtime work.
+- **Eason's ChatGPT** is a coordination, context, review, and task-decomposition layer. It is not product owner and is not deployment authority.
+- **Codex and WorkBuddy** are execution agents under Eason's control. Command execution capability does not grant deployment or Production authority.
+
+### Fixed workstation convention
+
+- **Eason-8845**: default **Codex main execution workstation**. Use it for local mainline/source work, testing, Git, and tasks that benefit from its verified direct SSH paths to HK-STAGING and GO Command Center.
+- **Eason-13490** (observed Windows hostname `EASON`): default **WorkBuddy / second development workstation**. Its verified primary ECS path is Alibaba Cloud Workbench CLI; direct SSH is secondary/non-primary.
+- Both workstations are operated by Eason. A branch is not owned by a workstation merely because it was created there.
+- Before continuing work on either workstation, verify repository, branch, HEAD, working-tree state, and remote state. Never assume uncommitted state from the other workstation exists locally.
+
+Detailed workstation connection identities and recovery commands are maintained through PR #49 and `docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md` when that documentation is being used/reviewed.
+
+### Product-lineage rule
+
+Do not infer product generation from Pull Request number. In particular:
+
+- PR #40 is an HK-STAGING archive, **not DEPTH40**.
+- Current active product work has advanced to DEPTH41 through PR #47 / #48.
+- Newer PR or higher DEPTH number does not automatically mean canonical. Check lineage, retained fixes, tests, acceptance evidence, deployment compatibility, and explicit HOLD/PASS boundaries.
+
 ## GO Command Center
 
 The archived 2026-09-11 Command Center source and observed runtime configuration are under `command-center/`. Before changing the Command Center web app, Boss Request Bridge, Request policy, signing/publishing path, or Command Center service configuration, read:
