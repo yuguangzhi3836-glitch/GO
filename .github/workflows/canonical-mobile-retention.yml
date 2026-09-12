@@ -1,0 +1,54 @@
+name: Canonical mobile retention
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/mobile/**
+      - ci/retention/BASELINE.json
+      - .github/workflows/canonical-mobile-retention.yml
+permissions:
+  contents: read
+jobs:
+  mobile-source-and-native-linking:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+      EXPO_OFFLINE: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Verify source and copy mobile build sandbox
+        run: |
+          python ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"
+          cp -a application/mobile/go-app "$RUNNER_TEMP/mobile"
+      - name: Install exact restored lock without lifecycle scripts
+        working-directory: ${{ runner.temp }}/mobile
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Type and storage/deep-link contract checks
+        working-directory: ${{ runner.temp }}/mobile
+        run: |
+          npm run typecheck 2>&1 | tee "$RUNNER_TEMP/evidence/typecheck.log"
+          npm run test:contract 2>&1 | tee "$RUNNER_TEMP/evidence/mobile-contract.log"
+      - name: Verify native modules from JavaScript directory
+        working-directory: ${{ runner.temp }}/mobile
+        run: node scripts/native-modules-check.mjs 2>&1 | tee "$RUNNER_TEMP/evidence/native-modules-js.log"
+      - name: Generate disposable iOS and Android projects without install or publishing
+        working-directory: ${{ runner.temp }}/mobile
+        run: npx --no-install expo prebuild --no-install --platform all 2>&1 | tee "$RUNNER_TEMP/evidence/prebuild.log"
+      - name: Verify native modules from generated native directories
+        working-directory: ${{ runner.temp }}/mobile
+        run: node scripts/native-modules-check.mjs --native 2>&1 | tee "$RUNNER_TEMP/evidence/native-modules-generated.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-mobile-linking-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/evidence
+          if-no-files-found: error
