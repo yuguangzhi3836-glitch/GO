@@ -7,11 +7,14 @@ on:
       - ci/retention/**
       - control-plane/depth40-compat-v2/**
       - .github/workflows/canonical-parent-retention.yml
+defaults:
+  run:
+    shell: bash
 permissions:
   contents: read
 concurrency:
   group: canonical-retention-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   regression:
     runs-on: ubuntu-24.04

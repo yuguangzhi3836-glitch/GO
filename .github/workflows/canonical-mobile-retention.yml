@@ -6,6 +6,9 @@ on:
       - application/mobile/**
       - ci/retention/BASELINE.json
       - .github/workflows/canonical-mobile-retention.yml
+defaults:
+  run:
+    shell: bash
 permissions:
   contents: read
 jobs:
@@ -15,7 +18,7 @@ jobs:
     env:
       CI: '1'
       EXPO_NO_TELEMETRY: '1'
-      EXPO_OFFLINE: '1'
+      EXPO_DEBUG: '1'
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@v4
