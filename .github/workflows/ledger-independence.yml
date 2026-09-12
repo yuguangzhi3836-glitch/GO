@@ -1,0 +1,29 @@
+name: Independent ledger mutation checks
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ci/journey-v2/ledger.py
+      - ci/journey-v2/test_ledger_independence.py
+      - .github/workflows/ledger-independence.yml
+permissions:
+  contents: read
+jobs:
+  auditor:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Bind source and test synthetic audit mutations
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD
+          sha256sum ci/journey-v2/ledger.py ci/journey-v2/test_ledger_independence.py
+          python -B -m unittest discover -s ci/journey-v2 -p test_ledger_independence.py -v
