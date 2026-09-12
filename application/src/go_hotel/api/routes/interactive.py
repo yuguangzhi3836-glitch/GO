@@ -40,6 +40,7 @@ def _order_obj(r):
 @router.get('/v1/supplier/orders/{order_id}/workbench')
 def supplier_order_workbench(order_id:str,p:Principal=Depends(supplier_principal)):
     assert_supplier_order(p,order_id)
+    from go_hotel.services.catalog_cash_trip_projection import read as cash_trip
     with SessionLocal() as s:
         o=s.get(OrderRow,order_id)
         pays=s.scalars(select(PaymentRow).where(PaymentRow.order_id==order_id).order_by(PaymentRow.created_at)).all()
@@ -49,6 +50,7 @@ def supplier_order_workbench(order_id:str,p:Principal=Depends(supplier_principal
         events=s.scalars(select(EventRow).where(EventRow.aggregate_id==order_id).order_by(EventRow.occurred_at)).all()
         return {'data':{
             'order':_order_obj(o),
+            'cash_after_sales':cash_trip(s,o),
             'fare_options':{'actions':[{'type':'SUPPLIER_CANCEL_REQUEST','allowed':o.status=='CONFIRMED'},
                 {'type':'CUSTOMER_FARE_CHANGE','allowed':False,'reason':'CUSTOMER_CONFIRMATION_REQUIRED'}]},
             'payments':[{'payment_id':x.payment_id,'payment_type':x.payment_type,'amount_minor':x.amount_minor,'currency':x.currency,'status':x.status,'created_at':_iso(x.created_at)} for x in pays],

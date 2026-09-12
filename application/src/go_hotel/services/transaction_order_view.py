@@ -154,7 +154,9 @@ def snapshot(vertical, order_id, *, supplier_id=None, account_id=None, admin=Fal
             balanced = balanced and len(entries) == 2 and {x.direction for x in entries} == {'DEBIT', 'CREDIT'}
             balanced = balanced and all((x.amount_minor, x.currency, x.entry_type) ==
                 (movement.amount_minor, movement.currency, movement.movement_type) for x in entries)
+        from go_hotel.services.catalog_cash_trip_projection import read as cash_trip
         return {'order': summary(vertical, order), 'refunds': refunds,
+                'cash_after_sales': cash_trip(s, order) if vertical == 'HOTEL' else None,
                 'original_payment': {'payment_intent_id': intent.payment_intent_id if valid else None,
                     'binding_state': 'BOUND' if valid else 'RECONCILIATION_REQUIRED',
                     'state': intent.state if valid else 'UNKNOWN', 'captured_minor': captured,

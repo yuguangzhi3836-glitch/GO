@@ -1,103 +1,139 @@
 {
-  "schema": "go.depth41.acceptance-patch.v1",
-  "parent_commit": "2d15536d2b65484e5a1c00067871387cefdfb235",
+  "application_git_tree": "60b254702a53b3f78180db6934e8cdaf1566d2e3",
   "baseline_application_tree": "a73b9b53a59c88ab995d0f9b123c9fb79e87e60d",
-  "application_git_tree": "219e4ca8a7176e3ff4c32af5524e322635c2d845",
   "files": {
     "application/frontend/consumer/app.js": {
       "base_git_blob": "2f38a8324bba29f89e73a2ac3bb530bd2b7e79fe",
       "git_blob": "f9532186ace6f0ed5c0903aef269a14efcf064bd",
-      "sha256": "44f269cd28036f347f1e60bcc46a4a67a176c5bd5e22f27676b40ee7f22674a6",
+      "mode": "100644",
+      "sha256": "44f269cd28036f347f1e60bcc46a4a67a176c5bd5e22f27676b40ee7f22674a6"
+    },
+    "application/frontend/consumer/trip-navigation.js": {
+      "base_git_blob": "5b2a0e6712e138dd7efdda544f168af773ad8aea",
+      "git_blob": "1d4b11f7380b4cf04bc97456e1da778c87e7c60a",
+      "sha256": "5cbe539e03195ba610576bbe7b07599992a804eeb526f6dcc9823e476ca7b2ca",
       "mode": "100644"
     },
     "application/frontend/shared/app.js": {
       "base_git_blob": "4929cc90e917fd89bf93a6cb45b7c9cbf167d67a",
-      "git_blob": "022d6b98af2573ad0825039d78a1c46f49eb93cd",
-      "sha256": "6ab5c50a8967496f022dc2275029eb0f3067136ad4b85fa69bf94aebbb2beaea",
+      "git_blob": "6e6881617ca7fa8b95ddc0e8e828b7c8d7bb961f",
+      "sha256": "6b665ed41a5361a0ccb3e61947ec4bd8dc2ef4822c0250a7202bdb511dfc11b2",
       "mode": "100644"
     },
     "application/frontend/shared/styles.css": {
       "base_git_blob": "2019abbee518ee308a3f7e67a4caed2aaf544c52",
       "git_blob": "bf7d025de5332cefe01af4542f847f902a3d281e",
-      "sha256": "a6265ba1260507ef732bb0c24932e74937f5dac727f9525a0ab0439a14a36287",
+      "mode": "100644",
+      "sha256": "a6265ba1260507ef732bb0c24932e74937f5dac727f9525a0ab0439a14a36287"
+    },
+    "application/mobile/go-app/src/screens/TripsScreen.tsx": {
+      "base_git_blob": "4eedf2f94464cec9ff86c8d39ebb80f2aeedcf6a",
+      "git_blob": "e25308f54d3d62074b89e2bf6d64e1481ff8b672",
+      "sha256": "0c4c66b27503eedd57c849dffc7f8102dc0549ad5b73f7667160cc8b6a141310",
       "mode": "100644"
     },
     "application/scripts/acceptance_runtime.py": {
       "base_git_blob": "298530ad287e3ada55d26ba98ce4fbc300130f66",
       "git_blob": "2d5ce369df34284a12063e4cb89b2926e8dc4eb7",
-      "sha256": "ecce59c7a2dcea8809babb2a50727770827a9726f6a1ed8d1479ce4b10d42d81",
-      "mode": "100644"
+      "mode": "100644",
+      "sha256": "ecce59c7a2dcea8809babb2a50727770827a9726f6a1ed8d1479ce4b10d42d81"
     },
     "application/src/go_hotel/api/routes/dashboard.py": {
       "base_git_blob": "d35ef0c0428eb428fff3721887468c3029508436",
       "git_blob": "38bce9efc1ef0b6d4357640eda6b2b6b600b3bf7",
-      "sha256": "6edd05c92f18fd974ef078825b962791950ce8368a04d60facb1172bae3a19f6",
-      "mode": "100644"
+      "mode": "100644",
+      "sha256": "6edd05c92f18fd974ef078825b962791950ce8368a04d60facb1172bae3a19f6"
     },
     "application/src/go_hotel/api/routes/operations_console.py": {
       "base_git_blob": "d5dbf9102ff30ce5d6d7c172936806a570af913c",
       "git_blob": "9dd062850d3f6815db20c14cc332928bffa2c98f",
-      "sha256": "bd86fafa9740a25d1ed3ab7848e192a2cf1b21f30e643f19654d01603a0f3847",
+      "mode": "100644",
+      "sha256": "bd86fafa9740a25d1ed3ab7848e192a2cf1b21f30e643f19654d01603a0f3847"
+    },
+    "application/src/go_hotel/services/catalog_cash_fare_execution.py": {
+      "base_git_blob": "bbaa4bedfd4b3d26c01ed3bf4f6f34a6d44026b7",
+      "git_blob": "ba692b20f810e492725ff7856fc6fdca712a2f47",
+      "sha256": "97e93690e79f4604d7a395f24dbd88961e09a54d448226cfd9ab51259e89c8f5",
       "mode": "100644"
     },
     "application/src/go_hotel/services/operational.py": {
       "base_git_blob": "6be748277f5f108de0ae7dc3f9658ef6e3ab8dec",
       "git_blob": "b21e4ff91d4d8a80aafd55a9ee1f7c545b544a27",
-      "sha256": "dfa466110962f5110445fbf26b5266988205b748c28a63eb473d7e4ee38f50f3",
-      "mode": "100644"
+      "mode": "100644",
+      "sha256": "dfa466110962f5110445fbf26b5266988205b748c28a63eb473d7e4ee38f50f3"
     },
     "application/src/go_hotel/services/transaction_order_view.py": {
       "base_git_blob": null,
-      "git_blob": "26986249a3e640dbf3da842b1ef6c8e9b50b79fd",
-      "sha256": "29559ce0d68cd1ea05016c1c7ccb6789963666a638d2ed595131ca5d12b3897b",
-      "mode": "100644"
-    },
-    "application/tests/test_depth41_transaction_views.py": {
-      "base_git_blob": null,
-      "git_blob": "4e95ec0bb6f1cd0de229b577b947e9b0f9a11f9e",
-      "sha256": "2125f248b60585ba5e01667c83347c89dee617f7363ecebad12bbf216f4f1217",
-      "mode": "100644"
-    },
-    "application/frontend/consumer/trip-navigation.js": {
-      "base_git_blob": "5b2a0e6712e138dd7efdda544f168af773ad8aea",
-      "git_blob": "4a806adb4b5e4fee04b590b586d82b62b2e4c2dd",
-      "sha256": "1286e9accb5900d46bd0dd2bc1c747294322139c2d468d7b6e02566c95ef09ca",
-      "mode": "100644"
-    },
-    "application/mobile/go-app/src/screens/TripsScreen.tsx": {
-      "base_git_blob": "4eedf2f94464cec9ff86c8d39ebb80f2aeedcf6a",
-      "git_blob": "bd32fa3991de56f2f7dbe0d05ee4e342474f7f55",
-      "sha256": "b991fe4c74c63a446235913da7555c723c76b09380539f41ae97425ec8a6a74f",
-      "mode": "100644"
-    },
-    "application/src/go_hotel/services/catalog_cash_fare_execution.py": {
-      "base_git_blob": "bbaa4bedfd4b3d26c01ed3bf4f6f34a6d44026b7",
-      "git_blob": "c1271ea240d81c74395e49b338944be94afc07d9",
-      "sha256": "a1c7a98abd667b660469c6308e1b213a2168d97a5fd2c6d2ea711cf92d0bebb6",
+      "git_blob": "ebf4b7b18ab01d823c4ecf3ce4635c088cf13470",
+      "sha256": "8015b4b190f665ee9bd9cfa3f780287ac50fd6a59a06fcd5efa3d2be4df680ef",
       "mode": "100644"
     },
     "application/src/go_hotel/services/vertical_lifecycle_projection.py": {
       "base_git_blob": "4999a942d26cfbcd18574d8a481552ef6c73448f",
       "git_blob": "4b9b81e1276647426061cf8dd241f97ab79cd4c6",
-      "sha256": "ca2d917e506d87e8c7b749bd834fda52880da03dc21b5f71143adacad09d161f",
-      "mode": "100644"
+      "mode": "100644",
+      "sha256": "ca2d917e506d87e8c7b749bd834fda52880da03dc21b5f71143adacad09d161f"
+    },
+    "application/tests/test_depth41_transaction_views.py": {
+      "base_git_blob": null,
+      "git_blob": "4e95ec0bb6f1cd0de229b577b947e9b0f9a11f9e",
+      "mode": "100644",
+      "sha256": "2125f248b60585ba5e01667c83347c89dee617f7363ecebad12bbf216f4f1217"
     },
     "application/tests/test_depth42_cross_end_journeys.py": {
       "base_git_blob": null,
       "git_blob": "5dfab036f4a054ad3a4dcc806a7e684e3f5d9e9d",
-      "sha256": "027180cfcd41d274644a51efcd9da9fd2fe5b8e6e0875797b0887a17685a6d5b",
-      "mode": "100644"
+      "mode": "100644",
+      "sha256": "027180cfcd41d274644a51efcd9da9fd2fe5b8e6e0875797b0887a17685a6d5b"
     },
     "application/tests_frontend/go_trip_all_orders.test.mjs": {
       "base_git_blob": null,
       "git_blob": "996220a199f93b6e926b9bdd5b9ae1241177f10a",
-      "sha256": "c40683d7033fdfb182a80e1ca3652739cba946260d6e3c7e100d12c0ed40f2b3",
+      "mode": "100644",
+      "sha256": "c40683d7033fdfb182a80e1ca3652739cba946260d6e3c7e100d12c0ed40f2b3"
+    },
+    "application/tests_frontend/cash_trip_summary.test.mjs": {
+      "base_git_blob": null,
+      "git_blob": "90849253ccc91569fd915924b1cb199c8b42783d",
+      "sha256": "de66396cf1ae04a7e0c1d277a17ef01573edaaf28d05dd0f7b48180423cd69ee",
+      "mode": "100644"
+    },
+    "application/tests/test_depth43_hotel_change_trips.py": {
+      "base_git_blob": null,
+      "git_blob": "a47a759b9d03fea9c494397d46ad89dbdacaceea",
+      "sha256": "ecdc5b4d7fa92681ec7818b2c05d18d065bd45b1c3cfff4042014dbf7968d281",
+      "mode": "100644"
+    },
+    "application/mobile/go-app/src/domain/tripFacts.ts": {
+      "base_git_blob": "c40bd9d1a0b59465307c563c4ed96c8ae8865127",
+      "git_blob": "84905855292deaa429e4ed1e3a36b490e6a4fca6",
+      "sha256": "216a5e1ab994e76dea55ac138c443e3666dadc9b619a2f6a4d05c2d1c86c1169",
+      "mode": "100644"
+    },
+    "application/src/go_hotel/services/catalog_cash_trip_projection.py": {
+      "base_git_blob": null,
+      "git_blob": "eafb734c1a29e21181bb616cc9e66abfbfb00bae",
+      "sha256": "e12f3233c34f2ba61534c77a52f82c90b96d74163821914df6c7b4cc8bdabc57",
+      "mode": "100644"
+    },
+    "application/src/go_hotel/services/consumer_trip_index.py": {
+      "base_git_blob": "df0553b006b59d1cde700628798daa6f7711de29",
+      "git_blob": "ffd9ad873b157abcca31d0c69e86db962b0966fd",
+      "sha256": "a4c619c3fc405f68ec3fbbc244399885dc82a984b29daa9f16b3340d2a85541d",
+      "mode": "100644"
+    },
+    "application/src/go_hotel/api/routes/interactive.py": {
+      "base_git_blob": "2854c68382f183f1e2af7691f8de7f9699d1fb51",
+      "git_blob": "1fc601ea6373460a5ed378376988d8d568d57884",
+      "sha256": "a91b933354ae56a9b422b77964b5ea57e2f6c2c94f5a11299d6bbd41debdea2d",
       "mode": "100644"
     }
   },
-  "migration": "NONE",
-  "topology": "UNCHANGED",
   "hong_kong": "NOT_ACCESSED",
+  "latest_repair_parent": "6d1728939364881b86e3992bf1a53927f95bd458",
+  "migration": "NONE",
+  "parent_commit": "2d15536d2b65484e5a1c00067871387cefdfb235",
   "production": "HOLD",
-  "latest_repair_parent": "f88b050754db38d90026e60d3654d53267f3b3c6"
+  "schema": "go.depth41.acceptance-patch.v1",
+  "topology": "UNCHANGED"
 }

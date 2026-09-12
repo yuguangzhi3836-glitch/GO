@@ -3,6 +3,15 @@ const routes: Record<string, string> = {
   HOTEL_CATALOG: 'OrderDetail', HOTEL_DIRECT: 'DirectReservationDetail', FLIGHT: 'FlightTripDetail', RAIL: 'RailTripDetail',
   RIDE: 'MobilityTripDetail', RENTAL: 'MobilityTripDetail', ATTRACTION: 'AttractionTripDetail',
 };
+export function cashTripLines(c:any):string[] {
+  if(!c)return [];
+  const states:Record<string,string>={AUTH_PENDING:'正在保留补款',READY:'申请已保存',SUPPLIER_PENDING:'酒店处理中',UNKNOWN_SUPPLIER:'正在核实酒店结果',CAPTURE_PENDING:'酒店已确认改期，补款待完成',REFUND_PENDING:'取消已确认，退款处理中',REJECTED_RELEASE_PENDING:'正在释放补款',REJECTED:'改期未获确认，原行程保留',PAYMENT_DECLINED:'补款未获授权，原行程保留',COMPLETED:'处理完成'};
+  const lines=[`入住：${c.check_in} → ${c.check_out}`,`退改进度：${states[c.state]||'正在核对'}`];
+  if(c.action==='CHANGE'&&!['COMPLETED','REJECTED','PAYMENT_DECLINED'].includes(c.state))lines.push(`申请日期：${c.requested_check_in} → ${c.requested_check_out}`);
+  for(const [label,key]of [['本次改期已补款','amount_paid_minor'],['累计实付（含补款）','gross_paid_minor'],['累计已退','refunded_minor'],['当前净实付','net_paid_minor']])
+    if(Number.isSafeInteger(c[key])&&(key!=='amount_paid_minor'||c.action==='CHANGE'))lines.push(`${label}：${c.currency} ${(c[key]/100).toFixed(2)}`);
+  return lines;
+}
 export function tripRoute(item: any) {
   const n = item?.navigation;
   if (!n || !Object.hasOwn(routes, n.kind) || typeof n.order_id !== 'string' ||

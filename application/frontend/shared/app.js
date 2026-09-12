@@ -210,9 +210,17 @@ async function supplierTransactionWorkbench(vertical,id){
  $('#view').innerHTML=`<button class="btn" id="back">← 返回订单</button><div class="section-head"><h2>订单详情</h2><span class="status">${esc(supplierFriendlyValue(d.order.status))}</span></div>${supplierObjectCard('订单事实',d.order)}<section class="card"><h3>原始付款与退款</h3><p>以下为本订单原始付款的处理记录；改期补款另行核对。</p><div class="kv"><div>已扣款</div><div>${esc(money(p.captured_minor,p.currency))}</div><div>已退款</div><div>${esc(money(p.refunded_minor,p.currency))}</div><div>净付款</div><div>${esc(money(p.net_minor,p.currency))}</div></div><p role="status">${p.binding_state==='BOUND'?'付款记录已关联': '付款记录待核对'}</p></section><h3>退款申请与进度</h3>${table(d.refunds,false,'退款记录')}`;
  $('#back').onclick=supplierOrders;
 }
+function cashAfterSalesCard(c){
+ if(!c)return '';
+ const states={AUTH_PENDING:'正在保留补款',READY:'申请已保存',SUPPLIER_PENDING:'酒店处理中',UNKNOWN_SUPPLIER:'正在核实酒店结果',CAPTURE_PENDING:'酒店已确认改期，补款待完成',REFUND_PENDING:'取消已确认，退款处理中',REJECTED_RELEASE_PENDING:'正在释放补款',REJECTED:'改期未获确认，原行程保留',PAYMENT_DECLINED:'补款未获授权，原行程保留',COMPLETED:'处理完成'};
+ const facts={'入住日期':c.check_in,'退房日期':c.check_out,'进度':states[c.state]||'正在核对'};
+ if(c.action==='CHANGE'&&!['COMPLETED','REJECTED','PAYMENT_DECLINED'].includes(c.state)){facts['申请入住日期']=c.requested_check_in;facts['申请退房日期']=c.requested_check_out;}
+ for(const [label,key]of [['累计实付（含补款）','gross_paid_minor'],['累计已退','refunded_minor'],['当前净实付','net_paid_minor']])if(Number.isSafeInteger(c[key]))facts[label]=money(c[key],c.currency);
+ return supplierObjectCard('当前退改与付款摘要',facts);
+}
 async function orderWorkbench(id){
  const d=unwrap(await api.request(`/v1/supplier/orders/${encodeURIComponent(id)}/workbench`));currentSupplierRoute='/orders';
- $('#view').innerHTML=`<button class="btn" id="back">← 返回订单</button><div class="section-head"><h2>订单详情</h2><span class="status">${esc(supplierFriendlyValue(d.order?.state||d.order?.status||'待处理'))}</span></div>${supplierObjectCard('订单事实',d.order)}<section class="card"><h3>退改与履约协助</h3><p>客户可在自己的 GO 订单中确认改期、取消及费用。酒店无法履约时，请提交申请和证据，由平台独立核实责任。</p><button class="btn primary" id="requestSupplierCancel">提交无法履约申请 / 查看处理进度</button></section><h3>支付</h3>${table(d.payments,false,'支付记录')}<h3>退款</h3>${table(d.refunds,false,'退款记录')}<h3>改期</h3>${table(d.changes,false,'改期记录')}<h3>住宿额度</h3>${table(d.stay_credits,false,'住宿额度')}<h3>事件时间线</h3>${table(d.timeline,false,'订单事件')}`;
+ $('#view').innerHTML=`<button class="btn" id="back">← 返回订单</button><div class="section-head"><h2>订单详情</h2><span class="status">${esc(supplierFriendlyValue(d.order?.state||d.order?.status||'待处理'))}</span></div>${supplierObjectCard('订单事实',d.order)}${cashAfterSalesCard(d.cash_after_sales)}<section class="card"><h3>退改与履约协助</h3><p>客户可在自己的 GO 订单中确认改期、取消及费用。酒店无法履约时，请提交申请和证据，由平台独立核实责任。</p><button class="btn primary" id="requestSupplierCancel">提交无法履约申请 / 查看处理进度</button></section><h3>支付</h3>${table(d.payments,false,'支付记录')}<h3>退款</h3>${table(d.refunds,false,'退款记录')}<h3>改期</h3>${table(d.changes,false,'改期记录')}<h3>住宿额度</h3>${table(d.stay_credits,false,'住宿额度')}<h3>事件时间线</h3>${table(d.timeline,false,'订单事件')}`;
  $('#back').onclick=supplierOrders;$('#requestSupplierCancel').onclick=()=>supplierFaultOrder(d.order);
 }
 async function supplierRisks(){const d=unwrap(await api.request('/v1/supplier/risk-cases'));const arr=d.items||[];$('#view').innerHTML=`<div class="section-head"><h2>Risk Case 工作台</h2></div>${table(arr,true)}`;bindRows(arr,r=>riskWorkbench(r.risk_event_id))}

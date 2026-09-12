@@ -78,6 +78,9 @@ def list_trips(account_id):
                 current['payment_state'] = row.payment_state
             elif native_status in {'PAYMENT_PENDING', 'PAYMENT_AUTHORIZED'}:
                 current['payment_state'] = native_status
+            if kind == 'HOTEL_CATALOG':
+                from go_hotel.services.catalog_cash_trip_projection import read
+                current['cash_after_sales'] = read(session, row)
 
         for vertical, kind, model in SOURCES:
             rows = session.scalars(select(model).where(model.account_id == account_id)).all()

@@ -1,51 +1,39 @@
 {
-  "schema": "go.depth42.current-candidate.v1",
-  "candidate_commit": "800538c1714dd3e50f3abf8c97964a2ee8ba4e72",
-  "candidate_branch": "fix/canonical-parent-retention-20260912",
-  "parent_commit": "f88b050754db38d90026e60d3654d53267f3b3c6",
-  "application_git_tree": "219e4ca8a7176e3ff4c32af5524e322635c2d845",
-  "source_tree_sha256": "be152b85b7b55ae6cc661446b20a309fc4c004c1c0c25f7b0c74fe0ea1c664da",
-  "source_files": 1304,
-  "current_status": "GO_TRIP_REPAIRS_ISOLATED_RECORDED_JOURNEY_PASS",
-  "historical_test_source": "9ec1de383725de95b507e8008fd4b4ca2917db74",
+  "schema": "go.depth43.current-candidate.v1",
+  "parent_commit": "6d1728939364881b86e3992bf1a53927f95bd458",
+  "application_git_tree": "60b254702a53b3f78180db6934e8cdaf1566d2e3",
+  "source_tree_sha256": "530086b348bdc8e935d32bae738e8b201f249e1085a09ae9bd0742139a3b2964",
+  "source_files": 1307,
+  "retained_parent_files": 1304,
+  "modified": 8,
+  "added": 3,
+  "change_classes": [
+    "PRODUCT_FIX",
+    "TEST_ONLY",
+    "DOCUMENTATION"
+  ],
+  "local": {
+    "python_passed": 83,
+    "frontend_passed": 249,
+    "native_typecheck": "PASS",
+    "native_contract": "PASS",
+    "database": "ISOLATED_SQLITE"
+  },
+  "ci": "PENDING",
+  "browser_search": "HOLD_LOOPBACK_ERR_BLOCKED_BY_CLIENT",
   "historical_results_transferred": false,
-  "new_changes": "docs/canonical-baseline/DEPTH42_GO_TRIP_REPAIRS.json",
-  "deployment_package": "NOT_RESEALED",
   "full_three_end_ux": "HOLD",
+  "native_device": "HOLD",
+  "postgresql": "HOLD",
+  "bank_settlement": "NOT_VERIFIED",
   "sealed_node": "HOLD",
   "final_release": "HOLD",
   "hong_kong": "NOT_ACCESSED",
   "production": "HOLD",
-  "tested_source_commit": "800538c1714dd3e50f3abf8c97964a2ee8ba4e72",
-  "producer_run": 34694860505,
-  "producer_run_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34694860505",
-  "python": {
-    "passed": 1723,
-    "skipped": 6,
-    "failures": 0,
-    "errors": 0
-  },
-  "frontend": {
-    "passed": 246,
-    "failed": 0
-  },
-  "compatibility": {
-    "passed": 34
-  },
-  "http": {
-    "checks_passed": 148,
-    "requests": 87
-  },
-  "browser_scenarios": 39,
-  "independent_original_payment_ledger_orders": 6,
-  "native_typecheck": "PASS_LOCAL",
-  "native_contract": "PASS_LOCAL",
-  "native_device": "HOLD",
-  "evidence_archive": "evidence/depth42-go-trip/ARCHIVE_MANIFEST.json",
-  "evidence_archive_status": "PASS_ALL_BLOB_BYTES_READ_BACK",
-  "all_go_trip_orders": "CURRENT_ACCOUNT_ALL_SIX_VERTICAL_NATIVE_ORDERS_AND_DIRECT_RESERVATIONS",
-  "go_trip_search": "WEB_NODE_VM_TESTED_NATIVE_TYPECHECKED_BROWSER_SEARCH_INTERACTION_NOT_SEPARATELY_VERIFIED",
-  "evidence_archive_commit": "155b8be4e86bf8e25088aeae58b3a948c958ad89",
-  "evidence_archive_run": 34695397575,
-  "detail_viewports": 72
+  "candidate_commit": null,
+  "candidate_branch": "fix/canonical-parent-retention-20260912",
+  "current_status": "HOTEL_CHANGE_TRIP_REPAIRS_CI_PENDING",
+  "new_changes": "docs/canonical-baseline/DEPTH43_HOTEL_CHANGE_REPAIRS.json",
+  "deployment_package": "NOT_RESEALED",
+  "historical_tested_source": "800538c1714dd3e50f3abf8c97964a2ee8ba4e72"
 }

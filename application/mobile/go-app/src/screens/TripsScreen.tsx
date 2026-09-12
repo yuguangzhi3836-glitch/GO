@@ -4,7 +4,7 @@ import {useFocusEffect} from '@react-navigation/native';
 import {GO,screen} from '../design';
 import {TopBar,StatusPill,Btn} from '../components/GO';
 import {api,sessionVersion} from '../api/client';
-import {tripRoute} from '../domain/tripFacts';
+import {tripRoute,cashTripLines} from '../domain/tripFacts';
 
 export default function Trips({navigation}:any) {
   const [journeys,setJourneys]=useState<any[]>([]),[orders,setOrders]=useState<any[]>([]);
@@ -33,6 +33,7 @@ export default function Trips({navigation}:any) {
         <Text style={screen.h2}>{o.title||'订单'}</Text><Text style={screen.sub}>{o.vertical} · {o.order_id}</Text>
         <StatusPill text={o.native_status||o.lifecycle_state||'状态待核对'} tone="navy"/>
         <Text style={screen.sub}>支付：{o.payment_state||'待核对'} · 退款：{o.refund_state||'待核对'}</Text>
+        {cashTripLines(o.cash_after_sales).map((line,i)=><Text key={i} style={screen.sub}>{line}</Text>)}
         {target?<Btn title="查看原订单" onPress={()=>navigation.navigate(target.screen,target.params)}/>:<Text style={screen.sub}>此类订单的 App 详情入口尚未接入，请在 GO 网页行程中查看。</Text>}
       </View>})}
       {journeys.length>0&&<Text style={screen.h2}>已归组行程</Text>}

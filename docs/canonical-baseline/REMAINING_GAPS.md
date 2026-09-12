@@ -1,3 +1,9 @@
+# 当前待验候选
+
+最新修复候选为 DEPTH43，详见 CURRENT_CANDIDATE.json、DEPTH43_REVIEW.md 和 DEPTH43_HOTEL_CHANGE_REPAIRS.json。应用 Git tree：`60b254702a53b3f78180db6934e8cdaf1566d2e3`，源码 SHA256 树：`530086b348bdc8e935d32bae738e8b201f249e1085a09ae9bd0742139a3b2964`，1307 个文件。仓库 CI 待绑定；本地 83 Python／249 前端／手机类型与契约检查通过。新搜索与改期真实浏览器、原生设备、PostgreSQL、复杂跨品类改期资金组合、完整 UX、Sealed Node 与最终发布仍 HOLD。
+
+以下为上一版 DEPTH42 的已归档范围，仅适用于其记录源码，不转移为本候选 PASS。
+
 # 当前候选的验收范围与剩余缺口
 
 唯一应用源码：PR47 `application/`，测试提交 `800538c1714dd3e50f3abf8c97964a2ee8ba4e72`。

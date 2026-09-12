@@ -15,19 +15,9 @@ def now():
     return clock()
 
 
-def project_cancellation(s, order, op, completed=False):
-    """Publish cancellation progress in the same transaction as its money facts."""
-    from go_hotel.services.consumer_unified_lifecycle import consumer_unified_lifecycle_service
-    return consumer_unified_lifecycle_service.project_in_session(s, {
-        'account_id': order.account_id, 'supplier_id': order.supplier_id,
-        'vertical': 'HOTEL', 'order_id': order.order_id, 'title': f'HOTEL {order.order_id}',
-        'lifecycle_state': 'CANCELLED' if order.status == 'CANCELLED' else 'CONFIRMED',
-        'payment_state': 'PAID', 'refund_state': 'REFUND_COMPLETED' if completed else 'REFUND_PROCESSING',
-        'change_allowed': False, 'cancel_allowed': False,
-        'facts': {'native_status': order.status, 'operation_id': op.operation_id},
-        'evidence_reference': 'cash-fare-cancel://' + op.operation_id,
-        'source_updated_at': now(), 'event_type': 'CASH_CANCELLATION_STATE_SYNC',
-    })
+def project_operation(s, order, op):
+    from go_hotel.services.catalog_cash_trip_projection import project
+    return project(s, order, op, now())
 
 
 def authorize(s, order, op, b):
@@ -129,7 +119,7 @@ async def start(oid, qid, expected_hash, consent, actor, token='pm_success', act
         s.flush()
         remedy.event(s, oid, 'CASH_FARE_ACCEPTED', owner, {'operation_id': opid, 'quote_id': qid,
             'quote_hash': q.quote_hash, 'plan_hash': op.plan_hash, 'acceptance_kind': plan['acceptance_kind']})
-        if q.action == 'CANCEL': project_cancellation(s, order, op)
+        project_operation(s, order, op)
     return await advance(opid)
 
 
@@ -139,12 +129,15 @@ async def advance(opid):
     dispatch = False
     with transaction() as s:
         order, op, b = lock(s, opid)
-        if op.state == 'AUTH_PENDING': authorize(s, order, op, b)
+        if op.state == 'AUTH_PENDING':
+            authorize(s, order, op, b)
+            project_operation(s, order, op)
         if op.state == 'READY':
             conn = remedy.connector(s, order)
             op.state = 'SUPPLIER_PENDING'; op.updated_at = now(); dispatch = True
             remedy.event(s, op.order_id, 'CASH_FARE_SUPPLIER_DISPATCH_PLANNED', op.plan_json['actor_id'],
                 {'operation_id': opid, 'action': b['action'], 'plan_hash': op.plan_hash})
+            project_operation(s, order, op)
         elif op.state not in {'CAPTURE_PENDING', 'REFUND_PENDING', 'REJECTED_RELEASE_PENDING'}:
             return public(op)
     if dispatch:
@@ -157,8 +150,9 @@ async def advance(opid):
                 observed = {'status': 'CONFIRMED', 'confirmation': reference}
         except BaseException as exc:
             with transaction() as s:
-                _, op, _ = lock(s, opid)
+                order, op, _ = lock(s, opid)
                 if op.state == 'SUPPLIER_PENDING': op.state = 'UNKNOWN_SUPPLIER'; op.updated_at = now()
+                project_operation(s, order, op)
                 result = public(op)
             if isinstance(exc, Exception): return result
             raise
@@ -176,11 +170,11 @@ def accept_observation(s, order, op, b, observed):
         if b['action'] == 'CANCEL':
             op.state = 'REFUND_PENDING'; order.status = 'CANCELLED'; order.version += 1; order.updated_at = now()
             remedy.event(s, order.order_id, 'CANCEL_CONFIRMED', op.plan_json['actor_id'], {'operation_id': op.operation_id, 'quote_id': op.quote_id})
-            project_cancellation(s, order, op)
         else: op.state = 'CAPTURE_PENDING'
     elif observed['status'] == 'REJECTED' and b['action'] == 'CHANGE': op.state = 'REJECTED_RELEASE_PENDING'
     else: op.state = 'UNKNOWN_SUPPLIER'
     op.updated_at = now()
+    project_operation(s, order, op)
 
 
 def complete(opid):
@@ -203,7 +197,6 @@ def complete(opid):
             op.state = 'COMPLETED'
             remedy.event(s, order.order_id, 'REFUND_COMPLETED', op.plan_json['actor_id'],
                 {'operation_id': opid, 'amount_minor': b['refund_amount_minor'], 'quote_hash': op.plan_json['quote_hash']})
-            project_cancellation(s, order, op, completed=True)
             # Retain the cancellation claim: the fee remainder is not free to refund again.
         elif op.state in {'CAPTURE_PENDING', 'REJECTED_RELEASE_PENDING'}:
             rejected = op.state == 'REJECTED_RELEASE_PENDING'
@@ -223,6 +216,7 @@ def complete(opid):
                 remedy.event(s, order.order_id, 'CHANGE_CONFIRMED', op.plan_json['actor_id'],
                     {'change_id': opid, 'new_check_in': b['new_check_in'], 'new_check_out': b['new_check_out'], 'amount_paid_minor': b['amount_due_minor']})
         op.updated_at = now()
+        project_operation(s, order, op)
         return public(op)
 
 
