@@ -14,4 +14,15 @@ This candidate extends the archived, hash-pinned Command Center Bridge and HK Ag
 
 install/preflight.sh verifies exact observed live artifact hashes before installation. The two install scripts require a staged candidate directory and fail closed if expected source, key metadata, or current artifact hash differs. uninstall.sh restores only an operator-provided, hash-verified artifact backup; it never reconstructs unknown server state.
 
+## Candidate integrity gate
+
+SHA256SUMS is generated from the canonical staged Git blobs, not from a
+Windows working tree. The candidate-local .gitattributes requires LF for all
+candidate files. Before staging to Linux, run:
+
+    tests/check_canonical_archive_manifest.sh <exact-commit-sha>
+
+The check creates a Git archive from that immutable commit, rejects CR bytes in
+the manifest, and requires every manifest entry to validate after extraction.
+
 No private key, token, or runtime configuration value is included.
