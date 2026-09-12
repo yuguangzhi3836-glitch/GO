@@ -34,3 +34,5 @@ CI 尚未完成；全量及浏览器结果必须绑定新源码。未取得本�
 Run 34696763146 全部六个任务成功，测试提交 abc28494bae06bff60b1f4597009198d0875b444。240 个 Python 测试文件按四分片覆盖，1733 PASS、6 PostgreSQL SKIP、0 FAIL／ERROR；前端 249、兼容 34、隔离 HTTP 148 项／87 次请求通过。既有 39 个浏览器场景及六单原支付退款独立 SQLite 审计通过。慢分片最终报告 439 PASS、1 SKIP、1573.20 秒，未将本地结果替换为 CI 结果。
 
 本轮新搜索与酒店复杂改期仍缺单独真实浏览器／原生设备旅程。原始 ZIP 按固定 artifact ID、大小、SHA256 和源码绑定，由原有归档工作流写入 evidence/depth43-hotel-change/；完成以 ARCHIVE_MANIFEST.json 与归档 Run 为准。
+
+归档已完成：提交 `553dac8db7303ec210f40d1ab725316d20706375`，Run 34698208564 成功。6 个原始 ZIP、运行记录、可读结果与源码指纹共 15 个文件全部逐字节回读 PASS。另行读取本轮 browser-results.json 与 ARCHIVE_MANIFEST.json，确认 39 场景、72 详情视口、1733 Python PASS／6 SKIP 均绑定 abc28494 的同一应用树。后续审查提交不修改 application/。
