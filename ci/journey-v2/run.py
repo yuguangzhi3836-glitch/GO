@@ -26,13 +26,14 @@ with (evidence / 'runtime.log').open('w') as log:
             raise TimeoutError('ISOLATED_RUNTIME_NOT_READY')
         result = subprocess.run(['node', str(root / 'ci/journey-v2/browser.mjs')], env=dict(env,
             GO_JOURNEY_STATE=str(state), GO_JOURNEY_EVIDENCE=str(evidence)))
+        audit = subprocess.run([sys.executable, str(root / 'ci/journey-v2/ledger.py'),
+            str(state), str(evidence)], env=env)
         for name in ['runtime-binding.json', 'fixture-identities.json']:
             shutil.copyfile(state / name, evidence / name)
-        sys.exit(result.returncode)
+        sys.exit(result.returncode or audit.returncode)
     finally:
         process.terminate()
         try: process.wait(timeout=15)
         except subprocess.TimeoutExpired: process.kill(); process.wait()
         # Do not archive the database, cookies, passwords, or authentication bodies.
         shutil.rmtree(state, ignore_errors=True)
-
