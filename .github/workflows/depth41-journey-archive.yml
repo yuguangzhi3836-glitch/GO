@@ -1,0 +1,35 @@
+name: DEPTH41 preserve verified journey evidence
+on:
+  push:
+    branches: [fix/canonical-parent-retention-20260912]
+    paths:
+      - .github/workflows/depth41-journey-archive.yml
+      - packaging/depth41-journey-archive/**
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Preserve pinned public artifacts on the existing Draft branch
+        env:
+          GO_ARCHIVE_TOKEN: ${{ github.token }}
+        run: python -B packaging/depth41-journey-archive/archive.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: depth41-journey-archive-receipt
+          path: ARCHIVE_RECEIPT.json
+          if-no-files-found: error
+          retention-days: 90
