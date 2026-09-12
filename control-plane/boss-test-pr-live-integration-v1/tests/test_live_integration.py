@@ -184,6 +184,17 @@ class IntegrationTests(unittest.TestCase):
         self.assertNotIn("docker compose", source.lower())
         self.assertNotIn("root.mkdir", source)
 
+    def test_offline_builder_profile_is_pinned_and_non_networked(self):
+        dockerfile = (ROOT / "hk-staging" / "Dockerfile.go-application-python-v1").read_text(encoding="utf-8").lower()
+        source = (ROOT / "hk-staging" / "hk_agent" / "test_pr.py").read_text(encoding="utf-8")
+        self.assertNotIn("pip install", dockerfile)
+        self.assertNotIn("apt", dockerfile)
+        self.assertNotIn("curl", dockerfile)
+        self.assertIn('"--network", "none", "--pull=false"', source)
+        self.assertIn('"--entrypoint", "/bin/sh"', source)
+        self.assertIn("TEST_PR_BUILDER_IMAGE_REJECT", source)
+        self.assertIn("TEST_PR_DEPENDENCY_PROFILE_REJECT", source)
+
     def test_build_root_validation_rejects_unsafe_state_and_accepts_provisioned_root(self):
         original = test_pr.BUILD_ROOT
         try:

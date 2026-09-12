@@ -1,5 +1,6 @@
 """Fixed, isolated HK_STAGING_TEST_PR executor; no Compose or runtime bindings."""
 import hashlib
+import json
 import os
 import pathlib
 import re
@@ -7,6 +8,7 @@ import shutil
 import stat
 import subprocess
 import tempfile
+import tomllib
 
 ACTION = "HK_STAGING_TEST_PR"
 PROFILE = "go-application-python-v1"
@@ -14,6 +16,9 @@ REPOSITORY = "git@github.com:yuguangzhi3836-glitch/GO.git"
 DEPLOY_KEY = "/etc/go-hk-agent/keys/github-go-source-reader"
 DOCKERFILE = "/usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1"
 BUILD_ROOT = "/var/lib/go-hk-test-pr/builds"
+BUILDER_IMAGE = "go-hotel:aoluguya-direct-r3-1-20260906"
+BUILDER_IMAGE_ID = "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324"
+DEPENDENCY_PROFILE_SHA256 = "904ede5e7ee3408e5f80bc2957d5f4b4d32754be6797bf6a53cff545b2fc94aa"
 SHA = re.compile(r"^[0-9a-f]{40}$")
 PR = re.compile(r"^[1-9][0-9]{0,8}$")
 
@@ -75,6 +80,22 @@ def _build_root():
     return root
 
 
+def _dependency_profile(path):
+    try:
+        project = tomllib.loads(path.read_text(encoding="utf-8"))["project"]
+        value = {"requires-python": project["requires-python"], "dependencies": project["dependencies"],
+                 "optional-dependencies": {"dev": project.get("optional-dependencies", {})["dev"]}}
+    except (OSError, KeyError, TypeError, tomllib.TOMLDecodeError) as exc:
+        raise Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT") from exc
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _builder_image(runner):
+    actual = runner(["/usr/bin/docker", "image", "inspect", BUILDER_IMAGE, "--format", "{{.Id}}"], timeout=30).stdout.strip()
+    if actual != BUILDER_IMAGE_ID:
+        raise Reject("TEST_PR_BUILDER_IMAGE_REJECT")
+
+
 def execute(task, runner=_run):
     source = validate_parameters(task["parameters"])
     commit = source["commit_sha"]
@@ -93,13 +114,16 @@ def execute(task, runner=_run):
         context = workspace / "application"
         if not (context / "pyproject.toml").is_file():
             raise Reject("TEST_PR_SOURCE_LAYOUT_REJECT")
-        runner(["/usr/bin/docker", "build", "--network", "none", "--file", DOCKERFILE, "--tag", image, str(context)], timeout=900)
+        if _dependency_profile(context / "pyproject.toml") != DEPENDENCY_PROFILE_SHA256:
+            raise Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT")
+        _builder_image(runner)
+        runner(["/usr/bin/docker", "build", "--network", "none", "--pull=false", "--file", DOCKERFILE, "--tag", image, str(context)], timeout=900)
         image_id = runner(["/usr/bin/docker", "image", "inspect", image, "--format", "{{.Id}}"], timeout=30).stdout.strip()
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", image_id):
             raise Reject("TEST_PR_IMAGE_ID_REJECT")
         runner(["/usr/bin/docker", "run", "--rm", "--network", "none", "--read-only", "--cap-drop", "ALL",
                 "--security-opt", "no-new-privileges", "--pids-limit", "128", "--memory", "768m", "--cpus", "1.00",
-                "--tmpfs", "/tmp:rw,nosuid,nodev,size=64m", image, "/bin/sh", "-c",
+                "--tmpfs", "/tmp:rw,nosuid,nodev,size=64m", "--entrypoint", "/bin/sh", image, "-c",
                 "python -m compileall -q /workspace/src && alembic heads"], timeout=180)
         return {
             "schema_version": "1", "executor_version": "test-pr-v1", "action_id": ACTION,
