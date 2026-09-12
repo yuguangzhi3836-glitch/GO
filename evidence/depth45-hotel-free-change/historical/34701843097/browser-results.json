@@ -1,0 +1,4224 @@
+{
+  "schema": "go.real-browser-journeys.v1",
+  "started_at": "2026-09-12T15:20:04.556Z",
+  "commit": "4570436f2053b654b59ecdd5ac9df3ed6a963373",
+  "source_tree_sha256": "dcd014e4f65cd60a1221f4b89139bbf17552425ece8fb38425683ba5a75162f3",
+  "environment": "ISOLATED_SQLITE_CHROMIUM",
+  "data": "SYNTHETIC_ONLY",
+  "browser_tests": [
+    {
+      "name": "consumer-login",
+      "started_at": "2026-09-12T15:20:04.991Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:06.043Z",
+      "screenshot": "001-consumer-login.png"
+    },
+    {
+      "name": "supplier-login",
+      "started_at": "2026-09-12T15:20:06.085Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:06.400Z",
+      "screenshot": "002-supplier-login.png"
+    },
+    {
+      "name": "admin-login",
+      "started_at": "2026-09-12T15:20:06.467Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:06.855Z",
+      "screenshot": "003-admin-login.png"
+    },
+    {
+      "name": "vault-two-confirmed-travelers",
+      "started_at": "2026-09-12T15:20:06.942Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:07.590Z",
+      "screenshot": "004-vault-two-confirmed-travelers.png"
+    },
+    {
+      "name": "consumer-unified-six-vertical-trip-reentry",
+      "started_at": "2026-09-12T15:20:16.949Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:17.351Z",
+      "screenshot": "017-consumer-unified-six-vertical-trip-reentry.png"
+    },
+    {
+      "name": "HOTEL-consumer-refresh-reentry",
+      "started_at": "2026-09-12T15:20:17.430Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:18.171Z",
+      "screenshot": "020-HOTEL-consumer-refresh-reentry.png"
+    },
+    {
+      "name": "FLIGHT-consumer-refresh-reentry",
+      "started_at": "2026-09-12T15:20:18.254Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:19.036Z",
+      "screenshot": "023-FLIGHT-consumer-refresh-reentry.png"
+    },
+    {
+      "name": "RAIL-consumer-refresh-reentry",
+      "started_at": "2026-09-12T15:20:19.121Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:19.837Z",
+      "screenshot": "026-RAIL-consumer-refresh-reentry.png"
+    },
+    {
+      "name": "RIDE-consumer-refresh-reentry",
+      "started_at": "2026-09-12T15:20:19.905Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:20.725Z",
+      "screenshot": "029-RIDE-consumer-refresh-reentry.png"
+    },
+    {
+      "name": "RENTAL-consumer-refresh-reentry",
+      "started_at": "2026-09-12T15:20:20.792Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:21.641Z",
+      "screenshot": "032-RENTAL-consumer-refresh-reentry.png"
+    },
+    {
+      "name": "ATTRACTION-consumer-refresh-reentry",
+      "started_at": "2026-09-12T15:20:21.708Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:22.460Z",
+      "screenshot": "035-ATTRACTION-consumer-refresh-reentry.png"
+    },
+    {
+      "name": "consumer-viewport-375",
+      "started_at": "2026-09-12T15:20:22.518Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:22.523Z",
+      "screenshot": "036-consumer-viewport-375.png"
+    },
+    {
+      "name": "supplier-viewport-375",
+      "started_at": "2026-09-12T15:20:22.585Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:22.603Z",
+      "screenshot": "037-supplier-viewport-375.png"
+    },
+    {
+      "name": "admin-viewport-375",
+      "started_at": "2026-09-12T15:20:22.665Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:22.672Z",
+      "screenshot": "038-admin-viewport-375.png"
+    },
+    {
+      "name": "consumer-viewport-430",
+      "started_at": "2026-09-12T15:20:22.723Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:22.732Z",
+      "screenshot": "039-consumer-viewport-430.png"
+    },
+    {
+      "name": "supplier-viewport-430",
+      "started_at": "2026-09-12T15:20:22.783Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:22.789Z",
+      "screenshot": "040-supplier-viewport-430.png"
+    },
+    {
+      "name": "admin-viewport-430",
+      "started_at": "2026-09-12T15:20:22.833Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:22.837Z",
+      "screenshot": "041-admin-viewport-430.png"
+    },
+    {
+      "name": "consumer-viewport-1440",
+      "started_at": "2026-09-12T15:20:22.907Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:22.913Z",
+      "screenshot": "042-consumer-viewport-1440.png"
+    },
+    {
+      "name": "supplier-viewport-1440",
+      "started_at": "2026-09-12T15:20:23.149Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:23.158Z",
+      "screenshot": "043-supplier-viewport-1440.png"
+    },
+    {
+      "name": "admin-viewport-1440",
+      "started_at": "2026-09-12T15:20:23.216Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:23.222Z",
+      "screenshot": "044-admin-viewport-1440.png"
+    },
+    {
+      "name": "HOTEL-supplier-admin-consumer-same-order",
+      "started_at": "2026-09-12T15:20:23.329Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:24.528Z",
+      "screenshot": "049-HOTEL-supplier-admin-consumer-same-order.png"
+    },
+    {
+      "name": "FLIGHT-supplier-admin-consumer-same-order",
+      "started_at": "2026-09-12T15:20:24.609Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:25.476Z",
+      "screenshot": "054-FLIGHT-supplier-admin-consumer-same-order.png"
+    },
+    {
+      "name": "RAIL-supplier-admin-consumer-same-order",
+      "started_at": "2026-09-12T15:20:25.557Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:26.494Z",
+      "screenshot": "059-RAIL-supplier-admin-consumer-same-order.png"
+    },
+    {
+      "name": "RIDE-supplier-admin-consumer-same-order",
+      "started_at": "2026-09-12T15:20:26.574Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:27.543Z",
+      "screenshot": "064-RIDE-supplier-admin-consumer-same-order.png"
+    },
+    {
+      "name": "RENTAL-supplier-admin-consumer-same-order",
+      "started_at": "2026-09-12T15:20:27.625Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:28.593Z",
+      "screenshot": "069-RENTAL-supplier-admin-consumer-same-order.png"
+    },
+    {
+      "name": "ATTRACTION-supplier-admin-consumer-same-order",
+      "started_at": "2026-09-12T15:20:28.679Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:29.844Z",
+      "screenshot": "074-ATTRACTION-supplier-admin-consumer-same-order.png"
+    },
+    {
+      "name": "DEPTH44-trip-search-375",
+      "started_at": "2026-09-12T15:20:29.889Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:30.626Z",
+      "screenshot": "075-DEPTH44-trip-search-375.png"
+    },
+    {
+      "name": "DEPTH44-trip-search-390",
+      "started_at": "2026-09-12T15:20:30.688Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:31.506Z",
+      "screenshot": "076-DEPTH44-trip-search-390.png"
+    },
+    {
+      "name": "DEPTH44-trip-search-430",
+      "started_at": "2026-09-12T15:20:31.569Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:32.237Z",
+      "screenshot": "077-DEPTH44-trip-search-430.png"
+    },
+    {
+      "name": "DEPTH44-trip-search-1440",
+      "started_at": "2026-09-12T15:20:32.291Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:33.033Z",
+      "screenshot": "078-DEPTH44-trip-search-1440.png"
+    },
+    {
+      "name": "DEPTH44-hotel-owner-login",
+      "started_at": "2026-09-12T15:20:35.741Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:36.001Z",
+      "screenshot": "084-DEPTH44-hotel-owner-login.png"
+    },
+    {
+      "name": "DEPTH44-required-journey-completion",
+      "started_at": "2026-09-12T15:20:52.585Z",
+      "result": "FAIL",
+      "error": "Expected values to be strictly equal:\n\nfalse !== true\n",
+      "visible_text": "GO Trips\n全部订单 · 包含待付款、已取消、退款中与已完成的订单\n查找订单\nHOTEL ord_b2be20749ea24aba\n已确认\n订单号\nord_b2be20749ea24aba\n品类\n酒店\n原始下单金额\n¥14,432.00\n入住日期\n2026-11-01\n退房日期\n2026-11-03\n退改进度\n处理完成\n本次改期已补款\n¥100.00\n累计实付（含补款）\n¥14,532.00\n累计已退\n¥0.00\n当前净实付\n¥14,532.00\n支付\n已扣款\n退款\n暂无退款\n查看订单与后续操作\n首页\n行程\n收藏\n消息\n我的",
+      "finished_at": "2026-09-12T15:20:52.590Z",
+      "screenshot": "091-DEPTH44-required-journey-completion.png"
+    },
+    {
+      "name": "no-unhandled-browser-errors",
+      "started_at": "2026-09-12T15:20:52.631Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:52.631Z",
+      "screenshot": "092-no-unhandled-browser-errors.png"
+    }
+  ],
+  "journeys": [
+    {
+      "name": "HOTEL-search-quote-traveler-payment",
+      "started_at": "2026-09-12T15:20:07.675Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:09.511Z",
+      "screenshot": "006-HOTEL-search-quote-traveler-payment.png"
+    },
+    {
+      "name": "HOTEL-after-sales-refund",
+      "started_at": "2026-09-12T15:20:09.041Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:09.456Z",
+      "screenshot": "005-HOTEL-after-sales-refund.png"
+    },
+    {
+      "name": "FLIGHT-roundtrip-two-adults-tickets",
+      "started_at": "2026-09-12T15:20:09.560Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:11.384Z",
+      "screenshot": "008-FLIGHT-roundtrip-two-adults-tickets.png"
+    },
+    {
+      "name": "FLIGHT-after-sales-refund",
+      "started_at": "2026-09-12T15:20:11.006Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:11.314Z",
+      "screenshot": "007-FLIGHT-after-sales-refund.png"
+    },
+    {
+      "name": "RAIL-two-adults-confirmed",
+      "started_at": "2026-09-12T15:20:11.452Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:13.020Z",
+      "screenshot": "010-RAIL-two-adults-confirmed.png"
+    },
+    {
+      "name": "RAIL-after-sales-refund",
+      "started_at": "2026-09-12T15:20:12.772Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:12.977Z",
+      "screenshot": "009-RAIL-after-sales-refund.png"
+    },
+    {
+      "name": "RIDE-traveler-confirmed",
+      "started_at": "2026-09-12T15:20:13.067Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:14.372Z",
+      "screenshot": "012-RIDE-traveler-confirmed.png"
+    },
+    {
+      "name": "RIDE-after-sales-refund",
+      "started_at": "2026-09-12T15:20:14.053Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:14.297Z",
+      "screenshot": "011-RIDE-after-sales-refund.png"
+    },
+    {
+      "name": "RENTAL-traveler-confirmed",
+      "started_at": "2026-09-12T15:20:14.421Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:15.606Z",
+      "screenshot": "014-RENTAL-traveler-confirmed.png"
+    },
+    {
+      "name": "RENTAL-after-sales-refund",
+      "started_at": "2026-09-12T15:20:15.280Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:15.526Z",
+      "screenshot": "013-RENTAL-after-sales-refund.png"
+    },
+    {
+      "name": "ATTRACTION-two-visitors-slot-confirmed",
+      "started_at": "2026-09-12T15:20:15.652Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:16.899Z",
+      "screenshot": "016-ATTRACTION-two-visitors-slot-confirmed.png"
+    },
+    {
+      "name": "ATTRACTION-after-sales-refund",
+      "started_at": "2026-09-12T15:20:16.638Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:16.858Z",
+      "screenshot": "015-ATTRACTION-after-sales-refund.png"
+    },
+    {
+      "name": "DEPTH44-unpaid-order-search-and-resume",
+      "started_at": "2026-09-12T15:20:33.129Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:35.652Z",
+      "screenshot": "083-DEPTH44-unpaid-order-search-and-resume.png"
+    },
+    {
+      "name": "DEPTH44-capture-failure-keeps-original-trip",
+      "started_at": "2026-09-12T15:20:36.058Z",
+      "result": "PASS",
+      "finished_at": "2026-09-12T15:20:38.496Z",
+      "screenshot": "088-DEPTH44-capture-failure-keeps-original-trip.png"
+    },
+    {
+      "name": "DEPTH44-retry-payment-from-same-order",
+      "started_at": "2026-09-12T15:20:38.550Z",
+      "result": "FAIL",
+      "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('tr[data-i]').filter({ hasText: 'ord_b2be20749ea24aba' }) to be visible\n",
+      "visible_text": "GO Trips\n全部订单 · 包含待付款、已取消、退款中与已完成的订单\n查找订单\nHOTEL ord_b2be20749ea24aba\n已确认\n订单号\nord_b2be20749ea24aba\n品类\n酒店\n原始下单金额\n¥14,432.00\n入住日期\n2026-11-01\n退房日期\n2026-11-03\n退改进度\n处理完成\n本次改期已补款\n¥100.00\n累计实付（含补款）\n¥14,532.00\n累计已退\n¥0.00\n当前净实付\n¥14,532.00\n支付\n已扣款\n退款\n暂无退款\n查看订单与后续操作\n首页\n行程\n收藏\n消息\n我的",
+      "finished_at": "2026-09-12T15:20:52.538Z",
+      "screenshot": "090-DEPTH44-retry-payment-from-same-order.png"
+    }
+  ],
+  "network": [
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:05.186Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 401
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:05.724Z",
+      "method": "POST",
+      "path": "/v1/consumer/auth/login",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:05.735Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:05.744Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:05.754Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:05.921Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:05.925Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/imports",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:05.929Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/consents",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:05.951Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/sources",
+      "status": 200
+    },
+    {
+      "role": "supplier",
+      "width": 1440,
+      "time": "2026-09-12T15:20:06.387Z",
+      "method": "GET",
+      "path": "/v1/supplier/dashboard",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:06.838Z",
+      "method": "GET",
+      "path": "/internal/v1/hosted-direct/disruptions",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:06.842Z",
+      "method": "GET",
+      "path": "/internal/v1/hosted-direct/disruption-candidates",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.103Z",
+      "method": "POST",
+      "path": "/v1/consumer/profile/imports",
+      "status": 201
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.133Z",
+      "method": "POST",
+      "path": "/v1/consumer/profile/imports/pij_a07d1f6e98234926/items/pii_797497956531473f/review",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.152Z",
+      "method": "POST",
+      "path": "/v1/consumer/profile/imports/pij_a07d1f6e98234926/items/pii_489bfb0059ba42a6/review",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.167Z",
+      "method": "POST",
+      "path": "/v1/consumer/profile/imports/pij_a07d1f6e98234926/items/pii_c3c8d4e97ce041a8/review",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.194Z",
+      "method": "POST",
+      "path": "/v1/consumer/profile/imports/pij_a07d1f6e98234926/commit",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.218Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/imports",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.236Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/sources",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.238Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.239Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/consents",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.432Z",
+      "method": "POST",
+      "path": "/v1/consumer/profile/imports",
+      "status": 201
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.448Z",
+      "method": "POST",
+      "path": "/v1/consumer/profile/imports/pij_52cb4fbfd9104c23/items/pii_60c1bdced37c4894/review",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.464Z",
+      "method": "POST",
+      "path": "/v1/consumer/profile/imports/pij_52cb4fbfd9104c23/items/pii_1dbb4ba812d24bae/review",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.479Z",
+      "method": "POST",
+      "path": "/v1/consumer/profile/imports/pij_52cb4fbfd9104c23/items/pii_5a4fafbf022a4baf/review",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.500Z",
+      "method": "POST",
+      "path": "/v1/consumer/profile/imports/pij_52cb4fbfd9104c23/commit",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.520Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/imports",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.527Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/consents",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.529Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.537Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/sources",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.777Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.793Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:07.803Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:08.067Z",
+      "method": "POST",
+      "path": "/v1/search/hotels",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:08.174Z",
+      "method": "GET",
+      "path": "/v1/consumer/hotels/htl_conrad_tokyo",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:08.377Z",
+      "method": "POST",
+      "path": "/v1/offers/off_700b03e35768429a/prebook",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:08.492Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:08.684Z",
+      "method": "POST",
+      "path": "/v1/consumer/orders",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:08.693Z",
+      "method": "GET",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:08.803Z",
+      "method": "GET",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:08.983Z",
+      "method": "POST",
+      "path": "/v1/consumer/checkout/HOTEL/ord_459b13ba62044342",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.040Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/HOTEL/ord_459b13ba62044342",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.045Z",
+      "method": "GET",
+      "path": "/v1/consumer/orders/ord_459b13ba62044342/detail",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.128Z",
+      "method": "POST",
+      "path": "/v1/orders/ord_459b13ba62044342/cancellation-quote",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.354Z",
+      "method": "POST",
+      "path": "/v1/orders/ord_459b13ba62044342/cancel",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.370Z",
+      "method": "GET",
+      "path": "/v1/consumer/orders/ord_459b13ba62044342/detail",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.424Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/HOTEL/ord_459b13ba62044342",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.443Z",
+      "method": "POST",
+      "path": "/v1/orders/ord_459b13ba62044342/cancel",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.455Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/HOTEL/ord_459b13ba62044342",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.660Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.675Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.682Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:09.925Z",
+      "method": "POST",
+      "path": "/v1/flights/journeys/search",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:10.055Z",
+      "method": "POST",
+      "path": "/v1/flights/journeys/compose",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:10.119Z",
+      "method": "POST",
+      "path": "/v1/flights/offers/flt_jny_164ad8faee4e454a/prebook",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:10.173Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:10.364Z",
+      "method": "POST",
+      "path": "/v1/flights/orders",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:10.370Z",
+      "method": "GET",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:10.918Z",
+      "method": "POST",
+      "path": "/v1/consumer/checkout/FLIGHT/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:10.929Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:10.957Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620/check-in",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:11.005Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/FLIGHT/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:11.052Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620/refund-quote",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:11.125Z",
+      "method": "POST",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620/refund",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:11.138Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:11.148Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/FLIGHT/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:11.161Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620/check-in",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:11.303Z",
+      "method": "POST",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620/refund",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:11.313Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/FLIGHT/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:11.603Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:11.611Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:11.620Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.086Z",
+      "method": "POST",
+      "path": "/v1/rail/search",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.256Z",
+      "method": "POST",
+      "path": "/v1/rail/offers/rail_off_7bdbf477d863402f/prebook",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.268Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.585Z",
+      "method": "POST",
+      "path": "/v1/rail/orders",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.592Z",
+      "method": "GET",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.726Z",
+      "method": "POST",
+      "path": "/v1/consumer/checkout/RAIL/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.743Z",
+      "method": "GET",
+      "path": "/v1/rail/orders/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.769Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RAIL/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.815Z",
+      "method": "GET",
+      "path": "/v1/rail/orders/rail_ord_7df9b142a7624474/refund-quote",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.892Z",
+      "method": "POST",
+      "path": "/v1/rail/orders/rail_ord_7df9b142a7624474/refund",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.908Z",
+      "method": "GET",
+      "path": "/v1/rail/orders/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.921Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RAIL/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.963Z",
+      "method": "POST",
+      "path": "/v1/rail/orders/rail_ord_7df9b142a7624474/refund",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:12.975Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RAIL/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:13.179Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:13.190Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:13.202Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:13.518Z",
+      "method": "POST",
+      "path": "/v1/mobility/rides/search",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:13.736Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:13.856Z",
+      "method": "POST",
+      "path": "/v1/mobility/rides/orders",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:13.860Z",
+      "method": "GET",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:13.976Z",
+      "method": "POST",
+      "path": "/v1/consumer/checkout/RIDE/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:13.987Z",
+      "method": "GET",
+      "path": "/v1/mobility/orders/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.050Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RIDE/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.050Z",
+      "method": "GET",
+      "path": "/v1/mobility/rides/orders/ride_ord_c34f2348721d4207/flight-tracking",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.103Z",
+      "method": "GET",
+      "path": "/v1/mobility/orders/ride_ord_c34f2348721d4207/refund-quote",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.188Z",
+      "method": "POST",
+      "path": "/v1/mobility/orders/ride_ord_c34f2348721d4207/cancel",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.206Z",
+      "method": "GET",
+      "path": "/v1/mobility/orders/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.207Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RIDE/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.271Z",
+      "method": "GET",
+      "path": "/v1/mobility/rides/orders/ride_ord_c34f2348721d4207/flight-tracking",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.276Z",
+      "method": "POST",
+      "path": "/v1/mobility/orders/ride_ord_c34f2348721d4207/cancel",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.295Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RIDE/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.528Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.546Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.557Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.852Z",
+      "method": "POST",
+      "path": "/v1/mobility/rentals/search",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:14.922Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.050Z",
+      "method": "POST",
+      "path": "/v1/consumer/profile/consents",
+      "status": 201
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.082Z",
+      "method": "POST",
+      "path": "/v1/mobility/rentals/orders",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.088Z",
+      "method": "GET",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.210Z",
+      "method": "POST",
+      "path": "/v1/consumer/checkout/RENTAL/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.230Z",
+      "method": "GET",
+      "path": "/v1/mobility/orders/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.277Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RENTAL/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.344Z",
+      "method": "GET",
+      "path": "/v1/mobility/orders/rent_ord_4c8e21ba03d54373/refund-quote",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.436Z",
+      "method": "POST",
+      "path": "/v1/mobility/orders/rent_ord_4c8e21ba03d54373/cancel",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.451Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RENTAL/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.454Z",
+      "method": "GET",
+      "path": "/v1/mobility/orders/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.511Z",
+      "method": "POST",
+      "path": "/v1/mobility/orders/rent_ord_4c8e21ba03d54373/cancel",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.525Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RENTAL/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.756Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.772Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:15.782Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.028Z",
+      "method": "POST",
+      "path": "/v1/attractions/search",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.149Z",
+      "method": "POST",
+      "path": "/v1/attractions/prebook",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.163Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.444Z",
+      "method": "POST",
+      "path": "/v1/attractions/orders",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.450Z",
+      "method": "GET",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.571Z",
+      "method": "POST",
+      "path": "/v1/consumer/checkout/ATTRACTION/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.581Z",
+      "method": "GET",
+      "path": "/v1/attractions/orders/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.633Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/ATTRACTION/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.684Z",
+      "method": "GET",
+      "path": "/v1/attractions/orders/attr_ord_5e95ad4b11a34697/refund-quote",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.774Z",
+      "method": "POST",
+      "path": "/v1/attractions/orders/attr_ord_5e95ad4b11a34697/refund",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.788Z",
+      "method": "GET",
+      "path": "/v1/attractions/orders/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.799Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/ATTRACTION/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.845Z",
+      "method": "POST",
+      "path": "/v1/attractions/orders/attr_ord_5e95ad4b11a34697/refund",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:16.856Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/ATTRACTION/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:17.051Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:17.063Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:17.073Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:17.297Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:17.538Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:17.550Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:17.562Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:17.756Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:17.824Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:17.916Z",
+      "method": "GET",
+      "path": "/v1/consumer/orders/ord_459b13ba62044342/detail",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:17.976Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/HOTEL/ord_459b13ba62044342",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:18.353Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:18.368Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:18.378Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:18.610Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:18.680Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:18.774Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:18.804Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620/check-in",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:18.831Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/FLIGHT/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:19.225Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:19.239Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:19.247Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:19.486Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:19.560Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:19.624Z",
+      "method": "GET",
+      "path": "/v1/rail/orders/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:19.680Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RAIL/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:20.013Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:20.027Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:20.040Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:20.294Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:20.380Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:20.474Z",
+      "method": "GET",
+      "path": "/v1/mobility/orders/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:20.548Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RIDE/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:20.548Z",
+      "method": "GET",
+      "path": "/v1/mobility/rides/orders/ride_ord_c34f2348721d4207/flight-tracking",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:20.933Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:20.947Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:20.956Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:21.198Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:21.277Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:21.410Z",
+      "method": "GET",
+      "path": "/v1/mobility/orders/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:21.488Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RENTAL/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:21.819Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:21.831Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:21.840Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:22.094Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:22.176Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:22.240Z",
+      "method": "GET",
+      "path": "/v1/attractions/orders/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:22.308Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/ATTRACTION/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "supplier-HOTEL",
+      "width": 390,
+      "time": "2026-09-12T15:20:23.587Z",
+      "method": "GET",
+      "path": "/v1/supplier/dashboard",
+      "status": 200
+    },
+    {
+      "role": "supplier-HOTEL",
+      "width": 390,
+      "time": "2026-09-12T15:20:23.628Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "supplier-HOTEL",
+      "width": 390,
+      "time": "2026-09-12T15:20:23.685Z",
+      "method": "GET",
+      "path": "/v1/supplier/orders/ord_459b13ba62044342/workbench",
+      "status": 200
+    },
+    {
+      "role": "supplier-HOTEL",
+      "width": 390,
+      "time": "2026-09-12T15:20:23.721Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/HOTEL/ord_459b13ba62044342",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:23.734Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/HOTEL/ord_459b13ba62044342",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:23.745Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/transaction-orders/HOTEL/ord_459b13ba62044342",
+      "status": 200
+    },
+    {
+      "role": "supplier-HOTEL",
+      "width": 390,
+      "time": "2026-09-12T15:20:24.242Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:24.322Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/HOTEL",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:24.361Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/HOTEL",
+      "status": 200
+    },
+    {
+      "role": "supplier",
+      "width": 1440,
+      "time": "2026-09-12T15:20:24.527Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/HOTEL/ord_459b13ba62044342",
+      "status": 404
+    },
+    {
+      "role": "supplier-FLIGHT",
+      "width": 390,
+      "time": "2026-09-12T15:20:24.870Z",
+      "method": "GET",
+      "path": "/v1/supplier/dashboard",
+      "status": 200
+    },
+    {
+      "role": "supplier-FLIGHT",
+      "width": 390,
+      "time": "2026-09-12T15:20:24.905Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "supplier-FLIGHT",
+      "width": 390,
+      "time": "2026-09-12T15:20:24.969Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/FLIGHT/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "supplier-FLIGHT",
+      "width": 390,
+      "time": "2026-09-12T15:20:24.997Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/FLIGHT/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:25.008Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/FLIGHT/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:25.019Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/transaction-orders/FLIGHT/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "supplier-FLIGHT",
+      "width": 390,
+      "time": "2026-09-12T15:20:25.255Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:25.292Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/FLIGHT",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:25.315Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/FLIGHT",
+      "status": 200
+    },
+    {
+      "role": "supplier",
+      "width": 1440,
+      "time": "2026-09-12T15:20:25.476Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/FLIGHT/flt_ord_24ed6fdf96514620",
+      "status": 404
+    },
+    {
+      "role": "supplier-RAIL",
+      "width": 390,
+      "time": "2026-09-12T15:20:25.802Z",
+      "method": "GET",
+      "path": "/v1/supplier/dashboard",
+      "status": 200
+    },
+    {
+      "role": "supplier-RAIL",
+      "width": 390,
+      "time": "2026-09-12T15:20:25.906Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "supplier-RAIL",
+      "width": 390,
+      "time": "2026-09-12T15:20:25.950Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/RAIL/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "supplier-RAIL",
+      "width": 390,
+      "time": "2026-09-12T15:20:25.980Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/RAIL/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:25.991Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RAIL/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:26.003Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/transaction-orders/RAIL/rail_ord_7df9b142a7624474",
+      "status": 200
+    },
+    {
+      "role": "supplier-RAIL",
+      "width": 390,
+      "time": "2026-09-12T15:20:26.254Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:26.309Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/RAIL",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:26.335Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/RAIL",
+      "status": 200
+    },
+    {
+      "role": "supplier",
+      "width": 1440,
+      "time": "2026-09-12T15:20:26.494Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/RAIL/rail_ord_7df9b142a7624474",
+      "status": 404
+    },
+    {
+      "role": "supplier-RIDE",
+      "width": 390,
+      "time": "2026-09-12T15:20:26.810Z",
+      "method": "GET",
+      "path": "/v1/supplier/dashboard",
+      "status": 200
+    },
+    {
+      "role": "supplier-RIDE",
+      "width": 390,
+      "time": "2026-09-12T15:20:26.934Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "supplier-RIDE",
+      "width": 390,
+      "time": "2026-09-12T15:20:26.985Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/RIDE/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "supplier-RIDE",
+      "width": 390,
+      "time": "2026-09-12T15:20:27.010Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/RIDE/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:27.021Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RIDE/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:27.032Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/transaction-orders/RIDE/ride_ord_c34f2348721d4207",
+      "status": 200
+    },
+    {
+      "role": "supplier-RIDE",
+      "width": 390,
+      "time": "2026-09-12T15:20:27.278Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:27.349Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/RIDE",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:27.375Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/RIDE",
+      "status": 200
+    },
+    {
+      "role": "supplier",
+      "width": 1440,
+      "time": "2026-09-12T15:20:27.543Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/RIDE/ride_ord_c34f2348721d4207",
+      "status": 404
+    },
+    {
+      "role": "supplier-RENTAL",
+      "width": 390,
+      "time": "2026-09-12T15:20:27.907Z",
+      "method": "GET",
+      "path": "/v1/supplier/dashboard",
+      "status": 200
+    },
+    {
+      "role": "supplier-RENTAL",
+      "width": 390,
+      "time": "2026-09-12T15:20:28.009Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "supplier-RENTAL",
+      "width": 390,
+      "time": "2026-09-12T15:20:28.069Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/RENTAL/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "supplier-RENTAL",
+      "width": 390,
+      "time": "2026-09-12T15:20:28.101Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/RENTAL/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:28.112Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/RENTAL/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:28.124Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/transaction-orders/RENTAL/rent_ord_4c8e21ba03d54373",
+      "status": 200
+    },
+    {
+      "role": "supplier-RENTAL",
+      "width": 390,
+      "time": "2026-09-12T15:20:28.370Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:28.410Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/RENTAL",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:28.439Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/RENTAL",
+      "status": 200
+    },
+    {
+      "role": "supplier",
+      "width": 1440,
+      "time": "2026-09-12T15:20:28.593Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/RENTAL/rent_ord_4c8e21ba03d54373",
+      "status": 404
+    },
+    {
+      "role": "supplier-ATTRACTION",
+      "width": 390,
+      "time": "2026-09-12T15:20:28.941Z",
+      "method": "GET",
+      "path": "/v1/supplier/dashboard",
+      "status": 200
+    },
+    {
+      "role": "supplier-ATTRACTION",
+      "width": 390,
+      "time": "2026-09-12T15:20:29.038Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "supplier-ATTRACTION",
+      "width": 390,
+      "time": "2026-09-12T15:20:29.088Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/ATTRACTION/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "supplier-ATTRACTION",
+      "width": 390,
+      "time": "2026-09-12T15:20:29.113Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/ATTRACTION/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:29.125Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/ATTRACTION/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:29.138Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/transaction-orders/ATTRACTION/attr_ord_5e95ad4b11a34697",
+      "status": 200
+    },
+    {
+      "role": "supplier-ATTRACTION",
+      "width": 390,
+      "time": "2026-09-12T15:20:29.545Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:29.662Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/ATTRACTION",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:29.686Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/ATTRACTION",
+      "status": 200
+    },
+    {
+      "role": "supplier",
+      "width": 1440,
+      "time": "2026-09-12T15:20:29.844Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/ATTRACTION/attr_ord_5e95ad4b11a34697",
+      "status": 404
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:30.015Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:30.029Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:30.039Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:30.323Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:30.416Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:30.590Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:30.620Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620/check-in",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:30.805Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:30.816Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:30.827Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:31.083Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:31.188Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:31.471Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:31.499Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620/check-in",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:31.680Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:31.692Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:31.704Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:31.957Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:32.039Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:32.207Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:32.244Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620/check-in",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:32.421Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:32.435Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:32.446Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:32.708Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:32.793Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:32.995Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:33.028Z",
+      "method": "GET",
+      "path": "/v1/flights/orders/flt_ord_24ed6fdf96514620/check-in",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:33.248Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:33.263Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:33.273Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:33.612Z",
+      "method": "POST",
+      "path": "/v1/search/hotels",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:33.690Z",
+      "method": "GET",
+      "path": "/v1/consumer/hotels/htl_conrad_tokyo",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:33.930Z",
+      "method": "POST",
+      "path": "/v1/offers/off_74fbe43b103a4ff3/prebook",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:34.074Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:34.217Z",
+      "method": "POST",
+      "path": "/v1/consumer/orders",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:34.224Z",
+      "method": "GET",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:34.385Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:34.399Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:34.409Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:34.685Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:34.890Z",
+      "method": "GET",
+      "path": "/v1/consumer/orders/ord_b2be20749ea24aba/detail",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:34.952Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/HOTEL/ord_b2be20749ea24aba",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:34.976Z",
+      "method": "GET",
+      "path": "/v1/consumer/orders/ord_b2be20749ea24aba/detail",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:35.392Z",
+      "method": "GET",
+      "path": "/v1/consumer/orders/ord_b2be20749ea24aba/detail",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:35.397Z",
+      "method": "GET",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:35.540Z",
+      "method": "POST",
+      "path": "/v1/consumer/checkout/HOTEL/ord_b2be20749ea24aba",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:35.558Z",
+      "method": "GET",
+      "path": "/v1/consumer/orders/ord_b2be20749ea24aba/detail",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:35.609Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/HOTEL/ord_b2be20749ea24aba",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:35.649Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "supplier-depth44",
+      "width": 390,
+      "time": "2026-09-12T15:20:35.980Z",
+      "method": "GET",
+      "path": "/v1/supplier/dashboard",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:36.169Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:36.181Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:36.190Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:36.481Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:36.656Z",
+      "method": "GET",
+      "path": "/v1/consumer/orders/ord_b2be20749ea24aba/detail",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:36.866Z",
+      "method": "POST",
+      "path": "/v1/orders/ord_b2be20749ea24aba/change-quote",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:37.081Z",
+      "method": "POST",
+      "path": "/v1/orders/ord_b2be20749ea24aba/change",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:37.110Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/HOTEL/ord_b2be20749ea24aba",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:37.112Z",
+      "method": "GET",
+      "path": "/v1/consumer/orders/ord_b2be20749ea24aba/detail",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:37.316Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:37.326Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:37.383Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:37.713Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "supplier-depth44",
+      "width": 390,
+      "time": "2026-09-12T15:20:37.904Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200
+    },
+    {
+      "role": "supplier-depth44",
+      "width": 390,
+      "time": "2026-09-12T15:20:37.978Z",
+      "method": "GET",
+      "path": "/v1/supplier/orders/ord_b2be20749ea24aba/workbench",
+      "status": 200
+    },
+    {
+      "role": "supplier-depth44",
+      "width": 390,
+      "time": "2026-09-12T15:20:38.228Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/HOTEL/ord_b2be20749ea24aba",
+      "status": 200
+    },
+    {
+      "role": "supplier-depth44",
+      "width": 390,
+      "time": "2026-09-12T15:20:38.239Z",
+      "method": "GET",
+      "path": "/v1/supplier/orders/ord_b2be20749ea24aba/workbench",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:38.383Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/HOTEL",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:38.411Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/transaction-orders/HOTEL/ord_b2be20749ea24aba",
+      "status": 200
+    },
+    {
+      "role": "admin",
+      "width": 1440,
+      "time": "2026-09-12T15:20:38.423Z",
+      "method": "GET",
+      "path": "/internal/v1/admin/operations/verticals/HOTEL",
+      "status": 200
+    },
+    {
+      "role": "supplier",
+      "width": 1440,
+      "time": "2026-09-12T15:20:38.495Z",
+      "method": "GET",
+      "path": "/v1/supplier/transaction-orders/HOTEL/ord_b2be20749ea24aba",
+      "status": 404
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:38.670Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:38.682Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:38.692Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:38.996Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:39.247Z",
+      "method": "GET",
+      "path": "/v1/consumer/orders/ord_b2be20749ea24aba/detail",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:39.735Z",
+      "method": "POST",
+      "path": "/v1/orders/ord_b2be20749ea24aba/cash-after-sales/cfo_36731c192d424c7d8a57381ef87545b9/retry-payment",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:39.752Z",
+      "method": "GET",
+      "path": "/v1/consumer/orders/ord_b2be20749ea24aba/detail",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:39.823Z",
+      "method": "GET",
+      "path": "/v1/consumer/transaction-orders/HOTEL/ord_b2be20749ea24aba",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:40.011Z",
+      "method": "GET",
+      "path": "/v1/consumer/me",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:40.019Z",
+      "method": "GET",
+      "path": "/v1/consumer/wallet",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:40.029Z",
+      "method": "GET",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200
+    },
+    {
+      "role": "consumer",
+      "width": 390,
+      "time": "2026-09-12T15:20:40.373Z",
+      "method": "GET",
+      "path": "/v1/consumer/unified-trips",
+      "status": 200
+    }
+  ],
+  "console_errors": [],
+  "limitations": [
+    "SQLite; independent PostgreSQL acceptance recorded separately",
+    "Simulator payment and supplier adapters; no live inventory, real payments or Hong Kong",
+    "Mobile viewport is mobile web, not a native device or Expo build"
+  ],
+  "hong_kong": "NOT_RUN",
+  "production": "HOLD",
+  "sealed_node_gate": "HOLD",
+  "final_release": "HOLD",
+  "browser_version": "140.0.7339.186",
+  "node_version": "v22.22.0",
+  "ci": {
+    "run_id": "34701843097",
+    "attempt": "1",
+    "job": "browser",
+    "runner_os": "Linux"
+  },
+  "order_checks": [
+    {
+      "vertical": "HOTEL",
+      "order_id": "ord_459b13ba62044342",
+      "quoted_refund_minor": 1443200,
+      "final": {
+        "order": {
+          "order_id": "ord_459b13ba62044342",
+          "vertical": "HOTEL",
+          "status": "CANCELLED",
+          "total_amount_minor": 1443200,
+          "currency": "CNY",
+          "updated_at": "2026-09-12T15:20:09.335332"
+        },
+        "refunds": [
+          {
+            "refund_id": "ref_596ca59568984846ab9f29b9ea244d47",
+            "order_id": "ord_459b13ba62044342",
+            "amount_minor": 1443200,
+            "currency": "CNY",
+            "status": "COMPLETED"
+          }
+        ],
+        "cash_after_sales": {
+          "operation_id": "cfo_a6fb81d797ac4e5cb6c5fb200d444815",
+          "action": "CANCEL",
+          "state": "COMPLETED",
+          "currency": "CNY",
+          "check_in": "2026-10-12",
+          "check_out": "2026-10-14",
+          "requested_check_in": null,
+          "requested_check_out": null,
+          "amount_due_minor": 0,
+          "amount_paid_minor": 0,
+          "current_room_value_minor": 1443200,
+          "gross_paid_minor": 1443200,
+          "refunded_minor": 1443200,
+          "net_paid_minor": 0,
+          "paid_change_fees_minor": 0,
+          "forfeited_change_value_minor": 0,
+          "scope": "ACCEPTED_CASH_FARE_OPERATION_FACTS",
+          "bank_settlement_verified": false
+        },
+        "original_payment": {
+          "payment_intent_id": "opi_50dc5a6da43e4802a37d44e7f397cc72",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 1443200,
+          "refunded_minor": 1443200,
+          "net_minor": 0,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 2886400,
+          "ledger_credit_minor": 2886400,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_470f4f359a43408e8937619e601c9536",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 1443200,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_adc5892fe7bf4b438e607a2bb0be9718",
+            "parent_movement_id": "omm_470f4f359a43408e8937619e601c9536",
+            "type": "CAPTURE",
+            "amount_minor": 1443200,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_c3982d9c627c40869ad10cf52f5b42cb",
+            "parent_movement_id": "omm_adc5892fe7bf4b438e607a2bb0be9718",
+            "type": "REFUND",
+            "amount_minor": 1443200,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      },
+      "refund_replay": "NO_DUPLICATE",
+      "cross_surface": "PASS"
+    },
+    {
+      "vertical": "FLIGHT",
+      "order_id": "flt_ord_24ed6fdf96514620",
+      "quoted_refund_minor": 1792000,
+      "final": {
+        "order": {
+          "order_id": "flt_ord_24ed6fdf96514620",
+          "vertical": "FLIGHT",
+          "status": "REFUNDED",
+          "total_amount_minor": 1872000,
+          "currency": "CNY",
+          "updated_at": "2026-09-12T15:20:11.116510"
+        },
+        "refunds": [
+          {
+            "refund_id": "flt_ref_de3886d6d1de4a4e",
+            "order_id": "flt_ord_24ed6fdf96514620",
+            "amount_minor": 1792000,
+            "currency": "CNY",
+            "status": "REFUND_COMPLETED"
+          }
+        ],
+        "cash_after_sales": null,
+        "original_payment": {
+          "payment_intent_id": "opi_625e0a65f6e14827ab8ba3c32e33bf05",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 1872000,
+          "refunded_minor": 1792000,
+          "net_minor": 80000,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 3664000,
+          "ledger_credit_minor": 3664000,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_51591dee7d4a433a996720df95c7bb1e",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 1872000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_b2bd183f6fe541c4ac2f185f56d103ba",
+            "parent_movement_id": "omm_51591dee7d4a433a996720df95c7bb1e",
+            "type": "CAPTURE",
+            "amount_minor": 1872000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_1a632f27cb1349e3ab66007b06180d94",
+            "parent_movement_id": "omm_b2bd183f6fe541c4ac2f185f56d103ba",
+            "type": "REFUND",
+            "amount_minor": 1792000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      },
+      "refund_replay": "NO_DUPLICATE",
+      "cross_surface": "PASS"
+    },
+    {
+      "vertical": "RAIL",
+      "order_id": "rail_ord_7df9b142a7624474",
+      "quoted_refund_minor": 13100,
+      "final": {
+        "order": {
+          "order_id": "rail_ord_7df9b142a7624474",
+          "vertical": "RAIL",
+          "status": "REFUNDED",
+          "total_amount_minor": 14700,
+          "currency": "CNY",
+          "updated_at": "2026-09-12T15:20:12.883640"
+        },
+        "refunds": [
+          {
+            "refund_id": "rail_ref_4325bc66f4e04a9a",
+            "order_id": "rail_ord_7df9b142a7624474",
+            "amount_minor": 13100,
+            "currency": "CNY",
+            "status": "REFUND_COMPLETED"
+          }
+        ],
+        "cash_after_sales": null,
+        "original_payment": {
+          "payment_intent_id": "opi_042fdc1fe24a42499c3653a0e9c3a281",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 14700,
+          "refunded_minor": 13100,
+          "net_minor": 1600,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 27800,
+          "ledger_credit_minor": 27800,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_80cf0c25b16a428d98d2bb529c7e29e0",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 14700,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_f40deb1c228446ff821766394d9d1df4",
+            "parent_movement_id": "omm_80cf0c25b16a428d98d2bb529c7e29e0",
+            "type": "CAPTURE",
+            "amount_minor": 14700,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_29b1763aa2a1497bab0361751e778719",
+            "parent_movement_id": "omm_f40deb1c228446ff821766394d9d1df4",
+            "type": "REFUND",
+            "amount_minor": 13100,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      },
+      "refund_replay": "NO_DUPLICATE",
+      "cross_surface": "PASS"
+    },
+    {
+      "vertical": "RIDE",
+      "order_id": "ride_ord_c34f2348721d4207",
+      "quoted_refund_minor": 16800,
+      "final": {
+        "order": {
+          "order_id": "ride_ord_c34f2348721d4207",
+          "vertical": "RIDE",
+          "status": "REFUNDED",
+          "total_amount_minor": 16800,
+          "currency": "CNY",
+          "updated_at": "2026-09-12T15:20:14.179576"
+        },
+        "refunds": [
+          {
+            "refund_id": "mob_ref_04c0c8964e8c46e0",
+            "order_id": "ride_ord_c34f2348721d4207",
+            "amount_minor": 16800,
+            "currency": "CNY",
+            "status": "REFUND_COMPLETED"
+          }
+        ],
+        "cash_after_sales": null,
+        "original_payment": {
+          "payment_intent_id": "opi_41adc49195b9473c8ab265d4ea318e21",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 16800,
+          "refunded_minor": 16800,
+          "net_minor": 0,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 33600,
+          "ledger_credit_minor": 33600,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_d6c0a670587e4465bc046a021b1d8001",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 16800,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_a23aca73303a44299e5ed8bcd330fdbe",
+            "parent_movement_id": "omm_d6c0a670587e4465bc046a021b1d8001",
+            "type": "CAPTURE",
+            "amount_minor": 16800,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_3d7c6632118f4832b4b9b11a5649b857",
+            "parent_movement_id": "omm_a23aca73303a44299e5ed8bcd330fdbe",
+            "type": "REFUND",
+            "amount_minor": 16800,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      },
+      "refund_replay": "NO_DUPLICATE",
+      "cross_surface": "PASS"
+    },
+    {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_4c8e21ba03d54373",
+      "quoted_refund_minor": 84000,
+      "final": {
+        "order": {
+          "order_id": "rent_ord_4c8e21ba03d54373",
+          "vertical": "RENTAL",
+          "status": "REFUNDED",
+          "total_amount_minor": 84000,
+          "currency": "CNY",
+          "updated_at": "2026-09-12T15:20:15.427755"
+        },
+        "refunds": [
+          {
+            "refund_id": "mob_ref_b7b3854fdcfc48f7",
+            "order_id": "rent_ord_4c8e21ba03d54373",
+            "amount_minor": 84000,
+            "currency": "CNY",
+            "status": "REFUND_COMPLETED"
+          }
+        ],
+        "cash_after_sales": null,
+        "original_payment": {
+          "payment_intent_id": "opi_cb5b69e870374091a2d4f9716d797351",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 84000,
+          "refunded_minor": 84000,
+          "net_minor": 0,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 168000,
+          "ledger_credit_minor": 168000,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_446118c947c24e8a924497d126346cf4",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 84000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_c199a083dd4e4e37ad6e226cb8a8685e",
+            "parent_movement_id": "omm_446118c947c24e8a924497d126346cf4",
+            "type": "CAPTURE",
+            "amount_minor": 84000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_b406cac383444329ab1e3a3d0dd72d37",
+            "parent_movement_id": "omm_c199a083dd4e4e37ad6e226cb8a8685e",
+            "type": "REFUND",
+            "amount_minor": 84000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      },
+      "refund_replay": "NO_DUPLICATE",
+      "cross_surface": "PASS"
+    },
+    {
+      "vertical": "ATTRACTION",
+      "order_id": "attr_ord_5e95ad4b11a34697",
+      "quoted_refund_minor": 36000,
+      "final": {
+        "order": {
+          "order_id": "attr_ord_5e95ad4b11a34697",
+          "vertical": "ATTRACTION",
+          "status": "REFUNDED",
+          "total_amount_minor": 36000,
+          "currency": "CNY",
+          "updated_at": "2026-09-12T15:20:16.764449"
+        },
+        "refunds": [
+          {
+            "refund_id": "attr_ref_83e86169c7dc4a07",
+            "order_id": "attr_ord_5e95ad4b11a34697",
+            "amount_minor": 36000,
+            "currency": "CNY",
+            "status": "REFUND_COMPLETED"
+          }
+        ],
+        "cash_after_sales": null,
+        "original_payment": {
+          "payment_intent_id": "opi_b769fd29b6b64d66815ff8694c7450d2",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 36000,
+          "refunded_minor": 36000,
+          "net_minor": 0,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 72000,
+          "ledger_credit_minor": 72000,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_81f935c017c848c4b804c918445c5ef4",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 36000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_7a0ab2cafd7f40bf8e3fac8b1b0b4920",
+            "parent_movement_id": "omm_81f935c017c848c4b804c918445c5ef4",
+            "type": "CAPTURE",
+            "amount_minor": 36000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_bed9a88f36c64c9db4213943d77e7dd2",
+            "parent_movement_id": "omm_7a0ab2cafd7f40bf8e3fac8b1b0b4920",
+            "type": "REFUND",
+            "amount_minor": 36000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      },
+      "refund_replay": "NO_DUPLICATE",
+      "cross_surface": "PASS"
+    }
+  ],
+  "detail_viewports": [
+    {
+      "role": "consumer",
+      "vertical": "HOTEL",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "018-HOTEL-consumer-detail-375.png"
+    },
+    {
+      "role": "consumer",
+      "vertical": "HOTEL",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "HOTEL",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "HOTEL",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "019-HOTEL-consumer-detail-1440.png"
+    },
+    {
+      "role": "consumer",
+      "vertical": "FLIGHT",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "021-FLIGHT-consumer-detail-375.png"
+    },
+    {
+      "role": "consumer",
+      "vertical": "FLIGHT",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "FLIGHT",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "FLIGHT",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "022-FLIGHT-consumer-detail-1440.png"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RAIL",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "024-RAIL-consumer-detail-375.png"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RAIL",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RAIL",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RAIL",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "025-RAIL-consumer-detail-1440.png"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RIDE",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "027-RIDE-consumer-detail-375.png"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RIDE",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RIDE",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RIDE",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "028-RIDE-consumer-detail-1440.png"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RENTAL",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "030-RENTAL-consumer-detail-375.png"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RENTAL",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RENTAL",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "RENTAL",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "031-RENTAL-consumer-detail-1440.png"
+    },
+    {
+      "role": "consumer",
+      "vertical": "ATTRACTION",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "033-ATTRACTION-consumer-detail-375.png"
+    },
+    {
+      "role": "consumer",
+      "vertical": "ATTRACTION",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "ATTRACTION",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "consumer",
+      "vertical": "ATTRACTION",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "034-ATTRACTION-consumer-detail-1440.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "HOTEL",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "045-HOTEL-supplier-detail-375.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "HOTEL",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "HOTEL",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "HOTEL",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "046-HOTEL-supplier-detail-1440.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "HOTEL",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "047-HOTEL-admin-detail-375.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "HOTEL",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "HOTEL",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "HOTEL",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "048-HOTEL-admin-detail-1440.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "FLIGHT",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "050-FLIGHT-supplier-detail-375.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "FLIGHT",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "FLIGHT",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "FLIGHT",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "051-FLIGHT-supplier-detail-1440.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "FLIGHT",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "052-FLIGHT-admin-detail-375.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "FLIGHT",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "FLIGHT",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "FLIGHT",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "053-FLIGHT-admin-detail-1440.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RAIL",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "055-RAIL-supplier-detail-375.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RAIL",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RAIL",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RAIL",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "056-RAIL-supplier-detail-1440.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "RAIL",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "057-RAIL-admin-detail-375.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "RAIL",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "RAIL",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "RAIL",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "058-RAIL-admin-detail-1440.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RIDE",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "060-RIDE-supplier-detail-375.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RIDE",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RIDE",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RIDE",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "061-RIDE-supplier-detail-1440.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "RIDE",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "062-RIDE-admin-detail-375.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "RIDE",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "RIDE",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "RIDE",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "063-RIDE-admin-detail-1440.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RENTAL",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "065-RENTAL-supplier-detail-375.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RENTAL",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RENTAL",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "RENTAL",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "066-RENTAL-supplier-detail-1440.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "RENTAL",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "067-RENTAL-admin-detail-375.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "RENTAL",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "RENTAL",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "RENTAL",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "068-RENTAL-admin-detail-1440.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "ATTRACTION",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "070-ATTRACTION-supplier-detail-375.png"
+    },
+    {
+      "role": "supplier",
+      "vertical": "ATTRACTION",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "ATTRACTION",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "supplier",
+      "vertical": "ATTRACTION",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "071-ATTRACTION-supplier-detail-1440.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "ATTRACTION",
+      "width": 375,
+      "result": "PASS",
+      "screenshot": "072-ATTRACTION-admin-detail-375.png"
+    },
+    {
+      "role": "admin",
+      "vertical": "ATTRACTION",
+      "width": 390,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "ATTRACTION",
+      "width": 430,
+      "result": "PASS"
+    },
+    {
+      "role": "admin",
+      "vertical": "ATTRACTION",
+      "width": 1440,
+      "result": "PASS",
+      "screenshot": "073-ATTRACTION-admin-detail-1440.png"
+    }
+  ],
+  "depth44": {
+    "scope": "GO_TRIP_SEARCH_AND_HOTEL_TWO_CHANGES",
+    "search_viewports": [
+      {
+        "width": 375,
+        "orders": 6,
+        "result": "PASS"
+      },
+      {
+        "width": 390,
+        "orders": 6,
+        "result": "PASS"
+      },
+      {
+        "width": 430,
+        "orders": 6,
+        "result": "PASS"
+      },
+      {
+        "width": 1440,
+        "orders": 6,
+        "result": "PASS"
+      }
+    ],
+    "fault_injections": [
+      {
+        "kind": "EXISTING_SIMULATOR_CAPTURE_FAILURE",
+        "order_id": "ord_b2be20749ea24aba",
+        "at": "2026-09-12T15:20:37.013Z"
+      }
+    ],
+    "checkpoints": [
+      {
+        "name": "UNPAID_QUERYABLE",
+        "order_id": "ord_b2be20749ea24aba",
+        "snapshot": {
+          "order": {
+            "order_id": "ord_b2be20749ea24aba",
+            "vertical": "HOTEL",
+            "status": "PAYMENT_PENDING",
+            "total_amount_minor": 1443200,
+            "currency": "CNY",
+            "updated_at": "2026-09-12T15:20:34.204951"
+          },
+          "refunds": [],
+          "cash_after_sales": null,
+          "original_payment": {
+            "payment_intent_id": null,
+            "binding_state": "RECONCILIATION_REQUIRED",
+            "state": "UNKNOWN",
+            "captured_minor": 0,
+            "refunded_minor": 0,
+            "net_minor": 0,
+            "currency": "CNY",
+            "capture_count": 0,
+            "refund_count": 0,
+            "ledger_debit_minor": 0,
+            "ledger_credit_minor": 0,
+            "ledger_entries": 0,
+            "ledger_balanced": false,
+            "reconciliation_required": true
+          },
+          "movements": [],
+          "scope": "ORIGINAL_PAYMENT_ROOT",
+          "bank_settlement_verified": false
+        }
+      },
+      {
+        "name": "PAID_SAME_ORDER",
+        "order_id": "ord_b2be20749ea24aba",
+        "snapshot": {
+          "order": {
+            "order_id": "ord_b2be20749ea24aba",
+            "vertical": "HOTEL",
+            "status": "CONFIRMED",
+            "total_amount_minor": 1443200,
+            "currency": "CNY",
+            "updated_at": "2026-09-12T15:20:35.519323"
+          },
+          "refunds": [],
+          "cash_after_sales": null,
+          "original_payment": {
+            "payment_intent_id": "opi_c1e4ce8dc1a7462e8079b28182943804",
+            "binding_state": "BOUND",
+            "state": "SUCCEEDED",
+            "captured_minor": 1443200,
+            "refunded_minor": 0,
+            "net_minor": 1443200,
+            "currency": "CNY",
+            "capture_count": 1,
+            "refund_count": 0,
+            "ledger_debit_minor": 1443200,
+            "ledger_credit_minor": 1443200,
+            "ledger_entries": 2,
+            "ledger_balanced": true,
+            "reconciliation_required": false
+          },
+          "movements": [
+            {
+              "movement_id": "omm_db8a2dd104eb4689931b4b7afeed1c61",
+              "parent_movement_id": null,
+              "type": "AUTHORIZATION",
+              "amount_minor": 1443200,
+              "currency": "CNY",
+              "state": "CONFIRMED"
+            },
+            {
+              "movement_id": "omm_4b76107d738040c7876cc25539eade09",
+              "parent_movement_id": "omm_db8a2dd104eb4689931b4b7afeed1c61",
+              "type": "CAPTURE",
+              "amount_minor": 1443200,
+              "currency": "CNY",
+              "state": "CONFIRMED"
+            }
+          ],
+          "scope": "ORIGINAL_PAYMENT_ROOT",
+          "bank_settlement_verified": false
+        }
+      },
+      {
+        "name": "CAPTURE_PENDING-consumer-list",
+        "screenshot": "085-CAPTURE_PENDING-consumer-list.png"
+      },
+      {
+        "name": "CAPTURE_PENDING-supplier-detail",
+        "screenshot": "086-CAPTURE_PENDING-supplier-detail.png"
+      },
+      {
+        "name": "CAPTURE_PENDING-admin-detail",
+        "screenshot": "087-CAPTURE_PENDING-admin-detail.png"
+      },
+      {
+        "name": "CAPTURE_PENDING",
+        "order_id": "ord_b2be20749ea24aba",
+        "snapshot": {
+          "order": {
+            "order_id": "ord_b2be20749ea24aba",
+            "vertical": "HOTEL",
+            "status": "CHANGE_PENDING",
+            "total_amount_minor": 1443200,
+            "currency": "CNY",
+            "updated_at": "2026-09-12T15:20:37.046822"
+          },
+          "refunds": [],
+          "cash_after_sales": {
+            "operation_id": "cfo_36731c192d424c7d8a57381ef87545b9",
+            "action": "CHANGE",
+            "state": "CAPTURE_PENDING",
+            "currency": "CNY",
+            "check_in": "2026-10-22",
+            "check_out": "2026-10-24",
+            "requested_check_in": "2026-11-01",
+            "requested_check_out": "2026-11-03",
+            "amount_due_minor": 10000,
+            "amount_paid_minor": 0,
+            "current_room_value_minor": 1443200,
+            "gross_paid_minor": 1443200,
+            "refunded_minor": 0,
+            "net_paid_minor": 1443200,
+            "paid_change_fees_minor": 0,
+            "forfeited_change_value_minor": 0,
+            "scope": "ACCEPTED_CASH_FARE_OPERATION_FACTS",
+            "bank_settlement_verified": false
+          },
+          "original_payment": {
+            "payment_intent_id": "opi_c1e4ce8dc1a7462e8079b28182943804",
+            "binding_state": "BOUND",
+            "state": "SUCCEEDED",
+            "captured_minor": 1443200,
+            "refunded_minor": 0,
+            "net_minor": 1443200,
+            "currency": "CNY",
+            "capture_count": 1,
+            "refund_count": 0,
+            "ledger_debit_minor": 1443200,
+            "ledger_credit_minor": 1443200,
+            "ledger_entries": 2,
+            "ledger_balanced": true,
+            "reconciliation_required": false
+          },
+          "movements": [
+            {
+              "movement_id": "omm_db8a2dd104eb4689931b4b7afeed1c61",
+              "parent_movement_id": null,
+              "type": "AUTHORIZATION",
+              "amount_minor": 1443200,
+              "currency": "CNY",
+              "state": "CONFIRMED"
+            },
+            {
+              "movement_id": "omm_4b76107d738040c7876cc25539eade09",
+              "parent_movement_id": "omm_db8a2dd104eb4689931b4b7afeed1c61",
+              "type": "CAPTURE",
+              "amount_minor": 1443200,
+              "currency": "CNY",
+              "state": "CONFIRMED"
+            }
+          ],
+          "scope": "ORIGINAL_PAYMENT_ROOT",
+          "bank_settlement_verified": false
+        }
+      },
+      {
+        "name": "FIRST_CHANGE_COMPLETED-consumer-list",
+        "screenshot": "089-FIRST_CHANGE_COMPLETED-consumer-list.png"
+      }
+    ],
+    "payment_viewports": [
+      {
+        "width": 375,
+        "result": "PASS",
+        "screenshot": "079-depth44-unpaid-resume-375.png"
+      },
+      {
+        "width": 390,
+        "result": "PASS",
+        "screenshot": "080-depth44-unpaid-resume-390.png"
+      },
+      {
+        "width": 430,
+        "result": "PASS",
+        "screenshot": "081-depth44-unpaid-resume-430.png"
+      },
+      {
+        "width": 1440,
+        "result": "PASS",
+        "screenshot": "082-depth44-unpaid-resume-1440.png"
+      }
+    ],
+    "complete": false,
+    "limitations": [
+      "Same-price hotel changes with separately charged fees; no high/low fare browser coverage",
+      "Capture failure uses the existing simulator token in one outgoing request",
+      "Refund response loss occurs after server success; not a partial internal refund failure",
+      "Supplier/admin browser inspection and authenticated reads; their money mutations are not exercised"
+    ]
+  },
+  "cash_journeys": [
+    {
+      "vertical": "HOTEL",
+      "change_quotes": [
+        {
+          "gross_paid_minor": 1443200,
+          "prior_refund_minor": 0,
+          "paid_amount_minor": 1443200,
+          "current_room_value_minor": 1443200,
+          "paid_change_fees_minor": 0,
+          "forfeited_change_value_minor": 0,
+          "check_in": "2026-10-22",
+          "check_out": "2026-10-24",
+          "order_id": "ord_b2be20749ea24aba",
+          "order_version": 5,
+          "currency": "CNY",
+          "supplier_confirmation_no": "MOCK-E49ED339E9",
+          "order_snapshot_hash": "9c4456661bfef121c8612017e268eaa956b0673a1641eedfcce7b4cf7a93e0ee",
+          "rule_hash": "69dd2cbf64f756dfb252985f3954f22d9d06c706e5a0e30c5d79035e842ec3ca",
+          "rule_version_id": "cfrv_a7b5b5d9a3974b33add319012511e300",
+          "order_created_at": "2026-09-12T15:20:34.204951+00:00",
+          "data_mode": "SIMULATION",
+          "old_value_minor": 1443200,
+          "new_value_minor": 1443200,
+          "fare_difference_minor": 0,
+          "change_fee_minor": 10000,
+          "amount_due_minor": 10000,
+          "lower_price_no_refund": true,
+          "lower_price_difference_minor": 0,
+          "lower_price_rule": "FORFEIT_NO_REFUND_NO_FUTURE_OFFSET",
+          "new_check_in": "2026-11-01",
+          "new_check_out": "2026-11-03",
+          "action": "CHANGE",
+          "quote_id": "chgq_84202d0b509e4e6a8bcfd369c1f1d44a",
+          "expires_at": "2026-09-12T15:30:36.847748+00:00",
+          "change_quote_id": "chgq_84202d0b509e4e6a8bcfd369c1f1d44a",
+          "quote_hash": "0f6476f08e861edf2ac01eb30683e357328628932119e5d38a8846c14d4ba051",
+          "external_live": false
+        }
+      ],
+      "stages": [
+        "UNPAID_QUERYABLE",
+        "PAID_SAME_ORDER",
+        "CAPTURE_PENDING"
+      ],
+      "complete": false,
+      "order_id": "ord_b2be20749ea24aba",
+      "original_capture_minor": 1443200
+    }
+  ],
+  "finished_at": "2026-09-12T15:20:52.682Z",
+  "failed": [
+    "DEPTH44-required-journey-completion",
+    "DEPTH44-retry-payment-from-same-order"
+  ],
+  "result": "GAPS_FOUND",
+  "three_end_real_ux_login": "HOLD",
+  "six_vertical_closed_loop": "HOLD"
+}

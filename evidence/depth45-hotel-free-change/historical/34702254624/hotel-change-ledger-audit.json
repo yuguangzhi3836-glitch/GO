@@ -1,0 +1,57 @@
+{
+  "schema": "go.hotel-adjustment-ledger.v1",
+  "result": "PASS",
+  "orders": [
+    {
+      "order_id": "ord_57172a167eb04ed5",
+      "result": "PASS",
+      "payment_roots": [
+        {
+          "business_type": "HOTEL_ORDER",
+          "business_id": "ord_57172a167eb04ed5",
+          "payment_intent_id": "opi_9c5c4ce9416c455fa3ac3da805b05617",
+          "capture_id": "omm_403ac2a64478451d9cafb1715ea6d2cc",
+          "refund_parent_id": "omm_403ac2a64478451d9cafb1715ea6d2cc",
+          "amount_minor": 1443200,
+          "currency": "CNY",
+          "ledger_pairs": 2,
+          "result": "PASS"
+        },
+        {
+          "business_type": "HOTEL_CHANGE",
+          "business_id": "chgq_005b835559674cbc8b04a5c444b03d72",
+          "payment_intent_id": "opi_a1447aa7eadc4e7b945392bafbe41194",
+          "capture_id": "omm_3e4566a34ba64c4192a5f62497b2db36",
+          "refund_parent_id": "omm_3e4566a34ba64c4192a5f62497b2db36",
+          "amount_minor": 10000,
+          "currency": "CNY",
+          "ledger_pairs": 2,
+          "result": "PASS"
+        },
+        {
+          "business_type": "HOTEL_CHANGE",
+          "business_id": "chgq_06705bb841e548c6a4ed22e9efc20ca6",
+          "payment_intent_id": "opi_10af3e9b10454fe0ac8df9ab1157d16f",
+          "capture_id": "omm_e28c332c273042339f9c8c137d5feb0a",
+          "refund_parent_id": "omm_e28c332c273042339f9c8c137d5feb0a",
+          "amount_minor": 10000,
+          "currency": "CNY",
+          "ledger_pairs": 2,
+          "result": "PASS"
+        }
+      ],
+      "capture_count": 3,
+      "refund_count": 3,
+      "gross_paid_minor": 1463200,
+      "refunded_minor": 1463200,
+      "net_paid_minor": 0,
+      "confirmed_changes": 2,
+      "cash_operations": 3
+    }
+  ],
+  "commit": "7a0a2628e3c3caee11832d761aade549cdfd4509",
+  "source_tree_sha256": "dcd014e4f65cd60a1221f4b89139bbf17552425ece8fb38425683ba5a75162f3",
+  "scope": "ONE_HOTEL_ORIGINAL_PLUS_TWO_CHANGE_ROOTS",
+  "mode": "SYNTHETIC_READ_ONLY_SQL",
+  "bank_settlement_verified": false
+}
