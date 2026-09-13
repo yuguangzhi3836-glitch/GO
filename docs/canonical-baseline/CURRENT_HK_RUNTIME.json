@@ -27,8 +27,8 @@
     "canonical_branch": "canonical/depth48-hk-runtime-20260913",
     "canonical_definition_commit": "dc0c31ddf2a1dac84396e71ca7811526c3d0131d",
     "canonical_runtime_fix_commit": "1290526",
-    "canonical_main_commit": null,
-    "canonical_main_commit_note": "Set to the merge commit of this sync PR during post-merge verification.",
+    "canonical_main_commit": "bba3b2589ec38404122fb9590fc8119410b96247",
+    "canonical_main_commit_note": "Merge commit of the canonical sync PR. Verified post-merge: main:application tree equals canonical_runtime_application_tree.",
     "canonical_runtime_application_tree": "3025b2b6b36ea9211da561a4631f304216de9d90",
     "canonical_runtime_application_files": 1325,
     "canonical_runtime_source_sha256": "d90a9e26c3a64b98009aaf170056f4b3acfa6acebd41baaed276b7baf17c6925"
@@ -109,8 +109,19 @@
     "github_only": true,
     "host_files_required": false,
     "previous_parent_required": false,
-    "result": null,
-    "note": "Filled by post-merge verification of this sync."
+    "result": "PASS",
+    "build_ref": "edff13f36e0ad1eed0ec6f8f9c24b124facca088",
+    "build_context_source": "git archive of the pushed branch; no host-side file copied",
+    "build_exit": 0,
+    "image_size_mb": 428,
+    "alembic_heads": ["0133_flight_change_plan"],
+    "alembic_revisions": 133,
+    "empty_db_migrate_exit": 0,
+    "empty_db_tables": 551,
+    "health_http": 200,
+    "openapi_http": 200,
+    "container_fatal_errors": 0,
+    "note": "Dockerfile, .dockerignore and pyproject.toml digests in the build context were verified against the GitHub blobs; the context had zero references to any host path. The empty-database migration produced 551 tables, matching the live HK database structurally."
   },
 
   "previous_runtime_status": "SUPERSEDED",
