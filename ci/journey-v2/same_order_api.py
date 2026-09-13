@@ -25,6 +25,13 @@ def main():
             str(root/'application/src'),str(root/'application'),str(root/'application/tests')]),
             GO_TEST_DB_PATH=str(state/'acceptance.db'),
             GO_JOURNEY_EVIDENCE=str(evidence/'six-order-observations.json'),
+            # This step runs pytest with cwd=application, i.e. with the product
+            # source tree as the process cwd. MediaHarvesterService defaults its
+            # cache dir to the relative path `var/media_cache`, which would land
+            # inside `application/` and then break the strict source-identity
+            # check performed by the next step. Keep every runtime cache in the
+            # disposable state directory instead.
+            GO_MEDIA_CACHE_DIR=str(state/'media_cache'),
             PYTEST_DISABLE_PLUGIN_AUTOLOAD='1',PYTHONDONTWRITEBYTECODE='1',APP_ENV='test',
             MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED='false')
         with (evidence/'pytest.log').open('w') as log:

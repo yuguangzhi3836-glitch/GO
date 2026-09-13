@@ -1,8 +1,19 @@
 # GO 候选归档索引
 
-当前唯一待验源码：[PR47 / application](application/)。[PR47 与 PR48 的逐文件对齐及剩余缺口](docs/canonical-baseline/README.md)。PR48 是历史旅程记录，后续验收集中到 PR47。完整验收与最终发布仍 HOLD。
+## 当前状态（先读这一段）
 
-用户于 2026-09-07 指定后续 GO 工作优先保存到 yuguangzhi3836-glitch/GO。
+HK-STAGING 自 2026-09-13 起运行 **DEPTH48 业务运行时**。唯一机器可读指针：
+[`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](docs/canonical-baseline/CURRENT_HK_RUNTIME.json)。
+
+- 业务源码：`application/`；构建定义：`application/Dockerfile`（`docker build -t <tag> application/`）
+- 运行 Compose：`deploy/hk-staging/docker-compose.business-runtime.yml`（8 个业务服务）
+- 环境契约：`deploy/hk-staging/RUNTIME_ENV_CONTRACT.md`（仅键名，无值）
+- 数据库 head：`0133_flight_change_plan`（PostgreSQL 18.4，551 表）
+- 保护非目标：caddy、redis、PostgreSQL/RDS 业务数据、媒体卷、HK Agent、Executor、签名密钥、Task/Evidence/ledger、Control Plane、SSH
+
+`CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` 是**源码输入／装配件**，其内层镜像不是业务运行镜像。
+`CP11_DEPTH46_CONSOLIDATED_PARENT_20260913` 与旧 R3.x 香港运行时均为**已被取代的历史运行时**。
+`hk-staging/`（2026-09-11）是**历史快照**，不是当前运行定义。
 
 历史候选：[DEPTH09 · 酒店建库准确性与复制复核](deliverables/CP11_DEPTH09_20260907/README.md)。
 
@@ -11,7 +22,7 @@
 DEPTH09 在 DEPTH08 上增加酒店身份、明确官网房型关系采集、逐房型照片核对、可靠页面版本切换、
 批次真实完成统计和管理写权限。更广一键建库流水线仍待完成。
 
-FINAL_RELEASE_GATE=HOLD；HOTEL_REPLICATION_GATE=HOLD。以上均为工程复核归档，未部署香港。
+FINAL_RELEASE_GATE=HOLD；HOTEL_REPLICATION_GATE=HOLD。以上均为工程复核归档。
 
 ## GO Command Center
 
@@ -19,11 +30,17 @@ FINAL_RELEASE_GATE=HOLD；HOTEL_REPLICATION_GATE=HOLD。以上均为工程复核
 
 该目录包含 Web Command Center 源码、现役 Boss Request Bridge 1.2.0、去敏配置、systemd/nginx 基线与源文件 SHA-256；不包含私钥、`.env` 实值、数据库、Token 或密码。
 
+**Control Plane 与 Business Runtime 是两条不同轴线。** 本目录与 `control-plane/`、`hk-staging/source/{agent,executor}` 属于 Control Plane；业务运行时看 `application/` + `deploy/hk-staging/`。
+
 ## HK-STAGING
 
 2026-09-11 现役 HK-STAGING 源码与运行配置归档：[`hk-staging/`](hk-staging/)。
 
 该目录区分当前运行镜像中的真实源码与服务器 host-side build context，包含现役 HK Agent、Executor 及四个 runtime、Compose、systemd、Caddy、去敏配置与 SHA-256 基线。它是源码/配置归档，不是 Execution Authority。
+
+> **该目录是上一代香港运行时的历史快照。** 业务运行时的当前定义在
+> [`deploy/hk-staging/`](deploy/hk-staging/)，当前运行状态见
+> [`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](docs/canonical-baseline/CURRENT_HK_RUNTIME.json)。
 
 Before any HK-STAGING deployment planning or execution, read
 [`docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md`](docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md).

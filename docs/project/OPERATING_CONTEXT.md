@@ -184,3 +184,27 @@ Codex 主执行              WorkBuddy 主执行
 8. **服务器连接能力 ≠ 部署授权。**
 9. **涉及 HK-STAGING / Command Center 时，必须读当前 Runbook，不能靠历史聊天和模型记忆。**
 10. **任何 AI 都不应擅自复制私钥、凭据、AccessKey、runtime `.env` 或其他秘密到 GitHub。**
+
+## 6. 当前业务运行状态速查（新会话 5 分钟上手）
+
+> 2026-09-13 起生效。唯一机器可读指针：
+> [`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](../canonical-baseline/CURRENT_HK_RUNTIME.json)。
+> 本节是导航，不是 Execution Authority。
+
+| 问题 | 答案 |
+| --- | --- |
+| 当前业务源码在哪里 | `application/` |
+| 当前 HK 运行的是什么 | **DEPTH48** 业务运行时（2026-09-13 上线） |
+| Dockerfile 在哪里 | `application/Dockerfile`，构建上下文就是 `application/` |
+| Compose 在哪里 | `deploy/hk-staging/docker-compose.business-runtime.yml` |
+| 当前 DB head | `0133_flight_change_plan`（PostgreSQL 18.4） |
+| 当前 8 个业务服务 | `api` + `outbox-worker` / `recovery-worker` / `reconciliation-worker` / `judgment-worker` / `mobile-engagement-worker` / `mobile-push-worker` / `mobile-push-receipt-worker` |
+| 哪些是 protected non-target | `caddy`、`redis`、PostgreSQL/RDS 业务数据、媒体持久卷、HK Agent、Executor、签名密钥、Task/Evidence/ledger、Control Plane authority、SSH、Production |
+| 怎么从 GitHub build | `docker build -t <tag> application/` |
+| 基本 smoke | `curl -fsS http://127.0.0.1:8000/health`；worker 模块可导入；`alembic heads` = `0133_flight_change_plan` |
+| 怎么运行 / 切换 | `deploy/hk-staging/README.md`（`--no-deps` + 显式 8 服务列表） |
+| 哪些已 superseded | DEPTH46 历史父包、旧 R3.x 香港运行时、`hk-staging/`（2026-09-11 快照） |
+| 什么不是 current authority | `deliverables/`、`evidence/` 中的历史证据；`CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` 的内层镜像（只是源码载体，不是可运行镜像） |
+| 两条轴线 | **Control Plane** = `command-center/`、`control-plane/`、`hk-staging/source/{agent,executor}`；**Business Runtime** = `application/` + `deploy/hk-staging/`。不要互相推断。 |
+
+不要从 PR 编号猜当前状态，也不要把历史 parent / sealed package / 归档快照当成 active runtime。

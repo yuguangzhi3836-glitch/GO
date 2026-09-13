@@ -1,0 +1,14 @@
+# Runtime build context exclusions.
+# Anything excluded here must not be required at runtime.
+.git
+.gitignore
+.pytest_cache
+**/__pycache__
+**/*.pyc
+**/*.pyo
+node_modules
+**/node_modules
+# Runtime data: the application caches under var/ relative to its cwd
+# (e.g. GO_MEDIA_CACHE_DIR default `var/media_cache`). Never ship it.
+var
+**/var/media_cache

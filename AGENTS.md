@@ -1,5 +1,35 @@
 # GO repository operating instructions
 
+## Current active runtime — read this before reasoning about HK-STAGING
+
+HK-STAGING runs the **DEPTH48 business runtime** since 2026-09-13. The single
+machine-readable pointer is `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`.
+
+Answer these from that file plus `deploy/hk-staging/README.md`, not from PR
+numbers, historical parents, or prior chat context:
+
+1. Business source: `application/`
+2. Active HK runtime generation: DEPTH48
+3. Build definition: `application/Dockerfile` (`docker build -t <tag> application/`)
+4. Compose: `deploy/hk-staging/docker-compose.business-runtime.yml`
+5. Database head: `0133_flight_change_plan` (PostgreSQL 18.4)
+6. Business services (8): `api`, `outbox-worker`, `recovery-worker`,
+   `reconciliation-worker`, `judgment-worker`, `mobile-engagement-worker`,
+   `mobile-push-worker`, `mobile-push-receipt-worker`
+7. Protected non-targets: `caddy`, `redis`, PostgreSQL/RDS business data, media
+   volumes, HK Agent, Executor, signing keys, Task/Evidence/ledger, Control
+   Plane authority data, SSH access, Production
+8. Build: see `deploy/hk-staging/README.md`
+9. Smoke: `curl -fsS http://127.0.0.1:8000/health`, worker entrypoints, `alembic heads`
+10. Superseded: DEPTH46 parent, old R3.x HK runtime, `hk-staging/` 2026-09-11
+    snapshot, and the `CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` image
+    (source input only, not a runnable business image)
+11. `deliverables/` and `evidence/` are historical evidence bound to their
+    original commit — not current authority
+12. **Control Plane and Business Runtime are two different axes.** Control Plane:
+    `command-center/`, `control-plane/`, `hk-staging/source/{agent,executor}`.
+    Business runtime: `application/` + `deploy/hk-staging/`.
+
 ## Read project operating context first
 
 Before taking over GO work, read:
@@ -31,7 +61,7 @@ Detailed workstation connection identities and recovery commands are maintained 
 Do not infer product generation from Pull Request number. In particular:
 
 - PR #40 is an HK-STAGING archive, **not DEPTH40**.
-- Current source work is DEPTH48, integrated through PR52; DEPTH46 remains the latest complete self-contained parent. Check current main and the live PR state before continuing.
+- Current source work is DEPTH48, integrated through PR52. DEPTH48 is now also the **active HK-STAGING business runtime**; its runtime definition is `application/Dockerfile` + `deploy/hk-staging/`. DEPTH46 is a **superseded historical** parent, not the current runtime. Check `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` for live runtime state.
 - Newer PR or higher DEPTH number does not automatically mean canonical. Check lineage, retained fixes, tests, acceptance evidence, deployment compatibility, and explicit HOLD/PASS boundaries.
 
 ## GO Command Center
@@ -47,6 +77,8 @@ The repository snapshot contains source and sanitized configuration only. It doe
 ## HK-STAGING Control Plane instructions
 
 The observed 2026-09-11 HK-STAGING runtime source and operational snapshot is under `hk-staging/`. Read `hk-staging/README.md` and `hk-staging/BASELINE_MANIFEST.md` when reasoning about the currently archived runtime source, Agent, Executor, Compose, systemd/Caddy configuration, or the documented live-vs-host build drift. This snapshot is evidence, not Execution Authority.
+
+`hk-staging/` is a **historical snapshot of the previous HK runtime generation**. The **active** business runtime definition is `application/Dockerfile` + `deploy/hk-staging/docker-compose.business-runtime.yml`; see `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`. Do not read the current business image, business source, or business service set from `hk-staging/`.
 
 Before any HK-STAGING Control Plane operation or planning—including
 `HK_STAGING_VERIFY`, `HK_STAGING_CANARY`, `HK_STAGING_DEPLOY`,

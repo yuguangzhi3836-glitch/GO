@@ -1,6 +1,53 @@
 # GO
 
-> Status refreshed 2026-09-12. This README is the repository entry point for current product lineage, project operating context, and operational-source boundaries. It is descriptive project context, not Execution Authority.
+> Status refreshed 2026-09-13. This README is the repository entry point for current product lineage, project operating context, and operational-source boundaries. It is descriptive project context, not Execution Authority.
+
+## CURRENT ACTIVE HK BUSINESS RUNTIME — DEPTH48
+
+HK-STAGING is running the DEPTH48 business runtime since **2026-09-13**. The
+machine-readable pointer is
+[`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](docs/canonical-baseline/CURRENT_HK_RUNTIME.json).
+
+```text
+business source    application/
+build definition   application/Dockerfile
+runtime compose    deploy/hk-staging/docker-compose.business-runtime.yml
+env contract       deploy/hk-staging/RUNTIME_ENV_CONTRACT.md
+runtime state      docs/canonical-baseline/CURRENT_HK_RUNTIME.json
+image              go-hotel:depth48-runtime-6d0fd905
+database head      0133_flight_change_plan  (PostgreSQL 18.4, 551 tables)
+business services  api + outbox / recovery / reconciliation / judgment /
+                   mobile-engagement / mobile-push / mobile-push-receipt workers
+protected          caddy, redis, PostgreSQL/RDS data, media volumes, HK Agent,
+                   Executor, signing keys, Task/Evidence/ledger, Control Plane, SSH
+```
+
+Build from a fresh clone, with no host-side file, previous parent, or sealed
+package:
+
+```sh
+docker build -t go-hotel:depth48-runtime application/
+```
+
+Read [`deploy/hk-staging/README.md`](deploy/hk-staging/README.md) before building,
+running, or cutting over the business runtime.
+
+### Status of the other lineage artifacts
+
+| Item | Status |
+| --- | --- |
+| `application/` on current main | **ACTIVE business source.** |
+| `deploy/hk-staging/` | **ACTIVE runtime definition.** |
+| `control-plane/`, `command-center/`, `hk-staging/source/{agent,executor}` | Separate **Control Plane** axis. Not the business runtime. |
+| `CP11_DEPTH46_CONSOLIDATED_PARENT_20260913` | **SUPERSEDED** historical runtime parent. |
+| old `R3.x` HK runtime images | **SUPERSEDED** historical HK runtime. |
+| `CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` | **SOURCE INPUT / ASSEMBLY ARTIFACT.** Its inner image carries source at `/opt/go/source/` and has no runtime entrypoint; it is not a runnable business image. |
+| `hk-staging/` (2026-09-11 snapshot) | **HISTORICAL SNAPSHOT.** Archive of the previous HK runtime generation; not active. |
+| `deliverables/`, `evidence/` | **HISTORICAL EVIDENCE**, bound to their original commit and scope. Not current authority. |
+
+Do not treat a historical parent, sealed package, or archived snapshot as the
+active runtime.
+
 
 ## Project operating context
 
@@ -32,9 +79,14 @@ Do not infer product generation from a Pull Request number.
 
 ## Current product working baseline — refreshed 2026-09-13
 
-本轮源码集成记录为 [PR52](https://github.com/yuguangzhi3836-glitch/GO/pull/52)，已纳入 DEPTH47 额度期限、DEPTH48 酒店金额与多航段改签、PR53 独立资金审计。当前应用树为 `ad7d1de1190f86ad29d1c6cdafbcedd592e27206`，1323 文件。本地 1796 项后端通过／6 项 PostgreSQL 跳过、270 项前端通过；六模块同单三角色接口、刷新／重登及独立 SQL 通过。详见 [本轮修复和明确边界](docs/canonical-baseline/DEPTH48_ORDERED_REPAIRS.md)。本轮已合成 [DEPTH48 源码父包](deliverables/CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913/README.md)，收进当前源码、证据及 DEPTH46 的 16 个原始分卷；[下载与清单指纹](docs/canonical-baseline/CURRENT_SOURCE_PARENT.json)。新运行镜像、完整三端可见页面和固定运行时 CI 仍待完成，状态为源码候选／HOLD。下列 DEPTH46 身份只描述已生成的历史运行父包，不代表本轮源码已进入该旧 ZIP。
+本轮源码集成记录为 [PR52](https://github.com/yuguangzhi3836-glitch/GO/pull/52)，已纳入 DEPTH47 额度期限、DEPTH48 酒店金额与多航段改签、PR53 独立资金审计。产品源码应用树仍为 `ad7d1de1190f86ad29d1c6cdafbcedd592e27206`，1323 文件。本地 1796 项后端通过／6 项 PostgreSQL 跳过、270 项前端通过；六模块同单三角色接口、刷新／重登及独立 SQL 通过。详见 [本轮修复和明确边界](docs/canonical-baseline/DEPTH48_ORDERED_REPAIRS.md)。
 
-PR47 was merged as `1c9847c82725b888d239686572f1f44b6dafc2cc` after isolated checks. DEPTH46 is the current independently restorable parent. DEPTH47 source repairs continue from that main commit; see [current module work](docs/canonical-baseline/DEPTH47_MODULE_BOUNDARIES.md) for its separate source identity and evidence.
+**本轮之后产品源码已不再只是候选**：DEPTH48 已作为业务运行时在 HK-STAGING 真实构建、启动、迁移并通过端到端健康检查。运行定义（`application/Dockerfile`、`deploy/hk-staging/`）已回写本仓库，当前状态见 [CURRENT_HK_RUNTIME.json](docs/canonical-baseline/CURRENT_HK_RUNTIME.json)。加上运行构建文件后的可运行应用树为 `06206c8127afb35de2f2307b6d0a529e54aa8f10`（1325 文件）——它与上面的 1323 文件产品源码树是两个不同身份，不要混用。
+
+`CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` 仍作为**源码输入／装配件**保留，其中的镜像不是业务运行镜像（只有 `COPY application/ /opt/go/source/`，无 CMD、无依赖安装）。[下载与清单指纹](docs/canonical-baseline/CURRENT_SOURCE_PARENT.json)。固定运行时 CI、完整三端可见页面、Sealed Node 与最终发布仍为 HOLD。下列 DEPTH46 身份只描述已生成的历史运行父包，已被当前 DEPTH48 运行时代替。
+
+
+PR47 was merged as `1c9847c82725b888d239686572f1f44b6dafc2cc` after isolated checks. **DEPTH46 is now a SUPERSEDED historical runtime parent** — it was replaced on HK-STAGING by the DEPTH48 runtime on 2026-09-13. It remains the last complete independently restorable *historical* parent and is retained for audit, not as the active runtime. See [current module work](docs/canonical-baseline/DEPTH47_MODULE_BOUNDARIES.md) for its separate source identity and evidence.
 
 - DEPTH46 packaged application source: `a09a32e8cc6da10785e8bcf6be025013aec50931`.
 - Application Git tree: `365b848d419ca5517b2cf711c271694bde346e33`; 1311 files.
@@ -45,7 +97,7 @@ PR47 was merged as `1c9847c82725b888d239686572f1f44b6dafc2cc` after isolated che
 
 The new parent combines the unchanged DEPTH45 application with a rebuilt, source-bound image and an independently preserved PR51 deployment-entry supplement. The supplement remains disabled and uninstalled. Package build/restore and archive results are recorded separately from application CI. DEPTH46 package build and restore passed; its 314,723,816-byte ZIP has SHA256 `cc9b16be9555a2499db29a9ce0ebc25879fedd2953577bedc1f5e6e833451ce9`. All 16 archive parts were read back. Build run 34718705172 succeeded at the build step and failed later because the branch moved; independent archive run 34719241031 succeeded. [Parent identity](docs/canonical-baseline/CURRENT_PARENT.json) records these separately.
 
-Full three-end UX, physical devices, PostgreSQL, complete Sealed Node and external provider/bank acceptance remain separate unfinished scopes. Source integration is not final release acceptance. Hong Kong and Production remain HOLD; their running source differs from this application candidate. PR48 is historical source/evidence and is not a parallel development baseline.
+Full three-end UX, physical devices, PostgreSQL, complete Sealed Node and external provider/bank acceptance remain separate unfinished scopes. Source integration is not final release acceptance. Production remains HOLD. The HK-STAGING business runtime is no longer "HOLD": it is running DEPTH48 as of 2026-09-13 — see [CURRENT_HK_RUNTIME.json](docs/canonical-baseline/CURRENT_HK_RUNTIME.json). PR48 is historical source/evidence and is not a parallel development baseline.
 
 ## PR #40 and later: classification
 
@@ -82,6 +134,9 @@ Operational reference: [`docs/control-plane/command-center/README.md`](docs/cont
 ## HK-STAGING source and operations
 
 The observed 2026-09-11 HK-STAGING runtime source, Agent, Executor, Compose, systemd, Caddy configuration, sanitized configuration, and source/build identity evidence are archived under [`hk-staging/`](hk-staging/). This archive is descriptive evidence only and is not Execution Authority.
+
+**`hk-staging/` is a HISTORICAL SNAPSHOT of the previous HK runtime generation.** It is not the active business runtime. The active runtime definition lives in [`deploy/hk-staging/`](deploy/hk-staging/). Use `hk-staging/` for Agent/Executor and control-plane reasoning; do not use it to determine the current business image, business source, or business service set.
+
 
 Before any HK-STAGING deployment, rollback, verification planning, execution, or Boss GPT/mobile control request, read [`docs/control-plane/hk-staging/README.md`](docs/control-plane/hk-staging/README.md) and the action-specific guidance it links.
 
