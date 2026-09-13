@@ -42,5 +42,17 @@
   "source_composite_packaged": true,
   "source_composite_parent": "CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913",
   "source_composite_index": "docs/canonical-baseline/CURRENT_SOURCE_PARENT.json",
-  "new_runtime_rebuilt": false
+  "new_runtime_rebuilt": false,
+  "pointer_scope": "SOURCE_LINEAGE_POINTER",
+  "pointer_note": "This file records the PR52 source-integration moment and is a SOURCE LINEAGE pointer, not the runtime pointer. For the active business runtime use docs/canonical-baseline/CURRENT_HK_RUNTIME.json.",
+  "runtime_pointer": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+  "runtime_status_20260913": {
+    "note": "Written 2026-09-13. Does not rewrite the historical fields above.",
+    "new_runtime_rebuilt": true,
+    "runtime_generation": "DEPTH48",
+    "image_tag": "go-hotel:depth48-runtime-6d0fd905",
+    "hk_staging": "DEPTH48_ACTIVE",
+    "database_head": "0133_flight_change_plan",
+    "runtime_definition": "application/Dockerfile + deploy/hk-staging/docker-compose.business-runtime.yml"
+  }
 }

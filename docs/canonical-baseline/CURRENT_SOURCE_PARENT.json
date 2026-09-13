@@ -26,5 +26,10 @@
   "new_runtime": "NOT_BUILT",
   "self_contained_runtime_parent": false,
   "final_release": "HOLD",
-  "evidence": "evidence/depth48-source-composite/GIT_OBJECT_READBACK.json"
+  "evidence": "evidence/depth48-source-composite/GIT_OBJECT_READBACK.json",
+  "pointer_scope": "SOURCE_INPUT_AND_ASSEMBLY_ARTIFACT",
+  "pointer_note": "This package is a SOURCE INPUT / assembly artifact. Its inner image only carries source at /opt/go/source/ and has no CMD, entrypoint, or dependency install, so it is not a runnable business image. For the active business runtime use docs/canonical-baseline/CURRENT_HK_RUNTIME.json.",
+  "runtime_pointer": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+  "superseded_by_runtime": "go-hotel:depth48-runtime-6d0fd905",
+  "pointer_status": "SOURCE_COMPOSITE_CANDIDATE_NOT_A_RUNTIME"
 }
