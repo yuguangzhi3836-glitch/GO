@@ -1,0 +1,33 @@
+{
+  "schema_version": "1",
+  "candidate": "boss-deploy-request-v1 / bridge 1.4.0-candidate",
+  "repository": "yuguangzhi3836-glitch/GO",
+  "base_main_commit": "9645c6f522544d0751ee658e0ab9f131043e7df2",
+  "bridge_sources": [
+    {
+      "commit": "9645c6f522544d0751ee658e0ab9f131043e7df2",
+      "path": "command-center/source/bridge/go-boss-request-bridge",
+      "version": "1.2",
+      "sha256": "3a23d4fb5ab7946fc6dcca15fb3450d14f6f896f6c2289ad3a0aa0e8bf0fc129",
+      "usage": "observed archived baseline, unchanged"
+    },
+    {
+      "commit": "1656148f4bab69820bae74e54356d0e87ace4ad2",
+      "path": "control-plane/boss-test-pr-live-integration-v1/command-center/go-boss-request-bridge",
+      "version": "1.3 source candidate (embedded version label remains 1.2)",
+      "sha256": "523a548b43731095fdc9634ab31d46c380dd7f3427d8253c804ff0024aa6e33f",
+      "usage": "direct source base; running bytes not verified in this turn"
+    }
+  ],
+  "archived_hk_contracts": {
+    "deployment_actions.py": "7400ef03caf9473db73eccca5206233c81707ae742547489f0ed93728e5b323e",
+    "transport.py": "4301a7e920fc25d98ea8403ac00ebbdb6a864bcb092d33caf343ad28603ff490",
+    "go-hk-deployctl": "323c30a7dda9bfa86c45a505854022ee161ef85b3bf41673c018987c88028388",
+    "deploy_runtime.py": "bbe2fefc471b637c625405a2ef8b18d40712040d3331b7a7a732388d51099516",
+    "DEPLOY_OPERATION_CONTRACT.json": "5e0db0e0ef1aeb77fa17b279f42837ea44648ef5e58ab2fb42ae1593831c382a"
+  },
+  "authorization": "user: 现在补齐布署请求入口; source implementation and isolated verification",
+  "installation_performed": false,
+  "deployment_performed": false,
+  "different_image_formal_hk_e2e": "NOT_PROVEN"
+}
