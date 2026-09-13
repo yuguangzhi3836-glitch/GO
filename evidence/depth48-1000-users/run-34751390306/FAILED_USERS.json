@@ -1,0 +1,362 @@
+[
+  {
+    "user_index": 301,
+    "vertical": "HOTEL",
+    "user_id": "usr_8111503d8a4e499bbc18fccd90d1d1e7",
+    "session_id": "a75279ed-74a8-4e06-9a72-c3b4ee55784d",
+    "order_id": "ord_5ba72544a7c34559",
+    "error": "THREE_ROLE_SAME_ORDER_FAILED",
+    "failed_checks": [
+      {
+        "name": "three-role-same-order",
+        "started_at": "2026-09-13T10:47:19.515Z",
+        "result": "FAIL",
+        "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('#view').getByText('ord_5ba72544a7c34559', { exact: true }).first() to be visible\n",
+        "visible_text": "← GO Trips\nGO Hotel\n已取消\n订单号\nord_5ba72544a7c34559\n确认号\nMOCK-5B42982F76\n金额\n¥14,432.00\n入住\n2026-10-13 → 2026-10-15\n查看本单已确认的退改规则\n取消与退款\n\n处理完成\n\n本次处理时累计付款（含补款）\n¥14,432.00\n本次处理时累计退款\n¥14,432.00\n原路退款已完成\n¥14,432.00\n管理订单\n改期 + 补差价\n查看本店住宿额度转换\n取消 / 查看退款\n订单时间线\n订单已创建\n2026/9/13 10:47:14\n订单记录已更新\n2026/9/13 10:47:14\n支付已授权\n2026/9/13 10:47:16\n订单记录已更新\n2026/9/13 10:47:16\n订单记录已更新\n2026/9/13 10:47:16\n支付已完成\n2026/9/13 10:47:16\n预订已确认\n2026/9/13 10:47:16\n订单记录已更新\n2026/9/13 10:47:17\n订单记录已更新\n2026/9/13 10:47:18\n订单记录已更新\n2026/9/13 10:47:18\n订单记录已更新\n2026/9/13 10:47:18\n退款已完成\n2026/9/13 10:47:18\n首页\n行程\n收藏\n消息\n我的",
+        "finished_at": "2026-09-13T10:47:38.719Z",
+        "screenshot": "001-three-role-same-order.png"
+      }
+    ],
+    "admin_network": [
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:02.283Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruption-candidates",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:02.589Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruptions",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:26.822Z",
+        "method": "GET",
+        "path": "/internal/v1/admin/operations/verticals/HOTEL",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "user_index": 302,
+    "vertical": "FLIGHT",
+    "user_id": "usr_1ce5b508b934406a811f640275d871d1",
+    "session_id": "f1e340d1-4b87-4510-9245-2eb37884f9e7",
+    "order_id": "flt_ord_b80197d0d7cc4bf6",
+    "error": "THREE_ROLE_SAME_ORDER_FAILED",
+    "failed_checks": [
+      {
+        "name": "three-role-same-order",
+        "started_at": "2026-09-13T10:47:20.091Z",
+        "result": "FAIL",
+        "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('#view').getByText('flt_ord_b80197d0d7cc4bf6', { exact: true }).first() to be visible\n",
+        "visible_text": "返回首页\n机票订单\n你的完整行程。\n01\nSHA → PEK\n2026-10-13\n\nGO 718 · 09:20–13:15 · 3小时55分\n\n托运 23 kg\n可退 · 费用 ¥400.00\n票价规则允许改签\n该程含税 ¥9,360.00\n02\nPEK → SHA\n2026-10-18\n\nGO 718 · 09:20–13:15 · 3小时55分\n\n托运 23 kg\n可退 · 费用 ¥400.00\n票价规则允许改签\n该程含税 ¥9,360.00\n值机与登机牌\n\n每位乘机人的每一程，分别核对。\n\n第 1 程 · SHA → PEK\n\n2026-10-13 · GO TEST ADULT A\n\n等待航空公司信息\n第 1 程 · SHA → PEK\n\n2026-10-13 · GO TEST ADULT B\n\n等待航空公司信息\n第 2 程 · PEK → SHA\n\n2026-10-18 · GO TEST ADULT A\n\n等待航空公司信息\n第 2 程 · PEK → SHA\n\n2026-10-18 · GO TEST ADULT B\n\n等待航空公司信息\n\n当前为模拟体验，不能用于实际出行。信息未核实时不会显示为已值机。\n\n刷新值机状态\n订单状态\n已退款\n¥18,720.00\n\n预订编号 等待出票确认\n\n乘机人 GO TEST ADULT A、GO TEST ADULT B\n\n票号 尚未出票\n\n当前为模拟订单，不可实际出行。\n\n选择航段改签\n查看全程退票费用\n查看全部行程\nGO · 让旅行回归清晰与从容",
+        "finished_at": "2026-09-13T10:47:38.709Z",
+        "screenshot": "001-three-role-same-order.png"
+      }
+    ],
+    "admin_network": [
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:01.982Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruption-candidates",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:02.022Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruptions",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:26.836Z",
+        "method": "GET",
+        "path": "/internal/v1/admin/operations/verticals/FLIGHT",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "user_index": 303,
+    "vertical": "RAIL",
+    "user_id": "usr_835d62d9c3194fd78951ffc430ab104e",
+    "session_id": "9d35d318-152e-4536-9b5b-6207ba853fe8",
+    "order_id": "rail_ord_0d684864328c4b0b",
+    "error": "THREE_ROLE_SAME_ORDER_FAILED",
+    "failed_checks": [
+      {
+        "name": "three-role-same-order",
+        "started_at": "2026-09-13T10:47:15.723Z",
+        "result": "FAIL",
+        "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('#view').getByText('rail_ord_0d684864328c4b0b', { exact: true }).first() to be visible\n",
+        "visible_text": "火车票订单\n\n支付已开始，占位继续保留；处理结果未明时，请继续核对原支付。\n\n状态\n已退款\n车次\nG7315\n席别\nSECOND_CLASS\n预订号\n—\n人数 / 含税总价\n2 人 · ¥147.00\n\n隔离测试订单，不能用于实际乘车。\n\n改签退票GO Trips\n证据链\n#1 ORDER_CREATED\nPAYMENT_PENDING\n#2 VAULT_BOOKING_DATA_RELEASED\nPAYMENT_PENDING\n#3 SUPPLIER_CONFIRMED\nTICKETED\n#4 REFUND_REQUESTED\nREFUND_PENDING\n#5 REFUND_COMPLETED\nREFUNDED\n首页\n行程\n收藏\n消息\n我的",
+        "finished_at": "2026-09-13T10:47:34.247Z",
+        "screenshot": "001-three-role-same-order.png"
+      }
+    ],
+    "admin_network": [
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:00.048Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruption-candidates",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:00.066Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruptions",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:22.589Z",
+        "method": "GET",
+        "path": "/internal/v1/admin/operations/verticals/RAIL",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "user_index": 304,
+    "vertical": "RIDE",
+    "user_id": "usr_1980f62f690f4878a3f454d2cd50a721",
+    "session_id": "b2a0126e-277f-4c89-91bc-152a912e4ca1",
+    "order_id": "ride_ord_c96f9c8cda314fbf",
+    "error": "THREE_ROLE_SAME_ORDER_FAILED",
+    "failed_checks": [
+      {
+        "name": "three-role-same-order",
+        "started_at": "2026-09-13T10:47:15.347Z",
+        "result": "FAIL",
+        "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('#view').getByText('ride_ord_c96f9c8cda314fbf', { exact: true }).first() to be visible\n",
+        "visible_text": "接送订单\n状态\n已退款\n车型\nCOMFORT\n行程\nPVG → 上海外滩\n供应确认\n—\n修改时间确认上车确认送达取消并退款\n证据链\n#1 ORDER_CREATED\nPAYMENT_PENDING\n#2 VAULT_BOOKING_DATA_RELEASED\nPAYMENT_PENDING\n#3 SUPPLIER_CONFIRMED\nCONFIRMED\n#4 REFUND_CONSENT_FROZEN\nCONFIRMED\n#5 REFUND_REQUESTED\nREFUND_PENDING\n#6 REFUND_COMPLETED\nREFUNDED\n首页\n行程\n收藏\n消息\n我的\n航班与接送安排\n\n已确认接车时间 2026-10-13T10:00\n\n关联航班后，可跟进抵达时间的变化。\n\n当前为模拟体验，未连接真实车队。\n\n刷新接送安排",
+        "finished_at": "2026-09-13T10:47:32.488Z",
+        "screenshot": "001-three-role-same-order.png"
+      }
+    ],
+    "admin_network": [
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:46:59.563Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruption-candidates",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:46:59.564Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruptions",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:20.882Z",
+        "method": "GET",
+        "path": "/internal/v1/admin/operations/verticals/RIDE",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "user_index": 305,
+    "vertical": "RENTAL",
+    "user_id": "usr_67fb63d243af473eb94e24f4c4db91bf",
+    "session_id": "715317b6-9e8d-446c-92ac-0ee700576ac2",
+    "order_id": "rent_ord_4c5875a62baf4f82",
+    "error": "THREE_ROLE_SAME_ORDER_FAILED",
+    "failed_checks": [
+      {
+        "name": "three-role-same-order",
+        "started_at": "2026-09-13T10:47:16.568Z",
+        "result": "FAIL",
+        "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('#view').getByText('rent_ord_4c5875a62baf4f82', { exact: true }).first() to be visible\n",
+        "visible_text": "租车订单\n状态\n已退款\n车型\nCOMPACT\n保险\nBASIC\n押金\n¥2,000.00\n供应确认\n—\n修改时间确认取车确认还车取消并退款\n证据链\n#1 ORDER_CREATED\nPAYMENT_PENDING\n#2 VAULT_BOOKING_DATA_RELEASED\nPAYMENT_PENDING\n#3 SUPPLIER_CONFIRMED\nCONFIRMED\n#4 REFUND_CONSENT_FROZEN\nCONFIRMED\n#5 REFUND_REQUESTED\nREFUND_PENDING\n#6 REFUND_COMPLETED\nREFUNDED\n首页\n行程\n收藏\n消息\n我的\n取还车安排\n\nNRT · 2026-10-13T10:00\n\nNRT · 2026-10-15T10:00\n\n当前订单总价\n¥840.00",
+        "finished_at": "2026-09-13T10:47:35.522Z",
+        "screenshot": "001-three-role-same-order.png"
+      }
+    ],
+    "admin_network": [
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:46:59.564Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruptions",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:46:59.596Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruption-candidates",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:23.720Z",
+        "method": "GET",
+        "path": "/internal/v1/admin/operations/verticals/RENTAL",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "user_index": 306,
+    "vertical": "ATTRACTION",
+    "user_id": "usr_9c706e8502cd4b52b44300fa0abc7d45",
+    "session_id": "cdc5c54d-679c-443b-bfd9-b25ba777d8be",
+    "order_id": "attr_ord_dbb343ee073746fb",
+    "error": "THREE_ROLE_SAME_ORDER_FAILED",
+    "failed_checks": [
+      {
+        "name": "three-role-same-order",
+        "started_at": "2026-09-13T10:47:19.797Z",
+        "result": "FAIL",
+        "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('#view').getByText('attr_ord_dbb343ee073746fb', { exact: true }).first() to be visible\n",
+        "visible_text": "门票 / 体验订单\n\n支付已开始，占位继续保留；处理结果未明时，请继续核对原支付。\n\n状态\n已退款\n产品\n东京晴空塔天望甲板\n日期 / 场次\n2026-10-13 16:00\n人数 / 含税总价\n2 人 · ¥360.00\n核销凭证\n—\n改期确认核销退款\n证据链\n#1 ORDER_CREATED\nPAYMENT_PENDING\n#2 VAULT_BOOKING_DATA_RELEASED\nPAYMENT_PENDING\n#3 SUPPLIER_CONFIRMED\nCONFIRMED\n#4 REFUND_REQUESTED\nREFUND_PENDING\n#5 REFUND_COMPLETED\nREFUNDED\n首页\n行程\n收藏\n消息\n我的",
+        "finished_at": "2026-09-13T10:47:38.760Z",
+        "screenshot": "001-three-role-same-order.png"
+      }
+    ],
+    "admin_network": [
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:01.825Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruption-candidates",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:02.022Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruptions",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:26.824Z",
+        "method": "GET",
+        "path": "/internal/v1/admin/operations/verticals/ATTRACTION",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "user_index": 307,
+    "vertical": "HOTEL",
+    "user_id": "usr_376ebdb20e3e4d68b7330aa7375509a8",
+    "session_id": "76b30289-9193-418f-9a61-3673b462e299",
+    "order_id": "ord_89ed98ca83d84f0f",
+    "error": "THREE_ROLE_SAME_ORDER_FAILED",
+    "failed_checks": [
+      {
+        "name": "three-role-same-order",
+        "started_at": "2026-09-13T10:47:17.855Z",
+        "result": "FAIL",
+        "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('#view').getByText('ord_89ed98ca83d84f0f', { exact: true }).first() to be visible\n",
+        "visible_text": "← GO Trips\nGO Hotel\n已取消\n订单号\nord_89ed98ca83d84f0f\n确认号\nMOCK-FC17913FEC\n金额\n¥14,432.00\n入住\n2026-10-13 → 2026-10-15\n查看本单已确认的退改规则\n取消与退款\n\n处理完成\n\n本次处理时累计付款（含补款）\n¥14,432.00\n本次处理时累计退款\n¥14,432.00\n原路退款已完成\n¥14,432.00\n管理订单\n改期 + 补差价\n查看本店住宿额度转换\n取消 / 查看退款\n订单时间线\n订单已创建\n2026/9/13 10:47:12\n订单记录已更新\n2026/9/13 10:47:12\n支付已授权\n2026/9/13 10:47:14\n订单记录已更新\n2026/9/13 10:47:14\n订单记录已更新\n2026/9/13 10:47:14\n支付已完成\n2026/9/13 10:47:14\n预订已确认\n2026/9/13 10:47:14\n订单记录已更新\n2026/9/13 10:47:15\n订单记录已更新\n2026/9/13 10:47:16\n订单记录已更新\n2026/9/13 10:47:16\n订单记录已更新\n2026/9/13 10:47:16\n退款已完成\n2026/9/13 10:47:16\n首页\n行程\n收藏\n消息\n我的",
+        "finished_at": "2026-09-13T10:47:36.300Z",
+        "screenshot": "001-three-role-same-order.png"
+      }
+    ],
+    "admin_network": [
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:01.792Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruptions",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:01.820Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruption-candidates",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:24.439Z",
+        "method": "GET",
+        "path": "/internal/v1/admin/operations/verticals/HOTEL",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "user_index": 308,
+    "vertical": "FLIGHT",
+    "user_id": "usr_2eddd94f95da496f929ea75250256e61",
+    "session_id": "33abd59a-8b64-428b-a663-a72f6c232e3d",
+    "order_id": "flt_ord_b2e3ac29e9124e42",
+    "error": "THREE_ROLE_SAME_ORDER_FAILED",
+    "failed_checks": [
+      {
+        "name": "three-role-same-order",
+        "started_at": "2026-09-13T10:47:19.717Z",
+        "result": "FAIL",
+        "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator('#view').getByText('flt_ord_b2e3ac29e9124e42', { exact: true }).first() to be visible\n",
+        "visible_text": "返回首页\n机票订单\n你的完整行程。\n01\nSHA → PEK\n2026-10-13\n\nGO 718 · 09:20–13:15 · 3小时55分\n\n托运 23 kg\n可退 · 费用 ¥400.00\n票价规则允许改签\n该程含税 ¥9,360.00\n02\nPEK → SHA\n2026-10-18\n\nGO 718 · 09:20–13:15 · 3小时55分\n\n托运 23 kg\n可退 · 费用 ¥400.00\n票价规则允许改签\n该程含税 ¥9,360.00\n值机与登机牌\n\n每位乘机人的每一程，分别核对。\n\n第 1 程 · SHA → PEK\n\n2026-10-13 · GO TEST ADULT A\n\n等待航空公司信息\n第 1 程 · SHA → PEK\n\n2026-10-13 · GO TEST ADULT B\n\n等待航空公司信息\n第 2 程 · PEK → SHA\n\n2026-10-18 · GO TEST ADULT A\n\n等待航空公司信息\n第 2 程 · PEK → SHA\n\n2026-10-18 · GO TEST ADULT B\n\n等待航空公司信息\n\n当前为模拟体验，不能用于实际出行。信息未核实时不会显示为已值机。\n\n刷新值机状态\n订单状态\n已退款\n¥18,720.00\n\n预订编号 等待出票确认\n\n乘机人 GO TEST ADULT A、GO TEST ADULT B\n\n票号 尚未出票\n\n当前为模拟订单，不可实际出行。\n\n选择航段改签\n查看全程退票费用\n查看全部行程\nGO · 让旅行回归清晰与从容",
+        "finished_at": "2026-09-13T10:47:38.363Z",
+        "screenshot": "001-three-role-same-order.png"
+      }
+    ],
+    "admin_network": [
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:01.133Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruptions",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:01.133Z",
+        "method": "GET",
+        "path": "/internal/v1/hosted-direct/disruption-candidates",
+        "status": 200
+      },
+      {
+        "role": "admin",
+        "width": 1440,
+        "time": "2026-09-13T10:47:26.410Z",
+        "method": "GET",
+        "path": "/internal/v1/admin/operations/verticals/FLIGHT",
+        "status": 200
+      }
+    ]
+  }
+]
