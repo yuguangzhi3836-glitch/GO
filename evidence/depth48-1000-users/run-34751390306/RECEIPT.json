@@ -1,0 +1,159 @@
+{
+  "schema": "go.depth48-1000-reviewed-receipt.v1",
+  "result": "HOLD_TARGET_NOT_REACHED",
+  "canonical_main": "286e294d92df4b7d1c0073116a8e628734abec6c",
+  "application_git_tree": "3025b2b6b36ea9211da561a4631f304216de9d90",
+  "application_source_sha256": "d90a9e26c3a64b98009aaf170056f4b3acfa6acebd41baaed276b7baf17c6925",
+  "verified_source_files": 1325,
+  "run_id": 34751390306,
+  "job_id": 103708426771,
+  "attempt": 1,
+  "checked_out_harness_head": "f26d27ccafc428d18159677ccd6e7701aaf8480a",
+  "github_event_merge_sha": "c9c69603000b9239b8598de7a1a15987907ebd7e",
+  "metadata_note": "Original source-binding field harness_commit contains GITHUB_SHA (the event merge SHA). Checkout logs bind the actual head separately. Original evidence is preserved verbatim.",
+  "environment": "GITHUB_HOSTED_ISOLATED_SQLITE_CHROMIUM",
+  "browser": "Chromium 140.0.7339.186",
+  "node": "22.22.0",
+  "python": "3.13.5",
+  "session_id": "781e5902-12a9-46fc-b465-6144e6fa1333",
+  "hostname": "runnervmlun5p",
+  "started_at": "2026-09-13T10:18:23.638Z",
+  "finished_at": "2026-09-13T10:47:39.427Z",
+  "requested_users": 1000,
+  "attempted_unique_users": 308,
+  "full_journey_passed": 300,
+  "failed_users": 8,
+  "not_attempted": 692,
+  "modules": {
+    "HOTEL": {
+      "attempted": 52,
+      "passed": 50
+    },
+    "FLIGHT": {
+      "attempted": 52,
+      "passed": 50
+    },
+    "RAIL": {
+      "attempted": 51,
+      "passed": 50
+    },
+    "RIDE": {
+      "attempted": 51,
+      "passed": 50
+    },
+    "RENTAL": {
+      "attempted": 51,
+      "passed": 50
+    },
+    "ATTRACTION": {
+      "attempted": 51,
+      "passed": 50
+    }
+  },
+  "stages": [
+    {
+      "users": 6,
+      "concurrency": 1,
+      "started_at": "2026-09-13T10:18:23.833Z",
+      "attempted": 6,
+      "finished_at": "2026-09-13T10:19:08.898Z",
+      "result": "PASS"
+    },
+    {
+      "users": 54,
+      "concurrency": 2,
+      "started_at": "2026-09-13T10:19:08.898Z",
+      "attempted": 54,
+      "finished_at": "2026-09-13T10:24:11.774Z",
+      "result": "PASS"
+    },
+    {
+      "users": 240,
+      "concurrency": 4,
+      "started_at": "2026-09-13T10:24:11.774Z",
+      "attempted": 240,
+      "finished_at": "2026-09-13T10:46:44.912Z",
+      "result": "PASS"
+    },
+    {
+      "users": 700,
+      "concurrency": 8,
+      "started_at": "2026-09-13T10:46:44.912Z",
+      "attempted": 8,
+      "finished_at": "2026-09-13T10:47:39.314Z",
+      "result": "STOPPED_ON_FAILURE"
+    }
+  ],
+  "latency": {
+    "scope": "same-origin browser API requests; responseEnd milliseconds",
+    "samples": 20733,
+    "p50_ms": 123.948,
+    "p95_ms": 365.997,
+    "p99_ms": 559.381
+  },
+  "latency_note": "Browser API observation sample, not HK service latency or a capacity acceptance threshold.",
+  "three_role_login_checks_passed": 924,
+  "detail_viewport_checks_passed": 3664,
+  "independent_ledger": {
+    "result": "PASS",
+    "orders": 308,
+    "capture_count_each": 1,
+    "refund_count_each": 1,
+    "duplicate_refund_observed": false
+  },
+  "preflight": {
+    "browser_checks_passed": 53,
+    "detail_viewports_passed": 72,
+    "six_order_ledger": "PASS",
+    "hotel_change_ledger": "PASS",
+    "included_in_1000_user_count": false
+  },
+  "blocker": {
+    "code": "ADMIN_VERTICAL_LIST_SAMPLE_LIMIT_50",
+    "affected_gate": "THREE_END_VISIBLE_SAME_ORDER",
+    "observed": "All user 301-308 journeys timed out locating the new order in the admin vertical page after successful consumer payment/refund and supplier detail.",
+    "source_evidence": "operations_console._sample uses SELECT model LIMIT 50 without ORDER BY. vertical_snapshot exposes no pagination/order query. frontend adminVertical renders only that sampled response and no pagination.",
+    "source_files": {
+      "src/go_hotel/api/routes/operations_console.py": "bd86fafa9740a25d1ed3ab7848e192a2cf1b21f30e643f19654d01603a0f3847",
+      "frontend/shared/app.js": "6b665ed41a5361a0ccb3e61947ec4bd8dc2ef4822c0250a7202bdb511dfc11b2"
+    },
+    "capacity_claim": "NOT_ESTABLISHED; the 50-per-module boundary coincides with the 4-to-8 concurrency transition, so this is not a measured 300-user or 8-concurrent capacity limit.",
+    "evidence_limit": "The first harness captured the consumer page on combined three-role failure. The exact failed admin-page screenshot and operations response body were not archived. Timed-out admin selectors, HTTP 200 observations, and matching source are retained."
+  },
+  "server_http_observations": {
+    "requests": 125299,
+    "status_counts": {
+      "200": 123708,
+      "401": 924,
+      "201": 667
+    },
+    "http_5xx": 0,
+    "auth_note": "401 observations occur on unauthenticated page-entry identity probes; not counted as authenticated journey failures."
+  },
+  "source_unchanged_after": true,
+  "artifact": {
+    "id": 10316761647,
+    "files": 882,
+    "screenshots": 245,
+    "bytes": 41851774,
+    "sha256": "f9704eaa6efd4832e60ab4501b2c77209b02672d60f5eea74313b089a7b3fcee",
+    "file_hashes_read_back": 880,
+    "hash_mismatches": 0,
+    "expires_at": "2026-12-12T10:15:48Z",
+    "url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34751390306/artifacts/10316761647"
+  },
+  "next_action": "Fix stable pagination and exact-order retrieval on the admin vertical surface on a separately identified candidate, then resume the 1000-user acceptance; keep this DEPTH48 evidence unchanged.",
+  "hong_kong": "NOT_ACCESSED",
+  "production": "NOT_ACCESSED",
+  "business_source_modified": false,
+  "not_certified": [
+    "1000-user completion",
+    "1000 concurrent users",
+    "HK runtime capacity",
+    "PostgreSQL browser E2E",
+    "native devices",
+    "official hotel content completeness",
+    "sealed Node gate",
+    "final release"
+  ]
+}
