@@ -68,6 +68,12 @@ def isolated_environment(state, credentials, inherited):
         'MFA_REQUIRED_FOR_ADMIN': 'false', 'COOKIE_SECURE': 'false',
         'MOBILE_PUSH_MODE': 'mock', 'OUTBOX_TRANSPORT': 'logging',
         'PYTHONDONTWRITEBYTECODE': '1',
+        # Runtime caches must never be written inside the product source tree.
+        # MediaHarvesterService defaults GO_MEDIA_CACHE_DIR to the relative path
+        # `var/media_cache`, i.e. relative to the process cwd. The isolated
+        # acceptance runtime deliberately runs with the source tree as cwd, so
+        # bind every runtime cache to the isolated state directory instead.
+        'GO_MEDIA_CACHE_DIR': str(state / 'media_cache'),
     })
     return env
 
