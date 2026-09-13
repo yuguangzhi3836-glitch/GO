@@ -40,6 +40,23 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Three actor API refresh relogin and independent SQL audit
         run: python -B ci/journey-v2/same_order_api.py journey-evidence/same-order-api journey-evidence/source-binding.json
+      - name: DIAGNOSTIC source pollution probe
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess
+          root = pathlib.Path('.').resolve()
+          fp = json.loads((root/'journey-evidence/source-fingerprint.json').read_text())
+          r = root/'application'
+          act = {p.relative_to(r).as_posix() for p in r.rglob('*') if p.is_file() and not p.is_symlink()}
+          print('DIAG fp_count       =', len(fp))
+          print('DIAG actual_count   =', len(act))
+          print('DIAG EXTRA          =', sorted(act-set(fp))[:40])
+          print('DIAG MISSING        =', sorted(set(fp)-act)[:40])
+          print('DIAG rglob_entries  =', sorted(str(p.relative_to(r)) for p in r.rglob('*'))[:60])
+          print('DIAG git_status     =', subprocess.run(['git','status','--porcelain','application'],capture_output=True,text=True).stdout[:2000])
+          print('DIAG untracked      =', subprocess.run(['git','ls-files','--others','--exclude-standard','application'],capture_output=True,text=True).stdout[:2000])
+          PY
       - name: Consumer supplier administrator same-order journeys
         run: python -B ci/journey-v2/run.py
       - name: Hash public evidence
