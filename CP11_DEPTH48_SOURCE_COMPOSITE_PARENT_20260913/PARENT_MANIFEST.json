@@ -1,0 +1,73 @@
+{
+  "application": {
+    "business_source_modified_this_assembly": false,
+    "files": 1323,
+    "fingerprint_path": "docs/canonical-baseline/DEPTH48_SOURCE_FINGERPRINT.json",
+    "git_tree": "ad7d1de1190f86ad29d1c6cdafbcedd592e27206",
+    "image_placeholders_used": false,
+    "source_commit": "8a22a4fcbba4574f5a06e356e461d7d083c86ae1",
+    "source_tree_sha256": "8e91fcf25e66478d5dac105c2608a195a98290640f2ecbfcec24fda27f212ac8"
+  },
+  "assembly_method": "GIT_OBJECT_COMPOSITION",
+  "created_date": "2026-09-13",
+  "evidence": {
+    "application_tests_rerun_this_assembly": false,
+    "browser_rerun_this_assembly": false,
+    "ci": "PRIOR_FAILED_BEFORE_STEPS_NO_NEW_PASS_CLAIM",
+    "full_package_byte_verification": "NOT_RUN_IN_CURRENT_ENVIRONMENT",
+    "full_package_restore": "NOT_RUN_IN_CURRENT_ENVIRONMENT",
+    "historical_browser_pass_transferred": false,
+    "inherited_results": "source/evidence/depth48-ordered-repairs/LOCAL_RESULTS.json",
+    "packaging_tests": "8_SYNTHETIC_TESTS_PASS_SEPARATELY_RECORDED"
+  },
+  "gates": {
+    "FINAL_RELEASE": "HOLD",
+    "FROZEN_RUNTIME_CI": "HOLD",
+    "FULL_THREE_END_UX": "HOLD",
+    "POSTGRESQL": "HOLD",
+    "PRODUCTION": "HOLD",
+    "SEALED_NODE": "HOLD"
+  },
+  "hk_execution": "NOT_RUN",
+  "metadata_sha256": {
+    "README.md": "e56eb598b813074dfea36afe8480bc3035d22c60ae1b7fac9c77ee351dabce3c",
+    "create_archive.py": "5bf61f15c3515bdeae2834b20e4a256b00a85c6ede9288f2b1af05ed98cfc315",
+    "verify_parent.py": "c2e34d7377560328453d9efcb45a80ca6c0e70790cebbea98633f0763c9a953c"
+  },
+  "name": "CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913",
+  "new_runtime": {
+    "image_archive_sha256": null,
+    "image_config_id": null,
+    "self_contained_runtime_parent": false,
+    "status": "NOT_BUILT"
+  },
+  "package_kind": "SOURCE_COMPOSITE_CANDIDATE",
+  "payloads": {
+    "previous_parent": {
+      "bytes": 314744185,
+      "files": 24,
+      "git_tree": "3aab9630d33025b120bab8ca06f18863d8372141"
+    },
+    "source": {
+      "bytes": 142160449,
+      "files": 2335,
+      "git_tree": "3c2c9ebda758c00b034b65663a492186a9ae581b"
+    }
+  },
+  "previous_parent": {
+    "application_git_tree": "365b848d419ca5517b2cf711c271694bde346e33",
+    "archive_directory": "deliverables/CP11_DEPTH46_CONSOLIDATED_PARENT_20260913",
+    "bytes_reused_without_change": true,
+    "image_archive_sha256": "8a4ff502aa98eb2d9a7e2b740db64282c96329577b094756c5e64ddfd506e9ed",
+    "image_config_id": "sha256:b3f075020b1d4817fd1f386d15427744fb4db3b5798292d4be855527fa654bf5",
+    "name": "CP11_DEPTH46_CONSOLIDATED_PARENT_20260913",
+    "parts": 16,
+    "runtime_scope": "HISTORICAL_DEPTH46_ONLY",
+    "zip_bytes": 314723816,
+    "zip_sha256": "cc9b16be9555a2499db29a9ce0ebc25879fedd2953577bedc1f5e6e833451ce9"
+  },
+  "production_execution": "NOT_RUN",
+  "schema": "go.source-composite-parent.v1",
+  "source_snapshot_commit": "6d0fd905d1b6004fd5cc5cf8d69d1bf26a0f700a",
+  "source_snapshot_rule": "All root entries except deliverables; exact DEPTH46 archive retained separately"
+}
