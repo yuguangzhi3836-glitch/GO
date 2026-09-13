@@ -1,0 +1,144 @@
+{
+  "schema": "go.depth48.ci-startup.v1",
+  "head_sha": "fe16920171eb5b10a1fa396d456bcfbb62146320",
+  "source_commit": "8a22a4fcbba4574f5a06e356e461d7d083c86ae1",
+  "application_git_tree": "ad7d1de1190f86ad29d1c6cdafbcedd592e27206",
+  "result": "FAILED_BEFORE_ANY_STEPS",
+  "failed_jobs": 9,
+  "skipped_packaging_jobs": 2,
+  "concrete_startup_reason": "UNKNOWN_NO_ANNOTATION_AVAILABLE",
+  "manual_rerun": false,
+  "runs": [
+    {
+      "conclusion": "failure",
+      "head_sha": "fe16920171eb5b10a1fa396d456bcfbb62146320",
+      "id": 34732168907,
+      "jobs": [
+        {
+          "conclusion": "failure",
+          "id": 103656841060,
+          "name": "postgres",
+          "runner_id": 0,
+          "status": "completed",
+          "steps": []
+        },
+        {
+          "conclusion": "failure",
+          "id": 103656841200,
+          "name": "browser",
+          "runner_id": 0,
+          "status": "completed",
+          "steps": []
+        }
+      ],
+      "name": "DEPTH48 ordered repair acceptance",
+      "status": "completed",
+      "url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34732168907"
+    },
+    {
+      "conclusion": "failure",
+      "head_sha": "fe16920171eb5b10a1fa396d456bcfbb62146320",
+      "id": 34732168866,
+      "jobs": [
+        {
+          "conclusion": "failure",
+          "id": 103656840915,
+          "name": "auditor",
+          "runner_id": 0,
+          "status": "completed",
+          "steps": []
+        }
+      ],
+      "name": "Independent ledger mutation checks",
+      "status": "completed",
+      "url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34732168866"
+    },
+    {
+      "conclusion": "failure",
+      "head_sha": "fe16920171eb5b10a1fa396d456bcfbb62146320",
+      "id": 34732168833,
+      "jobs": [
+        {
+          "conclusion": "failure",
+          "id": 103656840979,
+          "name": "frontend-http-compat",
+          "runner_id": 0,
+          "status": "completed",
+          "steps": []
+        },
+        {
+          "conclusion": "failure",
+          "id": 103656841041,
+          "name": "regression (0)",
+          "runner_id": 0,
+          "status": "completed",
+          "steps": []
+        },
+        {
+          "conclusion": "failure",
+          "id": 103656841053,
+          "name": "regression (3)",
+          "runner_id": 0,
+          "status": "completed",
+          "steps": []
+        },
+        {
+          "conclusion": "failure",
+          "id": 103656841074,
+          "name": "regression (2)",
+          "runner_id": 0,
+          "status": "completed",
+          "steps": []
+        },
+        {
+          "conclusion": "failure",
+          "id": 103656841097,
+          "name": "regression (1)",
+          "runner_id": 0,
+          "status": "completed",
+          "steps": []
+        },
+        {
+          "conclusion": "skipped",
+          "id": 103656841546,
+          "name": "parent-package",
+          "runner_id": null,
+          "status": "completed",
+          "steps": []
+        },
+        {
+          "conclusion": "skipped",
+          "id": 103656847090,
+          "name": "archive-parent-objects",
+          "runner_id": null,
+          "status": "completed",
+          "steps": []
+        }
+      ],
+      "name": "Canonical parent retention",
+      "status": "completed",
+      "url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34732168833"
+    },
+    {
+      "conclusion": "failure",
+      "head_sha": "fe16920171eb5b10a1fa396d456bcfbb62146320",
+      "id": 34732168869,
+      "jobs": [
+        {
+          "conclusion": "failure",
+          "id": 103656840913,
+          "name": "mobile-source-and-native-linking",
+          "runner_id": 0,
+          "status": "completed",
+          "steps": []
+        }
+      ],
+      "name": "Canonical mobile retention",
+      "status": "completed",
+      "url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34732168869"
+    }
+  ],
+  "merge_authorization": "USER_EXPLICIT_AUTHORIZATION; normal merge only, no required-check override",
+  "full_three_end_ux": "HOLD",
+  "new_parent": "NOT_BUILT"
+}
