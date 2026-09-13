@@ -1,0 +1,97 @@
+# GO HK-STAGING business runtime — canonical Compose definition
+#
+# This file defines the CURRENT ACTIVE HK-STAGING business runtime: the `api`
+# service plus the seven application workers. It is the GitHub-side equivalent
+# of the Compose file that is running on HK-STAGING-01.
+#
+# Scope rules
+# -----------
+# - Business services only. `caddy` and `redis` are PROTECTED NON-TARGETS of the
+#   business runtime and are intentionally NOT defined here; they are owned by
+#   their own Compose files on the host and must not be recreated by a business
+#   cutover. Deploy with `--no-deps` and an explicit service list.
+# - No secrets. The runtime environment is supplied through an external env file
+#   referenced by `GO_RUNTIME_ENV_FILE`. The env file itself is never committed.
+#   See `RUNTIME_ENV_CONTRACT.md` for the sanitized key contract.
+# - The image is selected by variable so the same definition is reusable across
+#   image revisions: `GO_BUSINESS_IMAGE_TAG`.
+#
+# Usage
+# -----
+#   export GO_RUNTIME_ENV_FILE=/path/to/runtime.env
+#   export GO_BUSINESS_IMAGE_TAG=go-hotel:depth48-runtime-<rev>
+#   docker compose -p <project> \
+#     --env-file "$GO_RUNTIME_ENV_FILE" \
+#     -f deploy/hk-staging/docker-compose.business-runtime.yml \
+#     up -d --no-deps \
+#     api outbox-worker recovery-worker reconciliation-worker \
+#     judgment-worker mobile-engagement-worker \
+#     mobile-push-worker mobile-push-receipt-worker
+#
+# Changing the service set in this file is a HK-STAGING topology change and is
+# governed by docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md.
+
+services:
+  api:
+    image: ${GO_BUSINESS_IMAGE_TAG:?GO_BUSINESS_IMAGE_TAG is required}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    environment:
+      PYTHONPATH: /app/src
+      AOLUGUYA_DIRECT_TEST_MODE: "true"
+      AOLUGUYA_REAL_INVENTORY_CONFIGURED: "false"
+      AOLUGUYA_REAL_RATE_CONFIGURED: "false"
+      AOLUGUYA_REAL_PAYMENT_CONFIGURED: "false"
+    ports: ["127.0.0.1:8000:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  outbox-worker:
+    image: ${GO_BUSINESS_IMAGE_TAG:?GO_BUSINESS_IMAGE_TAG is required}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.outbox_worker"]
+    restart: unless-stopped
+
+  recovery-worker:
+    image: ${GO_BUSINESS_IMAGE_TAG:?GO_BUSINESS_IMAGE_TAG is required}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    environment:
+      AOLUGUYA_DIRECT_TEST_MODE: "true"
+      AOLUGUYA_REAL_INVENTORY_CONFIGURED: "false"
+      AOLUGUYA_REAL_RATE_CONFIGURED: "false"
+      AOLUGUYA_REAL_PAYMENT_CONFIGURED: "false"
+    command: ["python", "-m", "go_hotel.workers.recovery_worker"]
+    restart: unless-stopped
+
+  reconciliation-worker:
+    image: ${GO_BUSINESS_IMAGE_TAG:?GO_BUSINESS_IMAGE_TAG is required}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.reconciliation_worker"]
+    restart: unless-stopped
+
+  judgment-worker:
+    image: ${GO_BUSINESS_IMAGE_TAG:?GO_BUSINESS_IMAGE_TAG is required}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.judgment_worker"]
+    restart: unless-stopped
+
+  mobile-engagement-worker:
+    image: ${GO_BUSINESS_IMAGE_TAG:?GO_BUSINESS_IMAGE_TAG is required}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.mobile_engagement_worker"]
+    restart: unless-stopped
+
+  mobile-push-worker:
+    image: ${GO_BUSINESS_IMAGE_TAG:?GO_BUSINESS_IMAGE_TAG is required}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.mobile_push_worker"]
+    restart: unless-stopped
+
+  mobile-push-receipt-worker:
+    image: ${GO_BUSINESS_IMAGE_TAG:?GO_BUSINESS_IMAGE_TAG is required}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.mobile_push_receipt_worker"]
+    restart: unless-stopped

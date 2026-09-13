@@ -1,0 +1,10 @@
+# Runtime build context exclusions.
+# Anything excluded here must not be required at runtime.
+.git
+.gitignore
+.pytest_cache
+**/__pycache__
+**/*.pyc
+**/*.pyo
+node_modules
+**/node_modules
