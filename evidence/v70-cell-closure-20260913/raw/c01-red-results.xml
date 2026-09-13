@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="4" time="9.779" timestamp="2026-09-13T07:12:51.681102-07:00" hostname="localhost"><testcase classname="tests.test_c01_hosted_fare_value_integrity" name="test_missing_current_nights_cannot_restore_forfeited_room_value[summary]" time="5.536"><failure message="Failed: DID NOT RAISE ValueError">client = &lt;starlette.testclient.TestClient object at 0x7fb02bcf9f10&gt;
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fb0283271a0&gt;
+operation = 'summary'
+
+    @pytest.mark.parametrize('operation', ['summary', 'cancel_quote', 'credit_quote'])
+    def test_missing_current_nights_cannot_restore_forfeited_room_value(client, monkeypatch, operation):
+        reservation, owner, *_ = booked(
+            client, monkeypatch, rules={**RULES, 'credit_terms': hosted_credit_value.TERMS}
+        )
+        reservation, _ = reprice(reservation, owner, 70000)
+        before = summary(reservation)
+        assert before['current_room_value_minor'] == 140000
+        assert before['forfeited_change_value_minor'] == 22000
+        rid = reservation['hosted_reservation_id']
+        with SessionLocal.begin() as session:
+            assert session.get(Stay, rid) is not None
+            # Fault injection is confined to the isolated per-test SQLite database.
+            session.execute(delete(Night).where(
+                Night.hosted_reservation_id == rid,
+                Night.stay_date &gt;= reservation['check_in'],
+                Night.stay_date &lt; reservation['check_out'],
+            ))
+        movements_before = money_facts()
+        readers = {
+            'summary': lambda: summary(reservation),
+            'cancel_quote': lambda: cancel_quote(reservation, owner),
+            'credit_quote': lambda: hosted_stay_credit.conversion_quote(rid, owner),
+        }
+&gt;       with pytest.raises(ValueError, match='HOSTED_FARE_VALUE_INTEGRITY_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c01_hosted_fare_value_integrity.py:50: Failed</failure></testcase><testcase classname="tests.test_c01_hosted_fare_value_integrity" name="test_missing_current_nights_cannot_restore_forfeited_room_value[cancel_quote]" time="0.732"><failure message="Failed: DID NOT RAISE ValueError">client = &lt;starlette.testclient.TestClient object at 0x7fb0261fbbc0&gt;
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fb027be51f0&gt;
+operation = 'cancel_quote'
+
+    @pytest.mark.parametrize('operation', ['summary', 'cancel_quote', 'credit_quote'])
+    def test_missing_current_nights_cannot_restore_forfeited_room_value(client, monkeypatch, operation):
+        reservation, owner, *_ = booked(
+            client, monkeypatch, rules={**RULES, 'credit_terms': hosted_credit_value.TERMS}
+        )
+        reservation, _ = reprice(reservation, owner, 70000)
+        before = summary(reservation)
+        assert before['current_room_value_minor'] == 140000
+        assert before['forfeited_change_value_minor'] == 22000
+        rid = reservation['hosted_reservation_id']
+        with SessionLocal.begin() as session:
+            assert session.get(Stay, rid) is not None
+            # Fault injection is confined to the isolated per-test SQLite database.
+            session.execute(delete(Night).where(
+                Night.hosted_reservation_id == rid,
+                Night.stay_date &gt;= reservation['check_in'],
+                Night.stay_date &lt; reservation['check_out'],
+            ))
+        movements_before = money_facts()
+        readers = {
+            'summary': lambda: summary(reservation),
+            'cancel_quote': lambda: cancel_quote(reservation, owner),
+            'credit_quote': lambda: hosted_stay_credit.conversion_quote(rid, owner),
+        }
+&gt;       with pytest.raises(ValueError, match='HOSTED_FARE_VALUE_INTEGRITY_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c01_hosted_fare_value_integrity.py:50: Failed</failure></testcase><testcase classname="tests.test_c01_hosted_fare_value_integrity" name="test_missing_current_nights_cannot_restore_forfeited_room_value[credit_quote]" time="0.636"><failure message="Failed: DID NOT RAISE ValueError">client = &lt;starlette.testclient.TestClient object at 0x7fb025851f70&gt;
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fb027be57f0&gt;
+operation = 'credit_quote'
+
+    @pytest.mark.parametrize('operation', ['summary', 'cancel_quote', 'credit_quote'])
+    def test_missing_current_nights_cannot_restore_forfeited_room_value(client, monkeypatch, operation):
+        reservation, owner, *_ = booked(
+            client, monkeypatch, rules={**RULES, 'credit_terms': hosted_credit_value.TERMS}
+        )
+        reservation, _ = reprice(reservation, owner, 70000)
+        before = summary(reservation)
+        assert before['current_room_value_minor'] == 140000
+        assert before['forfeited_change_value_minor'] == 22000
+        rid = reservation['hosted_reservation_id']
+        with SessionLocal.begin() as session:
+            assert session.get(Stay, rid) is not None
+            # Fault injection is confined to the isolated per-test SQLite database.
+            session.execute(delete(Night).where(
+                Night.hosted_reservation_id == rid,
+                Night.stay_date &gt;= reservation['check_in'],
+                Night.stay_date &lt; reservation['check_out'],
+            ))
+        movements_before = money_facts()
+        readers = {
+            'summary': lambda: summary(reservation),
+            'cancel_quote': lambda: cancel_quote(reservation, owner),
+            'credit_quote': lambda: hosted_stay_credit.conversion_quote(rid, owner),
+        }
+&gt;       with pytest.raises(ValueError, match='HOSTED_FARE_VALUE_INTEGRITY_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c01_hosted_fare_value_integrity.py:50: Failed</failure></testcase><testcase classname="tests.test_c01_hosted_fare_value_integrity" name="test_legacy_without_dated_stay_preserves_original_face_value" time="0.623" /></testsuite></testsuites>

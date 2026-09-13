@@ -6,7 +6,8 @@ balance. Cash forfeiture has its own capture, outside ordinary refund sources.
 """
 from datetime import date
 from sqlalchemy import select
-from go_hotel.db.models import HostedReservationNightRow as Night, HostedCreditAllocationRow as Allocation
+from go_hotel.db.models import (HostedReservationNightRow as Night,
+    HostedReservationStayRow as Stay, HostedCreditAllocationRow as Allocation)
 
 POLICY = 'CURRENT_ROOM_VALUE_WITH_IRREVERSIBLE_FORFEITURE_V1'
 FORFEITURE_KEY = 'direct-change-forfeiture:'
@@ -16,7 +17,11 @@ def basis(s, reservation):
     rows = list(s.scalars(select(Night).where(
         Night.hosted_reservation_id == reservation.hosted_reservation_id,
         Night.stay_date >= reservation.check_in, Night.stay_date < reservation.check_out)))
-    # Historical undated reservations have no changeable dated inventory.
+    # Managed stays always have dated night facts. Losing all current nights
+    # must not turn previously forfeited value back into accommodation value.
+    if not rows and s.get(Stay, reservation.hosted_reservation_id) is not None:
+        raise ValueError('HOSTED_FARE_VALUE_INTEGRITY_INVALID')
+    # Legacy reservations without a managed stay have no dated night ledger.
     current = reservation.amount_minor
     if rows:
         expected = (date.fromisoformat(reservation.check_out) - date.fromisoformat(reservation.check_in)).days

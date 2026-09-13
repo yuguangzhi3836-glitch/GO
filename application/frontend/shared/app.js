@@ -323,7 +323,52 @@ async function adminT20(){const x=unwrap(await api.request('/internal/v1/commerc
 async function supplierPaymentFinance(){const x=unwrap(await api.request('/v1/supplier/payment-finance'));const intents=x.intents||[],recs=x.reconciliations||[];const body=`<section class="card structured-section"><div><h3>资金规则</h3><p>未履约不结算；有争议先冻结；符合退款条件原路退；最终状态以持牌支付机构事实为准。</p></div><span class="status">${x.external_live?'真实支付已接入':'真实支付未开通'}</span></section><h3>支付记录</h3>${table(intents,false,'支付记录')}<h3>渠道处理</h3>${table(x.attempts||[],false,'渠道处理')}<h3>对账记录</h3>${table(recs,false,'对账记录')}`;$('#view').innerHTML=supplierStructuredShell('/finance',body,{'已支付':intents.filter(y=>/SUCCESS|CAPTURE|CONFIRM/.test(String(y.state))).length,'待结算':intents.filter(y=>/PENDING_SETTLEMENT/.test(String(y.state))).length,'退款中':0,'已结算':0})}
 async function adminPaymentOps(){const x=unwrap(await api.request('/internal/v1/payments/finance-status'));$('#view').innerHTML=`<div class="section-head"><h2>Omnichannel Payment Operations</h2><span>Global Idempotency · No Silent Fallback · Unknown State First</span></div>${metrics({intents:x.intents?.length||0,unknown:(x.intents||[]).filter(y=>y.state==='UNKNOWN_EXTERNAL_STATE').length,failed:(x.intents||[]).filter(y=>y.state==='FAILED').length,channels:x.supported_channels?.length||0})}<div class="card"><p>UNKNOWN_EXTERNAL_STATE 必须先对账，禁止换渠道和重复扣款。External Live: ${x.external_live?'YES':'NO'}</p></div><h2>Payment Intents</h2>${table(x.intents||[])}<h2>Attempts</h2>${table(x.attempts||[])}`}
 async function financeReconciliation(){const [x,f]=await Promise.all([api.request('/internal/v1/payments/finance-status').then(unwrap),api.request('/internal/v1/finance/status').then(unwrap)]);const clean=r=>Object.fromEntries(Object.entries(r||{}).filter(([k])=>!String(k).toLowerCase().includes('bank'))),recs=(x.reconciliations||[]).map(clean),moves=(f.movements||[]).map(clean);$('#view').innerHTML=`<div class="section-head"><h2>平台交易证据核验</h2><span>订单 · PSP 状态 · 退款 · 结算记录</span></div>${metrics({平台证据:recs.length,交易记录:moves.length,差异:recs.filter(y=>y.state==='DIFFERENCE'||y.match_status==='UNMATCHED').length,已匹配:recs.filter(y=>y.state==='MATCHED'||y.match_status==='MATCHED').length})}<div class="card"><h3>责任边界</h3><p>GO 只记录和展示平台内订单、支付、退款与结算状态及其证据。供应商与其银行/PSP之间的最终财务对账由供应商自行完成，GO 不代替供应商做银行侧对账或清算确认。</p></div><h2>平台交易证据</h2>${recs.length?table(recs):adminEmpty('当前没有平台交易核验异常')}<h2>资金状态记录</h2>${moves.length?table(moves):adminEmpty('当前没有资金状态记录')}`}
-async function adminVertical(v,title){const x=unwrap(await api.request(`/internal/v1/admin/operations/verticals/${v}`));$('#view').innerHTML=`<div class="section-head"><h2>${esc(title)}</h2><span>搜索/交易/履约/退改/退款统一运营视图</span></div>${metrics(x.metrics||{})}<h2>Orders</h2>${table(x.orders||[])}${x.supply?'<h2>Supply</h2>'+table(x.supply):''}<h2>Refunds</h2>${table(x.refunds||[])}`}
+async function adminVertical(v,title){
+  const view=$('#view');
+  const route=location.hash;
+  let requestId=0;
+  let state={page:1,refund_page:1,page_size:50,order_id:''};
+  const pager=(kind,p)=>`<nav class="actionbar" aria-label="${kind==='orders'?'订单':'退款'}分页">
+    <button class="btn" data-page-kind="${kind}" data-direction="-1" ${p.has_previous?'':'disabled'}>上一页</button>
+    <span data-page-summary="${kind}" aria-live="polite">第 ${p.page} / ${p.pages} 页 · 共 ${p.total} 条</span>
+    <button class="btn" data-page-kind="${kind}" data-direction="1" ${p.has_next?'':'disabled'}>下一页</button></nav>`;
+  async function load(next){
+    const id=++requestId;
+    const disabledBefore=[...view.querySelectorAll('#adminOrderSearch button,[data-page-kind]')].map(b=>[b,b.disabled]);
+    disabledBefore.forEach(([b])=>b.disabled=true);
+    try{
+      const params=new URLSearchParams({page:next.page,refund_page:next.refund_page,page_size:next.page_size});
+      if(next.order_id)params.set('order_id',next.order_id);
+      const x=unwrap(await api.request(`/internal/v1/admin/operations/verticals/${v}?${params}`));
+      if(id!==requestId||location.hash!==route||$('#view')!==view)return;
+      state={...next,page:x.pagination.orders.page,refund_page:x.pagination.refunds.page};
+      view.innerHTML=`<div class="section-head"><h2>${esc(title)}</h2><span>搜索/交易/履约/退改/退款统一运营视图</span></div>${metrics(x.metrics||{})}
+        <form id="adminOrderSearch" class="actionbar">
+          <label for="adminOrderId">订单号</label><input id="adminOrderId" maxlength="64" placeholder="输入完整订单号" value="${esc(state.order_id)}">
+          <button class="btn primary" type="submit">查询订单</button><button class="btn" type="button" id="adminOrderReset">清除查询</button>
+        </form><h2>订单</h2><section id="adminOrders">${x.orders.length?table(x.orders):adminEmpty(state.order_id?'未找到该订单':'当前没有订单')}</section>
+        ${pager('orders',x.pagination.orders)}${x.supply?'<h2>酒店供给</h2>'+table(x.supply):''}
+        <h2>退款</h2><section id="adminRefunds">${x.refunds.length?table(x.refunds):adminEmpty(state.order_id?'该订单暂无退款记录':'当前没有退款记录')}</section>${pager('refunds',x.pagination.refunds)}`;
+      $('#adminOrderSearch').onsubmit=e=>{e.preventDefault();load({...state,page:1,refund_page:1,order_id:$('#adminOrderId').value.trim()})};
+      $('#adminOrderReset').onclick=()=>load({...state,page:1,refund_page:1,order_id:''});
+      view.querySelectorAll('[data-page-kind]').forEach(button=>button.onclick=()=>{
+        const field=button.dataset.pageKind==='orders'?'page':'refund_page';
+        load({...state,[field]:state[field]+Number(button.dataset.direction)});
+      });
+    }catch(error){
+      if(id===requestId&&location.hash===route&&$('#view')===view){
+        notice('订单加载失败，请重试：'+error.message,true);
+        if(!view.querySelector('#adminOrderSearch')){
+          view.innerHTML='<p role="alert">订单加载失败</p><button class="btn" id="adminOrderRetry">重新加载</button>';
+          $('#adminOrderRetry').onclick=()=>load(next);
+        }else{
+          disabledBefore.forEach(([b,disabled])=>b.disabled=disabled);
+        }
+      }
+    }
+  }
+  return load(state);
+}
 async function adminVerticalHotel(){return adminVertical('HOTEL','酒店运营')}
 async function adminVerticalFlight(){return adminVertical('FLIGHT','机票运营')}
 async function adminVerticalRail(){return adminVertical('RAIL','铁路运营')}

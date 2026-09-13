@@ -125,7 +125,9 @@ class RentalService:
             r=s.scalar(select(MobilityRefundRow).where(MobilityRefundRow.order_id==order_id,
                 MobilityRefundRow.vertical=='RENTAL').order_by(MobilityRefundRow.created_at.desc()))
             if r:consent.existing(s,o,r,accepted_hash,'RENTAL')
-            if r and r.status=='REFUND_COMPLETED':return result(r)
+            if r and r.status=='REFUND_COMPLETED':
+                if o.status!='REFUNDED':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
+                return result(r)
             if r and r.status=='REFUND_PENDING':
                 if o.status!='REFUND_PENDING':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
             else:
@@ -150,7 +152,9 @@ class RentalService:
         with transaction() as s:
             o=owned(s,account,order_id);r=s.get(MobilityRefundRow,refund_id,with_for_update=True)
             consent.existing(s,o,r,accepted_hash,'RENTAL')
-            if r.status=='REFUND_COMPLETED':return result(r)
+            if r.status=='REFUND_COMPLETED':
+                if o.status!='REFUNDED':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
+                return result(r)
             if o.status!='REFUND_PENDING':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
             r.status='REFUND_COMPLETED';o.status='REFUNDED';o.updated_at=now()
             facts={'refund_id':refund_id,'refund_amount_minor':r.refund_amount_minor,

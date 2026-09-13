@@ -24,12 +24,14 @@ def run_idempotent(operation: str, key: str | None, payload: dict, fn, resource_
         raise HTTPException(status_code=409, detail={"code":"IDEMPOTENCY_IN_PROGRESS","message":"Request with this idempotency key is still in progress"})
     try:
         response = fn()
-        rid = resource_id_fn(response) if resource_id_fn else None
-        repo.complete_idempotency(operation, key, payload, response, rid)
-        return response
     except Exception:
         repo.release_idempotency_claim(operation, key, payload)
         raise
+    # The mutation already returned successfully. If recording its result fails,
+    # retain the durable claim: retry must reconcile, not repeat the side effect.
+    rid = resource_id_fn(response) if resource_id_fn else None
+    repo.complete_idempotency(operation, key, payload, response, rid)
+    return response
 
 async def run_idempotent_async(operation: str, key: str | None, payload: dict, fn, resource_id_fn=None):
     _require_key(key)
@@ -47,9 +49,10 @@ async def run_idempotent_async(operation: str, key: str | None, payload: dict, f
         raise HTTPException(status_code=409, detail={"code":"IDEMPOTENCY_IN_PROGRESS","message":"Request with this idempotency key is still in progress"})
     try:
         response = await fn()
-        rid = resource_id_fn(response) if resource_id_fn else None
-        repo.complete_idempotency(operation, key, payload, response, rid)
-        return response
     except Exception:
         repo.release_idempotency_claim(operation, key, payload)
         raise
+    # Keep the same fail-closed boundary as the synchronous mutation path.
+    rid = resource_id_fn(response) if resource_id_fn else None
+    repo.complete_idempotency(operation, key, payload, response, rid)
+    return response

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Annotated
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
 from go_hotel.db.session import SessionLocal
 from go_hotel.security.deps import admin_principal
@@ -26,38 +27,77 @@ def _sample(s, model, fields, limit=50):
 def _count(s, model):
     return int(s.scalar(select(func.count()).select_from(model)) or 0)
 
+def _page(s, model, fields, *, page, page_size, order_id, vertical=None):
+    # Scope filters belong in SQL before counting and slicing (ride/rental share a table).
+    filters = []
+    if vertical is not None:
+        filters.append(model.vertical == vertical)
+    if order_id:
+        filters.append(model.order_id == order_id)
+    total = int(s.scalar(select(func.count()).select_from(model).where(*filters)) or 0)
+    pages = max(1, (total + page_size - 1) // page_size)
+    page = min(page, pages)
+    # An immutable creation time plus the unique primary key makes ties deterministic.
+    # This is a live paginated view, not a snapshot of a changing database.
+    rows = s.scalars(select(model).where(*filters).order_by(
+        model.created_at.desc(), *[c.desc() for c in model.__table__.primary_key.columns]
+    ).offset((page - 1) * page_size).limit(page_size)).all()
+    return [_row_dict(r, fields) for r in rows], {
+        'page': page, 'page_size': page_size, 'total': total, 'pages': pages,
+        'has_previous': page > 1, 'has_next': page < pages,
+    }
+
+
+VERTICAL_ORDER_FIELDS = {
+    'HOTEL': (OrderRow, ['order_id', 'supplier_id', 'hotel_id', 'status', 'total_amount_minor', 'currency', 'supplier_confirmation_no', 'updated_at']),
+    'FLIGHT': (FlightOrderRow, ['order_id', 'status', 'total_amount_minor', 'currency', 'pnr', 'ticket_numbers', 'created_at', 'updated_at']),
+    'RAIL': (RailOrderRow, ['order_id', 'status', 'total_amount_minor', 'currency', 'booking_reference', 'ticket_numbers', 'created_at', 'updated_at']),
+    'RIDE': (MobilityRideOrderRow, ['order_id', 'status', 'pickup', 'dropoff', 'pickup_at', 'vehicle_class', 'total_amount_minor', 'currency', 'supplier_reference', 'updated_at']),
+    'RENTAL': (MobilityRentalOrderRow, ['order_id', 'status', 'pickup_location', 'return_location', 'pickup_at', 'return_at', 'vehicle_class', 'deposit_minor', 'total_amount_minor', 'currency', 'supplier_reference', 'updated_at']),
+    'ATTRACTION': (AttractionOrderRow, ['order_id', 'status', 'product_name', 'destination', 'visit_date', 'session_time', 'voucher_type', 'voucher_code', 'total_amount_minor', 'currency', 'supplier_reference', 'updated_at']),
+}
+VERTICAL_REFUND_FIELDS = {
+    'HOTEL': (RefundRow, ['refund_id', 'order_id', 'status', 'amount_minor', 'currency', 'created_at']),
+    'FLIGHT': (FlightRefundRow, ['refund_id', 'order_id', 'status', 'refund_amount_minor', 'currency', 'created_at', 'completed_at']),
+    'RAIL': (RailRefundRow, ['refund_id', 'order_id', 'status', 'refund_amount_minor', 'currency', 'created_at', 'completed_at']),
+    'RIDE': (MobilityRefundRow, ['refund_id', 'order_id', 'vertical', 'status', 'refund_amount_minor', 'currency', 'created_at']),
+    'RENTAL': (MobilityRefundRow, ['refund_id', 'order_id', 'vertical', 'status', 'refund_amount_minor', 'currency', 'created_at']),
+    'ATTRACTION': (AttractionRefundRow, ['refund_id', 'order_id', 'status', 'refund_amount_minor', 'currency', 'created_at', 'completed_at']),
+}
+
+
 @router.get('/verticals/{vertical}')
-def vertical_snapshot(vertical: str, p: Principal = Depends(admin_principal)):
+def vertical_snapshot(
+    vertical: str,
+    p: Principal = Depends(admin_principal),
+    page: Annotated[int, Query(ge=1, le=1000000)] = 1,
+    refund_page: Annotated[int, Query(ge=1, le=1000000)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 50,
+    order_id: Annotated[str | None, Query(max_length=64)] = None,
+):
     v = vertical.upper()
     if v not in VERTICALS:
         raise HTTPException(404, detail='VERTICAL_NOT_FOUND')
+    query = (order_id or '').strip() or None
+    order_model, order_fields = VERTICAL_ORDER_FIELDS[v]
+    refund_model, refund_fields = VERTICAL_REFUND_FIELDS[v]
+    mobility = v if v in {'RIDE', 'RENTAL'} else None
     with SessionLocal() as s:
+        orders, order_pages = _page(s, order_model, order_fields,
+            page=page, page_size=page_size, order_id=query)
+        refunds, refund_pages = _page(s, refund_model, refund_fields,
+            page=refund_page, page_size=page_size, order_id=query, vertical=mobility)
+        refund_filters = [refund_model.vertical == mobility] if mobility else []
+        data = {'vertical': v, 'orders': orders, 'refunds': refunds,
+            'query': {'order_id': query},
+            'pagination': {'orders': order_pages, 'refunds': refund_pages},
+            'metrics': {'orders': _count(s, order_model), 'refunds': int(s.scalar(
+                select(func.count()).select_from(refund_model).where(*refund_filters)) or 0)}}
         if v == 'HOTEL':
-            orders = _sample(s, OrderRow, ['order_id','supplier_id','hotel_id','status','total_amount_minor','currency','supplier_confirmation_no','updated_at'])
-            refunds = _sample(s, RefundRow, ['refund_id','order_id','status','amount_minor','currency','created_at'])
-            refunds = [{**x, 'refund_amount_minor': x['amount_minor']} for x in refunds]
-            supply = _sample(s, HotelPartnerPropertyRow, ['property_id','supplier_id','name_zh','name_en','property_type','group_name','brand_name','publication_state','updated_at'])
-            return {'data': {'vertical': v, 'orders': orders, 'refunds': refunds, 'supply': supply,
-                'metrics': {'orders': _count(s, OrderRow), 'refunds': _count(s, RefundRow), 'properties': _count(s, HotelPartnerPropertyRow)}}}
-        if v == 'FLIGHT':
-            orders = _sample(s, FlightOrderRow, ['order_id','status','total_amount_minor','currency','pnr','ticket_numbers','created_at','updated_at'])
-            refunds = _sample(s, FlightRefundRow, ['refund_id','order_id','status','refund_amount_minor','currency','created_at','completed_at'])
-            return {'data': {'vertical':v,'orders':orders,'refunds':refunds,'metrics':{'orders':_count(s,FlightOrderRow),'refunds':_count(s,FlightRefundRow)}}}
-        if v == 'RAIL':
-            orders = _sample(s, RailOrderRow, ['order_id','status','total_amount_minor','currency','booking_reference','ticket_numbers','created_at','updated_at'])
-            refunds = _sample(s, RailRefundRow, ['refund_id','order_id','status','refund_amount_minor','currency','created_at','completed_at'])
-            return {'data': {'vertical':v,'orders':orders,'refunds':refunds,'metrics':{'orders':_count(s,RailOrderRow),'refunds':_count(s,RailRefundRow)}}}
-        if v == 'RIDE':
-            orders = _sample(s, MobilityRideOrderRow, ['order_id','status','pickup','dropoff','pickup_at','vehicle_class','total_amount_minor','currency','supplier_reference','updated_at'])
-            refunds = [x for x in _sample(s, MobilityRefundRow, ['refund_id','order_id','vertical','status','refund_amount_minor','currency','created_at'],100) if x['vertical']=='RIDE']
-            return {'data': {'vertical':v,'orders':orders,'refunds':refunds,'metrics':{'orders':_count(s,MobilityRideOrderRow),'refunds':len(refunds)}}}
-        if v == 'RENTAL':
-            orders = _sample(s, MobilityRentalOrderRow, ['order_id','status','pickup_location','return_location','pickup_at','return_at','vehicle_class','deposit_minor','total_amount_minor','currency','supplier_reference','updated_at'])
-            refunds = [x for x in _sample(s, MobilityRefundRow, ['refund_id','order_id','vertical','status','refund_amount_minor','currency','created_at'],100) if x['vertical']=='RENTAL']
-            return {'data': {'vertical':v,'orders':orders,'refunds':refunds,'metrics':{'orders':_count(s,MobilityRentalOrderRow),'refunds':len(refunds)}}}
-        orders = _sample(s, AttractionOrderRow, ['order_id','status','product_name','destination','visit_date','session_time','voucher_type','voucher_code','total_amount_minor','currency','supplier_reference','updated_at'])
-        refunds = _sample(s, AttractionRefundRow, ['refund_id','order_id','status','refund_amount_minor','currency','created_at','completed_at'])
-        return {'data': {'vertical':v,'orders':orders,'refunds':refunds,'metrics':{'orders':_count(s,AttractionOrderRow),'refunds':_count(s,AttractionRefundRow)}}}
+            data['refunds'] = [{**x, 'refund_amount_minor': x['amount_minor']} for x in refunds]
+            data['supply'] = _sample(s, HotelPartnerPropertyRow, ['property_id','supplier_id','name_zh','name_en','property_type','group_name','brand_name','publication_state','updated_at'])
+            data['metrics']['properties'] = _count(s, HotelPartnerPropertyRow)
+        return {'data': data}
 
 
 

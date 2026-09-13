@@ -1,0 +1,80 @@
+name: V7 Cell scoped gap closure
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/**
+      - ci/cell-closure/**
+      - ci/admin-pagination/**
+      - .github/workflows/v70-cell-gap-closure.yml
+permissions:
+  contents: read
+concurrency:
+  group: v70-cell-closure-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  scoped-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify exact candidate and retained baseline
+        run: |
+          python ci/retention/verify_source.py "$RUNNER_TEMP/cell-evidence/source"
+          python ci/retention/verify_alignment.py "$RUNNER_TEMP/cell-evidence/alignment.json"
+          python - <<'PY'
+          import json, os, pathlib, subprocess
+          c=json.loads(pathlib.Path('ci/cell-closure/CANDIDATE.json').read_text())
+          actual=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
+          r=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'cell-evidence/source/RETENTION_RESULT.json').read_text())
+          assert actual==c['application_git_tree']
+          assert r['source_tree_sha256']==c['source_tree_sha256']
+          assert r['source_files']==c['source_files']
+          assert c['production']=='HOLD' and c['full_release']=='HOLD'
+          PY
+      - name: Install inherited frozen Python dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Scoped tests in fresh processes with normal worker settings
+        run: |
+          set -euo pipefail
+          files=(
+            tests/autonomy/test_c14_release_evidence_guards.py
+            tests/test_c01_hosted_fare_value_integrity.py
+            tests/test_c04_refund_terminal_integrity.py
+            tests/go_ai/test_c08_synthesis_audit_finalization.py
+            tests/journey/test_c10_current_status_projection.py
+            tests/test_c11_idempotency_completion_guard.py
+            tests/test_depth48_capacity.py
+          )
+          for file in "${files[@]}"; do
+            name=$(basename "$file" .py)
+            (cd application && GO_TEST_DB_PATH="$RUNNER_TEMP/$name.db" python -m pytest -p no:cacheprovider "$file" --junitxml="$RUNNER_TEMP/cell-evidence/$name.xml")
+          done
+          PYTHONPATH=application/src python -m pytest -p no:cacheprovider ci/admin-pagination/test_pagination.py --junitxml="$RUNNER_TEMP/cell-evidence/admin-pagination.xml"
+      - name: Bind original result files to this checkout
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'cell-evidence';out.mkdir(exist_ok=True)
+          files={str(p.relative_to(out)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.rglob('*')) if p.is_file()}
+          result={'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'application_git_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'files':files,'scope':'isolated scoped tests only','hong_kong':'NOT_ACCESSED','production':'HOLD','full_release':'HOLD'}
+          (out/'EVIDENCE_BINDING.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v70-cell-closure-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/cell-evidence
+          if-no-files-found: error
+          retention-days: 90
