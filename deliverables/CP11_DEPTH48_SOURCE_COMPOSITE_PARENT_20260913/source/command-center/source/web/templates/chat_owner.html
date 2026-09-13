@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>GO AI 指挥中心</title>
+  <link rel="stylesheet" href="/static/task-routing.css">
+  <link rel="stylesheet" href="/static/owner.css">
+  <link rel="stylesheet" href="/static/visibility.css">
+</head>
+<body data-surface="owner">
+  <main class="owner-shell">
+    <header class="owner-topbar">
+      <div class="owner-brand"><span class="owner-mark">GO</span><span>GO AI 指挥中心</span></div>
+      <span id="online-status" class="online-status">● 在线</span>
+      <span id="mode-status" class="mode-status">仅指挥模式</span>
+      <span class="owner-spacer"></span>
+      <details id="user-menu" class="user-menu" hidden>
+        <summary id="user-name">用户菜单</summary>
+        <div class="user-menu-panel"><a id="ops-link" href="/ops" hidden>打开管理台</a><button id="logout" type="button">退出登录</button></div>
+      </details>
+    </header>
+
+    <section id="login" class="owner-login">
+      <div class="login-mark">GO</div>
+      <h1>进入 GO AI 指挥中心</h1>
+      <p>使用本设备的 Face ID、指纹或 Windows Hello 安全进入。</p>
+      <button id="sign-in" class="owner-primary" type="button">安全进入</button>
+    </section>
+
+    <section id="app" class="owner-app" hidden>
+      <header class="room-header"><div><strong>GO AI 协作群</strong><span id="live-status">可讨论、可记录，不执行</span></div></header>
+      <section id="messages" class="owner-messages" aria-live="polite"></section>
+      <footer class="owner-compose"><textarea id="task-body" placeholder="输入消息，或粘贴 GPT 的完整任务说明…" aria-label="输入消息"></textarea><div class="owner-compose-actions"><button id="paste-gpt" class="owner-quiet" type="button">粘贴 GPT 内容</button><span id="hint">Enter 发送 · Shift + Enter 换行</span><button id="send-task" class="owner-primary" type="button">发送</button></div></footer>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+  <script src="/static/keybind.js"></script>
+  <script src="/static/realtime.js"></script>
+</body>
+</html>

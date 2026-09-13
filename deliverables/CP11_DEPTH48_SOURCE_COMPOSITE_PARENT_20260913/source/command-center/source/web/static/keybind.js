@@ -1,0 +1,1 @@
+document.querySelector('#task-body').addEventListener('keydown', event => {if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();document.querySelector('#send-task').click();}});

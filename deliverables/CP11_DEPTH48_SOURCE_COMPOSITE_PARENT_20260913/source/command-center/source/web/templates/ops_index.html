@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GO AI 指挥中心 · 管理台</title>
+  <link rel="stylesheet" href="/static/task-routing.css">
+  <link rel="stylesheet" href="/static/ops.css">
+  <link rel="stylesheet" href="/static/visibility.css">
+</head>
+<body data-surface="ops">
+  <main class="ops-shell">
+    <header class="ops-topbar"><div class="ops-brand"><span class="ops-mark">GO</span><span><strong>GO Command Center</strong><small>Private operating system</small></span></div><span class="ops-spacer"></span><span id="mode-status" class="ops-mode">COMMAND_ONLY · 不执行</span><span id="usage-summary" class="ops-cost">费用加载中…</span><details id="user-menu" class="ops-user-menu" hidden><summary id="user-name">用户菜单</summary><div><a href="/">老板聊天端</a><button id="logout" type="button">退出登录</button></div></details></header>
+    <section id="login" class="ops-login"><h1>管理员安全进入</h1><p>使用已登记的 Passkey 设备进入管理台。</p><button id="sign-in" class="ops-primary" type="button">安全进入</button></section>
+    <section id="app" class="ops-workbench" hidden>
+      <aside class="ops-nav" aria-label="管理导航"><p class="ops-nav-label">工作台</p><button class="active" type="button">指挥协作</button><button type="button">任务草稿</button><button type="button">Evidence</button><p class="ops-nav-label">治理</p><button type="button">团队与权限</button><button type="button">模型与费用</button></aside>
+      <section class="ops-chat"><header class="ops-room-header"><div><strong>GO AI 协作群</strong><span id="live-status">共享会话 · 实时同步</span></div><button id="refresh" class="ops-quiet" type="button">刷新</button></header><section id="messages" class="ops-messages" aria-live="polite"></section><footer class="ops-compose"><textarea id="task-body" placeholder="输入消息，或粘贴 GPT 的完整任务说明…" aria-label="输入消息"></textarea><div><button id="paste-gpt" class="ops-quiet" type="button">粘贴 GPT 内容</button><span id="hint">Enter 发送 · Shift + Enter 换行</span><button id="send-task" class="ops-primary" type="button">发送</button></div></footer></section>
+      <aside class="ops-inspector"><header><h1>任务草稿</h1><p>只读预演 · 尚未执行</p></header><section id="ops-draft-detail" class="ops-draft-detail"><p class="ops-empty">选择或创建一份任务草稿后，可在此查看目标、Agent 计划、边界与审批信息。</p></section></aside>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+  <script src="/static/keybind.js"></script>
+  <script src="/static/realtime.js"></script>
+</body>
+</html>

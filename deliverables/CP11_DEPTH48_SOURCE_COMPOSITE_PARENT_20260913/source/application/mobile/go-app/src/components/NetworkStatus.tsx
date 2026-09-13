@@ -1,0 +1,3 @@
+import React,{useEffect,useState}from'react';import{View,Text,StyleSheet}from'react-native';import NetInfo from'@react-native-community/netinfo';
+export default function NetworkStatus(){const[offline,setOffline]=useState(false);useEffect(()=>NetInfo.addEventListener(s=>setOffline(!s.isConnected||s.isInternetReachable===false)),[]);if(!offline)return null;return <View style={s.bar}><Text style={s.text}>网络已断开 · 订单/支付/退改不会离线执行，恢复网络后请重新确认</Text></View>}
+const s=StyleSheet.create({bar:{backgroundColor:'#FFF0D8',paddingVertical:8,paddingHorizontal:12},text:{fontSize:12,color:'#6A4214',textAlign:'center'}})

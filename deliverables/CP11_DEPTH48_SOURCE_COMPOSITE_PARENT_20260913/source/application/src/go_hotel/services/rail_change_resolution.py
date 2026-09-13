@@ -1,0 +1,203 @@
+"""Freeze one supplier decision before settling an isolated rail change.
+
+An explicit quote_id identifies retries even after another change starts. Conflicting
+facts cannot reverse a money decision. Unknown outcomes keep the order unavailable.
+"""
+from datetime import UTC, datetime
+from uuid import uuid4
+from sqlalchemy import select
+from go_hotel.autonomy.durable import transaction, db_now_ms, digest
+from go_hotel.db.session import SessionLocal
+from go_hotel.db.models import (
+    RailOrderRow as Order, RailChangeQuoteRow as Quote, RailChangeResolutionRow as Resolution,
+    PaymentOrderRootRow as Root, OmnichannelPaymentIntentRow as Intent,
+    OmnichannelMoneyMovementRow as Movement,
+)
+from go_hotel.services import vertical_prebook_contract as contracts
+from go_hotel.services import vertical_capacity as capacity
+from go_hotel.services.vertical_money_bridge import vertical_money_bridge
+from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence
+from go_hotel.services.vertical_lifecycle_projection import project_vertical_lifecycle
+
+LEASE_MS = 30000
+
+
+def _now():
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
+def _terms(o, q):
+    return {'order_id': o.order_id, 'account_id': o.account_id, 'quote_id': q.quote_id,
+            'amount_minor': q.total_due_minor, 'currency': q.currency,
+            'new_travel_date': q.new_travel_date, 'new_train_no': q.new_train_no,
+            'new_seat_class': q.new_seat_class, 'old_journey': o.current_journey,
+            'old_total_minor': o.total_amount_minor, 'party_count': len(o.passengers or [])}
+
+
+def _identity(op):
+    return {'quote_id': op.quote_id, 'order_id': op.order_id, 'account_id': op.account_id,
+            'actor_id': op.actor_id, 'request': op.request_json, 'terms': op.terms_json}
+
+
+def _event(s, o, kind, evidence, facts):
+    o.updated_at = _now()
+    append_vertical_evidence(s, 'RAIL', o.order_id, kind, o.status, facts)
+    project_vertical_lifecycle(s, 'RAIL', o, evidence, facts=facts)
+
+
+def _money_in(s, op, result):
+    terms = op.terms_json
+    if terms['amount_minor'] == 0:
+        return None
+    kind = 'CAPTURE' if op.request_json['state'] == 'TICKETED' else 'RELEASE'
+    key = 'capture_id' if kind == 'CAPTURE' else 'release_id'
+    root = s.scalar(select(Root).where(Root.business_type == 'RAIL_CHANGE', Root.business_id == op.quote_id))
+    intent = s.get(Intent, root.payment_intent_id) if root else None
+    money = s.get(Movement, result.get(key)) if result and result.get(key) else None
+    auth = s.get(Movement, money.parent_movement_id) if money else None
+    if (not intent or intent.payer_id != op.account_id or intent.currency != terms['currency']
+            or not money or money.root_payment_intent_id != root.payment_intent_id
+            or money.state != 'CONFIRMED' or money.movement_type != kind
+            or money.amount_minor != terms['amount_minor'] or money.currency != terms['currency']
+            or not auth or auth.movement_type != 'AUTHORIZATION' or auth.state != 'CONFIRMED'
+            or auth.root_payment_intent_id != money.root_payment_intent_id
+            or auth.amount_minor != terms['amount_minor'] or auth.currency != terms['currency']):
+        raise ValueError('RAIL_CHANGE_MONEY_NOT_CONFIRMED')
+    opposite = 'RELEASE' if kind == 'CAPTURE' else 'CAPTURE'
+    if s.scalar(select(Movement.money_movement_id).where(
+            Movement.root_payment_intent_id == root.payment_intent_id,
+            Movement.movement_type == opposite,
+            Movement.state.notin_(['FAILED', 'REJECTED', 'CANCELLED']))):
+        raise ValueError('RAIL_CHANGE_MONEY_CONFLICT')
+    return money.money_movement_id
+
+
+def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ticket_numbers, quote_id, output):
+    if not str(evidence_reference or '').strip() or not str(actor or '').strip():
+        raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
+    state = state.upper()
+    if state not in {'TICKETED', 'FAILED', 'UNKNOWN_EXTERNAL_STATE'}:
+        raise ValueError('RAIL_EXTERNAL_STATE_INVALID')
+    request = {'state': state, 'evidence_reference': evidence_reference,
+               'supplier_reference': supplier_reference, 'ticket_numbers': ticket_numbers or []}
+    with transaction(SessionLocal) as s:
+        o = s.get(Order, order_id, with_for_update=True)
+        if not o:
+            raise ValueError('RAIL_ORDER_NOT_FOUND')
+        if quote_id:
+            q = s.get(Quote, quote_id, with_for_update=True)
+            if not q or q.order_id != order_id:
+                raise ValueError('RAIL_CHANGE_QUOTE_INVALID')
+        else:
+            # Once this order has resolution history, never guess which change a
+            # delayed supplier response refers to. Callers must echo quote_id.
+            if s.scalar(select(Resolution.quote_id).where(Resolution.order_id == order_id)):
+                raise ValueError('RAIL_RESOLUTION_QUOTE_ID_REQUIRED')
+            q = s.scalar(select(Quote).where(Quote.order_id == order_id,
+                         Quote.status == 'PENDING_SUPPLIER').with_for_update())
+        if q:
+            if state not in {'TICKETED', 'FAILED'}:
+                raise ValueError('RAIL_RESOLUTION_CONFLICT')
+            if state == 'TICKETED':
+                if not str(supplier_reference or '').strip():
+                    raise ValueError('RAIL_RECONCILIATION_SUPPLIER_REFERENCE_REQUIRED')
+                request['ticket_numbers'] = contracts.rail_tickets(ticket_numbers or [], len(o.passengers or []))
+            elif supplier_reference or ticket_numbers:
+                raise ValueError('RAIL_FAILED_RESOLUTION_TICKET_INVALID')
+            op = s.get(Resolution, q.quote_id, with_for_update=True)
+            if op:
+                if op.request_hash != digest(_identity(op)) or op.account_id != o.account_id or op.order_id != order_id:
+                    raise ValueError('RAIL_RESOLUTION_INTEGRITY_INVALID')
+                if op.request_json != request:
+                    raise ValueError('RAIL_RESOLUTION_CONFLICT')
+                if op.state == 'COMPLETED':
+                    return dict(op.result_json)
+                if _terms(o, q) != op.terms_json:
+                    raise ValueError('RAIL_RESOLUTION_TERMS_INVALID')
+            else:
+                if o.status != 'UNKNOWN_EXTERNAL_STATE' or q.status != 'PENDING_SUPPLIER':
+                    raise ValueError('RAIL_RECONCILIATION_NOT_REQUIRED')
+                terms = _terms(o, q)
+                if type(terms['amount_minor']) is not int or terms['amount_minor'] < 0 or q.currency != o.currency:
+                    raise ValueError('RAIL_RESOLUTION_TERMS_INVALID')
+                op = Resolution(quote_id=q.quote_id, order_id=order_id, account_id=o.account_id,
+                    actor_id=actor, state='PENDING', request_json=request, terms_json=terms,
+                    request_hash='', lease_token=None, lease_until_ms=0, attempt=0,
+                    created_ms=db_now_ms(s), completed_ms=None, result_json=None)
+                op.request_hash = digest(_identity(op))
+                s.add(op)
+                _event(s, o, 'CHANGE_RESOLUTION_REQUESTED', evidence_reference,
+                       {'quote_id': q.quote_id, 'decision': state, 'actor': actor, 'request_hash': op.request_hash})
+            if o.status != 'UNKNOWN_EXTERNAL_STATE' or q.status != 'PENDING_SUPPLIER':
+                raise ValueError('RAIL_RESOLUTION_STATE_INVALID')
+            if op.lease_token and op.lease_until_ms > db_now_ms(s):
+                raise ValueError('RAIL_RESOLUTION_ALREADY_PROCESSING')
+            token = uuid4().hex
+            op.lease_token = token
+            op.lease_until_ms = db_now_ms(s) + LEASE_MS
+            op.attempt += 1
+            quote_id = q.quote_id
+            due = op.terms_json['amount_minor']
+        else:
+            # Legacy non-change state observations never dispatch money.
+            if state == 'UNKNOWN_EXTERNAL_STATE':
+                if o.status != 'TICKETED':
+                    raise ValueError('RAIL_ILLEGAL_STATE_TRANSITION')
+                o.status = state
+                kind = 'EXTERNAL_STATE_UNKNOWN'
+            else:
+                if o.status != 'UNKNOWN_EXTERNAL_STATE':
+                    raise ValueError('RAIL_RECONCILIATION_NOT_REQUIRED')
+                o.status = state
+                kind = 'RECONCILED_TO_' + state
+            _event(s, o, kind, evidence_reference, {'actor': actor, 'native_status': o.status})
+            return output(o)
+    try:
+        action = vertical_money_bridge.capture_adjustment if state == 'TICKETED' else vertical_money_bridge.release_adjustment
+        money = action('RAIL', quote_id, due, evidence_reference) if due else None
+        with transaction(SessionLocal) as s:
+            o = s.get(Order, order_id, with_for_update=True)
+            q = s.get(Quote, quote_id, with_for_update=True)
+            op = s.get(Resolution, quote_id, with_for_update=True)
+            if not o or not q or not op or op.request_hash != digest(_identity(op)) or op.request_json != request:
+                raise ValueError('RAIL_RESOLUTION_INTEGRITY_INVALID')
+            if op.state == 'COMPLETED':
+                return dict(op.result_json)
+            if op.lease_token != token or op.lease_until_ms <= db_now_ms(s):
+                raise ValueError('RAIL_RESOLUTION_LEASE_LOST')
+            if o.status != 'UNKNOWN_EXTERNAL_STATE' or q.status != 'PENDING_SUPPLIER' or _terms(o, q) != op.terms_json:
+                raise ValueError('RAIL_RESOLUTION_STATE_INVALID')
+            mid = _money_in(s, op, money)
+            if state == 'TICKETED':
+                journey = dict(op.terms_json['old_journey'])
+                journey.update(travel_date=q.new_travel_date, train_no=q.new_train_no, seat_class=q.new_seat_class,
+                               departure_time='08:30', arrival_time='09:18')
+                o.current_journey = journey
+                o.total_amount_minor = op.terms_json['old_total_minor'] + due
+                o.booking_reference = request['supplier_reference']
+                o.ticket_numbers = request['ticket_numbers']
+                q.status = 'EXECUTED'
+                kind = 'CHANGE_RECONCILED_TO_TICKETED'
+            else:
+                q.status = 'FAILED'
+                kind = 'CHANGE_FAILED_RESTORED_TICKETED'
+            capacity.complete_change_in(s, 'RAIL', order_id, quote_id, state == 'TICKETED')
+            o.status = 'TICKETED'
+            _event(s, o, kind, evidence_reference, {'actor': op.actor_id, 'resume_actor': actor,
+                   'quote_id': quote_id, 'money_movement_id': mid, 'decision': state,
+                   'booking_reference': o.booking_reference, 'ticket_numbers': o.ticket_numbers})
+            result = output(o)
+            op.state = 'COMPLETED'
+            op.result_json = result
+            op.completed_ms = db_now_ms(s)
+            op.lease_token = None
+            op.lease_until_ms = 0
+            return result
+    except Exception:
+        with transaction(SessionLocal) as s:
+            s.get(Order, order_id, with_for_update=True)
+            op = s.get(Resolution, quote_id, with_for_update=True)
+            if op and op.state == 'PENDING' and op.lease_token == token:
+                op.lease_token = None
+                op.lease_until_ms = 0
+        raise

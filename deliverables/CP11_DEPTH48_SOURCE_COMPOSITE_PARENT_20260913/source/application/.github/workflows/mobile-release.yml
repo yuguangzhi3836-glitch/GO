@@ -1,0 +1,50 @@
+name: mobile-release
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        type: choice
+        options: [preview, production]
+        default: preview
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile/go-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '20'}
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx expo-doctor
+      - run: npm run typecheck
+      - run: npm run test:contract
+  build-ios:
+    needs: validate
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: mobile/go-app}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '20'}
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx eas-cli build --platform ios --profile ${{ inputs.profile }} --non-interactive --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_EAS_PROJECT_ID }}
+          EXPO_PUBLIC_API_URL: ${{ inputs.profile == 'production' && secrets.PRODUCTION_API_URL || secrets.STAGING_API_URL }}
+  build-android:
+    needs: validate
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: mobile/go-app}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '20'}
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx eas-cli build --platform android --profile ${{ inputs.profile }} --non-interactive --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_EAS_PROJECT_ID }}
+          EXPO_PUBLIC_API_URL: ${{ inputs.profile == 'production' && secrets.PRODUCTION_API_URL || secrets.STAGING_API_URL }}

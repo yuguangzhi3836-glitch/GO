@@ -1,0 +1,29 @@
+"""Sprint 4D trust plane chaos engineering and production readiness gate.
+Revision ID: 0051_sprint4d
+Revises: 0050_sprint4c
+"""
+from alembic import op
+import sqlalchemy as sa
+revision='0051_sprint4d';down_revision='0050_sprint4c';branch_labels=None;depends_on=None
+
+def _immutable(table):
+    d=op.get_bind().dialect.name
+    if d=='sqlite':
+        op.execute(f"CREATE TRIGGER {table}_deny_update BEFORE UPDATE ON {table} BEGIN SELECT RAISE(ABORT, 'IMMUTABLE_CHAOS_READINESS_EVIDENCE'); END;")
+        op.execute(f"CREATE TRIGGER {table}_deny_delete BEFORE DELETE ON {table} BEGIN SELECT RAISE(ABORT, 'IMMUTABLE_CHAOS_READINESS_EVIDENCE'); END;")
+    elif d=='postgresql':
+        op.execute("""CREATE OR REPLACE FUNCTION deny_chaos_readiness_evidence_mutation() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'IMMUTABLE_CHAOS_READINESS_EVIDENCE'; END; $$ LANGUAGE plpgsql;""")
+        op.execute(f"CREATE TRIGGER {table}_deny_update BEFORE UPDATE ON {table} FOR EACH ROW EXECUTE FUNCTION deny_chaos_readiness_evidence_mutation();")
+        op.execute(f"CREATE TRIGGER {table}_deny_delete BEFORE DELETE ON {table} FOR EACH ROW EXECUTE FUNCTION deny_chaos_readiness_evidence_mutation();")
+
+def upgrade():
+    op.create_table('journey_recovery_chaos_policy',sa.Column('chaos_policy_id',sa.String(64),primary_key=True),sa.Column('policy_key',sa.String(128),nullable=False),sa.Column('version_no',sa.Integer(),nullable=False),sa.Column('environment',sa.String(16),nullable=False),sa.Column('required_scenarios_json',sa.JSON(),nullable=False),sa.Column('minimum_readiness_score',sa.Float(),nullable=False),sa.Column('max_rto_seconds',sa.Integer(),nullable=False),sa.Column('max_rpo_seconds',sa.Integer(),nullable=False),sa.Column('evidence_ttl_seconds',sa.Integer(),nullable=False),sa.Column('state',sa.String(24),nullable=False),sa.Column('created_by',sa.String(64),nullable=False),sa.Column('created_at',sa.DateTime(timezone=True),nullable=False),sa.Column('supplier_fact_unchanged',sa.Boolean(),nullable=False,server_default=sa.true()))
+    op.create_table('journey_recovery_chaos_campaign',sa.Column('chaos_campaign_id',sa.String(64),primary_key=True),sa.Column('environment',sa.String(16),nullable=False),sa.Column('chaos_policy_id',sa.String(64),nullable=False),sa.Column('campaign_key',sa.String(128),nullable=False),sa.Column('scenarios_json',sa.JSON(),nullable=False),sa.Column('state',sa.String(24),nullable=False),sa.Column('requested_by',sa.String(64),nullable=False),sa.Column('requested_at',sa.DateTime(timezone=True),nullable=False),sa.Column('completed_at',sa.DateTime(timezone=True)),sa.Column('supplier_fact_unchanged',sa.Boolean(),nullable=False,server_default=sa.true()))
+    op.create_table('journey_recovery_chaos_execution',sa.Column('chaos_execution_id',sa.String(64),primary_key=True),sa.Column('chaos_campaign_id',sa.String(64),nullable=False),sa.Column('environment',sa.String(16),nullable=False),sa.Column('scenario_type',sa.String(48),nullable=False),sa.Column('fault_parameters_json',sa.JSON(),nullable=False),sa.Column('expected_safety_action',sa.String(64),nullable=False),sa.Column('observed_safety_action',sa.String(64),nullable=False),sa.Column('recovery_state',sa.String(24),nullable=False),sa.Column('rto_seconds',sa.Integer(),nullable=False),sa.Column('rpo_seconds',sa.Integer(),nullable=False),sa.Column('evidence_hash',sa.String(64),nullable=False),sa.Column('evidence_reference',sa.String(256),nullable=False),sa.Column('executed_by',sa.String(64),nullable=False),sa.Column('started_at',sa.DateTime(timezone=True),nullable=False),sa.Column('completed_at',sa.DateTime(timezone=True),nullable=False),sa.Column('supplier_fact_unchanged',sa.Boolean(),nullable=False,server_default=sa.true()))
+    op.create_table('journey_recovery_readiness_assessment',sa.Column('readiness_assessment_id',sa.String(64),primary_key=True),sa.Column('environment',sa.String(16),nullable=False),sa.Column('chaos_policy_id',sa.String(64),nullable=False),sa.Column('chaos_campaign_id',sa.String(64),nullable=False),sa.Column('scenario_coverage_json',sa.JSON(),nullable=False),sa.Column('readiness_score',sa.Float(),nullable=False),sa.Column('max_observed_rto_seconds',sa.Integer(),nullable=False),sa.Column('max_observed_rpo_seconds',sa.Integer(),nullable=False),sa.Column('evidence_fresh',sa.Boolean(),nullable=False),sa.Column('state',sa.String(24),nullable=False),sa.Column('reason_codes_json',sa.JSON(),nullable=False),sa.Column('assessed_by',sa.String(64),nullable=False),sa.Column('assessed_at',sa.DateTime(timezone=True),nullable=False),sa.Column('supplier_fact_unchanged',sa.Boolean(),nullable=False,server_default=sa.true()))
+    op.create_table('journey_recovery_production_readiness_gate',sa.Column('production_readiness_gate_id',sa.String(64),primary_key=True),sa.Column('environment',sa.String(16),nullable=False),sa.Column('readiness_assessment_id',sa.String(64),nullable=False),sa.Column('gate_state',sa.String(24),nullable=False),sa.Column('readiness_score',sa.Float(),nullable=False),sa.Column('reason_codes_json',sa.JSON(),nullable=False),sa.Column('evidence_reference',sa.String(256),nullable=False),sa.Column('evaluated_by',sa.String(64),nullable=False),sa.Column('evaluated_at',sa.DateTime(timezone=True),nullable=False),sa.Column('valid_until',sa.DateTime(timezone=True),nullable=False),sa.Column('supplier_fact_unchanged',sa.Boolean(),nullable=False,server_default=sa.true()))
+    for t in ['journey_recovery_chaos_execution','journey_recovery_readiness_assessment','journey_recovery_production_readiness_gate']:_immutable(t)
+
+def downgrade():
+    for t in ['journey_recovery_production_readiness_gate','journey_recovery_readiness_assessment','journey_recovery_chaos_execution','journey_recovery_chaos_campaign','journey_recovery_chaos_policy']:
+        op.drop_table(t)

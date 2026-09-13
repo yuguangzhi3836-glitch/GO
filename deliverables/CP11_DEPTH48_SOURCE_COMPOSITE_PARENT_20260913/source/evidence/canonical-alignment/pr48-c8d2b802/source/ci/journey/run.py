@@ -1,0 +1,37 @@
+"""Run the real application on a fresh isolated database, then drive Chromium."""
+import json, os, pathlib, shutil, subprocess, sys, time, urllib.request
+
+root = pathlib.Path(__file__).resolve().parents[2]
+evidence = root / 'journey-evidence'
+binding = json.loads((evidence / 'source-binding.json').read_text())
+state = pathlib.Path(os.environ['RUNNER_TEMP']) / ('go-journey-' + str(os.getpid()))
+env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1')
+command = [sys.executable, str(root / 'application/scripts/acceptance_runtime.py'),
+    '--source', str(root / 'application'), '--fingerprint', str(evidence / 'source-fingerprint.json'),
+    '--expected-tree', binding['source_tree_sha256'], '--state', str(state), '--port', '4186']
+with (evidence / 'runtime.log').open('w') as log:
+    process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, env=env)
+    try:
+        for _ in range(120):
+            if process.poll() is not None:
+                raise RuntimeError('ISOLATED_RUNTIME_START_FAILED: inspect runtime.log')
+            try:
+                with urllib.request.urlopen('http://127.0.0.1:4186/__acceptance/binding', timeout=1) as response:
+                    actual = json.load(response)
+                assert actual['source_tree_sha256'] == binding['source_tree_sha256']
+                break
+            except OSError:
+                time.sleep(.5)
+        else:
+            raise TimeoutError('ISOLATED_RUNTIME_NOT_READY')
+        result = subprocess.run(['node', str(root / 'ci/journey/browser.mjs')], env=dict(env,
+            GO_JOURNEY_STATE=str(state), GO_JOURNEY_EVIDENCE=str(evidence)))
+        for name in ['runtime-binding.json', 'fixture-identities.json']:
+            shutil.copyfile(state / name, evidence / name)
+        sys.exit(result.returncode)
+    finally:
+        process.terminate()
+        try: process.wait(timeout=15)
+        except subprocess.TimeoutExpired: process.kill(); process.wait()
+        # Do not archive the database, cookies, passwords, or authentication bodies.
+        shutil.rmtree(state, ignore_errors=True)

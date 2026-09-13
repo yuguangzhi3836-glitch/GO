@@ -1,0 +1,180 @@
+name: go-hotel-staging
+services:
+  postgres:
+    image: postgres:16.4
+    environment:
+      POSTGRES_DB: go_hotel
+      POSTGRES_USER: go
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-go-staging-only}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U go -d go_hotel"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+    volumes:
+      - go_staging_pg:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+    volumes:
+      - go_staging_redis:/data
+    restart: unless-stopped
+
+  migrate:
+    build: .
+    environment: &app-env
+      APP_ENV: staging
+      DATABASE_URL: postgresql+psycopg://go:${POSTGRES_PASSWORD:-go-staging-only}@postgres:5432/go_hotel
+      REDIS_URL: redis://redis:6379/0
+      OUTBOX_TRANSPORT: redis
+      JWT_SECRET: ${JWT_SECRET:-replace-before-shared-staging}
+      VAULT_MASTER_KEY: ${VAULT_MASTER_KEY:-replace-before-shared-staging}
+      COOKIE_SECURE: "false"
+      MFA_REQUIRED_FOR_ADMIN: "true"
+      MOBILE_PUSH_MODE: ${MOBILE_PUSH_MODE:-mock}
+      GO_HOTEL_REGION_DISCOVERY_PROVIDERS_JSON: ${GO_HOTEL_REGION_DISCOVERY_PROVIDERS_JSON:-}
+      GO_HOTEL_REGION_DISCOVERY_BOOTSTRAP_OSM: ${GO_HOTEL_REGION_DISCOVERY_BOOTSTRAP_OSM:-true}
+      GO_HOTEL_REGION_DISCOVERY_OSM_ENDPOINT: ${GO_HOTEL_REGION_DISCOVERY_OSM_ENDPOINT:-https://overpass-api.de/api/interpreter}
+      GO_HOTEL_REGION_DISCOVERY_OSM_ENDPOINTS: ${GO_HOTEL_REGION_DISCOVERY_OSM_ENDPOINTS:-https://overpass-api.de/api/interpreter,https://overpass.kumi.systems/api/interpreter}
+      GO_HOTEL_REGION_DISCOVERY_PROVIDER_MAX_ATTEMPTS: ${GO_HOTEL_REGION_DISCOVERY_PROVIDER_MAX_ATTEMPTS:-2}
+      GO_HOTEL_REGION_WORKER_CONCURRENCY: ${GO_HOTEL_REGION_WORKER_CONCURRENCY:-6}
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build: .
+    environment: *app-env
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  outbox-worker:
+    build: .
+    environment: *app-env
+    command: ["python", "-m", "go_hotel.workers.outbox_worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  regional-hotel-build-worker:
+    build: .
+    environment: *app-env
+    command: ["python", "-m", "go_hotel.workers.regional_hotel_build_worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  recovery-worker:
+    build: .
+    environment: *app-env
+    command: ["python", "-m", "go_hotel.workers.recovery_worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  reconciliation-worker:
+    build: .
+    environment: *app-env
+    command: ["python", "-m", "go_hotel.workers.reconciliation_worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  judgment-worker:
+    build: .
+    environment: *app-env
+    command: ["python", "-m", "go_hotel.workers.judgment_worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  mobile-engagement-worker:
+    build: .
+    environment: *app-env
+    command: ["python", "-m", "go_hotel.workers.mobile_engagement_worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  mobile-push-worker:
+    build: .
+    environment: *app-env
+    command: ["python", "-m", "go_hotel.workers.mobile_push_worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  mobile-push-receipt-worker:
+    build: .
+    environment: *app-env
+    command: ["python", "-m", "go_hotel.workers.mobile_push_receipt_worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=15d"]
+    volumes:
+      - ./ops/prometheus/prometheus.staging.yml:/etc/prometheus/prometheus.yml:ro
+      - ./ops/alert_rules.yaml:/etc/prometheus/alert_rules.yaml:ro
+      - go_staging_prometheus:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./ops/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./ops/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - go_staging_grafana:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  go_staging_pg:
+  go_staging_redis:
+  go_staging_prometheus:
+  go_staging_grafana:

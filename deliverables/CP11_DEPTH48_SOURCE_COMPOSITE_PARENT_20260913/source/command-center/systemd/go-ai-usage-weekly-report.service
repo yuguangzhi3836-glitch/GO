@@ -1,0 +1,16 @@
+[Unit]
+Description=GO AI Command Center weekly usage report
+
+[Service]
+Type=oneshot
+User=goadmin
+Group=goadmin
+WorkingDirectory=/home/goadmin/go-ai-command-center
+EnvironmentFile=/home/goadmin/go-ai-command-center/.env
+ExecStart=/home/goadmin/go-ai-command-center/.venv/bin/python /home/goadmin/go-ai-command-center/usage_report.py weekly
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/goadmin/go-ai-command-center/data
+UMask=0077

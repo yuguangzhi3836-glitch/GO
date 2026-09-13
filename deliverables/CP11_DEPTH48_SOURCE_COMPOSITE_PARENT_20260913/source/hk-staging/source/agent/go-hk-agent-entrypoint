@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+import os,sys
+home=os.environ.get('HK_AGENT_HOME','/opt/go-hk-agent-rebuilt')
+if home not in sys.path: sys.path.insert(0,home)
+from hk_agent.transport import main
+raise SystemExit(main())

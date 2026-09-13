@@ -1,0 +1,8 @@
+.vault-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.vault-heading h2{margin-top:0}.vault-fact p{margin:6px 0}.vault-fact small{display:block;line-height:1.6}
+.vault-permissions{margin:20px 0;border-top:1px solid var(--line,#e5e7eb);padding-top:16px}
+.vault-permissions summary{cursor:pointer;font-weight:600;padding:8px 0;min-height:44px}
+.vault-value{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.6}
+.go-dialog{max-height:calc(100dvh - 40px);overflow-y:auto}.go-dialog .field{margin:16px 0}
+.go-dialog :focus-visible,.vault-permissions summary:focus-visible{outline:3px solid #246de8;outline-offset:3px}
+@media(max-width:560px){.vault-heading{flex-direction:column}.vault-fact{flex-wrap:wrap;gap:12px}.vault-actions{flex-wrap:wrap}.vault-actions .btn{min-height:44px}.go-dialog{max-height:calc(100dvh - 24px)}}

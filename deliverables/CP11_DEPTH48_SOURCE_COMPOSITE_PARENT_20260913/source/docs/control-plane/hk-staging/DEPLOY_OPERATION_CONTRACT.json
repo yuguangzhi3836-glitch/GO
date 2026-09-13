@@ -1,0 +1,60 @@
+{
+  "contract_version": "3",
+  "environment": "HK-STAGING-01",
+  "action_id": "HK_STAGING_DEPLOY",
+  "topology": {
+    "topology_id": "HK_STAGING_BUSINESS_TOPOLOGY",
+    "topology_version": 1,
+    "contract_path": "docs/control-plane/hk-staging/DEPLOYMENT_TOPOLOGY_V1.json",
+    "current_executor_binding": "FIXED_EIGHT_SERVICE_SET",
+    "normal_deploy_requires_exact_match": true,
+    "caller_supplied_service_list_allowed": false,
+    "candidate_inferred_topology_expansion_allowed": false,
+    "topology_change_via_normal_deploy_allowed": false,
+    "topology_mismatch_result": "TOPOLOGY_CHANGE_REQUIRED",
+    "dynamic_topology_loading_implemented": false,
+    "dynamic_topology_loading_proven": false
+  },
+  "target_services": [
+    "api",
+    "recovery-worker",
+    "outbox-worker",
+    "mobile-push-receipt-worker",
+    "reconciliation-worker",
+    "mobile-push-worker",
+    "mobile-engagement-worker",
+    "judgment-worker"
+  ],
+  "target_count": 8,
+  "same_image_force_recreate": {
+    "proven_formal_e2e_scenario": true,
+    "required_for_all_future_deploys": false,
+    "description": "The Executor owns fixed force-recreate semantics for the currently approved topology; callers cannot control the flag. The proven formal E2E used a same-image candidate."
+  },
+  "force_recreate_caller_controlled": false,
+  "different_image_candidate_implementation_support": "MECHANICALLY_ACCEPTED_WHEN_CANDIDATE_IMAGE_AND_REPOSITORY_DIGEST_VALIDATE_AND_CURRENT_IMAGE_MATCHES_EXPECTED_CURRENT_IMAGE",
+  "different_image_candidate_formal_e2e": "NOT_PROVEN",
+  "runtime_env_file": "/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env",
+  "runtime_env_file_caller_controlled": false,
+  "migration_allowed": false,
+  "automatic_rollback_allowed": false,
+  "production_allowed": false,
+  "durable_previous_state_required": true,
+  "fresh_task_id_required": true,
+  "fresh_nonce_required": true,
+  "fresh_release_id_required": true,
+  "single_attempt": true,
+  "post_deploy_bounded_api_readiness": {
+    "enabled": true,
+    "attempts": 12,
+    "interval_seconds": 5
+  },
+  "formal_verify_required": true,
+  "proven_executor_version": "0.4.3-rollback-runtime",
+  "proven_executor_revision": "R11-release-binding-schema-correction",
+  "deploy_record_v2_required": true,
+  "protected_non_targets": ["redis", "caddy"],
+  "task_release_id_path": "parameters.release_id",
+  "scoped_deployment": "NOT_IMPLEMENTED",
+  "documentation_is_execution_authority": false
+}

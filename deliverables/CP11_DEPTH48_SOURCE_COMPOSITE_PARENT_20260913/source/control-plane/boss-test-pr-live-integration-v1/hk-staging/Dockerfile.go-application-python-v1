@@ -1,0 +1,4 @@
+FROM go-hotel:aoluguya-direct-r3-1-20260906
+WORKDIR /workspace
+COPY . /workspace
+ENV PYTHONPATH=/workspace/src

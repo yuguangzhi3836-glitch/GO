@@ -1,0 +1,102 @@
+{
+  "schema": "go.hotel-supply-provider-adapter-contract.v1",
+  "template_status": "INCOMPLETE_UNTIL_SIGNED_SUPPLIER_DOCUMENTATION",
+  "provider": {
+    "provider_code": "__NAMED_SUPPLIER_CODE__",
+    "supplier_legal_name": "__REQUIRED_FROM_CONTRACT__",
+    "environment": "SANDBOX"
+  },
+  "contract_source": {
+    "authority": "SIGNED_SUPPLIER_DOCUMENTATION",
+    "documentation_reference": "__REQUIRED__",
+    "documentation_version": "__REQUIRED__",
+    "documentation_hash": "__REQUIRED_SHA256__"
+  },
+  "transport": {
+    "base_url": "__REQUIRED_HTTPS_SANDBOX_BASE_URL__",
+    "auth": {
+      "method": "__REQUIRED_FROM_SIGNED_DOCS__",
+      "credential_reference": "vault://__REQUIRED__"
+    },
+    "ip_allowlist_reference": "__REQUIRED__"
+  },
+  "operations": {
+    "availability": {
+      "method": "__REQUIRED__",
+      "path": "__REQUIRED__",
+      "headers_template": {},
+      "request_mapping": {},
+      "response_mapping": {}
+    },
+    "quote": {
+      "method": "__REQUIRED__",
+      "path": "__REQUIRED__",
+      "headers_template": {},
+      "request_mapping": {},
+      "response_mapping": {}
+    },
+    "book": {
+      "method": "__REQUIRED__",
+      "path": "__REQUIRED__",
+      "headers_template": {},
+      "request_mapping": {},
+      "response_mapping": {}
+    },
+    "query": {
+      "method": "__REQUIRED__",
+      "path": "__REQUIRED__",
+      "headers_template": {},
+      "request_mapping": {},
+      "response_mapping": {}
+    },
+    "cancel": {
+      "method": "__REQUIRED__",
+      "path": "__REQUIRED__",
+      "headers_template": {},
+      "request_mapping": {},
+      "response_mapping": {}
+    }
+  },
+  "canonical_mapping": {
+    "property": {},
+    "room": {},
+    "rate_plan": {},
+    "availability": {},
+    "quote": {},
+    "booking": {},
+    "cancellation": {}
+  },
+  "webhook": {
+    "callback_path": "/internal/v1/hotel-supply/webhooks/__provider_code__",
+    "event_mapping": {},
+    "signature": {
+      "scheme": "__REQUIRED_FROM_SIGNED_DOCS__",
+      "signature_header": "__REQUIRED__",
+      "timestamp_header": "__REQUIRED__",
+      "replay_tolerance_seconds": 300,
+      "secret_reference": "vault://__REQUIRED__"
+    }
+  },
+  "error_mapping": {
+    "supplier_to_go": {},
+    "unknown_error_policy": "FAIL_CLOSED"
+  },
+  "limits": {
+    "requests_per_second": "__REQUIRED__",
+    "max_concurrency": "__REQUIRED__",
+    "connect_timeout_ms": "__REQUIRED__",
+    "read_timeout_ms": "__REQUIRED__",
+    "max_attempts": "__REQUIRED__",
+    "retryable_go_errors": []
+  },
+  "attestation": {
+    "contract_reference": "__REQUIRED__",
+    "sandbox_account_reference": "__REQUIRED__",
+    "test_property_reference": "__REQUIRED__",
+    "authorized_scope": "HOTEL_SUPPLY_SANDBOX_CERTIFICATION",
+    "evidence_references": [],
+    "prepared_by": "__REQUIRED__",
+    "prepared_at": "__REQUIRED_ISO8601__",
+    "external_transport_verified": false
+  }
+}

@@ -1,0 +1,406 @@
+#!/usr/bin/env python3
+"""Fail-closed, persistent HK-STAGING VERIFY request channel."""
+import argparse, datetime as dt, fcntl, hashlib, json, os, pathlib, re, secrets, subprocess, sys, tempfile
+from cryptography.hazmat.primitives import serialization
+
+REPO = "git@github.com:chenzhenxi1-sudo/go-control-tasks.git"
+REQUEST_RE = re.compile(r"^requests/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json$")
+REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$")
+ALLOWED = {"schema_version", "request_id", "action_id", "environment", "requested_at"}
+POLICY = {"schema_version": "1", "action_id": "HK_STAGING_VERIFY", "environment": "HK-STAGING-01", "max_bytes": 4096, "max_age_seconds": 900}
+BASELINE_CONFIG = "/etc/go-command-center/boss-request-verify-baseline-v1.json"
+TEST_ACTION = "HK_STAGING_TEST_PR"
+TEST_ALLOWED = ALLOWED | {"pr_number"}
+GO_REPOSITORY = "git@github.com:yuguangzhi3836-glitch/GO.git"
+PR_RESOLVER_KEY = "/etc/go-command-center/keys/github-go-pr-resolver"
+COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+PR_NUMBER_RE = re.compile(r"^[1-9][0-9]{0,8}$")
+
+class Reject(Exception): pass
+
+def canonical(value): return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+def now(): return dt.datetime.now(dt.timezone.utc)
+def iso(value): return value.isoformat().replace("+00:00", "Z")
+def parse_time(value):
+    if not isinstance(value, str): raise Reject("requested_at_not_string")
+    try: return dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc: raise Reject("invalid_requested_at") from exc
+
+def validate_request(raw, at=None):
+    if len(raw) > POLICY["max_bytes"]: raise Reject("request_oversized")
+    try: request = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc: raise Reject("malformed_json") from exc
+    if not isinstance(request, dict): raise Reject("schema_fields")
+    fields = TEST_ALLOWED if request.get("action_id") == TEST_ACTION else ALLOWED
+    if set(request) != fields: raise Reject("schema_fields")
+    if request["schema_version"] != POLICY["schema_version"]: raise Reject("schema_version")
+    if not isinstance(request["request_id"], str) or not REQUEST_ID_RE.fullmatch(request["request_id"]): raise Reject("request_id")
+    if request["action_id"] not in {POLICY["action_id"], TEST_ACTION}: raise Reject("action")
+    if request["environment"] != POLICY["environment"]: raise Reject("environment")
+    when = parse_time(request["requested_at"])
+    at = at or now()
+    if when.tzinfo is None or when > at + dt.timedelta(seconds=60) or at - when > dt.timedelta(seconds=POLICY["max_age_seconds"]): raise Reject("stale_or_future_request")
+    if request["action_id"] == TEST_ACTION and (not isinstance(request["pr_number"],str) or not PR_NUMBER_RE.fullmatch(request["pr_number"])): raise Reject("pr_number")
+    return request
+
+def load_baseline(path=BASELINE_CONFIG):
+    value=json.loads(pathlib.Path(path).read_text())
+    required={"version","environment","image_id","evidence_task_id","evidence_commit","evidence_path"}
+    if set(value) != required or value["version"] != 1 or value["environment"] != POLICY["environment"]: raise Reject("invalid_authoritative_baseline")
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}",value["image_id"]): raise Reject("invalid_authoritative_baseline")
+    if not all(isinstance(value[x],str) and value[x] for x in ("evidence_task_id","evidence_commit","evidence_path")): raise Reject("invalid_authoritative_baseline")
+    return value
+def derive(request, baseline, at=None):
+    at = at or now(); stamp = at.strftime("%Y%m%dT%H%M%SZ")
+    # Seconds alone are insufficient for a persistent channel: two independent
+    # PRs can be accepted in one poll.  The request-id digest makes task and
+    # release identity deterministic per request without granting caller input
+    # control over any deployment parameter.
+    suffix=hashlib.sha256(request["request_id"].encode()).hexdigest()[:12]
+    unique_stamp=stamp+"-"+suffix
+    return {"schema_version":"1", "task_id":"go-boss-request-verify-" + unique_stamp,
+      "nonce":secrets.token_urlsafe(24), "issued_at":iso(at), "expires_at":iso(at + dt.timedelta(minutes=15)),
+      "authority":"GO-COMMAND-CENTER", "environment":POLICY["environment"], "action_id":POLICY["action_id"],
+      "parameters":{"release_id":"boss-request-verify-" + unique_stamp, "candidate_image_id":baseline["image_id"], "expected_current_image_id":baseline["image_id"]}}
+
+def sign(task, key_path):
+    key = serialization.load_pem_private_key(pathlib.Path(key_path).read_bytes(), password=None)
+    signed = dict(task); signed["signature"] = key.sign(canonical(task)).hex(); return signed
+
+def pr_resolver_env():
+    """The GO resolver uses only its dedicated read-only Deploy Key."""
+    env={"PATH":"/usr/bin:/bin","LC_ALL":"C","GIT_TERMINAL_PROMPT":"0","GIT_CONFIG_NOSYSTEM":"1","GIT_CONFIG_GLOBAL":"/dev/null"}
+    env["GIT_SSH_COMMAND"]="ssh -i %s -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes" % PR_RESOLVER_KEY
+    return env
+
+def resolve_pr(number):
+    if not isinstance(number,str) or not PR_NUMBER_RE.fullmatch(number): raise Reject("pr_number")
+    ref="refs/pull/%s/head" % number
+    try: lines=git(pr_resolver_env(),"ls-remote",GO_REPOSITORY,ref).stdout.splitlines()
+    except (OSError,subprocess.SubprocessError) as exc: raise Reject("pr_resolution_unavailable") from exc
+    if len(lines)!=1: raise Reject("pr_head_not_found")
+    parts=lines[0].split("\t")
+    if len(parts)!=2 or parts[1]!=ref or not COMMIT_SHA_RE.fullmatch(parts[0]): raise Reject("pr_head_invalid")
+    return parts[0]
+
+def derive_test_pr(request, at=None, resolver=resolve_pr):
+    commit=resolver(request["pr_number"])
+    if not COMMIT_SHA_RE.fullmatch(commit): raise Reject("pr_head_invalid")
+    at=at or now(); suffix=hashlib.sha256(request["request_id"].encode()).hexdigest()[:12]
+    return {"schema_version":"1","task_id":"go-boss-test-pr-%s-%s"%(request["pr_number"],suffix),"nonce":secrets.token_urlsafe(24),"issued_at":iso(at),"expires_at":iso(at+dt.timedelta(minutes=20)),"authority":"GO-COMMAND-CENTER","environment":POLICY["environment"],"action_id":TEST_ACTION,"parameters":{"builder_profile":"go-application-python-v1","source":{"repository":GO_REPOSITORY,"pr_number":request["pr_number"],"commit_sha":commit}}}
+
+def derive_formal_task(request, at=None, resolver=resolve_pr):
+    if request["action_id"] == TEST_ACTION: return derive_test_pr(request,at,resolver)
+    return derive(request,load_baseline(),at)
+
+class Ledger:
+    def __init__(self, root): self.root = pathlib.Path(root); self.root.mkdir(mode=0o700, parents=True, exist_ok=True); self.path=self.root/"ledger.json"; self.lock=self.root/"ledger.lock"
+    def transaction(self):
+        handle=open(self.lock, "a+"); fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            data=json.loads(self.path.read_text()) if self.path.exists() else {"version":1,"requests":{}}
+            yield data
+            temp=self.root/"ledger.tmp"; temp.write_bytes(canonical(data)); os.chmod(temp,0o600); os.replace(temp,self.path)
+        finally: fcntl.flock(handle, fcntl.LOCK_UN); handle.close()
+
+def git(env, *argv, cwd=None): return subprocess.run(["/usr/bin/git", *argv], cwd=cwd, env=env, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+def ssh_env():
+    env=os.environ.copy(); env["GIT_SSH_COMMAND"]="ssh -i /etc/go-command-center/keys/github-tasks-writer -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes"; return env
+def discover_heads():
+    output=git(ssh_env(), "ls-remote", REPO, "refs/pull/*/head").stdout.splitlines(); heads={}
+    for line in output:
+        sha, ref=line.split("\t",1); number=ref.split("/")[2]; heads[number]=sha
+    return heads
+def request_path_from_changes(changes):
+    """Accept only one added Request JSON file; every other PR diff is ignored."""
+    if len(changes) != 1: return None
+    parts=changes[0].split("\t")
+    if len(parts) != 2 or parts[0] != "A" or not REQUEST_RE.fullmatch(parts[1]): return None
+    return parts[1]
+def read_pr(number, head):
+    work=pathlib.Path(tempfile.mkdtemp(prefix="go-boss-request-")); env=ssh_env()
+    try:
+        git(env,"init","-q",str(work)); git(env,"-C",str(work),"remote","add","origin",REPO)
+        git(env,"-C",str(work),"fetch","-q","--depth","1","origin","main:refs/bridge/main","refs/pull/%s/head:refs/bridge/head" % number)
+        actual=git(env,"-C",str(work),"rev-parse","refs/bridge/head").stdout.strip()
+        if actual != head or discover_heads().get(str(number)) != head: raise Reject("pr_head_changed")
+        changes=git(env,"-C",str(work),"diff","--name-status","refs/bridge/main..refs/bridge/head").stdout.splitlines()
+        path=request_path_from_changes(changes)
+        if not path: return {"ignored":True,"reason":"non_request_or_extra_files"}
+        raw=git(env,"-C",str(work),"show","refs/bridge/head:"+path).stdout.encode()
+        return {"path":path,"raw":raw}
+    finally:
+        subprocess.run(["/usr/bin/rm","-rf",str(work)], check=True)
+
+def process(number, head, ledger_root, key_path, reader=read_pr):
+    ledger=Ledger(ledger_root); key="%s:%s" % (number,head)
+    tx=ledger.transaction(); data=next(tx)
+    try:
+        if key in data["requests"]:
+            record=data["requests"][key]
+            if record.get("status") == "claiming": raise Reject("ambiguous_claim_requires_operator_review")
+            return {"status":"already_seen","record":record}
+        proposal=reader(number,head)
+        if proposal.get("ignored"):
+            data["requests"][key]={"status":"ignored","reason":proposal["reason"]}; return {"status":"ignored"}
+        if not REQUEST_RE.fullmatch(proposal["path"]): raise Reject("request_path")
+        request=validate_request(proposal["raw"])
+        for record in data["requests"].values():
+            if record.get("request_id")==request["request_id"]: raise Reject("duplicate_request_id")
+        data["requests"][key]={"status":"claiming","request_id":request["request_id"]}
+        temp=ledger.root/"ledger.tmp"; temp.write_bytes(canonical(data)); os.chmod(temp,0o600); os.replace(temp,ledger.path)
+        preview=sign(derive(request,{"image_id":"sha256:"+"0"*64}),key_path)
+        data["requests"][key]={"status":"dry_run_consumed","request_id":request["request_id"],"task_id":preview["task_id"],"task_sha256":__import__("hashlib").sha256(canonical(preview)).hexdigest(),"publish_enabled":False}
+        return {"status":"dry_run_consumed","task_id":preview["task_id"],"publish_enabled":False}
+    finally:
+        try: next(tx)
+        except StopIteration: pass
+
+def load_arm(path):
+    value=json.loads(pathlib.Path(path).read_text())
+    required={"version","state","expected_request_id","max_formal_task_issuances","publish_enabled"}
+    if set(value) != required or value["version"] != 1 or value["max_formal_task_issuances"] != 1: raise Reject("invalid_arm_configuration")
+    if value["state"] not in {"ARMED","DISARMED_CONSUMED"} or not REQUEST_ID_RE.fullmatch(value["expected_request_id"]): raise Reject("invalid_arm_configuration")
+    if not isinstance(value["publish_enabled"],bool): raise Reject("invalid_arm_configuration")
+    return value
+def save_arm(path, value):
+    target=pathlib.Path(path); temporary=target.with_suffix(".tmp"); temporary.write_bytes(canonical(value)); os.chmod(temporary,0o600); os.replace(temporary,target)
+def remote_task(task_id):
+    work=pathlib.Path(tempfile.mkdtemp(prefix="go-boss-reconcile-")); env=ssh_env()
+    try:
+        git(env,"init","-q",str(work)); git(env,"-C",str(work),"remote","add","origin",REPO); git(env,"-C",str(work),"fetch","-q","--depth","1","origin","main")
+        got=subprocess.run(["/usr/bin/git","-C",str(work),"show","FETCH_HEAD:tasks/"+task_id+".json"],env=env,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
+        return got.stdout if got.returncode == 0 else None
+    finally: subprocess.run(["/usr/bin/rm","-rf",str(work)],check=True)
+def publish_task(task):
+    work=pathlib.Path(tempfile.mkdtemp(prefix="go-boss-publish-")); env=ssh_env(); task_id=task["task_id"]
+    try:
+        git(env,"clone","-q","--depth","1",REPO,str(work/"repo")); repo=work/"repo"; path=repo/"tasks"/(task_id+".json")
+        if path.exists(): raise Reject("task_id_already_exists")
+        path.write_bytes(canonical(task)+b"\n"); git(env,"-C",str(repo),"add","--",str(path.relative_to(repo)))
+        git(env,"-C",str(repo),"-c","user.name=GO Command Center","-c","user.email=go-command-center@localhost","commit","-m","task: "+task_id)
+        git(env,"-C",str(repo),"push","origin","HEAD:main")
+        return git(env,"-C",str(repo),"rev-parse","HEAD").stdout.strip()
+    finally: subprocess.run(["/usr/bin/rm","-rf",str(work)],check=True)
+def armed_process(number, head, ledger_root, key_path, arm_path):
+    arm=load_arm(arm_path); ledger=Ledger(ledger_root); key="%s:%s"%(number,head)
+    tx=ledger.transaction(); data=next(tx)
+    try:
+        existing=data["requests"].get(key)
+        if existing:
+            if existing.get("status") in {"prepared","publishing"}:
+                actual=remote_task(existing["task"]["task_id"])
+                if actual == canonical(existing["task"])+b"\n":
+                    existing["status"]="published"; arm["state"]="DISARMED_CONSUMED"; arm["publish_enabled"]=False; save_arm(arm_path,arm); return {"status":"published_reconciled","task_id":existing["task"]["task_id"]}
+                raise Reject("ambiguous_publish_requires_operator_review")
+            return {"status":"already_seen","record":existing}
+        proposal=read_pr(number,head)
+        if proposal.get("ignored"):
+            data["requests"][key]={"status":"ignored","reason":proposal["reason"]}; return {"status":"ignored"}
+        request=validate_request(proposal["raw"])
+        if request["request_id"] != arm["expected_request_id"] or arm["state"] != "ARMED" or not arm["publish_enabled"]: raise Reject("request_not_currently_armed")
+        if any(x.get("request_id")==request["request_id"] for x in data["requests"].values()): raise Reject("duplicate_request_id")
+        task=sign(derive(request,load_baseline()),key_path)
+        data["requests"][key]={"status":"prepared","request_id":request["request_id"],"task":task,"task_sha256":hashlib.sha256(canonical(task)).hexdigest()}
+    finally:
+        try: next(tx)
+        except StopIteration: pass
+    tx=ledger.transaction(); data=next(tx)
+    try: data["requests"][key]["status"]="publishing"
+    finally:
+        try: next(tx)
+        except StopIteration: pass
+    task=data["requests"][key]["task"]
+    try: commit=publish_task(task)
+    except Exception:
+        actual=remote_task(task["task_id"])
+        if actual != canonical(task)+b"\n": raise Reject("ambiguous_publish_requires_operator_review")
+        commit="reconciled"
+    actual=remote_task(task["task_id"])
+    if actual != canonical(task)+b"\n": raise Reject("published_task_readback_mismatch")
+    tx=ledger.transaction(); data=next(tx)
+    try: data["requests"][key]["status"]="published"; data["requests"][key]["task_commit"]=commit; arm["state"]="DISARMED_CONSUMED"; arm["publish_enabled"]=False; save_arm(arm_path,arm)
+    finally:
+        try: next(tx)
+        except StopIteration: pass
+    return {"status":"published","task_id":task["task_id"],"task_commit":commit}
+
+def load_channel(path):
+    value=json.loads(pathlib.Path(path).read_text())
+    if set(value)=={"version","mode","publish_enabled","allowed_actions","allowed_environment"}:
+        if value["version"]!=3 or value["mode"]!="PERSISTENT" or value["publish_enabled"] is not True: raise Reject("invalid_channel_configuration")
+        if value["allowed_environment"]!=POLICY["environment"] or value["allowed_actions"] != [POLICY["action_id"],TEST_ACTION]: raise Reject("invalid_channel_configuration")
+        return value
+    required={"version","mode","publish_enabled","allowed_action_id","allowed_environment"}
+    if set(value) != required or value["version"] != 2 or value["mode"] != "PERSISTENT": raise Reject("invalid_channel_configuration")
+    if value["publish_enabled"] is not True: raise Reject("persistent_publish_not_enabled")
+    if value["allowed_action_id"] != POLICY["action_id"] or value["allowed_environment"] != POLICY["environment"]: raise Reject("invalid_channel_configuration")
+    return value
+
+def persistent_process(number, head, ledger_root, key_path, channel_path):
+    # The immutable root-owned channel config is intentionally checked on every
+    # poll.  PR content never controls action, environment, image, or signing.
+    load_channel(channel_path); ledger=Ledger(ledger_root); key="%s:%s"%(number,head)
+    tx=ledger.transaction(); data=next(tx)
+    try:
+        existing=data["requests"].get(key)
+        if existing:
+            if existing.get("status") in {"prepared","publishing"}:
+                actual=remote_task(existing["task"]["task_id"])
+                if actual == canonical(existing["task"])+b"\n":
+                    existing["status"]="published"; existing["task_commit"]="reconciled"
+                    return {"status":"published_reconciled","task_id":existing["task"]["task_id"]}
+                raise Reject("ambiguous_publish_requires_operator_review")
+            return {"status":"already_seen","record":existing}
+        proposal=read_pr(number,head)
+        if proposal.get("ignored"):
+            data["requests"][key]={"status":"ignored","reason":proposal["reason"]}; return {"status":"ignored"}
+        request=validate_request(proposal["raw"])
+        if any(x.get("request_id")==request["request_id"] for x in data["requests"].values()): raise Reject("duplicate_request_id")
+        task=sign(derive_formal_task(request),key_path)
+        data["requests"][key]={"status":"prepared","request_id":request["request_id"],"task":task,"task_sha256":hashlib.sha256(canonical(task)).hexdigest()}
+    finally:
+        try: next(tx)
+        except StopIteration: pass
+    tx=ledger.transaction(); data=next(tx)
+    try: data["requests"][key]["status"]="publishing"
+    finally:
+        try: next(tx)
+        except StopIteration: pass
+    task=data["requests"][key]["task"]
+    try: commit=publish_task(task)
+    except Exception:
+        actual=remote_task(task["task_id"])
+        if actual != canonical(task)+b"\n": raise Reject("ambiguous_publish_requires_operator_review")
+        commit="reconciled"
+    if remote_task(task["task_id"]) != canonical(task)+b"\n": raise Reject("published_task_readback_mismatch")
+    tx=ledger.transaction(); data=next(tx)
+    try: data["requests"][key]["status"]="published"; data["requests"][key]["task_commit"]=commit
+    finally:
+        try: next(tx)
+        except StopIteration: pass
+    return {"status":"published","task_id":task["task_id"],"task_commit":commit}
+
+def main():
+    parser=argparse.ArgumentParser(); parser.add_argument("--once",action="store_true"); parser.add_argument("--ledger-root",default="/var/lib/go-command-center/boss-request-bridge-v1"); parser.add_argument("--key",default="/etc/go-command-center/keys/task-manifest-signing.pem"); parser.add_argument("--channel-config"); parser.add_argument("--self-test",action="store_true"); args=parser.parse_args()
+    if args.self_test: return run_tests()
+    if not args.channel_config: raise Reject("persistent_channel_configuration_required")
+    result=[]
+    for number,head in sorted(discover_heads().items(), key=lambda v:int(v[0])):
+        try: result.append({"pr":number,"head":head,**persistent_process(number,head,args.ledger_root,args.key,args.channel_config)})
+        except Reject as exc: result.append({"pr":number,"head":head,"status":"rejected","reason":str(exc)})
+    channel = load_channel(args.channel_config)
+    print(json.dumps({"bridge_version":"1.2.0", "channel_mode":channel["mode"],
+                      "publish_enabled":channel["publish_enabled"], "results":result},sort_keys=True)); return 0
+
+def run_tests():
+    import unittest
+    class Tests(unittest.TestCase):
+      def request(self, **x):
+        value={"schema_version":"1","request_id":"request-abc","action_id":"HK_STAGING_VERIFY","environment":"HK-STAGING-01","requested_at":iso(now())}; value.update(x); return canonical(value)
+      def test_valid(self): self.assertEqual(validate_request(self.request())["action_id"],"HK_STAGING_VERIFY")
+      def test_bad_json(self):
+        with self.assertRaises(Reject): validate_request(b"{")
+      def test_unknown_fields(self):
+        with self.assertRaises(Reject): validate_request(self.request(extra=True))
+      def test_action_and_env(self):
+        for value in (self.request(action_id="HK_STAGING_DEPLOY"),self.request(action_id="HK_STAGING_ROLLBACK"),self.request(environment="PRODUCTION")):
+          with self.assertRaises(Reject): validate_request(value)
+      def test_stale_and_size(self):
+        with self.assertRaises(Reject): validate_request(self.request(requested_at="2020-01-01T00:00:00Z"))
+        with self.assertRaises(Reject): validate_request(b"x"*(POLICY["max_bytes"]+1))
+      def test_derivation(self):
+        task=derive(validate_request(self.request()),{"image_id":"sha256:"+"0"*64}); self.assertEqual(set(task["parameters"]),{"release_id","candidate_image_id","expected_current_image_id"}); self.assertEqual(task["action_id"],"HK_STAGING_VERIFY")
+      def test_task_inputs_not_caller_controlled(self):
+        request=validate_request(self.request())
+        task=derive(request,{"image_id":"sha256:"+"0"*64})
+        self.assertNotIn("force_recreate",task["parameters"]); self.assertNotIn("compose_path",task["parameters"]); self.assertNotIn("runtime_env_path",task["parameters"])
+      def test_path_rule(self): self.assertTrue(REQUEST_RE.fullmatch("requests/request-abc.json")); self.assertFalse(REQUEST_RE.fullmatch("requests/../tasks/x.json"))
+      def test_request_path_rejects_extra_files(self):
+        self.assertFalse(REQUEST_RE.fullmatch("tasks/x.json")); self.assertFalse(REQUEST_RE.fullmatch("evidence/x.json")); self.assertFalse(REQUEST_RE.fullmatch("requests/a.txt"))
+      def test_diff_rules(self):
+        self.assertEqual(request_path_from_changes(["A\trequests/request-abc.json"]),"requests/request-abc.json")
+        self.assertIsNone(request_path_from_changes(["A\trequests/request-abc.json","A\ttasks/x.json"]))
+        self.assertIsNone(request_path_from_changes(["A\trequests/request-abc.json","A\tevidence/x.json"]))
+        self.assertIsNone(request_path_from_changes(["M\trequests/request-abc.json"]))
+        self.assertIsNone(request_path_from_changes(["R100\tpermission-test/x\trequests/request-abc.json"]))
+      def test_signature_roundtrip(self):
+        with tempfile.NamedTemporaryFile() as key:
+          private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate(); key.write(private.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())); key.flush()
+          task=derive(validate_request(self.request()),{"image_id":"sha256:"+"0"*64}); signed=sign(task,key.name); private.public_key().verify(bytes.fromhex(signed.pop("signature")),canonical(signed))
+      def test_replay_and_duplicate(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
+          private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate(); key.write(private.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())); key.flush()
+          reader=lambda n,h:{"path":"requests/request-abc.json","raw":self.request()}
+          one=process("2","a"*40,root,key.name,reader); self.assertEqual(one["status"],"dry_run_consumed"); self.assertEqual(process("2","a"*40,root,key.name,reader)["status"],"already_seen")
+          with self.assertRaises(Reject): process("3","b"*40,root,key.name,reader)
+      def test_extra_and_pr1_ignore(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
+          private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate(); key.write(private.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())); key.flush()
+          ignored=lambda n,h:{"ignored":True,"reason":"non_request_or_extra_files"}; self.assertEqual(process("1","c"*40,root,key.name,ignored)["status"],"ignored")
+      def test_head_change_rejects(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
+          private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate(); key.write(private.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())); key.flush()
+          with self.assertRaises(Reject): process("4","d"*40,root,key.name,lambda n,h: (_ for _ in ()).throw(Reject("pr_head_changed")))
+      def test_crash_claim_is_fail_closed(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
+          private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate(); key.write(private.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())); key.flush()
+          pathlib.Path(root,"ledger.json").write_bytes(canonical({"version":1,"requests":{"5:"+"e"*40:{"status":"claiming","request_id":"request-abc"}}}))
+          with self.assertRaises(Reject): process("5","e"*40,root,key.name,lambda n,h:None)
+      def test_channel_config_has_no_one_shot_fields(self):
+        with tempfile.NamedTemporaryFile() as config:
+          config.write(canonical({"version":2,"mode":"PERSISTENT","publish_enabled":True,"allowed_action_id":"HK_STAGING_VERIFY","allowed_environment":"HK-STAGING-01"})); config.flush()
+          self.assertEqual(load_channel(config.name)["mode"],"PERSISTENT")
+      def test_channel_rejects_one_shot_shape(self):
+        with tempfile.NamedTemporaryFile() as config:
+          config.write(canonical({"version":1,"state":"ARMED","expected_request_id":"request-abc","max_formal_task_issuances":1,"publish_enabled":True})); config.flush()
+          with self.assertRaises(Reject): load_channel(config.name)
+      def test_authoritative_baseline_validation_fails_closed(self):
+        valid={"version":1,"environment":"HK-STAGING-01","image_id":"sha256:"+"2"*64,"evidence_task_id":"evidence-task","evidence_commit":"a"*40,"evidence_path":"evidence/example.json"}
+        with tempfile.NamedTemporaryFile() as baseline:
+          baseline.write(canonical(valid)); baseline.flush(); self.assertEqual(load_baseline(baseline.name)["image_id"],valid["image_id"])
+          valid["image_id"]="not-an-image"; baseline.seek(0); baseline.truncate(); baseline.write(canonical(valid)); baseline.flush()
+          with self.assertRaises(Reject): load_baseline(baseline.name)
+      def test_ambiguous_push_recovery_fails_closed(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
+          task={"task_id":"synthetic-one-shot"}; pathlib.Path(root,"ledger.json").write_bytes(canonical({"version":1,"requests":{"6:"+"f"*40:{"status":"publishing","task":task}}}))
+          config=pathlib.Path(root,"arm.json"); config.write_bytes(canonical({"version":1,"state":"ARMED","expected_request_id":"request-abc","max_formal_task_issuances":1,"publish_enabled":True}))
+          original=globals()["remote_task"]; globals()["remote_task"]=lambda task_id: None
+          try:
+            with self.assertRaises(Reject): armed_process("6","f"*40,root,key.name,str(config))
+          finally: globals()["remote_task"]=original
+      def test_confirmed_push_disarms(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
+          task={"task_id":"synthetic-one-shot"}; pathlib.Path(root,"ledger.json").write_bytes(canonical({"version":1,"requests":{"7:"+"g"*40:{"status":"publishing","task":task}}}))
+          config=pathlib.Path(root,"arm.json"); config.write_bytes(canonical({"version":1,"state":"ARMED","expected_request_id":"request-abc","max_formal_task_issuances":1,"publish_enabled":True}))
+          original=globals()["remote_task"]; globals()["remote_task"]=lambda task_id: canonical(task)+b"\n"
+          try:
+            self.assertEqual(armed_process("7","g"*40,root,key.name,str(config))["status"],"published_reconciled")
+            self.assertEqual(load_arm(str(config))["state"],"DISARMED_CONSUMED")
+          finally: globals()["remote_task"]=original
+      def test_persistent_three_unique_requests_and_replays(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key, tempfile.NamedTemporaryFile() as config:
+          private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate(); key.write(private.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())); key.flush()
+          config.write(canonical({"version":2,"mode":"PERSISTENT","publish_enabled":True,"allowed_action_id":"HK_STAGING_VERIFY","allowed_environment":"HK-STAGING-01"})); config.flush()
+          tasks={}; original_reader,original_baseline,original_publish,original_remote=globals()["read_pr"],globals()["load_baseline"],globals()["publish_task"],globals()["remote_task"]
+          try:
+            globals()["read_pr"]=lambda n,h:{"path":"requests/request-%s.json"%n,"raw":self.request(request_id="request-%s"%n)}
+            globals()["load_baseline"]=lambda:{"image_id":"sha256:"+"1"*64}
+            globals()["publish_task"]=lambda task:(tasks.setdefault(task["task_id"],canonical(task)+b"\n") and "commit")
+            globals()["remote_task"]=lambda task_id:tasks.get(task_id)
+            for number,head in (("11","a"*40),("12","b"*40),("13","c"*40)):
+              self.assertEqual(persistent_process(number,head,root,key.name,config.name)["status"],"published")
+            self.assertEqual(persistent_process("11","a"*40,root,key.name,config.name)["status"],"already_seen")
+            globals()["read_pr"]=lambda n,h:{"path":"requests/request-duplicate.json","raw":self.request(request_id="request-11")}
+            with self.assertRaises(Reject): persistent_process("14","d"*40,root,key.name,config.name)
+          finally: globals()["read_pr"],globals()["load_baseline"],globals()["publish_task"],globals()["remote_task"]=original_reader,original_baseline,original_publish,original_remote
+      def test_persistent_ambiguous_publish_fails_closed(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key, tempfile.NamedTemporaryFile() as config:
+          config.write(canonical({"version":2,"mode":"PERSISTENT","publish_enabled":True,"allowed_action_id":"HK_STAGING_VERIFY","allowed_environment":"HK-STAGING-01"})); config.flush()
+          task={"task_id":"synthetic-persistent"}; pathlib.Path(root,"ledger.json").write_bytes(canonical({"version":1,"requests":{"15:"+"e"*40:{"status":"publishing","task":task}}}))
+          original=globals()["remote_task"]; globals()["remote_task"]=lambda task_id:None
+          try:
+            with self.assertRaises(Reject): persistent_process("15","e"*40,root,key.name,config.name)
+          finally: globals()["remote_task"]=original
+    suite=unittest.defaultTestLoader.loadTestsFromTestCase(Tests); result=unittest.TextTestRunner(verbosity=2).run(suite); return 0 if result.wasSuccessful() else 1
+if __name__ == "__main__": sys.exit(main())
