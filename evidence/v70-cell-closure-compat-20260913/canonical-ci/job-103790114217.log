@@ -1,0 +1,1285 @@
+﻿2026-09-13T20:46:59.8981654Z Current runner version: '2.337.0'
+2026-09-13T20:46:59.9017248Z ##[group]Runner Image Provisioner
+2026-09-13T20:46:59.9018634Z Hosted Compute Agent
+2026-09-13T20:46:59.9019773Z Version: 20260828.587
+2026-09-13T20:46:59.9020862Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-13T20:46:59.9022183Z Build Date: 2026-08-28T16:44:25Z
+2026-09-13T20:46:59.9023677Z Worker ID: {ea334a96-73e6-411c-a94c-dc34f6a6a3a7}
+2026-09-13T20:46:59.9025006Z Azure Region: eastus
+2026-09-13T20:46:59.9026402Z ##[endgroup]
+2026-09-13T20:46:59.9028840Z ##[group]Operating System
+2026-09-13T20:46:59.9029965Z Ubuntu
+2026-09-13T20:46:59.9030849Z 24.04.5
+2026-09-13T20:46:59.9031742Z LTS
+2026-09-13T20:46:59.9032820Z ##[endgroup]
+2026-09-13T20:46:59.9033769Z ##[group]Runner Image
+2026-09-13T20:46:59.9034951Z Image: ubuntu-24.04
+2026-09-13T20:46:59.9036362Z Version: 20260907.300.1
+2026-09-13T20:46:59.9038628Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-13T20:46:59.9041439Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-13T20:46:59.9043300Z ##[endgroup]
+2026-09-13T20:46:59.9045159Z ##[group]GITHUB_TOKEN Permissions
+2026-09-13T20:46:59.9048340Z Contents: read
+2026-09-13T20:46:59.9049420Z Metadata: read
+2026-09-13T20:46:59.9050501Z ##[endgroup]
+2026-09-13T20:46:59.9053563Z Secret source: Actions
+2026-09-13T20:46:59.9055146Z Cache mode: write
+2026-09-13T20:46:59.9056822Z Prepare workflow directory
+2026-09-13T20:46:59.9649949Z Prepare all required actions
+2026-09-13T20:46:59.9721596Z Getting action download info
+2026-09-13T20:47:00.1738979Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-13T20:47:00.2986287Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-13T20:47:00.4192621Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-13T20:47:00.6318340Z Complete job name: mobile-source-and-native-linking
+2026-09-13T20:47:00.7093439Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:47:00.7102166Z ##[group]Run actions/checkout@v4
+2026-09-13T20:47:00.7102923Z with:
+2026-09-13T20:47:00.7103429Z   ref: ddd2b9d82d560ba2657a7904f061fb20196d5924
+2026-09-13T20:47:00.7104056Z   persist-credentials: false
+2026-09-13T20:47:00.7104602Z   repository: yuguangzhi3836-glitch/GO
+2026-09-13T20:47:00.7108933Z   token: ***
+2026-09-13T20:47:00.7109385Z   ssh-strict: true
+2026-09-13T20:47:00.7109836Z   ssh-user: git
+2026-09-13T20:47:00.7110276Z   clean: true
+2026-09-13T20:47:00.7110771Z   sparse-checkout-cone-mode: true
+2026-09-13T20:47:00.7111313Z   fetch-depth: 1
+2026-09-13T20:47:00.7111785Z   fetch-tags: false
+2026-09-13T20:47:00.7112270Z   show-progress: true
+2026-09-13T20:47:00.7112723Z   lfs: false
+2026-09-13T20:47:00.7113147Z   submodules: false
+2026-09-13T20:47:00.7113603Z   set-safe-directory: true
+2026-09-13T20:47:00.7114137Z   allow-unsafe-pr-checkout: false
+2026-09-13T20:47:00.7114957Z env:
+2026-09-13T20:47:00.7115369Z   CI: 1
+2026-09-13T20:47:00.7115961Z   EXPO_NO_TELEMETRY: 1
+2026-09-13T20:47:00.7116427Z   EXPO_DEBUG: 1
+2026-09-13T20:47:00.7116885Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:00.7117394Z ##[endgroup]
+2026-09-13T20:47:00.8340951Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-13T20:47:00.8344472Z ##[group]Getting Git version info
+2026-09-13T20:47:00.8346788Z Working directory is '/home/runner/work/GO/GO'
+2026-09-13T20:47:00.8349681Z [command]/usr/bin/git version
+2026-09-13T20:47:00.8453421Z git version 2.55.0
+2026-09-13T20:47:00.8485764Z ##[endgroup]
+2026-09-13T20:47:00.8501889Z Temporarily overriding HOME='/home/runner/work/_temp/ba741da9-d437-4558-ba66-f073e36faa80' before making global git config changes
+2026-09-13T20:47:00.8505253Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-13T20:47:00.8684620Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-13T20:47:00.8687683Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-13T20:47:00.8689324Z ##[group]Initializing the repository
+2026-09-13T20:47:00.8690335Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-13T20:47:00.9991883Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-13T20:47:01.0026945Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-13T20:47:01.0203333Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-13T20:47:01.0207081Z hint: call:
+2026-09-13T20:47:01.0208324Z hint:
+2026-09-13T20:47:01.0210358Z hint: 	git config --global init.defaultBranch <name>
+2026-09-13T20:47:01.0212029Z hint:
+2026-09-13T20:47:01.0214201Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-13T20:47:01.0217271Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-13T20:47:01.0219563Z hint:
+2026-09-13T20:47:01.0220824Z hint: 	git branch -m <name>
+2026-09-13T20:47:01.0222764Z hint:
+2026-09-13T20:47:01.0224438Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-13T20:47:01.0227558Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-13T20:47:01.0370645Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-13T20:47:01.0373670Z ##[endgroup]
+2026-09-13T20:47:01.0375112Z ##[group]Disabling automatic garbage collection
+2026-09-13T20:47:01.0376638Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-13T20:47:01.0379252Z ##[endgroup]
+2026-09-13T20:47:01.0380555Z ##[group]Setting up auth
+2026-09-13T20:47:01.0381805Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-13T20:47:01.0386394Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-13T20:47:01.0390767Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-13T20:47:01.0395927Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-13T20:47:01.0407836Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-13T20:47:01.0449190Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-13T20:47:01.0868379Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-13T20:47:01.0873648Z ##[endgroup]
+2026-09-13T20:47:01.0876233Z ##[group]Fetching the repository
+2026-09-13T20:47:01.0878940Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ddd2b9d82d560ba2657a7904f061fb20196d5924
+2026-09-13T20:47:14.6187406Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-13T20:47:14.6204550Z  * branch            ddd2b9d82d560ba2657a7904f061fb20196d5924 -> FETCH_HEAD
+2026-09-13T20:47:14.6212210Z ##[endgroup]
+2026-09-13T20:47:14.6213737Z ##[group]Determining the checkout info
+2026-09-13T20:47:14.6214917Z ##[endgroup]
+2026-09-13T20:47:14.6216091Z [command]/usr/bin/git sparse-checkout disable
+2026-09-13T20:47:14.6265994Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-13T20:47:14.6313673Z ##[group]Checking out the ref
+2026-09-13T20:47:14.6316041Z [command]/usr/bin/git checkout --progress --force ddd2b9d82d560ba2657a7904f061fb20196d5924
+2026-09-13T20:47:15.7360225Z Updating files:  32% (1632/4950)
+2026-09-13T20:47:16.2239957Z Updating files:  33% (1634/4950)
+2026-09-13T20:47:16.2267359Z Updating files:  34% (1683/4950)
+2026-09-13T20:47:16.2296804Z Updating files:  35% (1733/4950)
+2026-09-13T20:47:16.2320859Z Updating files:  36% (1782/4950)
+2026-09-13T20:47:16.2427357Z Updating files:  37% (1832/4950)
+2026-09-13T20:47:16.2506151Z Updating files:  38% (1881/4950)
+2026-09-13T20:47:16.2556227Z Updating files:  39% (1931/4950)
+2026-09-13T20:47:16.2603460Z Updating files:  40% (1980/4950)
+2026-09-13T20:47:16.2717428Z Updating files:  41% (2030/4950)
+2026-09-13T20:47:16.2736492Z Updating files:  42% (2079/4950)
+2026-09-13T20:47:16.2738836Z Updating files:  43% (2129/4950)
+2026-09-13T20:47:16.2739767Z Updating files:  44% (2178/4950)
+2026-09-13T20:47:16.2762547Z Updating files:  45% (2228/4950)
+2026-09-13T20:47:16.2790786Z Updating files:  46% (2277/4950)
+2026-09-13T20:47:16.2815141Z Updating files:  47% (2327/4950)
+2026-09-13T20:47:16.2844139Z Updating files:  48% (2376/4950)
+2026-09-13T20:47:16.2882908Z Updating files:  49% (2426/4950)
+2026-09-13T20:47:16.2923395Z Updating files:  50% (2475/4950)
+2026-09-13T20:47:16.2956605Z Updating files:  51% (2525/4950)
+2026-09-13T20:47:16.2992110Z Updating files:  52% (2574/4950)
+2026-09-13T20:47:16.3033942Z Updating files:  53% (2624/4950)
+2026-09-13T20:47:16.3064831Z Updating files:  54% (2673/4950)
+2026-09-13T20:47:16.3096124Z Updating files:  55% (2723/4950)
+2026-09-13T20:47:16.3129218Z Updating files:  56% (2772/4950)
+2026-09-13T20:47:16.3158782Z Updating files:  57% (2822/4950)
+2026-09-13T20:47:16.3212695Z Updating files:  58% (2871/4950)
+2026-09-13T20:47:16.3233419Z Updating files:  59% (2921/4950)
+2026-09-13T20:47:16.3641680Z Updating files:  60% (2970/4950)
+2026-09-13T20:47:16.4139872Z Updating files:  61% (3020/4950)
+2026-09-13T20:47:16.4166505Z Updating files:  62% (3069/4950)
+2026-09-13T20:47:16.4230507Z Updating files:  63% (3119/4950)
+2026-09-13T20:47:16.4448974Z Updating files:  64% (3168/4950)
+2026-09-13T20:47:16.4625209Z Updating files:  65% (3218/4950)
+2026-09-13T20:47:16.5100520Z Updating files:  66% (3267/4950)
+2026-09-13T20:47:16.5306721Z Updating files:  67% (3317/4950)
+2026-09-13T20:47:16.5366143Z Updating files:  68% (3366/4950)
+2026-09-13T20:47:16.5406023Z Updating files:  69% (3416/4950)
+2026-09-13T20:47:16.5436143Z Updating files:  70% (3465/4950)
+2026-09-13T20:47:16.5477151Z Updating files:  71% (3515/4950)
+2026-09-13T20:47:16.5549173Z Updating files:  72% (3564/4950)
+2026-09-13T20:47:16.5576295Z Updating files:  73% (3614/4950)
+2026-09-13T20:47:16.5600584Z Updating files:  74% (3663/4950)
+2026-09-13T20:47:16.5628558Z Updating files:  75% (3713/4950)
+2026-09-13T20:47:16.5671014Z Updating files:  76% (3762/4950)
+2026-09-13T20:47:16.5710275Z Updating files:  77% (3812/4950)
+2026-09-13T20:47:16.5742143Z Updating files:  78% (3861/4950)
+2026-09-13T20:47:16.5782314Z Updating files:  79% (3911/4950)
+2026-09-13T20:47:16.5811391Z Updating files:  80% (3960/4950)
+2026-09-13T20:47:16.5859417Z Updating files:  81% (4010/4950)
+2026-09-13T20:47:16.6186534Z Updating files:  82% (4059/4950)
+2026-09-13T20:47:16.6401890Z Updating files:  83% (4109/4950)
+2026-09-13T20:47:16.6625136Z Updating files:  83% (4120/4950)
+2026-09-13T20:47:16.8472906Z Updating files:  84% (4158/4950)
+2026-09-13T20:47:16.8520136Z Updating files:  85% (4208/4950)
+2026-09-13T20:47:16.8561450Z Updating files:  86% (4257/4950)
+2026-09-13T20:47:16.8657703Z Updating files:  87% (4307/4950)
+2026-09-13T20:47:16.8681305Z Updating files:  88% (4356/4950)
+2026-09-13T20:47:16.8707465Z Updating files:  89% (4406/4950)
+2026-09-13T20:47:16.8737626Z Updating files:  90% (4455/4950)
+2026-09-13T20:47:16.8798253Z Updating files:  91% (4505/4950)
+2026-09-13T20:47:16.8820245Z Updating files:  92% (4554/4950)
+2026-09-13T20:47:16.8843585Z Updating files:  93% (4604/4950)
+2026-09-13T20:47:16.8870083Z Updating files:  94% (4653/4950)
+2026-09-13T20:47:16.8937335Z Updating files:  95% (4703/4950)
+2026-09-13T20:47:16.8977949Z Updating files:  96% (4752/4950)
+2026-09-13T20:47:16.9026919Z Updating files:  97% (4802/4950)
+2026-09-13T20:47:16.9089746Z Updating files:  98% (4851/4950)
+2026-09-13T20:47:16.9102478Z Updating files:  99% (4901/4950)
+2026-09-13T20:47:16.9126058Z Updating files: 100% (4950/4950)
+2026-09-13T20:47:16.9126833Z Updating files: 100% (4950/4950), done.
+2026-09-13T20:47:17.4236615Z Note: switching to 'ddd2b9d82d560ba2657a7904f061fb20196d5924'.
+2026-09-13T20:47:17.4237428Z 
+2026-09-13T20:47:17.4237965Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-13T20:47:17.4239043Z changes and commit them, and you can discard any commits you make in this
+2026-09-13T20:47:17.4239879Z state without impacting any branches by switching back to a branch.
+2026-09-13T20:47:17.4240389Z 
+2026-09-13T20:47:17.4240726Z If you want to create a new branch to retain commits you create, you may
+2026-09-13T20:47:17.4241490Z do so (now or later) by using -c with the switch command. Example:
+2026-09-13T20:47:17.4241941Z 
+2026-09-13T20:47:17.4242128Z   git switch -c <new-branch-name>
+2026-09-13T20:47:17.4242461Z 
+2026-09-13T20:47:17.4242653Z Or undo this operation with:
+2026-09-13T20:47:17.4242951Z 
+2026-09-13T20:47:17.4243103Z   git switch -
+2026-09-13T20:47:17.4243317Z 
+2026-09-13T20:47:17.4243688Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-13T20:47:17.4244232Z 
+2026-09-13T20:47:17.4244695Z HEAD is now at ddd2b9d ci: bind authorized Query default repair to exact application fingerprint
+2026-09-13T20:47:17.5869710Z ##[endgroup]
+2026-09-13T20:47:17.6256941Z [command]/usr/bin/git log -1 --format=%H
+2026-09-13T20:47:17.6299790Z ddd2b9d82d560ba2657a7904f061fb20196d5924
+2026-09-13T20:47:17.6326612Z ##[group]Removing auth
+2026-09-13T20:47:17.6327637Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-13T20:47:17.6365649Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-13T20:47:17.6624013Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-13T20:47:17.6652624Z http.https://github.com/.extraheader
+2026-09-13T20:47:17.6662761Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-13T20:47:17.7245971Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-13T20:47:17.7499278Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-13T20:47:17.7546903Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-13T20:47:17.7838493Z ##[endgroup]
+2026-09-13T20:47:17.8091536Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:47:17.8093124Z ##[group]Run actions/setup-node@v4
+2026-09-13T20:47:17.8093379Z with:
+2026-09-13T20:47:17.8093579Z   node-version: 22.22.0
+2026-09-13T20:47:17.8093801Z   always-auth: false
+2026-09-13T20:47:17.8094022Z   check-latest: false
+2026-09-13T20:47:17.8097193Z   token: ***
+2026-09-13T20:47:17.8097404Z env:
+2026-09-13T20:47:17.8097585Z   CI: 1
+2026-09-13T20:47:17.8097774Z   EXPO_NO_TELEMETRY: 1
+2026-09-13T20:47:17.8097988Z   EXPO_DEBUG: 1
+2026-09-13T20:47:17.8098203Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:17.8098443Z ##[endgroup]
+2026-09-13T20:47:18.6171529Z Attempting to download 22.22.0...
+2026-09-13T20:47:18.6281575Z (node:2115) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-13T20:47:18.6306364Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-13T20:47:19.1032577Z Acquiring 22.22.0 - x64 from https://github.com/actions/node-versions/releases/download/22.22.0-20981702931/node-22.22.0-linux-x64.tar.gz
+2026-09-13T20:47:19.8067649Z Extracting ...
+2026-09-13T20:47:19.8212128Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/07c40f7b-a6e0-48bf-a030-21b7bd5f38b2 -f /home/runner/work/_temp/239a03fe-3c82-4c02-9693-03954a31ec88
+2026-09-13T20:47:21.6274481Z Adding to the cache ...
+2026-09-13T20:47:25.8309066Z ##[group]Environment details
+2026-09-13T20:47:26.1156795Z node: v22.22.0
+2026-09-13T20:47:26.1157472Z npm: 10.9.4
+2026-09-13T20:47:26.1157931Z yarn: 1.22.22
+2026-09-13T20:47:26.1158858Z ##[endgroup]
+2026-09-13T20:47:26.1347551Z ##[group]Run python ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"
+2026-09-13T20:47:26.1348201Z [36;1mpython ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"[0m
+2026-09-13T20:47:26.1348723Z [36;1mcp -a application/mobile/go-app "$RUNNER_TEMP/mobile"[0m
+2026-09-13T20:47:26.1397237Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-13T20:47:26.1397601Z env:
+2026-09-13T20:47:26.1397788Z   CI: 1
+2026-09-13T20:47:26.1397984Z   EXPO_NO_TELEMETRY: 1
+2026-09-13T20:47:26.1398214Z   EXPO_DEBUG: 1
+2026-09-13T20:47:26.1398437Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:26.1398700Z ##[endgroup]
+2026-09-13T20:47:26.2666544Z {"source_files": 1332, "source_tree_sha256": "1c4d78c3c1bb5f448d0ebdb99d16a2d76419bbc663cc9ed8fae831e1d18c10c4", "unchanged_parent_files": 1188, "new_files": 61, "repaired_existing_files": 83, "compatibility_files_unchanged": 19, "checkpoint_commit": "ddd2b9d82d560ba2657a7904f061fb20196d5924", "byte_retention": "PASS", "full_feature_retention": "HOLD_APPROVAL_BLOCKED_PROVIDER_GUARD", "deployment": "NOT_RUN", "production": "HOLD"}
+2026-09-13T20:47:26.2861313Z ##[group]Run npm ci --ignore-scripts --no-audit --no-fund
+2026-09-13T20:47:26.2861790Z [36;1mnpm ci --ignore-scripts --no-audit --no-fund[0m
+2026-09-13T20:47:26.2900176Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-13T20:47:26.2900539Z env:
+2026-09-13T20:47:26.2900726Z   CI: 1
+2026-09-13T20:47:26.2900925Z   EXPO_NO_TELEMETRY: 1
+2026-09-13T20:47:26.2901153Z   EXPO_DEBUG: 1
+2026-09-13T20:47:26.2901375Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:26.2901631Z ##[endgroup]
+2026-09-13T20:47:29.4175076Z npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+2026-09-13T20:47:30.2997227Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-09-13T20:47:31.4050433Z npm warn deprecated uuid@7.0.3: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+2026-09-13T20:47:32.7199639Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-09-13T20:47:32.8599587Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-09-13T20:47:32.8833969Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-09-13T20:47:33.1603888Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-09-13T20:47:33.7017569Z npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-09-13T20:47:38.3556292Z 
+2026-09-13T20:47:38.3557324Z added 727 packages in 12s
+2026-09-13T20:47:38.4156224Z ##[group]Run npm run typecheck 2>&1 | tee "$RUNNER_TEMP/evidence/typecheck.log"
+2026-09-13T20:47:38.4156891Z [36;1mnpm run typecheck 2>&1 | tee "$RUNNER_TEMP/evidence/typecheck.log"[0m
+2026-09-13T20:47:38.4157420Z [36;1mnpm run test:contract 2>&1 | tee "$RUNNER_TEMP/evidence/mobile-contract.log"[0m
+2026-09-13T20:47:38.4193468Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-13T20:47:38.4193823Z env:
+2026-09-13T20:47:38.4194023Z   CI: 1
+2026-09-13T20:47:38.4194211Z   EXPO_NO_TELEMETRY: 1
+2026-09-13T20:47:38.4194432Z   EXPO_DEBUG: 1
+2026-09-13T20:47:38.4194652Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:38.4194911Z ##[endgroup]
+2026-09-13T20:47:38.5177589Z 
+2026-09-13T20:47:38.5178707Z > go-consumer-mobile@3.1.0-vi-consumer-ui-candidate typecheck
+2026-09-13T20:47:38.5179677Z > tsc --noEmit
+2026-09-13T20:47:38.5180082Z 
+2026-09-13T20:47:43.6391495Z 
+2026-09-13T20:47:43.6392829Z > go-consumer-mobile@3.1.0-vi-consumer-ui-candidate test:contract
+2026-09-13T20:47:43.6394197Z > node scripts/contract-check.mjs
+2026-09-13T20:47:43.6394814Z 
+2026-09-13T20:47:43.6676510Z Sprint 1Z mobile contract: PASS
+2026-09-13T20:47:43.6875001Z ##[group]Run node scripts/native-modules-check.mjs 2>&1 | tee "$RUNNER_TEMP/evidence/native-modules-js.log"
+2026-09-13T20:47:43.6876626Z [36;1mnode scripts/native-modules-check.mjs 2>&1 | tee "$RUNNER_TEMP/evidence/native-modules-js.log"[0m
+2026-09-13T20:47:43.6914099Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-13T20:47:43.6914471Z env:
+2026-09-13T20:47:43.6914668Z   CI: 1
+2026-09-13T20:47:43.6914864Z   EXPO_NO_TELEMETRY: 1
+2026-09-13T20:47:43.6915097Z   EXPO_DEBUG: 1
+2026-09-13T20:47:43.6915327Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:43.6915855Z ##[endgroup]
+2026-09-13T20:47:43.9605357Z {
+2026-09-13T20:47:43.9626351Z   "platform": "apple",
+2026-09-13T20:47:43.9636323Z   "cwd": ".",
+2026-09-13T20:47:43.9644582Z   "required": [
+2026-09-13T20:47:43.9658481Z     "expo",
+2026-09-13T20:47:43.9659127Z     "expo-modules-core",
+2026-09-13T20:47:43.9659749Z     "expo-asset",
+2026-09-13T20:47:43.9660307Z     "expo-file-system",
+2026-09-13T20:47:43.9660942Z     "expo-font",
+2026-09-13T20:47:43.9661503Z     "expo-keep-awake"
+2026-09-13T20:47:43.9662076Z   ],
+2026-09-13T20:47:43.9662730Z   "missing": [],
+2026-09-13T20:47:43.9663359Z   "outside": [],
+2026-09-13T20:47:43.9686174Z   "modules": {
+2026-09-13T20:47:43.9686801Z     "expo": {
+2026-09-13T20:47:43.9687764Z       "version": "53.0.27",
+2026-09-13T20:47:43.9694956Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo"
+2026-09-13T20:47:43.9696104Z     },
+2026-09-13T20:47:43.9696665Z     "expo-modules-core": {
+2026-09-13T20:47:43.9697276Z       "version": "2.5.0",
+2026-09-13T20:47:43.9698159Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-modules-core"
+2026-09-13T20:47:43.9699095Z     },
+2026-09-13T20:47:43.9699673Z     "expo-asset": {
+2026-09-13T20:47:43.9700286Z       "version": "11.1.7",
+2026-09-13T20:47:43.9701147Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-asset"
+2026-09-13T20:47:43.9701947Z     },
+2026-09-13T20:47:43.9702553Z     "expo-file-system": {
+2026-09-13T20:47:43.9703204Z       "version": "18.1.11",
+2026-09-13T20:47:43.9709192Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-file-system"
+2026-09-13T20:47:43.9710089Z     },
+2026-09-13T20:47:43.9710596Z     "expo-font": {
+2026-09-13T20:47:43.9711137Z       "version": "13.3.2",
+2026-09-13T20:47:43.9711945Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-font"
+2026-09-13T20:47:43.9713249Z     },
+2026-09-13T20:47:43.9720064Z     "expo-keep-awake": {
+2026-09-13T20:47:43.9720688Z       "version": "14.1.4",
+2026-09-13T20:47:43.9721526Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-keep-awake"
+2026-09-13T20:47:43.9722346Z     }
+2026-09-13T20:47:43.9722806Z   }
+2026-09-13T20:47:43.9723256Z }
+2026-09-13T20:47:44.1477220Z {
+2026-09-13T20:47:44.1485266Z   "platform": "android",
+2026-09-13T20:47:44.1486546Z   "cwd": ".",
+2026-09-13T20:47:44.1487104Z   "required": [
+2026-09-13T20:47:44.1487672Z     "expo",
+2026-09-13T20:47:44.1488298Z     "expo-modules-core",
+2026-09-13T20:47:44.1488889Z     "expo-asset",
+2026-09-13T20:47:44.1489426Z     "expo-file-system",
+2026-09-13T20:47:44.1489966Z     "expo-font",
+2026-09-13T20:47:44.1490492Z     "expo-keep-awake"
+2026-09-13T20:47:44.1491697Z   ],
+2026-09-13T20:47:44.1496936Z   "missing": [],
+2026-09-13T20:47:44.1497521Z   "outside": [],
+2026-09-13T20:47:44.1498070Z   "modules": {
+2026-09-13T20:47:44.1498580Z     "expo": {
+2026-09-13T20:47:44.1499112Z       "version": "53.0.27",
+2026-09-13T20:47:44.1500020Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo"
+2026-09-13T20:47:44.1500845Z     },
+2026-09-13T20:47:44.1501442Z     "expo-modules-core": {
+2026-09-13T20:47:44.1502116Z       "version": "2.5.0",
+2026-09-13T20:47:44.1503017Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-modules-core"
+2026-09-13T20:47:44.1503928Z     },
+2026-09-13T20:47:44.1504551Z     "expo-asset": {
+2026-09-13T20:47:44.1505202Z       "version": "11.1.7",
+2026-09-13T20:47:44.1506795Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-asset"
+2026-09-13T20:47:44.1507461Z     },
+2026-09-13T20:47:44.1507806Z     "expo-file-system": {
+2026-09-13T20:47:44.1508213Z       "version": "18.1.11",
+2026-09-13T20:47:44.1508869Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-file-system"
+2026-09-13T20:47:44.1509503Z     },
+2026-09-13T20:47:44.1509840Z     "expo-font": {
+2026-09-13T20:47:44.1510199Z       "version": "13.3.2",
+2026-09-13T20:47:44.1510809Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-font"
+2026-09-13T20:47:44.1511213Z     },
+2026-09-13T20:47:44.1511431Z     "expo-keep-awake": {
+2026-09-13T20:47:44.1511690Z       "version": "14.1.4",
+2026-09-13T20:47:44.1512102Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-keep-awake"
+2026-09-13T20:47:44.1512494Z     }
+2026-09-13T20:47:44.1512682Z   }
+2026-09-13T20:47:44.1512865Z }
+2026-09-13T20:47:44.1576459Z ##[group]Run npx --no-install expo prebuild --no-install --platform all 2>&1 | tee "$RUNNER_TEMP/evidence/prebuild.log"
+2026-09-13T20:47:44.1577330Z [36;1mnpx --no-install expo prebuild --no-install --platform all 2>&1 | tee "$RUNNER_TEMP/evidence/prebuild.log"[0m
+2026-09-13T20:47:44.1612616Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-13T20:47:44.1612961Z env:
+2026-09-13T20:47:44.1613168Z   CI: 1
+2026-09-13T20:47:44.1613364Z   EXPO_NO_TELEMETRY: 1
+2026-09-13T20:47:44.1613602Z   EXPO_DEBUG: 1
+2026-09-13T20:47:44.1613822Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:44.1614065Z ##[endgroup]
+2026-09-13T20:47:44.6007717Z 2026-09-13T20:47:44.599Z expo:env /home/runner/work/_temp/mobile/.env does not exist, skipping this env file
+2026-09-13T20:47:44.6017497Z 2026-09-13T20:47:44.600Z expo:env /home/runner/work/_temp/mobile/.env.development does not exist, skipping this env file
+2026-09-13T20:47:44.6023677Z 2026-09-13T20:47:44.600Z expo:env /home/runner/work/_temp/mobile/.env.local does not exist, skipping this env file
+2026-09-13T20:47:44.6037488Z 2026-09-13T20:47:44.600Z expo:env /home/runner/work/_temp/mobile/.env.development.local does not exist, skipping this env file
+2026-09-13T20:47:44.7870844Z - Creating native directories (./ios and ./android)
+2026-09-13T20:47:45.2849783Z 2026-09-13T20:47:45.283Z expo:utils:npm Run: npm view expo-template-bare-minimum@sdk-53 dist --json
+2026-09-13T20:47:45.2852081Z 2026-09-13T20:47:45.284Z expo:utils:npm Fetch from URL: https://registry.npmjs.org/expo-template-bare-minimum/-/expo-template-bare-minimum-53.0.42.tgz
+2026-09-13T20:47:45.5418353Z 2026-09-13T20:47:45.541Z expo:prebuild:copyTemplateFiles All platforms have an internal gitignore: true
+2026-09-13T20:47:45.9114284Z 2026-09-13T20:47:45.910Z expo:prebuild:copyTemplateFiles Got files to transform: ["ios/Podfile","app.json","android/settings.gradle","android/build.gradle","android/app/build.gradle","android/app/src/main/AndroidManifest.xml","android/app/src/debug/AndroidManifest.xml","ios/GO.xcodeproj/project.pbxproj","ios/GO.xcodeproj/xcshareddata/xcschemes/GO.xcscheme","ios/GO.xcodeproj/project.xcworkspace/contents.xcworkspacedata","android/app/src/main/res/drawable/rn_edit_text_material.xml","android/app/src/main/res/drawable/ic_launcher_background.xml","android/app/src/main/res/values/styles.xml","android/app/src/main/res/values/strings.xml","android/app/src/main/res/values/colors.xml","android/app/src/main/java/com/go/MainApplication.kt","android/app/src/main/java/com/go/MainActivity.kt"]
+2026-09-13T20:47:45.9136881Z 2026-09-13T20:47:45.913Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/ios/Podfile
+2026-09-13T20:47:45.9143272Z 2026-09-13T20:47:45.913Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/app.json
+2026-09-13T20:47:45.9147215Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/settings.gradle
+2026-09-13T20:47:45.9156543Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/build.gradle
+2026-09-13T20:47:45.9159261Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/app/src/main/AndroidManifest.xml
+2026-09-13T20:47:45.9162049Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/app/src/debug/AndroidManifest.xml
+2026-09-13T20:47:45.9164795Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/app/build.gradle
+2026-09-13T20:47:45.9167574Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/ios/GO.xcodeproj/project.pbxproj
+2026-09-13T20:47:45.9170737Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/ios/GO.xcodeproj/xcshareddata/xcschemes/GO.xcscheme
+2026-09-13T20:47:45.9173687Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/ios/GO.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+2026-09-13T20:47:45.9176948Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/app/src/main/res/drawable/rn_edit_text_material.xml
+2026-09-13T20:47:45.9179924Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/app/src/main/res/drawable/ic_launcher_background.xml
+2026-09-13T20:47:45.9182631Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/app/src/main/res/values/strings.xml
+2026-09-13T20:47:45.9185235Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/app/src/main/res/values/colors.xml
+2026-09-13T20:47:45.9188220Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/app/src/main/java/com/go/MainApplication.kt
+2026-09-13T20:47:45.9190999Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/app/src/main/java/com/go/MainActivity.kt
+2026-09-13T20:47:45.9193707Z 2026-09-13T20:47:45.914Z expo:prebuild:copyTemplateFiles Renaming app name in file: /home/runner/work/_temp/mobile/android/app/src/main/res/values/styles.xml
+2026-09-13T20:47:45.9196157Z ✔ Created native directories
+2026-09-13T20:47:45.9197001Z - Updating package.json
+2026-09-13T20:47:45.9219141Z › Using react-native@0.79.0 instead of recommended react-native@0.79.6.
+2026-09-13T20:47:45.9220647Z - Updating package.json
+2026-09-13T20:47:45.9221840Z ✔ Updated package.json | no changes
+2026-09-13T20:47:46.0637015Z 2026-09-13T20:47:46.061Z expo:config-plugins:ios:maps Google Maps API Key: null
+2026-09-13T20:47:46.0707858Z 2026-09-13T20:47:46.070Z expo:prebuild-config:expo-splash-screen:ios config: undefined
+2026-09-13T20:47:46.0754061Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-firebase-analytics
+2026-09-13T20:47:46.0756431Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-firebase-core
+2026-09-13T20:47:46.0758107Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-google-sign-in
+2026-09-13T20:47:46.0759947Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-app-auth
+2026-09-13T20:47:46.0761501Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-av
+2026-09-13T20:47:46.0763136Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-background-fetch
+2026-09-13T20:47:46.0764820Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-brightness
+2026-09-13T20:47:46.0766657Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-calendar
+2026-09-13T20:47:46.0768227Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-camera
+2026-09-13T20:47:46.0769791Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-cellular
+2026-09-13T20:47:46.0771358Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-dev-menu
+2026-09-13T20:47:46.0772980Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-dev-launcher
+2026-09-13T20:47:46.0774690Z 2026-09-13T20:47:46.075Z expo:prebuild-config Skipping unlinked auto plugin: expo-image-picker
+2026-09-13T20:47:46.0776804Z 2026-09-13T20:47:46.077Z expo:prebuild-config Skipping unlinked auto plugin: expo-location
+2026-09-13T20:47:46.0778524Z 2026-09-13T20:47:46.077Z expo:prebuild-config Skipping unlinked auto plugin: expo-media-library
+2026-09-13T20:47:46.0780567Z 2026-09-13T20:47:46.077Z expo:prebuild-config Skipping unlinked auto plugin: expo-screen-orientation
+2026-09-13T20:47:46.0782275Z 2026-09-13T20:47:46.077Z expo:prebuild-config Skipping unlinked auto plugin: expo-sensors
+2026-09-13T20:47:46.0783888Z 2026-09-13T20:47:46.077Z expo:prebuild-config Skipping unlinked auto plugin: expo-task-manager
+2026-09-13T20:47:46.0785858Z 2026-09-13T20:47:46.077Z expo:prebuild-config Skipping unlinked auto plugin: expo-local-authentication
+2026-09-13T20:47:46.0929392Z » android: EDGE_TO_EDGE_PLUGIN: No configuration found for `edgeToEdgeEnabled` field in the project app config, falling back to false. In Android 16+ (targetSdkVersion 36) it will no longer be possible to disable edge-to-edge. Learn more: https://expo.fyi/edge-to-edge-rollout
+2026-09-13T20:47:46.0984137Z 2026-09-13T20:47:46.098Z expo:config-plugins:mod-compiler run in order: dangerous, xcodeproj, infoPlist, entitlements, podfile, appDelegate, expoPlist, podfileProperties, splashScreenStoryboard
+2026-09-13T20:47:46.1027626Z ios.dangerous: withDefaultBaseMods ➜ withIosBaseMods ➜ withGeneratedBaseMods ➜ withIosDangerousBaseMod
+2026-09-13T20:47:46.1029853Z 2026-09-13T20:47:46.102Z expo:config-plugins:base-mods mods.ios.dangerous: file path: [skipped]
+2026-09-13T20:47:46.1031930Z ios.dangerous: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withIosIcons ➜ withDangerousMod
+2026-09-13T20:47:46.1033698Z » ios: icon: No icon is defined in the Expo config.
+2026-09-13T20:47:46.2427714Z ios.dangerous: withStaticPlugin ➜ withIosSplashScreen ➜ withPlugins ➜ withStaticPlugin ➜ withIosSplashColors ➜ withDangerousMod
+2026-09-13T20:47:46.2447332Z 2026-09-13T20:47:46.238Z expo:prebuild-config:expo-splash-screen:ios:splash-colorset create colors contents.json: /home/runner/work/_temp/mobile/ios/GO/Images.xcassets/SplashScreenBackground.colorset
+2026-09-13T20:47:46.2456222Z 2026-09-13T20:47:46.238Z expo:prebuild-config:expo-splash-screen:ios:splash-colorset use colors: [
+2026-09-13T20:47:46.2456998Z   {
+2026-09-13T20:47:46.2457458Z     color: { components: [Object], 'color-space': 'srgb' },
+2026-09-13T20:47:46.2458005Z     idiom: 'universal'
+2026-09-13T20:47:46.2458343Z   }
+2026-09-13T20:47:46.2458609Z ]
+2026-09-13T20:47:46.2517581Z ios.dangerous: withStaticPlugin ➜ withIosSplashScreen ➜ withPlugins ➜ withStaticPlugin ➜ withIosSplashAssets ➜ withDangerousMod
+2026-09-13T20:47:46.2536334Z ios.xcodeproj: withDefaultBaseMods ➜ withIosBaseMods ➜ withGeneratedBaseMods ➜ withIosXcodeprojBaseMod
+2026-09-13T20:47:46.2547524Z 2026-09-13T20:47:46.251Z expo:config-plugins:base-mods mods.ios.xcodeproj: file path: /home/runner/work/_temp/mobile/ios/GO.xcodeproj/project.pbxproj
+2026-09-13T20:47:46.3024848Z ios.xcodeproj: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withDevelopmentTeam ➜ withXcodeProject
+2026-09-13T20:47:46.3037247Z ios.xcodeproj: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withLocales ➜ withXcodeProject
+2026-09-13T20:47:46.3072006Z ios.xcodeproj: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withBitcode ➜ withXcodeProject
+2026-09-13T20:47:46.3136940Z ios.xcodeproj: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withDeviceFamily ➜ withXcodeProject
+2026-09-13T20:47:46.3177048Z ios.xcodeproj: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withGoogleServicesFile ➜ withXcodeProject
+2026-09-13T20:47:46.3208150Z ios.xcodeproj: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withProductName ➜ withXcodeProject
+2026-09-13T20:47:46.3237824Z ios.xcodeproj: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withBundleIdentifier ➜ withXcodeProject
+2026-09-13T20:47:46.3247540Z ios.xcodeproj: withStaticPlugin ➜ withIosSplashScreen ➜ withPlugins ➜ withStaticPlugin ➜ withIosSplashXcodeProject ➜ withXcodeProject
+2026-09-13T20:47:46.3264572Z ios.xcodeproj: withStaticPlugin ➜ withRunOnce ➜ withNotifications ➜ withNotificationsIOS ➜ withNotificationSounds ➜ withXcodeProject
+2026-09-13T20:47:46.3266171Z ios.infoPlist: withDefaultBaseMods ➜ withIosBaseMods ➜ withGeneratedBaseMods ➜ withIosInfoPlistBaseMod
+2026-09-13T20:47:46.3317256Z 2026-09-13T20:47:46.329Z expo:config-plugins:base-mods mods.ios.infoPlist: file path: /home/runner/work/_temp/mobile/ios/GO/Info.plist
+2026-09-13T20:47:46.3462209Z ios.infoPlist: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withVersion ➜ withInfoPlist
+2026-09-13T20:47:46.3464791Z ios.infoPlist: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withBuildNumber ➜ withInfoPlist
+2026-09-13T20:47:46.3467977Z ios.infoPlist: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withUsesNonExemptEncryption ➜ withInfoPlist
+2026-09-13T20:47:46.3470239Z ios.infoPlist: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withScheme ➜ withInfoPlist
+2026-09-13T20:47:46.3472466Z ios.infoPlist: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withRequiresFullScreen ➜ withInfoPlist
+2026-09-13T20:47:46.3475062Z ios.infoPlist: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withOrientation ➜ withInfoPlist
+2026-09-13T20:47:46.3477542Z ios.infoPlist: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withDisplayName ➜ withInfoPlist
+2026-09-13T20:47:46.3479535Z ios.infoPlist: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withGoogle ➜ withInfoPlist
+2026-09-13T20:47:46.3481991Z ios.infoPlist: withStaticPlugin ➜ withIosSplashScreen ➜ withPlugins ➜ withStaticPlugin ➜ withIosSplashInfoPlist ➜ withInfoPlist
+2026-09-13T20:47:46.3484228Z 2026-09-13T20:47:46.347Z expo:prebuild-config:expo-splash-screen:ios:infoPlist isDarkModeEnabled:  false
+2026-09-13T20:47:46.3486501Z ios.infoPlist: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withIosUserInterfaceStyle ➜ withInfoPlist
+2026-09-13T20:47:46.3488996Z ios.infoPlist: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withIosRootViewBackgroundColor ➜ withInfoPlist
+2026-09-13T20:47:46.3490879Z ios.infoPlist: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withIosAdMob ➜ withInfoPlist
+2026-09-13T20:47:46.3492795Z ios.infoPlist: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withMaps ➜ withGoogleMapsKey ➜ withInfoPlist
+2026-09-13T20:47:46.3494861Z ios.infoPlist: withStaticPlugin ➜ withRunOnce ➜ withSecureStore ➜ withIosPermissions ➜ withInfoPlist
+2026-09-13T20:47:46.3497413Z 2026-09-13T20:47:46.348Z expo:config-plugins:ios:permissions Setting "NSFaceIDUsageDescription" to "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
+2026-09-13T20:47:46.3530773Z ios.entitlements: withDefaultBaseMods ➜ withIosBaseMods ➜ withGeneratedBaseMods ➜ withIosEntitlementsBaseMod
+2026-09-13T20:47:46.3782285Z 2026-09-13T20:47:46.377Z expo:config-plugins:base-mods mods.ios.entitlements: file path: /home/runner/work/_temp/mobile/ios/GO/GO.entitlements
+2026-09-13T20:47:46.3824553Z ios.entitlements: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withAssociatedDomains ➜ withEntitlementsPlist
+2026-09-13T20:47:46.3828809Z ios.entitlements: withStaticPlugin ➜ withExpoContacts ➜ withRunOnce ➜ withAccessesContactNotes ➜ withEntitlementsPlist
+2026-09-13T20:47:46.3857327Z ios.entitlements: withStaticPlugin ➜ withExpoAppleAuthentication ➜ withRunOnce ➜ withAppleSignInWarning ➜ withEntitlementsPlist
+2026-09-13T20:47:46.3860035Z ios.entitlements: withStaticPlugin ➜ withRunOnce ➜ withNotifications ➜ withNotificationsIOS ➜ withEntitlementsPlist
+2026-09-13T20:47:46.3861488Z ios.podfile: withDefaultBaseMods ➜ withIosBaseMods ➜ withGeneratedBaseMods ➜ withIosPodfileBaseMod
+2026-09-13T20:47:46.3862814Z 2026-09-13T20:47:46.383Z expo:config-plugins:base-mods mods.ios.podfile: file path: /home/runner/work/_temp/mobile/ios/Podfile
+2026-09-13T20:47:46.3864188Z ios.podfile: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withMaps ➜ withMapsCocoaPods ➜ withPodfile
+2026-09-13T20:47:46.3865304Z 2026-09-13T20:47:46.384Z expo:config-plugins:ios:maps Is Expo Autolinked: true
+2026-09-13T20:47:46.3866488Z 2026-09-13T20:47:46.384Z expo:config-plugins:ios:maps react-native-maps path: null
+2026-09-13T20:47:46.3877124Z ios.appDelegate: withDefaultBaseMods ➜ withIosBaseMods ➜ withGeneratedBaseMods ➜ withIosAppDelegateBaseMod
+2026-09-13T20:47:46.3879834Z 2026-09-13T20:47:46.387Z expo:config-plugins:base-mods mods.ios.appDelegate: file path: /home/runner/work/_temp/mobile/ios/GO/AppDelegate.swift
+2026-09-13T20:47:46.3882740Z ios.appDelegate: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withMaps ➜ withGoogleMapsAppDelegate ➜ withAppDelegate
+2026-09-13T20:47:46.3885784Z ios.expoPlist: withDefaultBaseMods ➜ withIosBaseMods ➜ withGeneratedBaseMods ➜ withIosExpoPlistBaseMod
+2026-09-13T20:47:46.3887915Z 2026-09-13T20:47:46.388Z expo:config-plugins:base-mods mods.ios.expoPlist: file path: /home/runner/work/_temp/mobile/ios/GO/Supporting/Expo.plist
+2026-09-13T20:47:46.3893475Z ios.expoPlist: withUnversionedUpdates ➜ withUpdates ➜ withPlugins ➜ withStaticPlugin ➜ withUpdatesPlist ➜ withExpoPlist
+2026-09-13T20:47:46.3909699Z ios.podfileProperties: withDefaultBaseMods ➜ withIosBaseMods ➜ withGeneratedBaseMods ➜ withIosPodfilePropertiesBaseMod
+2026-09-13T20:47:46.3912287Z 2026-09-13T20:47:46.390Z expo:config-plugins:base-mods mods.ios.podfileProperties: file path: /home/runner/work/_temp/mobile/ios/Podfile.properties.json
+2026-09-13T20:47:46.3916511Z ios.podfileProperties: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withNewArchEnabledPodfileProps ➜ withPodfileProperties
+2026-09-13T20:47:46.3930487Z ios.podfileProperties: withIosExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withJsEnginePodfileProps ➜ withPodfileProperties
+2026-09-13T20:47:46.3932250Z ios.podfileProperties: withUnversionedUpdates ➜ withUpdates ➜ withPlugins ➜ withStaticPlugin ➜ withUpdatesNativeDebugPodfileProps ➜ withPodfileProperties
+2026-09-13T20:47:46.3943149Z ios.splashScreenStoryboard: withPlugins ➜ withStaticPlugin ➜ withIosSplashScreenStoryboardBaseMod ➜ withGeneratedBaseMods ➜ withIosSplashScreenStoryboardBaseMod
+2026-09-13T20:47:46.3946513Z 2026-09-13T20:47:46.393Z expo:config-plugins:base-mods mods.ios.splashScreenStoryboard: file path: /home/runner/work/_temp/mobile/ios/GO/SplashScreen.storyboard
+2026-09-13T20:47:46.4134680Z ios.splashScreenStoryboard: withStaticPlugin ➜ withIosSplashScreen ➜ withPlugins ➜ withStaticPlugin ➜ withIosSplashScreenImage ➜ withIosSplashScreenStoryboard
+2026-09-13T20:47:46.4147234Z 2026-09-13T20:47:46.413Z expo:prebuild-config:expo-splash-screen:ios:InterfaceBuilder Remove all splash screen image elements
+2026-09-13T20:47:46.4149669Z 2026-09-13T20:47:46.413Z expo:prebuild-config:expo-splash-screen:ios:InterfaceBuilder Removing existing IB item with id EXPO-SplashScreen, from: [
+2026-09-13T20:47:46.4151109Z   {
+2026-09-13T20:47:46.4151620Z     '$': {
+2026-09-13T20:47:46.4152173Z       clipsSubviews: 'YES',
+2026-09-13T20:47:46.4152856Z       userInteractionEnabled: 'NO',
+2026-09-13T20:47:46.4153583Z       contentMode: 'scaleAspectFit',
+2026-09-13T20:47:46.4154338Z       horizontalHuggingPriority: '251',
+2026-09-13T20:47:46.4155119Z       verticalHuggingPriority: '251',
+2026-09-13T20:47:46.4156095Z       image: 'SplashScreen',
+2026-09-13T20:47:46.4156908Z       translatesAutoresizingMaskIntoConstraints: 'NO',
+2026-09-13T20:47:46.4157774Z       id: 'EXPO-SplashScreen',
+2026-09-13T20:47:46.4158467Z       userLabel: 'SplashScreen'
+2026-09-13T20:47:46.4159072Z     },
+2026-09-13T20:47:46.4159615Z     rect: [ [Object] ],
+2026-09-13T20:47:46.4160268Z     accessibility: [ [Object] ]
+2026-09-13T20:47:46.4160856Z   }
+2026-09-13T20:47:46.4161304Z ]
+2026-09-13T20:47:46.4183120Z 2026-09-13T20:47:46.417Z expo:config-plugins:mod-compiler run in order: dangerous, manifest, colors, strings, gradleProperties, styles, colorsNight, settingsGradle, projectBuildGradle, appBuildGradle
+2026-09-13T20:47:46.4186022Z android.dangerous: withDefaultBaseMods ➜ withAndroidBaseMods ➜ withGeneratedBaseMods ➜ withAndroidDangerousBaseMod
+2026-09-13T20:47:46.4188096Z 2026-09-13T20:47:46.418Z expo:config-plugins:base-mods mods.android.dangerous: file path: [skipped]
+2026-09-13T20:47:46.4190131Z android.dangerous: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withPackageRefactor ➜ withDangerousMod
+2026-09-13T20:47:46.4202269Z 2026-09-13T20:47:46.420Z expo:config-plugins:android:package Found package "null" for type "debug"
+2026-09-13T20:47:46.4219259Z 2026-09-13T20:47:46.421Z expo:config-plugins:android:package Found package "com.go" for type "main"
+2026-09-13T20:47:46.4221513Z 2026-09-13T20:47:46.421Z expo:config-plugins:android:package Refactor "com.go" to "travel.go.consumer" for type "main"
+2026-09-13T20:47:46.4238008Z 2026-09-13T20:47:46.423Z expo:config-plugins:android:package Error updating "/home/runner/work/_temp/mobile/android/app/BUCK" for type "main"
+2026-09-13T20:47:46.4245872Z 2026-09-13T20:47:46.424Z expo:config-plugins:android:package Found package "null" for type "release"
+2026-09-13T20:47:46.4248282Z android.dangerous: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withGoogleServicesFile ➜ withDangerousMod
+2026-09-13T20:47:46.4250659Z android.dangerous: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withLocales ➜ withDangerousMod
+2026-09-13T20:47:46.4253586Z android.dangerous: withStaticPlugin ➜ withAndroidSplashScreen ➜ withPlugins ➜ withStaticPlugin ➜ withAndroidSplashDrawables ➜ withDangerousMod
+2026-09-13T20:47:46.4256861Z android.dangerous: withStaticPlugin ➜ withAndroidSplashScreen ➜ withPlugins ➜ withStaticPlugin ➜ withAndroidSplashImages ➜ withDangerousMod
+2026-09-13T20:47:46.4259547Z android.dangerous: withStaticPlugin ➜ withRunOnce ➜ withNotifications ➜ withNotificationsAndroid ➜ withNotificationSounds ➜ withDangerousMod
+2026-09-13T20:47:46.4262256Z android.dangerous: withStaticPlugin ➜ withRunOnce ➜ withNotifications ➜ withNotificationsAndroid ➜ withNotificationIcons ➜ withDangerousMod
+2026-09-13T20:47:46.4264426Z android.manifest: withDefaultBaseMods ➜ withAndroidBaseMods ➜ withGeneratedBaseMods ➜ withAndroidManifestBaseMod
+2026-09-13T20:47:46.4266725Z 2026-09-13T20:47:46.425Z expo:config-plugins:base-mods mods.android.manifest: file path: /home/runner/work/_temp/mobile/android/app/src/main/AndroidManifest.xml
+2026-09-13T20:47:46.4285139Z android.manifest: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withPermissions ➜ withAndroidManifest
+2026-09-13T20:47:46.4297288Z android.manifest: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withOrientation ➜ withAndroidManifest
+2026-09-13T20:47:46.4299403Z android.manifest: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withScheme ➜ withAndroidManifest
+2026-09-13T20:47:46.4301552Z android.manifest: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withAndroidIntentFilters ➜ withAndroidManifest
+2026-09-13T20:47:46.4357038Z android.manifest: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withWindowSoftInputMode ➜ withAndroidManifest
+2026-09-13T20:47:46.4375741Z android.manifest: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withAllowBackup ➜ withAndroidManifest
+2026-09-13T20:47:46.4397776Z android.manifest: withStaticPlugin ➜ withRunOnce ➜ withFileSystem ➜ withPermissions ➜ withAndroidManifest
+2026-09-13T20:47:46.4408201Z android.manifest: withUnversionedUpdates ➜ withUpdates ➜ withPlugins ➜ withStaticPlugin ➜ withUpdatesManifest ➜ withAndroidManifest
+2026-09-13T20:47:46.4438148Z android.manifest: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withAndroidAdMob ➜ withAndroidManifest
+2026-09-13T20:47:46.4476952Z android.manifest: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withGoogleMapsApiKey ➜ withAndroidManifest
+2026-09-13T20:47:46.4507942Z android.manifest: withStaticPlugin ➜ withRunOnce ➜ withNotifications ➜ withNotificationsAndroid ➜ withNotificationManifest ➜ withAndroidManifest
+2026-09-13T20:47:46.4536295Z android.manifest: withStaticPlugin ➜ withRunOnce ➜ withSecureStore ➜ withAndroidManifest
+2026-09-13T20:47:46.4538216Z android.colors: withDefaultBaseMods ➜ withAndroidBaseMods ➜ withGeneratedBaseMods ➜ withAndroidColorsBaseMod
+2026-09-13T20:47:46.4547696Z 2026-09-13T20:47:46.441Z expo:config-plugins:base-mods mods.android.colors: file path: /home/runner/work/_temp/mobile/android/app/src/main/res/values/colors.xml
+2026-09-13T20:47:46.4557495Z android.colors: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withPrimaryColor ➜ withPrimaryColorColors ➜ withAndroidColors
+2026-09-13T20:47:46.4560217Z android.colors: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withStatusBar ➜ withStatusBarColors ➜ withAndroidColors
+2026-09-13T20:47:46.4562586Z android.colors: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withNavigationBar ➜ withNavigationBarColors ➜ withAndroidColors
+2026-09-13T20:47:46.4564917Z android.colors: withStaticPlugin ➜ withAndroidSplashScreen ➜ withPlugins ➜ withStaticPlugin ➜ withAndroidSplashStyles ➜ withAndroidColors
+2026-09-13T20:47:46.4569213Z android.colors: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withAndroidRootViewBackgroundColor ➜ withRootViewBackgroundColorColors ➜ withAndroidColors
+2026-09-13T20:47:46.4589694Z android.colors: withStaticPlugin ➜ withRunOnce ➜ withNotifications ➜ withNotificationsAndroid ➜ withNotificationIconColor ➜ withAndroidColors
+2026-09-13T20:47:46.4593078Z android.strings: withDefaultBaseMods ➜ withAndroidBaseMods ➜ withGeneratedBaseMods ➜ withAndroidStringsBaseMod
+2026-09-13T20:47:46.4617060Z 2026-09-13T20:47:46.451Z expo:config-plugins:base-mods mods.android.strings: file path: /home/runner/work/_temp/mobile/android/app/src/main/res/values/strings.xml
+2026-09-13T20:47:46.4627245Z android.strings: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withName ➜ withStringsXml
+2026-09-13T20:47:46.4629413Z android.strings: withStaticPlugin ➜ withAndroidSplashScreen ➜ withPlugins ➜ withStaticPlugin ➜ withAndroidSplashStrings ➜ withStringsXml
+2026-09-13T20:47:46.4631409Z android.strings: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withAndroidUserInterfaceStyle ➜ withStringsXml
+2026-09-13T20:47:46.4643421Z » android: userInterfaceStyle: Install expo-system-ui in your project to enable this feature.
+2026-09-13T20:47:46.4645919Z android.strings: withUnversionedUpdates ➜ withUpdates ➜ withPlugins ➜ withStaticPlugin ➜ withRuntimeVersionResource ➜ withStringsXml
+2026-09-13T20:47:46.4651173Z android.gradleProperties: withDefaultBaseMods ➜ withAndroidBaseMods ➜ withGeneratedBaseMods ➜ withAndroidGradlePropertiesBaseMod
+2026-09-13T20:47:46.4653634Z 2026-09-13T20:47:46.457Z expo:config-plugins:base-mods mods.android.gradleProperties: file path: /home/runner/work/_temp/mobile/android/gradle.properties
+2026-09-13T20:47:46.4656545Z android.gradleProperties: withStaticPlugin ➜ withEdgeToEdge ➜ withEdgeToEdgeEnabledGradleProperties ➜ withGradleProperties
+2026-09-13T20:47:46.4659075Z android.gradleProperties: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withNewArchEnabledGradleProps ➜ withGradleProperties
+2026-09-13T20:47:46.4661475Z android.gradleProperties: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withJsEngineGradleProps ➜ withGradleProperties
+2026-09-13T20:47:46.4664124Z android.gradleProperties: withUnversionedUpdates ➜ withUpdates ➜ withPlugins ➜ withStaticPlugin ➜ withUpdatesNativeDebugGradleProps ➜ withGradleProperties
+2026-09-13T20:47:46.4675173Z android.styles: withDefaultBaseMods ➜ withAndroidBaseMods ➜ withGeneratedBaseMods ➜ withAndroidStylesBaseMod
+2026-09-13T20:47:46.4677690Z 2026-09-13T20:47:46.459Z expo:config-plugins:base-mods mods.android.styles: file path: /home/runner/work/_temp/mobile/android/app/src/main/res/values/styles.xml
+2026-09-13T20:47:46.4679880Z android.styles: withStaticPlugin ➜ withEdgeToEdge ➜ withRestoreDefaultTheme ➜ withAndroidStyles
+2026-09-13T20:47:46.4681732Z android.styles: withStaticPlugin ➜ withEdgeToEdge ➜ withConfigureEdgeToEdgeEnforcement ➜ withAndroidStyles
+2026-09-13T20:47:46.4683999Z android.styles: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withPrimaryColor ➜ withPrimaryColorStyles ➜ withAndroidStyles
+2026-09-13T20:47:46.4686735Z android.styles: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withStatusBar ➜ withStatusBarStyles ➜ withAndroidStyles
+2026-09-13T20:47:46.4698506Z android.styles: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withNavigationBar ➜ withNavigationBarStyles ➜ withAndroidStyles
+2026-09-13T20:47:46.4712869Z android.styles: withStaticPlugin ➜ withAndroidSplashScreen ➜ withPlugins ➜ withStaticPlugin ➜ withAndroidSplashStyles ➜ withAndroidStyles
+2026-09-13T20:47:46.4714580Z android.styles: withFallback ➜ withPlugins ➜ withStaticPlugin ➜ withAndroidRootViewBackgroundColor ➜ withRootViewBackgroundColorStyles ➜ withAndroidStyles
+2026-09-13T20:47:46.4736439Z android.colorsNight: withDefaultBaseMods ➜ withAndroidBaseMods ➜ withGeneratedBaseMods ➜ withAndroidColorsNightBaseMod
+2026-09-13T20:47:46.4738575Z 2026-09-13T20:47:46.463Z expo:config-plugins:base-mods mods.android.colorsNight: file path: /home/runner/work/_temp/mobile/android/app/src/main/res/values-night/colors.xml
+2026-09-13T20:47:46.4741479Z android.colorsNight: withStaticPlugin ➜ withAndroidSplashScreen ➜ withPlugins ➜ withStaticPlugin ➜ withAndroidSplashStyles ➜ withAndroidColorsNight
+2026-09-13T20:47:46.4743788Z android.settingsGradle: withDefaultBaseMods ➜ withAndroidBaseMods ➜ withGeneratedBaseMods ➜ withAndroidSettingsGradleBaseMod
+2026-09-13T20:47:46.4746310Z 2026-09-13T20:47:46.466Z expo:config-plugins:base-mods mods.android.settingsGradle: file path: /home/runner/work/_temp/mobile/android/settings.gradle
+2026-09-13T20:47:46.4752704Z android.settingsGradle: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withNameSettingsGradle ➜ withSettingsGradle
+2026-09-13T20:47:46.4755166Z android.projectBuildGradle: withDefaultBaseMods ➜ withAndroidBaseMods ➜ withGeneratedBaseMods ➜ withAndroidProjectBuildGradleBaseMod
+2026-09-13T20:47:46.4763298Z 2026-09-13T20:47:46.469Z expo:config-plugins:base-mods mods.android.projectBuildGradle: file path: /home/runner/work/_temp/mobile/android/build.gradle
+2026-09-13T20:47:46.4767123Z android.projectBuildGradle: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withSdk52ReactNative78CompatAndroid ➜ withSdk52ReactNative78CompatAndroidProjectGradle ➜ withProjectBuildGradle
+2026-09-13T20:47:46.4770330Z android.projectBuildGradle: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withSdk52ReactNative77CompatAndroid ➜ withProjectBuildGradle
+2026-09-13T20:47:46.4772893Z android.projectBuildGradle: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withClassPath ➜ withProjectBuildGradle
+2026-09-13T20:47:46.4775253Z android.appBuildGradle: withDefaultBaseMods ➜ withAndroidBaseMods ➜ withGeneratedBaseMods ➜ withAndroidAppBuildGradleBaseMod
+2026-09-13T20:47:46.4777830Z 2026-09-13T20:47:46.470Z expo:config-plugins:base-mods mods.android.appBuildGradle: file path: /home/runner/work/_temp/mobile/android/app/build.gradle
+2026-09-13T20:47:46.4781033Z android.appBuildGradle: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withSdk52ReactNative78CompatAndroid ➜ withSdk52ReactNative78CompatAndroidAppGradle ➜ withAppBuildGradle
+2026-09-13T20:47:46.4783778Z android.appBuildGradle: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withVersion ➜ withAppBuildGradle
+2026-09-13T20:47:46.4786341Z android.appBuildGradle: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withPackageGradle ➜ withAppBuildGradle
+2026-09-13T20:47:46.4788627Z android.appBuildGradle: withAndroidExpoPlugins ➜ withPlugins ➜ withStaticPlugin ➜ withApplyPlugin ➜ withAppBuildGradle
+2026-09-13T20:47:46.4789794Z 
+2026-09-13T20:47:46.4790107Z Evaluated config:
+2026-09-13T20:47:46.4790644Z {
+2026-09-13T20:47:46.4791206Z   name: [32m'GO'[39m,
+2026-09-13T20:47:46.4791972Z   slug: [32m'go-consumer'[39m,
+2026-09-13T20:47:46.4792695Z   scheme: [32m'go'[39m,
+2026-09-13T20:47:46.4793555Z   version: [32m'1.1.0'[39m,
+2026-09-13T20:47:46.4794359Z   orientation: [32m'portrait'[39m,
+2026-09-13T20:47:46.4795210Z   userInterfaceStyle: [32m'light'[39m,
+2026-09-13T20:47:46.4796109Z   plugins: [
+2026-09-13T20:47:46.4796817Z     [32m'expo-secure-store'[39m,
+2026-09-13T20:47:46.4797649Z     [32m'expo-notifications'[39m
+2026-09-13T20:47:46.4798289Z   ],
+2026-09-13T20:47:46.4798964Z   description: [90mundefined[39m,
+2026-09-13T20:47:46.4799738Z   sdkVersion: [32m'53.0.0'[39m,
+2026-09-13T20:47:46.4800376Z   platforms: [
+2026-09-13T20:47:46.4800970Z     [32m'ios'[39m,
+2026-09-13T20:47:46.4801603Z     [32m'android'[39m
+2026-09-13T20:47:46.4802135Z   ],
+2026-09-13T20:47:46.4802623Z   ios: {
+2026-09-13T20:47:46.4803502Z     supportsTablet: [33mfalse[39m,
+2026-09-13T20:47:46.4804483Z     bundleIdentifier: [32m'travel.go.consumer'[39m,
+2026-09-13T20:47:46.4805246Z     associatedDomains: [
+2026-09-13T20:47:46.4806213Z       [32m'applinks:go.travel'[39m
+2026-09-13T20:47:46.4806797Z     ],
+2026-09-13T20:47:46.4807380Z     buildNumber: [32m'1'[39m,
+2026-09-13T20:47:46.4807946Z     infoPlist: {
+2026-09-13T20:47:46.4808843Z       CADisableMinimumFrameDurationOnPhone: [33mtrue[39m,
+2026-09-13T20:47:46.4810095Z       CFBundleDevelopmentRegion: [32m'$(DEVELOPMENT_LANGUAGE)'[39m,
+2026-09-13T20:47:46.4811226Z       CFBundleExecutable: [32m'$(EXECUTABLE_NAME)'[39m,
+2026-09-13T20:47:46.4812376Z       CFBundleIdentifier: [32m'$(PRODUCT_BUNDLE_IDENTIFIER)'[39m,
+2026-09-13T20:47:46.4813436Z       CFBundleInfoDictionaryVersion: [32m'6.0'[39m,
+2026-09-13T20:47:46.4814392Z       CFBundleName: [32m'$(PRODUCT_NAME)'[39m,
+2026-09-13T20:47:46.4815677Z       CFBundlePackageType: [32m'$(PRODUCT_BUNDLE_PACKAGE_TYPE)'[39m,
+2026-09-13T20:47:46.4816821Z       CFBundleShortVersionString: [32m'1.1.0'[39m,
+2026-09-13T20:47:46.4817729Z       CFBundleSignature: [32m'????'[39m,
+2026-09-13T20:47:46.4818528Z       CFBundleVersion: [32m'1'[39m,
+2026-09-13T20:47:46.4819346Z       LSRequiresIPhoneOS: [33mtrue[39m,
+2026-09-13T20:47:46.4820226Z       LSMinimumSystemVersion: [32m'12.0'[39m,
+2026-09-13T20:47:46.4821188Z       UILaunchStoryboardName: [32m'SplashScreen'[39m,
+2026-09-13T20:47:46.4822006Z       UIRequiredDeviceCapabilities: [
+2026-09-13T20:47:46.4823007Z         [32m'arm64'[39m
+2026-09-13T20:47:46.4823572Z       ],
+2026-09-13T20:47:46.4824372Z       UIStatusBarStyle: [32m'UIStatusBarStyleDefault'[39m,
+2026-09-13T20:47:46.4825274Z       UISupportedInterfaceOrientations: [
+2026-09-13T20:47:46.4826586Z         [32m'UIInterfaceOrientationPortrait'[39m,
+2026-09-13T20:47:46.4827648Z         [32m'UIInterfaceOrientationPortraitUpsideDown'[39m
+2026-09-13T20:47:46.4828416Z       ],
+2026-09-13T20:47:46.4829290Z       UIViewControllerBasedStatusBarAppearance: [33mfalse[39m,
+2026-09-13T20:47:46.4830172Z       CFBundleURLTypes: [
+2026-09-13T20:47:46.4830737Z         {
+2026-09-13T20:47:46.4831283Z           CFBundleURLSchemes: [
+2026-09-13T20:47:46.4831971Z             [32m'go'[39m,
+2026-09-13T20:47:46.4832707Z             [32m'travel.go.consumer'[39m
+2026-09-13T20:47:46.4833337Z           ]
+2026-09-13T20:47:46.4833804Z         }
+2026-09-13T20:47:46.4834262Z       ],
+2026-09-13T20:47:46.4834958Z       UIRequiresFullScreen: [33mfalse[39m,
+2026-09-13T20:47:46.4836070Z       CFBundleDisplayName: [32m'GO'[39m,
+2026-09-13T20:47:46.4836958Z       UIUserInterfaceStyle: [32m'Light'[39m,
+2026-09-13T20:47:46.4838346Z       NSFaceIDUsageDescription: [32m'Allow $(PRODUCT_NAME) to access your Face ID biometric data.'[39m,
+2026-09-13T20:47:46.4839523Z       NSAppTransportSecurity: {
+2026-09-13T20:47:46.4840355Z         NSAllowsArbitraryLoads: [33mfalse[39m,
+2026-09-13T20:47:46.4841292Z         NSAllowsLocalNetworking: [33mtrue[39m
+2026-09-13T20:47:46.4841972Z       }
+2026-09-13T20:47:46.4842431Z     },
+2026-09-13T20:47:46.4842950Z     entitlements: {
+2026-09-13T20:47:46.4843822Z       [32m'com.apple.developer.associated-domains'[39m: [
+2026-09-13T20:47:46.4844766Z         [32m'applinks:go.travel'[39m
+2026-09-13T20:47:46.4845566Z       ],
+2026-09-13T20:47:46.4846413Z       [32m'aps-environment'[39m: [32m'development'[39m
+2026-09-13T20:47:46.4847137Z     }
+2026-09-13T20:47:46.4847600Z   },
+2026-09-13T20:47:46.4848104Z   android: {
+2026-09-13T20:47:46.4848912Z     package: [32m'travel.go.consumer'[39m,
+2026-09-13T20:47:46.4849613Z     intentFilters: [
+2026-09-13T20:47:46.4850126Z       {
+2026-09-13T20:47:46.4850758Z         action: [32m'VIEW'[39m,
+2026-09-13T20:47:46.4851505Z         autoVerify: [33mtrue[39m,
+2026-09-13T20:47:46.4852095Z         data: [
+2026-09-13T20:47:46.4852604Z           {
+2026-09-13T20:47:46.4853264Z             scheme: [32m'https'[39m,
+2026-09-13T20:47:46.4854265Z             host: [32m'go.travel'[39m,
+2026-09-13T20:47:46.4855138Z             pathPrefix: [32m'/app'[39m
+2026-09-13T20:47:46.4855963Z           }
+2026-09-13T20:47:46.4856443Z         ],
+2026-09-13T20:47:46.4856974Z         category: [
+2026-09-13T20:47:46.4857664Z           [32m'BROWSABLE'[39m,
+2026-09-13T20:47:46.4858343Z           [32m'DEFAULT'[39m
+2026-09-13T20:47:46.4858903Z         ]
+2026-09-13T20:47:46.4859407Z       },
+2026-09-13T20:47:46.4859867Z       {
+2026-09-13T20:47:46.4860471Z         action: [32m'VIEW'[39m,
+2026-09-13T20:47:46.4861101Z         data: [
+2026-09-13T20:47:46.4861584Z           {
+2026-09-13T20:47:46.4862219Z             scheme: [32m'go'[39m
+2026-09-13T20:47:46.4862794Z           }
+2026-09-13T20:47:46.4863250Z         ],
+2026-09-13T20:47:46.4863750Z         category: [
+2026-09-13T20:47:46.4864447Z           [32m'BROWSABLE'[39m,
+2026-09-13T20:47:46.4865135Z           [32m'DEFAULT'[39m
+2026-09-13T20:47:46.4865940Z         ]
+2026-09-13T20:47:46.4866404Z       }
+2026-09-13T20:47:46.4866875Z     ],
+2026-09-13T20:47:46.4867500Z     versionCode: [33m1[39m,
+2026-09-13T20:47:46.4868093Z     permissions: [
+2026-09-13T20:47:46.4868909Z       [32m'android.permission.READ_EXTERNAL_STORAGE'[39m,
+2026-09-13T20:47:46.4869917Z       [32m'android.permission.WRITE_EXTERNAL_STORAGE'[39m,
+2026-09-13T20:47:46.4870865Z       [32m'android.permission.INTERNET'[39m
+2026-09-13T20:47:46.4871524Z     ]
+2026-09-13T20:47:46.4871918Z   },
+2026-09-13T20:47:46.4875192Z   extra: {
+2026-09-13T20:47:46.4876748Z     apiBaseUrl: [32m'http://localhost:8000'[39m,
+2026-09-13T20:47:46.4877530Z     environment: [32m'development'[39m,
+2026-09-13T20:47:46.4878092Z     eas: {
+2026-09-13T20:47:46.4878734Z       projectId: [32m'REPLACE_WITH_EAS_PROJECT_ID'[39m
+2026-09-13T20:47:46.4879359Z     }
+2026-09-13T20:47:46.4879831Z   },
+2026-09-13T20:47:46.4880233Z   _internal: {
+2026-09-13T20:47:46.4880743Z     isDebug: [33mtrue[39m,
+2026-09-13T20:47:46.4881509Z     projectRoot: [32m'/home/runner/work/_temp/mobile'[39m,
+2026-09-13T20:47:46.4882540Z     dynamicConfigPath: [32m'/home/runner/work/_temp/mobile/app.config.js'[39m,
+2026-09-13T20:47:46.4883666Z     staticConfigPath: [32m'/home/runner/work/_temp/mobile/app.json'[39m,
+2026-09-13T20:47:46.4884737Z     packageJsonPath: [32m'/home/runner/work/_temp/mobile/package.json'[39m,
+2026-09-13T20:47:46.4887170Z     autolinkedModules: [
+2026-09-13T20:47:46.4887796Z       [32m'expo'[39m,
+2026-09-13T20:47:46.4888416Z       [32m'expo-application'[39m,
+2026-09-13T20:47:46.4889064Z       [32m'expo-asset'[39m,
+2026-09-13T20:47:46.4889700Z       [32m'expo-constants'[39m,
+2026-09-13T20:47:46.4890430Z       [32m'expo-device'[39m,
+2026-09-13T20:47:46.4891261Z       [32m'expo-file-system'[39m,
+2026-09-13T20:47:46.4891989Z       [32m'expo-font'[39m,
+2026-09-13T20:47:46.4898514Z       [32m'expo-keep-awake'[39m,
+2026-09-13T20:47:46.4899240Z       [32m'expo-linking'[39m,
+2026-09-13T20:47:46.4899930Z       [32m'expo-modules-core'[39m,
+2026-09-13T20:47:46.4900610Z       [32m'expo-notifications'[39m,
+2026-09-13T20:47:46.4901326Z       [32m'expo-secure-store'[39m
+2026-09-13T20:47:46.4901854Z     ],
+2026-09-13T20:47:46.4902628Z     templateChecksum: [32m'e8c2dcbacab46345952f39da13edf59f'[39m,
+2026-09-13T20:47:46.4903348Z     pluginHistory: {
+2026-09-13T20:47:46.4903977Z       [32m'expo-secure-store'[39m: {
+2026-09-13T20:47:46.4904707Z         name: [32m'expo-secure-store'[39m,
+2026-09-13T20:47:46.4905704Z         version: [32m'14.2.4'[39m
+2026-09-13T20:47:46.4906925Z       },
+2026-09-13T20:47:46.4907573Z       [32m'expo-notifications'[39m: {
+2026-09-13T20:47:46.4908314Z         name: [32m'expo-notifications'[39m,
+2026-09-13T20:47:46.4909192Z         version: [32m'0.31.5'[39m
+2026-09-13T20:47:46.4909888Z       },
+2026-09-13T20:47:46.4910571Z       [32m'react-native-maps'[39m: {
+2026-09-13T20:47:46.4911745Z         name: [32m'react-native-maps'[39m,
+2026-09-13T20:47:46.4912625Z         version: [32m'UNVERSIONED'[39m
+2026-09-13T20:47:46.4913375Z       },
+2026-09-13T20:47:46.4914305Z       [32m'expo-ads-admob'[39m: {
+2026-09-13T20:47:46.4915190Z         name: [32m'expo-ads-admob'[39m,
+2026-09-13T20:47:46.4916504Z         version: [32m'UNVERSIONED'[39m
+2026-09-13T20:47:46.4917275Z       },
+2026-09-13T20:47:46.4918293Z       [32m'expo-apple-authentication'[39m: {
+2026-09-13T20:47:46.4919308Z         name: [32m'expo-apple-authentication'[39m,
+2026-09-13T20:47:46.4920484Z         version: [32m'UNVERSIONED'[39m
+2026-09-13T20:47:46.4926283Z       },
+2026-09-13T20:47:46.5004971Z       [32m'expo-contacts'[39m: {
+2026-09-13T20:47:46.5005821Z         name: [32m'expo-contacts'[39m,
+2026-09-13T20:47:46.5006462Z         version: [32m'UNVERSIONED'[39m
+2026-09-13T20:47:46.5006908Z       },
+2026-09-13T20:47:46.5007332Z       [32m'expo-updates'[39m: {
+2026-09-13T20:47:46.5007888Z         name: [32m'expo-updates'[39m,
+2026-09-13T20:47:46.5008462Z         version: [32m'UNVERSIONED'[39m
+2026-09-13T20:47:46.5008900Z       },
+2026-09-13T20:47:46.5009359Z       [32m'expo-document-picker'[39m: {
+2026-09-13T20:47:46.5009984Z         name: [32m'expo-document-picker'[39m,
+2026-09-13T20:47:46.5010585Z         version: [32m'UNVERSIONED'[39m
+2026-09-13T20:47:46.5011007Z       },
+2026-09-13T20:47:46.5011433Z       [32m'expo-system-ui'[39m: {
+2026-09-13T20:47:46.5011986Z         name: [32m'expo-system-ui'[39m,
+2026-09-13T20:47:46.5012549Z         version: [32m'UNVERSIONED'[39m
+2026-09-13T20:47:46.5012971Z       },
+2026-09-13T20:47:46.5013404Z       [32m'expo-splash-screen'[39m: {
+2026-09-13T20:47:46.5014326Z         name: [32m'expo-splash-screen'[39m,
+2026-09-13T20:47:46.5014918Z         version: [32m'UNVERSIONED'[39m
+2026-09-13T20:47:46.5015345Z       },
+2026-09-13T20:47:46.5024013Z       [32m'expo-navigation-bar'[39m: {
+2026-09-13T20:47:46.5024699Z         name: [32m'expo-navigation-bar'[39m,
+2026-09-13T20:47:46.5025352Z         version: [32m'UNVERSIONED'[39m
+2026-09-13T20:47:46.5026155Z       },
+2026-09-13T20:47:46.5026632Z       [32m'expo-file-system'[39m: {
+2026-09-13T20:47:46.5027272Z         name: [32m'expo-file-system'[39m,
+2026-09-13T20:47:46.5027869Z         version: [32m'18.1.11'[39m
+2026-09-13T20:47:46.5028299Z       }
+2026-09-13T20:47:46.5028598Z     },
+2026-09-13T20:47:46.5028930Z     modResults: {
+2026-09-13T20:47:46.5029284Z       ios: {
+2026-09-13T20:47:46.5029681Z         splashScreenStoryboard: {
+2026-09-13T20:47:46.5030112Z           document: {
+2026-09-13T20:47:46.5030540Z             [32m'$'[39m: {
+2026-09-13T20:47:46.5031422Z               type: [32m'com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB'[39m,
+2026-09-13T20:47:46.5032286Z               version: [32m'3.0'[39m,
+2026-09-13T20:47:46.5032945Z               toolsVersion: [32m'32700.99.1234'[39m,
+2026-09-13T20:47:46.5033978Z               targetRuntime: [32m'iOS.CocoaTouch'[39m,
+2026-09-13T20:47:46.5034694Z               propertyAccessControl: [32m'none'[39m,
+2026-09-13T20:47:46.5036633Z               useAutolayout: [32m'YES'[39m,
+2026-09-13T20:47:46.5037319Z               launchScreen: [32m'YES'[39m,
+2026-09-13T20:47:46.5038000Z               useTraitCollections: [32m'YES'[39m,
+2026-09-13T20:47:46.5038675Z               useSafeAreas: [32m'YES'[39m,
+2026-09-13T20:47:46.5039316Z               colorMatched: [32m'YES'[39m,
+2026-09-13T20:47:46.5040152Z               initialViewController: [32m'EXPO-VIEWCONTROLLER-1'[39m
+2026-09-13T20:47:46.5040818Z             },
+2026-09-13T20:47:46.5041167Z             device: [
+2026-09-13T20:47:46.5041523Z               {
+2026-09-13T20:47:46.5041978Z                 [32m'$'[39m: {
+2026-09-13T20:47:46.5042529Z                   id: [32m'retina6_12'[39m,
+2026-09-13T20:47:46.5043236Z                   orientation: [32m'portrait'[39m,
+2026-09-13T20:47:46.5043903Z                   appearance: [32m'light'[39m
+2026-09-13T20:47:46.5044823Z                 }
+2026-09-13T20:47:46.5045179Z               }
+2026-09-13T20:47:46.5045763Z             ],
+2026-09-13T20:47:46.5046138Z             dependencies: [
+2026-09-13T20:47:46.5049454Z               {
+2026-09-13T20:47:46.5049843Z                 deployment: [
+2026-09-13T20:47:46.5050279Z                   {
+2026-09-13T20:47:46.5050834Z                     [32m'$'[39m: {
+2026-09-13T20:47:46.5051506Z                       identifier: [32m'iOS'[39m
+2026-09-13T20:47:46.5051993Z                     }
+2026-09-13T20:47:46.5052358Z                   }
+2026-09-13T20:47:46.5052690Z                 ],
+2026-09-13T20:47:46.5053049Z                 plugIn: [
+2026-09-13T20:47:46.5053464Z                   {
+2026-09-13T20:47:46.5053981Z                     [32m'$'[39m: {
+2026-09-13T20:47:46.5054910Z                       identifier: [32m'com.apple.InterfaceBuilder.IBCocoaTouchPlugin'[39m,
+2026-09-13T20:47:46.5056165Z                       version: [32m'22685'[39m
+2026-09-13T20:47:46.5056646Z                     }
+2026-09-13T20:47:46.5057010Z                   }
+2026-09-13T20:47:46.5057357Z                 ],
+2026-09-13T20:47:46.5057722Z                 capability: [
+2026-09-13T20:47:46.5058103Z                   {
+2026-09-13T20:47:46.5058395Z                     [32m'$'[39m: {
+2026-09-13T20:47:46.5058757Z                       name: [32m'Named colors'[39m,
+2026-09-13T20:47:46.5059155Z                       minToolsVersion: [32m'9.0'[39m
+2026-09-13T20:47:46.5059459Z                     }
+2026-09-13T20:47:46.5059671Z                   },
+2026-09-13T20:47:46.5059882Z                   {
+2026-09-13T20:47:46.5060148Z                     [32m'$'[39m: {
+2026-09-13T20:47:46.5060535Z                       name: [32m'Safe area layout guides'[39m,
+2026-09-13T20:47:46.5061144Z                       minToolsVersion: [32m'9.0'[39m
+2026-09-13T20:47:46.5061426Z                     }
+2026-09-13T20:47:46.5061631Z                   },
+2026-09-13T20:47:46.5061836Z                   {
+2026-09-13T20:47:46.5062104Z                     [32m'$'[39m: {
+2026-09-13T20:47:46.5062548Z                       name: [32m'documents saved in the Xcode 8 format'[39m,
+2026-09-13T20:47:46.5063012Z                       minToolsVersion: [32m'8.0'[39m
+2026-09-13T20:47:46.5063302Z                     }
+2026-09-13T20:47:46.5063511Z                   }
+2026-09-13T20:47:46.5063716Z                 ]
+2026-09-13T20:47:46.5063913Z               }
+2026-09-13T20:47:46.5064109Z             ],
+2026-09-13T20:47:46.5064308Z             scenes: [
+2026-09-13T20:47:46.5064512Z               {
+2026-09-13T20:47:46.5064715Z                 scene: [
+2026-09-13T20:47:46.5064939Z                   {
+2026-09-13T20:47:46.5065207Z                     [32m'$'[39m: {
+2026-09-13T20:47:46.5068823Z                       sceneID: [32m'EXPO-SCENE-1'[39m
+2026-09-13T20:47:46.5069141Z                     },
+2026-09-13T20:47:46.5069390Z                     objects: [
+2026-09-13T20:47:46.5069629Z                       {
+2026-09-13T20:47:46.5069894Z                         viewController: [
+2026-09-13T20:47:46.5070167Z                           {
+2026-09-13T20:47:46.5070480Z                             [32m'$'[39m: {
+2026-09-13T20:47:46.5071001Z                               storyboardIdentifier: [32m'SplashScreenViewController'[39m,
+2026-09-13T20:47:46.5071556Z                               id: [32m'EXPO-VIEWCONTROLLER-1'[39m,
+2026-09-13T20:47:46.5072022Z                               sceneMemberID: [32m'viewController'[39m
+2026-09-13T20:47:46.5072374Z                             },
+2026-09-13T20:47:46.5072640Z                             view: [
+2026-09-13T20:47:46.5072910Z                               {
+2026-09-13T20:47:46.5073231Z                                 [32m'$'[39m: {
+2026-09-13T20:47:46.5073629Z                                   key: [32m'view'[39m,
+2026-09-13T20:47:46.5074083Z                                   userInteractionEnabled: [32m'NO'[39m,
+2026-09-13T20:47:46.5074548Z                                   contentMode: [32m'scaleToFill'[39m,
+2026-09-13T20:47:46.5075042Z                                   insetsLayoutMarginsFromSafeArea: [32m'NO'[39m,
+2026-09-13T20:47:46.5075967Z                                   id: [32m'EXPO-ContainerView'[39m,
+2026-09-13T20:47:46.5076483Z                                   userLabel: [32m'ContainerView'[39m
+2026-09-13T20:47:46.5076829Z                                 },
+2026-09-13T20:47:46.5077107Z                                 rect: [
+2026-09-13T20:47:46.5077386Z                                   {
+2026-09-13T20:47:46.5077724Z                                     [32m'$'[39m: {
+2026-09-13T20:47:46.5078115Z                                       key: [32m'frame'[39m,
+2026-09-13T20:47:46.5078517Z                                       x: [32m'0.0'[39m,
+2026-09-13T20:47:46.5078902Z                                       y: [32m'0.0'[39m,
+2026-09-13T20:47:46.5079290Z                                       width: [32m'393'[39m,
+2026-09-13T20:47:46.5079738Z                                       height: [32m'852'[39m
+2026-09-13T20:47:46.5080055Z                                     }
+2026-09-13T20:47:46.5080327Z                                   }
+2026-09-13T20:47:46.5080605Z                                 ],
+2026-09-13T20:47:46.5080903Z                                 autoresizingMask: [
+2026-09-13T20:47:46.5081210Z                                   {
+2026-09-13T20:47:46.5081546Z                                     [32m'$'[39m: {
+2026-09-13T20:47:46.5081964Z                                       key: [32m'autoresizingMask'[39m,
+2026-09-13T20:47:46.5082409Z                                       flexibleMaxX: [32m'YES'[39m,
+2026-09-13T20:47:46.5082843Z                                       flexibleMaxY: [32m'YES'[39m
+2026-09-13T20:47:46.5083302Z                                     }
+2026-09-13T20:47:46.5083573Z                                   }
+2026-09-13T20:47:46.5083839Z                                 ],
+2026-09-13T20:47:46.5084118Z                                 subviews: [
+2026-09-13T20:47:46.5084400Z                                   {
+2026-09-13T20:47:46.5084691Z                                     imageView: []
+2026-09-13T20:47:46.5084988Z                                   }
+2026-09-13T20:47:46.5085253Z                                 ],
+2026-09-13T20:47:46.5086455Z                                 viewLayoutGuide: [
+2026-09-13T20:47:46.5087002Z                                   {
+2026-09-13T20:47:46.5087610Z                                     [32m'$'[39m: {
+2026-09-13T20:47:46.5088178Z                                       key: [32m'safeArea'[39m,
+2026-09-13T20:47:46.5088622Z                                       id: [32m'Rmq-lb-GrQ'[39m
+2026-09-13T20:47:46.5088960Z                                     }
+2026-09-13T20:47:46.5089237Z                                   }
+2026-09-13T20:47:46.5089518Z                                 ],
+2026-09-13T20:47:46.5089815Z                                 constraints: [
+2026-09-13T20:47:46.5090110Z                                   {
+2026-09-13T20:47:46.5090400Z                                     constraint: [
+2026-09-13T20:47:46.5090704Z                                       {
+2026-09-13T20:47:46.5091064Z                                         [32m'$'[39m: {
+2026-09-13T20:47:46.5091523Z                                           firstItem: [32m'EXPO-SplashScreen'[39m,
+2026-09-13T20:47:46.5092024Z                                           firstAttribute: [32m'centerY'[39m,
+2026-09-13T20:47:46.5092521Z                                           secondItem: [32m'EXPO-ContainerView'[39m,
+2026-09-13T20:47:46.5093019Z                                           secondAttribute: [32m'centerY'[39m,
+2026-09-13T20:47:46.5093471Z                                           id: [32m'0VC-Wk-OaO'[39m
+2026-09-13T20:47:46.5093809Z                                         }
+2026-09-13T20:47:46.5094107Z                                       },
+2026-09-13T20:47:46.5094383Z                                       {
+2026-09-13T20:47:46.5094735Z                                         [32m'$'[39m: {
+2026-09-13T20:47:46.5095184Z                                           firstItem: [32m'EXPO-SplashScreen'[39m,
+2026-09-13T20:47:46.5096068Z                                           firstAttribute: [32m'centerX'[39m,
+2026-09-13T20:47:46.5096604Z                                           secondItem: [32m'EXPO-ContainerView'[39m,
+2026-09-13T20:47:46.5097099Z                                           secondAttribute: [32m'centerX'[39m,
+2026-09-13T20:47:46.5097548Z                                           id: [32m'zR4-NK-mVN'[39m
+2026-09-13T20:47:46.5097880Z                                         }
+2026-09-13T20:47:46.5098166Z                                       }
+2026-09-13T20:47:46.5098451Z                                     ]
+2026-09-13T20:47:46.5098729Z                                   }
+2026-09-13T20:47:46.5098995Z                                 ]
+2026-09-13T20:47:46.5099266Z                               }
+2026-09-13T20:47:46.5099505Z                             ]
+2026-09-13T20:47:46.5099740Z                           }
+2026-09-13T20:47:46.5099968Z                         ],
+2026-09-13T20:47:46.5100237Z                         placeholder: [
+2026-09-13T20:47:46.5100764Z                           {
+2026-09-13T20:47:46.5101104Z                             [32m'$'[39m: {
+2026-09-13T20:47:46.5101568Z                               placeholderIdentifier: [32m'IBFirstResponder'[39m,
+2026-09-13T20:47:46.5102055Z                               id: [32m'EXPO-PLACEHOLDER-1'[39m,
+2026-09-13T20:47:46.5102509Z                               userLabel: [32m'First Responder'[39m,
+2026-09-13T20:47:46.5102966Z                               sceneMemberID: [32m'firstResponder'[39m
+2026-09-13T20:47:46.5103440Z                             }
+2026-09-13T20:47:46.5103674Z                           }
+2026-09-13T20:47:46.5103901Z                         ]
+2026-09-13T20:47:46.5104122Z                       }
+2026-09-13T20:47:46.5104347Z                     ],
+2026-09-13T20:47:46.5104571Z                     point: [
+2026-09-13T20:47:46.5104804Z                       {
+2026-09-13T20:47:46.5105129Z                         [32m'$'[39m: {
+2026-09-13T20:47:46.5105804Z                           key: [32m'canvasLocation'[39m,
+2026-09-13T20:47:46.5106330Z                           x: [32m'0.0'[39m,
+2026-09-13T20:47:46.5106686Z                           y: [32m'0.0'[39m
+2026-09-13T20:47:46.5106968Z                         }
+2026-09-13T20:47:46.5107197Z                       }
+2026-09-13T20:47:46.5107410Z                     ]
+2026-09-13T20:47:46.5107619Z                   }
+2026-09-13T20:47:46.5107818Z                 ]
+2026-09-13T20:47:46.5108021Z               }
+2026-09-13T20:47:46.5108220Z             ],
+2026-09-13T20:47:46.5108422Z             resources: [
+2026-09-13T20:47:46.5108641Z               {
+2026-09-13T20:47:46.5108839Z                 image: [
+2026-09-13T20:47:46.5109051Z                   {
+2026-09-13T20:47:46.5109329Z                     [32m'$'[39m: {
+2026-09-13T20:47:46.5109696Z                       name: [32m'SplashScreenLogo'[39m,
+2026-09-13T20:47:46.5110071Z                       width: [32m'100'[39m,
+2026-09-13T20:47:46.5110455Z                       height: [32m'90.333335876464844'[39m
+2026-09-13T20:47:46.5110749Z                     }
+2026-09-13T20:47:46.5110953Z                   }
+2026-09-13T20:47:46.5111157Z                 ]
+2026-09-13T20:47:46.5111350Z               }
+2026-09-13T20:47:46.5111540Z             ]
+2026-09-13T20:47:46.5111729Z           }
+2026-09-13T20:47:46.5111912Z         }
+2026-09-13T20:47:46.5112093Z       }
+2026-09-13T20:47:46.5112272Z     }
+2026-09-13T20:47:46.5112455Z   },
+2026-09-13T20:47:46.5112647Z   runtimeVersion: {
+2026-09-13T20:47:46.5112939Z     policy: [32m'appVersion'[39m
+2026-09-13T20:47:46.5113188Z   },
+2026-09-13T20:47:46.5113371Z   updates: {
+2026-09-13T20:47:46.5113650Z     fallbackToCacheTimeout: [33m0[39m
+2026-09-13T20:47:46.5113922Z   },
+2026-09-13T20:47:46.5114100Z   mods: {
+2026-09-13T20:47:46.5114283Z     ios: {
+2026-09-13T20:47:46.5114551Z       infoPlist: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5114926Z         isProvider: [33mtrue[39m,
+2026-09-13T20:47:46.5115682Z         isIntrospective: [33mtrue[39m
+2026-09-13T20:47:46.5116012Z       },
+2026-09-13T20:47:46.5116310Z       entitlements: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5116725Z         isProvider: [33mtrue[39m,
+2026-09-13T20:47:46.5117069Z         isIntrospective: [33mtrue[39m
+2026-09-13T20:47:46.5117331Z       },
+2026-09-13T20:47:46.5117592Z       xcodeproj: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5117963Z         isProvider: [33mtrue[39m
+2026-09-13T20:47:46.5118207Z       },
+2026-09-13T20:47:46.5118467Z       podfile: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5118836Z         isProvider: [33mtrue[39m
+2026-09-13T20:47:46.5119081Z       },
+2026-09-13T20:47:46.5119349Z       appDelegate: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5119731Z         isProvider: [33mtrue[39m
+2026-09-13T20:47:46.5119968Z       },
+2026-09-13T20:47:46.5120224Z       expoPlist: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5120588Z         isProvider: [33mtrue[39m,
+2026-09-13T20:47:46.5120919Z         isIntrospective: [33mtrue[39m
+2026-09-13T20:47:46.5121176Z       },
+2026-09-13T20:47:46.5121473Z       podfileProperties: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5121874Z         isProvider: [33mtrue[39m,
+2026-09-13T20:47:46.5122201Z         isIntrospective: [33mtrue[39m
+2026-09-13T20:47:46.5122455Z       },
+2026-09-13T20:47:46.5122712Z       dangerous: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5123083Z         isProvider: [33mtrue[39m
+2026-09-13T20:47:46.5123481Z       },
+2026-09-13T20:47:46.5123803Z       splashScreenStoryboard: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5124228Z         isProvider: [33mtrue[39m,
+2026-09-13T20:47:46.5124561Z         isIntrospective: [33mtrue[39m
+2026-09-13T20:47:46.5124822Z       }
+2026-09-13T20:47:46.5124998Z     },
+2026-09-13T20:47:46.5125189Z     android: {
+2026-09-13T20:47:46.5125705Z       manifest: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5126112Z         isProvider: [33mtrue[39m,
+2026-09-13T20:47:46.5126461Z         isIntrospective: [33mtrue[39m
+2026-09-13T20:47:46.5126726Z       },
+2026-09-13T20:47:46.5126981Z       colors: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5127342Z         isProvider: [33mtrue[39m,
+2026-09-13T20:47:46.5127667Z         isIntrospective: [33mtrue[39m
+2026-09-13T20:47:46.5127922Z       },
+2026-09-13T20:47:46.5128181Z       dangerous: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5128548Z         isProvider: [33mtrue[39m
+2026-09-13T20:47:46.5128796Z       },
+2026-09-13T20:47:46.5129070Z       strings: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5129432Z         isProvider: [33mtrue[39m,
+2026-09-13T20:47:46.5129752Z         isIntrospective: [33mtrue[39m
+2026-09-13T20:47:46.5130009Z       },
+2026-09-13T20:47:46.5130298Z       gradleProperties: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5130691Z         isProvider: [33mtrue[39m,
+2026-09-13T20:47:46.5131008Z         isIntrospective: [33mtrue[39m
+2026-09-13T20:47:46.5131266Z       },
+2026-09-13T20:47:46.5131515Z       styles: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5131870Z         isProvider: [33mtrue[39m,
+2026-09-13T20:47:46.5132190Z         isIntrospective: [33mtrue[39m
+2026-09-13T20:47:46.5132451Z       },
+2026-09-13T20:47:46.5132717Z       colorsNight: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5133089Z         isProvider: [33mtrue[39m,
+2026-09-13T20:47:46.5133409Z         isIntrospective: [33mtrue[39m
+2026-09-13T20:47:46.5133670Z       },
+2026-09-13T20:47:46.5133945Z       settingsGradle: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5134326Z         isProvider: [33mtrue[39m
+2026-09-13T20:47:46.5134575Z       },
+2026-09-13T20:47:46.5134872Z       projectBuildGradle: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5135266Z         isProvider: [33mtrue[39m
+2026-09-13T20:47:46.5135745Z       },
+2026-09-13T20:47:46.5136021Z       appBuildGradle: [AsyncFunction: interceptingMod] {
+2026-09-13T20:47:46.5136552Z         isProvider: [33mtrue[39m
+2026-09-13T20:47:46.5136816Z       }
+2026-09-13T20:47:46.5136998Z     }
+2026-09-13T20:47:46.5137175Z   },
+2026-09-13T20:47:46.5137370Z   androidStatusBar: {
+2026-09-13T20:47:46.5137677Z     backgroundColor: [32m'#ffffff'[39m
+2026-09-13T20:47:46.5137942Z   }
+2026-09-13T20:47:46.5138124Z }
+2026-09-13T20:47:46.5138227Z 
+2026-09-13T20:47:46.5138338Z Finished prebuild
+2026-09-13T20:47:46.5138691Z 2026-09-13T20:47:46.473Z expo:prebuild Skipped pod install
+2026-09-13T20:47:46.5167699Z ##[group]Run node scripts/native-modules-check.mjs --native 2>&1 | tee "$RUNNER_TEMP/evidence/native-modules-generated.log"
+2026-09-13T20:47:46.5168609Z [36;1mnode scripts/native-modules-check.mjs --native 2>&1 | tee "$RUNNER_TEMP/evidence/native-modules-generated.log"[0m
+2026-09-13T20:47:46.5203931Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-13T20:47:46.5204279Z env:
+2026-09-13T20:47:46.5204462Z   CI: 1
+2026-09-13T20:47:46.5204656Z   EXPO_NO_TELEMETRY: 1
+2026-09-13T20:47:46.5204874Z   EXPO_DEBUG: 1
+2026-09-13T20:47:46.5205091Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:46.5205335Z ##[endgroup]
+2026-09-13T20:47:46.7111795Z {
+2026-09-13T20:47:46.7112610Z   "platform": "apple",
+2026-09-13T20:47:46.7113345Z   "cwd": ".",
+2026-09-13T20:47:46.7114022Z   "required": [
+2026-09-13T20:47:46.7114640Z     "expo",
+2026-09-13T20:47:46.7115241Z     "expo-modules-core",
+2026-09-13T20:47:46.7116725Z     "expo-asset",
+2026-09-13T20:47:46.7117418Z     "expo-file-system",
+2026-09-13T20:47:46.7118375Z     "expo-font",
+2026-09-13T20:47:46.7118990Z     "expo-keep-awake"
+2026-09-13T20:47:46.7119589Z   ],
+2026-09-13T20:47:46.7120152Z   "missing": [],
+2026-09-13T20:47:46.7120756Z   "outside": [],
+2026-09-13T20:47:46.7121340Z   "modules": {
+2026-09-13T20:47:46.7121894Z     "expo": {
+2026-09-13T20:47:46.7122427Z       "version": "53.0.27",
+2026-09-13T20:47:46.7123239Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo"
+2026-09-13T20:47:46.7124007Z     },
+2026-09-13T20:47:46.7124660Z     "expo-modules-core": {
+2026-09-13T20:47:46.7125312Z       "version": "2.5.0",
+2026-09-13T20:47:46.7126670Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-modules-core"
+2026-09-13T20:47:46.7127418Z     },
+2026-09-13T20:47:46.7127950Z     "expo-asset": {
+2026-09-13T20:47:46.7128521Z       "version": "11.1.7",
+2026-09-13T20:47:46.7129339Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-asset"
+2026-09-13T20:47:46.7130202Z     },
+2026-09-13T20:47:46.7130803Z     "expo-file-system": {
+2026-09-13T20:47:46.7131536Z       "version": "18.1.11",
+2026-09-13T20:47:46.7132471Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-file-system"
+2026-09-13T20:47:46.7133374Z     },
+2026-09-13T20:47:46.7133953Z     "expo-font": {
+2026-09-13T20:47:46.7134585Z       "version": "13.3.2",
+2026-09-13T20:47:46.7135731Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-font"
+2026-09-13T20:47:46.7136933Z     },
+2026-09-13T20:47:46.7137482Z     "expo-keep-awake": {
+2026-09-13T20:47:46.7138118Z       "version": "14.1.4",
+2026-09-13T20:47:46.7139011Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-keep-awake"
+2026-09-13T20:47:46.7139828Z     }
+2026-09-13T20:47:46.7140311Z   }
+2026-09-13T20:47:46.7140796Z }
+2026-09-13T20:47:46.9114249Z {
+2026-09-13T20:47:46.9116318Z   "platform": "apple",
+2026-09-13T20:47:46.9117385Z   "cwd": "ios",
+2026-09-13T20:47:46.9117937Z   "required": [
+2026-09-13T20:47:46.9123509Z     "expo",
+2026-09-13T20:47:46.9124383Z     "expo-modules-core",
+2026-09-13T20:47:46.9124999Z     "expo-asset",
+2026-09-13T20:47:46.9126284Z     "expo-file-system",
+2026-09-13T20:47:46.9126870Z     "expo-font",
+2026-09-13T20:47:46.9127582Z     "expo-keep-awake"
+2026-09-13T20:47:46.9128093Z   ],
+2026-09-13T20:47:46.9128630Z   "missing": [],
+2026-09-13T20:47:46.9132073Z   "outside": [],
+2026-09-13T20:47:46.9133095Z   "modules": {
+2026-09-13T20:47:46.9136978Z     "expo": {
+2026-09-13T20:47:46.9137748Z       "version": "53.0.27",
+2026-09-13T20:47:46.9138400Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo"
+2026-09-13T20:47:46.9139425Z     },
+2026-09-13T20:47:46.9139942Z     "expo-modules-core": {
+2026-09-13T20:47:46.9140561Z       "version": "2.5.0",
+2026-09-13T20:47:46.9141566Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-modules-core"
+2026-09-13T20:47:46.9142541Z     },
+2026-09-13T20:47:46.9143129Z     "expo-asset": {
+2026-09-13T20:47:46.9143733Z       "version": "11.1.7",
+2026-09-13T20:47:46.9144969Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-asset"
+2026-09-13T20:47:46.9146712Z     },
+2026-09-13T20:47:46.9147462Z     "expo-file-system": {
+2026-09-13T20:47:46.9148079Z       "version": "18.1.11",
+2026-09-13T20:47:46.9149011Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-file-system"
+2026-09-13T20:47:46.9149855Z     },
+2026-09-13T20:47:46.9150421Z     "expo-font": {
+2026-09-13T20:47:46.9151166Z       "version": "13.3.2",
+2026-09-13T20:47:46.9152029Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-font"
+2026-09-13T20:47:46.9153106Z     },
+2026-09-13T20:47:46.9153637Z     "expo-keep-awake": {
+2026-09-13T20:47:46.9154583Z       "version": "14.1.4",
+2026-09-13T20:47:46.9155768Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-keep-awake"
+2026-09-13T20:47:46.9156639Z     }
+2026-09-13T20:47:46.9157161Z   }
+2026-09-13T20:47:46.9157646Z }
+2026-09-13T20:47:47.0746600Z {
+2026-09-13T20:47:47.0747761Z   "platform": "android",
+2026-09-13T20:47:47.0748425Z   "cwd": ".",
+2026-09-13T20:47:47.0749309Z   "required": [
+2026-09-13T20:47:47.0749852Z     "expo",
+2026-09-13T20:47:47.0750408Z     "expo-modules-core",
+2026-09-13T20:47:47.0751025Z     "expo-asset",
+2026-09-13T20:47:47.0751630Z     "expo-file-system",
+2026-09-13T20:47:47.0752238Z     "expo-font",
+2026-09-13T20:47:47.0752817Z     "expo-keep-awake"
+2026-09-13T20:47:47.0753381Z   ],
+2026-09-13T20:47:47.0753878Z   "missing": [],
+2026-09-13T20:47:47.0754396Z   "outside": [],
+2026-09-13T20:47:47.0754885Z   "modules": {
+2026-09-13T20:47:47.0755379Z     "expo": {
+2026-09-13T20:47:47.0757772Z       "version": "53.0.27",
+2026-09-13T20:47:47.0758580Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo"
+2026-09-13T20:47:47.0759339Z     },
+2026-09-13T20:47:47.0759830Z     "expo-modules-core": {
+2026-09-13T20:47:47.0760326Z       "version": "2.5.0",
+2026-09-13T20:47:47.0761169Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-modules-core"
+2026-09-13T20:47:47.0762005Z     },
+2026-09-13T20:47:47.0762507Z     "expo-asset": {
+2026-09-13T20:47:47.0763087Z       "version": "11.1.7",
+2026-09-13T20:47:47.0763901Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-asset"
+2026-09-13T20:47:47.0764816Z     },
+2026-09-13T20:47:47.0765376Z     "expo-file-system": {
+2026-09-13T20:47:47.0766750Z       "version": "18.1.11",
+2026-09-13T20:47:47.0767663Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-file-system"
+2026-09-13T20:47:47.0768536Z     },
+2026-09-13T20:47:47.0769085Z     "expo-font": {
+2026-09-13T20:47:47.0769675Z       "version": "13.3.2",
+2026-09-13T20:47:47.0770517Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-font"
+2026-09-13T20:47:47.0771365Z     },
+2026-09-13T20:47:47.0771857Z     "expo-keep-awake": {
+2026-09-13T20:47:47.0772436Z       "version": "14.1.4",
+2026-09-13T20:47:47.0773273Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-keep-awake"
+2026-09-13T20:47:47.0774041Z     }
+2026-09-13T20:47:47.0774493Z   }
+2026-09-13T20:47:47.0774935Z }
+2026-09-13T20:47:47.2365824Z {
+2026-09-13T20:47:47.2366963Z   "platform": "android",
+2026-09-13T20:47:47.2367787Z   "cwd": "android",
+2026-09-13T20:47:47.2368358Z   "required": [
+2026-09-13T20:47:47.2368878Z     "expo",
+2026-09-13T20:47:47.2369429Z     "expo-modules-core",
+2026-09-13T20:47:47.2370034Z     "expo-asset",
+2026-09-13T20:47:47.2370722Z     "expo-file-system",
+2026-09-13T20:47:47.2371419Z     "expo-font",
+2026-09-13T20:47:47.2372082Z     "expo-keep-awake"
+2026-09-13T20:47:47.2372737Z   ],
+2026-09-13T20:47:47.2373317Z   "missing": [],
+2026-09-13T20:47:47.2373916Z   "outside": [],
+2026-09-13T20:47:47.2374537Z   "modules": {
+2026-09-13T20:47:47.2375117Z     "expo": {
+2026-09-13T20:47:47.2376091Z       "version": "53.0.27",
+2026-09-13T20:47:47.2377032Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo"
+2026-09-13T20:47:47.2377915Z     },
+2026-09-13T20:47:47.2378564Z     "expo-modules-core": {
+2026-09-13T20:47:47.2379260Z       "version": "2.5.0",
+2026-09-13T20:47:47.2380529Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-modules-core"
+2026-09-13T20:47:47.2381597Z     },
+2026-09-13T20:47:47.2382153Z     "expo-asset": {
+2026-09-13T20:47:47.2384346Z       "version": "11.1.7",
+2026-09-13T20:47:47.2388283Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-asset"
+2026-09-13T20:47:47.2389468Z     },
+2026-09-13T20:47:47.2390179Z     "expo-file-system": {
+2026-09-13T20:47:47.2390762Z       "version": "18.1.11",
+2026-09-13T20:47:47.2391616Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-file-system"
+2026-09-13T20:47:47.2392453Z     },
+2026-09-13T20:47:47.2392911Z     "expo-font": {
+2026-09-13T20:47:47.2393436Z       "version": "13.3.2",
+2026-09-13T20:47:47.2394210Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-font"
+2026-09-13T20:47:47.2394938Z     },
+2026-09-13T20:47:47.2396741Z     "expo-keep-awake": {
+2026-09-13T20:47:47.2397670Z       "version": "14.1.4",
+2026-09-13T20:47:47.2398581Z       "path": "/home/runner/work/_temp/mobile/node_modules/expo-keep-awake"
+2026-09-13T20:47:47.2399696Z     }
+2026-09-13T20:47:47.2400178Z   }
+2026-09-13T20:47:47.2400638Z }
+2026-09-13T20:47:47.2493656Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:47:47.2494969Z ##[group]Run actions/upload-artifact@v4
+2026-09-13T20:47:47.2495250Z with:
+2026-09-13T20:47:47.2495950Z   name: canonical-mobile-linking-ddd2b9d82d560ba2657a7904f061fb20196d5924
+2026-09-13T20:47:47.2496393Z   path: /home/runner/work/_temp/evidence
+2026-09-13T20:47:47.2496683Z   if-no-files-found: error
+2026-09-13T20:47:47.2496922Z   compression-level: 6
+2026-09-13T20:47:47.2497149Z   overwrite: false
+2026-09-13T20:47:47.2497366Z   include-hidden-files: false
+2026-09-13T20:47:47.2497598Z env:
+2026-09-13T20:47:47.2497774Z   CI: 1
+2026-09-13T20:47:47.2497971Z   EXPO_NO_TELEMETRY: 1
+2026-09-13T20:47:47.2498178Z   EXPO_DEBUG: 1
+2026-09-13T20:47:47.2498424Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:47.2498666Z ##[endgroup]
+2026-09-13T20:47:47.4274823Z (node:2334) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-13T20:47:47.4276890Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-13T20:47:47.4394851Z With the provided path, there will be 7 files uploaded
+2026-09-13T20:47:47.4401405Z Artifact name is valid!
+2026-09-13T20:47:47.4403092Z Root directory input is valid!
+2026-09-13T20:47:47.6506546Z Beginning upload of artifact content to blob storage
+2026-09-13T20:47:47.7096123Z (node:2334) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-13T20:47:47.7421643Z Uploaded bytes 72023
+2026-09-13T20:47:47.7576785Z Finished uploading artifact content to blob storage!
+2026-09-13T20:47:47.7578412Z SHA256 digest of uploaded artifact zip is 1124088ad264786e5f223383b5d4f13b3641b10ddcab7c714a2a312422758b39
+2026-09-13T20:47:47.7580413Z Finalizing artifact upload
+2026-09-13T20:47:47.9355100Z Artifact canonical-mobile-linking-ddd2b9d82d560ba2657a7904f061fb20196d5924.zip successfully finalized. Artifact ID 10324493153
+2026-09-13T20:47:47.9358010Z Artifact canonical-mobile-linking-ddd2b9d82d560ba2657a7904f061fb20196d5924 has been successfully uploaded! Final size is 72023 bytes. Artifact ID is 10324493153
+2026-09-13T20:47:47.9363376Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34781824424/artifacts/10324493153
+2026-09-13T20:47:47.9540830Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:47:47.9542105Z Post job cleanup.
+2026-09-13T20:47:48.0828085Z (node:2346) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-13T20:47:48.0829698Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-13T20:47:48.1070136Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:47:48.1072562Z Post job cleanup.
+2026-09-13T20:47:48.2536190Z [command]/usr/bin/git version
+2026-09-13T20:47:48.2606305Z git version 2.55.0
+2026-09-13T20:47:48.2708195Z Temporarily overriding HOME='/home/runner/work/_temp/9fa34206-76c4-4da8-80c7-cddbb7cabaad' before making global git config changes
+2026-09-13T20:47:48.2746556Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-13T20:47:48.2756719Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-13T20:47:48.2809535Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-13T20:47:48.2937527Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-13T20:47:48.3436732Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-13T20:47:48.3487696Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-13T20:47:48.3817579Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-13T20:47:48.3926831Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-13T20:47:48.4473672Z Cleaning up orphan processes
+2026-09-13T20:47:48.4862886Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
