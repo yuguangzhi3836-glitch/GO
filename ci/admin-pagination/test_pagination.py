@@ -124,3 +124,15 @@ def test_authentication_and_roles_remain_required(setup):
 def test_invalid_vertical_rejected(setup):
     client,_,_=setup
     assert client.get('/internal/v1/admin/operations/verticals/UNKNOWN').status_code==404
+
+@pytest.mark.parametrize('v',VERTICALS)
+def test_direct_call_defaults_match_http(setup,v):
+    client,_,_=setup
+    direct=ops.vertical_snapshot(v,p=None)['data']
+    # HTTP serializes timestamps; compare identifiers, values and pagination.
+    http=get(client,v)
+    for kind in ['orders','refunds']:
+        assert [x['order_id'] for x in direct[kind]]==[x['order_id'] for x in http[kind]]
+    assert direct['query']==http['query']=={'order_id':None}
+    assert direct['pagination']==http['pagination']
+    assert direct['metrics']==http['metrics']

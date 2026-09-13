@@ -1,3 +1,4 @@
+from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
 from go_hotel.db.session import SessionLocal
@@ -69,10 +70,10 @@ VERTICAL_REFUND_FIELDS = {
 def vertical_snapshot(
     vertical: str,
     p: Principal = Depends(admin_principal),
-    page: int = Query(1, ge=1, le=1000000),
-    refund_page: int = Query(1, ge=1, le=1000000),
-    page_size: int = Query(50, ge=1, le=100),
-    order_id: str | None = Query(None, max_length=64),
+    page: Annotated[int, Query(ge=1, le=1000000)] = 1,
+    refund_page: Annotated[int, Query(ge=1, le=1000000)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 50,
+    order_id: Annotated[str | None, Query(max_length=64)] = None,
 ):
     v = vertical.upper()
     if v not in VERTICALS:
