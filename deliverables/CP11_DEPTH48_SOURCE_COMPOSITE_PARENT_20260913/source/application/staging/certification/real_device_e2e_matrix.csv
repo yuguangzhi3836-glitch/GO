@@ -1,0 +1,23 @@
+ID,Platform,Scenario,Expected,Blocker
+MOB-001,iOS,Install TestFlight build,App installs and launches,true
+MOB-002,Android,Install Play Internal build,App installs and launches,true
+MOB-003,Both,GO ID login and refresh,Session survives restart and refresh rotates,true
+MOB-004,Both,Hotel search and detail,Results and canonical offers render,true
+MOB-005,Both,Prebook repricing,Changed price requires explicit acceptance,true
+MOB-006,Both,Payment authorization to supplier book to capture,One confirmed order and one capture,true
+MOB-007,Both,Network loss after supplier book,No duplicate booking; reconciliation resolves,true
+MOB-008,Both,Cancel and refund,Trips shows continuous cancellation/refund states,true
+MOB-009,Both,Change with higher price,Only positive difference charged,true
+MOB-010,Both,Stay Credit,365-day property-only credit enforced,true
+MOB-011,iOS,APNs booking confirmation push,Push arrives and deep-links to correct order,true
+MOB-012,Android,FCM booking confirmation push,Push arrives and deep-links to correct order,true
+MOB-013,Both,Refund completed push,Push opens refund/order detail,true
+MOB-014,Both,Supplier-fault compensation push,Compensation status is visible,true
+MOB-015,Both,Check-in reminder,Reminder routes to active trip,true
+MOB-016,Both,Review invite 2-10h after checkout,Invite opens correct review,true
+MOB-017,Both,Next app open quick review,Only NOT_REVIEWED order blocks once,true
+MOB-018,Both,Completed review second trigger,No second trigger after COMPLETED,true
+MOB-019,iOS,Universal Link,HTTPS link opens matching GO screen,true
+MOB-020,Android,App Link,HTTPS link opens matching GO screen,true
+MOB-021,Both,Secure device storage,Tokens absent from plaintext app storage/logs,true
+MOB-022,Both,Dead push token,Backend revokes invalid token after provider receipt,true

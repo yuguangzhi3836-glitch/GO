@@ -1,0 +1,48 @@
+{
+  "schema": "go.depth43.local-evidence.v1",
+  "tested_source_commit": "abc28494bae06bff60b1f4597009198d0875b444",
+  "application_git_tree": "60b254702a53b3f78180db6934e8cdaf1566d2e3",
+  "source_tree_sha256": "530086b348bdc8e935d32bae738e8b201f249e1085a09ae9bd0742139a3b2964",
+  "python": {
+    "selected_tests": 83,
+    "passed": 83
+  },
+  "frontend": {
+    "passed": 249
+  },
+  "native": {
+    "typecheck": "PASS",
+    "contract": "PASS",
+    "device": "NOT_RUN"
+  },
+  "reproduction": {
+    "source_commit": "6d1728939364881b86e3992bf1a53927f95bd458",
+    "application_git_tree": "219e4ca8a7176e3ff4c32af5524e322635c2d845",
+    "added_test_file_only": true,
+    "failed_assertion": "projection_current == True after successful hotel change",
+    "log": "depth43-reproduction.log"
+  },
+  "browser_search": {
+    "status": "HOLD",
+    "attempted_url": "http://127.0.0.1:4187/",
+    "observed_error": "Browser Use cannot open http://127.0.0.1:4187 in tab 1. Browser reported: net::ERR_BLOCKED_BY_CLIENT",
+    "authentication_not_attempted": true
+  },
+  "limitations": [
+    "Local materialization lacks four unchanged PNGs; full repository CI verifies original assets",
+    "No native device or bank settlement evidence",
+    "New change/search browser scenarios are not included in the inherited 39-case browser suite"
+  ],
+  "hong_kong": "NOT_ACCESSED",
+  "production": "HOLD",
+  "slow_shard_diagnostic": {
+    "shard": 3,
+    "passed": 439,
+    "skipped": 1,
+    "seconds": 122.4,
+    "exit_code": 0,
+    "python": "3.12",
+    "log_sha256": "bcd4eeee3fa5df811ce2b3d81f03f0aea5bd512966dbc9a804d9a8fe65a29a63",
+    "scope": "LOCAL_SAME_FILE_SELECTION_ONLY_DOES_NOT_REPLACE_GITHUB_JOB"
+  }
+}

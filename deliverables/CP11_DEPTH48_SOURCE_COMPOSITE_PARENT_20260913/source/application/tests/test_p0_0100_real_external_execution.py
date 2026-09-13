@@ -1,0 +1,66 @@
+from datetime import datetime,timezone,timedelta
+import hashlib,hmac,json,os
+from sqlalchemy import select
+from go_hotel.db.session import SessionLocal
+from go_hotel.db.models import (OrderRow,ExternalSandboxCredentialBindingRow as Cred,NamedSupplierAdapterRow as Adapter,
+ NamedSupplierAdapterBindingRow as Binding,ExternalSandboxExecutionAuthorizationRow as Auth,OrderSupplierFulfillmentRow,
+ ConsumerUnifiedLifecycleRow,OmnichannelMoneyMovementRow,ExternalTruthWebhookReceiptRow)
+from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service as source
+from go_hotel.services.omnichannel_payment import omnichannel_payment_service as pay
+from go_hotel.services.real_external_execution import real_external_execution_service as real
+
+SECRET='p0-0100-secret'
+def sig(payload):return hmac.new(SECRET.encode(),json.dumps(payload,sort_keys=True,separators=(',',':'),default=str).encode(),hashlib.sha256).hexdigest()
+class Resp:
+ def __init__(self,payload,status=202):self._payload=payload;self.status_code=status;self.content=b'1'
+ def json(self):return self._payload
+
+def setup_auth():
+ os.environ['GO_EXTERNAL_SANDBOX_NETWORK_ENABLED']='1';os.environ['GO_ALLOW_HTTP_EXTERNAL_SANDBOX']='1';os.environ['GO_P0_0100_SECRET']=SECRET
+ with SessionLocal() as s:
+  s.add_all([
+   Cred(credential_binding_id='cred-h',supplier_intake_id='intake-1',vertical='HOTEL',vault_provider='ENV',secret_reference='env://GO_P0_0100_SECRET',credential_fingerprint='h',access_test_state='PASS',updated_at=datetime.now(timezone.utc)),
+   Cred(credential_binding_id='cred-p',supplier_intake_id='intake-1',vertical='PAYMENT',vault_provider='ENV',secret_reference='env://GO_P0_0100_SECRET',credential_fingerprint='p',access_test_state='PASS',updated_at=datetime.now(timezone.utc)),
+   Adapter(named_adapter_id='ad-h',supplier_intake_id='intake-1',vertical='HOTEL',supplier_name='Hotel Sandbox',adapter_key='hotel-sandbox-0100',adapter_version=1,capability_manifest_json=['BOOK','QUERY','CANCEL','WEBHOOK'],implementation_reference='test://adapter',state='IMPLEMENTATION_VERIFIED',updated_at=datetime.now(timezone.utc)),
+   Adapter(named_adapter_id='ad-p',supplier_intake_id='intake-1',vertical='PAYMENT',supplier_name='PSP Sandbox',adapter_key='psp-sandbox-0100',adapter_version=1,capability_manifest_json=['AUTHORIZE','CAPTURE','REFUND','SETTLEMENT','CALLBACK'],implementation_reference='test://adapter',state='IMPLEMENTATION_VERIFIED',updated_at=datetime.now(timezone.utc)),
+   Binding(adapter_binding_id='bind-h',named_adapter_id='ad-h',endpoint_reference='http://supplier.local/execute',credential_binding_id='cred-h',allowlist_reference='test://allow',test_resource_reference='hotel-1',configuration_attested=True,state='BOUND_AND_ATTESTED',updated_at=datetime.now(timezone.utc)),
+   Binding(adapter_binding_id='bind-p',named_adapter_id='ad-p',endpoint_reference='http://psp.local/execute',credential_binding_id='cred-p',allowlist_reference='test://allow',test_resource_reference='acct-1',configuration_attested=True,state='BOUND_AND_ATTESTED',updated_at=datetime.now(timezone.utc)),
+   Auth(execution_authorization_id='auth-0100',certification_suite_id='suite-1',hotel_adapter_binding_id='bind-h',psp_adapter_binding_id='bind-p',maker_id='maker',checker_id='checker',evidence_reference='approval://0100',state='APPROVED_EXTERNAL_SANDBOX_ONLY',approved_at=datetime.now(timezone.utc),expires_at=datetime.now(timezone.utc)+timedelta(hours=1))])
+  s.commit()
+
+def seed_order():
+ with SessionLocal() as s:
+  s.add(OrderRow(order_id='hotel-order-0100',prebook_id='pb-0100',hotel_id='hotel-1',account_id='guest-0100',total_amount_minor=12000,currency='CNY',status='PENDING_PAYMENT',supplier_confirmation_no=None,supplier_id=None,version=1,created_at=datetime.now(timezone.utc),updated_at=datetime.now(timezone.utc)));s.commit()
+ source.decide('HOTEL','hotel-order-0100',[{'source_id':'hotel-supplier-0100','source_type':'HOTEL_OFFICIAL_DIRECT','authorized':True,'available':True,'evidence_reference':'supplier-authority://0100'}])
+ i=pay.create_intent({'business_type':'HOTEL_ORDER','business_id':'hotel-order-0100','channel_priority':['ALIPAY']},'idem-0100','guest-0100');pay.select_channel(i['payment_intent_id'],'ALIPAY','guest-0100');return i
+
+def test_0100_real_transport_is_fail_closed_without_network_enable():
+ setup_auth();i=seed_order();os.environ['GO_EXTERNAL_SANDBOX_NETWORK_ENABLED']='0'
+ try:real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'real-auth-0100'})
+ except ValueError as e:assert str(e)=='REAL_EXTERNAL_NETWORK_EXECUTION_NOT_ENABLED'
+ else:assert False
+
+def test_0100_signed_psp_and_supplier_callbacks_drive_0099_truth_chain(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
+ op=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'real-auth-0100'})
+ p={'state':'SUCCEEDED','external_operation_id':'ext-authorize','amount_minor':12000};r=real.payment_callback(op['external_truth_operation_id'],'pay-delivery-auth',p,sig(p));assert r['intent']['state']=='SUCCEEDED' and r['money_movement']['movement_type']=='AUTHORIZATION'
+ capop=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'real-cap-0100','amount_minor':12000})
+ cp={'state':'SUCCEEDED','external_operation_id':'ext-capture','amount_minor':12000};cr=real.payment_callback(capop['external_truth_operation_id'],'pay-delivery-cap',cp,sig(cp));assert cr['money_movement']['movement_type']=='CAPTURE'
+ with SessionLocal() as s:
+  f=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.payment_intent_id==iid));assert f.state=='CAPTURE_CONFIRMED_READY_FOR_SUPPLIER';fid=f.order_supplier_fulfillment_id
+ sop=real.execute_supplier(fid,'auth-0100',{'operation':'BOOK','idempotency_key':'real-book-0100','facts':{'room':'DLX'}})
+ sp={'state':'CONFIRMED','external_operation_id':'ext-book','supplier_confirmation_reference':'HC-0100'};sr=real.supplier_callback(sop['external_truth_operation_id'],'hotel-delivery-1',sp,sig(sp));assert sr['result']['unified_lifecycle']['lifecycle_state']=='CONFIRMED'
+ with SessionLocal() as s:
+  assert s.get(OrderRow,'hotel-order-0100').status=='CONFIRMED'
+  life=s.scalar(select(ConsumerUnifiedLifecycleRow).where(ConsumerUnifiedLifecycleRow.vertical=='HOTEL',ConsumerUnifiedLifecycleRow.order_id=='hotel-order-0100'));assert life and life.payment_state=='PAID'
+  assert len(s.scalars(select(ExternalTruthWebhookReceiptRow)).all())==3
+
+def test_0100_signed_settlement_bank_feed_and_reconciliation(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id'];monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
+ op=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'real-auth-0100'});p={'state':'SUCCEEDED','external_operation_id':'ext-authorize','amount_minor':12000};real.payment_callback(op['external_truth_operation_id'],'d-a',p,sig(p))
+ cap=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'real-cap-0100'});cp={'state':'SUCCEEDED','external_operation_id':'ext-capture','amount_minor':12000};real.payment_callback(cap['external_truth_operation_id'],'d-c',cp,sig(cp))
+ t=datetime.now(timezone.utc).isoformat();sett={'external_transaction_id':'psp-tx-0100','amount_minor':12000,'currency':'CNY','evidence_reference':'psp://settlement/0100','occurred_at':t};real.psp_settlement_callback(cap['external_truth_operation_id'],'d-settle',sett,sig(sett))
+ os.environ['GO_BANK_FEED_KEY_TESTBANK']=SECRET
+ feed={'evidence_reference':'bank://feed/0100','lines':[{'bank_line_identity':'bank-line-0100','legal_entity_id':'GO_CN','amount_minor':12000,'currency':'CNY','payment_reference':'psp-tx-0100','evidence_reference':'bank://line/0100','booked_at':t}]};real.bank_feed('testbank','bank-delivery-0100',feed,sig(feed))
+ rec=real.reconcile(iid,'psp-tx-0100');assert rec['state']=='MATCHED' and rec['ledger_amount_minor']==12000

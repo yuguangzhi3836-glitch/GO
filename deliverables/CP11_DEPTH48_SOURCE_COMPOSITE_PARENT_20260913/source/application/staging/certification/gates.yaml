@@ -1,0 +1,48 @@
+release: GO Mobile Sprint 2C
+required_state: INSTALLABLE_INTERNAL
+gates:
+  - id: PG16
+    title: PostgreSQL 16 migration and concurrency
+    blocker: true
+  - id: REDIS
+    title: Redis queue/outbox/push worker smoke
+    blocker: true
+  - id: PSP
+    title: PSP sandbox lifecycle
+    blocker: true
+  - id: CONNECTOR
+    title: Real hotel connector sandbox lifecycle
+    blocker: true
+  - id: APNS
+    title: APNs real-device delivery and receipt
+    blocker: true
+  - id: FCM
+    title: FCM real-device delivery and receipt
+    blocker: true
+  - id: UNIVERSAL_LINK
+    title: Apple Universal Link association
+    blocker: true
+  - id: APP_LINK
+    title: Android App Link association
+    blocker: true
+  - id: APPLE_SIGNING
+    title: Apple signing and App Store Connect app
+    blocker: true
+  - id: GOOGLE_SIGNING
+    title: Google Play signing and app
+    blocker: true
+  - id: TESTFLIGHT
+    title: TestFlight build installable
+    blocker: true
+  - id: PLAY_INTERNAL
+    title: Play Internal build installable
+    blocker: true
+  - id: IPHONE_E2E
+    title: Physical iPhone P0 E2E
+    blocker: true
+  - id: ANDROID_E2E
+    title: Physical Android P0 E2E
+    blocker: true
+  - id: STORE_CHECKLIST
+    title: Store submission checklist
+    blocker: true

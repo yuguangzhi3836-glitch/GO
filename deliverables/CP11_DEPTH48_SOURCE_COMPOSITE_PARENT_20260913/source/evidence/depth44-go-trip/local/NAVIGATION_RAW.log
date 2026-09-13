@@ -1,0 +1,26 @@
+✔ GO Trip shows all states, searches owned rows, opens the filtered order and restores all (1.907443ms)
+✔ legacy hotel return opens the same all-order GO Trip (0.66832ms)
+✔ HOTEL_CATALOG: reopen the existing order without a new order or payment (2.276501ms)
+✔ HOTEL_DIRECT: reopen the existing order without a new order or payment (1.280966ms)
+✔ FLIGHT: reopen the existing order without a new order or payment (0.612756ms)
+✔ RAIL: reopen the existing order without a new order or payment (0.514628ms)
+✔ RIDE: reopen the existing order without a new order or payment (0.548579ms)
+✔ RENTAL: reopen the existing order without a new order or payment (0.525383ms)
+✔ ATTRACTION: reopen the existing order without a new order or payment (0.639306ms)
+✔ untrusted evidence URLs and unsupported identities never select an endpoint (0.900481ms)
+✔ card output escapes content and uses current canonical status (0.662311ms)
+✔ an order response cannot populate a different order or vertical (1.080102ms)
+✔ late order response cannot overwrite a new screen (1.298623ms)
+✔ continuing payment re-reads amount and uses the original order only (0.759928ms)
+✔ already paid or expired orders cannot invoke payment from a stale card (1.331392ms)
+✔ payment timeout reads the same order and never silently resends (0.700399ms)
+✔ leaving before the fresh order read prevents a payment dialog (0.54271ms)
+✔ real app dispatch uses every existing enriched order renderer (3.453739ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 96.590531

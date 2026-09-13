@@ -1,0 +1,80 @@
+{
+  "schema": "go.depth42.go-trip-repairs.v1",
+  "parent_commit": "f88b050754db38d90026e60d3654d53267f3b3c6",
+  "parent_application_tree": "64be539474a770ca2f8ccdc9b0776ccc89c7ff66",
+  "application_git_tree": "219e4ca8a7176e3ff4c32af5524e322635c2d845",
+  "retained_parent_files": 1302,
+  "source_files": 1304,
+  "files": [
+    {
+      "path": "application/frontend/consumer/app.js",
+      "previous_git_blob": "c57c482be6e3371aa46824aea65df7877f488b79",
+      "git_blob": "f9532186ace6f0ed5c0903aef269a14efcf064bd",
+      "sha256": "44f269cd28036f347f1e60bcc46a4a67a176c5bd5e22f27676b40ee7f22674a6"
+    },
+    {
+      "path": "application/frontend/consumer/trip-navigation.js",
+      "previous_git_blob": "5b2a0e6712e138dd7efdda544f168af773ad8aea",
+      "git_blob": "4a806adb4b5e4fee04b590b586d82b62b2e4c2dd",
+      "sha256": "1286e9accb5900d46bd0dd2bc1c747294322139c2d468d7b6e02566c95ef09ca"
+    },
+    {
+      "path": "application/mobile/go-app/src/screens/TripsScreen.tsx",
+      "previous_git_blob": "4eedf2f94464cec9ff86c8d39ebb80f2aeedcf6a",
+      "git_blob": "bd32fa3991de56f2f7dbe0d05ee4e342474f7f55",
+      "sha256": "b991fe4c74c63a446235913da7555c723c76b09380539f41ae97425ec8a6a74f"
+    },
+    {
+      "path": "application/src/go_hotel/services/catalog_cash_fare_execution.py",
+      "previous_git_blob": "bbaa4bedfd4b3d26c01ed3bf4f6f34a6d44026b7",
+      "git_blob": "c1271ea240d81c74395e49b338944be94afc07d9",
+      "sha256": "a1c7a98abd667b660469c6308e1b213a2168d97a5fd2c6d2ea711cf92d0bebb6"
+    },
+    {
+      "path": "application/src/go_hotel/services/transaction_order_view.py",
+      "previous_git_blob": "0c44512ee3973010306783e5acb3827c1618adf0",
+      "git_blob": "26986249a3e640dbf3da842b1ef6c8e9b50b79fd",
+      "sha256": "29559ce0d68cd1ea05016c1c7ccb6789963666a638d2ed595131ca5d12b3897b"
+    },
+    {
+      "path": "application/src/go_hotel/services/vertical_lifecycle_projection.py",
+      "previous_git_blob": "4999a942d26cfbcd18574d8a481552ef6c73448f",
+      "git_blob": "4b9b81e1276647426061cf8dd241f97ab79cd4c6",
+      "sha256": "ca2d917e506d87e8c7b749bd834fda52880da03dc21b5f71143adacad09d161f"
+    },
+    {
+      "path": "application/tests/test_depth42_cross_end_journeys.py",
+      "previous_git_blob": null,
+      "git_blob": "5dfab036f4a054ad3a4dcc806a7e684e3f5d9e9d",
+      "sha256": "027180cfcd41d274644a51efcd9da9fd2fe5b8e6e0875797b0887a17685a6d5b"
+    },
+    {
+      "path": "application/tests_frontend/go_trip_all_orders.test.mjs",
+      "previous_git_blob": null,
+      "git_blob": "996220a199f93b6e926b9bdd5b9ae1241177f10a",
+      "sha256": "c40683d7033fdfb182a80e1ca3652739cba946260d6e3c7e100d12c0ed40f2b3"
+    }
+  ],
+  "local_verification": {
+    "python": "91 PASS",
+    "frontend": "246 PASS",
+    "runtime": "Python 3.12 isolated SQLite",
+    "full_repository_ci": "PASS_RUN_34694860505_WITH_6_POSTGRESQL_SKIPS",
+    "native_typecheck": "PASS",
+    "native_contract": "PASS"
+  },
+  "historical_browser_pass_transferred": false,
+  "full_three_end_ux": "HOLD",
+  "native_device": "HOLD",
+  "bank_settlement": "NOT_VERIFIED",
+  "sealed_node": "HOLD",
+  "release": "HOLD",
+  "source_tree_sha256": "be152b85b7b55ae6cc661446b20a309fc4c004c1c0c25f7b0c74fe0ea1c664da",
+  "tested_source_commit": "800538c1714dd3e50f3abf8c97964a2ee8ba4e72",
+  "ci": {
+    "passed": 1723,
+    "skipped": 6,
+    "failures": 0,
+    "errors": 0
+  }
+}

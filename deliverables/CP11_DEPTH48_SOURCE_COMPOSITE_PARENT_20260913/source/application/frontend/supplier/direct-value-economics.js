@@ -1,0 +1,1 @@
+if(window.GO_CONSOLE){window.GO_CONSOLE.nav.splice(6,0,{route:'/direct-value',label:'官方直连价值',custom:'supplierDirectValue'},{route:'/channel-economics',label:'直连经营分析',custom:'supplierChannelEconomics'});}
