@@ -1,0 +1,144 @@
+name: DEPTH48 capacity candidate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/**
+      - ci/capacity/**
+      - .github/workflows/depth48-capacity.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: depth48-capacity-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_capacity_ci
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_capacity_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_capacity_ci
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /application/
+            /ci/capacity/
+            /ci/retention/requirements.lock
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Install canonical CI dependency lock
+        run: python -m pip install -r ci/retention/requirements.lock
+      - name: Migrate disposable PostgreSQL 18.4
+        working-directory: application
+        env:
+          PYTHONPATH: src
+          DATABASE_URL: ${{ env.POSTGRES_TEST_DATABASE_URL }}
+        run: python -m alembic upgrade head
+      - name: Capacity, security and six PostgreSQL concurrency checks
+        working-directory: application
+        run: >-
+          python -m pytest tests/test_depth48_capacity.py
+          tests/test_sprint1v_observability.py tests/test_sprint1u_production_bff.py
+          tests/test_depth27_session_isolation.py tests/test_depth35_refresh_scope.py
+          tests/test_r82_admin_first_mfa_enrollment.py tests/test_sprint1y_consumer_identity.py
+          tests/test_p0_0100_postgres_concurrency.py tests/test_p0_0101_postgres_race_matrix.py
+          --tb=short -o cache_dir="$RUNNER_TEMP/pytest-cache"
+          --junitxml="$RUNNER_TEMP/capacity-evidence/regression.xml"
+      - name: Load harness diagnostics self-test only
+        run: node ci/capacity/load-public.mjs --self-test
+      - uses: actions/checkout@v4
+        with:
+          ref: 286e294d92df4b7d1c0073116a8e628734abec6c
+          path: baseline-source
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /application/src/go_hotel/main.py
+            /application/src/go_hotel/observability/metrics.py
+      - name: Controlled comparison after regression has completed
+        run: python ci/capacity/compare.py --baseline-root baseline-source --output "$RUNNER_TEMP/capacity-evidence/comparison.json"
+      - name: Bind evidence to source
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/capacity-evidence"
+          git rev-parse HEAD > "$RUNNER_TEMP/capacity-evidence/commit.txt"
+          git rev-parse HEAD:application > "$RUNNER_TEMP/capacity-evidence/application-tree.txt"
+          python -m pip freeze > "$RUNNER_TEMP/capacity-evidence/test-dependencies.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: depth48-capacity-tests-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/capacity-evidence/
+          retention-days: 90
+
+  runtime-image:
+    needs: regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          sparse-checkout: application
+      - name: Build canonical Dockerfile with source identity labels
+        run: |
+          mkdir -p "$RUNNER_TEMP/capacity-runtime"
+          IMAGE="go-hotel:capacity-${GITHUB_SHA}"
+          echo "CAPACITY_IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          docker build --label "org.opencontainers.image.revision=$(git rev-parse HEAD)" --label "com.go.application-tree=$(git rev-parse HEAD:application)" -t "$IMAGE" application/
+          docker image inspect "$IMAGE" > "$RUNNER_TEMP/capacity-runtime/image-inspect.json"
+          git rev-parse HEAD > "$RUNNER_TEMP/capacity-runtime/commit.txt"
+          git rev-parse HEAD:application > "$RUNNER_TEMP/capacity-runtime/application-tree.txt"
+      - name: Smoke the image against a disposable SQLite database
+        run: |
+          mkdir -p "$RUNNER_TEMP/capacity-db"
+          docker run --rm -v "$RUNNER_TEMP/capacity-db:/data" -e DATABASE_URL=sqlite+pysqlite:////data/smoke.db "$CAPACITY_IMAGE" python -c 'from go_hotel.db.models import Base; from go_hotel.db.session import engine; Base.metadata.create_all(engine)'
+          docker run -d --name capacity-smoke -p 127.0.0.1:18000:8000 -v "$RUNNER_TEMP/capacity-db:/data" -e DATABASE_URL=sqlite+pysqlite:////data/smoke.db "$CAPACITY_IMAGE"
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:18000/health > "$RUNNER_TEMP/capacity-runtime/health.json"; then break; fi
+            sleep 1
+          done
+          python -c 'import json,os,pathlib; p=pathlib.Path(os.environ["RUNNER_TEMP"])/"capacity-runtime/health.json"; assert json.loads(p.read_text())["status"]=="ok"'
+          docker exec capacity-smoke alembic heads > "$RUNNER_TEMP/capacity-runtime/alembic-heads.txt"
+          test "$(awk '{print $1}' "$RUNNER_TEMP/capacity-runtime/alembic-heads.txt")" = 0133_flight_change_plan
+          docker exec capacity-smoke python -m pip freeze > "$RUNNER_TEMP/capacity-runtime/runtime-dependencies.txt"
+      - name: Preserve source-bound runtime image
+        run: |
+          docker save "$CAPACITY_IMAGE" | gzip -1 > "$RUNNER_TEMP/capacity-runtime/runtime-image.tar.gz"
+          cd "$RUNNER_TEMP/capacity-runtime"
+          sha256sum runtime-image.tar.gz > runtime-image.sha256
+      - name: Collect logs and stop isolated container
+        if: always()
+        run: |
+          docker logs capacity-smoke > "$RUNNER_TEMP/capacity-runtime/container.log" 2>&1 || true
+          docker rm -f capacity-smoke || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: depth48-capacity-runtime-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/capacity-runtime/
+          retention-days: 30
