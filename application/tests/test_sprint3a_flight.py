@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from go_hotel.flight.service import flight_service
 from tests.vertical_transaction_helpers import confirm_existing_fulfillment
 def auth(client,email='flight@example.com'):
@@ -30,12 +31,12 @@ def test_flight_search_to_ticket_and_trip(client):
 
 def test_flight_change_reissues_ticket(client):
     h=auth(client); oid=create_ticketed(client,h)
-    q=client.post(f'/v1/flights/orders/{oid}/change-quote',headers=h,json={'new_departure_date':'2026-09-03'}); assert q.status_code==200,q.text
+    q=client.post(f'/v1/flights/orders/{oid}/change-quote',headers=h,json={'new_departure_date':(date.today()+timedelta(days=12)).isoformat()}); assert q.status_code==200,q.text
     data=q.json()['data']; assert data['fare_difference_minor']==30000 and data['change_fee_minor']==10000
     ex=client.post(f"/v1/flights/orders/{oid}/execute-change/{data['quote_id']}",headers=h); assert ex.status_code==200,ex.text
     assert ex.json()['data']['status']=='UNKNOWN_EXTERNAL_STATE' and ex.json()['data']['ticket_numbers']==[]
     rec=flight_service.admin_external_state(oid,'TICKETED','supplier-change-proof','ops','PNR-REISSUED',['990-REISSUED-REAL'])
-    assert rec['itinerary'][0]['departure_date']=='2026-09-03'
+    assert rec['itinerary'][0]['departure_date']==data['new_departure_date']
     assert rec['ticket_numbers']==['990-REISSUED-REAL']
 
 def test_flight_refund_tracks_fee_and_original_payment(client):

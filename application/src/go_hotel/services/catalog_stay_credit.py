@@ -36,7 +36,7 @@ def checked_quote(s,qid,kind,expected,consent,allow_expired=False):
     return q
 
 
-def conversion_facts(s,order,rule):
+def conversion_facts(s,order,rule,quoted_at=None):
     if order.status!='CONFIRMED' or order.currency!='CNY':raise ValueError('CONFIRMED_CNY_ORDER_REQUIRED')
     if s.scalar(select(Credit).where(Credit.original_order_id==order.order_id)):raise ValueError('STAY_CREDIT_ALREADY_EXISTS')
     if s.scalar(select(OrderChangeRow).where(OrderChangeRow.order_id==order.order_id,OrderChangeRow.status=='SUPPLIER_PROCESSING')):raise ValueError('ORDER_CHANGE_RECONCILIATION_REQUIRED')
@@ -45,6 +45,7 @@ def conversion_facts(s,order,rule):
     original_prebook=s.get(PrebookRow,order.prebook_id)
     original_offer=s.get(OfferRow,original_prebook.offer_id)
     cash=cash_facts(s,order,original_offer)
+    if date.fromisoformat(cash['check_in'])<=now().date():raise ValueError('UNUSED_FUTURE_STAY_REQUIRED')
     if not rule.get('stay_credit_allowed') or rule.get('stay_credit_scope')!='PROPERTY_ONLY':raise ValueError('PROPERTY_CREDIT_RULE_REQUIRED')
     days=rule.get('stay_credit_validity_days')
     if type(days) is not int or not 1<=days<=365:raise ValueError('CREDIT_VALIDITY_EXCEEDS_MASTER')
@@ -63,6 +64,8 @@ def conversion_facts(s,order,rule):
         'credit_value_minor':amount,'supplier_confirmation_no':order.supplier_confirmation_no,
         'sources':lines,'validity_days':days,'terms':{**TERMS,'cancellation_fee_tiers':deepcopy(rule['tiers'])},
         'rule_snapshot':deepcopy(rule),'data_mode':'SIMULATION'}
+    from go_hotel.services.hotel_change_policy import credit_window
+    result.update(credit_window(order.created_at,quoted_at or now(),days))
     if forfeiture:result['cash_change_forfeiture']=forfeiture
     return result
 
@@ -92,10 +95,12 @@ async def convert(order_id,quote_id,expected_hash,consent,actor):
             if p.quote_id!=quote_id or p.accepted_by!=actor:raise ValueError('CREDIT_CONVERSION_REQUEST_CONFLICT')
             return value.public(c,p)
         if aware(q.expires_at)<=now():raise ValueError('STAY_CREDIT_QUOTE_EXPIRED')
-        current=conversion_facts(s,order,q.payload_json['rule_snapshot'])
+        if not q.payload_json.get('credit_policy'):raise ValueError('CREDIT_QUOTE_STALE_REQUOTE_REQUIRED')
+        current=conversion_facts(s,order,q.payload_json['rule_snapshot'],q.payload_json['credit_quoted_at'])
         if current!=q.payload_json:raise ValueError('CREDIT_QUOTE_STALE_REQUOTE_REQUIRED')
         conn=remedy.connector(s,order);confirmation=order.supplier_confirmation_no
-        cid=ident('sc');start=now();expiry=start+timedelta(days=current['validity_days'])
+        cid=ident('sc');start=now();expiry=datetime.fromisoformat(current['credit_expires_at'])
+        if start>=expiry:raise ValueError('HOTEL_CHANGE_ONE_YEAR_VALIDITY_EXCEEDED')
         contract={**deepcopy(current),'valid_from':start.isoformat(),'credit_expires_at':expiry.isoformat()}
         c=Credit(stay_credit_id=cid,original_order_id=order_id,account_id=order.account_id,property_id=order.hotel_id,
             credit_value_minor=current['credit_value_minor'],currency=order.currency,valid_from=start,expires_at=expiry,status='CANCEL_PENDING',created_at=start)
@@ -157,11 +162,23 @@ def get_credit(cid):
         return result
 
 
+def require_stay_window(c,p,check_in,check_out):
+    ci,co=date.fromisoformat(check_in),date.fromisoformat(check_out)
+    if not now().date()<ci<co or ci>aware(c.expires_at).date():raise ValueError('CREDIT_STAY_DATES_OUTSIDE_VALIDITY')
+    rules=p.contract_json['rule_snapshot'].get('rules')
+    if rules:
+        from zoneinfo import ZoneInfo
+        arrival=datetime.fromisoformat(check_in).replace(hour=rules['check_in_hour'],tzinfo=ZoneInfo(rules['timezone']))
+        if arrival>aware(c.expires_at):raise ValueError('CREDIT_CHECK_IN_MUST_BE_WITHIN_VALIDITY')
+    elif p.contract_json.get('credit_policy'):
+        raise ValueError('CREDIT_ACCEPTED_ARRIVAL_RULE_REQUIRED')
+
+
 async def redemption_quote(cid,check_in,check_out):
     funds.require_isolated();ci=date.fromisoformat(check_in);co=date.fromisoformat(check_out)
     with transaction() as s:
         c,p=value.checked(s,cid);value.active(c,p)
-        if not now().date()<ci<co or ci>aware(c.expires_at).date():raise ValueError('CREDIT_STAY_DATES_OUTSIDE_VALIDITY')
+        require_stay_window(c,p,check_in,check_out)
         order=s.get(Order,c.original_order_id);conn=remedy.connector(s,order);currency=c.currency;property_id=c.property_id
     offers=await conn.search('TYO',check_in,check_out,currency)
     candidates=[o for o in offers if o.hotel_id==property_id and o.currency==currency and o.check_in==check_in and o.check_out==check_out and o.total_amount_minor>0]
@@ -267,7 +284,7 @@ async def redeem(cid,qid,expected_hash,consent,token,actor,profile_release=None)
         if aware(q.expires_at)<=now():raise ValueError('STAY_CREDIT_QUOTE_EXPIRED')
         b=q.payload_json
         if b['contract_hash']!=p.contract_hash or b['ledger_head_hash']!=p.ledger_head_hash or b['credit_value_minor']!=p.available_minor:raise ValueError('CREDIT_QUOTE_STALE_REQUOTE_REQUIRED')
-        if date.fromisoformat(b['check_in'])<=now().date() or date.fromisoformat(b['check_in'])>aware(c.expires_at).date():raise ValueError('CREDIT_STAY_DATES_OUTSIDE_VALIDITY')
+        require_stay_window(c,p,b['check_in'],b['check_out'])
         offer=s.get(OfferRow,b['offer_id'])
         if not offer or (offer.hotel_id,offer.supplier_id,offer.total_amount_minor,offer.currency,offer.check_in,offer.check_out)!=(c.property_id,b['supplier_id'],b['new_value_minor'],c.currency,b['check_in'],b['check_out']):raise ValueError('CREDIT_REDEMPTION_OFFER_CHANGED')
         conn=remedy.connector(s,s.get(Order,c.original_order_id));domain_offer=repo._offer(offer)
@@ -310,6 +327,8 @@ async def resume_redemption(oid,actor):
         a,c,p=lock_allocation(s,oid)
         if a.state not in {'PAYMENT_PENDING','CAPTURE_PENDING'}:return allocation_public(a)
         if a.state=='PAYMENT_PENDING':
+            if now()>=aware(c.expires_at):
+                failed(s,a,c,p,actor,'CREDIT_EXPIRED_BEFORE_BOOKING');return allocation_public(a)
             try:verify_traveler(s,c.account_id,a.request_json.get('profile_release'))
             except ValueError:
                 failed(s,a,c,p,actor,'TRAVELER_PERMISSION_CHANGED_BEFORE_BOOKING');return allocation_public(a)

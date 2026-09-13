@@ -65,9 +65,12 @@ def test_rule_snapshot_consent_and_validity_are_fixed(client):
     from catalog_fare_helpers import publish_for_order
     with pytest.raises(ValueError,match='MAXIMUM_365'):publish_for_order(oid,stay_credit_days=10000)
     publish_for_order(oid,stay_credit_days=100)
-    # An explicitly accepted, unexpired quote preserves its 365-day contract.
+    # Supplier rule changes cannot renew or shorten this accepted original-order deadline.
     c=run(svc.convert(oid,q['quote_id'],q['quote_hash'],True,'owner'))
-    assert datetime.fromisoformat(c['expires_at'])-datetime.fromisoformat(c['valid_from'])==timedelta(days=365)
+    assert c['expires_at']==q['credit_expires_at']
+    with SessionLocal() as s:
+        original_created=s.get(OrderRow,oid).created_at.replace(tzinfo=timezone.utc)
+    assert datetime.fromisoformat(c['expires_at'])==original_created+timedelta(days=365)
     oid2=booked_order(client,idem='new-rule')
     assert svc.conversion_quote(oid2)['validity_days']==100
     with SessionLocal.begin() as s:s.get(StayCreditRow,c['stay_credit_id']).expires_at+=timedelta(days=1)

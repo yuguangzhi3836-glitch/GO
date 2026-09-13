@@ -60,9 +60,12 @@ class Service:
  def checkout(self,stay_id,b,actor):
   if not b.get('hotel_fulfillment_evidence') or not b.get('guest_checkout_reference'):raise ValueError('DUAL_FULFILLMENT_EVIDENCE_REQUIRED')
   with transaction() as s:
-   x=locked_stay(s,stay_id);reservation=s.get(HostedDirectReservationRow,x.hosted_reservation_id) if x else None;amount=b.get('fulfilled_amount_minor',reservation.amount_minor if reservation else 0)
-   if not x or x.state!='IN_HOUSE' or type(amount) is not int or amount<0 or amount>reservation.amount_minor:raise ValueError('VALID_IN_HOUSE_CHECKOUT_AMOUNT_REQUIRED')
-   x.state='CHECKED_OUT';x.actual_check_out_at=now();x.updated_at=now();f=StayFulfillmentEvidenceRow(fulfillment_evidence_id=ident('sfe'),stay_lifecycle_id=stay_id,hotel_evidence_reference=b['hotel_fulfillment_evidence'],guest_checkout_reference=b['guest_checkout_reference'],fulfilled_amount_minor=amount,state='DUAL_CONFIRMED',confirmed_at=now());s.add(f);self._event(s,x,'CHECKED_OUT_EARLY' if amount<reservation.amount_minor else 'CHECKED_OUT',actor,b);s.commit();return out(x)
+   x=locked_stay(s,stay_id);reservation=s.get(HostedDirectReservationRow,x.hosted_reservation_id) if x else None
+   from go_hotel.services.hosted_fare_value import basis
+   room_value=basis(s,reservation)['current_room_value_minor'] if reservation else 0
+   amount=b.get('fulfilled_amount_minor',room_value)
+   if not x or x.state!='IN_HOUSE' or type(amount) is not int or amount<0 or amount>room_value:raise ValueError('VALID_IN_HOUSE_CHECKOUT_AMOUNT_REQUIRED')
+   x.state='CHECKED_OUT';x.actual_check_out_at=now();x.updated_at=now();f=StayFulfillmentEvidenceRow(fulfillment_evidence_id=ident('sfe'),stay_lifecycle_id=stay_id,hotel_evidence_reference=b['hotel_fulfillment_evidence'],guest_checkout_reference=b['guest_checkout_reference'],fulfilled_amount_minor=amount,state='DUAL_CONFIRMED',confirmed_at=now());s.add(f);self._event(s,x,'CHECKED_OUT_EARLY' if amount<room_value else 'CHECKED_OUT',actor,b);s.commit();return out(x)
  def no_show(self,stay_id,b,actor):
   with SessionLocal() as s:
    probe=s.get(GuestStayLifecycleRow,stay_id)

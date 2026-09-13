@@ -47,186 +47,11 @@
     "docker-compose.staging.yml"
   ],
   "latest_repair": {
-    "id": "DEPTH45_HOTEL_FREE_CHANGE_365D",
-    "parent_commit": "7a0a2628e3c3caee11832d761aade549cdfd4509",
-    "application_git_tree": "365b848d419ca5517b2cf711c271694bde346e33",
-    "source_tree_sha256": "0b2c140ae8edf532704b022d345da8892e7863947f4ff5b34e3a0a40a7000077",
-    "changes": [
-      {
-        "git_blob": "d2dfef9a522494a2d88c2af17c76cd01b1049cff",
-        "path": "application/frontend/consumer/catalog-cash-fare.js",
-        "sha256": "05f4321d406932e7881c412e54aab2a9b63b1e101785ce3f10a87801b165df4b",
-        "size": 7153
-      },
-      {
-        "git_blob": "94457edd9a7ccc72d375d9962dd4eaa15ba3e0c8",
-        "path": "application/frontend/consumer/catalog-fare.js",
-        "sha256": "e8a5e074c5753450c4682d8505feb9469e2f4af46b01d957cfda0bdd9f3fd09d",
-        "size": 3187
-      },
-      {
-        "git_blob": "10a5bb00274c70f3f9c9027781bf50129ebc7744",
-        "path": "application/frontend/consumer/direct-fare.js",
-        "sha256": "a13e29339480f00b782d56497c538591fd18c96bc9ab6a5a2ca25c72684b882a",
-        "size": 9385
-      },
-      {
-        "git_blob": "8ea9d2abf28ad1f9b1de743d5df13c953405021b",
-        "path": "application/frontend/supplier/catalog-fare.js",
-        "sha256": "66eb4040a8510615a2415ca1b43ad031f2ce2598bfc60715084cfe76776b2d55",
-        "size": 6969
-      },
-      {
-        "git_blob": "63fa81d24e3d3212b39f30f7f68b090b10b6a710",
-        "path": "application/mobile/go-app/src/components/HotelFareTerms.tsx",
-        "sha256": "7ac66afd7a74cc7d715cae556403a0a2d998753cceec58fe663c71053430cfa3",
-        "size": 1506
-      },
-      {
-        "git_blob": "2f57c87e94cbe653145927bbf2cb342adb81b71d",
-        "path": "application/mobile/go-app/src/domain/changeTerms.ts",
-        "sha256": "7e2077c9d5b26c4bff34c543c02501aff1d8dcef262ea6f2c136056c18a0fb4e",
-        "size": 2989
-      },
-      {
-        "git_blob": "a51f2366837be166afc907a35c6ba45b3d066c3f",
-        "path": "application/scripts/acceptance_runtime.py",
-        "sha256": "55d4df8ffb2cf3392b4f17737eda21d043fc70cee52af9d4860a12b3e1b063f6",
-        "size": 9692
-      },
-      {
-        "git_blob": "1d8343e5bfc535cdec275f654f80cedfec388c9b",
-        "path": "application/src/go_hotel/services/catalog_cash_fare.py",
-        "sha256": "21ea5fc7bcdd01249c343af848e18d5a031ddc9762c072f48c286a137f416dde",
-        "size": 17722
-      },
-      {
-        "git_blob": "363236d8a7df30fe3c20d224ab4bb13722172855",
-        "path": "application/src/go_hotel/services/catalog_cash_fare_execution.py",
-        "sha256": "5d7ee876a6524660a98900cbfcf090b6b4a7d35707fdf6fc632a5150f3fdf2fb",
-        "size": 16456
-      },
-      {
-        "git_blob": "2732d033fb28555caf1c2e4c2fdd49b5143dd618",
-        "path": "application/src/go_hotel/services/catalog_fare_snapshot.py",
-        "sha256": "7c6e2f3d0211829658268263cadecad90f06d9d58089c6375d23c850f1419d74",
-        "size": 13812
-      },
-      {
-        "git_blob": "aac96968e17bd46b75053cdd636521d292d4391d",
-        "path": "application/src/go_hotel/services/hosted_fare_change.py",
-        "sha256": "bbc4c479702c2ee3f8f51c8c30a9865b8afc451c6f9023f4ade984e72920a6a4",
-        "size": 15534
-      },
-      {
-        "git_blob": "be97fcfc66b88b779c432107651c6f2f0c84857d",
-        "path": "application/src/go_hotel/services/hosted_fare_rules.py",
-        "sha256": "4e9313ce835645298e2cd553d37157e92676c7fb1aa9220b643d86a9e5523b4f",
-        "size": 20276
-      },
-      {
-        "git_blob": "a5579ce46e8145061bf759ef5aab25859852f59a",
-        "path": "application/tests/test_depth08_hosted_change.py",
-        "sha256": "4e7a5dabb13d6d905ddc318e2cc6d7dea22f1983cbb31afa09d1f82a1c4b85ce",
-        "size": 10597
-      },
-      {
-        "git_blob": "9c273653a233f25a53afd73687c7a68e3c8d1657",
-        "path": "application/tests/test_depth08_hosted_fare.py",
-        "sha256": "6d351a8074d3315777f5240f3d6e22124893aacee1bfbb64759a104eed2d62c1",
-        "size": 12898
-      },
-      {
-        "git_blob": "39cb6ea54aa8796c0cb42755fb841ba7e9a5e069",
-        "path": "application/tests/test_depth09_credit_api.py",
-        "sha256": "ccd8fb128156a284cd7c2ddaf78927b271ba4631aa33b7e6beca9b4416b86b8d",
-        "size": 4879
-      },
-      {
-        "git_blob": "721116634df1348dacdf10f3b624126360d4a72e",
-        "path": "application/tests/test_depth09_credit_boundaries.py",
-        "sha256": "35cbad777140a572e7cf156085bf7f1e99ee0d45ffd000095ba47e21c54820f8",
-        "size": 17089
-      },
-      {
-        "git_blob": "28313051174199ab246b8acdef676fbe6c9c8452",
-        "path": "application/tests/test_depth13_catalog_fare.py",
-        "sha256": "a04c5c6a585a050ef0d41be7411a3f89b40d2267f158006ce6762fcaee4d7fb4",
-        "size": 9825
-      },
-      {
-        "git_blob": "38f78bcb7bb33eb9dea365718c97ba017cfa440d",
-        "path": "application/tests/test_depth13_catalog_fare_api.py",
-        "sha256": "c56d70eb93d033af62938a9112a4f0b2c4f50f4e34293abd2388b8753d4d06c8",
-        "size": 4913
-      },
-      {
-        "git_blob": "510b242510cc4caf52a95c83733be1b29d3cf7c1",
-        "path": "application/tests/test_depth14_cash_fare.py",
-        "sha256": "e1ac3fe2f088ea673a03db3b89ec802d99752305cc6807ea1ebfbf298944c87b",
-        "size": 15363
-      },
-      {
-        "git_blob": "ed8f2d06ac3f1ff80e8ad727ceae076cd3e6c614",
-        "path": "application/tests/test_depth14_cash_fare_api.py",
-        "sha256": "7b50dca11188e7abab110711ad9f53a79e2aac3af9f0b33ed7a9eb7e9a297a25",
-        "size": 5310
-      },
-      {
-        "git_blob": "565461b90cf07dad18f33153a2ef6a391e345118",
-        "path": "application/tests/test_depth15_credit_exclusion.py",
-        "sha256": "1a72f6ce9a7ff17dd27a73f2de116e60a6121be8717b12e87d89e1b8d2dc78fc",
-        "size": 11276
-      },
-      {
-        "git_blob": "83319288fcf376d9cf99e3684dcbb6a2da4f42b7",
-        "path": "application/tests/test_depth43_hotel_change_trips.py",
-        "sha256": "6e5737914bc9c6fa2097b61b27fdeadf6dbb009c87e5347f435d317ac4154a52",
-        "size": 6391
-      },
-      {
-        "git_blob": "19f49aa5f6aab62adcb3fa0f0bff3ca1369b3361",
-        "path": "application/tests/test_sprint1m_fare_runtime.py",
-        "sha256": "2ee921dd4df7590cfb73a93741d23d3431b4047f958d5beb21565c93d60966ac",
-        "size": 5846
-      },
-      {
-        "git_blob": "a786a31561c38c88545d956cbcf209a2aaec77cc",
-        "path": "application/tests_frontend/catalog_cash_fare.test.mjs",
-        "sha256": "b09c31bebe14a51187b8f022ce86f9dae0102cd8ef9830b055f0f713a5b443f3",
-        "size": 5171
-      },
-      {
-        "git_blob": "5f6362326427dbce0fbd5f5de0ab7a9435f56ccc",
-        "path": "application/tests_frontend/catalog_fare.test.mjs",
-        "sha256": "a6487221ce228e2511c978a6f7f92129295a7a73577fa63d2552ffc49b3210c2",
-        "size": 3697
-      },
-      {
-        "git_blob": "a21162358b811f2d6916757f3c3a552330c3d398",
-        "path": "application/tests_frontend/mobile_change_actions.test.mjs",
-        "sha256": "21213540c3350bed71c79a58299492368da9b68c88fdc6090df0cb945397fa38",
-        "size": 5162
-      },
-      {
-        "git_blob": "18745c03c6a2eb13d2cde91cb5f48fe7749d50df",
-        "path": "application/tests_frontend/mobile_change_terms.test.mjs",
-        "sha256": "149fd754e950bf45cdf275854064bb9668e24445ecd9a8613f7af5a98aafaa1b",
-        "size": 2801
-      },
-      {
-        "git_blob": "781363be18114493d5b5d5a957d8fdc4ef26f95e",
-        "path": "application/src/go_hotel/services/hotel_change_policy.py",
-        "sha256": "2eb96a27af27dc2e17c896a600e1fe726c91eea745bef5558f72106cb991d804",
-        "size": 1389
-      },
-      {
-        "git_blob": "15d17495dfc0ad68d0c239457f5b287825da14b7",
-        "path": "application/tests/test_depth45_hotel_free_change.py",
-        "sha256": "9d2f75ed0971d9df63bf506d4b9692fad66d7168b58b90350d97c8eca7829ea0",
-        "size": 4682
-      }
-    ]
+    "application_git_tree": "e6d3aaad6deca1f0801e8c7e4182f353eca93b91",
+    "changed_application_files": 12,
+    "generation": "DEPTH47",
+    "parent_commit": "1c9847c82725b888d239686572f1f44b6dafc2cc",
+    "scope": "Original-order credit expiry, local arrival and prebook boundaries, web/native consent and same-order recovery"
   },
   "original_application_commit": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
   "original_application_git_blobs": {
@@ -1525,10 +1350,16 @@
     "WAVE07_FRG02_RELEASE_BINDING_20260831.json": "ab59be66a64e7e08208c567d063bb1db35a50c42bafb6b0cee4b3e7aa5388154",
     "docker-compose.staging.yml": "be0e44388907c24420d39ce976d3738a2cc65752c3699ec41f45e44297ad0044",
     "docs/release/STORE_SUBMISSION_CHECKLIST.md": "8fe1aa46ac47fd45f233c2e581e75946d05d3c5530b9b859150184641f2570fc",
-    "frontend/consumer/app.js": "f2e2a7926b33a0b88ba3d704141ee9dbf69087d165a61ffb6bda33ad17e3a4ee",
+    "frontend/consumer/app.js": "bc229f455613bcb81be960bca4aa53a05449847b15c32fe938308f878ddecd3a",
+    "frontend/consumer/catalog-cash-fare.js": "05f4321d406932e7881c412e54aab2a9b63b1e101785ce3f10a87801b165df4b",
+    "frontend/consumer/catalog-credit.js": "fa6bdabbf095c77f204e444879fc18c34c9a43e1f8545c5fbeab1479f46d2d6e",
+    "frontend/consumer/catalog-fare.js": "e8a5e074c5753450c4682d8505feb9469e2f4af46b01d957cfda0bdd9f3fd09d",
+    "frontend/consumer/direct-credit.js": "a997a6c903ca988100022564084429f5d51307abe77f66351a9c67445638c12d",
+    "frontend/consumer/direct-fare.js": "bd391078f1d11964d16a179ab354a98d03a58e83dcf6ec1a52cda14ac72a8a26",
     "frontend/consumer/trip-navigation.js": "5cbe539e03195ba610576bbe7b07599992a804eeb526f6dcc9823e476ca7b2ca",
     "frontend/shared/app.js": "6b665ed41a5361a0ccb3e61947ec4bd8dc2ef4822c0250a7202bdb511dfc11b2",
     "frontend/shared/styles.css": "a6265ba1260507ef732bb0c24932e74937f5dac727f9525a0ab0439a14a36287",
+    "frontend/supplier/catalog-fare.js": "66eb4040a8510615a2415ca1b43ad031f2ce2598bfc60715084cfe76776b2d55",
     "gate_toolchain/NODE_SOURCE.json": "19ed8d420cbb485b54ee2ff318c9d0d76453693416a8f18491fa71ad0fcd6996",
     "governance/workbench/WAVE07_ONBOARDING_INTEGRATION_OWNERSHIP_CONTRACT_20260831.json": "c3360f8dd1e71a15ddbad8d196584a38ae36b1ed35c79230a651167a7ed6d4cd",
     "governance/workbench/cell_charters/C04_CELL_CHARTER.json": "1fae3bdbb4562cece50503a743ca568577a0c58b8cc5c271d374066bdc36e78f",
@@ -1538,9 +1369,14 @@
     "mobile/go-app/package-lock.json": "86afba42927483ca21a094ccb5ea14154a9d5561ed391a535313122dd443e86a",
     "mobile/go-app/package.json": "d20f0366f8723155ebcd8fe142b5877fda40ec4b5aaae6a2ab5a5563054903d8",
     "mobile/go-app/scripts/native-modules-check.mjs": "57ca8e71236416e929411e51e980d76ede984b573256056dcd587c71e398dc0d",
+    "mobile/go-app/src/components/HotelFareTerms.tsx": "7ac66afd7a74cc7d715cae556403a0a2d998753cceec58fe663c71053430cfa3",
     "mobile/go-app/src/design.ts": "bdc83ca08701f7f22fa60ca11f8ee02d43b64e32a9de884bd6be9a62ed0d6548",
+    "mobile/go-app/src/domain/changeTerms.ts": "7e2077c9d5b26c4bff34c543c02501aff1d8dcef262ea6f2c136056c18a0fb4e",
+    "mobile/go-app/src/domain/stayCreditActions.ts": "4436e94783d86540a3b2e183117298ecd79a1f92cd9731a1a353d0d9376d7b94",
+    "mobile/go-app/src/domain/tripFacts.ts": "216a5e1ab994e76dea55ac138c443e3666dadc9b619a2f6a4d05c2d1c86c1169",
     "mobile/go-app/src/navigation/linking.ts": "0c6a483a59537f9c1518c553b0ad19581d4c40ac511f83eef9323e4ad44f47b1",
     "mobile/go-app/src/screens/JourneyRecoveryScreen.tsx": "b2e61d7ac6a235157d9a622625031f144e3b1ec2234e7fa76369470de0b0c77e",
+    "mobile/go-app/src/screens/StayCreditScreen.tsx": "9d223b9437c3fa4a4f37a1746ab20f522568f23d20c2a8652d9e379bcb2dcc38",
     "mobile/go-app/src/screens/TripsScreen.tsx": "0c4c66b27503eedd57c849dffc7f8102dc0549ad5b73f7667160cc8b6a141310",
     "scripts/acceptance_runtime.py": "55d4df8ffb2cf3392b4f17737eda21d043fc70cee52af9d4860a12b3e1b063f6",
     "scripts/provider_certification_preflight.py": "99e0e4cd3a745f0b56e8f08626c27b3ebe685a16b9fb7b75a1527327eeaed5d9",
@@ -1548,10 +1384,21 @@
     "specs/provider_adapters/generic_named_supplier_sandbox_template.json": "88b4257d9a6fda2a946dfd4b10a7875f1c43f11a545b5356c90cff550202af8b",
     "specs/provider_adapters/tongcheng_sandbox_template.json": "29770a587d9cb5bc60241ab6f79cdd0a126e5743eb1ce4cc713cca0dbb79a274",
     "specs/state_machine_matrix.csv": "3e9123cd291f46bbf2f23a12ee3bdc53c04bd3a08f53e3b2739ebe2d022364eb",
+    "src/go_hotel/api/routes/consumer.py": "2df9a9709377bdcab48ef14b00c66ae97293467d84ef31e2da5f4594fd4b1baf",
     "src/go_hotel/api/routes/consumer_checkout.py": "90a79306628ff3b8eed526628359f3102cbdc4837e1c5ab668c90632c402848a",
     "src/go_hotel/api/routes/dashboard.py": "6edd05c92f18fd974ef078825b962791950ce8368a04d60facb1172bae3a19f6",
+    "src/go_hotel/api/routes/interactive.py": "a91b933354ae56a9b422b77964b5ea57e2f6c2c94f5a11299d6bbd41debdea2d",
     "src/go_hotel/api/routes/operations_console.py": "bd86fafa9740a25d1ed3ab7848e192a2cf1b21f30e643f19654d01603a0f3847",
+    "src/go_hotel/services/catalog_cash_fare.py": "21ea5fc7bcdd01249c343af848e18d5a031ddc9762c072f48c286a137f416dde",
     "src/go_hotel/services/catalog_cash_fare_execution.py": "5d7ee876a6524660a98900cbfcf090b6b4a7d35707fdf6fc632a5150f3fdf2fb",
+    "src/go_hotel/services/catalog_cash_trip_projection.py": "e12f3233c34f2ba61534c77a52f82c90b96d74163821914df6c7b4cc8bdabc57",
+    "src/go_hotel/services/catalog_fare_snapshot.py": "7c6e2f3d0211829658268263cadecad90f06d9d58089c6375d23c850f1419d74",
+    "src/go_hotel/services/catalog_stay_credit.py": "a2f44a4ca90dbb25229df4e22c07114334786e3839277ab002fcf8a83bf7ba5e",
+    "src/go_hotel/services/consumer_trip_index.py": "a4c619c3fc405f68ec3fbbc244399885dc82a984b29daa9f16b3340d2a85541d",
+    "src/go_hotel/services/hosted_fare_change.py": "1967419f09782ee95bf82a660cc9e584c79bb5ba3b85800dd4586de6ab7757b1",
+    "src/go_hotel/services/hosted_fare_rules.py": "ece318b2f438cecb55254940c9ba458e3e471abacd412ae0750894ada7bbfc32",
+    "src/go_hotel/services/hosted_stay_credit.py": "d656fc60b833f2d86081f64cf8f1e8993cf1b57d4957fa31caaf74cb7b1fbb08",
+    "src/go_hotel/services/hotel_change_policy.py": "a58a748776b87f104a9adcfacba2a43a65be7d9320bd3cecfd24955970a5e688",
     "src/go_hotel/services/operational.py": "dfa466110962f5110445fbf26b5266988205b748c28a63eb473d7e4ee38f50f3",
     "src/go_hotel/services/transaction_order_view.py": "8015b4b190f665ee9bd9cfa3f780287ac50fd6a59a06fcd5efa3d2be4df680ef",
     "src/go_hotel/services/vertical_lifecycle_projection.py": "ca2d917e506d87e8c7b749bd834fda52880da03dc21b5f71143adacad09d161f",
@@ -1561,48 +1408,64 @@
     "staging/certification/real_device_e2e_matrix.csv": "4fa7310b5efc26d0586b45c13966c5e59d63d46d2b1aa1110ebba5c802c75567",
     "staging/certification/status.sprint2d.json": "9e28a492e35f04a252e684a5684d9817e1fe45d069b5e4ec0bc9746305deb299",
     "tests/test_depth08_api_and_migration.py": "b8eeff48ccd553638230faff3ab2a24d2956fa6456846a6fa701d457c433c488",
-    "tests/test_depth37_provider_preflight.py": "7b7dad9327b50c0f6d5f8502ea4d4fbf3692146794027238ac3d68a2fa2afc2d",
-    "tests/test_depth41_transaction_views.py": "2125f248b60585ba5e01667c83347c89dee617f7363ecebad12bbf216f4f1217",
-    "tests/test_depth42_cross_end_journeys.py": "027180cfcd41d274644a51efcd9da9fd2fe5b8e6e0875797b0887a17685a6d5b",
-    "tests/test_master03_closure.py": "33d5f94283b97b5334ec494aedcc428a660db61c3fe1978ef02c0f965200b36c",
-    "tests/test_sprint2b_mobile_release.py": "ae02a298c1596cbe4caf50b2304ee40d965f74151b4989676af41fd93f993c22",
-    "tests/test_wave04_v70_release_gate_contract.py": "a4988d3c06db697a4a821b2a44be96c632f159b152f48ba42320923752675ec8",
-    "tests_frontend/go_trip_all_orders.test.mjs": "c40683d7033fdfb182a80e1ca3652739cba946260d6e3c7e100d12c0ed40f2b3",
-    "tests_frontend/mobile_build_config.test.mjs": "838504efbf53abdcad6c31388e213cc673540d21342c53b7675f76efa9526550",
-    "tests_frontend/cash_trip_summary.test.mjs": "de66396cf1ae04a7e0c1d277a17ef01573edaaf28d05dd0f7b48180423cd69ee",
-    "tests/test_depth43_hotel_change_trips.py": "6e5737914bc9c6fa2097b61b27fdeadf6dbb009c87e5347f435d317ac4154a52",
-    "mobile/go-app/src/domain/tripFacts.ts": "216a5e1ab994e76dea55ac138c443e3666dadc9b619a2f6a4d05c2d1c86c1169",
-    "src/go_hotel/services/catalog_cash_trip_projection.py": "e12f3233c34f2ba61534c77a52f82c90b96d74163821914df6c7b4cc8bdabc57",
-    "src/go_hotel/services/consumer_trip_index.py": "a4c619c3fc405f68ec3fbbc244399885dc82a984b29daa9f16b3340d2a85541d",
-    "src/go_hotel/api/routes/interactive.py": "a91b933354ae56a9b422b77964b5ea57e2f6c2c94f5a11299d6bbd41debdea2d",
-    "src/go_hotel/api/routes/consumer.py": "2df9a9709377bdcab48ef14b00c66ae97293467d84ef31e2da5f4594fd4b1baf",
-    "tests/test_depth44_hotel_date_binding.py": "cf00e0355dac84330e1d82f4ca71291adb1b27278fefd27aecb847728d692c37",
-    "tests_frontend/hotel_date_binding.test.mjs": "b5605f031c4a772635c8cd686b6586d9963d57a37f51ffe5f066d728ae3d5f6a",
-    "frontend/consumer/catalog-cash-fare.js": "05f4321d406932e7881c412e54aab2a9b63b1e101785ce3f10a87801b165df4b",
-    "frontend/consumer/catalog-fare.js": "e8a5e074c5753450c4682d8505feb9469e2f4af46b01d957cfda0bdd9f3fd09d",
-    "frontend/consumer/direct-fare.js": "a13e29339480f00b782d56497c538591fd18c96bc9ab6a5a2ca25c72684b882a",
-    "frontend/supplier/catalog-fare.js": "66eb4040a8510615a2415ca1b43ad031f2ce2598bfc60715084cfe76776b2d55",
-    "mobile/go-app/src/components/HotelFareTerms.tsx": "7ac66afd7a74cc7d715cae556403a0a2d998753cceec58fe663c71053430cfa3",
-    "mobile/go-app/src/domain/changeTerms.ts": "7e2077c9d5b26c4bff34c543c02501aff1d8dcef262ea6f2c136056c18a0fb4e",
-    "src/go_hotel/services/catalog_cash_fare.py": "21ea5fc7bcdd01249c343af848e18d5a031ddc9762c072f48c286a137f416dde",
-    "src/go_hotel/services/catalog_fare_snapshot.py": "7c6e2f3d0211829658268263cadecad90f06d9d58089c6375d23c850f1419d74",
-    "src/go_hotel/services/hosted_fare_change.py": "bbc4c479702c2ee3f8f51c8c30a9865b8afc451c6f9023f4ade984e72920a6a4",
-    "src/go_hotel/services/hosted_fare_rules.py": "4e9313ce835645298e2cd553d37157e92676c7fb1aa9220b643d86a9e5523b4f",
-    "tests/test_depth08_hosted_change.py": "4e7a5dabb13d6d905ddc318e2cc6d7dea22f1983cbb31afa09d1f82a1c4b85ce",
+    "tests/test_depth08_hosted_change.py": "bcf9ebdaa610ade09017819da68aa8c06667f0bb189c16607b61d4c037e816b9",
     "tests/test_depth08_hosted_fare.py": "6d351a8074d3315777f5240f3d6e22124893aacee1bfbb64759a104eed2d62c1",
     "tests/test_depth09_credit_api.py": "ccd8fb128156a284cd7c2ddaf78927b271ba4631aa33b7e6beca9b4416b86b8d",
     "tests/test_depth09_credit_boundaries.py": "35cbad777140a572e7cf156085bf7f1e99ee0d45ffd000095ba47e21c54820f8",
+    "tests/test_depth12_catalog_credit.py": "f524fe59e8bb0a0540b6870d65b629554bb415dd58d976bcfaf91d923d66b248",
     "tests/test_depth13_catalog_fare.py": "a04c5c6a585a050ef0d41be7411a3f89b40d2267f158006ce6762fcaee4d7fb4",
     "tests/test_depth13_catalog_fare_api.py": "c56d70eb93d033af62938a9112a4f0b2c4f50f4e34293abd2388b8753d4d06c8",
     "tests/test_depth14_cash_fare.py": "e1ac3fe2f088ea673a03db3b89ec802d99752305cc6807ea1ebfbf298944c87b",
     "tests/test_depth14_cash_fare_api.py": "7b50dca11188e7abab110711ad9f53a79e2aac3af9f0b33ed7a9eb7e9a297a25",
     "tests/test_depth15_credit_exclusion.py": "1a72f6ce9a7ff17dd27a73f2de116e60a6121be8717b12e87d89e1b8d2dc78fc",
+    "tests/test_depth37_provider_preflight.py": "7b7dad9327b50c0f6d5f8502ea4d4fbf3692146794027238ac3d68a2fa2afc2d",
+    "tests/test_depth41_transaction_views.py": "2125f248b60585ba5e01667c83347c89dee617f7363ecebad12bbf216f4f1217",
+    "tests/test_depth42_cross_end_journeys.py": "fa4fc3bfe79a6cf5db410b189cdb0617ef957b2a32292236700688500aa3aea2",
+    "tests/test_depth43_hotel_change_trips.py": "6e5737914bc9c6fa2097b61b27fdeadf6dbb009c87e5347f435d317ac4154a52",
+    "tests/test_depth44_hotel_date_binding.py": "cf00e0355dac84330e1d82f4ca71291adb1b27278fefd27aecb847728d692c37",
+    "tests/test_depth45_hotel_free_change.py": "9d2f75ed0971d9df63bf506d4b9692fad66d7168b58b90350d97c8eca7829ea0",
+    "tests/test_depth47_credit_original_deadline.py": "1a92bf6746f226c71cdbdd8c67e0c23cd5602708a85e42cab6939d1246d6d7eb",
+    "tests/test_master03_closure.py": "33d5f94283b97b5334ec494aedcc428a660db61c3fe1978ef02c0f965200b36c",
     "tests/test_sprint1m_fare_runtime.py": "2ee921dd4df7590cfb73a93741d23d3431b4047f958d5beb21565c93d60966ac",
+    "tests/test_sprint2b_mobile_release.py": "ae02a298c1596cbe4caf50b2304ee40d965f74151b4989676af41fd93f993c22",
+    "tests/test_wave04_v70_release_gate_contract.py": "a4988d3c06db697a4a821b2a44be96c632f159b152f48ba42320923752675ec8",
+    "tests_frontend/cash_trip_summary.test.mjs": "de66396cf1ae04a7e0c1d277a17ef01573edaaf28d05dd0f7b48180423cd69ee",
     "tests_frontend/catalog_cash_fare.test.mjs": "b09c31bebe14a51187b8f022ce86f9dae0102cd8ef9830b055f0f713a5b443f3",
+    "tests_frontend/catalog_credit.test.mjs": "6dd71d3217fa611e997e2516870673ff7d5bd03d14047230e2a1279f0c3a7b16",
     "tests_frontend/catalog_fare.test.mjs": "a6487221ce228e2511c978a6f7f92129295a7a73577fa63d2552ffc49b3210c2",
-    "tests_frontend/mobile_change_actions.test.mjs": "21213540c3350bed71c79a58299492368da9b68c88fdc6090df0cb945397fa38",
+    "tests_frontend/go_trip_all_orders.test.mjs": "c40683d7033fdfb182a80e1ca3652739cba946260d6e3c7e100d12c0ed40f2b3",
+    "tests_frontend/hotel_date_binding.test.mjs": "b5605f031c4a772635c8cd686b6586d9963d57a37f51ffe5f066d728ae3d5f6a",
+    "tests_frontend/mobile_build_config.test.mjs": "838504efbf53abdcad6c31388e213cc673540d21342c53b7675f76efa9526550",
+    "tests_frontend/mobile_change_actions.test.mjs": "41150743754c05b79e40352798e1a4ca4b9f32b80475b2d34f2035c7594bda03",
     "tests_frontend/mobile_change_terms.test.mjs": "149fd754e950bf45cdf275854064bb9668e24445ecd9a8613f7af5a98aafaa1b",
-    "src/go_hotel/services/hotel_change_policy.py": "2eb96a27af27dc2e17c896a600e1fe726c91eea745bef5558f72106cb991d804",
-    "tests/test_depth45_hotel_free_change.py": "9d2f75ed0971d9df63bf506d4b9692fad66d7168b58b90350d97c8eca7829ea0"
+    "tests_frontend/mobile_stay_credit.test.mjs": "70dfd0813431d2f5aef192dec53954c9fdc8fe4db5ea184b85caf6e82a35dbee",
+    "tests_frontend/native_api_bridge.mjs": "952a6a666223f640cc7c0356c2066c0ea79627d675c553b33c866321aa9dd582",
+    "tests_frontend/flight_changes.test.mjs": "87a4f7c849c5d3d7c3e4eaad1af51c8f15b1730f5e56559b135e0fdcbbfc5310",
+    "tests/test_sprint3a_flight.py": "f40d13f3c8ec5f12f0bd28d114ae7e5aa19691c97617064afa2b5b3dd17313bf",
+    "tests/test_depth25_migration_history.py": "efa0e86ccf88594d67e60df441a462c687d33514feb3892f0fc4ef322a98acbc",
+    "tests/test_depth48_flight_migration.py": "d8ed83f91c0d7a5d1678505aca08d6eedbe7ee4c5a1a4918bb8ade57b936b5d3",
+    "tests/test_depth48_hosted_forfeiture.py": "691ac6eede5132500c568b20b4b84fa540a820382c35acf626ba33842c88d925",
+    "tests/test_depth48_flight_changes.py": "d1e348c3d12f90658eb5ef6e045b0b5456140e05892bb011072314026806f67e",
+    "tests/test_parent_implementation_code_review_debt_closure.py": "70fbd1f748c975e0be68ac8a965ac61bf1134b1c09d0b93e27c84d42c4cb1815",
+    "tests/test_flight_journey_depth.py": "0091c18f9445b3b68c1033aa1ee90f8b4bb23561205e75ec133f65584afc6caf",
+    "alembic/versions/0133_flight_change_plan.py": "ddef08d68cf1e2bb24df6a83f8a6d43bf76ae7eb22d867ea9618ea6ae787a791",
+    "src/go_hotel/services/hosted_fare_value.py": "4098dbb4d36de42454224c63c762d1cbdfb015136a8fd57655626c9deec428c0",
+    "src/go_hotel/services/post_stay_dispute.py": "8dd377d725366d1044a1eefa7da9d28e4450ab9440a886672a8483a240c17209",
+    "src/go_hotel/services/hosted_credit_value.py": "0fc638dc70a8c48b096400410c6dfbe5cc42626e73f4aae8ff0ef10286625dae",
+    "src/go_hotel/services/flight_change_resolution.py": "5ac1b2da15ffdb3a127f70ccc10d4a57caba935654f5cc6c89873a3c78f48104",
+    "src/go_hotel/services/guest_stay_fulfillment.py": "6fe70087d4229e8567adb30147a4302f24017df405646dae2ca95a721fe7023e",
+    "src/go_hotel/services/hosted_credit_refunds.py": "dacd85b3df1ee321dfd1cc0b2bd96ffe0dd955ee1a69ca7a2f87978369fc93b7",
+    "src/go_hotel/services/unified_money_movement.py": "dab22cc7369c7befc2e121ce38ae8e480d450faf166da126f0adc1c17c340ed6",
+    "src/go_hotel/services/hosted_money.py": "7859e1ac591eb1ecb7ca00d10ebf6c2b5acc08cf9e0b5236d27250ae5170de32",
+    "src/go_hotel/db/models.py": "07c000c12ff33a90b1436145c9efca87981ed9373fc708f18adbede046d2dde5",
+    "src/go_hotel/flight/changes.py": "babfa1e13c0166f0f265c49dbdfb2d1a682390c4f4fce3a3d707a1145669ae99",
+    "src/go_hotel/flight/service.py": "d3f7c0e19f93980830410d67b7e82619a2db1596a31e1631be1596afc1c7b166",
+    "src/go_hotel/api/routes/flight.py": "23550f89a7b838d406a06c919a58421d7ef69e867872b2f1e2c1e9527edc0c2d",
+    "frontend/consumer/index.html": "33f58986b9271e8a7b96d30c9d08e27084d8ec5a3a4df50684066b46f05f2212",
+    "frontend/consumer/flight-journeys.js": "0bf11c3de683b50dd94b53097a9b91cf4ae6d0f1c248bfe01b429407017fb260",
+    "frontend/consumer/flight-changes.js": "fe96ca1d54769ac2d0db01c8cbb59b4b2107140acb4ec23cc4409d472734afcd",
+    "mobile/go-app/src/domain/changeActions.ts": "86b68e14c3590c45ac1e2ce571cced63c5674cd01bf3b83f2f254fc05f385d9f",
+    "mobile/go-app/src/screens/ChangeBookingScreen.tsx": "69e881354a3bea4cc3b598368673e0d6d3261f45a4235fbbfa1981e4ee7d6fb7",
+    "tests/test_final_depth_terminal_hardening.py": "08fe07ad0e12d18322d51e2fab9e0d34070accedc02a471557ad5f80a6299839"
   }
 }

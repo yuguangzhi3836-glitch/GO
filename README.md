@@ -26,48 +26,26 @@ Detailed connection identities and recovery paths are being maintained through P
 
 - **PR #40** (`archive: add canonical HK-STAGING source snapshot`) is an archive of the observed HK-STAGING runtime/source state. It is **not a new GO product version**.
 - **DEPTH40** is a product-candidate generation in the application lineage. Its sealed P0.3 parent was validated separately and later received deployment-compatibility/package work.
-- The newest active product work has now moved to **DEPTH41**, primarily through PR #47 and PR #48.
+- Product generations advanced through DEPTH45 source repairs and the DEPTH46 consolidated parent; PR47 is now merged. DEPTH47 repairs continue from that merged main.
 
 Do not infer product generation from a Pull Request number.
 
-## Current product working baseline
+## Current product working baseline — refreshed 2026-09-13
 
-The current unified development / repair / acceptance starting point is **DEPTH41 PR #47**:
+本轮源码集成记录为 [PR52](https://github.com/yuguangzhi3836-glitch/GO/pull/52)，已纳入 DEPTH47 额度期限、DEPTH48 酒店金额与多航段改签、PR53 独立资金审计。当前应用树为 `ad7d1de1190f86ad29d1c6cdafbcedd592e27206`，1323 文件。本地 1796 项后端通过／6 项 PostgreSQL 跳过、270 项前端通过；六模块同单三角色接口、刷新／重登及独立 SQL 通过。详见 [本轮修复和明确边界](docs/canonical-baseline/DEPTH48_ORDERED_REPAIRS.md)。完整三端可见页面、固定运行时 CI 及新父包仍待完成。下列 DEPTH46 身份只描述已生成的历史父包，不代表本轮源码已进入该 ZIP。
 
-- PR: [#47 · DEPTH41 unified parent](https://github.com/yuguangzhi3836-glitch/GO/pull/47)
-- Branch: `fix/canonical-parent-retention-20260912`
-- Parent package: `CP11_DEPTH41_UNIFIED_PARENT_V1_20260912`
-- PR head / archive commit: `2d15536d2b65484e5a1c00067871387cefdfb235`
-- Tested source/build commit: `62fdde3cabe72b92fa5dc1b37b7652395fe3aba5`
-- Application Git tree: `a73b9b53a59c88ab995d0f9b123c9fb79e87e60d`
-- Application file count: **1300**
-- Source SHA-256 tree: `928468ed31550195dfa8f121832e91b8d08aa9d5c15cef1381d903f76c9f97b3`
+PR47 was merged as `1c9847c82725b888d239686572f1f44b6dafc2cc` after isolated checks. DEPTH46 is the current independently restorable parent. DEPTH47 source repairs continue from that main commit; see [current module work](docs/canonical-baseline/DEPTH47_MODULE_BOUNDARIES.md) for its separate source identity and evidence.
 
-PR #47 consolidates the latest DEPTH40 compatibility parent, retained valid DEPTH36R3 / DEPTH37 / DEPTH37R2 fixes, and the selected supplier-operations fix from PR #48 into one self-contained parent.
+- DEPTH46 packaged application source: `a09a32e8cc6da10785e8bcf6be025013aec50931`.
+- Application Git tree: `365b848d419ca5517b2cf711c271694bde346e33`; 1311 files.
+- Source SHA256 tree: `0b2c140ae8edf532704b022d345da8892e7863947f4ff5b34e3a0a40a7000077`.
+- Business rules: hotel date changes have zero change fee, a fixed 365-day period from original booking, higher-price differences payable and lower-price differences forfeited. Cancellation uses the accepted refund terms.
+- Exact-source isolated CI 34703772217: 1751 Python passes and 6 PostgreSQL skips; 254 frontend, 34 compatibility and 148 HTTP checks; 53 browser scenarios with independent original-payment and hotel-change money audits.
+- Current artifacts and unresolved scopes: [candidate](docs/canonical-baseline/CURRENT_CANDIDATE.json), [remaining work](docs/canonical-baseline/REMAINING_GAPS.md), [DEPTH46 build](packaging/depth46-consolidated-parent/README.md).
 
-Verified on the tested source/build commit:
+The new parent combines the unchanged DEPTH45 application with a rebuilt, source-bound image and an independently preserved PR51 deployment-entry supplement. The supplement remains disabled and uninstalled. Package build/restore and archive results are recorded separately from application CI. DEPTH46 package build and restore passed; its 314,723,816-byte ZIP has SHA256 `cc9b16be9555a2499db29a9ce0ebc25879fedd2953577bedc1f5e6e833451ce9`. All 16 archive parts were read back. Build run 34718705172 succeeded at the build step and failed later because the branch moved; independent archive run 34719241031 succeeded. [Parent identity](docs/canonical-baseline/CURRENT_PARENT.json) records these separately.
 
-- Python: 1710 collected; **1704 passed**, 6 PostgreSQL tests skipped, 0 failed, 0 errors.
-- Frontend: **244/244**.
-- Deployment-compatibility regression: **34/34**.
-- Isolated HTTP gate: 148 checks / 87 requests passed.
-- Package restore, image/source identity, dependency binding, and archive reconstruction passed.
-- Mobile type/basic contract/native-module linkage checks passed, but this is **not physical-device journey acceptance**.
-
-### Current hold boundary
-
-DEPTH41 is **not yet the final canonical/release source**.
-
-PR #47 remains Draft and explicitly records `CANONICAL_SOURCE_RECOMMENDATION=REJECT` until the remaining acceptance gaps are closed. Outstanding items include hotel refund/final-ledger confirmation, supplier same-order reconciliation, the remaining vertical refund/final-money and three-end states, complete three-end UX, physical-device coverage, six PostgreSQL checks, Sealed Node coverage, and final release gates.
-
-Therefore:
-
-- `MERGE=NO`
-- `DEPLOYMENT=NO`
-- `PRODUCTION=HOLD`
-- HK-STAGING currently running source is **not identical** to this DEPTH41 parent.
-
-PR [#48 · DEPTH41 cross-end journey acceptance](https://github.com/yuguangzhi3836-glitch/GO/pull/48) remains a Draft acceptance/fix branch. Its selected result has been incorporated into PR #47, while its original evidence remains bound to its own tested commit and must not be promoted into a broader PASS claim.
+Full three-end UX, physical devices, PostgreSQL, complete Sealed Node and external provider/bank acceptance remain separate unfinished scopes. Source integration is not final release acceptance. Hong Kong and Production remain HOLD; their running source differs from this application candidate. PR48 is historical source/evidence and is not a parallel development baseline.
 
 ## PR #40 and later: classification
 
@@ -80,17 +58,13 @@ PR [#48 · DEPTH41 cross-end journey acceptance](https://github.com/yuguangzhi38
 | [#44](https://github.com/yuguangzhi3836-glitch/GO/pull/44) | DEPTH40 packaging | Builds a self-contained DEPTH40 P0.3 compatibility-V2 parent. |
 | [#45](https://github.com/yuguangzhi3836-glitch/GO/pull/45) | Artifact archive | Persists the verified DEPTH40 parent bytes/evidence; not product progression. |
 | [#46](https://github.com/yuguangzhi3836-glitch/GO/pull/46) | Control Plane | Candidate-only `HK_STAGING_TEST_PR` chain; not application product progression. |
-| [#47](https://github.com/yuguangzhi3836-glitch/GO/pull/47) | **DEPTH41 unified product parent** | **Current unified product working baseline**, still Draft/HOLD. |
+| [#47](https://github.com/yuguangzhi3836-glitch/GO/pull/47) | **DEPTH46 consolidated parent** | Merged at `1c9847c82725`; fixed application, rebuilt image, PR51 supplement and complete restore receipts. |
 | [#48](https://github.com/yuguangzhi3836-glitch/GO/pull/48) | DEPTH41 acceptance / product fix | Cross-end journey acceptance and business-depth repair; selected changes are folded into #47. |
 | [#49](https://github.com/yuguangzhi3836-glitch/GO/pull/49) | Control-plane connection documentation | Workstation / Git / ECS access and identity recovery documentation; not application product progression. |
 
-## `main` is not the latest product tree yet
+## Source integration status
 
-The current `main` branch contains the merged operational archives and historical repository material, including PR #40. The newest DEPTH41 product parent is still on Draft PR #47 and has **not** been merged into `main`.
-
-For product development/review, do not treat the old root `deliverables/CP11_DEPTH18_20260908` entry as the latest engineering result. DEPTH17/18 remain historical evidence only.
-
-For current product work, begin with PR #47 and its `application/` tree, then verify the exact branch/SHA and current acceptance status before making changes.
+PR47 is merged at `1c9847c82725b888d239686572f1f44b6dafc2cc` under the user's explicit repository/CI/PR-merge authorization. New work starts from current main `application/`; PR48 remains historical. Earlier DEPTH17/18 and DEPTH40/41 packages remain historical artifacts with their own recorded source and runtime identities.
 
 ## Historical deliverables
 

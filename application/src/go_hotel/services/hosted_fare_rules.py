@@ -136,7 +136,9 @@ def calculate(s,r,stay,guest,a,snap,action):
         hours=max(0,(boundary-t).total_seconds()/3600)
         fee_bps=0 if cooling else next(x['fee_basis_points'] for x in rules['cancellation_tiers'] if hours>=x['min_hours'])
     # Integer floor is explicit in every persisted quote; no floating-point money.
-    fee=r.amount_minor*fee_bps//10000
+    from go_hotel.services.hosted_fare_value import basis
+    value=basis(s,r)
+    fee=value['current_room_value_minor']*fee_bps//10000
     expiry=min(t+timedelta(minutes=10),deadline) if action=='CANCEL_FOR_REFUND' else t+timedelta(minutes=10)
     if cooling:expiry=min(expiry,cooling_end,boundary)
     if action=='CANCEL_FOR_REFUND':
@@ -144,16 +146,16 @@ def calculate(s,r,stay,guest,a,snap,action):
             edge=boundary-timedelta(hours=tier['min_hours'])
             if edge>t:expiry=min(expiry,edge)
     from go_hotel.services.hosted_credit_value import prepaid,allocation,Credit
-    credit_paid=prepaid(s,r.hosted_reservation_id);prepaid_fee=min(fee,credit_paid)
+    credit_paid=prepaid(s,r.hosted_reservation_id);prepaid_fee=min(fee,credit_paid-value['prepaid_forfeiture_minor'])
     allocated=allocation(s,r.hosted_reservation_id)
     credit=s.get(Credit,allocated.credit_id) if allocated else None
-    restored_credit=credit_paid-prepaid_fee
+    restored_credit=credit_paid-prepaid_fee-value['prepaid_forfeiture_minor']
     if credit and restored_credit and aware(credit.expires_at)>t:expiry=min(expiry,aware(credit.expires_at))
     return {'action':action,'reservation_id':r.hosted_reservation_id,'rule_version_id':snap.rule_version_id,
-        'rule_hash':snap.rule_hash,'currency':r.currency,'order_amount_minor':r.amount_minor,
+        'rule_hash':snap.rule_hash,'currency':r.currency,'order_amount_minor':r.amount_minor,**value,
         'cancellation_fee_minor':fee if action=='CANCEL_FOR_REFUND' else 0,
         'no_show_fee_minor':fee if action=='NO_SHOW' else 0,'fee_minor':fee,'fee_basis_points':fee_bps,
-        'rounding':'FLOOR_MINOR_UNIT','cash_refund_minor':0,'authorization_release_minor':r.amount_minor-credit_paid-(fee-prepaid_fee),
+        'rounding':'FLOOR_MINOR_UNIT','cash_refund_minor':0,'authorization_release_minor':r.amount_minor-credit_paid-(fee-prepaid_fee)-value['cash_forfeiture_minor'],
         'prepaid_fee_minor':prepaid_fee,'cash_fee_minor':fee-prepaid_fee,
         'restored_credit_minor':restored_credit if credit and aware(credit.expires_at)>t else 0,
         'expired_credit_minor':restored_credit if credit and aware(credit.expires_at)<=t else 0,
@@ -216,6 +218,9 @@ def execute(rid,qid,expected_fee,currency,account=None,approval_id=None,evidence
         if q.state=='EXECUTED':return deepcopy(q.result_json)
         snap=snapshot(s,r);eligible(s,r,stay,guest,a,action,snap)
         if q.order_revision!=revision(s,r,stay,guest,a,snap):raise ValueError('FARE_ORDER_CHANGED_REQUOTE_REQUIRED')
+        from go_hotel.services.hosted_fare_value import basis,capture_forfeiture
+        value=basis(s,r)
+        if any(q.quote_json.get(k)!=v for k,v in value.items()):raise ValueError('FARE_VALUE_POLICY_REQUOTE_REQUIRED')
         refs=['fare-quote://'+q.quote_id,'hotel-fare-rule://'+snap.rule_version_id]
         if action=='NO_SHOW':
             approval=s.get(Approval,approval_id,with_for_update=True) if approval_id else None
@@ -237,12 +242,13 @@ def execute(rid,qid,expected_fee,currency,account=None,approval_id=None,evidence
         if cash_fee:
             money.create_in_session(s,payment.payment_intent_id,{'movement_type':'CAPTURE','amount_minor':cash_fee,
                 'parent_movement_id':auth.money_movement_id,'mode':'CONTRACT_SIMULATOR','evidence':refs},'direct-fare-fee:'+qid,'hosted-fare')
-        released=r.amount_minor-credit_paid-cash_fee
+        capture_forfeiture(s,r,a,refs)
+        released=r.amount_minor-credit_paid-cash_fee-value['cash_forfeiture_minor']
         if released:
             money.create_in_session(s,payment.payment_intent_id,{'movement_type':'RELEASE','amount_minor':released,
                 'parent_movement_id':auth.money_movement_id,'mode':'CONTRACT_SIMULATOR','evidence':refs},'direct-fare-release:'+qid,'hosted-fare')
-        a.state='CONTRACT_CAPTURED_NOT_ALIPAY_NOT_SETTLED' if cash_fee else 'CONTRACT_RELEASED_NOT_ALIPAY';a.updated_at=now()
-        r.payment_state='CONTRACT_CREDIT_PAID' if credit_result['prepaid_fee_minor'] else 'CONTRACT_CAPTURED_NOT_ALIPAY' if cash_fee else 'NO_PAYMENT_NO_REFUND_REQUIRED'
+        a.state='CONTRACT_CAPTURED_NOT_ALIPAY_NOT_SETTLED' if cash_fee+value['cash_forfeiture_minor'] else 'CONTRACT_RELEASED_NOT_ALIPAY';a.updated_at=now()
+        r.payment_state='CONTRACT_CREDIT_PAID' if credit_result['prepaid_fee_minor']+value['prepaid_forfeiture_minor'] else 'CONTRACT_CAPTURED_NOT_ALIPAY' if cash_fee+value['cash_forfeiture_minor'] else 'NO_PAYMENT_NO_REFUND_REQUIRED'
         if action=='CANCEL_FOR_REFUND':
             stay.operational_state='CANCELLED';r.reservation_state='CANCELLED'
             if not guest:
@@ -257,7 +263,7 @@ def execute(rid,qid,expected_fee,currency,account=None,approval_id=None,evidence
             event_type=action+'_SETTLED',actor_id=actor or account,payload_json={'quote_id':qid,'evidence':refs},
             evidence_hash=digest(refs),occurred_at=now()))
         ops._release(s,rid);r.updated_at=stay.updated_at=now()
-        result={'reservation_id':rid,'quote_id':qid,'state':r.reservation_state,'fee_captured_minor':cash_fee,'total_fee_minor':expected_fee,**credit_result,
+        result={'reservation_id':rid,'quote_id':qid,'state':r.reservation_state,'fee_captured_minor':cash_fee,'total_fee_minor':expected_fee,**value,**credit_result,
             'authorization_released_minor':released,'cash_refund_minor':0,'currency':r.currency,
             'rule_version_id':snap.rule_version_id,'data_mode':'SIMULATION','external_live':False}
         q.state='EXECUTED';q.result_json=result

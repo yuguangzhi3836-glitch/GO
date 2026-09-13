@@ -38,9 +38,10 @@ def on_approval(s,r,d):
     else:
         c=value.checked(s,allocated.credit_id)
         a=s.scalar(select(Authorization).where(Authorization.hosted_reservation_id==r.hosted_reservation_id))
-        candidates=[(m,m.amount_minor,'CASH',None) for m in funds.movements(s,a) if m.movement_type=='CAPTURE' and m.state=='CONFIRMED']
+        candidates=[(m,m.amount_minor,'CASH',None) for m in funds.refundable_captures(s,a)]
         assigned=sum(x['amount_minor'] for p in s.scalars(select(Plan).where(Plan.hosted_reservation_id==r.hosted_reservation_id)) for x in p.plan_json if x['kind']=='CREDIT')
-        candidates.append((s.get(Movement,c.source_capture_id),max(0,value.prepaid(s,r.hosted_reservation_id)-assigned),'CREDIT',c.credit_id))
+        from go_hotel.services.hosted_fare_value import basis
+        candidates.append((s.get(Movement,c.source_capture_id),max(0,value.prepaid(s,r.hosted_reservation_id)-basis(s,r)['prepaid_forfeiture_minor']-assigned),'CREDIT',c.credit_id))
     amount=d.refund_amount_minor;lines=[]
     for capture,limit,kind,cid in candidates:
         take=min(amount,limit,remaining(s,capture))

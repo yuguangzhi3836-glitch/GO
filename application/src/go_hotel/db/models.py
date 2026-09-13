@@ -51,6 +51,36 @@ class VerticalCapacityClaimRow(Base):
         CheckConstraint('quantity > 0', name='ck_capacity_claim_quantity'),
     )
 
+class FlightChangePlanRow(Base):
+    __tablename__ = 'flight_change_plan'
+    quote_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    order_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    plan_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    plan_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class FlightChangeResolutionRow(Base):
+    __tablename__ = 'flight_change_resolution'
+    quote_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    order_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    state: Mapped[str] = mapped_column(String(16), nullable=False)
+    request_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    terms_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    result_json: Mapped[dict | None] = mapped_column(JSON)
+    lease_token: Mapped[str | None] = mapped_column(String(64))
+    lease_until_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    attempt: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    completed_ms: Mapped[int | None] = mapped_column(BigInteger)
+    __table_args__ = (
+        CheckConstraint("state IN ('PENDING','COMPLETED')", name='ck_flight_resolution_state'),
+        CheckConstraint('attempt >= 0 AND lease_until_ms >= 0', name='ck_flight_resolution_lease'),
+    )
+
 class RailChangeResolutionRow(Base):
     __tablename__ = 'rail_change_resolution'
     quote_id: Mapped[str] = mapped_column(String(64), primary_key=True)

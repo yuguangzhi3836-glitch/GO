@@ -1,0 +1,41 @@
+{
+  "candidate_name": "CP11_DEPTH48_ORDERED_REPAIR_PARENT_20260913",
+  "status": "NOT_BUILT_WAITING_FOR_STEP_3",
+  "source": {
+    "schema": "go.depth48.source-identity.v1",
+    "application_git_tree": "ad7d1de1190f86ad29d1c6cdafbcedd592e27206",
+    "source_tree_sha256": "8e91fcf25e66478d5dac105c2608a195a98290640f2ecbfcec24fda27f212ac8",
+    "source_files": 1323,
+    "previous_application_git_tree": "e6d3aaad6deca1f0801e8c7e4182f353eca93b91",
+    "parent_source_files_retained": 1314,
+    "changed_paths": 36,
+    "added_paths": 9,
+    "binary_files_retained_by_remote_blob": 4,
+    "local_complete_binary_checkout": false,
+    "pr": 52,
+    "branch": "fix/depth47-credit-and-module-boundaries-20260913",
+    "new_self_contained_parent_built": false,
+    "existing_parent_unchanged": true
+  },
+  "previous_parent": "CP11_DEPTH46_CONSOLIDATED_PARENT_20260913",
+  "previous_parent_zip_sha256": "cc9b16be9555a2499db29a9ce0ebc25879fedd2953577bedc1f5e6e833451ce9",
+  "previous_image_config_id": "sha256:b3f075020b1d4817fd1f386d15427744fb4db3b5798292d4be855527fa654bf5",
+  "required_order": [
+    "HOTEL_RULES",
+    "MULTI_LEG_FLIGHT_CHANGE",
+    "SIX_VERTICAL_THREE_END_ACCEPTANCE",
+    "NEW_SELF_CONTAINED_PARENT"
+  ],
+  "blockers": [
+    "Visible three-end acceptance not executed",
+    "Disposable PostgreSQL and frozen-runtime CI not executed",
+    "No complete parent image archive or Docker available locally"
+  ],
+  "required_packaging_checks": [
+    "Retain every inherited source path, supplement and historical evidence",
+    "Bind newly rebuilt image to exact source tree and migration 0133",
+    "Offline image reload and source-check",
+    "Verify and read back complete ZIP and archive parts"
+  ],
+  "deploy": "NOT_AUTHORIZED_BY_THIS_RECORD"
+}

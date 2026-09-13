@@ -25,7 +25,7 @@ def data(response):
     return response.json()['data']
 
 
-def console_auth(client, supplier_id=None):
+def console_auth(client, supplier_id=None, login_again=False):
     username = 'journey-' + secrets.token_hex(8) + '@example.test'
     password = secrets.token_urlsafe(32)
     actor = 'SUPPLIER_USER' if supplier_id else 'GO_ADMIN'
@@ -33,7 +33,11 @@ def console_auth(client, supplier_id=None):
         ['SUPPLIER_OWNER'] if supplier_id else ['GO_GOVERNANCE'])
     tokens = identity_service.login(username, password, None, 'isolated-api-journey',
         expected_actor_type=actor)
-    return {'Authorization': 'Bearer ' + tokens['access_token']}
+    def fresh():
+        next_tokens = identity_service.login(username, password, None, 'isolated-api-relogin', expected_actor_type=actor)
+        return {'Authorization': 'Bearer ' + next_tokens['access_token']}
+    headers = {'Authorization': 'Bearer ' + tokens['access_token']}
+    return (headers, fresh) if login_again else headers
 
 
 def six_orders(client, headers):
@@ -81,7 +85,7 @@ def test_six_vertical_paid_refunded_money_and_three_actor_same_order(client):
     consumer = auth(client, 'depth42-journey@example.test')
     stranger = auth(client, 'depth42-other@example.test')
     orders = six_orders(client, consumer)
-    administrator = console_auth(client)
+    administrator, admin_relogin = console_auth(client, login_again=True)
     unrelated_supplier = console_auth(client, 'depth42-unrelated')
     observations = []
     for vertical, order in orders.items():
@@ -127,14 +131,15 @@ def test_six_vertical_paid_refunded_money_and_three_actor_same_order(client):
                 assert all(e.amount_minor == move.amount_minor and e.currency == move.currency for e in entries)
             owner = session.get(OrderRow, oid).supplier_id if vertical == 'HOTEL' else session.scalar(
                 select(Fulfillment).where(Fulfillment.payment_intent_id == intent.payment_intent_id)).supplier_id
-        supplier = console_auth(client, owner)
+        supplier, supplier_relogin = console_auth(client, owner, login_again=True)
         trip = next(x for x in data(client.get('/v1/consumer/unified-trips', headers=consumer))['items'] if x['order_id'] == oid)
         assert trip['supplier_id'] == owner
         observations.append({'vertical': vertical, 'order_id': oid, 'supplier_id': owner,
             'paid_minor': order['total_amount_minor'], 'refund_minor': quote['refund_amount_minor'],
             'currency': quote['currency'], 'native_status': trip['native_status'],
             'refund_state': trip['refund_state'], 'money_rows_verified': len(moves)})
-        # Continue money journeys even when the legacy console omitted this vertical.
+        observations[-1]['actor_views'] = {}
+        # Same order is available in each role's list and final detail.
         observations[-1]['supplier_listed'] = any(x['order_id'] == oid for x in
             data(client.get('/v1/supplier/transaction-orders', headers=supplier))['items'])
         observations[-1]['admin_listed'] = any(x['order_id'] == oid for x in
@@ -148,6 +153,18 @@ def test_six_vertical_paid_refunded_money_and_three_actor_same_order(client):
                 assert view['original_payment']['captured_minor'] == order['total_amount_minor']
                 assert view['original_payment']['refunded_minor'] == quote['refund_amount_minor']
                 assert view['original_payment']['ledger_balanced']
+                assert view['order']['status'] == trip['native_status']
+                assert view['order']['currency'] == quote['currency']
+                assert view['original_payment']['net_minor'] == order['total_amount_minor'] - quote['refund_amount_minor']
+                assert data(client.get(f'{prefix}/transaction-orders/{vertical}/{oid}', headers=actor)) == view
+                if prefix == '/v1/consumer':
+                    tokens = data(client.post('/v1/mobile/auth/login', json={'email':'depth42-journey@example.test','password':'StrongPass123!'}))
+                    fresh = {'Authorization':'Bearer '+tokens['access_token']}
+                    client.cookies.clear()
+                else:
+                    fresh = supplier_relogin() if prefix == '/v1/supplier' else admin_relogin()
+                assert data(client.get(f'{prefix}/transaction-orders/{vertical}/{oid}', headers=fresh)) == view
+                observations[-1]['actor_views'][prefix] = {'final':view,'refresh':'PASS','relogin':'PASS'}
         assert client.get(f'/v1/supplier/transaction-orders/{vertical}/{oid}', headers=unrelated_supplier).status_code == 404
         assert client.get(f'/v1/consumer/transaction-orders/{vertical}/{oid}', headers=stranger).status_code == 404
     print('DEPTH42_JOURNEYS=' + json.dumps(observations, ensure_ascii=False))

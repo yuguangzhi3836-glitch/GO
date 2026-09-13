@@ -74,7 +74,8 @@ class FlightService:
     def _ticket_assignments(self,o):
         if o.status!='TICKETED' or len(o.ticket_numbers)!=len(o.passengers)*len(o.current_itinerary):return []
         return [{'leg_index':leg,'passenger_index':person,'passenger_name':p['full_name'],
-            'ticket_number':o.ticket_numbers[leg*len(o.passengers)+person]}
+            'ticket_number':o.ticket_numbers[leg*len(o.passengers)+person],
+            'supplier_reference':o.current_itinerary[leg].get('supplier_reference',o.pnr)}
             for leg in range(len(o.current_itinerary)) for person,p in enumerate(o.passengers)]
     def _order(self,o):
         return {"passenger_count":len(o.passengers),"ticket_assignments":self._ticket_assignments(o),"trip_type":(o.current_itinerary[0].get("trip_type", "ONE_WAY") if o.current_itinerary else "ONE_WAY"),"data_mode":"SIMULATION","external_live":False,"order_id":o.order_id,"account_id":o.account_id,"status":o.status,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"passengers":o.passengers,"pnr":o.pnr if o.status=="TICKETED" else None,"ticket_numbers":o.ticket_numbers if o.status=="TICKETED" else [],"itinerary":o.current_itinerary,"created_at":o.created_at.isoformat(),"updated_at":o.updated_at.isoformat()}
@@ -87,6 +88,10 @@ class FlightService:
             changes=s.scalars(select(FlightChangeQuoteRow).where(FlightChangeQuoteRow.order_id==order_id).order_by(FlightChangeQuoteRow.created_at)).all()
             refunds=s.scalars(select(FlightRefundRow).where(FlightRefundRow.order_id==order_id).order_by(FlightRefundRow.created_at)).all()
             result["change_quotes"]=[{"quote_id":x.quote_id,"status":x.status,"new_departure_date":x.new_departure_date,"new_flight_number":x.new_flight_number,"fare_difference_minor":x.fare_difference_minor,"change_fee_minor":x.change_fee_minor,"total_due_minor":x.total_due_minor,"currency":x.currency} for x in changes]
+            from go_hotel.db.models import FlightChangePlanRow
+            from go_hotel.flight.changes import public as change_public
+            result['change_quotes']=[change_public(x,p) if (p:=s.get(FlightChangePlanRow,x.quote_id)) else item
+                                     for x,item in zip(changes,result['change_quotes'])]
             result["refunds"]=[{"refund_id":x.refund_id,"status":x.status,"refund_fee_minor":x.refund_fee_minor,"refund_amount_minor":x.refund_amount_minor,"currency":x.currency} for x in refunds]
             result["evidence"]=list_vertical_evidence(s,"FLIGHT",order_id)
             return result
@@ -95,25 +100,18 @@ class FlightService:
         with SessionLocal() as s:
             rows=s.scalars(select(FlightOrderRow).where(FlightOrderRow.account_id==account_id).order_by(FlightOrderRow.updated_at.desc())).all()
             return [self._order(x) for x in rows]
-    def change_quote(self,account_id,order_id,new_departure_date):
-        production_truth_required("FLIGHT", "CHANGE_QUOTE")
-        with SessionLocal.begin() as s:
-            o=s.get(FlightOrderRow,order_id)
-            if not o or o.account_id!=account_id or o.status!="TICKETED": raise ValueError("FLIGHT_ORDER_NOT_CHANGEABLE")
-            if len(o.current_itinerary) != 1:
-                raise ValueError("FLIGHT_ORDER_NOT_CHANGEABLE:MULTI_LEG_CHANGE_NOT_IMPLEMENTED")
-            offer=s.get(FlightOfferRow,s.get(FlightPrebookRow,o.prebook_id).offer_id)
-            if not offer.change_policy.get("allowed", False):
-                raise ValueError("FLIGHT_ORDER_NOT_CHANGEABLE:FARE_POLICY")
-            fare_diff=30000*len(o.passengers); fee=offer.change_policy.get("fee_minor", 0)
-            q=FlightChangeQuoteRow(quote_id=new_id("flt_chq"),order_id=order_id,new_departure_date=new_departure_date,new_flight_number="GO720",fare_difference_minor=fare_diff,change_fee_minor=fee,total_due_minor=fare_diff+fee,currency=o.currency,status="QUOTED",expires_at=now()+timedelta(minutes=15),created_at=now())
-            s.add(q); s.flush(); return {"quote_id":q.quote_id,"order_id":order_id,"new_departure_date":q.new_departure_date,"new_flight_number":q.new_flight_number,"fare_difference_minor":fare_diff,"change_fee_minor":fee,"total_due_minor":q.total_due_minor,"currency":q.currency,"expires_at":q.expires_at.isoformat()}
-    def execute_change(self,account_id,order_id,quote_id):
+    def change_quote(self,account_id,order_id,new_departure_date=None,leg_index=None,changes=None):
+        from go_hotel.flight.changes import create_quote
+        return create_quote(account_id,order_id,new_departure_date,leg_index,changes)
+    def execute_change(self,account_id,order_id,quote_id,confirmation=None):
         production_truth_required('FLIGHT','EXECUTE_CHANGE')
         with SessionLocal() as s:
             if s.bind.dialect.name=='sqlite':s.execute(text('BEGIN IMMEDIATE'))
             o=s.get(FlightOrderRow,order_id,with_for_update=True);q=s.get(FlightChangeQuoteRow,quote_id)
             if not o or o.account_id!=account_id or not q or q.order_id!=order_id:raise ValueError('FLIGHT_CHANGE_QUOTE_INVALID')
+            from go_hotel.flight.changes import checked,consent
+            plan=checked(s,o,q,require_current=q.status not in {'EXECUTED','FAILED'})
+            consent(o,q,plan,confirmation)
             if q.status=='PENDING_SUPPLIER' and o.status=='UNKNOWN_EXTERNAL_STATE':return self._order(o)|{'idempotent_replay':True}
             if q.status=='EXECUTED':return self._order(o)|{'idempotent_replay':True}
             resuming=q.status=='AUTHORIZATION_PENDING' and o.status=='UNKNOWN_EXTERNAL_STATE'
@@ -133,6 +131,7 @@ class FlightService:
             o=s.get(FlightOrderRow,order_id,with_for_update=True);q=s.get(FlightChangeQuoteRow,quote_id)
             if q.status=='PENDING_SUPPLIER':return self._order(o)|{'idempotent_replay':True}
             if o.status!='UNKNOWN_EXTERNAL_STATE' or q.status!='AUTHORIZATION_PENDING':raise ValueError('FLIGHT_CHANGE_QUOTE_INVALID')
+            checked(s,o,q)
             q.status='PENDING_SUPPLIER';o.updated_at=now()
             append_vertical_evidence(s,'FLIGHT',order_id,'CHANGE_SUBMITTED_AWAITING_SUPPLIER',o.status,
                 {'quote_id':quote_id,'authorization_id':(adjustment or {}).get('authorization_id')})
@@ -196,7 +195,16 @@ class FlightService:
                 'money_movement_ids':movement.get('money_movement_ids',[movement['money_movement_id']])}
             append_vertical_evidence(s,'FLIGHT',order_id,'REFUND_COMPLETED',order.status,facts)
             project_vertical_lifecycle(s,'FLIGHT',order,'refund:'+refund_id,facts=facts);s.commit();return result(row)
-    def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,ticket_numbers=None):
+    def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,ticket_numbers=None,quote_id=None):
+        from go_hotel.db.models import FlightChangePlanRow,FlightChangeResolutionRow
+        with SessionLocal() as s:
+            managed=quote_id or s.scalar(select(FlightChangePlanRow.quote_id).where(FlightChangePlanRow.order_id==order_id))
+        if managed:
+            from go_hotel.services.flight_change_resolution import reconcile
+            return reconcile(order_id,state,evidence_reference,actor,supplier_reference,ticket_numbers,quote_id,self._order)
+        return self._legacy_admin_external_state(order_id,state,evidence_reference,actor,supplier_reference,ticket_numbers)
+
+    def _legacy_admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,ticket_numbers=None):
         if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
         state=state.upper();ticket_numbers=list(ticket_numbers or [])
         with SessionLocal() as s:

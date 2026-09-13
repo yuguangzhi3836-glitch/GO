@@ -1,6 +1,6 @@
 from tests.attraction_fixtures import quoted_attraction
 import pytest
-from datetime import timedelta
+from datetime import date, timedelta
 from sqlalchemy import select
 from tests.test_sprint3a_flight import auth as flight_auth, create_ticketed
 from tests.test_sprint3c_mobility import auth as mobility_auth
@@ -16,7 +16,7 @@ from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillm
 
 def test_flight_old_quote_cannot_execute_after_refund(client):
     h=flight_auth(client,'terminal-flight@example.com'); oid=create_ticketed(client,h)
-    q=client.post(f'/v1/flights/orders/{oid}/change-quote',headers=h,json={'new_departure_date':'2026-09-05'}).json()['data']
+    q=client.post(f'/v1/flights/orders/{oid}/change-quote',headers=h,json={'new_departure_date':(date.today()+timedelta(days=12)).isoformat()}).json()['data']
     assert client.post(f'/v1/flights/orders/{oid}/refund',headers=h).status_code==200
     r=client.post(f"/v1/flights/orders/{oid}/execute-change/{q['quote_id']}",headers=h)
     assert r.status_code in {404,422}

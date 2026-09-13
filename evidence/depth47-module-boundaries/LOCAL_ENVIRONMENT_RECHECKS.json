@@ -1,0 +1,82 @@
+[
+  {
+    "test": "tests.test_depth08_migration::test_fare_migration_roundtrip_preserves_prior_tables_and_does_not_fabricate_snapshots",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth09_migration::test_credit_migration_roundtrip_preserves_fare_rows_and_never_creates_unfunded_credit",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth24_expiry::test_expiry_recovers_from_actual_process_exit[False]",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth24_expiry::test_expiry_recovers_from_actual_process_exit[True]",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth24_expiry::test_one_shot_worker_runs_against_durable_database",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth08_api_and_migration::test_worker_cli_process_consumes_persisted_queue",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth10_migration::test_supplier_fault_migration_roundtrip_preserves_original_credit_and_allocations",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth11_migration::test_catalog_remedy_migration_preserves_historical_cases_and_hosted_mandates",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth14_migration::test_cash_fare_migration_roundtrip_never_backfills_historical_consent",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth21_refund_recovery::test_process_exit_after_money_can_resume_only_after_lease_expiry[RAIL]",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth21_refund_recovery::test_process_exit_after_money_can_resume_only_after_lease_expiry[ATTRACTION]",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_parent_implementation_code_review_debt_closure::test_current_source_head_and_upgrade_downgrade_roundtrip",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth06_migration::test_rental_settlement_migration_roundtrip_preserves_existing_refunds",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth12_migration::test_catalog_credit_migration_preserves_historical_credit_without_invented_funding",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth13_migration::test_rule_snapshot_migration_preserves_historical_credit_and_order_without_fabrication",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth22_rail_resolution::test_process_exit_after_money_recovers[TICKETED]",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth22_rail_resolution::test_process_exit_after_money_recovers[FAILED]",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth15_migration::test_source_exclusion_migration_roundtrip_preserves_old_full_capture_allocation",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth15_migration::test_downgrade_cannot_drop_a_nonzero_exclusion_and_revive_forfeited_source_value",
+    "status": "passed"
+  },
+  {
+    "test": "tests.test_depth23_capacity::test_capacity_survives_process_exit",
+    "status": "passed"
+  }
+]

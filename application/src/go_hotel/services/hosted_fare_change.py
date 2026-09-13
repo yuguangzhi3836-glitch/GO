@@ -1,4 +1,4 @@
-"""Dated changes and extensions with a retained price floor and atomic reauthorization."""
+"""Dated changes using current room value, irreversible forfeiture and atomic funding."""
 from copy import deepcopy
 from datetime import date,datetime,timedelta
 from sqlalchemy import select,update
@@ -13,7 +13,7 @@ from go_hotel.services.hosted_reservation_operations import dates,aware,hosted_r
 from go_hotel.services.alipay_safeguarded_settlement import transaction
 from go_hotel.services.omnichannel_payment import digest,legal_entity
 from go_hotel.services.unified_money_movement import unified_money_movement_service as money
-from go_hotel.services import hotel_change_policy
+from go_hotel.services import hotel_change_policy, hosted_fare_value as value
 
 
 def now():return fare.now()
@@ -80,14 +80,18 @@ def create_quote(rid,account,action,start,end):
             if arrival>aware(s.get(Credit,allocated.credit_id).expires_at):raise ValueError('CREDIT_CHECK_IN_MUST_BE_WITHIN_VALIDITY')
         nights=priced(s,r,stay,action,start,end)
         room_total=sum(n['price_minor'] for n in nights)
-        # Extension preserves every previous retained amount and adds only new nights.
-        quoted=room_total if action=='CHANGE_DATE' else r.amount_minor+sum(n['price_minor'] for n in nights if n['stay_date']>=r.check_out)
-        difference=max(0,quoted-r.amount_minor);fee=0;total=r.amount_minor+difference
+        previous=value.basis(s,r)
+        quoted=room_total
+        difference=max(0,quoted-previous['current_room_value_minor']);fee=0;total=r.amount_minor+difference
+        forfeited=previous['forfeited_change_value_minor']+max(0,previous['current_room_value_minor']-quoted)
         q=Quote(quote_id=ident('hfq'),hosted_reservation_id=rid,action=action,
             order_revision=fare.revision(s,r,stay,guest,a,snap),state='QUOTED',result_json={},
             created_at=now(),expires_at=now()+timedelta(minutes=10),quote_json={},quote_hash='')
         payload={'action':action,'reservation_id':rid,'check_in':start,'check_out':end,'old_amount_minor':r.amount_minor,
             'new_room_quote_minor':room_total,'new_amount_minor':total,'fare_difference_minor':difference,
+            'fare_value_policy':value.POLICY,'old_room_value_minor':previous['current_room_value_minor'],
+            'previous_forfeited_change_value_minor':previous['forfeited_change_value_minor'],
+            'forfeited_change_value_minor':forfeited,
             'change_fee_minor':fee,'additional_amount_minor':difference+fee,'cash_refund_minor':0,'stay_credit_minor':0,
             'lower_price_rule':'NO_REFUND_NO_CASH_NO_BALANCE','currency':r.currency,'nights':nights,
             'authorization_replacement_minor':total-credited if total!=r.amount_minor else 0,
@@ -142,6 +146,9 @@ def execute(rid,account,qid,expected_total,expected_additional,currency):
         if q.state=='EXECUTED':return deepcopy(q.result_json)
         r,stay,guest,a,snap=context(s,rid,account,q.action)
         hotel_change_policy.require_zero_fee(payload)
+        previous=value.basis(s,r)
+        if (payload.get('fare_value_policy'),payload.get('old_room_value_minor'),payload.get('previous_forfeited_change_value_minor'))!=(value.POLICY,previous['current_room_value_minor'],previous['forfeited_change_value_minor']):
+            raise ValueError('FARE_VALUE_POLICY_REQUOTE_REQUIRED')
         if q.action=='CHANGE_DATE':
             policy=hotel_change_policy.require_window(r.created_at,payload['check_in'],now(),
                 snap.rules_json['timezone'],snap.rules_json['check_in_hour'])
@@ -169,6 +176,7 @@ def execute(rid,account,qid,expected_total,expected_additional,currency):
         if guest:guest.planned_check_out=r.check_out;guest.updated_at=now()
         result={'reservation_id':rid,'quote_id':qid,'action':q.action,'check_in':r.check_in,'check_out':r.check_out,
             'amount_minor':r.amount_minor,'additional_amount_minor':expected_additional,'currency':r.currency,
+            'current_room_value_minor':payload['new_room_quote_minor'],'forfeited_change_value_minor':payload['forfeited_change_value_minor'],
             'state':'CONFIRMED','cash_refund_minor':0,'data_mode':'SIMULATION','external_live':False}
         if guest:
             from go_hotel.db.models import GuestStayEventRow

@@ -15,13 +15,13 @@ TABLES = {
 }
 
 
-def audit(state, evidence):
-    report=json.loads((evidence/'browser-results.json').read_text())
+def audit(state, evidence, report_name="browser-results.json"):
+    report=json.loads((evidence/report_name).read_text())
     binding=json.loads((state/'runtime-binding.json').read_text())
     assert report['source_tree_sha256']==binding['source_tree_sha256']
     result={'schema':'go.independent-sqlite-ledger.v1','commit':report['commit'],
             'source_tree_sha256':binding['source_tree_sha256'],'mode':'SYNTHETIC_READ_ONLY_SQL',
-            'bank_settlement_verified':False,'orders':[],'result':'HOLD'}
+            'input_report':report_name,'bank_settlement_verified':False,'orders':[],'result':'HOLD'}
     db=sqlite3.connect((state/'acceptance.db').resolve().as_uri()+'?mode=ro',uri=True)
     db.row_factory=sqlite3.Row
     db.execute('PRAGMA query_only=ON')
@@ -41,10 +41,19 @@ def audit(state, evidence):
             iid=root['payment_intent_id']
             intent=one('SELECT * FROM omnichannel_payment_intent WHERE payment_intent_id=?',iid)
             fact=one('SELECT * FROM payment_order_fact_binding WHERE payment_intent_id=?',iid)
+            decision=one('SELECT * FROM vertical_source_decision WHERE vertical_source_decision_id=?',fact['source_decision_id'])
+            assert (decision['vertical'],decision['business_id'])==(v,oid), 'SOURCE_ORDER_MISMATCH'
+            assert decision['selected_source_id'] and decision['evidence_reference'] and fact['evidence_reference'], 'SOURCE_EVIDENCE_REQUIRED'
+            payee=order['supplier_id'] if v=='HOTEL' else decision['selected_source_id']
+            assert decision['selected_source_id']==payee, 'SOURCE_PAYEE_MISMATCH'
+            for payment in (intent,fact):
+                assert payment['payee_id']==payee, 'ORDER_PAYEE_MISMATCH'
+                assert payment['amount_minor']==order['total_amount_minor'], 'ORDER_AMOUNT_MISMATCH'
+                assert payment['currency']==order['currency'], 'ORDER_CURRENCY_MISMATCH'
             assert (intent['business_type'],intent['business_id'],intent['payer_id'],intent['state'])==(v+'_ORDER',oid,order['account_id'],'SUCCEEDED')
             assert (fact['business_type'],fact['business_id'],fact['payer_id'],fact['payee_id'],fact['currency'],fact['amount_minor'])==(v+'_ORDER',oid,order['account_id'],intent['payee_id'],order['currency'],intent['amount_minor'])
             movements=rows('SELECT * FROM omnichannel_money_movement WHERE root_payment_intent_id=?',iid)
-            assert all(x['state']=='CONFIRMED' and x['currency']==order['currency'] and x['business_id']==oid for x in movements)
+            assert all(x['state']=='CONFIRMED' and x['currency']==order['currency'] and x['business_id']==oid and x['business_type']==v+'_ORDER' for x in movements)
             groups={kind:[x for x in movements if x['movement_type']==kind] for kind in ('AUTHORIZATION','CAPTURE','REFUND')}
             assert len(movements)==3 and all(len(x)==1 for x in groups.values())
             auth,cap,ref=(groups[k][0] for k in ('AUTHORIZATION','CAPTURE','REFUND'))
