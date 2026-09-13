@@ -36,8 +36,17 @@ Before taking over GO work, read:
 
 1. `README.md`
 2. `docs/project/OPERATING_CONTEXT.md`
+3. `docs/project/GO_CURRENT_STATE.md`
+4. `docs/project/ACTIVE_DECISIONS.md`
+5. the relevant module state file under `docs/state/`
+6. `docs/project/CONTEXT_CHECKPOINT.json`
+7. `docs/project/CONTEXT_HANDOFF_PROTOCOL.md` when synchronizing or handing off project context
 
-Treat these as the current project-context entry point before reasoning about who owns product direction, who reviews/integrates work, which AI/agent is acting, or which workstation should execute a task.
+Treat these as the current project-context entry point before reasoning about who owns product direction, who reviews/integrates work, which AI/agent is acting, which workstation should execute a task, or what the project currently believes to be true.
+
+**Do not synchronize GO by replaying every historical Pull Request by default.** Use the current-state layer plus the context checkpoint, then inspect changes after the checkpoint. Older PRs remain available for audit, provenance, conflict investigation, rollback/lineage questions, or an explicit historical request.
+
+An open PR/branch is a candidate and must not be silently promoted into current project truth merely because it is newer or contains more code.
 
 ### Human / AI responsibility model
 
