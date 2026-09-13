@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "status": "CANDIDATE",
+  "checkpoint_main_sha": "286e294d92df4b7d1c0073116a8e628734abec6c",
+  "checkpoint_main_date": "2026-09-13T09:03:36Z",
+  "created_for": "project-context/current-state-v1",
+  "context_entrypoints": [
+    "README.md",
+    "docs/project/OPERATING_CONTEXT.md",
+    "docs/project/GO_CURRENT_STATE.md",
+    "docs/project/ACTIVE_DECISIONS.md",
+    "docs/project/CONTEXT_HANDOFF_PROTOCOL.md"
+  ],
+  "module_state_root": "docs/state",
+  "meaning": "Once this candidate is reviewed and accepted, effective project truth up to checkpoint_main_sha should normally be loaded from the current-state layer rather than reconstructed by replaying historical pull requests.",
+  "limitations": [
+    "Open pull requests are not imported as current main facts.",
+    "Historical business decisions not yet materialized from authoritative sources are not reconstructed from AI memory.",
+    "Runtime execution authority is not granted by this checkpoint."
+  ]
+}
