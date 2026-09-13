@@ -1,0 +1,55 @@
+name: DEPTH48 pagination repair and cumulative 1000 users
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ci/load1000/**
+      - ci/admin-pagination/**
+      - .github/workflows/depth48-1000-users.yml
+permissions:
+  contents: read
+concurrency:
+  group: depth48-1000-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+jobs:
+  isolated-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Install existing pinned isolated dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+          npm install --no-save --ignore-scripts playwright@1.55.1
+          npx playwright install --with-deps chromium
+      - name: Isolated SQL and HTTP pagination regression
+        run: |
+          mkdir -p pagination-unit-evidence
+          PYTHONPATH=application/src python -B -m pytest -q -p no:cacheprovider ci/admin-pagination/test_pagination.py --junitxml=pagination-unit-evidence/junit.xml | tee pagination-unit-evidence/pytest.log
+      - name: Current DEPTH48 six-module browser and hotel-change preflight
+        run: python -B ci/load1000/run.py --preflight
+      - name: 1000 unique browser users in stages 6 54 240 700
+        run: python -B ci/load1000/run.py
+      - name: Preserve evidence and fingerprints
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: depth48-1000-${{ github.event.pull_request.head.sha }}
+          path: |
+            load1000-preflight/
+            load1000-evidence/
+            pagination-unit-evidence/
+          if-no-files-found: error
+          retention-days: 90

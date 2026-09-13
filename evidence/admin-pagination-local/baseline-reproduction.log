@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_exact_lookup_and_empty_results[HOTEL] __________________
+
+setup = (<starlette.testclient.TestClient object at 0x7fd6205dd2e0>, <fastapi.applications.FastAPI object at 0x7fd621514da0>, ...te:////tmp/pytest-of-root/pytest-6/test_exact_lookup_and_empty_re0/private.db), autoflush=True, expire_on_commit=True))
+v = 'HOTEL'
+
+    @pytest.mark.parametrize('v',VERTICALS)
+    def test_exact_lookup_and_empty_results(setup,v):
+        client,_,sessions=setup
+        oid=f'{v.lower()}-test-001' # beyond the first 100 rows
+        d=get(client,v,order_id=' '+oid+' ',page=3,refund_page=3)
+>       assert [x['order_id'] for x in d['orders']]==[oid]
+E       AssertionError: assert ['hotel-test-...est-119', ...] == ['hotel-test-001']
+E         
+E         At index 0 diff: 'hotel-test-124' != 'hotel-test-001'
+E         Left contains 49 more items, first extra item: 'hotel-test-123'
+E         Use -v to get more diff
+
+depth48-pagination/ci/admin-pagination/test_pagination.py:87: AssertionError
+=========================== short test summary info ============================
+FAILED depth48-pagination/ci/admin-pagination/test_pagination.py::test_exact_lookup_and_empty_results[HOTEL]
+1 failed, 27 deselected in 2.71s
