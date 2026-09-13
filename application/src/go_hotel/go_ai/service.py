@@ -257,14 +257,22 @@ class GOAIService:
             "Reconcile conflicts, preserve uncertainty, do not invent supplier/payment facts, and do not expose provider/model identities.\n\n"
             f"Original request:\n{request.message}\n\nSubtask outputs:\n{synthesis_input}"
         )
-        synthesis_text, synthesis_provider, synthesis_model = self._execute_compute_task(
-            parent_request=request,
-            task_id="task_synthesis",
-            task_type="SYNTHESIS",
-            instruction=synthesis_instruction,
-            attempt_base=9000,
-            max_cost_tier=None if assessment.tier in {"TIER_3_DEEP_REASONING", "TIER_4_MULTI_AGENT", "TIER_5_HIGH_ASSURANCE"} else max_cost_tier,
-        )
+        try:
+            synthesis_text, synthesis_provider, synthesis_model = self._execute_compute_task(
+                parent_request=request,
+                task_id="task_synthesis",
+                task_type="SYNTHESIS",
+                instruction=synthesis_instruction,
+                attempt_base=9000,
+                max_cost_tier=None if assessment.tier in {"TIER_3_DEEP_REASONING", "TIER_4_MULTI_AGENT", "TIER_5_HIGH_ASSURANCE"} else max_cost_tier,
+            )
+        except Exception as exc:
+            # Synthesis is also an orchestration task: finalize its failure just
+            # like a subtask failure instead of leaving the request ROUTING.
+            self._complete_request(request.request_id, failure_code="GO_AI_ORCHESTRATION_TASK_FAILED")
+            if isinstance(exc, ValueError):
+                raise
+            raise ValueError("GO_AI_ORCHESTRATION_TASK_FAILED") from exc
 
         model_check_completed = False
         if assessment.requires_model_verification:

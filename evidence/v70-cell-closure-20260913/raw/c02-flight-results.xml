@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="21" time="16.259" timestamp="2026-09-13T07:13:42.290692-07:00" hostname="localhost"><testcase classname="tests.test_depth48_flight_changes" name="test_selected_legs_replace_only_their_passenger_tickets_then_refund[ROUND_TRIP-changes0]" time="5.223" /><testcase classname="tests.test_depth48_flight_changes" name="test_selected_legs_replace_only_their_passenger_tickets_then_refund[ROUND_TRIP-changes1]" time="0.503" /><testcase classname="tests.test_depth48_flight_changes" name="test_selected_legs_replace_only_their_passenger_tickets_then_refund[MULTI_CITY-changes2]" time="0.447" /><testcase classname="tests.test_depth48_flight_changes" name="test_selected_legs_replace_only_their_passenger_tickets_then_refund[MULTI_CITY-changes3]" time="0.429" /><testcase classname="tests.test_depth48_flight_changes" name="test_unaccepted_multi_leg_quote_never_authorizes_money[missing]" time="0.364" /><testcase classname="tests.test_depth48_flight_changes" name="test_unaccepted_multi_leg_quote_never_authorizes_money[wrong_hash]" time="0.450" /><testcase classname="tests.test_depth48_flight_changes" name="test_unaccepted_multi_leg_quote_never_authorizes_money[wrong_amount]" time="0.398" /><testcase classname="tests.test_depth48_flight_changes" name="test_unaccepted_multi_leg_quote_never_authorizes_money[currency]" time="0.349" /><testcase classname="tests.test_depth48_flight_changes" name="test_unaccepted_multi_leg_quote_never_authorizes_money[false_consent]" time="0.349" /><testcase classname="tests.test_depth48_flight_changes" name="test_invalid_selection_or_date_order_cannot_create_plan[changes0]" time="0.376" /><testcase classname="tests.test_depth48_flight_changes" name="test_invalid_selection_or_date_order_cannot_create_plan[changes1]" time="0.345" /><testcase classname="tests.test_depth48_flight_changes" name="test_invalid_selection_or_date_order_cannot_create_plan[changes2]" time="0.375" /><testcase classname="tests.test_depth48_flight_changes" name="test_invalid_selection_or_date_order_cannot_create_plan[changes3]" time="0.356" /><testcase classname="tests.test_depth48_flight_changes" name="test_invalid_selection_or_date_order_cannot_create_plan[changes4]" time="0.334" /><testcase classname="tests.test_depth48_flight_changes" name="test_changed_order_or_plan_cannot_borrow_prior_consent" time="0.351" /><testcase classname="tests.test_depth48_flight_changes" name="test_crash_after_money_recovers_once_and_rejects_opposite_decision[TICKETED]" time="0.399" /><testcase classname="tests.test_depth48_flight_changes" name="test_crash_after_money_recovers_once_and_rejects_opposite_decision[FAILED]" time="0.375" /><testcase classname="tests.test_depth48_flight_changes" name="test_concurrent_opposite_resolution_cannot_change_money_decision" time="0.391" /><testcase classname="tests.test_depth48_flight_changes" name="test_wrong_coupon_count_and_foreign_receipt_never_complete_order" time="0.408" /><testcase classname="tests.test_depth48_flight_changes" name="test_old_resolution_replay_cannot_overwrite_next_change" time="0.412" /><testcase classname="tests.test_depth48_flight_changes" name="test_http_requires_selection_and_binds_exact_confirmed_quote" time="0.176"><failure message="sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a readonly database&#10;[SQL: INSERT INTO identity_user (user_id, username, password_hash, actor_type, supplier_id, roles, status, token_version, mfa_secret_ciphertext, mfa_enabled_at, sso_provider, sso_subject, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]&#10;[parameters: ('usr_448f2a1f27884d3eb769e3e1d3cc14a3', 'flight@example.com', 'pbkdf2_sha256$260000$0YsJibQTFFAD34Qz1K4V8g$afpasYtbKvYnKkX5qTAZV9vFJ842s9Pn_vvhJ150Y68', 'CONSUMER', None, '[&quot;CONSUMER&quot;]', 'ACTIVE', 1, None, None, None, None, '2026-09-13 14:13:57.408523', '2026-09-13 14:13:57.408523')]&#10;(Background on this error at: https://sqlalche.me/e/20/e3q8)">self = &lt;sqlalchemy.engine.base.Connection object at 0x7f5c68502060&gt;
+dialect = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f5c72a5e630&gt;
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f5c68549e80&gt;
+statement = &lt;sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f5c6e783680&gt;
+parameters = [('usr_448f2a1f27884d3eb769e3e1d3cc14a3', 'flight@example.com', 'pbkdf2_sha256$260000$0YsJibQTFFAD34Qz1K4V8g$afpasYtbKvYnKkX5qTAZV9vFJ842s9Pn_vvhJ150Y68', 'CONSUMER', None, '["CONSUMER"]', ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -&gt; CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+&gt;                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f5c72a5e630&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f5c68536440&gt;
+statement = 'INSERT INTO identity_user (user_id, username, password_hash, actor_type, supplier_id, roles, status, token_version, m..., mfa_enabled_at, sso_provider, sso_subject, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('usr_448f2a1f27884d3eb769e3e1d3cc14a3', 'flight@example.com', 'pbkdf2_sha256$260000$0YsJibQTFFAD34Qz1K4V8g$afpasYtbKvYnKkX5qTAZV9vFJ842s9Pn_vvhJ150Y68', 'CONSUMER', None, '["CONSUMER"]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f5c68549e80&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlite3.OperationalError: attempt to write a readonly database
+
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: OperationalError
+
+The above exception was the direct cause of the following exception:
+
+client = &lt;starlette.testclient.TestClient object at 0x7f5c69550b90&gt;
+
+    def test_http_requires_selection_and_binds_exact_confirmed_quote(client):
+&gt;       owner,o,h=booked(client);path='/v1/flights/orders/'+o['order_id']
+                  ^^^^^^^^^^^^^^
+
+tests/test_depth48_flight_changes.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_depth48_flight_changes.py:18: in booked
+    h=auth(client);o,_=create(client,h,party,kind);o=pay(client,h,o)
+      ^^^^^^^^^^^^
+tests/test_sprint3a_flight.py:5: in auth
+    r=client.post('/v1/consumer/auth/register',json={'email':email,'password':'StrongPass123!','display_name':'Flight Traveler'})
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/starlette/testclient.py:556: in post
+    return super().post(
+../../go-venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+../../go-venv/lib/python3.12/site-packages/starlette/testclient.py:455: in request
+    return super().request(
+../../go-venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+../../go-venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+../../go-venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/starlette/testclient.py:354: in handle_request
+    raise exc
+../../go-venv/lib/python3.12/site-packages/starlette/testclient.py:351: in handle_request
+    portal.call(self.app, scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/anyio/from_thread.py:340: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../../go-venv/lib/python3.12/site-packages/anyio/from_thread.py:265: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/fastapi/applications.py:1163: in __call__
+    await super().__call__(scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:284: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:255: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:209: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../../go-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../../go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../../go-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/starlette/routing.py:670: in __call__
+    await self.middleware_stack(scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/fastapi/routing.py:2734: in app
+    await route.handle(scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/fastapi/routing.py:1780: in handle
+    await self.original_router.handle(scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/fastapi/routing.py:2789: in handle
+    await included_router._handle_selected(scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/fastapi/routing.py:1800: in _handle_selected
+    await original_route.handle(scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/fastapi/routing.py:1279: in handle
+    await app(scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/fastapi/routing.py:158: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+../../go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../../go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../../go-venv/lib/python3.12/site-packages/fastapi/routing.py:144: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/fastapi/routing.py:706: in app
+    raw_response = await run_endpoint_function(
+../../go-venv/lib/python3.12/site-packages/fastapi/routing.py:354: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/starlette/concurrency.py:34: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/anyio/to_thread.py:65: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+../../go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:2706: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1100: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/api/routes/consumer_identity.py:52: in register
+    profile=consumer_service.register(body.email,body.password,body.display_name,body.phone)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/consumer/service.py:21: in register
+    user_id=identity_service.create_user(email,password,"CONSUMER",None,["CONSUMER"])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/security/service.py:34: in create_user
+    def create_user(self, username,password,actor_type,supplier_id,roles): return self.ensure_user(username,password,actor_type,supplier_id,roles)
+                                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/security/service.py:33: in ensure_user
+    s.add(row); s.commit(); return row.user_id
+                ^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2035: in commit
+    trans.commit(_to_root=True)
+&lt;string&gt;:2: in commit
+    ???
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+&lt;string&gt;:2: in _prepare_impl
+    ???
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f5c72a5e630&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f5c68536440&gt;
+statement = 'INSERT INTO identity_user (user_id, username, password_hash, actor_type, supplier_id, roles, status, token_version, m..., mfa_enabled_at, sso_provider, sso_subject, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('usr_448f2a1f27884d3eb769e3e1d3cc14a3', 'flight@example.com', 'pbkdf2_sha256$260000$0YsJibQTFFAD34Qz1K4V8g$afpasYtbKvYnKkX5qTAZV9vFJ842s9Pn_vvhJ150Y68', 'CONSUMER', None, '["CONSUMER"]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f5c68549e80&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a readonly database
+E       [SQL: INSERT INTO identity_user (user_id, username, password_hash, actor_type, supplier_id, roles, status, token_version, mfa_secret_ciphertext, mfa_enabled_at, sso_provider, sso_subject, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('usr_448f2a1f27884d3eb769e3e1d3cc14a3', 'flight@example.com', 'pbkdf2_sha256$260000$0YsJibQTFFAD34Qz1K4V8g$afpasYtbKvYnKkX5qTAZV9vFJ842s9Pn_vvhJ150Y68', 'CONSUMER', None, '["CONSUMER"]', 'ACTIVE', 1, None, None, None, None, '2026-09-13 14:13:57.408523', '2026-09-13 14:13:57.408523')]
+E       (Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: OperationalError</failure></testcase></testsuite></testsuites>

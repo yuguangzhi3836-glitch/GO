@@ -61,7 +61,9 @@ class JourneyService:
    shared=s.execute(select(GoJourneyRow).where(GoJourneyRow.journey_id.in_(member_ids))).scalars().all() if member_ids else []
    rows={x.journey_id:x for x in [*owned,*shared]}.values()
    rows=sorted(rows,key=lambda x:(x.starts_at or '',x.created_at))
-   return [self._serialize(s,x) for x in rows]
+   # List and detail must project the same current vertical order state.
+   # Refresh is read-only; retain attachment snapshots as historical evidence.
+   return [self._serialize(s,x,refresh=True) for x in rows]
  def get(self,account_id,journey_id):
   with SessionLocal() as s:
    j=s.get(GoJourneyRow,journey_id)
