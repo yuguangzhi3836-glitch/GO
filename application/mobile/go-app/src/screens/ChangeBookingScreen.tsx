@@ -13,11 +13,16 @@ const errors:Record<string,string>={CHANGE_INPUT_INVALID:'请填写有效日期�
 export default function ChangeBookingScreen({route,navigation,vertical}:any){
   const id=route.params?.orderId||route.params?.order?.order_id;
   const [fields,setFields]=useState<Record<string,string>>({}),[view,setView]=useState<any>(null),[result,setResult]=useState<any>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+  const [legs,setLegs]=useState<any[]>([]);
   const sequence=useRef(0),operation=useRef(false),controller=useRef<ReturnType<typeof createChangeActions>|null>(null);
   useFocusEffect(useCallback(()=>{
     const ticket=++sequence.current,version=sessionVersion();
     const active=createChangeActions(api,()=>ticket===sequence.current&&version===sessionVersion());controller.current=active;
     setFields({});setView(null);setResult(null);setError('');setBusy(false);
+    setLegs([]);
+    if(vertical==='FLIGHT')void api('/v1/flights/orders/'+id).then(response=>{
+      if(ticket===sequence.current&&version===sessionVersion()){setLegs(response.data.itinerary||[]);}
+    }).catch(()=>{if(ticket===sequence.current)setError('暂时无法读取完整行程，请返回订单重试。');});
     return()=>{sequence.current++;active.invalidate();controller.current=null;};
   },[id,vertical]));
   const edit=(key:string,value:string)=>{controller.current?.invalidate();setView(null);setError('');setFields(old=>({...old,[key]:value}));};
@@ -37,10 +42,14 @@ export default function ChangeBookingScreen({route,navigation,vertical}:any){
   return <View style={screen.root}><TopBar title="核对改签方案" onBack={()=>navigation.goBack()}/><ScrollView contentContainerStyle={screen.content}>
     <Text style={screen.sub}>隔离模拟验收，不产生真实扣款或实际旅行凭证。申请受理不等于供应商确认。</Text>
     <Text style={screen.sub}>原订单：{id||'缺失'}</Text>
+    {vertical==='FLIGHT'&&legs.length>1&&<View style={screen.card}><Text style={screen.h2}>选择本次改签的航段</Text>
+      {legs.map((leg:any,i:number)=><Btn key={i} secondary={fields.leg_index!==String(i)} title={`第 ${i+1} 程 · ${leg.origin} → ${leg.destination} · ${leg.departure_date}`} disabled={busy} onPress={()=>edit('leg_index',String(i))}/>)}
+      <Text style={screen.sub}>其余航段保持原安排；本次包含该程全部乘机人。</Text></View>}
     {!busy&&changeFields(vertical).map(key=><Field key={key} label={labels[key]} value={fields[key]||''} onChangeText={v=>edit(key,v)}/>)}
     {!!error&&<Text accessibilityRole="alert" style={screen.sub}>{error}</Text>}
     <Btn title={busy?'正在核对…':'获取改签报价'} disabled={busy||!!result} onPress={()=>{void run(false);}}/>
     {view&&<View style={screen.card}><Text style={screen.h2}>请确认本次方案</Text>
+      {vertical==='FLIGHT'&&view.input.leg_index!==undefined&&<Text style={screen.sub}>改签第 {Number(view.input.leg_index)+1} 程</Text>}
       {changeFields(vertical).map(key=><Text key={key} style={screen.sub}>{labels[key]}：{view.input[key]}</Text>)}
       {changeTerms(vertical,view.quote).map(term=><View key={term.label}><Text style={screen.sub}>{term.label}{term.value?'：'+term.value:''}</Text>{term.minor!==undefined&&<Price minor={term.minor} currency={view.quote.currency}/>}</View>)}
       <Text style={screen.sub}>{changeAmount(vertical,view.quote)<0?'预计原路退款':'本次需补金额'}</Text>

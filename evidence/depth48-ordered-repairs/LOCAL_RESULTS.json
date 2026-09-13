@@ -1,0 +1,56 @@
+{
+  "schema": "go.depth48.source-identity.v1",
+  "application_git_tree": "ad7d1de1190f86ad29d1c6cdafbcedd592e27206",
+  "source_tree_sha256": "8e91fcf25e66478d5dac105c2608a195a98290640f2ecbfcec24fda27f212ac8",
+  "source_files": 1323,
+  "previous_application_git_tree": "e6d3aaad6deca1f0801e8c7e4182f353eca93b91",
+  "parent_source_files_retained": 1314,
+  "changed_paths": 36,
+  "added_paths": 9,
+  "binary_files_retained_by_remote_blob": 4,
+  "local_complete_binary_checkout": false,
+  "pr": 52,
+  "branch": "fix/depth47-credit-and-module-boundaries-20260913",
+  "new_self_contained_parent_built": false,
+  "existing_parent_unchanged": true,
+  "python": {
+    "PASS": 1796,
+    "FAIL": 0,
+    "SKIP": 6
+  },
+  "python_total": 1802,
+  "first_attempt_failures": 1,
+  "first_attempt_failure_reason": "An old terminal-state test used 2026-09-05; corrected to a relative future date and reran all 14 affected-file cases. Application integrity guards were retained.",
+  "frontend": {
+    "passed": 270,
+    "failed": 0
+  },
+  "native_typescript": "PASS",
+  "sqlite_migration": {
+    "passed": 11,
+    "head": "0133_flight_change_plan",
+    "data_loss_downgrade": "REFUSED"
+  },
+  "same_order_api": {
+    "verticals": 6,
+    "actor_details": 18,
+    "refresh": 18,
+    "relogin": 18,
+    "independent_sql": "PASS",
+    "scenario": "PAID_THEN_REFUNDED"
+  },
+  "ledger_mutation_methods": 7,
+  "local_browser": {
+    "result": "BLOCKED",
+    "error": "ERR_BLOCKED_BY_CLIENT",
+    "target": "http://127.0.0.1:4189/consumer/",
+    "ui_scenarios_executed": 0
+  },
+  "postgres": "NOT_AVAILABLE_LOCALLY_SIX_TESTS_SKIPPED",
+  "native_device": "NOT_EXECUTED",
+  "cryptography": "Runtime-owned 46.0.0; restored local wheel binary was truncated. Frozen dependency CI still required.",
+  "new_parent": "NOT_BUILT",
+  "hk": "NOT_ACCESSED",
+  "production": "HOLD",
+  "evidence_scope": "Local Python 3.12.14 / SQLite and Node; not GitHub CI PASS or full browser acceptance"
+}

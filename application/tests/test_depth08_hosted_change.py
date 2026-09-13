@@ -39,7 +39,7 @@ def test_change_high_supplement_low_no_refund_and_immutable_original_authorizati
         assert len(held)==2 and all(s.get(Inventory,n.inventory_day_id).capacity_available==7 for n in held)
         updated=s.get(Reservation,r['hosted_reservation_id']);assert updated.amount_minor==expected
     # Fee cancellation now binds the replacement hold; it never recaptures the old root.
-    cancelled=cancel(r,account,quote(r,account));assert cancelled['authorization_released_minor']+cancelled['fee_captured_minor']==expected
+    cancelled=cancel(r,account,quote(r,account));assert cancelled['authorization_released_minor']+cancelled['fee_captured_minor']+cancelled['cash_forfeiture_minor']==expected
     assert summary(r)['held_minor']==0
 
 

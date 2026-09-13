@@ -1,4 +1,4 @@
-name: DEPTH47 module boundaries
+name: DEPTH48 ordered repair acceptance
 on:
   pull_request:
     branches: [main]
@@ -38,6 +38,8 @@ jobs:
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
           npm install --no-save --ignore-scripts playwright@1.55.1
           npx playwright install --with-deps chromium
+      - name: Three actor API refresh relogin and independent SQL audit
+        run: python -B ci/journey-v2/same_order_api.py journey-evidence/same-order-api journey-evidence/source-binding.json
       - name: Consumer supplier administrator same-order journeys
         run: python -B ci/journey-v2/run.py
       - name: Hash public evidence

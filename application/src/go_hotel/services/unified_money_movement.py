@@ -56,6 +56,8 @@ class UnifiedMoneyMovementService:
   if parent_id:
    parent=next((x for x in movements if x.money_movement_id==parent_id),None)
    if not parent:raise ValueError('PARENT_MOVEMENT_MUST_SHARE_ROOT')
+   from go_hotel.services.hosted_fare_value import is_forfeiture
+   if typ in {'REFUND','COMPENSATION'} and is_forfeiture(parent):raise ValueError('HOSTED_CHANGE_FORFEITURE_NOT_REFUNDABLE')
    allowed={'CAPTURE':{'AUTHORIZATION'},'REFUND':{'CAPTURE'},'COMPENSATION':{'CAPTURE'},'PAYOUT':{'CAPTURE'},'RELEASE':{'AUTHORIZATION'}}
    if typ in allowed and parent.movement_type not in allowed[typ]:raise ValueError('INVALID_MONEY_MOVEMENT_PARENT_TYPE')
    if typ in allowed and parent.state!='CONFIRMED':raise ValueError('CONFIRMED_PARENT_MOVEMENT_REQUIRED')

@@ -32,9 +32,11 @@ Do not infer product generation from a Pull Request number.
 
 ## Current product working baseline — refreshed 2026-09-13
 
+本轮源码集成记录为 [PR52](https://github.com/yuguangzhi3836-glitch/GO/pull/52)，已纳入 DEPTH47 额度期限、DEPTH48 酒店金额与多航段改签、PR53 独立资金审计。当前应用树为 `ad7d1de1190f86ad29d1c6cdafbcedd592e27206`，1323 文件。本地 1796 项后端通过／6 项 PostgreSQL 跳过、270 项前端通过；六模块同单三角色接口、刷新／重登及独立 SQL 通过。详见 [本轮修复和明确边界](docs/canonical-baseline/DEPTH48_ORDERED_REPAIRS.md)。完整三端可见页面、固定运行时 CI 及新父包仍待完成。下列 DEPTH46 身份只描述已生成的历史父包，不代表本轮源码已进入该 ZIP。
+
 PR47 was merged as `1c9847c82725b888d239686572f1f44b6dafc2cc` after isolated checks. DEPTH46 is the current independently restorable parent. DEPTH47 source repairs continue from that main commit; see [current module work](docs/canonical-baseline/DEPTH47_MODULE_BOUNDARIES.md) for its separate source identity and evidence.
 
-- Accepted application source: `a09a32e8cc6da10785e8bcf6be025013aec50931`.
+- DEPTH46 packaged application source: `a09a32e8cc6da10785e8bcf6be025013aec50931`.
 - Application Git tree: `365b848d419ca5517b2cf711c271694bde346e33`; 1311 files.
 - Source SHA256 tree: `0b2c140ae8edf532704b022d345da8892e7863947f4ff5b34e3a0a40a7000077`.
 - Business rules: hotel date changes have zero change fee, a fixed 365-day period from original booking, higher-price differences payable and lower-price differences forfeited. Cancellation uses the accepted refund terms.

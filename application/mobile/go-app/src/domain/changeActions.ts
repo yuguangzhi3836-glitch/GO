@@ -31,6 +31,10 @@ export function validateChangeFields(vertical:string, fields:ChangeFields) {
     }
     out[key]=value;
   }
+  if(vertical==='FLIGHT'&&fields.leg_index!==undefined){
+    if(!/^[0-5]$/.test(fields.leg_index))throw Error('CHANGE_INPUT_INVALID');
+    out.leg_index=fields.leg_index;
+  }
   if(vertical==='HOTEL'&&out.new_check_out<=out.new_check_in)throw Error('CHANGE_INPUT_INVALID');
   if(vertical==='RENTAL'&&Date.parse(out.return_at)<=Date.parse(out.pickup_at))throw Error('CHANGE_INPUT_INVALID');
   return out;
@@ -61,14 +65,16 @@ export function createChangeActions(request:Request,current:()=>boolean=()=>true
       if(!['CONFIRMED','TICKETED'].includes(order.status))throw Error('ORDER_NOT_CHANGEABLE');
       await capability();check(r);
       const c=config[ref.vertical as keyof typeof config];
-      const q=(await request(c.base+ref.orderId+(ref.vertical==='RENTAL'?'/change-quotes':'/change-quote'),{method:'POST',body:JSON.stringify(input)})).data;check(r);
+      if(ref.vertical==='FLIGHT'&&(order.itinerary||[]).length>1&&input.leg_index===undefined)throw Error('CHANGE_INPUT_INVALID');
+      const payload=ref.vertical==='FLIGHT'&&input.leg_index!==undefined?{...input,leg_index:Number(input.leg_index)}:input;
+      const q=(await request(c.base+ref.orderId+(ref.vertical==='RENTAL'?'/change-quotes':'/change-quote'),{method:'POST',body:JSON.stringify(payload)})).data;check(r);
       const qid=q?.change_quote_id||q?.quote_id;
       if(q?.order_id!==ref.orderId||typeof qid!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(qid)||!(expires(q.expires_at)>now()))throw Error('CHANGE_QUOTE_UNVERIFIED');
       for(const key of Object.keys(input)){
         const returned=ref.vertical==='RENTAL'?'new_'+key:key;
-        if(q[returned]!==input[key])throw Error('CHANGE_QUOTE_UNVERIFIED');
+        if((key==='leg_index'?String(q[returned]):q[returned])!==input[key])throw Error('CHANGE_QUOTE_UNVERIFIED');
       }
-      if(ref.vertical==='HOTEL'&&!/^[0-9a-f]{64}$/.test(q.quote_hash))throw Error('CHANGE_QUOTE_UNVERIFIED');
+      if(['HOTEL','FLIGHT'].includes(ref.vertical)&&!/^[0-9a-f]{64}$/.test(q.quote_hash))throw Error('CHANGE_QUOTE_UNVERIFIED');
       changeAmount(ref.vertical,q);
       changeTerms(ref.vertical,q);
       accepted={ref:{...ref},input:{...input},quote:JSON.parse(JSON.stringify(q)),qid,revision:r};
@@ -88,6 +94,7 @@ export function createChangeActions(request:Request,current:()=>boolean=()=>true
       if(!(expires(a.quote.expires_at)>now()))throw Error('CHANGE_QUOTE_EXPIRED');
       const q=a.quote,c=config[ref.vertical as keyof typeof config];
       const body=ref.vertical==='HOTEL'?{change_quote_id:a.qid,quote_hash:q.quote_hash,confirmed:true}:
+        ref.vertical==='FLIGHT'?{quote_hash:q.quote_hash,expected_total_due_minor:changeAmount(ref.vertical,q),currency:q.currency,confirmed:true}:
         ref.vertical==='RENTAL'?{expected_difference_minor:changeAmount(ref.vertical,q),currency:q.currency,mode:'CONTRACT_SIMULATOR'}:undefined;
       const path=c.base+ref.orderId+(ref.vertical==='HOTEL'?'/change':ref.vertical==='RENTAL'?'/changes/'+a.qid:'/execute-change/'+a.qid);
       // Consume consent before sending; timeouts must never trigger an automatic retry.

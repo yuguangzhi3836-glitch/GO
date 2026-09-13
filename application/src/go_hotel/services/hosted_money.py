@@ -45,6 +45,11 @@ def movements(s,a):
     return list(s.scalars(select(Movement).where(Movement.root_payment_intent_id.in_(ids)).order_by(Movement.created_at,Movement.money_movement_id))) if ids else []
 
 
+def refundable_captures(s,a):
+    from go_hotel.services.hosted_fare_value import is_forfeiture
+    return [m for m in movements(s,a) if m.movement_type=='CAPTURE' and m.state=='CONFIRMED' and not is_forfeiture(m)]
+
+
 def active_movements(s,a):
     current=root(s,a)
     return [m for m in movements(s,a) if current and m.root_payment_intent_id==current.payment_intent_id]
@@ -124,7 +129,8 @@ def fulfillment(s,r,a):
     if s.scalar(select(Dispute).where(Dispute.stay_lifecycle_id==guest.stay_lifecycle_id,Dispute.state=='OPEN_SETTLEMENT_FROZEN')):
         raise ValueError('OPEN_FULFILLMENT_DISPUTE')
     evidence=s.scalar(select(Fulfillment).where(Fulfillment.stay_lifecycle_id==guest.stay_lifecycle_id,Fulfillment.state=='DUAL_CONFIRMED'))
-    if not evidence or type(evidence.fulfilled_amount_minor) is not int or not 0<=evidence.fulfilled_amount_minor<=r.amount_minor:
+    from go_hotel.services.hosted_fare_value import basis
+    if not evidence or type(evidence.fulfilled_amount_minor) is not int or not 0<=evidence.fulfilled_amount_minor<=basis(s,r)['current_room_value_minor']:
         raise ValueError('VALID_DUAL_FULFILLMENT_EVIDENCE_REQUIRED')
     return guest,evidence
 
@@ -136,13 +142,16 @@ def settle(s,r,stay,a):
     guest,evidence=fulfillment(s,r,a)
     auth=next((m for m in active_movements(s,a) if m.movement_type=='AUTHORIZATION' and m.state=='CONFIRMED'),None)
     from go_hotel.services.hosted_credit_value import prepaid,settle_allocation
-    amount=max(0,evidence.fulfilled_amount_minor-prepaid(s,r.hosted_reservation_id))
+    from go_hotel.services.hosted_fare_value import basis,capture_forfeiture
+    value=basis(s,r)
+    amount=max(0,evidence.fulfilled_amount_minor-(prepaid(s,r.hosted_reservation_id)-value['prepaid_forfeiture_minor']))
     if amount and not auth:raise ValueError('CONFIRMED_AUTHORIZATION_REQUIRED')
     refs=[evidence.hotel_evidence_reference,evidence.guest_checkout_reference]
     if amount:money.create_in_session(s,payment.payment_intent_id,{'movement_type':'CAPTURE','amount_minor':amount,
         'parent_movement_id':auth.money_movement_id,'mode':'CONTRACT_SIMULATOR','evidence':refs},
         'direct-capture:'+a.authorization_id,'hosted-money')
-    remaining=s.get(Intent,payment.payment_intent_id).amount_minor-amount
+    capture_forfeiture(s,r,a,refs)
+    remaining=s.get(Intent,payment.payment_intent_id).amount_minor-amount-value['cash_forfeiture_minor']
     if remaining:money.create_in_session(s,payment.payment_intent_id,{'movement_type':'RELEASE','amount_minor':remaining,
         'parent_movement_id':auth.money_movement_id,'mode':'CONTRACT_SIMULATOR','evidence':refs},
         'direct-unfulfilled-release:'+a.authorization_id,'hosted-money')
@@ -167,7 +176,8 @@ def summary(s,r):
     from go_hotel.db.models import HostedCreditRefundPlanRow
     plans=s.scalars(select(HostedCreditRefundPlanRow).where(HostedCreditRefundPlanRow.hosted_reservation_id==r.hosted_reservation_id)).all()
     credit_refunded=sum(x['amount_minor'] for p in plans if (e:=s.get(Refund,p.refund_eligibility_id)) and e.decision=='REFUND_CONFIRMED_SIMULATION' for x in p.plan_json if x['kind']=='CREDIT')
-    return {**totals,'credit_refund_minor':credit_refunded,'total_refund_minor':totals['refund_minor']+credit_refunded,'credit':credit,'prepaid_credit_minor':credit['prepaid_minor'],'payment_intent_id':payment.payment_intent_id,'held_minor':totals['authorization_minor']-totals['capture_minor']-totals['release_minor'],
+    from go_hotel.services.hosted_fare_value import basis
+    return {**totals,**basis(s,r),'refundable_capture_minor':sum(m.amount_minor for m in refundable_captures(s,a)),'credit_refund_minor':credit_refunded,'total_refund_minor':totals['refund_minor']+credit_refunded,'credit':credit,'prepaid_credit_minor':credit['prepaid_minor'],'payment_intent_id':payment.payment_intent_id,'held_minor':totals['authorization_minor']-totals['capture_minor']-totals['release_minor'],
         'refund_state':state,'refund_cycle_count':len(refund_rows),'reconciliation_required':bool(a.external_invoked or a.state=='UNKNOWN_EXTERNAL_STATE' or any(m.state!='CONFIRMED' for m in rows) or reconciliation_required(s,r.hosted_reservation_id)),'movements':[{'money_movement_id':m.money_movement_id,'type':m.movement_type,
             'amount_minor':m.amount_minor,'state':m.state,'parent_movement_id':m.parent_movement_id} for m in rows],
         'data_mode':'SIMULATION','external_live':False}
@@ -221,7 +231,7 @@ def execute_refund(eligibility_id):
         if not payment:raise ValueError('REAL_ALIPAY_REFUND_EXECUTOR_NOT_CONFIGURED')
         require_known(s,a)
         capture=s.get(Movement,eligibility.original_payment_reference) if eligibility.original_payment_reference else None
-        if not capture or capture.root_payment_intent_id!=payment.payment_intent_id or capture.movement_type!='CAPTURE' or capture.state!='CONFIRMED':
+        if not capture or capture.root_payment_intent_id!=payment.payment_intent_id or capture not in refundable_captures(s,a):
             raise ValueError('ORIGINAL_CONFIRMED_CAPTURE_REQUIRED')
         if decision.state!='APPROVED_CONTRACT_ONLY' or not decision.checker_id or decision.checker_id==decision.requester_id:
             raise ValueError('APPROVED_INDEPENDENT_REFUND_DECISION_REQUIRED')

@@ -75,7 +75,7 @@ class Service:
    if d.requester_id==actor:raise ValueError('MAKER_CHECKER_SEPARATION_REQUIRED')
    c=s.get(PostStayDisputeCaseRow,d.dispute_case_id);stay=s.get(GuestStayLifecycleRow,c.stay_lifecycle_id);f=s.scalar(select(StayFulfillmentEvidenceRow).where(StayFulfillmentEvidenceRow.stay_lifecycle_id==stay.stay_lifecycle_id));a=s.scalar(select(AlipayAuthorizationRow).where(AlipayAuthorizationRow.hosted_reservation_id==stay.hosted_reservation_id));caps=[x for x in (f.fulfilled_amount_minor if f else None,a.amount_minor if a else None) if x is not None];cap=min(caps) if caps else 0
    if hosted_money.root(s,a):
-    captures=sum(m.amount_minor for m in hosted_money.movements(s,a) if m.movement_type=='CAPTURE' and m.state=='CONFIRMED')
+    captures=sum(m.amount_minor for m in hosted_money.refundable_captures(s,a))
     from go_hotel.db.models import HostedDirectReservationRow
     from go_hotel.services.hosted_credit_value import refund_basis
     reservation=s.get(HostedDirectReservationRow,stay.hosted_reservation_id)
@@ -104,7 +104,7 @@ class Service:
    case=s.get(PostStayDisputeCaseRow,d.dispute_case_id);guest=s.get(GuestStayLifecycleRow,case.stay_lifecycle_id)
    a=s.scalar(select(AlipayAuthorizationRow).where(AlipayAuthorizationRow.hosted_reservation_id==guest.hosted_reservation_id))
    if hosted_money.root(s,a):
-    capture=next((m for m in hosted_money.movements(s,a) if m.movement_type=='CAPTURE' and m.state=='CONFIRMED'),None)
+    capture=next(iter(hosted_money.refundable_captures(s,a)),None)
     if d.refund_amount_minor and not capture:raise ValueError('ORIGINAL_CONFIRMED_CAPTURE_REQUIRED')
     r.original_payment_reference=capture.money_movement_id if capture else None;r.blockers_json=[]
    s.commit();return out(r)

@@ -139,7 +139,7 @@ def test_nonrefundable_leg_cannot_be_refunded_and_multi_change_is_not_silently_f
     assert client.get(f'/v1/flights/orders/{oid}/refund-quote',headers=h).status_code==422
     assert client.post(f'/v1/flights/orders/{oid}/refund',headers=h).status_code==422
     r=client.post(f'/v1/flights/orders/{oid}/change-quote',headers=h,json={'new_departure_date':day(12)})
-    assert r.status_code==422 and 'MULTI_LEG_CHANGE_NOT_IMPLEMENTED' in r.text
+    assert r.status_code==409 and 'FLIGHT_CHANGE_SEGMENT_SELECTION_REQUIRED' in r.text
     detail=client.get(f'/v1/flights/orders/{oid}',headers=h).json()['data']
     assert detail['status']=='TICKETED' and detail['itinerary']==offer['segments']
 

@@ -8,7 +8,7 @@ from go_hotel.db.models import (
     HostedDirectRoomOfferRow as Offer,HostedDirectHotelRow as Hotel,HostedDirectRateVariantRow as Variant,
     HostedInventoryDayRow as Inventory,HostedRateCalendarDayRow as Rate,GuestStayLifecycleRow as Guest,
     AlipayAuthorizationRow as Authorization,HostedFareRuleVersionRow as Rule)
-from go_hotel.services import hosted_credit_value as value,hosted_fare_rules as fare,hosted_money as funds,hotel_change_policy
+from go_hotel.services import hosted_credit_value as value,hosted_fare_rules as fare,hosted_money as funds,hotel_change_policy,hosted_fare_value
 from go_hotel.services.hosted_direct_booking import ident,out
 from go_hotel.services.hosted_reservation_operations import dates,aware,hosted_reservation_operations_service as ops
 from go_hotel.services.alipay_safeguarded_settlement import transaction
@@ -34,7 +34,9 @@ def conversion_quote(rid,account):
         q=Quote(quote_id=ident('hfq'),hosted_reservation_id=rid,action='CONVERT_TO_CREDIT',
             order_revision=fare.revision(s,r,stay,guest,a,snap),quote_json={},quote_hash='',state='QUOTED',result_json={},
             created_at=timestamp,expires_at=min(timestamp+timedelta(minutes=10),datetime.fromisoformat(policy['credit_expires_at']),fare.check_in_at(r,snap.rules_json)+timedelta(hours=snap.rules_json['no_show_grace_hours'])))
-        payload={'action':'CONVERT_TO_CREDIT','reservation_id':rid,'retained_value_minor':r.amount_minor,
+        retained=hosted_fare_value.basis(s,r)
+        payload={'action':'CONVERT_TO_CREDIT','reservation_id':rid,'retained_value_minor':retained['current_room_value_minor'],
+            **retained,
             'funding_capture_minor':r.amount_minor,'cancellation_fee_minor':0,'change_fee_minor':0,
             'cash_refund_minor':0,'currency':r.currency,'scope':'PROPERTY_ONLY','hotel_id':s.get(Offer,r.hosted_offer_id).hosted_hotel_id,
             'validity_days':snap.rules_json['stay_credit_days'],'credit_terms':value.terms(snap),
@@ -55,10 +57,13 @@ def convert(rid,account,qid,expected_value,currency):
         if now()>=datetime.fromisoformat(policy['credit_expires_at']):raise ValueError('HOTEL_CHANGE_ONE_YEAR_VALIDITY_EXCEEDED')
         if q.order_revision!=fare.revision(s,r,stay,guest,a,snap):raise ValueError('FARE_ORDER_CHANGED_REQUOTE_REQUIRED')
         if s.scalar(select(Credit).where(Credit.original_reservation_id==rid)):raise ValueError('ORDER_ALREADY_CONVERTED_TO_CREDIT')
+        retained=hosted_fare_value.basis(s,r)
+        if any(q.quote_json.get(k)!=v for k,v in retained.items()):raise ValueError('FARE_VALUE_POLICY_REQUOTE_REQUIRED')
         payment=funds.root(s,a);auth=next(x for x in funds.active_movements(s,a) if x.movement_type=='AUTHORIZATION' and x.state=='CONFIRMED')
         refs=['credit-conversion-quote://'+qid,'customer-retained-value-consent://'+account+'/'+qid,'hotel-fare-rule://'+snap.rule_version_id]
         capture=money.create_in_session(s,payment.payment_intent_id,{'movement_type':'CAPTURE','amount_minor':expected_value,
             'parent_movement_id':auth.money_movement_id,'mode':'CONTRACT_SIMULATOR','evidence':refs},'direct-credit-funding:'+qid,'hosted-credit')
+        hosted_fare_value.capture_forfeiture(s,r,a,refs)
         c=Credit(credit_id=ident('hsc'),original_reservation_id=rid,account_id=account,
             hosted_hotel_id=q.quote_json['hotel_id'],currency=currency,source_capture_id=capture['money_movement_id'],
             issued_minor=expected_value,available_minor=0,state='ACTIVE',ledger_head_hash=None,
@@ -72,7 +77,7 @@ def convert(rid,account,qid,expected_value,currency):
                 assigned_room_reference=None,planned_check_out=r.check_out,actual_check_in_at=None,actual_check_out_at=None,updated_at=now());s.add(guest)
         ops._release(s,rid)
         result={'reservation_id':rid,'quote_id':qid,'credit':value.public(c),'state':'CONVERTED_TO_CREDIT',
-            'funding_capture_minor':expected_value,'cash_refund_minor':0,'currency':currency,'data_mode':'SIMULATION','external_live':False}
+            'funding_capture_minor':r.amount_minor,**retained,'cash_refund_minor':0,'currency':currency,'data_mode':'SIMULATION','external_live':False}
         q.state='EXECUTED';q.result_json=result
         ops._event(s,rid,'STAY_CREDIT_CREATED',account,{'credit_id':c.credit_id,'quote_id':qid,'source_capture_id':c.source_capture_id,'rule_hash':snap.rule_hash})
         ops._notify(s,rid,'GUEST','STAY_CREDIT_CREATED',result);return result

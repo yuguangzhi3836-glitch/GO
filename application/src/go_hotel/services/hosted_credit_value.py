@@ -125,9 +125,13 @@ def prepaid(s,rid):
 def summary(s,rid):
     a=allocation(s,rid)
     source=s.scalar(select(Credit).where(Credit.original_reservation_id==rid))
+    from go_hotel.services.hosted_fare_value import basis
+    lost=basis(s,s.get(Reservation,rid))['prepaid_forfeiture_minor'] if a else 0
     return {'issued_credit':public(source) if source else None,
         'applied_credit':{'credit_id':a.credit_id,'applied_minor':a.applied_minor,'forfeited_minor':a.forfeited_minor,
-            'fulfilled_minor':a.fulfilled_minor,'fee_consumed_minor':a.fee_consumed_minor,'restored_minor':a.restored_minor,'state':a.state,
+            'fulfilled_minor':max(0,a.fulfilled_minor-(lost if a.state=='SETTLED' else 0)),
+            'fee_consumed_minor':max(0,a.fee_consumed_minor-(lost if a.state=='CANCELLED' else 0)),
+            'change_forfeited_minor':lost,'retained_allocation_minor':prepaid(s,rid),'restored_minor':a.restored_minor,'state':a.state,
             'expires_at':aware(s.get(Credit,a.credit_id).expires_at).isoformat()} if a else None,
         'prepaid_minor':prepaid(s,rid)}
 
@@ -135,16 +139,21 @@ def summary(s,rid):
 def refund_basis(s,r,cash_captured):
     c=s.scalar(select(Credit).where(Credit.original_reservation_id==r.hosted_reservation_id))
     if c:return c.available_minor if c.state=='ACTIVE' and aware(c.expires_at)>now() else 0
-    return cash_captured+prepaid(s,r.hosted_reservation_id)
+    from go_hotel.services.hosted_fare_value import basis
+    return cash_captured+max(0,prepaid(s,r.hosted_reservation_id)-basis(s,r)['prepaid_forfeiture_minor'])
 
 
 def return_unused(s,r,fee,actor,reference):
     a=allocation(s,r.hosted_reservation_id)
-    if not a:return {'prepaid_fee_minor':0,'restored_credit_minor':0,'expired_credit_minor':0}
+    if not a:return {'prepaid_fee_minor':0,'prepaid_forfeiture_minor':0,'restored_credit_minor':0,'expired_credit_minor':0}
     if a.state not in {'ACTIVE','SETTLED'}:raise ValueError('CREDIT_ALLOCATION_ALREADY_CLOSED')
-    c=checked(s,a.credit_id);consumed=min(fee,a.applied_minor);remaining=a.applied_minor-consumed
+    from go_hotel.services.hosted_fare_value import basis
+    forfeited=basis(s,r)['prepaid_forfeiture_minor']
+    c=checked(s,a.credit_id);fee_paid=min(fee,a.applied_minor-forfeited);consumed=fee_paid+forfeited;remaining=a.applied_minor-consumed
     a.fee_consumed_minor=consumed;a.restored_minor=remaining;a.state='CANCELLED'
-    if consumed:event(s,c,'FARE_FEE_CONSUMED',0,r.hosted_reservation_id,[reference,{'fee_minor':consumed}],actor)
+    # The historical storage column holds retained allocation value; public fees exclude forfeiture.
+    if fee_paid:event(s,c,'FARE_FEE_CONSUMED',0,r.hosted_reservation_id,[reference,{'fee_minor':fee_paid}],actor)
+    if forfeited:event(s,c,'CHANGE_FORFEITURE_CONSUMED',0,r.hosted_reservation_id,[reference,{'forfeited_minor':forfeited}],actor)
     if remaining:event(s,c,'UNUSED_VALUE_RESTORED',remaining,r.hosted_reservation_id,[reference],actor)
     expired=0
     if aware(c.expires_at)<=now():
@@ -152,7 +161,7 @@ def return_unused(s,r,fee,actor,reference):
         if expired:event(s,c,'EXPIRED',-expired,None,[reference],actor)
         c.state='EXPIRED'
     elif c.state!='FROZEN_REFUND':c.state='ACTIVE' if c.available_minor else 'ALLOCATED'
-    return {'prepaid_fee_minor':consumed,'restored_credit_minor':remaining if not expired else 0,'expired_credit_minor':expired}
+    return {'prepaid_fee_minor':fee_paid,'prepaid_forfeiture_minor':forfeited,'restored_credit_minor':remaining if not expired else 0,'expired_credit_minor':expired}
 
 
 def settle_allocation(s,r,fulfilled,actor,evidence):
@@ -160,9 +169,12 @@ def settle_allocation(s,r,fulfilled,actor,evidence):
     if not a:return
     if a.state=='SETTLED':return
     if a.state!='ACTIVE':raise ValueError('CREDIT_ALLOCATION_ALREADY_CLOSED')
-    c=checked(s,a.credit_id);consumed=min(fulfilled,a.applied_minor);remaining=a.applied_minor-consumed
+    from go_hotel.services.hosted_fare_value import basis
+    forfeited=basis(s,r)['prepaid_forfeiture_minor']
+    c=checked(s,a.credit_id);fulfilled_paid=min(fulfilled,a.applied_minor-forfeited);consumed=fulfilled_paid+forfeited;remaining=a.applied_minor-consumed
     a.fulfilled_minor=consumed;a.restored_minor=remaining;a.state='SETTLED'
-    event(s,c,'FULFILLMENT_CONSUMED',0,r.hosted_reservation_id,[*evidence,{'fulfilled_minor':consumed}],actor)
+    event(s,c,'FULFILLMENT_CONSUMED',0,r.hosted_reservation_id,[*evidence,{'fulfilled_minor':fulfilled_paid}],actor)
+    if forfeited:event(s,c,'CHANGE_FORFEITURE_CONSUMED',0,r.hosted_reservation_id,[*evidence,{'forfeited_minor':forfeited}],actor)
     if remaining:event(s,c,'UNUSED_FULFILLMENT_RESTORED',remaining,r.hosted_reservation_id,evidence,actor)
     if aware(c.expires_at)<=now():
         if c.available_minor:event(s,c,'EXPIRED',-c.available_minor,None,evidence,actor)
