@@ -50,7 +50,19 @@ The new targeted tests first ran against the unchanged baseline: 10 failed,
 1 passed. They demonstrate event-loop blocking, unbounded metric history,
 whole-registry copying and missing denial correlation. After the repair all
 11 passed. Existing authentication/session/CSRF/MFA/observability regression:
-33 passed. Full local backend regression is recorded separately when complete.
+33 passed. Full local backend regression with the canonical CI dependency lock:
+1807 passed, 6 PostgreSQL-only tests skipped locally, 270 warnings, 804.91 seconds.
+The separate PostgreSQL 18.4 capacity CI passed all 50 selected checks, including
+those six concurrency checks. Initial source commit `08f6b691680783dd53b856386a54603ca27f5190`
+also passed the isolated runtime-image build, startup health and migration-head checks
+in [run 34759359218](https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34759359218).
+
+Initial existing retention/ordered-repair workflows stopped at their strict source
+allowlist because the new capacity test was not registered (runs 34759359171 and
+34759359107). This follow-up registers exactly the two modified modules and one
+new test, including their blob/SHA256 values, and the resulting application tree.
+Validators, original provenance records and gate thresholds are unchanged.
+Results of the rerun are recorded on the PR; initial failures remain available.
 
 `ci/capacity/compare.py` loads the two exact baseline Git blobs and candidate
 files, then compares the real middleware with an injected 3 ms synchronous I/O

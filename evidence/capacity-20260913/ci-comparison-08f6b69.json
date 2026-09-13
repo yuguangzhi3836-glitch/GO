@@ -1,0 +1,70 @@
+{
+  "run_id": 34759359218,
+  "job_id": 103729286889,
+  "source_commit": "08f6b691680783dd53b856386a54603ca27f5190",
+  "result": {
+    "scope": "SYNTHETIC_ASGI_MIDDLEWARE_NOT_HK_CAPACITY",
+    "base_commit": "286e294d92df4b7d1c0073116a8e628734abec6c",
+    "candidate_files_sha256": {
+      "application/src/go_hotel/main.py": "9b51b695c9bd4d11f4f9d6ee13db62ffe69e536e0d08e9f66cda4edee01a26b2",
+      "application/src/go_hotel/observability/metrics.py": "254694230c1932ab02c3754035848076821d884f3dc2a4d856e5a8e3d08e83fb"
+    },
+    "experiments": {
+      "baseline": {
+        "requests": [
+          {
+            "simultaneous_probe_requests": 500,
+            "injected_sync_io_ms": 3,
+            "elapsed_seconds": 2.2026063890000103,
+            "p95_ms": 2072.39483299999,
+            "max_event_loop_lag_ms": 2003.7909319999967,
+            "http_errors": 0
+          },
+          {
+            "simultaneous_probe_requests": 1000,
+            "injected_sync_io_ms": 3,
+            "elapsed_seconds": 4.576707204000002,
+            "p95_ms": 4311.081519000012,
+            "max_event_loop_lag_ms": 3742.3780010000014,
+            "http_errors": 0
+          }
+        ],
+        "metrics": {
+          "observations": 200000,
+          "retained_samples": 200000,
+          "traced_retained_bytes": 6422368,
+          "traced_peak_bytes": 6423008,
+          "scrape_ms": 16.507287999999676
+        }
+      },
+      "candidate": {
+        "requests": [
+          {
+            "simultaneous_probe_requests": 500,
+            "injected_sync_io_ms": 3,
+            "elapsed_seconds": 0.48548766799999044,
+            "p95_ms": 373.82299000000785,
+            "max_event_loop_lag_ms": 113.51263899998798,
+            "http_errors": 0
+          },
+          {
+            "simultaneous_probe_requests": 1000,
+            "injected_sync_io_ms": 3,
+            "elapsed_seconds": 1.5627110209999984,
+            "p95_ms": 1060.4701230000019,
+            "max_event_loop_lag_ms": 515.7893660000025,
+            "http_errors": 0
+          }
+        ],
+        "metrics": {
+          "observations": 200000,
+          "retained_samples": 4096,
+          "traced_retained_bytes": 131744,
+          "traced_peak_bytes": 132376,
+          "scrape_ms": 0.1523480000003019
+        }
+      }
+    },
+    "live_hk_1000_gate": "NOT_EXECUTED"
+  }
+}
