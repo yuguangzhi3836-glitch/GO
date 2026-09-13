@@ -9,7 +9,8 @@ Only the admin operations route and shared admin renderer change.
 
 Contents: complete source/runtime archive, Docker-loadable business image,
 source fingerprints, image inspect/dependency snapshot, boot smoke result,
-image-save/load restoration proof and SHA256/ZIP readback. Build success is not
+image-save/load restoration proof, SQL/HTTP regressions executed inside the
+actual image, and SHA256/ZIP readback. Build success is not
 deployment success. Current HK runtime pointer is unchanged until signed live
 verification provides the new image/host/schema/time binding.
 

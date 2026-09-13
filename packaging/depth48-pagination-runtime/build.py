@@ -71,6 +71,13 @@ smoke_raw=run(['docker','run','--rm','--network','none','--tmpfs','/tmp','--entr
 (OUT/'image-smoke.log').write_text(smoke_raw)
 smoke_result=json.loads(smoke_raw.strip().splitlines()[-1]);assert smoke_result['result']=='PASS'
 save('image-smoke.json',smoke_result)
+# Test the actual built image and resolved dependency set, not the host Python.
+container_tests=run(['docker','run','--rm','--network','none','--tmpfs','/tmp',
+    '-e','PYTHONDONTWRITEBYTECODE=1','-v',str(ROOT/'packaging/depth48-pagination-runtime')+':/verify:ro',
+    '-v',str(OUT)+':/evidence','--entrypoint','python',TAG,'-B','-m','pytest','-q',
+    '-p','no:cacheprovider','/verify/test_pagination.py','--junitxml=/evidence/image-pagination-junit.xml'])
+(OUT/'image-pagination-tests.log').write_text(container_tests)
+
 image_tar=OUT/'business-image.tar.gz'
 with image_tar.open('wb') as f:
     p=subprocess.Popen(['docker','save',TAG],stdout=subprocess.PIPE)
@@ -89,7 +96,7 @@ source_tar=OUT/'source-and-runtime.tar.gz'
 with source_tar.open('wb') as target:subprocess.run(['git','archive','--format=tar.gz','HEAD','application','deploy/hk-staging'],cwd=ROOT,stdout=target,check=True)
 with tarfile.open(source_tar) as t:
     for rel,expected in fp.items():assert hashlib.sha256(t.extractfile('application/'+rel).read()).hexdigest()==expected,rel
-manifest={**BINDING,'build_commit':COMMIT,'built_at':datetime.now(timezone.utc).isoformat(),'run_id':os.environ.get('GITHUB_RUN_ID'),'run_attempt':os.environ.get('GITHUB_RUN_ATTEMPT'),'image_tag':TAG,'image_id':image_id,'image_archive_sha256':digest(image_tar),'source_archive_sha256':digest(source_tar),'build_restore_smoke':'PASS','environment':'DISPOSABLE_GITHUB_RUNNER','tested_source_commit':'d8aa02fff7d1391132d9eee5daadcb3b90d04392','browser_run':34755489869,'release_approved':False,'deployed':False,'hong_kong':'NOT_ACCESSED','production':'NOT_ACCESSED','migration_required':False,'schema_head':'0133_flight_change_plan','deployment_hold':['Exact-source browser acceptance must pass','Fresh live drift and current DEPTH48 previous-state record','CANARY and signed DEPLOY/VERIFY through existing Command Center','Deploy channel usable/enabled evidence unavailable in current source scope'],'rollback_policy':'Preserve current live DEPTH48 image and durable state. Never use superseded DEPTH46/R3 as rollback source. No automatic rollback.'}
+manifest={**BINDING,'build_commit':COMMIT,'built_at':datetime.now(timezone.utc).isoformat(),'run_id':os.environ.get('GITHUB_RUN_ID'),'run_attempt':os.environ.get('GITHUB_RUN_ATTEMPT'),'image_tag':TAG,'image_id':image_id,'image_archive_sha256':digest(image_tar),'source_archive_sha256':digest(source_tar),'build_restore_smoke':'PASS','actual_image_pagination_regression':'PASS','environment':'DISPOSABLE_GITHUB_RUNNER','tested_source_commit':'d8aa02fff7d1391132d9eee5daadcb3b90d04392','browser_run':34755489869,'release_approved':False,'deployed':False,'hong_kong':'NOT_ACCESSED','production':'NOT_ACCESSED','migration_required':False,'schema_head':'0133_flight_change_plan','deployment_hold':['Exact-source browser acceptance must pass','Fresh live drift and current DEPTH48 previous-state record','CANARY and signed DEPLOY/VERIFY through existing Command Center','Deploy channel usable/enabled evidence unavailable in current source scope'],'rollback_policy':'Preserve current live DEPTH48 image and durable state. Never use superseded DEPTH46/R3 as rollback source. No automatic rollback.'}
 save('MANIFEST.json',manifest)
 # Existing canonical runtime definitions are included verbatim, not converted to executor parameters.
 (OUT/'README.md').write_text((ROOT/'packaging/depth48-pagination-runtime/README.md').read_text())
