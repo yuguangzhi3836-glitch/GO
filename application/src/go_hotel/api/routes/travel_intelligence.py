@@ -1,9 +1,10 @@
 from __future__ import annotations
 import uuid
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictBool
+from fastapi.responses import JSONResponse
 from go_hotel.core.config import settings
-from go_hotel.security.deps import admin_principal
+from go_hotel.security.deps import admin_principal, consumer_principal
 from go_hotel.security.service import Principal
 from go_hotel.travel_intelligence.service import travel_intelligence_service as svc
 from go_hotel.repositories.sql import repo
@@ -93,7 +94,30 @@ def append_event(body:TravelEventRequest,p:Principal=Depends(admin_principal)):
 
 @router.get("/internal/v1/travelers/{traveler_id}/preferences")
 def preferences(traveler_id:str,purpose:str=Query(min_length=1),p:Principal=Depends(admin_principal)):
-    _enabled(); return {"data":{"traveler_id":traveler_id,"purpose":purpose,"preferences":[],"projection":"P0_EMPTY_PURPOSE_BOUND"}}
+    _enabled(); return _private(_call(svc.preferences,traveler_id,purpose=purpose,actor_id=p.user_id,actor_type=p.actor_type))
+
+def _private(data):
+    return JSONResponse({"data":data},headers={"Cache-Control":"no-store, private","Pragma":"no-cache"})
+
+class PreferenceSaveRequest(BaseModel):
+    model_config={"extra":"forbid"}
+    value:dict|list|str|int|float|bool
+    purpose:str=Field(min_length=1,max_length=128)
+    consent_id:str=Field(min_length=1,max_length=64)
+    confirmed:StrictBool
+    expected_preference_id:str|None=Field(default=None,max_length=64)
+
+@router.put("/v1/consumer/travelers/{traveler_id}/preferences/{preference_key}")
+def save_preference(traveler_id:str,preference_key:str,body:PreferenceSaveRequest,p:Principal=Depends(consumer_principal)):
+    _enabled(); return _private(_call(svc.save_preference,p.user_id,traveler_id,preference_key=preference_key,**body.model_dump()))
+
+@router.get("/v1/consumer/travelers/{traveler_id}/preferences")
+def consumer_preferences(traveler_id:str,purpose:str=Query(min_length=1,max_length=128),p:Principal=Depends(consumer_principal)):
+    _enabled(); return _private(_call(svc.preferences,traveler_id,purpose=purpose,user_id=p.user_id,actor_id=p.user_id,actor_type=p.actor_type))
+
+@router.delete("/v1/consumer/travelers/{traveler_id}/preferences/{preference_id}")
+def revoke_preference(traveler_id:str,preference_id:str,p:Principal=Depends(consumer_principal)):
+    _enabled(); return _private(_call(svc.revoke_preference,p.user_id,traveler_id,preference_id))
 
 @router.get("/internal/v1/intelligence/entities/{entity_id}/evidence")
 def entity_evidence(entity_id:str,limit:int=Query(50,ge=1,le=100),p:Principal=Depends(admin_principal)):
@@ -121,7 +145,7 @@ def entity_relation(body:EntityLinkRequest,idempotency_key:str=Header(alias='Ide
 
 @router.get('/internal/v1/travelers/{traveler_id}/graph')
 def traveler_graph(traveler_id:str,purpose:str=Query(min_length=1),p:Principal=Depends(admin_principal)):
-    _enabled(); return {'data':_call(svc.traveler_graph,traveler_id,purpose=purpose)}
+    _enabled(); return _private(_call(svc.traveler_graph,traveler_id,purpose=purpose,actor_id=p.user_id,actor_type=p.actor_type))
 
 @router.post('/internal/v1/judgment/evaluate-independent')
 def evaluate_independent(body:JudgmentRequest,x_correlation_id:str|None=Header(default=None,alias='X-Correlation-ID'),idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(admin_principal)):

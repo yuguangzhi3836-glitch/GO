@@ -1,0 +1,39 @@
+{
+  "cell": "C14",
+  "anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "scope": "Existing engineering authority and release-input guards only",
+  "command": [
+    "/workspace/scratch/948b51def3a9/venv/bin/python",
+    "-m",
+    "pytest",
+    "tests/workbench/test_go_parallel_workbench_build01.py",
+    "tests/autonomy/test_v7_ai_org_build01_1_legal_authority.py",
+    "tests/autonomy/test_c14_release_evidence_guards.py",
+    "--junitxml=../evidence/v70-round2-20260914/c14/authority-regression.xml"
+  ],
+  "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+  "runtime": {
+    "python": "3.12.14",
+    "pytest": "9.1.1",
+    "fastapi": "0.141.1",
+    "sqlalchemy": "2.0.52"
+  },
+  "exit_code": 0,
+  "test_results": {
+    "passed": 96,
+    "failed": 0,
+    "skipped": 0
+  },
+  "raw_evidence_sha256": {
+    "authority-regression.xml": "333baece07c568899c6629b46f1f5372030a9fa0df1c0514c560d85239776165",
+    "authority-regression.log": "6fab4abd01b904f60845c4f53e68822b139fb9ced05986741e4cfac9efc0cad6"
+  },
+  "test_source_sha256": {
+    "tests/workbench/test_go_parallel_workbench_build01.py": "9ce97c7933c9b609b94cba95c4e1bb5632d5a438c7f33de87438124ccb3d5155",
+    "tests/autonomy/test_v7_ai_org_build01_1_legal_authority.py": "03e16fd0d88d479d82ca0d7bc444594e077375de8ebdae3267edc77a1f441509",
+    "tests/autonomy/test_c14_release_evidence_guards.py": "051e330942d6f969aeed58f43bd4d4d4621379bf3e8801e5a2978cc0d00508c2"
+  },
+  "candidate_gate": "PENDING_FIXED_CANDIDATE",
+  "c13_gate": "NOT_REVIEWED_BY_C14",
+  "hk_or_production_action": false
+}

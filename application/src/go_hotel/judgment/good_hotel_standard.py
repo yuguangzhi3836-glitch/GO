@@ -1,6 +1,7 @@
 from datetime import datetime,timezone
 import hashlib,json,uuid
-from sqlalchemy import select,func
+from sqlalchemy import select,func,text
+from go_hotel.autonomy.durable import transaction
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import GoodHotelStandardVersionRow,GoodHotelStandardGovernanceEventRow
 def now():return datetime.now(timezone.utc)
@@ -14,7 +15,13 @@ class GoodHotelStandardService:
   with SessionLocal() as s:
    row=s.scalar(select(GoodHotelStandardVersionRow).where(GoodHotelStandardVersionRow.state=='ACTIVE').order_by(GoodHotelStandardVersionRow.version_no.desc()))
    if row:return row
-   row=GoodHotelStandardVersionRow(good_hotel_standard_version_id='ghsv_system_v1',version_no=1,standard_key='GO_GOOD_HOTEL_STANDARD',dimensions_json=DEFAULT['dimensions'],thresholds_json=DEFAULT['thresholds'],disqualifiers_json=DEFAULT['disqualifiers'],evidence_requirements_json=DEFAULT['evidence_requirements'],content_hash=digest(DEFAULT),state='ACTIVE',requested_by='SYSTEM_BOOTSTRAP',approved_by='SYSTEM_CONSTITUTION',effective_at=now(),created_at=now());s.add(row);self._event(s,row,'INITIAL_STANDARD_ACTIVATED','SYSTEM_CONSTITUTION',{'immutable_baseline':True});s.commit();return row
+  with transaction(SessionLocal) as s:
+   # The initial version row does not exist yet. Serialize bootstrap across
+   # processes, then re-read; ordinary active reads above remain read-only.
+   if s.bind.dialect.name=='postgresql':s.execute(text('SELECT pg_advisory_xact_lock(7480209001)'))
+   row=s.scalar(select(GoodHotelStandardVersionRow).where(GoodHotelStandardVersionRow.state=='ACTIVE').order_by(GoodHotelStandardVersionRow.version_no.desc()))
+   if row:return row
+   row=GoodHotelStandardVersionRow(good_hotel_standard_version_id='ghsv_system_v1',version_no=1,standard_key='GO_GOOD_HOTEL_STANDARD',dimensions_json=DEFAULT['dimensions'],thresholds_json=DEFAULT['thresholds'],disqualifiers_json=DEFAULT['disqualifiers'],evidence_requirements_json=DEFAULT['evidence_requirements'],content_hash=digest(DEFAULT),state='ACTIVE',requested_by='SYSTEM_BOOTSTRAP',approved_by='SYSTEM_CONSTITUTION',effective_at=now(),created_at=now());s.add(row);self._event(s,row,'INITIAL_STANDARD_ACTIVATED','SYSTEM_CONSTITUTION',{'immutable_baseline':True});s.flush();return row
  def active(self):return self.bootstrap()
  def create(self,b,actor):
   forbidden={'price_threshold','commission','subscription','advertising','gmv','popularity'};raw={k:b[k] for k in ('dimensions','thresholds','disqualifiers','evidence_requirements')}

@@ -1,0 +1,37 @@
+{
+  "cell_id": "C09",
+  "task_id": "V70-R2-C09-02",
+  "status": "EVIDENCE_READY",
+  "completed_stages": 4,
+  "total_stages": 6,
+  "scope": "Same-hotel serialized evidence/judgment/recommendation transaction, exact completed-hook replay, sealed evidence reuse, concurrent first-standard bootstrap. SQLite runtime complete; PostgreSQL executable entry supplied and awaits actual CI evidence.",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "inherited_candidate": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "completed_at": "2026-09-14T04:09:08.404029+00:00",
+  "tests": {
+    "tests": 34,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "test_evidence": "reviewed-green.result.json",
+  "changes": "Uses the existing transaction helper (SQLite BEGIN IMMEDIATE) and a stable hotel SHA256-derived PostgreSQL transaction advisory lock, including first-writer absence, plus existing-row FOR UPDATE. Evidence is read inside that transaction; all prior ACTIVE/unterminated decisions are superseded together. Existing identical sealed evidence is reused; unchanged active decisions are replayed. Completed hooks store and verify their own judgment/package/hotel/source binding. Only hooks captured before the evidence read and represented in the package are completed. Missing or mismatched old bindings require review. Concurrent standard bootstrap double-checks under a transaction lock.",
+  "remaining_gaps": [
+    "Actual PostgreSQL 18.4 run is pending root CI; local missing-URL probe is HOLD/exit2, never a PG pass.",
+    "Domain event/outbox appends remain after the core judgment transaction; interruption can leave missing events and replay does not replenish them. Exactly-once event recovery is not claimed.",
+    "External SQL writers and concurrent standard-governance approval are outside this finite service-writer scope; no migration or uniqueness constraint was introduced.",
+    "Legacy completed hooks with no durable binding require review; they do not fall back to hotel latest."
+  ],
+  "C14": "PENDING_INDEPENDENT_REVIEW",
+  "C13": "PENDING_AFTER_C14",
+  "next_task": {
+    "id": "V70-R2-C09-03",
+    "description": "Close post-commit judgment-event/outbox interruption: bind created events atomically or recover missing events without duplicate publication, with process-exit evidence."
+  },
+  "domain_completion_percent": null,
+  "red_evidence": [
+    "red: four business-boundary failures",
+    "bootstrap-red: first simultaneous standard initialization unique constraint failure",
+    "review-red: invalid persisted-field supplement initialized standard before rejecting; now rejected before bootstrap and rechecked in transaction"
+  ]
+}

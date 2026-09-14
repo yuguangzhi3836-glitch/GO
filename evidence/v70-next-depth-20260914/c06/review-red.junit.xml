@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="18" time="3.902" timestamp="2026-09-14T13:02:19.607770+09:00" hostname="localhost"><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_prebook_freezes_server_policy_and_utc_boundary" time="1.475" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T06:29:59.999+00:00-False]" time="0.114" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T06:30:00+00:00-True]" time="0.077" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T08:59:59.999+00:00-True]" time="0.075" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T09:00:00+00:00-False]" time="0.075" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_later_catalog_policy_cannot_rewrite_consumed_contract" time="0.077" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_nonexistent_or_ambiguous_supplier_local_session_requires_review[2026-03-08-02:30]" time="0.054" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_nonexistent_or_ambiguous_supplier_local_session_requires_review[2026-11-01-01:30]" time="0.050" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_cross_midnight_window_uses_supplier_timezone_not_server_date" time="0.054" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad0]" time="0.041" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad1]" time="0.040" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad2]" time="0.039" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad3]" time="0.040" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_supplier_policy_is_explicitly_legacy_unverified" time="0.051" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_client_cannot_supply_a_validity_policy" time="0.053" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_deleting_frozen_window_without_resealing_cannot_downgrade_to_legacy" time="0.076"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f11fbca8800&gt;
+
+    def test_deleting_frozen_window_without_resealing_cannot_downgrade_to_legacy(monkeypatch):
+        install(monkeypatch)
+        _, owner, oid = booked('ATTRACTION')
+        with SessionLocal.begin() as session:
+            contract = session.scalar(select(Contract).where(Contract.order_id == oid))
+            changed = dict(contract.terms_json)
+            changed.pop('redemption_window')
+            contract.terms_json = changed
+&gt;       with pytest.raises(ValueError, match='ATTRACTION_LEGACY_TERMS_REVIEW_REQUIRED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:121: Failed</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_contract_cannot_downgrade_a_confirmed_order_to_legacy" time="0.075"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f11fbcabcb0&gt;
+
+    def test_missing_contract_cannot_downgrade_a_confirmed_order_to_legacy(monkeypatch):
+        install(monkeypatch)
+        _, owner, oid = booked('ATTRACTION')
+        with SessionLocal.begin() as session:
+            session.delete(session.scalar(select(Contract).where(Contract.order_id == oid)))
+&gt;       with pytest.raises(ValueError, match='ATTRACTION_LEGACY_TERMS_REVIEW_REQUIRED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:132: Failed</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_supplier_confirmed_date_change_uses_frozen_policy_on_new_session" time="0.091" /></testsuite></testsuites>

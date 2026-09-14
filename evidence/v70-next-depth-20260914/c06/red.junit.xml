@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="13" skipped="0" tests="15" time="3.951" timestamp="2026-09-14T12:57:42.695855+09:00" hostname="localhost"><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_prebook_freezes_server_policy_and_utc_boundary" time="1.468"><failure message="KeyError: 'redemption_window'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe47350e8d0&gt;
+
+    def test_prebook_freezes_server_policy_and_utc_boundary(monkeypatch):
+        install(monkeypatch)
+        quote = svc.prebook('tokyo_skytree', '2026-09-15', 1)
+&gt;       window = quote['redemption_window']
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'redemption_window'
+
+tests/test_next_depth_c06_supplier_validity.py:27: KeyError</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T06:29:59.999+00:00-False]" time="0.341"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe4727ebbf0&gt;
+instant = '2026-09-15T06:29:59.999+00:00', allowed = False
+
+    @pytest.mark.parametrize('instant,allowed', [
+        ('2026-09-15T06:29:59.999+00:00', False),
+        ('2026-09-15T06:30:00+00:00', True),
+        ('2026-09-15T08:59:59.999+00:00', True),
+        ('2026-09-15T09:00:00+00:00', False),
+    ])
+    def test_redemption_respects_exact_half_open_window(monkeypatch, instant, allowed):
+        install(monkeypatch)
+        _, owner, oid = booked('ATTRACTION')
+        at = int(datetime.fromisoformat(instant).timestamp()*1000)
+        # The service uses DB time; this controls that clock at a fixed boundary.
+        monkeypatch.setattr(service, 'db_now_ms', lambda session: at, raising=False)
+        if allowed:
+            assert svc.redeem(owner, oid, 'isolated://entry')['status'] == 'FULFILLED'
+        else:
+&gt;           with pytest.raises(ValueError, match='ATTRACTION_OUTSIDE_SUPPLIER_VALIDITY_WINDOW'):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:52: Failed</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T06:30:00+00:00-True]" time="0.084" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T08:59:59.999+00:00-True]" time="0.079" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T09:00:00+00:00-False]" time="0.075"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe4726a8aa0&gt;
+instant = '2026-09-15T09:00:00+00:00', allowed = False
+
+    @pytest.mark.parametrize('instant,allowed', [
+        ('2026-09-15T06:29:59.999+00:00', False),
+        ('2026-09-15T06:30:00+00:00', True),
+        ('2026-09-15T08:59:59.999+00:00', True),
+        ('2026-09-15T09:00:00+00:00', False),
+    ])
+    def test_redemption_respects_exact_half_open_window(monkeypatch, instant, allowed):
+        install(monkeypatch)
+        _, owner, oid = booked('ATTRACTION')
+        at = int(datetime.fromisoformat(instant).timestamp()*1000)
+        # The service uses DB time; this controls that clock at a fixed boundary.
+        monkeypatch.setattr(service, 'db_now_ms', lambda session: at, raising=False)
+        if allowed:
+            assert svc.redeem(owner, oid, 'isolated://entry')['status'] == 'FULFILLED'
+        else:
+&gt;           with pytest.raises(ValueError, match='ATTRACTION_OUTSIDE_SUPPLIER_VALIDITY_WINDOW'):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:52: Failed</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_later_catalog_policy_cannot_rewrite_consumed_contract" time="0.072"><failure message="KeyError: 'redemption_window'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe4725b54f0&gt;
+
+    def test_later_catalog_policy_cannot_rewrite_consumed_contract(monkeypatch):
+        install(monkeypatch)
+        _, owner, oid = booked('ATTRACTION')
+&gt;       original = deepcopy(svc.get(owner, oid)['redemption_window'])
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'redemption_window'
+
+tests/test_next_depth_c06_supplier_validity.py:61: KeyError</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_nonexistent_or_ambiguous_supplier_local_session_requires_review[2026-03-08-02:30]" time="0.050"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe4726aac90&gt;
+day = '2026-03-08', session = '02:30'
+
+    @pytest.mark.parametrize('day,session', [('2026-03-08', '02:30'), ('2026-11-01', '01:30')])
+    def test_nonexistent_or_ambiguous_supplier_local_session_requires_review(monkeypatch, day, session):
+        install(monkeypatch, destination_timezone='America/New_York')
+        monkeypatch.setitem(CATALOG['tokyo_skytree'], 'sessions', [session])
+&gt;       with pytest.raises(ValueError, match='ATTRACTION_SUPPLIER_LOCAL_TIME_REVIEW_REQUIRED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:72: Failed</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_nonexistent_or_ambiguous_supplier_local_session_requires_review[2026-11-01-01:30]" time="0.050"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe472600350&gt;
+day = '2026-11-01', session = '01:30'
+
+    @pytest.mark.parametrize('day,session', [('2026-03-08', '02:30'), ('2026-11-01', '01:30')])
+    def test_nonexistent_or_ambiguous_supplier_local_session_requires_review(monkeypatch, day, session):
+        install(monkeypatch, destination_timezone='America/New_York')
+        monkeypatch.setitem(CATALOG['tokyo_skytree'], 'sessions', [session])
+&gt;       with pytest.raises(ValueError, match='ATTRACTION_SUPPLIER_LOCAL_TIME_REVIEW_REQUIRED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:72: Failed</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_cross_midnight_window_uses_supplier_timezone_not_server_date" time="0.049"><failure message="KeyError: 'redemption_window'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe472601430&gt;
+
+    def test_cross_midnight_window_uses_supplier_timezone_not_server_date(monkeypatch):
+        install(monkeypatch)
+        monkeypatch.setitem(CATALOG['tokyo_skytree'], 'sessions', ['00:15'])
+        quote = svc.prebook('tokyo_skytree', '2026-09-15', 1, session_time='00:15')
+&gt;       assert quote['redemption_window']['opens_at'] == '2026-09-14T14:45:00+00:00'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'redemption_window'
+
+tests/test_next_depth_c06_supplier_validity.py:82: KeyError</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad0]" time="0.053"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe472600c80&gt;
+bad = {'destination_timezone': 'not/a-zone'}
+
+    @pytest.mark.parametrize('bad', [
+        {'destination_timezone': 'not/a-zone'}, {'opens_minutes_before_session': True},
+        {'closes_minutes_after_session': 0}, {'policy_reference': ''},
+    ])
+    def test_invalid_supplier_policy_never_issues_a_quote(monkeypatch, bad):
+        install(monkeypatch, **bad)
+&gt;       with pytest.raises(ValueError, match='ATTRACTION_SUPPLIER_VALIDITY_POLICY_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:92: Failed</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad1]" time="0.051"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe472602420&gt;
+bad = {'opens_minutes_before_session': True}
+
+    @pytest.mark.parametrize('bad', [
+        {'destination_timezone': 'not/a-zone'}, {'opens_minutes_before_session': True},
+        {'closes_minutes_after_session': 0}, {'policy_reference': ''},
+    ])
+    def test_invalid_supplier_policy_never_issues_a_quote(monkeypatch, bad):
+        install(monkeypatch, **bad)
+&gt;       with pytest.raises(ValueError, match='ATTRACTION_SUPPLIER_VALIDITY_POLICY_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:92: Failed</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad2]" time="0.051"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe472605d30&gt;
+bad = {'closes_minutes_after_session': 0}
+
+    @pytest.mark.parametrize('bad', [
+        {'destination_timezone': 'not/a-zone'}, {'opens_minutes_before_session': True},
+        {'closes_minutes_after_session': 0}, {'policy_reference': ''},
+    ])
+    def test_invalid_supplier_policy_never_issues_a_quote(monkeypatch, bad):
+        install(monkeypatch, **bad)
+&gt;       with pytest.raises(ValueError, match='ATTRACTION_SUPPLIER_VALIDITY_POLICY_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:92: Failed</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad3]" time="0.050"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe472604740&gt;
+bad = {'policy_reference': ''}
+
+    @pytest.mark.parametrize('bad', [
+        {'destination_timezone': 'not/a-zone'}, {'opens_minutes_before_session': True},
+        {'closes_minutes_after_session': 0}, {'policy_reference': ''},
+    ])
+    def test_invalid_supplier_policy_never_issues_a_quote(monkeypatch, bad):
+        install(monkeypatch, **bad)
+&gt;       with pytest.raises(ValueError, match='ATTRACTION_SUPPLIER_VALIDITY_POLICY_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:92: Failed</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_supplier_policy_is_explicitly_legacy_unverified" time="0.050"><failure message="KeyError: 'redemption_window'">def test_missing_supplier_policy_is_explicitly_legacy_unverified():
+        quote = svc.prebook('tokyo_skytree', '2026-09-15', 1)
+&gt;       assert quote['redemption_window'] == {'state': 'LEGACY_UNVERIFIED'}
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'redemption_window'
+
+tests/test_next_depth_c06_supplier_validity.py:98: KeyError</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_client_cannot_supply_a_validity_policy" time="0.057"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe472605970&gt;
+
+    def test_client_cannot_supply_a_validity_policy(monkeypatch):
+        install(monkeypatch)
+        quote = svc.prebook('tokyo_skytree', '2026-09-15', 1)
+        body = {'prebook_id': quote['prebook_id'], 'offer_id': 'tokyo_skytree',
+                'visit_date': '2026-09-15', 'quantity': 1, 'attendees': [{'full_name': 'A'}],
+                'supplier_validity_policy': {**POLICY, 'closes_minutes_after_session': 999999}}
+&gt;       with pytest.raises(ValueError, match='ATTRACTION_VALIDITY_CLIENT_FIELD_FORBIDDEN'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:107: Failed</failure></testcase></testsuite></testsuites>

@@ -4,7 +4,7 @@ from go_hotel.security.deps import consumer_principal, admin_principal
 from go_hotel.security.service import Principal
 from go_hotel.flight.service import flight_service
 from go_hotel.flight.journeys import JourneySearch, JourneyCompose, search_journey, compose_journey
-from go_hotel.api.idempotency import run_idempotent
+from go_hotel.api.idempotency import run_idempotent, run_recoverable_idempotent
 from go_hotel.api.refund_confirmation import RefundConfirmation
 from go_hotel.services.booking_data_release import release_booking_data
 from go_hotel.db.session import SessionLocal
@@ -71,7 +71,9 @@ def create_order(body:OrderBody,p:Principal=Depends(consumer_principal),idempote
 @router.post('/v1/flights/orders/{order_id}/checkout')
 def checkout(order_id:str,body:CheckoutBody,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
     payload={'user_id':p.user_id,'order_id':order_id,**body.model_dump()}
-    return run_idempotent('FLIGHT_CHECKOUT',idempotency_key,payload,lambda:wrap(flight_service.checkout,p.user_id,order_id,body.payment_method_id))
+    return run_recoverable_idempotent('FLIGHT_CHECKOUT',idempotency_key,payload,order_id,
+        lambda boundary:wrap(flight_service.checkout,p.user_id,order_id,body.payment_method_id,boundary),
+        lambda boundary:wrap(flight_service.recover_checkout,p.user_id,order_id,body.payment_method_id,boundary))
 @router.get('/v1/flights/orders/{order_id}')
 def order(order_id:str,p:Principal=Depends(consumer_principal)): return wrap(flight_service.order,p.user_id,order_id)
 @router.get('/v1/flights/trips')
@@ -82,7 +84,9 @@ def change_quote(order_id:str,body:ChangeQuoteBody,p:Principal=Depends(consumer_
 def execute_change(order_id:str,quote_id:str,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key'),body:ChangeConfirmation|None=Body(default=None)):
     confirmation=body.model_dump() if body else None
     payload={'user_id':p.user_id,'order_id':order_id,'quote_id':quote_id,'confirmation':confirmation}
-    return run_idempotent('FLIGHT_EXECUTE_CHANGE',idempotency_key,payload,lambda:wrap(flight_service.execute_change,p.user_id,order_id,quote_id,confirmation))
+    return run_recoverable_idempotent('FLIGHT_EXECUTE_CHANGE',idempotency_key,payload,quote_id,
+        lambda boundary:wrap(flight_service.execute_change,p.user_id,order_id,quote_id,confirmation,boundary),
+        lambda boundary:wrap(flight_service.recover_execute_change,p.user_id,order_id,quote_id,confirmation,boundary))
 @router.get('/v1/flights/orders/{order_id}/refund-quote')
 def refund_quote(order_id:str,p:Principal=Depends(consumer_principal)): return wrap(flight_service.refund_quote,p.user_id,order_id)
 @router.post('/v1/flights/orders/{order_id}/refund')

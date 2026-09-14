@@ -1,0 +1,33 @@
+C10_SQL_COUNT vertical=ATTRACTION viewer=c10_owner journeys=1:4 journeys=31:4 items=61
+.C10_SQL_COUNT vertical=FLIGHT viewer=c10_owner journeys=1:4 journeys=31:4 items=61
+.C10_SQL_COUNT vertical=HOTEL viewer=c10_owner journeys=1:4 journeys=31:4 items=61
+.C10_SQL_COUNT vertical=RAIL viewer=c10_owner journeys=1:4 journeys=31:4 items=61
+.C10_SQL_COUNT vertical=RENTAL viewer=c10_owner journeys=1:4 journeys=31:4 items=61
+.C10_SQL_COUNT vertical=RIDE viewer=c10_owner journeys=1:4 journeys=31:4 items=61
+.C10_SQL_COUNT vertical=ATTRACTION viewer=c10_member journeys=1:5 journeys=31:5 items=61
+.C10_SQL_COUNT vertical=FLIGHT viewer=c10_member journeys=1:5 journeys=31:5 items=61
+.C10_SQL_COUNT vertical=HOTEL viewer=c10_member journeys=1:5 journeys=31:5 items=61
+.C10_SQL_COUNT vertical=RAIL viewer=c10_member journeys=1:5 journeys=31:5 items=61
+.C10_SQL_COUNT vertical=RENTAL viewer=c10_member journeys=1:5 journeys=31:5 items=61
+.C10_SQL_COUNT vertical=RIDE viewer=c10_member journeys=1:5 journeys=31:5 items=61
+..C10_SQL_COUNT chunk_boundary journeys=405 items=809 SELECTs=7
+F...........................
+=================================== FAILURES ===================================
+_______ test_order_batch_chunk_boundary_does_not_fall_back_to_n_plus_one _______
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+
+    def test_order_batch_chunk_boundary_does_not_fall_back_to_n_plus_one(isolated_session):
+        _seed(isolated_session, "HOTEL")
+        grow(isolated_session, "HOTEL", 405)
+        listed, statements = counted_list(isolated_session, OWNER)
+        print(f"C10_SQL_COUNT chunk_boundary journeys=405 items=809 SELECTs={len(statements)}")
+        assert len(listed) == 405
+>       assert len(statements) <= 6
+E       AssertionError: assert 7 <= 6
+E        +  where 7 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de... (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?), (?, ?))', ...])
+
+tests/journey/test_c10_batch_list_projection.py:94: AssertionError
+=========================== short test summary info ============================
+FAILED tests/journey/test_c10_batch_list_projection.py::test_order_batch_chunk_boundary_does_not_fall_back_to_n_plus_one
+1 failed, 40 passed in 2.51s

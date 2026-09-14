@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_invalid_evidence_supplement_cannot_initialize_standard_or_write_events __
+
+    def test_invalid_evidence_supplement_cannot_initialize_standard_or_write_events():
+        assert rows(GoodHotelStandardVersionRow) == []
+        assert rows(GoodHotelStandardGovernanceEventRow) == []
+        with pytest.raises(HTTPException) as caught:
+            svc.reevaluate('next-hotel', {'confirmed_serious_risk_count': 0})
+        assert caught.value.detail['code'] == 'JUDGMENT_EVIDENCE_FIELD_FORBIDDEN'
+>       assert rows(GoodHotelStandardVersionRow) == []
+E       assert [<go_hotel.db...7f8497a6a1b0>] == []
+E         
+E         Left contains one more item: <go_hotel.db.models.GoodHotelStandardVersionRow object at 0x7f8497a6a1b0>
+E         Use -v to get more diff
+
+tests/judgment/test_next_depth_concurrent_judgment.py:187: AssertionError
+=========================== short test summary info ============================
+FAILED tests/judgment/test_next_depth_concurrent_judgment.py::test_invalid_evidence_supplement_cannot_initialize_standard_or_write_events

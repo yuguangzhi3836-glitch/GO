@@ -1,0 +1,23 @@
+{
+  "cell": "C05",
+  "task": "C05-R2-REPEATED-UNKNOWN-FULFILLMENT",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "task_state": "DONE_SCOPED_AWAITING_C14",
+  "scope": "Two unknown-result episodes across CONFIRMED and IN_PROGRESS restore the respective phase; unknown blocks fulfillment; completion cannot restart; single START/COMPLETE evidence; no refund.",
+  "test_progress": {
+    "passed": 1,
+    "selected": 1,
+    "percentage": 100
+  },
+  "full_cell_progress": "NOT_MEASURED_NO_FULL_DOMAIN_DENOMINATOR",
+  "C14": "PENDING_INDEPENDENT_REVIEW",
+  "C13": "PENDING_AFTER_C14",
+  "next_task": "Check evidence-loss/corruption recovery boundaries before accepting a historical UNKNOWN result, then bind provider confirmation to the same ride phase.",
+  "limitation": "No ride business source change. This is local simulator evidence, not a real vehicle or fleet journey.",
+  "evidence": [
+    "after.raw.log",
+    "after.junit.xml",
+    "source-identity.json",
+    "runs.json"
+  ]
+}

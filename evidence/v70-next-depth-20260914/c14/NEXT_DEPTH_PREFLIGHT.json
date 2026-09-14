@@ -1,0 +1,69 @@
+{
+  "reviewer": "/root/c14_review",
+  "observed_at": "2026-09-14T04:11:27.391207+00:00",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "status": "PREFLIGHT_ONLY_PENDING_FIXED_CANDIDATE",
+  "business_source_mutation": false,
+  "findings": [
+    {
+      "id": "C14-C06-CONTRACT-DOWNGRADE",
+      "issue": "Deleting frozen redemption_window or whole contract could silently downgrade to legacy compatibility and permit redemption",
+      "state": "FIX_VERIFIED_IN_SOURCE_BUILDER_RED_GREEN_OBSERVED",
+      "evidence": [
+        "c06/review-red.junit.xml",
+        "c06/final-green.junit.xml"
+      ],
+      "fix": "Existing contract validated through _order_terms before legacy determination; redeem always requires valid consumed contract. Missing contract read projection may say LEGACY_UNVERIFIED but redemption fails closed.",
+      "scope": "44 selected local tests builder report; independent C13 pending"
+    },
+    {
+      "id": "C14-C05-PHASE-CONTRADICTION",
+      "issue": "Hashed UNKNOWN previous_status must match its immediate predecessor observed_status",
+      "state": "FIX_VERIFIED_IN_SOURCE_BUILDER_RED_GREEN_OBSERVED",
+      "evidence": [
+        "c05/phase-before.junit.xml",
+        "c05/phase-after.junit.xml"
+      ],
+      "fix": "Require at least two intact chain entries and equality with predecessor phase; unknown stays unrecovered on contradiction"
+    },
+    {
+      "id": "C14-C09-BOOTSTRAP-BEFORE-REJECTION",
+      "issue": "Compared with PR73, active standard bootstrap moved before protected evidence feature rejection, possibly creating governance side effects for invalid first request",
+      "state": "FIX_VERIFIED_IN_SOURCE_BUILDER_RED_GREEN_OBSERVED",
+      "origin": "C13 independent preflight observation, C14 source confirmed ordering change",
+      "evidence": [
+        "c09/review-red.junit.xml",
+        "c09/reviewed-green.junit.xml"
+      ],
+      "fix": "Pre-bootstrap allowlist rejects all six current persisted fields; original lock-internal validation against actual feature keys retained; builder34PASS"
+    },
+    {
+      "id": "C14-C07-COMMIT-OBSERVATION",
+      "issue": "Subprocess poll completion is later than committed revocation; worker exit must not be represented as exact DB commit observation",
+      "state": "BUILDER_NOTIFIED",
+      "requested": "Independent committed marker immediately after revocation service return; preserve prior originals"
+    },
+    {
+      "id": "C14-C11-RESOURCE-FENCE",
+      "issue": "Different HTTP idempotency keys for same resource can race shared bridge despite per-request token fencing",
+      "state": "BUILDER_REPRO_AND_FIX_IN_PROGRESS",
+      "requirements": [
+        "Resource fence full payload/owner binding",
+        "Same transaction and token as request claim",
+        "Fixed row lock ordering",
+        "RUNNING no timeout takeover",
+        "Unknown payment states remain HOLD"
+      ]
+    }
+  ],
+  "accepted_scope_boundaries": {
+    "C02": "Pure isolated coupon planning/preview only; checksum not authority; no HTTP/payment/reissue integration",
+    "C07": "Database transaction authorization linearization; no promise to revoke already sent network bytes; PostgreSQL pending actual isolated CI",
+    "C08": "Read-only crash-state assessment; automatic ROUTING recovery remains HOLD",
+    "C09": "Deduplication, one ACTIVE judgment and hook exact binding; post-commit event delivery/outbox remains unclosed",
+    "C10": "Batched current-state list projection retains owner/member checks and snapshot fallback; no pagination or PG EXPLAIN claimed",
+    "C12": "Local execution receipt admission checks metadata and content hashes; not worker authentication or liveness",
+    "C11": "Only two opted-in keyed flight operations; other35 callbacks and hard-dead RUNNING takeover remain unclosed"
+  }
+}

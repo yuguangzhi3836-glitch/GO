@@ -1,0 +1,28 @@
+{
+  "anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "cell": "C09",
+  "run": "evidence-authority-green",
+  "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+  "argv": [
+    "/workspace/scratch/948b51def3a9/venv/bin/python",
+    "-m",
+    "pytest",
+    "tests/judgment/test_round2_evidence_authority.py",
+    "tests/test_sprint1p_judgment_runtime.py",
+    "tests/test_wave03_c07_c09_authority_contract.py::test_c09_rejects_traveler_fit_context_as_recommendation_input",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/workspace/scratch/948b51def3a9/GO/evidence/v70-round2-20260914/c09/evidence-authority-green.junit.xml"
+  ],
+  "environment_overrides": {
+    "PYTHONPATH": "src",
+    "GO_TEST_DB_PATH": "/tmp/go-v70-r2-c09-f66d3e40003b41c19cf659d8a305864e.db",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "runtime": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "started_at": "2026-09-14T03:04:03.430298+00:00",
+  "database_backend": "isolated SQLite",
+  "external_provider": "simulated",
+  "hk_or_browser_acceptance": false
+}

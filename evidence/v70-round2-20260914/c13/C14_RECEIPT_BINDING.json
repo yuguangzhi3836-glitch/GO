@@ -1,0 +1,188 @@
+{
+  "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+  "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+  "observed_at": "2026-09-14T03:18:12.744645+00:00",
+  "record": {
+    "schema": "go.v70.round2.c14.review.v1",
+    "reviewer": "/root/c14_review",
+    "reviewer_cell": "C14",
+    "review_type": "INDEPENDENT_ENGINEERING_AUTHORITY_CONSTITUTION_BOUNDARY_REVIEW",
+    "status": "PASS_SCOPED",
+    "completed_at_utc": "2026-09-14T03:17:15.048729+00:00",
+    "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+    "application_git_tree": "740d026e3723f5da015342ead3394969629541df",
+    "source_tree_sha256": "b4383b383dd54e472ef178f1804d925bebf55019dc17f3641712cc42d4aae7b4",
+    "source_files": 1341,
+    "candidate_manifest_path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+    "candidate_manifest_sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+    "verification_path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+    "verification_sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+    "source_scope": {
+      "existing_modified_files": 6,
+      "new_files": 9,
+      "unchanged_inherited_files": 1326,
+      "deleted_files": 0,
+      "all_declared_files_git_blob_sha256_size_verified": true,
+      "git_tree_independently_reconstructed": true
+    },
+    "changed_paths_reviewed": [
+      "application/src/go_hotel/api/routes/travel_intelligence.py",
+      "application/src/go_hotel/go_ai/service.py",
+      "application/src/go_hotel/journey/service.py",
+      "application/src/go_hotel/judgment/service.py",
+      "application/src/go_hotel/mobility/rental/service.py",
+      "application/src/go_hotel/travel_intelligence/preferences.py",
+      "application/src/go_hotel/travel_intelligence/service.py",
+      "application/tests/go_ai/test_c08_audit_commit_failure.py",
+      "application/tests/journey/test_c10_attachment_canonical_facts.py",
+      "application/tests/judgment/test_round2_evidence_authority.py",
+      "application/tests/test_round2_c07_explicit_preferences.py",
+      "application/tests/test_v70_round2_c01_mixed_funding.py",
+      "application/tests/test_v70_round2_c02_partial_party.py",
+      "application/tests/test_v70_round2_c04_rental_receipts.py",
+      "application/tests/test_v70_round2_c05_recovery_fulfillment.py"
+    ],
+    "integration_files_sha256": {
+      "ci/round2/CANDIDATE.json": "8823546cd336663ab32ff04f625f0dddcf9bb5904b9c951c538c5d9f6b300548",
+      "ci/round2/validate_ledger.py": "c64086f3280d936f40f6ceb26efaa81002905676a87126c38c9cd2b3610dd4a5",
+      "ci/round2/test_validate_ledger.py": "ceb372457019fc9ce46f97528c05ef094dd7bcbccb19e6f3d5b482588852dcf7",
+      "ci/round2/README.md": "8838070fc63c2992f32946ce4b128bca401ce7edc04267906f25440eb770052c",
+      "ci/round2/example-ledger.json": "a9a4a4a8d91e0f1fe62e6c62856e850c526cc17cc4e74e8a7c12849ada069998",
+      "ci/cell-closure/CANDIDATE.json": "f0ef5b6d394d119ad481b236dd9c51faf922d87e9d5d0552eef22f297d5358ed",
+      "ci/retention/BASELINE.json": "96179b225416ea1df6a4f5ca98a36b3747b0433d05f64dd10c12243fa6498ca2",
+      "ci/journey-v2/ACCEPTANCE_PATCH.json": "5e89b759eef49c3d4c4e77f3e5cce2b7c068c466b4b1fb4c8f986a4a666dbd5f",
+      ".github/workflows/v70-cell-gap-closure.yml": "646254a8d74f3a56658277ae7f08d8ceaa66b2d96c0ba4ce581b40235d37eda0"
+    },
+    "cell_findings": [
+      {
+        "cell": "C07",
+        "decision": "PASS_SCOPED",
+        "scope": "Explicit SELF-owned preference API and purpose-bound graph",
+        "observations": [
+          "Authenticated consumer owner only writes; ACTIVE SELF and EDIT/VIEW checked",
+          "Exact consent type/traveler/purpose/key; finite current consent and revocation checked on every projection",
+          "Encrypted preference values, explicit confirmation, immutable revisions, no session auto-promotion, no-store HTTP responses",
+          "C07 judgment methods remain forbidden; no C09 rule or verdict ownership claimed",
+          "Shared API path centrally assigned to C07 implementation with C12 integration and C14 review"
+        ]
+      },
+      {
+        "cell": "C04",
+        "decision": "PASS_SCOPED_AFTER_CHANGE_REQUEST",
+        "scope": "Rental cancellation receipt provenance",
+        "observations": [
+          "Initial scoped candidate failed to bind same-order prior equal-amount receipt to this cancellation",
+          "Builder reproduced the precise finding: 1 failing test; original failure preserved",
+          "Final source verifies durable owner/currency/confirmed original capture and exact multiset of payment intent/capture/amount/idempotency key from frozen plan",
+          "33 builder cases passed; final C13 remains independent and pending"
+        ]
+      },
+      {
+        "cell": "C08",
+        "decision": "PASS_SCOPED",
+        "scope": "Transient success-audit commit handling",
+        "observations": [
+          "Only a fresh bounded transaction attempts FAILED when persisted request is still ROUTING",
+          "Already-committed terminal success is not overwritten after lost commit acknowledgement",
+          "Model compute not repeated; persistent audit outage raises and remains explicitly unresolved"
+        ]
+      },
+      {
+        "cell": "C09",
+        "decision": "PASS_SCOPED",
+        "scope": "Persisted evidence has priority over request supplements",
+        "observations": [
+          "Only C09-owned service changed C09 truth logic",
+          "Six persisted evidence keys cannot be overridden before writes; serious risk retains veto",
+          "Six recommendation dimensions and commercial/traveler-fit exclusions retained"
+        ]
+      },
+      {
+        "cell": "C10",
+        "decision": "PASS_SCOPED",
+        "scope": "Canonical attachment facts dominate caller display metadata",
+        "observations": [
+          "Order remains owned by its original Cell and is not changed by journey attachment",
+          "Canonical order facts overwrite conflicting caller amount/currency/identity snapshot keys while custom notes remain supported",
+          "Existing snapshot refresh/performance limits remain separate depth tasks"
+        ]
+      },
+      {
+        "cell": "C12",
+        "decision": "PASS_SCOPED",
+        "scope": "Local scheduler ledger validation and continuation records",
+        "observations": [
+          "14 unique Cells and fixed source anchor; RUNNING needs referenced checked bytes",
+          "100 percent requires scoped DONE and tests/Evidence/C14/C13 in time order with different C14/C13 identities",
+          "Executable gaps in IDLE/DONE/BLOCKED trigger SCHEDULER_FAIL and explicit new ASSIGNED followups with preserved history",
+          "No network, remote ACK, signing, HK runtime or production operations; reviewer strings are not authentication"
+        ]
+      },
+      {
+        "cells": [
+          "C01",
+          "C02",
+          "C03",
+          "C05",
+          "C06",
+          "C11"
+        ],
+        "decision": "PASS_SCOPED_ENGINEERING_BOUNDARY_ONLY",
+        "scope": "Test-only or runtime-evidence depth work within existing code",
+        "observations": [
+          "C01/C02/C05 additions are tests and do not alter business rules or provider authority",
+          "C03/C06 runtime evidence manifests verified at recorded bytes; no product source edits",
+          "C11 probes and open post-commit callback recovery are not treated as a completed product fix",
+          "Partial-passenger acceptance, attraction time windows, real provider and money evidence remain open where declared"
+        ]
+      }
+    ],
+    "resolved_change_requests": [
+      {
+        "id": "C14-R2-C04-FROZEN-PLAN-RECEIPT-BINDING",
+        "original_record": "evidence/v70-round2-20260914/c14/c04-plan-binding-change-request.json",
+        "resolution": "CLOSED_IN_THIS_EXACT_CANDIDATE",
+        "red_log": "evidence/v70-round2-20260914/c04/receipt-plan-before.raw.log",
+        "green_log": "evidence/v70-round2-20260914/c04/receipt-plan-after.raw.log"
+      }
+    ],
+    "existing_authority_regression": {
+      "passed": 96,
+      "failed": 0,
+      "skipped": 0,
+      "scope": "Existing engineering authority guards, not full candidate QA",
+      "result_path": "evidence/v70-round2-20260914/c14/authority-regression.result.json"
+    },
+    "ci_review": {
+      "status": "PASS_SCOPED_DEFINITION_REVIEW",
+      "workflow": ".github/workflows/v70-cell-gap-closure.yml",
+      "facts": [
+        "Pull-request head checkout, contents:read, persist-credentials:false",
+        "Existing byte-retention/alignment verifiers and frozen dependency lock unchanged",
+        "Existing tests retained with 8 new source test files and scheduler unittest appended",
+        "Candidate bindings re-aligned; source checks assert exact tree/hash/count plus release and production HOLD",
+        "Original evidence archived with checkout commit and application tree; no deployment step"
+      ],
+      "execution_claim": "NOT_RUN_BY_C14; CI original execution evidence remains pending"
+    },
+    "independence": {
+      "business_source_written_by_c14": false,
+      "c13_result": "PENDING_INDEPENDENT_ACCEPTANCE",
+      "c13_reviewer": "/root/c13_independent",
+      "same_agent_as_c13": false
+    },
+    "unproven_scopes": [
+      "Complete system/domain 100 percent",
+      "PostgreSQL concurrent consent withdrawal and real process restart",
+      "Frozen-image/complete browser or device acceptance",
+      "External provider, real money, approved jurisdiction-specific legal policy",
+      "Persistent C08 audit-outage recovery, C11 post-commit callback protocol, C06 timezone window",
+      "Remote 14-worker liveness or continuously executing scheduler"
+    ],
+    "external_legal_certification": "NOT_CLAIMED",
+    "merge_authorization": "NOT_GRANTED_BY_THIS_REVIEW",
+    "hk_action": "NOT_ACCESSED_OR_DEPLOYED",
+    "production": "HOLD",
+    "next_action": "C13 independently validates the exact candidate; preserve original failing evidence and continue remaining depth scopes through explicit assignments."
+  }
+}

@@ -1,0 +1,285 @@
+C10_SQL_COUNT vertical=ATTRACTION viewer=c10_owner journeys=1:4 journeys=31:94 items=61
+FC10_SQL_COUNT vertical=FLIGHT viewer=c10_owner journeys=1:4 journeys=31:94 items=61
+FC10_SQL_COUNT vertical=HOTEL viewer=c10_owner journeys=1:4 journeys=31:94 items=61
+FC10_SQL_COUNT vertical=RAIL viewer=c10_owner journeys=1:4 journeys=31:94 items=61
+FC10_SQL_COUNT vertical=RENTAL viewer=c10_owner journeys=1:4 journeys=31:94 items=61
+FC10_SQL_COUNT vertical=RIDE viewer=c10_owner journeys=1:4 journeys=31:94 items=61
+FC10_SQL_COUNT vertical=ATTRACTION viewer=c10_member journeys=1:5 journeys=31:95 items=61
+FC10_SQL_COUNT vertical=FLIGHT viewer=c10_member journeys=1:5 journeys=31:95 items=61
+FC10_SQL_COUNT vertical=HOTEL viewer=c10_member journeys=1:5 journeys=31:95 items=61
+FC10_SQL_COUNT vertical=RAIL viewer=c10_member journeys=1:5 journeys=31:95 items=61
+FC10_SQL_COUNT vertical=RENTAL viewer=c10_member journeys=1:5 journeys=31:95 items=61
+FC10_SQL_COUNT vertical=RIDE viewer=c10_member journeys=1:5 journeys=31:95 items=61
+F.C10_SQL_COUNT chunk_boundary journeys=405 items=809 SELECTs=1216
+F
+=================================== FAILURES ===================================
+_ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-ATTRACTION] __
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'ATTRACTION', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 94 == 4
+E        +  where 94 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ttraction_order_runtime_updated_at \nFROM attraction_order_runtime \nWHERE attraction_order_runtime.order_id = ?', ...])
+E        +  and   4 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de... AS attraction_order_runtime_updated_at \nFROM attraction_order_runtime \nWHERE attraction_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+___ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-FLIGHT] ____
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'FLIGHT', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 94 == 4
+E        +  where 94 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ated_at AS flight_order_runtime_updated_at \nFROM flight_order_runtime \nWHERE flight_order_runtime.order_id = ?', ...])
+E        +  and   4 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...e.updated_at AS flight_order_runtime_updated_at \nFROM flight_order_runtime \nWHERE flight_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+____ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-HOTEL] ____
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'HOTEL', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 94 == 4
+E        +  where 94 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...updated_at AS hotel_order_runtime_updated_at \nFROM hotel_order_runtime \nWHERE hotel_order_runtime.order_id = ?', ...])
+E        +  and   4 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...time.updated_at AS hotel_order_runtime_updated_at \nFROM hotel_order_runtime \nWHERE hotel_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+____ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RAIL] _____
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RAIL', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 94 == 4
+E        +  where 94 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...me.updated_at AS rail_order_runtime_updated_at \nFROM rail_order_runtime \nWHERE rail_order_runtime.order_id = ?', ...])
+E        +  and   4 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...runtime.updated_at AS rail_order_runtime_updated_at \nFROM rail_order_runtime \nWHERE rail_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+___ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RENTAL] ____
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RENTAL', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 94 == 4
+E        +  where 94 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...order_runtime_updated_at \nFROM mobility_rental_order_runtime \nWHERE mobility_rental_order_runtime.order_id = ?', ...])
+E        +  and   4 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ntal_order_runtime_updated_at \nFROM mobility_rental_order_runtime \nWHERE mobility_rental_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+____ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RIDE] _____
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RIDE', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 94 == 4
+E        +  where 94 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ide_order_runtime_updated_at \nFROM mobility_ride_order_runtime \nWHERE mobility_ride_order_runtime.order_id = ?', ...])
+E        +  and   4 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ity_ride_order_runtime_updated_at \nFROM mobility_ride_order_runtime \nWHERE mobility_ride_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+_ test_list_queries_bounded_by_vertical_not_order_count[c10_member-ATTRACTION] _
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'ATTRACTION', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 95 == 5
+E        +  where 95 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ourney_item_runtime.journey_id = ? ORDER BY go_journey_item_runtime.sort_key, go_journey_item_runtime.created_at', ...])
+E        +  and   5 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de... AS attraction_order_runtime_updated_at \nFROM attraction_order_runtime \nWHERE attraction_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+___ test_list_queries_bounded_by_vertical_not_order_count[c10_member-FLIGHT] ___
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'FLIGHT', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 95 == 5
+E        +  where 95 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ourney_item_runtime.journey_id = ? ORDER BY go_journey_item_runtime.sort_key, go_journey_item_runtime.created_at', ...])
+E        +  and   5 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...e.updated_at AS flight_order_runtime_updated_at \nFROM flight_order_runtime \nWHERE flight_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+___ test_list_queries_bounded_by_vertical_not_order_count[c10_member-HOTEL] ____
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'HOTEL', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 95 == 5
+E        +  where 95 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ourney_item_runtime.journey_id = ? ORDER BY go_journey_item_runtime.sort_key, go_journey_item_runtime.created_at', ...])
+E        +  and   5 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...time.updated_at AS hotel_order_runtime_updated_at \nFROM hotel_order_runtime \nWHERE hotel_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+____ test_list_queries_bounded_by_vertical_not_order_count[c10_member-RAIL] ____
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RAIL', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 95 == 5
+E        +  where 95 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ourney_item_runtime.journey_id = ? ORDER BY go_journey_item_runtime.sort_key, go_journey_item_runtime.created_at', ...])
+E        +  and   5 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...runtime.updated_at AS rail_order_runtime_updated_at \nFROM rail_order_runtime \nWHERE rail_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+___ test_list_queries_bounded_by_vertical_not_order_count[c10_member-RENTAL] ___
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RENTAL', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 95 == 5
+E        +  where 95 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ourney_item_runtime.journey_id = ? ORDER BY go_journey_item_runtime.sort_key, go_journey_item_runtime.created_at', ...])
+E        +  and   5 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ntal_order_runtime_updated_at \nFROM mobility_rental_order_runtime \nWHERE mobility_rental_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+____ test_list_queries_bounded_by_vertical_not_order_count[c10_member-RIDE] ____
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RIDE', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+        grow(isolated_session, vertical, 31)
+        listed, large = counted_list(isolated_session, viewer)
+        print(f"C10_SQL_COUNT vertical={vertical} viewer={viewer} journeys=1:{len(small)} journeys=31:{len(large)} items=61")
+>       assert len(large) == len(small), "Journey/vertical order N+1 query growth"
+E       AssertionError: Journey/vertical order N+1 query growth
+E       assert 95 == 5
+E        +  where 95 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ourney_item_runtime.journey_id = ? ORDER BY go_journey_item_runtime.sort_key, go_journey_item_runtime.created_at', ...])
+E        +  and   5 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...ity_ride_order_runtime_updated_at \nFROM mobility_ride_order_runtime \nWHERE mobility_ride_order_runtime.order_id = ?'])
+
+tests/journey/test_c10_batch_list_projection.py:57: AssertionError
+_______ test_order_batch_chunk_boundary_does_not_fall_back_to_n_plus_one _______
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+
+    def test_order_batch_chunk_boundary_does_not_fall_back_to_n_plus_one(isolated_session):
+        _seed(isolated_session, "HOTEL")
+        grow(isolated_session, "HOTEL", 405)
+        listed, statements = counted_list(isolated_session, OWNER)
+        print(f"C10_SQL_COUNT chunk_boundary journeys=405 items=809 SELECTs={len(statements)}")
+        assert len(listed) == 405
+>       assert len(statements) <= 6
+E       AssertionError: assert 1216 <= 6
+E        +  where 1216 = len(['SELECT go_journey_runtime.journey_id, go_journey_runtime.account_id, go_journey_runtime.title, go_journey_runtime.de...updated_at AS hotel_order_runtime_updated_at \nFROM hotel_order_runtime \nWHERE hotel_order_runtime.order_id = ?', ...])
+
+tests/journey/test_c10_batch_list_projection.py:94: AssertionError
+=========================== short test summary info ============================
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-ATTRACTION]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-FLIGHT]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-HOTEL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RAIL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RENTAL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RIDE]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-ATTRACTION]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-FLIGHT]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-HOTEL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-RAIL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-RENTAL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-RIDE]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_order_batch_chunk_boundary_does_not_fall_back_to_n_plus_one
+13 failed, 1 passed in 2.28s

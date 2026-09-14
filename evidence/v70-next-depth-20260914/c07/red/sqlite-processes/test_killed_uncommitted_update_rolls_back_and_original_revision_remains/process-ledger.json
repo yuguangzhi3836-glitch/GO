@@ -1,0 +1,254 @@
+[
+  {
+    "index": 0,
+    "operation": "setup",
+    "started_at": "2026-09-14T03:56:18.197838+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "00-setup.stdout.log",
+    "stderr": "00-setup.stderr.log",
+    "pid": 12,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T03:56:20.317726+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 12,
+        "at": "2026-09-14T03:56:19.383672+00:00",
+        "operation": "setup",
+        "source_sha256": "b084f3a112998ae08194fcd179ad83f6fc9177bd7c40c2cbb7992e94deba1762"
+      },
+      {
+        "kind": "result",
+        "pid": 12,
+        "at": "2026-09-14T03:56:19.798428+00:00",
+        "result": {
+          "consent_id": "pcn_ab2d70cf7bad4b5a",
+          "status": "ACTIVE",
+          "traveler_id": "process-traveler",
+          "purpose": "HOTEL_PLANNING",
+          "scope": [
+            "TRAVEL_PREFERENCE:HOTEL_ROOM"
+          ],
+          "expires_at": "2026-09-15T03:56:19.391814+00:00"
+        }
+      }
+    ]
+  },
+  {
+    "index": 1,
+    "operation": "save",
+    "started_at": "2026-09-14T03:56:20.318262+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "01-save.stdout.log",
+    "stderr": "01-save.stderr.log",
+    "pid": 13,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T03:56:22.387591+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 13,
+        "at": "2026-09-14T03:56:21.535910+00:00",
+        "operation": "save",
+        "source_sha256": "b084f3a112998ae08194fcd179ad83f6fc9177bd7c40c2cbb7992e94deba1762"
+      },
+      {
+        "kind": "result",
+        "pid": 13,
+        "at": "2026-09-14T03:56:21.941871+00:00",
+        "result": {
+          "preference_id": "pff_16588f627f734979",
+          "preference_key": "HOTEL_ROOM",
+          "value": {
+            "quiet": true
+          },
+          "purpose": "HOTEL_PLANNING",
+          "consent_id": "pcn_ab2d70cf7bad4b5a",
+          "status": "ACTIVE",
+          "source": "EXPLICIT_USER_CONFIRMATION"
+        }
+      }
+    ]
+  },
+  {
+    "index": 2,
+    "operation": "save",
+    "started_at": "2026-09-14T03:56:22.388251+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "02-save.stdout.log",
+    "stderr": "02-save.stderr.log",
+    "pid": 14,
+    "exit_code": -9,
+    "finished_at": "2026-09-14T03:56:23.964199+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 14,
+        "at": "2026-09-14T03:56:23.556510+00:00",
+        "operation": "save",
+        "source_sha256": "b084f3a112998ae08194fcd179ad83f6fc9177bd7c40c2cbb7992e94deba1762"
+      },
+      {
+        "kind": "paused",
+        "pid": 14,
+        "at": "2026-09-14T03:56:23.947866+00:00",
+        "point": "before_commit"
+      }
+    ]
+  },
+  {
+    "index": 3,
+    "operation": "read",
+    "started_at": "2026-09-14T03:56:23.964810+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "03-read.stdout.log",
+    "stderr": "03-read.stderr.log",
+    "pid": 15,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T03:56:26.034083+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 15,
+        "at": "2026-09-14T03:56:25.154398+00:00",
+        "operation": "read",
+        "source_sha256": "b084f3a112998ae08194fcd179ad83f6fc9177bd7c40c2cbb7992e94deba1762"
+      },
+      {
+        "kind": "result",
+        "pid": 15,
+        "at": "2026-09-14T03:56:25.570987+00:00",
+        "result": {
+          "traveler_id": "process-traveler",
+          "purpose": "HOTEL_PLANNING",
+          "preferences": [
+            {
+              "preference_id": "pff_16588f627f734979",
+              "preference_key": "HOTEL_ROOM",
+              "value": {
+                "quiet": true
+              },
+              "purpose": "HOTEL_PLANNING",
+              "consent_id": "pcn_ab2d70cf7bad4b5a",
+              "status": "ACTIVE",
+              "source": "EXPLICIT_USER_CONFIRMATION"
+            }
+          ],
+          "projection": "EXPLICIT_PURPOSE_BOUND_V1",
+          "graph_preferences": [
+            {
+              "preference_id": "pff_16588f627f734979",
+              "preference_key": "HOTEL_ROOM",
+              "value": {
+                "quiet": true
+              },
+              "purpose": "HOTEL_PLANNING",
+              "consent_id": "pcn_ab2d70cf7bad4b5a",
+              "status": "ACTIVE",
+              "source": "EXPLICIT_USER_CONFIRMATION"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "index": 4,
+    "operation": "save",
+    "started_at": "2026-09-14T03:56:26.034746+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "04-save.stdout.log",
+    "stderr": "04-save.stderr.log",
+    "pid": 16,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T03:56:28.103986+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 16,
+        "at": "2026-09-14T03:56:27.201243+00:00",
+        "operation": "save",
+        "source_sha256": "b084f3a112998ae08194fcd179ad83f6fc9177bd7c40c2cbb7992e94deba1762"
+      },
+      {
+        "kind": "result",
+        "pid": 16,
+        "at": "2026-09-14T03:56:27.618327+00:00",
+        "result": {
+          "preference_id": "pff_7053527a38df4f50",
+          "preference_key": "HOTEL_ROOM",
+          "value": {
+            "quiet": false
+          },
+          "purpose": "HOTEL_PLANNING",
+          "consent_id": "pcn_ab2d70cf7bad4b5a",
+          "status": "ACTIVE",
+          "source": "EXPLICIT_USER_CONFIRMATION"
+        }
+      }
+    ]
+  },
+  {
+    "index": 5,
+    "operation": "inspect",
+    "started_at": "2026-09-14T03:56:28.104732+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "05-inspect.stdout.log",
+    "stderr": "05-inspect.stderr.log",
+    "pid": 17,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T03:56:30.224723+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 17,
+        "at": "2026-09-14T03:56:29.301126+00:00",
+        "operation": "inspect",
+        "source_sha256": "b084f3a112998ae08194fcd179ad83f6fc9177bd7c40c2cbb7992e94deba1762"
+      },
+      {
+        "kind": "result",
+        "pid": 17,
+        "at": "2026-09-14T03:56:29.735341+00:00",
+        "result": {
+          "consents": [
+            {
+              "id": "pcn_ab2d70cf7bad4b5a",
+              "status": "ACTIVE"
+            }
+          ],
+          "facts": [
+            {
+              "id": "pff_16588f627f734979",
+              "status": "SUPERSEDED",
+              "superseded_by": "pff_7053527a38df4f50"
+            },
+            {
+              "id": "pff_7053527a38df4f50",
+              "status": "ACTIVE",
+              "superseded_by": null
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

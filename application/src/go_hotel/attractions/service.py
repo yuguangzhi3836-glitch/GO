@@ -1,6 +1,7 @@
 from go_hotel.services import vertical_reservation_expiry as reservation_expiry
 from datetime import UTC, datetime, timedelta, date
 from sqlalchemy import select
+from sqlalchemy.orm import object_session
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import AttractionOrderRow,AttractionChangeQuoteRow,AttractionRefundRow
 from go_hotel.domain.models import new_id
@@ -9,7 +10,8 @@ from go_hotel.services.vertical_lifecycle_projection import project_vertical_lif
 from go_hotel.services.vertical_money_bridge import vertical_money_bridge
 from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service
 from go_hotel.core.production_truth_gate import production_truth_required
-from go_hotel.autonomy.durable import transaction,digest
+from go_hotel.autonomy.durable import transaction,digest,db_now_ms
+from go_hotel.attractions import validity
 from go_hotel.services import vertical_prebook_contract as contracts
 from go_hotel.services import vertical_refund_recovery
 from go_hotel.services import vertical_capacity as capacity
@@ -72,7 +74,8 @@ class AttractionService:
    'visit_date':visit_date,'session_time':session,'available_sessions':x['sessions'],'ticket_type':x['ticket_type'],
    'quantity':quantity,'unit_amount_minor':x['price'],'total_amount_minor':x['price']*quantity,'currency':currency,
    'eligibility':x['eligibility'],'voucher_type':x['voucher_type'],'changeable':x['changeable'],'refundable':x['refundable'],
-   'inventory_observed_units':x['inventory'],'inventory_reserved':False}
+   'inventory_observed_units':x['inventory'],'inventory_reserved':False,
+   'redemption_window':validity.freeze(x.get('supplier_validity_policy'),visit_date,session)}
   with transaction(SessionLocal) as s:
    left=capacity.available_in(s,'ATTRACTION',capacity.attraction_resource(offer_id,visit_date,session),x['inventory'])
    if left<quantity:raise ValueError('ATTRACTION_INVENTORY_CHANGED')
@@ -82,6 +85,7 @@ class AttractionService:
  def create_order(self,account,b):
   production_truth_required('ATTRACTION','CREATE_ORDER')
   if not b.get('prebook_id'):raise ValueError('ATTRACTION_PREBOOK_REQUIRED')
+  if {'supplier_validity_policy','redemption_window','destination_timezone'}.intersection(b):raise ValueError('ATTRACTION_VALIDITY_CLIENT_FIELD_FORBIDDEN')
   with transaction(SessionLocal) as s:
    request={k:b.get(k) for k in ('offer_id','visit_date','session_time','quantity','currency','attendees','traveler_ids')}
    contract,replay=contracts.current_in(s,'ATTRACTION',b['prebook_id'],account,request)
@@ -108,7 +112,12 @@ class AttractionService:
    result=self.out(o)
   vertical_source_runtime_service.decide('ATTRACTION',result['order_id'],[{'source_id':'attraction-engineering-source','source_type':'ATTRACTION_OFFICIAL','authorized':True,'available':True,'evidence_reference':f"attraction-prebook://{b['prebook_id']}"}])
   return result
- def out(self,o): return {"vertical":"ATTRACTION","order_id":o.order_id,"status":o.status,"product_id":o.product_id,"product_name":o.product_name,"product_type":o.product_type,"destination":o.destination,"visit_date":o.visit_date,"session_time":o.session_time,"ticket_type":o.ticket_type,"quantity":o.quantity,"eligibility":o.eligibility,"voucher_type":o.voucher_type,"voucher_code":o.voucher_code if o.status=="CONFIRMED" else None,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"attendees":o.attendees,"supplier_reference":o.supplier_reference if o.status=="CONFIRMED" else None,"external_live":False} | reservation_expiry.projection('ATTRACTION',o)
+ def _window_in(self,s,o):
+  if s is None:return {'state':'LEGACY_UNVERIFIED'}
+  row=s.scalar(select(VerticalPrebookContractRow).where(VerticalPrebookContractRow.vertical=='ATTRACTION',VerticalPrebookContractRow.order_id==o.order_id))
+  if not row:return {'state':'LEGACY_UNVERIFIED'}
+  return validity.for_order(self._order_terms(s,o.order_id),o.visit_date,o.session_time)
+ def out(self,o): return {"vertical":"ATTRACTION","order_id":o.order_id,"status":o.status,"product_id":o.product_id,"product_name":o.product_name,"product_type":o.product_type,"destination":o.destination,"visit_date":o.visit_date,"session_time":o.session_time,"ticket_type":o.ticket_type,"quantity":o.quantity,"eligibility":o.eligibility,"voucher_type":o.voucher_type,"voucher_code":o.voucher_code if o.status=="CONFIRMED" else None,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"attendees":o.attendees,"supplier_reference":o.supplier_reference if o.status=="CONFIRMED" else None,"external_live":False,"redemption_window":self._window_in(object_session(o),o)} | reservation_expiry.projection('ATTRACTION',o)
  def get(self,account,order_id):
   with SessionLocal() as s:
    o=s.get(AttractionOrderRow,order_id,with_for_update=True)
@@ -155,8 +164,9 @@ class AttractionService:
    o=s.get(AttractionOrderRow,order_id,with_for_update=True)
    if not o or o.account_id!=account: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
    if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
+   window=validity.for_order(self._order_terms(s,order_id),o.visit_date,o.session_time);validity.guard(window,db_now_ms(s))
    voucher_code=o.voucher_code; supplier_reference=o.supplier_reference
-   o.status="FULFILLED";o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,"VOUCHER_REDEEMED",o.status,{"evidence_reference":evidence_reference,"voucher_code":voucher_code,"supplier_reference":supplier_reference,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"voucher_code":voucher_code,"supplier_reference":supplier_reference});return self.out(o)
+   o.status="FULFILLED";o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,"VOUCHER_REDEEMED",o.status,{"evidence_reference":evidence_reference,"voucher_code":voucher_code,"supplier_reference":supplier_reference,"redemption_window":window,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"voucher_code":voucher_code,"supplier_reference":supplier_reference});return self.out(o)
  def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,voucher_code=None):
   if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
   state=state.upper()

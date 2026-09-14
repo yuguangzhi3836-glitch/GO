@@ -1,0 +1,179 @@
+[
+  {
+    "index": 0,
+    "operation": "setup",
+    "started_at": "2026-09-14T03:59:35.552308+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "00-setup.stdout.log",
+    "stderr": "00-setup.stderr.log",
+    "pid": 17,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T03:59:37.671520+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 17,
+        "at": "2026-09-14T03:59:36.744711+00:00",
+        "operation": "setup",
+        "source_sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1"
+      },
+      {
+        "kind": "result",
+        "pid": 17,
+        "at": "2026-09-14T03:59:37.174013+00:00",
+        "result": {
+          "consent_id": "pcn_c78e5afe4eb04e81",
+          "status": "ACTIVE",
+          "traveler_id": "process-traveler",
+          "purpose": "HOTEL_PLANNING",
+          "scope": [
+            "TRAVEL_PREFERENCE:HOTEL_ROOM"
+          ],
+          "expires_at": "2026-09-15T03:59:36.751995+00:00"
+        }
+      }
+    ]
+  },
+  {
+    "index": 1,
+    "operation": "save",
+    "started_at": "2026-09-14T03:59:37.672355+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "01-save.stdout.log",
+    "stderr": "01-save.stderr.log",
+    "pid": 18,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T03:59:40.274790+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 18,
+        "at": "2026-09-14T03:59:38.843905+00:00",
+        "operation": "save",
+        "source_sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1"
+      },
+      {
+        "kind": "paused",
+        "pid": 18,
+        "at": "2026-09-14T03:59:38.844266+00:00",
+        "point": "before_operation"
+      },
+      {
+        "kind": "result",
+        "pid": 18,
+        "at": "2026-09-14T03:59:39.814897+00:00",
+        "error": "TRAVEL_PREFERENCE_REVISION_CONFLICT"
+      }
+    ]
+  },
+  {
+    "index": 2,
+    "operation": "save",
+    "started_at": "2026-09-14T03:59:37.673168+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "02-save.stdout.log",
+    "stderr": "02-save.stderr.log",
+    "pid": 19,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T03:59:40.275473+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 19,
+        "at": "2026-09-14T03:59:38.898212+00:00",
+        "operation": "save",
+        "source_sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1"
+      },
+      {
+        "kind": "paused",
+        "pid": 19,
+        "at": "2026-09-14T03:59:38.898366+00:00",
+        "point": "before_operation"
+      },
+      {
+        "kind": "result",
+        "pid": 19,
+        "at": "2026-09-14T03:59:39.342845+00:00",
+        "result": {
+          "preference_id": "pff_d3db51fc73b642be",
+          "preference_key": "HOTEL_ROOM",
+          "value": {
+            "quiet": false
+          },
+          "purpose": "HOTEL_PLANNING",
+          "consent_id": "pcn_c78e5afe4eb04e81",
+          "status": "ACTIVE",
+          "source": "EXPLICIT_USER_CONFIRMATION"
+        }
+      }
+    ]
+  },
+  {
+    "index": 3,
+    "operation": "read",
+    "started_at": "2026-09-14T03:59:40.276017+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "03-read.stdout.log",
+    "stderr": "03-read.stderr.log",
+    "pid": 20,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T03:59:42.345285+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 20,
+        "at": "2026-09-14T03:59:41.448363+00:00",
+        "operation": "read",
+        "source_sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1"
+      },
+      {
+        "kind": "result",
+        "pid": 20,
+        "at": "2026-09-14T03:59:41.860124+00:00",
+        "result": {
+          "traveler_id": "process-traveler",
+          "purpose": "HOTEL_PLANNING",
+          "preferences": [
+            {
+              "preference_id": "pff_d3db51fc73b642be",
+              "preference_key": "HOTEL_ROOM",
+              "value": {
+                "quiet": false
+              },
+              "purpose": "HOTEL_PLANNING",
+              "consent_id": "pcn_c78e5afe4eb04e81",
+              "status": "ACTIVE",
+              "source": "EXPLICIT_USER_CONFIRMATION"
+            }
+          ],
+          "projection": "EXPLICIT_PURPOSE_BOUND_V1",
+          "graph_preferences": [
+            {
+              "preference_id": "pff_d3db51fc73b642be",
+              "preference_key": "HOTEL_ROOM",
+              "value": {
+                "quiet": false
+              },
+              "purpose": "HOTEL_PLANNING",
+              "consent_id": "pcn_c78e5afe4eb04e81",
+              "status": "ACTIVE",
+              "source": "EXPLICIT_USER_CONFIRMATION"
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

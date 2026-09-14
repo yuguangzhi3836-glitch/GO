@@ -1,0 +1,13 @@
+.....F                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_withdrawal_serializes_with_inflight_read_or_old_grant_releases_nothing __
+tests/test_round2_c07_process_recovery.py:222: in test_withdrawal_serializes_with_inflight_read_or_old_grant_releases_nothing
+    assert not revoked_before_release or read["preferences"]==[],observed
+E   AssertionError: {'backend': 'sqlite', 'withdrawal_finished_before_reader_release': True, 'released_preference_count': 1}
+E   assert (not True or [{'preference...ANNING', ...}] == []
+E     
+E     Left contains one more item: {'preference_id': 'pff_7105b23d8aaf44c3', 'preference_key': 'HOTEL_ROOM', 'value': {'quiet': True}, 'purpose': 'HOTEL_PLANNING', ...}
+E     Use -v to get more diff)
+=========================== short test summary info ============================
+FAILED tests/test_round2_c07_process_recovery.py::test_withdrawal_serializes_with_inflight_read_or_old_grant_releases_nothing
+1 failed, 5 passed in 60.42s (0:01:00)

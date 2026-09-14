@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.935" timestamp="2026-09-14T13:08:09.767526+09:00" hostname="localhost"><testcase classname="tests.judgment.test_next_depth_concurrent_judgment" name="test_invalid_evidence_supplement_cannot_initialize_standard_or_write_events" time="1.487"><failure message="assert [&lt;go_hotel.db...7f8497a6a1b0&gt;] == []&#10;  &#10;  Left contains one more item: &lt;go_hotel.db.models.GoodHotelStandardVersionRow object at 0x7f8497a6a1b0&gt;&#10;  Use -v to get more diff">def test_invalid_evidence_supplement_cannot_initialize_standard_or_write_events():
+        assert rows(GoodHotelStandardVersionRow) == []
+        assert rows(GoodHotelStandardGovernanceEventRow) == []
+        with pytest.raises(HTTPException) as caught:
+            svc.reevaluate('next-hotel', {'confirmed_serious_risk_count': 0})
+        assert caught.value.detail['code'] == 'JUDGMENT_EVIDENCE_FIELD_FORBIDDEN'
+&gt;       assert rows(GoodHotelStandardVersionRow) == []
+E       assert [&lt;go_hotel.db...7f8497a6a1b0&gt;] == []
+E         
+E         Left contains one more item: &lt;go_hotel.db.models.GoodHotelStandardVersionRow object at 0x7f8497a6a1b0&gt;
+E         Use -v to get more diff
+
+tests/judgment/test_next_depth_concurrent_judgment.py:187: AssertionError</failure></testcase></testsuite></testsuites>

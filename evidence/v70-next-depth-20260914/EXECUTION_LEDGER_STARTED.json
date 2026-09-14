@@ -1,0 +1,3261 @@
+{
+  "schema_version": 1,
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "round_id": "V70-NEXT-DEPTH-20260914",
+  "recorded_at": "2026-09-14T03:53:38.920401+00:00",
+  "snapshot_scope": "Actual delegated local development ACKs; independent C13 awaits frozen candidate and C14. Logical Cells share bounded agents; no server ACK claims.",
+  "cells": [
+    {
+      "cell_id": "C01",
+      "agent": "/root/vertical_depth",
+      "task": {
+        "id": "V70-R2-C01-02",
+        "description": "混合额度现金结账未知资金结果恢复，保留已通过酒店价格规则",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C01.json",
+            "sha256": "6186dff7ac97f23047cab3b7a866d16c5638734acdde9fcd757e90e3b183aca9",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C01-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C01.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C01-01",
+          "description": "酒店金额完整性混合状态下一层验收",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C01-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C01-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c01/README.md",
+              "sha256": "673cd687b995f814dc2acc4d65b3fc3e0d536c99d240524597381df957f85ce2",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C01-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c01/after.junit.xml",
+              "sha256": "dfefd802955c2452dfe3659a11a43ab96f568a7d1e7f1564212feeeb4e93831a",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C01-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c01/after.raw.log",
+              "sha256": "1030ae81b672c80f4db06edb3faa96fbff6bd7f339f8b20da5b68a4679a2a4ad",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C01-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c01/result.json",
+              "sha256": "2fd71fa2a1630ce413bb5b8e42b0836616f08fab1ae3f077fc47b9274f12bce2",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C01-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c01/runs.json",
+              "sha256": "b7380791a3d58469de92245a63fa096d8402113c04c9c4388ce0add79a61dd52",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C01-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c01/source-identity.json",
+              "sha256": "aa159d5971d162344363e6d8ffc9f00b2faddc4c82de92a9c6cb10bfd65042f0",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C01-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C01-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C01-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C01-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c01/after.raw.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c01/after.raw.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C02",
+      "agent": "/root/vertical_depth",
+      "task": {
+        "id": "V70-R2-C02-02",
+        "description": "按乘客及票联拆分改签设计与隔离实现；保护未选乘客和航段、原金额分摊",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C02.json",
+            "sha256": "6d687a1dbd6da901c9333236d40b2e8ab15dd2098c343970c16f3225102e31f2",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C02-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C02.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C02-01",
+          "description": "多航段部分乘客请求边界与无资金副作用",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C02-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C02-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c02/README.md",
+              "sha256": "bdb97a532a36e9f628e952c91890fc8489a06922088695feb4fde203584d45be",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C02-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c02/after.junit.xml",
+              "sha256": "3f51c9bc6b72569da10edc6e9401256a9b4051032bc1755665d3d8f256aa637a",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C02-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c02/after.raw.log",
+              "sha256": "7101a1356a2a0e720981d6ca015eb7060df278d6997d6475a2590ec74d4c2ddd",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C02-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c02/result.json",
+              "sha256": "4d5f7e687d55ed7d911e9b15d9cf1598b1eacf2ef7def4a143e7c75dcd6afa3e",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C02-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c02/runs.json",
+              "sha256": "92767c79d657567d931e3eff68b6d5dbcba1e45928e49188b8622af7ec208775",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C02-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c02/source-identity.json",
+              "sha256": "8b9b88de14c6cf0c5e37bbe14501548ae813c31b1ecfdbf7357e9fab12e79c59",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C02-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C02-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C02-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C02-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c02/after.raw.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c02/after.raw.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C03",
+      "agent": "/root/runtime_next",
+      "task": {
+        "id": "V70-R2-C03-02",
+        "description": "未付款到期与支付取消竞争，以及目标库存满额时不得补扣",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C03.json",
+            "sha256": "c1ce447f6bfaba716d41d93807b9f0dd3f6ce6a909af9ab15159604b020db1ff",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C03-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C03.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C03-01",
+          "description": "铁路改签双库存与退款恢复运行补证",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/CELL_RESULT.json",
+              "sha256": "cc12a9dd9a23e36c471c3be06290102efbfd8e535060b8cc6ed8341f19c31684",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/README.md",
+              "sha256": "bd3d2f16bef7995d7cc69f5c071c938e77e2571a1b4463fa4eef77fdd36e6818",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/SHA256SUMS.json",
+              "sha256": "588b0b70a71406c0fb4ab63b427ad4f2a2beb3f5dfab1e0c35b17d2a10ab112a",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/dual-inventory-refund.command.json",
+              "sha256": "55418fdbf9b8469c4a0b1eeb7d5c9ba097f56d743c7d8374903fa151877aa2c5",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/dual-inventory-refund.hashes-after.json",
+              "sha256": "71a690fb43961954243e33197ce630695161bef08f0362a050e72e60bfdcca9b",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/dual-inventory-refund.hashes-before.json",
+              "sha256": "71a690fb43961954243e33197ce630695161bef08f0362a050e72e60bfdcca9b",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/dual-inventory-refund.junit.xml",
+              "sha256": "ab442e101d186a5b44d082de03c2c0d59027018e5caeb71982909c5c7f77588e",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/dual-inventory-refund.raw.log",
+              "sha256": "99db33d5c94c6f7da021687c7391181685cc33299c5435b1c861e2db3be3ec87",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/dual-inventory-refund.result.json",
+              "sha256": "bcec8d72c84d3412f2717f386181f4aaf870ceeb43d22946f55169ce3e36da7c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/runtime-existing.command.json",
+              "sha256": "a1ec1a22f4ea97e1fa8d2ca6a54bdf054e528de578e2bcf8e290709b2eecd8e4",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/runtime-existing.hashes-after.json",
+              "sha256": "d15bd4456a26f6add173207b4bad970fb568fe27f03ca17acfa95209beb061a7",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/runtime-existing.hashes-before.json",
+              "sha256": "d15bd4456a26f6add173207b4bad970fb568fe27f03ca17acfa95209beb061a7",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/runtime-existing.junit.xml",
+              "sha256": "50342cae11b5e2121bf2eb985261984da918f4bdb2a3880e0b88702f4d1dc8a4",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/runtime-existing.raw.log",
+              "sha256": "5dc4df59da10be757fa131e4a2d4548f47d85d020921b557e3b44d979ebd3e03",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/runtime-existing.result.json",
+              "sha256": "0a3c5536efc26747297082b5d70b9883f05019bf5fcdd672ec1ce4dd7bea3a48",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c03/source-binding.json",
+              "sha256": "3bf32cf0f9e485e69cc2792ce4ac61c922aa99461b2690f1bf27eb2397361fb2",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C03-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c03/dual-inventory-refund.raw.log",
+            "evidence/v70-round2-20260914/c03/runtime-existing.raw.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c03/runtime-existing.raw.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C04",
+      "agent": "/root/vertical_depth",
+      "task": {
+        "id": "V70-R2-C04-02",
+        "description": "历史租车退款与冻结计划账本只读对账，列出矛盾修复候选",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C04.json",
+            "sha256": "ed363472b15665e5df38ffc98fcfa93b9b422321570abbf5ccd02583f1c6b880",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C04-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C04.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C04-01",
+          "description": "租车退款资金回执配对与终态一致性",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/README.md",
+              "sha256": "c5a68fd5e348ac0c05a1709389cd945fe6a2d778af383633f832bf2d2c8b34b3",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/after.junit.xml",
+              "sha256": "201f06b7a018fec203ada5b46ee71b939e6a1ce05916a3837b163c70d8d6f6d1",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/after.raw.log",
+              "sha256": "4d2df7a96ce4a667da3ccf295f2d16c728a65ed0e861a3baa919f7bb469b02b5",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/before.raw.log",
+              "sha256": "f48437c1818f4d3f2b540e0dcbddc3e75ecdd079fd40724c97aac47cf6861cfb",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/before2.junit.xml",
+              "sha256": "f4df81a18a521866c1a89e8ca0679bc2baeb7243458ecb563dfc1052fece1651",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/before2.raw.log",
+              "sha256": "de23a4fd06769ee3858fefd8a1a8bb701e7357cffd13e86d707c78cea19ef9f8",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/receipt-plan-after.junit.xml",
+              "sha256": "07f1f72eb596f59d3c6619dab5c67ec5bfe29b6d538f7511a85cca0359ef420f",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/receipt-plan-after.raw.log",
+              "sha256": "d140760c16527c43a5185827cbeec43fa0deb015a8062358fd9a74bb86ab6f28",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/receipt-plan-before.junit.xml",
+              "sha256": "f1463d36739afab8ad23968850ee471c40bdfbb8bf8a8d437535a2f139566dbb",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/receipt-plan-before.raw.log",
+              "sha256": "e259de6cd88987b298883b5fccfeb2e9d5c99f209bc7336a47dcc13560fb90fd",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/receipt-plan-before.sha256",
+              "sha256": "8854c126af0d7dcff46c6062e7c2954a8944a316c6811c8fe23ad6b9ed67322d",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/receipt-plan-runs.json",
+              "sha256": "b5c2e675ab5c547f0c2495e4a822abd70e6ba70a649eaace42a8a5cc5b961b0d",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/receipt-plan-source-identity.json",
+              "sha256": "a34f056de57b6f60b7cefbc1ec69bd6f3ee113897838bda62e4dd711dd7aadb8",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/regression.junit.xml",
+              "sha256": "ef083d64d861377f5aece50ed2717a0a08d513e5486fe326bbfb8e7736586c31",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/regression.raw.log",
+              "sha256": "e837a173ec33d93b1abd07a04b38fc03bdbdeb6df44acf9db29177e484bf5824",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/result.json",
+              "sha256": "1282582e75bb0df91e13362802f6db11cc69899ef4455d443839b341641ea4a1",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/runs.json",
+              "sha256": "8775b1c70494c04908ff5d494f899eb21130e97946ab4351ffeece3cc5b0c677",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/source-before.sha256",
+              "sha256": "c6f315eef1eee3a3f7f414b1987714d4792ef110089ace4b3324a58357f362ee",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c04/source-identity.json",
+              "sha256": "013bbb524c9b7876497d2c142782c7c856e065a49f64189aa95d6164174e0337",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C04-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c04/after.raw.log",
+            "evidence/v70-round2-20260914/c04/before.raw.log",
+            "evidence/v70-round2-20260914/c04/before2.raw.log",
+            "evidence/v70-round2-20260914/c04/receipt-plan-after.raw.log",
+            "evidence/v70-round2-20260914/c04/receipt-plan-before.raw.log",
+            "evidence/v70-round2-20260914/c04/regression.raw.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c04/receipt-plan-after.raw.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C05",
+      "agent": "/root/vertical_depth",
+      "task": {
+        "id": "V70-R2-C05-02",
+        "description": "未知结果恢复中证据缺失或损坏的同阶段拒绝与恢复",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C05.json",
+            "sha256": "400734fa476abe701c01eb38015d7194b9e3dc81444c1f55314d7bcd3415cc98",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C05-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C05.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C05-01",
+          "description": "用车未知结果恢复与退款履约下一层",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C05-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C05-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c05/README.md",
+              "sha256": "0a018744359f1dfe873f6ebc65bd62d7c62c2fad4821e23c961a4ba4a89b3a22",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C05-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c05/after.junit.xml",
+              "sha256": "47848f3cf6de0d68a2bf43af16b97686efc28ce6ad3977cf5fa7fe75b8468408",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C05-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c05/after.raw.log",
+              "sha256": "423b1d0e014eb1eab96f4420f7b344c2615be505dd574b756ac884826ca74f2d",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C05-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c05/result.json",
+              "sha256": "97e188d968fb22fb64e06c2b686471f0f426257ecbfdabaec101291e9fea0481",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C05-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c05/runs.json",
+              "sha256": "cb2271104fd00086e497911fbade6bc54098c66dd5a629d48fe52ae605235265",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C05-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c05/source-identity.json",
+              "sha256": "6c805bbf2c76b07ece254f52ba26c2d0631d069159f2fcb1ccf3b73a657540fd",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C05-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C05-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C05-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C05-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c05/after.raw.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c05/after.raw.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C06",
+      "agent": "/root/runtime_next",
+      "task": {
+        "id": "V70-R2-C06-02",
+        "description": "目的地时区及供应商有效窗口契约，补核销临界点测试",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C06.json",
+            "sha256": "a4a350b03cb315e0e360fb663d8c0f329ff2883ba3b63e11d06ae93391368e9e",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C06-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C06.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C06-01",
+          "description": "景点核销退款互斥及合同运行补证",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/CELL_RESULT.json",
+              "sha256": "81fc732cdeeadd3e2f4ec27f117402c20293f49f2ad14fbe4b039788caa4cdf8",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/README.md",
+              "sha256": "fd3ce7b15eb490c918dc9ab188963a3896a2721fe180ff4f2fca177fb2526a6d",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/SHA256SUMS.json",
+              "sha256": "6e8f7f7f8eaa5cfa5c92b9c1094f85b16e43156989789f86fc387d5abbf85d00",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/redemption-refund-exclusion.command.json",
+              "sha256": "b827de847f940ce386ed2f58a6e8b36b0935b09fb70fe9546460538f1198aca8",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/redemption-refund-exclusion.hashes-after.json",
+              "sha256": "d1c50160ca91badf0acb0cf26dbe13d3e881c87d4dc4cf0dab2a1a339598c5ee",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/redemption-refund-exclusion.hashes-before.json",
+              "sha256": "d1c50160ca91badf0acb0cf26dbe13d3e881c87d4dc4cf0dab2a1a339598c5ee",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/redemption-refund-exclusion.junit.xml",
+              "sha256": "3a54190bc02f16d21cfbe0ce704a338b87b2a0e3d7f43abcb93d8716be667abe",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/redemption-refund-exclusion.raw.log",
+              "sha256": "99db33d5c94c6f7da021687c7391181685cc33299c5435b1c861e2db3be3ec87",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/redemption-refund-exclusion.result.json",
+              "sha256": "68541da14a05e6283fb140be2d3e77b7692f3b47d1b80ae3986140a4eda094c0",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/runtime-existing.command.json",
+              "sha256": "d1b11349b9e62ea61ea216538437910c9049a7aab8a66900a661330f5215828c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/runtime-existing.hashes-after.json",
+              "sha256": "4edf3dfe79c8afd91e3a3b936013b2fd8cbd92d048d3eb95ee6f034d1d3563f6",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/runtime-existing.hashes-before.json",
+              "sha256": "4edf3dfe79c8afd91e3a3b936013b2fd8cbd92d048d3eb95ee6f034d1d3563f6",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/runtime-existing.junit.xml",
+              "sha256": "896033506872ed3b63110810203952e9afa55fc1de185cb17aa5374394bd5cd7",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/runtime-existing.raw.log",
+              "sha256": "6d82cf7c7a7bc54ae70215d162423db36c4bfe0ab0ef7fb69e10f3f7489b5701",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/runtime-existing.result.json",
+              "sha256": "bfbb598e9b1d57c0f282b47d6592e0c1ed3b2e07eeba379b9cb65fed4c00c57a",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c06/source-binding.json",
+              "sha256": "ed6b7f8e23a0700587ed75dda584bfa4cd5a8c7d91c9df2af6eea04146be4d82",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C06-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c06/redemption-refund-exclusion.raw.log",
+            "evidence/v70-round2-20260914/c06/runtime-existing.raw.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c06/runtime-existing.raw.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C07",
+      "agent": "/root/c07_p0",
+      "task": {
+        "id": "V70-R2-C07-02",
+        "description": "隔离PostgreSQL并发更新撤回及跨进程重启持久化验收",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C07.json",
+            "sha256": "39f7e5af7e60526a36678fbfc2ce4cfc64fbde10e684fe1b69ff21b2c0c76870",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C07-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C07.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C07-01",
+          "description": "P0显式偏好加密持久化及purpose-consent读取撤回",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c07/REPORT.md",
+              "sha256": "2c391e2ec6c6cd84e9cc4d7170a985f32c7fe5690a4e357895384af1543a45ff",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c07/commands.json",
+              "sha256": "16c724f72ad6e2cb0a0f5854f1c1e5f355fc535c7552cd16cdfba5a6c4447ccf",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c07/green-attempt1.log",
+              "sha256": "118984a8df75e866d5c3969ea0be9434e90e13613d7200734f297671f042e845",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c07/green-final.log",
+              "sha256": "bcbc1d5acfe60485c752ccd233634711b285b6d2b6cf6aac4477da52f552f61f",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c07/red-environment-failure.log",
+              "sha256": "6c7d09acac761ebeca504646eabd1c90209cf2154a106870bdf6b4dbaf58b89f",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c07/red.log",
+              "sha256": "fd203112e92d6784551291791fd13246eb17274dcc59827f37849785297de891",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c07/source-manifest.json",
+              "sha256": "2ec34ada48b041df732bbb1c70b29b7039977bac44d8abd0d537e8256278d6cf",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C07-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c07/green-attempt1.log",
+            "evidence/v70-round2-20260914/c07/green-final.log",
+            "evidence/v70-round2-20260914/c07/red-environment-failure.log",
+            "evidence/v70-round2-20260914/c07/red.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c07/green-final.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C08",
+      "agent": "/root/c12_scheduler",
+      "task": {
+        "id": "V70-R2-C08-02",
+        "description": "进程硬中断后的ROUTING审计恢复，禁止重放模型副作用",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C08.json",
+            "sha256": "59868d7e4b64463f4c98c0468e778cc18bfabf8675b501452ad623d8a5a44de3",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C08-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C08.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C08-01",
+          "description": "规划成功结果审计提交故障收敛",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c08/EXECUTION.json",
+              "sha256": "d3dcaab7bd0d562575554b20012b7788ab3e44505e7c81240321c2dbfb57acc8",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c08/README.md",
+              "sha256": "29441ba77d40aa8f0d4845ee2234587c65a731279177b33139ab32af3be66b0a",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c08/green.command.json",
+              "sha256": "da15f0ce2c4cc7718ceeb15c9420de7e7e980aea936f7cc74eabf6e2d1d94b72",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c08/green.log",
+              "sha256": "3778c5c90f5276339c6de23117314f593efa65b62332a11fb9ba1c55404fb3ad",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c08/green.xml",
+              "sha256": "c40531d3a6b9ddc107a39c21867f724a2787c14a5c940e87563bfcda86e8eeee",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c08/red.command.json",
+              "sha256": "541becf95f6ffa09803cb2cb4479b09fcd0074b0f9fe4a213d13c3860682c919",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c08/red.log",
+              "sha256": "0d9225085a9ed3e10e58d6b6c6ecbecaea6d41df8e553288617316557dcd2c60",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c08/red.xml",
+              "sha256": "87b403e63f50942da427f0e87a1ad8bc73e6d3a6c9d3dd7c5be861d4a4332b8f",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C08-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c08/green.log",
+            "evidence/v70-round2-20260914/c08/red.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c08/green.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C09",
+      "agent": "/root/runtime_next",
+      "task": {
+        "id": "V70-R2-C09-02",
+        "description": "同酒店并发重评及钩子重放，仅一个ACTIVE判断和匹配证据",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C09.json",
+            "sha256": "8e253c43dd807886371a95e990f597b9d24de4dd5be90dbddf6921e3b7e58215",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C09-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C09.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C09-01",
+          "description": "判断证据运行补齐及禁止调用方覆盖风险事实",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/CELL_RESULT.json",
+              "sha256": "82dd9a93ca4f2991a5ce943f1fc4ba7f36454f98955cbcc51f01ec91306e57e7",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/README.md",
+              "sha256": "2ad4c8cd871cf7ff6b5118cee7a31b968b0cb1621f3ba92fe876176e929a8754",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/SHA256SUMS.json",
+              "sha256": "7fbfba47b190fa13b4be050ac46c18f9e72054ff6a8d22648be695b4d744fc39",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-green.command.json",
+              "sha256": "547397770f1c61d2d53a49f2bad82ee4a6cc16471f8cb0eaf81960f3cd044160",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-green.hashes-after.json",
+              "sha256": "8326e81b1531ea22e5aa723dd095e089c7b23d76b855b15de6b4d200769ffe7a",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-green.hashes-before.json",
+              "sha256": "8326e81b1531ea22e5aa723dd095e089c7b23d76b855b15de6b4d200769ffe7a",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-green.junit.xml",
+              "sha256": "47fa9e6736f5f05054247dcd33996df932e9ff36b7c59281bdf3d514685814d3",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-green.raw.log",
+              "sha256": "4e8371f9c620cfa4bc5d9ebdf7294ff64db14d8292266e6fd5f232f5168cd93a",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-green.result.json",
+              "sha256": "50c78d199fef3255327da5f912e8fc8d6d336bd95dc8f1919e42b4f885bb0467",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-red.command.json",
+              "sha256": "2c61c2bb39160efb9f15aea4b6ec3a24e003de0a8ac4836a04280abcde049b1c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-red.hashes-after.json",
+              "sha256": "941c839a71f928bf4c3b5dc3fde5c2967f500292817b514ad900ea83b32a4ca6",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-red.hashes-before.json",
+              "sha256": "941c839a71f928bf4c3b5dc3fde5c2967f500292817b514ad900ea83b32a4ca6",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-red.junit.xml",
+              "sha256": "c4c543008cdf6931561ad7a52fb6a545f9d8778264cb10472b214fcca566170e",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-red.raw.log",
+              "sha256": "adc6700a781b4e4463b809451f0b782ed08e27ca7d49980a77c443067c865ed3",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/evidence-authority-red.result.json",
+              "sha256": "c2e825a3f47609d86fa281a2172585bab74b8fbe255551a011e1f398a1ac97bc",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c09/source-binding.json",
+              "sha256": "2685244e00ab4907e39d937d98043291344f067f139b57e83fe2fd19ed8c13a5",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C09-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c09/evidence-authority-green.raw.log",
+            "evidence/v70-round2-20260914/c09/evidence-authority-red.raw.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c09/evidence-authority-green.raw.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C10",
+      "agent": "/root/c12_scheduler",
+      "task": {
+        "id": "V70-R2-C10-02",
+        "description": "行程列表批量投影，约束N+1且保留成员权限和缺单回退",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C10.json",
+            "sha256": "bb00c10c45f81bda6b5098465b2f48984c961afc58761595b7911808d29ce3d3",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C10-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C10.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C10-01",
+          "description": "统一行程金额事实污染修复与查询成本复现",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c10/EXECUTION.json",
+              "sha256": "a73963c00ac6590a0bc0a5bb17d05579a5cbeffb086a1b5a598115155793dfb8",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c10/README.md",
+              "sha256": "057bb14fb27dbc22e08e8b6e050ca2c3468690d573e85fac40f1b254ec259ab8",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c10/green.command.json",
+              "sha256": "7fa679b2a30a96105d80215531b34a108946838cbef07a5e551d61536f91df79",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c10/green.log",
+              "sha256": "03e1aed8b1368661cbe8cbe375edcf96b05759540bafcd8870fb1c51b108958a",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c10/green.xml",
+              "sha256": "e456e253d2b8938f3c044553102e35881e8ebd486a5c73ab882a40af5208cf9a",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c10/query_scaling.command.json",
+              "sha256": "bf4e0a1a0be7a7aad46b0c2bbc03eeabc5409a5c4f543799256baf4941210a35",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c10/query_scaling.log",
+              "sha256": "c4d81c1ae559234543adcd204b334832c943e2406677eaf49ef40a2870f954e4",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c10/query_scaling.xml",
+              "sha256": "79a5219dafd2b0ba6e633e2fccc39fc0de4b7187e07c96983d504af89161d137",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c10/red.command.json",
+              "sha256": "609dd2d5e846b6d04f77df62432304afd2453bdd0fade97a8aa1019b9c425c0b",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c10/red.log",
+              "sha256": "db36e6b33c18b237b95ba5f9d02f7b797cb4d5f296b2c2f8c20c23ca4d1c0df9",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c10/red.xml",
+              "sha256": "23577d6339614ddc45ae3a9a99024d8885b9587e41835cccc5240a646cabb7ba",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C10-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c10/green.log",
+            "evidence/v70-round2-20260914/c10/query_scaling.log",
+            "evidence/v70-round2-20260914/c10/red.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c10/green.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C11",
+      "agent": "/root/cross_domain_depth",
+      "task": {
+        "id": "V70-R2-C11-03",
+        "description": "实现FLIGHT_CHECKOUT与FLIGHT_EXECUTE_CHANGE的显式副作用阶段和既有order/quote资源绑定恢复",
+        "scope": "仅两条flight operation与已审恢复接点，不按异常类型盲目放行，先形成固定隔离候选",
+        "test_plan": "按c11/followup/ACCEPTANCE.md的20项条件优先验证两flight操作；原2个FAIL不得删改或当PASS",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C11.json",
+            "sha256": "43762c3c478dfb4883569c8393500ba7313d22af87a2aa4dc2025a09c7a32bb7",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C11-03"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C11.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C11-01",
+          "description": "幂等callback提交副作用后抛错重放复现",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "BLOCKED",
+          "completion": {
+            "percent": 33.333333,
+            "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+          },
+          "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/red.log",
+              "sha256": "0534b29ee6a4626ccadf8ac5a1897823fa890fc3bb69212af4212614fa985773",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/retained_regression.log",
+              "sha256": "01b6a7296138f4541706d10cd175e92188435626a74123b3058ab6cfcdcc30e9",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/DISPATCH.json",
+            "evidence/v70-round2-20260914/c11/red.log",
+            "evidence/v70-round2-20260914/c11/retained_regression.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "HOLD",
+              "evidence_refs": []
+            },
+            "evidence": {
+              "status": "HOLD",
+              "evidence_refs": []
+            },
+            "c14": {
+              "status": "HOLD",
+              "evidence_refs": []
+            },
+            "c13": {
+              "status": "HOLD",
+              "evidence_refs": []
+            }
+          }
+        },
+        {
+          "id": "V70-R2-C11-02",
+          "description": "37处幂等callback提交边界分类与两条flight恢复设计；原重复副作用缺口未修",
+          "scope": "本域下一层明确可执行工作，外部运行范围单列",
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "status": "BLOCKED",
+          "completion": {
+            "percent": 50,
+            "definition": "缺口/任务/静态Evidence已形成3/6；运行失败未修，C14/C13闭环未通过，不计100%"
+          },
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/CONTRACT_REVIEW.md",
+              "sha256": "551b767f3e715d76183cd5013386e74b7c9a86c99891d503828dc722249d3b84",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/EXECUTION.json",
+              "sha256": "0eb539fca2b1278ef84c82d8b43fed89a1d09da772d7bde83907b29e72abca36",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/followup/ACCEPTANCE.md",
+              "sha256": "cb3f2c51d4c3dd6c1f9a65d9b5fdb2b13b31e578caa307e3e27eb144b3e242a3",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/followup/CALLBACK_INVENTORY.json",
+              "sha256": "0bce2b12e1452cc7dbfa0d1a0ef5961a17f0ddfcbc6c0919121261091edd2368",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/followup/CALLBACK_REVIEW.md",
+              "sha256": "519da50f2ca98393c33149405c5f27b664081eb7a7bfeb57ad8a2eddb07acbfa",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/followup/DESIGN.md",
+              "sha256": "2fe26fff332484d0caa72316124ded0cc8bc30d77acf3a08cb1e5c07a903dc35",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/followup/EXECUTION.json",
+              "sha256": "98649bda001d1325c9e8267be756c26fee70a493843da6d2fdb5c1b17923e1ba",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/followup/SOURCE_SHA256.json",
+              "sha256": "9fdc2407771fc930e7aff676211bded716770a2e29bfae8851e34d5ed9dabbff",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/followup/validation.command.json",
+              "sha256": "e25b2613897854d7632b8ab48c11647ca46aca81b90677004f0571bbd602d6b9",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/followup/validation.log",
+              "sha256": "e87bd097a9474520f2e0ebdc4e97c12daa841db49221d5686668328bf8a7c0eb",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/red.command.json",
+              "sha256": "708774176e06e3dbc720af100f8eb896d8fa192e9f7833b6421004fd793588e8",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/red.log",
+              "sha256": "0534b29ee6a4626ccadf8ac5a1897823fa890fc3bb69212af4212614fa985773",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/red.xml",
+              "sha256": "ce3f0218d0ae818581a006ee58c654aa7abd3d6f0ff9b41e49556ac158f2b5ad",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/retained_regression.command.json",
+              "sha256": "39acc84204f6b34e0f0ee285174937a1986a3bfe6ce60e36cbde826379248903",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/retained_regression.log",
+              "sha256": "01b6a7296138f4541706d10cd175e92188435626a74123b3058ab6cfcdcc30e9",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/retained_regression.xml",
+              "sha256": "487162c88201de4aea2ce3703a0aadafe990fead476c23097d1ce7c09d7af1ce",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-02"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c11/followup/validation.log",
+            "evidence/v70-round2-20260914/c11/red.log",
+            "evidence/v70-round2-20260914/c11/retained_regression.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "FAIL",
+              "evidence_refs": []
+            },
+            "evidence": {
+              "status": "HOLD",
+              "evidence_refs": []
+            },
+            "c14": {
+              "status": "HOLD",
+              "evidence_refs": []
+            },
+            "c13": {
+              "status": "HOLD",
+              "evidence_refs": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C12",
+      "agent": "/root/c12_scheduler",
+      "task": {
+        "id": "V70-R2-C12-02",
+        "description": "冻结CI运行调度校验器，验证下一任务承接证据及原件回读",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C12.json",
+            "sha256": "5af63e5bb325e36ac5462b3d5a69b3d99ec3aad1c97f6cd4117f3a58e21acd97",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C12-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C12.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C12-01",
+          "description": "14Cell调度校验与SCHEDULER_FAIL续派去重",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C12-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C12-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c12/RESULT.json",
+              "sha256": "170d9521aba26d8a25d30d22193b16fca2961f151fdd6ba6fa48be580e19d88b",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C12-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c12/validator-tests.raw.log",
+              "sha256": "93660ee7a1fb764547bfc654f7f2c2bd8f32253a29e18c296155364de63b5c5d",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C12-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C12-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C12-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C12-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c12/validator-tests.raw.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c12/validator-tests.raw.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C13",
+      "agent": "/root/c13_independent",
+      "task": {
+        "id": "V70-R2-C13-02",
+        "description": "固定源码CI与独立原件验收，核对各Cell下一任务是否承接",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "ASSIGNED",
+        "completion": {
+          "percent": 0,
+          "definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS"
+        },
+        "evidence": [],
+        "execution_evidence_refs": [],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C13-01",
+          "description": "固定候选独立审查测试及证据校验",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c07/green-final.log",
+              "sha256": "bcbc1d5acfe60485c752ccd233634711b285b6d2b6cf6aac4477da52f552f61f",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/C14_RECEIPT_BINDING.json",
+              "sha256": "f56a81543093df501f935912cf8bb6e18b5011fe52f174a57291d2d581a733f1",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/ORIGINAL_EVIDENCE_AUDIT.json",
+              "sha256": "50e945436821aba693de39a6765ff8a6b26c1a97b111d1443cccc78ba64fe6fe",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/README.md",
+              "sha256": "5053dfa6e9512260360099ca494088e78f5c73b1bce98412760ebc2bb2f94c01",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/SHA256SUMS.json",
+              "sha256": "0180f94424a8edfdc5053343dcd7a720a2a766cdb970010891c88268d1c44294",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/c11-known-open-gap.after.json",
+              "sha256": "dc4e534a5bf2a5d1d934c5885dd36d3c54d4488232bf25aff13e1305f5ed14a1",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/c11-known-open-gap.before.json",
+              "sha256": "a37c2b7ebe500e912465c2d23b851d21cbbc1f573f3627391bd9063d3ad67a84",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/c11-known-open-gap.command.json",
+              "sha256": "1bdfc6ae3dec531b0921295fb98cca3e3ebec17380233853cce5a5c89eeb27a4",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/c11-known-open-gap.log",
+              "sha256": "6e3b6b59a09a83b149e8d497f79621b1bf56332147c9feb07b437ddb9e5a7863",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/c11-known-open-gap.result.json",
+              "sha256": "12e52152e0b5669ca6c3f2e76df068c55331b4532bd25317d1e08ba7e7d7b0de",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/c11-known-open-gap.xml",
+              "sha256": "1c451ee0bb5b7c781faae196b9fcb589b5f7b2604f79c41efb8f308c84affa8a",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/independent-scopes.after.json",
+              "sha256": "125b716166b2a44b774c779ef0a8bdccab2439f4eff3995ea0f743c5871d784c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/independent-scopes.before.json",
+              "sha256": "a0e80a31fe69f29ebe6bd361158c8536936b8808ba26863ffb9ecb1afee0f2d6",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/independent-scopes.command.json",
+              "sha256": "e1d3f95112ef1fb3c063410f8996145d7a88f463e3853cde99666d4dbfa64d57",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/independent-scopes.log",
+              "sha256": "43ce50745a3ef22327c10ad40f4f09d2bddbbda0c98254d8d03da935264122b7",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/independent-scopes.result.json",
+              "sha256": "ab6999f4564c910d2d359b7d797adb3dc41e8f46b7f7d0f20f3abaddfa1c84fb",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/independent-scopes.xml",
+              "sha256": "1b43db965cab80c2389840d0105e3d175a1e0655c6203c22eef9e5ae7c533c93",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C13-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c07/green-final.log",
+            "evidence/v70-round2-20260914/c13/c11-known-open-gap.log",
+            "evidence/v70-round2-20260914/c13/independent-scopes.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c07/green-final.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ],
+      "dependency": "New candidate source freeze, then C14 gate; no claimed execution ACK"
+    },
+    {
+      "cell_id": "C14",
+      "agent": "/root/c14_review",
+      "task": {
+        "id": "V70-R2-C14-02",
+        "description": "审核下一层候选权限真源与Evidence边界，保留本轮PASS范围",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 0,
+          "definition": "Dispatch ACK and source inspection started; six-stage task acceptance still pending, no milestone credit from ACK alone"
+        },
+        "evidence": [
+          {
+            "path": "evidence/v70-next-depth-20260914/dispatch-acks/C14.json",
+            "sha256": "a5445733386374172ff322393119a1a3eb55c51fc605be40841b5d8b8284f77b",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C14-02"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-next-depth-20260914/dispatch-acks/C14.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C14-01",
+          "description": "目的同意权限/C07C09真源边界及候选独立审查",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "DONE_SCOPED",
+          "completion": {
+            "percent": 100,
+            "definition": "仅本轮已定义有限范围的六阶段闭合；全Cell完成度未知，不代表下一任务已完成"
+          },
+          "test_plan": "本域登记的有限测试；独立C13的210PASS与C11另2FAIL分别保留，不对整个领域或香港转移PASS",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+              "sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+              "sha256": "9ebad6a2f2c4f74c9ff86b9a15f751901dc725940971ea65d8365d8290467328",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+              "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.md",
+              "sha256": "3b5785051ff439b624e8ebd14e9cda57340be45a30da06711b5307202376963e",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/authority-regression.log",
+              "sha256": "6fab4abd01b904f60845c4f53e68822b139fb9ced05986741e4cfac9efc0cad6",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/authority-regression.result.json",
+              "sha256": "afacd51b00483e11ec379f6bd36e12910547b3f0ab27bb454dd0b5e819413d59",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/authority-regression.xml",
+              "sha256": "333baece07c568899c6629b46f1f5372030a9fa0df1c0514c560d85239776165",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/c03-c06-c09-evidence-verification.json",
+              "sha256": "e9cddd064f5ca6e211cb7cc5ad25a7d8b32a7e648f319831c6d4f6331729c4e5",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/c04-plan-binding-change-request.json",
+              "sha256": "b4628db704cd3e60c994198470e572d9b64138f7d876b2171286d58d82bc37f4",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/c07-source-verification.json",
+              "sha256": "a5bbcd0130899dd56c80d98011ac66b92a1ea35faaa908ed8f89d82df8d29a1f",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json",
+              "sha256": "ba323327d782881698c5c48eb50cd4f0a9dde4460af73900c069aa3ef2804a74",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c14/preflight-review.json",
+              "sha256": "2599bfa581e010a14c2a65fa35548537ab45cc4867072e80686500eb79a4829c",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C14-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/c14/authority-regression.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/authority-regression.log"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00",
+              "meaning": "Builder finite scope evidence verified before C14; independent rerun is separately under C13"
+            },
+            "evidence": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/fixed-candidate-verification.json"
+              ],
+              "completed_at": "2026-09-14T03:15:44.115334+00:00"
+            },
+            "c14": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:17:15.048729+00:00",
+              "reviewer": "/root/c14_review"
+            },
+            "c13": {
+              "status": "PASS_SCOPED",
+              "evidence_refs": [
+                "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json"
+              ],
+              "completed_at": "2026-09-14T03:22:39.466826+00:00",
+              "reviewer": "/root/c13_independent"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event": "ROUND2_SESSION_AGENT_DISPATCH",
+      "at": "2026-09-14T03:16:20.152844+00:00",
+      "evidence": "evidence/v70-round2-20260914/DISPATCH.json"
+    },
+    {
+      "event": "C13_INDEPENDENT_AGENT_ASSIGNED",
+      "at": "2026-09-14T03:16:20.152844+00:00",
+      "agent": "/root/c13_independent"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C11",
+      "at": "2026-09-14T03:16:20.188077+00:00",
+      "previous_task_id": "V70-R2-C11-01",
+      "previous_status": "BLOCKED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C11",
+      "at": "2026-09-14T03:16:20.188077+00:00",
+      "assignment_id": "local-followup-f9b00392dac1d790e17c",
+      "task_id": "V70-R2-C11-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "C11_FOLLOWUP_ACK_AND_STATIC_REVIEW_OBSERVED",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "task_id": "V70-R2-C11-02",
+      "agent": "/root/cross_domain_depth",
+      "evidence": "evidence/v70-round2-20260914/c11/followup/EXECUTION.json",
+      "timestamp_meaning": "observed and archived now; original ACK time not inferred"
+    },
+    {
+      "event": "SCOPED_OUTCOMES_VERIFIED",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "c14": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+      "c13": "evidence/v70-round2-20260914/c13/FINAL_C13_REVIEW.json",
+      "known_open_tests": {
+        "cell": "C11",
+        "failures": 2
+      }
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C01",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C01-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C01",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-6a6c6cfc53545c801082",
+      "task_id": "V70-R2-C01-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C02",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C02-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C02",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-f8d9f19e48e8dfbc0400",
+      "task_id": "V70-R2-C02-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C03",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C03-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C03",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-557b0b5c24358190a204",
+      "task_id": "V70-R2-C03-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C04",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C04-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C04",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-1923bebcac5e6b0587fa",
+      "task_id": "V70-R2-C04-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C05",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C05-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C05",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-281274238955b88769f8",
+      "task_id": "V70-R2-C05-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C06",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C06-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C06",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-9d25e0a20d8fb9d4f0bb",
+      "task_id": "V70-R2-C06-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C07",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C07-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C07",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-e1bff350c2035fd2d27d",
+      "task_id": "V70-R2-C07-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C08",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C08-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C08",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-336dd357c1cd4602001f",
+      "task_id": "V70-R2-C08-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C09",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C09-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C09",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-f09ee15e94ef817d0d1f",
+      "task_id": "V70-R2-C09-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C10",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C10-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C10",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-cd7ab88f4528d3a970d4",
+      "task_id": "V70-R2-C10-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C11",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C11-02",
+      "previous_status": "BLOCKED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C11",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-fbbdfb84199eec9b2460",
+      "task_id": "V70-R2-C11-03",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C12",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C12-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C12",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-8257eeef01a44db52cbe",
+      "task_id": "V70-R2-C12-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C13",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C13-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C13",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-6dd25de49bf9846c655b",
+      "task_id": "V70-R2-C13-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C14",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "previous_task_id": "V70-R2-C14-01",
+      "previous_status": "DONE_SCOPED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C14",
+      "at": "2026-09-14T03:24:50.483332+00:00",
+      "assignment_id": "local-followup-88cd0c2e44f16d05fded",
+      "task_id": "V70-R2-C14-02",
+      "status": "ASSIGNED"
+    },
+    {
+      "timestamp": "2026-09-14T03:53:38.920401+00:00",
+      "type": "ACTUAL_LOCAL_DELEGATION_ACKS",
+      "running_cells": 13,
+      "assigned_after_dependencies": [
+        "C13"
+      ],
+      "idle_cells": 0,
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b"
+    }
+  ],
+  "followups": [
+    {
+      "id": "local-followup-f9b00392dac1d790e17c",
+      "cell_id": "C11",
+      "task_id": "V70-R2-C11-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:16:20.188077+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "37处幂等callback提交边界分类，先FLIGHT_CHECKOUT和EXECUTE_CHANGE",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-6a6c6cfc53545c801082",
+      "cell_id": "C01",
+      "task_id": "V70-R2-C01-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "混合额度现金结账未知资金结果恢复，保留已通过酒店价格规则",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-f8d9f19e48e8dfbc0400",
+      "cell_id": "C02",
+      "task_id": "V70-R2-C02-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "按乘客及票联拆分改签设计与隔离实现；保护未选乘客和航段、原金额分摊",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-557b0b5c24358190a204",
+      "cell_id": "C03",
+      "task_id": "V70-R2-C03-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "未付款到期与支付取消竞争，以及目标库存满额时不得补扣",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-1923bebcac5e6b0587fa",
+      "cell_id": "C04",
+      "task_id": "V70-R2-C04-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "历史租车退款与冻结计划账本只读对账，列出矛盾修复候选",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-281274238955b88769f8",
+      "cell_id": "C05",
+      "task_id": "V70-R2-C05-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "未知结果恢复中证据缺失或损坏的同阶段拒绝与恢复",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-9d25e0a20d8fb9d4f0bb",
+      "cell_id": "C06",
+      "task_id": "V70-R2-C06-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "目的地时区及供应商有效窗口契约，补核销临界点测试",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-e1bff350c2035fd2d27d",
+      "cell_id": "C07",
+      "task_id": "V70-R2-C07-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "隔离PostgreSQL并发更新撤回及跨进程重启持久化验收",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-336dd357c1cd4602001f",
+      "cell_id": "C08",
+      "task_id": "V70-R2-C08-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "进程硬中断后的ROUTING审计恢复，禁止重放模型副作用",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-f09ee15e94ef817d0d1f",
+      "cell_id": "C09",
+      "task_id": "V70-R2-C09-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "同酒店并发重评及钩子重放，仅一个ACTIVE判断和匹配证据",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-cd7ab88f4528d3a970d4",
+      "cell_id": "C10",
+      "task_id": "V70-R2-C10-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "行程列表批量投影，约束N+1且保留成员权限和缺单回退",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-fbbdfb84199eec9b2460",
+      "cell_id": "C11",
+      "task_id": "V70-R2-C11-03",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "实现FLIGHT_CHECKOUT与FLIGHT_EXECUTE_CHANGE的显式副作用阶段和既有order/quote资源绑定恢复",
+      "scope": "仅两条flight operation与已审恢复接点，不按异常类型盲目放行，先形成固定隔离候选",
+      "test_plan": "按c11/followup/ACCEPTANCE.md的20项条件优先验证两flight操作；原2个FAIL不得删改或当PASS",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-8257eeef01a44db52cbe",
+      "cell_id": "C12",
+      "task_id": "V70-R2-C12-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "冻结CI运行调度校验器，验证下一任务承接证据及原件回读",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-6dd25de49bf9846c655b",
+      "cell_id": "C13",
+      "task_id": "V70-R2-C13-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "固定源码CI与独立原件验收，核对各Cell下一任务是否承接",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    },
+    {
+      "id": "local-followup-88cd0c2e44f16d05fded",
+      "cell_id": "C14",
+      "task_id": "V70-R2-C14-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:24:50.483332+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "审核下一层候选权限真源与Evidence边界，保留本轮PASS范围",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    }
+  ],
+  "application_git_tree": "740d026e3723f5da015342ead3394969629541df",
+  "source_tree_sha256": "b4383b383dd54e472ef178f1804d925bebf55019dc17f3641712cc42d4aae7b4",
+  "full_release": "HOLD",
+  "hong_kong": "NOT_ACCESSED",
+  "production": "HOLD",
+  "clarifications": {
+    "C13_tests_gate": "Upstream builder test input reviewed for the source acceptance chain; C13 independent execution and 210PASS/2FAIL originals are referenced only by the C13 gate. Original task_history preserved byte-content-equivalently as JSON values."
+  },
+  "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b"
+}

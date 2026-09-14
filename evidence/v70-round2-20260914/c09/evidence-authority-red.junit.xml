@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="16" time="4.313" timestamp="2026-09-14T12:02:11.710750+09:00" hostname="localhost"><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_supplement_cannot_override_persisted_evidence_or_publish[confirmed_serious_risk_count-0]" time="1.784"><failure message="Failed: DID NOT RAISE HTTPException">key = 'confirmed_serious_risk_count', value = 0
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+&gt;       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed</failure></testcase><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_supplement_cannot_override_persisted_evidence_or_publish[completed_review_count-100000]" time="0.095"><failure message="Failed: DID NOT RAISE HTTPException">key = 'completed_review_count', value = 100000
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+&gt;       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed</failure></testcase><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_supplement_cannot_override_persisted_evidence_or_publish[structured_experience_avg_milli-5000]" time="0.056"><failure message="Failed: DID NOT RAISE HTTPException">key = 'structured_experience_avg_milli', value = 5000
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+&gt;       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed</failure></testcase><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_supplement_cannot_override_persisted_evidence_or_publish[dimension_summary-value3]" time="0.056"><failure message="Failed: DID NOT RAISE HTTPException">key = 'dimension_summary', value = {'SAFETY': {'positive': 100, 'negative': 0}}
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+&gt;       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed</failure></testcase><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_supplement_cannot_override_persisted_evidence_or_publish[monitoring_risk_count-0]" time="0.055"><failure message="Failed: DID NOT RAISE HTTPException">key = 'monitoring_risk_count', value = 0
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+&gt;       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed</failure></testcase><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_supplement_cannot_override_persisted_evidence_or_publish[verified_remediation_count-100]" time="0.057"><failure message="Failed: DID NOT RAISE HTTPException">key = 'verified_remediation_count', value = 100
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+&gt;       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed</failure></testcase><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_persisted_serious_risk_vetoes_complete_independent_six_dimension_assessment" time="0.056" /><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_each_six_dimension_evidence_is_mandatory[WORK_OF_HOSPITALITY]" time="0.058" /><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_each_six_dimension_evidence_is_mandatory[IRREPLACEABILITY]" time="0.056" /><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_each_six_dimension_evidence_is_mandatory[SENSE_OF_PLACE]" time="0.061" /><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_each_six_dimension_evidence_is_mandatory[AESTHETIC_JUDGMENT]" time="0.055" /><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_each_six_dimension_evidence_is_mandatory[EMOTIONAL_RESONANCE]" time="0.056" /><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_each_six_dimension_evidence_is_mandatory[WORTH_THE_JOURNEY]" time="0.055" /><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_commercial_independence_requires_explicit_boolean_attestation[False]" time="0.055" /><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_commercial_independence_requires_explicit_boolean_attestation[None]" time="0.056" /><testcase classname="tests.judgment.test_round2_evidence_authority" name="test_commercial_independence_requires_explicit_boolean_attestation[true]" time="0.062" /></testsuite></testsuites>

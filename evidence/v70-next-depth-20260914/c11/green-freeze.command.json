@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/workspace/scratch/948b51def3a9/venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "-p",
+    "no:cacheprovider",
+    "tests/payments/test_c11_flight_idempotency_recovery.py",
+    "tests/test_c11_idempotency_completion_guard.py",
+    "tests/test_idempotency.py",
+    "tests/test_sprint3a_flight.py",
+    "tests/test_depth48_flight_changes.py",
+    "tests/test_depth05_flight_parties.py",
+    "--junitxml=/workspace/scratch/948b51def3a9/GO/evidence/v70-next-depth-20260914/c11/green-freeze.xml"
+  ],
+  "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+  "environment": {
+    "PYTHONPATH": "src",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "GO_TEST_DB_PATH": "/tmp/c11-freeze-20260914.db"
+  },
+  "started_at": "2026-09-14T04:15:07.174856+00:00"
+}

@@ -1,0 +1,76 @@
+[
+  {
+    "label": "before",
+    "exit_code": 127,
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c05-next-before-20260914-a.db PYTHONPATH=src ../venv/bin/python -m pytest tests/test_v70_next_c05_recovery_evidence.py -p no:cacheprovider --junitxml=../evidence/v70-next-depth-20260914/c05/before.junit.xml > ../evidence/v70-next-depth-20260914/c05/before.raw.log 2>&1",
+    "reason": "Incorrect relative interpreter path from application cwd; no tests collected. Corrected to the existing absolute interpreter without dependency changes."
+  },
+  {
+    "label": "before2",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c05-next-before-20260914-b.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_next_c05_recovery_evidence.py -p no:cacheprovider --junitxml=../evidence/v70-next-depth-20260914/c05/before2.junit.xml > ../evidence/v70-next-depth-20260914/c05/before2.raw.log 2>&1",
+    "exit_code": 1,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "8",
+      "skipped": "0",
+      "tests": "8",
+      "time": "3.447",
+      "timestamp": "2026-09-14T12:50:27.424011+09:00",
+      "hostname": "localhost"
+    },
+    "source_capture": "Earlier progressive-builder runs retained; final files are separately pinned in SOURCE_IDENTITY.json and must receive independent exact-candidate C13 validation."
+  },
+  {
+    "label": "after",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c05-next-after-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_next_c05_recovery_evidence.py tests/test_v70_round2_c05_recovery_fulfillment.py tests/test_final_depth_terminal_hardening.py -k 'ride or unknown' -p no:cacheprovider --junitxml=../evidence/v70-next-depth-20260914/c05/after.junit.xml > ../evidence/v70-next-depth-20260914/c05/after.raw.log 2>&1",
+    "exit_code": 0,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "12",
+      "time": "6.318",
+      "timestamp": "2026-09-14T12:51:29.316364+09:00",
+      "hostname": "localhost"
+    },
+    "source_capture": "Earlier progressive-builder runs retained; final files are separately pinned in SOURCE_IDENTITY.json and must receive independent exact-candidate C13 validation."
+  },
+  {
+    "label": "phase-before",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c05-next-phase-before-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_next_c05_recovery_evidence.py -k contradictory_phase -p no:cacheprovider --junitxml=../evidence/v70-next-depth-20260914/c05/phase-before.junit.xml > ../evidence/v70-next-depth-20260914/c05/phase-before.raw.log 2>&1",
+    "exit_code": 1,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "2",
+      "skipped": "0",
+      "tests": "2",
+      "time": "3.416",
+      "timestamp": "2026-09-14T12:55:30.377975+09:00",
+      "hostname": "localhost"
+    },
+    "source_capture": "Earlier progressive-builder runs retained; final files are separately pinned in SOURCE_IDENTITY.json and must receive independent exact-candidate C13 validation."
+  },
+  {
+    "label": "phase-after",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c05-next-phase-after-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_next_c05_recovery_evidence.py tests/test_v70_round2_c05_recovery_fulfillment.py tests/test_final_depth_terminal_hardening.py -k 'ride or unknown' -p no:cacheprovider --junitxml=../evidence/v70-next-depth-20260914/c05/phase-after.junit.xml > ../evidence/v70-next-depth-20260914/c05/phase-after.raw.log 2>&1",
+    "exit_code": 0,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "14",
+      "time": "6.782",
+      "timestamp": "2026-09-14T12:57:36.714039+09:00",
+      "hostname": "localhost"
+    },
+    "source_capture": "Earlier progressive-builder runs retained; final files are separately pinned in SOURCE_IDENTITY.json and must receive independent exact-candidate C13 validation."
+  }
+]

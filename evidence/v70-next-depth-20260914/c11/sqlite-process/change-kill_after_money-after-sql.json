@@ -1,0 +1,51 @@
+{
+  "root_ids": [
+    "opi_719b3278aa2b406680c2e15d566ae627"
+  ],
+  "money": [
+    {
+      "id": "omm_b6b3be0b3d0343f4bc03010e7a2646b0",
+      "root": "opi_719b3278aa2b406680c2e15d566ae627",
+      "type": "AUTHORIZATION",
+      "state": "CONFIRMED",
+      "amount": 40000,
+      "currency": "CNY",
+      "key": "flight-change-auth:flt_chq_a57e382e0f9e4495",
+      "parent": null
+    }
+  ],
+  "attempt_ids": [],
+  "claims": [
+    {
+      "operation": "FLIGHT_EXECUTE_CHANGE",
+      "key": "request-change-kill_after_money",
+      "resource": "flt_chq_a57e382e0f9e4495",
+      "code": 102,
+      "body": {
+        "status": "RUNNING",
+        "execution_token": "e62656f0332d4a8caa75bcb436bdc84e"
+      }
+    },
+    {
+      "operation": "RESOURCE:FLIGHT_EXECUTE_CHANGE",
+      "key": "flt_chq_a57e382e0f9e4495",
+      "resource": "flt_chq_a57e382e0f9e4495",
+      "code": 102,
+      "body": {
+        "status": "RUNNING",
+        "execution_token": "e62656f0332d4a8caa75bcb436bdc84e"
+      }
+    },
+    {
+      "operation": "FLIGHT_EXECUTE_CHANGE",
+      "key": "request-change-kill_after_money-other",
+      "resource": "flt_chq_a57e382e0f9e4495",
+      "code": 102,
+      "body": {
+        "status": "WAITING_RESOURCE"
+      }
+    }
+  ],
+  "order_status": "UNKNOWN_EXTERNAL_STATE",
+  "quote_status": "AUTHORIZATION_PENDING"
+}

@@ -1,0 +1,20 @@
+...F                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_full_target_capacity_rejects_before_supplemental_money_or_original_release _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f154b52e720>
+
+    def test_full_target_capacity_rejects_before_supplemental_money_or_original_release(monkeypatch):
+        svc, owner, oid = booked('RAIL')
+        original = svc.order(owner, oid)
+        q = svc.change_quote(owner, oid, '2026-09-16')
+        with SessionLocal() as session:
+            quote = session.get(RailChangeQuoteRow, q['quote_id'])
+            seat = quote.new_seat_class
+>           target = capacity.rail_resource(quote.new_train_no, quote.new_travel_date, seat)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: rail_resource() takes 1 positional argument but 3 were given
+
+tests/test_next_depth_c03_payment_inventory_races.py:86: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_next_depth_c03_payment_inventory_races.py::test_full_target_capacity_rejects_before_supplemental_money_or_original_release

@@ -1,0 +1,35 @@
+{
+  "command": [
+    "/workspace/scratch/948b51def3a9/venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "-p",
+    "no:cacheprovider",
+    "tests/payments/test_c11_flight_idempotency_recovery.py",
+    "tests/test_c11_idempotency_completion_guard.py",
+    "tests/test_idempotency.py",
+    "tests/test_sprint3a_flight.py",
+    "tests/test_depth48_flight_changes.py",
+    "tests/test_depth05_flight_parties.py",
+    "--junitxml=/workspace/scratch/948b51def3a9/GO/evidence/v70-next-depth-20260914/c11/green-final.xml"
+  ],
+  "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+  "environment": {
+    "PYTHONPATH": "src",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "GO_TEST_DB_PATH": "/tmp/c11-final-20260914.db"
+  },
+  "started_at": "2026-09-14T04:12:59.747133+00:00",
+  "test_sources": {
+    "tests/payments/test_c11_flight_idempotency_recovery.py": "b5d84022a68b1e9e1f9d87898b86724dad4fed4d7d70af7d565b069b13432263",
+    "tests/test_c11_idempotency_completion_guard.py": "9b40a65a8c1c36edeb3c036ae932a90f571ae17127dcc8f3b7c23e14813f04f5",
+    "tests/test_idempotency.py": "499316c2383850d65fa8c5ea1ec2321cc56478b04d356caf30240557b9f0de0b",
+    "tests/test_sprint3a_flight.py": "f40d13f3c8ec5f12f0bd28d114ae7e5aa19691c97617064afa2b5b3dd17313bf",
+    "tests/test_depth48_flight_changes.py": "d1e348c3d12f90658eb5ef6e045b0b5456140e05892bb011072314026806f67e",
+    "tests/test_depth05_flight_parties.py": "57be9bb6ec1f85911f889d7c0c380e3b3c57d88f8b658880a6d4283b175a7cae"
+  },
+  "exit_code": 0,
+  "finished_at": "2026-09-14T04:13:20.680018+00:00"
+}

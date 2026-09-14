@@ -1,0 +1,65 @@
+{
+  "cell_id": "C10",
+  "task_id": "V70-R2-C10-02",
+  "agent": "/root/c12_scheduler",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "started_at": "2026-09-14T03:49:37.710068+00:00",
+  "recorded_at": "2026-09-14T04:01:18.054739+00:00",
+  "implementation_and_local_validation": "PASS_SCOPED",
+  "C14": "PENDING_REVIEW",
+  "C13": "PENDING_INDEPENDENT_REVIEW",
+  "domain_completion": "NOT_CLAIMED",
+  "scope": "Batch Journey list current-state projection with member access, order ownership, ordering and snapshot fallback retention",
+  "outcome": "Owner SELECT count 4\u21924, member 5\u21925 from 1 to 31 journeys; 405 journeys/809 items uses 7 SELECTs in 400-key chunks.",
+  "tests_passed": 41,
+  "new_tests": 14,
+  "green_command": {
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "-m",
+      "pytest",
+      "tests/journey/test_c10_batch_list_projection.py",
+      "tests/journey/test_c10_current_status_projection.py",
+      "tests/journey/test_c10_attachment_canonical_facts.py",
+      "-p",
+      "no:cacheprovider",
+      "-s",
+      "--junitxml",
+      "/workspace/scratch/948b51def3a9/GO/evidence/v70-next-depth-20260914/c10/green-final.junit.xml"
+    ],
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "started_at": "2026-09-14T03:58:05.919295+00:00",
+    "finished_at": "2026-09-14T03:58:09.672265+00:00",
+    "exit_code": 0
+  },
+  "files_sha256": {
+    "application/src/go_hotel/journey/service.py": "e4d37195af8bf9d788e03ad37342d8b471395616d874088e317db895c8f715b2",
+    "application/tests/journey/test_c10_batch_list_projection.py": "99938833b59963eb641b0bc9971fd507ad174c9a8953d0d76eabbd210364962d"
+  },
+  "evidence_sha256": {
+    "evidence/v70-next-depth-20260914/c10/receipt-admission.command.json": "628eb25e1dce6bc0d6408fe236e4bbcd80b9b1867642b702063aea7cb022c98e",
+    "evidence/v70-next-depth-20260914/c10/EXECUTION.json": "bb00c10c45f81bda6b5098465b2f48984c961afc58761595b7911808d29ce3d3",
+    "evidence/v70-next-depth-20260914/c10/ACK_RECEIPT.json": "793c553285bb9bd9658b24d9398099ef52eb4b7f5fd752472616c36633a17267",
+    "evidence/v70-next-depth-20260914/c10/receipt-admission.raw.log": "5cac8b1d15816b664c5637d2baaf68d19d65133329fa5bc9a36f795423c2571d",
+    "evidence/v70-next-depth-20260914/c10/red.raw.log": "37d152a0f9c6601438517fdee2e64bfccf831e95c5de15de69c4cbc0c8bf1419",
+    "evidence/v70-next-depth-20260914/c10/EXECUTION_INITIAL.json": "9f0a312eb7029b5bc86892ed9ab1e6ce9c133a986447c7b3f82c29d99ecd236d",
+    "evidence/v70-next-depth-20260914/c10/red-corrected-fixture.raw.log": "5ec9a5edc5a2d34a70a4057180da91e4791df4dd04e6ad5b57c163e737d98a11",
+    "evidence/v70-next-depth-20260914/c10/red-corrected-fixture.junit.xml": "c3d6b0c685e9fe20206103a9d5dd98455109dcc7d549fadfcc2aad51877421ce",
+    "evidence/v70-next-depth-20260914/c10/green.command.json": "e8753848df8eb93b53dc1cc0c2010e7150021c48f617ce4ac69cb05d30b8d640",
+    "evidence/v70-next-depth-20260914/c10/red-corrected-fixture.command.json": "bc558a7d8556ac372cfd8d84ec1eca53dfbe1841906235778a8dd9a989a8b2ff",
+    "evidence/v70-next-depth-20260914/c10/green-final.command.json": "d733537663650cdbe71974a44a5584f70b2ddc2bdb1e0569a5de76fa8ed63c89",
+    "evidence/v70-next-depth-20260914/c10/green.raw.log": "aa64afac21562f6bddff1019e5d79fb633dca2dc57d340bad1f5a0cfaa1eae07",
+    "evidence/v70-next-depth-20260914/c10/red.junit.xml": "59394cfc1c16bcf9e9f569d8c0703638c3d448335e3c2e02776d9caafdace70f",
+    "evidence/v70-next-depth-20260914/c10/green-final.raw.log": "059fe08558f234833a8f70cb310d881c3b6654a4e6222f450c9351baaedc74bc",
+    "evidence/v70-next-depth-20260914/c10/green-final.junit.xml": "2bf1a1ed5e43898d4e1ba04c352ad5808d22374c46410671e9eeac36559a3d1e",
+    "evidence/v70-next-depth-20260914/c10/red.command.json": "ffdcf1eaf1b5b0a55dee0a062c1f968121def8402f80a85f5cf51df20972d197",
+    "evidence/v70-next-depth-20260914/c10/green.junit.xml": "b4c5a8988db82dd646a07d68e431f2baa6c78ae023130405a876cb515b32b822"
+  },
+  "limits": [
+    "SQLite SQL counts only; no Hong Kong load test or PostgreSQL EXPLAIN",
+    "List remains unpaginated; total result memory still grows with journey/item count",
+    "Initial red fixture violated unique attachment invariant; use red-corrected-fixture for product regression proof. First green chunk-count expectation omitted second item batch; final expectation matches explicit 2+2+3 query decomposition."
+  ],
+  "next_task": "Bound list memory/result size with a separately reviewed pagination contract and verify PostgreSQL query plans on approved isolated DB."
+}

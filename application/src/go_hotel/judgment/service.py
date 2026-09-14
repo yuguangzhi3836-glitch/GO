@@ -2,8 +2,9 @@ from __future__ import annotations
 import json
 from hashlib import sha256
 from datetime import timedelta
-from sqlalchemy import select
+from sqlalchemy import select, text
 from go_hotel.db.session import SessionLocal
+from go_hotel.autonomy.durable import transaction
 from go_hotel.db.models import (
     ReviewSessionRow,RiskEventRuntimeRow,RiskRemediationRow,JudgmentHookRow,
     JudgmentEvidencePackageRow,JudgmentRuntimeRow,RecommendationDecisionRow,GoodHotelStandardAssessmentRow
@@ -18,6 +19,8 @@ PROMPT_VERSION="NO_GENERATIVE_PROMPT_V1"
 RULE_VERSION="GO_JUDGMENT_RULES_1.0"
 RECOMMENDATION_RULE_VERSION="GO_RECOMMENDATION_CONSTITUTION_1.0"
 COMMERCIAL_FIELDS={"subscription_amount","advertising_budget","commission","rebate","partnership_tier","investment_relationship","commercial_revenue","gmv","clicks","favorites","popularity","user_preference","traveler_fit","traveler_context","candidate_scores","personalization_score"}
+PERSISTED_EVIDENCE_FIELDS={"completed_review_count","structured_experience_avg_milli","dimension_summary",
+    "confirmed_serious_risk_count","monitoring_risk_count","verified_remediation_count"}
 
 RECOMMENDATION_DIMENSIONS=(
     "WORK_OF_HOSPITALITY",
@@ -32,11 +35,14 @@ RECOMMENDATION_STATES={"STRONG","PRESENT","LIMITED","ABSENT","UNKNOWN"}
 class JudgmentService:
     def _evidence(self, hotel_id:str)->dict:
         with SessionLocal() as s:
-            reviews=s.scalars(select(ReviewSessionRow).where(ReviewSessionRow.hotel_id==hotel_id,ReviewSessionRow.status=="COMPLETED").order_by(ReviewSessionRow.completed_at)).all()
-            risks=s.scalars(select(RiskEventRuntimeRow).where(RiskEventRuntimeRow.hotel_id==hotel_id).order_by(RiskEventRuntimeRow.created_at)).all()
-            rems=[]
-            for r in risks:
-                rems.extend(s.scalars(select(RiskRemediationRow).where(RiskRemediationRow.risk_event_id==r.risk_event_id)).all())
+            return self._evidence_in(s, hotel_id)
+
+    def _evidence_in(self, s, hotel_id):
+        reviews=s.scalars(select(ReviewSessionRow).where(ReviewSessionRow.hotel_id==hotel_id,ReviewSessionRow.status=="COMPLETED").order_by(ReviewSessionRow.completed_at)).all()
+        risks=s.scalars(select(RiskEventRuntimeRow).where(RiskEventRuntimeRow.hotel_id==hotel_id).order_by(RiskEventRuntimeRow.created_at)).all()
+        rems=[]
+        for r in risks:
+            rems.extend(s.scalars(select(RiskRemediationRow).where(RiskRemediationRow.risk_event_id==r.risk_event_id)).all())
         source_refs=[]; dims={}; experience=[]
         for r in reviews:
             source_refs.append({"type":"GO_TRUTH_REVIEW","id":r.review_id,"at":r.completed_at.isoformat() if r.completed_at else None})
@@ -127,40 +133,118 @@ class JudgmentService:
         elif isinstance(value,list):
             for i,v in enumerate(value): self._assert_no_forbidden_features(v,f"{path}[{i}]")
 
-    def reevaluate(self,hotel_id:str,extra_features:dict|None=None)->dict:
+    def _lock_hotel_in(self, s, hotel_id):
+        # An ACTIVE row cannot lock the first evaluation because it may not exist.
+        # The database transaction lock also fences separate API/worker processes.
+        if s.bind.dialect.name == "postgresql":
+            key = int.from_bytes(sha256(("GO_JUDGMENT:" + hotel_id).encode()).digest()[:8], "big", signed=True)
+            s.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": key})
+
+    def _complete_hooks_in(self, hooks, judgment_id, package_id, source_refs):
+        sources = {(x["type"], x["id"]) for x in source_refs}
+        for hook in hooks:
+            if (hook.source_type, hook.source_id) in sources:
+                hook.status = "COMPLETED"
+                hook.payload = {**(hook.payload or {}), "judgment_id": judgment_id,
+                                "evidence_package_id": package_id}
+
+    def _reevaluate_in(self, s, hotel_id, extra_features, standard):
+        now = now_utc()
+        # Capture pending hooks before the evidence read. Hooks arriving after this
+        # snapshot must remain REQUESTED for the next evaluation.
+        hooks = list(s.scalars(select(JudgmentHookRow).where(
+            JudgmentHookRow.hotel_id == hotel_id, JudgmentHookRow.status == "REQUESTED").with_for_update()))
+        ev = self._evidence_in(s, hotel_id)
+        feature = dict(ev["feature_snapshot"])
+        if extra_features:
+            protected = set(feature).intersection(extra_features)
+            if protected:
+                unprocessable("JUDGMENT_EVIDENCE_FIELD_FORBIDDEN", f"Persisted evidence fields cannot be overridden: {', '.join(sorted(protected))}")
+            feature.update(extra_features)
+        raw = json.dumps({"hotel_id": hotel_id, "source_refs": ev["source_refs"], "feature_snapshot": feature},
+                         sort_keys=True, separators=(",", ":"), default=str).encode()
+        digest = sha256(raw).hexdigest()
+        package = s.scalar(select(JudgmentEvidencePackageRow).where(JudgmentEvidencePackageRow.content_hash == digest))
+        if package and package.hotel_id != hotel_id:
+            unprocessable("JUDGMENT_EVIDENCE_IDENTITY_INVALID", "Sealed evidence belongs to another hotel")
+        priors = list(s.scalars(select(JudgmentRuntimeRow).where(
+            JudgmentRuntimeRow.hotel_id == hotel_id, JudgmentRuntimeRow.status == "ACTIVE").with_for_update()))
+        prior_recs = list(s.scalars(select(RecommendationDecisionRow).where(
+            RecommendationDecisionRow.hotel_id == hotel_id, RecommendationDecisionRow.valid_to.is_(None)).with_for_update()))
+        if len(priors) == len(prior_recs) == 1 and package:
+            prior, rec = priors[0], prior_recs[0]
+            if (prior.evidence_package_id == package.package_id and rec.judgment_id == prior.judgment_id
+                and prior.good_hotel_standard_version_id == standard.good_hotel_standard_version_id
+                and prior.model_version == MODEL_VERSION and prior.prompt_version == PROMPT_VERSION
+                and prior.rule_version == RULE_VERSION and rec.rule_version == RECOMMENDATION_RULE_VERSION):
+                self._complete_hooks_in(hooks, prior.judgment_id, package.package_id, ev["source_refs"])
+                return prior.judgment_id, None
+        package_id = package.package_id if package else new_id("evpkg")
+        judgment_id, decision_id = new_id("jud"), new_id("rec")
+        score, dims, explanation, confidence = self._score(feature)
+        rec_status, reasons, public_score = self._recommend(score, feature)
+        for prior in priors:
+            prior.status = "SUPERSEDED"
+            prior.valid_to = now
+        for prior in prior_recs:
+            prior.valid_to = now
+        if not package:
+            s.add(JudgmentEvidencePackageRow(package_id=package_id,hotel_id=hotel_id,source_refs=ev["source_refs"],source_summary=ev["source_summary"],feature_snapshot=feature,excluded_commercial_fields=sorted(COMMERCIAL_FIELDS),content_hash=digest,sealed_at=now,created_at=now))
+        s.add(GoodHotelStandardAssessmentRow(good_hotel_standard_assessment_id=new_id('ghsa'),hotel_id=hotel_id,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,evidence_package_id=package_id,dimension_result_json=dims,disqualifier_result_json=[x for x in standard.disqualifiers_json if x in reasons],assessment_state=rec_status,reason_codes_json=reasons,assessed_at=now))
+        s.add(JudgmentRuntimeRow(judgment_id=judgment_id,hotel_id=hotel_id,evidence_package_id=package_id,go_score_milli=score,dimension_result=dims,explanation=explanation,confidence_bps=confidence,model_version=MODEL_VERSION,prompt_version=PROMPT_VERSION,rule_version=RULE_VERSION,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,status="ACTIVE",public_at=now if rec_status=="GO_RECOMMENDED" else None,valid_from=now,valid_to=None,created_at=now))
+        s.add(RecommendationDecisionRow(decision_id=decision_id,hotel_id=hotel_id,judgment_id=judgment_id,status=rec_status,reason_codes=reasons,public_go_score_milli=public_score,rule_version=RECOMMENDATION_RULE_VERSION,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,valid_from=now,valid_to=None,created_at=now))
+        self._complete_hooks_in(hooks, judgment_id, package_id, ev["source_refs"])
+        return judgment_id, {"package_id": package_id, "score": score, "decision_id": decision_id, "status": rec_status}
+
+    def _publish_events(self, hotel_id, judgment_id, created):
+        if created is None:
+            return
+        repo.append_event(Event(new_id("evt"),"JUDGMENT_CREATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"evidence_package_id":created["package_id"],"go_score_milli":created["score"]}))
+        repo.append_event(Event(new_id("evt"),"GO_SCORE_UPDATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"go_score_milli":created["score"]}))
+        repo.append_event(Event(new_id("evt"),"RECOMMENDATION_STATUS_CHANGED","HOTEL",hotel_id,{"decision_id":created["decision_id"],"status":created["status"],"judgment_id":judgment_id}))
+
+    def reevaluate(self, hotel_id: str, extra_features: dict | None = None) -> dict:
         if extra_features:
             self._assert_no_forbidden_features(extra_features)
-        now=now_utc(); standard=good_hotel_standard_service.active();ev=self._evidence(hotel_id); feature=dict(ev["feature_snapshot"])
-        if extra_features: feature.update(extra_features)
-        raw=json.dumps({"hotel_id":hotel_id,"source_refs":ev["source_refs"],"feature_snapshot":feature},sort_keys=True,separators=(",",":"),default=str).encode()
-        digest=sha256(raw).hexdigest(); package_id=new_id("evpkg"); judgment_id=new_id("jud"); decision_id=new_id("rec")
-        score,dims,explanation,confidence=self._score(feature)
-        rec_status,reasons,public_score=self._recommend(score,feature)
-        with SessionLocal.begin() as s:
-            prior=s.scalar(select(JudgmentRuntimeRow).where(JudgmentRuntimeRow.hotel_id==hotel_id,JudgmentRuntimeRow.status=="ACTIVE").order_by(JudgmentRuntimeRow.created_at.desc()))
-            if prior: prior.status="SUPERSEDED"; prior.valid_to=now
-            prior_rec=s.scalar(select(RecommendationDecisionRow).where(RecommendationDecisionRow.hotel_id==hotel_id,RecommendationDecisionRow.valid_to.is_(None)).order_by(RecommendationDecisionRow.created_at.desc()))
-            if prior_rec: prior_rec.valid_to=now
-            s.add(JudgmentEvidencePackageRow(package_id=package_id,hotel_id=hotel_id,source_refs=ev["source_refs"],source_summary=ev["source_summary"],feature_snapshot=feature,excluded_commercial_fields=sorted(COMMERCIAL_FIELDS),content_hash=digest,sealed_at=now,created_at=now))
-            s.add(GoodHotelStandardAssessmentRow(good_hotel_standard_assessment_id=new_id('ghsa'),hotel_id=hotel_id,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,evidence_package_id=package_id,dimension_result_json=dims,disqualifier_result_json=[x for x in standard.disqualifiers_json if x in reasons],assessment_state=rec_status,reason_codes_json=reasons,assessed_at=now))
-            s.add(JudgmentRuntimeRow(judgment_id=judgment_id,hotel_id=hotel_id,evidence_package_id=package_id,go_score_milli=score,dimension_result=dims,explanation=explanation,confidence_bps=confidence,model_version=MODEL_VERSION,prompt_version=PROMPT_VERSION,rule_version=RULE_VERSION,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,status="ACTIVE",public_at=now if rec_status=="GO_RECOMMENDED" else None,valid_from=now,valid_to=None,created_at=now))
-            s.add(RecommendationDecisionRow(decision_id=decision_id,hotel_id=hotel_id,judgment_id=judgment_id,status=rec_status,reason_codes=reasons,public_go_score_milli=public_score,rule_version=RECOMMENDATION_RULE_VERSION,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,valid_from=now,valid_to=None,created_at=now))
-            hooks=s.scalars(select(JudgmentHookRow).where(JudgmentHookRow.hotel_id==hotel_id,JudgmentHookRow.status=="REQUESTED")).all()
-            for h in hooks: h.status="COMPLETED"
-        repo.append_event(Event(new_id("evt"),"JUDGMENT_CREATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"evidence_package_id":package_id,"go_score_milli":score}))
-        repo.append_event(Event(new_id("evt"),"GO_SCORE_UPDATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"go_score_milli":score}))
-        repo.append_event(Event(new_id("evt"),"RECOMMENDATION_STATUS_CHANGED","HOTEL",hotel_id,{"decision_id":decision_id,"status":rec_status,"judgment_id":judgment_id}))
+            # Reject caller replacement of persisted facts before even the lazy
+            # standard bootstrap can write. Recheck actual fields under lock too.
+            protected = PERSISTED_EVIDENCE_FIELDS.intersection(extra_features)
+            if protected:
+                unprocessable("JUDGMENT_EVIDENCE_FIELD_FORBIDDEN", f"Persisted evidence fields cannot be overridden: {', '.join(sorted(protected))}")
+        standard = good_hotel_standard_service.active()
+        with transaction(SessionLocal) as s:
+            self._lock_hotel_in(s, hotel_id)
+            judgment_id, created = self._reevaluate_in(s, hotel_id, extra_features, standard)
+        self._publish_events(hotel_id, judgment_id, created)
         return self.get_judgment(judgment_id)
 
-    def process_hook(self,hook_id:str)->dict:
-        with SessionLocal() as s:
-            h=s.get(JudgmentHookRow,hook_id)
-            if not h: not_found("JUDGMENT_HOOK_NOT_FOUND","Judgment hook not found")
-            hotel_id=h.hotel_id
-            if h.status=="COMPLETED":
-                latest=s.scalar(select(JudgmentRuntimeRow).where(JudgmentRuntimeRow.hotel_id==hotel_id).order_by(JudgmentRuntimeRow.created_at.desc()))
-                if latest: return self.get_judgment(latest.judgment_id)
-        return self.reevaluate(hotel_id)
+    def process_hook(self, hook_id: str) -> dict:
+        standard = good_hotel_standard_service.active()
+        with transaction(SessionLocal) as s:
+            hook = s.get(JudgmentHookRow, hook_id)
+            if not hook:
+                not_found("JUDGMENT_HOOK_NOT_FOUND", "Judgment hook not found")
+            hotel_id = hook.hotel_id
+            self._lock_hotel_in(s, hotel_id)
+            # Re-read after waiting for the hotel lock (another worker may finish).
+            s.refresh(hook)
+            if hook.hotel_id != hotel_id:
+                unprocessable("JUDGMENT_HOOK_IDENTITY_INVALID", "Hook hotel changed")
+            if hook.status == "COMPLETED":
+                binding = hook.payload or {}
+                judgment = s.get(JudgmentRuntimeRow, binding.get("judgment_id")) if binding.get("judgment_id") else None
+                package = s.get(JudgmentEvidencePackageRow, binding.get("evidence_package_id")) if binding.get("evidence_package_id") else None
+                if (not judgment or not package or judgment.hotel_id != hotel_id or package.hotel_id != hotel_id
+                    or judgment.evidence_package_id != package.package_id
+                    or not any(x.get("type") == hook.source_type and x.get("id") == hook.source_id for x in package.source_refs)):
+                    unprocessable("JUDGMENT_HOOK_RESULT_REVIEW_REQUIRED", "Completed hook has no matching durable result binding")
+                judgment_id, created = judgment.judgment_id, None
+            elif hook.status == "REQUESTED":
+                judgment_id, created = self._reevaluate_in(s, hotel_id, None, standard)
+            else:
+                unprocessable("JUDGMENT_HOOK_STATE_INVALID", "Hook is not processable")
+        self._publish_events(hotel_id, judgment_id, created)
+        return self.get_judgment(judgment_id)
 
     def process_pending(self,limit:int=100)->list[dict]:
         with SessionLocal() as s:

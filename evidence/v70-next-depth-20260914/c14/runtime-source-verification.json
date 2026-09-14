@@ -1,0 +1,71 @@
+{
+  "reviewer": "/root/c14_review",
+  "observed_at": "2026-09-14T04:11:27.391207+00:00",
+  "scope": "Only builder frozen source digest validation; whole candidate pending",
+  "result": "MATCH",
+  "checks": [
+    {
+      "cell": "c03",
+      "path": "application/tests/test_next_depth_c03_payment_inventory_races.py",
+      "expected": "a69c18f7264ec6b2f08f8a7bfe48d0eed2ecbd6720806f718ea233be727caa31",
+      "actual": "a69c18f7264ec6b2f08f8a7bfe48d0eed2ecbd6720806f718ea233be727caa31",
+      "match": true
+    },
+    {
+      "cell": "c03",
+      "path": "application/src/go_hotel/rail/service.py",
+      "expected": "bc580c697f74b9b3277304b8c0a7e8b9a3a8de1b9ecbca5271f58ec4bd3b7ff7",
+      "actual": "bc580c697f74b9b3277304b8c0a7e8b9a3a8de1b9ecbca5271f58ec4bd3b7ff7",
+      "match": true
+    },
+    {
+      "cell": "c06",
+      "path": "application/src/go_hotel/attractions/service.py",
+      "expected": "518e680f84f49b53caca21fc0eb0ce37634af8e05c2791ebf3f3550b0e47d2d4",
+      "actual": "518e680f84f49b53caca21fc0eb0ce37634af8e05c2791ebf3f3550b0e47d2d4",
+      "match": true
+    },
+    {
+      "cell": "c06",
+      "path": "application/src/go_hotel/attractions/validity.py",
+      "expected": "93cb671e45afac616f5a284bf7310fc26354e5a25de5e6a853e9337c6e59875e",
+      "actual": "93cb671e45afac616f5a284bf7310fc26354e5a25de5e6a853e9337c6e59875e",
+      "match": true
+    },
+    {
+      "cell": "c06",
+      "path": "application/tests/test_next_depth_c06_supplier_validity.py",
+      "expected": "12a783f49696a1dcadb9ea42632b38c2a6c6b2fb8a4d5e04e47b86782693ff58",
+      "actual": "12a783f49696a1dcadb9ea42632b38c2a6c6b2fb8a4d5e04e47b86782693ff58",
+      "match": true
+    },
+    {
+      "cell": "c09",
+      "path": "application/src/go_hotel/judgment/service.py",
+      "expected": "ad955e64863cd7fc919adbb1f39735f94df0dc4bc9cf90784882f6ca8de68478",
+      "actual": "ad955e64863cd7fc919adbb1f39735f94df0dc4bc9cf90784882f6ca8de68478",
+      "match": true
+    },
+    {
+      "cell": "c09",
+      "path": "application/src/go_hotel/judgment/good_hotel_standard.py",
+      "expected": "d15221f7925142869bd84cd8a7c955f838aa9d5ad78b1c2965307a53b9a3adad",
+      "actual": "d15221f7925142869bd84cd8a7c955f838aa9d5ad78b1c2965307a53b9a3adad",
+      "match": true
+    },
+    {
+      "cell": "c09",
+      "path": "application/tests/judgment/test_next_depth_concurrent_judgment.py",
+      "expected": "c6c579c38c5ac65234f5b75c3f87bdb998de08b17add0697c85e50b59b19a5fb",
+      "actual": "c6c579c38c5ac65234f5b75c3f87bdb998de08b17add0697c85e50b59b19a5fb",
+      "match": true
+    },
+    {
+      "cell": "c09",
+      "path": "application/ci/next_depth/c09_postgres.py",
+      "expected": "5ba3f05d6918e293c24f2df5f5defb6105c8e0de3f8212ad4141a636ba8ba6e0",
+      "actual": "5ba3f05d6918e293c24f2df5f5defb6105c8e0de3f8212ad4141a636ba8ba6e0",
+      "match": true
+    }
+  ]
+}

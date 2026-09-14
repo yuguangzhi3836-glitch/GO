@@ -60,7 +60,15 @@ class FlightService:
                 raise ValueError('FLIGHT_PASSENGER_INVALID:ADULT_NAME_REQUIRED')
             o=FlightOrderRow(order_id=new_id("flt_ord"),account_id=account_id,prebook_id=prebook_id,status="PAYMENT_PENDING",total_amount_minor=p.total_amount_minor,currency=p.currency,passengers=passengers,payment_method_id=None,pnr=None,ticket_numbers=[],current_itinerary=off.segments,created_at=now(),updated_at=now())
             s.add(o); s.flush(); append_vertical_evidence(s,"FLIGHT",o.order_id,"ORDER_CREATED",o.status,{"prebook_id":prebook_id}); return self._order(o)
-    def checkout(self,account_id,order_id,payment_method_id):
+    def recover_checkout(self,account_id,order_id,payment_method_id,boundary):
+        if not boundary or not boundary.recovering:
+            raise ValueError('FLIGHT_RECOVERY_CONTEXT_REQUIRED')
+        from .payment_recovery import checkout
+        return checkout(self,account_id,order_id,payment_method_id,boundary)
+    def checkout(self,account_id,order_id,payment_method_id,boundary=None):
+        if boundary is not None:
+            from .payment_recovery import checkout
+            return checkout(self,account_id,order_id,payment_method_id,boundary)
         production_truth_required("FLIGHT", "CHECKOUT")
         with SessionLocal.begin() as s:
             o=s.get(FlightOrderRow,order_id)
@@ -103,7 +111,15 @@ class FlightService:
     def change_quote(self,account_id,order_id,new_departure_date=None,leg_index=None,changes=None):
         from go_hotel.flight.changes import create_quote
         return create_quote(account_id,order_id,new_departure_date,leg_index,changes)
-    def execute_change(self,account_id,order_id,quote_id,confirmation=None):
+    def recover_execute_change(self,account_id,order_id,quote_id,confirmation,boundary):
+        if not boundary or not boundary.recovering:
+            raise ValueError('FLIGHT_RECOVERY_CONTEXT_REQUIRED')
+        from .payment_recovery import execute_change
+        return execute_change(self,account_id,order_id,quote_id,confirmation,boundary)
+    def execute_change(self,account_id,order_id,quote_id,confirmation=None,boundary=None):
+        if boundary is not None:
+            from .payment_recovery import execute_change
+            return execute_change(self,account_id,order_id,quote_id,confirmation,boundary)
         production_truth_required('FLIGHT','EXECUTE_CHANGE')
         with SessionLocal() as s:
             if s.bind.dialect.name=='sqlite':s.execute(text('BEGIN IMMEDIATE'))

@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="4" time="3.350" timestamp="2026-09-14T12:52:05.951391+09:00" hostname="localhost"><testcase classname="tests.judgment.test_next_depth_concurrent_judgment" name="test_unchanged_reevaluation_reuses_sealed_evidence_and_active_judgment" time="1.451"><failure message="sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: judgment_evidence_package.content_hash&#10;[SQL: INSERT INTO judgment_evidence_package (package_id, hotel_id, source_refs, source_summary, feature_snapshot, excluded_commercial_fields, content_hash, sealed_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)]&#10;[parameters: ('evpkg_78034f69ba294c2c', 'next-hotel', '[]', '{&quot;reviews&quot;: 0, &quot;risks&quot;: 0, &quot;remediations&quot;: 0}', '{&quot;completed_review_count&quot;: 0, &quot;structured_experience_avg_milli&quot;: null, &quot;dimension_summary&quot;: {}, &quot;confirmed_serious_risk_count&quot;: 0, &quot;monitoring_risk_count&quot;: 0, &quot;verified_remediation_count&quot;: 0}', '[&quot;advertising_budget&quot;, &quot;candidate_scores&quot;, &quot;clicks&quot;, &quot;commercial_revenue&quot;, &quot;commission&quot;, &quot;favorites&quot;, &quot;gmv&quot;, &quot;investment_relationship&quot;, &quot;partnership_tier&quot;, &quot;personalization_score&quot;, &quot;popularity&quot;, &quot;rebate&quot;, &quot;subscription_amount&quot;, &quot;traveler_context&quot;, &quot;traveler_fit&quot;, &quot;user_preference&quot;]', '978c0ba7712cab51438a63503aefc8ef45c4a7b175ec74b1bd59b87658240cc8', '2026-09-14 03:52:08.799121', '2026-09-14 03:52:08.799121')]&#10;(Background on this error at: https://sqlalche.me/e/20/gkpj)">self = &lt;sqlalchemy.engine.base.Connection object at 0x7f22e70b18e0&gt;
+dialect = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f22e9235a60&gt;
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f22e70b1c10&gt;
+statement = &lt;sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f22e70637a0&gt;
+parameters = [('evpkg_78034f69ba294c2c', 'next-hotel', '[]', '{"reviews": 0, "risks": 0, "remediations": 0}', '{"completed_review_c...n_score", "popularity", "rebate", "subscription_amount", "traveler_context", "traveler_fit", "user_preference"]', ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -&gt; CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+&gt;                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f22e9235a60&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f22e6ebc1c0&gt;
+statement = 'INSERT INTO judgment_evidence_package (package_id, hotel_id, source_refs, source_summary, feature_snapshot, excluded_commercial_fields, content_hash, sealed_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('evpkg_78034f69ba294c2c', 'next-hotel', '[]', '{"reviews": 0, "risks": 0, "remediations": 0}', '{"completed_review_co...on_score", "popularity", "rebate", "subscription_amount", "traveler_context", "traveler_fit", "user_preference"]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f22e70b1c10&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: judgment_evidence_package.content_hash
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+    def test_unchanged_reevaluation_reuses_sealed_evidence_and_active_judgment():
+        first = svc.reevaluate('next-hotel')
+&gt;       second = svc.reevaluate('next-hotel')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/judgment/test_next_depth_concurrent_judgment.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/judgment/service.py:144: in reevaluate
+    with SessionLocal.begin() as s:
+         ^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+&lt;string&gt;:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+&lt;string&gt;:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f22e9235a60&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f22e6ebc1c0&gt;
+statement = 'INSERT INTO judgment_evidence_package (package_id, hotel_id, source_refs, source_summary, feature_snapshot, excluded_commercial_fields, content_hash, sealed_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('evpkg_78034f69ba294c2c', 'next-hotel', '[]', '{"reviews": 0, "risks": 0, "remediations": 0}', '{"completed_review_co...on_score", "popularity", "rebate", "subscription_amount", "traveler_context", "traveler_fit", "user_preference"]', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f22e70b1c10&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: judgment_evidence_package.content_hash
+E       [SQL: INSERT INTO judgment_evidence_package (package_id, hotel_id, source_refs, source_summary, feature_snapshot, excluded_commercial_fields, content_hash, sealed_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('evpkg_78034f69ba294c2c', 'next-hotel', '[]', '{"reviews": 0, "risks": 0, "remediations": 0}', '{"completed_review_count": 0, "structured_experience_avg_milli": null, "dimension_summary": {}, "confirmed_serious_risk_count": 0, "monitoring_risk_count": 0, "verified_remediation_count": 0}', '["advertising_budget", "candidate_scores", "clicks", "commercial_revenue", "commission", "favorites", "gmv", "investment_relationship", "partnership_tier", "personalization_score", "popularity", "rebate", "subscription_amount", "traveler_context", "traveler_fit", "user_preference"]', '978c0ba7712cab51438a63503aefc8ef45c4a7b175ec74b1bd59b87658240cc8', '2026-09-14 03:52:08.799121', '2026-09-14 03:52:08.799121')]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: IntegrityError</failure></testcase><testcase classname="tests.judgment.test_next_depth_concurrent_judgment" name="test_two_first_writers_cannot_leave_two_active_judgments" time="0.077"><failure message="assert 2 == 1&#10; +  where 2 = len([&lt;go_hotel.db.models.RecommendationDecisionRow object at 0x7f22e6be89b0&gt;, &lt;go_hotel.db.models.RecommendationDecisionRow object at 0x7f22e6be8980&gt;])">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f22e70b3f80&gt;
+
+    def test_two_first_writers_cannot_leave_two_active_judgments(monkeypatch):
+        good_hotel_standard_service.active()
+        ready = Barrier(2)
+        read_rendezvous = Barrier(2)
+        original = Session.scalar
+        def observed_read(session, statement, *args, **kwargs):
+            value = original(session, statement, *args, **kwargs)
+            sql = str(statement)
+            # Coordinate the old read-before-write race without replacing DB results.
+            # Serialized implementations let the first reader time out then commit.
+            if 'FROM judgment_runtime' in sql and 'judgment_runtime.status' in sql:
+                try:
+                    read_rendezvous.wait(timeout=0.3)
+                except BrokenBarrierError:
+                    pass
+            return value
+        monkeypatch.setattr(Session, 'scalar', observed_read)
+        def evaluate(label):
+            ready.wait(timeout=10)
+            return svc.reevaluate('next-hotel', {'assessment_revision': label})
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            values = [f.result(timeout=15) for f in [pool.submit(evaluate, 'A'), pool.submit(evaluate, 'B')]]
+        assert len({x['judgment_id'] for x in values}) == 2
+&gt;       active = assert_one_active('next-hotel')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/judgment/test_next_depth_concurrent_judgment.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+hotel = 'next-hotel'
+
+    def assert_one_active(hotel):
+        judgments = [x for x in rows(JudgmentRuntimeRow) if x.hotel_id == hotel]
+        active = [x for x in judgments if x.status == 'ACTIVE']
+        decisions = [x for x in rows(RecommendationDecisionRow) if x.hotel_id == hotel and x.valid_to is None]
+&gt;       assert len(active) == len(decisions) == 1
+E       assert 2 == 1
+E        +  where 2 = len([&lt;go_hotel.db.models.RecommendationDecisionRow object at 0x7f22e6be89b0&gt;, &lt;go_hotel.db.models.RecommendationDecisionRow object at 0x7f22e6be8980&gt;])
+
+tests/judgment/test_next_depth_concurrent_judgment.py:27: AssertionError</failure></testcase><testcase classname="tests.judgment.test_next_depth_concurrent_judgment" name="test_concurrent_same_hook_is_one_result_and_payload_keeps_evidence_binding" time="0.085"><failure message="KeyError: 'judgment_id'">def test_concurrent_same_hook_is_one_result_and_payload_keeps_evidence_binding():
+        hid = hook()
+        good_hotel_standard_service.active()
+        ready = Barrier(2)
+        def process():
+            ready.wait(timeout=10)
+            return svc.process_hook(hid)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            values = [f.result(timeout=15) for f in [pool.submit(process), pool.submit(process)]]
+        assert values[0]['judgment_id'] == values[1]['judgment_id']
+        active = assert_one_active('next-hotel')
+        with SessionLocal() as session:
+            h = session.get(JudgmentHookRow, hid)
+            assert h.status == 'COMPLETED'
+            assert h.payload['original_fact'] == 'preserved'
+&gt;           assert h.payload['judgment_id'] == active.judgment_id
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'judgment_id'
+
+tests/judgment/test_next_depth_concurrent_judgment.py:97: KeyError</failure></testcase><testcase classname="tests.judgment.test_next_depth_concurrent_judgment" name="test_hook_replay_returns_its_original_judgment_after_later_reevaluation" time="0.070"><failure message="AssertionError: assert 'jud_5fda517993e445b8' == 'jud_c0d438bf41504288'&#10;  &#10;  - jud_c0d438bf41504288&#10;  + jud_5fda517993e445b8">def test_hook_replay_returns_its_original_judgment_after_later_reevaluation():
+        hid = hook()
+        first = svc.process_hook(hid)
+        later = svc.reevaluate('next-hotel', {'assessment_revision': 'later'})
+        assert later['judgment_id'] != first['judgment_id']
+        replay = svc.process_hook(hid)
+&gt;       assert replay['judgment_id'] == first['judgment_id']
+E       AssertionError: assert 'jud_5fda517993e445b8' == 'jud_c0d438bf41504288'
+E         
+E         - jud_c0d438bf41504288
+E         + jud_5fda517993e445b8
+
+tests/judgment/test_next_depth_concurrent_judgment.py:107: AssertionError</failure></testcase></testsuite></testsuites>

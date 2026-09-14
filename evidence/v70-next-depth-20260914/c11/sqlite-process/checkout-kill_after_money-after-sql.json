@@ -1,0 +1,63 @@
+{
+  "root_ids": [
+    "opi_88b57e956ed74825ad4ec17136c1f0b5"
+  ],
+  "money": [
+    {
+      "id": "omm_2d3d2d1a1bb54f49b8d21a860b0e7647",
+      "root": "opi_88b57e956ed74825ad4ec17136c1f0b5",
+      "type": "AUTHORIZATION",
+      "state": "CONFIRMED",
+      "amount": 468000,
+      "currency": "CNY",
+      "key": "flight-auth:c11o_97aab41444284ba39fea58d7646abb35",
+      "parent": null
+    },
+    {
+      "id": "omm_689283f4faf540238368006531600bc5",
+      "root": "opi_88b57e956ed74825ad4ec17136c1f0b5",
+      "type": "CAPTURE",
+      "state": "CONFIRMED",
+      "amount": 468000,
+      "currency": "CNY",
+      "key": "flight-cap:c11o_97aab41444284ba39fea58d7646abb35",
+      "parent": "omm_2d3d2d1a1bb54f49b8d21a860b0e7647"
+    }
+  ],
+  "attempt_ids": [
+    "opa_e0145c872487434097ac440d9afa219b"
+  ],
+  "claims": [
+    {
+      "operation": "FLIGHT_CHECKOUT",
+      "key": "request-checkout-kill_after_money",
+      "resource": "c11o_97aab41444284ba39fea58d7646abb35",
+      "code": 102,
+      "body": {
+        "status": "RUNNING",
+        "execution_token": "34856a921aa04040a5d54e6aedb652bb"
+      }
+    },
+    {
+      "operation": "RESOURCE:FLIGHT_CHECKOUT",
+      "key": "c11o_97aab41444284ba39fea58d7646abb35",
+      "resource": "c11o_97aab41444284ba39fea58d7646abb35",
+      "code": 102,
+      "body": {
+        "status": "RUNNING",
+        "execution_token": "34856a921aa04040a5d54e6aedb652bb"
+      }
+    },
+    {
+      "operation": "FLIGHT_CHECKOUT",
+      "key": "request-checkout-kill_after_money-other",
+      "resource": "c11o_97aab41444284ba39fea58d7646abb35",
+      "code": 102,
+      "body": {
+        "status": "WAITING_RESOURCE"
+      }
+    }
+  ],
+  "order_status": "PAYMENT_AUTHORIZED",
+  "quote_status": null
+}
