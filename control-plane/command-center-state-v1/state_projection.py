@@ -553,6 +553,34 @@ def normalize_evidence(evidence):
     return out
 
 
+def failure_detail(evidence):
+    """The closed failure block of a non-success record, plus the contract's own
+    answer to "does this authorize a retry".
+
+    The artifact is never trusted on that point.  A failure record authorizes
+    nothing, so the projection states ``retry_permitted`` false from the contract
+    and reports separately what the artifact claimed; a claim to the contrary is
+    recorded and given no effect.
+    """
+    block = evidence.get("failure")
+    detail = {"retry_permitted": False,
+              "replay_authorized": False,
+              "authorizes_any_action": False,
+              "artifact_claimed_retry_permitted": bool(evidence.get("retry_permitted")),
+              "artifact_claimed_replay_authorized": bool(evidence.get("replay_authorized")),
+              "artifact_claimed_authorizes_any_action": bool(evidence.get("authorizes_any_action"))}
+    if isinstance(block, dict):
+        for key in ("kind", "stage", "reason_code"):
+            if isinstance(block.get(key), str):
+                detail[key] = block[key]
+        if isinstance(block.get("attempt_number"), int):
+            detail["attempt_number"] = block["attempt_number"]
+        for key in ("attempt_budget_exhausted", "execution_attempted"):
+            if isinstance(block.get(key), bool):
+                detail[key] = block[key]
+    return detail
+
+
 def validate_request(request):
     if not isinstance(request, dict):
         raise Malformed("request_not_object")
@@ -712,14 +740,19 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
         }
         expires = parse_time(task["expires_at"])
         candidates = evidence_by_key.get((task["task_id"], task["nonce"]), [])
+        conflicting = False
         if len(candidates) > 1:
             digests = {digest({k: v for k, v in item.items() if not k.startswith("_")})
                        for _, item in candidates}
+            entry["evidence_count"] = len(candidates)
             if len(digests) > 1:
+                # Two distinct signed records for one Task identity.  No single
+                # outcome can be established, so this fails closed below.
+                conflicting = True
+                entry["evidence_conflict"] = True
                 loaded.anomaly("EVIDENCE_CONFLICT",
                                "multiple distinct Evidence records for one signed task",
                                task["task_id"])
-            entry["evidence_count"] = len(candidates)
         if signature is False:
             entry.update({"lifecycle": "POLICY_HOLD",
                           "assertion": assertion(STATE_FAILED, "TASK_SIGNATURE_INVALID",
@@ -746,8 +779,11 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
                                            "expires_at passed with no signed Evidence for this task",
                                            refs),
                     "hk_agent_picked_up": unknown(
-                        "the agent ledger is not on the control bus, so absence of Evidence cannot "
-                        "distinguish TASK_NOT_PICKED_UP from an unpublished failure", refs),
+                        "no Evidence exists for this Task. Since CC V1-02 an authenticated Task "
+                        "whose claimed attempt fails publishes a signed failure record, so absence "
+                        "indicates the attempt was never claimed — but that cannot be asserted for "
+                        "Tasks that predate the capability, and the agent ledger is still not on the "
+                        "control bus", refs),
                 })
             else:
                 entry.update({
@@ -806,26 +842,50 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
                           "assertion": assertion(STATE_FAILED, "EVIDENCE_SIGNATURE_INVALID",
                                                  "the Evidence signature does not verify against the "
                                                  "Hong Kong evidence verifier identity", refs)})
-        elif completed > expires:
-            entry.update({"lifecycle": "EVIDENCE_TIMEOUT",
-                          "assertion": assertion(STATE_FAILED, "EVIDENCE_AFTER_EXPIRY",
-                                                 "Evidence completed_at is outside the task validity "
-                                                 "window", refs)})
         elif started > completed:
             entry.update({"lifecycle": "EVIDENCE_INVALID",
                           "assertion": assertion(STATE_FAILED, "EVIDENCE_TIME_ORDER",
                                                  "started_at is after completed_at", refs)})
         elif ev["status"] != "SUCCESS":
+            # CC V1-02: a signed non-success status is the failure answer, and it
+            # stays the answer even outside the validity window, because a failure
+            # is recorded when the attempt stopped and that may legitimately be
+            # after expires_at.  Only a claimed success can time out.
+            detail = failure_detail(ev)
+            described = ", ".join("%s=%s" % (key, detail[key])
+                                  for key in ("kind", "stage", "reason_code") if key in detail)
+            if detail["artifact_claimed_retry_permitted"] or \
+                    detail["artifact_claimed_replay_authorized"] or \
+                    detail["artifact_claimed_authorizes_any_action"]:
+                loaded.anomaly("FAILURE_EVIDENCE_AUTHORIZATION_CLAIM",
+                               "a failure record claims an authorization; the contract says a failure "
+                               "record authorizes nothing, and the claim is given no effect",
+                               task["task_id"])
             entry.update({"lifecycle": "EXECUTION_FAILED",
-                          "assertion": assertion(STATE_FAILED, ev["status"],
-                                                 "the signed Evidence reports a non-success status",
-                                                 refs)})
+                          "assertion": assertion(
+                              STATE_FAILED, ev["status"],
+                              "the signed Evidence reports a non-success status%s"
+                              % (": " + described if described else ""), refs),
+                          "failure": detail})
+        elif completed > expires:
+            entry.update({"lifecycle": "EVIDENCE_TIMEOUT",
+                          "assertion": assertion(STATE_FAILED, "EVIDENCE_AFTER_EXPIRY",
+                                                 "Evidence completed_at is outside the task validity "
+                                                 "window", refs)})
         else:
             expected = ACTION_RESULT.get(task["action_id"])
             result = ev.get("executor_result") if isinstance(ev.get("executor_result"), str) else None
             mismatch = bool(expected) and result != expected
             task_established = signature is True
-            if mismatch and verified:
+            if conflicting:
+                # Fail closed.  One Task identity cannot have two outcomes.
+                entry.update({"lifecycle": "EVIDENCE_VERIFIED",
+                              "assertion": assertion(
+                                  STATE_OBSERVED, "EVIDENCE_CONFLICT",
+                                  "two distinct signed Evidence records exist for one Task identity, "
+                                  "so no single outcome can be established and no claim stronger than "
+                                  "OBSERVED is made", refs)})
+            elif mismatch and verified:
                 entry.update({"lifecycle": "EXECUTION_FAILED",
                               "assertion": assertion(STATE_FAILED, "EXECUTOR_RESULT_MISMATCH",
                                                      "executor_result %r does not equal the frozen "
@@ -1182,17 +1242,27 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
             return ((task.get("evidence") or {}).get("completed_at")) or task["expires_at"]
         pick = max(terminal_non_success, key=terminal_rank)
         proven_failure = pick in broken
+        failure_refs = [pick["source"]["path"]]
+        evidence_path = (pick.get("evidence") or {}).get("source", {}).get("path")
+        if evidence_path:
+            failure_refs.append(evidence_path)
+        failure_value = {"task_id": pick["task_id"], "action_id": pick["action_id"],
+                         "lifecycle": pick["lifecycle"], "value": pick["assertion"]["value"],
+                         "kind": "FAILED_RECORD" if proven_failure else "EXPIRED_WITHOUT_EVIDENCE",
+                         "at": terminal_rank(pick)}
+        if pick.get("failure"):
+            # CC V1-02: why it failed and where the attempt stopped, so the last
+            # failure can be answered together with the Task that caused it.
+            failure_value["failure"] = pick["failure"]
         last_failure = assertion(
             STATE_OBSERVED,
-            {"task_id": pick["task_id"], "action_id": pick["action_id"],
-             "lifecycle": pick["lifecycle"], "value": pick["assertion"]["value"],
-             "kind": "FAILED_RECORD" if proven_failure else "EXPIRED_WITHOUT_EVIDENCE",
-             "at": terminal_rank(pick)},
+            failure_value,
             ("the most recent terminal failure record on the control bus" if proven_failure else
              "the most recent terminal non-success is an expiry, not a proven failure: the task "
-             "reached its expiry with no Evidence, and the agent ledger that would distinguish "
-             "'never picked up' from 'failed unpublished' is not on the control bus"),
-            [pick["source"]["path"]])
+             "reached its expiry with no Evidence, and that is now a meaningful statement — an "
+             "authenticated Task whose claimed attempt fails publishes a signed failure record, so "
+             "absence indicates the attempt was never claimed rather than an unpublished failure"),
+            sorted(set(failure_refs)))
 
     # ---- rollback candidates ---------------------------------------------- #
     rollback_pairs = sorted({t["task_id"]: t["evidence"]["completed_at"] for t in deploys}.items(),

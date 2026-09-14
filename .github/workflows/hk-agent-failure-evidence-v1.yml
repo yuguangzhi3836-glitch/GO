@@ -1,0 +1,167 @@
+name: HK agent failure closure (isolated)
+on:
+  push:
+    branches: [cc/github-native-delivery-v1, cc/v1-finalization-20260914]
+    paths:
+      - 'control-plane/boss-test-pr-live-integration-v1/**'
+      - 'control-plane/command-center-state-v1/contracts/**'
+      - '.github/workflows/hk-agent-failure-evidence-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'control-plane/boss-test-pr-live-integration-v1/**'
+      - 'control-plane/command-center-state-v1/contracts/**'
+      - '.github/workflows/hk-agent-failure-evidence-v1.yml'
+permissions:
+  contents: read
+concurrency:
+  group: hk-agent-failure-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  isolated-failure-closure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned test dependency
+        run: python -m pip install cryptography==46.0.0
+      - name: Check the HK agent lineage manifest
+        working-directory: control-plane/boss-test-pr-live-integration-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Check the state layer manifest
+        working-directory: control-plane/command-center-state-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Run the HK agent lineage suite on Linux
+        working-directory: control-plane/boss-test-pr-live-integration-v1
+        run: python -m unittest discover -s tests -v
+      - name: Prove that a synthetic failure becomes verifiable Evidence the projection reads
+        run: |
+          python - <<'PY'
+          import base64, datetime as dt, json, os, pathlib, sys
+          import argparse
+          from cryptography.hazmat.primitives import serialization
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+          lineage = pathlib.Path('control-plane/boss-test-pr-live-integration-v1')
+          state = pathlib.Path('control-plane/command-center-state-v1')
+          sys.path.insert(0, str(lineage / 'hk-staging'))
+          from hk_agent import transport
+          sys.path.insert(0, str(state))
+          import state_projection as sp
+
+          work = pathlib.Path(os.environ['RUNNER_TEMP']) / 'hk-agent-failure'
+          work.mkdir(parents=True, exist_ok=True)
+          task_key, evidence_key = Ed25519PrivateKey.generate(), Ed25519PrivateKey.generate()
+          (work / 'task.pub').write_bytes(task_key.public_key().public_bytes(
+              serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH))
+          (work / 'evidence.pem').write_bytes(evidence_key.private_bytes(
+              serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+              serialization.NoEncryption()))
+          (work / 'evidence.pub').write_bytes(evidence_key.public_key().public_bytes(
+              serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH))
+
+          now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+          iso = lambda m: m.isoformat().replace('+00:00', 'Z')
+          task = {'schema_version': '1', 'task_id': 'cc-v1-02-ci', 'nonce': 'nonce-cc-v1-02-ci',
+                  'issued_at': iso(now), 'expires_at': iso(now + dt.timedelta(minutes=15)),
+                  'authority': 'GO-COMMAND-CENTER', 'environment': 'HK-STAGING-01',
+                  'action_id': 'HK_STAGING_VERIFY',
+                  'parameters': {'release_id': 'release-cc-v1-02',
+                                 'candidate_image_id': 'sha256:' + 'a' * 64,
+                                 'expected_current_image_id': 'sha256:' + 'a' * 64}}
+          task['signature'] = task_key.sign(transport.canonical(task)).hex()
+
+          # 1. the agent builds and signs a failure record for a claimed attempt
+          refusal = transport.Reject('executor rejected', stage='parser')
+          record = transport.sign(transport.failure_evidence(task, refusal, stage='parser'),
+                                  str(work / 'evidence.pem'))
+
+          # 2. it must satisfy the published contract, and authorize nothing
+          schema = json.loads((state / 'contracts' / 'failure_evidence_v1.schema.json')
+                              .read_text(encoding='utf-8'))
+          missing = [k for k in schema['required'] if k not in record]
+          assert not missing, missing
+          assert record['status'] == 'FAILED', record['status']
+          assert record['failure']['reason_code'] in \
+                 schema['properties']['failure']['properties']['reason_code']['enum']
+          for key in ('retry_permitted', 'replay_authorized', 'authorizes_any_action'):
+              assert record[key] is False, key
+          assert (record['task_id'], record['nonce'], record['action_id'], record['environment']) == \
+                 (task['task_id'], task['nonce'], task['action_id'], task['environment'])
+
+          # 3. the signature must verify against the evidence identity
+          evidence_key.public_key().verify(base64.b64decode(record['signature']),
+                                           transport.canonical(record))
+
+          # 4. the Command Center projection must read it as a proven failure
+          bus = work / 'bus'
+          (bus / 'tasks').mkdir(parents=True, exist_ok=True)
+          (bus / 'evidence').mkdir(parents=True, exist_ok=True)
+          (bus / 'tasks' / 't.json').write_text(json.dumps(task))
+          (bus / 'evidence' / 'e.json').write_text(json.dumps(record))
+          pin = lambda p: sp.Verifier(str(p), 'pin', 'hex').ssh_fingerprint
+          contract = work / 'VERIFIER_IDENTITIES_V1.json'
+          contract.write_text(json.dumps({'schema_version': '1',
+                                          'contract': sp.IDENTITY_CONTRACT_NAME,
+                                          'identities': [
+              {'identity_id': 'CI-TASK', 'role': sp.ROLE_TASK, 'signature_encoding': 'hex',
+               'public_key_ssh_sha256': pin(work / 'task.pub')},
+              {'identity_id': 'CI-EVIDENCE', 'role': sp.ROLE_EVIDENCE,
+               'signature_encoding': 'base64',
+               'public_key_ssh_sha256': pin(work / 'evidence.pub')}]}))
+          loaded = sp.Loaded()
+          sp.load_tasks(str(bus), loaded)
+          sp.load_evidence(str(bus), loaded)
+          identity = sp.IdentityContract(str(contract))
+          tv = sp.Verifier(str(work / 'task.pub'), sp.TASK_VERIFIER_IDENTITY, 'hex',
+                           expected=identity.expected(sp.ROLE_TASK))
+          ev = sp.Verifier(str(work / 'evidence.pub'), sp.EVIDENCE_VERIFIER_IDENTITY, 'base64',
+                           expected=identity.expected(sp.ROLE_EVIDENCE))
+          separated = sp.separated(tv, ev, loaded)
+          task_bound, evidence_bound = sp.bind_identities(tv, ev, loaded)
+          args = argparse.Namespace(tasks_ref='main', tasks_head=None,
+                                    evidence_ref='permission-test', evidence_head=None,
+                                    go_ref='main', go_head=None)
+          state_doc = sp.build_state(loaded, tv, ev, now, {
+              'stale_seconds': 86400, 'liveness_window': 1800, 'verification_window': 86400,
+              'stuck_after': 900, 'recent_window': 604800, 'go_repo': None,
+              'repository_main_sha': None, 'identities_separated': separated,
+              'identity_contract': identity,
+              'proven_allowed': bool(separated and task_bound and evidence_bound),
+              'fail_closed_reasons': [], 'args': args})
+          entry = state_doc['tasks'][0]
+          assert entry['evidence']['signature_verified'] is True, 'failure record did not verify'
+          assert entry['lifecycle'] == 'EXECUTION_FAILED', entry['lifecycle']
+          assert entry['assertion']['state'] == 'FAILED', entry['assertion']['state']
+          assert entry['failure']['reason_code'] == 'EXECUTOR_OUTPUT_REJECTED', entry['failure']
+          assert entry['failure']['retry_permitted'] is False
+          detail = entry['failure']
+          assert detail['artifact_claimed_retry_permitted'] is False, detail
+
+          binding = {'event': os.environ['GITHUB_EVENT_NAME'],
+                     'workflow_commit': os.environ['GITHUB_SHA'],
+                     'run_id': os.environ['GITHUB_RUN_ID'],
+                     'synthetic_failure_signed_evidence': 'PROVEN',
+                     'failure_record_satisfies_contract': True,
+                     'failure_reaches_execution_failed': True,
+                     'failure_authorizes_nothing': True,
+                     'pre_claim_rejection_publishes_nothing': 'ASSERTED_BY_TEST_SUITE',
+                     'installation_performed': False, 'deployment_performed': False,
+                     'hong_kong_accessed': False, 'production_accessed': False}
+          (work / 'binding.json').write_text(json.dumps(binding, indent=2) + '\n')
+          print(json.dumps(binding, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hk-agent-failure-${{ github.sha }}
+          path: ${{ runner.temp }}/hk-agent-failure/
+          if-no-files-found: error
+          retention-days: 30

@@ -206,7 +206,7 @@
       "evidence": [
         "tasks/go-boss-test-pr-42-a9d5683be3e7.json"
       ],
-      "reason": "the most recent terminal non-success is an expiry, not a proven failure: the task reached its expiry with no Evidence, and the agent ledger that would distinguish 'never picked up' from 'failed unpublished' is not on the control bus",
+      "reason": "the most recent terminal non-success is an expiry, not a proven failure: the task reached its expiry with no Evidence, and that is now a meaningful statement \u2014 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed rather than an unpublished failure",
       "state": "OBSERVED",
       "value": {
         "action_id": "HK_STAGING_TEST_PR",
@@ -959,7 +959,7 @@
       "expires_at": "2026-09-04T15:58:27.299100+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -990,7 +990,7 @@
       "expires_at": "2026-09-05T01:11:11.557002+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -1096,7 +1096,7 @@
       "expires_at": "2026-09-06T05:45:59.385419+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -1127,7 +1127,7 @@
       "expires_at": "2026-09-06T10:48:14.284789+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -1290,7 +1290,7 @@
       "expires_at": "2026-09-07T04:54:59.419342+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -1325,7 +1325,7 @@
       "expires_at": "2026-09-08T03:39:18.213108+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -1360,7 +1360,7 @@
       "expires_at": "2026-09-08T07:13:20.243124+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -1395,7 +1395,7 @@
       "expires_at": "2026-09-08T12:20:49.317617+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -1430,7 +1430,7 @@
       "expires_at": "2026-09-08T12:42:38.708739+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -1558,7 +1558,7 @@
       "expires_at": "2026-09-09T02:01:03.780244+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -1659,7 +1659,7 @@
       "expires_at": "2026-09-09T16:37:29.218780+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -1697,7 +1697,7 @@
       "expires_at": "2026-09-09T16:56:48.094680+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -1935,7 +1935,7 @@
       "expires_at": "2026-09-10T11:18:57.000000+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -2042,7 +2042,7 @@
       "expires_at": "2026-09-11T04:11:21.564370+00:00",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -2340,7 +2340,7 @@
       "expires_at": "2026-09-11T10:08:56.682627Z",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -2695,7 +2695,7 @@
       "expires_at": "2026-09-12T09:31:04.561510Z",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -2797,7 +2797,7 @@
       "expires_at": "2026-09-12T10:44:39.878757Z",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },
@@ -2899,7 +2899,7 @@
       "expires_at": "2026-09-12T14:15:51.260269Z",
       "hk_agent_picked_up": {
         "evidence": [],
-        "reason": "the agent ledger is not on the control bus, so absence of Evidence cannot distinguish TASK_NOT_PICKED_UP from an unpublished failure",
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
         "state": "UNKNOWN",
         "value": null
       },

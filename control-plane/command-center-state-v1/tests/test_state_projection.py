@@ -1184,5 +1184,183 @@ class DeterminismTests(unittest.TestCase):
         self.assertEqual(state["generated_at"], status["generated_at"])
 
 
+# --------------------------------------------------------------------------- #
+class FailureEvidenceTests(unittest.TestCase):
+    """CC V1-02.  A signed failure record is a real answer, and never a permission.
+
+    Before this the failure half of the lifecycle lived only in the agent-local
+    ledger, so the control bus could not distinguish "never picked up" from
+    "picked up and failed".
+    """
+
+    def setUp(self):
+        self.task_key, self.task_pub = key_pair("cc-task")
+        self.evidence_key, self.evidence_pub = key_pair("hk-evidence")
+
+    def signed_task(self, **over):
+        """The fixture Task as it really arrives: signed by the task identity."""
+        return sign(task(**over), self.task_key, "hex")
+
+    def failure(self, tk, **over):
+        value = evidence(tk, status="FAILED", executor_result="EXECUTION_FAILED",
+                         failure={"schema_version": "1", "kind": "RESULT_REJECT",
+                                  "stage": "parser", "reason_code": "EXECUTOR_OUTPUT_REJECTED",
+                                  "attempt_number": 1, "attempt_budget_exhausted": True,
+                                  "execution_attempted": True, "return_code": 1,
+                                  "diagnostic": {"stdout": {"length": 0, "sha256": "0" * 64,
+                                                            "preview": ""},
+                                                 "stderr": {"length": 0, "sha256": "0" * 64,
+                                                            "preview": ""}}},
+                         retry_permitted=False, replay_authorized=False,
+                         authorizes_any_action=False)
+        value.update(over)
+        return value
+
+    def build_one(self, evidence_value, tk=None):
+        tk = tk or task()
+        return build(*layout(tasks=[("t.json", tk)], evidences=[("e.json", evidence_value)]),
+                     task_pub=self.task_pub, evidence_pub=self.evidence_pub)
+
+    # -- the failure answer ----------------------------------------------------
+    def test_a_signed_failure_record_reaches_execution_failed(self):
+        tk = self.signed_task()
+        loaded, state, status = self.build_one(sign(self.failure(tk), self.evidence_key, "base64"), tk)
+        entry = state["tasks"][0]
+        self.assertTrue(entry["task_signature_verified"])
+        self.assertTrue(entry["evidence"]["signature_verified"])
+        self.assertEqual(entry["lifecycle"], "EXECUTION_FAILED")
+        self.assertEqual(entry["assertion"]["state"], sp.STATE_FAILED)
+        self.assertEqual(entry["assertion"]["value"], "FAILED")
+        self.assertIn("RESULT_REJECT", entry["assertion"]["reason"])
+        self.assertEqual(entry["failure"]["kind"], "RESULT_REJECT")
+        self.assertEqual(entry["failure"]["reason_code"], "EXECUTOR_OUTPUT_REJECTED")
+        self.assertEqual(entry["failure"]["stage"], "parser")
+        self.assertNotIn("EVIDENCE_CONFLICT", [a["kind"] for a in loaded.anomalies])
+
+    def test_the_last_failure_names_the_task_and_why_it_failed(self):
+        tk = self.signed_task()
+        _, state, status = self.build_one(sign(self.failure(tk), self.evidence_key, "base64"), tk)
+        answer = status["answers"]["last_failure"]
+        self.assertEqual(answer["state"], sp.STATE_OBSERVED)
+        self.assertEqual(answer["value"]["task_id"], tk["task_id"])
+        self.assertEqual(answer["value"]["action_id"], tk["action_id"])
+        self.assertEqual(answer["value"]["kind"], "FAILED_RECORD")
+        self.assertEqual(answer["value"]["failure"]["reason_code"], "EXECUTOR_OUTPUT_REJECTED")
+        # the answer points at both the Task and the failure record it came from
+        self.assertIn("tasks/t.json", answer["evidence"])
+        self.assertIn("evidence/e.json", answer["evidence"])
+
+    def test_a_failure_outside_the_validity_window_is_still_execution_failed(self):
+        # A failure is recorded when the attempt stopped, which may legitimately
+        # be after expires_at.  Only a claimed success can time out.
+        tk = self.signed_task()
+        late = self.failure(tk, completed_at=sp.iso(sp.parse_time(tk["expires_at"])
+                                                    + dt.timedelta(minutes=5)))
+        _, state, _ = self.build_one(sign(late, self.evidence_key, "base64"), tk)
+        entry = state["tasks"][0]
+        self.assertEqual(entry["lifecycle"], "EXECUTION_FAILED")
+        self.assertEqual(entry["failure"]["kind"], "RESULT_REJECT")
+
+    def test_a_claimed_success_outside_the_window_still_times_out(self):
+        tk = self.signed_task()
+        late = evidence(tk, completed_at=sp.iso(sp.parse_time(tk["expires_at"])
+                                                + dt.timedelta(minutes=5)))
+        _, state, _ = self.build_one(sign(late, self.evidence_key, "base64"), tk)
+        self.assertEqual(state["tasks"][0]["lifecycle"], "EVIDENCE_TIMEOUT")
+
+    # -- fail-closed cases -----------------------------------------------------
+    def test_a_failure_record_signed_by_the_wrong_identity_is_invalid(self):
+        tk = self.signed_task()
+        crossed = sign(self.failure(tk), self.task_key, "base64")
+        _, state, _ = self.build_one(crossed, tk)
+        entry = state["tasks"][0]
+        self.assertFalse(entry["evidence"]["signature_verified"])
+        self.assertEqual(entry["lifecycle"], "EVIDENCE_INVALID")
+        self.assertEqual(entry["assertion"]["state"], sp.STATE_FAILED)
+        self.assertNotIn("failure", entry)
+
+    def test_a_failure_record_claiming_an_authorization_is_given_no_effect(self):
+        tk = self.signed_task()
+        claiming = self.failure(tk, retry_permitted=True, replay_authorized=True,
+                                authorizes_any_action=True)
+        loaded, state, _ = self.build_one(sign(claiming, self.evidence_key, "base64"), tk)
+        self.assertIn("FAILURE_EVIDENCE_AUTHORIZATION_CLAIM",
+                      [a["kind"] for a in loaded.anomalies])
+        detail = state["tasks"][0]["failure"]
+        # the contract answers, not the artifact
+        self.assertIs(detail["retry_permitted"], False)
+        self.assertIs(detail["replay_authorized"], False)
+        self.assertIs(detail["authorizes_any_action"], False)
+        self.assertIs(detail["artifact_claimed_retry_permitted"], True)
+        self.assertEqual(state["tasks"][0]["lifecycle"], "EXECUTION_FAILED")
+
+    def test_two_distinct_records_for_one_task_identity_fail_closed(self):
+        tk = self.signed_task()
+        good = sign(evidence(tk), self.evidence_key, "base64")
+        bad = sign(self.failure(tk), self.evidence_key, "base64")
+        loaded, state, _ = build(*layout(tasks=[("t.json", tk)],
+                                         evidences=[("a.json", good), ("b.json", bad)]),
+                                 task_pub=self.task_pub, evidence_pub=self.evidence_pub)
+        self.assertIn("EVIDENCE_CONFLICT", [a["kind"] for a in loaded.anomalies])
+        entry = state["tasks"][0]
+        self.assertTrue(entry["evidence_conflict"])
+        self.assertEqual(entry["assertion"]["state"], sp.STATE_OBSERVED)
+        self.assertNotEqual(entry["assertion"]["state"], sp.STATE_PROVEN)
+        self.assertNotEqual(entry["lifecycle"], "COMPLETE")
+
+    def test_a_duplicate_byte_identical_record_is_not_a_conflict(self):
+        tk = self.signed_task()
+        good = sign(evidence(tk), self.evidence_key, "base64")
+        loaded, state, _ = build(*layout(tasks=[("t.json", tk)],
+                                         evidences=[("a.json", good), ("b.json", dict(good))]),
+                                 task_pub=self.task_pub, evidence_pub=self.evidence_pub)
+        self.assertNotIn("EVIDENCE_CONFLICT", [a["kind"] for a in loaded.anomalies])
+        self.assertEqual(state["tasks"][0]["lifecycle"], "COMPLETE")
+
+    def test_a_malformed_failure_record_is_reported_not_interpreted(self):
+        tk = self.signed_task()
+        broken = sign(self.failure(tk), self.evidence_key, "base64")
+        del broken["action_id"]
+        loaded, state, _ = self.build_one(broken, tk)
+        self.assertIn("EVIDENCE_UNREADABLE", [a["kind"] for a in loaded.anomalies])
+        entry = state["tasks"][0]
+        self.assertIsNone(entry.get("failure"))
+        self.assertIsNone(entry.get("evidence"))
+        self.assertNotEqual(entry["assertion"]["state"], sp.STATE_FAILED)
+
+    def test_an_unbound_failure_record_is_reported_not_interpreted(self):
+        # The record must name the Task it answers; a record without a binding is
+        # not merged onto some Task by guesswork.
+        tk = self.signed_task()
+        broken = sign(self.failure(tk, task_id="someone-else"), self.evidence_key, "base64")
+        loaded, state, _ = self.build_one(broken, tk)
+        self.assertIsNone(state["tasks"][0].get("evidence"))
+
+    # -- the success path is untouched -----------------------------------------
+    def test_the_success_path_carries_no_failure_block(self):
+        tk = self.signed_task()
+        _, state, _ = self.build_one(sign(evidence(tk), self.evidence_key, "base64"), tk)
+        entry = state["tasks"][0]
+        self.assertEqual(entry["lifecycle"], "COMPLETE")
+        self.assertEqual(entry["assertion"]["state"], sp.STATE_PROVEN)
+        self.assertNotIn("failure", entry)
+
+    # -- the contract itself ---------------------------------------------------
+    def test_the_failure_contract_is_closed(self):
+        schema = json.loads((ROOT / "contracts" / "failure_evidence_v1.schema.json")
+                            .read_text(encoding="utf-8"))
+        self.assertEqual(schema["properties"]["status"]["const"], "FAILED")
+        self.assertEqual(schema["properties"]["executor_result"]["const"], "EXECUTION_FAILED")
+        for key in ("retry_permitted", "replay_authorized", "authorizes_any_action"):
+            self.assertEqual(schema["properties"][key]["const"], False, key)
+        block = schema["properties"]["failure"]
+        for key in ("task_id", "nonce", "action_id", "environment"):
+            self.assertIn(key, schema["required"])
+        self.assertIn("UNCLASSIFIED_REJECT",
+                      block["properties"]["reason_code"]["enum"])
+        self.assertIn("AGENT_REJECT", block["properties"]["kind"]["enum"])
+        self.assertIn("attempt_budget_exhausted", block["required"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

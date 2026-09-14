@@ -1,8 +1,10 @@
-import datetime as dt
 import ast
+import base64
+import datetime as dt
 import hashlib
 import importlib.machinery
 import importlib.util
+import json
 import pathlib
 import os
 import shlex
@@ -24,7 +26,7 @@ spec = importlib.util.spec_from_loader(loader.name, loader)
 bridge = importlib.util.module_from_spec(spec)
 loader.exec_module(bridge)
 sys.path.insert(0, str(ROOT / "hk-staging"))
-from hk_agent import test_pr, transport
+from hk_agent import deployment_actions, test_pr, transport
 
 
 class IntegrationTests(unittest.TestCase):
@@ -423,6 +425,331 @@ class IntegrationTests(unittest.TestCase):
                         self.assertEqual(target.read_bytes(), backup_file.read_bytes())
                     else:
                         self.assertFalse(target.exists())
+
+
+class FailureClosureTests(unittest.TestCase):
+    """CC V1-02.  A claimed attempt that fails is reported on, signed and bound.
+
+    Before this, a failure touched only the agent-local SQLite ledger, so the
+    control bus could not tell "never picked up" from "picked up and failed".
+    """
+
+    STATE_V1 = ROOT.parents[0] / "command-center-state-v1"
+
+    def setUp(self):
+        key, self.task_verify_key, self.evidence_key, self.evidence_verify_key = self.key_material()
+        self.task_key = key
+        self.evidence_private = self.evidence_key
+        self.published = []
+
+    # -- helpers --------------------------------------------------------------
+    def key_material(self):
+        workspace = pathlib.Path(tempfile.mkdtemp(prefix="ccv102-"))
+        self.workspace = workspace
+        task_private = Ed25519PrivateKey.generate()
+        evidence_private = Ed25519PrivateKey.generate()
+        (workspace / "task.pem").write_bytes(task_private.private_bytes(
+            serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
+        (workspace / "task.pub").write_bytes(task_private.public_key().public_bytes(
+            serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH))
+        (workspace / "evidence.pem").write_bytes(evidence_private.private_bytes(
+            serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
+        (workspace / "evidence.pub").write_bytes(evidence_private.public_key().public_bytes(
+            serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH))
+        return (task_private, str(workspace / "task.pub"),
+                evidence_private, str(workspace / "evidence.pub"))
+
+    @staticmethod
+    def iso(moment):
+        return moment.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+    def signed_task(self, action="HK_STAGING_VERIFY", **over):
+        now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+        issued = now - dt.timedelta(minutes=1)
+        value = {
+            "schema_version": "1", "task_id": "cc-v1-02-task", "nonce": "nonce-cc-v1-02",
+            "issued_at": self.iso(issued), "expires_at": self.iso(issued + dt.timedelta(minutes=15)),
+            "authority": "GO-COMMAND-CENTER", "environment": "HK-STAGING-01",
+            "action_id": action,
+            "parameters": {"release_id": "release-cc-v1-02",
+                           "candidate_image_id": "sha256:" + "a" * 64,
+                           "expected_current_image_id": "sha256:" + "a" * 64},
+        }
+        value.update(over)
+        value["signature"] = self.task_key.sign(transport.canonical(value)).hex()
+        return value
+
+    def config(self):
+        return {"environment": "HK-STAGING-01", "authority": "GO-COMMAND-CENTER",
+                "tasks_repo": "git@example.invalid:tasks.git", "tasks_key": "unused",
+                "evidence_repo": "git@example.invalid:evidence.git", "evidence_key": "unused",
+                "task_verify_key": self.task_verify_key,
+                "evidence_signing_key": str(self.workspace / "evidence.pem")}
+
+    def isolated_run(self, task, *, executor=None, push=None, ledger=None):
+        """Drive run_once with the network transport replaced by fixtures."""
+        captured = {"tasks": {"%s.json" % task["task_id"]: task},
+                    "clones": [], "published": self.published, "segments": []}
+
+        def fake_clone(repo, key, target):
+            target = pathlib.Path(target)
+            captured["clones"].append(target.name)
+            staged = captured["tasks"] if target.name == "tasks" else captured.get(
+                "staged_%s" % target.name, {})
+            (target / "tasks").mkdir(parents=True, exist_ok=True)
+            (target / "evidence").mkdir(parents=True, exist_ok=True)
+            for name, value in staged.items():
+                (target / "tasks" / name).write_text(json.dumps(value), encoding="utf-8")
+
+        def fake_git(key, args, cwd=None):
+            captured["segments"].append(list(args))
+            return "f" * 40
+
+        def fake_push(data, cfg, work, stage=None, refuse_overwrite=False, dirname="evidence"):
+            if push is not None:
+                return push(data, cfg, work, stage=stage,
+                            refuse_overwrite=refuse_overwrite, dirname=dirname)
+            self.published.append(data)
+            return "f" * 40
+
+        real_dispatch = transport.dispatch_action
+        if executor is not None:
+            def dispatch_one(task, _executor=executor, _real=real_dispatch):
+                return _real(task, _executor)
+            transport.dispatch_action = dispatch_one
+
+        originals = (transport.clone, transport.git, transport.push_evidence, transport.dispatch_action)
+        transport.clone, transport.git, transport.push_evidence = fake_clone, fake_git, fake_push
+        try:
+            ledger = ledger or (self.workspace / "ledger.sqlite3")
+            result = transport.run_once(str(self.write_config()), str(ledger), task["task_id"])
+        finally:
+            transport.clone, transport.git, transport.push_evidence, transport.dispatch_action = originals
+        return result, captured
+
+    def write_config(self):
+        path = self.workspace / "agent.json"
+        path.write_text(json.dumps(self.config()), encoding="utf-8")
+        return path
+
+    class BrokenExecutor:
+        """Reports a completed subprocess whose stdout cannot be accepted."""
+
+        def __init__(self, stage, stdout):
+            self.stage, self.stdout = stage, stdout
+
+        def run(self, argv):
+            return {"stdout": self.stdout, "stderr": "", "returncode": 1}
+
+    # -- the closure ----------------------------------------------------------
+    def test_a_claimed_attempt_that_fails_publishes_signed_bound_evidence(self):
+        task = self.signed_task()
+        broken = self.BrokenExecutor("parser", "{not json")
+        result, _ = self.isolated_run(task, executor=broken)
+
+        self.assertEqual(result["processed"], 0)
+        self.assertEqual(result["rejected"], 1)
+        publication = result["failure_evidence"][0]
+        self.assertTrue(publication["published"], publication)
+        self.assertEqual(len(self.published), 1)
+
+        record = self.published[0]
+        # bound to the original Task, no binding lost on failure
+        self.assertEqual(record["task_id"], task["task_id"])
+        self.assertEqual(record["nonce"], task["nonce"])
+        self.assertEqual(record["action_id"], task["action_id"])
+        self.assertEqual(record["environment"], task["environment"])
+        # a failure record is never a success record
+        self.assertEqual(record["status"], "FAILED")
+        self.assertNotEqual(record["executor_result"], "VERIFY_OK")
+        # signed with the same evidence identity, and the signature verifies
+        self.assertTrue(record["signature"])
+        self.evidence_private.public_key().verify(
+            base64.b64decode(record["signature"]), transport.canonical(record))
+        # the whole gate chain passed before the executor output was refused
+        self.assertEqual(set(record["gate_results"].values()), {"PASS"})
+        # closed semantics
+        self.assertEqual(record["failure"]["kind"], "RESULT_REJECT")
+        self.assertEqual(record["failure"]["stage"], "parser")
+        self.assertEqual(record["failure"]["reason_code"], "EXECUTOR_OUTPUT_REJECTED")
+        self.assertTrue(record["failure"]["execution_attempted"])
+        self.assertTrue(record["failure"]["attempt_budget_exhausted"])
+        # nothing here authorizes anything
+        self.assertIs(record["retry_permitted"], False)
+        self.assertIs(record["replay_authorized"], False)
+        self.assertIs(record["authorizes_any_action"], False)
+
+    def test_the_published_record_satisfies_the_published_contract(self):
+        task = self.signed_task()
+        broken = self.BrokenExecutor("parser", "{not json")
+        self.isolated_run(task, executor=broken)
+        record = self.published[0]
+
+        schema = json.loads((self.STATE_V1 / "contracts" / "failure_evidence_v1.schema.json").read_text(encoding="utf-8"))
+        missing = [key for key in schema["required"] if key not in record]
+        self.assertEqual(missing, [], "the agent produced a record the contract does not describe")
+        for key, rule in schema["properties"].items():
+            if "const" in rule and key in record:
+                self.assertEqual(record[key], rule["const"], key)
+        self.assertEqual(dict(record["failure"])["schema_version"],
+                         schema["properties"]["failure"]["properties"]["schema_version"]["const"])
+        for key in schema["properties"]["failure"]["required"]:
+            self.assertIn(key, record["failure"])
+
+    def test_a_task_rejected_before_the_claim_publishes_nothing(self):
+        # An unauthenticated Task must never be able to cause a write, so a bad
+        # signature produces no record at all.
+        task = self.signed_task()
+        task["signature"] = "0" * 128
+        result, _ = self.isolated_run(task)
+        self.assertEqual(result["rejected"], 1)
+        self.assertEqual(result["failure_evidence"][0],
+                         {"attempted": False, "published": False, "reason": "task_not_claimed"})
+        self.assertEqual(self.published, [])
+
+    def test_an_expired_task_that_was_never_claimed_publishes_nothing(self):
+        now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+        task = self.signed_task(issued_at=self.iso(now - dt.timedelta(hours=2)),
+                                expires_at=self.iso(now - dt.timedelta(hours=1)))
+        result, _ = self.isolated_run(task)
+        self.assertEqual(result["rejected"], 1)
+        self.assertFalse(result["failure_evidence"][0]["attempted"])
+        self.assertEqual(self.published, [])
+
+    def test_a_failed_publication_is_neither_success_nor_a_retry(self):
+        task = self.signed_task()
+        broken = self.BrokenExecutor("parser", "{not json")
+        ledger = self.workspace / "ledger.sqlite3"
+
+        def refusing_push(data, cfg, work, stage=None, refuse_overwrite=False, dirname="evidence"):
+            self.published.append(data)
+            raise transport.Reject("GITHUB_TRANSPORT_REJECT", stage=stage)
+
+        result, _ = self.isolated_run(task, executor=broken,
+                                      push=refusing_push, ledger=ledger)
+        self.assertEqual(result["processed"], 0, "a failed work item must never be counted as processed")
+        publication = result["failure_evidence"][0]
+        self.assertTrue(publication["attempted"])
+        self.assertFalse(publication["published"])
+        self.assertIn("not a success", publication["note"])
+
+        # the attempt budget was claimed durably, so the next poll refuses the
+        # Task instead of re-executing it
+        self.assertTrue(transport.Ledger(str(ledger)).attempted(task["task_id"], task["nonce"]))
+        second, _ = self.isolated_run(task, executor=broken,
+                                      ledger=ledger)
+        self.assertEqual(second["processed"], 0)
+        self.assertEqual(second["failure_evidence"][0],
+                         {"attempted": False, "published": False, "reason": "task_not_claimed"})
+        self.assertEqual(len(self.published), 1, "a refused publication was retried")
+
+    def test_a_published_failure_is_not_republished_on_the_next_poll(self):
+        task = self.signed_task()
+        broken = self.BrokenExecutor("parser", "{not json")
+        ledger = self.workspace / "ledger.sqlite3"
+        first, _ = self.isolated_run(task, executor=broken,
+                                     ledger=ledger)
+        self.assertTrue(first["failure_evidence"][0]["published"])
+        self.assertEqual(len(self.published), 1)
+
+        second, _ = self.isolated_run(task, executor=broken,
+                                      ledger=ledger)
+        self.assertEqual(second["rejected"], 1)
+        self.assertEqual(second["failure_evidence"][0]["reason"], "task_not_claimed")
+        self.assertEqual(len(self.published), 1, "one Task identity published twice")
+
+    def test_a_duplicate_record_is_refused_rather_than_overwritten(self):
+        task = self.signed_task()
+        record = transport.failure_evidence(task, transport.Reject("GITHUB_TRANSPORT_REJECT"),
+                                            stage=transport.STAGE_EVIDENCE_PUBLISH)
+        name = (task["task_id"] + "-" + task["nonce"]) + ".json"
+        existing = self.workspace / "evidence-failure" / "evidence" / name
+        existing.parent.mkdir(parents=True, exist_ok=True)
+        existing.write_text('{"published":"first"}', encoding="utf-8")
+
+        def fake_clone(repo, key, target):
+            self.assertEqual(pathlib.Path(target).name, "evidence-failure")
+            pathlib.Path(target).mkdir(parents=True, exist_ok=True)
+            (pathlib.Path(target) / "evidence").mkdir(exist_ok=True)
+            (pathlib.Path(target) / "evidence" / name).write_text(existing.read_text(encoding="utf-8"), encoding="utf-8")
+
+        original_clone = transport.clone
+        transport.clone = fake_clone
+        try:
+            with self.assertRaisesRegex(transport.Reject, "EVIDENCE_DUPLICATE_REJECT"):
+                transport.push_evidence(transport.sign(record, str(self.workspace / "evidence.pem")),
+                                        self.config(), self.workspace,
+                                        refuse_overwrite=True, dirname="evidence-failure")
+        finally:
+            transport.clone = original_clone
+        self.assertEqual(existing.read_text(encoding="utf-8"), '{"published":"first"}')
+
+    def test_the_success_path_is_unchanged(self):
+        task = self.signed_task()
+        executor = deployment_actions.FakeExecutor()
+        result, _ = self.isolated_run(task, executor=executor)
+        self.assertEqual(result["processed"], 1)
+        self.assertEqual(result["rejected"], 0)
+        self.assertEqual(result["failure_evidence"], [])
+        self.assertEqual(len(result["evidence_commits"]), 1)
+        self.assertEqual(len(self.published), 1)
+        record = self.published[0]
+        self.assertEqual(record["status"], "SUCCESS")
+        self.assertNotIn("failure", record)
+        self.assertNotIn("retry_permitted", record)
+
+    # -- the closed vocabularies ----------------------------------------------
+    def test_reasons_are_closed_and_free_text_is_never_echoed(self):
+        self.assertEqual(transport.failure_reason("GITHUB_TRANSPORT_REJECT"), "GITHUB_TRANSPORT_REJECT")
+        self.assertEqual(transport.failure_reason("executor rejected"), "UNCLASSIFIED_REJECT")
+        self.assertEqual(transport.failure_reason("-----BEGIN PRIVATE KEY----- leaked"),
+                         "UNCLASSIFIED_REJECT")
+        self.assertEqual(transport.failure_reason("executor rejected", "parser"),
+                         "EXECUTOR_OUTPUT_REJECTED")
+        self.assertEqual(transport.failure_reason("whatever", "no_such_stage"),
+                         "UNCLASSIFIED_REJECT")
+
+    def test_kinds_are_closed_and_unmapped_stages_are_never_echoed(self):
+        self.assertEqual(transport.failure_kind("parser"), "RESULT_REJECT")
+        self.assertEqual(transport.failure_kind("subprocess_nonzero"), "EXECUTION_FAILED")
+        self.assertEqual(transport.failure_kind(transport.STAGE_ROLLBACK_HANDOFF), "HANDOFF_FAILED")
+        self.assertEqual(transport.failure_kind("something_new"), "AGENT_REJECT")
+
+    def test_gate_results_report_where_the_attempt_stopped(self):
+        stopped_at_signature = transport.failure_gate_results("signature")
+        self.assertEqual(stopped_at_signature["schema"], "PASS")
+        self.assertEqual(stopped_at_signature["signature"], "FAIL")
+        self.assertEqual(stopped_at_signature["parameters"], "NOT_EVALUATED")
+        all_passed = transport.failure_gate_results("parser")
+        self.assertEqual(set(all_passed.values()), {"PASS"})
+
+    def test_the_contract_and_the_producer_agree_on_the_closed_sets(self):
+        # The published contract and the agent's vocabularies must not drift: a
+        # record the contract does not describe would be unreadable to a reader
+        # that trusts the contract.
+        schema = json.loads((self.STATE_V1 / "contracts" / "failure_evidence_v1.schema.json")
+                            .read_text(encoding="utf-8"))
+        block = schema["properties"]["failure"]["properties"]
+        self.assertEqual(set(block["reason_code"]["enum"]),
+                         set(transport.FAILURE_REASON_CODES) | {transport.FAILURE_REASON_FALLBACK})
+        self.assertEqual(set(block["kind"]["enum"]),
+                         set(transport.FAILURE_KIND_BY_STAGE.values()) | {transport.FAILURE_KIND_FALLBACK})
+        self.assertEqual(set(block["stage"]["enum"]),
+                         {transport.STAGE_AGENT, transport.STAGE_ROLLBACK_HANDOFF,
+                          transport.STAGE_EXECUTOR, transport.STAGE_RESULT,
+                          transport.STAGE_EVIDENCE_BUILD, transport.STAGE_EVIDENCE_PUBLISH,
+                          "subprocess", "subprocess_nonzero", "subprocess_error", "parser"})
+
+    def test_failure_stages_are_not_swallowed_as_agent_reject(self):
+        reject = transport.Reject("EXECUTOR_RESULT_REJECT", stage=transport.STAGE_EVIDENCE_BUILD)
+        self.assertEqual(getattr(reject, "stage"), transport.STAGE_EVIDENCE_BUILD)
+        self.assertEqual(str(reject), "EXECUTOR_RESULT_REJECT")
+        # an executor refusal is normalised to one type the caller already handles
+        executor_reject = deployment_actions.Reject("executor stdout rejected", stdout="raw", stage="parser")
+        staged = transport._staged(executor_reject, transport.STAGE_EXECUTOR)
+        self.assertIsInstance(staged, transport.Reject)
+        self.assertEqual(staged.stage, "parser")
+        self.assertEqual(staged.stdout, "raw")
 
 
 if __name__ == "__main__":

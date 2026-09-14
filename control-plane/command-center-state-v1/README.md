@@ -40,6 +40,7 @@ Executor surface                   NOT WIDENED
 | `contracts/request_v1.schema.json` | what a human / ChatGPT may submit, and what is forbidden |
 | `contracts/task_v1.schema.json` | the Execution Authority envelope and the frozen parameter contracts |
 | `contracts/evidence_v1.schema.json` | both published Evidence generations, and the terminal-result table |
+| `contracts/failure_evidence_v1.schema.json` | the signed failure record: its binding, its closed vocabularies, and what it may never authorize |
 | `contracts/control_state_v1.schema.json` | the projection format and the rank rules |
 | `contracts/control_status_v1.schema.json` | the bounded ChatGPT read contract and the question map |
 | `contracts/agent_liveness_v1.schema.json` | how liveness is represented, and what it may never claim |
@@ -306,6 +307,32 @@ The same binding was applied to the live-bus snapshot, which moved from
 `COMPLETE 24 | TASK_EXPIRED 18 | POLICY_HOLD 4`. See
 `evidence/PROJECTION_20260914/README.md` for what the three new failures are.
 
+### 9. A failure is published, not swallowed (CC V1-02)
+
+The failure half of the lifecycle used to live only in the agent-local SQLite
+ledger, so the control bus could not tell "never picked up" from "picked up and
+failed". A Task whose **claimed** execution attempt fails now publishes a signed
+`FAILED` record to the same `evidence/<task_id>-<nonce>.json` path a success
+uses, signed by the same Hong Kong evidence identity and bound to the original
+`task_id`, `nonce`, `action_id` and `environment`.
+
+The consumer side needed two corrections for that to be read honestly:
+
+* **A signed non-success status is now evaluated before the validity window.** A
+  failure is recorded when the attempt stopped, which may legitimately be after
+  `expires_at`; only a claimed success can time out. Without this, every failure
+  record would have been mislabelled `EVIDENCE_TIMEOUT`.
+* **Two distinct records for one Task identity now fail closed.** They are
+  reported as `EVIDENCE_CONFLICT` and capped at `EVIDENCE_VERIFIED` / `OBSERVED`,
+  because one Task identity cannot have two outcomes; byte-identical duplicates
+  are not a conflict.
+
+A failure record authorizes nothing. The projection reports `retry_permitted`,
+`replay_authorized` and `authorizes_any_action` as **false from the contract** and
+separately reports what the artifact claimed, so a record claiming otherwise is
+recorded and given no effect. `answers.last_failure` now carries the failure
+`kind`, `stage` and `reason_code` alongside the Task that caused it.
+
 ## Verified current architecture
 
 Read from repository evidence, not from old notes.
@@ -371,6 +398,13 @@ SAME_KEY_COLLISION_REJECTED=PASS
 MISSING_KEY_NEVER_PROVEN=PASS
 REAL_CONTROL_BUS_HISTORY_REACHES_PROVEN=PASS
 PRIVATE_KEY_PUBLISHED=NO
+
+SIGNED_FAILURE_EVIDENCE=PASS
+FAILURE_BOUND_TO_TASK_IDENTITY=PASS
+FAILURE_AUTHORIZES_NOTHING=PASS
+FAILURE_OUTSIDE_VALIDITY_WINDOW_IS_EXECUTION_FAILED=PASS
+CONFLICTING_FAILURE_RECORDS_FAIL_CLOSED=PASS
+INSTALLED=NO
 
 REPOSITORY_RUNTIME_AND_LIVE_RUNTIME_SEPARATED=PASS
 ACTIVE_STUCK_TASK_CLASSIFICATION=PASS
@@ -475,6 +509,10 @@ publish a Task, approve a plan, or reach Hong Kong.
 **Closed by CC V1-01:** verifier public keys are now published, bound and
 fingerprint-pinned (`identity/`). The Control Plane no longer caps at `OBSERVED`.
 
+**Closed by CC V1-02:** a claimed execution attempt that fails now publishes a
+signed failure record, so "picked up and failed" is no longer invisible and
+absence of Evidence now indicates no claim.
+
 1. **Three historical Tasks fail under the published Task signer.** With the
    identity now bound, `go-m3-042-e2e-health-20260905T151233846901Z`,
    `…20260905T152130238921Z` and `…20260906T011815978751Z` resolve as
@@ -484,15 +522,14 @@ fingerprint-pinned (`identity/`). The Control Plane no longer caps at `OBSERVED`
    that was superseded before `2026-09-06T07:47:11Z` and whose public key is not
    published anywhere. Attribution is open; this is a real finding, not a
    defect introduced by CC V1-01.
-2. **A failed execution publishes no Evidence.** `transport.py` records a
-   rejection in the agent-local SQLite ledger and never publishes signed Evidence,
-   so `EXECUTION_FAILED` and `TASK_NOT_PICKED_UP` are unobservable from GitHub.
-   The failure half of the lifecycle is only half closed. → CC V1-02.
+2. **The failure closure is not installed.** The HK agent source now publishes
+   failure records, but nothing is deployed by CC V1 and no installation is
+   claimed. `INSTALLED=NO`. Live failure visibility therefore still depends on a
+   later, separately approved install.
 3. **No liveness producer.** `CONTROL_PLANE_HEALTH` exists but nothing schedules
    it, so `hk_agent_online` is honest and useless. → CC V1-03.
 4. **No publication target for the derived state.** The projector writes files;
-   nothing yet pushes them where ChatGPT reads. Until Command Center publishes the
-   state on the control bus, the contract exists but no reader sees it. → CC V1-04.
+   nothing yet pushes them where ChatGPT reads. → CC V1-04.
 5. **Bridge ledger facts are not on the control bus.** Request rejection reasons,
    duplicate-request detection, ambiguity holds and plan/approval consumption live
    only in `/var/lib/go-command-center/boss-request-bridge-v1/ledger.json`.

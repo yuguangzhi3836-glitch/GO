@@ -61,7 +61,7 @@
       "evidence": [
         "tasks/go-boss-test-pr-42-a9d5683be3e7.json"
       ],
-      "reason": "the most recent terminal non-success is an expiry, not a proven failure: the task reached its expiry with no Evidence, and the agent ledger that would distinguish 'never picked up' from 'failed unpublished' is not on the control bus",
+      "reason": "the most recent terminal non-success is an expiry, not a proven failure: the task reached its expiry with no Evidence, and that is now a meaningful statement \u2014 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed rather than an unpublished failure",
       "state": "OBSERVED",
       "value": {
         "action_id": "HK_STAGING_TEST_PR",
