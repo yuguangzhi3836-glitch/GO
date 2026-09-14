@@ -45,7 +45,13 @@ jobs:
         run: |
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Explicit original migration history cases and compatibility coverage
+        if: matrix.shard == 2
+        working-directory: application
+        run: |
+          PYTHONPATH=src python -m pytest -p no:cacheprovider tests/test_depth25_migration_history.py --junitxml="$RUNNER_TEMP/evidence/migration-history.xml"
       - name: Run isolated Python test shard
+        if: ${{ !cancelled() }}
         run: |
           export GO_NATIVE_NODE="$(command -v node)"
           python ci/retention/run_suite.py --shard ${{ matrix.shard }} --evidence "$RUNNER_TEMP/evidence/tests"
