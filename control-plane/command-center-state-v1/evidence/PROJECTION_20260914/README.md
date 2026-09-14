@@ -68,6 +68,8 @@ hk_agent_liveness            UNKNOWN
 runtime_verification         NOT_RECENTLY_VERIFIED
 active_stuck_tasks           0
 enabled_request_actions      HK_STAGING_VERIFY, HK_STAGING_TEST_PR
+deploy_readiness_evaluation  NOT_IN_SCOPE
+rollback_readiness_evaluation NOT_IN_SCOPE
 by_lifecycle                 EVIDENCE_PUBLISHED 24 | TASK_EXPIRED 21 | POLICY_HOLD 1
 anomalies                    TASK_PARAMETER_CONTRACT_DRIFT
 ```
@@ -91,20 +93,27 @@ Findings that were not previously answerable in one place:
    the recent window and 8 expired before it; both are indexed separately and do
    not change the current-health answer.
 
-4. **Deployability resolves to HOLD**, and the request channel reports
-   `HK_STAGING_DEPLOY` as `CAPABILITY_PRESENT_BUT_DISABLED` with
-   `deploy_request_enabled=false`. The live Command Center switch is reported as
-   `UNKNOWN` because it is a live-host fact.
+4. **DEPLOY stays a capability classification, not a readiness verdict.** The
+   request channel reports `HK_STAGING_DEPLOY` as
+   `CAPABILITY_PRESENT_BUT_DISABLED` with `deploy_request_enabled=false` and
+   `readiness_evaluation=NOT_IN_SCOPE`. The live Command Center switch is reported
+   as `UNKNOWN` because it is a live-host fact. No `can_deploy`, no deployment
+   eligibility, no rollback target selection and no release-gate verdict appears
+   in `CONTROL_STATUS_V1`; those facts stay under
+   `control_state.informational` with `contract=false`.
 
 5. **One historical Task is preserved rather than dropped.** A 2026-09-09 CANARY
    Task carries a parameter contract that predates the current one. It is kept
    with `POLICY_HOLD` and an explicit drift anomaly and cannot be counted as
    proof. Silent deletion would have made the state look cleaner and less true.
 
-6. **Rollback candidates can be enumerated from proof, not from memory.** Four
-   successful `HK_STAGING_DEPLOY` Evidence records exist; the newest is
-   `go-boss02-final-deploy-20260911T025420Z`. A candidate set derived from signed
-   results, explicitly *not* an approval and *not* a signed ROLLBACK Task.
+6. **Rollback candidate history is recorded, but rollback readiness is not
+   claimed.** Four successful `HK_STAGING_DEPLOY` Evidence records exist; the
+   newest is `go-boss02-final-deploy-20260911T025420Z`. They are kept as
+   non-contract data at
+   `control_state.informational.rollback_candidate_history`. Selecting a rollback
+   target is **not** part of `CONTROL_STATUS_V1`, and a candidate list is not an
+   approval and not a signed ROLLBACK Task.
 
 ## Files
 

@@ -651,13 +651,17 @@ class RuntimeSeparationTests(unittest.TestCase):
         self.assertEqual(repository_main["state"], sp.STATE_OBSERVED)
         self.assertEqual(repository_main["value"], "f" * 40)
 
-    def test_production_gate_stays_hold(self):
+    def test_release_gate_facts_stay_informational_only(self):
         tk, ev = self.verify_pair(self.VERIFIED, "2026-09-14T11:50:00Z")
         _, state, status = build(*layout(tasks=[("t.json", tk)], evidences=[("e.json", ev)]),
                                  go_repo=self.go_repo(self.VERIFIED))
-        self.assertEqual(state["control_state"]["production"]["state"], sp.STATE_HOLD)
-        self.assertEqual(status["answers"]["can_deploy"]["state"], sp.STATE_HOLD)
-        self.assertEqual(status["answers"]["can_deploy"]["value"], "NO")
+        informational = state["control_state"]["informational"]
+        self.assertFalse(informational["contract"])
+        self.assertEqual(informational["production"]["state"], sp.STATE_HOLD)
+        self.assertIn("readiness_evaluation", state["control_state"]["deploy_capability"]["value"])
+        # Release-gate facts must not surface as a contract answer.
+        self.assertNotIn("release_gates", status["answers"])
+        self.assertNotIn("can_deploy", status["answers"])
 
 
 # --------------------------------------------------------------------------- #
@@ -729,14 +733,54 @@ class ContractTests(unittest.TestCase):
                                                  "head_sha": "f" * 40, "request": request})])
         return build(root, req)
 
+    REQUIRED_ANSWERS = ("hk_agent_recent_activity", "active_tasks", "last_task", "pr_tested",
+                        "verify", "repository_declared_runtime", "runtime_verification",
+                        "stuck_tasks", "last_failure", "request_channel")
+
     def test_answers_cover_every_required_question(self):
         _, _, status = self.build_contract()
-        for key in ("hk_agent_recent_activity", "active_tasks", "last_task", "last_evidence",
-                    "pr_tested", "verify", "repository_declared_runtime", "live_verified_runtime",
-                    "runtime_verification", "stuck_tasks", "last_failure", "request_channel",
-                    "can_deploy", "repository_main_sha", "runtime_built_from_main_sha",
-                    "rollback_targets", "release_gates", "go_is_healthy", "hk_agent_online"):
+        for key in self.REQUIRED_ANSWERS:
             self.assertIn(key, status["answers"])
+
+    def test_the_required_answer_set_does_not_leak_beyond_scope(self):
+        # Ten status questions plus the request channel. Anything else in answers
+        # is explicitly a supporting field, never a required one.
+        supporting = {"last_evidence", "live_verified_runtime", "go_is_healthy",
+                      "hk_agent_online", "repository_main_sha", "runtime_built_from_main_sha"}
+        _, _, status = self.build_contract()
+        self.assertEqual(set(status["answers"]) - set(self.REQUIRED_ANSWERS), supporting)
+
+    def test_deploy_readiness_is_not_in_the_contract(self):
+        _, _, status = self.build_contract()
+        for key in ("can_deploy", "rollback_targets", "release_gates", "deployment_eligibility",
+                    "deploy_ready", "rollback_ready"):
+            self.assertNotIn(key, status["answers"], "%s must not be a contract answer" % key)
+        self.assertEqual(status["out_of_scope"]["deploy_readiness_evaluation"], "NOT_IN_SCOPE")
+        self.assertEqual(status["out_of_scope"]["rollback_readiness_evaluation"], "NOT_IN_SCOPE")
+
+    def test_deploy_capability_is_classification_only(self):
+        _, state, status = self.build_contract()
+        capability = state["control_state"]["deploy_capability"]
+        self.assertEqual(capability["value"]["capability"], "CAPABILITY_PRESENT_BUT_DISABLED")
+        self.assertIs(capability["value"]["request_enabled"], False)
+        self.assertEqual(capability["value"]["readiness_evaluation"], "NOT_IN_SCOPE")
+        self.assertEqual(status["answers"]["request_channel"]["readiness_evaluation"],
+                         "NOT_IN_SCOPE")
+        self.assertFalse(status["answers"]["request_channel"]["deploy_request_enabled"])
+
+    def test_no_deploy_readiness_value_is_computed_anywhere(self):
+        _, state, status = self.build_contract()
+        blob = json.dumps(state) + json.dumps(status)
+        for forbidden in ("DEPLOY_READY", "deployment_eligibility", "can_deploy"):
+            self.assertNotIn(forbidden, blob.replace("does not compute can_deploy", ""))
+
+    def test_rollback_target_selection_is_not_a_contract_capability(self):
+        _, state, status = self.build_contract()
+        self.assertNotIn("rollback_targets", status["answers"])
+        # Historical DEPLOY proof may remain as an internal fact.
+        history = state["control_state"]["informational"]["rollback_candidate_history"]
+        self.assertIn(history["state"], (sp.STATE_UNKNOWN, sp.STATE_OBSERVED))
+        self.assertFalse(state["control_state"]["informational"]["contract"])
 
     def test_verify_status_query(self):
         _, _, status = self.build_contract()
@@ -792,12 +836,13 @@ class ContractTests(unittest.TestCase):
         self.assertLess(len(json.dumps(status)), 65536)
 
     def test_empty_control_bus_yields_unknown_not_success(self):
-        _, _, status = build(*layout())
+        _, state, status = build(*layout())
         self.assertEqual(status["answers"]["go_is_healthy"]["state"], sp.STATE_UNKNOWN)
         self.assertEqual(status["answers"]["hk_agent_online"]["state"], sp.STATE_UNKNOWN)
-        self.assertEqual(status["answers"]["can_deploy"]["state"], sp.STATE_HOLD)
         self.assertEqual(status["answers"]["runtime_verification"]["state"], sp.STATE_UNKNOWN)
         self.assertEqual(status["answers"]["stuck_tasks"]["answer"]["value"], "NO")
+        self.assertEqual(state["control_state"]["deploy_capability"]["value"]["capability"],
+                         "CAPABILITY_PRESENT_BUT_DISABLED")
 
     def test_manifest_files_are_not_treated_as_requests(self):
         root, req = layout(requests=[("good.json",

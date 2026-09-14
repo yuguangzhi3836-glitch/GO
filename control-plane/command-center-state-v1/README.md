@@ -20,6 +20,8 @@ Explicitly out of scope and not attempted here:
 
 ```
 DEPLOY request enablement          NOT DONE   (capability stays fail-closed)
+DEPLOY_READINESS_EVALUATION        NOT_IN_SCOPE
+ROLLBACK_READINESS_EVALUATION      NOT_IN_SCOPE
 DEPLOY / image switch E2E          NOT DONE
 ROLLBACK Request schema            NOT ADDED
 CANARY Request schema              NOT ADDED
@@ -78,24 +80,64 @@ verification status, runtime drift, and the projection time.
 
 ## P0-2 — CONTROL_STATUS_V1
 
-A stable, read-only query contract covering exactly the ten questions asked of
-it. See `CHATGPT_CONTRACT_V1.md` for the full map:
+A stable, read-only query contract that answers **exactly ten questions**, plus
+one channel declaration. See `CHATGPT_CONTRACT_V1.md` for the full map:
 
 ```
 1  HK Agent 最近是否有活动        → answers.hk_agent_recent_activity
 2  当前有没有正在执行的任务        → answers.active_tasks
-3  最近一个任务完成了吗            → answers.last_task / last_evidence
+3  最近任务是否完成                → answers.last_task / last_evidence
 4  PR X 是否已经 TEST_PR          → answers.pr_tested.by_pr_number["X"]
-5  PR X 测试结果是什么             → answers.pr_tested.by_pr_number["X"][0]
+5  PR X TEST_PR 结果是什么         → answers.pr_tested.by_pr_number["X"][0]
 6  最近一次 VERIFY 是否成功        → answers.verify
-7  当前 repository-declared runtime → answers.repository_declared_runtime
+7  repository-declared runtime     → answers.repository_declared_runtime
 8  该 runtime 最近是否被 live 证明  → answers.runtime_verification
-9  当前有没有活跃 stuck task       → answers.stuck_tasks.answer
+9  当前是否存在 active stuck task   → answers.stuck_tasks.answer
 10 最近一次失败是什么              → answers.last_failure
+   which actions chat may request  → answers.request_channel
 ```
 
 It cannot create a Task, sign, publish a Task, call an Executor, SSH, modify Hong
 Kong, deploy or roll back.
+
+### Deploy / rollback readiness is explicitly not part of this contract
+
+```text
+can_deploy                    REMOVED FROM THE CONTRACT
+rollback_targets              REMOVED FROM THE CONTRACT
+release_gates                 REMOVED FROM THE CONTRACT
+deployment_eligibility        NEVER COMPUTED
+DEPLOY_READY                  NEVER COMPUTED
+```
+
+`CONTROL_STATUS_V1.out_of_scope` states it:
+
+```json
+{"deploy_readiness_evaluation": "NOT_IN_SCOPE",
+ "rollback_readiness_evaluation": "NOT_IN_SCOPE"}
+```
+
+Deploy readiness would have to combine an approved candidate, TEST_PR, VERIFY,
+CANARY, Human Approval, a deployment plan, source/package/image binding, the
+current runtime and the live Command Center switch. Rollback readiness would have
+to combine a signed source DEPLOY task, its Evidence and Human Approval. Neither
+belongs to this PR.
+
+Recorded facts that could feed a later readiness design remain, but only as
+non-contract data:
+
+```
+CURRENT_CONTROL_STATE.control_state.informational.contract = false
+  rollback_candidate_history   from successful signed DEPLOY Evidence
+  release_gates                read from the canonical pointer
+  final_release_gate / hk_deploy_gate / production
+CURRENT_CONTROL_STATE.control_state.deploy_capability
+  {"capability": "CAPABILITY_PRESENT_BUT_DISABLED",
+   "request_enabled": false,
+   "readiness_evaluation": "NOT_IN_SCOPE"}
+```
+
+No test asserts their presence in `answers`, and a test asserts they are absent.
 
 ## P0-3 — Request → Task → Evidence lifecycle
 
@@ -138,7 +180,7 @@ for both roles.
 `MATCH` and `DRIFT` require a VERIFY Evidence inside the verification window.
 Older proof reports `NOT_RECENTLY_VERIFIED` even when the images agree.
 
-### 3. DEPLOY is not exposed to chat
+### 3. DEPLOY is not exposed to chat, and its readiness is not evaluated
 
 ```json
 {"enabled_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR"],
@@ -148,13 +190,18 @@ Older proof reports `NOT_RECENTLY_VERIFIED` even when the images agree.
    "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
    "HK_STAGING_CANARY": "NOT_REQUESTABLE",
    "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE"},
- "deploy_request_enabled": false}
+ "deploy_request_enabled": false,
+ "readiness_evaluation": "NOT_IN_SCOPE"}
 ```
 
 `known_capability` and `currently_enabled_request_action` are separate concepts
 throughout the schema. The live Command Center channel switch is a live-host fact
 and is reported as `UNKNOWN`, never asserted. No deployment plan is created, no
 switch is modified, no DEPLOY Task is signed.
+
+The contract computes no `can_deploy`, no deployment eligibility, no rollback
+target selection and no release-gate verdict. Release-gate and rollback-candidate
+facts survive only under `control_state.informational` with `contract=false`.
 
 ### 4. `current_main` is gone
 
@@ -240,6 +287,8 @@ WORKSTATION_LOCAL_PATHS_REMOVED=PASS
 
 DEPLOY_REQUEST_ENABLED=NO
 DEPLOY_PERFORMED=NO
+DEPLOY_READINESS_EVALUATION=NOT_IN_SCOPE
+ROLLBACK_READINESS_EVALUATION=NOT_IN_SCOPE
 ROLLBACK_REQUEST_ADDED=NO
 CANARY_REQUEST_ADDED=NO
 WEB_UI_CHANGED=NO
@@ -319,6 +368,8 @@ AUTHORITY_MODEL_WEAKENING           NO
 ARBITRARY_COMMAND_EXECUTION         NO
 DIRECT_CHAT_TO_SHELL                NO
 WEB_UI_REWRITE                      NO
+DEPLOY_READINESS_EVALUATION         NOT_IN_SCOPE
+ROLLBACK_READINESS_EVALUATION       NOT_IN_SCOPE
 ```
 
 The projector holds no private key, no token and no GitHub credential. It cannot

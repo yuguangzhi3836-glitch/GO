@@ -2,10 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "go://control-plane/command-center-state-v1/contracts/control_status_v1.schema.json",
   "title": "GO Command Center CONTROL_STATUS_V1",
-  "description": "The compact, stable, read-only query contract a ChatGPT connector reads instead of the underlying JSON. Scope: CONTROL_STATE_AND_STATUS_ONLY. Bounded in size, fixed question keys, no execution parameter, and it can neither create nor sign a Task.",
+  "description": "The compact, stable, read-only query contract a ChatGPT connector reads instead of the underlying JSON. Scope: CONTROL_STATE_AND_STATUS_ONLY. The required answer set is exactly the ten status questions plus request_channel. Bounded in size, no execution parameter, and it can neither create nor sign a Task. It does NOT evaluate deploy or rollback readiness.",
   "type": "object",
   "required": ["schema_version", "contract", "scope", "audience", "authority", "generated_at",
-               "freshness", "sources", "verification", "answers", "limits", "verdict"],
+               "freshness", "sources", "verification", "answers", "limits", "out_of_scope", "verdict"],
   "properties": {
     "schema_version": {"const": "1"},
     "contract": {"const": "CONTROL_STATUS_V1"},
@@ -18,19 +18,18 @@
     "verification": {"type": "object"},
     "answers": {
       "type": "object",
-      "required": ["hk_agent_recent_activity", "active_tasks", "last_task", "last_evidence",
-                   "pr_tested", "verify", "repository_declared_runtime", "live_verified_runtime",
-                   "runtime_verification", "stuck_tasks", "last_failure", "request_channel",
-                   "can_deploy", "repository_main_sha", "runtime_built_from_main_sha",
-                   "rollback_targets", "release_gates", "go_is_healthy", "hk_agent_online"],
+      "description": "Required = the ten question keys plus request_channel. All other keys are supporting fields and are never required.",
+      "required": ["hk_agent_recent_activity", "active_tasks", "last_task", "pr_tested", "verify",
+                   "repository_declared_runtime", "runtime_verification", "stuck_tasks",
+                   "last_failure", "request_channel"],
       "additionalProperties": true,
       "properties": {
         "hk_agent_recent_activity": {"$ref": "#/$defs/assertion",
           "description": "Q1: the newest signed CONTROL_PLANE_HEALTH Evidence at any age. Activity, never liveness."},
         "active_tasks": {"type": "object",
           "description": "Q2: tasks published and still inside their validity window."},
-        "last_task": {"$ref": "#/$defs/assertion", "description": "Q3: the newest signed Task of any class."},
-        "last_evidence": {"$ref": "#/$defs/assertion"},
+        "last_task": {"$ref": "#/$defs/assertion",
+          "description": "Q3: the newest signed Task of any class."},
         "pr_tested": {
           "type": "object",
           "required": ["latest", "by_pr_number", "in_flight"],
@@ -41,13 +40,12 @@
             "in_flight": {"type": "array"}
           }
         },
-        "verify": {"$ref": "#/$defs/assertion", "description": "Q6: the newest HK_STAGING_VERIFY task."},
+        "verify": {"$ref": "#/$defs/assertion",
+          "description": "Q6: the newest HK_STAGING_VERIFY task."},
         "repository_declared_runtime": {"$ref": "#/$defs/assertion",
           "description": "Q7: what the repository declares. A declaration is never the truth about what is running."},
-        "live_verified_runtime": {"$ref": "#/$defs/assertion",
-          "description": "Q8: the image named by the newest VERIFY Evidence."},
         "runtime_verification": {"$ref": "#/$defs/assertion",
-          "description": "Q8: MATCH / DRIFT / NOT_RECENTLY_VERIFIED / UNKNOWN."},
+          "description": "Q8: MATCH / DRIFT / NOT_RECENTLY_VERIFIED / UNKNOWN plus the image relation."},
         "stuck_tasks": {
           "type": "object",
           "required": ["answer", "active_stuck_tasks", "recent_expired_tasks",
@@ -61,16 +59,44 @@
             "default_lookup": {"const": "active_stuck_tasks"}
           }
         },
-        "last_failure": {"$ref": "#/$defs/assertion", "description": "Q10: kind is FAILED_RECORD or EXPIRED_WITHOUT_EVIDENCE."},
-        "request_channel": {"type": "object",
-          "description": "known_capability vs currently_enabled_request_action. ChatGPT may use enabled actions only."},
-        "can_deploy": {"$ref": "#/$defs/assertion"},
-        "repository_main_sha": {"$ref": "#/$defs/assertion"},
-        "runtime_built_from_main_sha": {"$ref": "#/$defs/assertion"},
-        "rollback_targets": {"$ref": "#/$defs/assertion"},
-        "release_gates": {"type": "object"},
-        "go_is_healthy": {"$ref": "#/$defs/assertion"},
-        "hk_agent_online": {"$ref": "#/$defs/assertion"}
+        "last_failure": {"$ref": "#/$defs/assertion",
+          "description": "Q10: kind is FAILED_RECORD or EXPIRED_WITHOUT_EVIDENCE."},
+        "request_channel": {
+          "type": "object",
+          "description": "Which actions chat may currently create a Request for. A capability classification only; see out_of_scope.",
+          "required": ["enabled_request_actions", "known_capabilities", "capability_classification",
+                       "deploy_request_enabled", "readiness_evaluation"],
+          "properties": {
+            "enabled_request_actions": {"type": "array", "items": {"type": "string"}},
+            "known_capabilities": {"type": "array", "items": {"type": "string"}},
+            "capability_classification": {"type": "object"},
+            "deploy_request_enabled": {"const": false},
+            "readiness_evaluation": {"const": "NOT_IN_SCOPE"}
+          }
+        },
+        "last_evidence": {"$ref": "#/$defs/assertion",
+          "x-go-role": "SUPPORTING_NOT_REQUIRED"},
+        "live_verified_runtime": {"$ref": "#/$defs/assertion",
+          "x-go-role": "SUPPORTING_NOT_REQUIRED"},
+        "go_is_healthy": {"$ref": "#/$defs/assertion",
+          "x-go-role": "SUPPORTING_NOT_REQUIRED"},
+        "hk_agent_online": {"$ref": "#/$defs/assertion",
+          "x-go-role": "SUPPORTING_NOT_REQUIRED",
+          "description": "Strict liveness. PROVEN only from a fresh signed probe; never inferred from a successful task."},
+        "repository_main_sha": {"$ref": "#/$defs/assertion",
+          "x-go-role": "SUPPORTING_NOT_REQUIRED"},
+        "runtime_built_from_main_sha": {"$ref": "#/$defs/assertion",
+          "x-go-role": "SUPPORTING_NOT_REQUIRED"}
+      },
+      "not": {
+        "anyOf": [
+          {"required": ["can_deploy"]},
+          {"required": ["rollback_targets"]},
+          {"required": ["release_gates"]},
+          {"required": ["deployment_eligibility"]},
+          {"required": ["deploy_ready"]},
+          {"required": ["rollback_ready"]}
+        ]
       }
     },
     "limits": {
@@ -82,13 +108,19 @@
         "never_infer": {"type": "string"}
       }
     },
+    "out_of_scope": {
+      "type": "object",
+      "required": ["deploy_readiness_evaluation", "rollback_readiness_evaluation"],
+      "properties": {
+        "deploy_readiness_evaluation": {"const": "NOT_IN_SCOPE"},
+        "rollback_readiness_evaluation": {"const": "NOT_IN_SCOPE"},
+        "note": {"type": "string"}
+      }
+    },
     "verdict": {
       "type": "object",
-      "required": ["healthy", "blockers"],
-      "properties": {
-        "healthy": {"$ref": "#/$defs/assertion"},
-        "blockers": {"type": "array"}
-      }
+      "required": ["healthy"],
+      "properties": {"healthy": {"$ref": "#/$defs/assertion"}}
     }
   },
   "$defs": {
@@ -104,23 +136,25 @@
     }
   },
   "x-go-question-map": {
-    "HK Agent 最近是否有活动": "answers.hk_agent_recent_activity",
-    "当前有没有正在执行的任务": "answers.active_tasks",
-    "最近一个任务完成了吗": "answers.last_task (+ answers.last_evidence)",
-    "PR X 是否已经 TEST_PR": "answers.pr_tested.by_pr_number[X]",
-    "PR X 测试结果是什么": "answers.pr_tested.by_pr_number[X][0]",
-    "最近一次 VERIFY 是否成功": "answers.verify",
-    "当前 repository-declared HK runtime 是什么": "answers.repository_declared_runtime",
-    "这个 runtime 最近是否被 live VERIFY 证明": "answers.runtime_verification (+ answers.live_verified_runtime)",
-    "当前有没有活跃的 stuck task": "answers.stuck_tasks.answer",
-    "最近一次失败是什么": "answers.last_failure"
+    "1 HK Agent 最近是否有活动": "answers.hk_agent_recent_activity",
+    "2 当前有没有正在执行的任务": "answers.active_tasks",
+    "3 最近任务是否完成": "answers.last_task (+ answers.last_evidence)",
+    "4 PR X 是否已经 TEST_PR": "answers.pr_tested.by_pr_number[X]",
+    "5 PR X 测试结果是什么": "answers.pr_tested.by_pr_number[X][0]",
+    "6 最近一次 VERIFY 是否成功": "answers.verify",
+    "7 repository-declared runtime 是什么": "answers.repository_declared_runtime",
+    "8 该 runtime 最近是否被 live VERIFY 证明": "answers.runtime_verification (+ answers.live_verified_runtime)",
+    "9 当前是否存在 active stuck task": "answers.stuck_tasks.answer",
+    "10 最近一次失败是什么": "answers.last_failure",
+    "which actions may chat request": "answers.request_channel"
   },
   "x-go-notes": [
     "answers.hk_agent_online is derived only from fresh signed CONTROL_PLANE_HEALTH Evidence. answers.hk_agent_recent_activity reports the last signed activity at any age and is explicitly NOT liveness.",
     "answers.repository_declared_runtime and answers.live_verified_runtime are separate objects. A repository pointer can never make the live runtime PROVEN.",
     "answers.stuck_tasks.answer reads active_stuck_tasks only; recently and historically expired tasks are reported separately and never change the current-health answer.",
-    "answers.request_channel distinguishes known_capability from currently_enabled_request_action. The connector may create Request files only for enabled actions.",
+    "answers.request_channel distinguishes known_capability from currently_enabled_request_action. HK_STAGING_DEPLOY is CAPABILITY_PRESENT_BUT_DISABLED and is not requestable. The connector may create Request files only for enabled actions.",
     "answers.repository_main_sha is UNKNOWN unless it was supplied out of band; the runtime's build-source SHA is never substituted for it.",
+    "Deploy readiness and rollback readiness are NOT computed here. No can_deploy, deployment eligibility, rollback target selection or release-gate verdict exists in answers.",
     "This contract contains no image override, service name, compose path, shell command or signing parameter."
   ]
 }

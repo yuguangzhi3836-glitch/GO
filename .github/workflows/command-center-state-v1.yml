@@ -144,6 +144,26 @@ jobs:
           assert list(status['answers']['request_channel']['enabled_request_actions']) == \
                  ['HK_STAGING_VERIFY', 'HK_STAGING_TEST_PR'], 'deploy leaked into enabled actions'
           assert status['answers']['request_channel']['deploy_request_enabled'] is False
+          assert status['answers']['request_channel']['readiness_evaluation'] == 'NOT_IN_SCOPE'
+
+          required = {'hk_agent_recent_activity', 'active_tasks', 'last_task', 'pr_tested',
+                      'verify', 'repository_declared_runtime', 'runtime_verification',
+                      'stuck_tasks', 'last_failure', 'request_channel'}
+          assert required <= set(status['answers']), 'a required status answer is missing'
+          for key in ('can_deploy', 'rollback_targets', 'release_gates', 'deployment_eligibility',
+                      'deploy_ready', 'rollback_ready'):
+              assert key not in status['answers'], '%s must not be a contract answer' % key
+          assert status['out_of_scope']['deploy_readiness_evaluation'] == 'NOT_IN_SCOPE'
+          assert status['out_of_scope']['rollback_readiness_evaluation'] == 'NOT_IN_SCOPE'
+          assert 'blockers' not in status['verdict'], 'verdict must carry only the health answer'
+
+          capability = good['control_state']['deploy_capability']
+          assert capability['value']['capability'] == 'CAPABILITY_PRESENT_BUT_DISABLED'
+          assert capability['value']['request_enabled'] is False
+          assert capability['value']['readiness_evaluation'] == 'NOT_IN_SCOPE'
+          assert good['control_state']['informational']['contract'] is False
+          assert good['control_state']['out_of_scope']['deploy_readiness_evaluation'] == 'NOT_IN_SCOPE'
+
           assert sp.LOCAL_PATH_RE.findall(first) == [], 'local path leaked into the projection'
           assert sp.LOCAL_PATH_RE.findall(json.dumps(status)) == [], 'local path leaked into status'
 
@@ -152,8 +172,10 @@ jobs:
                      'projection_sha256': hashlib.sha256(first.encode()).hexdigest(),
                      'deterministic': True, 'signer_identity_separation': 'PROVEN',
                      'installation_performed': False, 'deployment_performed': False,
-                     'deploy_request_enabled': False, 'hong_kong_accessed': False,
-                     'production_accessed': False}
+                     'deploy_request_enabled': False,
+                     'deploy_readiness_evaluation': 'NOT_IN_SCOPE',
+                     'rollback_readiness_evaluation': 'NOT_IN_SCOPE',
+                     'hong_kong_accessed': False, 'production_accessed': False}
           (out / 'binding.json').write_text(json.dumps(binding, indent=2) + '\n')
           print(json.dumps(binding, sort_keys=True))
           PY

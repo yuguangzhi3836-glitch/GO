@@ -12,15 +12,13 @@
   "control_state": {
     "active_stuck_tasks": [],
     "active_tasks": [],
-    "deploy_status": {
+    "deploy_capability": {
       "evidence": [],
-      "reason": "the DEPLOY capability is present and installed, but request enablement is fail-closed and every release gate is HOLD. Capability presence is not deployment authorization, and no approved deployment plan is readable from the control bus",
-      "state": "HOLD",
+      "reason": "the DEPLOY capability exists in the repository and its request enablement is fail-closed. This is a capability classification, not a readiness evaluation, and it must never be read as one",
+      "state": "OBSERVED",
       "value": {
         "capability": "CAPABILITY_PRESENT_BUT_DISABLED",
-        "final_release": "HOLD",
-        "hk_deploy": "HOLD",
-        "production": "HOLD",
+        "readiness_evaluation": "NOT_IN_SCOPE",
         "request_enabled": false
       }
     },
@@ -33,12 +31,6 @@
         "task_id": "go-boss02-canary-20260909T014228979291Z"
       }
     ],
-    "final_release": {
-      "evidence": [],
-      "reason": "release acceptance is a separate axis from the business runtime and the Control Plane",
-      "state": "HOLD",
-      "value": "HOLD"
-    },
     "health": {
       "age_seconds": 116193,
       "as_of": "2026-09-13T03:43:27Z",
@@ -143,12 +135,6 @@
       "state": "UNKNOWN",
       "value": null
     },
-    "hk_deploy": {
-      "evidence": [],
-      "reason": "deployment authorization is not derived from the existence of a DEPLOY capability",
-      "state": "HOLD",
-      "value": "HOLD"
-    },
     "hk_runtime_identity": {
       "evidence": [
         "evidence/go-m3-auto-health-20260906T115227992322Z-jzoWVgooSJWTldTOGkT57zLvcCOiQAGS.json"
@@ -160,6 +146,51 @@
         "last_probe_host": "iZj6ccs8t04f1p4d8pe69zZ",
         "normalized": "i-j6ccs8t04f1p4d8pe69z",
         "pointer_host": "i-j6ccs8t04f1p4d8pe69z"
+      }
+    },
+    "informational": {
+      "contract": false,
+      "final_release_gate": {
+        "evidence": [],
+        "reason": "release acceptance is a separate axis from the business runtime and the Control Plane",
+        "state": "HOLD",
+        "value": "HOLD"
+      },
+      "hk_deploy_gate": {
+        "evidence": [],
+        "reason": "deployment authorization is not derived from the existence of a DEPLOY capability, and this contract does not evaluate deployment readiness",
+        "state": "HOLD",
+        "value": "HOLD"
+      },
+      "note": "recorded facts only. Deploy readiness and rollback readiness are explicitly out of scope for this contract",
+      "production": {
+        "evidence": [],
+        "reason": "Production has not been touched and is out of scope for the Control Plane",
+        "state": "HOLD",
+        "value": "HOLD"
+      },
+      "release_gates": {
+        "final_release": "HOLD",
+        "hk_deploy": "HOLD",
+        "production": "HOLD",
+        "runtime_status": "ACTIVE"
+      },
+      "rollback_candidate_history": {
+        "evidence": [
+          "evidence/go-boss02-final-deploy-20260911T025420Z-ZeLZ20u_3G163YURk-E55WXArlvCrupa.json"
+        ],
+        "reason": "rollback eligibility is a candidate set derived from successful DEPLOY Evidence. It is not an approval and not a signed ROLLBACK task",
+        "state": "OBSERVED",
+        "value": {
+          "newest_completed_at": "2026-09-11T02:57:16Z",
+          "releases": [
+            "go-boss02-deploy-r4-20260909T131418835006Z",
+            "go-boss02-deploy-v2-20260910T030827Z",
+            "go-boss02-deploy-v2-r7-20260910T075319Z",
+            "go-boss02-final-deploy-20260911T025420Z"
+          ],
+          "source_deploy_task_id": "go-boss02-final-deploy-20260911T025420Z"
+        }
       }
     },
     "last_evidence": {
@@ -233,11 +264,10 @@
         "verified_at": "2026-09-13T03:43:27Z"
       }
     },
-    "production": {
-      "evidence": [],
-      "reason": "Production has not been touched and is out of scope for the Control Plane",
-      "state": "HOLD",
-      "value": "HOLD"
+    "out_of_scope": {
+      "deploy_readiness_evaluation": "NOT_IN_SCOPE",
+      "note": "deploy readiness would have to combine an approved candidate, TEST_PR, VERIFY, CANARY, Human Approval, a deployment plan, source/package/image binding, the current runtime and the live Command Center switch. Rollback readiness would have to combine a signed source DEPLOY task, its Evidence and Human Approval. Neither is implemented or claimed here",
+      "rollback_readiness_evaluation": "NOT_IN_SCOPE"
     },
     "recent_expired_tasks": [
       {
@@ -345,12 +375,6 @@
         "task_id": "go-boss-test-pr-42-a9d5683be3e7"
       }
     ],
-    "release_gates": {
-      "final_release": "HOLD",
-      "hk_deploy": "HOLD",
-      "production": "HOLD",
-      "runtime_status": "ACTIVE"
-    },
     "repository_main_sha": {
       "evidence": [],
       "reason": "the repository main revision supplied to this run",
@@ -369,23 +393,6 @@
         "image_tag": "go-hotel:depth48-runtime-6d0fd905",
         "pointer_path": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
         "runtime_generation": "DEPTH48"
-      }
-    },
-    "rollback_source": {
-      "evidence": [
-        "evidence/go-boss02-final-deploy-20260911T025420Z-ZeLZ20u_3G163YURk-E55WXArlvCrupa.json"
-      ],
-      "reason": "rollback eligibility is a candidate set derived from successful DEPLOY Evidence. It is not an approval and not a signed ROLLBACK task",
-      "state": "OBSERVED",
-      "value": {
-        "newest_completed_at": "2026-09-11T02:57:16Z",
-        "releases": [
-          "go-boss02-deploy-r4-20260909T131418835006Z",
-          "go-boss02-deploy-v2-20260910T030827Z",
-          "go-boss02-deploy-v2-r7-20260910T075319Z",
-          "go-boss02-final-deploy-20260911T025420Z"
-        ],
-        "source_deploy_task_id": "go-boss02-final-deploy-20260911T025420Z"
       }
     },
     "runtime_built_from_main_sha": {
@@ -635,7 +642,8 @@
       "state": "UNKNOWN",
       "value": null
     },
-    "note": "ChatGPT may create Request files only for enabled_request_actions"
+    "note": "ChatGPT may create Request files only for enabled_request_actions. HK_STAGING_DEPLOY is reported as a capability classification; computing deploy or rollback readiness is out of scope for this contract",
+    "readiness_evaluation": "NOT_IN_SCOPE"
   },
   "requests": [
     {

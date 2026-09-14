@@ -1025,7 +1025,10 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
         "live_request_switch": unknown(
             "the live Command Center channel switch is a live-host fact. It is not on the control "
             "bus and this projection must not assert it"),
-        "note": "ChatGPT may create Request files only for enabled_request_actions",
+        "readiness_evaluation": "NOT_IN_SCOPE",
+        "note": ("ChatGPT may create Request files only for enabled_request_actions. HK_STAGING_DEPLOY "
+                 "is reported as a capability classification; computing deploy or rollback readiness "
+                 "is out of scope for this contract"),
     }
 
     # ---- repository main vs runtime build source --------------------------- #
@@ -1049,21 +1052,20 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
         if runtime_identity.get("canonical_main_commit")
         else unknown("the canonical runtime pointer does not record a canonical main commit"))
 
-    # ---- deploy authorization gate ----------------------------------------- #
+    # ---- deploy capability classification ---------------------------------- #
+    # Capability only. This contract does not evaluate deploy readiness: real
+    # readiness would have to combine an approved candidate, TEST_PR, VERIFY,
+    # CANARY, Human Approval, a deployment plan, source/package/image binding,
+    # the current runtime and the live Command Center switch. None of that is in
+    # scope here, so no DEPLOY_READY / can_deploy / eligibility value is produced.
     hold = pointers["hold"]
-    if hold:
-        deploy_status = assertion(
-            STATE_HOLD,
-            {"capability": "CAPABILITY_PRESENT_BUT_DISABLED",
-             "request_enabled": False,
-             "hk_deploy": hold.get("hk_deploy"),
-             "final_release": hold.get("final_release"),
-             "production": hold.get("production")},
-            "the DEPLOY capability is present and installed, but request enablement is fail-closed "
-            "and every release gate is HOLD. Capability presence is not deployment authorization, "
-            "and no approved deployment plan is readable from the control bus")
-    else:
-        deploy_status = unknown("no canonical pointer was supplied, so release gates are unknown")
+    deploy_capability = assertion(
+        STATE_OBSERVED,
+        {"capability": "CAPABILITY_PRESENT_BUT_DISABLED", "request_enabled": False,
+         "readiness_evaluation": "NOT_IN_SCOPE"},
+        "the DEPLOY capability exists in the repository and its request enablement is fail-closed. "
+        "This is a capability classification, not a readiness evaluation, and it must never be read "
+        "as one")
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -1117,7 +1119,7 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
             "hk_runtime_identity": runtime_identity_assertion,
             "verify_status": last_task("HK_STAGING_VERIFY"),
             "test_pr_status": test_pr,
-            "deploy_status": deploy_status,
+            "deploy_capability": deploy_capability,
             "repository_runtime_pointer": repository_runtime,
             "live_verified_runtime": live_verified,
             "runtime_verification": verification_assertion,
@@ -1141,22 +1143,41 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
                                                  "the newest successful DEPLOY Evidence",
                                                  [deploys[-1]["evidence"]["source"]["path"]])
                                        if deploys else unknown("no successful DEPLOY Evidence")),
-            "rollback_source": rollback,
-            "release_gates": hold or {"hk_deploy": "UNKNOWN", "final_release": "UNKNOWN",
-                                      "production": "UNKNOWN"},
-            "final_release": assertion(
-                STATE_HOLD if hold.get("final_release") == "HOLD" else STATE_UNKNOWN,
-                hold.get("final_release"),
-                "release acceptance is a separate axis from the business runtime and the Control "
-                "Plane"),
-            "hk_deploy": assertion(
-                STATE_HOLD if hold.get("hk_deploy") == "HOLD" else STATE_UNKNOWN,
-                hold.get("hk_deploy"),
-                "deployment authorization is not derived from the existence of a DEPLOY capability"),
-            "production": assertion(
-                STATE_HOLD if hold.get("production") in ("HOLD", "UNTOUCHED_HOLD") else STATE_UNKNOWN,
-                hold.get("production"),
-                "Production has not been touched and is out of scope for the Control Plane"),
+            # Informational, non-contract. These are recorded facts read from the
+            # canonical pointer and from historical signed Evidence. They are NOT
+            # part of CONTROL_STATUS_V1 and they are NOT a readiness evaluation.
+            "informational": {
+                "contract": False,
+                "note": ("recorded facts only. Deploy readiness and rollback readiness are explicitly "
+                         "out of scope for this contract"),
+                "rollback_candidate_history": rollback,
+                "release_gates": hold or {"hk_deploy": "UNKNOWN", "final_release": "UNKNOWN",
+                                          "production": "UNKNOWN"},
+                "final_release_gate": assertion(
+                    STATE_HOLD if hold.get("final_release") == "HOLD" else STATE_UNKNOWN,
+                    hold.get("final_release"),
+                    "release acceptance is a separate axis from the business runtime and the Control "
+                    "Plane"),
+                "hk_deploy_gate": assertion(
+                    STATE_HOLD if hold.get("hk_deploy") == "HOLD" else STATE_UNKNOWN,
+                    hold.get("hk_deploy"),
+                    "deployment authorization is not derived from the existence of a DEPLOY "
+                    "capability, and this contract does not evaluate deployment readiness"),
+                "production": assertion(
+                    STATE_HOLD if hold.get("production") in ("HOLD", "UNTOUCHED_HOLD")
+                    else STATE_UNKNOWN,
+                    hold.get("production"),
+                    "Production has not been touched and is out of scope for the Control Plane"),
+            },
+            "out_of_scope": {
+                "deploy_readiness_evaluation": "NOT_IN_SCOPE",
+                "rollback_readiness_evaluation": "NOT_IN_SCOPE",
+                "note": ("deploy readiness would have to combine an approved candidate, TEST_PR, "
+                         "VERIFY, CANARY, Human Approval, a deployment plan, source/package/image "
+                         "binding, the current runtime and the live Command Center switch. Rollback "
+                         "readiness would have to combine a signed source DEPLOY task, its Evidence "
+                         "and Human Approval. Neither is implemented or claimed here"),
+            },
         },
         "anomalies": loaded.anomalies,
         "rebuild": {
@@ -1206,30 +1227,28 @@ def build_status(state, verdict):
                        for t in tasks
                        if t["action_id"] == "HK_STAGING_TEST_PR" and not t.get("evidence")]
 
-    deploy_block = cs["deploy_status"]
     answers = {
-        # 1
+        # ---- the ten status questions, and nothing that implies more ------- #
+        # 1  HK Agent 最近是否有活动
         "hk_agent_recent_activity": cs["hk_agent_last_activity"],
-        # 2
+        # 2  当前有没有正在执行的任务
         "active_tasks": {"state": STATE_OBSERVED, "value": len(cs["active_tasks"]),
                          "reason": "tasks published and still inside their validity window",
                          "evidence": [t["source_path"] for t in cs["active_tasks"]],
                          "tasks": cs["active_tasks"]},
-        # 3
+        # 3  最近任务是否完成
         "last_task": cs["last_task"],
-        "last_evidence": cs["last_evidence"],
-        # 4 + 5
+        # 4 + 5  PR X 是否已经 TEST_PR / 结果是什么
         "pr_tested": {"latest": cs["test_pr_status"], "by_pr_number": pr_index,
                       "in_flight": pending_test_pr,
                       "note": "look up by_pr_number for 'has PR N been TEST_PR tested?'"},
-        # 6
+        # 6  最近一次 VERIFY 是否成功
         "verify": cs["verify_status"],
-        # 7
+        # 7  repository-declared runtime
         "repository_declared_runtime": cs["repository_runtime_pointer"],
-        # 8
-        "live_verified_runtime": cs["live_verified_runtime"],
+        # 8  该 runtime 最近是否被 live VERIFY 证明
         "runtime_verification": cs["runtime_verification"],
-        # 9
+        # 9  当前是否存在 active stuck task
         "stuck_tasks": {
             "answer": cs["stuck_answer"],
             "active_stuck_tasks": cs["active_stuck_tasks"],
@@ -1239,20 +1258,17 @@ def build_status(state, verdict):
             "note": ("'is anything stuck right now' is answered only from active_stuck_tasks. "
                      "Expired history is indexed separately and never affects current health"),
         },
-        # 10
+        # 10 最近一次失败是什么
         "last_failure": cs["last_failure"],
+        # Which actions chat may currently create a Request for.
+        "request_channel": state["request_channel"],
+        # ---- supporting fields, not part of the required answer set -------- #
+        "last_evidence": cs["last_evidence"],
+        "live_verified_runtime": cs["live_verified_runtime"],
         "go_is_healthy": verdict,
         "hk_agent_online": cs["hk_agent_liveness"],
         "repository_main_sha": cs["repository_main_sha"],
         "runtime_built_from_main_sha": cs["runtime_built_from_main_sha"],
-        "can_deploy": assertion(
-            STATE_HOLD, "NO",
-            "the DEPLOY capability is present but request enablement is fail-closed and every "
-            "release gate is HOLD. This projection cannot authorize a deployment",
-            deploy_block["evidence"]),
-        "request_channel": state["request_channel"],
-        "rollback_targets": cs["rollback_source"],
-        "release_gates": cs["release_gates"],
     }
     return {
         "schema_version": SCHEMA_VERSION,
@@ -1278,10 +1294,14 @@ def build_status(state, verdict):
             "never_infer": ("last successful task != agent online; repository pointer != live "
                             "runtime; capability present != request enabled"),
         },
-        "verdict": {
-            "healthy": verdict,
-            "blockers": [{"source": "deploy_status", "reason": deploy_block["reason"]}],
+        "out_of_scope": {
+            "deploy_readiness_evaluation": "NOT_IN_SCOPE",
+            "rollback_readiness_evaluation": "NOT_IN_SCOPE",
+            "note": ("this contract answers the ten status questions and the request channel only. It "
+                     "does not compute can_deploy, deployment eligibility, rollback target selection "
+                     "or release-gate verdicts, and no such key is present in answers"),
         },
+        "verdict": {"healthy": verdict},
     }
 
 

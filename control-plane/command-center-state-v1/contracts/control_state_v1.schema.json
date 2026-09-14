@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "go://control-plane/command-center-state-v1/contracts/control_state_v1.schema.json",
   "title": "GO Command Center CURRENT_CONTROL_STATE",
-  "description": "Deterministic projection of the GitHub-native Control Plane. Scope: CONTROL_STATE_AND_STATUS_ONLY. Derived, rebuildable and NON-AUTHORITATIVE. Every leaf is an assertion ranked PROVEN / OBSERVED / PENDING / HOLD / FAILED / UNKNOWN; UNKNOWN always carries value=null and never implies success. The document carries no workstation path, no temp directory and no local absolute path: sources are identified by repository, ref, commit SHA and repository-relative path only.",
+  "description": "Deterministic projection of the GitHub-native Control Plane. Scope: CONTROL_STATE_AND_STATUS_ONLY. Derived, rebuildable and NON-AUTHORITATIVE. Every leaf is an assertion ranked PROVEN / OBSERVED / PENDING / HOLD / FAILED / UNKNOWN; UNKNOWN always carries value=null and never implies success. Deploy readiness and rollback readiness are NOT evaluated: recorded release-gate and rollback-candidate facts live under control_state.informational with contract=false. The document carries no workstation path, no temp directory and no local absolute path: sources are identified by repository, ref, commit SHA and repository-relative path only.",
   "type": "object",
   "required": ["schema_version", "contract", "scope", "authority", "generated_at", "freshness",
                "sources", "verification", "counts", "requests", "tasks", "request_channel",
@@ -99,14 +99,13 @@
       "type": "object",
       "required": ["health", "last_request", "last_task", "last_evidence", "last_failure",
                    "hk_agent_last_activity", "hk_agent_liveness", "hk_runtime_identity",
-                   "verify_status", "test_pr_status", "deploy_status",
+                   "verify_status", "test_pr_status", "deploy_capability",
                    "repository_runtime_pointer", "live_verified_runtime", "runtime_verification",
                    "runtime_verification_state", "repository_main_sha",
                    "runtime_built_from_main_sha", "runtime_canonical_main_sha",
                    "stuck_answer", "active_tasks", "active_stuck_tasks", "recent_expired_tasks",
                    "historical_expired_tasks", "failed_or_invalid_tasks", "stale_tasks",
-                   "last_successful_deploy", "rollback_source", "release_gates",
-                   "final_release", "hk_deploy", "production"],
+                   "last_successful_deploy", "informational", "out_of_scope"],
       "properties": {
         "health": {"$ref": "#/$defs/assertion"},
         "last_request": {"$ref": "#/$defs/assertion"},
@@ -119,7 +118,8 @@
         "hk_runtime_identity": {"$ref": "#/$defs/assertion"},
         "verify_status": {"$ref": "#/$defs/assertion"},
         "test_pr_status": {"$ref": "#/$defs/assertion"},
-        "deploy_status": {"$ref": "#/$defs/assertion"},
+        "deploy_capability": {"$ref": "#/$defs/assertion",
+          "description": "Capability classification only: CAPABILITY_PRESENT_BUT_DISABLED with request_enabled=false and readiness_evaluation=NOT_IN_SCOPE. Never a readiness verdict."},
         "repository_runtime_pointer": {"$ref": "#/$defs/assertion",
           "description": "What the repository DECLARES. Never the truth about what is running on Hong Kong, so never PROVEN."},
         "live_verified_runtime": {"$ref": "#/$defs/assertion",
@@ -141,11 +141,29 @@
         "failed_or_invalid_tasks": {"type": "array"},
         "stale_tasks": {"type": "array"},
         "last_successful_deploy": {"$ref": "#/$defs/assertion"},
-        "rollback_source": {"$ref": "#/$defs/assertion"},
-        "release_gates": {"type": "object"},
-        "final_release": {"$ref": "#/$defs/assertion"},
-        "hk_deploy": {"$ref": "#/$defs/assertion"},
-        "production": {"$ref": "#/$defs/assertion"}
+        "informational": {
+          "type": "object",
+          "description": "Non-contract recorded facts. contract=false. Deploy and rollback readiness are NOT evaluated.",
+          "required": ["contract", "rollback_candidate_history", "release_gates"],
+          "properties": {
+            "contract": {"const": false},
+            "note": {"type": "string"},
+            "rollback_candidate_history": {"$ref": "#/$defs/assertion"},
+            "release_gates": {"type": "object"},
+            "final_release_gate": {"$ref": "#/$defs/assertion"},
+            "hk_deploy_gate": {"$ref": "#/$defs/assertion"},
+            "production": {"$ref": "#/$defs/assertion"}
+          }
+        },
+        "out_of_scope": {
+          "type": "object",
+          "required": ["deploy_readiness_evaluation", "rollback_readiness_evaluation"],
+          "properties": {
+            "deploy_readiness_evaluation": {"const": "NOT_IN_SCOPE"},
+            "rollback_readiness_evaluation": {"const": "NOT_IN_SCOPE"},
+            "note": {"type": "string"}
+          }
+        }
       }
     }
   },

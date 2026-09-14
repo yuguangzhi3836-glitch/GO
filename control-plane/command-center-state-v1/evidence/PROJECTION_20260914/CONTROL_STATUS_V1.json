@@ -7,12 +7,6 @@
       "tasks": [],
       "value": 0
     },
-    "can_deploy": {
-      "evidence": [],
-      "reason": "the DEPLOY capability is present but request enablement is fail-closed and every release gate is HOLD. This projection cannot authorize a deployment",
-      "state": "HOLD",
-      "value": "NO"
-    },
     "go_is_healthy": {
       "age_seconds": 116193,
       "as_of": "2026-09-13T03:43:27Z",
@@ -191,12 +185,6 @@
       },
       "note": "look up by_pr_number for 'has PR N been TEST_PR tested?'"
     },
-    "release_gates": {
-      "final_release": "HOLD",
-      "hk_deploy": "HOLD",
-      "production": "HOLD",
-      "runtime_status": "ACTIVE"
-    },
     "repository_declared_runtime": {
       "evidence": [
         "docs/canonical-baseline/CURRENT_HK_RUNTIME.json"
@@ -246,24 +234,8 @@
         "state": "UNKNOWN",
         "value": null
       },
-      "note": "ChatGPT may create Request files only for enabled_request_actions"
-    },
-    "rollback_targets": {
-      "evidence": [
-        "evidence/go-boss02-final-deploy-20260911T025420Z-ZeLZ20u_3G163YURk-E55WXArlvCrupa.json"
-      ],
-      "reason": "rollback eligibility is a candidate set derived from successful DEPLOY Evidence. It is not an approval and not a signed ROLLBACK task",
-      "state": "OBSERVED",
-      "value": {
-        "newest_completed_at": "2026-09-11T02:57:16Z",
-        "releases": [
-          "go-boss02-deploy-r4-20260909T131418835006Z",
-          "go-boss02-deploy-v2-20260910T030827Z",
-          "go-boss02-deploy-v2-r7-20260910T075319Z",
-          "go-boss02-final-deploy-20260911T025420Z"
-        ],
-        "source_deploy_task_id": "go-boss02-final-deploy-20260911T025420Z"
-      }
+      "note": "ChatGPT may create Request files only for enabled_request_actions. HK_STAGING_DEPLOY is reported as a capability classification; computing deploy or rollback readiness is out of scope for this contract",
+      "readiness_evaluation": "NOT_IN_SCOPE"
     },
     "runtime_built_from_main_sha": {
       "evidence": [
@@ -509,6 +481,11 @@
       "the current repository main revision, unless it is passed in explicitly"
     ]
   },
+  "out_of_scope": {
+    "deploy_readiness_evaluation": "NOT_IN_SCOPE",
+    "note": "this contract answers the ten status questions and the request channel only. It does not compute can_deploy, deployment eligibility, rollback target selection or release-gate verdicts, and no such key is present in answers",
+    "rollback_readiness_evaluation": "NOT_IN_SCOPE"
+  },
   "schema_version": "1",
   "scope": "CONTROL_STATE_AND_STATUS_ONLY",
   "sources": {
@@ -539,12 +516,6 @@
     }
   },
   "verdict": {
-    "blockers": [
-      {
-        "reason": "the DEPLOY capability is present and installed, but request enablement is fail-closed and every release gate is HOLD. Capability presence is not deployment authorization, and no approved deployment plan is readable from the control bus",
-        "source": "deploy_status"
-      }
-    ],
     "healthy": {
       "age_seconds": 116193,
       "as_of": "2026-09-13T03:43:27Z",
