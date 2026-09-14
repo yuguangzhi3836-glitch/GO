@@ -1,0 +1,200 @@
+name: C13 PR76 independent acceptance
+
+on:
+  push:
+    branches:
+      - acceptance/c13-pr76-37d9a420-20260914
+    paths:
+      - .github/workflows/c13-pr76-independent-acceptance.yml
+
+permissions:
+  contents: read
+  actions: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: c13-pr76-37d9a420-independent
+  cancel-in-progress: false
+
+env:
+  C13_CANDIDATE: 37d9a42091938e26be538d3d410397182abec5c8
+  C13_PRIOR_GATE: 13f4f85d551877241b90f263e8af1612aff0e254
+  C13_APP_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+  C13_SOURCE_SHA256: a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374
+  C13_SOURCE_FILES: '1365'
+  C13_MIGRATION_HEAD: 0134_flight_status_width
+
+jobs:
+  independent-c13:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout independent acceptance controller
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Checkout exact fixed candidate read-only
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.C13_CANDIDATE }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Set up pinned Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+
+      - name: Independently recompute source identity and exact final repair boundary
+        run: |
+          mkdir -p "$RUNNER_TEMP/c13"
+          python - <<'PY' | tee "$RUNNER_TEMP/c13/identity-and-diff.log"
+          import hashlib, json, os, pathlib, subprocess
+
+          root = pathlib.Path('candidate')
+          expected_sha = os.environ['C13_CANDIDATE']
+          prior = os.environ['C13_PRIOR_GATE']
+          expected_tree = os.environ['C13_APP_TREE']
+          expected_source = os.environ['C13_SOURCE_SHA256']
+          expected_count = int(os.environ['C13_SOURCE_FILES'])
+
+          def git(*args):
+              return subprocess.check_output(['git', *args], cwd=root, text=True).strip()
+
+          actual_sha = git('rev-parse', 'HEAD')
+          assert actual_sha == expected_sha, (actual_sha, expected_sha)
+          actual_tree = git('rev-parse', 'HEAD:application')
+          assert actual_tree == expected_tree, (actual_tree, expected_tree)
+
+          raw = subprocess.check_output(['git','ls-files','-z','application'], cwd=root)
+          paths = [p.decode() for p in raw.split(b'\0') if p]
+          assert len(paths) == expected_count, (len(paths), expected_count)
+          fingerprint = {}
+          for full in paths:
+              rel = full[len('application/'):]
+              data = (root / full).read_bytes()
+              fingerprint[rel] = hashlib.sha256(data).hexdigest()
+          source_sha = hashlib.sha256(''.join(f'{p}\0{h}\n' for p,h in sorted(fingerprint.items())).encode()).hexdigest()
+          assert source_sha == expected_source, (source_sha, expected_source)
+
+          migration = (root/'application/alembic/versions/0134_flight_status_width.py').read_text()
+          assert 'revision = "0134_flight_status_width"' in migration
+          assert 'down_revision = "0133_flight_change_plan"' in migration
+
+          changed = subprocess.check_output(
+              ['git','diff','--name-only',f'{prior}..{expected_sha}'], cwd=root, text=True
+          ).splitlines()
+          expected_changed = [
+              'application/tests/test_parent_implementation_code_review_debt_closure.py',
+              'ci/cell-closure/CANDIDATE.json',
+              'ci/next-depth/CANDIDATE.json',
+              'ci/retention/BASELINE.json',
+          ]
+          assert sorted(changed) == sorted(expected_changed), changed
+
+          patch = subprocess.check_output([
+              'git','diff','--unified=0',f'{prior}..{expected_sha}','--',
+              'application/tests/test_parent_implementation_code_review_debt_closure.py'
+          ], cwd=root, text=True)
+          removed = [line for line in patch.splitlines() if line.startswith('-') and not line.startswith('---')]
+          added = [line for line in patch.splitlines() if line.startswith('+') and not line.startswith('+++')]
+          assert removed == ['-    assert head_lines == ["0133_flight_change_plan (head)"]'], removed
+          assert added == ['+    assert head_lines == ["0134_flight_status_width (head)"]'], added
+
+          result = {
+              'candidate': actual_sha,
+              'application_tree': actual_tree,
+              'source_files': len(paths),
+              'source_sha256': source_sha,
+              'migration_head': '0134_flight_status_width',
+              'changed_paths_after_prior_gate': changed,
+              'final_application_change': 'TEST_ONLY stale Alembic head expectation 0133 -> 0134',
+              'identity_check': 'PASS',
+              'boundary_check': 'PASS',
+          }
+          pathlib.Path(os.environ['RUNNER_TEMP'],'c13','IDENTITY_BOUNDARY.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps(result, indent=2))
+          PY
+
+      - name: Independently read original final-head Actions evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, subprocess
+          out = pathlib.Path(os.environ['RUNNER_TEMP'])/'c13'/'original-actions'
+          out.mkdir(parents=True, exist_ok=True)
+          repo = os.environ['GITHUB_REPOSITORY']
+          candidate = os.environ['C13_CANDIDATE']
+          runs = [34826156566,34826156402,34826156461,34826156384,34826156482]
+          summaries=[]
+          for run_id in runs:
+              run_raw = subprocess.check_output(['gh','api',f'repos/{repo}/actions/runs/{run_id}'], text=True)
+              jobs_raw = subprocess.check_output(['gh','api',f'repos/{repo}/actions/runs/{run_id}/jobs?per_page=100'], text=True)
+              (out/f'run-{run_id}.json').write_text(run_raw)
+              (out/f'run-{run_id}-jobs.json').write_text(jobs_raw)
+              run=json.loads(run_raw); jobs=json.loads(jobs_raw)['jobs']
+              assert run['head_sha'] == candidate, (run_id, run['head_sha'])
+              assert run['status'] == 'completed', (run_id, run['status'])
+              assert run['conclusion'] == 'success', (run_id, run['conclusion'])
+              bad=[(j['name'],j['status'],j['conclusion']) for j in jobs if j['conclusion'] not in ('success','skipped')]
+              assert not bad, (run_id,bad)
+              summaries.append({'run_id':run_id,'name':run['name'],'conclusion':run['conclusion'],
+                                'jobs':[{'name':j['name'],'conclusion':j['conclusion']} for j in jobs]})
+          parent = next(x for x in summaries if x['run_id']==34826156566)
+          required={'frontend-http-compat','regression (0)','regression (1)','regression (2)','regression (3)'}
+          seen={j['name'] for j in parent['jobs'] if j['conclusion']=='success'}
+          assert required <= seen, (required-seen)
+          (pathlib.Path(os.environ['RUNNER_TEMP'])/'c13'/'ORIGINAL_ACTIONS_REVIEW.json').write_text(json.dumps(summaries,indent=2)+'\n')
+          print(json.dumps(summaries,indent=2))
+          PY
+
+      - name: Extract candidate frozen dependency bundle with integrity checks
+        run: |
+          python candidate/ci/retention/dependencies.py --repository candidate --output "$RUNNER_TEMP/frozen" | tee "$RUNNER_TEMP/c13/frozen-dependencies.log"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r candidate/ci/retention/requirements.lock
+
+      - name: Independent fresh-process migration history and stale-contract verification
+        working-directory: candidate/application
+        run: |
+          export PYTHONPATH=src
+          python -m pytest -p no:cacheprovider \
+            tests/test_depth25_migration_history.py \
+            tests/test_parent_implementation_code_review_debt_closure.py::test_current_source_head_and_upgrade_downgrade_roundtrip \
+            --junitxml="$RUNNER_TEMP/c13/c13-independent-migration.xml" \
+            2>&1 | tee "$RUNNER_TEMP/c13/c13-independent-migration.log"
+
+      - name: Emit independent C13 verdict
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          verdict={
+            'gate':'C13_INDEPENDENT_ACCEPTANCE',
+            'candidate':os.environ['C13_CANDIDATE'],
+            'outcome':'PASS_SCOPED',
+            'scope':'source identity, final repair boundary, original final-head Actions evidence, fresh-process migration/history affected checks',
+            'candidate_modified':False,
+            'main_merge_authorized':False,
+            'final_release':'HOLD',
+            'hk_deploy':'HOLD',
+            'production':'HOLD'
+          }
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'c13'/'C13_VERDICT.json'
+          p.write_text(json.dumps(verdict,indent=2)+'\n')
+          print(json.dumps(verdict,indent=2))
+          PY
+
+      - name: Upload independent C13 Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: C13-PR76-independent-37d9a420-${{ github.run_id }}
+          path: ${{ runner.temp }}/c13
+          if-no-files-found: error
+          retention-days: 90
