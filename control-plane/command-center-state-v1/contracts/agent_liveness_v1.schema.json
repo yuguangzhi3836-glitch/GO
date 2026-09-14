@@ -38,8 +38,14 @@
         "a successful VERIFY / TEST_PR / DEPLOY task is not proof that the agent is online now",
         "a newer Evidence timestamp does not prove the current process is alive",
         "NULL from a failed liveness probe does not prove the agent is dead",
-        "the projection must never synthesise a heartbeat the agent did not sign"
+        "the projection must never synthesise a heartbeat the agent did not sign",
+        "activity is not liveness: the newest CONTROL_PLANE_HEALTH Evidence at any age answers 'when did we last hear from it', never 'is it online now'"
       ]
+    },
+    "two_questions_not_one": {
+      "hk_agent_recent_activity": "the newest signed CONTROL_PLANE_HEALTH Evidence, at any age. OBSERVED (or PROVEN once its signature verified). Always answerable once any probe exists.",
+      "hk_agent_online": "PROVEN only from liveness Evidence inside the freshness window; otherwise UNKNOWN with last_seen and age_seconds attached.",
+      "note": "Never answer the second question with the first one."
     },
     "properties_of_the_mechanism": {
       "type": "object",

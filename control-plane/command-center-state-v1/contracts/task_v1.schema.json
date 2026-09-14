@@ -31,9 +31,16 @@
     "HK_STAGING_ROLLBACK": ["release_id", "source_deploy_task_id", "approval_id"],
     "HK_STAGING_TEST_PR": ["builder_profile", "source"]
   },
+  "x-go-verification-identity": {
+    "identity": "GO Command Center task-manifest signer",
+    "encoding": "hex",
+    "note": "A Task must verify ONLY against the Command Center task verifier key. It must never validate against the Hong Kong evidence verifier key. A projection that supplies the same public key for both roles must refuse every PROVEN claim.",
+    "related_but_distinct": "Evidence is signed by the Hong Kong agent evidence signer and verified with base64. The two identities must be different keys."
+  },
   "x-go-notes": [
     "The agent rejects an already-seen task_id OR nonce, an already-claimed nonce, an unknown action, a mismatched authority or environment, an expired task, and any parameter set that is not exactly the frozen contract.",
     "The agent allows exactly one executor attempt per task. A task that fails is never retried; a new task is required.",
-    "History contains Tasks whose parameter sets predate the current contract. They are preserved for lineage and must be read as LEGACY_OR_UNKNOWN, never as current proof."
+    "History contains Tasks whose parameter sets predate the current contract. They are preserved for lineage and must be read as LEGACY_OR_UNKNOWN, never as current proof.",
+    "The existence of a Task for an action does not mean that action is requestable. See request_v1.schema.json for the difference between known capability and enabled request action."
   ]
 }

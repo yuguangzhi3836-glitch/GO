@@ -1,20 +1,47 @@
 #!/usr/bin/env python3
 """GO Command Center control-state projection — CONTROL_STATE_V1.
 
-Read-only, offline, deterministic projection of the GitHub-native Control Plane.
+Scope: CONTROL_STATE_AND_STATUS_ONLY.
 
+Read-only, offline, deterministic projection of the GitHub-native Control Plane.
 It answers one question: *given only the control bus, what is the current control
-state?*  It never invents an answer.  Every leaf is an assertion carrying a
-state from {PROVEN, OBSERVED, PENDING, HOLD, FAILED, UNKNOWN} plus the evidence
+state?*  It never invents an answer.  Every leaf is an assertion carrying a state
+from {PROVEN, OBSERVED, PENDING, HOLD, FAILED, UNKNOWN} plus the evidence
 references that produced it.  Absence of evidence is reported as UNKNOWN, never
 as success.
 
-Inputs are local directory checkouts.  Nothing here reaches the network, the
-Hong Kong runtime, Production, a signing key, or any live Control Plane state.
+Identity discipline
+-------------------
+Signed Tasks and Signed Evidence are verified with **different** verifier
+identities:
 
-Authority: the output of this tool is a DERIVED, NON-AUTHORITATIVE view.  The
-Signed Task and the Signed Evidence remain the only Execution Authority and the
-only proof.  This file is never hand-edited and is always rebuildable.
+  * the Command Center task-manifest signing key  (``--task-verify-key``)
+  * the Hong Kong agent evidence signing key      (``--evidence-verify-key``)
+
+A Task must never validate against the evidence key and Evidence must never
+validate against the task key.  If both public keys turn out to be the same key,
+the projection refuses to claim PROVEN for anything and records a
+VERIFIER_IDENTITY_COLLISION anomaly.
+
+Runtime discipline
+------------------
+A repository pointer is a *declaration*.  It is never the truth about what is
+running on Hong Kong.  ``repository_runtime_pointer`` and ``live_verified_runtime``
+are separate objects, and ``runtime_verification`` reports MATCH / DRIFT /
+NOT_RECENTLY_VERIFIED / UNKNOWN.
+
+Portability
+-----------
+The derived output contains no workstation path, no temp directory and no local
+absolute path.  Sources are identified by repository, ref, commit SHA, artifact
+id and repository-relative path only, so two different machines projecting the
+same inputs produce a semantically equivalent, stable document.
+
+Authority
+---------
+The output is a DERIVED, NON-AUTHORITATIVE view.  The Signed Task is the only
+Execution Authority and the Signed Evidence is the only proof.  This file is
+never hand-edited and is always rebuildable.
 """
 import argparse
 import datetime as dt
@@ -27,6 +54,7 @@ import sys
 SCHEMA_VERSION = "1"
 CONTRACT_STATE = "CURRENT_CONTROL_STATE"
 CONTRACT_STATUS = "CONTROL_STATUS_V1"
+CONTRACT_SCOPE = "CONTROL_STATE_AND_STATUS_ONLY"
 
 STATE_PROVEN = "PROVEN"
 STATE_OBSERVED = "OBSERVED"
@@ -35,7 +63,41 @@ STATE_HOLD = "HOLD"
 STATE_FAILED = "FAILED"
 STATE_UNKNOWN = "UNKNOWN"
 
+RUNTIME_MATCH = "MATCH"
+RUNTIME_DRIFT = "DRIFT"
+RUNTIME_NOT_RECENTLY_VERIFIED = "NOT_RECENTLY_VERIFIED"
+RUNTIME_UNKNOWN = "UNKNOWN"
+
 AUTHORITY = "DERIVED_NON_AUTHORITATIVE"
+
+TASKS_REPOSITORY = "chenzhenxi1-sudo/go-control-tasks"
+EVIDENCE_REPOSITORY = "chenzhenxi1-sudo/go-control-evidence"
+GO_REPOSITORY = "yuguangzhi3836-glitch/GO"
+CANONICAL_RUNTIME_POINTER = "docs/canonical-baseline/CURRENT_HK_RUNTIME.json"
+CANONICAL_CANDIDATE_POINTER = "docs/canonical-baseline/CURRENT_CANDIDATE.json"
+
+TASK_VERIFIER_IDENTITY = "GO Command Center task-manifest signer"
+EVIDENCE_VERIFIER_IDENTITY = "Hong Kong agent evidence signer"
+
+# Every action the Control Plane can execute.
+KNOWN_CAPABILITIES = (
+    "CONTROL_PLANE_HEALTH",
+    "HK_STAGING_VERIFY",
+    "HK_STAGING_TEST_PR",
+    "HK_STAGING_DEPLOY",
+    "HK_STAGING_CANARY",
+    "HK_STAGING_ROLLBACK",
+)
+# The only actions a human / ChatGPT Request channel may currently create.
+ENABLED_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR")
+CAPABILITY_CLASSIFICATION = {
+    "HK_STAGING_VERIFY": "SUPPORTED_PROVEN",
+    "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
+    "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
+    "HK_STAGING_CANARY": "NOT_REQUESTABLE",
+    "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE",
+    "CONTROL_PLANE_HEALTH": "PLATFORM_ADMIN_ONLY",
+}
 
 TASK_REQUIRED = {"schema_version", "task_id", "environment", "action_id", "issued_at",
                  "expires_at", "nonce", "parameters", "authority", "signature"}
@@ -74,18 +136,22 @@ COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 RELEASE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 INSTANCE_RE = re.compile(r"^(?:i[-Zz]?)?([0-9a-z]{16,20})[Zz]?$")
 
+# Anything that would make the derived document machine-specific.
+LOCAL_PATH_RE = re.compile(r"(?:[A-Za-z]:[\\/]|\\\\[^\\]|/home/|/Users/|/var/folders/|AppData)")
+
 
 def normalize_instance(value):
     """Map the three observed spellings of one Alibaba instance id to one form.
 
-    `i-j6ccs8t04f1p4d8pe69z` (workbench), `iZj6ccs8t04f1p4d8pe69zZ` (uname
-    nodename inside the guest) and the bare `j6ccs8t04f1p4d8pe69z` all denote
+    ``i-j6ccs8t04f1p4d8pe69z`` (workbench), ``iZj6ccs8t04f1p4d8pe69zZ`` (uname
+    nodename inside the guest) and the bare ``j6ccs8t04f1p4d8pe69z`` all denote
     the same machine, so liveness can be bound to the runtime host.
     """
     if not isinstance(value, str):
         return None
     match = INSTANCE_RE.fullmatch(value.strip())
     return "i-" + match.group(1) if match else None
+
 
 LIFECYCLE_REQUEST = {"REQUEST_CREATED", "REQUEST_VALIDATED", "REQUEST_REJECTED"}
 LIFECYCLE_TASK = {"TASK_SIGNED", "TASK_PUBLISHED", "HK_AGENT_PICKED_UP", "EXECUTION_STARTED",
@@ -139,12 +205,18 @@ def read_json(path):
 
 
 # --------------------------------------------------------------------------- #
-# signature verification (optional; absent key => OBSERVED, never PROVEN)
+# signature verification — two separate identities
 # --------------------------------------------------------------------------- #
 class Verifier:
-    """Ed25519 verifier that reports NOT_PERFORMED rather than assuming success."""
+    """One Ed25519 verifier identity.
 
-    def __init__(self, key_path=None):
+    Reports NOT_PERFORMED rather than assuming success when no key is supplied.
+    ``encoding`` is carried per artifact: tasks are hex, evidence is base64.
+    """
+
+    def __init__(self, key_path, identity, encoding):
+        self.identity = identity
+        self.encoding = encoding
         self.key = None
         self.fingerprint = None
         self.available = False
@@ -166,10 +238,14 @@ class Verifier:
             self.available = False
             self.fingerprint = "unavailable:%s" % type(exc).__name__
 
-    def verify(self, obj, encoding):
+    def disabled_copy(self):
+        return Verifier(None, self.identity, self.encoding)
+
+    def verify(self, obj, encoding=None):
         """Return True / False / None (None = could not be performed)."""
         if not self.available:
             return None
+        encoding = encoding or self.encoding
         signature = obj.get("signature")
         if not isinstance(signature, str):
             return False
@@ -191,6 +267,24 @@ class Verifier:
             return True
         except Exception:  # noqa: BLE001
             return False
+
+    def describe(self):
+        return {"identity": self.identity, "encoding": self.encoding,
+                "key_fingerprint": self.fingerprint,
+                "signature_verification": "PERFORMED" if self.available else "NOT_PERFORMED"}
+
+
+def separated(task_verifier, evidence_verifier, loaded):
+    """Enforce that the two verifier identities are genuinely different keys."""
+    if not (task_verifier.available and evidence_verifier.available):
+        return True
+    if task_verifier.fingerprint == evidence_verifier.fingerprint:
+        loaded.anomaly("VERIFIER_IDENTITY_COLLISION",
+                       "the task verifier and the evidence verifier resolve to the same public "
+                       "key; the two signing identities must be distinct, so no PROVEN claim is "
+                       "made in this run", task_verifier.fingerprint)
+        return False
+    return True
 
 
 # --------------------------------------------------------------------------- #
@@ -254,10 +348,11 @@ def normalize_evidence(evidence):
     if evidence["action_id"] not in ACTION_PARAMETERS:
         raise Malformed("evidence_action_unknown")
     parse_time(evidence["started_at"])
-    parse_time(evidence[generation == "v2" and "completed_at" or "finished_at"])
+    terminal = evidence["completed_at"] if generation == "v2" else evidence["finished_at"]
+    parse_time(terminal)
     out = dict(evidence)
     out["_generation"] = generation
-    out["_completed_at"] = evidence["completed_at"] if generation == "v2" else evidence["finished_at"]
+    out["_completed_at"] = terminal
     return out
 
 
@@ -289,9 +384,9 @@ def validate_request(request):
 # --------------------------------------------------------------------------- #
 class Loaded:
     def __init__(self):
-        self.tasks = []            # (path, task)
-        self.evidence = []         # (path, evidence)
-        self.requests = []         # (ref, head_sha, source, request)
+        self.tasks = []            # (file name, task)
+        self.evidence = []         # (file name, evidence)
+        self.requests = []         # (ref, head_sha, file name, request)
         self.anomalies = []        # {kind, detail, ref}
 
     def anomaly(self, kind, detail, ref=None):
@@ -301,7 +396,7 @@ class Loaded:
 def load_tasks(root, loaded):
     folder = pathlib.Path(root) / "tasks"
     if not folder.is_dir():
-        loaded.anomaly("TASKS_DIRECTORY_MISSING", str(folder))
+        loaded.anomaly("TASKS_DIRECTORY_MISSING", "%s/tasks" % TASKS_REPOSITORY)
         return
     for path in sorted(folder.glob("*.json")):
         try:
@@ -313,7 +408,7 @@ def load_tasks(root, loaded):
 def load_evidence(root, loaded):
     folder = pathlib.Path(root) / "evidence"
     if not folder.is_dir():
-        loaded.anomaly("EVIDENCE_DIRECTORY_MISSING", str(folder))
+        loaded.anomaly("EVIDENCE_DIRECTORY_MISSING", "%s/evidence" % EVIDENCE_REPOSITORY)
         return
     for path in sorted(folder.glob("*.json")):
         try:
@@ -327,7 +422,8 @@ def load_requests(root, loaded):
         return
     folder = pathlib.Path(root)
     if not folder.is_dir():
-        loaded.anomaly("REQUESTS_DIRECTORY_MISSING", str(folder))
+        loaded.anomaly("REQUESTS_DIRECTORY_MISSING",
+                       "collected Request files were not supplied")
         return
     for path in sorted(folder.glob("*.json")):
         if path.name.startswith("_"):
@@ -359,32 +455,34 @@ def request_records(loaded):
         if duplicate:
             loaded.anomaly("REQUEST_ID_REUSED", "request_id", request["request_id"])
         seen[request["request_id"]] = True
-        lifecycle = "REQUEST_CREATED"
-        if not duplicate:
-            # Command Center acceptance is not on the control bus; a Request is
-            # only proven consumed when its derived Task exists.
-            lifecycle = "REQUEST_CREATED"
+        action = request["action_id"]
+        requestable = action in ENABLED_REQUEST_ACTIONS
         out.append({
             "schema_version": "1",
             "request_id": request["request_id"],
-            "action_id": request["action_id"],
+            "action_id": action,
             "environment": request["environment"],
             "requested_at": request["requested_at"],
             "target": {k: request[k] for k in sorted(set(request) - REQUEST_REQUIRED)},
             "request_sha256": digest(request),
-            "source": {"ref": ref, "head_sha": head, "file": source},
+            "source": {"repository": TASKS_REPOSITORY, "ref": ref,
+                       "head_sha": head, "path": "requests/" + source},
+            "requestable_by_current_channel": requestable,
+            "capability_classification": CAPABILITY_CLASSIFICATION.get(action, "UNKNOWN"),
             "holding_execution_authority": False,
-            "lifecycle": lifecycle,
+            # Command Center acceptance is a Bridge-ledger fact, not a control-bus
+            # fact, so a Request is only ever reported as CREATED.
+            "lifecycle": "REQUEST_CREATED",
+            "duplicate_request_id": duplicate,
         })
     return out
 
 
-def task_records(loaded, task_verifier, at, stale_seconds):
+def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
     by_nonce, by_id = {}, {}
     evidence_by_key = {}
     for name, item in loaded.evidence:
-        key = (item["task_id"], item["nonce"])
-        evidence_by_key.setdefault(key, []).append((name, item))
+        evidence_by_key.setdefault((item["task_id"], item["nonce"]), []).append((name, item))
 
     for name, task in loaded.tasks:
         by_id.setdefault(task["task_id"], []).append(name)
@@ -399,8 +497,7 @@ def task_records(loaded, task_verifier, at, stale_seconds):
     records = []
     for name, task in sorted(loaded.tasks, key=lambda pair: pair[1]["issued_at"]):
         refs = []
-        signature = task_verifier.verify(task, "hex") if task_verifier.available else None
-        task_sha = digest({k: v for k, v in task.items() if k != "signature"})
+        signature = task_verifier.verify(task, "hex")
         entry = {
             "task_id": task["task_id"],
             "nonce": task["nonce"],
@@ -410,24 +507,27 @@ def task_records(loaded, task_verifier, at, stale_seconds):
             "issued_at": task["issued_at"],
             "expires_at": task["expires_at"],
             "parameters": task["parameters"],
-            "task_sha256": task_sha,
-            "source_file": name,
-            "signature_verified": signature,
+            "task_sha256": digest({k: v for k, v in task.items() if k != "signature"}),
+            "source": {"repository": TASKS_REPOSITORY, "path": "tasks/" + name},
+            "task_signature_verified": signature,
+            "task_verifier_identity": TASK_VERIFIER_IDENTITY,
             "parameter_contract": task.get("_parameter_contract", "CURRENT"),
         }
         expires = parse_time(task["expires_at"])
         candidates = evidence_by_key.get((task["task_id"], task["nonce"]), [])
         if len(candidates) > 1:
-            digests = {digest({k: v for k, v in item.items() if not k.startswith("_")}) for _, item in candidates}
+            digests = {digest({k: v for k, v in item.items() if not k.startswith("_")})
+                       for _, item in candidates}
             if len(digests) > 1:
-                loaded.anomaly("EVIDENCE_CONFLICT", "multiple distinct evidence for one signed task",
+                loaded.anomaly("EVIDENCE_CONFLICT",
+                               "multiple distinct Evidence records for one signed task",
                                task["task_id"])
             entry["evidence_count"] = len(candidates)
         if signature is False:
             entry.update({"lifecycle": "POLICY_HOLD",
                           "assertion": assertion(STATE_FAILED, "TASK_SIGNATURE_INVALID",
-                                                 "task signature does not verify against the pinned "
-                                                 "Command Center key", refs)})
+                                                 "the task signature does not verify against the "
+                                                 "Command Center task verifier identity", refs)})
             records.append(entry)
             continue
         if entry["parameter_contract"] != "CURRENT":
@@ -449,15 +549,15 @@ def task_records(loaded, task_verifier, at, stale_seconds):
                                            "expires_at passed with no signed Evidence for this task",
                                            refs),
                     "hk_agent_picked_up": unknown(
-                        "the agent ledger is not on the control bus; absence of Evidence cannot "
+                        "the agent ledger is not on the control bus, so absence of Evidence cannot "
                         "distinguish TASK_NOT_PICKED_UP from an unpublished failure", refs),
                 })
             else:
                 entry.update({
                     "lifecycle": "TASK_PUBLISHED",
                     "assertion": assertion(STATE_OBSERVED, "TASK_PUBLISHED",
-                                           "signed task published and still inside its validity window",
-                                           refs),
+                                           "signed task published and still inside its validity "
+                                           "window", refs),
                     "hk_agent_picked_up": unknown("no Evidence published yet", refs),
                 })
             records.append(entry)
@@ -465,7 +565,7 @@ def task_records(loaded, task_verifier, at, stale_seconds):
 
         ev_name, ev = sorted(candidates, key=lambda pair: pair[1]["_completed_at"])[0]
         refs = sorted({name, ev_name})
-        ev_signature = task_verifier.verify(ev, "base64") if task_verifier.available else None
+        ev_signature = evidence_verifier.verify(ev, "base64")
         completed = parse_time(ev["_completed_at"])
         started = parse_time(ev["started_at"])
         # The health payload sits at executor_result in the current agent and at
@@ -474,13 +574,15 @@ def task_records(loaded, task_verifier, at, stale_seconds):
         if not isinstance(payload, dict):
             payload = ev.get("result") if isinstance(ev.get("result"), dict) else None
         entry["evidence"] = {
-            "source_file": ev_name,
+            "source": {"repository": EVIDENCE_REPOSITORY,
+                       "path": "evidence/" + ev_name},
             "completed_at": ev["_completed_at"],
             "generation": ev["_generation"],
             "status": ev["status"],
             "executor_result": ev.get("executor_result") if isinstance(ev.get("executor_result"), str)
             else (ev.get("result") if isinstance(ev.get("result"), str) else None),
             "signature_verified": ev_signature,
+            "verifier_identity": EVIDENCE_VERIFIER_IDENTITY,
             "evidence_sha256": digest({k: v for k, v in ev.items() if not k.startswith("_")}),
         }
         if payload:
@@ -490,18 +592,23 @@ def task_records(loaded, task_verifier, at, stale_seconds):
                 "tasks_repo_connectivity": payload.get("tasks_repo_connectivity"),
                 "evidence_repo_connectivity": payload.get("evidence_repo_connectivity"),
             }
-        if isinstance(ev.get("built_image_id"), str):
-            entry["evidence"]["built_image_id"] = ev["built_image_id"]
+        for key in ("built_image_id", "source_pr_number", "source_commit_sha",
+                    "task_canonical_sha256", "deploy_record_id", "deploy_record_sha256",
+                    "rollback_record_id"):
+            if isinstance(ev.get(key), str):
+                entry["evidence"][key] = ev[key]
         if isinstance(ev.get("agent_version"), str):
             entry["evidence"]["agent_version"] = ev["agent_version"]
-        entry["execution_started"] = assertion(STATE_PROVEN if ev_signature else STATE_OBSERVED,
-                                               ev["started_at"],
-                                               "Evidence carries started_at for this task/nonce", refs)
+        entry["execution_started"] = assertion(
+            STATE_PROVEN if ev_signature else STATE_OBSERVED, ev["started_at"],
+            "the Evidence carries started_at for this task/nonce", refs)
+
+        verified = ev_signature is True
         if ev_signature is False:
             entry.update({"lifecycle": "EVIDENCE_INVALID",
                           "assertion": assertion(STATE_FAILED, "EVIDENCE_SIGNATURE_INVALID",
-                                                 "Evidence signature does not verify against the "
-                                                 "pinned Hong Kong key", refs)})
+                                                 "the Evidence signature does not verify against the "
+                                                 "Hong Kong evidence verifier identity", refs)})
         elif completed > expires:
             entry.update({"lifecycle": "EVIDENCE_TIMEOUT",
                           "assertion": assertion(STATE_FAILED, "EVIDENCE_AFTER_EXPIRY",
@@ -514,33 +621,50 @@ def task_records(loaded, task_verifier, at, stale_seconds):
         elif ev["status"] != "SUCCESS":
             entry.update({"lifecycle": "EXECUTION_FAILED",
                           "assertion": assertion(STATE_FAILED, ev["status"],
-                                                 "signed Evidence reports a non-success status", refs)})
+                                                 "the signed Evidence reports a non-success status",
+                                                 refs)})
         else:
             expected = ACTION_RESULT.get(task["action_id"])
-            result = ev.get("executor_result")
+            result = ev.get("executor_result") if isinstance(ev.get("executor_result"), str) else None
             mismatch = bool(expected) and result != expected
-            if ev_signature is None:
-                entry.update({
-                    "lifecycle": "EVIDENCE_PUBLISHED",
-                    "assertion": assertion(
-                        STATE_OBSERVED, "EXECUTOR_RESULT_MISMATCH" if mismatch else "EVIDENCE_PUBLISHED",
-                        "Evidence is published and reports %r, but no verifier public key was "
-                        "supplied, so OBSERVED is the strongest honest claim" % (result or "no result"),
-                        refs)})
-            elif mismatch:
+            task_established = signature is True
+            if mismatch and verified:
                 entry.update({"lifecycle": "EXECUTION_FAILED",
                               "assertion": assertion(STATE_FAILED, "EXECUTOR_RESULT_MISMATCH",
                                                      "executor_result %r does not equal the frozen "
                                                      "terminal result %r" % (result, expected), refs)})
-            else:
+            elif mismatch:
+                entry.update({"lifecycle": "EVIDENCE_PUBLISHED",
+                              "assertion": assertion(
+                                  STATE_OBSERVED, "EXECUTOR_RESULT_MISMATCH",
+                                  "Evidence reports %r instead of the frozen terminal result %r, but "
+                                  "the evidence signature was not verified, so OBSERVED is the "
+                                  "strongest honest claim" % (result, expected), refs)})
+            elif verified and task_established:
                 entry.update({"lifecycle": "COMPLETE",
                               "assertion": assertion(STATE_PROVEN, expected or "HEALTH_OK",
-                                                     "signed Evidence verified against the pinned "
-                                                     "Hong Kong key and reports the frozen terminal "
-                                                     "result", refs)})
+                                                     "Evidence verified against the Hong Kong evidence "
+                                                     "verifier identity, its Task verified against the "
+                                                     "Command Center task verifier identity, and it "
+                                                     "reports the frozen terminal result", refs)})
+            elif verified:
+                entry.update({"lifecycle": "EVIDENCE_VERIFIED",
+                              "assertion": assertion(
+                                  STATE_OBSERVED, "EVIDENCE_VERIFIED",
+                                  "the Evidence verifies against the Hong Kong evidence identity, but "
+                                  "no Command Center task verifier key was supplied, so the Task this "
+                                  "Evidence claims to answer was never established and COMPLETE "
+                                  "cannot be claimed", refs)})
+            else:
+                entry.update({"lifecycle": "EVIDENCE_PUBLISHED",
+                              "assertion": assertion(
+                                  STATE_OBSERVED, "EVIDENCE_PUBLISHED",
+                                  "Evidence is published and reports %r, but no evidence verifier "
+                                  "key was supplied, so OBSERVED is the strongest honest claim"
+                                  % (result or "no result"), refs)})
         if at - completed > dt.timedelta(seconds=stale_seconds):
             entry["staleness"] = assertion(STATE_OBSERVED, "STALE",
-                                           "newest Evidence for this task is older than the "
+                                           "the newest Evidence for this task is older than the "
                                            "configured freshness window", refs)
         records.append(entry)
     return records
@@ -553,11 +677,11 @@ def lifecycle_counts(tasks):
     return counts
 
 
-def newest_for(tasks, action, predicate=None):
-    matches = [t for t in tasks if t["action_id"] == action and (predicate is None or predicate(t))]
+def newest_for(tasks, action):
+    matches = [t for t in tasks if t["action_id"] == action]
     if not matches:
         return None
-    return max(matches, key=lambda t: t.get("evidence", {}).get("completed_at", t["issued_at"]))
+    return max(matches, key=lambda t: t["evidence"]["completed_at"])
 
 
 def canonical_pointers(go_repo):
@@ -565,12 +689,12 @@ def canonical_pointers(go_repo):
     if not go_repo:
         return out
     base = pathlib.Path(go_repo) / "docs" / "canonical-baseline"
-    for key, name in (("runtime", "CURRENT_HK_RUNTIME.json"), ("candidate", "CURRENT_CANDIDATE.json")):
-        path = base / name
+    for key, name in (("runtime", "CURRENT_HK_RUNTIME.json"),
+                      ("candidate", "CURRENT_CANDIDATE.json")):
         try:
-            out[key] = read_json(path)
+            out[key] = read_json(base / name)
         except (OSError, ValueError) as exc:
-            out["read_errors"].append("%s:%s" % (name, exc))
+            out["read_errors"].append("%s:%s" % (name, type(exc).__name__))
     runtime = out["runtime"] or {}
     candidate = out["candidate"] or {}
     release = runtime.get("release_acceptance") or {}
@@ -583,27 +707,49 @@ def canonical_pointers(go_repo):
     return out
 
 
-def build_state(loaded, task_verifier, at, stale_seconds, go_repo, liveness_window, source_refs):
-    tasks = task_records(loaded, task_verifier, at, stale_seconds)
+def source_identity(args, request_count):
+    """Stable, portable provenance. Never a workstation path."""
+    return {
+        "tasks": {"repository": TASKS_REPOSITORY, "ref": args.tasks_ref,
+                  "head_sha": args.tasks_head},
+        "evidence": {"repository": EVIDENCE_REPOSITORY, "ref": args.evidence_ref,
+                     "head_sha": args.evidence_head},
+        "requests": {"repository": TASKS_REPOSITORY,
+                     "refs": ["refs/heads/boss-request-*", "refs/heads/request/*"],
+                     "collected": request_count},
+        "go": {"repository": GO_REPOSITORY, "ref": args.go_ref, "head_sha": args.go_head,
+               "canonical_runtime_pointer": CANONICAL_RUNTIME_POINTER,
+               "canonical_candidate_pointer": CANONICAL_CANDIDATE_POINTER},
+    }
+
+
+def build_state(loaded, task_verifier, evidence_verifier, at, options):
+    stale_seconds = options["stale_seconds"]
+    liveness_window = options["liveness_window"]
+    verification_window = options["verification_window"]
+    stuck_after = options["stuck_after"]
+    recent_window = options["recent_window"]
+
+    tasks = task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds)
     requests = request_records(loaded)
-    pointers = canonical_pointers(go_repo)
+    pointers = canonical_pointers(options.get("go_repo"))
 
     def has_success(task):
         return (task.get("evidence") or {}).get("status") == "SUCCESS"
 
-    # `completed`  = signature-verified success (PROVEN territory)
-    # `observed`   = published success whose signature could not be checked here
+    # `completed` = signature-verified success (PROVEN territory)
+    # `observed`  = published success whose chain could not be fully verified here
     completed = [t for t in tasks if t["lifecycle"] == "COMPLETE"]
-    observed = [t for t in tasks if t["lifecycle"] == "EVIDENCE_PUBLISHED" and has_success(t)]
+    observed = [t for t in tasks
+                if t["lifecycle"] in ("EVIDENCE_PUBLISHED", "EVIDENCE_VERIFIED") and has_success(t)]
     successes = completed + observed
-    verified = bool(completed) and not observed
     deploys = [t for t in successes if t["action_id"] == "HK_STAGING_DEPLOY"
                and t["assertion"]["state"] != STATE_FAILED]
     health = [t for t in successes if t["action_id"] == "CONTROL_PLANE_HEALTH"]
     newest_health = max(health, key=lambda t: t["evidence"]["completed_at"], default=None)
-    newest_evidence = max(successes, key=lambda t: t["evidence"]["completed_at"], default=None) \
-        or max((t for t in tasks if t.get("evidence")),
-               key=lambda t: t["evidence"]["completed_at"], default=None)
+    newest_evidence = (max(successes, key=lambda t: t["evidence"]["completed_at"], default=None)
+                       or max((t for t in tasks if t.get("evidence")),
+                              key=lambda t: t["evidence"]["completed_at"], default=None))
 
     def last_task(action=None):
         pool = [t for t in tasks if action is None or t["action_id"] == action]
@@ -611,23 +757,34 @@ def build_state(loaded, task_verifier, at, stale_seconds, go_repo, liveness_wind
             return unknown("no signed task of this class exists on the control bus yet")
         pick = max(pool, key=lambda t: t["evidence"]["completed_at"]
                    if t.get("evidence") else t["issued_at"])
-        return assertion(STATE_OBSERVED if pick["signature_verified"] is None else (
-            STATE_PROVEN if pick["signature_verified"] else STATE_FAILED),
-            {"task_id": pick["task_id"], "action_id": pick["action_id"],
-             "lifecycle": pick["lifecycle"], "issued_at": pick["issued_at"],
-             "expires_at": pick["expires_at"]},
-            "newest signed task of this class observed on the control bus",
-            [pick["source_file"]] + ([pick["evidence"]["source_file"]] if pick.get("evidence") else []))
+        state = STATE_OBSERVED if pick["task_signature_verified"] is None else (
+            STATE_PROVEN if pick["task_signature_verified"] else STATE_FAILED)
+        return assertion(state,
+                         {"task_id": pick["task_id"], "action_id": pick["action_id"],
+                          "lifecycle": pick["lifecycle"], "issued_at": pick["issued_at"],
+                          "expires_at": pick["expires_at"]},
+                         "the newest signed task of this class observed on the control bus",
+                         [pick["source"]["path"]]
+                         + ([pick["evidence"]["source"]["path"]] if pick.get("evidence") else []))
 
+    # ---- HK agent activity and liveness ------------------------------------ #
+    last_activity = unknown("no CONTROL_PLANE_HEALTH Evidence exists on the control bus")
     liveness = unknown("no CONTROL_PLANE_HEALTH Evidence exists on the control bus")
     if newest_health:
         age = (at - parse_time(newest_health["evidence"]["completed_at"])).total_seconds()
         payload = newest_health.get("liveness_payload") or {}
-        probe = newest_health["evidence"]["source_file"]
+        probe = newest_health["evidence"]["source"]["path"]
+        last_activity = assertion(
+            STATE_PROVEN if newest_health["lifecycle"] == "COMPLETE" else STATE_OBSERVED,
+            {"completed_at": newest_health["evidence"]["completed_at"],
+             "hostname": payload.get("hostname"), "agent_version": payload.get("agent_version"),
+             "age_seconds": int(age)},
+            "the newest signed CONTROL_PLANE_HEALTH Evidence, at any age. Activity is not liveness",
+            [probe])
         if age > liveness_window:
             liveness = assertion(STATE_UNKNOWN, None,
-                                 "newest signed liveness Evidence is %d s old, outside the %d s "
-                                 "window: a past success is not proof of current liveness"
+                                 "the newest signed liveness Evidence is %d s old, outside the "
+                                 "%d s window: a past success is not proof of current liveness"
                                  % (int(age), liveness_window), [probe])
             liveness["age_seconds"] = int(age)
             liveness["last_seen"] = {"hostname": payload.get("hostname"),
@@ -649,141 +806,288 @@ def build_state(loaded, task_verifier, at, stale_seconds, go_repo, liveness_wind
                                  "not checked here, so OBSERVED is the strongest honest claim",
                                  [probe])
 
+    # ---- repository-declared runtime vs live verified runtime -------------- #
     runtime = pointers["runtime"] or {}
-    image = (runtime.get("image") or {})
+    image = runtime.get("image") or {}
     pointer_image = image.get("image_config_id")
-    newest_verify = newest_for(successes, "HK_STAGING_VERIFY")
-    evidence_image = None
-    if newest_verify:
-        evidence_image = newest_verify["parameters"].get("expected_current_image_id")
-    verify_proven = bool(newest_verify) and newest_verify["lifecycle"] == "COMPLETE"
-    verify_rank = "verified" if verify_proven else "observed"
-    if pointer_image and evidence_image:
-        if pointer_image == evidence_image:
-            runtime_assertion = assertion(STATE_OBSERVED if not verify_proven else STATE_PROVEN,
-                                          pointer_image,
-                                          "canonical pointer and the newest %s VERIFY Evidence agree"
-                                          % verify_rank,
-                                          [newest_verify["evidence"]["source_file"]])
-            drift = assertion(STATE_OBSERVED, "NONE",
-                              "derived runtime image equals the canonical pointer image")
-        else:
-            runtime_assertion = assertion(STATE_OBSERVED, pointer_image,
-                                          "canonical pointer is authoritative for the runtime "
-                                          "currently deployed on HK-STAGING",
-                                          [newest_verify["evidence"]["source_file"]])
-            drift = assertion(STATE_OBSERVED, "DRIFT",
-                              "the newest %s VERIFY Evidence refers to %s while the canonical "
-                              "pointer records %s: no VERIFY Evidence of any rank exists for the "
-                              "runtime now recorded as deployed" % (verify_rank, evidence_image,
-                                                                    pointer_image),
-                              [newest_verify["evidence"]["source_file"]])
-    elif pointer_image:
-        runtime_assertion = assertion(STATE_OBSERVED, pointer_image,
-                                      "canonical pointer only; no VERIFY Evidence with a runtime "
-                                      "image was observed on the control bus")
-        drift = unknown("cannot compare: no VERIFY Evidence carrying a runtime image")
-    else:
-        runtime_assertion = unknown("no canonical runtime pointer supplied")
-        drift = unknown("no canonical runtime pointer supplied")
+    runtime_identity = runtime.get("canonical_runtime_identity") or {}
+    source_identity_block = runtime.get("product_source_identity") or {}
 
-    healthy = unknown("no Evidence of any kind exists on the control bus")
+    if pointer_image:
+        repository_runtime = assertion(
+            STATE_OBSERVED, {"image_config_id": pointer_image,
+                             "image_tag": image.get("image_tag"),
+                             "runtime_generation": runtime.get("runtime_generation"),
+                             "host": runtime.get("host"),
+                             "pointer_path": CANONICAL_RUNTIME_POINTER},
+            "the repository declares this runtime. A declaration is never the truth about what is "
+            "running on Hong Kong, so this can never be PROVEN",
+            [CANONICAL_RUNTIME_POINTER])
+    else:
+        repository_runtime = unknown("no canonical runtime pointer was supplied")
+
+    newest_verify = newest_for(successes, "HK_STAGING_VERIFY")
+    live_image, live_state = None, RUNTIME_UNKNOWN
+    if newest_verify:
+        live_image = newest_verify["parameters"].get("expected_current_image_id")
+        verify_age = (at - parse_time(newest_verify["evidence"]["completed_at"])).total_seconds()
+        verified = newest_verify["lifecycle"] == "COMPLETE"
+        live_verified = assertion(
+            STATE_PROVEN if verified else STATE_OBSERVED,
+            {"image_config_id": live_image,
+             "verified_at": newest_verify["evidence"]["completed_at"],
+             "age_seconds": int(verify_age),
+             "verification_rank": "SIGNATURE_VERIFIED" if verified else "OBSERVED_ONLY"},
+            "the newest VERIFY Evidence names the image that was current at that moment. This is a "
+            "point-in-time proof, not a continuous statement",
+            [newest_verify["evidence"]["source"]["path"]])
+        if pointer_image and live_image == pointer_image:
+            image_relation = "MATCH"
+        elif pointer_image:
+            image_relation = "DIFFER"
+        else:
+            image_relation = "UNKNOWN"
+        detail = {"verdict": RUNTIME_UNKNOWN, "image_relation": image_relation,
+                  "repository_declared_image": pointer_image,
+                  "live_proven_image": live_image,
+                  "live_verification_age_seconds": int(verify_age),
+                  "live_verification_rank": "SIGNATURE_VERIFIED" if verified else "OBSERVED_ONLY"}
+        refs = sorted({newest_verify["evidence"]["source"]["path"]}
+                      | ({CANONICAL_RUNTIME_POINTER} if pointer_image else set()))
+        fresh = verify_age <= verification_window
+        if not fresh:
+            live_state = RUNTIME_NOT_RECENTLY_VERIFIED
+            detail["verdict"] = live_state
+            verification_assertion = assertion(
+                STATE_OBSERVED, detail,
+                "the newest VERIFY Evidence is %d s old, outside the %d s window, so the live "
+                "runtime is not recently verified. The declared and proven images %s"
+                % (int(verify_age), verification_window,
+                   "are the same image" if image_relation == "MATCH" else
+                   "differ" if image_relation == "DIFFER" else "cannot be compared"),
+                refs)
+        elif image_relation == "MATCH":
+            live_state = RUNTIME_MATCH
+            detail["verdict"] = live_state
+            verification_assertion = assertion(
+                STATE_PROVEN if verified else STATE_OBSERVED, detail,
+                "the live VERIFY Evidence and the repository pointer name the same image",
+                refs)
+        elif image_relation == "DIFFER":
+            live_state = RUNTIME_DRIFT
+            detail["verdict"] = live_state
+            verification_assertion = assertion(
+                STATE_PROVEN if verified else STATE_OBSERVED, detail,
+                "the live VERIFY Evidence names %s while the repository pointer declares %s: the "
+                "declared runtime has no live proof and the proven runtime is not the declared one"
+                % (live_image, pointer_image), refs)
+        else:
+            verification_assertion = assertion(
+                STATE_OBSERVED, detail,
+                "no repository pointer was supplied, so the live runtime cannot be compared", refs)
+    else:
+        live_verified = unknown("no VERIFY Evidence carrying a runtime image was observed")
+        verification_assertion = unknown(
+            "no VERIFY Evidence exists on the control bus, so live runtime verification is unknown")
+
+    runtime_identity_assertion = unknown("no canonical runtime pointer supplied")
+    if runtime:
+        pointer_host = normalize_instance(runtime.get("host"))
+        probe_host = normalize_instance(
+            (newest_health or {}).get("liveness_payload", {}).get("hostname")) if newest_health else None
+        identity = {"pointer_host": runtime.get("host"), "normalized": pointer_host,
+                    "last_probe_host": (newest_health or {}).get("liveness_payload", {})
+                    .get("hostname") if newest_health else None}
+        if pointer_host and probe_host:
+            identity["host_matches_last_probe"] = pointer_host == probe_host
+            runtime_identity_assertion = assertion(
+                STATE_OBSERVED, identity,
+                "the canonical runtime host and the host that signed liveness Evidence are the same "
+                "instance" if pointer_host == probe_host else
+                "RUNTIME IDENTITY MISMATCH: the canonical pointer names %s but liveness Evidence was "
+                "signed by %s" % (pointer_host, probe_host),
+                [newest_health["evidence"]["source"]["path"]])
+        else:
+            runtime_identity_assertion = assertion(
+                STATE_OBSERVED, identity,
+                "canonical pointer host only; no signed liveness Evidence is available to bind it to "
+                "a live machine")
+
+    # ---- health, verify, test_pr ------------------------------------------ #
+    health_assertion = unknown("no Evidence of any kind exists on the control bus")
     if newest_verify:
         age = (at - parse_time(newest_verify["evidence"]["completed_at"])).total_seconds()
         if newest_verify["assertion"]["state"] == STATE_FAILED:
-            healthy = assertion(STATE_FAILED, newest_verify["lifecycle"],
-                                "the newest VERIFY task did not reach a successful terminal state",
-                                [newest_verify["source_file"]])
+            health_assertion = assertion(
+                STATE_FAILED, newest_verify["lifecycle"],
+                "the newest VERIFY task did not reach a successful terminal state",
+                [newest_verify["source"]["path"]])
         else:
-            state = STATE_PROVEN if verify_proven else STATE_OBSERVED
-            healthy = assertion(state, "HEALTHY_AS_OF_LAST_PROBE",
-                                "the newest VERIFY Evidence reports VERIFY_OK. This is the last "
-                                "proven moment, not present-moment liveness",
-                                [newest_verify["evidence"]["source_file"]])
-            healthy["as_of"] = newest_verify["evidence"]["completed_at"]
-            healthy["age_seconds"] = int(age)
-            healthy["stale"] = age > stale_seconds
+            rank = STATE_PROVEN if newest_verify["lifecycle"] == "COMPLETE" else STATE_OBSERVED
+            health_assertion = assertion(
+                rank, "HEALTHY_AS_OF_LAST_PROBE",
+                "the newest VERIFY Evidence reports VERIFY_OK. This is the last proven moment, not "
+                "present-moment liveness", [newest_verify["evidence"]["source"]["path"]])
+            health_assertion["as_of"] = newest_verify["evidence"]["completed_at"]
+            health_assertion["age_seconds"] = int(age)
+            health_assertion["stale"] = age > stale_seconds
 
-    inflight = [{"task_id": t["task_id"], "action_id": t["action_id"],
-                 "expires_at": t["expires_at"], "lifecycle": t["lifecycle"]}
-                for t in tasks if t["lifecycle"] in ("TASK_PUBLISHED", "TASK_SIGNED")]
-    failed = [{"task_id": t["task_id"], "action_id": t["action_id"], "lifecycle": t["lifecycle"],
-               "reason": t["assertion"]["reason"]}
-              for t in tasks if t["assertion"]["state"] == STATE_FAILED]
-    stale = [{"task_id": t["task_id"], "action_id": t["action_id"],
-              "completed_at": t["evidence"]["completed_at"]}
-             for t in tasks if t.get("staleness")]
-    timed_out = [{"task_id": t["task_id"], "action_id": t["action_id"],
-                  "expires_at": t["expires_at"]} for t in tasks if t["lifecycle"] == "TASK_EXPIRED"]
+    newest_test_pr = newest_for(successes, "HK_STAGING_TEST_PR")
+    test_pr = unknown("no successful TEST_PR Evidence was observed")
+    if newest_test_pr:
+        verifier_rank = STATE_PROVEN if newest_test_pr["lifecycle"] == "COMPLETE" else STATE_OBSERVED
+        test_pr = assertion(
+            verifier_rank,
+            {"task_id": newest_test_pr["task_id"],
+             "pr_number": newest_test_pr["parameters"]["source"]["pr_number"],
+             "commit_sha": newest_test_pr["parameters"]["source"]["commit_sha"],
+             "result": newest_test_pr["evidence"].get("executor_result"),
+             "built_image_id": newest_test_pr["evidence"].get("built_image_id"),
+             "completed_at": newest_test_pr["evidence"]["completed_at"],
+             "application_health_proven": False, "deployment_performed": False},
+            "the newest successful TEST_PR Evidence. An isolated offline build is not a deployment",
+            [newest_test_pr["evidence"]["source"]["path"]])
 
-    rollback_sources = sorted({t["task_id"]: t["evidence"]["completed_at"] for t in deploys}.items(),
-                              key=lambda pair: pair[1])
-    rollback = unknown("no successful DEPLOY Evidence exists on the control bus")
-    if rollback_sources:
-        newest = rollback_sources[-1][0]
-        rollback = assertion(STATE_OBSERVED,
-                             {"source_deploy_task_id": newest,
-                              "releases": [name for name, _ in rollback_sources],
-                              "newest_completed_at": rollback_sources[-1][1]},
-                             "rollback eligibility is a candidate set derived from successful "
-                             "DEPLOY Evidence; it is not an approval and not a signed ROLLBACK task",
-                             [t["evidence"]["source_file"] for t in deploys if t["task_id"] == newest])
+    # ---- task population classification ----------------------------------- #
+    def brief(task):
+        return {"task_id": task["task_id"], "action_id": task["action_id"],
+                "lifecycle": task["lifecycle"], "issued_at": task["issued_at"],
+                "expires_at": task["expires_at"],
+                "source_path": task["source"]["path"]}
 
-    if pointers["hold"]:
-        deploy_gate = pointers["hold"].get("hk_deploy", "HOLD")
-        deploy_state = STATE_HOLD if deploy_gate == "HOLD" else STATE_OBSERVED
-        deploy_assertion = assertion(
-            deploy_state,
-            {"deployment_requests_enabled": "UNKNOWN",
-             "approved_plans": "UNKNOWN",
-             "canary_evidence": "UNKNOWN"},
-            "RELEASE GATES: hk_deploy=%s, final_release=%s, production=%s. A verified DEPLOY "
-            "capability is not deploy authorization: the live request switch, approved plan store "
-            "and fresh CANARY/VERIFY proofs are Control Plane state that this projection cannot read"
-            % (deploy_gate, pointers["hold"].get("final_release"),
-               pointers["hold"].get("production")))
+    active = [t for t in tasks if t["lifecycle"] in ("TASK_PUBLISHED", "TASK_SIGNED")]
+    active_stuck = [t for t in active
+                    if (at - parse_time(t["issued_at"])).total_seconds() > stuck_after]
+    expired = [t for t in tasks if t["lifecycle"] == "TASK_EXPIRED"]
+    recent_expired = [t for t in expired
+                      if parse_time(t["expires_at"]) >= at - dt.timedelta(seconds=recent_window)]
+    historical_expired = [t for t in expired if t not in recent_expired]
+    broken = [t for t in tasks if t["lifecycle"] in
+              ("EXECUTION_FAILED", "EVIDENCE_INVALID", "EVIDENCE_TIMEOUT", "POLICY_HOLD")]
+
+    if active_stuck:
+        stuck_answer = assertion(
+            STATE_OBSERVED, "YES",
+            "%d task(s) are published, still inside their validity window and more than %d s old "
+            "with no Evidence" % (len(active_stuck), stuck_after),
+            [t["source"]["path"] for t in active_stuck])
     else:
-        deploy_assertion = unknown("no canonical pointer supplied, so release gates are unknown")
+        stuck_answer = assertion(
+            STATE_OBSERVED, "NO",
+            "no published task is overdue. %d recently expired and %d historical expired task(s) "
+            "are indexed separately and do not affect current health"
+            % (len(recent_expired), len(historical_expired)))
 
-    # Bind the governed runtime host to the host that actually signed liveness
-    # Evidence. One instance id has three spellings; all map to one identity.
-    runtime_identity = unknown("no canonical runtime pointer supplied")
-    if runtime:
-        pointer_host = normalize_instance(runtime.get("host"))
-        probe_host = None
-        if newest_health:
-            probe_host = normalize_instance((newest_health.get("liveness_payload") or {}).get("hostname"))
-        identity = {"pointer_host": runtime.get("host"), "normalized": pointer_host,
-                    "last_probe_host": (newest_health or {}).get("liveness_payload", {}).get("hostname")
-                    if newest_health else None}
-        if pointer_host and probe_host:
-            identity["host_matches_last_probe"] = pointer_host == probe_host
-            runtime_identity = assertion(
-                STATE_OBSERVED, identity,
-                "the canonical runtime host %s and the host that signed liveness Evidence %s are "
-                "the same instance" % (pointer_host, probe_host) if pointer_host == probe_host else
-                "RUNTIME IDENTITY MISMATCH: the canonical pointer names %s but liveness Evidence was "
-                "signed by %s" % (pointer_host, probe_host),
-                [newest_health["evidence"]["source_file"]])
-        else:
-            runtime_identity = assertion(STATE_OBSERVED, identity,
-                                         "canonical pointer host only; no signed liveness Evidence "
-                                         "is available to bind it to a live machine")
+    last_failure = unknown("no failed, invalid, hold or expired task was observed")
+    terminal_non_success = broken + expired
+    if terminal_non_success:
+        def terminal_rank(task):
+            return ((task.get("evidence") or {}).get("completed_at")) or task["expires_at"]
+        pick = max(terminal_non_success, key=terminal_rank)
+        proven_failure = pick in broken
+        last_failure = assertion(
+            STATE_OBSERVED,
+            {"task_id": pick["task_id"], "action_id": pick["action_id"],
+             "lifecycle": pick["lifecycle"], "value": pick["assertion"]["value"],
+             "kind": "FAILED_RECORD" if proven_failure else "EXPIRED_WITHOUT_EVIDENCE",
+             "at": terminal_rank(pick)},
+            ("the most recent terminal failure record on the control bus" if proven_failure else
+             "the most recent terminal non-success is an expiry, not a proven failure: the task "
+             "reached its expiry with no Evidence, and the agent ledger that would distinguish "
+             "'never picked up' from 'failed unpublished' is not on the control bus"),
+            [pick["source"]["path"]])
+
+    # ---- rollback candidates ---------------------------------------------- #
+    rollback_pairs = sorted({t["task_id"]: t["evidence"]["completed_at"] for t in deploys}.items(),
+                            key=lambda pair: pair[1])
+    rollback = unknown("no successful DEPLOY Evidence exists on the control bus")
+    if rollback_pairs:
+        newest_deploy = rollback_pairs[-1][0]
+        rollback = assertion(
+            STATE_OBSERVED,
+            {"source_deploy_task_id": newest_deploy,
+             "releases": [name for name, _ in rollback_pairs],
+             "newest_completed_at": rollback_pairs[-1][1]},
+            "rollback eligibility is a candidate set derived from successful DEPLOY Evidence. It is "
+            "not an approval and not a signed ROLLBACK task",
+            [t["evidence"]["source"]["path"] for t in deploys if t["task_id"] == newest_deploy])
+
+    # ---- request channel and deploy capability ---------------------------- #
+    request_channel = {
+        "enabled_request_actions": list(ENABLED_REQUEST_ACTIONS),
+        "known_capabilities": list(KNOWN_CAPABILITIES),
+        "capability_classification": dict(CAPABILITY_CLASSIFICATION),
+        "deploy_request_enabled": False,
+        "deploy_request_enabled_source": (
+            "the authoritative Boss Request contract currently exposes VERIFY and TEST_PR only; "
+            "the DEPLOY request capability is present in the repository and installed per its "
+            "closeout, but its request enablement remains fail-closed"),
+        "live_request_switch": unknown(
+            "the live Command Center channel switch is a live-host fact. It is not on the control "
+            "bus and this projection must not assert it"),
+        "note": "ChatGPT may create Request files only for enabled_request_actions",
+    }
+
+    # ---- repository main vs runtime build source --------------------------- #
+    repository_main = (assertion(STATE_OBSERVED, options["repository_main_sha"],
+                                 "the repository main revision supplied to this run")
+                       if options.get("repository_main_sha")
+                       else unknown(
+                           "the current repository main revision was not supplied. The projector "
+                           "reads local checkouts and never runs git, so it will not substitute a "
+                           "runtime source SHA for the repository head"))
+    runtime_built_from = (assertion(
+        STATE_OBSERVED, source_identity_block.get("source_commit"),
+        "the repository records the product source commit that this runtime was built from",
+        [CANONICAL_RUNTIME_POINTER])
+        if source_identity_block.get("source_commit")
+        else unknown("the canonical runtime pointer does not record a product source commit"))
+    runtime_canonical_main = (assertion(
+        STATE_OBSERVED, runtime_identity.get("canonical_main_commit"),
+        "the repository records the main commit at which the canonical runtime definition was "
+        "frozen", [CANONICAL_RUNTIME_POINTER])
+        if runtime_identity.get("canonical_main_commit")
+        else unknown("the canonical runtime pointer does not record a canonical main commit"))
+
+    # ---- deploy authorization gate ----------------------------------------- #
+    hold = pointers["hold"]
+    if hold:
+        deploy_status = assertion(
+            STATE_HOLD,
+            {"capability": "CAPABILITY_PRESENT_BUT_DISABLED",
+             "request_enabled": False,
+             "hk_deploy": hold.get("hk_deploy"),
+             "final_release": hold.get("final_release"),
+             "production": hold.get("production")},
+            "the DEPLOY capability is present and installed, but request enablement is fail-closed "
+            "and every release gate is HOLD. Capability presence is not deployment authorization, "
+            "and no approved deployment plan is readable from the control bus")
+    else:
+        deploy_status = unknown("no canonical pointer was supplied, so release gates are unknown")
 
     return {
         "schema_version": SCHEMA_VERSION,
         "contract": CONTRACT_STATE,
+        "scope": CONTRACT_SCOPE,
         "authority": AUTHORITY,
         "authority_note": ("Derived projection only. The Signed Task is the only Execution "
                            "Authority and the Signed Evidence is the only proof. This document "
-                           "never authorizes an operation."),
+                           "never authorizes an operation, and it adds no execution capability."),
         "generated_at": iso(at),
-        "freshness": {"stale_after_seconds": stale_seconds, "liveness_window_seconds": liveness_window},
-        "sources": source_refs,
+        "freshness": {"stale_after_seconds": stale_seconds,
+                      "liveness_window_seconds": liveness_window,
+                      "live_verification_window_seconds": verification_window,
+                      "stuck_after_seconds": stuck_after,
+                      "recent_expired_window_seconds": recent_window},
+        "sources": source_identity(options["args"], len(requests)),
         "verification": {
-            "task_key_fingerprint": task_verifier.fingerprint,
-            "signature_verification": "PERFORMED" if task_verifier.available else "NOT_PERFORMED",
-            "proven_requires_key": True,
+            "task": task_verifier.describe(),
+            "evidence": evidence_verifier.describe(),
+            "identities_separated": options["identities_separated"],
+            "proven_requires_both_keys": True,
+            "note": ("A Task must never validate against the evidence key and Evidence must never "
+                     "validate against the task key. PROVEN requires the artifact's own identity to "
+                     "verify"),
         },
         "counts": {
             "tasks": len(tasks), "evidence": len(loaded.evidence), "requests": len(requests),
@@ -791,11 +1095,12 @@ def build_state(loaded, task_verifier, at, stale_seconds, go_repo, liveness_wind
         },
         "requests": requests,
         "tasks": tasks,
+        "request_channel": request_channel,
         "control_state": {
-            "health": healthy,
-            "last_request": (assertion(STATE_OBSERVED,                                       requests[-1]["request_id"],
-                                       "newest Request file observed on a control-bus ref",
-                                       [requests[-1]["source"]["file"]])
+            "health": health_assertion,
+            "last_request": (assertion(STATE_OBSERVED, requests[-1]["request_id"],
+                                       "the newest Request file observed on a control-bus ref",
+                                       [requests[-1]["source"]["path"]])
                              if requests else unknown("no Request file observed on the control bus")),
             "last_task": last_task(),
             "last_evidence": (assertion(
@@ -803,54 +1108,66 @@ def build_state(loaded, task_verifier, at, stale_seconds, go_repo, liveness_wind
                 {"task_id": newest_evidence["task_id"],
                  "action_id": newest_evidence["action_id"],
                  "completed_at": newest_evidence["evidence"]["completed_at"]},
-                "newest signed Evidence on the control bus",
-                [newest_evidence["evidence"]["source_file"]])
+                "the newest signed Evidence on the control bus",
+                [newest_evidence["evidence"]["source"]["path"]])
                 if newest_evidence else unknown("no signed Evidence exists on the control bus")),
+            "last_failure": last_failure,
+            "hk_agent_last_activity": last_activity,
             "hk_agent_liveness": liveness,
-            "hk_runtime_identity": runtime_identity,
+            "hk_runtime_identity": runtime_identity_assertion,
             "verify_status": last_task("HK_STAGING_VERIFY"),
-            "test_pr_status": last_task("HK_STAGING_TEST_PR"),
-            "deploy_status": deploy_assertion,
-            "current_runtime": runtime_assertion,
-            "current_main": assertion(STATE_OBSERVED, (pointers["runtime"] or {}).get(
-                "canonical_runtime_identity", {}).get("canonical_main_commit"),
-                "canonical runtime pointer records the main commit the runtime was built from"),
-            "current_release_candidate": assertion(
-                STATE_OBSERVED, (pointers["candidate"] or {}).get("source_commit"),
-                "canonical candidate pointer records the newest integrated source identity"),
-            "inflight_tasks": inflight,
-            "failed_tasks": failed,
-            "stale_tasks": stale,
-            "expired_without_evidence": timed_out,
+            "test_pr_status": test_pr,
+            "deploy_status": deploy_status,
+            "repository_runtime_pointer": repository_runtime,
+            "live_verified_runtime": live_verified,
+            "runtime_verification": verification_assertion,
+            "runtime_verification_state": live_state,
+            "repository_main_sha": repository_main,
+            "runtime_built_from_main_sha": runtime_built_from,
+            "runtime_canonical_main_sha": runtime_canonical_main,
+            "stuck_answer": stuck_answer,
+            "active_tasks": [brief(t) for t in active],
+            "active_stuck_tasks": [brief(t) for t in active_stuck],
+            "recent_expired_tasks": [brief(t) for t in recent_expired],
+            "historical_expired_tasks": [brief(t) for t in historical_expired],
+            "failed_or_invalid_tasks": [
+                {"task_id": t["task_id"], "action_id": t["action_id"], "lifecycle": t["lifecycle"],
+                 "reason": t["assertion"]["reason"], "source_path": t["source"]["path"]}
+                for t in broken],
+            "stale_tasks": [{"task_id": t["task_id"], "action_id": t["action_id"],
+                             "completed_at": t["evidence"]["completed_at"]}
+                            for t in tasks if t.get("staleness")],
             "last_successful_deploy": (assertion(STATE_OBSERVED, deploys[-1]["task_id"],
-                                                 "newest verified DEPLOY Evidence",
-                                                 [deploys[-1]["evidence"]["source_file"]])
-                                       if deploys else unknown("no verified successful DEPLOY Evidence")),
+                                                 "the newest successful DEPLOY Evidence",
+                                                 [deploys[-1]["evidence"]["source"]["path"]])
+                                       if deploys else unknown("no successful DEPLOY Evidence")),
             "rollback_source": rollback,
-            "control_plane_drift": drift,
-            "release_gates": pointers["hold"] or {"hk_deploy": "UNKNOWN", "final_release": "UNKNOWN",
-                                                  "production": "UNKNOWN"},
+            "release_gates": hold or {"hk_deploy": "UNKNOWN", "final_release": "UNKNOWN",
+                                      "production": "UNKNOWN"},
             "final_release": assertion(
-                STATE_HOLD if pointers["hold"].get("final_release") == "HOLD" else STATE_UNKNOWN,
-                pointers["hold"].get("final_release"),
-                "release acceptance is a separate axis from business runtime and Control Plane"),
+                STATE_HOLD if hold.get("final_release") == "HOLD" else STATE_UNKNOWN,
+                hold.get("final_release"),
+                "release acceptance is a separate axis from the business runtime and the Control "
+                "Plane"),
             "hk_deploy": assertion(
-                STATE_HOLD if pointers["hold"].get("hk_deploy") == "HOLD" else STATE_UNKNOWN,
-                pointers["hold"].get("hk_deploy"),
+                STATE_HOLD if hold.get("hk_deploy") == "HOLD" else STATE_UNKNOWN,
+                hold.get("hk_deploy"),
                 "deployment authorization is not derived from the existence of a DEPLOY capability"),
             "production": assertion(
-                STATE_HOLD if pointers["hold"].get("production") in ("HOLD", "UNTOUCHED_HOLD") else STATE_UNKNOWN,
-                pointers["hold"].get("production"),
+                STATE_HOLD if hold.get("production") in ("HOLD", "UNTOUCHED_HOLD") else STATE_UNKNOWN,
+                hold.get("production"),
                 "Production has not been touched and is out of scope for the Control Plane"),
         },
         "anomalies": loaded.anomalies,
         "rebuild": {
             "deterministic": True,
             "pin_generated_at": "pass --now <ISO8601> to make the byte output reproducible",
-            "command": "python control-plane/command-center-state-v1/state_projection.py --tasks-repo "
-                       "<go-control-tasks> --evidence-repo <go-control-evidence> "
-                       "--requests-dir <requests> --go-repo <GO> --task-verify-key <pub> "
-                       "--out <dir>",
+            "command": ("python control-plane/command-center-state-v1/state_projection.py "
+                        "--tasks-repo <go-control-tasks> --evidence-repo <go-control-evidence> "
+                        "--requests-dir <collected-requests> --go-repo <GO> "
+                        "--task-verify-key <cc-task.pub> --evidence-verify-key <hk-evidence.pub> "
+                        "--tasks-head <sha> --evidence-head <sha> --go-head <sha> "
+                        "--repository-main-sha <sha> --now <ISO8601> --out <dir>"),
         },
     }
 
@@ -866,50 +1183,81 @@ def verdict_for(control_state):
 def build_status(state, verdict):
     cs = state["control_state"]
     tasks = state["tasks"]
-    test_pr_by_pr = {}
+
+    pr_index = {}
     for task in tasks:
-        if task["action_id"] != "HK_STAGING_TEST_PR":
+        if task["action_id"] != "HK_STAGING_TEST_PR" or not task.get("evidence"):
             continue
         source = task["parameters"]["source"]
-        test_pr_by_pr.setdefault(source["pr_number"], []).append({
+        pr_index.setdefault(source["pr_number"], []).append({
             "task_id": task["task_id"],
             "commit_sha": source["commit_sha"],
             "lifecycle": task["lifecycle"],
-            "completed_at": (task.get("evidence") or {}).get("completed_at"),
-            "built_image_id": (task.get("evidence") or {}).get("built_image_id"),
+            "result": task["evidence"].get("executor_result"),
+            "built_image_id": task["evidence"].get("built_image_id"),
+            "completed_at": task["evidence"]["completed_at"],
+            "signature_verified": task["evidence"].get("signature_verified"),
             "state": task["assertion"]["state"],
+            "source_path": task["evidence"]["source"]["path"],
         })
-    blocked = [a["reason"] for a in (cs["deploy_status"],) if a["state"] in (STATE_HOLD, STATE_UNKNOWN)]
+    pending_test_pr = [{"task_id": t["task_id"], "pr_number": t["parameters"]["source"]["pr_number"],
+                        "lifecycle": t["lifecycle"], "state": t["assertion"]["state"],
+                        "issued_at": t["issued_at"], "expires_at": t["expires_at"]}
+                       for t in tasks
+                       if t["action_id"] == "HK_STAGING_TEST_PR" and not t.get("evidence")]
+
+    deploy_block = cs["deploy_status"]
     answers = {
+        # 1
+        "hk_agent_recent_activity": cs["hk_agent_last_activity"],
+        # 2
+        "active_tasks": {"state": STATE_OBSERVED, "value": len(cs["active_tasks"]),
+                         "reason": "tasks published and still inside their validity window",
+                         "evidence": [t["source_path"] for t in cs["active_tasks"]],
+                         "tasks": cs["active_tasks"]},
+        # 3
+        "last_task": cs["last_task"],
+        "last_evidence": cs["last_evidence"],
+        # 4 + 5
+        "pr_tested": {"latest": cs["test_pr_status"], "by_pr_number": pr_index,
+                      "in_flight": pending_test_pr,
+                      "note": "look up by_pr_number for 'has PR N been TEST_PR tested?'"},
+        # 6
+        "verify": cs["verify_status"],
+        # 7
+        "repository_declared_runtime": cs["repository_runtime_pointer"],
+        # 8
+        "live_verified_runtime": cs["live_verified_runtime"],
+        "runtime_verification": cs["runtime_verification"],
+        # 9
+        "stuck_tasks": {
+            "answer": cs["stuck_answer"],
+            "active_stuck_tasks": cs["active_stuck_tasks"],
+            "recent_expired_tasks": cs["recent_expired_tasks"],
+            "historical_expired_tasks": cs["historical_expired_tasks"],
+            "default_lookup": "active_stuck_tasks",
+            "note": ("'is anything stuck right now' is answered only from active_stuck_tasks. "
+                     "Expired history is indexed separately and never affects current health"),
+        },
+        # 10
+        "last_failure": cs["last_failure"],
         "go_is_healthy": verdict,
         "hk_agent_online": cs["hk_agent_liveness"],
-        "my_task_executed": {
-            "last_request": cs["last_request"], "last_task": cs["last_task"],
-            "last_evidence": cs["last_evidence"],
-        },
-        "pr_tested": {"latest": cs["test_pr_status"], "by_pr_number": test_pr_by_pr,
-                      "note": "look up by_pr_number for 'did you test PR N?'"},
-        "verify": cs["verify_status"],
-        "deploy": cs["deploy_status"],
-        "current_runtime": cs["current_runtime"],
-        "current_main": cs["current_main"],
-        "current_release_candidate": cs["current_release_candidate"],
-        "can_deploy": {
-            "state": STATE_HOLD if cs["deploy_status"]["state"] == STATE_HOLD else cs["deploy_status"]["state"],
-            "value": "NO" if cs["deploy_status"]["state"] == STATE_HOLD else None,
-            "reason": ("deployment authorization is not established by this projection; %s"
-                       % "; ".join(blocked) if blocked else "deployability is unknown"),
-            "evidence": cs["deploy_status"]["evidence"],
-        },
-        "stuck_tasks": cs["inflight_tasks"] + cs["expired_without_evidence"],
-        "pending_evidence": cs["inflight_tasks"],
+        "repository_main_sha": cs["repository_main_sha"],
+        "runtime_built_from_main_sha": cs["runtime_built_from_main_sha"],
+        "can_deploy": assertion(
+            STATE_HOLD, "NO",
+            "the DEPLOY capability is present but request enablement is fail-closed and every "
+            "release gate is HOLD. This projection cannot authorize a deployment",
+            deploy_block["evidence"]),
+        "request_channel": state["request_channel"],
         "rollback_targets": cs["rollback_source"],
-        "control_plane_drift": cs["control_plane_drift"],
         "release_gates": cs["release_gates"],
     }
     return {
         "schema_version": SCHEMA_VERSION,
         "contract": CONTRACT_STATUS,
+        "scope": CONTRACT_SCOPE,
         "audience": "CHATGPT_CONNECTOR / HUMAN_OPERATOR",
         "authority": AUTHORITY,
         "generated_at": state["generated_at"],
@@ -918,18 +1266,21 @@ def build_status(state, verdict):
         "verification": state["verification"],
         "answers": answers,
         "limits": {
-            "read_contract_only": "This is a bounded read contract. It is not Execution Authority "
-                                  "and it never contains execution parameters.",
+            "read_contract_only": ("This is a bounded read contract. It is not Execution Authority, "
+                                   "it never contains an execution parameter, and it can neither "
+                                   "create nor sign a Task"),
             "unobservable_by_this_projection": [
-                "the live Command Center channel switch and approved plan store",
+                "the live Command Center channel switch and the approved deployment plan store",
                 "the Hong Kong agent ledger (attempts, failures, nonce claims)",
                 "runtime process state on HK-STAGING",
+                "the current repository main revision, unless it is passed in explicitly",
             ],
-            "never_infer": "last successful task != agent online; runtime ACTIVE != release accepted",
+            "never_infer": ("last successful task != agent online; repository pointer != live "
+                            "runtime; capability present != request enabled"),
         },
         "verdict": {
             "healthy": verdict,
-            "blockers": [{"source": "deploy_status", "reason": r} for r in blocked],
+            "blockers": [{"source": "deploy_status", "reason": deploy_block["reason"]}],
         },
     }
 
@@ -943,13 +1294,25 @@ def main(argv=None):
     parser.add_argument("--evidence-repo", required=True, help="local checkout of go-control-evidence")
     parser.add_argument("--requests-dir", help="optional directory of collected Request files")
     parser.add_argument("--go-repo", help="optional local checkout of the GO repository")
-    parser.add_argument("--task-verify-key", help="pinned Command Center task public key")
+    parser.add_argument("--task-verify-key",
+                        help="pinned Command Center task-manifest public key (hex-signature identity)")
+    parser.add_argument("--evidence-verify-key",
+                        help="pinned Hong Kong evidence public key (base64-signature identity)")
+    parser.add_argument("--tasks-head", default=None, help="pinned commit SHA of the tasks source")
+    parser.add_argument("--tasks-ref", default="main")
+    parser.add_argument("--evidence-head", default=None, help="pinned commit SHA of the evidence source")
+    parser.add_argument("--evidence-ref", default="permission-test")
+    parser.add_argument("--go-head", default=None, help="pinned commit SHA of the GO source")
+    parser.add_argument("--go-ref", default="main")
+    parser.add_argument("--repository-main-sha",
+                        help="current repository main revision, if it has been established out of band")
     parser.add_argument("--out", required=True, help="output directory (created if absent)")
     parser.add_argument("--now", help="ISO 8601 instant to project at (default: current UTC)")
     parser.add_argument("--stale-after-seconds", type=int, default=86400)
     parser.add_argument("--liveness-window-seconds", type=int, default=1800)
-    parser.add_argument("--tasks-head", default=None)
-    parser.add_argument("--evidence-head", default=None)
+    parser.add_argument("--live-verification-window-seconds", type=int, default=86400)
+    parser.add_argument("--stuck-after-seconds", type=int, default=900)
+    parser.add_argument("--recent-expired-window-seconds", type=int, default=604800)
     parser.add_argument("--stdout", action="store_true", help="also print CONTROL_STATUS_V1")
     args = parser.parse_args(argv)
 
@@ -958,34 +1321,60 @@ def main(argv=None):
     load_tasks(args.tasks_repo, loaded)
     load_evidence(args.evidence_repo, loaded)
     load_requests(args.requests_dir, loaded)
-    verifier = Verifier(args.task_verify_key)
 
-    state = build_state(loaded, verifier, at, args.stale_after_seconds, args.go_repo,
-                        args.liveness_window_seconds,
-                        {"tasks_repo": args.tasks_repo, "tasks_head": args.tasks_head,
-                         "evidence_repo": args.evidence_repo, "evidence_head": args.evidence_head,
-                         "requests_dir": args.requests_dir, "go_repo": args.go_repo})
-    # One shared verdict feeds both contracts, so they can never disagree.
+    task_verifier = Verifier(args.task_verify_key, TASK_VERIFIER_IDENTITY, "hex")
+    evidence_verifier = Verifier(args.evidence_verify_key, EVIDENCE_VERIFIER_IDENTITY, "base64")
+    identities_separated = separated(task_verifier, evidence_verifier, loaded)
+    if not identities_separated:
+        task_verifier = task_verifier.disabled_copy()
+        evidence_verifier = evidence_verifier.disabled_copy()
+
+    options = {
+        "stale_seconds": args.stale_after_seconds,
+        "liveness_window": args.liveness_window_seconds,
+        "verification_window": args.live_verification_window_seconds,
+        "stuck_after": args.stuck_after_seconds,
+        "recent_window": args.recent_expired_window_seconds,
+        "go_repo": args.go_repo,
+        "repository_main_sha": args.repository_main_sha,
+        "identities_separated": identities_separated,
+        "args": args,
+    }
+    state = build_state(loaded, task_verifier, evidence_verifier, at, options)
     status = build_status(state, verdict_for(state["control_state"]))
+
+    # Portability guard: the derived documents must never carry a workstation
+    # path, a user directory or a temp directory.
+    leaked = sorted(set(LOCAL_PATH_RE.findall(
+        json.dumps(state, sort_keys=True) + json.dumps(status, sort_keys=True))))
+    if leaked:
+        loaded.anomaly("LOCAL_PATH_LEAK",
+                       "derived output contains machine-specific path fragments: %s" % leaked)
+        state["anomalies"] = loaded.anomalies
+        state["counts"]["anomalies"] = len(loaded.anomalies)
 
     index = {
         "schema_version": SCHEMA_VERSION,
         "contract": "TASK_INDEX",
+        "scope": CONTRACT_SCOPE,
         "authority": AUTHORITY,
         "generated_at": state["generated_at"],
         "entries": [{
             "task_id": t["task_id"], "action_id": t["action_id"], "lifecycle": t["lifecycle"],
             "issued_at": t["issued_at"], "expires_at": t["expires_at"],
-            "task_sha256": t["task_sha256"], "source_file": t["source_file"],
+            "task_sha256": t["task_sha256"], "source_path": t["source"]["path"],
+            "task_signature_verified": t["task_signature_verified"],
             "evidence_state": (t.get("evidence") or {}).get("status", "NO_EVIDENCE_PUBLISHED"),
-            "evidence_file": (t.get("evidence") or {}).get("source_file"),
+            "evidence_path": (t.get("evidence") or {}).get("source", {}).get("path"),
             "evidence_sha256": (t.get("evidence") or {}).get("evidence_sha256"),
+            "evidence_signature_verified": (t.get("evidence") or {}).get("signature_verified"),
             "assertion_state": t["assertion"]["state"],
         } for t in state["tasks"]],
     }
     latest = {
         "schema_version": SCHEMA_VERSION,
         "contract": "LATEST_EVIDENCE",
+        "scope": CONTRACT_SCOPE,
         "authority": AUTHORITY,
         "generated_at": state["generated_at"],
         "by_action": {},
@@ -994,8 +1383,9 @@ def main(argv=None):
                        key=lambda t: t["evidence"]["completed_at"]):
         latest["by_action"][task["action_id"]] = {
             "task_id": task["task_id"], "completed_at": task["evidence"]["completed_at"],
-            "file": task["evidence"]["source_file"], "sha256": task["evidence"]["evidence_sha256"],
+            "path": task["evidence"]["source"]["path"], "sha256": task["evidence"]["evidence_sha256"],
             "status": task["evidence"]["status"], "lifecycle": task["lifecycle"],
+            "signature_verified": task["evidence"]["signature_verified"],
         }
 
     out = pathlib.Path(args.out)
@@ -1004,16 +1394,22 @@ def main(argv=None):
                           ("CONTROL_STATUS_V1.json", status),
                           ("TASK_INDEX.json", index),
                           ("LATEST_EVIDENCE.json", latest)):
-        path = out / name
-        path.write_bytes(json.dumps(payload, indent=2, sort_keys=True).encode("utf-8") + b"\n")
+        (out / name).write_bytes(
+            json.dumps(payload, indent=2, sort_keys=True).encode("utf-8") + b"\n")
+
     summary = {
-        "contract": CONTRACT_STATUS, "generated_at": state["generated_at"],
+        "contract": CONTRACT_STATUS, "scope": CONTRACT_SCOPE,
+        "generated_at": state["generated_at"],
         "tasks": state["counts"]["tasks"], "evidence": state["counts"]["evidence"],
         "requests": state["counts"]["requests"],
         "by_lifecycle": state["counts"]["by_lifecycle"],
-        "signature_verification": state["verification"]["signature_verification"],
+        "task_signature_verification": state["verification"]["task"]["signature_verification"],
+        "evidence_signature_verification": state["verification"]["evidence"]["signature_verification"],
+        "identities_separated": identities_separated,
         "hk_agent_liveness": status["answers"]["hk_agent_online"]["state"],
-        "control_plane_drift": status["answers"]["control_plane_drift"]["value"],
+        "runtime_verification": state["control_state"]["runtime_verification_state"],
+        "active_stuck_tasks": len(state["control_state"]["active_stuck_tasks"]),
+        "enabled_request_actions": request_channel_list(state),
         "anomalies": [a["kind"] for a in state["anomalies"]],
         "out": str(out),
     }
@@ -1021,6 +1417,10 @@ def main(argv=None):
     if args.stdout:
         print(json.dumps(status, indent=2, sort_keys=True))
     return 0
+
+
+def request_channel_list(state):
+    return state["request_channel"]["enabled_request_actions"]
 
 
 if __name__ == "__main__":

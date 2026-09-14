@@ -1,9 +1,13 @@
 # CONTROL_STATUS_V1 — the ChatGPT read contract
 
+Scope: `CONTROL_STATE_AND_STATUS_ONLY`. This contract is read-only. It cannot
+create a Task, sign anything, publish a Task, call an Executor, open a shell,
+reach Hong Kong, deploy or roll back.
+
 ChatGPT must not parse dozens of Task JSON files, the Bridge ledger, the agent
 ledger, Compose files or server logs. It reads one bounded document.
 
-## Read the document
+## Read the documents
 
 ```
 CONTROL_STATUS_V1.json      # compact, fixed question keys, size-bounded
@@ -12,45 +16,65 @@ TASK_INDEX.json             # one row per Task, linked to its Evidence
 LATEST_EVIDENCE.json        # newest Evidence per action
 ```
 
-All four are derived from the same run and cannot disagree with each other.
+All four come from one run and cannot disagree with each other. Every source
+reference inside them is a repository-relative path such as
+`tasks/<task_id>.json`; there is no workstation path anywhere.
 
 ## Question → key
 
 | A human asks | Read | Answer shape |
 |---|---|---|
-| GO 现在正常吗？ | `answers.go_is_healthy` | `state` + `value` (`HEALTHY_AS_OF_LAST_PROBE`) + `as_of` + `age_seconds` + `stale` |
-| 香港 Agent 在线吗？ | `answers.hk_agent_online` | `PROVEN` only from a fresh signed liveness probe; otherwise `UNKNOWN` with `last_seen` |
-| 我刚才的任务执行了吗？ | `answers.my_task_executed` | `last_request` → `last_task` → `last_evidence` chain |
-| PR 123 测了吗？测试结果是什么？ | `answers.pr_tested.by_pr_number["123"]` | commit SHA, lifecycle, built image id, completion time |
-| 现在香港跑哪个版本？ | `answers.current_runtime` | image config id + `control_plane_drift` verdict |
-| 最近一次部署是什么？ | `answers.deploy` + `answers.rollback_targets` | newest successful DEPLOY Evidence, rollback candidate set |
-| 能不能部署？为什么不能？ | `answers.can_deploy` | `value` is `NO` while a release gate is `HOLD`, plus every blocking reason |
-| 有没有任务卡住？有没有 Evidence 回来？ | `answers.stuck_tasks` / `answers.pending_evidence` | Task ids with expiry and lifecycle |
-| 可以回滚到哪？ | `answers.rollback_targets` | verified DEPLOY task ids, newest first |
-| Control Plane 漂移了吗？ | `answers.control_plane_drift` | `NONE` / `DRIFT` / `UNKNOWN` with both image ids |
+| 1. HK Agent 最近是否有活动？ | `answers.hk_agent_recent_activity` | last signed `CONTROL_PLANE_HEALTH` at any age, with `age_seconds` |
+| 2. 当前有没有正在执行的任务？ | `answers.active_tasks` | count plus the task list |
+| 3. 最近一个任务完成了吗？ | `answers.last_task` → `answers.last_evidence` | task id, lifecycle, completion time |
+| 4. PR X 是否已经 TEST_PR？ | `answers.pr_tested.by_pr_number["X"]` | exists or absent; `in_flight` lists pending ones |
+| 5. PR X 测试结果是什么？ | `answers.pr_tested.by_pr_number["X"][0]` | `TEST_PR_OK`, immutable commit SHA, built image id, completion time |
+| 6. 最近一次 VERIFY 是否成功？ | `answers.verify` | lifecycle plus assertion rank |
+| 7. 当前 repository-declared HK runtime 是什么？ | `answers.repository_declared_runtime` | image config id, tag, generation, pointer path |
+| 8. 这个 runtime 最近是否被 live VERIFY 证明？ | `answers.runtime_verification` + `answers.live_verified_runtime` | `MATCH` / `DRIFT` / `NOT_RECENTLY_VERIFIED` / `UNKNOWN` |
+| 9. 当前有没有活跃的 stuck task？ | `answers.stuck_tasks.answer` | `YES` / `NO`, computed from `active_stuck_tasks` only |
+| 10. 最近一次失败是什么？ | `answers.last_failure` | task id plus `kind` = `FAILED_RECORD` or `EXPIRED_WITHOUT_EVIDENCE` |
 
-## The three sentences a connector must never say
+## The distinctions a connector must preserve
 
-1. *"The agent is online"* — unless a fresh signed `CONTROL_PLANE_HEALTH` Evidence
-   is inside the liveness window. A successful VERIFY task is not liveness.
-2. *"The task failed"* — unless signed Evidence reports a non-success status.
-   Absence of Evidence means `UNKNOWN`, not failure.
-3. *"Deployment is approved"* — deployability is governed by the live Command
-   Center switch, an approved plan in the root-owned store, and fresh CANARY /
-   VERIFY proofs. None of those are readable from the control bus, and all three
-   release gates are `HOLD`.
+1. **Activity is not liveness.** `answers.hk_agent_recent_activity` answers "when
+   did we last hear from it". `answers.hk_agent_online` answers "is it online
+   now" and is `PROVEN` only from liveness Evidence inside the freshness window.
+   Never answer the second with the first.
+2. **A repository pointer is not the live runtime.** `repository_declared_runtime`
+   is what the repository declares; `live_verified_runtime` is what a VERIFY
+   Evidence actually proved. They are separate objects and the first can never
+   make the second `PROVEN`.
+3. **Expired history is not stuck work.** `answers.stuck_tasks.answer` reads
+   `active_stuck_tasks` only. `recent_expired_tasks` and
+   `historical_expired_tasks` are indexed separately and never change the answer.
+4. **A capability present is not a request enabled.** `answers.request_channel`
+   separates `known_capabilities` from `enabled_request_actions`. Only enabled
+   actions may be submitted.
+5. **`repository_main_sha` is not the runtime build source.**
+   `answers.repository_main_sha` is `UNKNOWN` unless it was established out of
+   band; `answers.runtime_built_from_main_sha` is a different field with a
+   different meaning.
 
 ## Creating a Request from chat
 
-The connector may write only the Request contract
-(`contracts/request_v1.schema.json`). It may supply `action_id`, `environment`,
-`request_id`, `requested_at`, and one target selector: `pr_number` for
-`HK_STAGING_TEST_PR` or `plan_id` for `HK_STAGING_DEPLOY`.
+The connector may write a Request file only for an action listed in
+`answers.request_channel.enabled_request_actions`, which today is exactly:
+
+```
+HK_STAGING_VERIFY
+HK_STAGING_TEST_PR
+```
+
+It supplies `action_id`, `environment`, a fresh `request_id`, `requested_at`, and
+one target selector: `pr_number` for `HK_STAGING_TEST_PR`.
 
 It must never supply an image id, repo digest, service list, compose path, env
 file, shell command, executor path, signature, nonce, `task_id`, `release_id`,
-`approval_id`, `canary_evidence_id` or `source_deploy_task_id`. Those are derived
-by Command Center from fixed, root-owned, human-approved state.
+`approval_id`, `canary_evidence_id`, `source_deploy_task_id` or `plan_id`. Those
+belong to Command Center logic and to root-owned, human-approved state. A
+`plan_id` is expressible in the schema but its action is **not enabled**: do not
+submit it.
 
 ## Creating a Request on GitHub
 
