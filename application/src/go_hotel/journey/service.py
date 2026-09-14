@@ -48,7 +48,8 @@ class JourneyService:
   exists=s.execute(select(GoJourneyItemRow).where(GoJourneyItemRow.account_id==j.account_id,GoJourneyItemRow.vertical==v,GoJourneyItemRow.order_id==x["order_id"])).scalar_one_or_none()
   if exists: raise ValueError("ORDER_ALREADY_IN_JOURNEY")
   title,sub,loc,facts=self._default_snapshot(v,row);starts=x.get("starts_at") or getattr(row,"pickup_at",None) or getattr(row,"visit_date",None);ends=x.get("ends_at") or getattr(row,"return_at",None)
-  item=GoJourneyItemRow(item_id=f"jit_{uuid4().hex[:18]}",journey_id=j.journey_id,account_id=j.account_id,vertical=v,order_id=row.order_id,title=x.get("title") or title,subtitle=x.get("subtitle") or sub,location=x.get("location") or loc,starts_at=starts,ends_at=ends,status_snapshot=row.status,facts_json={**facts,**(x.get("facts") or {})},detail_route=VERTICALS[v][1],sort_key=x.get("sort_key") or starts or row.created_at.isoformat(),created_at=now());s.add(item);return item
+  # Caller notes may extend the snapshot; canonical order facts retain priority.
+  item=GoJourneyItemRow(item_id=f"jit_{uuid4().hex[:18]}",journey_id=j.journey_id,account_id=j.account_id,vertical=v,order_id=row.order_id,title=x.get("title") or title,subtitle=x.get("subtitle") or sub,location=x.get("location") or loc,starts_at=starts,ends_at=ends,status_snapshot=row.status,facts_json={**(x.get("facts") or {}),**facts},detail_route=VERTICALS[v][1],sort_key=x.get("sort_key") or starts or row.created_at.isoformat(),created_at=now());s.add(item);return item
  def attach(self,account_id,journey_id,x):
   with SessionLocal() as s:
    j=s.get(GoJourneyRow,journey_id)

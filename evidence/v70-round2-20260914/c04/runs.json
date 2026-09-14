@@ -1,0 +1,54 @@
+[
+  {
+    "name": "before-environment-missing",
+    "command": "GO_TEST_DB_PATH=/tmp/c04-r2-before-20260914-a.db PYTHONPATH=src /workspace/scratch/2d68c25b0133/go-venv/bin/python -m pytest tests/test_v70_round2_c04_rental_receipts.py -q --junitxml=../evidence/v70-round2-20260914/c04/before.junit.xml > ../evidence/v70-round2-20260914/c04/before.raw.log 2>&1",
+    "exit_code": 127,
+    "reason": "Historical venv interpreter target absent; no test collected."
+  },
+  {
+    "name": "before2",
+    "command": "GO_TEST_DB_PATH=/tmp/c04-r2-before-20260914-b.db PYTHONPATH=src:/workspace/scratch/2d68c25b0133/go-venv/lib/python3.12/site-packages python -m pytest tests/test_v70_round2_c04_rental_receipts.py -q --junitxml=../evidence/v70-round2-20260914/c04/before2.junit.xml > ../evidence/v70-round2-20260914/c04/before2.raw.log 2>&1",
+    "exit_code": 1,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "4",
+      "skipped": "0",
+      "tests": "5",
+      "time": "3.826",
+      "timestamp": "2026-09-14T12:01:46.332788+09:00",
+      "hostname": "localhost"
+    }
+  },
+  {
+    "name": "after",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c04-r2-after-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_round2_c04*.py -p no:cacheprovider -q --junitxml=../evidence/v70-round2-20260914/c04/after.junit.xml > ../evidence/v70-round2-20260914/c04/after.raw.log 2>&1",
+    "exit_code": 0,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "5",
+      "time": "3.532",
+      "timestamp": "2026-09-14T12:04:13.498309+09:00",
+      "hostname": "localhost"
+    }
+  },
+  {
+    "name": "regression",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c04-r2-regression-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_depth06_rental_settlement.py tests/test_c04_refund_terminal_integrity.py tests/test_depth33_mobility_refund_consent.py -p no:cacheprovider -q --junitxml=../evidence/v70-round2-20260914/c04/regression.junit.xml > ../evidence/v70-round2-20260914/c04/regression.raw.log 2>&1",
+    "exit_code": 0,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "27",
+      "time": "8.354",
+      "timestamp": "2026-09-14T12:05:19.866213+09:00",
+      "hostname": "localhost"
+    }
+  }
+]

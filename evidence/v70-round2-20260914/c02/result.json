@@ -1,0 +1,23 @@
+{
+  "cell": "C02",
+  "task": "C02-R2-PARTIAL-PARTY-BOUNDARY",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "task_state": "DONE_SCOPED_AWAITING_C14",
+  "scope": "Three-passenger ROUND_TRIP/MULTI_CITY orders with partial selection at body/leg level reject HTTP422 extra_forbidden without quotes, money or ticket changes.",
+  "test_progress": {
+    "passed": 4,
+    "selected": 4,
+    "percentage": 100
+  },
+  "full_cell_progress": "NOT_MEASURED_NO_FULL_DOMAIN_DENOMINATOR",
+  "C14": "PENDING_INDEPENDENT_REVIEW",
+  "C13": "PENDING_AFTER_C14",
+  "next_task": "Design and implement passenger-coupon selection preserving unselected passengers and legs, exact consent and payment allocation on the current source. Existing all-party plan is not sufficient.",
+  "limitation": "Partial-passenger changes remain unsupported. Four passing rejection cases are boundary evidence, not completion of that feature.",
+  "evidence": [
+    "after.raw.log",
+    "after.junit.xml",
+    "source-identity.json",
+    "runs.json"
+  ]
+}

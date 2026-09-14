@@ -117,16 +117,32 @@ class GOAIService:
             ))
 
     def _complete_request(self, request_id: str, *, provider_id: str | None = None, model: str | None = None, result=None, failure_code: str | None = None) -> None:
-        with SessionLocal.begin() as s:
-            row = s.get(GoAIRequestRow, request_id)
-            if not row:
-                return
-            row.state = "FAILED" if failure_code else "COMPLETED"
-            row.selected_provider = provider_id
-            row.selected_model = model
-            row.response_hash = _hash_json({"text": result.text, "provider": result.provider_id, "model": result.model}) if result else None
-            row.failure_code = failure_code
-            row.updated_at = now_utc()
+        try:
+            with SessionLocal.begin() as s:
+                row = s.get(GoAIRequestRow, request_id)
+                if not row:
+                    return
+                row.state = "FAILED" if failure_code else "COMPLETED"
+                row.selected_provider = provider_id
+                row.selected_model = model
+                row.response_hash = _hash_json({"text": result.text, "provider": result.provider_id, "model": result.model}) if result else None
+                row.failure_code = failure_code
+                row.updated_at = now_utc()
+        except Exception:
+            if not failure_code:
+                # A transient success-audit failure must not leave a request
+                # ROUTING forever. Use one fresh transaction, never re-run
+                # compute, and preserve an already committed terminal record.
+                try:
+                    with SessionLocal.begin() as s:
+                        row = s.get(GoAIRequestRow, request_id)
+                        if row and row.state == "ROUTING":
+                            row.state = "FAILED"
+                            row.failure_code = "GO_AI_AUDIT_FINALIZATION_FAILED"
+                            row.updated_at = now_utc()
+                except Exception:
+                    log.warning("GO_AI_AUDIT_FINALIZATION_FAILED request_id=%s", request_id)
+            raise
 
 
     @staticmethod

@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="12" skipped="0" tests="12" time="1.788" timestamp="2026-09-14T12:02:47.426721+09:00" hostname="localhost"><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[attach-ATTRACTION]" time="0.320"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'ATTRACTION', entrypoint = 'attach'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[attach-FLIGHT]" time="0.013"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'FLIGHT', entrypoint = 'attach'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[attach-HOTEL]" time="0.011"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'HOTEL', entrypoint = 'attach'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[attach-RAIL]" time="0.011"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RAIL', entrypoint = 'attach'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[attach-RENTAL]" time="0.012"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RENTAL', entrypoint = 'attach'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[attach-RIDE]" time="0.011"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RIDE', entrypoint = 'attach'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[create-ATTRACTION]" time="0.010"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'ATTRACTION', entrypoint = 'create'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[create-FLIGHT]" time="0.011"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'FLIGHT', entrypoint = 'create'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[create-HOTEL]" time="0.009"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'HOTEL', entrypoint = 'create'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[create-RAIL]" time="0.010"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RAIL', entrypoint = 'create'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[create-RENTAL]" time="0.010"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RENTAL', entrypoint = 'create'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase><testcase classname="tests.journey.test_c10_attachment_canonical_facts" name="test_attachment_preserves_order_facts_and_allows_custom_notes[create-RIDE]" time="0.012"><failure message="assert 1 == 50000">isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RIDE', entrypoint = 'create'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("entrypoint", ["attach", "create"])
+    def test_attachment_preserves_order_facts_and_allows_custom_notes(isolated_session, vertical, entrypoint):
+        model = _seed(isolated_session, vertical)
+        with isolated_session.begin() as session:
+            session.delete(session.get(GoJourneyItemRow, ITEM_ID))
+            order = session.get(model, ORDER_ID)
+            canonical = journey_module.journey_service._default_snapshot(vertical, order)[3]
+        supplied = {key: "CALLER_OVERRIDE" for key in canonical}
+        supplied.update(amount_minor=1, currency="USD", traveler_note="Meet in lobby")
+        item = {"vertical": vertical, "order_id": ORDER_ID, "facts": supplied, "title": "My custom title"}
+        if entrypoint == "create":
+            result = journey_module.journey_service.create(OWNER, {"title": "New trip", "items": [item]})
+        else:
+            result = journey_module.journey_service.attach(OWNER, JOURNEY_ID, item)
+        observed = result["timeline"][0]
+&gt;       assert observed["facts"]["amount_minor"] == 50000
+E       assert 1 == 50000
+
+tests/journey/test_c10_attachment_canonical_facts.py:26: AssertionError</failure></testcase></testsuite></testsuites>

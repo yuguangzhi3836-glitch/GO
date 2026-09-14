@@ -1,0 +1,198 @@
+--- a/application/src/go_hotel/api/routes/travel_intelligence.py
++++ b/application/src/go_hotel/api/routes/travel_intelligence.py
+@@ -1,9 +1,10 @@
+ from __future__ import annotations
+ import uuid
+ from fastapi import APIRouter, Depends, Header, HTTPException, Query
+-from pydantic import BaseModel, Field
++from pydantic import BaseModel, Field, StrictBool
++from fastapi.responses import JSONResponse
+ from go_hotel.core.config import settings
+-from go_hotel.security.deps import admin_principal
++from go_hotel.security.deps import admin_principal, consumer_principal
+ from go_hotel.security.service import Principal
+ from go_hotel.travel_intelligence.service import travel_intelligence_service as svc
+ from go_hotel.repositories.sql import repo
+@@ -93,7 +94,30 @@
+ 
+ @router.get("/internal/v1/travelers/{traveler_id}/preferences")
+ def preferences(traveler_id:str,purpose:str=Query(min_length=1),p:Principal=Depends(admin_principal)):
+-    _enabled(); return {"data":{"traveler_id":traveler_id,"purpose":purpose,"preferences":[],"projection":"P0_EMPTY_PURPOSE_BOUND"}}
++    _enabled(); return _private(_call(svc.preferences,traveler_id,purpose=purpose,actor_id=p.user_id,actor_type=p.actor_type))
++
++def _private(data):
++    return JSONResponse({"data":data},headers={"Cache-Control":"no-store, private","Pragma":"no-cache"})
++
++class PreferenceSaveRequest(BaseModel):
++    model_config={"extra":"forbid"}
++    value:dict|list|str|int|float|bool
++    purpose:str=Field(min_length=1,max_length=128)
++    consent_id:str=Field(min_length=1,max_length=64)
++    confirmed:StrictBool
++    expected_preference_id:str|None=Field(default=None,max_length=64)
++
++@router.put("/v1/consumer/travelers/{traveler_id}/preferences/{preference_key}")
++def save_preference(traveler_id:str,preference_key:str,body:PreferenceSaveRequest,p:Principal=Depends(consumer_principal)):
++    _enabled(); return _private(_call(svc.save_preference,p.user_id,traveler_id,preference_key=preference_key,**body.model_dump()))
++
++@router.get("/v1/consumer/travelers/{traveler_id}/preferences")
++def consumer_preferences(traveler_id:str,purpose:str=Query(min_length=1,max_length=128),p:Principal=Depends(consumer_principal)):
++    _enabled(); return _private(_call(svc.preferences,traveler_id,purpose=purpose,user_id=p.user_id,actor_id=p.user_id,actor_type=p.actor_type))
++
++@router.delete("/v1/consumer/travelers/{traveler_id}/preferences/{preference_id}")
++def revoke_preference(traveler_id:str,preference_id:str,p:Principal=Depends(consumer_principal)):
++    _enabled(); return _private(_call(svc.revoke_preference,p.user_id,traveler_id,preference_id))
+ 
+ @router.get("/internal/v1/intelligence/entities/{entity_id}/evidence")
+ def entity_evidence(entity_id:str,limit:int=Query(50,ge=1,le=100),p:Principal=Depends(admin_principal)):
+@@ -121,7 +145,7 @@
+ 
+ @router.get('/internal/v1/travelers/{traveler_id}/graph')
+ def traveler_graph(traveler_id:str,purpose:str=Query(min_length=1),p:Principal=Depends(admin_principal)):
+-    _enabled(); return {'data':_call(svc.traveler_graph,traveler_id,purpose=purpose)}
++    _enabled(); return _private(_call(svc.traveler_graph,traveler_id,purpose=purpose,actor_id=p.user_id,actor_type=p.actor_type))
+ 
+ @router.post('/internal/v1/judgment/evaluate-independent')
+ def evaluate_independent(body:JudgmentRequest,x_correlation_id:str|None=Header(default=None,alias='X-Correlation-ID'),idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(admin_principal)):
+--- a/application/src/go_hotel/go_ai/service.py
++++ b/application/src/go_hotel/go_ai/service.py
+@@ -117,16 +117,32 @@
+             ))
+ 
+     def _complete_request(self, request_id: str, *, provider_id: str | None = None, model: str | None = None, result=None, failure_code: str | None = None) -> None:
+-        with SessionLocal.begin() as s:
+-            row = s.get(GoAIRequestRow, request_id)
+-            if not row:
+-                return
+-            row.state = "FAILED" if failure_code else "COMPLETED"
+-            row.selected_provider = provider_id
+-            row.selected_model = model
+-            row.response_hash = _hash_json({"text": result.text, "provider": result.provider_id, "model": result.model}) if result else None
+-            row.failure_code = failure_code
+-            row.updated_at = now_utc()
++        try:
++            with SessionLocal.begin() as s:
++                row = s.get(GoAIRequestRow, request_id)
++                if not row:
++                    return
++                row.state = "FAILED" if failure_code else "COMPLETED"
++                row.selected_provider = provider_id
++                row.selected_model = model
++                row.response_hash = _hash_json({"text": result.text, "provider": result.provider_id, "model": result.model}) if result else None
++                row.failure_code = failure_code
++                row.updated_at = now_utc()
++        except Exception:
++            if not failure_code:
++                # A transient success-audit failure must not leave a request
++                # ROUTING forever. Use one fresh transaction, never re-run
++                # compute, and preserve an already committed terminal record.
++                try:
++                    with SessionLocal.begin() as s:
++                        row = s.get(GoAIRequestRow, request_id)
++                        if row and row.state == "ROUTING":
++                            row.state = "FAILED"
++                            row.failure_code = "GO_AI_AUDIT_FINALIZATION_FAILED"
++                            row.updated_at = now_utc()
++                except Exception:
++                    log.warning("GO_AI_AUDIT_FINALIZATION_FAILED request_id=%s", request_id)
++            raise
+ 
+ 
+     @staticmethod
+--- a/application/src/go_hotel/journey/service.py
++++ b/application/src/go_hotel/journey/service.py
+@@ -48,7 +48,8 @@
+   exists=s.execute(select(GoJourneyItemRow).where(GoJourneyItemRow.account_id==j.account_id,GoJourneyItemRow.vertical==v,GoJourneyItemRow.order_id==x["order_id"])).scalar_one_or_none()
+   if exists: raise ValueError("ORDER_ALREADY_IN_JOURNEY")
+   title,sub,loc,facts=self._default_snapshot(v,row);starts=x.get("starts_at") or getattr(row,"pickup_at",None) or getattr(row,"visit_date",None);ends=x.get("ends_at") or getattr(row,"return_at",None)
+-  item=GoJourneyItemRow(item_id=f"jit_{uuid4().hex[:18]}",journey_id=j.journey_id,account_id=j.account_id,vertical=v,order_id=row.order_id,title=x.get("title") or title,subtitle=x.get("subtitle") or sub,location=x.get("location") or loc,starts_at=starts,ends_at=ends,status_snapshot=row.status,facts_json={**facts,**(x.get("facts") or {})},detail_route=VERTICALS[v][1],sort_key=x.get("sort_key") or starts or row.created_at.isoformat(),created_at=now());s.add(item);return item
++  # Caller notes may extend the snapshot; canonical order facts retain priority.
++  item=GoJourneyItemRow(item_id=f"jit_{uuid4().hex[:18]}",journey_id=j.journey_id,account_id=j.account_id,vertical=v,order_id=row.order_id,title=x.get("title") or title,subtitle=x.get("subtitle") or sub,location=x.get("location") or loc,starts_at=starts,ends_at=ends,status_snapshot=row.status,facts_json={**(x.get("facts") or {}),**facts},detail_route=VERTICALS[v][1],sort_key=x.get("sort_key") or starts or row.created_at.isoformat(),created_at=now());s.add(item);return item
+  def attach(self,account_id,journey_id,x):
+   with SessionLocal() as s:
+    j=s.get(GoJourneyRow,journey_id)
+--- a/application/src/go_hotel/judgment/service.py
++++ b/application/src/go_hotel/judgment/service.py
+@@ -130,8 +130,13 @@
+     def reevaluate(self,hotel_id:str,extra_features:dict|None=None)->dict:
+         if extra_features:
+             self._assert_no_forbidden_features(extra_features)
+-        now=now_utc(); standard=good_hotel_standard_service.active();ev=self._evidence(hotel_id); feature=dict(ev["feature_snapshot"])
+-        if extra_features: feature.update(extra_features)
++        now=now_utc();ev=self._evidence(hotel_id); feature=dict(ev["feature_snapshot"])
++        if extra_features:
++            protected=set(feature).intersection(extra_features)
++            if protected:
++                unprocessable("JUDGMENT_EVIDENCE_FIELD_FORBIDDEN",f"Persisted evidence fields cannot be overridden: {', '.join(sorted(protected))}")
++            feature.update(extra_features)
++        standard=good_hotel_standard_service.active()
+         raw=json.dumps({"hotel_id":hotel_id,"source_refs":ev["source_refs"],"feature_snapshot":feature},sort_keys=True,separators=(",",":"),default=str).encode()
+         digest=sha256(raw).hexdigest(); package_id=new_id("evpkg"); judgment_id=new_id("jud"); decision_id=new_id("rec")
+         score,dims,explanation,confidence=self._score(feature)
+--- a/application/src/go_hotel/mobility/rental/service.py
++++ b/application/src/go_hotel/mobility/rental/service.py
+@@ -156,9 +156,26 @@
+                 if o.status!='REFUNDED':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
+                 return result(r)
+             if o.status!='REFUND_PENDING':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
++            # A provider/executor status alone cannot complete a refund. Verify
++            # durable receipts against this owner's original and change roots.
++            from types import SimpleNamespace
++            from go_hotel.services.vertical_refund_recovery import _confirmed_money_in
++            confirmed_ids=_confirmed_money_in(s,SimpleNamespace(vertical='RENTAL',order_id=order_id,
++                account_id=account,adjustment_ids_json=adjustment_ids(s,order_id),
++                quote_json={'currency':r.currency,'refund_amount_minor':r.refund_amount_minor}),movement)
++            # Earlier refunds on the same order may have the same amount.
++            # Each receipt must belong to this frozen cancellation allocation.
++            from collections import Counter
++            from go_hotel.db.models import OmnichannelMoneyMovementRow as Movement
++            expected=Counter((item['payment_intent_id'],item['capture_id'],item['amount_minor'],item['key'])
++                for item in r.settlement_plan_json)
++            receipts=[s.get(Movement,mid) for mid in confirmed_ids]
++            observed=Counter((item.root_payment_intent_id,item.parent_movement_id,
++                item.amount_minor,item.idempotency_key) for item in receipts)
++            if observed!=expected:raise ValueError('REFUND_RECEIPT_PLAN_MISMATCH')
+             r.status='REFUND_COMPLETED';o.status='REFUNDED';o.updated_at=now()
+             facts={'refund_id':refund_id,'refund_amount_minor':r.refund_amount_minor,
+-                   'money_movement_ids':movement['money_movement_ids']}
++                   'money_movement_ids':confirmed_ids}
+             append_vertical_evidence(s,'RENTAL',order_id,'REFUND_COMPLETED',o.status,facts)
+             project_vertical_lifecycle(s,'RENTAL',o,'rental-refund://'+refund_id,facts=facts)
+             return result(r)
+--- a/application/src/go_hotel/travel_intelligence/service.py
++++ b/application/src/go_hotel/travel_intelligence/service.py
+@@ -11,6 +11,7 @@
+ )
+ from .contracts import EVENT_TYPES, ACTOR_TYPES, SOURCES, PRIVACY_CLASSES, RETENTION_CLASSES, ENTITY_TYPES, TRANSACTION_TRUTH_DOMAINS
+ from .cost_governor import model_cost_governor
++from .preferences import TravelPreferenceMixin
+ 
+ UTC=timezone.utc
+ def now(): return datetime.now(UTC)
+@@ -31,7 +32,7 @@
+     if m: out["nights"]=int(m.group(1))
+     return out
+ 
+-class TravelIntelligenceService:
++class TravelIntelligenceService(TravelPreferenceMixin):
+     def create_decision(self, *, input_snapshot:dict, evidence_snapshot:dict, output_snapshot:dict, correlation_id:str, rule_version:str="TI_P0_RULES_1.0", prompt_version:str="NONE", model_version:str="DETERMINISTIC") -> AIDecisionRow:
+         with SessionLocal.begin() as s:
+             prev=s.scalar(select(AIDecisionRow).order_by(AIDecisionRow.created_at.desc()).limit(1))
+@@ -178,15 +179,8 @@
+             rid=uuid.uuid4(); s.add(TravelEntityRelationRow(relation_id=rid,from_entity_id=a,relation_type=relation_type.upper(),to_entity_id=b,valid_from=now(),valid_to=None,created_at=now()))
+         return {"relation_id":str(rid),"idempotent":False}
+ 
+-    def traveler_graph(self, traveler_id:str, *, purpose:str)->dict:
+-        if not purpose.strip(): raise ValueError("TRAVELER_GRAPH_PURPOSE_REQUIRED")
+-        with SessionLocal() as s:
+-            traveler=s.get(TravelerProfileRow,traveler_id)
+-            if not traveler or traveler.status!="ACTIVE": raise ValueError("TRAVELER_NOT_FOUND")
+-            intents=s.scalars(select(TravelIntentRow).where(TravelIntentRow.traveler_id==traveler_id).order_by(TravelIntentRow.updated_at.desc()).limit(20)).all()
+-            events=s.scalars(select(TravelBehaviorEventRow).where(TravelBehaviorEventRow.traveler_id==traveler_id).order_by(TravelBehaviorEventRow.occurred_at.desc()).limit(100)).all()
+-        # Session behavior is evidence, not permanent preference. No implicit durable preference mutation.
+-        return {"traveler_id":traveler_id,"purpose":purpose,"identity":{"relationship_type":traveler.relationship_type,"nationality":traveler.nationality},"recent_intents":[x.normalized_intent for x in intents],"behavior_evidence_count":len(events),"durable_preferences":[],"policy":"SESSION_SIGNAL_NEVER_AUTO_PROMOTES_TO_PERMANENT_PREFERENCE"}
++    def traveler_graph(self, traveler_id:str, *, purpose:str, actor_id:str="C07", actor_type:str="GO_SYSTEM")->dict:
++        return self.preference_graph(traveler_id, purpose=purpose, actor_id=actor_id, actor_type=actor_type)
+ 
+     def independent_judgment(self, *, intent_id:str, candidate_entity_ids:list[str], context:dict, correlation_id:str)->dict:
+         raise ValueError("C07_JUDGMENT_AUTHORITY_FORBIDDEN")

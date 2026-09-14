@@ -1,0 +1,863 @@
+{
+  "task_id": "V70-R2-C11-02",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "source_basis": "Frozen round-two local candidate derived from anchor; actual reviewed bytes bound by manifest. Not a claim of pristine main bytes.",
+  "mode": "STATIC_REVIEW_ONLY",
+  "callsite_count": 37,
+  "distinct_operations": 34,
+  "route_file_count": 9,
+  "rows": [
+    {
+      "id": "C11-CALL-01",
+      "operation": "ATTRACTION_PREBOOK",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/attractions.py",
+      "function": "prebook",
+      "call_line": 34,
+      "route": [
+        "/v1/attractions/prebook"
+      ],
+      "callback": "lambda:w(a.prebook,b.offer_id,b.visit_date,b.quantity,b.currency,b.session_time,p.user_id if p else None)",
+      "classification": "LOCAL_PREBOOK_GENERATION",
+      "precommit_failure_boundary": "Party/catalog/date/session/currency and capacity validation before issue_in transaction commit.",
+      "postcommit_or_uncertain_boundary": "Prebook contract commit acknowledgement loss may issue a second contract when outer claim is released; no inventory reservation at this stage.",
+      "available_durable_keys": "Generated VerticalPrebookContractRow.prebook_id and terms hash; no reviewed outer claim->prebook mapping.",
+      "minimal_recovery_hook": "Persist resource binding and recover the existing exact contract rather than issue another. Do not treat availability observation as reserved inventory.",
+      "review_sources": [
+        "attractions/service.py",
+        "services/vertical_prebook_contract.py",
+        "services/vertical_capacity.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-02",
+      "operation": "ATTRACTION_CREATE_ORDER",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/attractions.py",
+      "function": "book",
+      "call_line": 44,
+      "route": [
+        "/v1/attractions/orders"
+      ],
+      "callback": "execute",
+      "classification": "CONSUMED_PREBOOK_PLUS_SOURCE_AND_VAULT",
+      "precommit_failure_boundary": "Prebook/owner/request/party/product/stock validations inside order transaction; earlier vault releases are separate.",
+      "postcommit_or_uncertain_boundary": "Order+capacity+consumed contract commit before source-runtime decision and route vault-evidence write.",
+      "available_durable_keys": "Consumed prebook_id -> order_id with request hash/owner; source decision for order; vault release_ids.",
+      "minimal_recovery_hook": "Recover via exact consumed contract; fill missing source/evidence without creating order or reserving stock again.",
+      "review_sources": [
+        "attractions/service.py",
+        "services/vertical_prebook_contract.py",
+        "services/vertical_capacity.py",
+        "services/booking_data_release.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-03",
+      "operation": "ATTRACTION_EXECUTE_CHANGE",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/attractions.py",
+      "function": "ec",
+      "call_line": 53,
+      "route": [
+        "/v1/attractions/orders/{order_id}/execute-change/{quote_id}"
+      ],
+      "callback": "lambda:w(a.execute_change,p.user_id,order_id,quote_id)",
+      "classification": "LOCAL_CAPACITY_STATE_TRANSITION",
+      "precommit_failure_boundary": "Owned confirmed order, QUOTED+unexpired quote and target capacity checks before atomic commit.",
+      "postcommit_or_uncertain_boundary": "Prepared capacity+quote PENDING_SUPPLIER+order UNKNOWN commit may survive acknowledgement loss; direct retry currently expects QUOTED and can conflict.",
+      "available_durable_keys": "order_id+quote_id and prepared capacity claim; pending quote; outer HTTP key.",
+      "minimal_recovery_hook": "Recover same pending quote and capacity reservation; await supplier fact. Do not create new quote or claim; complete/release capacity only on definitive supplier decision.",
+      "review_sources": [
+        "attractions/service.py",
+        "services/vertical_capacity.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-04",
+      "operation": "ATTRACTION_REFUND",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/attractions.py",
+      "function": "refund",
+      "call_line": 58,
+      "route": [
+        "/v1/attractions/orders/{order_id}/refund"
+      ],
+      "callback": "lambda:w(a.refund,p.user_id,order_id)",
+      "classification": "LEASED_FROZEN_REFUND",
+      "precommit_failure_boundary": "Owned order, consumed terms, accepted quote and positive refund validations before frozen operation/lease commit.",
+      "postcommit_or_uncertain_boundary": "REFUND_PENDING operation/lease commit before refund; lost receipt/lease/finalize error can be post-money.",
+      "available_durable_keys": "VerticalRefundOperation(ATTRACTION,order_id), request hash/lease; attraction-refund:{order_id}.",
+      "minimal_recovery_hook": "Use same operation/lease and fixed money key, verify durable receipts, finalize order/capacity and replay HTTP outcome.",
+      "review_sources": [
+        "services/vertical_refund_recovery.py",
+        "attractions/service.py",
+        "services/vertical_money_bridge.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-05",
+      "operation": "ATTRACTION_REDEEM",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/attractions.py",
+      "function": "redeem",
+      "call_line": 61,
+      "route": [
+        "/v1/attractions/orders/{order_id}/redeem"
+      ],
+      "callback": "lambda:w(a.redeem,p.user_id,order_id,b.evidence_reference)",
+      "classification": "LOCAL_VOUCHER_STATE_TRANSITION",
+      "precommit_failure_boundary": "Evidence, ownership and CONFIRMED source state validated before transaction commit.",
+      "postcommit_or_uncertain_boundary": "FULFILLED+VOUCHER_REDEEMED event/lifecycle commit may survive ack loss; retry no longer sees CONFIRMED.",
+      "available_durable_keys": "order_id+evidence_reference and stored voucher/supplier reference in event; outer HTTP key.",
+      "minimal_recovery_hook": "Replay only if exact redemption evidence matches committed transition; do not re-redeem or infer voucher success from order status alone.",
+      "review_sources": [
+        "attractions/service.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-06",
+      "operation": "ATTRACTION_ADMIN_EXTERNAL_STATE",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/attractions.py",
+      "function": "external_state",
+      "call_line": 64,
+      "route": [
+        "/internal/v1/admin/attractions/orders/{order_id}/external-state"
+      ],
+      "callback": "lambda:w(a.admin_external_state,order_id,b.state,b.evidence_reference,p.user_id,b.supplier_reference,b.voucher_code)",
+      "classification": "LOCAL_SUPPLIER_CAPACITY_RESOLUTION",
+      "precommit_failure_boundary": "Actor/evidence/state and pending supplier/voucher reference checks before local commit.",
+      "postcommit_or_uncertain_boundary": "Capacity complete/release and pending quote/order transition are committed atomically; ack loss can leave definitive state before route error.",
+      "available_durable_keys": "order_id+pending quote_id (not explicit API argument)+evidence_reference; capacity claim. A newer pending quote can make historical response ambiguous.",
+      "minimal_recovery_hook": "Bind explicit resolution identity to quote/evidence before replay; inspect persisted decision and voucher. Never apply an old response to a newer pending quote.",
+      "review_sources": [
+        "attractions/service.py",
+        "services/vertical_capacity.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-07",
+      "operation": "ATTRACTION_REFUND_CONFIRMED",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/attractions.py",
+      "function": "refund_confirmed",
+      "call_line": 73,
+      "route": [
+        "/v1/attractions/orders/{order_id}/refund-confirmed"
+      ],
+      "callback": "lambda:w(a.refund,p.user_id,order_id,b.quote_hash)",
+      "classification": "LEASED_FROZEN_REFUND",
+      "precommit_failure_boundary": "Owned order, consumed terms, accepted quote and positive refund validations before frozen operation/lease commit.",
+      "postcommit_or_uncertain_boundary": "REFUND_PENDING operation/lease commit before refund; lost receipt/lease/finalize error can be post-money.",
+      "available_durable_keys": "VerticalRefundOperation(ATTRACTION,order_id), request hash/lease; attraction-refund:{order_id}.",
+      "minimal_recovery_hook": "Use same operation/lease and fixed money key, verify durable receipts, finalize order/capacity and replay HTTP outcome.",
+      "review_sources": [
+        "services/vertical_refund_recovery.py",
+        "attractions/service.py",
+        "services/vertical_money_bridge.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-08",
+      "operation": "supplier_unable_to_fulfill",
+      "mode": "ASYNC",
+      "route_file": "application/src/go_hotel/api/routes/compensation.py",
+      "function": "unable_to_fulfill",
+      "call_line": 48,
+      "route": [
+        "/v1/supplier/orders/{order_id}/unable-to-fulfill"
+      ],
+      "callback": "execute",
+      "classification": "DURABLE_CASE_PLUS_LATE_AUDIT",
+      "precommit_failure_boundary": "Supplier ownership before wrapper; reason/evidence validation and exact request checks before case/plan commit.",
+      "postcommit_or_uncertain_boundary": "Case/plan/event commit before route audit_service.append. Audit failure can follow a successfully registered cancellation request; no money is executed by this request function.",
+      "available_durable_keys": "SupplierFaultCase.order_id -> case_id; CatalogSupplierRemedy request_hash binds supplier/cause/evidence/requester.",
+      "minimal_recovery_hook": "Recover same case by exact request hash, append missing request audit idempotently; do not call remedy.execute or refund merely to repair an HTTP response.",
+      "review_sources": [
+        "api/routes/compensation.py",
+        "compensation/service.py",
+        "services/catalog_supplier_remedy.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-09",
+      "operation": "CONSUMER_EXPLICIT_CHECKOUT",
+      "mode": "ASYNC",
+      "route_file": "application/src/go_hotel/api/routes/consumer_checkout.py",
+      "function": "checkout",
+      "call_line": 111,
+      "route": [
+        "/v1/consumer/checkout/{vertical}/{order_id}"
+      ],
+      "callback": "execute",
+      "classification": "SIX_VERTICAL_MULTI_STAGE_PAYMENT",
+      "precommit_failure_boundary": "Environment/vertical/owner/expected amount/currency/payable status checked before outer claim. In callback, existing fulfillment unknown-state checks may refer to prior side effects.",
+      "postcommit_or_uncertain_boundary": "Hotel authorization/book/capture or vertical root/movements/supplier fulfillment each have durable steps. Late fulfillment/projection or HTTPException may follow capture.",
+      "available_durable_keys": "order_id; hotel ExternalOperation operation_id fences; other vertical fixed checkout/auth/cap keys, payment root and supplier_fulfillment_id.",
+      "minimal_recovery_hook": "Resolve per-vertical canonical payment+supplier outcome via existing recovery hooks; replay verified final response or pending state without new payment, source choice or booking.",
+      "review_sources": [
+        "api/routes/consumer_checkout.py",
+        "services/booking.py",
+        "services/vertical_transaction_bridge.py",
+        "services/order_supplier_fulfillment.py"
+      ],
+      "priority": "P0"
+    },
+    {
+      "id": "C11-CALL-10",
+      "operation": "CONSUMER_HOTEL_CREATE",
+      "mode": "ASYNC",
+      "route_file": "application/src/go_hotel/api/routes/consumer_identity.py",
+      "function": "create_consumer_order",
+      "call_line": 115,
+      "route": [
+        "/v1/consumer/orders"
+      ],
+      "callback": "execute",
+      "classification": "CREATE_UNBOUND_PLUS_VAULT",
+      "precommit_failure_boundary": "Fare consent preflight before vault release; booking consistency/fare snapshot validated in order transaction, but disclosure may already be durable.",
+      "postcommit_or_uncertain_boundary": "Order/event/fare-snapshot commit before separate vault-evidence and response; random order_id not atomically bound to HTTP claim in reviewed path.",
+      "available_durable_keys": "HTTP operation/key/hash; generated order_id, prebook_id and immutable fare snapshot. Reviewed create_order_with_event has no claim binding.",
+      "minimal_recovery_hook": "Reserve exact creation resource identity and atomically bind to claim/order event; recover same order/snapshot, append missing evidence once. Do not match by price/name.",
+      "review_sources": [
+        "api/routes/consumer_identity.py",
+        "services/booking.py",
+        "repositories/sql.py",
+        "services/booking_data_release.py"
+      ],
+      "priority": "P0"
+    },
+    {
+      "id": "C11-CALL-11",
+      "operation": "cancel",
+      "mode": "ASYNC",
+      "route_file": "application/src/go_hotel/api/routes/fare.py",
+      "function": "cancel",
+      "call_line": 43,
+      "route": [
+        "/v1/orders/{order_id}/cancel"
+      ],
+      "callback": "lambda: _fare_cancel(order_id,body,actor)",
+      "classification": "HOTEL_CASH_FARE_OPERATION",
+      "precommit_failure_boundary": "Isolation, ownership, quote hash/consent/expiry/current facts and change-window checks before operation commit; existing operation returns persisted public state.",
+      "postcommit_or_uncertain_boundary": "Operation+order claim and pending order commit before advance; supplier or authorization may succeed before local finalization. HTTP/domain validation error may follow those commits.",
+      "available_durable_keys": "CatalogCashFareOperation.quote_id -> operation_id; CatalogCashFareClaim.order_id; frozen plan hash; downstream operation-prefixed money keys.",
+      "minimal_recovery_hook": "Lookup operation by exact quote/actor/payload; use existing catalog_cash_fare_execution.reconcile/retry_payment APIs as appropriate. Never start a new cancellation/change quote for transport retry.",
+      "review_sources": [
+        "fare/service.py",
+        "services/catalog_cash_fare_execution.py",
+        "services/catalog_cash_fare.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-12",
+      "operation": "change",
+      "mode": "ASYNC",
+      "route_file": "application/src/go_hotel/api/routes/fare.py",
+      "function": "change",
+      "call_line": 52,
+      "route": [
+        "/v1/orders/{order_id}/change"
+      ],
+      "callback": "lambda: _fare_change(order_id,body,actor)",
+      "classification": "HOTEL_CASH_FARE_OPERATION",
+      "precommit_failure_boundary": "Isolation, ownership, quote hash/consent/expiry/current facts and change-window checks before operation commit; existing operation returns persisted public state.",
+      "postcommit_or_uncertain_boundary": "Operation+order claim and pending order commit before advance; supplier or authorization may succeed before local finalization. HTTP/domain validation error may follow those commits.",
+      "available_durable_keys": "CatalogCashFareOperation.quote_id -> operation_id; CatalogCashFareClaim.order_id; frozen plan hash; downstream operation-prefixed money keys.",
+      "minimal_recovery_hook": "Lookup operation by exact quote/actor/payload; use existing catalog_cash_fare_execution.reconcile/retry_payment APIs as appropriate. Never start a new cancellation/change quote for transport retry.",
+      "review_sources": [
+        "fare/service.py",
+        "services/catalog_cash_fare_execution.py",
+        "services/catalog_cash_fare.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-13",
+      "operation": "stay_credit_convert",
+      "mode": "ASYNC",
+      "route_file": "application/src/go_hotel/api/routes/fare.py",
+      "function": "convert_to_stay_credit",
+      "call_line": 75,
+      "route": [
+        "/v1/orders/{order_id}/convert-to-stay-credit"
+      ],
+      "callback": "lambda: _fare_convert(order_id,body,credit_actor(p))",
+      "classification": "CREDIT_CONVERSION_AND_SUPPLIER_CANCEL",
+      "precommit_failure_boundary": "Quote/consent/order/current value/window checks before Credit/Contract/source reservation commit.",
+      "postcommit_or_uncertain_boundary": "Credit CANCEL_PENDING/source funds reserved before supplier cancel. Cancellation can succeed before activate reports changed source order; pending/UNKNOWN_CANCEL remains durable.",
+      "available_durable_keys": "StayCredit.original_order_id -> stay_credit_id; credit contract quote_id+accepted_by+contract_hash.",
+      "minimal_recovery_hook": "Read existing credit and reconcile_conversion using supplier status; activate exact reserved source only with proof. Never issue a second credit or cancel again due solely to HTTP failure.",
+      "review_sources": [
+        "services/catalog_stay_credit.py",
+        "fare/service.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-14",
+      "operation": "stay_credit_redeem",
+      "mode": "ASYNC",
+      "route_file": "application/src/go_hotel/api/routes/fare.py",
+      "function": "redeem",
+      "call_line": 86,
+      "route": [
+        "/v1/stay-credits/{credit_id}/redeem"
+      ],
+      "callback": "lambda: _fare_redeem(credit_id,body,credit_actor(p),p)",
+      "classification": "CREDIT_ALLOCATION_PLUS_VAULT",
+      "precommit_failure_boundary": "Traveler consent check may precede release, but release_traveler commits disclosure before later quote/value validation. Do not certify callback-wide no effects merely from stale quote.",
+      "postcommit_or_uncertain_boundary": "Allocation+credit value reservation commit before supplier prebook and booking; later funding/book/finalization may fail independently.",
+      "available_durable_keys": "Allocation.quote_id -> order_id; request_hash; credit-prebook:{order_id}, credit-book:{order_id}; profile release_id.",
+      "minimal_recovery_hook": "Recover same allocation and use reconcile_redemption/resume_redemption; verify existing prebook/book outcome and journal. Restore value only via existing definitive-failure path, never on timeout alone.",
+      "review_sources": [
+        "services/catalog_stay_credit.py",
+        "services/catalog_credit_value.py",
+        "api/routes/fare.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-15",
+      "operation": "FLIGHT_CREATE_ORDER",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/flight.py",
+      "function": "create_order",
+      "call_line": 70,
+      "route": [
+        "/v1/flights/orders"
+      ],
+      "callback": "execute",
+      "classification": "CREATE_UNBOUND_PLUS_VAULT",
+      "precommit_failure_boundary": "Duplicate traveler/raw reference and prebook/passenger validations can precede order commit, but earlier travelers may already have durable vault releases. HTTP/ValueError alone proves no rollback.",
+      "postcommit_or_uncertain_boundary": "Vault release(s), order commit and route vault-evidence commit are separate. New random order_id is not bound atomically to HTTP claim; post-commit response/audit failure can re-enter creation.",
+      "available_durable_keys": "HTTP operation/key+payload hash exists; generated order_id and prebook_id are searchable evidence, but no atomic HTTP-claim-to-order mapping was found in reviewed creation path.",
+      "minimal_recovery_hook": "Introduce a durable creation-operation/resource binding before or atomically with creation; recover order by that exact binding. Deduplicate subsequent vault-evidence write. Do not infer a unique prior order from similar payload.",
+      "review_sources": [
+        "flight/service.py",
+        "services/booking_data_release.py",
+        "api/routes/flight.py"
+      ],
+      "priority": "P0"
+    },
+    {
+      "id": "C11-CALL-16",
+      "operation": "FLIGHT_CHECKOUT",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/flight.py",
+      "function": "checkout",
+      "call_line": 74,
+      "route": [
+        "/v1/flights/orders/{order_id}/checkout"
+      ],
+      "callback": "lambda:wrap(flight_service.checkout,p.user_id,order_id,body.payment_method_id)",
+      "classification": "MULTI_TRANSACTION_PAYMENT",
+      "precommit_failure_boundary": "production_truth_required and owned order lookup precede first mutation; safe retry only if validation failed before mutation/bridge and rollback is positively known.",
+      "postcommit_or_uncertain_boundary": "checkout commits PAYMENT_AUTHORIZED/payment_method before bridge. Source decision, intent, authorization and capture have their own commits. Later projection or bridge errors may follow money effects.",
+      "available_durable_keys": "Known order_id; payment business root FLIGHT_ORDER/order_id; flight-checkout:{order_id}, flight-auth:{order_id}, flight-cap:{order_id}.",
+      "minimal_recovery_hook": "Read payment root and confirmed money receipts; resume the same checkout_contract only for known states. UNKNOWN_EXTERNAL_STATE stays fenced. Project existing capture into order and complete HTTP claim after verified outcome.",
+      "review_sources": [
+        "flight/service.py",
+        "services/vertical_transaction_bridge.py",
+        "services/omnichannel_payment.py",
+        "services/unified_money_movement.py"
+      ],
+      "priority": "P0"
+    },
+    {
+      "id": "C11-CALL-17",
+      "operation": "FLIGHT_EXECUTE_CHANGE",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/flight.py",
+      "function": "execute_change",
+      "call_line": 85,
+      "route": [
+        "/v1/flights/orders/{order_id}/execute-change/{quote_id}"
+      ],
+      "callback": "lambda:wrap(flight_service.execute_change,p.user_id,order_id,quote_id,confirmation)",
+      "classification": "MULTI_TRANSACTION_ADJUSTMENT",
+      "precommit_failure_boundary": "Owned order/quote, checked plan, explicit consent, status and expiry validations before first authorization-requested commit. Existing resumed state is not evidence of a fresh no-effect invocation.",
+      "postcommit_or_uncertain_boundary": "First commit freezes AUTHORIZATION_PENDING/UNKNOWN_EXTERNAL_STATE and supersedes other quotes. prepare_adjustment can commit intent/auth; subsequent released/conflict ValueError occurs after this boundary. Second commit sets PENDING_SUPPLIER.",
+      "available_durable_keys": "order_id+quote_id and frozen change plan; FLIGHT_CHANGE/quote_id; flight-change-intent:{quote_id}, flight-change-auth:{quote_id}, flight-change-cap:{quote_id}, flight-change-release:{quote_id}; resolution row keyed quote_id.",
+      "minimal_recovery_hook": "Use quote and payment root to resume authorization preparation; never create new quote/root for retry. Keep pending supplier state. Capture/release only via reviewed flight_change_resolution.reconcile with supplier evidence, not as generic exception compensation.",
+      "review_sources": [
+        "flight/service.py",
+        "flight/changes.py",
+        "services/vertical_money_bridge.py",
+        "services/flight_change_resolution.py"
+      ],
+      "priority": "P0"
+    },
+    {
+      "id": "C11-CALL-18",
+      "operation": "FLIGHT_REFUND",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/flight.py",
+      "function": "refund",
+      "call_line": 91,
+      "route": [
+        "/v1/flights/orders/{order_id}/refund"
+      ],
+      "callback": "lambda:wrap(flight_service.refund,p.user_id,order_id)",
+      "classification": "FROZEN_REFUND_MULTI_STAGE",
+      "precommit_failure_boundary": "Order ownership/status, fare policy and frozen consent checks before initial refund commit. Existing pending refund must be resumed, not classified safe by exception.",
+      "postcommit_or_uncertain_boundary": "REFUND_PENDING+consent+refund row commit before money. Money can confirm before later consent/state/projection error; a ValueError is potentially post-effect.",
+      "available_durable_keys": "Order/refund row and frozen consent; flight-refund:{order_id} plus deterministic component keys across original/change captures.",
+      "minimal_recovery_hook": "Resume the same pending refund and existing money roots; verify confirmed amount/currency/root receipts, then finalize row/projection and HTTP replay. Never create a new refund key.",
+      "review_sources": [
+        "flight/service.py",
+        "services/flight_refund_consent.py",
+        "services/vertical_money_bridge.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-19",
+      "operation": "FLIGHT_ADMIN_EXTERNAL_STATE",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/flight.py",
+      "function": "admin_external_state",
+      "call_line": 96,
+      "route": [
+        "/internal/v1/admin/flights/orders/{order_id}/external-state"
+      ],
+      "callback": "lambda:wrap(flight_service.admin_external_state,order_id,body.state,body.evidence_reference,p.user_id,body.supplier_reference,body.ticket_numbers,body.quote_id)",
+      "classification": "SUPPLIER_RESOLUTION_WITH_MONEY",
+      "precommit_failure_boundary": "Actor/evidence, owned order/quote, tickets and decision checks; only pre-effect validated rejection can release.",
+      "postcommit_or_uncertain_boundary": "Managed resolution persists decision/lease before capture or release, then state commit. Legacy branch may call capture/release before final transaction validations.",
+      "available_durable_keys": "Managed FlightChangeResolutionRow/quote_id+request hash; FLIGHT_CHANGE root; fixed change-cap/change-release keys. Legacy order_id/evidence has weaker resolution identity.",
+      "minimal_recovery_hook": "Prefer explicit quote_id managed reconcile; recover same frozen decision and receipts. Conflicting decisions reject; never reverse a confirmed capture merely because HTTP response failed.",
+      "review_sources": [
+        "flight/service.py",
+        "services/flight_change_resolution.py",
+        "services/vertical_money_bridge.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-20",
+      "operation": "FLIGHT_REFUND_CONFIRMED",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/flight.py",
+      "function": "refund_confirmed",
+      "call_line": 101,
+      "route": [
+        "/v1/flights/orders/{order_id}/refund-confirmed"
+      ],
+      "callback": "lambda:wrap(flight_service.refund,p.user_id,order_id,body.quote_hash)",
+      "classification": "FROZEN_REFUND_MULTI_STAGE",
+      "precommit_failure_boundary": "Order ownership/status, fare policy and frozen consent checks before initial refund commit. Existing pending refund must be resumed, not classified safe by exception.",
+      "postcommit_or_uncertain_boundary": "REFUND_PENDING+consent+refund row commit before money. Money can confirm before later consent/state/projection error; a ValueError is potentially post-effect.",
+      "available_durable_keys": "Order/refund row and frozen consent; flight-refund:{order_id} plus deterministic component keys across original/change captures.",
+      "minimal_recovery_hook": "Resume the same pending refund and existing money roots; verify confirmed amount/currency/root receipts, then finalize row/projection and HTTP replay. Never create a new refund key.",
+      "review_sources": [
+        "flight/service.py",
+        "services/flight_refund_consent.py",
+        "services/vertical_money_bridge.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-21",
+      "operation": "cancel",
+      "mode": "ASYNC",
+      "route_file": "application/src/go_hotel/api/routes/mobile.py",
+      "function": "mobile_cancel",
+      "call_line": 110,
+      "route": [
+        "/v1/mobile/orders/{order_id}/cancel"
+      ],
+      "callback": "lambda:_fare_cancel(order_id,request,p.user_id)",
+      "classification": "HOTEL_CASH_FARE_OPERATION",
+      "precommit_failure_boundary": "Isolation, ownership, quote hash/consent/expiry/current facts and change-window checks before operation commit; existing operation returns persisted public state.",
+      "postcommit_or_uncertain_boundary": "Operation+order claim and pending order commit before advance; supplier or authorization may succeed before local finalization. HTTP/domain validation error may follow those commits.",
+      "available_durable_keys": "CatalogCashFareOperation.quote_id -> operation_id; CatalogCashFareClaim.order_id; frozen plan hash; downstream operation-prefixed money keys.",
+      "minimal_recovery_hook": "Lookup operation by exact quote/actor/payload; use existing catalog_cash_fare_execution.reconcile/retry_payment APIs as appropriate. Never start a new cancellation/change quote for transport retry.",
+      "review_sources": [
+        "fare/service.py",
+        "services/catalog_cash_fare_execution.py",
+        "services/catalog_cash_fare.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-22",
+      "operation": "change",
+      "mode": "ASYNC",
+      "route_file": "application/src/go_hotel/api/routes/mobile.py",
+      "function": "mobile_change",
+      "call_line": 128,
+      "route": [
+        "/v1/mobile/orders/{order_id}/change"
+      ],
+      "callback": "lambda:_fare_change(order_id,request,p.user_id)",
+      "classification": "HOTEL_CASH_FARE_OPERATION",
+      "precommit_failure_boundary": "Isolation, ownership, quote hash/consent/expiry/current facts and change-window checks before operation commit; existing operation returns persisted public state.",
+      "postcommit_or_uncertain_boundary": "Operation+order claim and pending order commit before advance; supplier or authorization may succeed before local finalization. HTTP/domain validation error may follow those commits.",
+      "available_durable_keys": "CatalogCashFareOperation.quote_id -> operation_id; CatalogCashFareClaim.order_id; frozen plan hash; downstream operation-prefixed money keys.",
+      "minimal_recovery_hook": "Lookup operation by exact quote/actor/payload; use existing catalog_cash_fare_execution.reconcile/retry_payment APIs as appropriate. Never start a new cancellation/change quote for transport retry.",
+      "review_sources": [
+        "fare/service.py",
+        "services/catalog_cash_fare_execution.py",
+        "services/catalog_cash_fare.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-23",
+      "operation": "stay_credit_convert",
+      "mode": "ASYNC",
+      "route_file": "application/src/go_hotel/api/routes/mobile.py",
+      "function": "mobile_convert_stay_credit",
+      "call_line": 158,
+      "route": [
+        "/v1/mobile/orders/{order_id}/convert-to-stay-credit"
+      ],
+      "callback": "lambda:_fare_convert(order_id,body,p.user_id)",
+      "classification": "CREDIT_CONVERSION_AND_SUPPLIER_CANCEL",
+      "precommit_failure_boundary": "Quote/consent/order/current value/window checks before Credit/Contract/source reservation commit.",
+      "postcommit_or_uncertain_boundary": "Credit CANCEL_PENDING/source funds reserved before supplier cancel. Cancellation can succeed before activate reports changed source order; pending/UNKNOWN_CANCEL remains durable.",
+      "available_durable_keys": "StayCredit.original_order_id -> stay_credit_id; credit contract quote_id+accepted_by+contract_hash.",
+      "minimal_recovery_hook": "Read existing credit and reconcile_conversion using supplier status; activate exact reserved source only with proof. Never issue a second credit or cancel again due solely to HTTP failure.",
+      "review_sources": [
+        "services/catalog_stay_credit.py",
+        "fare/service.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-24",
+      "operation": "RIDE_CREATE_ORDER",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/mobility.py",
+      "function": "rb",
+      "call_line": 43,
+      "route": [
+        "/v1/mobility/rides/orders"
+      ],
+      "callback": "execute",
+      "classification": "CREATE_UNBOUND_PLUS_SOURCE_AND_VAULT",
+      "precommit_failure_boundary": "Offer/date/client-policy validation precedes order transaction, but route vault release may already have durable side effects.",
+      "postcommit_or_uncertain_boundary": "Random order row/policy/reservation commits before source-runtime decision and separate vault-evidence transaction. No atomic outer-claim resource mapping found.",
+      "available_durable_keys": "HTTP operation/key+payload hash; generated order_id and reservation/policy records. Same offer/time/account is not a unique operation key.",
+      "minimal_recovery_hook": "Add explicit claim->planned resource binding at order creation, then replay that row and complete missing source/evidence writes. No duplicate order creation from a new random ID.",
+      "review_sources": [
+        "mobility/ride/service.py",
+        "mobility/rental/service.py",
+        "services/booking_data_release.py",
+        "services/vertical_source_runtime.py"
+      ],
+      "priority": "P0"
+    },
+    {
+      "id": "C11-CALL-25",
+      "operation": "RENTAL_CREATE_ORDER",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/mobility.py",
+      "function": "cb",
+      "call_line": 59,
+      "route": [
+        "/v1/mobility/rentals/orders"
+      ],
+      "callback": "execute",
+      "classification": "CREATE_UNBOUND_PLUS_SOURCE_AND_VAULT",
+      "precommit_failure_boundary": "Offer/date/client-policy validation precedes order transaction, but route vault release may already have durable side effects.",
+      "postcommit_or_uncertain_boundary": "Random order row/policy/reservation commits before source-runtime decision and separate vault-evidence transaction. No atomic outer-claim resource mapping found.",
+      "available_durable_keys": "HTTP operation/key+payload hash; generated order_id and reservation/policy records. Same offer/time/account is not a unique operation key.",
+      "minimal_recovery_hook": "Add explicit claim->planned resource binding at order creation, then replay that row and complete missing source/evidence writes. No duplicate order creation from a new random ID.",
+      "review_sources": [
+        "mobility/ride/service.py",
+        "mobility/rental/service.py",
+        "services/booking_data_release.py",
+        "services/vertical_source_runtime.py"
+      ],
+      "priority": "P0"
+    },
+    {
+      "id": "C11-CALL-26",
+      "operation": "MOBILITY_MODIFY",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/mobility.py",
+      "function": "modify",
+      "call_line": 66,
+      "route": [
+        "/v1/mobility/orders/{order_id}/modify"
+      ],
+      "callback": "lambda:w(m.modify,p.user_id,order_id,b.new_time)",
+      "classification": "LOCAL_SINGLE_TRANSACTION",
+      "precommit_failure_boundary": "Owned confirmed order and rental unchanged-duration rule checked in local transaction before commit.",
+      "postcommit_or_uncertain_boundary": "Commit acknowledgement loss can leave new pickup time and event committed. Re-entry may duplicate audit even when scalar value is unchanged.",
+      "available_durable_keys": "order_id+accepted new_time and existing event; no reviewed unique modification-operation row. HTTP key is current request fence.",
+      "minimal_recovery_hook": "Bind exact operation to projection/event; verify committed new_time and expected prior version before constructing replay. Rollback-known pre-write failure may release.",
+      "review_sources": [
+        "mobility/ride/service.py",
+        "mobility/rental/service.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-27",
+      "operation": "MOBILITY_REFUND_CONFIRMED",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/mobility.py",
+      "function": "refund_confirmed",
+      "call_line": 72,
+      "route": [
+        "/v1/mobility/orders/{order_id}/refund-confirmed"
+      ],
+      "callback": "lambda:w(m.cancel,p.user_id,order_id,b.quote_hash)",
+      "classification": "FROZEN_MOBILITY_REFUND",
+      "precommit_failure_boundary": "Ownership/status/accepted refund hash and frozen plan checks before first refund commit; existing pending/completed refund has exact consent checks.",
+      "postcommit_or_uncertain_boundary": "Refund row+order pending commit before money. Receipt/state validation can fail after confirmed refund and must retain identity.",
+      "available_durable_keys": "RIDE: refund row/order and ride-refund:{order_id}; RENTAL: refund_id with frozen settlement_plan_json and rental-cancel:{refund_id} component keys.",
+      "minimal_recovery_hook": "Recover frozen refund and same plan; verify owner/root/currency/amount receipts before finalizing. Keep quote consent fixed; never derive a new amount or refund key on retry.",
+      "review_sources": [
+        "mobility/ride/refunds.py",
+        "mobility/rental/service.py",
+        "services/vertical_money_bridge.py",
+        "services/mobility_refund_consent.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-28",
+      "operation": "MOBILITY_CANCEL",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/mobility.py",
+      "function": "cancel",
+      "call_line": 75,
+      "route": [
+        "/v1/mobility/orders/{order_id}/cancel"
+      ],
+      "callback": "lambda:w(m.cancel,p.user_id,order_id)",
+      "classification": "FROZEN_MOBILITY_REFUND",
+      "precommit_failure_boundary": "Ownership/status/accepted refund hash and frozen plan checks before first refund commit; existing pending/completed refund has exact consent checks.",
+      "postcommit_or_uncertain_boundary": "Refund row+order pending commit before money. Receipt/state validation can fail after confirmed refund and must retain identity.",
+      "available_durable_keys": "RIDE: refund row/order and ride-refund:{order_id}; RENTAL: refund_id with frozen settlement_plan_json and rental-cancel:{refund_id} component keys.",
+      "minimal_recovery_hook": "Recover frozen refund and same plan; verify owner/root/currency/amount receipts before finalizing. Keep quote consent fixed; never derive a new amount or refund key on retry.",
+      "review_sources": [
+        "mobility/ride/refunds.py",
+        "mobility/rental/service.py",
+        "services/vertical_money_bridge.py",
+        "services/mobility_refund_consent.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-29",
+      "operation": "MOBILITY_FULFILLMENT",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/mobility.py",
+      "function": "fulfill",
+      "call_line": 78,
+      "route": [
+        "/v1/mobility/orders/{order_id}/fulfillment"
+      ],
+      "callback": "lambda:w(m.fulfill,p.user_id,order_id,b.action,b.evidence_reference)",
+      "classification": "LOCAL_STATE_TRANSITION",
+      "precommit_failure_boundary": "Evidence, ownership and legal source/target transition checked before local commit.",
+      "postcommit_or_uncertain_boundary": "Transition, event and lifecycle commit may precede lost acknowledgement. Retry of START/COMPLETE/PICKUP/RETURN can reject because state already advanced.",
+      "available_durable_keys": "order_id+action+evidence_reference; persisted lifecycle/event, but event uniqueness must be verified before claiming replay.",
+      "minimal_recovery_hook": "Lookup exact operation/evidence and resulting transition; replay success only with same actor/expected prior state. Do not repeat transition or invent evidence.",
+      "review_sources": [
+        "mobility/ride/service.py",
+        "mobility/rental/service.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-30",
+      "operation": "MOBILITY_ADMIN_EXTERNAL_STATE",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/mobility.py",
+      "function": "external_state",
+      "call_line": 81,
+      "route": [
+        "/internal/v1/admin/mobility/orders/{order_id}/external-state"
+      ],
+      "callback": "lambda:w(m.admin_external_state,order_id,b.state,b.evidence_reference,p.user_id)",
+      "classification": "LOCAL_SUPPLIER_STATE_TRANSITION",
+      "precommit_failure_boundary": "Actor/evidence/state/previous state validation before local mutation.",
+      "postcommit_or_uncertain_boundary": "Restoration/FAILED/UNKNOWN transition and event commit can be acknowledged ambiguously; re-entry may conflict with already restored state.",
+      "available_durable_keys": "order_id+decision+evidence_reference; stored previous_status in unknown event; outer HTTP key.",
+      "minimal_recovery_hook": "Recover exact decision and prior-state event; idempotent replay requires operation/evidence binding. Do not infer CONFIRMED if preserved prior state was IN_PROGRESS.",
+      "review_sources": [
+        "mobility/ride/service.py",
+        "mobility/rental/service.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-31",
+      "operation": "RAIL_PREBOOK",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/rail.py",
+      "function": "prebook",
+      "call_line": 45,
+      "route": [
+        "/v1/rail/offers/{offer_id}/prebook"
+      ],
+      "callback": "lambda:wrap(rail_service.prebook,offer_id,quantity,account)",
+      "classification": "LOCAL_PREBOOK_GENERATION",
+      "precommit_failure_boundary": "Party count, offer expiry/currency and capacity observation validated within transaction before issue_in; rollback-known local error can be safe.",
+      "postcommit_or_uncertain_boundary": "Contract/prebook commit acknowledgement can be lost. Subsequent key release can issue another prebook; current prebook does not reserve inventory.",
+      "available_durable_keys": "Generated prebook_id/VerticalPrebookContractRow and terms hash; no reviewed atomic outer HTTP key->prebook_id binding.",
+      "minimal_recovery_hook": "Persist generated prebook resource binding in claim transaction or add exact request-operation record; recover same prebook without issuing again.",
+      "review_sources": [
+        "rail/service.py",
+        "services/vertical_prebook_contract.py",
+        "services/vertical_capacity.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-32",
+      "operation": "RAIL_CREATE_ORDER",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/rail.py",
+      "function": "create_order",
+      "call_line": 56,
+      "route": [
+        "/v1/rail/orders"
+      ],
+      "callback": "execute",
+      "classification": "CONSUMED_PREBOOK_PLUS_VAULT",
+      "precommit_failure_boundary": "Prebook owner/request/terms/passenger validations inside order transaction; vault releases can already have committed outside it.",
+      "postcommit_or_uncertain_boundary": "Order+capacity+consumed contract commit precedes route vault-evidence commit. Late evidence error leaves a real order even if HTTP claim is released.",
+      "available_durable_keys": "Consumed VerticalPrebookContractRow prebook_id -> order_id plus owner/consumed request hash; outer HTTP claim key; vault release_ids.",
+      "minimal_recovery_hook": "Recover exact consumed contract and replay its order; retry only missing evidence using durable release identities. Do not repeat disclosure or reserve capacity.",
+      "review_sources": [
+        "rail/service.py",
+        "services/vertical_prebook_contract.py",
+        "services/booking_data_release.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-33",
+      "operation": "RAIL_CHECKOUT",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/rail.py",
+      "function": "checkout",
+      "call_line": 60,
+      "route": [
+        "/v1/rail/orders/{order_id}/checkout"
+      ],
+      "callback": "lambda:wrap(rail_service.checkout,p.user_id,order_id,body.payment_method_id)",
+      "classification": "MULTI_TRANSACTION_PAYMENT",
+      "precommit_failure_boundary": "Owned order and reservation payment guard before payment-method transaction; persistent reservation state must be inspected for retry.",
+      "postcommit_or_uncertain_boundary": "Payment method/reservation guard transaction commits before bridge; capture may be durable before final order state commit.",
+      "available_durable_keys": "RAIL_ORDER/order_id; rail-checkout:{order_id}, rail-auth:{order_id}, rail-cap:{order_id}; reservation expiry row.",
+      "minimal_recovery_hook": "Recover same payment root and reservation state; verify receipts then project order. Do not re-reserve or revive an expired reservation.",
+      "review_sources": [
+        "rail/service.py",
+        "services/vertical_transaction_bridge.py",
+        "services/vertical_reservation_expiry.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-34",
+      "operation": "RAIL_EXECUTE_CHANGE",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/rail.py",
+      "function": "execute_change",
+      "call_line": 70,
+      "route": [
+        "/v1/rail/orders/{order_id}/execute-change/{quote_id}"
+      ],
+      "callback": "lambda:wrap(rail_service.execute_change,p.user_id,order_id,quote_id)",
+      "classification": "RESERVED_CAPACITY_AND_ADJUSTMENT",
+      "precommit_failure_boundary": "Order/quote/expiry/target capacity validation precedes preparing transaction commit.",
+      "postcommit_or_uncertain_boundary": "Capacity preparation+PREPARING/CHANGE_PENDING commit before adjustment; second transaction validation can fail after auth.",
+      "available_durable_keys": "quote_id, prepared capacity claim, RAIL_CHANGE/quote_id, rail-change-intent/auth/cap/release:{quote_id}.",
+      "minimal_recovery_hook": "Resume same PREPARING quote and target capacity; use rail_change_resolution for eventual supplier-confirmed capture/release and capacity completion.",
+      "review_sources": [
+        "rail/service.py",
+        "services/vertical_capacity.py",
+        "services/vertical_money_bridge.py",
+        "services/rail_change_resolution.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-35",
+      "operation": "RAIL_REFUND",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/rail.py",
+      "function": "refund",
+      "call_line": 76,
+      "route": [
+        "/v1/rail/orders/{order_id}/refund"
+      ],
+      "callback": "lambda:wrap(rail_service.refund,p.user_id,order_id)",
+      "classification": "LEASED_FROZEN_REFUND",
+      "precommit_failure_boundary": "Owned order, frozen quote/consent, amount checks before operation/lease commit; already-processing error means existing effect scope.",
+      "postcommit_or_uncertain_boundary": "Operation/order REFUND_PENDING+lease commit before money; failed money or lost lease can follow committed refund. Error path releases only domain lease, not frozen operation.",
+      "available_durable_keys": "VerticalRefundOperation(vertical=RAIL,order_id), request_hash+lease_token; rail-refund:{order_id} and component money keys.",
+      "minimal_recovery_hook": "Reconcile fixed money keys; reacquire expired domain lease; verify durable receipts and finalize existing operation, then resolve HTTP claim.",
+      "review_sources": [
+        "services/vertical_refund_recovery.py",
+        "services/vertical_money_bridge.py",
+        "rail/service.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-36",
+      "operation": "RAIL_ADMIN_EXTERNAL_STATE",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/rail.py",
+      "function": "admin_external_state",
+      "call_line": 81,
+      "route": [
+        "/internal/v1/admin/rail/orders/{order_id}/external-state"
+      ],
+      "callback": "lambda:wrap(rail_service.admin_external_state,order_id,body.state,body.evidence_reference,p.user_id,body.supplier_reference,body.ticket_numbers,body.quote_id)",
+      "classification": "LEASED_SUPPLIER_RESOLUTION",
+      "precommit_failure_boundary": "Actor/evidence, quote_id, frozen request and supplier-reference/ticket validation before resolution lease commit.",
+      "postcommit_or_uncertain_boundary": "Resolution decision/lease commits before capture/release; local finalize/lease conflict may follow money.",
+      "available_durable_keys": "RailChangeResolutionRow keyed quote_id with request_hash+lease_token; RAIL_CHANGE root and fixed cap/release keys.",
+      "minimal_recovery_hook": "Resume same frozen resolution by quote_id; reject conflicting late reply; verify money receipt then complete capacity/order projection.",
+      "review_sources": [
+        "services/rail_change_resolution.py",
+        "services/vertical_money_bridge.py",
+        "services/vertical_capacity.py"
+      ],
+      "priority": "P1"
+    },
+    {
+      "id": "C11-CALL-37",
+      "operation": "RAIL_REFUND_CONFIRMED",
+      "mode": "SYNC",
+      "route_file": "application/src/go_hotel/api/routes/rail.py",
+      "function": "refund_confirmed",
+      "call_line": 86,
+      "route": [
+        "/v1/rail/orders/{order_id}/refund-confirmed"
+      ],
+      "callback": "lambda:wrap(rail_service.refund,p.user_id,order_id,body.quote_hash)",
+      "classification": "LEASED_FROZEN_REFUND",
+      "precommit_failure_boundary": "Owned order, frozen quote/consent, amount checks before operation/lease commit; already-processing error means existing effect scope.",
+      "postcommit_or_uncertain_boundary": "Operation/order REFUND_PENDING+lease commit before money; failed money or lost lease can follow committed refund. Error path releases only domain lease, not frozen operation.",
+      "available_durable_keys": "VerticalRefundOperation(vertical=RAIL,order_id), request_hash+lease_token; rail-refund:{order_id} and component money keys.",
+      "minimal_recovery_hook": "Reconcile fixed money keys; reacquire expired domain lease; verify durable receipts and finalize existing operation, then resolve HTTP claim.",
+      "review_sources": [
+        "services/vertical_refund_recovery.py",
+        "services/vertical_money_bridge.py",
+        "rail/service.py"
+      ],
+      "priority": "P1"
+    }
+  ]
+}

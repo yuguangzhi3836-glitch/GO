@@ -1,0 +1,76 @@
+{
+  "cell": "C06",
+  "base_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "task_id": "R2-C06-RUNTIME-01",
+  "state": "EVIDENCE_READY_AWAITING_C14_C13",
+  "scope": [
+    "Attraction API booking/change/refund path and non-refundable product",
+    "Consumed quote ownership, locked party/price/refund terms, consumption and integrity guards",
+    "Refund executor exclusion against redemption/change; successful change and redemption preserve active session capacity"
+  ],
+  "completion": {
+    "metric": "round2_workflow_phases",
+    "numerator": 4,
+    "denominator": 6,
+    "completed": [
+      "GAP",
+      "TASK",
+      "TEST",
+      "EVIDENCE"
+    ],
+    "pending": [
+      "C14",
+      "C13"
+    ],
+    "domain_percent": null,
+    "scope_test_counts": {
+      "tests": 27,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "runs": [
+    {
+      "run": "redemption-refund-exclusion",
+      "exit_code": 0,
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "before_after_domain_hashes_equal": true,
+      "raw_log": "evidence/v70-round2-20260914/c06/redemption-refund-exclusion.raw.log",
+      "junit": "evidence/v70-round2-20260914/c06/redemption-refund-exclusion.junit.xml"
+    },
+    {
+      "run": "runtime-existing",
+      "exit_code": 0,
+      "counts": {
+        "tests": 25,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "before_after_domain_hashes_equal": true,
+      "raw_log": "evidence/v70-round2-20260914/c06/runtime-existing.raw.log",
+      "junit": "evidence/v70-round2-20260914/c06/runtime-existing.junit.xml"
+    }
+  ],
+  "red_reproduction": null,
+  "c14_gate": "PENDING_INDEPENDENT_REVIEW",
+  "c13_gate": "PENDING_INDEPENDENT_ACCEPTANCE",
+  "next_task": {
+    "task": "R2-C06-DEPTH-02: add destination timezone to bound visit/session terms and define supplier-backed validity-window verification before adding clock-boundary redemption acceptance.",
+    "dispatch_state": "READY_FOR_CENTRAL_SCHEDULER",
+    "executed": false
+  },
+  "unresolved": [
+    "P1: current attraction catalog and consumed contract lack destination timezone / voucher validity-window facts; redeem checks state/evidence but has no local session time gate. This is an identified next-depth implementation gap, not a passed timezone test.",
+    "PostgreSQL concurrent execution, physical scan/real supplier redemption and image/HK/browser acceptance were not run."
+  ],
+  "runtime_boundary": "Builder run on a shared materialized tree derived from anchor; listed domain files hashed before/after, no changed domain file during each run. Whole integrated candidate/image is not certified by these runs.",
+  "source_changed": false,
+  "remote_write_merge_deploy": false
+}

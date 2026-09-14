@@ -1,11 +1,149 @@
 {
   "schema": "go.v70.cell-closure.v1",
-  "baseline_commit": "286e294d92df4b7d1c0073116a8e628734abec6c",
-  "baseline_application_git_tree": "3025b2b6b36ea9211da561a4631f304216de9d90",
-  "application_git_tree": "995d0d83faf883bec980c896fe8a17b0f12360fa",
-  "source_files": 1332,
-  "source_tree_sha256": "1c4d78c3c1bb5f448d0ebdb99d16a2d76419bbc663cc9ed8fae831e1d18c10c4",
+  "baseline_commit": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "baseline_application_git_tree": "995d0d83faf883bec980c896fe8a17b0f12360fa",
+  "application_git_tree": "740d026e3723f5da015342ead3394969629541df",
+  "source_files": 1341,
+  "source_tree_sha256": "b4383b383dd54e472ef178f1804d925bebf55019dc17f3641712cc42d4aae7b4",
   "changed_application_files": {
+    "application/src/go_hotel/api/routes/travel_intelligence.py": {
+      "mode": "100644",
+      "sha": "f3f5f7ed83fffc76279d98d34aae7f900001c9c4",
+      "sha256": "98b8a1e23a84caf03424a41236d075149f8221cfc9895a70ebd6ff7f5707ef88",
+      "size": 12716,
+      "base_git_blob": "3f3cf7243c62a1c691a32e6347a9ffae1949b175",
+      "git_blob": "f3f5f7ed83fffc76279d98d34aae7f900001c9c4"
+    },
+    "application/src/go_hotel/go_ai/service.py": {
+      "mode": "100644",
+      "sha": "b959b7825e8530d99cc64b7e3c623824518223e4",
+      "sha256": "efd4840bb77f6eec14fe026236189a4a8b6cd67ce5f5ec753c88044be3edb082",
+      "size": 24569,
+      "base_git_blob": "7237170830c2a6a3a9b2fb5cf74ce227109735b2",
+      "git_blob": "b959b7825e8530d99cc64b7e3c623824518223e4"
+    },
+    "application/src/go_hotel/journey/service.py": {
+      "mode": "100644",
+      "sha": "bdd781b362d1b9ecb1ca86f153f6ed0008b8f066",
+      "sha256": "9aae628225586f19d1b20ac10ad659737b6845ecddcb0be647832f13a75d01b9",
+      "size": 7139,
+      "base_git_blob": "4152f80c9edabb2d099082386fa8e5b940b59505",
+      "git_blob": "bdd781b362d1b9ecb1ca86f153f6ed0008b8f066"
+    },
+    "application/src/go_hotel/judgment/service.py": {
+      "mode": "100644",
+      "sha": "dd8fcf59b64c9ef642b5549f4ba29a28e5cd869f",
+      "sha256": "af29391fbda28565b208989795523e71118ebc0e1aa132b74f52fe191a0457b2",
+      "size": 16207,
+      "base_git_blob": "e04e4024c5a779b94ae2ac066e792868f6641050",
+      "git_blob": "dd8fcf59b64c9ef642b5549f4ba29a28e5cd869f"
+    },
+    "application/src/go_hotel/mobility/rental/service.py": {
+      "mode": "100644",
+      "sha": "a8b1dc8f5ce551f186a823e79b040807a598c376",
+      "sha256": "f60fbe158bc458013ef45c0144b51e79d9dd216b1982ed9e2cad9458d68f13b6",
+      "size": 15789,
+      "base_git_blob": "0cd359cb1f70e53b65b1a289fbdd3a11ad454ad9",
+      "git_blob": "a8b1dc8f5ce551f186a823e79b040807a598c376"
+    },
+    "application/src/go_hotel/travel_intelligence/preferences.py": {
+      "mode": "100644",
+      "sha": "b083735b5cbdc9aea89ead761d800f9bff85cee9",
+      "sha256": "b084f3a112998ae08194fcd179ad83f6fc9177bd7c40c2cbb7992e94deba1762",
+      "size": 11861,
+      "base_git_blob": null,
+      "git_blob": "b083735b5cbdc9aea89ead761d800f9bff85cee9"
+    },
+    "application/src/go_hotel/travel_intelligence/service.py": {
+      "mode": "100644",
+      "sha": "4d016cd831809e78fdd16ccc1fbfe5b666d2e849",
+      "sha256": "328d0a39da80805f8a821b1b1166ac1467078b8f91c7db5189e7a0ba222a1c7c",
+      "size": 23190,
+      "base_git_blob": "412d6745922b12cbcf50555bed7dcc8f73a72f7b",
+      "git_blob": "4d016cd831809e78fdd16ccc1fbfe5b666d2e849"
+    },
+    "application/tests/go_ai/test_c08_audit_commit_failure.py": {
+      "mode": "100644",
+      "sha": "3cd0f82b3b67efca323cc6cfa640915c6c2fa9aa",
+      "sha256": "aacdd4fd9e7d27cbac77fd76964817c6d5ce63bb73db9cbae56fb4d5afb4d066",
+      "size": 4231,
+      "base_git_blob": null,
+      "git_blob": "3cd0f82b3b67efca323cc6cfa640915c6c2fa9aa"
+    },
+    "application/tests/journey/test_c10_attachment_canonical_facts.py": {
+      "mode": "100644",
+      "sha": "7e539b074a74e536f80bad0d009e26beb28f7856",
+      "sha256": "11853c4c5ac3f98c42d79d689b5c5c79fb7da0e0b0038f2401af1f8564e73637",
+      "size": 1950,
+      "base_git_blob": null,
+      "git_blob": "7e539b074a74e536f80bad0d009e26beb28f7856"
+    },
+    "application/tests/judgment/test_round2_evidence_authority.py": {
+      "mode": "100644",
+      "sha": "e633f21ea5199bea498084163f366a2418c97612",
+      "sha256": "465ef8827097bd1f002ef6f2d61eef4551e679bb6eb4566ce6aa1cb4d6b76cf7",
+      "size": 3837,
+      "base_git_blob": null,
+      "git_blob": "e633f21ea5199bea498084163f366a2418c97612"
+    },
+    "application/tests/test_round2_c07_explicit_preferences.py": {
+      "mode": "100644",
+      "sha": "7b75fff13e21871f86f54c1335546e3294252e22",
+      "sha256": "d077f40d1e2975fa7ac1f5c3380174dcdbe2071f2652a1badd30e8a65791f1a5",
+      "size": 13249,
+      "base_git_blob": null,
+      "git_blob": "7b75fff13e21871f86f54c1335546e3294252e22"
+    },
+    "application/tests/test_v70_round2_c01_mixed_funding.py": {
+      "mode": "100644",
+      "sha": "5ff241f2e13db368d2336c26343826445f1eb6ae",
+      "sha256": "f3a911a4ab9b74cf0f1c7cc12b8eff581cdcf5a8e7d21ebbc4a301886dbc80a2",
+      "size": 3186,
+      "base_git_blob": null,
+      "git_blob": "5ff241f2e13db368d2336c26343826445f1eb6ae"
+    },
+    "application/tests/test_v70_round2_c02_partial_party.py": {
+      "mode": "100644",
+      "sha": "123e1e0fd334cfd8bc6833c0b48c5b0a3e6e6b0f",
+      "sha256": "a05bb805b4317260e2725b0073bcd147d9a6ebc60c7c49a3bfbd8fb350e4707a",
+      "size": 1698,
+      "base_git_blob": null,
+      "git_blob": "123e1e0fd334cfd8bc6833c0b48c5b0a3e6e6b0f"
+    },
+    "application/tests/test_v70_round2_c04_rental_receipts.py": {
+      "mode": "100644",
+      "sha": "c2c330aff847922838318fc466d7a0fcaf3b7bd5",
+      "sha256": "08a7a91fe941806f1b66af8aa3f6e12c63e68e8feb3c2c3466d02d7af7fc94af",
+      "size": 4242,
+      "base_git_blob": null,
+      "git_blob": "c2c330aff847922838318fc466d7a0fcaf3b7bd5"
+    },
+    "application/tests/test_v70_round2_c05_recovery_fulfillment.py": {
+      "mode": "100644",
+      "sha": "fbda71ca973f0c89ddec9fd10b7da6fc1eab238c",
+      "sha256": "87df6622c5fbb65250d7a44a938c497d7830ac48b0107978644b185a36be8628",
+      "size": 2162,
+      "base_git_blob": null,
+      "git_blob": "fbda71ca973f0c89ddec9fd10b7da6fc1eab238c"
+    }
+  },
+  "inherited_candidates": {
+    "PR62": "d8aa02fff7d1391132d9eee5daadcb3b90d04392",
+    "PR64": "8246993f25f9873fe22e8f7c232f8e9e7929ca95"
+  },
+  "hong_kong": "NOT_ACCESSED_NOT_DEPLOYED",
+  "production": "HOLD",
+  "full_release": "HOLD",
+  "query_defaults_repair": {
+    "source_commit": "8de489349c278b5976fdd58f8ab1e59468fc9d41",
+    "application_git_tree": "995d0d83faf883bec980c896fe8a17b0f12360fa",
+    "source_tree_sha256": "1c4d78c3c1bb5f448d0ebdb99d16a2d76419bbc663cc9ed8fae831e1d18c10c4",
+    "path": "application/src/go_hotel/api/routes/operations_console.py",
+    "git_blob": "2e6f85b7fc883fab0f74e505951ce751f19cbb37",
+    "sha256": "dd8ce37a8fa8def78d855012086f22c841aacdda8bbe7437f8322297e53a9a38",
+    "reason": "Authorized four Query defaults repair; retain all verification assertions and historical evidence."
+  },
+  "first_round_changed_application_files": {
     "application/frontend/shared/app.js": {
       "git_blob": "f12395c6c3ba5887e63091f4a1ff43dc0a7f0846",
       "sha256": "12663e73711d40684f5724c122f29cdc96ff46840f798fcb32750746436af7d0",
@@ -109,20 +247,5 @@
       "base_git_blob": null
     }
   },
-  "inherited_candidates": {
-    "PR62": "d8aa02fff7d1391132d9eee5daadcb3b90d04392",
-    "PR64": "8246993f25f9873fe22e8f7c232f8e9e7929ca95"
-  },
-  "hong_kong": "NOT_ACCESSED_NOT_DEPLOYED",
-  "production": "HOLD",
-  "full_release": "HOLD",
-  "query_defaults_repair": {
-    "source_commit": "8de489349c278b5976fdd58f8ab1e59468fc9d41",
-    "application_git_tree": "995d0d83faf883bec980c896fe8a17b0f12360fa",
-    "source_tree_sha256": "1c4d78c3c1bb5f448d0ebdb99d16a2d76419bbc663cc9ed8fae831e1d18c10c4",
-    "path": "application/src/go_hotel/api/routes/operations_console.py",
-    "git_blob": "2e6f85b7fc883fab0f74e505951ce751f19cbb37",
-    "sha256": "dd8ce37a8fa8def78d855012086f22c841aacdda8bbe7437f8322297e53a9a38",
-    "reason": "Authorized four Query defaults repair; retain all verification assertions and historical evidence."
-  }
+  "round2_source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1"
 }

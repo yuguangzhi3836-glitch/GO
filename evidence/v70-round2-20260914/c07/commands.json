@@ -1,0 +1,31 @@
+{
+  "red_environment_failure": {
+    "command": "PYTHONPATH=src GO_TEST_DB_PATH=/tmp/go-r2-c07-red.db /workspace/scratch/2d68c25b0133/go-venv/bin/python -m pytest -q tests/test_round2_c07_explicit_preferences.py --tb=short",
+    "exit_code": 127,
+    "meaning": "Interpreter unavailable; not a product test result"
+  },
+  "red": {
+    "command": "PYTHONPATH=src GO_TEST_DB_PATH=/tmp/go-r2-c07-red.db /workspace/scratch/948b51def3a9/venv/bin/python -m pytest -q tests/test_round2_c07_explicit_preferences.py --tb=short",
+    "exit_code": 1,
+    "failed": 19,
+    "meaning": "Before feature implementation: missing service methods and HTTP route 404. Tests subsequently expanded; not all current tests existed during red."
+  },
+  "green_attempt1": {
+    "command": "PYTHONPATH=src GO_TEST_DB_PATH=/tmp/go-r2-c07-green.db /workspace/scratch/948b51def3a9/venv/bin/python -m pytest -q tests/test_round2_c07_explicit_preferences.py tests/test_travel_intelligence_p0.py tests/test_wave03_c07_c09_authority_contract.py --tb=short",
+    "exit_code": 0,
+    "passed": 30
+  },
+  "green_final": {
+    "command": "PYTHONPATH=src GO_TEST_DB_PATH=/tmp/go-r2-c07-green-final.db /workspace/scratch/948b51def3a9/venv/bin/python -m pytest -ra tests/test_round2_c07_explicit_preferences.py tests/test_travel_intelligence_p0.py tests/test_wave03_c07_c09_authority_contract.py tests/test_personal_travel_vault.py tests/test_parent_p0_travel_intelligence_hotel_infra.py --tb=short",
+    "exit_code": 0,
+    "passed": 51,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 7.6,
+    "warnings": 2
+  },
+  "working_directory": "/workspace/scratch/948b51def3a9/GO/application",
+  "network": "No network/provider/HK calls",
+  "database": "Synthetic per-command local SQLite file; no remote database access",
+  "timing_note": "Per-process start timestamps were not captured; pytest duration and log records are retained without invented timestamps."
+}

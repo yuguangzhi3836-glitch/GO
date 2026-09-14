@@ -5,6 +5,7 @@ on:
     paths:
       - application/**
       - ci/cell-closure/**
+      - ci/round2/**
       - ci/admin-pagination/**
       - .github/workflows/v70-cell-gap-closure.yml
 permissions:
@@ -55,12 +56,23 @@ jobs:
             tests/journey/test_c10_current_status_projection.py
             tests/test_c11_idempotency_completion_guard.py
             tests/test_depth48_capacity.py
+            tests/go_ai/test_c08_audit_commit_failure.py
+            tests/journey/test_c10_attachment_canonical_facts.py
+            tests/judgment/test_round2_evidence_authority.py
+            tests/test_round2_c07_explicit_preferences.py
+            tests/test_v70_round2_c01_mixed_funding.py
+            tests/test_v70_round2_c02_partial_party.py
+            tests/test_v70_round2_c04_rental_receipts.py
+            tests/test_v70_round2_c05_recovery_fulfillment.py
           )
           for file in "${files[@]}"; do
             name=$(basename "$file" .py)
             (cd application && GO_TEST_DB_PATH="$RUNNER_TEMP/$name.db" python -m pytest -p no:cacheprovider "$file" --junitxml="$RUNNER_TEMP/cell-evidence/$name.xml")
           done
           PYTHONPATH=application/src python -m pytest -p no:cacheprovider ci/admin-pagination/test_pagination.py --junitxml="$RUNNER_TEMP/cell-evidence/admin-pagination.xml"
+      - name: Round 2 scheduler consistency regression
+        shell: bash
+        run: python -m unittest discover -s ci/round2 -p test_validate_ledger.py -v 2>&1 | tee "$RUNNER_TEMP/cell-evidence/scheduler.log"
       - name: Bind original result files to this checkout
         if: always()
         run: |

@@ -130,8 +130,13 @@ class JudgmentService:
     def reevaluate(self,hotel_id:str,extra_features:dict|None=None)->dict:
         if extra_features:
             self._assert_no_forbidden_features(extra_features)
-        now=now_utc(); standard=good_hotel_standard_service.active();ev=self._evidence(hotel_id); feature=dict(ev["feature_snapshot"])
-        if extra_features: feature.update(extra_features)
+        now=now_utc();ev=self._evidence(hotel_id); feature=dict(ev["feature_snapshot"])
+        if extra_features:
+            protected=set(feature).intersection(extra_features)
+            if protected:
+                unprocessable("JUDGMENT_EVIDENCE_FIELD_FORBIDDEN",f"Persisted evidence fields cannot be overridden: {', '.join(sorted(protected))}")
+            feature.update(extra_features)
+        standard=good_hotel_standard_service.active()
         raw=json.dumps({"hotel_id":hotel_id,"source_refs":ev["source_refs"],"feature_snapshot":feature},sort_keys=True,separators=(",",":"),default=str).encode()
         digest=sha256(raw).hexdigest(); package_id=new_id("evpkg"); judgment_id=new_id("jud"); decision_id=new_id("rec")
         score,dims,explanation,confidence=self._score(feature)

@@ -1,0 +1,17 @@
+{
+  "reviewer": "C14",
+  "recorded_at": "2026-09-14T03:10:04.264104+00:00",
+  "anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "finding_id": "C14-R2-C04-FROZEN-PLAN-RECEIPT-BINDING",
+  "status": "CHANGE_REQUESTED",
+  "basis": "CODE_REVIEW_INFERENCE_AWAITING_BUILDER_REPRODUCTION",
+  "source_sha256": {
+    "application/src/go_hotel/mobility/rental/service.py": "58a6d742f8fc726b194f8d9440b051809d916f6b08d3f6c5cb435282b46e3c55",
+    "application/src/go_hotel/services/vertical_refund_recovery.py": "1f5a72fd895968f6400f909e97750805f859bc18f06976432bd21ba38221416a",
+    "application/src/go_hotel/services/vertical_money_bridge.py": "cf03f71716f50262200e4d366d54316541d9d4e5d5c4d2d839c9cdcea7138647"
+  },
+  "observation": "C04 calls _confirmed_money_in, which checks payer/root/currency/type/confirmed status and summed amount, but does not match each movement idempotency_key and allocation to settlement_plan_json. A prior refund against this same capture for the same amount could be incorrectly reused as evidence of the current cancellation.",
+  "concrete_scenario": "Two-day rental paid 500; shortened to one day 250 and already refunded 250. Cancellation owes remaining 250. Executor returns the prior change refund ID; current checks can accept that old receipt without paying cancellation.",
+  "required_closure": "Add negative reproduction for same-order previous equal-amount refund, and one-to-one match all returned persisted receipt tuples (root_payment_intent_id,parent_movement_id,amount_minor,idempotency_key) against the exact frozen settlement plan before completion. Preserve owner/currency/status/original-capture checks and retry semantics.",
+  "not_external_legal_review": true
+}

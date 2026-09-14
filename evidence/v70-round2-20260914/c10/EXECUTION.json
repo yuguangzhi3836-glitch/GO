@@ -1,0 +1,75 @@
+{
+  "cell": "C10",
+  "task": "C10-R2-CANONICAL-ATTACHMENT-FACTS",
+  "status": "EVIDENCE_READY",
+  "task_scope": "Preserve canonical snapshot facts against caller override for six verticals at create/attach while retaining notes and custom title.",
+  "stages": {
+    "gap": "DONE",
+    "task": "DONE",
+    "test": "PASS_LOCAL",
+    "evidence": "DONE",
+    "C14": "PENDING_INDEPENDENT_REVIEW",
+    "C13": "PENDING_INDEPENDENT_REVIEW"
+  },
+  "chain_completed": 4,
+  "chain_total": 6,
+  "new_tests": 12,
+  "green_tests": 27,
+  "production_files": [
+    "application/src/go_hotel/journey/service.py"
+  ],
+  "test_files": [
+    "application/tests/journey/test_c10_attachment_canonical_facts.py"
+  ],
+  "remaining": [
+    "N+1 SELECT growth measured, not repaired.",
+    "Existing attachment snapshots remain historical and are not rewritten."
+  ],
+  "query_measurements": [
+    {
+      "journeys": 1,
+      "items": 1,
+      "selects": 4
+    },
+    {
+      "journeys": 1,
+      "items": 25,
+      "selects": 28
+    },
+    {
+      "journeys": 25,
+      "items": 25,
+      "selects": 52
+    }
+  ],
+  "next_task": {
+    "id": "C10-R2-BATCH-PROJECTION",
+    "owner": "C10",
+    "state": "PROPOSED_PENDING_ROOT_DISPATCH",
+    "task": "Batch list item/current-state reads; bound query count by vertical/chunk while preserving order, member authorization, absent order and other-account fallback.",
+    "dispatch_authority": "Domain proposal only; root scheduler has not dispatched this record."
+  },
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "created_at": "2026-09-14T03:07:41.693219+00:00",
+  "completion_scope": "Only this assigned finite task; not whole-domain completion.",
+  "authority": "Local source candidate and isolated test evidence; no remote write, merge or deployment; C14/C13 not self-signed.",
+  "evidence_files": [
+    "evidence/v70-round2-20260914/c10/README.md",
+    "evidence/v70-round2-20260914/c10/candidate.patch",
+    "evidence/v70-round2-20260914/c10/green.command.json",
+    "evidence/v70-round2-20260914/c10/green.log",
+    "evidence/v70-round2-20260914/c10/green.xml",
+    "evidence/v70-round2-20260914/c10/query_scaling.command.json",
+    "evidence/v70-round2-20260914/c10/query_scaling.log",
+    "evidence/v70-round2-20260914/c10/query_scaling.xml",
+    "evidence/v70-round2-20260914/c10/red.command.json",
+    "evidence/v70-round2-20260914/c10/red.log",
+    "evidence/v70-round2-20260914/c10/red.xml",
+    "evidence/v70-round2-20260914/c10/test_list_query_scaling_probe.py"
+  ],
+  "candidate_sha256": {
+    "application/src/go_hotel/journey/service.py": "9aae628225586f19d1b20ac10ad659737b6845ecddcb0be647832f13a75d01b9",
+    "application/tests/journey/test_c10_attachment_canonical_facts.py": "11853c4c5ac3f98c42d79d689b5c5c79fb7da0e0b0038f2401af1f8564e73637"
+  },
+  "state_correction_at": "2026-09-14T03:18:24.105325+00:00"
+}

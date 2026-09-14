@@ -1,0 +1,31 @@
+{
+  "before": {
+    "gate": "SCHEDULER_FAIL",
+    "errors": [],
+    "reassign_cells": [
+      "C01",
+      "C02",
+      "C03",
+      "C04",
+      "C05",
+      "C06",
+      "C07",
+      "C08",
+      "C09",
+      "C10",
+      "C11",
+      "C12",
+      "C13",
+      "C14"
+    ],
+    "meaning": "Local development ledger consistency only; no remote ACK or runtime authority."
+  },
+  "after": {
+    "gate": "PASS_SCOPED",
+    "errors": [],
+    "reassign_cells": [],
+    "meaning": "Local development ledger consistency only; no remote ACK or runtime authority."
+  },
+  "observed_at": "2026-09-14T03:24:50.483332+00:00",
+  "meaning": "Completion-to-next-task transition; generated local ASSIGNED records, not server ACKs or autonomous permanent workers"
+}

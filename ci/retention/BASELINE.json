@@ -1482,15 +1482,27 @@
     "tests_frontend/native_api_bridge.mjs": "952a6a666223f640cc7c0356c2066c0ea79627d675c553b33c866321aa9dd582",
     "src/go_hotel/api/idempotency.py": "260a12d78f7e4b1cb375ee71e200486146feb3b8946ad1805ba5c15534f86c58",
     "src/go_hotel/autonomy/release.py": "add9483e8e11e115a8bdb57791528a4137577088e396bdbcdb18cb302a1f3802",
-    "src/go_hotel/go_ai/service.py": "9b0ef8d9907155a60c143f55c8ecb32ec18dc2262a44354144d2fad71e1adf45",
-    "src/go_hotel/journey/service.py": "cbb4ad735e6a3a6632154dace37a80ef7945e95706bbfc17e1a32f674e0ab67b",
-    "src/go_hotel/mobility/rental/service.py": "d8768e8eef0d2e083d6b777ba3eca38124caa801ecda49282c8308708f8c0c99",
+    "src/go_hotel/go_ai/service.py": "efd4840bb77f6eec14fe026236189a4a8b6cd67ce5f5ec753c88044be3edb082",
+    "src/go_hotel/journey/service.py": "9aae628225586f19d1b20ac10ad659737b6845ecddcb0be647832f13a75d01b9",
+    "src/go_hotel/mobility/rental/service.py": "f60fbe158bc458013ef45c0144b51e79d9dd216b1982ed9e2cad9458d68f13b6",
     "tests/autonomy/test_c14_release_evidence_guards.py": "051e330942d6f969aeed58f43bd4d4d4621379bf3e8801e5a2978cc0d00508c2",
     "tests/go_ai/test_c08_synthesis_audit_finalization.py": "1c431307f6c97dd2389950391bcaf0af93e99f9f3004088a8c0f31196d022327",
     "tests/journey/test_c10_current_status_projection.py": "a87fb62bc980726a5ee5cb83ff57f1f452e9944b7a836c23b7f5ccd0a0059f16",
     "tests/test_c01_hosted_fare_value_integrity.py": "d5c89d4a4d3d0f880659abce0a8be596da997327e92fd3859368a96b2ad72991",
     "tests/test_c04_refund_terminal_integrity.py": "b66b39fe48d6c56bd009ee73a2931845a1e553ad5b65a90fd16f8c669114820a",
-    "tests/test_c11_idempotency_completion_guard.py": "9b40a65a8c1c36edeb3c036ae932a90f571ae17127dcc8f3b7c23e14813f04f5"
+    "tests/test_c11_idempotency_completion_guard.py": "9b40a65a8c1c36edeb3c036ae932a90f571ae17127dcc8f3b7c23e14813f04f5",
+    "src/go_hotel/api/routes/travel_intelligence.py": "98b8a1e23a84caf03424a41236d075149f8221cfc9895a70ebd6ff7f5707ef88",
+    "src/go_hotel/judgment/service.py": "af29391fbda28565b208989795523e71118ebc0e1aa132b74f52fe191a0457b2",
+    "src/go_hotel/travel_intelligence/preferences.py": "b084f3a112998ae08194fcd179ad83f6fc9177bd7c40c2cbb7992e94deba1762",
+    "src/go_hotel/travel_intelligence/service.py": "328d0a39da80805f8a821b1b1166ac1467078b8f91c7db5189e7a0ba222a1c7c",
+    "tests/go_ai/test_c08_audit_commit_failure.py": "aacdd4fd9e7d27cbac77fd76964817c6d5ce63bb73db9cbae56fb4d5afb4d066",
+    "tests/journey/test_c10_attachment_canonical_facts.py": "11853c4c5ac3f98c42d79d689b5c5c79fb7da0e0b0038f2401af1f8564e73637",
+    "tests/judgment/test_round2_evidence_authority.py": "465ef8827097bd1f002ef6f2d61eef4551e679bb6eb4566ce6aa1cb4d6b76cf7",
+    "tests/test_round2_c07_explicit_preferences.py": "d077f40d1e2975fa7ac1f5c3380174dcdbe2071f2652a1badd30e8a65791f1a5",
+    "tests/test_v70_round2_c01_mixed_funding.py": "f3a911a4ab9b74cf0f1c7cc12b8eff581cdcf5a8e7d21ebbc4a301886dbc80a2",
+    "tests/test_v70_round2_c02_partial_party.py": "a05bb805b4317260e2725b0073bcd147d9a6ebc60c7c49a3bfbd8fb350e4707a",
+    "tests/test_v70_round2_c04_rental_receipts.py": "08a7a91fe941806f1b66af8aa3f6e12c63e68e8feb3c2c3466d02d7af7fc94af",
+    "tests/test_v70_round2_c05_recovery_fulfillment.py": "87df6622c5fbb65250d7a44a938c497d7830ac48b0107978644b185a36be8628"
   },
   "v70_cell_closure": {
     "base_commit": "286e294d92df4b7d1c0073116a8e628734abec6c",
@@ -1525,5 +1537,19 @@
     "git_blob": "2e6f85b7fc883fab0f74e505951ce751f19cbb37",
     "sha256": "dd8ce37a8fa8def78d855012086f22c841aacdda8bbe7437f8322297e53a9a38",
     "reason": "Authorized four Query defaults repair; retain all verification assertions and historical evidence."
+  },
+  "v70_round2": {
+    "schema": "go.v70.round2.candidate.v1",
+    "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+    "base_application_git_tree": "995d0d83faf883bec980c896fe8a17b0f12360fa",
+    "application_git_tree": "740d026e3723f5da015342ead3394969629541df",
+    "source_tree_sha256": "b4383b383dd54e472ef178f1804d925bebf55019dc17f3641712cc42d4aae7b4",
+    "source_files": 1341,
+    "inherited_application_files": 1326,
+    "new_application_files": 9,
+    "deleted_application_files": [],
+    "full_release": "HOLD",
+    "hong_kong": "NOT_ACCESSED",
+    "production": "HOLD"
   }
 }

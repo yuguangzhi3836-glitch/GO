@@ -156,9 +156,26 @@ class RentalService:
                 if o.status!='REFUNDED':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
                 return result(r)
             if o.status!='REFUND_PENDING':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
+            # A provider/executor status alone cannot complete a refund. Verify
+            # durable receipts against this owner's original and change roots.
+            from types import SimpleNamespace
+            from go_hotel.services.vertical_refund_recovery import _confirmed_money_in
+            confirmed_ids=_confirmed_money_in(s,SimpleNamespace(vertical='RENTAL',order_id=order_id,
+                account_id=account,adjustment_ids_json=adjustment_ids(s,order_id),
+                quote_json={'currency':r.currency,'refund_amount_minor':r.refund_amount_minor}),movement)
+            # Earlier refunds on the same order may have the same amount.
+            # Each receipt must belong to this frozen cancellation allocation.
+            from collections import Counter
+            from go_hotel.db.models import OmnichannelMoneyMovementRow as Movement
+            expected=Counter((item['payment_intent_id'],item['capture_id'],item['amount_minor'],item['key'])
+                for item in r.settlement_plan_json)
+            receipts=[s.get(Movement,mid) for mid in confirmed_ids]
+            observed=Counter((item.root_payment_intent_id,item.parent_movement_id,
+                item.amount_minor,item.idempotency_key) for item in receipts)
+            if observed!=expected:raise ValueError('REFUND_RECEIPT_PLAN_MISMATCH')
             r.status='REFUND_COMPLETED';o.status='REFUNDED';o.updated_at=now()
             facts={'refund_id':refund_id,'refund_amount_minor':r.refund_amount_minor,
-                   'money_movement_ids':movement['money_movement_ids']}
+                   'money_movement_ids':confirmed_ids}
             append_vertical_evidence(s,'RENTAL',order_id,'REFUND_COMPLETED',o.status,facts)
             project_vertical_lifecycle(s,'RENTAL',o,'rental-refund://'+refund_id,facts=facts)
             return result(r)
