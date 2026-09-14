@@ -86,3 +86,5 @@ jobs:
     uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
     with: {cell: C12, task: V70-R3-C12-01, issue: '88', model: gpt-6-astra, effort: high, baseline_test: ci/round2/test_validate_ledger.py, scope: scheduler, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
     secrets: inherit
+
+# retrigger: API key rotated 2026-09-15T00:05+08:00
