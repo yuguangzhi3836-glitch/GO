@@ -8,8 +8,12 @@ HK-STAGING 自 2026-09-13 起运行 **DEPTH48 业务运行时**。唯一机器�
 - 业务源码：`application/`；构建定义：`application/Dockerfile`（`docker build -t <tag> application/`）
 - 运行 Compose：`deploy/hk-staging/docker-compose.business-runtime.yml`（8 个业务服务）
 - 环境契约：`deploy/hk-staging/RUNTIME_ENV_CONTRACT.md`（仅键名，无值）
-- 数据库 head：`0133_flight_change_plan`（PostgreSQL 18.4，551 表）
+- **运行中**数据库 head：`0133_flight_change_plan`（PostgreSQL 18.4，551 表）
 - 保护非目标：caddy、redis、PostgreSQL/RDS 业务数据、媒体卷、HK Agent、Executor、签名密钥、Task/Evidence/ledger、Control Plane、SSH
+
+> 上表描述的是**运行中的** DEPTH48 运行时。repository 侧事实（canonical main SHA、`main:application` tree/文件数/源码指纹、**repository** migration head、gate/release 状态、open candidate PR）见
+> [`docs/project/GO_CURRENT_STATE.md`](docs/project/GO_CURRENT_STATE.md) 与 [`docs/project/CONTEXT_CHECKPOINT.json`](docs/project/CONTEXT_CHECKPOINT.json)。
+> 2026-09-14 刷新后：运行中 DB revision 仍为 `0133_flight_change_plan`，而 repository migration head 已是 `0134_flight_status_width`（尚未在 HK 执行）。两者不是同一个东西。
 
 `CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` 是**源码输入／装配件**，其内层镜像不是业务运行镜像。
 `CP11_DEPTH46_CONSOLIDATED_PARENT_20260913` 与旧 R3.x 香港运行时均为**已被取代的历史运行时**。
