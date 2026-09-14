@@ -1,255 +1,36 @@
 {
-  "schema": "go.v70.next-depth.candidate.v1",
+  "schema": "go.v70.next-depth.candidate.rebind.v2",
   "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "product_candidate_commit": "4d236353b0ec40d7506ffb3469cac09c98bc8c37",
+  "application_git_tree": "3293f1f748b832d3039e2f0fdb4729328a00333a",
+  "preintegration_candidate_commit": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
+  "preintegration_application_git_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
   "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
-  "base_application_git_tree": "740d026e3723f5da015342ead3394969629541df",
-  "application_git_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
-  "source_tree_sha256": "dc6b8655e362991a7556b07f8ab2b038b81be89f9b0c32f816be5f52a2c6f70f",
-  "source_files": 1364,
-  "changed_application_files": {
-    "application/ci/next_depth/c07_postgres.py": {
+  "source_files": 1365,
+  "inherited_candidate_manifest": {
+    "path": "ci/next-depth/CANDIDATE_INHERITED_85FB.json",
+    "git_blob": "d616e629a1d05f5955a04b60cb60d34bdf571917"
+  },
+  "integrated_application_delta": {
+    "application/src/go_hotel/db/models.py": {
       "mode": "100644",
-      "sha": "7e634cc9f8dd77cc51568daf9a0f410673a4638a",
-      "sha256": "3eb3377f81e219cc4edfe035fbd185e1f4f1337bde4fdcb90957214efc7ea993",
-      "size": 3921,
-      "base_git_blob": null
+      "git_blob": "f0e014f47560ca3f8ecae9ffc2af0cb3746efb38"
     },
-    "application/ci/next_depth/c09_postgres.py": {
+    "application/alembic/versions/0134_flight_status_width.py": {
       "mode": "100644",
-      "sha": "01111d44759f473756832645bfa1a48e7f1c61ee",
-      "sha256": "5ba3f05d6918e293c24f2df5f5defb6105c8e0de3f8212ad4141a636ba8ba6e0",
-      "size": 6454,
-      "base_git_blob": null
-    },
-    "application/ci/next_depth/c11_postgres.py": {
-      "mode": "100644",
-      "sha": "8924bc99d21a216855f7836e6f0a0885bf375cf5",
-      "sha256": "7a8ace9209c972720672e3842af34da9f414e10c48e665de150ca3a6394aac55",
-      "size": 12490,
-      "base_git_blob": null
-    },
-    "application/ci/next_depth/c11_process_actor.py": {
-      "mode": "100644",
-      "sha": "bb7dc2f6837492144d865c524365629ef0244f44",
-      "sha256": "481e4e057723ab89e17c2c6f07c2ea23267b579c3ca2c662089349269a6e458b",
-      "size": 2237,
-      "base_git_blob": null
-    },
-    "application/src/go_hotel/api/idempotency.py": {
-      "mode": "100644",
-      "sha": "e726bbd6524bff4ea98de2f02befd065af315c69",
-      "sha256": "7389d027c67734303be604969b4f3c97f299444ea9d05a76de55d99682a82579",
-      "size": 5925,
-      "base_git_blob": "3ab71ad2f13015079e108e401e91014777c4e723"
-    },
-    "application/src/go_hotel/api/routes/flight.py": {
-      "mode": "100644",
-      "sha": "b29e17d3ea65b68c51c506d34c07b175fbbabf67",
-      "sha256": "f7270d34441903036a69067716cec3c39a87f092594ce736d0c3d5eb51902967",
-      "size": 7868,
-      "base_git_blob": "7d0b6a5e5857848eff4ab1469695e9e76080fcd9"
-    },
-    "application/src/go_hotel/attractions/service.py": {
-      "mode": "100644",
-      "sha": "5f8b4819386848b2ab3eebb1b50f511aee4cfedb",
-      "sha256": "518e680f84f49b53caca21fc0eb0ce37634af8e05c2791ebf3f3550b0e47d2d4",
-      "size": 17849,
-      "base_git_blob": "18c9bf5116756afe490a810618f5e64ff94592d5"
-    },
-    "application/src/go_hotel/attractions/validity.py": {
-      "mode": "100644",
-      "sha": "de9a41eb136bef5f5f4be9803c406b904751956b",
-      "sha256": "93cb671e45afac616f5a284bf7310fc26354e5a25de5e6a853e9337c6e59875e",
-      "size": 3506,
-      "base_git_blob": null
-    },
-    "application/src/go_hotel/flight/coupon_plan.py": {
-      "mode": "100644",
-      "sha": "cf24bdf75cfadbeafbdd8d5a541b6654cdd74133",
-      "sha256": "6242fe6e99bcbd9f77b2732ef175aa2a38351874f537d736505ccc2e627ebb89",
-      "size": 7997,
-      "base_git_blob": null
-    },
-    "application/src/go_hotel/flight/payment_recovery.py": {
-      "mode": "100644",
-      "sha": "810a9061a17566a55bcd30a18b7046c714926538",
-      "sha256": "60034e9a1722b8a396bf6d4d757a287ea418bbd331282fe0468799887d2817ca",
-      "size": 14544,
-      "base_git_blob": null
-    },
-    "application/src/go_hotel/flight/service.py": {
-      "mode": "100644",
-      "sha": "2c766cf540636203bc824d458b6294da18e34236",
-      "sha256": "b70d4e40aa33610c68a050ac50038236aa3c0fa6ffc2cbbe87d28678fbaf9369",
-      "size": 23880,
-      "base_git_blob": "b86a17612ff70710052db799939a25e819b4ef73"
-    },
-    "application/src/go_hotel/go_ai/service.py": {
-      "mode": "100644",
-      "sha": "c11b6a660c0c6a58fca807effb91b39918606614",
-      "sha256": "3f3f5feeb3a4da05a744d8b7874b8fcd0f7e0785da819983bd3fc6909ef6f2dc",
-      "size": 26264,
-      "base_git_blob": "b959b7825e8530d99cc64b7e3c623824518223e4"
-    },
-    "application/src/go_hotel/journey/service.py": {
-      "mode": "100644",
-      "sha": "8354c8e070c056d2388217eed94bfe05afb3c93c",
-      "sha256": "e4d37195af8bf9d788e03ad37342d8b471395616d874088e317db895c8f715b2",
-      "size": 8712,
-      "base_git_blob": "bdd781b362d1b9ecb1ca86f153f6ed0008b8f066"
-    },
-    "application/src/go_hotel/judgment/good_hotel_standard.py": {
-      "mode": "100644",
-      "sha": "1f14ecc957c2ac0831473b744d7a5c7c7e2e56f7",
-      "sha256": "d15221f7925142869bd84cd8a7c955f838aa9d5ad78b1c2965307a53b9a3adad",
-      "size": 4886,
-      "base_git_blob": "de6e7fb11b08fce5a7133f31b005acd5f7922639"
-    },
-    "application/src/go_hotel/judgment/service.py": {
-      "mode": "100644",
-      "sha": "154770137bcdb592e3309d08bafbcca81729cad4",
-      "sha256": "ad955e64863cd7fc919adbb1f39735f94df0dc4bc9cf90784882f6ca8de68478",
-      "size": 21041,
-      "base_git_blob": "dd8fcf59b64c9ef642b5549f4ba29a28e5cd869f"
-    },
-    "application/src/go_hotel/mobility/rental/reconciliation.py": {
-      "mode": "100644",
-      "sha": "0c38f9e17b9e58c2269e79ed7182ad3b1e562281",
-      "sha256": "eda26a527b91e6f59b66ce75f566c1da366aa19e2a0a7cabfd494a583700ea7e",
-      "size": 5022,
-      "base_git_blob": null
-    },
-    "application/src/go_hotel/mobility/ride/recovery_evidence.py": {
-      "mode": "100644",
-      "sha": "7fb7ac6c862f50f35d1d7f23e2e6073a29617c76",
-      "sha256": "437396d94c7ff0448855099937edc949429649ffa827397b10265d06eeb5d7ee",
-      "size": 2154,
-      "base_git_blob": null
-    },
-    "application/src/go_hotel/mobility/ride/service.py": {
-      "mode": "100644",
-      "sha": "c543af5c19237fc8ded6a293686e232b7ea07588",
-      "sha256": "ef10cd646a5f621416f17f47af9ea8ac0f1638c22f53f8da87359faf61770db5",
-      "size": 9440,
-      "base_git_blob": "fd2a193bdd4dcd9b863ddbc958ea00e9d2873806"
-    },
-    "application/src/go_hotel/repositories/sql.py": {
-      "mode": "100644",
-      "sha": "c948dfd8e89601a107296c12f4d0d6f948606d47",
-      "sha256": "36bb6fb7e64c531a283a89a47ddb98a317fdf89702aa16f4de46d8635b5c3824",
-      "size": 42153,
-      "base_git_blob": "dcc2dec0fb08aaee0a8598d688a71e45f7f2d0d5"
-    },
-    "application/src/go_hotel/services/mutation_boundary.py": {
-      "mode": "100644",
-      "sha": "f62fba3ef01e3f4d182314cfef7473670f882e33",
-      "sha256": "611d9bbd6170c87d5c221c8d16eb897fc3dd8e4a6a89b160247ce92098e555d3",
-      "size": 660,
-      "base_git_blob": null
-    },
-    "application/src/go_hotel/travel_intelligence/preferences.py": {
-      "mode": "100644",
-      "sha": "d8cff6e1b95f4778a0a61252bf86f2bfebf877f4",
-      "sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1",
-      "size": 12186,
-      "base_git_blob": "b083735b5cbdc9aea89ead761d800f9bff85cee9"
-    },
-    "application/tests/c07_preference_process_actor.py": {
-      "mode": "100644",
-      "sha": "a12aca195f0b8210d1267874d9505e11847914af",
-      "sha256": "6bd2e7d8f5e6d1b4eaad52c6cff50e8ac0d883b64e1ac3fd58e655cf2c6cadbe",
-      "size": 5085,
-      "base_git_blob": null
-    },
-    "application/tests/go_ai/c08_hard_exit_worker.py": {
-      "mode": "100644",
-      "sha": "2f1d31742e564ada9bea5c622cd922313b216e1b",
-      "sha256": "85702d024449720fbbccf49191e30229dc1dea38d5ac86b013cd9c0faffbecf8",
-      "size": 1890,
-      "base_git_blob": null
-    },
-    "application/tests/go_ai/test_c08_hard_exit_recovery.py": {
-      "mode": "100644",
-      "sha": "07f27dd1578a4cebe14baf28fc4a401f074f590d",
-      "sha256": "cb209b4f0dc76f746837560402182757bcadc5caeda7da19dfe89e8b050fd0c1",
-      "size": 3024,
-      "base_git_blob": null
-    },
-    "application/tests/journey/test_c10_batch_list_projection.py": {
-      "mode": "100644",
-      "sha": "b50d0ac54c803827639cb2d317fe4dd2d100c190",
-      "sha256": "99938833b59963eb641b0bc9971fd507ad174c9a8953d0d76eabbd210364962d",
-      "size": 5474,
-      "base_git_blob": null
-    },
-    "application/tests/judgment/test_next_depth_concurrent_judgment.py": {
-      "mode": "100644",
-      "sha": "c27a41d750fa64d0bcafc0cff1e9069a52168030",
-      "sha256": "c6c579c38c5ac65234f5b75c3f87bdb998de08b17add0697c85e50b59b19a5fb",
-      "size": 8642,
-      "base_git_blob": null
-    },
-    "application/tests/payments/test_c11_flight_idempotency_recovery.py": {
-      "mode": "100644",
-      "sha": "bfc245ff70951ef39dcfc9da030c5f9e8029a5c5",
-      "sha256": "783816041585a447e93d801c5450d924e619ad3d5a50b4b04afdd058673d77be",
-      "size": 18946,
-      "base_git_blob": null
-    },
-    "application/tests/test_next_depth_c03_payment_inventory_races.py": {
-      "mode": "100644",
-      "sha": "b68ba2d99a8538185873402e7cf7729af4350735",
-      "sha256": "a69c18f7264ec6b2f08f8a7bfe48d0eed2ecbd6720806f718ea233be727caa31",
-      "size": 4982,
-      "base_git_blob": null
-    },
-    "application/tests/test_next_depth_c06_supplier_validity.py": {
-      "mode": "100644",
-      "sha": "d321207145eb653efd531145c343e0f1fe4332c9",
-      "sha256": "12a783f49696a1dcadb9ea42632b38c2a6c6b2fb8a4d5e04e47b86782693ff58",
-      "size": 8005,
-      "base_git_blob": null
-    },
-    "application/tests/test_round2_c07_process_recovery.py": {
-      "mode": "100644",
-      "sha": "f3e2cc075a45e81f6b387e86ea1a5a63cad48d3e",
-      "sha256": "4f577c32240286c255cb0ffc6f6460b463bb3279f29ce03c4e071d26121ea65a",
-      "size": 11203,
-      "base_git_blob": null
-    },
-    "application/tests/test_v70_next_c01_unknown_funding.py": {
-      "mode": "100644",
-      "sha": "f1d284d3d961e3a8621ce523bb5faf3cdc997e6c",
-      "sha256": "8d38828184fde831bc4ba080b903350cd71b86064c159f198a2b60d08810f3cd",
-      "size": 4313,
-      "base_git_blob": null
-    },
-    "application/tests/test_v70_next_c02_coupon_plan.py": {
-      "mode": "100644",
-      "sha": "c065603824371c849ee769eacd95c6bc7cae2b25",
-      "sha256": "5419f02e5694f45d59a356784db8eb66572fb43599d8df8dcf97e33dcb0e5bd0",
-      "size": 5394,
-      "base_git_blob": null
-    },
-    "application/tests/test_v70_next_c04_readonly_reconciliation.py": {
-      "mode": "100644",
-      "sha": "42a1c6cb2800936dfec3431975a68126a4c303a2",
-      "sha256": "fe6f95dfa685803c189b1a86f82cb64500e8b6bba7d79303fd8f5ab4cb03c33d",
-      "size": 3444,
-      "base_git_blob": null
-    },
-    "application/tests/test_v70_next_c05_recovery_evidence.py": {
-      "mode": "100644",
-      "sha": "44d441cdad37bbbca7848772c4c1774dd9054a13",
-      "sha256": "e17dc0cc080650953185f2273e8afd2a055109fb5754eb775741070c0fd76a83",
-      "size": 2417,
-      "base_git_blob": null
+      "git_blob": "079dfe9a992484e687aa8fcd3c669d2d60cb85d5",
+      "revision": "0134_flight_status_width",
+      "down_revision": "0133_flight_change_plan"
     }
   },
-  "inherited_application_files": 1330,
-  "new_application_files": 23,
-  "deleted_application_files": [],
-  "full_release": "HOLD",
+  "source_tree_sha256_status": "COMPUTE_AND_BIND_FROM_RETENTION_GATE",
+  "verified_inherited_evidence": {
+    "pr74_postgresql_workflow_run": 34807203728,
+    "c11_original_postgresql_cases": "10/10 PASS",
+    "migration_0134_data_preservation_and_downgrade_guard": "PASS"
+  },
+  "gate_order": ["RETENTION","C07_POSTGRES","C09_POSTGRES","C11_POSTGRES","REGRESSION","C14","C13"],
   "hong_kong": "NOT_ACCESSED",
+  "final_release": "HOLD",
   "production": "HOLD"
 }

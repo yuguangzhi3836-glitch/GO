@@ -1,0 +1,30 @@
+{
+  "schema": "go.v70.pr73.integrated-gate-binding.v2",
+  "status": "REBIND_SUBMITTED_GATES_PENDING",
+  "product_candidate_commit": "4d236353b0ec40d7506ffb3469cac09c98bc8c37",
+  "candidate_git_tree": "c0cbae77a97b318c8b2b9411f5d42c1b794c3067",
+  "application_tree": "3293f1f748b832d3039e2f0fdb4729328a00333a",
+  "canonical_main_before_gate": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "manifests": {
+    "baseline": "ci/retention/BASELINE.json",
+    "baseline_inherited_blob": "8eda2e86ad5164c0e8203a068026ef195cb3f995",
+    "candidate": "ci/next-depth/CANDIDATE.json",
+    "candidate_inherited_blob": "d616e629a1d05f5955a04b60cb60d34bdf571917"
+  },
+  "migration": {
+    "revision": "0134_flight_status_width",
+    "down_revision": "0133_flight_change_plan",
+    "git_blob": "079dfe9a992484e687aa8fcd3c669d2d60cb85d5"
+  },
+  "verified_inherited_evidence": {
+    "pr74_workflow_run": 34807203728,
+    "c11_original_postgresql_cases": "10/10 PASS",
+    "migration_data_preservation_and_downgrade_guard": "PASS"
+  },
+  "execution_required": ["retention","C07 PostgreSQL","C09 PostgreSQL","C11 PostgreSQL","regression"],
+  "gate_order_after_green": ["C14","C13"],
+  "already_pass_work_redevelopment": "PROHIBITED",
+  "hk_deploy": "HOLD",
+  "final_release": "HOLD",
+  "production": "HOLD"
+}
