@@ -1,0 +1,36 @@
+{
+  "status": "BOUND_FOR_C14_C13",
+  "candidate_commit_sha": "4d236353b0ec40d7506ffb3469cac09c98bc8c37",
+  "candidate_git_tree_sha": "c0cbae77a97b318c8b2b9411f5d42c1b794c3067",
+  "application_tree_sha": "3293f1f748b832d3039e2f0fdb4729328a00333a",
+  "lineage": {
+    "canonical_main_before_gate": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+    "pr73_pre_integration": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
+    "pr74_verified_repair": "5082f94357148082601690bcca0651b59e149582",
+    "integration_merge": "4d236353b0ec40d7506ffb3469cac09c98bc8c37"
+  },
+  "verified_inherited_evidence": {
+    "pr74_postgresql_workflow_run": 34807203728,
+    "pr74_result": "PASS",
+    "c11_original_postgresql_cases": "10/10 PASS",
+    "migration_0134_data_preservation_and_downgrade_guard": "PASS"
+  },
+  "gate_order": ["C14", "C13"],
+  "c14": {
+    "status": "PENDING",
+    "scope": "authority, boundary, evidence identity, release authority, no overclaim"
+  },
+  "c13": {
+    "status": "PENDING_AFTER_C14_PASS",
+    "scope": "independent acceptance against the exact fixed candidate and bound evidence"
+  },
+  "merge_to_main": "PROHIBITED_UNTIL_C14_AND_C13_PASS",
+  "hk_deploy": "HOLD",
+  "final_release": "HOLD",
+  "production": "HOLD",
+  "notes": [
+    "Already-PASS evidence is inherited and must not be redeveloped solely for completeness.",
+    "Any new test or review result must bind to the exact candidate SHA or a documented gate-only descendant.",
+    "Assignment or ledger state is not execution proof."
+  ]
+}
