@@ -88,8 +88,16 @@ jobs:
           ack_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           start_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           python -m py_compile '${{ matrix.probe }}' 2>&1 | tee -a "$RUNNER_TEMP/start-process.log"
-          printf 'probe_compile=PASS\n' | tee -a "$RUNNER_TEMP/start-process.log"
-          printf 'acknowledged_at=%s\nstarted_at=%s\n' "$ack_at" "$start_at" | tee -a "$RUNNER_TEMP/start-process.log"
+          python - <<'PY' '${{ matrix.probe }}' 2>&1 | tee -a "$RUNNER_TEMP/start-process.log"
+          import ast, hashlib, pathlib, sys
+          p = pathlib.Path(sys.argv[1])
+          data = p.read_bytes()
+          tree = ast.parse(data.decode('utf-8'))
+          tests = sum(1 for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name.startswith('test_'))
+          print(f'probe_sha256={hashlib.sha256(data).hexdigest()}')
+          print(f'test_functions={tests}')
+          PY
+          printf 'task_bound_probe=PASS\nacknowledged_at=%s\nstarted_at=%s\n' "$ack_at" "$start_at" | tee -a "$RUNNER_TEMP/start-process.log"
           echo "ACK_AT=$ack_at" >> "$GITHUB_ENV"
           echo "START_AT=$start_at" >> "$GITHUB_ENV"
 
@@ -102,10 +110,9 @@ jobs:
           PROBE: ${{ matrix.probe }}
         run: |
           set -euo pipefail
-          observed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           process_sha=$(sha256sum "$RUNNER_TEMP/start-process.log" | awk '{print $1}')
           actual=$(git rev-parse HEAD)
-          python - <<'PY'
+          PROCESS_SHA="$process_sha" ACTUAL_SOURCE="$actual" python - <<'PY'
           import json, os, pathlib
           out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'r3-worker-start'
           out.mkdir(parents=True, exist_ok=True)
@@ -115,10 +122,10 @@ jobs:
             'cell_id': os.environ['CELL'],
             'task_id': os.environ['TASK'],
             'issue_number': int(os.environ['ISSUE']),
-            'source_anchor': '8ffcde66d36c1bbf849218529ef015f6e81725af',
+            'source_anchor': os.environ['ACTUAL_SOURCE'],
             'acknowledged_at': os.environ['ACK_AT'],
             'started_at': os.environ['START_AT'],
-            'observed_at': os.popen('date -u +%Y-%m-%dT%H:%M:%SZ').read().strip(),
+            'observed_at': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
             'execution_identity': {
               'provider': 'github-actions',
               'run_id': os.environ.get('GITHUB_RUN_ID'),
@@ -129,7 +136,7 @@ jobs:
               'actor': os.environ.get('GITHUB_ACTOR'),
               'workflow': os.environ.get('GITHUB_WORKFLOW'),
               'workflow_ref': os.environ.get('GITHUB_WORKFLOW_REF'),
-              'workflow_sha': os.environ.get('GITHUB_WORKFLOW_SHA'),
+              'workflow_sha': os.environ.get('GITHUB_WORKFLOW_SHA')
             },
             'probe': os.environ['PROBE'],
             'execution_evidence': {
@@ -137,7 +144,7 @@ jobs:
               'sha256': os.environ['PROCESS_SHA'],
               'kind': 'PROCESS_OUTPUT'
             },
-            'scope': 'worker ACK/start admission only; no task completion claim',
+            'scope': 'task-bound ACK/start admission only; no completion claim',
             'hong_kong': 'NOT_ACCESSED',
             'production': 'HOLD',
             'final_release': 'HOLD'
@@ -145,14 +152,8 @@ jobs:
           (out / 'ACK_START.json').write_text(json.dumps(receipt, indent=2) + '\n')
           PY
           cp "$RUNNER_TEMP/start-process.log" "$RUNNER_TEMP/r3-worker-start/start-process.log"
-        env:
-          CELL: ${{ matrix.cell }}
-          TASK: ${{ matrix.task }}
-          ISSUE: ${{ matrix.issue }}
-          PROBE: ${{ matrix.probe }}
-          PROCESS_SHA: ${{ env.PROCESS_SHA }}
 
-      - name: Heartbeat window for live-run verification
+      - name: Live heartbeat window
         shell: bash
         run: |
           set -euo pipefail
