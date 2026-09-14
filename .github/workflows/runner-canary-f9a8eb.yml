@@ -1,0 +1,41 @@
+name: Runner canary for fixed f9a8eb candidate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/runner-canary-f9a8eb.yml
+permissions:
+  contents: read
+jobs:
+  ubuntu-22:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - name: Runner started
+        run: echo RUNNER_STARTED_UBUNTU_22
+      - uses: actions/checkout@v4
+        with:
+          ref: f9a8eb74729ca99cf9e67fd102ea39d2ba8ef779
+          persist-credentials: false
+      - name: Verify fixed candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "f9a8eb74729ca99cf9e67fd102ea39d2ba8ef779"
+          echo FIXED_CANDIDATE_OK_UBUNTU_22
+  ubuntu-24:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Runner started
+        run: echo RUNNER_STARTED_UBUNTU_24
+      - uses: actions/checkout@v4
+        with:
+          ref: f9a8eb74729ca99cf9e67fd102ea39d2ba8ef779
+          persist-credentials: false
+      - name: Verify fixed candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "f9a8eb74729ca99cf9e67fd102ea39d2ba8ef779"
+          echo FIXED_CANDIDATE_OK_UBUNTU_24
