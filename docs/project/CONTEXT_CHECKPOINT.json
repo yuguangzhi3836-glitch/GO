@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "status": "REFRESHED",
+  "checkpoint_main_sha": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+  "checkpoint_main_date": "2026-09-14T18:34:48+08:00",
+  "checkpoint_main_subject": "Merge PR #76: bind 0134 compatibility repair and final gate evidence",
+  "refreshed_at": "2026-09-14T19:57:19+08:00",
+  "refreshed_by_pr": "#65",
+  "created_for": "project-context/current-state-v1",
+  "previous_checkpoint_main_sha": "286e294d92df4b7d1c0073116a8e628734abec6c",
+  "checkpoint_points_at": "canonical main — never at this context PR's own branch head",
+  "context_entrypoints": [
+    "README.md",
+    "docs/project/OPERATING_CONTEXT.md",
+    "docs/project/GO_CURRENT_STATE.md",
+    "docs/project/ACTIVE_DECISIONS.md",
+    "docs/project/CONTEXT_HANDOFF_PROTOCOL.md"
+  ],
+  "module_state_root": "docs/state",
+  "meaning": "All accepted project truth up to checkpoint_main_sha has been compressed into the current-state layer. A fresh session should load this layer and inspect only the delta after checkpoint_main_sha, rather than replaying historical pull requests.",
+  "canonical_main_snapshot": {
+    "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+    "application_files": 1365,
+    "application_source_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
+    "migration_head": "0134_flight_status_width",
+    "migration_down_revision": "0133_flight_change_plan",
+    "migration_revisions": 134,
+    "gate_manifests": [
+      "ci/retention/BASELINE.json",
+      "ci/next-depth/CANDIDATE.json",
+      "ci/cell-closure/CANDIDATE.json"
+    ],
+    "merged_since_previous_checkpoint": ["#66", "#67", "#69", "#70", "#74", "#76"]
+  },
+  "live_runtime_snapshot": {
+    "environment": "HK-STAGING",
+    "runtime_generation": "DEPTH48",
+    "deployed_date": "2026-09-13",
+    "image_tag": "go-hotel:depth48-runtime-6d0fd905",
+    "deployed_application_tree": "3025b2b6b36ea9211da561a4631f304216de9d90",
+    "deployed_application_files": 1325,
+    "live_database_revision": "0133_flight_change_plan",
+    "runtime_pointer": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+    "repository_source_ahead_of_runtime": {
+      "files_changed": 62,
+      "insertions": 5329,
+      "deletions": 195,
+      "migration_delta": "0133_flight_change_plan -> 0134_flight_status_width",
+      "migration_applied": false
+    },
+    "mutated_by_this_refresh": false
+  },
+  "gate_snapshot": {
+    "retention_rebind": "PASS_RUN_34825183779",
+    "c11_original_postgresql_cases": "10/10 PASS (run 34807203728)",
+    "migration_0134_preservation_and_downgrade_guard": "PASS",
+    "c14_for_final_tree": "NOT_RECORDED_ON_MAIN",
+    "c13_for_final_tree": "NOT_RECORDED_ON_MAIN",
+    "gate_order": ["RETENTION", "C07_POSTGRES", "C09_POSTGRES", "C11_POSTGRES", "REGRESSION", "C14", "C13"],
+    "hk_deploy": "HOLD",
+    "final_release": "HOLD",
+    "production": "HOLD",
+    "historical_pass_transferred": false
+  },
+  "active_candidate_prs_not_current_truth": [61, 65, 71, 72, 73, 75, 78, 89, 90, 91],
+  "limitations": [
+    "Open pull requests are not imported as current main facts.",
+    "Historical business decisions not materialized from authoritative sources are not reconstructed from AI memory.",
+    "Runtime execution authority is not granted by this checkpoint.",
+    "A scoped C13/C14 acceptance bound to one candidate tree does not transfer to a different tree.",
+    "The repository migration head is not the live database revision."
+  ]
+}
