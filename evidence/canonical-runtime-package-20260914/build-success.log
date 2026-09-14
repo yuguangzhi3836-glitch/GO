@@ -1,0 +1,662 @@
+﻿2026-09-14T01:13:13.3484804Z Current runner version: '2.337.0'
+2026-09-14T01:13:13.3520407Z ##[group]Runner Image Provisioner
+2026-09-14T01:13:13.3522004Z Hosted Compute Agent
+2026-09-14T01:13:13.3523047Z Version: 20260828.587
+2026-09-14T01:13:13.3524322Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-14T01:13:13.3525770Z Build Date: 2026-08-28T16:44:25Z
+2026-09-14T01:13:13.3527332Z Worker ID: {020fbdfc-0fef-4384-87b9-9d85843bcf61}
+2026-09-14T01:13:13.3528726Z Azure Region: westus2
+2026-09-14T01:13:13.3529703Z ##[endgroup]
+2026-09-14T01:13:13.3532184Z ##[group]Operating System
+2026-09-14T01:13:13.3533359Z Ubuntu
+2026-09-14T01:13:13.3534391Z 24.04.5
+2026-09-14T01:13:13.3535480Z LTS
+2026-09-14T01:13:13.3536779Z ##[endgroup]
+2026-09-14T01:13:13.3537751Z ##[group]Runner Image
+2026-09-14T01:13:13.3538998Z Image: ubuntu-24.04
+2026-09-14T01:13:13.3540045Z Version: 20260907.300.1
+2026-09-14T01:13:13.3542297Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-14T01:13:13.3545024Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-14T01:13:13.3547313Z ##[endgroup]
+2026-09-14T01:13:13.3549279Z ##[group]GITHUB_TOKEN Permissions
+2026-09-14T01:13:13.3552102Z Contents: read
+2026-09-14T01:13:13.3553080Z Metadata: read
+2026-09-14T01:13:13.3554262Z ##[endgroup]
+2026-09-14T01:13:13.3557632Z Secret source: Actions
+2026-09-14T01:13:13.3559242Z Cache mode: write
+2026-09-14T01:13:13.3560432Z Prepare workflow directory
+2026-09-14T01:13:13.4056653Z Prepare all required actions
+2026-09-14T01:13:13.4137450Z Getting action download info
+2026-09-14T01:13:13.8620607Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-14T01:13:13.9831223Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-14T01:13:14.2036806Z Complete job name: build
+2026-09-14T01:13:14.2775901Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-14T01:13:14.2784825Z ##[group]Run actions/checkout@v4
+2026-09-14T01:13:14.2785559Z with:
+2026-09-14T01:13:14.2786026Z   ref: 83b253931864f8c2664a0a897b9a5c833286d8c5
+2026-09-14T01:13:14.2787107Z   fetch-depth: 0
+2026-09-14T01:13:14.2787588Z   persist-credentials: false
+2026-09-14T01:13:14.2788118Z   repository: yuguangzhi3836-glitch/GO
+2026-09-14T01:13:14.2792083Z   token: ***
+2026-09-14T01:13:14.2792512Z   ssh-strict: true
+2026-09-14T01:13:14.2792941Z   ssh-user: git
+2026-09-14T01:13:14.2793354Z   clean: true
+2026-09-14T01:13:14.2793795Z   sparse-checkout-cone-mode: true
+2026-09-14T01:13:14.2794322Z   fetch-tags: false
+2026-09-14T01:13:14.2794799Z   show-progress: true
+2026-09-14T01:13:14.2795253Z   lfs: false
+2026-09-14T01:13:14.2795665Z   submodules: false
+2026-09-14T01:13:14.2796126Z   set-safe-directory: true
+2026-09-14T01:13:14.2796805Z   allow-unsafe-pr-checkout: false
+2026-09-14T01:13:14.2797668Z ##[endgroup]
+2026-09-14T01:13:14.3947759Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-14T01:13:14.5046676Z ##[group]Getting Git version info
+2026-09-14T01:13:14.5067991Z Working directory is '/home/runner/work/GO/GO'
+2026-09-14T01:13:14.5134343Z [command]/usr/bin/git version
+2026-09-14T01:13:14.5138387Z git version 2.55.0
+2026-09-14T01:13:14.5159258Z ##[endgroup]
+2026-09-14T01:13:14.5173869Z Temporarily overriding HOME='/home/runner/work/_temp/672d8a4f-8f44-4090-9fb2-6d0f0433f13f' before making global git config changes
+2026-09-14T01:13:14.5178066Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-14T01:13:14.5183067Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-14T01:13:14.5186461Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-14T01:13:14.5189335Z ##[group]Initializing the repository
+2026-09-14T01:13:14.5190397Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-14T01:13:14.5193795Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-14T01:13:14.5195879Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-14T01:13:14.5198694Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-14T01:13:14.5199969Z hint: call:
+2026-09-14T01:13:14.5200646Z hint:
+2026-09-14T01:13:14.5201486Z hint: 	git config --global init.defaultBranch <name>
+2026-09-14T01:13:14.5203165Z hint:
+2026-09-14T01:13:14.5204147Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-14T01:13:14.5207333Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-14T01:13:14.5208641Z hint:
+2026-09-14T01:13:14.5209356Z hint: 	git branch -m <name>
+2026-09-14T01:13:14.5210942Z hint:
+2026-09-14T01:13:14.5212031Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-14T01:13:14.5213598Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-14T01:13:14.5217242Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-14T01:13:14.5220395Z ##[endgroup]
+2026-09-14T01:13:14.5221654Z ##[group]Disabling automatic garbage collection
+2026-09-14T01:13:14.5223179Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-14T01:13:14.5226206Z ##[endgroup]
+2026-09-14T01:13:14.5227684Z ##[group]Setting up auth
+2026-09-14T01:13:14.5230116Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-14T01:13:14.5235143Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-14T01:13:14.5725868Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-14T01:13:14.5732388Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-14T01:13:14.5932069Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-14T01:13:14.5973107Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-14T01:13:14.6225042Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-14T01:13:14.6264489Z ##[endgroup]
+2026-09-14T01:13:14.6266946Z ##[group]Fetching the repository
+2026-09-14T01:13:14.6276719Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+2026-09-14T01:13:37.6418862Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-14T01:13:37.6435777Z  * [new branch]      acceptance/cp11-depth24-runtime -> origin/acceptance/cp11-depth24-runtime
+2026-09-14T01:13:37.6440105Z  * [new branch]      acceptance/cp11-depth25-evidence-export -> origin/acceptance/cp11-depth25-evidence-export
+2026-09-14T01:13:37.6441962Z  * [new branch]      acceptance/cp11-depth25-runtime -> origin/acceptance/cp11-depth25-runtime
+2026-09-14T01:13:37.6443382Z  * [new branch]      acceptance/cp11-depth26-runtime -> origin/acceptance/cp11-depth26-runtime
+2026-09-14T01:13:37.6444795Z  * [new branch]      acceptance/cp11-depth28-v14-ci -> origin/acceptance/cp11-depth28-v14-ci
+2026-09-14T01:13:37.6448973Z  * [new branch]      acceptance/cp11-depth29-isolated -> origin/acceptance/cp11-depth29-isolated
+2026-09-14T01:13:37.6450561Z  * [new branch]      acceptance/cp11-depth30-isolated -> origin/acceptance/cp11-depth30-isolated
+2026-09-14T01:13:37.6452023Z  * [new branch]      acceptance/cp11-depth31-isolated -> origin/acceptance/cp11-depth31-isolated
+2026-09-14T01:13:37.6453417Z  * [new branch]      acceptance/cp11-depth32-isolated -> origin/acceptance/cp11-depth32-isolated
+2026-09-14T01:13:37.6455521Z  * [new branch]      acceptance/cp11-depth32r2-isolated -> origin/acceptance/cp11-depth32r2-isolated
+2026-09-14T01:13:37.6457583Z  * [new branch]      acceptance/cp11-depth33-isolated -> origin/acceptance/cp11-depth33-isolated
+2026-09-14T01:13:37.6459185Z  * [new branch]      acceptance/cp11-depth34-isolated -> origin/acceptance/cp11-depth34-isolated
+2026-09-14T01:13:37.6460758Z  * [new branch]      acceptance/cp11-depth34r2-isolated -> origin/acceptance/cp11-depth34r2-isolated
+2026-09-14T01:13:37.6462297Z  * [new branch]      acceptance/cp11-depth35-isolated -> origin/acceptance/cp11-depth35-isolated
+2026-09-14T01:13:37.6463918Z  * [new branch]      acceptance/cp11-depth35r2-isolated -> origin/acceptance/cp11-depth35r2-isolated
+2026-09-14T01:13:37.6465616Z  * [new branch]      acceptance/cp11-depth36-auth-test-r2 -> origin/acceptance/cp11-depth36-auth-test-r2
+2026-09-14T01:13:37.6467550Z  * [new branch]      acceptance/cp11-depth36-isolated -> origin/acceptance/cp11-depth36-isolated
+2026-09-14T01:13:37.6469124Z  * [new branch]      acceptance/cp11-depth36r2-isolated -> origin/acceptance/cp11-depth36r2-isolated
+2026-09-14T01:13:37.6470746Z  * [new branch]      acceptance/cp11-depth36r3-isolated -> origin/acceptance/cp11-depth36r3-isolated
+2026-09-14T01:13:37.6472535Z  * [new branch]      acceptance/cp11-depth37-build-r2 -> origin/acceptance/cp11-depth37-build-r2
+2026-09-14T01:13:37.6474311Z  * [new branch]      acceptance/cp11-depth37-device-smoke -> origin/acceptance/cp11-depth37-device-smoke
+2026-09-14T01:13:37.6476391Z  * [new branch]      acceptance/cp11-depth37-postgres -> origin/acceptance/cp11-depth37-postgres
+2026-09-14T01:13:37.6478968Z  * [new branch]      acceptance/cp11-depth37-provider-inputs -> origin/acceptance/cp11-depth37-provider-inputs
+2026-09-14T01:13:37.6481429Z  * [new branch]      acceptance/cp11-depth37-readiness -> origin/acceptance/cp11-depth37-readiness
+2026-09-14T01:13:37.6483035Z  * [new branch]      acceptance/cp11-depth37r2-native-build -> origin/acceptance/cp11-depth37r2-native-build
+2026-09-14T01:13:37.6484487Z  * [new branch]      acceptance/depth37-agent-gateway -> origin/acceptance/depth37-agent-gateway
+2026-09-14T01:13:37.6485899Z  * [new branch]      acceptance/depth37-agent-gateway-r2 -> origin/acceptance/depth37-agent-gateway-r2
+2026-09-14T01:13:37.6487703Z  * [new branch]      acceptance/depth38-agent-lifecycle -> origin/acceptance/depth38-agent-lifecycle
+2026-09-14T01:13:37.6489569Z  * [new branch]      acceptance/depth40-isolated-runtime-review -> origin/acceptance/depth40-isolated-runtime-review
+2026-09-14T01:13:37.6491333Z  * [new branch]      acceptance/depth40-pg18-upgrade-recovery -> origin/acceptance/depth40-pg18-upgrade-recovery
+2026-09-14T01:13:37.6492943Z  * [new branch]      acceptance/depth40-staging-build-review -> origin/acceptance/depth40-staging-build-review
+2026-09-14T01:13:37.6494400Z  * [new branch]      acceptance/depth40-zero-restore -> origin/acceptance/depth40-zero-restore
+2026-09-14T01:13:37.6495943Z  * [new branch]      acceptance/depth41-cross-end-journeys-20260912 -> origin/acceptance/depth41-cross-end-journeys-20260912
+2026-09-14T01:13:37.6498018Z  * [new branch]      acceptance/depth48-1000-users-20260913 -> origin/acceptance/depth48-1000-users-20260913
+2026-09-14T01:13:37.6499700Z  * [new branch]      acceptance/depth48-hk-load1000-20260913-1115 -> origin/acceptance/depth48-hk-load1000-20260913-1115
+2026-09-14T01:13:37.6501714Z  * [new branch]      archive-command-center-20260911 -> origin/archive-command-center-20260911
+2026-09-14T01:13:37.6503431Z  * [new branch]      archive-hk-staging-20260911 -> origin/archive-hk-staging-20260911
+2026-09-14T01:13:37.6505186Z  * [new branch]      archive-tools/depth40-parent-34644569516 -> origin/archive-tools/depth40-parent-34644569516
+2026-09-14T01:13:37.6507665Z  * [new branch]      archive/depth40-p03-compat-v2-parent-34644569516 -> origin/archive/depth40-p03-compat-v2-parent-34644569516
+2026-09-14T01:13:37.6510502Z  * [new branch]      archive/depth48-source-parent-555c624d-20260913 -> origin/archive/depth48-source-parent-555c624d-20260913
+2026-09-14T01:13:37.6512734Z  * [new branch]      build/canonical-runtime-package-20260914 -> origin/build/canonical-runtime-package-20260914
+2026-09-14T01:13:37.6514636Z  * [new branch]      build/depth48-source-composite-parent-20260913 -> origin/build/depth48-source-composite-parent-20260913
+2026-09-14T01:13:37.6516587Z  * [new branch]      canonical/depth48-hk-runtime-20260913 -> origin/canonical/depth48-hk-runtime-20260913
+2026-09-14T01:13:37.6518294Z  * [new branch]      canonical/depth48-runtime-pointer-postmerge -> origin/canonical/depth48-runtime-pointer-postmerge
+2026-09-14T01:13:37.6519960Z  * [new branch]      capacity/depth48-1000vu-20260913T131404277Z -> origin/capacity/depth48-1000vu-20260913T131404277Z
+2026-09-14T01:13:37.6521497Z  * [new branch]      checkpoints/cp11-refund-ride-3f72a45 -> origin/checkpoints/cp11-refund-ride-3f72a45
+2026-09-14T01:13:37.6523019Z  * [new branch]      closeout/pr51-deploy-capability-20260913 -> origin/closeout/pr51-deploy-capability-20260913
+2026-09-14T01:13:37.6524790Z  * [new branch]      codex/docs-boss02-final-proven-operations-20260911 -> origin/codex/docs-boss02-final-proven-operations-20260911
+2026-09-14T01:13:37.6526983Z  * [new branch]      consolidation/canonical-go-application-baseline-20260912 -> origin/consolidation/canonical-go-application-baseline-20260912
+2026-09-14T01:13:37.6529093Z  * [new branch]      control-plane/boss-test-pr-live-integration-v1-20260912 -> origin/control-plane/boss-test-pr-live-integration-v1-20260912
+2026-09-14T01:13:37.6530833Z  * [new branch]      control-plane/boss-test-pr-v1-20260912 -> origin/control-plane/boss-test-pr-v1-20260912
+2026-09-14T01:13:37.6532239Z  * [new branch]      deliverables/cp11-depth19-5cb6034 -> origin/deliverables/cp11-depth19-5cb6034
+2026-09-14T01:13:37.6533804Z  * [new branch]      deliverables/cp11-depth20-fadcdca -> origin/deliverables/cp11-depth20-fadcdca
+2026-09-14T01:13:37.6535332Z  * [new branch]      deliverables/cp11-depth21-refund-recovery -> origin/deliverables/cp11-depth21-refund-recovery
+2026-09-14T01:13:37.6537370Z  * [new branch]      deliverables/cp11-depth23-shared-capacity -> origin/deliverables/cp11-depth23-shared-capacity
+2026-09-14T01:13:37.6558695Z  * [new branch]      deliverables/cp11-depth24-unpaid-expiry -> origin/deliverables/cp11-depth24-unpaid-expiry
+2026-09-14T01:13:37.6581441Z  * [new branch]      deliverables/cp11-depth25-postgres-runtime -> origin/deliverables/cp11-depth25-postgres-runtime
+2026-09-14T01:13:37.6587468Z  * [new branch]      deliverables/cp11-depth26-control-brand -> origin/deliverables/cp11-depth26-control-brand
+2026-09-14T01:13:37.6610768Z  * [new branch]      deliverables/cp11-depth27-brand-aligned-v3 -> origin/deliverables/cp11-depth27-brand-aligned-v3
+2026-09-14T01:13:37.6625375Z  * [new branch]      deliverables/cp11-depth27-brand-height -> origin/deliverables/cp11-depth27-brand-height
+2026-09-14T01:13:37.6627599Z  * [new branch]      deliverables/cp11-depth27-brand-light-v7-c28ae4ff -> origin/deliverables/cp11-depth27-brand-light-v7-c28ae4ff
+2026-09-14T01:13:37.6629395Z  * [new branch]      deliverables/cp11-depth27-brand-master-v12 -> origin/deliverables/cp11-depth27-brand-master-v12
+2026-09-14T01:13:37.6631269Z  * [new branch]      deliverables/cp11-depth27-brand-master-v13-38407a0e -> origin/deliverables/cp11-depth27-brand-master-v13-38407a0e
+2026-09-14T01:13:37.6633517Z  * [new branch]      deliverables/cp11-depth27-brand-master-v14-619f8035 -> origin/deliverables/cp11-depth27-brand-master-v14-619f8035
+2026-09-14T01:13:37.6638447Z  * [new branch]      deliverables/cp11-depth27-brand-master-v6-59136e88 -> origin/deliverables/cp11-depth27-brand-master-v6-59136e88
+2026-09-14T01:13:37.6640271Z  * [new branch]      deliverables/cp11-depth27-brand-master-v8 -> origin/deliverables/cp11-depth27-brand-master-v8
+2026-09-14T01:13:37.6642038Z  * [new branch]      deliverables/cp11-depth27-brand-plus-top-v5 -> origin/deliverables/cp11-depth27-brand-plus-top-v5
+2026-09-14T01:13:37.6644017Z  * [new branch]      deliverables/cp11-depth27-brand-refined-v4 -> origin/deliverables/cp11-depth27-brand-refined-v4
+2026-09-14T01:13:37.6645593Z  * [new branch]      deliverables/cp11-depth27-brand-text-safe -> origin/deliverables/cp11-depth27-brand-text-safe
+2026-09-14T01:13:37.6647574Z  * [new branch]      deliverables/cp11-depth27-session-brand -> origin/deliverables/cp11-depth27-session-brand
+2026-09-14T01:13:37.6649248Z  * [new branch]      deliverables/cp11-depth28-v14-integration -> origin/deliverables/cp11-depth28-v14-integration
+2026-09-14T01:13:37.6651046Z  * [new branch]      deliverables/cp11-depth29-trip-reentry -> origin/deliverables/cp11-depth29-trip-reentry
+2026-09-14T01:13:37.6652827Z  * [new branch]      deliverables/cp11-depth30-native-payment -> origin/deliverables/cp11-depth30-native-payment
+2026-09-14T01:13:37.6654611Z  * [new branch]      deliverables/cp11-depth31-consent-direct -> origin/deliverables/cp11-depth31-consent-direct
+2026-09-14T01:13:37.6656889Z  * [new branch]      deliverables/cp11-depth32-change-terms -> origin/deliverables/cp11-depth32-change-terms
+2026-09-14T01:13:37.6658990Z  * [new branch]      deliverables/cp11-depth32r2-change-terms -> origin/deliverables/cp11-depth32r2-change-terms
+2026-09-14T01:13:37.6660816Z  * [new branch]      deliverables/cp11-depth33-mobility-refund -> origin/deliverables/cp11-depth33-mobility-refund
+2026-09-14T01:13:37.6662470Z  * [new branch]      deliverables/cp11-depth34-hotel-quote -> origin/deliverables/cp11-depth34-hotel-quote
+2026-09-14T01:13:37.6664115Z  * [new branch]      deliverables/cp11-depth34r2-hotel-quote -> origin/deliverables/cp11-depth34r2-hotel-quote
+2026-09-14T01:13:37.6665945Z  * [new branch]      deliverables/cp11-depth35-session-transitions -> origin/deliverables/cp11-depth35-session-transitions
+2026-09-14T01:13:37.6670954Z  * [new branch]      deliverables/cp11-depth35r2-session-transitions -> origin/deliverables/cp11-depth35r2-session-transitions
+2026-09-14T01:13:37.6672654Z  * [new branch]      deliverables/cp11-depth36-auth-test-r2 -> origin/deliverables/cp11-depth36-auth-test-r2
+2026-09-14T01:13:37.6674140Z  * [new branch]      deliverables/cp11-depth36-isolated-runtime -> origin/deliverables/cp11-depth36-isolated-runtime
+2026-09-14T01:13:37.6675653Z  * [new branch]      deliverables/cp11-depth36r2-support-restore -> origin/deliverables/cp11-depth36r2-support-restore
+2026-09-14T01:13:37.6678648Z  * [new branch]      deliverables/cp11-depth36r3-mobile-contract -> origin/deliverables/cp11-depth36r3-mobile-contract
+2026-09-14T01:13:37.6680361Z  * [new branch]      deliverables/cp11-depth37-node-native-provider -> origin/deliverables/cp11-depth37-node-native-provider
+2026-09-14T01:13:37.6682046Z  * [new branch]      deliverables/cp11-depth37r2-native-linking -> origin/deliverables/cp11-depth37r2-native-linking
+2026-09-14T01:13:37.6683443Z  * [new branch]      deliverables/cp11-refund-ride-8384a51 -> origin/deliverables/cp11-refund-ride-8384a51
+2026-09-14T01:13:37.6684925Z  * [new branch]      deliverables/depth40-isolated-runtime-34560743096 -> origin/deliverables/depth40-isolated-runtime-34560743096
+2026-09-14T01:13:37.6686944Z  * [new branch]      deliverables/depth40-isolated-runtime-34564932860 -> origin/deliverables/depth40-isolated-runtime-34564932860
+2026-09-14T01:13:37.6688917Z  * [new branch]      deliverables/depth40-staging-build-34564932969 -> origin/deliverables/depth40-staging-build-34564932969
+2026-09-14T01:13:37.6690491Z  * [new branch]      deliverables/depth40-staging-build-34565633360 -> origin/deliverables/depth40-staging-build-34565633360
+2026-09-14T01:13:37.6692011Z  * [new branch]      deliverables/depth40-staging-build-34565938702 -> origin/deliverables/depth40-staging-build-34565938702
+2026-09-14T01:13:37.6693397Z  * [new branch]      depth10-chain-autonomy-masterpiece -> origin/depth10-chain-autonomy-masterpiece
+2026-09-14T01:13:37.6694576Z  * [new branch]      depth40-p03-parent-candidate -> origin/depth40-p03-parent-candidate
+2026-09-14T01:13:37.6696218Z  * [new branch]      docs/control-plane-connection-inventory-20260912 -> origin/docs/control-plane-connection-inventory-20260912
+2026-09-14T01:13:37.6697518Z  * [new branch]      docs/depth48-merge-receipt-20260913 -> origin/docs/depth48-merge-receipt-20260913
+2026-09-14T01:13:37.6698289Z  * [new branch]      docs/hk-agent-polling-runtime-20260910 -> origin/docs/hk-agent-polling-runtime-20260910
+2026-09-14T01:13:37.6699109Z  * [new branch]      docs/hk-staging-deploy-runbook-20260909 -> origin/docs/hk-staging-deploy-runbook-20260909
+2026-09-14T01:13:37.6699928Z  * [new branch]      evidence/cp11-depth25-runtime-34306784341 -> origin/evidence/cp11-depth25-runtime-34306784341
+2026-09-14T01:13:37.6700681Z  * [new branch]      evidence/cp11-depth28-ci-34343745354 -> origin/evidence/cp11-depth28-ci-34343745354
+2026-09-14T01:13:37.6701519Z  * [new branch]      evidence/cp11-depth29-browser-preflight-20260909 -> origin/evidence/cp11-depth29-browser-preflight-20260909
+2026-09-14T01:13:37.6702348Z  * [new branch]      evidence/cp11-depth29-ci-34352506603 -> origin/evidence/cp11-depth29-ci-34352506603
+2026-09-14T01:13:37.6703056Z  * [new branch]      evidence/cp11-depth30-ci-34372130831 -> origin/evidence/cp11-depth30-ci-34372130831
+2026-09-14T01:13:37.6703780Z  * [new branch]      evidence/cp11-depth31-ci-34422477135 -> origin/evidence/cp11-depth31-ci-34422477135
+2026-09-14T01:13:37.6704503Z  * [new branch]      evidence/cp11-depth32-ci-34427905965 -> origin/evidence/cp11-depth32-ci-34427905965
+2026-09-14T01:13:37.6705194Z  * [new branch]      evidence/cp11-depth33-ci-34432816747 -> origin/evidence/cp11-depth33-ci-34432816747
+2026-09-14T01:13:37.6705880Z  * [new branch]      evidence/cp11-depth34-ci-34434039448 -> origin/evidence/cp11-depth34-ci-34434039448
+2026-09-14T01:13:37.6707412Z  * [new branch]      evidence/cp11-depth35-ci-34440381225 -> origin/evidence/cp11-depth35-ci-34440381225
+2026-09-14T01:13:37.6709123Z  * [new branch]      evidence/cp11-depth35r2-browser-readiness-20260910 -> origin/evidence/cp11-depth35r2-browser-readiness-20260910
+2026-09-14T01:13:37.6710809Z  * [new branch]      evidence/cp11-depth36-predeployment-20260910 -> origin/evidence/cp11-depth36-predeployment-20260910
+2026-09-14T01:13:37.6712226Z  * [new branch]      evidence/cp11-depth36r3-ci-34453179558 -> origin/evidence/cp11-depth36r3-ci-34453179558
+2026-09-14T01:13:37.6713652Z  * [new branch]      evidence/cp11-depth36r3-predeployment-20260910 -> origin/evidence/cp11-depth36r3-predeployment-20260910
+2026-09-14T01:13:37.6715188Z  * [new branch]      evidence/cp11-depth37-predeployment-20260910 -> origin/evidence/cp11-depth37-predeployment-20260910
+2026-09-14T01:13:37.6716970Z  * [new branch]      evidence/depth40-compat-v2-34642554667 -> origin/evidence/depth40-compat-v2-34642554667
+2026-09-14T01:13:37.6718784Z  * [new branch]      evidence/depth40-staging-build-34565938702-independent -> origin/evidence/depth40-staging-build-34565938702-independent
+2026-09-14T01:13:37.6720621Z  * [new branch]      evidence/pr66-canonical-reconciliation-20260913 -> origin/evidence/pr66-canonical-reconciliation-20260913
+2026-09-14T01:13:37.6722277Z  * [new branch]      evidence/verify-20260911T095356Z-review-20260912 -> origin/evidence/verify-20260911T095356Z-review-20260912
+2026-09-14T01:13:37.6723838Z  * [new branch]      feature/boss-deploy-request-v1-20260912 -> origin/feature/boss-deploy-request-v1-20260912
+2026-09-14T01:13:37.6725314Z  * [new branch]      fix/canonical-parent-retention-20260912 -> origin/fix/canonical-parent-retention-20260912
+2026-09-14T01:13:37.6726963Z  * [new branch]      fix/credit-acceptance-clock-local -> origin/fix/credit-acceptance-clock-local
+2026-09-14T01:13:37.6728374Z  * [new branch]      fix/depth40-deployment-compat-v2-20260912 -> origin/fix/depth40-deployment-compat-v2-20260912
+2026-09-14T01:13:37.6729837Z  * [new branch]      fix/depth46-ledger-independence-review -> origin/fix/depth46-ledger-independence-review
+2026-09-14T01:13:37.6731460Z  * [new branch]      fix/depth47-credit-and-module-boundaries-20260913 -> origin/fix/depth47-credit-and-module-boundaries-20260913
+2026-09-14T01:13:37.6733343Z  * [new branch]      fix/depth48-admin-pagination-20260913 -> origin/fix/depth48-admin-pagination-20260913
+2026-09-14T01:13:37.6734741Z  * [new branch]      fix/v70-cell-gap-closure-20260913 -> origin/fix/v70-cell-gap-closure-20260913
+2026-09-14T01:13:37.6736742Z  * [new branch]      governance/command-center-development-authority-20260909 -> origin/governance/command-center-development-authority-20260909
+2026-09-14T01:13:37.6738662Z  * [new branch]      governance/versioned-deployment-topology-v1-20260912 -> origin/governance/versioned-deployment-topology-v1-20260912
+2026-09-14T01:13:37.6739968Z  * [new branch]      main       -> origin/main
+2026-09-14T01:13:37.6741004Z  * [new branch]      p0-agent-native-lifecycle-closure-v0-3 -> origin/p0-agent-native-lifecycle-closure-v0-3
+2026-09-14T01:13:37.6742402Z  * [new branch]      p0-agent-transaction-gateway-v1 -> origin/p0-agent-transaction-gateway-v1
+2026-09-14T01:13:37.6743602Z  * [new branch]      p0-agent-transaction-lifecycle-v0-2 -> origin/p0-agent-transaction-lifecycle-v0-2
+2026-09-14T01:13:37.6745057Z  * [new branch]      package/depth40-p03-compat-v2-parent-20260912 -> origin/package/depth40-p03-compat-v2-parent-20260912
+2026-09-14T01:13:37.6746830Z  * [new branch]      package/depth48-admin-pagination-20260913 -> origin/package/depth48-admin-pagination-20260913
+2026-09-14T01:13:37.6748217Z  * [new branch]      payment-center/reality-discovery-01 -> origin/payment-center/reality-discovery-01
+2026-09-14T01:13:37.6749480Z  * [new branch]      preparation/cp11-depth31-source -> origin/preparation/cp11-depth31-source
+2026-09-14T01:13:37.6750655Z  * [new branch]      project-context/current-state-v1 -> origin/project-context/current-state-v1
+2026-09-14T01:13:37.6752188Z  * [new branch]      review/depth46-depth47-expert-findings -> origin/review/depth46-depth47-expert-findings
+2026-09-14T01:13:37.6754829Z [command]/usr/bin/git rev-parse --verify --quiet 83b253931864f8c2664a0a897b9a5c833286d8c5^{object}
+2026-09-14T01:13:37.6755774Z 83b253931864f8c2664a0a897b9a5c833286d8c5
+2026-09-14T01:13:37.6757581Z ##[endgroup]
+2026-09-14T01:13:37.6758351Z ##[group]Determining the checkout info
+2026-09-14T01:13:37.6759194Z ##[endgroup]
+2026-09-14T01:13:37.6759682Z [command]/usr/bin/git sparse-checkout disable
+2026-09-14T01:13:37.6761072Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-14T01:13:37.6854560Z ##[group]Checking out the ref
+2026-09-14T01:13:37.6855611Z [command]/usr/bin/git checkout --progress --force 83b253931864f8c2664a0a897b9a5c833286d8c5
+2026-09-14T01:13:38.8326871Z Updating files:  32% (1633/4990)
+2026-09-14T01:13:39.2755827Z Updating files:  33% (1647/4990)
+2026-09-14T01:13:39.2779841Z Updating files:  34% (1697/4990)
+2026-09-14T01:13:39.2805798Z Updating files:  35% (1747/4990)
+2026-09-14T01:13:39.2842625Z Updating files:  36% (1797/4990)
+2026-09-14T01:13:39.2935920Z Updating files:  37% (1847/4990)
+2026-09-14T01:13:39.2997495Z Updating files:  38% (1897/4990)
+2026-09-14T01:13:39.3058859Z Updating files:  39% (1947/4990)
+2026-09-14T01:13:39.3088290Z Updating files:  40% (1996/4990)
+2026-09-14T01:13:39.3109362Z Updating files:  41% (2046/4990)
+2026-09-14T01:13:39.3134794Z Updating files:  42% (2096/4990)
+2026-09-14T01:13:39.3160768Z Updating files:  43% (2146/4990)
+2026-09-14T01:13:39.3190166Z Updating files:  44% (2196/4990)
+2026-09-14T01:13:39.3217752Z Updating files:  45% (2246/4990)
+2026-09-14T01:13:39.3260492Z Updating files:  46% (2296/4990)
+2026-09-14T01:13:39.3294790Z Updating files:  47% (2346/4990)
+2026-09-14T01:13:39.3356864Z Updating files:  48% (2396/4990)
+2026-09-14T01:13:39.3407063Z Updating files:  49% (2446/4990)
+2026-09-14T01:13:39.3454485Z Updating files:  50% (2495/4990)
+2026-09-14T01:13:39.3485664Z Updating files:  51% (2545/4990)
+2026-09-14T01:13:39.3525531Z Updating files:  52% (2595/4990)
+2026-09-14T01:13:39.3571802Z Updating files:  53% (2645/4990)
+2026-09-14T01:13:39.3599449Z Updating files:  54% (2695/4990)
+2026-09-14T01:13:39.3630029Z Updating files:  55% (2745/4990)
+2026-09-14T01:13:39.3661414Z Updating files:  56% (2795/4990)
+2026-09-14T01:13:39.3689975Z Updating files:  57% (2845/4990)
+2026-09-14T01:13:39.3720554Z Updating files:  58% (2895/4990)
+2026-09-14T01:13:39.3747597Z Updating files:  59% (2945/4990)
+2026-09-14T01:13:39.4617423Z Updating files:  60% (2994/4990)
+2026-09-14T01:13:39.4697372Z Updating files:  61% (3044/4990)
+2026-09-14T01:13:39.4725541Z Updating files:  62% (3094/4990)
+2026-09-14T01:13:39.4836977Z Updating files:  63% (3144/4990)
+2026-09-14T01:13:39.5259524Z Updating files:  64% (3194/4990)
+2026-09-14T01:13:39.5517609Z Updating files:  65% (3244/4990)
+2026-09-14T01:13:39.5937371Z Updating files:  66% (3294/4990)
+2026-09-14T01:13:39.5983145Z Updating files:  67% (3344/4990)
+2026-09-14T01:13:39.6011199Z Updating files:  68% (3394/4990)
+2026-09-14T01:13:39.6036130Z Updating files:  69% (3444/4990)
+2026-09-14T01:13:39.6060683Z Updating files:  70% (3493/4990)
+2026-09-14T01:13:39.6118640Z Updating files:  71% (3543/4990)
+2026-09-14T01:13:39.6184380Z Updating files:  72% (3593/4990)
+2026-09-14T01:13:39.6209185Z Updating files:  73% (3643/4990)
+2026-09-14T01:13:39.6237167Z Updating files:  74% (3693/4990)
+2026-09-14T01:13:39.6276037Z Updating files:  75% (3743/4990)
+2026-09-14T01:13:39.6316410Z Updating files:  76% (3793/4990)
+2026-09-14T01:13:39.6350373Z Updating files:  77% (3843/4990)
+2026-09-14T01:13:39.6392092Z Updating files:  78% (3893/4990)
+2026-09-14T01:13:39.6420183Z Updating files:  79% (3943/4990)
+2026-09-14T01:13:39.6459989Z Updating files:  80% (3992/4990)
+2026-09-14T01:13:39.6640526Z Updating files:  81% (4042/4990)
+2026-09-14T01:13:39.6797052Z Updating files:  82% (4092/4990)
+2026-09-14T01:13:39.6932137Z Updating files:  83% (4142/4990)
+2026-09-14T01:13:39.7101403Z Updating files:  83% (4162/4990)
+2026-09-14T01:13:39.7302866Z Updating files:  84% (4192/4990)
+2026-09-14T01:13:39.7361660Z Updating files:  85% (4242/4990)
+2026-09-14T01:13:39.7429585Z Updating files:  86% (4292/4990)
+2026-09-14T01:13:39.7463560Z Updating files:  87% (4342/4990)
+2026-09-14T01:13:39.7493614Z Updating files:  88% (4392/4990)
+2026-09-14T01:13:39.7537024Z Updating files:  89% (4442/4990)
+2026-09-14T01:13:39.7565948Z Updating files:  90% (4491/4990)
+2026-09-14T01:13:39.7660864Z Updating files:  91% (4541/4990)
+2026-09-14T01:13:39.7697039Z Updating files:  92% (4591/4990)
+2026-09-14T01:13:39.7741964Z Updating files:  93% (4641/4990)
+2026-09-14T01:13:39.7768886Z Updating files:  94% (4691/4990)
+2026-09-14T01:13:39.7813628Z Updating files:  95% (4741/4990)
+2026-09-14T01:13:39.7850926Z Updating files:  96% (4791/4990)
+2026-09-14T01:13:39.7881843Z Updating files:  97% (4841/4990)
+2026-09-14T01:13:39.7924880Z Updating files:  98% (4891/4990)
+2026-09-14T01:13:39.7950858Z Updating files:  99% (4941/4990)
+2026-09-14T01:13:39.7952208Z Updating files: 100% (4990/4990)
+2026-09-14T01:13:39.7952992Z Updating files: 100% (4990/4990), done.
+2026-09-14T01:13:39.8456940Z Note: switching to '83b253931864f8c2664a0a897b9a5c833286d8c5'.
+2026-09-14T01:13:39.8457537Z 
+2026-09-14T01:13:39.8466954Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-14T01:13:39.8468031Z changes and commit them, and you can discard any commits you make in this
+2026-09-14T01:13:39.8468853Z state without impacting any branches by switching back to a branch.
+2026-09-14T01:13:39.8469322Z 
+2026-09-14T01:13:39.8469633Z If you want to create a new branch to retain commits you create, you may
+2026-09-14T01:13:39.8470379Z do so (now or later) by using -c with the switch command. Example:
+2026-09-14T01:13:39.8470815Z 
+2026-09-14T01:13:39.8470988Z   git switch -c <new-branch-name>
+2026-09-14T01:13:39.8471279Z 
+2026-09-14T01:13:39.8471439Z Or undo this operation with:
+2026-09-14T01:13:39.8471705Z 
+2026-09-14T01:13:39.8471841Z   git switch -
+2026-09-14T01:13:39.8472042Z 
+2026-09-14T01:13:39.8472491Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-14T01:13:39.8473018Z 
+2026-09-14T01:13:39.8473549Z HEAD is now at 83b2539 fix: distinguish retained source archive from canonical image cache exclusions
+2026-09-14T01:13:39.8575493Z ##[endgroup]
+2026-09-14T01:13:39.8627897Z [command]/usr/bin/git log -1 --format=%H
+2026-09-14T01:13:39.8657661Z 83b253931864f8c2664a0a897b9a5c833286d8c5
+2026-09-14T01:13:39.8668666Z ##[group]Removing auth
+2026-09-14T01:13:39.8672393Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-14T01:13:39.8717805Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-14T01:13:39.8963427Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-14T01:13:39.8992707Z http.https://github.com/.extraheader
+2026-09-14T01:13:39.9000945Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-14T01:13:40.0073929Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-14T01:13:40.0344634Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-14T01:13:40.0380739Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-14T01:13:40.0720305Z ##[endgroup]
+2026-09-14T01:13:40.0927080Z ##[group]Run python3 -B -m unittest discover -s packaging/canonical-runtime -p 'test_*.py' -v
+2026-09-14T01:13:40.0927834Z [36;1mpython3 -B -m unittest discover -s packaging/canonical-runtime -p 'test_*.py' -v[0m
+2026-09-14T01:13:40.0973406Z shell: /usr/bin/bash -e {0}
+2026-09-14T01:13:40.0973683Z ##[endgroup]
+2026-09-14T01:13:42.3804005Z test_alias_duplicates_and_parent_collisions_rejected (test_package.ArchiveSafety.test_alias_duplicates_and_parent_collisions_rejected) ... ok
+2026-09-14T01:13:42.3812199Z test_corrupt_package_rejected_before_docker (test_package.ArchiveSafety.test_corrupt_package_rejected_before_docker) ... ok
+2026-09-14T01:13:42.3823871Z test_regular_archive_restores_bytes (test_package.ArchiveSafety.test_regular_archive_restores_bytes) ... ok
+2026-09-14T01:13:42.3860645Z test_rejects_traversal_absolute_links_devices_and_duplicates (test_package.ArchiveSafety.test_rejects_traversal_absolute_links_devices_and_duplicates) ... ok
+2026-09-14T01:13:42.3870106Z test_substituted_deployment_contract_rejected (test_package.ArchiveSafety.test_substituted_deployment_contract_rejected) ... ok
+2026-09-14T01:13:42.3875663Z test_wrong_source_rejected (test_package.ArchiveSafety.test_wrong_source_rejected) ... ok
+2026-09-14T01:13:42.3876593Z 
+2026-09-14T01:13:42.3897236Z ----------------------------------------------------------------------
+2026-09-14T01:13:42.3907047Z Ran 6 tests in 0.011s
+2026-09-14T01:13:42.3907317Z 
+2026-09-14T01:13:42.3907455Z OK
+2026-09-14T01:13:42.4042320Z ##[group]Run set -o pipefail
+2026-09-14T01:13:42.4042661Z [36;1mset -o pipefail[0m
+2026-09-14T01:13:42.4043279Z [36;1mpython3 -B packaging/canonical-runtime/package.py build "$RUNNER_TEMP/runtime-delivery" 2>&1 | tee "$RUNNER_TEMP/runtime-build.log"[0m
+2026-09-14T01:13:42.4081158Z shell: /usr/bin/bash -e {0}
+2026-09-14T01:13:42.4081419Z ##[endgroup]
+2026-09-14T01:13:44.4302322Z 3.12-slim: Pulling from library/python
+2026-09-14T01:13:44.6790905Z 6310eb16bf42: Pulling fs layer
+2026-09-14T01:13:44.6794122Z dbd0b7849e6c: Pulling fs layer
+2026-09-14T01:13:44.6794905Z 1560cfed01dc: Pulling fs layer
+2026-09-14T01:13:44.6795339Z 56235e424563: Pulling fs layer
+2026-09-14T01:13:44.6795903Z 56235e424563: Waiting
+2026-09-14T01:13:44.9872056Z dbd0b7849e6c: Verifying Checksum
+2026-09-14T01:13:44.9872592Z dbd0b7849e6c: Download complete
+2026-09-14T01:13:45.0438856Z 1560cfed01dc: Verifying Checksum
+2026-09-14T01:13:45.0439610Z 1560cfed01dc: Download complete
+2026-09-14T01:13:45.0846678Z 6310eb16bf42: Verifying Checksum
+2026-09-14T01:13:45.0847488Z 6310eb16bf42: Download complete
+2026-09-14T01:13:45.2202963Z 56235e424563: Verifying Checksum
+2026-09-14T01:13:45.2204017Z 56235e424563: Download complete
+2026-09-14T01:13:46.2792305Z 6310eb16bf42: Pull complete
+2026-09-14T01:13:48.9574753Z dbd0b7849e6c: Pull complete
+2026-09-14T01:13:49.6627687Z 1560cfed01dc: Pull complete
+2026-09-14T01:13:49.6789658Z 56235e424563: Pull complete
+2026-09-14T01:13:49.6837639Z Digest: sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+2026-09-14T01:13:49.6852899Z Status: Downloaded newer image for python:3.12-slim
+2026-09-14T01:13:49.6867582Z docker.io/library/python:3.12-slim
+2026-09-14T01:13:50.2095400Z #0 building with "default" instance using docker driver
+2026-09-14T01:13:50.2096704Z 
+2026-09-14T01:13:50.2097666Z #1 [internal] load build definition from Dockerfile
+2026-09-14T01:13:50.2098537Z #1 transferring dockerfile: 1.49kB 0.0s done
+2026-09-14T01:13:50.2099600Z #1 DONE 0.0s
+2026-09-14T01:13:50.2100202Z 
+2026-09-14T01:13:50.2101139Z #2 [internal] load metadata for docker.io/library/python:3.12-slim
+2026-09-14T01:13:50.2102118Z #2 DONE 0.0s
+2026-09-14T01:13:50.2102995Z 
+2026-09-14T01:13:50.2103539Z #3 [internal] load .dockerignore
+2026-09-14T01:13:50.2104753Z #3 transferring context: 391B done
+2026-09-14T01:13:50.2105623Z #3 DONE 0.0s
+2026-09-14T01:13:50.2106924Z 
+2026-09-14T01:13:50.2107541Z #4 [1/4] FROM docker.io/library/python:3.12-slim
+2026-09-14T01:13:50.2108824Z #4 DONE 0.0s
+2026-09-14T01:13:50.2109381Z 
+2026-09-14T01:13:50.2110197Z #5 [2/4] WORKDIR /app
+2026-09-14T01:13:50.2110951Z #5 DONE 0.0s
+2026-09-14T01:13:50.2111779Z 
+2026-09-14T01:13:50.2112328Z #6 [internal] load build context
+2026-09-14T01:13:50.4929094Z #6 transferring context: 17.88MB 0.3s done
+2026-09-14T01:13:50.6523557Z #6 DONE 0.4s
+2026-09-14T01:13:50.6524320Z 
+2026-09-14T01:13:50.6524620Z #7 [3/4] COPY . .
+2026-09-14T01:13:50.7281501Z #7 DONE 0.2s
+2026-09-14T01:13:50.8797253Z 
+2026-09-14T01:13:50.8821937Z #8 [4/4] RUN pip install --no-cache-dir -e ".[dev]"
+2026-09-14T01:13:52.0277338Z #8 1.297 Obtaining file:///app
+2026-09-14T01:13:52.1790997Z #8 1.300   Installing build dependencies: started
+2026-09-14T01:13:53.9268684Z #8 3.197   Installing build dependencies: finished with status 'done'
+2026-09-14T01:13:54.0772634Z #8 3.198   Checking if build backend supports build_editable: started
+2026-09-14T01:13:54.4185346Z #8 3.689   Checking if build backend supports build_editable: finished with status 'done'
+2026-09-14T01:13:54.5693006Z #8 3.690   Getting requirements to build editable: started
+2026-09-14T01:13:54.9884843Z #8 4.260   Getting requirements to build editable: finished with status 'done'
+2026-09-14T01:13:55.1411006Z #8 4.261   Preparing editable metadata (pyproject.toml): started
+2026-09-14T01:13:55.5632616Z #8 4.835   Preparing editable metadata (pyproject.toml): finished with status 'done'
+2026-09-14T01:13:55.6697923Z #8 4.940 Collecting fastapi>=0.115 (from go-hotel-platform==1.5.0)
+2026-09-14T01:13:55.8552595Z #8 4.972   Downloading fastapi-0.141.1-py3-none-any.whl.metadata (27 kB)
+2026-09-14T01:13:55.8553885Z #8 5.010 Collecting uvicorn>=0.30 (from uvicorn[standard]>=0.30->go-hotel-platform==1.5.0)
+2026-09-14T01:13:55.8555019Z #8 5.017   Downloading uvicorn-0.52.4-py3-none-any.whl.metadata (6.6 kB)
+2026-09-14T01:13:55.8556020Z #8 5.126 Collecting pydantic>=2.8 (from go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.0484572Z #8 5.135   Downloading pydantic-2.13.5-py3-none-any.whl.metadata (110 kB)
+2026-09-14T01:13:56.0517518Z #8 5.162 Collecting pydantic-settings>=2.4 (from go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.0518704Z #8 5.169   Downloading pydantic_settings-2.15.0-py3-none-any.whl.metadata (3.9 kB)
+2026-09-14T01:13:56.1645518Z #8 5.436 Collecting sqlalchemy>=2.0 (from go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.2706212Z #8 5.444   Downloading sqlalchemy-2.0.52-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (9.6 kB)
+2026-09-14T01:13:56.2708524Z #8 5.476 Collecting alembic>=1.13 (from go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.2710742Z #8 5.484   Downloading alembic-1.20.0-py3-none-any.whl.metadata (7.3 kB)
+2026-09-14T01:13:56.2712327Z #8 5.502 Collecting psycopg>=3.2 (from psycopg[binary]>=3.2->go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.2714139Z #8 5.510   Downloading psycopg-3.3.5-py3-none-any.whl.metadata (4.3 kB)
+2026-09-14T01:13:56.2715456Z #8 5.534 Collecting httpx>=0.27 (from go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.2716932Z #8 5.542   Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+2026-09-14T01:13:56.4190857Z #8 5.690 Collecting Pillow>=10 (from go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.5803456Z #8 5.701   Downloading pillow-12.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.1 kB)
+2026-09-14T01:13:56.6138239Z #8 5.885 Collecting cryptography>=43 (from go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.7248845Z #8 5.894   Downloading cryptography-50.0.1-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (4.3 kB)
+2026-09-14T01:13:56.7250318Z #8 5.912 Collecting PyJWT>=2.9 (from PyJWT[crypto]>=2.9->go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.7251629Z #8 5.920   Downloading pyjwt-2.14.0-py3-none-any.whl.metadata (3.4 kB)
+2026-09-14T01:13:56.7252593Z #8 5.949 Collecting redis>=5.0 (from go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.7253677Z #8 5.957   Downloading redis-8.1.0-py3-none-any.whl.metadata (16 kB)
+2026-09-14T01:13:56.7254553Z #8 5.996 Collecting pytest>=8 (from go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.9055185Z #8 6.004   Downloading pytest-9.1.1-py3-none-any.whl.metadata (7.6 kB)
+2026-09-14T01:13:56.9060507Z #8 6.032 Collecting pytest-asyncio>=0.24 (from go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.9061785Z #8 6.039   Downloading pytest_asyncio-1.4.0-py3-none-any.whl.metadata (4.1 kB)
+2026-09-14T01:13:56.9063021Z #8 6.057 Collecting Mako (from alembic>=1.13->go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.9064004Z #8 6.065   Downloading mako-1.4.1-py3-none-any.whl.metadata (2.9 kB)
+2026-09-14T01:13:56.9065227Z #8 6.083 Collecting typing-extensions>=4.12 (from alembic>=1.13->go-hotel-platform==1.5.0)
+2026-09-14T01:13:56.9066733Z #8 6.091   Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+2026-09-14T01:13:56.9067665Z #8 6.177 Collecting cffi>=2.0.0 (from cryptography>=43->go-hotel-platform==1.5.0)
+2026-09-14T01:13:57.0060252Z #8 6.186   Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.5 kB)
+2026-09-14T01:13:57.0063980Z #8 6.216 Collecting starlette>=0.46.0 (from fastapi>=0.115->go-hotel-platform==1.5.0)
+2026-09-14T01:13:57.0065412Z #8 6.224   Downloading starlette-1.6.0-py3-none-any.whl.metadata (6.4 kB)
+2026-09-14T01:13:57.0066955Z #8 6.257 Collecting typing-inspection>=0.4.2 (from fastapi>=0.115->go-hotel-platform==1.5.0)
+2026-09-14T01:13:57.0068261Z #8 6.265   Downloading typing_inspection-0.4.4-py3-none-any.whl.metadata (2.6 kB)
+2026-09-14T01:13:57.0069412Z #8 6.277 Collecting annotated-doc>=0.0.2 (from fastapi>=0.115->go-hotel-platform==1.5.0)
+2026-09-14T01:13:57.1217279Z #8 6.285   Downloading annotated_doc-0.0.5-py3-none-any.whl.metadata (6.5 kB)
+2026-09-14T01:13:57.1218883Z #8 6.305 Collecting anyio (from httpx>=0.27->go-hotel-platform==1.5.0)
+2026-09-14T01:13:57.1219963Z #8 6.313   Downloading anyio-4.15.1-py3-none-any.whl.metadata (4.7 kB)
+2026-09-14T01:13:57.1221111Z #8 6.337 Collecting certifi (from httpx>=0.27->go-hotel-platform==1.5.0)
+2026-09-14T01:13:57.1222351Z #8 6.346   Downloading certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+2026-09-14T01:13:57.1223249Z #8 6.365 Collecting httpcore==1.* (from httpx>=0.27->go-hotel-platform==1.5.0)
+2026-09-14T01:13:57.1224094Z #8 6.373   Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+2026-09-14T01:13:57.1224865Z #8 6.393 Collecting idna (from httpx>=0.27->go-hotel-platform==1.5.0)
+2026-09-14T01:13:57.2865328Z #8 6.401   Downloading idna-3.19-py3-none-any.whl.metadata (9.2 kB)
+2026-09-14T01:13:57.2867166Z #8 6.416 Collecting h11>=0.16 (from httpcore==1.*->httpx>=0.27->go-hotel-platform==1.5.0)
+2026-09-14T01:13:57.2868714Z #8 6.425   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+2026-09-14T01:13:57.2869765Z #8 6.557 Collecting psycopg-binary==3.3.5 (from psycopg[binary]>=3.2->go-hotel-platform==1.5.0)
+2026-09-14T01:13:57.4649998Z #8 6.566   Downloading psycopg_binary-3.3.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.7 kB)
+2026-09-14T01:13:57.4652196Z #8 6.578 Collecting annotated-types>=0.6.0 (from pydantic>=2.8->go-hotel-platform==1.5.0)
+2026-09-14T01:13:57.4653469Z #8 6.586   Downloading annotated_types-0.8.0-py3-none-any.whl.metadata (15 kB)
+2026-09-14T01:13:57.9064144Z #8 7.178 Collecting pydantic-core==2.46.5 (from pydantic>=2.8->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.0235980Z #8 7.186   Downloading pydantic_core-2.46.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+2026-09-14T01:13:58.0237798Z #8 7.221 Collecting python-dotenv>=0.21.0 (from pydantic-settings>=2.4->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.0239087Z #8 7.229   Downloading python_dotenv-1.2.3-py3-none-any.whl.metadata (29 kB)
+2026-09-14T01:13:58.0240201Z #8 7.269 Collecting iniconfig>=1.0.1 (from pytest>=8->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.0241266Z #8 7.277   Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+2026-09-14T01:13:58.0242312Z #8 7.295 Collecting packaging>=22 (from pytest>=8->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.2149238Z #8 7.303   Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+2026-09-14T01:13:58.2150265Z #8 7.317 Collecting pluggy<2,>=1.5 (from pytest>=8->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.2151130Z #8 7.325   Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+2026-09-14T01:13:58.2151970Z #8 7.345 Collecting pygments>=2.7.2 (from pytest>=8->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.2152802Z #8 7.353   Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+2026-09-14T01:13:58.2153654Z #8 7.486 Collecting greenlet>=1 (from sqlalchemy>=2.0->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.3387638Z #8 7.494   Downloading greenlet-3.5.5-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (3.8 kB)
+2026-09-14T01:13:58.3388941Z #8 7.516 Collecting click>=7.0 (from uvicorn>=0.30->uvicorn[standard]>=0.30->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.3389938Z #8 7.525   Downloading click-8.5.0-py3-none-any.whl.metadata (2.6 kB)
+2026-09-14T01:13:58.3390859Z #8 7.558 Collecting httptools>=0.8.0 (from uvicorn[standard]>=0.30->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.3392208Z #8 7.566   Downloading httptools-0.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+2026-09-14T01:13:58.3393518Z #8 7.609 Collecting pyyaml>=5.1 (from uvicorn[standard]>=0.30->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.4774281Z #8 7.615   Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+2026-09-14T01:13:58.4776838Z #8 7.675 Collecting uvloop>=0.15.1 (from uvicorn[standard]>=0.30->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.4778626Z #8 7.683   Downloading uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+2026-09-14T01:13:58.4780139Z #8 7.749 Collecting watchfiles>=0.20 (from uvicorn[standard]>=0.30->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.5901713Z #8 7.766   Downloading watchfiles-1.2.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+2026-09-14T01:13:58.5904095Z #8 7.861 Collecting websockets>=13.0 (from uvicorn[standard]>=0.30->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.7136136Z #8 7.869   Downloading websockets-17.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.3 kB)
+2026-09-14T01:13:58.7138231Z #8 7.884 Collecting pycparser (from cffi>=2.0.0->cryptography>=43->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.7139342Z #8 7.891   Downloading pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+2026-09-14T01:13:58.7140267Z #8 7.984 Collecting MarkupSafe>=2.0 (from Mako->alembic>=1.13->go-hotel-platform==1.5.0)
+2026-09-14T01:13:58.8201918Z #8 7.994   Downloading markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+2026-09-14T01:13:58.8203473Z #8 8.007 Downloading alembic-1.20.0-py3-none-any.whl (268 kB)
+2026-09-14T01:13:58.8204808Z #8 8.022 Downloading cryptography-50.0.1-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+2026-09-14T01:13:58.8206981Z #8 8.059    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 131.6 MB/s eta 0:00:00
+2026-09-14T01:13:58.8208136Z #8 8.067 Downloading fastapi-0.141.1-py3-none-any.whl (131 kB)
+2026-09-14T01:13:58.8209111Z #8 8.075 Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+2026-09-14T01:13:58.8210048Z #8 8.083 Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+2026-09-14T01:13:58.8211116Z #8 8.091 Downloading pillow-12.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (6.9 MB)
+2026-09-14T01:13:58.9224989Z #8 8.113    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 403.8 MB/s eta 0:00:00
+2026-09-14T01:13:58.9237414Z #8 8.121 Downloading psycopg-3.3.5-py3-none-any.whl (213 kB)
+2026-09-14T01:13:58.9238770Z #8 8.129 Downloading psycopg_binary-3.3.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (5.2 MB)
+2026-09-14T01:13:58.9240028Z #8 8.147    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.2/5.2 MB 313.0 MB/s eta 0:00:00
+2026-09-14T01:13:58.9240765Z #8 8.156 Downloading pydantic-2.13.5-py3-none-any.whl (472 kB)
+2026-09-14T01:13:58.9241732Z #8 8.165 Downloading pydantic_core-2.46.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+2026-09-14T01:13:58.9242694Z #8 8.170    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 518.7 MB/s eta 0:00:00
+2026-09-14T01:13:58.9243133Z #8 8.178 Downloading pydantic_settings-2.15.0-py3-none-any.whl (69 kB)
+2026-09-14T01:13:58.9243560Z #8 8.186 Downloading pyjwt-2.14.0-py3-none-any.whl (32 kB)
+2026-09-14T01:13:58.9243975Z #8 8.194 Downloading pytest-9.1.1-py3-none-any.whl (386 kB)
+2026-09-14T01:13:59.0243355Z #8 8.202 Downloading pytest_asyncio-1.4.0-py3-none-any.whl (16 kB)
+2026-09-14T01:13:59.0244107Z #8 8.210 Downloading redis-8.1.0-py3-none-any.whl (560 kB)
+2026-09-14T01:13:59.0245197Z #8 8.214    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 560.6/560.6 kB 779.9 MB/s eta 0:00:00
+2026-09-14T01:13:59.0246700Z #8 8.232 Downloading sqlalchemy-2.0.52-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (3.4 MB)
+2026-09-14T01:13:59.0248149Z #8 8.245    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.4/3.4 MB 302.2 MB/s eta 0:00:00
+2026-09-14T01:13:59.0248620Z #8 8.252 Downloading uvicorn-0.52.4-py3-none-any.whl (79 kB)
+2026-09-14T01:13:59.0249042Z #8 8.260 Downloading annotated_doc-0.0.5-py3-none-any.whl (5.3 kB)
+2026-09-14T01:13:59.0249497Z #8 8.268 Downloading annotated_types-0.8.0-py3-none-any.whl (13 kB)
+2026-09-14T01:13:59.0250022Z #8 8.277 Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+2026-09-14T01:13:59.0250767Z #8 8.285 Downloading click-8.5.0-py3-none-any.whl (125 kB)
+2026-09-14T01:13:59.0251332Z #8 8.292 Downloading greenlet-3.5.5-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (621 kB)
+2026-09-14T01:13:59.1295621Z #8 8.295    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 621.4/621.4 kB 793.1 MB/s eta 0:00:00
+2026-09-14T01:13:59.1303617Z #8 8.304 Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+2026-09-14T01:13:59.1304685Z #8 8.312 Downloading httptools-0.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (523 kB)
+2026-09-14T01:13:59.1305754Z #8 8.320 Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2026-09-14T01:13:59.1306688Z #8 8.328 Downloading packaging-26.3-py3-none-any.whl (129 kB)
+2026-09-14T01:13:59.1307370Z #8 8.335 Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-09-14T01:13:59.1308025Z #8 8.343 Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+2026-09-14T01:13:59.1308969Z #8 8.350    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 683.0 MB/s eta 0:00:00
+2026-09-14T01:13:59.1309949Z #8 8.357 Downloading python_dotenv-1.2.3-py3-none-any.whl (22 kB)
+2026-09-14T01:13:59.1310595Z #8 8.365 Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (807 kB)
+2026-09-14T01:13:59.1311327Z #8 8.368    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 807.9/807.9 kB 749.8 MB/s eta 0:00:00
+2026-09-14T01:13:59.1311758Z #8 8.377 Downloading starlette-1.6.0-py3-none-any.whl (75 kB)
+2026-09-14T01:13:59.1312147Z #8 8.385 Downloading anyio-4.15.1-py3-none-any.whl (132 kB)
+2026-09-14T01:13:59.1312510Z #8 8.393 Downloading idna-3.19-py3-none-any.whl (68 kB)
+2026-09-14T01:13:59.1312918Z #8 8.401 Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+2026-09-14T01:13:59.2307299Z #8 8.413 Downloading typing_inspection-0.4.4-py3-none-any.whl (14 kB)
+2026-09-14T01:13:59.2308747Z #8 8.427 Downloading uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.4 MB)
+2026-09-14T01:13:59.2317548Z #8 8.451    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.4/4.4 MB 200.5 MB/s eta 0:00:00
+2026-09-14T01:13:59.2318898Z #8 8.460 Downloading watchfiles-1.2.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (456 kB)
+2026-09-14T01:13:59.2320503Z #8 8.469 Downloading websockets-17.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (224 kB)
+2026-09-14T01:13:59.2321803Z #8 8.477 Downloading certifi-2026.7.22-py3-none-any.whl (136 kB)
+2026-09-14T01:13:59.2322675Z #8 8.485 Downloading mako-1.4.1-py3-none-any.whl (80 kB)
+2026-09-14T01:13:59.2323859Z #8 8.493 Downloading markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+2026-09-14T01:13:59.2325194Z #8 8.502 Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+2026-09-14T01:13:59.4467771Z #8 8.565 Building wheels for collected packages: go-hotel-platform
+2026-09-14T01:13:59.4468778Z #8 8.567   Building editable for go-hotel-platform (pyproject.toml): started
+2026-09-14T01:13:59.9327686Z #8 9.195   Building editable for go-hotel-platform (pyproject.toml): finished with status 'done'
+2026-09-14T01:14:00.1527278Z #8 9.196   Created wheel for go-hotel-platform: filename=go_hotel_platform-1.5.0-0.editable-py3-none-any.whl size=1565 sha256=b5683be3a9f47471febf007d040228cb4aa4e30b1ef4dfe600df1319d48511cf
+2026-09-14T01:14:00.1529005Z #8 9.196   Stored in directory: /tmp/pip-ephem-wheel-cache-kruis8k9/wheels/54/1b/b7/aa63e25c8f14f4f2ae7b04e6097bdecb770e455c5c1ee0a600
+2026-09-14T01:14:00.1529921Z #8 9.199 Successfully built go-hotel-platform
+2026-09-14T01:14:00.1532490Z #8 9.272 Installing collected packages: websockets, uvloop, typing-extensions, redis, pyyaml, python-dotenv, PyJWT, pygments, pycparser, psycopg-binary, pluggy, Pillow, packaging, MarkupSafe, iniconfig, idna, httptools, h11, greenlet, click, certifi, annotated-types, annotated-doc, uvicorn, typing-inspection, sqlalchemy, pytest, pydantic-core, psycopg, Mako, httpcore, cffi, anyio, watchfiles, starlette, pytest-asyncio, pydantic, httpx, cryptography, alembic, pydantic-settings, fastapi, go-hotel-platform
+2026-09-14T01:14:04.8068175Z #8 14.08 Successfully installed Mako-1.4.1 MarkupSafe-3.0.3 Pillow-12.3.0 PyJWT-2.14.0 alembic-1.20.0 annotated-doc-0.0.5 annotated-types-0.8.0 anyio-4.15.1 certifi-2026.7.22 cffi-2.1.1 click-8.5.0 cryptography-50.0.1 fastapi-0.141.1 go-hotel-platform-1.5.0 greenlet-3.5.5 h11-0.16.0 httpcore-1.0.9 httptools-0.8.0 httpx-0.28.1 idna-3.19 iniconfig-2.3.0 packaging-26.3 pluggy-1.6.0 psycopg-3.3.5 psycopg-binary-3.3.5 pycparser-3.0 pydantic-2.13.5 pydantic-core-2.46.5 pydantic-settings-2.15.0 pygments-2.21.0 pytest-9.1.1 pytest-asyncio-1.4.0 python-dotenv-1.2.3 pyyaml-6.0.3 redis-8.1.0 sqlalchemy-2.0.52 starlette-1.6.0 typing-extensions-4.16.0 typing-inspection-0.4.4 uvicorn-0.52.4 uvloop-0.22.1 watchfiles-1.2.0 websockets-17.1
+2026-09-14T01:14:04.9574990Z #8 14.08 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+2026-09-14T01:14:05.3492840Z #8 DONE 14.6s
+2026-09-14T01:14:05.5008933Z 
+2026-09-14T01:14:05.5027282Z #9 exporting to image
+2026-09-14T01:14:05.5027909Z #9 exporting layers
+2026-09-14T01:14:06.6881483Z #9 exporting layers 1.3s done
+2026-09-14T01:14:06.7075201Z #9 writing image sha256:47bb66c429868689e922ecc1bee668e9c12bfa24e2cddca1717e16887f34115d done
+2026-09-14T01:14:06.7076167Z #9 naming to docker.io/library/go-hotel:canonical-995d0d83-20260914 done
+2026-09-14T01:14:06.7077073Z #9 DONE 1.3s
+2026-09-14T01:14:29.1031239Z c33cb8b64ee3742ed2c53b3247e602661e2c2366c1cbfe2ad59b732aff32caec
+2026-09-14T01:14:45.7548261Z {
+2026-09-14T01:14:45.7549132Z   "application_git_tree": "995d0d83faf883bec980c896fe8a17b0f12360fa",
+2026-09-14T01:14:45.7550219Z   "builder_commit": "83b253931864f8c2664a0a897b9a5c833286d8c5",
+2026-09-14T01:14:45.7550944Z   "deployment": "NOT_RUN",
+2026-09-14T01:14:45.7551455Z   "full_release": "HOLD",
+2026-09-14T01:14:45.7552212Z   "image_id": "sha256:47bb66c429868689e922ecc1bee668e9c12bfa24e2cddca1717e16887f34115d",
+2026-09-14T01:14:45.7553111Z   "image_tag": "go-hotel:canonical-995d0d83-20260914",
+2026-09-14T01:14:45.7553735Z   "limits": [
+2026-09-14T01:14:45.7554236Z     "worker imports are not worker liveness",
+2026-09-14T01:14:45.7554861Z     "health is not a full business journey",
+2026-09-14T01:14:45.7555468Z     "SQLite smoke is not PostgreSQL acceptance",
+2026-09-14T01:14:45.7556171Z     "floating upstream build dependencies recorded, not frozen",
+2026-09-14T01:14:45.7557089Z     "no registry digest is invented"
+2026-09-14T01:14:45.7557617Z   ],
+2026-09-14T01:14:45.7558042Z   "production": "HOLD",
+2026-09-14T01:14:45.7558521Z   "repo_digests": [],
+2026-09-14T01:14:45.7559049Z   "runtime_package_build": "PASS_SCOPED",
+2026-09-14T01:14:45.7559604Z   "sealed_node": "HOLD",
+2026-09-14T01:14:45.7560214Z   "source_commit": "c6ea4dd670db36e71f3839fb31e656a5c8806858",
+2026-09-14T01:14:45.7560862Z   "source_files": 1332,
+2026-09-14T01:14:45.7561588Z   "source_tree_sha256": "1c4d78c3c1bb5f448d0ebdb99d16a2d76419bbc663cc9ed8fae831e1d18c10c4",
+2026-09-14T01:14:45.7562452Z   "topology_id": "HK_STAGING_BUSINESS_TOPOLOGY",
+2026-09-14T01:14:45.7563078Z   "topology_version": 1
+2026-09-14T01:14:45.7563564Z }
+2026-09-14T01:14:45.7563858Z 
+2026-09-14T01:14:45.7564473Z b297f139a236681019fe894f4f1a94068636649e1235a20502a383a610f16f63  runtime-package.tar.gz
+2026-09-14T01:14:45.7565183Z 
+2026-09-14T01:14:45.7738084Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-14T01:14:45.7739953Z ##[group]Run actions/upload-artifact@v4
+2026-09-14T01:14:45.7740239Z with:
+2026-09-14T01:14:45.7740537Z   name: canonical-runtime-83b253931864f8c2664a0a897b9a5c833286d8c5
+2026-09-14T01:14:45.7741926Z   path: /home/runner/work/_temp/runtime-delivery/runtime-package.tar.gz
+/home/runner/work/_temp/runtime-delivery/runtime-package.sha256
+/home/runner/work/_temp/runtime-delivery/bundle/*.json
+/home/runner/work/_temp/runtime-delivery/bundle/*.log
+/home/runner/work/_temp/runtime-delivery/bundle/*.txt
+/home/runner/work/_temp/runtime-build.log
+
+2026-09-14T01:14:45.7743215Z   if-no-files-found: error
+2026-09-14T01:14:45.7743489Z   compression-level: 0
+2026-09-14T01:14:45.7743704Z   retention-days: 90
+2026-09-14T01:14:45.7743909Z   overwrite: false
+2026-09-14T01:14:45.7744119Z   include-hidden-files: false
+2026-09-14T01:14:45.7744352Z ##[endgroup]
+2026-09-14T01:14:45.9480606Z (node:3036) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-14T01:14:45.9482141Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-14T01:14:45.9634950Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-14T01:14:45.9639746Z The least common ancestor is /home/runner/work/_temp. This will be the root directory of the artifact
+2026-09-14T01:14:45.9641202Z With the provided path, there will be 16 files uploaded
+2026-09-14T01:14:45.9644807Z Artifact name is valid!
+2026-09-14T01:14:45.9645807Z Root directory input is valid!
+2026-09-14T01:14:46.3654960Z Beginning upload of artifact content to blob storage
+2026-09-14T01:14:46.4242307Z (node:3036) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-14T01:14:47.3017246Z Uploaded bytes 8388608
+2026-09-14T01:14:47.4033888Z Uploaded bytes 16777216
+2026-09-14T01:14:47.4228882Z Uploaded bytes 25165824
+2026-09-14T01:14:47.5935610Z Uploaded bytes 33554432
+2026-09-14T01:14:47.6241914Z Uploaded bytes 41943040
+2026-09-14T01:14:47.6830456Z Uploaded bytes 50331648
+2026-09-14T01:14:47.6911604Z Uploaded bytes 58720256
+2026-09-14T01:14:47.8490025Z Uploaded bytes 67108864
+2026-09-14T01:14:47.9535344Z Uploaded bytes 75497472
+2026-09-14T01:14:47.9707231Z Uploaded bytes 83886080
+2026-09-14T01:14:47.9823711Z Uploaded bytes 92274688
+2026-09-14T01:14:48.1576602Z Uploaded bytes 100663296
+2026-09-14T01:14:48.2557122Z Uploaded bytes 109051904
+2026-09-14T01:14:48.4820412Z Uploaded bytes 114416212
+2026-09-14T01:14:48.5994368Z Finished uploading artifact content to blob storage!
+2026-09-14T01:14:48.5999547Z SHA256 digest of uploaded artifact zip is 0402a0308a459c661f9ed1a256923be2b589cbe5e4ddfcb424877e34704e4a5f
+2026-09-14T01:14:48.6002237Z Finalizing artifact upload
+2026-09-14T01:14:48.8422833Z Artifact canonical-runtime-83b253931864f8c2664a0a897b9a5c833286d8c5.zip successfully finalized. Artifact ID 10328889188
+2026-09-14T01:14:48.8424984Z Artifact canonical-runtime-83b253931864f8c2664a0a897b9a5c833286d8c5 has been successfully uploaded! Final size is 114416212 bytes. Artifact ID is 10328889188
+2026-09-14T01:14:48.8433179Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34795198840/artifacts/10328889188
+2026-09-14T01:14:48.8677313Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-14T01:14:48.8678588Z Post job cleanup.
+2026-09-14T01:14:48.9623897Z [command]/usr/bin/git version
+2026-09-14T01:14:48.9687064Z git version 2.55.0
+2026-09-14T01:14:48.9779467Z Temporarily overriding HOME='/home/runner/work/_temp/d89c10a5-2a18-436f-8e6a-1e15a03676fc' before making global git config changes
+2026-09-14T01:14:48.9797287Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-14T01:14:48.9813552Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-14T01:14:48.9867110Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-14T01:14:48.9937919Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-14T01:14:49.0255289Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-14T01:14:49.0279173Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-14T01:14:49.0697732Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-14T01:14:49.0733704Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-14T01:14:49.1390915Z Cleaning up orphan processes
+2026-09-14T01:14:49.2371492Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
