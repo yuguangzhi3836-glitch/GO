@@ -65,9 +65,10 @@ jobs:
           python - <<'PY'
           import json, pathlib, subprocess
           candidate=json.loads(pathlib.Path('ci/next-depth/CANDIDATE.json').read_text())
+          baseline=json.loads(pathlib.Path('ci/retention/BASELINE.json').read_text())
           actual=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
-          assert actual==candidate['application_git_tree']
-          assert candidate['source_anchor']=='fef9c748adb77d37ba5d4dc4fa4662eb668303a1'
+          assert actual==candidate['application_git_tree']==baseline['application_git_tree']
+          assert candidate['source_anchor']==baseline['source_anchor_main']=='8ffcde66d36c1bbf849218529ef015f6e81725af'
           assert candidate['parent_candidate_commit']=='a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b'
           PY
       - name: Install inherited frozen dependencies
