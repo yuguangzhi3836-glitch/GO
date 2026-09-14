@@ -1,0 +1,202 @@
+{
+  "schema_version": 2,
+  "ledger_id": "V70-R3-MAIN-8ffcde66-20260914",
+  "recorded_at": "2026-09-14T10:43:00Z",
+  "authority": "V7.0 Ultimate / V6.1 lineage + C14",
+  "canonical_source": {
+    "branch": "main",
+    "commit": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+    "merge_source_candidate": "37d9a42091938e26be538d3d410397182abec5c8",
+    "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+    "source_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
+    "migration_head": "0134_flight_status_width",
+    "rule": "All successor work starts from this main commit. Existing PASS evidence is inherited and must not be redeveloped."
+  },
+  "rebound_gate_originals": {
+    "c14": {
+      "status": "PASS_SCOPED",
+      "candidate": "37d9a42091938e26be538d3d410397182abec5c8",
+      "evidence": "PR #76 review pullrequestreview-5196279543",
+      "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/76#pullrequestreview-5196279543"
+    },
+    "c13": {
+      "status": "PASS_SCOPED",
+      "candidate": "37d9a42091938e26be538d3d410397182abec5c8",
+      "executor": "EASON remote isolated worktree",
+      "evidence": "Issue #77 comment 5662413937 / PR #76 review 5196456000",
+      "url": "https://github.com/yuguangzhi3836-glitch/GO/issues/77#issuecomment-5662413937"
+    },
+    "main_merge": {
+      "status": "PASS",
+      "pr": 76,
+      "merge_commit": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "merged_at": "2026-09-14T10:34:49Z"
+    }
+  },
+  "release_gates": {
+    "MAIN_MERGE": "PASS",
+    "C14": "PASS_SCOPED",
+    "C13": "PASS_SCOPED",
+    "FINAL_RELEASE": "HOLD",
+    "HK_DEPLOY": "HOLD",
+    "PRODUCTION": "HOLD"
+  },
+  "dispatch_semantics": {
+    "ASSIGNED_NO_ACK": "Task has been dispatched in the authoritative ledger but no worker start/ACK receipt is claimed.",
+    "RUNNING": "May be used only after a source-bound execution receipt or equivalent worker evidence exists.",
+    "DONE_SCOPED": "Only the finite task scope is complete; never means the whole Cell/domain is complete.",
+    "BLOCKED_EXTERNAL": "No executable local work is claimed for the named blocked scope until the unlock condition exists.",
+    "TRIGGER_ARMED": "Gate Cell activates only when a new fixed candidate is presented."
+  },
+  "cells": [
+    {
+      "cell": "C01",
+      "status": "ASSIGNED_NO_ACK",
+      "task": "V70-R3-C01-01",
+      "origin_proposal": "V70-R2-C01-03",
+      "description": "Source-bound read-only diagnosis of mixed hotel funds before any controlled reconciliation decision.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "inherit": ["evidence/v70-next-depth-20260914/c01/RESULT.json"],
+      "do_not_claim": ["RUNNING", "reconciliation performed", "domain complete"]
+    },
+    {
+      "cell": "C02",
+      "status": "ASSIGNED_NO_ACK",
+      "task": "V70-R3-C02-01",
+      "origin_proposal": "V70-R2-C02-03",
+      "description": "Specify trusted persisted coupon-plan and exact-consent integration with C11, including same-day segments and negative fare-difference treatment before enabling HTTP.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "inherit": ["evidence/v70-next-depth-20260914/c02/RESULT.json"],
+      "do_not_claim": ["supplier E2E complete", "domain complete"]
+    },
+    {
+      "cell": "C03",
+      "status": "ASSIGNED_NO_ACK",
+      "task": "V70-R3-C03-01",
+      "origin_proposal": "V70-R2-C03-03",
+      "description": "Run the four source-bound rail payment/inventory races under isolated PostgreSQL and audit order/root/claim convergence after process exit.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "inherit": ["evidence/v70-next-depth-20260914/c03/CELL_RESULT.json"],
+      "do_not_claim": ["PostgreSQL PASS until fresh evidence exists", "domain complete"]
+    },
+    {
+      "cell": "C04",
+      "status": "ASSIGNED_NO_ACK",
+      "task": "V70-R3-C04-01",
+      "origin_proposal": "V70-R2-C04-03",
+      "description": "Add bounded read-only administrative presentation and operator review of reconciliation findings without automatic money or state repair.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "inherit": ["evidence/v70-next-depth-20260914/c04/RESULT.json"],
+      "do_not_claim": ["historical live DB inspected", "money repaired", "domain complete"]
+    },
+    {
+      "cell": "C05",
+      "status": "ASSIGNED_NO_ACK",
+      "task": "V70-R3-C05-01",
+      "origin_proposal": "V70-R2-C05-03",
+      "description": "Correlate fleet confirmation identity with the same current UNKNOWN episode and reject delayed confirmations from an earlier episode.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "inherit": ["evidence/v70-next-depth-20260914/c05/RESULT.json"],
+      "do_not_claim": ["real fleet outcome proven", "external signature proven", "domain complete"]
+    },
+    {
+      "cell": "C06",
+      "status": "BLOCKED_EXTERNAL",
+      "task": "V70-R3-C06-01",
+      "origin_proposal": "V70-R2-C06-03",
+      "description": "Bind a real authorized supplier policy import to frozen validity terms and expose frozen window/LEGACY_UNVERIFIED consistently in the consumer flow.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "inherit": ["evidence/v70-next-depth-20260914/c06/CELL_RESULT.json"],
+      "blocker": "Authorized supplier validity-policy data/evidence is not available in the current repository evidence set.",
+      "unlock_condition": "Provide authorized supplier policy data and provenance suitable for import testing; then dispatch implementation and consumer-flow exposure on the same canonical source.",
+      "do_not_claim": ["supplier-window acceptance", "provider callback proven", "domain complete"]
+    },
+    {
+      "cell": "C07",
+      "status": "DONE_SCOPED_WATCH",
+      "task": null,
+      "description": "Preserve already-PASS C07 scoped evidence including final PostgreSQL recovery; current command does not assert a new C07 successor scope.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "scheduler_rule": "If a new executable in-scope gap is evidenced, immediately assign it; do not treat DONE_SCOPED as domain completion.",
+      "do_not_claim": ["domain complete"]
+    },
+    {
+      "cell": "C08",
+      "status": "ASSIGNED_NO_ACK",
+      "task": "V70-R3-C08-01",
+      "origin_proposal": "C08 RESULT next_task",
+      "description": "Design reviewed durable execution ownership/lease and a complete checkpoint contract without automatic model replay.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "inherit": ["evidence/v70-next-depth-20260914/c08/RESULT.json"],
+      "do_not_claim": ["automatic ROUTING recovery", "exactly-once provider behavior", "domain complete"]
+    },
+    {
+      "cell": "C09",
+      "status": "ASSIGNED_NO_ACK",
+      "task": "V70-R3-C09-01",
+      "origin_proposal": "V70-R2-C09-03",
+      "description": "Close post-commit judgment-event/outbox interruption: atomically bind created events or recover missing events without duplicate publication, with process-exit evidence.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "inherit": ["evidence/v70-next-depth-20260914/c09/CELL_RESULT.json"],
+      "do_not_claim": ["exactly-once event recovery until proven", "domain complete"]
+    },
+    {
+      "cell": "C10",
+      "status": "ASSIGNED_NO_ACK",
+      "task": "V70-R3-C10-01",
+      "origin_proposal": "C10 RESULT next_task",
+      "description": "Bound Journey list memory/result size with a separately reviewed pagination contract and verify PostgreSQL query plans on an approved isolated DB.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "inherit": ["evidence/v70-next-depth-20260914/c10/RESULT.json"],
+      "do_not_claim": ["HK load test complete", "PostgreSQL EXPLAIN complete until evidenced", "domain complete"]
+    },
+    {
+      "cell": "C11",
+      "status": "ASSIGNED_NO_ACK",
+      "task": "V70-R3-C11-01",
+      "origin_completed_scope": "V70-R2-C11-03",
+      "description": "Close supplier-resolution commit interruption for the two keyed flight operations, preserving the proven payment/resource fences and PostgreSQL recovery; no expansion to the other 35 callbacks in this task.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "inherit": ["evidence/v70-next-depth-20260914/c11/REPORT.md", "GitHub Actions run 34826156482 SUCCESS"],
+      "next_after_completion": "Address hard-death RUNNING takeover/recovery as a separately reviewed scope.",
+      "do_not_claim": ["all callbacks recovered", "supplier outcome proven", "domain complete"]
+    },
+    {
+      "cell": "C12",
+      "status": "ASSIGNED_NO_ACK",
+      "task": "V70-R3-C12-01",
+      "origin_completed_scope": "V70-R2-C12-02",
+      "description": "Advance scheduler evidence from receipt admission to durable worker identity/liveness: define heartbeat-expiry and stale RUNNING handling without treating record consistency as worker authentication.",
+      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+      "inherit": ["evidence/v70-next-depth-20260914/c12/RESULT.json", "GitHub Actions run 34826156402 SUCCESS"],
+      "do_not_claim": ["worker identity authenticated", "current liveness proven", "domain complete"]
+    },
+    {
+      "cell": "C13",
+      "status": "TRIGGER_ARMED",
+      "task": null,
+      "description": "Independent acceptance remains dormant until a new frozen candidate is presented; then validate exact source/Evidence independently.",
+      "inherit": ["Issue #77 independent PASS_SCOPED for 37d9a420"],
+      "trigger": "NEW_FIXED_CANDIDATE",
+      "do_not_claim": ["release approval"]
+    },
+    {
+      "cell": "C14",
+      "status": "TRIGGER_ARMED",
+      "task": null,
+      "description": "Source/authority gate remains dormant until a new fixed candidate is presented; C14 precedes C13 for that new candidate.",
+      "inherit": ["PR #76 C14 PASS_SCOPED for 37d9a420"],
+      "trigger": "NEW_FIXED_CANDIDATE",
+      "do_not_claim": ["release approval"]
+    }
+  ],
+  "scheduler_summary": {
+    "assigned_no_ack": ["C01", "C02", "C03", "C04", "C05", "C08", "C09", "C10", "C11", "C12"],
+    "blocked_external": ["C06"],
+    "done_scoped_watch": ["C07"],
+    "trigger_armed": ["C13", "C14"],
+    "running_claims": [],
+    "scheduler_fail_cells_after_dispatch": [],
+    "note": "This file records dispatch, not execution. A Cell may become RUNNING only after source-bound ACK/start Evidence appears."
+  }
+}
