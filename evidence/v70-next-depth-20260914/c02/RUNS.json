@@ -1,0 +1,53 @@
+[
+  {
+    "label": "plan",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c02-next-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_next_c02_coupon_plan.py -p no:cacheprovider --junitxml=../evidence/v70-next-depth-20260914/c02/plan.junit.xml > ../evidence/v70-next-depth-20260914/c02/plan.raw.log 2>&1",
+    "exit_code": 0,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "23",
+      "time": "1.371",
+      "timestamp": "2026-09-14T12:59:04.767882+09:00",
+      "hostname": "localhost"
+    },
+    "source_capture": "Earlier progressive-builder runs retained; final files are separately pinned in SOURCE_IDENTITY.json and must receive independent exact-candidate C13 validation."
+  },
+  {
+    "label": "plan-final",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c02-next-plan-final-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_next_c02_coupon_plan.py -p no:cacheprovider --junitxml=../evidence/v70-next-depth-20260914/c02/plan-final.junit.xml > ../evidence/v70-next-depth-20260914/c02/plan-final.raw.log 2>&1",
+    "exit_code": 0,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "24",
+      "time": "1.502",
+      "timestamp": "2026-09-14T13:00:12.222756+09:00",
+      "hostname": "localhost"
+    },
+    "source_capture": "Earlier progressive-builder runs retained; final files are separately pinned in SOURCE_IDENTITY.json and must receive independent exact-candidate C13 validation."
+  },
+  {
+    "label": "plan-bound",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c02-next-plan-bound-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_next_c02_coupon_plan.py -p no:cacheprovider --junitxml=../evidence/v70-next-depth-20260914/c02/plan-bound.junit.xml > ../evidence/v70-next-depth-20260914/c02/plan-bound.raw.log 2>&1",
+    "exit_code": 0,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "25",
+      "time": "1.372",
+      "timestamp": "2026-09-14T13:02:06.853939+09:00",
+      "hostname": "localhost"
+    },
+    "source_capture": "Earlier progressive-builder runs retained; final files are separately pinned in SOURCE_IDENTITY.json and must receive independent exact-candidate C13 validation."
+  }
+]

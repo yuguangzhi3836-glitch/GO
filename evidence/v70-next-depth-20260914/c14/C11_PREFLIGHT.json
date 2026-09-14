@@ -1,0 +1,83 @@
+{
+  "reviewer": "/root/c14_review",
+  "cell_id": "C14",
+  "task_id": "V70-R2-C14-02",
+  "reviewed_at_utc": "2026-09-14T03:51:50.510302+00:00",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "parent_candidate_application_tree": "740d026e3723f5da015342ead3394969629541df",
+  "scope": "C11 two-flight-operation recoverable idempotency implementation pre-review",
+  "decision": "DESIGN_ACCEPTABLE_SUBJECT_TO_SCOPED_IMPLEMENTATION_AND_EVIDENCE",
+  "final_gate": "PENDING_NEW_FIXED_CANDIDATE",
+  "source_bindings": [
+    {
+      "path": "evidence/v70-round2-20260914/c11/followup/DESIGN.md",
+      "sha256": "2fe26fff332484d0caa72316124ded0cc8bc30d77acf3a08cb1e5c07a903dc35",
+      "matches_parent_candidate": null
+    },
+    {
+      "path": "evidence/v70-round2-20260914/c11/followup/ACCEPTANCE.md",
+      "sha256": "cb3f2c51d4c3dd6c1f9a65d9b5fdb2b13b31e578caa307e3e27eb144b3e242a3",
+      "matches_parent_candidate": null
+    },
+    {
+      "path": "application/src/go_hotel/api/idempotency.py",
+      "sha256": "260a12d78f7e4b1cb375ee71e200486146feb3b8946ad1805ba5c15534f86c58",
+      "matches_parent_candidate": true
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/flight.py",
+      "sha256": "23550f89a7b838d406a06c919a58421d7ef69e867872b2f1e2c1e9527edc0c2d",
+      "matches_parent_candidate": true
+    },
+    {
+      "path": "application/src/go_hotel/flight/service.py",
+      "sha256": "d3f7c0e19f93980830410d67b7e82619a2db1596a31e1631be1596afc1c7b166",
+      "matches_parent_candidate": true
+    },
+    {
+      "path": "application/src/go_hotel/repositories/sql.py",
+      "sha256": "c22ea50d9a47c6a45aefacb5c77d71767891186745b693a1fe8689728ca7dfe1",
+      "matches_parent_candidate": true
+    },
+    {
+      "path": "application/src/go_hotel/services/vertical_transaction_bridge.py",
+      "sha256": "b6e5095676f4e998a8e1e320fed813e2f9a6cf28b498407662da7edfd4b8a296",
+      "matches_parent_candidate": true
+    }
+  ],
+  "required_evidence": [
+    {
+      "id": "C14-ND-C11-01",
+      "boundary": "Identity and ownership",
+      "required": "Before callback, persist claim operation/key/payload hash/resource binding; reject mismatched owner/order/quote/payment method/amount/currency; binding failure runs no callback. Same key from another owner exposes no response."
+    },
+    {
+      "id": "C14-ND-C11-02",
+      "boundary": "Unknown outcomes fail closed",
+      "required": "Enter possible-effect state before first commit/external call. ValueError-to-HTTPException translation and classification lookup errors must not release uncertain claim. Safe release requires positively proved no effect."
+    },
+    {
+      "id": "C14-ND-C11-03",
+      "boundary": "Durable money and supplier truth",
+      "required": "Recover only exact existing root/auth/capture/change keys; check payer, amount, currency, parents and CONFIRMED state. Unknown intent or movements do not authorize re-execute, refund, or TICKETED projection."
+    },
+    {
+      "id": "C14-ND-C11-04",
+      "boundary": "Replay and concurrency",
+      "required": "One original execution/recovery writer per same claim; different HTTP keys for same order/quote remain constrained by canonical operation. Failed complete/query preserves claim; retry returns precisely identified committed outcome."
+    },
+    {
+      "id": "C14-ND-C11-05",
+      "boundary": "Change terminality",
+      "required": "PENDING_SUPPLIER stays pending until supplier evidence; released authorization cannot be revived with a replacement key; existing resolution owns capture/release and ticketing."
+    },
+    {
+      "id": "C14-ND-C11-06",
+      "boundary": "Honest evidence scope",
+      "required": "Preserve original red and prior PASS. New two-operation tests do not fix remaining 35 callsites. PostgreSQL cross-process concurrency, actual process termination/restart, real money/provider/browser remain HOLD unless executed with bound raw evidence."
+    }
+  ],
+  "implementation_risk_observed": "Existing checkout_contract only explicitly blocks intent UNKNOWN_EXTERNAL_STATE before invoking money operations. New recovery must independently verify durable money states instead of assuming a returned capture ID proves a confirmed payment.",
+  "business_code_written": false,
+  "hk_or_production_action": false
+}

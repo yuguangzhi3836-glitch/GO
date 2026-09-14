@@ -2,7 +2,7 @@ from __future__ import annotations
 from hashlib import sha256
 import json
 from datetime import timedelta
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, text
 from sqlalchemy.exc import IntegrityError
 from go_hotel.db.models import (
     OfferRow, PrebookRow, OrderRow, PaymentRow, EventRow, OutboxRow, IdempotencyRow,
@@ -367,6 +367,110 @@ class SqlRepository:
             r = s.get(IdempotencyRow, {"idempotency_key": key, "operation": operation})
             if r and r.request_hash == digest and r.response_code == 102:
                 s.delete(r)
+
+    def bind_idempotency_resource(self, operation, key, payload, resource_id, token, *, new_claim):
+        """Bind before effects, or exclusively acquire a quiescent failed call.
+
+        RUNNING is never reclaimed by a timeout: a lease is not a fence around
+        an external side effect. A dead process therefore requires review.
+        """
+        if not isinstance(resource_id, str) or not 1 <= len(resource_id) <= 64:
+            raise ValueError("IDEMPOTENCY_RESOURCE_INVALID")
+        digest = self.hash_payload(payload)
+        with SessionLocal.begin() as s:
+            if s.bind.dialect.name == 'sqlite':
+                s.execute(text('BEGIN IMMEDIATE'))
+            row = s.get(IdempotencyRow, {'operation': operation, 'idempotency_key': key}, with_for_update=True)
+            if not row or row.request_hash != digest:
+                raise ValueError('IDEMPOTENCY_CLAIM_LOST')
+            if row.resource_id not in {None, resource_id}:
+                raise ValueError('IDEMPOTENCY_RESOURCE_CONFLICT')
+            if row.response_code != 102:
+                if row.response_code != 200:
+                    raise ValueError('IDEMPOTENCY_RECONCILIATION_REQUIRED')
+                if row.resource_id != resource_id:
+                    raise ValueError('IDEMPOTENCY_RESOURCE_CONFLICT')
+                return 'REPLAY', row.response_body
+            if new_claim:
+                if row.resource_id is not None or row.response_body != {'status': 'IN_PROGRESS'}:
+                    raise ValueError('IDEMPOTENCY_CLAIM_LOST')
+                mode = 'START'
+            else:
+                if row.resource_id != resource_id or row.response_body.get('status') not in {'RECOVERY_REQUIRED', 'WAITING_RESOURCE'}:
+                    return 'IN_PROGRESS', None
+                mode = 'RECOVER' if row.response_body.get('status') == 'RECOVERY_REQUIRED' else 'START'
+            # Different HTTP keys must not race the same payment callback.
+            # Lock order is always request row, then the resource row; no
+            # transaction locks another request row while holding the resource.
+            guard_id = {'operation': 'RESOURCE:' + operation, 'idempotency_key': resource_id}
+            guard = s.get(IdempotencyRow, guard_id, with_for_update=True)
+            if guard is None:
+                try:
+                    with s.begin_nested():
+                        guard = IdempotencyRow(**guard_id, request_hash=digest, response_code=102,
+                            response_body={'status': 'UNCLAIMED'}, resource_id=resource_id, created_at=now_utc())
+                        s.add(guard)
+                        s.flush()
+                except IntegrityError:
+                    guard = s.get(IdempotencyRow, guard_id, with_for_update=True)
+            if not guard or guard.request_hash != digest or guard.resource_id != resource_id:
+                raise ValueError('IDEMPOTENCY_RESOURCE_CONFLICT')
+            if guard.response_code != 102:
+                if guard.response_code != 200:
+                    raise ValueError('IDEMPOTENCY_RECONCILIATION_REQUIRED')
+                row.resource_id = resource_id
+                row.response_code = guard.response_code
+                row.response_body = guard.response_body
+                return 'REPLAY', guard.response_body
+            if guard.response_body.get('status') == 'RUNNING':
+                row.resource_id = resource_id
+                row.response_body = {'status': 'WAITING_RESOURCE'}
+                return 'IN_PROGRESS', None
+            if guard.response_body.get('status') == 'RECOVERY_REQUIRED':
+                mode = 'RECOVER'
+            elif guard.response_body.get('status') != 'UNCLAIMED':
+                return 'IN_PROGRESS', None
+            row.resource_id = resource_id
+            row.response_body = {'status': 'RUNNING', 'execution_token': token}
+            guard.response_body = {'status': 'RUNNING', 'execution_token': token}
+            return mode, None
+
+    def finish_recoverable_idempotency(self, operation, key, payload, resource_id, token, action, response=None):
+        """Fence every completion, failure marker and safe release by token."""
+        if action not in {'COMPLETE', 'RECOVERY_REQUIRED', 'RELEASE'}:
+            raise ValueError('IDEMPOTENCY_ACTION_INVALID')
+        digest = self.hash_payload(payload)
+        with SessionLocal.begin() as s:
+            if s.bind.dialect.name == 'sqlite':
+                s.execute(text('BEGIN IMMEDIATE'))
+            row = s.get(IdempotencyRow, {'operation': operation, 'idempotency_key': key}, with_for_update=True)
+            if not row or row.request_hash != digest or row.resource_id != resource_id:
+                raise ValueError('IDEMPOTENCY_CLAIM_LOST')
+            # A completion commit may succeed while its acknowledgement fails.
+            # Failure handling may observe it but must never replace its result.
+            if row.response_code != 102:
+                if action == 'RECOVERY_REQUIRED' and row.response_code == 200:
+                    return
+                raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
+            if row.response_body != {'status': 'RUNNING', 'execution_token': token}:
+                raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
+            guard = s.get(IdempotencyRow, {'operation': 'RESOURCE:' + operation,
+                'idempotency_key': resource_id}, with_for_update=True)
+            if (not guard or guard.request_hash != digest or guard.resource_id != resource_id
+                    or guard.response_code != 102
+                    or guard.response_body != {'status': 'RUNNING', 'execution_token': token}):
+                raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
+            if action == 'RELEASE':
+                s.delete(row)
+                s.delete(guard)
+            elif action == 'COMPLETE':
+                row.response_code = 200
+                row.response_body = response
+                guard.response_code = 200
+                guard.response_body = response
+            else:
+                row.response_body = {'status': 'RECOVERY_REQUIRED'}
+                guard.response_body = {'status': 'RECOVERY_REQUIRED'}
 
     def save_idempotency(self, operation: str, key: str, payload: dict, response: dict, resource_id: str | None = None, response_code: int = 200) -> dict:
         digest = self.hash_payload(payload)

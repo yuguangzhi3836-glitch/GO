@@ -6,6 +6,7 @@ on:
       - application/**
       - ci/cell-closure/**
       - ci/round2/**
+      - ci/next-depth/**
       - ci/admin-pagination/**
       - .github/workflows/v70-cell-gap-closure.yml
 permissions:
@@ -64,6 +65,17 @@ jobs:
             tests/test_v70_round2_c02_partial_party.py
             tests/test_v70_round2_c04_rental_receipts.py
             tests/test_v70_round2_c05_recovery_fulfillment.py
+            tests/go_ai/test_c08_hard_exit_recovery.py
+            tests/journey/test_c10_batch_list_projection.py
+            tests/judgment/test_next_depth_concurrent_judgment.py
+            tests/payments/test_c11_flight_idempotency_recovery.py
+            tests/test_next_depth_c03_payment_inventory_races.py
+            tests/test_next_depth_c06_supplier_validity.py
+            tests/test_round2_c07_process_recovery.py
+            tests/test_v70_next_c01_unknown_funding.py
+            tests/test_v70_next_c02_coupon_plan.py
+            tests/test_v70_next_c04_readonly_reconciliation.py
+            tests/test_v70_next_c05_recovery_evidence.py
           )
           for file in "${files[@]}"; do
             name=$(basename "$file" .py)
@@ -73,6 +85,15 @@ jobs:
       - name: Round 2 scheduler consistency regression
         shell: bash
         run: python -m unittest discover -s ci/round2 -p test_validate_ledger.py -v 2>&1 | tee "$RUNNER_TEMP/cell-evidence/scheduler.log"
+      - name: Next depth receipt admission and actual execution records
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest ci/round2/test_validate_ledger.py -k receipt -p no:cacheprovider --junitxml "$RUNNER_TEMP/cell-evidence/receipt-tests.xml"
+          for cell in C08 C10 C12; do
+            lower=$(echo "$cell" | tr '[:upper:]' '[:lower:]')
+            python ci/round2/verify_execution_receipt.py "evidence/v70-next-depth-20260914/$lower/ACK_RECEIPT.json" --evidence-root . --expected-cell "$cell" --expected-task "V70-R2-$cell-02" --expected-agent /root/c12_scheduler | tee "$RUNNER_TEMP/cell-evidence/$lower-receipt-admission.json"
+          done
       - name: Bind original result files to this checkout
         if: always()
         run: |

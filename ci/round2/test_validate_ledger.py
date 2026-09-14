@@ -191,6 +191,68 @@ class SchedulerContractTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertEqual(json.loads(source.read_text()), self.ledger)
 
+    def receipt_verifier(self):
+        path = SCRIPT.with_name("verify_execution_receipt.py")
+        receipt_spec = importlib.util.spec_from_file_location("receipt_verifier", path)
+        module = importlib.util.module_from_spec(receipt_spec)
+        receipt_spec.loader.exec_module(module)
+        return module
+
+    def receipt(self):
+        log_path = self.root / "actual-test-process-output.log"
+        log_path.write_text("TEST FIXTURE: actual fixture receipt bytes\n")
+        return {
+            "cell_id": "C12", "task_id": "V70-R2-C12-02", "agent": "/root/c12_scheduler",
+            "source_anchor": validator.SOURCE_ANCHOR,
+            "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+            "status": "RUNNING", "acknowledged_at": "2026-09-14T00:00:01Z",
+            "started_at": "2026-09-14T00:00:02Z", "observed_at": "2026-09-14T00:00:03Z",
+            "execution_evidence": [{"kind": "PROCESS_OUTPUT", "path": log_path.name,
+                                    "sha256": hashlib.sha256(log_path.read_bytes()).hexdigest()}],
+        }
+
+    def receipt_check(self, receipt):
+        return self.receipt_verifier().verify(receipt, self.root, expected_cell="C12", expected_task="V70-R2-C12-02", expected_agent="/root/c12_scheduler")
+
+    def test_receipt_assigned_without_ack_cannot_be_admitted_as_running(self):
+        receipt = self.receipt()
+        receipt.update(status="ASSIGNED", acknowledged_at=None, started_at=None)
+        result = self.receipt_check(receipt)
+        self.assertEqual(result["gate"], "HOLD")
+        self.assertIn("RUNNING", " ".join(result["errors"]))
+        self.assertIn("acknowledged_at", " ".join(result["errors"]))
+
+    def test_receipt_real_ack_and_bound_output_support_only_record_admission(self):
+        result = self.receipt_check(self.receipt())
+        self.assertEqual(result["gate"], "PASS_SCOPED")
+        self.assertEqual(result["authenticated_worker_identity"], False)
+        self.assertEqual(result["live_worker_liveness_verified"], False)
+
+    def test_receipt_rejects_wrong_task_agent_parent_and_source(self):
+        for field in ("task_id", "agent", "parent_candidate_commit", "source_anchor"):
+            receipt = self.receipt()
+            receipt[field] = "WRONG_IDENTITY"
+            result = self.receipt_check(receipt)
+            self.assertEqual(result["gate"], "HOLD")
+            self.assertIn(field, " ".join(result["errors"]))
+
+    def test_receipt_missing_tampered_or_escaping_execution_log_is_hold(self):
+        for replacement in ("missing.log", "/etc/passwd", "../outside.log"):
+            receipt = self.receipt()
+            receipt["execution_evidence"][0]["path"] = replacement
+            self.assertEqual(self.receipt_check(receipt)["gate"], "HOLD")
+        receipt = self.receipt()
+        (self.root / receipt["execution_evidence"][0]["path"]).write_text("changed bytes")
+        self.assertEqual(self.receipt_check(receipt)["gate"], "HOLD")
+
+    def test_receipt_rejects_ack_after_start_and_empty_execution_evidence(self):
+        receipt = self.receipt()
+        receipt["acknowledged_at"] = "2026-09-14T00:01:00Z"
+        self.assertEqual(self.receipt_check(receipt)["gate"], "HOLD")
+        receipt = self.receipt()
+        receipt["execution_evidence"] = []
+        self.assertEqual(self.receipt_check(receipt)["gate"], "HOLD")
+
 
 if __name__ == "__main__":
     unittest.main()

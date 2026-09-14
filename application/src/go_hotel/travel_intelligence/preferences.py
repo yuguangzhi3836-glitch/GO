@@ -11,7 +11,6 @@ from sqlalchemy import select
 
 from go_hotel.db.models import (ProfileAccessAuditRow, ProfileConsentRow, ProfileFactRow,
     TravelerProfileRow, TravelIntentRow, TravelBehaviorEventRow)
-from go_hotel.db.session import SessionLocal
 from go_hotel.domain.models import new_id
 from go_hotel.security.crypto import encrypt_secret, decrypt_secret
 from go_hotel.services.personal_vault_management import mutation_session, owned_traveler, permission
@@ -39,14 +38,16 @@ def _purpose(value):
 
 
 def _active_consents(session, traveler, purpose, consent_type):
-    t = _now()
+    # Share the consent-row lock with the existing vault's revocation UPDATE.
+    # Retain it through preference projection/write and its audit transaction.
     rows = session.scalars(select(ProfileConsentRow).where(
         ProfileConsentRow.user_id == traveler.user_id,
         ProfileConsentRow.traveler_id == traveler.traveler_id,
         ProfileConsentRow.consent_type == consent_type,
         ProfileConsentRow.purpose == purpose,
         ProfileConsentRow.status == "ACTIVE",
-        ProfileConsentRow.revoked_at.is_(None))).all()
+        ProfileConsentRow.revoked_at.is_(None)).order_by(ProfileConsentRow.consent_id).with_for_update()).all()
+    t = _now()
     return {c.consent_id:c for c in rows
         if c.expires_at is not None and _aware(c.granted_at) <= t < _aware(c.expires_at)}
 
@@ -179,7 +180,9 @@ class TravelPreferenceMixin:
 
     def preferences(self, traveler_id, *, purpose, actor_id="C07", actor_type="GO_SYSTEM", user_id=None):
         purpose = _purpose(purpose)
-        with SessionLocal.begin() as s:
+        # SQLite needs BEGIN IMMEDIATE because its legacy SELECT handling does
+        # not otherwise retain a transaction that serializes consent withdrawal.
+        with mutation_session() as s:
             tr = s.get(TravelerProfileRow, traveler_id)
             if not tr or tr.status != "ACTIVE" or (user_id is not None and tr.user_id != user_id):
                 raise ValueError("TRAVELER_NOT_FOUND")
@@ -194,7 +197,7 @@ class TravelPreferenceMixin:
 
     def preference_graph(self, traveler_id, *, purpose, actor_id="C07", actor_type="GO_SYSTEM"):
         purpose = _purpose(purpose)
-        with SessionLocal.begin() as s:
+        with mutation_session() as s:
             tr = s.get(TravelerProfileRow, traveler_id)
             if not tr or tr.status != "ACTIVE":
                 raise ValueError("TRAVELER_NOT_FOUND")

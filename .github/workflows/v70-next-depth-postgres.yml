@@ -1,0 +1,116 @@
+name: V7 next depth PostgreSQL recovery
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/**
+      - ci/next-depth/**
+      - ci/retention/**
+      - .github/workflows/v70-next-depth-postgres.yml
+permissions:
+  contents: read
+concurrency:
+  group: v70-next-depth-pg-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cell: C07
+            database: go_c07_isolated
+            script: ci/next_depth/c07_postgres.py
+          - cell: C09
+            database: go_c09_isolated
+            script: ci/next_depth/c09_postgres.py
+          - cell: C11
+            database: go_c11_isolated
+            script: ci/next_depth/c11_postgres.py
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: ${{ matrix.database }}
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d ${{ matrix.database }}"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_C07_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/${{ matrix.database }}
+      GO_C09_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/${{ matrix.database }}
+      GO_C11_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/${{ matrix.database }}
+      GO_C07_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+      GO_C09_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+      GO_C11_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify exact candidate and inherited source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ci/retention/verify_source.py "$RUNNER_TEMP/next-depth-pg/source"
+          python ci/retention/verify_alignment.py "$RUNNER_TEMP/next-depth-pg/alignment.json"
+          python - <<'PY'
+          import json, pathlib, subprocess
+          candidate=json.loads(pathlib.Path('ci/next-depth/CANDIDATE.json').read_text())
+          actual=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
+          assert actual==candidate['application_git_tree']
+          assert candidate['source_anchor']=='fef9c748adb77d37ba5d4dc4fa4662eb668303a1'
+          assert candidate['parent_candidate_commit']=='a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b'
+          PY
+      - name: Install inherited frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Run actual isolated process recovery and concurrency checks
+        working-directory: application
+        shell: bash
+        env:
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/next-depth-pg/${{ matrix.cell }}"
+          python -B '${{ matrix.script }}' --evidence-dir "$RUNNER_TEMP/next-depth-pg/${{ matrix.cell }}" 2>&1 | tee "$RUNNER_TEMP/next-depth-pg/driver.log"
+      - name: Bind original logs and process observations
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'next-depth-pg';out.mkdir(exist_ok=True)
+          files={str(p.relative_to(out)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.rglob('*')) if p.is_file()}
+          report={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'application_git_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'files':files,'environment':'disposable GitHub Actions PostgreSQL 18.4 service','scope':'${{ matrix.cell }} scoped concurrency and recovery; gates depend on original process observations','hong_kong':'NOT_ACCESSED','production':'HOLD','full_release':'HOLD'}
+          (out/'EVIDENCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+      - name: Emit bounded original result files for independent review
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json,os,pathlib
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'next-depth-pg'
+          for p in sorted(out.rglob('*')):
+              if p.is_file() and p.suffix in ('.json','.xml','.log') and p.stat().st_size <= 100000:
+                  print('EVIDENCE_FILE '+json.dumps({'path':str(p.relative_to(out)),'content':p.read_text(errors='strict')},ensure_ascii=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v70-next-depth-pg-${{ matrix.cell }}-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/next-depth-pg
+          if-no-files-found: error
+          retention-days: 90

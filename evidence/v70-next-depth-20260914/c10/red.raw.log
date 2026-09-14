@@ -1,0 +1,2880 @@
+FFFFFFFFFFFFFF
+=================================== FAILURES ===================================
+_ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-ATTRACTION] __
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afac28080>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afbafb230>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afac8ae40>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afac8b560>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'ATTRACTION', 'c10_batch_o0001', 'Batch item', ...), ('c10_bat... ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'ATTRACTION', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afbafb230>
+cursor = <sqlite3.Cursor object at 0x7f3afacbc6c0>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'ATTRACTION', 'c10_batch_o0001', 'Batch item', ...), ('c10_bat... ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'ATTRACTION', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afac8ae40>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'ATTRACTION', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afbafb230>
+cursor = <sqlite3.Cursor object at 0x7f3afacbc6c0>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'ATTRACTION', 'c10_batch_o0001', 'Batch item', ...), ('c10_bat... ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'ATTRACTION', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afac8ae40>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'ATTRACTION', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'ATTRACTION', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'ATTRACTION', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'ATTRACTION', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'ATTRACTION', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'ATTRACTION', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'ATTRACTION', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'ATTRACTION', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'ATTRACTION', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'ATTRACTION', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+___ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-FLIGHT] ____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afab053a0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afb938260>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa0e1820>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afa0e1850>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'FLIGHT', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'FLIGHT', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afb938260>
+cursor = <sqlite3.Cursor object at 0x7f3afa3f4440>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'FLIGHT', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'FLIGHT', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa0e1820>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'FLIGHT', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afb938260>
+cursor = <sqlite3.Cursor object at 0x7f3afa3f4440>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'FLIGHT', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'FLIGHT', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa0e1820>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'FLIGHT', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'FLIGHT', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'FLIGHT', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'FLIGHT', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'FLIGHT', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'FLIGHT', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'FLIGHT', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'FLIGHT', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'FLIGHT', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'FLIGHT', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+____ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-HOTEL] ____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afa0e3320>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afac884a0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afaaf9ca0>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afaaf9fa0>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afac884a0>
+cursor = <sqlite3.Cursor object at 0x7f3afab52ec0>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afaaf9ca0>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'HOTEL', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afac884a0>
+cursor = <sqlite3.Cursor object at 0x7f3afab52ec0>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afaaf9ca0>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'HOTEL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'HOTEL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'HOTEL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'HOTEL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'HOTEL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'HOTEL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+____ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RAIL] _____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afaafaba0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa0e3ad0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afaa66c30>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afaa66e40>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RAIL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RAIL', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa0e3ad0>
+cursor = <sqlite3.Cursor object at 0x7f3afaa62ac0>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RAIL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RAIL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afaa66c30>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RAIL', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa0e3ad0>
+cursor = <sqlite3.Cursor object at 0x7f3afaa62ac0>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RAIL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RAIL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afaa66c30>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RAIL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'RAIL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'RAIL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'RAIL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'RAIL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RAIL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'RAIL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'RAIL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'RAIL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'RAIL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+___ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RENTAL] ____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afb939280>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afaafbbc0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afab1ffe0>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afab1ffb0>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RENTAL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RENTAL', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afaafbbc0>
+cursor = <sqlite3.Cursor object at 0x7f3afa489740>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RENTAL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RENTAL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afab1ffe0>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RENTAL', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afaafbbc0>
+cursor = <sqlite3.Cursor object at 0x7f3afa489740>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RENTAL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RENTAL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afab1ffe0>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RENTAL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'RENTAL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'RENTAL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'RENTAL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'RENTAL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RENTAL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'RENTAL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'RENTAL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'RENTAL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'RENTAL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+____ test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RIDE] _____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afaa64710>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afaa64b30>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa953fb0>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afa9522d0>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RIDE', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RIDE', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afaa64b30>
+cursor = <sqlite3.Cursor object at 0x7f3afaa62a40>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RIDE', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RIDE', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa953fb0>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RIDE', viewer = 'c10_owner'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afaa64b30>
+cursor = <sqlite3.Cursor object at 0x7f3afaa62a40>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RIDE', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RIDE', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa953fb0>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RIDE', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'RIDE', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'RIDE', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'RIDE', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'RIDE', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RIDE', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'RIDE', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'RIDE', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'RIDE', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'RIDE', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+_ test_list_queries_bounded_by_vertical_not_order_count[c10_member-ATTRACTION] _
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afaa678c0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afaa654c0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afabdc920>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afabdd160>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'ATTRACTION', 'c10_batch_o0001', 'Batch item', ...), ('c10_bat... ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'ATTRACTION', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afaa654c0>
+cursor = <sqlite3.Cursor object at 0x7f3afa08b540>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'ATTRACTION', 'c10_batch_o0001', 'Batch item', ...), ('c10_bat... ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'ATTRACTION', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afabdc920>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'ATTRACTION', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afaa654c0>
+cursor = <sqlite3.Cursor object at 0x7f3afa08b540>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'ATTRACTION', 'c10_batch_o0001', 'Batch item', ...), ('c10_bat... ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'ATTRACTION', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afabdc920>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'ATTRACTION', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'ATTRACTION', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'ATTRACTION', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'ATTRACTION', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'ATTRACTION', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'ATTRACTION', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'ATTRACTION', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'ATTRACTION', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'ATTRACTION', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'ATTRACTION', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+___ test_list_queries_bounded_by_vertical_not_order_count[c10_member-FLIGHT] ___
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afa0e16a0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa9508c0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afaccd5e0>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afaccd610>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'FLIGHT', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'FLIGHT', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa9508c0>
+cursor = <sqlite3.Cursor object at 0x7f3afa7d0fc0>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'FLIGHT', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'FLIGHT', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afaccd5e0>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'FLIGHT', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa9508c0>
+cursor = <sqlite3.Cursor object at 0x7f3afa7d0fc0>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'FLIGHT', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'FLIGHT', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afaccd5e0>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'FLIGHT', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'FLIGHT', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'FLIGHT', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'FLIGHT', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'FLIGHT', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'FLIGHT', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'FLIGHT', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'FLIGHT', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'FLIGHT', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'FLIGHT', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+___ test_list_queries_bounded_by_vertical_not_order_count[c10_member-HOTEL] ____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afa950440>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afac5bcb0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3af9ddd520>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3af9ddd7f0>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afac5bcb0>
+cursor = <sqlite3.Cursor object at 0x7f3af9433140>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3af9ddd520>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'HOTEL', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afac5bcb0>
+cursor = <sqlite3.Cursor object at 0x7f3af9433140>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3af9ddd520>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'HOTEL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'HOTEL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'HOTEL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'HOTEL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'HOTEL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'HOTEL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+____ test_list_queries_bounded_by_vertical_not_order_count[c10_member-RAIL] ____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afa952120>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa0df0e0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3af9dbd520>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3af9dbd7f0>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RAIL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RAIL', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa0df0e0>
+cursor = <sqlite3.Cursor object at 0x7f3af9d49e40>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RAIL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RAIL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3af9dbd520>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RAIL', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa0df0e0>
+cursor = <sqlite3.Cursor object at 0x7f3af9d49e40>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RAIL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RAIL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3af9dbd520>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RAIL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'RAIL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'RAIL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'RAIL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'RAIL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RAIL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'RAIL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'RAIL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'RAIL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'RAIL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+___ test_list_queries_bounded_by_vertical_not_order_count[c10_member-RENTAL] ___
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afa0de4e0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3af9dc7b90>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa3ad880>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afa3adb50>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RENTAL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RENTAL', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3af9dc7b90>
+cursor = <sqlite3.Cursor object at 0x7f3afa365d40>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RENTAL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RENTAL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa3ad880>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RENTAL', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3af9dc7b90>
+cursor = <sqlite3.Cursor object at 0x7f3afa365d40>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RENTAL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j...em', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RENTAL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa3ad880>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RENTAL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'RENTAL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'RENTAL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'RENTAL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'RENTAL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RENTAL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'RENTAL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'RENTAL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'RENTAL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'RENTAL', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+____ test_list_queries_bounded_by_vertical_not_order_count[c10_member-RIDE] ____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3afaccfb60>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3af9d2cc50>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa165730>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afa165a00>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RIDE', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RIDE', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3af9d2cc50>
+cursor = <sqlite3.Cursor object at 0x7f3af9f7a040>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RIDE', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RIDE', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa165730>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+vertical = 'RIDE', viewer = 'c10_member'
+
+    @pytest.mark.parametrize("vertical", sorted(journey_module.VERTICALS))
+    @pytest.mark.parametrize("viewer", [OWNER, MEMBER])
+    def test_list_queries_bounded_by_vertical_not_order_count(isolated_session, vertical, viewer):
+        _seed(isolated_session, vertical)
+        initial, small = counted_list(isolated_session, viewer)
+>       grow(isolated_session, vertical, 31)
+
+tests/journey/test_c10_batch_list_projection.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3af9d2cc50>
+cursor = <sqlite3.Cursor object at 0x7f3af9f7a040>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RIDE', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j00...item', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RIDE', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa165730>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'RIDE', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'RIDE', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'RIDE', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'RIDE', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'RIDE', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'RIDE', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'RIDE', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'RIDE', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 60 total bound parameter sets ...  ('c10_batch_j0030_i0', 'c10_batch_j0030', 'c10_owner', 'RIDE', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0030_i1', 'c10_batch_j0030', 'c10_owner', 'RIDE', 'c10_batch_o0030', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+_ test_batch_projection_keeps_owner_boundary_missing_and_unsupported_fallback __
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3af9dbfb60>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa3a3800>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa148cb0>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afa148aa0>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa3a3800>
+cursor = <sqlite3.Cursor object at 0x7f3afa3655c0>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa148cb0>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+
+    def test_batch_projection_keeps_owner_boundary_missing_and_unsupported_fallback(isolated_session):
+        model = _seed(isolated_session, "HOTEL")
+>       grow(isolated_session, "HOTEL", 5)
+
+tests/journey/test_c10_batch_list_projection.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa3a3800>
+cursor = <sqlite3.Cursor object at 0x7f3afa3655c0>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afa148cb0>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'HOTEL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'HOTEL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'HOTEL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'HOTEL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+_______ test_order_batch_chunk_boundary_does_not_fall_back_to_n_plus_one _______
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f3af9dbf1d0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa164bc0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afab74f50>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3afab74b60>
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa164bc0>
+cursor = <sqlite3.Cursor object at 0x7f3afab15e40>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afab74f50>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+isolated_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:///:memory:), autoflush=True, expire_on_commit=False)
+
+    def test_order_batch_chunk_boundary_does_not_fall_back_to_n_plus_one(isolated_session):
+        _seed(isolated_session, "HOTEL")
+>       grow(isolated_session, "HOTEL", 405)
+
+tests/journey/test_c10_batch_list_projection.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/journey/test_c10_batch_list_projection.py:16: in grow
+    with factory.begin() as session:
+         ^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1819: in _maker_context_manager
+    with self.begin():
+         ^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:147: in __exit__
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/util.py:145: in __exit__
+    self.commit()
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3afa164bc0>
+cursor = <sqlite3.Cursor object at 0x7f3afab15e40>
+statement = 'INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, ... status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', ...), ('c10_batch_j0...tem', ...), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', ...), ...]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3afab74f50>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: go_journey_item_runtime.account_id, go_journey_item_runtime.vertical, go_journey_item_runtime.order_id
+E       [SQL: INSERT INTO go_journey_item_runtime (item_id, journey_id, account_id, vertical, order_id, title, subtitle, location, starts_at, ends_at, status_snapshot, facts_json, detail_route, sort_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: [('c10_batch_j0001_i0', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0001_i1', 'c10_batch_j0001', 'c10_owner', 'HOTEL', 'c10_batch_o0001', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0002_i0', 'c10_batch_j0002', 'c10_owner', 'HOTEL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0002_i1', 'c10_batch_j0002', 'c10_owner', 'HOTEL', 'c10_batch_o0002', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0003_i0', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0003_i1', 'c10_batch_j0003', 'c10_owner', 'HOTEL', 'c10_batch_o0003', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000'), ('c10_batch_j0004_i0', 'c10_batch_j0004', 'c10_owner', 'HOTEL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0004_i1', 'c10_batch_j0004', 'c10_owner', 'HOTEL', 'c10_batch_o0004', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')  ... displaying 10 of 808 total bound parameter sets ...  ('c10_batch_j0404_i0', 'c10_batch_j0404', 'c10_owner', 'HOTEL', 'c10_batch_o0404', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '2', '2026-09-13 12:00:00.000000'), ('c10_batch_j0404_i1', 'c10_batch_j0404', 'c10_owner', 'HOTEL', 'c10_batch_o0404', 'Batch item', None, None, None, None, 'CONFIRMED', '{"historical": true}', 'OrderDetail', '1', '2026-09-13 12:00:01.000000')]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+=========================== short test summary info ============================
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-ATTRACTION]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-FLIGHT]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-HOTEL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RAIL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RENTAL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_owner-RIDE]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-ATTRACTION]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-FLIGHT]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-HOTEL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-RAIL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-RENTAL]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_list_queries_bounded_by_vertical_not_order_count[c10_member-RIDE]
+FAILED tests/journey/test_c10_batch_list_projection.py::test_batch_projection_keeps_owner_boundary_missing_and_unsupported_fallback
+FAILED tests/journey/test_c10_batch_list_projection.py::test_order_batch_chunk_boundary_does_not_fall_back_to_n_plus_one
+14 failed in 5.67s

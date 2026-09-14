@@ -1,0 +1,7 @@
+{
+  "working_directory": "/workspace/scratch/948b51def3a9/GO/application",
+  "command": "PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/go-c07-e1-controller.db GO_C07_PROCESS_EVIDENCE_DIR=/workspace/scratch/948b51def3a9/GO/evidence/v70-next-depth-20260914/c07/e1-commit-marker/processes /workspace/scratch/948b51def3a9/venv/bin/python -m pytest -ra -p no:cacheprovider tests/test_round2_c07_process_recovery.py::test_withdrawal_serializes_with_authorized_inflight_update_or_update_is_rejected tests/test_round2_c07_process_recovery.py::test_withdrawal_serializes_with_inflight_read_or_old_grant_releases_nothing --junitxml=../evidence/v70-next-depth-20260914/c07/e1-commit-marker/junit.xml --tb=short",
+  "exit_code": 0,
+  "passed": 2,
+  "duration_seconds": 24.55
+}

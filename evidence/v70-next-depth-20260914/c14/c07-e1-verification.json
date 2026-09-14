@@ -1,0 +1,80 @@
+{
+  "reviewer": "/root/c14_review",
+  "observed_at": "2026-09-14T04:14:41.415931+00:00",
+  "result": "MATCH",
+  "scope": "E1 commit-ack measurement source and raw observation verification only",
+  "product_unchanged": true,
+  "tests": "2 affected interleavings rerun; old40 total preserved, not42 distinct",
+  "checks": [
+    {
+      "path": "application/src/go_hotel/travel_intelligence/preferences.py",
+      "expected": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1",
+      "actual": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1",
+      "match": true
+    },
+    {
+      "path": "application/tests/c07_preference_process_actor.py",
+      "expected": "6bd2e7d8f5e6d1b4eaad52c6cff50e8ac0d883b64e1ac3fd58e655cf2c6cadbe",
+      "actual": "6bd2e7d8f5e6d1b4eaad52c6cff50e8ac0d883b64e1ac3fd58e655cf2c6cadbe",
+      "match": true
+    },
+    {
+      "path": "application/tests/test_round2_c07_process_recovery.py",
+      "expected": "4f577c32240286c255cb0ffc6f6460b463bb3279f29ce03c4e071d26121ea65a",
+      "actual": "4f577c32240286c255cb0ffc6f6460b463bb3279f29ce03c4e071d26121ea65a",
+      "match": true
+    },
+    {
+      "path": "application/ci/next_depth/c07_postgres.py",
+      "expected": "3eb3377f81e219cc4edfe035fbd185e1f4f1337bde4fdcb90957214efc7ea993",
+      "actual": "3eb3377f81e219cc4edfe035fbd185e1f4f1337bde4fdcb90957214efc7ea993",
+      "match": true
+    }
+  ],
+  "observations": [
+    {
+      "path": "evidence/v70-next-depth-20260914/c07/e1-commit-marker/processes/test_withdrawal_serializes_with_inflight_read_or_old_grant_releases_nothing/ordering-observation.json",
+      "sha256": "05742e187adc62b3612ae9944e1d34e0b62ac5efbceb203d4ec440f6a4811630",
+      "record": {
+        "backend": "sqlite",
+        "withdrawal_commit_ack": {
+          "event": "CONSENT_WITHDRAWAL_COMMIT_ACK",
+          "pid": 15,
+          "at": "2026-09-14T04:11:21.908663+00:00",
+          "monotonic_ns": 5033364109905
+        },
+        "reader_resumed": {
+          "kind": "resumed",
+          "pid": 14,
+          "at": "2026-09-14T04:11:21.427453+00:00",
+          "monotonic_ns": 5032882899790,
+          "point": "after_consent"
+        },
+        "withdrawal_commit_ack_before_reader_resume": false,
+        "released_preference_count": 1
+      }
+    },
+    {
+      "path": "evidence/v70-next-depth-20260914/c07/e1-commit-marker/processes/test_withdrawal_serializes_with_authorized_inflight_update_or_update_is_rejected/ordering-observation.json",
+      "sha256": "88db24463410374ae8412cdf90388708eb0fbd09d0402ca822178738eafd8c7b",
+      "record": {
+        "backend": "sqlite",
+        "withdrawal_commit_ack": {
+          "event": "CONSENT_WITHDRAWAL_COMMIT_ACK",
+          "pid": 9,
+          "at": "2026-09-14T04:11:08.447179+00:00",
+          "monotonic_ns": 5019902623761
+        },
+        "writer_resumed": {
+          "kind": "resumed",
+          "pid": 8,
+          "at": "2026-09-14T04:11:07.962179+00:00",
+          "monotonic_ns": 5019417624330,
+          "point": "after_consent"
+        },
+        "withdrawal_commit_ack_before_writer_resume": false,
+        "writer_outcome": "COMMITTED"
+      }
+    }
+  ]
+}

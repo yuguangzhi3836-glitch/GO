@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/workspace/scratch/948b51def3a9/venv/bin/python",
+    "-m",
+    "pytest",
+    "tests/journey/test_c10_batch_list_projection.py",
+    "-p",
+    "no:cacheprovider",
+    "-s",
+    "--junitxml",
+    "/workspace/scratch/948b51def3a9/GO/evidence/v70-next-depth-20260914/c10/red-corrected-fixture.junit.xml"
+  ],
+  "started_at": "2026-09-14T03:54:02.561508+00:00",
+  "finished_at": "2026-09-14T03:54:05.893181+00:00",
+  "exit_code": 1,
+  "prior_red_note": "Original red.log fixture violated unique account/vertical/order attachment constraint; preserved as fixture failure, excluded from product defect proof."
+}

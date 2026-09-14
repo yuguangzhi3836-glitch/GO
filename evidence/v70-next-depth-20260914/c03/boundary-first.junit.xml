@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="4" time="3.141" timestamp="2026-09-14T12:55:54.179661+09:00" hostname="localhost"><testcase classname="tests.test_next_depth_c03_payment_inventory_races" name="test_closed_reservation_wins_after_checkout_guard_before_payment_root[expiry]" time="1.479" /><testcase classname="tests.test_next_depth_c03_payment_inventory_races" name="test_closed_reservation_wins_after_checkout_guard_before_payment_root[cancel]" time="0.076" /><testcase classname="tests.test_next_depth_c03_payment_inventory_races" name="test_committed_payment_root_blocks_cancel_and_expiry_during_capture_handoff" time="0.101" /><testcase classname="tests.test_next_depth_c03_payment_inventory_races" name="test_full_target_capacity_rejects_before_supplemental_money_or_original_release" time="0.088"><failure message="TypeError: rail_resource() takes 1 positional argument but 3 were given">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f154b52e720&gt;
+
+    def test_full_target_capacity_rejects_before_supplemental_money_or_original_release(monkeypatch):
+        svc, owner, oid = booked('RAIL')
+        original = svc.order(owner, oid)
+        q = svc.change_quote(owner, oid, '2026-09-16')
+        with SessionLocal() as session:
+            quote = session.get(RailChangeQuoteRow, q['quote_id'])
+            seat = quote.new_seat_class
+&gt;           target = capacity.rail_resource(quote.new_train_no, quote.new_travel_date, seat)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: rail_resource() takes 1 positional argument but 3 were given
+
+tests/test_next_depth_c03_payment_inventory_races.py:86: TypeError</failure></testcase></testsuite></testsuites>
