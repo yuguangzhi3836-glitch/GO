@@ -390,6 +390,49 @@ output, so a real projection supplies zero facts and every Request honestly read
 `REQUEST_CREATED`. The remaining gap is the missing wiring, not the missing
 mechanism.
 
+### 11. Readiness is evaluated read-only, and a YES is not an approval (CC V1-06)
+
+`control-plane/command-center-deploy-readiness-v1` answers *"can we deploy now,
+and why not"* as `DEPLOY_READY = YES / NO / UNKNOWN`, combining this projection's
+output with an optional operator-supplied bundle of live-host facts. #94 kept
+deploy readiness `NOT_IN_SCOPE` on purpose: it would have had to combine an
+approved candidate, TEST_PR, VERIFY, CANARY, Human Approval, a deployment plan,
+source/package/image binding, the current runtime and the live Command Center
+switch. Every one of those now has a defined source, and the ones that are
+live-host facts are `UNKNOWN` by construction rather than assumed.
+
+Pass `--deploy-readiness <DEPLOY_READINESS.json>` and the state document carries:
+
+```
+control_state.deploy_readiness          value YES / NO, or the state is UNKNOWN with a null value
+control_state.deploy_readiness_gates    one entry per gate, in the evaluator's order
+control_state.out_of_scope.deploy_readiness_evaluation   EVALUATED_READ_ONLY
+control_state.out_of_scope.deploy_readiness_document     the verdict's repository-relative path
+```
+
+Four properties are enforced by tests rather than asserted in prose:
+
+* **Unprovable is never yes.** A mandatory gate that could not be established
+  keeps the verdict at `UNKNOWN`; the projection carries that as an `UNKNOWN`
+  assertion with a null value, and the per-gate detail is still there, so nothing
+  is lost by the null.
+* **A verdict is quoted, never computed here.** This layer evaluates nothing
+  itself. Without a document it states nothing, and it never infers readiness
+  from the presence of an approved candidate.
+* **A verdict that claims authority is refused.** The evaluator's ten boundary
+  flags must be exactly the published ones; any disagreement records
+  `DEPLOY_READINESS_UNREADABLE` and leaves the state `UNKNOWN`.
+* **`answers` is untouched.** The frozen ChatGPT contract still carries no
+  `can_deploy`, no deployment eligibility, no `release_gates` and no
+  `rollback_targets`. Surfacing readiness there is #107's decision, not this one.
+
+Rollback readiness remains `NOT_IN_SCOPE`; CC V1-09 / #104 owns it and the
+evaluator says so instead of guessing.
+
+As of the committed projection the verdict is **`NO`**: the candidate commit has
+never been TEST_PR'd on the control bus and the newest verified VERIFY is outside
+its freshness window, while five further gates are unprovable offline.
+
 ## Verified current architecture
 
 Read from repository evidence, not from old notes.
@@ -606,10 +649,15 @@ reasons.
    real projection supplies zero facts, every Request reads `REQUEST_CREATED`,
    and refusal reasons stay unobservable from the control bus.
    `TARGET_INSTALLED=NO`.
-6. **Every remaining blocker above is a wiring gap, not a mechanism gap.** The
-   mechanisms for failure closure, liveness, publication and request visibility
-   were each added by a CC V1 issue and are each uninstalled. Installing any of
-   them is a separately approved change and is not implied by having built it.
+6. **The deploy readiness evaluator is not scheduled.** The evaluator exists and
+   CI verifies it (CC V1-06), but nothing runs it on a timer and no live bundle
+   is published anywhere, so the readiness verdict is only as current as the
+   operator's last run. `INSTALLED=NO`.
+7. **Every remaining blocker above is a wiring gap, not a mechanism gap.** The
+   mechanisms for failure closure, liveness, publication, request visibility and
+   deploy readiness were each added by a CC V1 issue and are each uninstalled.
+   Installing any of them is a separately approved change and is not implied by
+   having built it.
 
 ## Not proven by this PR
 

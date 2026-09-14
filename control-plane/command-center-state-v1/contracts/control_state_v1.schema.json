@@ -197,7 +197,7 @@
                             "TASK_PARAMETER_CONTRACT_DRIFT", "VERIFIER_IDENTITY_COLLISION",
                             "REQUEST_FACTS_DIRECTORY_MISSING", "REQUEST_FACT_UNREADABLE",
                             "REQUEST_FACT_INDEX_UNREADABLE", "REQUEST_BINDING_UNPROVEN",
-                            "REQUEST_FACT_WITHOUT_REQUEST",
+                            "REQUEST_FACT_WITHOUT_REQUEST", "DEPLOY_READINESS_UNREADABLE",
                             "LOCAL_PATH_LEAK"]},
           "detail": {"type": "string"},
           "ref": {"type": ["string", "null"]}
@@ -215,7 +215,8 @@
                    "runtime_built_from_main_sha", "runtime_canonical_main_sha",
                    "stuck_answer", "active_tasks", "active_stuck_tasks", "recent_expired_tasks",
                    "historical_expired_tasks", "failed_or_invalid_tasks", "stale_tasks",
-                   "last_successful_deploy", "informational", "out_of_scope"],
+                   "last_successful_deploy", "deploy_readiness", "deploy_readiness_gates",
+                   "informational", "out_of_scope"],
       "properties": {
         "health": {"$ref": "#/$defs/assertion"},
         "last_request": {"$ref": "#/$defs/assertion"},
@@ -251,6 +252,24 @@
         "failed_or_invalid_tasks": {"type": "array"},
         "stale_tasks": {"type": "array"},
         "last_successful_deploy": {"$ref": "#/$defs/assertion"},
+        "deploy_readiness": {"$ref": "#/$defs/assertion",
+          "description": "CC V1-06. The verdict the separate read-only evaluator produced, quoted verbatim: value is YES / NO, or the state is UNKNOWN when it could not be established. Never evaluated here, and YES is never an approval."},
+        "deploy_readiness_gates": {
+          "type": "array",
+          "description": "One entry per gate the evaluator reported, in its own order. Empty when no verdict was supplied. A gate that is not PASS is present here, never omitted.",
+          "items": {
+            "type": "object",
+            "required": ["gate", "mandatory", "state", "reason"],
+            "properties": {
+              "gate": {"enum": ["APPROVED_CANDIDATE", "SOURCE_BINDING", "PACKAGE_BINDING",
+                                "DEPLOYMENT_PLAN", "HUMAN_APPROVAL", "TEST_PR", "VERIFY",
+                                "CURRENT_RUNTIME", "LIVE_SWITCH", "CANARY", "RELEASE_GATES"]},
+              "mandatory": {"type": "boolean"},
+              "state": {"enum": ["PASS", "FAIL", "UNKNOWN"]},
+              "reason": {"type": "string"}
+            }
+          }
+        },
         "informational": {
           "type": "object",
           "description": "Non-contract recorded facts. contract=false. Deploy and rollback readiness are NOT evaluated.",
@@ -269,7 +288,14 @@
           "type": "object",
           "required": ["deploy_readiness_evaluation", "rollback_readiness_evaluation"],
           "properties": {
-            "deploy_readiness_evaluation": {"const": "NOT_IN_SCOPE"},
+            "deploy_readiness_evaluation": {
+              "enum": ["NOT_IN_SCOPE", "EVALUATED_READ_ONLY"],
+              "description": "EVALUATED_READ_ONLY once a verdict from control-plane/command-center-deploy-readiness-v1 is carried. Even then this projection evaluates nothing itself and a YES authorises nothing."
+            },
+            "deploy_readiness_document": {
+              "type": ["string", "null"],
+              "description": "repository-relative path of the verdict document, or null when none was supplied; never a workstation path"
+            },
             "rollback_readiness_evaluation": {"const": "NOT_IN_SCOPE"},
             "note": {"type": "string"}
           }

@@ -20,11 +20,11 @@ Work must proceed strictly in this order. Do not skip an issue. Do not begin the
 
 | Order | GitHub Issue | Goal | Status |
 |---:|---:|---|---|
-| 01 | #96 | Publish Task / Evidence verifier public keys and identity binding | OPEN |
-| 02 | #97 | Publish Signed Evidence for failed execution | OPEN |
-| 03 | #98 | Add verifiable HK Agent liveness producer | OPEN |
-| 04 | #99 | Establish formal Derived Control State publication target | OPEN |
-| 05 | #100 | Project Bridge ledger facts onto the control bus | OPEN |
+| 01 | #96 | Publish Task / Evidence verifier public keys and identity binding | CLOSED |
+| 02 | #97 | Publish Signed Evidence for failed execution | CLOSED |
+| 03 | #98 | Add verifiable HK Agent liveness producer | CLOSED |
+| 04 | #99 | Establish formal Derived Control State publication target | CLOSED |
+| 05 | #100 | Project Bridge ledger facts onto the control bus | CLOSED |
 | 06 | #101 | Implement read-only Deploy Readiness evaluator | OPEN |
 | 07 | #102 | Prove DEPLOY Request dry-run and rejection paths | OPEN |
 | 08 | #103 | Connect Boss / ChatGPT DEPLOY Request to the proven HK execution chain | OPEN |

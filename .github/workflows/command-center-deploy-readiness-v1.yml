@@ -1,0 +1,333 @@
+name: Command Center deploy readiness (isolated)
+on:
+  push:
+    branches: [cc/github-native-delivery-v1, cc/v1-finalization-20260914]
+    paths:
+      - 'control-plane/command-center-deploy-readiness-v1/**'
+      - 'control-plane/command-center-state-v1/**'
+      - '.github/workflows/command-center-deploy-readiness-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'control-plane/command-center-deploy-readiness-v1/**'
+      - 'control-plane/command-center-state-v1/**'
+      - '.github/workflows/command-center-deploy-readiness-v1.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cc-deploy-readiness-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  isolated-deploy-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned test dependency
+        run: python -m pip install cryptography==46.0.0
+      - name: Check the deploy readiness manifest
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Run the evaluator suite on Linux
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: python -m unittest discover -s tests -v
+      - name: Run the evaluator built-in checks
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: python command-center/go-deploy-readiness selftest
+      - name: Run the isolated verification and write summary.json
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: python run_checks.py "$RUNNER_TEMP/cc-deploy-readiness-checks"
+      - name: Confirm the state layer is still green
+        working-directory: control-plane/command-center-state-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Confirm the state layer suite still passes
+        working-directory: control-plane/command-center-state-v1
+        run: python -m unittest discover -s tests -q
+      - name: Confirm the state layer isolated checks still pass
+        run: python control-plane/command-center-state-v1/run_checks.py "$RUNNER_TEMP/cc-state-checks"
+      - name: Prove the readiness verdict is read-only, closed and never an authorisation
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import pathlib
+          import subprocess
+          import sys
+
+          component = pathlib.Path('control-plane/command-center-deploy-readiness-v1')
+          evaluator = component / 'command-center' / 'go-deploy-readiness'
+          projection = pathlib.Path('control-plane/command-center-state-v1/state_projection.py')
+
+          work = pathlib.Path(os.environ['RUNNER_TEMP']) / 'ccv106'
+          if work.exists():
+              __import__('shutil').rmtree(work)
+          bus = work / 'bus'
+          (bus / 'tasks').mkdir(parents=True)
+          (bus / 'evidence').mkdir()
+          go = work / 'GO' / 'docs' / 'canonical-baseline'
+          go.mkdir(parents=True)
+
+          COMMIT = 'a' * 40
+          TREE = 'b' * 40
+          SOURCE_TREE = 'd' * 64
+          CURRENT_IMAGE = 'sha256:' + 'e' * 64
+          CANDIDATE_IMAGE = 'sha256:' + 'f' * 64
+          GATES = ['three_end_ux', 'six_vertical_closed_loop', 'sealed_node', 'final_release']
+
+          (go / 'CURRENT_CANDIDATE.json').write_text(json.dumps({
+              'schema': 'go.depth48.current-candidate.v1', 'source_commit': COMMIT,
+              'application_git_tree': TREE, 'previous_application_git_tree': 'c' * 40,
+              'source_tree_sha256': SOURCE_TREE, 'candidate_pr': 52, 'candidate_branch': 'main'}),
+              encoding='utf-8')
+          (go / 'CURRENT_HK_RUNTIME.json').write_text(json.dumps({
+              'image_config_id': CURRENT_IMAGE, 'image_tag': 'synthetic', 'host': 'i-synthetic',
+              'runtime_generation': 'SYNTHETIC'}), encoding='utf-8')
+
+          state = {
+              'schema_version': '1', 'contract': 'CURRENT_CONTROL_STATE',
+              'sources': {'go': {'repository': 'yuguangzhi3836-glitch/GO', 'head_sha': '0' * 40,
+                                 'canonical_candidate_pointer':
+                                     'docs/canonical-baseline/CURRENT_CANDIDATE.json',
+                                 'canonical_runtime_pointer':
+                                     'docs/canonical-baseline/CURRENT_HK_RUNTIME.json'}},
+              'freshness': {'live_verification_window_seconds': 86400},
+              'control_state': {
+                  'live_verified_runtime': {'state': 'PROVEN', 'value': {
+                      'image_config_id': CURRENT_IMAGE, 'age_seconds': 60,
+                      'verified_at': '2026-09-15T00:30:00Z'}},
+                  'repository_runtime_pointer': {'value': {'image_config_id': CURRENT_IMAGE}},
+                  'runtime_verification_state': 'MATCH'},
+              'tasks': [{'task_id': 'synthetic-test-pr', 'action_id': 'HK_STAGING_TEST_PR',
+                         'issued_at': '2026-09-15T00:10:00Z', 'lifecycle': 'COMPLETE',
+                         'parameters': {'source': {'commit_sha': COMMIT}},
+                         'evidence': {'status': 'SUCCESS', 'source': {'path': 'evidence/t.json'}}}]}
+          state_path = work / 'CURRENT_CONTROL_STATE.json'
+          state_path.write_text(json.dumps(state), encoding='utf-8')
+
+          bundle = work / 'live'
+          bundle.mkdir()
+          bundle.write_text and None
+          (bundle / 'release-one.json').write_text(json.dumps({
+              'plan': {'schema_version': '1', 'plan_id': 'release-one', 'environment': 'HK-STAGING-01',
+                       'action_id': 'HK_STAGING_DEPLOY', 'source_commit': COMMIT,
+                       'application_git_tree': TREE,
+                       'candidate': {'source_commit': COMMIT, 'application_git_tree': TREE,
+                                     'source_tree_sha256': SOURCE_TREE, 'image_id': CANDIDATE_IMAGE,
+                                     'repo_digest': 'go-hotel@' + CANDIDATE_IMAGE},
+                       'expected_current_image_id': CURRENT_IMAGE,
+                       'canary_task_sha256': '1' * 64, 'canary_evidence_sha256': '2' * 64,
+                       'gates': {name: 'PASS' for name in GATES}},
+              'approval': {'approval_id': 'approval-one', 'approved_at': '2026-09-15T00:00:00Z',
+                           'expires_at': '2026-09-16T00:00:00Z'}}), encoding='utf-8')
+          CHANNEL = bundle / 'channel.json'
+          CHANNEL.write_text(json.dumps({
+              'deployment_requests_enabled': True, 'publish_enabled': True,
+              'allowed_actions': ['HK_STAGING_VERIFY', 'HK_STAGING_TEST_PR', 'HK_STAGING_DEPLOY'],
+              'allowed_environment': 'HK-STAGING-01'}), encoding='utf-8')
+
+          AT = '2026-09-15T01:00:00Z'
+
+
+          def run(*args, expect=0):
+              result = subprocess.run([sys.executable, *args], capture_output=True, text=True)
+              assert result.returncode == expect, (result.returncode, result.stdout, result.stderr)
+              return dict(line.split('=', 1) for line in result.stdout.strip().splitlines() if '=' in line)
+
+
+          def evaluate(out, live=None, expect=0):
+              args = [str(evaluator), 'evaluate', '--control-state', str(state_path),
+                      '--go-repo', str(work / 'GO'), '--out', str(work / out), '--now', AT]
+              if live:
+                  args += ['--live-bundle', str(live)]
+              summary = run(*args, expect=expect)
+              path = work / out / 'DEPLOY_READINESS.json'
+              document = json.loads(path.read_text(encoding='utf-8')) if path.exists() else None
+              return summary, document
+
+
+          # 1. without the live bundle the live gates are unprovable, so the verdict is UNKNOWN
+          summary, bare = evaluate('out-bare')
+          assert summary['DEPLOY_READY'] == 'UNKNOWN', summary
+          assert bare['verdict']['failed'] == [], bare['verdict']
+          assert set(bare['verdict']['unknown']) == {'PACKAGE_BINDING', 'DEPLOYMENT_PLAN',
+                                                    'HUMAN_APPROVAL', 'CURRENT_RUNTIME', 'LIVE_SWITCH'}
+          assert all(entry['reason'] for entry in bare['blocking_reasons'])
+          assert bare['not_evaluated']['rollback_readiness'] == 'NOT_IN_SCOPE'
+          assert not any(value for key, value in bare['authority_boundary'].items()
+                         if key != 'may_read_live_command_center_state')
+
+          # 2. a complete bundle reaches YES -- and YES is still not an approval
+          summary, full = evaluate('out-full', bundle)
+          assert summary['DEPLOY_READY'] == 'YES', summary
+          assert full['blocking_reasons'] == []
+          assert 'not an approval' in full['verdict']['reason']
+          assert {gate['gate'] for gate in full['gates']} == set(
+              json.loads((component / 'contracts/deploy_readiness_v1.schema.json')
+                         .read_text(encoding='utf-8'))['x-go-gates']) - {'note'}
+          mandatory = [gate for gate in full['gates'] if gate['mandatory']]
+          assert len(mandatory) == 9 and all(gate['state'] == 'PASS' for gate in mandatory)
+
+          # 3. one definite refusal is NO, and the reason is concrete
+          CHANNEL.write_text(json.dumps({
+              'deployment_requests_enabled': False, 'publish_enabled': True,
+              'allowed_actions': ['HK_STAGING_DEPLOY'], 'allowed_environment': 'HK-STAGING-01'}),
+              encoding='utf-8')
+          summary, closed = evaluate('out-closed', bundle)
+          assert summary['DEPLOY_READY'] == 'NO', summary
+          assert closed['verdict']['failed'] == ['LIVE_SWITCH'], closed['verdict']
+          assert 'deployment_requests_disabled' in json.dumps(closed['blocking_reasons'])
+          CHANNEL.write_text(json.dumps({
+              'deployment_requests_enabled': True, 'publish_enabled': True,
+              'allowed_actions': ['HK_STAGING_VERIFY', 'HK_STAGING_TEST_PR', 'HK_STAGING_DEPLOY'],
+              'allowed_environment': 'HK-STAGING-01'}), encoding='utf-8')
+
+          # 4. a source mismatch between the plan and the candidate is a definite NO
+          mismatched = work / 'mismatch'
+          mismatched.mkdir()
+          plan = json.loads((bundle / 'release-one.json').read_text(encoding='utf-8'))
+          plan['plan']['candidate']['source_commit'] = '9' * 40
+          (mismatched / 'release-one.json').write_text(json.dumps(plan), encoding='utf-8')
+          (mismatched / 'channel.json').write_bytes(CHANNEL.read_bytes())
+          summary, wrong = evaluate('out-mismatch', mismatched)
+          assert summary['DEPLOY_READY'] == 'NO', summary
+          assert 'PACKAGE_BINDING' in wrong['verdict']['failed'], wrong['verdict']
+
+          # 5. the projection carries the verdict verbatim and never computes one
+          import base64
+          import hashlib
+
+          from cryptography.hazmat.primitives import serialization
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+          keys = work / 'keys'
+          keys.mkdir()
+
+
+          def newkey(name):
+              key = Ed25519PrivateKey.generate()
+              (keys / ('%s.pem' % name)).write_bytes(key.private_bytes(
+                  serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+                  serialization.NoEncryption()))
+              (keys / ('%s.pub' % name)).write_bytes(key.public_key().public_bytes(
+                  serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))
+              return key
+
+
+          newkey('cc-task')
+          newkey('hk-evidence')
+          sys.path.insert(0, 'control-plane/command-center-state-v1')
+          import state_projection as sp  # noqa: E402
+
+
+          def pin(name):
+              return sp.Verifier(str(keys / ('%s.pub' % name)), sp.TASK_VERIFIER_IDENTITY, 'hex').ssh_fingerprint
+
+
+          contract = work / 'VERIFIER_IDENTITIES_V1.json'
+          contract.write_text(json.dumps({
+              'schema_version': '1', 'contract': sp.IDENTITY_CONTRACT_NAME, 'scope': sp.CONTRACT_SCOPE,
+              'identities': [
+                  {'identity_id': 'CI-CC-TASK-SIGNER', 'role': sp.ROLE_TASK,
+                   'display_name': sp.TASK_VERIFIER_IDENTITY, 'algorithm': 'Ed25519',
+                   'signature_encoding': 'hex', 'public_key_ssh_sha256': pin('cc-task')},
+                  {'identity_id': 'CI-HK-EVIDENCE-SIGNER', 'role': sp.ROLE_EVIDENCE,
+                   'display_name': sp.EVIDENCE_VERIFIER_IDENTITY, 'algorithm': 'Ed25519',
+                   'signature_encoding': 'base64', 'public_key_ssh_sha256': pin('hk-evidence')}]}))
+          assert pin('cc-task') != pin('hk-evidence')
+
+
+          def project(out, readiness_path=None):
+              args = [sys.executable, str(projection), '--tasks-repo', str(bus), '--evidence-repo', str(bus),
+                      '--go-repo', str(work / 'GO'), '--verifier-identities', str(contract),
+                      '--task-verify-key', str(keys / 'cc-task.pub'),
+                      '--evidence-verify-key', str(keys / 'hk-evidence.pub'),
+                      '--now', '2026-09-15T01:00:00Z', '--out', str(work / out)]
+              if readiness_path:
+                  args += ['--deploy-readiness', str(readiness_path)]
+              result = subprocess.run(args, capture_output=True, text=True)
+              assert result.returncode == 0, (result.stdout, result.stderr)
+              return json.loads((work / out / 'CURRENT_CONTROL_STATE.json').read_text(encoding='utf-8'))
+
+
+          plain = project('state-plain')
+          assert plain['control_state']['deploy_readiness']['state'] == 'UNKNOWN'
+          assert plain['control_state']['deploy_readiness']['value'] is None
+          assert plain['control_state']['out_of_scope']['deploy_readiness_evaluation'] == 'NOT_IN_SCOPE'
+          assert plain['control_state']['out_of_scope']['deploy_readiness_document'] is None
+
+          carried = project('state-carried', work / 'out-closed' / 'DEPLOY_READINESS.json')
+          readiness = carried['control_state']['deploy_readiness']
+          assert readiness['value'] == 'NO', readiness
+          assert 'LIVE_SWITCH' in readiness['reason'], readiness
+          assert carried['control_state']['out_of_scope']['deploy_readiness_evaluation'] == 'EVALUATED_READ_ONLY'
+          assert carried['control_state']['out_of_scope']['deploy_readiness_document'].startswith(
+              'control-plane/command-center-deploy-readiness-v1/')
+          assert len(carried['control_state']['deploy_readiness_gates']) == 11
+          assert [g['gate'] for g in carried['control_state']['deploy_readiness_gates']] == list(
+              sp.DEPLOY_READINESS_GATES)
+          assert {'gate'} <= set(carried['control_state']['deploy_readiness_gates'][0])
+
+          # 6. a verdict that claims authority is refused rather than quoted
+          claiming = json.loads((work / 'out-full' / 'DEPLOY_READINESS.json').read_text(encoding='utf-8'))
+          claiming['authority_boundary']['can_create_task'] = True
+          bad = work / 'claiming.json'
+          bad.write_text(json.dumps(claiming), encoding='utf-8')
+          refused = project('state-claiming', bad)
+          assert refused['control_state']['deploy_readiness']['state'] == 'UNKNOWN'
+          assert 'DEPLOY_READINESS_UNREADABLE' in [a['kind'] for a in refused['anomalies']]
+
+          # 7. the status contract still carries no readiness key
+          status = json.loads((work / 'state-carried' / 'CONTROL_STATUS_V1.json').read_text(encoding='utf-8'))
+          for forbidden in ('deploy_readiness', 'can_deploy', 'deployment_eligibility', 'release_gates',
+                            'rollback_targets'):
+              assert forbidden not in status['answers'], forbidden
+
+          blob = json.dumps(carried) + json.dumps(status)
+          for forbidden in ('"grants_execution": true', '"is_execution_authority": true',
+                            '"touches_production": true'):
+              assert forbidden not in blob, forbidden
+
+          binding = {
+              'event': os.environ.get('GITHUB_EVENT_NAME', 'local'),
+              'workflow_commit': os.environ.get('GITHUB_SHA', 'local'),
+              'run_id': os.environ.get('GITHUB_RUN_ID', 'local'),
+              'issue': '#101 CC V1-06',
+              'verdict_set': ['YES', 'NO', 'UNKNOWN'],
+              'gates': len(sp.DEPLOY_READINESS_GATES),
+              'mandatory_gates': len(sp.DEPLOY_READINESS_MANDATORY),
+              'every_gate_satisfied_reaches_yes': True,
+              'a_mandatory_failure_reaches_no': True,
+              'an_unprovable_live_fact_stays_unknown': True,
+              'unknown_is_never_promoted_to_yes': True,
+              'a_source_mismatch_is_no': True,
+              'advisory_gates_never_block': True,
+              'the_projection_quotes_the_verdict_and_never_computes_one': True,
+              'a_verdict_claiming_authority_is_refused': True,
+              'yes_is_not_an_approval': True,
+              'rollback_readiness_remains_not_in_scope': True,
+              'status_contract_unchanged': True,
+              'creates_or_publishes_a_task': False,
+              'opens_the_request_switch': False,
+              'accepts_caller_supplied_parameters': False,
+              'holds_private_key': False,
+              'installed': False,
+              'hong_kong_accessed': False,
+              'production_accessed': False,
+          }
+          (work / 'binding.json').write_text(json.dumps(binding, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(binding, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cc-deploy-readiness-${{ github.sha }}
+          path: ${{ runner.temp }}/ccv106/
+          if-no-files-found: error
+          retention-days: 30

@@ -22,6 +22,13 @@
         "request_enabled": false
       }
     },
+    "deploy_readiness": {
+      "evidence": [],
+      "reason": "no deploy readiness verdict was supplied. The evaluator is a separate read-only component, so without its document this projection states nothing about readiness",
+      "state": "UNKNOWN",
+      "value": null
+    },
+    "deploy_readiness_gates": [],
     "failed_or_invalid_tasks": [
       {
         "action_id": "CONTROL_PLANE_HEALTH",
@@ -262,8 +269,9 @@
       }
     },
     "out_of_scope": {
+      "deploy_readiness_document": null,
       "deploy_readiness_evaluation": "NOT_IN_SCOPE",
-      "note": "deploy readiness would have to combine an approved candidate, TEST_PR, VERIFY, CANARY, Human Approval, a deployment plan, source/package/image binding, the current runtime and the live Command Center switch. Rollback readiness would have to combine a signed source DEPLOY task, its Evidence and Human Approval. Neither is implemented or claimed here",
+      "note": "deploy readiness is evaluated read-only by control-plane/command-center-deploy-readiness-v1 from this state plus an optional operator-supplied bundle of live-host facts; it creates and publishes nothing and its YES authorises nothing. Rollback readiness would have to combine a signed source DEPLOY task, its Evidence and Human Approval, and is not evaluated here",
       "rollback_readiness_evaluation": "NOT_IN_SCOPE"
     },
     "recent_expired_tasks": [

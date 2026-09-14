@@ -229,6 +229,30 @@ REQUEST_FATE_BY_KIND = {"REQUEST_VALIDATED": "BECAME_A_TASK",
                         "REQUEST_REPLAY_REJECTED": "REPLAYED_SUBMISSION",
                         "REQUEST_CREATED": "NO_BRIDGE_FACT_OBSERVED"}
 
+# ---- CC V1-06: the read-only Deploy Readiness verdict --------------------- #
+# A separate component answers "can we deploy now, and why not" from the derived
+# state plus an optional operator-supplied bundle of live-host facts. This
+# projection only carries the verdict it produced; it never evaluates readiness
+# itself and it never turns a verdict into an authorisation.
+DEPLOY_READINESS_CONTRACT = "DEPLOY_READINESS_V1"
+DEPLOY_READINESS_DOCUMENT = ("control-plane/command-center-deploy-readiness-v1/"
+                             "DEPLOY_READINESS.json")
+DEPLOY_READY_VALUES = ("YES", "NO", "UNKNOWN")
+DEPLOY_READINESS_GATES = ("APPROVED_CANDIDATE", "SOURCE_BINDING", "PACKAGE_BINDING",
+                          "DEPLOYMENT_PLAN", "HUMAN_APPROVAL", "TEST_PR", "VERIFY",
+                          "CURRENT_RUNTIME", "LIVE_SWITCH", "CANARY", "RELEASE_GATES")
+DEPLOY_READINESS_MANDATORY = tuple(name for name in DEPLOY_READINESS_GATES
+                                   if name not in ("CANARY", "RELEASE_GATES"))
+DEPLOY_READINESS_GATE_STATES = ("PASS", "FAIL", "UNKNOWN")
+# The verdict block may carry exactly these boundary flags, all false except the
+# one that says it only reads what it was handed.
+DEPLOY_READINESS_BOUNDARY = {
+    "is_execution_authority": False, "can_create_task": False, "can_publish_task": False,
+    "can_open_the_request_switch": False, "holds_private_key": False, "signs_anything": False,
+    "accepts_caller_supplied_parameters": False, "touches_production": False,
+    "may_read_live_command_center_state": True, "is_a_deploy_approval": False,
+}
+
 
 # --------------------------------------------------------------------------- #
 # primitives
@@ -745,6 +769,7 @@ class Loaded:
         self.requests = []         # (ref, head_sha, file name, request)
         self.request_facts = []    # validated Bridge Request facts
         self.request_fact_index = None   # the exporter's submission-level index, if supplied
+        self.deploy_readiness = None     # the evaluator's verdict, if supplied
         self.anomalies = []        # {kind, detail, ref}
 
     def anomaly(self, kind, detail, ref=None):
@@ -858,6 +883,53 @@ def load_request_facts(root, loaded):
                 cleaned, key=lambda s: s["submission_key"])}
         except (Malformed, ValueError, OSError, UnicodeError, KeyError) as exc:
             loaded.anomaly("REQUEST_FACT_INDEX_UNREADABLE", "%s" % exc, index_path.name)
+
+
+def load_deploy_readiness(path, loaded):
+    """Read the verdict the read-only evaluator produced, fail-closed.
+
+    Only whitelisted fields are carried across, and a verdict that claims any
+    authority is refused: a readiness document is an observation, and one that
+    says otherwise is not a document this projection will quote.
+    """
+    if not path:
+        return
+    try:
+        document = read_json(path)
+        if not isinstance(document, dict) or document.get("contract") != DEPLOY_READINESS_CONTRACT:
+            raise Malformed("deploy_readiness_contract")
+        verdict = document.get("verdict")
+        if not isinstance(verdict, dict) or verdict.get("deploy_ready") not in DEPLOY_READY_VALUES:
+            raise Malformed("deploy_readiness_verdict")
+        boundary = document.get("authority_boundary")
+        if not isinstance(boundary, dict) or set(boundary) != set(DEPLOY_READINESS_BOUNDARY):
+            raise Malformed("deploy_readiness_authority_fields")
+        for key, expected in DEPLOY_READINESS_BOUNDARY.items():
+            if boundary[key] is not expected:
+                # A readiness verdict that claims it may deploy something is not
+                # a readiness verdict.
+                raise Malformed("deploy_readiness_claims_authority:%s" % key)
+        gates = []
+        for entry in document.get("gates") or []:
+            if (not isinstance(entry, dict) or entry.get("gate") not in DEPLOY_READINESS_GATES
+                    or entry.get("state") not in DEPLOY_READINESS_GATE_STATES):
+                raise Malformed("deploy_readiness_gate")
+            gates.append({"gate": entry["gate"], "mandatory": bool(entry.get("mandatory")),
+                          "state": entry["state"], "reason": str(entry.get("reason") or "")})
+        if {g["gate"] for g in gates} != set(DEPLOY_READINESS_GATES):
+            raise Malformed("deploy_readiness_gate_set")
+        loaded.deploy_readiness = {
+            "deploy_ready": verdict["deploy_ready"],
+            "reason": str(verdict.get("reason") or ""),
+            "as_of": document.get("as_of"),
+            "failed": [str(name) for name in verdict.get("failed") or []],
+            "unknown": [str(name) for name in verdict.get("unknown") or []],
+            "blocking_gates": [str(entry.get("gate")) for entry in
+                               (document.get("blocking_reasons") or []) if isinstance(entry, dict)],
+            "gates": sorted(gates, key=lambda g: DEPLOY_READINESS_GATES.index(g["gate"])),
+        }
+    except (Malformed, ValueError, OSError, UnicodeError) as exc:
+        loaded.anomaly("DEPLOY_READINESS_UNREADABLE", "%s" % exc, pathlib.Path(path).name)
 
 
 # --------------------------------------------------------------------------- #
@@ -1777,6 +1849,28 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
         "This is a capability classification, not a readiness evaluation, and it must never be read "
         "as one")
 
+    readiness = loaded.deploy_readiness
+    if readiness is None:
+        deploy_readiness_assertion = unknown(
+            "no deploy readiness verdict was supplied. The evaluator is a separate read-only "
+            "component, so without its document this projection states nothing about readiness")
+    elif readiness["deploy_ready"] == "UNKNOWN":
+        deploy_readiness_assertion = unknown(
+            "the read-only evaluator could not establish %s, so readiness is unknown rather than yes"
+            % ", ".join(readiness["unknown"] or ["-"]))
+    elif readiness["deploy_ready"] == "NO":
+        deploy_readiness_assertion = assertion(
+            STATE_OBSERVED, "NO",
+            "the read-only evaluator refused: %s" % ", ".join(readiness["failed"] or ["-"]),
+            [DEPLOY_READINESS_DOCUMENT])
+    else:
+        deploy_readiness_assertion = assertion(
+            STATE_OBSERVED, "YES",
+            "every mandatory gate passed as of %s. This is an observation about the evidence, not "
+            "an approval, and it authorises nothing" % (readiness["as_of"] or "the evaluation "
+                                                                             "instant"),
+            [DEPLOY_READINESS_DOCUMENT])
+
     return {
         "schema_version": SCHEMA_VERSION,
         "contract": CONTRACT_STATE,
@@ -1845,6 +1939,11 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
             "runtime_built_from_main_sha": runtime_built_from,
             "runtime_canonical_main_sha": runtime_canonical_main,
             "stuck_answer": stuck_answer,
+            # CC V1-06. The verdict a separate read-only evaluator produced, quoted
+            # verbatim and never evaluated here. `state` describes the observation;
+            # `value` carries the closed verdict.
+            "deploy_readiness": deploy_readiness_assertion,
+            "deploy_readiness_gates": (loaded.deploy_readiness or {}).get("gates", []),
             "active_tasks": [brief(t) for t in active],
             "active_stuck_tasks": [brief(t) for t in active_stuck],
             "recent_expired_tasks": [brief(t) for t in recent_expired],
@@ -1887,13 +1986,17 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
                     "Production has not been touched and is out of scope for the Control Plane"),
             },
             "out_of_scope": {
-                "deploy_readiness_evaluation": "NOT_IN_SCOPE",
+                "deploy_readiness_evaluation": ("EVALUATED_READ_ONLY"
+                                                if loaded.deploy_readiness else "NOT_IN_SCOPE"),
+                "deploy_readiness_document": (DEPLOY_READINESS_DOCUMENT
+                                              if loaded.deploy_readiness else None),
                 "rollback_readiness_evaluation": "NOT_IN_SCOPE",
-                "note": ("deploy readiness would have to combine an approved candidate, TEST_PR, "
-                         "VERIFY, CANARY, Human Approval, a deployment plan, source/package/image "
-                         "binding, the current runtime and the live Command Center switch. Rollback "
-                         "readiness would have to combine a signed source DEPLOY task, its Evidence "
-                         "and Human Approval. Neither is implemented or claimed here"),
+                "note": ("deploy readiness is evaluated read-only by "
+                         "control-plane/command-center-deploy-readiness-v1 from this state plus an "
+                         "optional operator-supplied bundle of live-host facts; it creates and "
+                         "publishes nothing and its YES authorises nothing. Rollback readiness "
+                         "would have to combine a signed source DEPLOY task, its Evidence and "
+                         "Human Approval, and is not evaluated here"),
             },
         },
         "anomalies": loaded.anomalies,
@@ -2040,7 +2143,10 @@ def build_status(state, verdict):
             "note": ("this contract answers the ten status questions, the request channel and the "
                      "fate of a submitted Request. It "
                      "does not compute can_deploy, deployment eligibility, rollback target selection "
-                     "or release-gate verdicts, and no such key is present in answers"),
+                     "or release-gate verdicts, and no such key is present in answers. A read-only "
+                     "deploy readiness verdict, when one has been produced, is carried in "
+                     "CURRENT_CONTROL_STATE.json as control_state.deploy_readiness; it is never "
+                     "an approval and this contract deliberately does not surface it"),
         },
         "verdict": {"healthy": verdict},
     }
@@ -2057,6 +2163,9 @@ def main(argv=None):
     parser.add_argument("--request-facts-dir",
                         help=("optional directory of Bridge Request facts exported read-only by "
                               "control-plane/command-center-request-visibility-v1"))
+    parser.add_argument("--deploy-readiness",
+                        help=("optional DEPLOY_READINESS.json produced read-only by "
+                              "control-plane/command-center-deploy-readiness-v1"))
     parser.add_argument("--go-repo", help="optional local checkout of the GO repository")
     parser.add_argument("--task-verify-key",
                         help="pinned Command Center task-manifest public key (hex-signature identity)")
@@ -2089,6 +2198,7 @@ def main(argv=None):
     load_evidence(args.evidence_repo, loaded)
     load_requests(args.requests_dir, loaded)
     load_request_facts(args.request_facts_dir, loaded)
+    load_deploy_readiness(args.deploy_readiness, loaded)
 
     identity_contract = IdentityContract(args.verifier_identities)
     task_verifier = Verifier(args.task_verify_key, TASK_VERIFIER_IDENTITY, "hex",

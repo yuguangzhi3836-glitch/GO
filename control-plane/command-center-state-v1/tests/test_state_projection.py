@@ -166,7 +166,7 @@ def identity_contract(task_pub=None, evidence_pub=None, task_pin=None, evidence_
 
 
 def build(root, req_dir=None, task_pub=None, evidence_pub=None, go_repo=None, at=None,
-          contract=None, facts_root=None, **flags):
+          contract=None, facts_root=None, readiness=None, **flags):
     """Build the state without going through the CLI.
 
     A contract pinning the fixture keys is generated unless one is supplied, so
@@ -178,6 +178,7 @@ def build(root, req_dir=None, task_pub=None, evidence_pub=None, go_repo=None, at
     sp.load_evidence(str(root), loaded)
     sp.load_requests(str(req_dir) if req_dir else None, loaded)
     sp.load_request_facts(str(facts_root) if facts_root else None, loaded)
+    sp.load_deploy_readiness(str(readiness) if readiness else None, loaded)
     if contract is None:
         contract = identity_contract(task_pub, evidence_pub)
     identity = sp.IdentityContract(contract)
@@ -1611,6 +1612,174 @@ class RequestVisibilityTests(unittest.TestCase):
         self.assertIn("why did my Request not become a Task", schema["x-go-question-map"])
         for forbidden in ("can_deploy", "rollback_targets", "release_gates"):
             self.assertNotIn(forbidden, schema["properties"]["answers"]["properties"])
+
+
+class DeployReadinessTests(unittest.TestCase):
+    """CC V1-06: the projection quotes a readiness verdict and never computes one.
+
+    The evaluator is a separate read-only component. What these tests pin is
+    that this layer carries its answer verbatim, cannot be made to claim a
+    readiness it was not given, and refuses a verdict that claims authority.
+    """
+
+    def setUp(self):
+        self.task_key, self.task_pub = key_pair("cc-task")
+        self.evidence_key, self.evidence_pub = key_pair("hk-evidence")
+
+    def document(self, deploy_ready="NO", gates=None, boundary=None, contract=None, **over):
+        value = {
+            "schema_version": "1",
+            "contract": contract or sp.DEPLOY_READINESS_CONTRACT,
+            "scope": "READ_ONLY_DEPLOY_READINESS",
+            "authority": "DERIVED_NON_AUTHORITATIVE",
+            "generated_at": "2026-09-15T00:30:00Z",
+            "as_of": "2026-09-15T00:30:00Z",
+            "verdict": {"deploy_ready": deploy_ready, "reason": "synthetic",
+                        "mandatory_gates": len(sp.DEPLOY_READINESS_MANDATORY),
+                        "failed": ([g for g in sp.DEPLOY_READINESS_MANDATORY
+                                    if g == "TEST_PR"] if deploy_ready == "NO" else []),
+                        "unknown": ([g for g in sp.DEPLOY_READINESS_MANDATORY
+                                     if g == "LIVE_SWITCH"] if deploy_ready == "UNKNOWN" else []),
+                        "advisory_failed": []},
+            "gates": gates if gates is not None else [
+                {"gate": name, "mandatory": name in sp.DEPLOY_READINESS_MANDATORY,
+                 "state": ("FAIL" if (name == "TEST_PR" and deploy_ready == "NO")
+                           else "UNKNOWN" if (name == "LIVE_SWITCH" and deploy_ready == "UNKNOWN")
+                           else "PASS"),
+                 "reason": "synthetic %s" % name}
+                for name in sp.DEPLOY_READINESS_GATES],
+            "blocking_reasons": [{"gate": "TEST_PR", "state": "FAIL", "reason": "synthetic"}]
+            if deploy_ready == "NO" else [],
+            "authority_boundary": dict(boundary or sp.DEPLOY_READINESS_BOUNDARY),
+            "not_evaluated": {"rollback_readiness": "NOT_IN_SCOPE", "note": "synthetic"},
+        }
+        value.update(over)
+        return value
+
+    def write(self, document):
+        folder = pathlib.Path(tempfile.mkdtemp(prefix="ccs-readiness-"))
+        path = folder / sp.DEPLOY_READINESS_DOCUMENT.split("/")[-1]
+        path.write_text(json.dumps(document), encoding="utf-8")
+        return path
+
+    def project(self, document):
+        root, req_dir = layout()
+        return build(root, req_dir, task_pub=self.task_pub, evidence_pub=self.evidence_pub,
+                     readiness=self.write(document))
+
+    def test_without_a_verdict_the_projection_states_nothing(self):
+        root, req_dir = layout()
+        _, state, _ = build(root, req_dir, task_pub=self.task_pub, evidence_pub=self.evidence_pub)
+        readiness = state["control_state"]["deploy_readiness"]
+        self.assertEqual(readiness["state"], sp.STATE_UNKNOWN)
+        self.assertIsNone(readiness["value"])
+        self.assertIn("no deploy readiness verdict was supplied", readiness["reason"])
+        self.assertEqual(state["control_state"]["deploy_readiness_gates"], [])
+        self.assertEqual(state["control_state"]["out_of_scope"]["deploy_readiness_evaluation"],
+                         "NOT_IN_SCOPE")
+        self.assertIsNone(state["control_state"]["out_of_scope"]["deploy_readiness_document"])
+
+    def test_a_no_verdict_is_carried_verbatim(self):
+        _, state, _ = self.project(self.document("NO"))
+        readiness = state["control_state"]["deploy_readiness"]
+        self.assertEqual(readiness["state"], sp.STATE_OBSERVED)
+        self.assertEqual(readiness["value"], "NO")
+        self.assertIn("TEST_PR", readiness["reason"])
+        self.assertEqual(state["control_state"]["out_of_scope"]["deploy_readiness_evaluation"],
+                         "EVALUATED_READ_ONLY")
+        self.assertEqual(state["control_state"]["out_of_scope"]["deploy_readiness_document"],
+                         sp.DEPLOY_READINESS_DOCUMENT)
+        self.assertEqual([g["gate"] for g in state["control_state"]["deploy_readiness_gates"]],
+                         list(sp.DEPLOY_READINESS_GATES))
+
+    def test_a_yes_verdict_is_carried_and_is_not_an_approval(self):
+        _, state, _ = self.project(self.document("YES"))
+        readiness = state["control_state"]["deploy_readiness"]
+        self.assertEqual(readiness["value"], "YES")
+        self.assertIn("authorises nothing", readiness["reason"])
+
+    def test_an_unknown_verdict_is_unknown_and_never_yes(self):
+        _, state, _ = self.project(self.document("UNKNOWN"))
+        readiness = state["control_state"]["deploy_readiness"]
+        self.assertEqual(readiness["state"], sp.STATE_UNKNOWN)
+        self.assertIsNone(readiness["value"])
+        self.assertIn("LIVE_SWITCH", readiness["reason"])
+        # The per-gate detail is still there: nothing is lost by the null value.
+        self.assertEqual(len(state["control_state"]["deploy_readiness_gates"]),
+                         len(sp.DEPLOY_READINESS_GATES))
+
+    def test_a_verdict_that_claims_authority_is_refused(self):
+        for key in sp.DEPLOY_READINESS_BOUNDARY:
+            if sp.DEPLOY_READINESS_BOUNDARY[key] is False:
+                boundary = dict(sp.DEPLOY_READINESS_BOUNDARY)
+                boundary[key] = True
+                _, state, _ = self.project(self.document("YES", boundary=boundary))
+                self.assertEqual(state["control_state"]["deploy_readiness"]["state"],
+                                 sp.STATE_UNKNOWN, key)
+                self.assertIn("DEPLOY_READINESS_UNREADABLE",
+                              [a["kind"] for a in state["anomalies"]], key)
+
+    def test_a_document_of_another_contract_is_refused(self):
+        _, state, _ = self.project(self.document("YES", contract="SOMETHING_ELSE"))
+        self.assertEqual(state["control_state"]["deploy_readiness"]["state"], sp.STATE_UNKNOWN)
+        self.assertIn("DEPLOY_READINESS_UNREADABLE", [a["kind"] for a in state["anomalies"]])
+
+    def test_a_verdict_outside_the_closed_set_is_refused(self):
+        _, state, _ = self.project(self.document("PROBABLY"))
+        self.assertEqual(state["control_state"]["deploy_readiness"]["state"], sp.STATE_UNKNOWN)
+        self.assertIn("DEPLOY_READINESS_UNREADABLE", [a["kind"] for a in state["anomalies"]])
+
+    def test_an_incomplete_gate_set_is_refused(self):
+        gates = [g for g in self.document()["gates"] if g["gate"] != "TEST_PR"]
+        _, state, _ = self.project(self.document("NO", gates=gates))
+        self.assertEqual(state["control_state"]["deploy_readiness"]["state"], sp.STATE_UNKNOWN)
+        self.assertIn("DEPLOY_READINESS_UNREADABLE", [a["kind"] for a in state["anomalies"]])
+
+    def test_a_gate_outside_the_closed_set_is_refused(self):
+        gates = self.document()["gates"]
+        gates[-1]["gate"] = "SOMETHING_ELSE"
+        _, state, _ = self.project(self.document("NO", gates=gates))
+        self.assertEqual(state["control_state"]["deploy_readiness"]["state"], sp.STATE_UNKNOWN)
+
+    def test_a_verdict_never_moves_a_task_side_answer(self):
+        root, req_dir = layout()
+        _, without, _ = build(root, req_dir, task_pub=self.task_pub,
+                              evidence_pub=self.evidence_pub)
+        _, with_verdict, _ = build(root, req_dir, task_pub=self.task_pub,
+                                   evidence_pub=self.evidence_pub,
+                                   readiness=self.write(self.document("YES")))
+        self.assertEqual(without["tasks"], with_verdict["tasks"])
+        self.assertEqual(without["control_state"]["health"],
+                         with_verdict["control_state"]["health"])
+        self.assertEqual(without["requests"], with_verdict["requests"])
+
+    def test_rollback_readiness_stays_out_of_scope(self):
+        _, state, _ = self.project(self.document("YES"))
+        self.assertEqual(
+            state["control_state"]["out_of_scope"]["rollback_readiness_evaluation"],
+            "NOT_IN_SCOPE")
+
+    def test_the_projection_contract_declares_the_verdict_rules(self):
+        schema = json.loads((ROOT / "contracts" / "control_state_v1.schema.json")
+                            .read_text(encoding="utf-8"))
+        control = schema["properties"]["control_state"]
+        for key in ("deploy_readiness", "deploy_readiness_gates"):
+            self.assertIn(key, control["required"], key)
+        gates = control["properties"]["deploy_readiness_gates"]["items"]["properties"]["gate"]
+        self.assertEqual(set(gates["enum"]), set(sp.DEPLOY_READINESS_GATES))
+        out_of_scope = control["properties"]["out_of_scope"]["properties"]
+        self.assertEqual(set(out_of_scope["deploy_readiness_evaluation"]["enum"]),
+                         {"NOT_IN_SCOPE", "EVALUATED_READ_ONLY"})
+        self.assertEqual(out_of_scope["rollback_readiness_evaluation"]["const"], "NOT_IN_SCOPE")
+
+    def test_the_status_contract_still_carries_no_readiness_key(self):
+        schema = json.loads((ROOT / "contracts" / "control_status_v1.schema.json")
+                            .read_text(encoding="utf-8"))
+        for forbidden in ("deploy_readiness", "can_deploy", "deployment_eligibility",
+                          "release_gates", "rollback_targets"):
+            self.assertNotIn(forbidden, schema["properties"]["answers"]["properties"], forbidden)
+        note = schema["properties"]["out_of_scope"]["properties"]["note"]
+        self.assertTrue(note)
 
 
 class FailureEvidenceTests(unittest.TestCase):

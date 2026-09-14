@@ -679,7 +679,7 @@
   },
   "out_of_scope": {
     "deploy_readiness_evaluation": "NOT_IN_SCOPE",
-    "note": "this contract answers the ten status questions, the request channel and the fate of a submitted Request. It does not compute can_deploy, deployment eligibility, rollback target selection or release-gate verdicts, and no such key is present in answers",
+    "note": "this contract answers the ten status questions, the request channel and the fate of a submitted Request. It does not compute can_deploy, deployment eligibility, rollback target selection or release-gate verdicts, and no such key is present in answers. A read-only deploy readiness verdict, when one has been produced, is carried in CURRENT_CONTROL_STATE.json as control_state.deploy_readiness; it is never an approval and this contract deliberately does not surface it",
     "rollback_readiness_evaluation": "NOT_IN_SCOPE"
   },
   "schema_version": "1",
