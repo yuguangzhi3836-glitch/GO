@@ -190,6 +190,8 @@ Codex 主执行              WorkBuddy 主执行
 > 2026-09-13 起生效。唯一机器可读指针：
 > [`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](../canonical-baseline/CURRENT_HK_RUNTIME.json)。
 > 本节是导航，不是 Execution Authority。
+>
+> 2026-09-14 刷新：本节继续只描述**运行中**的运行时的导航；repository 侧事实已拆到 [`GO_CURRENT_STATE.md`](GO_CURRENT_STATE.md)。运行中的 DB revision（`0133`）与 repository migration head（`0134`）是两件事。
 
 | 问题 | 答案 |
 | --- | --- |
@@ -197,14 +199,19 @@ Codex 主执行              WorkBuddy 主执行
 | 当前 HK 运行的是什么 | **DEPTH48** 业务运行时（2026-09-13 上线） |
 | Dockerfile 在哪里 | `application/Dockerfile`，构建上下文就是 `application/` |
 | Compose 在哪里 | `deploy/hk-staging/docker-compose.business-runtime.yml` |
-| 当前 DB head | `0133_flight_change_plan`（PostgreSQL 18.4） |
+| 当前 **live HK** DB revision | `0133_flight_change_plan`（PostgreSQL 18.4，551 表）—— 这是**运行中**数据库的版本 |
+| 当前 **repository** migration head | `0134_flight_status_width`（canonical main 源码 head，**尚未**在 live HK 执行） |
+| 当前 repository 源码身份 | canonical main `8ffcde66…`，`main:application` = `dd815baf…`（1365 文件）—— 详见 [`GO_CURRENT_STATE.md`](GO_CURRENT_STATE.md) |
 | 当前 8 个业务服务 | `api` + `outbox-worker` / `recovery-worker` / `reconciliation-worker` / `judgment-worker` / `mobile-engagement-worker` / `mobile-push-worker` / `mobile-push-receipt-worker` |
 | 哪些是 protected non-target | `caddy`、`redis`、PostgreSQL/RDS 业务数据、媒体持久卷、HK Agent、Executor、签名密钥、Task/Evidence/ledger、Control Plane authority、SSH、Production |
 | 怎么从 GitHub build | `docker build -t <tag> application/` |
-| 基本 smoke | `curl -fsS http://127.0.0.1:8000/health`；worker 模块可导入；`alembic heads` = `0133_flight_change_plan` |
+| 基本 smoke | `curl -fsS http://127.0.0.1:8000/health`；worker 模块可导入；运行镜像内 `alembic heads` = `0133_flight_change_plan` |
 | 怎么运行 / 切换 | `deploy/hk-staging/README.md`（`--no-deps` + 显式 8 服务列表） |
 | 哪些已 superseded | DEPTH46 历史父包、旧 R3.x 香港运行时、`hk-staging/`（2026-09-11 快照） |
 | 什么不是 current authority | `deliverables/`、`evidence/` 中的历史证据；`CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` 的内层镜像（只是源码载体，不是可运行镜像） |
 | 两条轴线 | **Control Plane** = `command-center/`、`control-plane/`、`hk-staging/source/{agent,executor}`；**Business Runtime** = `application/` + `deploy/hk-staging/`。不要互相推断。 |
+| 三条 HOLD | `HK_DEPLOY` / `FINAL_RELEASE` / `PRODUCTION` 在 canonical main 上均为 `HOLD`，不会因为 merge 或 context 刷新而解除 |
+
+> 本表只描述**运行中**的运行时的导航。repository 侧（main SHA、application tree、源码指纹、repository migration head、gate/release 状态、open candidate PR）一律以 [`GO_CURRENT_STATE.md`](GO_CURRENT_STATE.md) 与 [`CONTEXT_CHECKPOINT.json`](CONTEXT_CHECKPOINT.json) 为准。**运行中的 DB revision 不等于 repository migration head。**
 
 不要从 PR 编号猜当前状态，也不要把历史 parent / sealed package / 归档快照当成 active runtime。
