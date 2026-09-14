@@ -1,0 +1,27 @@
+{
+  "authority": "V7.0 Ultimate / V6.1 lineage + C14",
+  "product_source": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+  "expected_application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "cells": {
+    "C01": {"task":"V70-R3-C01-01","issue":79,"model":"gpt-5.6-sol","effort":"high","objective":"Close one real next executable C01 hotel funds/integrity depth gap around mixed hotel funds, hotel amount/change/refund invariants, or read-only diagnosis. Preserve existing PASS and do not invent money/state repair authority.","baseline_test":"tests/test_v70_next_c01_unknown_funding.py"},
+    "C02": {"task":"V70-R3-C02-01","issue":80,"model":"gpt-5.6-sol","effort":"high","objective":"Close one real next executable C02 flight planning/rules depth gap around trusted coupon plan, exact consent, round-trip/multi-city, change/fare-difference correctness. Preserve prior planner PASS and do not claim supplier E2E without evidence.","baseline_test":"tests/test_v70_next_c02_coupon_plan.py"},
+    "C03": {"task":"V70-R3-C03-01","issue":81,"model":"gpt-6-astra","effort":"high","objective":"Close one real next executable C03 rail payment/inventory concurrency or post-exit convergence gap. Preserve PostgreSQL atomicity/idempotency and prove the fix with a regression test.","baseline_test":"tests/test_next_depth_c03_payment_inventory_races.py"},
+    "C04": {"task":"V70-R3-C04-01","issue":82,"model":"gpt-5.6-sol","effort":"high","objective":"Close one real next executable C04 bounded read-only reconciliation/admin-review gap. Preserve the rule that reconciliation cannot auto-repair money or business state without authority.","baseline_test":"tests/test_v70_next_c04_readonly_reconciliation.py"},
+    "C05": {"task":"V70-R3-C05-01","issue":83,"model":"gpt-5.6-sol","effort":"high","objective":"Close one real next executable C05 mobility/fleet recovery gap, especially binding confirmations to the current UNKNOWN episode and rejecting stale/contradictory evidence. Do not claim a real external fleet signature.","baseline_test":"tests/test_v70_next_c05_recovery_evidence.py"},
+    "C07": {"task":"V70-R3-C07-01","issue":95,"model":"gpt-5.6-sol","effort":"high","objective":"Close one real next executable C07 Traveler Intelligence depth gap involving explicit preferences, purpose/context integrity, or cross-journey consistency while preserving consent withdrawal, encryption, ownership and process durability.","baseline_test":"tests/test_round2_c07_explicit_preferences.py"},
+    "C08": {"task":"V70-R3-C08-01","issue":84,"model":"gpt-6-astra","effort":"high","objective":"Close one real next executable C08 durable execution ownership/lease/checkpoint gap. Preserve safe recovery semantics and do not claim automatic replay/recovery beyond tested behavior.","baseline_test":"tests/go_ai/test_c08_hard_exit_recovery.py"},
+    "C09": {"task":"V70-R3-C09-01","issue":85,"model":"gpt-6-astra","effort":"high","objective":"Close one real next executable C09 judgment-event/outbox interruption or audit-durability gap. Preserve idempotency and never broaden to exactly-once claims without proof.","baseline_test":"tests/judgment/test_next_depth_concurrent_judgment.py"},
+    "C10": {"task":"V70-R3-C10-01","issue":86,"model":"gpt-5.6-sol","effort":"high","objective":"Close one real next executable C10 Journey pagination/search/status-consistency depth gap and keep PostgreSQL query semantics safe. Do not claim HK load or EXPLAIN evidence unless actually generated.","baseline_test":"tests/journey/test_c10_batch_list_projection.py"},
+    "C11": {"task":"V70-R3-C11-01","issue":87,"model":"gpt-6-astra","effort":"high","objective":"Close one real next executable C11 flight supplier-resolution commit-interruption/idempotency recovery gap, starting from the two keyed flight operations and preserving all existing PostgreSQL recovery PASS behavior.","baseline_test":"tests/payments/test_c11_flight_idempotency_recovery.py"},
+    "C12": {"task":"V70-R3-C12-01","issue":88,"model":"gpt-6-astra","effort":"high","objective":"Close one real next executable C12 worker identity/liveness/lease/heartbeat-expiry or stale-RUNNING depth gap. Receipt consistency is not worker authentication; preserve fail-closed authority semantics.","baseline_test":"../ci/round2/test_validate_ledger.py"}
+  },
+  "global_rules": [
+    "Make an actual product source change plus a regression test; docs/status-only changes are rejected.",
+    "Do not redo already-PASS work merely to create activity.",
+    "Do not change migrations in this runner; if a schema migration is required, return BLOCKED_SCHEMA_CHANGE_REQUIRED without product edits.",
+    "Do not modify deployment, HK runtime, production, release authority, secrets, GitHub workflows, governance or evidence history.",
+    "Do not weaken auth, consent, ownership, money/inventory atomicity, idempotency, auditability or concurrency guarantees to make tests pass.",
+    "Do not commit, push, merge or deploy from the AI step. The deterministic post-agent gate owns candidate commit/push/Evidence.",
+    "FINAL_RELEASE, HK_DEPLOY and PRODUCTION remain HOLD."
+  ]
+}
