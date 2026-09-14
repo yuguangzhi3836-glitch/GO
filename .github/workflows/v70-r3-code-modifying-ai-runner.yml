@@ -1,0 +1,59 @@
+name: V7 R3 11-Cell code-modifying AI orchestration
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/v70-r3-code-modifying-ai-runner.yml
+      - .github/workflows/v70-r3-ai-cell-pipeline.yml
+      - automation/coding-runner/TASKS.json
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  c01:
+    uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
+    with: {cell: C01, task: V70-R3-C01-01, issue: '79', model: gpt-5.6-sol, effort: high, baseline_test: tests/test_v70_next_c01_unknown_funding.py, scope: application, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
+    secrets: inherit
+  c02:
+    uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
+    with: {cell: C02, task: V70-R3-C02-01, issue: '80', model: gpt-5.6-sol, effort: high, baseline_test: tests/test_v70_next_c02_coupon_plan.py, scope: application, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
+    secrets: inherit
+  c03:
+    uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
+    with: {cell: C03, task: V70-R3-C03-01, issue: '81', model: gpt-6-astra, effort: high, baseline_test: tests/test_next_depth_c03_payment_inventory_races.py, scope: application, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
+    secrets: inherit
+  c04:
+    uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
+    with: {cell: C04, task: V70-R3-C04-01, issue: '82', model: gpt-5.6-sol, effort: high, baseline_test: tests/test_v70_next_c04_readonly_reconciliation.py, scope: application, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
+    secrets: inherit
+  c05:
+    uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
+    with: {cell: C05, task: V70-R3-C05-01, issue: '83', model: gpt-5.6-sol, effort: high, baseline_test: tests/test_v70_next_c05_recovery_evidence.py, scope: application, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
+    secrets: inherit
+  c07:
+    uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
+    with: {cell: C07, task: V70-R3-C07-01, issue: '95', model: gpt-5.6-sol, effort: high, baseline_test: tests/test_round2_c07_explicit_preferences.py, scope: application, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
+    secrets: inherit
+  c08:
+    uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
+    with: {cell: C08, task: V70-R3-C08-01, issue: '84', model: gpt-6-astra, effort: high, baseline_test: tests/go_ai/test_c08_hard_exit_recovery.py, scope: application, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
+    secrets: inherit
+  c09:
+    uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
+    with: {cell: C09, task: V70-R3-C09-01, issue: '85', model: gpt-6-astra, effort: high, baseline_test: tests/judgment/test_next_depth_concurrent_judgment.py, scope: application, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
+    secrets: inherit
+  c10:
+    uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
+    with: {cell: C10, task: V70-R3-C10-01, issue: '86', model: gpt-5.6-sol, effort: high, baseline_test: tests/journey/test_c10_batch_list_projection.py, scope: application, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
+    secrets: inherit
+  c11:
+    uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
+    with: {cell: C11, task: V70-R3-C11-01, issue: '87', model: gpt-6-astra, effort: high, baseline_test: tests/payments/test_c11_flight_idempotency_recovery.py, scope: application, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
+    secrets: inherit
+  c12:
+    uses: ./.github/workflows/v70-r3-ai-cell-pipeline.yml
+    with: {cell: C12, task: V70-R3-C12-01, issue: '88', model: gpt-6-astra, effort: high, baseline_test: ci/round2/test_validate_ledger.py, scope: scheduler, base_sha: '${{ github.event.pull_request.base.sha }}', runner_head_sha: '${{ github.event.pull_request.head.sha }}', expected_application_tree: dd815baf0105cce603e9a28b002cfb9d8b95d186, r3_product_anchor: 8ffcde66d36c1bbf849218529ef015f6e81725af}
+    secrets: inherit
