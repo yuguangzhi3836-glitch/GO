@@ -3,6 +3,8 @@
 > Purpose: record currently effective human/project decisions without requiring a new session to replay historical chats or PRs.
 >
 > This is an append-preserving decision register. Do not silently rewrite history when a decision changes.
+>
+> **Refreshed 2026-09-14** against canonical main `8ffcde66d36c1bbf849218529ef015f6e81725af`. Existing decisions `GO-D001`–`GO-D006` are preserved; `GO-D006` is marked `PARTIALLY_SUPERSEDED`. New decisions `GO-D007`–`GO-D013` were appended. Nothing was deleted.
 
 ## Decision lifecycle
 
@@ -62,10 +64,75 @@ When a decision changes:
 
 ### GO-D006 — Project context is snapshot-driven, not PR-replay-driven
 
-- Status: `CANDIDATE_IN_THIS_PR`
-- Decision candidate: after this context-system PR is accepted, new sessions should load the current-state layer and only inspect changes after the recorded checkpoint by default. Historical PRs remain audit evidence, not mandatory startup context.
+- Status: `PARTIALLY_SUPERSEDED` (2026-09-14)
+- Decision: after this context-system PR is accepted, new sessions should load the current-state layer and only inspect changes after the recorded checkpoint by default. Historical PRs remain audit evidence, not mandatory startup context.
+- Surviving scope: the snapshot-driven startup rule remains effective.
+- Replaced scope: the original entry described "the recorded checkpoint" without binding it to a repository object. `GO-D007` now fixes that: the checkpoint binds **canonical main**, and the context layer is refreshed by a bounded context PR rather than by redesigning a parallel context system.
+- Superseded by: `GO-D007`.
 - Applies to: ChatGPT/Codex/WorkBuddy/human handoff.
-- Source: this PR.
+- Source: this PR (initial), refreshed 2026-09-14.
+
+### GO-D007 — The context checkpoint binds canonical main, not the context branch
+
+- Status: `CANDIDATE_IN_THIS_PR`
+- Decision candidate: `docs/project/CONTEXT_CHECKPOINT.json:checkpoint_main_sha` always names the verified canonical `main` SHA at which the current-state layer was last refreshed. It never names the context PR's own branch head or merge commit.
+- Consequence: a fresh session compares canonical `main` against the checkpoint to compute the delta. The context PR itself is `ACTIVE_CANDIDATE` until merged.
+- Consequence: refreshing the checkpoint requires re-resolving `main` at execution time; a previously quoted SHA must never be assumed still current.
+- Applies to: context layer, checkpoint semantics, handoff.
+- Supersedes: part of `GO-D006`.
+- Source: this PR refresh, 2026-09-14.
+- Type: **governance / technical** — does not change any business rule.
+
+### GO-D008 — Three axes are recorded separately and never inferred from one another
+
+- Status: `ACTIVE` (recorded from current main evidence; made explicit here)
+- Decision: **Business Runtime**, **Control Plane** and **Release Acceptance** are three separate axes. `runtime is ACTIVE` never implies acceptance passed; a Control Plane service being maintenance-inactive is not a business-runtime gap; release acceptance is never granted by the existence of a merged PR.
+- Applies to: runtime reasoning, gate reporting, handoff summaries.
+- Source: `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` axis split, `ci/` gate manifests.
+- Type: **governance** — wording discipline, not implementation.
+
+### GO-D009 — Repository migration head is not the live database revision
+
+- Status: `ACTIVE`
+- Decision: the current-state layer records the **repository** migration head and the **live** database revision as two separate facts. A repository migration that has not been executed must be reported as pending, never as the current live revision.
+- Consequence at this checkpoint: repository head `0134_flight_status_width`; last confirmed live HK revision `0133_flight_change_plan`.
+- Applies to: any statement about "current database head".
+- Source: `ci/retention/BASELINE.json`, `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`.
+- Type: **technical/operational** — expresses the existing no-live-mutation boundary.
+
+### GO-D010 — Scoped acceptance does not transfer across source changes
+
+- Status: `ACTIVE`
+- Decision: a `PASS_SCOPED` C13/C14 (or equivalent) acceptance is bound to one exact candidate tree and its source fingerprint. It must not be restated as acceptance for a different tree on canonical main.
+- Evidence: the CI manifests on main carry `historical_pass_transferred: false`.
+- Applies to: gate reporting, handoff, release claims.
+- Source: `ci/cell-closure/CANDIDATE.json`, `ci/next-depth/CANDIDATE.json`, `evidence/v70-round2-20260914/`.
+- Type: **governance** — acceptance integrity.
+
+### GO-D011 — All three release flags stay HOLD until separately authorized
+
+- Status: `ACTIVE`
+- Decision: `HK_DEPLOY`, `FINAL_RELEASE` and `PRODUCTION` remain `HOLD` at this checkpoint, as recorded by canonical main itself. A merge into `main` does not lift them; a context refresh does not lift them; an open PR claiming otherwise does not lift them.
+- Applies to: deployment, migration, runtime cutover, production.
+- Source: `ci/retention/BASELINE.json` (`hk_deploy`, `final_release`, `production`), `ci/cell-closure/CANDIDATE.json`, `evidence/v70-pr73-integrated-gate-20260914/INTEGRATED_CANDIDATE_BINDING.json`.
+- Type: **business/operational authority boundary**.
+
+### GO-D012 — Payment Center remains discovery-only and independent
+
+- Status: `ACTIVE`
+- Decision: Payment Center work stays a separate, read-only technical-reality-discovery workstream (PR #61) until explicitly accepted. The context layer records its existence only; it does not implement Payment Center, does not modify payment business code, and does not decide new money truth.
+- Consequence: PR #61 discovery findings are `ACTIVE_CANDIDATE` and must not be presented as canonical main payment architecture.
+- Applies to: payment/funds work, money-truth ownership.
+- Source: PR #61 (open, Draft, unmerged), `docs/state/PAYMENT.md`.
+- Type: **business + governance**.
+
+### GO-D013 — The context layer is refreshed, never re-designed in parallel
+
+- Status: `CANDIDATE_IN_THIS_PR`
+- Decision candidate: when canonical main has moved materially, the existing context system (`docs/project/GO_CURRENT_STATE.md`, `ACTIVE_DECISIONS.md`, `CONTEXT_HANDOFF_PROTOCOL.md`, `CONTEXT_CHECKPOINT.json`, `docs/state/*`, AGENTS.md startup section) is refreshed **in place** on its own branch. No second, parallel context system is created, and no main-owned runtime pointer is rewritten to satisfy the context layer.
+- Applies to: this context PR and all future refreshes.
+- Source: this PR refresh, 2026-09-14.
+- Type: **governance / technical**.
 
 ## Domain decisions not materialized here
 
@@ -74,8 +141,18 @@ This V1 register intentionally does **not** copy every historical hotel/payment/
 Those must be imported only from authoritative source material with explicit provenance. In particular:
 
 - Payment Center currently has an active discovery candidate in PR #61.
-- PR #61 is not merged into main at the baseline of this context PR.
+- PR #61 is still open, still Draft, and **not** merged into main as of checkpoint `8ffcde66d36c1bbf849218529ef015f6e81725af`.
 - Payment business decisions must not be silently reconstructed from code names, AI memory or this summary.
+- Newer candidate PRs (#71, #72, #73, #75, #78, #89, #90, #91) are also unmerged. Their internal PASS/ACK claims are `ACTIVE_CANDIDATE`, not decisions and not current facts.
+
+## Decision-change history index
+
+| Decision | Status | Note |
+| --- | --- | --- |
+| `GO-D006` | `PARTIALLY_SUPERSEDED` | Surviving startup rule kept; checkpoint binding replaced by `GO-D007`. |
+| `GO-D007` | `CANDIDATE_IN_THIS_PR` | Checkpoint binds canonical main. |
+| `GO-D008` … `GO-D012` | `ACTIVE` | Recorded from canonical main evidence on 2026-09-14. |
+| `GO-D013` | `CANDIDATE_IN_THIS_PR` | Refresh in place, never re-design in parallel. |
 
 ## Human-readable decision rule
 

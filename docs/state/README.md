@@ -2,6 +2,8 @@
 
 This directory contains compact **current-state cards** for major GO modules.
 
+Current baseline for all cards: canonical `main@8ffcde66d36c1bbf849218529ef015f6e81725af` (refreshed 2026-09-14). Each card states its own baseline; if a card's baseline is older than the checkpoint in [`docs/project/CONTEXT_CHECKPOINT.json`](../project/CONTEXT_CHECKPOINT.json), treat the card as stale and refresh it.
+
 These files are not historical changelogs. Their purpose is to answer a fresh-session question quickly:
 
 > What is true now, what is only a candidate, and what is still unknown/blocked?
@@ -18,6 +20,8 @@ Each module state should separate:
 Do not promote an open PR into current truth.
 
 Do not paste full historical PR chronology here.
+
+A card refresh is a documentation change. It must not modify application source, CI bindings, migrations, evidence or runtime state, and it must not restate a repository identity as a live runtime identity (or vice versa).
 
 Older PRs remain audit evidence and should be consulted only when a current fact needs provenance or when investigating a conflict.
 

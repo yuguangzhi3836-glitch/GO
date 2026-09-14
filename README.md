@@ -22,6 +22,10 @@ protected          caddy, redis, PostgreSQL/RDS data, media volumes, HK Agent,
                    Executor, signing keys, Task/Evidence/ledger, Control Plane, SSH
 ```
 
+> The block above describes the **running** DEPTH48 runtime. Repository-side facts are tracked separately: canonical `main`, `main:application` tree, source fingerprint, the **repository** migration head, the gate/release state and the open candidate PRs. See [`docs/project/GO_CURRENT_STATE.md`](docs/project/GO_CURRENT_STATE.md) and [`docs/project/CONTEXT_CHECKPOINT.json`](docs/project/CONTEXT_CHECKPOINT.json).
+>
+> As of the 2026-09-14 context refresh the running database revision is `0133_flight_change_plan`, while the repository migration head is `0134_flight_status_width` and **has not been applied** to HK. A running-database revision is not a repository migration head.
+
 Build from a fresh clone, with no host-side file, previous parent, or sealed
 package:
 

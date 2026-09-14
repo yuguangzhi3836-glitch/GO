@@ -48,6 +48,15 @@ Treat these as the current project-context entry point before reasoning about wh
 
 An open PR/branch is a candidate and must not be silently promoted into current project truth merely because it is newer or contains more code.
 
+`docs/project/CONTEXT_CHECKPOINT.json` records `checkpoint_main_sha` — the verified canonical `main` at which the current-state layer was last refreshed. It always names **canonical main**, never the context layer's own branch head. To compute what has changed, compare current `main` against that SHA and read only the delta.
+
+Keep two identities apart when answering "where are we now":
+
+- the **repository** identity (`main` SHA, `main:application` tree, file count, source fingerprint, **repository** migration head);
+- the **live runtime** identity (HK-STAGING generation, deployed application tree, **live** database revision).
+
+A repository migration that has not been executed is not the live database revision. A merged PR does not move the live runtime. `HK_DEPLOY`, `FINAL_RELEASE` and `PRODUCTION` are separate authorizations and are `HOLD` unless canonical main records otherwise.
+
 ### Human / AI responsibility model
 
 - **余总 / Boss** is the product owner and final business-direction decision maker.
@@ -141,3 +150,5 @@ Any change that adds/removes/renames runtime service roles, introduces another b
 ## Unified application source
 
 PR52 merged DEPTH47/DEPTH48 source repairs at `9a056e255374d4254208d519462e7cd5b693a78f`; PR53 ledger checks were included. The application tree is `ad7d1de1190f86ad29d1c6cdafbcedd592e27206`. See `docs/canonical-baseline/DEPTH48_ORDERED_REPAIRS.md`. DEPTH46 remains the latest complete parent; visible three-end acceptance, PostgreSQL, frozen-runtime CI and a new self-contained parent remain unfinished. On 2026-09-13 the user explicitly authorized uploading the new parent, source, workflows and subsequent fixes to this repository, running isolated CI, and merging the PR. Perform the source review, exact-source validation and conflict resolution before merging. This source-merge authorization does not authorize installation or Hong Kong/Production deployment. After merge, start subsequent work from application/ on current main using short-lived branches and reviewable PRs. Historical evidence remains bound to its original commit and scope.
+
+**Current canonical baseline (refreshed 2026-09-14):** canonical `main` is `8ffcde66d36c1bbf849218529ef015f6e81725af`; `main:application` is `dd815baf0105cce603e9a28b002cfb9d8b95d186` (1365 files, source fingerprint `a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374`) and the repository migration head is `0134_flight_status_width`. The paragraph above records the DEPTH48 integration identity at merge time and remains historical. Current facts — including the live HK-STAGING runtime identity, the live database revision, the gate/release state and the open candidate PRs — belong to the current-state layer: see [`docs/project/GO_CURRENT_STATE.md`](docs/project/GO_CURRENT_STATE.md) and [`docs/project/CONTEXT_CHECKPOINT.json`](docs/project/CONTEXT_CHECKPOINT.json). PR #66, #67, #69, #70, #74 and #76 are merged; `HK_DEPLOY`, `FINAL_RELEASE` and `PRODUCTION` remain `HOLD`.
