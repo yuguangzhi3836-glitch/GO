@@ -150,7 +150,17 @@ jobs:
                                sign(evidence, evidence_key, 'base64'))
           assert cross_task['tasks'][0]['task_signature_verified'] is False, 'crossed task verified'
           assert cross_task['tasks'][0]['lifecycle'] == 'POLICY_HOLD'
-          assert cross_task['verification']['task']['identity_binding'] == 'IDENTITY_MISMATCH'
+          # The key is the right one for the role; it is the artifact that is crossed.
+          assert cross_task['verification']['task']['identity_binding'] == 'BOUND'
+
+          crossed_identity = run_bus('crossed-identity', sign(task, task_key, 'hex'),
+                                     sign(evidence, evidence_key, 'base64'),
+                                     task_key_name='hk-evidence.pub')
+          assert crossed_identity['verification']['task']['identity_binding'] == \
+                 'IDENTITY_MISMATCH', 'the evidence key was accepted in the task role'
+          assert crossed_identity['verification']['evidence']['identity_binding'] == 'BOUND'
+          assert crossed_identity['verification']['proven_allowed'] is False
+          assert crossed_identity['tasks'][0]['assertion']['state'] != 'PROVEN'
 
           unsigned = run_bus('unsigned', task, evidence,
                              task_key_name=None, evidence_key_name=None)
@@ -210,6 +220,13 @@ jobs:
                      'run_id': os.environ['GITHUB_RUN_ID'],
                      'projection_sha256': hashlib.sha256(first.encode()).hexdigest(),
                      'deterministic': True, 'signer_identity_separation': 'PROVEN',
+                     'verifier_identity_contract': 'LOADED',
+                     'task_identity_binding': 'BOUND',
+                     'evidence_identity_binding': 'BOUND',
+                     'wrong_key_rejected': True,
+                     'crossed_identity_rejected': True,
+                     'missing_key_never_proven': True,
+                     'published_private_keys': 'NONE',
                      'installation_performed': False, 'deployment_performed': False,
                      'deploy_request_enabled': False,
                      'deploy_readiness_evaluation': 'NOT_IN_SCOPE',
