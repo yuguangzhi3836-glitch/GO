@@ -82,8 +82,18 @@ enabled_request_actions      HK_STAGING_VERIFY, HK_STAGING_TEST_PR
 deploy_readiness_evaluation  NOT_IN_SCOPE
 rollback_readiness_evaluation NOT_IN_SCOPE
 by_lifecycle                 COMPLETE 24 | TASK_EXPIRED 18 | POLICY_HOLD 4
+request_lifecycles           REQUEST_CREATED 13   (zero Request facts supplied)
+request_facts                0
 anomalies                    TASK_PARAMETER_CONTRACT_DRIFT
 ```
+
+Every Request reads `REQUEST_CREATED` because **zero Bridge Request facts were
+supplied to this projection**: the read-only exporter that publishes them exists
+(`control-plane/command-center-request-visibility-v1`, CC V1-05) but nothing
+drives it or publishes its output yet, so `request_visibility.facts_collected`
+is 0 and no Request can be reported as accepted or refused. That is the honest
+state of the control bus, not a projection defect: a Request file on the bus
+means a human wrote it and nothing more.
 
 ## What changed from OBSERVED to PROVEN
 

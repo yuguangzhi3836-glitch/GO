@@ -1,0 +1,360 @@
+name: Command Center request visibility (isolated)
+on:
+  push:
+    branches: [cc/github-native-delivery-v1, cc/v1-finalization-20260914]
+    paths:
+      - 'control-plane/command-center-request-visibility-v1/**'
+      - 'control-plane/command-center-state-v1/**'
+      - '.github/workflows/command-center-request-visibility-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'control-plane/command-center-request-visibility-v1/**'
+      - 'control-plane/command-center-state-v1/**'
+      - '.github/workflows/command-center-request-visibility-v1.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cc-request-visibility-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  isolated-request-visibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned test dependency
+        run: python -m pip install cryptography==46.0.0
+      - name: Check the request visibility manifest
+        working-directory: control-plane/command-center-request-visibility-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Run the export suite on Linux
+        working-directory: control-plane/command-center-request-visibility-v1
+        run: python -m unittest discover -s tests -v
+      - name: Run the exporter built-in checks
+        working-directory: control-plane/command-center-request-visibility-v1
+        run: python command-center/go-request-fact-export selftest
+      - name: Run the isolated verification and write summary.json
+        working-directory: control-plane/command-center-request-visibility-v1
+        run: python run_checks.py "$RUNNER_TEMP/cc-request-visibility-checks"
+      - name: Confirm the state layer is still green
+        working-directory: control-plane/command-center-state-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Confirm the state layer suite still passes
+        working-directory: control-plane/command-center-state-v1
+        run: python -m unittest discover -s tests -q
+      - name: Confirm the state layer isolated checks still pass
+        run: python control-plane/command-center-state-v1/run_checks.py "$RUNNER_TEMP/cc-state-checks"
+      - name: Prove the Bridge facts reach the control bus without becoming authority
+        run: |
+          python - <<'PY'
+          import datetime as dt
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import subprocess
+          import sys
+
+          from cryptography.hazmat.primitives import serialization
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+          work = pathlib.Path(os.environ['RUNNER_TEMP']) / 'ccv105'
+          if work.exists():
+              __import__('shutil').rmtree(work)
+          bus = work / 'bus'
+          (bus / 'tasks').mkdir(parents=True)
+          (bus / 'evidence').mkdir()
+          requests_dir = work / 'requests'
+          requests_dir.mkdir()
+          keys = work / 'keys'
+          keys.mkdir()
+
+          component = pathlib.Path('control-plane/command-center-request-visibility-v1')
+          exporter = component / 'command-center' / 'go-request-fact-export'
+          projection = pathlib.Path('control-plane/command-center-state-v1/state_projection.py')
+
+
+          def newkey(name):
+              key = Ed25519PrivateKey.generate()
+              (keys / ('%s.pem' % name)).write_bytes(key.private_bytes(
+                  serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+                  serialization.NoEncryption()))
+              (keys / ('%s.pub' % name)).write_bytes(key.public_key().public_bytes(
+                  serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))
+              return key
+
+
+          task_key = newkey('cc-task')
+          newkey('hk-evidence')
+
+          sys.path.insert(0, 'control-plane/command-center-state-v1')
+          import state_projection as sp  # noqa: E402
+
+
+          def pin(name):
+              return sp.Verifier(str(keys / ('%s.pub' % name)), sp.TASK_VERIFIER_IDENTITY, 'hex').ssh_fingerprint
+
+
+          contract = work / 'VERIFIER_IDENTITIES_V1.json'
+          contract.write_text(json.dumps({
+              'schema_version': '1', 'contract': sp.IDENTITY_CONTRACT_NAME, 'scope': sp.CONTRACT_SCOPE,
+              'identities': [
+                  {'identity_id': 'CI-CC-TASK-SIGNER', 'role': sp.ROLE_TASK,
+                   'display_name': sp.TASK_VERIFIER_IDENTITY, 'algorithm': 'Ed25519',
+                   'signature_encoding': 'hex', 'public_key_ssh_sha256': pin('cc-task')},
+                  {'identity_id': 'CI-HK-EVIDENCE-SIGNER', 'role': sp.ROLE_EVIDENCE,
+                   'display_name': sp.EVIDENCE_VERIFIER_IDENTITY, 'algorithm': 'Ed25519',
+                   'signature_encoding': 'base64', 'public_key_ssh_sha256': pin('hk-evidence')}]}))
+          assert pin('cc-task') != pin('hk-evidence'), 'fixture pins collided'
+
+
+          def canonical(value):
+              return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+          def head(seed):
+              return hashlib.sha256(('ci-head-%s' % seed).encode()).hexdigest()[:40]
+
+
+          def link(request_id):
+              return hashlib.sha256(request_id.encode()).hexdigest()[:12]
+
+
+          ACCEPTED, REFUSED, DUPLICATED, REPLAYED, UNPROVEN, TAMPERED = (
+              'ci-accepted', 'ci-refused', 'ci-duplicated', 'ci-replayed', 'ci-unproven', 'ci-tampered')
+          PR = {'ci-accepted': '101', 'ci-refused': '102', 'ci-duplicated': '103',
+                'ci-replayed': '104', 'ci-unproven': '105', 'ci-tampered': '106'}
+
+          for request_id in (ACCEPTED, REFUSED, DUPLICATED, REPLAYED, UNPROVEN, TAMPERED):
+              body = {'schema_version': '1', 'request_id': request_id, 'action_id': 'HK_STAGING_VERIFY',
+                      'environment': 'HK-STAGING-01', 'requested_at': '2026-09-15T01:30:00Z'}
+              (requests_dir / (request_id + '.json')).write_bytes(canonical(
+                  {'ref': 'refs/remotes/origin/boss-request-' + request_id, 'head_sha': head(request_id),
+                   'path': 'requests/' + request_id + '.json', 'request': body}) + b"\n")
+
+
+          def derived_task(request_id):
+              body = {'schema_version': '1',
+                      'task_id': 'go-boss-request-verify-20260915T020000Z-' + link(request_id),
+                      'nonce': 'ci-nonce-' + link(request_id)[:6],
+                      'issued_at': '2026-09-15T01:59:00Z', 'expires_at': '2026-09-15T02:14:00Z',
+                      'authority': 'GO-COMMAND-CENTER', 'environment': 'HK-STAGING-01',
+                      'action_id': 'HK_STAGING_VERIFY',
+                      'parameters': {'release_id': 'ci-' + link(request_id),
+                                     'candidate_image_id': 'sha256:' + '1' * 64,
+                                     'expected_current_image_id': 'sha256:' + '1' * 64}}
+              signed = dict(body)
+              signed['signature'] = task_key.sign(canonical(body)).hex()
+              return signed
+
+
+          accepted_task = derived_task(ACCEPTED)
+          unproven_task = derived_task(UNPROVEN)
+          (bus / 'tasks' / (accepted_task['task_id'] + '.json')).write_bytes(canonical(accepted_task) + b"\n")
+          # The unproven Task is deliberately never published to the control bus.
+
+          ledger = {'version': 1, 'requests': {
+              '%s:%s' % (PR[ACCEPTED], head(ACCEPTED)): {
+                  'status': 'published', 'request_id': ACCEPTED, 'task': accepted_task,
+                  'task_sha256': hashlib.sha256(canonical(accepted_task)).hexdigest(),
+                  'task_commit': 'c' * 40},
+              '%s:%s' % (PR[UNPROVEN], head(UNPROVEN)): {
+                  'status': 'published', 'request_id': UNPROVEN, 'task': unproven_task,
+                  'task_sha256': hashlib.sha256(canonical(unproven_task)).hexdigest(),
+                  'task_commit': 'd' * 40}}}
+          (work / 'ledger.json').write_bytes(canonical(ledger) + b"\n")
+
+          (work / 'poll.json').write_bytes(canonical({
+              'schema_version': '1', 'journaled_at': '2026-09-15T02:00:00Z',
+              'bridge_output': {
+                  'bridge_version': '1.3.0', 'channel_mode': 'PERSISTENT', 'publish_enabled': True,
+                  'results': [
+                      {'pr': PR[ACCEPTED], 'head': head(ACCEPTED), 'status': 'published',
+                       'task_id': accepted_task['task_id']},
+                      {'pr': PR[REFUSED], 'head': head(REFUSED), 'status': 'rejected',
+                       'reason': 'pr_head_not_found'},
+                      {'pr': PR[DUPLICATED], 'head': head(DUPLICATED), 'status': 'rejected',
+                       'reason': 'duplicate_request_id'},
+                      {'pr': PR[REPLAYED], 'head': head(REPLAYED), 'status': 'already_seen',
+                       'record': {'status': 'published', 'request_id': REPLAYED}},
+                      {'pr': PR[TAMPERED], 'head': head(TAMPERED), 'status': 'rejected',
+                       'reason': 'request_oversized'},
+                      {'pr': '107', 'head': 'e' * 40, 'status': 'rejected', 'reason': 'malformed_json'}]}})
+              + b"\n")
+
+          export_root = work / 'export'
+
+
+          def run(*args, expect=0):
+              result = subprocess.run([sys.executable, *args], capture_output=True, text=True)
+              assert result.returncode == expect, (result.returncode, result.stdout, result.stderr)
+              return dict(line.split('=', 1) for line in result.stdout.strip().splitlines() if '=' in line)
+
+
+          # 1. export the Bridge facts, read-only
+          exported = run(str(exporter), 'export', '--ledger', str(work / 'ledger.json'),
+                         '--poll-results', str(work / 'poll.json'), '--requests-dir', str(requests_dir),
+                         '--out', str(export_root), '--now', '2026-09-15T02:10:00Z')
+          index = json.loads((export_root / 'INDEX.json').read_text(encoding='utf-8'))
+          kinds = index['counts']['by_kind']
+          assert kinds == {'REQUEST_VALIDATED': 2, 'REQUEST_REJECTED': 2, 'REQUEST_DUPLICATE': 1,
+                           'REQUEST_REPLAY_REJECTED': 1}, kinds
+          assert index['counts']['submissions_without_fact'] == 1, index['counts']
+          assert index['reasons_preserved_verbatim'] is True
+          assert not any(index['authority'].values())
+          assert exported['AUTHORITY'] == 'NONE'
+          unbound = [s for s in index['submissions'] if not s['fact_emitted']]
+          assert unbound and unbound[0]['reason'] == 'malformed_json', unbound
+
+          for path in sorted((export_root / 'facts').glob('*.json')):
+              fact = json.loads(path.read_text(encoding='utf-8'))
+              assert not any(fact['authority'].values()), path.name
+              assert fact['reason']['preserved_verbatim'] is True, path.name
+              if fact['kind'] == 'REQUEST_VALIDATED':
+                  assert fact['binding']['proof_required'] is True, path.name
+                  assert fact['binding']['proof'] == 'TASK_SIGNATURE_AND_DIGEST_PREFIX', path.name
+              else:
+                  assert fact['binding']['claimed'] is False, path.name
+
+          # re-export with a different instant: same fact ids, so the store is append-only
+          before = sorted(p.name for p in (export_root / 'facts').glob('*.json'))
+          run(str(exporter), 'export', '--ledger', str(work / 'ledger.json'),
+              '--poll-results', str(work / 'poll.json'), '--requests-dir', str(requests_dir),
+              '--out', str(export_root), '--now', '2026-09-15T03:00:00Z')
+          assert sorted(p.name for p in (export_root / 'facts').glob('*.json')) == before
+
+          # 2. tamper with one fact: the id no longer covers the body
+          victim = None
+          for path in sorted((export_root / 'facts').glob('*.json')):
+              fact = json.loads(path.read_text(encoding='utf-8'))
+              if fact['request_id'] == TAMPERED:
+                  victim = (path, fact)
+          assert victim, 'the tampered fixture produced no fact'
+          victim[1]['observed_at'] = '2026-09-15T04:00:00Z'
+          victim[0].write_bytes(canonical(victim[1]) + b"\n")
+
+
+          # 3. project with the facts
+          def project(out, facts=None):
+              args = [sys.executable, str(projection), '--tasks-repo', str(bus), '--evidence-repo', str(bus),
+                      '--requests-dir', str(requests_dir), '--go-repo', '.',
+                      '--verifier-identities', str(contract), '--task-verify-key', str(keys / 'cc-task.pub'),
+                      '--evidence-verify-key', str(keys / 'hk-evidence.pub'),
+                      '--now', '2026-09-15T02:10:00Z', '--out', str(out)]
+              if facts:
+                  args += ['--request-facts-dir', str(facts)]
+              result = subprocess.run(args, capture_output=True, text=True)
+              assert result.returncode == 0, (result.stdout, result.stderr)
+              return json.loads((out / 'CURRENT_CONTROL_STATE.json').read_text(encoding='utf-8'))
+
+
+          with_facts = project(work / 'state-with', export_root)
+          without_facts = project(work / 'state-without')
+
+          by_id = {r['request_id']: r for r in with_facts['requests']}
+          fate = lambda rid: by_id[rid]['why_not_a_task']['state']
+
+          assert by_id[ACCEPTED]['lifecycle'] == 'REQUEST_VALIDATED', by_id[ACCEPTED]['lifecycle']
+          assert by_id[ACCEPTED]['binding']['proof_state'] == 'TASK_SIGNATURE_AND_DIGEST_PREFIX'
+          assert fate(ACCEPTED) == 'BECAME_A_TASK'
+          assert by_id[REFUSED]['lifecycle'] == 'REQUEST_REJECTED'
+          assert by_id[REFUSED]['why_not_a_task']['reason_code'] == 'pr_head_not_found'
+          assert by_id[REFUSED]['why_not_a_task']['reason_class'] == 'UNRESOLVABLE'
+          assert fate(DUPLICATED) == 'DUPLICATE_REQUEST_ID'
+          assert by_id[DUPLICATED]['lifecycle'] == 'REQUEST_DUPLICATE'
+          assert fate(REPLAYED) == 'REPLAYED_SUBMISSION'
+          assert by_id[REPLAYED]['lifecycle'] == 'REQUEST_REPLAY_REJECTED'
+          assert fate(UNPROVEN) == 'ACCEPTANCE_CLAIMED_BUT_UNPROVEN'
+          assert by_id[UNPROVEN]['lifecycle'] == 'REQUEST_CREATED', by_id[UNPROVEN]['lifecycle']
+          assert by_id[UNPROVEN]['binding']['proof_state'] == 'NOT_ESTABLISHED'
+          assert by_id[TAMPERED]['lifecycle'] == 'REQUEST_CREATED'
+
+          anomalies = [a['kind'] for a in with_facts['anomalies']]
+          assert 'REQUEST_BINDING_UNPROVEN' in anomalies, anomalies
+          assert 'REQUEST_FACT_UNREADABLE' in anomalies, anomalies
+
+          visibility = with_facts['request_visibility']
+          assert visibility['by_lifecycle'] == {'REQUEST_CREATED': 2, 'REQUEST_DUPLICATE': 1,
+                                                'REQUEST_REJECTED': 1, 'REQUEST_REPLAY_REJECTED': 1,
+                                                'REQUEST_VALIDATED': 1}, visibility['by_lifecycle']
+          assert visibility['duplicate_or_replay_counted_as_success'] is False
+          assert [c['counted_as_success'] for c in visibility['duplicate_or_replay']] == [False, False]
+          assert visibility['acceptance_requires_a_signed_task'] is True
+          assert visibility['rejection_reasons_are_published'] is True
+          assert visibility['facts_are_execution_authority'] is False
+          assert visibility['bridge_fact_export_installed'] is False
+          assert len(visibility['acceptance_claims_without_a_signed_task']) == 1
+          assert [s['reason_code'] for s in visibility['submissions_without_a_request_identity']] \
+              == ['malformed_json']
+          assert len(visibility['rejected_or_refused']) == 3
+
+          # 4. without the export nothing is invented
+          without = {r['request_id']: r for r in without_facts['requests']}
+          assert without[ACCEPTED]['lifecycle'] == 'REQUEST_CREATED', without[ACCEPTED]['lifecycle']
+          assert all(r['lifecycle'] == 'REQUEST_CREATED' for r in without.values())
+          assert without_facts['counts']['request_facts'] == 0
+          assert without_facts['request_visibility']['facts_collected'] == 0
+
+          # 5. the facts never move a task-side answer
+          assert with_facts['tasks'] == without_facts['tasks']
+          assert with_facts['counts']['by_lifecycle'] == without_facts['counts']['by_lifecycle']
+          assert with_facts['control_state']['health'] == without_facts['control_state']['health']
+
+          # 6. the status contract answers the question, and carries no verdict
+          status = json.loads((work / 'state-with' / 'CONTROL_STATUS_V1.json').read_text(encoding='utf-8'))
+          assert status['answers']['request_fate']['accepted'] == 1
+          assert status['answers']['request_fate']['refused'] == 1
+          assert status['answers']['request_fate']['duplicate'] == 1
+          assert status['answers']['request_fate']['replayed'] == 1
+          assert status['answers']['request_fate']['by_request_id'][REFUSED]['why_not_a_task'][
+              'reason_code'] == 'pr_head_not_found'
+          for forbidden in ('can_deploy', 'rollback_targets', 'release_gates', 'deployment_eligibility'):
+              assert forbidden not in status['answers'], forbidden
+
+          blob = json.dumps(with_facts) + json.dumps(status)
+          for forbidden in ('grants_execution": true', 'is_execution_authority": true'):
+              assert forbidden not in blob, forbidden
+
+          binding = {
+              'event': os.environ.get('GITHUB_EVENT_NAME', 'local'),
+              'workflow_commit': os.environ.get('GITHUB_SHA', 'local'),
+              'run_id': os.environ.get('GITHUB_RUN_ID', 'local'),
+              'issue': '#100 CC V1-05',
+              'fact_kinds': sorted(kinds),
+              'rejected_facts': kinds.get('REQUEST_REJECTED'),
+              'duplicate_facts': kinds.get('REQUEST_DUPLICATE'),
+              'replay_facts': kinds.get('REQUEST_REPLAY_REJECTED'),
+              'bridge_refusal_reasons_published': True,
+              'acceptance_requires_a_signed_task': True,
+              'acceptance_claim_without_a_task_is_unproven': True,
+              'a_task_from_another_request_cannot_be_borrowed': True,
+              'tampered_fact_is_detected': True,
+              'duplicate_or_replay_never_a_success': True,
+              'submission_without_a_request_identity_is_recorded': True,
+              'facts_without_the_export_change_nothing': True,
+              'requests_are_never_reported_accepted_without_facts': True,
+              'exporter_holds_private_key': False,
+              'facts_are_execution_authority': False,
+              'installed': False,
+              'deployed': False,
+              'hong_kong_accessed': False,
+              'production_accessed': False,
+          }
+          (work / 'binding.json').write_text(json.dumps(binding, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(binding, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cc-request-visibility-${{ github.sha }}
+          path: ${{ runner.temp }}/ccv105/
+          if-no-files-found: error
+          retention-days: 30

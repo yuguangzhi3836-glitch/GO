@@ -166,7 +166,7 @@ def identity_contract(task_pub=None, evidence_pub=None, task_pin=None, evidence_
 
 
 def build(root, req_dir=None, task_pub=None, evidence_pub=None, go_repo=None, at=None,
-          contract=None, **flags):
+          contract=None, facts_root=None, **flags):
     """Build the state without going through the CLI.
 
     A contract pinning the fixture keys is generated unless one is supplied, so
@@ -177,6 +177,7 @@ def build(root, req_dir=None, task_pub=None, evidence_pub=None, go_repo=None, at
     sp.load_tasks(str(root), loaded)
     sp.load_evidence(str(root), loaded)
     sp.load_requests(str(req_dir) if req_dir else None, loaded)
+    sp.load_request_facts(str(facts_root) if facts_root else None, loaded)
     if contract is None:
         contract = identity_contract(task_pub, evidence_pub)
     identity = sp.IdentityContract(contract)
@@ -218,6 +219,83 @@ def build(root, req_dir=None, task_pub=None, evidence_pub=None, go_repo=None, at
 def project(root, req_dir=None, **flags):
     """Build and return only the state document."""
     return build(root, req_dir, **flags)[1]
+
+
+# --------------------------------------------------------------------------- #
+# CC V1-05 fixtures: Bridge Request facts
+#
+# The fact shape is pinned here a second time on purpose. If the exported
+# contract and the projector ever disagree, these tests fail instead of the
+# disagreement reaching a projection.
+# --------------------------------------------------------------------------- #
+def fact_reason(code=None, name=None, origin="BRIDGE_REJECT_TOKEN"):
+    if code is None:
+        return {"applicable": False, "code": None, "class": None, "origin": None,
+                "preserved_verbatim": True}
+    return {"applicable": True, "code": code, "class": name, "origin": origin,
+            "preserved_verbatim": True}
+
+
+def no_binding():
+    return {"claimed": False, "task_id": None, "task_sha256": None, "task_commit": None,
+            "proof_required": False, "proof": "NOT_APPLICABLE"}
+
+
+def accepted_binding(task, request_id):
+    body = {k: v for k, v in task.items() if not k.startswith("_")}
+    return {"claimed": True, "task_id": task["task_id"],
+            "task_sha256": sp.digest(body), "task_commit": "c" * 40,
+            "proof_required": True, "proof": "TASK_SIGNATURE_AND_DIGEST_PREFIX"}
+
+
+def request_fact(kind, request_id, action_id="HK_STAGING_VERIFY", **over):
+    fact = {
+        "schema_version": "1", "kind": kind, "request_id": request_id, "action_id": action_id,
+        "environment": "HK-STAGING-01", "nonce": over.pop("nonce", None),
+        "observed_at": over.pop("observed_at", "2026-09-14T11:30:00Z"),
+        "time_source": over.pop("time_source", "POLL_JOURNAL"),
+        "submission": over.pop("submission",
+                               {"pr_number": "7", "head_sha": "b" * 40,
+                                "submission_key": "7:" + "b" * 40}),
+        "source": over.pop("source",
+                           {"repository": sp.TASKS_REPOSITORY,
+                            "ref": "refs/remotes/origin/boss-request-1",
+                            "head_sha": "b" * 40, "path": "requests/request-1.json",
+                            "request_sha256": "0" * 64}),
+        "reason": over.pop("reason", fact_reason()),
+        "binding": over.pop("binding", no_binding()),
+        "authority": over.pop("authority",
+                              {k: False for k in sp.REQUEST_FACT_AUTHORITY_KEYS}),
+    }
+    fact.update(over)
+    fact["fact_id"] = "request-fact-" + sp.digest(
+        {k: v for k, v in fact.items() if k != "fact_id"})[:32]
+    return fact
+
+
+def facts_root_of(facts=(), index=None):
+    """An export root in the shape the read-only exporter writes."""
+    root = pathlib.Path(tempfile.mkdtemp(prefix="ccs-facts-"))
+    folder = root / sp.REQUEST_FACTS_DIRNAME
+    folder.mkdir()
+    for fact in facts:
+        (folder / (fact["fact_id"] + ".json")).write_text(json.dumps(fact), encoding="utf-8")
+    if index is not None:
+        (root / sp.REQUEST_FACT_INDEX_NAME).write_text(json.dumps(index), encoding="utf-8")
+    return root
+
+
+def request_file(request_id="request-1", action="HK_STAGING_VERIFY", **over):
+    value = {"schema_version": "1", "request_id": request_id, "action_id": action,
+             "environment": "HK-STAGING-01", "requested_at": "2026-09-14T11:00:00Z"}
+    value.update(over)
+    return value
+
+
+def task_identity(request_id):
+    """A Task identity built the way the Bridge builds one, from the request digest."""
+    return "go-boss-request-verify-20260914T110000Z-" + __import__("hashlib").sha256(
+        request_id.encode()).hexdigest()[:sp.REQUEST_TASK_DIGEST_LINK]
 
 
 # --------------------------------------------------------------------------- #
@@ -1016,9 +1094,12 @@ class ContractTests(unittest.TestCase):
 
     def test_the_required_answer_set_does_not_leak_beyond_scope(self):
         # Ten status questions plus the request channel. Anything else in answers
-        # is explicitly a supporting field, never a required one.
+        # is explicitly a supporting field, never a required one. request_fate
+        # (CC V1-05) is supporting: it says why a Request did not become a Task,
+        # and it neither adds nor withholds an execution verdict.
         supporting = {"last_evidence", "live_verified_runtime", "go_is_healthy",
-                      "hk_agent_online", "repository_main_sha", "runtime_built_from_main_sha"}
+                      "hk_agent_online", "repository_main_sha", "runtime_built_from_main_sha",
+                      "request_fate"}
         _, _, status = self.build_contract()
         self.assertEqual(set(status["answers"]) - set(self.REQUIRED_ANSWERS), supporting)
 
@@ -1185,6 +1266,353 @@ class DeterminismTests(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
+class RequestVisibilityTests(unittest.TestCase):
+    """CC V1-05: a Request is a proposal, and only a signed Task proves acceptance.
+
+    Before this, Command Center acceptance was a Bridge-ledger fact that never
+    reached the control bus, so every Request could only be reported as CREATED
+    and "why was my Request refused?" had no answer. These tests pin the three
+    things that must not regress: an acceptance is never believed on a fact's
+    word, a refusal never loses the Bridge's reason, and a duplicate or a replay
+    is never a success.
+    """
+
+    def setUp(self):
+        self.task_key, self.task_pub = key_pair("cc-task")
+        self.evidence_key, self.evidence_pub = key_pair("hk-evidence")
+
+    # -- helpers --------------------------------------------------------------
+    def signed_task(self, request_id="request-1", **over):
+        issued = AT - dt.timedelta(minutes=30)
+        return sign(task(task_id=task_identity(request_id), nonce="nonce-ccv1-05",
+                         issued_at=sp.iso(issued),
+                         expires_at=sp.iso(issued + dt.timedelta(minutes=15)), **over),
+                    self.task_key, "hex")
+
+    def project_one(self, facts=(), index=None, requests=(("request-1.json", None),),
+                    tasks=(), task_pub="auto", evidence_pub=None):
+        request_files = [(name, value if value is not None else request_file())
+                         for name, value in requests]
+        root, req_dir = layout(tasks=tasks, requests=request_files)
+        return build(root, req_dir, task_pub=(self.task_pub if task_pub == "auto" else task_pub),
+                     evidence_pub=evidence_pub, facts_root=facts_root_of(facts, index))
+
+    # -- a Request file is not an acceptance ----------------------------------
+    def test_a_request_file_alone_is_only_created(self):
+        _, state, status = self.project_one()
+        entry = state["requests"][0]
+        self.assertEqual(entry["lifecycle"], "REQUEST_CREATED")
+        self.assertEqual(entry["lifecycle_source"], "CONTROL_BUS_ONLY")
+        self.assertEqual(entry["why_not_a_task"]["state"], "NO_BRIDGE_FACT_OBSERVED")
+        self.assertFalse(entry["binding"]["proof_required"])
+        self.assertEqual(status["answers"]["request_fate"]["accepted"], 0)
+        self.assertEqual(status["answers"]["request_fate"]["waiting"], 1)
+
+    def test_the_closed_lifecycle_set_is_exactly_the_issue_set(self):
+        self.assertEqual(set(sp.REQUEST_FACT_KINDS),
+                         {"REQUEST_CREATED", "REQUEST_VALIDATED", "REQUEST_REJECTED",
+                          "REQUEST_DUPLICATE", "REQUEST_REPLAY_REJECTED"})
+        for kind in sp.REQUEST_FACT_KINDS:
+            self.assertIn(kind, sp.LIFECYCLE_REQUEST, kind)
+
+    # -- acceptance requires proof --------------------------------------------
+    def test_a_corroborated_acceptance_is_reported(self):
+        request_id = "request-1"
+        tk = self.signed_task(request_id)
+        _, state, status = self.project_one(
+            tasks=[("%s.json" % tk["task_id"], tk)],
+            facts=[request_fact("REQUEST_VALIDATED", request_id,
+                                binding=accepted_binding(tk, request_id))])
+        entry = state["requests"][0]
+        self.assertEqual(entry["lifecycle"], "REQUEST_VALIDATED")
+        self.assertEqual(entry["lifecycle_source"], "BRIDGE_FACT")
+        self.assertEqual(entry["why_not_a_task"]["state"], "BECAME_A_TASK")
+        self.assertEqual(entry["binding"]["proof_state"], sp.REQUEST_FACT_PROOF)
+        self.assertEqual(entry["binding"]["task_id"], tk["task_id"])
+        self.assertEqual(status["answers"]["request_fate"]["accepted"], 1)
+
+    def test_an_acceptance_without_the_published_identity_is_not_verified(self):
+        """No key means no identity claim, so the acceptance cannot be believed."""
+        request_id = "request-1"
+        tk = self.signed_task(request_id)
+        _, state, _ = self.project_one(
+            tasks=[("%s.json" % tk["task_id"], tk)], task_pub=None,
+            facts=[request_fact("REQUEST_VALIDATED", request_id,
+                                binding=accepted_binding(tk, request_id))])
+        entry = state["requests"][0]
+        self.assertNotEqual(entry["lifecycle"], "REQUEST_VALIDATED")
+        self.assertEqual(entry["why_not_a_task"]["state"], "ACCEPTANCE_CLAIMED_BUT_UNPROVEN")
+        self.assertEqual(entry["binding"]["proof_state"], "NOT_ESTABLISHED")
+        self.assertIn("REQUEST_BINDING_UNPROVEN", [a["kind"] for a in state["anomalies"]])
+        # The ineffective fact is reported, never hidden.
+        self.assertEqual(len(entry["facts"]), 1)
+        self.assertFalse(entry["facts"][0]["effective"])
+
+    def test_an_acceptance_whose_task_is_absent_is_not_verified(self):
+        request_id = "request-1"
+        tk = self.signed_task(request_id)
+        _, state, _ = self.project_one(
+            facts=[request_fact("REQUEST_VALIDATED", request_id,
+                                binding=accepted_binding(tk, request_id))])
+        entry = state["requests"][0]
+        self.assertEqual(entry["lifecycle"], "REQUEST_CREATED")
+        self.assertEqual(entry["why_not_a_task"]["state"], "ACCEPTANCE_CLAIMED_BUT_UNPROVEN")
+        self.assertIn("not on the control bus", entry["binding"]["proof_detail"])
+
+    def test_a_task_from_another_request_is_refused(self):
+        """The digest link is the whole point: a Task must carry its own Request."""
+        request_id = "request-1"
+        tk = self.signed_task("a-different-request")
+        _, state, _ = self.project_one(
+            tasks=[("%s.json" % tk["task_id"], tk)],
+            facts=[request_fact("REQUEST_VALIDATED", request_id,
+                                binding=accepted_binding(tk, request_id))])
+        entry = state["requests"][0]
+        self.assertEqual(entry["lifecycle"], "REQUEST_CREATED")
+        self.assertIn("digest of this request_id", entry["binding"]["proof_detail"])
+
+    def test_a_mistyped_task_digest_is_refused(self):
+        request_id = "request-1"
+        tk = self.signed_task(request_id)
+        binding = accepted_binding(tk, request_id)
+        binding["task_sha256"] = "f" * 64
+        _, state, _ = self.project_one(
+            tasks=[("%s.json" % tk["task_id"], tk)],
+            facts=[request_fact("REQUEST_VALIDATED", request_id, binding=binding)])
+        self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_CREATED")
+        self.assertIn("does not describe the Task", state["requests"][0]["binding"]["proof_detail"])
+
+    # -- a refusal never loses its reason -------------------------------------
+    def test_a_refusal_keeps_the_bridge_reason_verbatim(self):
+        _, state, status = self.project_one(
+            facts=[request_fact("REQUEST_REJECTED", "request-1",
+                                reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"))])
+        entry = state["requests"][0]
+        self.assertEqual(entry["lifecycle"], "REQUEST_REJECTED")
+        self.assertEqual(entry["why_not_a_task"],
+                         {"state": "REFUSED", "reason_code": "pr_head_not_found",
+                          "reason_class": "UNRESOLVABLE"})
+        self.assertEqual(entry["facts"][0]["reason"]["code"], "pr_head_not_found")
+        visible = state["request_visibility"]["rejected_or_refused"]
+        self.assertEqual([r["reason_code"] for r in visible], ["pr_head_not_found"])
+        self.assertEqual(visible[0]["reason_origin"], "BRIDGE_REJECT_TOKEN")
+        self.assertEqual(status["answers"]["request_fate"]["refused"], 1)
+
+    def test_an_unclassified_reason_is_still_reported(self):
+        _, state, _ = self.project_one(
+            facts=[request_fact("REQUEST_REJECTED", "request-1",
+                                reason=fact_reason("a_token_invented_tomorrow",
+                                                   "UNCLASSIFIED_REJECT"))])
+        entry = state["requests"][0]
+        self.assertEqual(entry["why_not_a_task"]["reason_code"], "a_token_invented_tomorrow")
+        self.assertEqual(entry["lifecycle"], "REQUEST_REJECTED")
+
+    def test_a_ledger_derived_reason_keeps_its_origin(self):
+        _, state, _ = self.project_one(
+            facts=[request_fact("REQUEST_REJECTED", "request-1",
+                                reason={"applicable": True, "code": "dry_run_no_task_published",
+                                        "class": "NOT_ALLOWED", "origin": "BRIDGE_LEDGER_STATE",
+                                        "preserved_verbatim": True})])
+        visible = state["request_visibility"]["rejected_or_refused"][0]
+        self.assertEqual(visible["reason_origin"], "BRIDGE_LEDGER_STATE")
+
+    # -- a duplicate or a replay is never a success ---------------------------
+    def test_a_duplicate_is_its_own_lifecycle_and_never_a_success(self):
+        _, state, status = self.project_one(
+            facts=[request_fact("REQUEST_DUPLICATE", "request-1",
+                                reason=fact_reason("duplicate_request_id", "DUPLICATE"))])
+        entry = state["requests"][0]
+        self.assertEqual(entry["lifecycle"], "REQUEST_DUPLICATE")
+        self.assertEqual(entry["why_not_a_task"]["state"], "DUPLICATE_REQUEST_ID")
+        self.assertEqual(status["answers"]["request_fate"]["accepted"], 0)
+        self.assertEqual(status["answers"]["request_fate"]["duplicate"], 1)
+        counted = state["request_visibility"]["duplicate_or_replay"]
+        self.assertEqual([c["counted_as_success"] for c in counted], [False])
+
+    def test_a_replay_is_its_own_lifecycle_and_never_a_success(self):
+        _, state, status = self.project_one(
+            facts=[request_fact("REQUEST_REPLAY_REJECTED", "request-1",
+                                reason=fact_reason("already_seen", "REPLAY",
+                                                   origin="BRIDGE_POLL_STATUS"))])
+        entry = state["requests"][0]
+        self.assertEqual(entry["lifecycle"], "REQUEST_REPLAY_REJECTED")
+        self.assertEqual(entry["why_not_a_task"]["state"], "REPLAYED_SUBMISSION")
+        self.assertEqual(status["answers"]["request_fate"]["replayed"], 1)
+        self.assertEqual(status["answers"]["request_fate"]["accepted"], 0)
+
+    def test_a_duplicate_does_not_hide_an_earlier_acceptance(self):
+        request_id = "request-1"
+        tk = self.signed_task(request_id)
+        _, state, status = self.project_one(
+            tasks=[("%s.json" % tk["task_id"], tk)],
+            facts=[request_fact("REQUEST_VALIDATED", request_id,
+                                binding=accepted_binding(tk, request_id)),
+                   request_fact("REQUEST_DUPLICATE", request_id,
+                                observed_at="2026-09-14T11:45:00Z",
+                                reason=fact_reason("duplicate_request_id", "DUPLICATE"))])
+        entry = state["requests"][0]
+        self.assertEqual(entry["lifecycle"], "REQUEST_VALIDATED")
+        self.assertEqual(len(entry["facts"]), 2)
+        self.assertEqual(status["answers"]["request_fate"]["duplicate"], 0)
+        self.assertEqual(len(state["request_visibility"]["duplicate_or_replay"]), 1)
+
+    def test_an_acceptance_outranks_a_refusal_for_the_same_request(self):
+        request_id = "request-1"
+        tk = self.signed_task(request_id)
+        _, state, _ = self.project_one(
+            tasks=[("%s.json" % tk["task_id"], tk)],
+            facts=[request_fact("REQUEST_REJECTED", request_id,
+                                observed_at="2026-09-14T11:20:00Z",
+                                reason=fact_reason("stale_or_future_request", "INVALID_REQUEST")),
+                   request_fact("REQUEST_VALIDATED", request_id,
+                                observed_at="2026-09-14T11:40:00Z",
+                                binding=accepted_binding(tk, request_id))])
+        self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_VALIDATED")
+
+    # -- untrusted facts fail closed ------------------------------------------
+    def test_a_malformed_fact_is_refused(self):
+        bad = request_fact("REQUEST_REJECTED", "request-1",
+                           reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"))
+        bad["reason"]["class"] = "NOT_A_CLASS"
+        bad["fact_id"] = "request-fact-" + sp.digest(
+            {k: v for k, v in bad.items() if k != "fact_id"})[:32]
+        _, state, _ = self.project_one(facts=[bad])
+        self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_CREATED")
+        self.assertIn("REQUEST_FACT_UNREADABLE", [a["kind"] for a in state["anomalies"]])
+
+    def test_a_tampered_fact_is_detected(self):
+        good = request_fact("REQUEST_REJECTED", "request-1",
+                            reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"))
+        good["observed_at"] = "2026-09-14T23:59:59Z"          # id not recomputed
+        _, state, _ = self.project_one(facts=[good])
+        self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_CREATED")
+        details = [a["detail"] for a in state["anomalies"] if a["kind"] == "REQUEST_FACT_UNREADABLE"]
+        self.assertTrue(any("tampered" in d for d in details), details)
+
+    def test_a_fact_claiming_authority_is_refused(self):
+        """A fact that says it authorizes something is not a fact."""
+        for key in sp.REQUEST_FACT_AUTHORITY_KEYS:
+            authority = {k: False for k in sp.REQUEST_FACT_AUTHORITY_KEYS}
+            authority[key] = True
+            bad = request_fact("REQUEST_VALIDATED", "request-1", authority=authority,
+                               binding={"claimed": True, "task_id": task_identity("request-1"),
+                                        "task_sha256": "a" * 64, "task_commit": None,
+                                        "proof_required": True,
+                                        "proof": sp.REQUEST_FACT_PROOF})
+            _, state, _ = self.project_one(facts=[bad])
+            self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_CREATED", key)
+            self.assertIn("REQUEST_FACT_UNREADABLE", [a["kind"] for a in state["anomalies"]])
+
+    def test_a_non_validated_fact_may_not_claim_a_binding(self):
+        bad = request_fact("REQUEST_REJECTED", "request-1",
+                           reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"),
+                           binding={"claimed": True, "task_id": "x", "task_sha256": None,
+                                    "task_commit": None, "proof_required": False,
+                                    "proof": "NOT_APPLICABLE"})
+        _, state, _ = self.project_one(facts=[bad])
+        self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_CREATED")
+
+    def test_a_fact_without_its_request_is_unknown_not_guessed(self):
+        _, state, status = self.project_one(
+            requests=(),
+            facts=[request_fact("REQUEST_REJECTED", "request-that-was-never-collected",
+                                reason=fact_reason("request_oversized", "INVALID_REQUEST"))])
+        self.assertEqual(len(state["requests"]), 1)
+        entry = state["requests"][0]
+        self.assertEqual(entry["lifecycle"], "UNKNOWN")
+        self.assertEqual(entry["lifecycle_source"], "BRIDGE_FACT_WITHOUT_REQUEST")
+        self.assertEqual(entry["why_not_a_task"]["state"], "REQUEST_NOT_ON_THE_BUS")
+        self.assertIn("REQUEST_FACT_WITHOUT_REQUEST", [a["kind"] for a in state["anomalies"]])
+
+    # -- submission-level visibility ------------------------------------------
+    def test_a_submission_without_a_request_identity_is_reported(self):
+        index = {"schema_version": "1", "contract": "REQUEST_FACT_INDEX",
+                 "submissions": [{"submission_key": "9:" + "d" * 40, "pr_number": "9",
+                                  "head_sha": "d" * 40, "bridge_status": "rejected",
+                                  "reason": "malformed_json", "reason_class": "INVALID_REQUEST",
+                                  "fact_emitted": False, "detail": "POLL:request_identity_unresolved"}],
+                 "counts": {}}
+        _, state, status = self.project_one(index=index)
+        visible = state["request_visibility"]["submissions_without_a_request_identity"]
+        self.assertEqual([s["reason_code"] for s in visible], ["malformed_json"])
+        self.assertTrue(state["request_visibility"]["submission_index_collected"])
+        self.assertEqual(status["answers"]["request_fate"]["unbound_submissions"], visible)
+
+    def test_a_broken_index_is_refused_and_the_facts_still_count(self):
+        index = {"schema_version": "1", "submissions": "not-a-list"}
+        _, state, _ = self.project_one(
+            index=index,
+            facts=[request_fact("REQUEST_REJECTED", "request-1",
+                                reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"))])
+        self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_REJECTED")
+        self.assertFalse(state["request_visibility"]["submission_index_collected"])
+        self.assertIn("REQUEST_FACT_INDEX_UNREADABLE", [a["kind"] for a in state["anomalies"]])
+
+    # -- boundaries -----------------------------------------------------------
+    def test_request_facts_are_never_execution_authority(self):
+        request_id = "request-1"
+        tk = self.signed_task(request_id)
+        _, state, _ = self.project_one(
+            tasks=[("%s.json" % tk["task_id"], tk)],
+            facts=[request_fact("REQUEST_VALIDATED", request_id,
+                                binding=accepted_binding(tk, request_id))])
+        visibility = state["request_visibility"]
+        self.assertTrue(visibility["acceptance_requires_a_signed_task"])
+        self.assertTrue(visibility["rejection_reasons_are_published"])
+        self.assertFalse(visibility["duplicate_or_replay_counted_as_success"])
+        self.assertFalse(visibility["facts_are_execution_authority"])
+        self.assertFalse(visibility["bridge_fact_export_installed"])
+        for entry in state["requests"]:
+            self.assertFalse(entry["holding_execution_authority"])
+            for fact in entry["facts"]:
+                self.assertFalse(fact["binding"]["proof_required"]
+                                 and fact["binding"]["proof_state"] == "NOT_ESTABLISHED"
+                                 and entry["lifecycle"] == "REQUEST_VALIDATED")
+
+    def test_facts_never_change_a_task_answer(self):
+        """Adding facts must not move any task-side leaf: they describe Requests."""
+        request_id = "request-1"
+        tk = self.signed_task(request_id)
+        tasks = [("%s.json" % tk["task_id"], tk)]
+        _, without, _ = self.project_one(tasks=tasks)
+        _, with_facts, _ = self.project_one(
+            tasks=tasks,
+            facts=[request_fact("REQUEST_VALIDATED", request_id,
+                                binding=accepted_binding(tk, request_id))])
+        self.assertEqual(without["tasks"], with_facts["tasks"])
+        self.assertEqual(without["counts"]["by_lifecycle"], with_facts["counts"]["by_lifecycle"])
+        self.assertEqual(without["control_state"]["health"], with_facts["control_state"]["health"])
+        self.assertEqual(without["requests"][0]["request_sha256"],
+                         with_facts["requests"][0]["request_sha256"])
+
+    def test_the_state_contract_declares_the_request_fact_rules(self):
+        schema = json.loads((ROOT / "contracts" / "control_state_v1.schema.json")
+                            .read_text(encoding="utf-8"))
+        self.assertIn("request_visibility", schema["required"])
+        visibility = schema["properties"]["request_visibility"]
+        self.assertEqual(visibility["properties"]["acceptance_requires_a_signed_task"]["const"], True)
+        self.assertEqual(
+            visibility["properties"]["duplicate_or_replay_counted_as_success"]["const"], False)
+        self.assertEqual(visibility["properties"]["facts_are_execution_authority"]["const"], False)
+        self.assertEqual(visibility["properties"]["bridge_fact_export_installed"]["const"], False)
+        lifecycle = schema["properties"]["requests"]["items"]["properties"]["lifecycle"]
+        self.assertEqual(set(lifecycle["enum"]), set(sp.LIFECYCLE_REQUEST))
+        fate = schema["properties"]["requests"]["items"]["properties"]["why_not_a_task"]
+        self.assertEqual(set(fate["properties"]["state"]["enum"]), set(sp.REQUEST_FATE_STATES))
+
+    def test_the_status_contract_carries_the_fate_answer(self):
+        schema = json.loads((ROOT / "contracts" / "control_status_v1.schema.json")
+                            .read_text(encoding="utf-8"))
+        fate = schema["properties"]["answers"]["properties"]["request_fate"]
+        for key in ("by_request_id", "unbound_submissions", "answer"):
+            self.assertIn(key, fate["required"])
+        self.assertIn("carries the Bridge's own reason code",
+                      " ".join(schema["x-go-notes"]))
+        self.assertIn("why did my Request not become a Task", schema["x-go-question-map"])
+        for forbidden in ("can_deploy", "rollback_targets", "release_gates"):
+            self.assertNotIn(forbidden, schema["properties"]["answers"]["properties"])
+
+
 class FailureEvidenceTests(unittest.TestCase):
     """CC V1-02.  A signed failure record is a real answer, and never a permission.
 

@@ -1,0 +1,163 @@
+# CC V1-05 — Request visibility: the Bridge's facts on the control bus
+
+Issue: **#100 · CC V1-05｜请求可见性｜将 Bridge Ledger 事实投影到 Control Bus**
+Scope stays `CONTROL_STATE_AND_STATUS_ONLY`. This component adds no execution
+capability, holds no private key, signs nothing and deploys nothing.
+
+## The gap it closes
+
+A Request is one `requests/<request_id>.json` file a human drops on the control
+bus. What the Command Center Bridge then did with it was visible only on the
+Command Center host:
+
+| Bridge outcome | Where it lived before |
+|---|---|
+| accepted, Task signed and published | the durable ledger — **and nowhere else** |
+| **refused, with a reason** | printed to the Bridge's stdout, kept in no file at all |
+| duplicate `request_id` | a `Reject` raised before anything was written |
+| a submission re-presented | the ledger's `already_seen`, never published |
+
+So the projection could only ever report `REQUEST_CREATED`, and the question an
+operator most wants answered — *"why did my Request not become a Task?"* — had
+no answer on the control bus. `LIFECYCLE_V1.md` recorded exactly that as a
+delivery blocker instead of guessing.
+
+This component is the missing half of the pipe. It reads the Bridge's own
+records **read-only** and writes one Request fact per Request identity.
+
+## What it reads
+
+| Input | What it is | Written by |
+|---|---|---|
+| `--ledger` | the Bridge ledger `ledger.json` | the Bridge |
+| `--poll-results` | the Bridge's own poll output, journalled | the operator's timer wrapper |
+| `--requests-dir` | Request files collected from the control bus | the collector |
+
+The Bridge prints one JSON object per poll and keeps nothing, so the instant that
+places its observations in time can only come from the journal wrapper. A
+journalled document is:
+
+```json
+{"schema_version": "1", "journaled_at": "<ISO8601>",
+ "bridge_output": {"bridge_version": "...", "channel_mode": "PERSISTENT",
+                   "publish_enabled": true,
+                   "results": [{"pr": "42", "head": "<sha>", "status": "rejected",
+                                "reason": "pr_head_not_found"}]}}
+```
+
+`bridge_output` is **byte-for-byte what the Bridge already prints** — no Bridge
+change is required, and none is made here. Redirecting that stdout into a durable
+journal is an installation concern, and it has not been done.
+
+## The closed fact vocabulary
+
+```
+REQUEST_CREATED          the Request file is on the bus; no Bridge fact observed
+REQUEST_VALIDATED        the Bridge recorded a published Task   -> proof required
+REQUEST_REJECTED         the Bridge refused it, reason preserved
+REQUEST_DUPLICATE        a distinct submission reused a consumed request_id
+REQUEST_REPLAY_REJECTED  a consumed submission identity was presented again
+```
+
+Every fact binds `request_id`, `action_id`, `submission` (pr + head), `source`
+(the control-bus ref the Request was read from) and `nonce` when a signed Task
+bound one. A submission whose Request identity cannot be established produces
+**no fact** — a fact must bind an identity — and is recorded at submission level
+in the export index with its reason intact, rather than being silently dropped.
+
+### Reasons are classified, never dropped
+
+The Bridge's own token is copied through verbatim with an `origin` naming which
+Bridge record said it:
+
+```
+BRIDGE_REJECT_TOKEN    a token from the Bridge's own Reject
+BRIDGE_POLL_STATUS     a poll status such as already_seen
+BRIDGE_LEDGER_STATE    a terminal ledger state, e.g. dry_run_no_task_published
+```
+
+The closed classes and the tokens that map to them live in
+`contracts/request_fact_v1.schema.json`, not in the exporter's code. The test
+suite extracts **every** refusing token the Bridge can emit from the three Bridge
+sources in this repository — 81 of them today — and fails if the contract cannot
+classify any one of them. A token nobody has seen yet is carried as
+`UNCLASSIFIED_REJECT` with the token intact.
+
+## An acceptance is never taken on faith
+
+`REQUEST_VALIDATED` sets `proof_required = true`. The exporter only forwards the
+claim; the consumer must corroborate it, and in `state_projection.py` all of the
+following must hold before a Request is reported as validated:
+
+1. the named Task exists on the control bus;
+2. its `task_id` carries `sha256(request_id)[:12]`, the digest the Bridge derives
+   the identity from — so a Task from another Request can never be borrowed;
+3. the claimed `task_sha256` is the digest of the Task as the bus stores it;
+4. the Task's own signature verifies; and
+5. the verifier that checked it is **bound** to the published Command Center task
+   identity, because a key that merely loads is not the right key.
+
+Any failure keeps the Request at `REQUEST_CREATED`, reports the claim and why it
+failed in `requests[].binding`, and records a `REQUEST_BINDING_UNPROVEN` anomaly.
+It never leaves `REQUEST_VALIDATED`. A forged fact therefore cannot fabricate an
+acceptance: forging a positive fact needs the Task signing key.
+
+## Duplicate and replay are separate kinds, on purpose
+
+`REQUEST_DUPLICATE` and `REQUEST_REPLAY_REJECTED` are their own lifecycles and
+each carries `counted_as_success = false` in the state document. A duplicate can
+never be read as an acceptance, and neither can a replay.
+
+## What it is not
+
+```
+is_execution_authority=false   grants_execution=false   can_create_task=false
+can_sign=false                 holds_private_key=false may_authorize_retry=false
+may_authorize_replay=false     may_edit_a_request=false
+```
+
+Every file the exporter authors carries the same eight `false` values, and the
+projection refuses any fact that claims otherwise. There is no code path from a
+fact to an executor. The exporter never writes a ledger, never signs, and never
+opens the ledger for writing.
+
+## Usage
+
+```sh
+# export (read-only), reproducibly
+python control-plane/command-center-request-visibility-v1/command-center/go-request-fact-export \
+  export --ledger /var/lib/go-command-center/boss-request-bridge-v1/ledger.json \
+         --poll-results <journalled-bridge-output.json> \
+         --requests-dir <collected-requests> \
+         --out <export-root> --now <ISO8601>
+
+# the exporter's own rules
+python control-plane/command-center-request-visibility-v1/command-center/go-request-fact-export selftest
+
+# isolated verification, writes summary.json
+python control-plane/command-center-request-visibility-v1/run_checks.py <outdir>
+```
+
+Then the projection consumes it:
+
+```sh
+python control-plane/command-center-state-v1/state_projection.py ... \
+  --request-facts-dir <export-root>
+```
+
+Re-exporting the same Bridge outcome reproduces the same `fact_id`, so the store
+is append-only and idempotent; a hand-edited fact is detected because the
+projection recomputes the id over the whole body.
+
+## Verified, not installed
+
+```
+INSTALLED=NO     the exporter exists and CI verifies it, but nothing drives it on
+                 a timer and nothing publishes its output to the control bus yet.
+                 Until an approved change connects it, CURRENT.json carries zero
+                 facts, every collected Request stays REQUEST_CREATED, and refusal
+                 reasons remain unobservable from the control bus.
+TARGET_INSTALLED=NO
+```
+
+The remaining gap is the **missing wiring, not the missing mechanism**.

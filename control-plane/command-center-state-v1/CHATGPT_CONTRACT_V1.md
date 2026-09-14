@@ -22,15 +22,16 @@ ledger, Compose files or server logs. It reads one bounded document.
 10 最近一次失败是什么               → answers.last_failure
 ```
 
-Plus one channel declaration:
+Plus one channel declaration and one fate lookup:
 
 ```
 which actions chat may request     → answers.request_channel
+why did my Request not become a Task → answers.request_fate.by_request_id[request_id].why_not_a_task
 ```
 
 Every other key in `answers` is a **supporting field**, never a required one:
 `last_evidence`, `live_verified_runtime`, `go_is_healthy`, `hk_agent_online`,
-`repository_main_sha`, `runtime_built_from_main_sha`.
+`repository_main_sha`, `runtime_built_from_main_sha`, `request_fate`.
 
 ## Answer shapes
 
@@ -138,3 +139,40 @@ submit it, and do not plan a deployment on the basis of this contract.
 3. Open a PR targeting `main`. Do not merge it — Command Center ingests the
    immutable PR head.
 4. Read the result from Signed Evidence, never from the PR.
+
+## Reading what happened to a Request
+
+A Request file existing means a human wrote it. It never means the Request was
+accepted, so never infer acceptance from a branch, a PR or a file:
+
+```
+answers.request_fate.by_request_id["<request_id>"]
+    lifecycle            REQUEST_CREATED / VALIDATED / REJECTED / DUPLICATE /
+                         REPLAY_REJECTED / UNKNOWN
+    why_not_a_task.state closed set:
+                           BECAME_A_TASK                    only with a signed Task behind it
+                           ACCEPTANCE_CLAIMED_BUT_UNPROVEN   a claim that could not be corroborated
+                           REFUSED
+                           DUPLICATE_REQUEST_ID
+                           REPLAYED_SUBMISSION
+                           NO_BRIDGE_FACT_OBSERVED
+                           REQUEST_NOT_ON_THE_BUS
+    why_not_a_task.reason_code  the Bridge's own token, verbatim
+    binding.proof_state  TASK_SIGNATURE_AND_DIGEST_PREFIX / NOT_ESTABLISHED / NOT_APPLICABLE
+```
+
+`requests[].why_not_a_task` carries the same answer per Request, and
+`request_visibility` carries the counts, the refusals with their reason class and
+origin, the duplicate/replay list, and the submissions that could not be bound to
+a Request identity at all.
+
+Three things to hold on to:
+
+* **A Bridge fact is an observation, not a permission.** It authorizes no retry,
+  no replay and no action, whatever it says.
+* **A duplicate or a replay is never a success**, and each is reported with
+  `counted_as_success = false`.
+* **`BECAME_A_TASK` is the only state that means the Request became work**, and it
+  appears only when a signed Task on the control bus carries that Request's
+  digest and verifies. If the fact export is not wired yet, every Request reads
+  `REQUEST_CREATED` — that is honest, not a failure.

@@ -179,11 +179,55 @@ def normalize_instance(value):
     return "i-" + match.group(1) if match else None
 
 
-LIFECYCLE_REQUEST = {"REQUEST_CREATED", "REQUEST_VALIDATED", "REQUEST_REJECTED"}
+LIFECYCLE_REQUEST = {"REQUEST_CREATED", "REQUEST_VALIDATED", "REQUEST_REJECTED",
+                     "REQUEST_DUPLICATE", "REQUEST_REPLAY_REJECTED", "UNKNOWN"}
 LIFECYCLE_TASK = {"TASK_SIGNED", "TASK_PUBLISHED", "HK_AGENT_PICKED_UP", "EXECUTION_STARTED",
                   "EVIDENCE_PUBLISHED", "EVIDENCE_VERIFIED", "COMPLETE", "TASK_EXPIRED",
                   "TASK_NOT_PICKED_UP", "EXECUTION_FAILED", "EVIDENCE_INVALID",
                   "EVIDENCE_TIMEOUT", "REPLAY_REJECTED", "POLICY_HOLD"}
+
+# ---- CC V1-05: Bridge Request facts -------------------------------------- #
+# The closed Request fact vocabulary, exported read-only from the Bridge by
+# control-plane/command-center-request-visibility-v1. A Request fact says what
+# the Bridge did with a Request; it is never a permission.
+REQUEST_FACT_KINDS = ("REQUEST_CREATED", "REQUEST_VALIDATED", "REQUEST_REJECTED",
+                      "REQUEST_DUPLICATE", "REQUEST_REPLAY_REJECTED")
+# Highest first. An acceptance outranks every negative, and every negative is a
+# negative: a duplicate or a replay may never be read as a success.
+REQUEST_FACT_RANK = {"REQUEST_VALIDATED": 4, "REQUEST_DUPLICATE": 3,
+                     "REQUEST_REPLAY_REJECTED": 2, "REQUEST_REJECTED": 1,
+                     "REQUEST_CREATED": 0}
+REQUEST_FACT_CLASSES = {"INVALID_REQUEST", "NOT_ALLOWED", "UNRESOLVABLE", "CONFLICT",
+                        "AMBIGUOUS", "DUPLICATE", "REPLAY", "UNCLASSIFIED_REJECT"}
+REQUEST_FACT_REASON_ORIGINS = {"BRIDGE_REJECT_TOKEN", "BRIDGE_POLL_STATUS",
+                               "BRIDGE_LEDGER_STATE"}
+REQUEST_FACT_TIME_SOURCES = {"POLL_JOURNAL", "TASK_ISSUED_AT", "REQUEST_REQUESTED_AT"}
+REQUEST_FACT_AUTHORITY_KEYS = ("is_execution_authority", "grants_execution", "can_create_task",
+                               "can_sign", "holds_private_key", "may_authorize_retry",
+                               "may_authorize_replay", "may_edit_a_request")
+REQUEST_FACT_REQUIRED = {"schema_version", "fact_id", "kind", "request_id", "action_id",
+                         "environment", "nonce", "observed_at", "time_source", "submission",
+                         "source", "reason", "binding", "authority"}
+REQUEST_FACT_BINDING_KEYS = {"claimed", "task_id", "task_sha256", "task_commit",
+                             "proof_required", "proof"}
+REQUEST_FACT_REASON_KEYS = {"applicable", "code", "class", "origin", "preserved_verbatim"}
+REQUEST_FACT_SOURCE_KEYS = {"repository", "ref", "head_sha", "path", "request_sha256"}
+REQUEST_FACT_ID_RE = re.compile(r"^request-fact-[0-9a-f]{32}$")
+REQUEST_FACT_PROOF = "TASK_SIGNATURE_AND_DIGEST_PREFIX"
+# The Bridge derives a Task identity from sha256(request_id) and the projection
+# verifies that link itself rather than believing the fact.
+REQUEST_TASK_DIGEST_LINK = 12
+REQUEST_FACTS_DIRNAME = "facts"
+REQUEST_FACT_INDEX_NAME = "INDEX.json"
+# The closed reasons a Request did not become a Task.
+REQUEST_FATE_STATES = ("BECAME_A_TASK", "ACCEPTANCE_CLAIMED_BUT_UNPROVEN", "REFUSED",
+                       "DUPLICATE_REQUEST_ID", "REPLAYED_SUBMISSION",
+                       "NO_BRIDGE_FACT_OBSERVED", "REQUEST_NOT_ON_THE_BUS")
+REQUEST_FATE_BY_KIND = {"REQUEST_VALIDATED": "BECAME_A_TASK",
+                        "REQUEST_REJECTED": "REFUSED",
+                        "REQUEST_DUPLICATE": "DUPLICATE_REQUEST_ID",
+                        "REQUEST_REPLAY_REJECTED": "REPLAYED_SUBMISSION",
+                        "REQUEST_CREATED": "NO_BRIDGE_FACT_OBSERVED"}
 
 
 # --------------------------------------------------------------------------- #
@@ -604,6 +648,93 @@ def validate_request(request):
     return request
 
 
+def validate_request_fact(payload):
+    """A Bridge Request fact, validated fail-closed.
+
+    An untrusted fact must not be able to change an answer, so anything that is
+    structurally wrong is refused outright and anything that claims authority is
+    refused as a lie about what a fact is. Recomputing the fact id is what makes
+    a hand-edited fact detectable: the id covers the whole body.
+    """
+    if not isinstance(payload, dict):
+        raise Malformed("request_fact_not_object")
+    if set(payload) != REQUEST_FACT_REQUIRED:
+        raise Malformed("request_fact_fields")
+    if not isinstance(payload["fact_id"], str) or not REQUEST_FACT_ID_RE.fullmatch(payload["fact_id"]):
+        raise Malformed("request_fact_id")
+    recomputed = "request-fact-" + digest({k: v for k, v in payload.items() if k != "fact_id"})[:32]
+    if recomputed != payload["fact_id"]:
+        raise Malformed("request_fact_tampered")
+    if payload["schema_version"] != "1":
+        raise Malformed("request_fact_schema_version")
+    if payload["kind"] not in REQUEST_FACT_KINDS:
+        raise Malformed("request_fact_kind")
+    if not isinstance(payload["request_id"], str) or not re.fullmatch(
+            r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$", payload["request_id"]):
+        raise Malformed("request_fact_request_id")
+    if payload["action_id"] not in REQUEST_EXTRA_FIELDS:
+        raise Malformed("request_fact_action")
+    if payload["environment"] != "HK-STAGING-01":
+        raise Malformed("request_fact_environment")
+    if payload["nonce"] is not None and not isinstance(payload["nonce"], str):
+        raise Malformed("request_fact_nonce")
+    parse_time(payload["observed_at"])
+    if payload["time_source"] not in REQUEST_FACT_TIME_SOURCES:
+        raise Malformed("request_fact_time_source")
+    submission = payload["submission"]
+    if not isinstance(submission, dict) or set(submission) != {"pr_number", "head_sha",
+                                                               "submission_key"}:
+        raise Malformed("request_fact_submission")
+    if (not re.fullmatch(r"^[1-9][0-9]{0,8}$", str(submission["pr_number"]))
+            or not COMMIT_RE.fullmatch(str(submission["head_sha"]))
+            or submission["submission_key"] != "%s:%s" % (submission["pr_number"],
+                                                           submission["head_sha"])):
+        raise Malformed("request_fact_submission")
+    source = payload["source"]
+    if source is not None:
+        if not isinstance(source, dict) or set(source) != REQUEST_FACT_SOURCE_KEYS:
+            raise Malformed("request_fact_source")
+        if not isinstance(source["path"], str) or not source["path"].startswith("requests/"):
+            raise Malformed("request_fact_source")
+    reason = payload["reason"]
+    if not isinstance(reason, dict) or set(reason) != REQUEST_FACT_REASON_KEYS:
+        raise Malformed("request_fact_reason")
+    if not isinstance(reason["applicable"], bool):
+        raise Malformed("request_fact_reason")
+    if reason["applicable"]:
+        if (not isinstance(reason["code"], str) or not reason["code"]
+                or reason["class"] not in REQUEST_FACT_CLASSES
+                or reason["origin"] not in REQUEST_FACT_REASON_ORIGINS
+                or reason["preserved_verbatim"] is not True):
+            raise Malformed("request_fact_reason")
+    elif (reason["code"], reason["class"], reason["origin"]) != (None, None, None):
+        raise Malformed("request_fact_reason")
+    binding = payload["binding"]
+    if not isinstance(binding, dict) or set(binding) - {"note"} != REQUEST_FACT_BINDING_KEYS:
+        raise Malformed("request_fact_binding")
+    if not isinstance(binding["claimed"], bool) or not isinstance(binding["proof_required"], bool):
+        raise Malformed("request_fact_binding")
+    if binding["proof"] not in (REQUEST_FACT_PROOF, "NOT_APPLICABLE"):
+        raise Malformed("request_fact_binding")
+    if payload["kind"] == "REQUEST_VALIDATED":
+        # The only positive fact. It must declare that it needs proof and must
+        # name the Task it claims, or it is refused rather than believed.
+        if (binding["claimed"] is not True or binding["proof_required"] is not True
+                or binding["proof"] != REQUEST_FACT_PROOF
+                or not isinstance(binding["task_id"], str) or not binding["task_id"]):
+            raise Malformed("request_fact_binding")
+    elif (binding["claimed"] is not False or binding["proof_required"] is not False
+          or binding["proof"] != "NOT_APPLICABLE" or binding["task_id"] is not None):
+        raise Malformed("request_fact_binding")
+    authority = payload["authority"]
+    if not isinstance(authority, dict) or set(authority) != set(REQUEST_FACT_AUTHORITY_KEYS):
+        raise Malformed("request_fact_authority_fields")
+    if any(value is not False for value in authority.values()):
+        # A fact that claims any authority is not a fact.
+        raise Malformed("request_fact_claims_authority")
+    return payload
+
+
 # --------------------------------------------------------------------------- #
 # loaders
 # --------------------------------------------------------------------------- #
@@ -612,6 +743,8 @@ class Loaded:
         self.tasks = []            # (file name, task)
         self.evidence = []         # (file name, evidence)
         self.requests = []         # (ref, head_sha, file name, request)
+        self.request_facts = []    # validated Bridge Request facts
+        self.request_fact_index = None   # the exporter's submission-level index, if supplied
         self.anomalies = []        # {kind, detail, ref}
 
     def anomaly(self, kind, detail, ref=None):
@@ -669,10 +802,146 @@ def load_requests(root, loaded):
             loaded.anomaly("REQUEST_UNREADABLE", "%s" % exc, path.name)
 
 
+def load_request_facts(root, loaded):
+    """Read the exported Bridge facts. Nothing here is trusted on its own word.
+
+    The folder is the export root produced read-only by
+    ``control-plane/command-center-request-visibility-v1``. A fact that is
+    malformed, tampered with, or that claims any authority is refused and given
+    no effect; the facts/INDEX.json is optional and only ever adds
+    submission-level observations, which cannot elevate anything.
+    """
+    if not root:
+        return
+    folder = pathlib.Path(root)
+    if not folder.is_dir():
+        loaded.anomaly("REQUEST_FACTS_DIRECTORY_MISSING",
+                       "collected Bridge Request facts were not supplied")
+        return
+    facts = folder / REQUEST_FACTS_DIRNAME
+    if not facts.is_dir():
+        loaded.anomaly("REQUEST_FACTS_DIRECTORY_MISSING", "%s/facts" % root)
+    else:
+        for path in sorted(facts.glob("*.json")):
+            if path.name.startswith("_"):
+                continue
+            try:
+                loaded.request_facts.append(validate_request_fact(read_json(path)))
+            except (Malformed, ValueError, OSError, UnicodeError) as exc:
+                loaded.anomaly("REQUEST_FACT_UNREADABLE", "%s" % exc, path.name)
+    index_path = folder / REQUEST_FACT_INDEX_NAME
+    if index_path.is_file():
+        try:
+            index = read_json(index_path)
+            submissions = index["submissions"] if isinstance(index, dict) else None
+            if not isinstance(submissions, list):
+                raise Malformed("request_fact_index_submissions")
+            cleaned = []
+            for item in submissions:
+                if (isinstance(item, dict) and isinstance(item.get("submission_key"), str)
+                        and isinstance(item.get("bridge_status"), str)
+                        and isinstance(item.get("fact_emitted"), bool)
+                        and (item.get("reason") is None or isinstance(item.get("reason"), str))
+                        and (item.get("reason_class") is None
+                             or item["reason_class"] in REQUEST_FACT_CLASSES)):
+                    cleaned.append({"submission_key": item["submission_key"],
+                                    "pr_number": item.get("pr_number"),
+                                    "head_sha": item.get("head_sha"),
+                                    "bridge_status": item["bridge_status"],
+                                    "reason_code": item.get("reason"),
+                                    "reason_class": item.get("reason_class"),
+                                    "fact_emitted": item["fact_emitted"]})
+                else:
+                    loaded.anomaly("REQUEST_FACT_INDEX_UNREADABLE",
+                                   "submission entry is not usable", index_path.name)
+            loaded.request_fact_index = {"submissions": sorted(
+                cleaned, key=lambda s: s["submission_key"])}
+        except (Malformed, ValueError, OSError, UnicodeError, KeyError) as exc:
+            loaded.anomaly("REQUEST_FACT_INDEX_UNREADABLE", "%s" % exc, index_path.name)
+
+
 # --------------------------------------------------------------------------- #
 # projection
 # --------------------------------------------------------------------------- #
-def request_records(loaded):
+def request_binding_context(loaded, tasks, task_verifier):
+    """What the projection knows about the Tasks a Request could have produced.
+
+    The Bridge names a Task; this is the independent side of the check, built
+    from the signed Tasks actually on the control bus and from whether the
+    Command Center task verifier really is the published identity.
+    """
+    context = {}
+    for name, task in loaded.tasks:
+        body = {k: v for k, v in task.items() if not k.startswith("_")}
+        entry = context.setdefault(task["task_id"], {"ambiguous": False})
+        if entry.get("task_sha256") not in (None, digest(body)):
+            # One Task identity, two different signed bodies: no single binding
+            # can be established, so the binding is refused rather than picked.
+            entry["ambiguous"] = True
+        entry["task_sha256"] = digest(body)
+        entry["action_id"] = task["action_id"]
+        entry["source_path"] = "tasks/" + name
+    for record in tasks:
+        entry = context.get(record["task_id"])
+        if entry is not None:
+            entry["signature_verified"] = record["task_signature_verified"]
+            entry["lifecycle"] = record["lifecycle"]
+    for entry in context.values():
+        entry["verifier_binding"] = task_verifier.binding
+    return context
+
+
+def evaluate_request_binding(fact, context):
+    """Corroborate an acceptance claim against the signed Task. Never assume it.
+
+    An acceptance means Command Center signed a Task for this Request, so the
+    proof needs both halves: the named Task's own signature must verify, and the
+    verifier that checked it must be the identity published in the contract. A
+    key that merely loads is not the right key, and no key at all proves nothing.
+
+    Returns (proof_state, detail). Only REQUEST_FACT_PROOF lets a Request be
+    reported as validated; anything else keeps it at REQUEST_CREATED.
+    """
+    if fact["kind"] != "REQUEST_VALIDATED":
+        return "NOT_APPLICABLE", "this fact is not an acceptance claim"
+    task_id = fact["binding"]["task_id"]
+    entry = context.get(task_id)
+    if entry is None:
+        return "NOT_ESTABLISHED", "the Task this fact names is not on the control bus"
+    if entry["ambiguous"]:
+        return "NOT_ESTABLISHED", "two different signed Tasks share this task_id"
+    suffix = hashlib.sha256(fact["request_id"].encode()).hexdigest()[:REQUEST_TASK_DIGEST_LINK]
+    if not task_id.endswith("-" + suffix):
+        return "NOT_ESTABLISHED", ("the task_id does not carry the digest of this request_id, so "
+                                   "this Task did not come from this Request")
+    if entry["action_id"] != fact["action_id"]:
+        return "NOT_ESTABLISHED", "the named Task performs a different action"
+    if fact["binding"]["task_sha256"] != entry["task_sha256"]:
+        return "NOT_ESTABLISHED", "the claimed task_sha256 does not describe the Task on the bus"
+    if entry.get("verifier_binding") != BINDING_BOUND:
+        return "NOT_ESTABLISHED", ("the Command Center task verifier is not bound to the published "
+                                   "identity contract, so the signature is not an identity claim")
+    if entry.get("signature_verified") is not True:
+        return "NOT_ESTABLISHED", ("the named Task's signature did not verify against the published "
+                                   "Command Center task identity")
+    return REQUEST_FACT_PROOF, "the signed Task exists, carries this request identity and verifies"
+
+
+def request_records(loaded, binding_context):
+    """Project every Request with the strongest fact that can actually be proven.
+
+    Three rules the projection must never break: an acceptance is only reported
+    when the signed Task corroborates it; a duplicate or a replay is never a
+    success; and a Request with no Bridge fact stays CREATED instead of being
+    guessed into an acceptance.
+    """
+    by_request = {}
+    for fact in loaded.request_facts:
+        by_request.setdefault(fact["request_id"], []).append(fact)
+    for facts in by_request.values():
+        facts.sort(key=lambda f: (f["observed_at"], f["fact_id"]))
+
+    seen_fact_ids = set()
     out = []
     seen = {}
     for ref, head, source, request in loaded.requests:
@@ -682,6 +951,59 @@ def request_records(loaded):
         seen[request["request_id"]] = True
         action = request["action_id"]
         requestable = action in ENABLED_REQUEST_ACTIONS
+        facts = [f for f in by_request.get(request["request_id"], [])
+                 if f["action_id"] == action]
+        projected, chosen = [], None
+        for fact in facts:
+            proof, detail = evaluate_request_binding(fact, binding_context)
+            seen_fact_ids.add(fact["fact_id"])
+            projected.append({"fact_id": fact["fact_id"], "kind": fact["kind"],
+                              "observed_at": fact["observed_at"],
+                              "time_source": fact["time_source"],
+                              "submission": fact["submission"],
+                              "reason": fact["reason"],
+                              "binding": {"task_id": fact["binding"]["task_id"],
+                                          "task_sha256": fact["binding"]["task_sha256"],
+                                          "task_commit": fact["binding"]["task_commit"],
+                                          "proof_required": fact["binding"]["proof_required"],
+                                          "proof_state": proof, "proof_detail": detail},
+                              "effective": proof != "NOT_ESTABLISHED"})
+            if proof == "NOT_ESTABLISHED":
+                loaded.anomaly("REQUEST_BINDING_UNPROVEN", detail, fact["fact_id"])
+        for fact in projected:
+            if not fact["effective"]:
+                continue
+            if chosen is None or REQUEST_FACT_RANK[fact["kind"]] > REQUEST_FACT_RANK[chosen["kind"]]:
+                chosen = fact
+        unproven = [f for f in projected
+                    if f["kind"] == "REQUEST_VALIDATED" and not f["effective"]]
+        if chosen is None:
+            lifecycle, lifecycle_source = "REQUEST_CREATED", "CONTROL_BUS_ONLY"
+            if unproven:
+                # A claim was made and could not be corroborated. The claim is
+                # reported, with the reason it failed, instead of being replaced
+                # by a bland "nothing seen".
+                binding = dict(unproven[-1]["binding"])
+                binding["proof_required"] = True
+            else:
+                binding = {"task_id": None, "task_sha256": None, "task_commit": None,
+                           "proof_required": False, "proof_state": "NOT_APPLICABLE",
+                           "proof_detail": ("no Bridge fact has been observed for this Request; its "
+                                            "existence on the control bus is all that is established")}
+        else:
+            lifecycle, lifecycle_source = chosen["kind"], "BRIDGE_FACT"
+            binding = chosen["binding"]
+        if lifecycle == "REQUEST_VALIDATED":
+            fate = {"state": "BECAME_A_TASK", "reason_code": None, "reason_class": None}
+        elif unproven and lifecycle == "REQUEST_CREATED":
+            fate = {"state": "ACCEPTANCE_CLAIMED_BUT_UNPROVEN",
+                    "reason_code": None, "reason_class": None}
+        elif chosen is None:
+            fate = {"state": "NO_BRIDGE_FACT_OBSERVED", "reason_code": None, "reason_class": None}
+        else:
+            fate = {"state": REQUEST_FATE_BY_KIND[lifecycle],
+                    "reason_code": chosen["reason"]["code"],
+                    "reason_class": chosen["reason"]["class"]}
         out.append({
             "schema_version": "1",
             "request_id": request["request_id"],
@@ -695,12 +1017,123 @@ def request_records(loaded):
             "requestable_by_current_channel": requestable,
             "capability_classification": CAPABILITY_CLASSIFICATION.get(action, "UNKNOWN"),
             "holding_execution_authority": False,
-            # Command Center acceptance is a Bridge-ledger fact, not a control-bus
-            # fact, so a Request is only ever reported as CREATED.
-            "lifecycle": "REQUEST_CREATED",
+            "lifecycle": lifecycle,
+            "lifecycle_source": lifecycle_source,
+            "lifecycle_note": ("reported from a Bridge fact only when the signed Task corroborates "
+                               "an acceptance; otherwise from the Request file alone"),
+            "why_not_a_task": fate,
+            "binding": binding,
+            "facts": projected,
             "duplicate_request_id": duplicate,
         })
+
+    # A fact whose Request was never collected still says something, but it
+    # cannot be attached to a Request, so it is reported as UNKNOWN rather than
+    # being dropped or attributed to a Request that does not exist.
+    for request_id in sorted(by_request):
+        if request_id in seen:
+            continue
+        for fact in by_request[request_id]:
+            seen_fact_ids.add(fact["fact_id"])
+        loaded.anomaly("REQUEST_FACT_WITHOUT_REQUEST",
+                       "a Bridge fact names a Request that is not on the control bus")
+        out.append({
+            "schema_version": "1",
+            "request_id": request_id,
+            "action_id": by_request[request_id][0]["action_id"],
+            "environment": "HK-STAGING-01",
+            "requested_at": None,
+            "target": {},
+            "request_sha256": None,
+            "source": None,
+            "requestable_by_current_channel": None,
+            "capability_classification": CAPABILITY_CLASSIFICATION.get(
+                by_request[request_id][0]["action_id"], "UNKNOWN"),
+            "holding_execution_authority": False,
+            "lifecycle": "UNKNOWN",
+            "lifecycle_source": "BRIDGE_FACT_WITHOUT_REQUEST",
+            "lifecycle_note": ("the Bridge spoke about this Request but its Request file was not "
+                               "collected, so no control-bus identity exists to bind"),
+            "why_not_a_task": {"state": "REQUEST_NOT_ON_THE_BUS", "reason_code": None,
+                               "reason_class": None},
+            "binding": {"task_id": None, "task_sha256": None, "task_commit": None,
+                        "proof_required": False, "proof_state": "NOT_APPLICABLE",
+                        "proof_detail": "the Request file was not collected"},
+            "facts": [{"fact_id": fact["fact_id"], "kind": fact["kind"],
+                       "observed_at": fact["observed_at"], "time_source": fact["time_source"],
+                       "submission": fact["submission"], "reason": fact["reason"],
+                       "binding": {"task_id": fact["binding"]["task_id"],
+                                   "task_sha256": fact["binding"]["task_sha256"],
+                                   "task_commit": fact["binding"]["task_commit"],
+                                   "proof_required": fact["binding"]["proof_required"],
+                                   "proof_state": ("NOT_APPLICABLE" if fact["kind"] != "REQUEST_VALIDATED"
+                                                   else evaluate_request_binding(fact, binding_context)[0]),
+                                   "proof_detail": ("no Request file to bind"
+                                                    if fact["kind"] != "REQUEST_VALIDATED"
+                                                    else evaluate_request_binding(fact, binding_context)[1])},
+                       "effective": fact["kind"] != "REQUEST_VALIDATED"}
+                      for fact in by_request[request_id]],
+            "duplicate_request_id": False,
+        })
     return out
+
+
+def request_visibility(loaded, requests, facts_source):
+    """The bounded answer to "what happened to the Requests?", never a verdict."""
+    by_lifecycle = {}
+    for entry in requests:
+        by_lifecycle[entry["lifecycle"]] = by_lifecycle.get(entry["lifecycle"], 0) + 1
+    rejected, negatives, unproven = [], [], []
+    for entry in requests:
+        for fact in entry["facts"]:
+            if fact["kind"] == "REQUEST_VALIDATED" and fact["binding"]["proof_state"] == "NOT_ESTABLISHED":
+                unproven.append({"request_id": entry["request_id"], "fact_id": fact["fact_id"],
+                                 "submission": fact["submission"],
+                                 "claimed_task_id": fact["binding"]["task_id"],
+                                 "proof_detail": fact["binding"]["proof_detail"]})
+            if fact["kind"] in ("REQUEST_DUPLICATE", "REQUEST_REPLAY_REJECTED"):
+                negatives.append({"request_id": entry["request_id"], "fact_id": fact["fact_id"],
+                                  "kind": fact["kind"], "observed_at": fact["observed_at"],
+                                  "submission": fact["submission"],
+                                  "reason_code": fact["reason"]["code"],
+                                  "reason_class": fact["reason"]["class"],
+                                  "counted_as_success": False})
+            if fact["reason"]["applicable"]:
+                rejected.append({"request_id": entry["request_id"], "fact_id": fact["fact_id"],
+                                 "kind": fact["kind"], "observed_at": fact["observed_at"],
+                                 "submission": fact["submission"],
+                                 "reason_code": fact["reason"]["code"],
+                                 "reason_class": fact["reason"]["class"],
+                                 "reason_origin": fact["reason"]["origin"]})
+    index = loaded.request_fact_index
+    unbound = [s for s in (index or {}).get("submissions", []) if not s["fact_emitted"]]
+    return {
+        "facts_source": facts_source,
+        "facts_collected": len(loaded.request_facts),
+        "submission_index_collected": index is not None,
+        "submissions_observed": len((index or {}).get("submissions", [])),
+        "by_lifecycle": dict(sorted(by_lifecycle.items())),
+        "rejected_or_refused": sorted(rejected, key=lambda r: (r["observed_at"], r["fact_id"])),
+        "duplicate_or_replay": sorted(negatives, key=lambda r: (r["observed_at"], r["fact_id"])),
+        "acceptance_claims_without_a_signed_task": sorted(
+            unproven, key=lambda r: r["fact_id"]),
+        "submissions_without_a_request_identity": sorted(unbound, key=lambda s: s["submission_key"]),
+        "why_not_a_task": {
+            "answer_field": "requests[].why_not_a_task",
+            "closed_states": list(REQUEST_FATE_STATES),
+            "note": ("a Request that did not become a Task is answered from the closed state and, "
+                     "where one exists, the Bridge's own reason code, preserved verbatim"),
+        },
+        "acceptance_requires_a_signed_task": True,
+        "rejection_reasons_are_published": True,
+        "duplicate_or_replay_counted_as_success": False,
+        "facts_are_execution_authority": False,
+        "bridge_fact_export_installed": False,
+        "note": ("the Bridge's durable ledger holds the accepted half; every refusal reason is "
+                 "printed by the Bridge and journalled by the operator, so this layer can only "
+                 "report refusal reasons once that journal is installed. Until then a Request with "
+                 "no settled fact stays REQUEST_CREATED, which is what the control bus shows"),
+    }
 
 
 def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
@@ -964,7 +1397,7 @@ def canonical_pointers(go_repo):
     return out
 
 
-def source_identity(args, request_count):
+def source_identity(args, request_count, fact_count=0):
     """Stable, portable provenance. Never a workstation path."""
     return {
         "tasks": {"repository": TASKS_REPOSITORY, "ref": args.tasks_ref,
@@ -974,6 +1407,10 @@ def source_identity(args, request_count):
         "requests": {"repository": TASKS_REPOSITORY,
                      "refs": ["refs/heads/boss-request-*", "refs/heads/request/*"],
                      "collected": request_count},
+        "request_facts": {"repository": TASKS_REPOSITORY,
+                          "refs": ["refs/heads/request-facts/*"],
+                          "collected": fact_count,
+                          "exporter": "control-plane/command-center-request-visibility-v1"},
         "go": {"repository": GO_REPOSITORY, "ref": args.go_ref, "head_sha": args.go_head,
                "canonical_runtime_pointer": CANONICAL_RUNTIME_POINTER,
                "canonical_candidate_pointer": CANONICAL_CANDIDATE_POINTER},
@@ -988,7 +1425,13 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
     recent_window = options["recent_window"]
 
     tasks = task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds)
-    requests = request_records(loaded)
+    requests = request_records(loaded, request_binding_context(loaded, tasks, task_verifier))
+    visibility = request_visibility(loaded, requests, {
+        "repository": TASKS_REPOSITORY, "refs": ["refs/heads/request-facts/*"],
+        "exporter": "control-plane/command-center-request-visibility-v1"})
+    # A fact whose Request file was never collected has no control-bus source, so
+    # it can never be "the newest Request on the bus".
+    on_bus = [entry for entry in requests if entry.get("source")]
     pointers = canonical_pointers(options.get("go_repo"))
 
     def has_success(task):
@@ -1348,7 +1791,7 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
                       "live_verification_window_seconds": verification_window,
                       "stuck_after_seconds": stuck_after,
                       "recent_expired_window_seconds": recent_window},
-        "sources": source_identity(options["args"], len(requests)),
+        "sources": source_identity(options["args"], len(requests), len(loaded.request_facts)),
         "verification": {
             "task": task_verifier.describe(),
             "evidence": evidence_verifier.describe(),
@@ -1365,17 +1808,19 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
         },
         "counts": {
             "tasks": len(tasks), "evidence": len(loaded.evidence), "requests": len(requests),
+            "request_facts": len(loaded.request_facts),
             "by_lifecycle": lifecycle_counts(tasks), "anomalies": len(loaded.anomalies),
         },
         "requests": requests,
+        "request_visibility": visibility,
         "tasks": tasks,
         "request_channel": request_channel,
         "control_state": {
             "health": health_assertion,
-            "last_request": (assertion(STATE_OBSERVED, requests[-1]["request_id"],
+            "last_request": (assertion(STATE_OBSERVED, on_bus[-1]["request_id"],
                                        "the newest Request file observed on a control-bus ref",
-                                       [requests[-1]["source"]["path"]])
-                             if requests else unknown("no Request file observed on the control bus")),
+                                       [on_bus[-1]["source"]["path"]])
+                             if on_bus else unknown("no Request file observed on the control bus")),
             "last_task": last_task(),
             "last_evidence": (assertion(
                 STATE_PROVEN if newest_evidence["lifecycle"] == "COMPLETE" else STATE_OBSERVED,
@@ -1457,7 +1902,8 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
             "pin_generated_at": "pass --now <ISO8601> to make the byte output reproducible",
             "command": ("python control-plane/command-center-state-v1/state_projection.py "
                         "--tasks-repo <go-control-tasks> --evidence-repo <go-control-evidence> "
-                        "--requests-dir <collected-requests> --go-repo <GO> "
+                        "--requests-dir <collected-requests> --request-facts-dir <exported-facts> "
+                        "--go-repo <GO> "
                         "--task-verify-key <cc-task.pub> --evidence-verify-key <hk-evidence.pub> "
                         "--verifier-identities <identity/VERIFIER_IDENTITIES_V1.json> "
                         "--tasks-head <sha> --evidence-head <sha> --go-head <sha> "
@@ -1535,6 +1981,23 @@ def build_status(state, verdict):
         "last_failure": cs["last_failure"],
         # Which actions chat may currently create a Request for.
         "request_channel": state["request_channel"],
+        # Why a Request did not become a Task, from the Bridge's own facts.
+        "request_fate": {
+            "by_request_id": {r["request_id"]: {"lifecycle": r["lifecycle"],
+                                                "why_not_a_task": r["why_not_a_task"],
+                                                "binding": r["binding"]}
+                              for r in state["requests"]},
+            "accepted": sum(1 for r in state["requests"] if r["lifecycle"] == "REQUEST_VALIDATED"),
+            "refused": sum(1 for r in state["requests"] if r["lifecycle"] == "REQUEST_REJECTED"),
+            "duplicate": sum(1 for r in state["requests"] if r["lifecycle"] == "REQUEST_DUPLICATE"),
+            "replayed": sum(1 for r in state["requests"] if r["lifecycle"] == "REQUEST_REPLAY_REJECTED"),
+            "waiting": sum(1 for r in state["requests"] if r["lifecycle"] == "REQUEST_CREATED"),
+            "unbound_submissions": state["request_visibility"][
+                "submissions_without_a_request_identity"],
+            "answer": ("look up by_request_id; why_not_a_task.state is a closed set and "
+                       "BECAME_A_TASK is reported only when a signed Task corroborates it. A "
+                       "Bridge fact is never Execution Authority."),
+        },
         # ---- supporting fields, not part of the required answer set -------- #
         "last_evidence": cs["last_evidence"],
         "live_verified_runtime": cs["live_verified_runtime"],
@@ -1563,14 +2026,19 @@ def build_status(state, verdict):
                 "the Hong Kong agent ledger (attempts, failures, nonce claims)",
                 "runtime process state on HK-STAGING",
                 "the current repository main revision, unless it is passed in explicitly",
+                "any Bridge observation that was never exported as a fact: the Bridge prints "
+                "refusal reasons and keeps them nowhere, so until the export is installed a "
+                "Request with no settled fact is reported as REQUEST_CREATED",
             ],
             "never_infer": ("last successful task != agent online; repository pointer != live "
-                            "runtime; capability present != request enabled"),
+                            "runtime; capability present != request enabled; a Request file "
+                            "existing != the Request was accepted"),
         },
         "out_of_scope": {
             "deploy_readiness_evaluation": "NOT_IN_SCOPE",
             "rollback_readiness_evaluation": "NOT_IN_SCOPE",
-            "note": ("this contract answers the ten status questions and the request channel only. It "
+            "note": ("this contract answers the ten status questions, the request channel and the "
+                     "fate of a submitted Request. It "
                      "does not compute can_deploy, deployment eligibility, rollback target selection "
                      "or release-gate verdicts, and no such key is present in answers"),
         },
@@ -1586,6 +2054,9 @@ def main(argv=None):
     parser.add_argument("--tasks-repo", required=True, help="local checkout of go-control-tasks")
     parser.add_argument("--evidence-repo", required=True, help="local checkout of go-control-evidence")
     parser.add_argument("--requests-dir", help="optional directory of collected Request files")
+    parser.add_argument("--request-facts-dir",
+                        help=("optional directory of Bridge Request facts exported read-only by "
+                              "control-plane/command-center-request-visibility-v1"))
     parser.add_argument("--go-repo", help="optional local checkout of the GO repository")
     parser.add_argument("--task-verify-key",
                         help="pinned Command Center task-manifest public key (hex-signature identity)")
@@ -1617,6 +2088,7 @@ def main(argv=None):
     load_tasks(args.tasks_repo, loaded)
     load_evidence(args.evidence_repo, loaded)
     load_requests(args.requests_dir, loaded)
+    load_request_facts(args.request_facts_dir, loaded)
 
     identity_contract = IdentityContract(args.verifier_identities)
     task_verifier = Verifier(args.task_verify_key, TASK_VERIFIER_IDENTITY, "hex",
@@ -1728,6 +2200,8 @@ def main(argv=None):
         "runtime_verification": state["control_state"]["runtime_verification_state"],
         "active_stuck_tasks": len(state["control_state"]["active_stuck_tasks"]),
         "enabled_request_actions": request_channel_list(state),
+        "request_facts": state["counts"]["request_facts"],
+        "request_lifecycles": state["request_visibility"]["by_lifecycle"],
         "anomalies": [a["kind"] for a in state["anomalies"]],
         "out": str(out),
     }

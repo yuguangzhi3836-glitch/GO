@@ -11,11 +11,44 @@ one of these states and must never collapse them into PASS / FAIL.
 | State | Meaning | Observable on the control bus |
 |---|---|---|
 | `REQUEST_CREATED` | A human intent file exists on a control-bus ref | yes |
-| `REQUEST_VALIDATED` | Command Center accepted it and derived a Task | indirectly, via the derived Task existing |
-| `REQUEST_REJECTED` | Command Center refused it | **no** — the rejection reason lives in the Bridge ledger on Command Center |
+| `REQUEST_VALIDATED` | Command Center accepted it and derived a **signed** Task | via the fact, corroborated by the Task |
+| `REQUEST_REJECTED` | Command Center refused it | via the fact, with the reason |
+| `REQUEST_DUPLICATE` | A distinct submission reused a consumed `request_id` | via the fact |
+| `REQUEST_REPLAY_REJECTED` | A consumed submission identity was presented again | via the fact |
+| `UNKNOWN` | The Bridge spoke about it but its Request file is not on the bus | via the fact |
 
-The projector therefore reports every Request as `REQUEST_CREATED` and links it to
-a Task when one exists. It does not invent an acceptance.
+CC V1-05 moved what the Bridge did with a Request onto the control bus. The
+Bridge's durable ledger keeps the **accepted** half and the `ignored` reasons;
+every refusal is raised as a `Reject` and printed to stdout, and was kept in no
+file at all — so before this, a refusal reason existed only in the Bridge's
+process output and was lost when the poll ended. The read-only exporter in
+`control-plane/command-center-request-visibility-v1` now reads the ledger, the
+operator's journalled copy of that stdout, and the collected Request files, and
+emits one Request fact per Request identity.
+
+Three rules follow, and the projection enforces all three:
+
+* **An acceptance needs proof.** `REQUEST_VALIDATED` is the only positive fact
+  and it declares `proof_required`. The projection reports it only when the named
+  Task is on the control bus, its `task_id` carries `sha256(request_id)[:12]`,
+  its claimed digest describes the Task as stored, its signature verifies, and
+  the verifier is bound to the published Command Center identity. Anything less
+  leaves the Request at `REQUEST_CREATED` with a `REQUEST_BINDING_UNPROVEN`
+  anomaly and the failed claim still visible. A Request file existing is never
+  evidence that it was accepted.
+* **A reason is never dropped.** The Bridge's own token is carried through
+  verbatim; a token the contract does not classify is `UNCLASSIFIED_REJECT`, not
+  a blank. A submission whose Request identity cannot be established produces no
+  fact — a fact binds a `request_id` — and is recorded at submission level in the
+  export index with its reason intact.
+* **A duplicate or a replay is never a success.** Each has its own lifecycle and
+  each carries `counted_as_success = false`.
+
+A fact is an observation of the Bridge, never a permission: it authorizes no
+retry, no replay and no action, and the projection refuses any fact that claims
+otherwise. Until an approved change wires the export to a timer and publishes its
+output, `request_visibility.facts_collected` is 0 and every Request honestly
+reads `REQUEST_CREATED`.
 
 ## Task / Evidence lifecycle
 
@@ -52,7 +85,7 @@ with assertion rank `OBSERVED`. If neither key is supplied, the state is
 
 | State | Trigger | Detectable from the control bus |
 |---|---|---|
-| `REQUEST_REJECTED` | Request refused by the Bridge | no (Bridge ledger) |
+| `REQUEST_REJECTED` | Request refused by the Bridge | yes, via a published Request fact (CC V1-05) |
 | `TASK_EXPIRED` | `now >= expires_at` and no Evidence | yes |
 | `TASK_NOT_PICKED_UP` | claim never happened | **no** — needs the agent ledger. CC V1-02 narrows this to "no claim", for Tasks published after the capability exists |
 | `EXECUTION_FAILED` | Evidence `status != SUCCESS`, or a verified `executor_result` differs from the frozen terminal result | yes, when Evidence exists |
@@ -120,9 +153,14 @@ The two states an operator most wants are *"did it even get picked up?"* and
 
 CC V1-02 closed the first one for the failure half: a claimed attempt that fails
 now publishes a signed record, so "picked up and failed" is no longer invisible and
-absence of Evidence now indicates no claim. The second is still outside the
-control bus — the Bridge ledger that holds rejection reasons is not published —
-and that remains a delivery blocker rather than something to guess at.
+absence of Evidence now indicates no claim.
+
+CC V1-05 closed the second one's mechanism: the Bridge's refusals are exported as
+Request facts, so `why_not_a_task` has a closed answer set and the Bridge's own
+reason code. What is still missing is the **wiring** — nothing drives the export
+on a timer or publishes its output — so on the live bus a Request with no settled
+fact still reads `REQUEST_CREATED`. That is recorded as a remaining blocker, and
+it is a wiring gap rather than a mechanism gap.
 
 ## Rank rules
 

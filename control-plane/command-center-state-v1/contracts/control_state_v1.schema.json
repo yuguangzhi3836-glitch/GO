@@ -2,11 +2,17 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "go://control-plane/command-center-state-v1/contracts/control_state_v1.schema.json",
   "title": "GO Command Center CURRENT_CONTROL_STATE",
-  "description": "Deterministic projection of the GitHub-native Control Plane. Scope: CONTROL_STATE_AND_STATUS_ONLY. Derived, rebuildable and NON-AUTHORITATIVE. Every leaf is an assertion ranked PROVEN / OBSERVED / PENDING / HOLD / FAILED / UNKNOWN; UNKNOWN always carries value=null and never implies success. Deploy readiness and rollback readiness are NOT evaluated: recorded release-gate and rollback-candidate facts live under control_state.informational with contract=false. The document carries no workstation path, no temp directory and no local absolute path: sources are identified by repository, ref, commit SHA and repository-relative path only.",
+  "description": "Deterministic projection of the GitHub-native Control Plane. Scope: CONTROL_STATE_AND_STATUS_ONLY. Derived, rebuildable and NON-AUTHORITATIVE. Every leaf is an assertion ranked PROVEN / OBSERVED / PENDING / HOLD / FAILED / UNKNOWN; UNKNOWN always carries value=null and never implies success. Deploy readiness and rollback readiness are NOT evaluated: recorded release-gate and rollback-candidate facts live under control_state.informational with contract=false. The document carries no workstation path, no temp directory and no local absolute path: sources are identified by repository, ref, commit SHA and repository-relative path only. request_visibility reports what the Command Center Bridge did with each Request, from facts exported read-only; a Request is never reported as accepted unless a signed Task on the control bus corroborates it.",
+  "x-go-request-facts": [
+    "A Request file on the control bus means a human wrote it. It never means the Request was accepted.",
+    "REQUEST_VALIDATED requires all three: the named Task is on the control bus, its task_id carries sha256(request_id)[:12], and its signature verifies against the published Command Center task identity.",
+    "A fact is an observation of the Bridge. It authorizes no retry, no replay and no action, and the projection refuses any fact that claims otherwise.",
+    "A duplicate or a replay is reported as its own lifecycle and is never counted as a success."
+  ],
   "type": "object",
   "required": ["schema_version", "contract", "scope", "authority", "generated_at", "freshness",
-               "sources", "verification", "counts", "requests", "tasks", "request_channel",
-               "control_state", "anomalies", "rebuild"],
+               "sources", "verification", "counts", "requests", "request_visibility", "tasks",
+               "request_channel", "control_state", "anomalies", "rebuild"],
   "properties": {
     "schema_version": {"const": "1"},
     "contract": {"const": "CURRENT_CONTROL_STATE"},
@@ -74,11 +80,94 @@
         "tasks": {"type": "integer", "minimum": 0},
         "evidence": {"type": "integer", "minimum": 0},
         "requests": {"type": "integer", "minimum": 0},
+        "request_facts": {"type": "integer", "minimum": 0},
         "by_lifecycle": {"type": "object"},
         "anomalies": {"type": "integer", "minimum": 0}
       }
     },
-    "requests": {"type": "array"},
+    "requests": {
+      "type": "array",
+      "description": "One entry per collected Request file, plus one per Bridge fact whose Request file was not collected. lifecycle is the strongest fact that could actually be proven.",
+      "items": {
+        "type": "object",
+        "required": ["schema_version", "request_id", "action_id", "environment", "requestable_by_current_channel",
+                     "holding_execution_authority", "lifecycle", "lifecycle_source",
+                     "why_not_a_task", "binding", "facts"],
+        "properties": {
+          "lifecycle": {
+            "enum": ["REQUEST_CREATED", "REQUEST_VALIDATED", "REQUEST_REJECTED",
+                     "REQUEST_DUPLICATE", "REQUEST_REPLAY_REJECTED", "UNKNOWN"],
+            "description": "UNKNOWN means the Bridge spoke about this Request but its file is not on the control bus. REQUEST_VALIDATED is reported only when a signed Task corroborates the acceptance."
+          },
+          "lifecycle_source": {
+            "enum": ["BRIDGE_FACT", "CONTROL_BUS_ONLY", "BRIDGE_FACT_WITHOUT_REQUEST"]
+          },
+          "why_not_a_task": {
+            "type": "object",
+            "required": ["state", "reason_code", "reason_class"],
+            "properties": {
+              "state": {"enum": ["BECAME_A_TASK", "ACCEPTANCE_CLAIMED_BUT_UNPROVEN", "REFUSED",
+                                 "DUPLICATE_REQUEST_ID", "REPLAYED_SUBMISSION",
+                                 "NO_BRIDGE_FACT_OBSERVED", "REQUEST_NOT_ON_THE_BUS"]},
+              "reason_code": {"type": ["string", "null"],
+                "description": "the refusing component's own token, preserved verbatim"},
+              "reason_class": {"type": ["string", "null"]}
+            }
+          },
+          "binding": {
+            "type": "object",
+            "required": ["task_id", "task_sha256", "task_commit", "proof_required", "proof_state",
+                         "proof_detail"],
+            "properties": {
+              "task_id": {"type": ["string", "null"]},
+              "task_sha256": {"type": ["string", "null"]},
+              "task_commit": {"type": ["string", "null"]},
+              "proof_required": {"type": "boolean"},
+              "proof_state": {"enum": ["TASK_SIGNATURE_AND_DIGEST_PREFIX", "NOT_ESTABLISHED",
+                                       "NOT_APPLICABLE"]},
+              "proof_detail": {"type": "string"}
+            }
+          },
+          "facts": {"type": "array",
+            "description": "Every fact for this Request, including ones that could not be proven. An ineffective fact is reported, never hidden."}
+        }
+      }
+    },
+    "request_visibility": {
+      "type": "object",
+      "description": "CC V1-05. What happened to the Requests, from the Bridge's own exported facts. Bounded, non-authoritative, and never a verdict.",
+      "required": ["facts_source", "facts_collected", "submission_index_collected", "by_lifecycle",
+                   "rejected_or_refused", "duplicate_or_replay",
+                   "acceptance_claims_without_a_signed_task",
+                   "submissions_without_a_request_identity", "why_not_a_task",
+                   "acceptance_requires_a_signed_task", "rejection_reasons_are_published",
+                   "duplicate_or_replay_counted_as_success", "facts_are_execution_authority",
+                   "bridge_fact_export_installed"],
+      "properties": {
+        "facts_source": {"type": "object"},
+        "facts_collected": {"type": "integer", "minimum": 0},
+        "submission_index_collected": {"type": "boolean"},
+        "submissions_observed": {"type": "integer", "minimum": 0},
+        "by_lifecycle": {"type": "object"},
+        "rejected_or_refused": {"type": "array"},
+        "duplicate_or_replay": {
+          "type": "array",
+          "description": "Each entry records counted_as_success = false. A duplicate or a replay is never a success."
+        },
+        "acceptance_claims_without_a_signed_task": {"type": "array"},
+        "submissions_without_a_request_identity": {"type": "array"},
+        "why_not_a_task": {"type": "object"},
+        "acceptance_requires_a_signed_task": {"const": true},
+        "rejection_reasons_are_published": {"const": true},
+        "duplicate_or_replay_counted_as_success": {"const": false},
+        "facts_are_execution_authority": {"const": false},
+        "bridge_fact_export_installed": {
+          "const": false,
+          "description": "the exporter exists and is verified in CI, but nothing drives it or publishes to the control bus yet"
+        },
+        "note": {"type": "string"}
+      }
+    },
     "tasks": {"type": "array"},
     "request_channel": {
       "type": "object",
@@ -106,6 +195,9 @@
                             "REQUEST_UNREADABLE", "TASK_ID_REUSED", "REQUEST_ID_REUSED",
                             "REPLAY_REJECTED", "EVIDENCE_CONFLICT",
                             "TASK_PARAMETER_CONTRACT_DRIFT", "VERIFIER_IDENTITY_COLLISION",
+                            "REQUEST_FACTS_DIRECTORY_MISSING", "REQUEST_FACT_UNREADABLE",
+                            "REQUEST_FACT_INDEX_UNREADABLE", "REQUEST_BINDING_UNPROVEN",
+                            "REQUEST_FACT_WITHOUT_REQUEST",
                             "LOCAL_PATH_LEAK"]},
           "detail": {"type": "string"},
           "ref": {"type": ["string", "null"]}

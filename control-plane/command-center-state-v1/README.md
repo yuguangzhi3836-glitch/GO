@@ -147,11 +147,16 @@ No test asserts their presence in `answers`, and a test asserts they are absent.
 ## P0-3 — Request → Task → Evidence lifecycle
 
 The closed vocabulary and the observable/unobservable boundary are in
-`LIFECYCLE_V1.md`. Two rules are load-bearing and enforced by tests:
+`LIFECYCLE_V1.md`. Three rules are load-bearing and enforced by tests:
 
 * **`COMPLETE` requires both identities.** Evidence must verify against the Hong
   Kong evidence key *and* the Task must verify against the Command Center task
   key. Evidence that verifies alone stops at `EVIDENCE_VERIFIED` / `OBSERVED`.
+* **`REQUEST_VALIDATED` requires a signed Task.** A Request file on the bus is
+  human intent and nothing more. Acceptance is reported only when the named Task
+  is present, carries `sha256(request_id)[:12]`, matches its claimed digest, and
+  verifies under the bound published identity; otherwise the Request stays
+  `REQUEST_CREATED` with the failed claim visible. See section 10.
 * **Stuck is not the same as expired.** `answers.stuck_tasks.answer` reads
   `active_stuck_tasks` only. 21 expired historical Tasks do not make 21 things
   stuck.
@@ -333,6 +338,58 @@ separately reports what the artifact claimed, so a record claiming otherwise is
 recorded and given no effect. `answers.last_failure` now carries the failure
 `kind`, `stage` and `reason_code` alongside the Task that caused it.
 
+### 10. What the Bridge did with a Request is now on the control bus (CC V1-05)
+
+Acceptance was a Bridge-ledger fact that never reached the control bus, and a
+refusal reason was printed to the Bridge's stdout and kept nowhere — the ledger
+holds the accepted half and the `ignored` reasons only. Every Request could
+therefore only be reported as `REQUEST_CREATED`, and *"why did my Request not
+become a Task?"* had no answer on the bus.
+
+`control-plane/command-center-request-visibility-v1` reads the ledger, the
+operator's journalled copy of the Bridge's own poll output, and the collected
+Request files — all read-only — and emits one Request fact per Request identity:
+`REQUEST_CREATED`, `REQUEST_VALIDATED`, `REQUEST_REJECTED`, `REQUEST_DUPLICATE`,
+`REQUEST_REPLAY_REJECTED`. The projection consumes it through
+`--request-facts-dir` and publishes:
+
+```
+requests[].lifecycle                  the strongest fact that could be proven
+requests[].lifecycle_source           BRIDGE_FACT / CONTROL_BUS_ONLY
+requests[].why_not_a_task.state       a closed set, plus the Bridge's reason code
+requests[].binding.proof_state        TASK_SIGNATURE_AND_DIGEST_PREFIX or NOT_ESTABLISHED
+request_visibility.by_lifecycle       counts
+request_visibility.rejected_or_refused           reason, class and origin
+request_visibility.duplicate_or_replay           counted_as_success = false
+request_visibility.acceptance_claims_without_a_signed_task
+request_visibility.submissions_without_a_request_identity
+answers.request_fate                  the answer surface for a ChatGPT connector
+```
+
+Four properties are enforced by tests rather than asserted in prose:
+
+* **An acceptance is corroborated, never believed.** `REQUEST_VALIDATED` is
+  accepted only when the named Task is on the control bus, its `task_id` carries
+  `sha256(request_id)[:12]`, its claimed digest describes the Task as stored, its
+  signature verifies, and the verifier is bound to the published identity. A
+  failure leaves the Request at `REQUEST_CREATED`, surfaces the claim and the
+  reason it failed, and records `REQUEST_BINDING_UNPROVEN` — never
+  `REQUEST_VALIDATED`. Forging a positive fact would need the Task signing key.
+* **A refusal never loses its reason.** The Bridge's token is carried verbatim
+  with an `origin`; a token the contract cannot classify is
+  `UNCLASSIFIED_REJECT`, and the contract is checked against every refusing token
+  the Bridge sources can emit (81 today, zero unclassified).
+* **A duplicate or a replay is never a success.** Each is its own lifecycle and
+  each is reported with `counted_as_success = false`.
+* **Nothing here is authority.** Every fact carries the same eight `false` values
+  in its `authority` block, and the projection refuses any fact that claims
+  otherwise. `request_visibility.facts_are_execution_authority` is false.
+
+`TARGET_INSTALLED=NO`: nothing drives the export on a timer or publishes its
+output, so a real projection supplies zero facts and every Request honestly reads
+`REQUEST_CREATED`. The remaining gap is the missing wiring, not the missing
+mechanism.
+
 ## Verified current architecture
 
 Read from repository evidence, not from old notes.
@@ -429,6 +486,7 @@ python control-plane/command-center-state-v1/state_projection.py \
   --tasks-repo    <local checkout of go-control-tasks> \
   --evidence-repo <local checkout of go-control-evidence> \
   --requests-dir  <collected Request files, optional> \
+  --request-facts-dir <exported Bridge Request facts, optional> \
   --go-repo       <local checkout of GO, optional> \
   --task-verify-key     <pinned Command Center task public key, optional> \
   --evidence-verify-key <pinned Hong Kong evidence public key, optional> \
@@ -513,6 +571,17 @@ fingerprint-pinned (`identity/`). The Control Plane no longer caps at `OBSERVED`
 signed failure record, so "picked up and failed" is no longer invisible and
 absence of Evidence now indicates no claim.
 
+**Closed by CC V1-03:** a bounded liveness producer exists, so `CONTROL_PLANE_HEALTH`
+is now driven on a clock instead of never.
+
+**Closed by CC V1-04:** the derived state has a formal publication target
+(`CURRENT.json` + immutable snapshots), so a reader has one stable entry point.
+
+**Closed by CC V1-05:** the Bridge's Request facts are exported and projected, so
+`REQUEST_REJECTED`, `REQUEST_DUPLICATE` and Request-layer
+`REQUEST_REPLAY_REJECTED` are now expressible on the control bus with their
+reasons.
+
 1. **Three historical Tasks fail under the published Task signer.** With the
    identity now bound, `go-m3-042-e2e-health-20260905T151233846901Z`,
    `…20260905T152130238921Z` and `…20260906T011815978751Z` resolve as
@@ -526,14 +595,21 @@ absence of Evidence now indicates no claim.
    failure records, but nothing is deployed by CC V1 and no installation is
    claimed. `INSTALLED=NO`. Live failure visibility therefore still depends on a
    later, separately approved install.
-3. **No liveness producer.** `CONTROL_PLANE_HEALTH` exists but nothing schedules
-   it, so `hk_agent_online` is honest and useless. → CC V1-03.
-4. **No publication target for the derived state.** The projector writes files;
-   nothing yet pushes them where ChatGPT reads. → CC V1-04.
-5. **Bridge ledger facts are not on the control bus.** Request rejection reasons,
-   duplicate-request detection, ambiguity holds and plan/approval consumption live
-   only in `/var/lib/go-command-center/boss-request-bridge-v1/ledger.json`.
-   `REQUEST_REJECTED` and Request-layer `REPLAY_REJECTED` stay invisible. → CC V1-05.
+3. **The liveness producer is not installed.** The mechanism exists (CC V1-03)
+   but no systemd unit or timer change has been made, so the control bus still
+   carries no fresh liveness Evidence. `INSTALLED=NO`.
+4. **The publication target is not wired.** The target and the publisher exist
+   (CC V1-04) but nothing pushes to it, so `CURRENT.json` does not exist and a
+   reader reports `UNKNOWN`. `TARGET_INSTALLED=NO`.
+5. **The request fact export is not wired.** The exporter exists and CI verifies
+   it (CC V1-05), but nothing drives it on a timer or publishes its output, so a
+   real projection supplies zero facts, every Request reads `REQUEST_CREATED`,
+   and refusal reasons stay unobservable from the control bus.
+   `TARGET_INSTALLED=NO`.
+6. **Every remaining blocker above is a wiring gap, not a mechanism gap.** The
+   mechanisms for failure closure, liveness, publication and request visibility
+   were each added by a CC V1 issue and are each uninstalled. Installing any of
+   them is a separately approved change and is not implied by having built it.
 
 ## Not proven by this PR
 

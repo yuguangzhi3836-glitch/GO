@@ -594,6 +594,7 @@
       "TASK_EXPIRED": 18
     },
     "evidence": 24,
+    "request_facts": 0,
     "requests": 13,
     "tasks": 46
   },
@@ -606,7 +607,7 @@
   },
   "generated_at": "2026-09-14T12:00:00Z",
   "rebuild": {
-    "command": "python control-plane/command-center-state-v1/state_projection.py --tasks-repo <go-control-tasks> --evidence-repo <go-control-evidence> --requests-dir <collected-requests> --go-repo <GO> --task-verify-key <cc-task.pub> --evidence-verify-key <hk-evidence.pub> --verifier-identities <identity/VERIFIER_IDENTITIES_V1.json> --tasks-head <sha> --evidence-head <sha> --go-head <sha> --repository-main-sha <sha> --now <ISO8601> --out <dir>",
+    "command": "python control-plane/command-center-state-v1/state_projection.py --tasks-repo <go-control-tasks> --evidence-repo <go-control-evidence> --requests-dir <collected-requests> --request-facts-dir <exported-facts> --go-repo <GO> --task-verify-key <cc-task.pub> --evidence-verify-key <hk-evidence.pub> --verifier-identities <identity/VERIFIER_IDENTITIES_V1.json> --tasks-head <sha> --evidence-head <sha> --go-head <sha> --repository-main-sha <sha> --now <ISO8601> --out <dir>",
     "deterministic": true,
     "pin_generated_at": "pass --now <ISO8601> to make the byte output reproducible"
   },
@@ -642,14 +643,63 @@
     "note": "ChatGPT may create Request files only for enabled_request_actions. HK_STAGING_DEPLOY is reported as a capability classification; computing deploy or rollback readiness is out of scope for this contract",
     "readiness_evaluation": "NOT_IN_SCOPE"
   },
+  "request_visibility": {
+    "acceptance_claims_without_a_signed_task": [],
+    "acceptance_requires_a_signed_task": true,
+    "bridge_fact_export_installed": false,
+    "by_lifecycle": {
+      "REQUEST_CREATED": 13
+    },
+    "duplicate_or_replay": [],
+    "duplicate_or_replay_counted_as_success": false,
+    "facts_are_execution_authority": false,
+    "facts_collected": 0,
+    "facts_source": {
+      "exporter": "control-plane/command-center-request-visibility-v1",
+      "refs": [
+        "refs/heads/request-facts/*"
+      ],
+      "repository": "chenzhenxi1-sudo/go-control-tasks"
+    },
+    "note": "the Bridge's durable ledger holds the accepted half; every refusal reason is printed by the Bridge and journalled by the operator, so this layer can only report refusal reasons once that journal is installed. Until then a Request with no settled fact stays REQUEST_CREATED, which is what the control bus shows",
+    "rejected_or_refused": [],
+    "rejection_reasons_are_published": true,
+    "submission_index_collected": false,
+    "submissions_observed": 0,
+    "submissions_without_a_request_identity": [],
+    "why_not_a_task": {
+      "answer_field": "requests[].why_not_a_task",
+      "closed_states": [
+        "BECAME_A_TASK",
+        "ACCEPTANCE_CLAIMED_BUT_UNPROVEN",
+        "REFUSED",
+        "DUPLICATE_REQUEST_ID",
+        "REPLAYED_SUBMISSION",
+        "NO_BRIDGE_FACT_OBSERVED",
+        "REQUEST_NOT_ON_THE_BUS"
+      ],
+      "note": "a Request that did not become a Task is answered from the closed state and, where one exists, the Bridge's own reason code, preserved verbatim"
+    }
+  },
   "requests": [
     {
       "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-test-pr42-282e764ef353486c",
       "request_sha256": "2aa4045f853b562a89b264405223a98d7434cb256824fec0bb22a861609ef058",
       "requestable_by_current_channel": true,
@@ -663,15 +713,31 @@
       },
       "target": {
         "pr_number": "42"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
       }
     },
     {
       "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-test-pr42-379053731198402b",
       "request_sha256": "40b2417d722f1574e35ffc7c4712f7f7f3286a6bf86d7a02e37a9a22a553d194",
       "requestable_by_current_channel": true,
@@ -685,15 +751,31 @@
       },
       "target": {
         "pr_number": "42"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
       }
     },
     {
       "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-test-pr42-4132c7fed3f1",
       "request_sha256": "791ce8b6b24f50c1177727861ef1c47926037545bbc3c6fc1c3686167901c370",
       "requestable_by_current_channel": true,
@@ -707,15 +789,31 @@
       },
       "target": {
         "pr_number": "42"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
       }
     },
     {
       "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-test-pr42-7fccaf271379",
       "request_sha256": "df3c4305bcd00251f5e62fd7dbfb6f67174ac92ef04e2b34202962631b3efbc0",
       "requestable_by_current_channel": true,
@@ -729,15 +827,31 @@
       },
       "target": {
         "pr_number": "42"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
       }
     },
     {
       "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-test-pr42-blind-1f329c67da8c",
       "request_sha256": "4d5c04ce506d604de11dfb9c168c70095df8d25394c0ebf58fe813f5bf15f613",
       "requestable_by_current_channel": true,
@@ -751,15 +865,31 @@
       },
       "target": {
         "pr_number": "42"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
       }
     },
     {
       "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-test-pr47-b76c37606914",
       "request_sha256": "2a6c3e26de3cfbe323e1a3440905310d75007ad292d32924810aabb8d34aa83a",
       "requestable_by_current_channel": true,
@@ -773,15 +903,31 @@
       },
       "target": {
         "pr_number": "47"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
       }
     },
     {
       "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-verify-13afc1575088",
       "request_sha256": "9982eec0e7785041651fb9888b5c61d44f50f49aaec8e15020b4ca3713a3753c",
       "requestable_by_current_channel": true,
@@ -793,15 +939,31 @@
         "ref": "refs/remotes/origin/boss-request-boss-hk-verify-13afc1575088",
         "repository": "chenzhenxi1-sudo/go-control-tasks"
       },
-      "target": {}
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
     },
     {
       "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-verify-1638b840eaab4ffa",
       "request_sha256": "9418627c9de5ef3f28338088124fb09b212ad23c2ff7f4bba94124c932c11af0",
       "requestable_by_current_channel": true,
@@ -813,15 +975,31 @@
         "ref": "refs/remotes/origin/boss-request-boss-hk-verify-1638b840eaab4ffa",
         "repository": "chenzhenxi1-sudo/go-control-tasks"
       },
-      "target": {}
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
     },
     {
       "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-verify-20260913T033938887-cb3430da",
       "request_sha256": "9dcadd8cd4d4d5b9bb53ab4e1e08ba8cc4fa468237165bffba1094e6679421a7",
       "requestable_by_current_channel": true,
@@ -833,15 +1011,31 @@
         "ref": "refs/remotes/origin/boss-request-boss-hk-verify-20260913T033938887-cb3430da",
         "repository": "chenzhenxi1-sudo/go-control-tasks"
       },
-      "target": {}
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
     },
     {
       "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-verify-52c39f5d665e4669",
       "request_sha256": "c5fb7883e84727fd3c622350705f5074ba3d1e4b0878d610552ef1a3026c01cc",
       "requestable_by_current_channel": true,
@@ -853,15 +1047,31 @@
         "ref": "refs/remotes/origin/boss-request-boss-hk-verify-52c39f5d665e4669",
         "repository": "chenzhenxi1-sudo/go-control-tasks"
       },
-      "target": {}
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
     },
     {
       "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-verify-52e00ab59d0e41fd",
       "request_sha256": "c0e9944e59b529e97719aa8edc8f8598a89f4b8e34da8bbf31dad69256d18dd0",
       "requestable_by_current_channel": true,
@@ -873,15 +1083,31 @@
         "ref": "refs/remotes/origin/boss-request-boss-hk-verify-52e00ab59d0e41fd",
         "repository": "chenzhenxi1-sudo/go-control-tasks"
       },
-      "target": {}
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
     },
     {
       "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-hk-verify-68d7c283d0a248fe",
       "request_sha256": "0a6a724658811980fa017b0df969eec003abe458c6d9a35591b71699f7dba959",
       "requestable_by_current_channel": true,
@@ -893,15 +1119,31 @@
         "ref": "refs/remotes/origin/boss-request-boss-hk-verify-68d7c283d0a248fe",
         "repository": "chenzhenxi1-sudo/go-control-tasks"
       },
-      "target": {}
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
     },
     {
       "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
       "capability_classification": "SUPPORTED_PROVEN",
       "duplicate_request_id": false,
       "environment": "HK-STAGING-01",
+      "facts": [],
       "holding_execution_authority": false,
       "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
       "request_id": "boss-mobile-verify-e2e-20260911-01",
       "request_sha256": "39b69408f812d91cd3cc574a8ef51523f462e4f19f367d455c890fcfab17dd2b",
       "requestable_by_current_channel": true,
@@ -913,7 +1155,12 @@
         "ref": "refs/remotes/origin/boss-request-boss-mobile-verify-e2e-20260911-01",
         "repository": "chenzhenxi1-sudo/go-control-tasks"
       },
-      "target": {}
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
     }
   ],
   "schema_version": "1",
@@ -930,6 +1177,14 @@
       "head_sha": "bbd9d26966c146476bb976fe514f17c7b353f84c",
       "ref": "main",
       "repository": "yuguangzhi3836-glitch/GO"
+    },
+    "request_facts": {
+      "collected": 0,
+      "exporter": "control-plane/command-center-request-visibility-v1",
+      "refs": [
+        "refs/heads/request-facts/*"
+      ],
+      "repository": "chenzhenxi1-sudo/go-control-tasks"
     },
     "requests": {
       "collected": 13,

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "go://control-plane/command-center-state-v1/contracts/control_status_v1.schema.json",
   "title": "GO Command Center CONTROL_STATUS_V1",
-  "description": "The compact, stable, read-only query contract a ChatGPT connector reads instead of the underlying JSON. Scope: CONTROL_STATE_AND_STATUS_ONLY. The required answer set is exactly the ten status questions plus request_channel. Bounded in size, no execution parameter, and it can neither create nor sign a Task. It does NOT evaluate deploy or rollback readiness.",
+  "description": "The compact, stable, read-only query contract a ChatGPT connector reads instead of the underlying JSON. Scope: CONTROL_STATE_AND_STATUS_ONLY. The required answer set is exactly the ten status questions plus request_channel; answers.request_fate is a supporting field that says why a submitted Request did not become a Task. Bounded in size, no execution parameter, and it can neither create nor sign a Task. It does NOT evaluate deploy or rollback readiness.",
   "type": "object",
   "required": ["schema_version", "contract", "scope", "audience", "authority", "generated_at",
                "freshness", "sources", "verification", "answers", "limits", "out_of_scope", "verdict"],
@@ -73,6 +73,24 @@
             "deploy_request_enabled": {"const": false},
             "readiness_evaluation": {"const": "NOT_IN_SCOPE"}
           }
+        },
+        "request_fate": {
+          "type": "object",
+          "description": "CC V1-05. Why a Request did not become a Task, from the Bridge's own exported facts. Closed states; BECAME_A_TASK only with a signed Task behind it.",
+          "required": ["by_request_id", "unbound_submissions", "answer"],
+          "properties": {
+            "by_request_id": {"type": "object",
+              "description": "request_id -> {lifecycle, why_not_a_task, binding}"},
+            "accepted": {"type": "integer", "minimum": 0},
+            "refused": {"type": "integer", "minimum": 0},
+            "duplicate": {"type": "integer", "minimum": 0},
+            "replayed": {"type": "integer", "minimum": 0},
+            "waiting": {"type": "integer", "minimum": 0},
+            "unbound_submissions": {"type": "array",
+              "description": "submissions the Bridge spoke about whose Request identity could not be established; no fact exists for them because a fact binds a request_id"},
+            "answer": {"type": "string"}
+          },
+          "x-go-role": "SUPPORTING_NOT_REQUIRED"
         },
         "last_evidence": {"$ref": "#/$defs/assertion",
           "x-go-role": "SUPPORTING_NOT_REQUIRED"},
@@ -146,13 +164,15 @@
     "8 该 runtime 最近是否被 live VERIFY 证明": "answers.runtime_verification (+ answers.live_verified_runtime)",
     "9 当前是否存在 active stuck task": "answers.stuck_tasks.answer",
     "10 最近一次失败是什么": "answers.last_failure",
-    "which actions may chat request": "answers.request_channel"
+    "which actions may chat request": "answers.request_channel",
+    "why did my Request not become a Task": "answers.request_fate.by_request_id[request_id].why_not_a_task"
   },
   "x-go-notes": [
     "answers.hk_agent_online is derived only from fresh signed CONTROL_PLANE_HEALTH Evidence. answers.hk_agent_recent_activity reports the last signed activity at any age and is explicitly NOT liveness.",
     "answers.repository_declared_runtime and answers.live_verified_runtime are separate objects. A repository pointer can never make the live runtime PROVEN.",
     "answers.stuck_tasks.answer reads active_stuck_tasks only; recently and historically expired tasks are reported separately and never change the current-health answer.",
     "answers.request_channel distinguishes known_capability from currently_enabled_request_action. HK_STAGING_DEPLOY is CAPABILITY_PRESENT_BUT_DISABLED and is not requestable. The connector may create Request files only for enabled actions.",
+    "answers.request_fate reports why a Request did not become a Task, from facts the Bridge exported read-only. A Request file existing is not an acceptance: BECAME_A_TASK appears only when a signed Task on the control bus carries that Request's digest and verifies. A refusal carries the Bridge's own reason code, unmodified, and a duplicate or replay carries counted_as_success=false.",
     "answers.repository_main_sha is UNKNOWN unless it was supplied out of band; the runtime's build-source SHA is never substituted for it.",
     "Deploy readiness and rollback readiness are NOT computed here. No can_deploy, deployment eligibility, rollback target selection or release-gate verdict exists in answers.",
     "This contract contains no image override, service name, compose path, shell command or signing parameter."
