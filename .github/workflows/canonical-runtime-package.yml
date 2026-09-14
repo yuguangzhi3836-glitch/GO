@@ -1,0 +1,69 @@
+name: Canonical runtime package and independent restore
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - packaging/canonical-runtime/**
+      - .github/workflows/canonical-runtime-package.yml
+permissions:
+  contents: read
+concurrency:
+  group: canonical-runtime-package-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Packaging safety regression
+        run: python3 -B -m unittest discover -s packaging/canonical-runtime -p 'test_*.py' -v
+      - name: Build fixed canonical business image and source-bound package
+        run: |
+          set -o pipefail
+          python3 -B packaging/canonical-runtime/package.py build "$RUNNER_TEMP/runtime-delivery" 2>&1 | tee "$RUNNER_TEMP/runtime-build.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-runtime-${{ github.event.pull_request.head.sha }}
+          path: |
+            ${{ runner.temp }}/runtime-delivery/runtime-package.tar.gz
+            ${{ runner.temp }}/runtime-delivery/runtime-package.sha256
+            ${{ runner.temp }}/runtime-delivery/bundle/*.json
+            ${{ runner.temp }}/runtime-delivery/bundle/*.log
+            ${{ runner.temp }}/runtime-delivery/bundle/*.txt
+            ${{ runner.temp }}/runtime-build.log
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+  independent-restore:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: canonical-runtime-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/downloaded
+      - name: Restore image on independent runner; execute without network
+        run: |
+          set -o pipefail
+          python3 -B packaging/canonical-runtime/package.py restore "$RUNNER_TEMP/downloaded/runtime-delivery" 2>&1 | tee "$RUNNER_TEMP/restore.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-runtime-restore-${{ github.event.pull_request.head.sha }}
+          path: |
+            ${{ runner.temp }}/downloaded/runtime-delivery/restore-evidence
+            ${{ runner.temp }}/restore.log
+          if-no-files-found: error
+          retention-days: 90
