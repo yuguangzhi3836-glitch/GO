@@ -92,6 +92,27 @@ WHAT_REMAINS_BEFORE_CC_V1_DELIVERY=see REMAINING_CC_V1_BLOCKERS in the PR body
   and in this README's final section.
 ```
 
+## Relationship to the project context layer
+
+`docs/project/GO_CURRENT_STATE.md`, `docs/project/CONTEXT_CHECKPOINT.json` and
+`docs/state/` (merged as PR #65) are a **human-readable narrative context layer**.
+They are refreshed by a Pull Request, they are keyed to a `checkpoint_main_sha`,
+and they deliberately record that live Control Plane host state is a live-host
+fact rather than repository evidence.
+
+This layer is different in kind and complements it:
+
+| | Project context layer | This layer |
+|---|---|---|
+| Content | authored narrative and decision cards | derived control-bus state |
+| Produced by | a human/GPT editing a PR | `state_projection.py`, never hand-edited |
+| Bound to | `checkpoint_main_sha` | the exact control-bus refs and SHAs in `sources` |
+| Freshness | refreshed when someone refreshes it | rebuildable at any instant with `--now` |
+| Failure mode avoided | stale prose | speculation: every leaf carries a rank and a reason |
+
+The two must not be conflated. Neither replaces the other, and neither is
+Execution Authority.
+
 ## Web Command Center classification
 
 The old Web Command Center is classified, not removed and not refactored:
