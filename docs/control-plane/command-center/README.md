@@ -1,13 +1,40 @@
 # GO Command Center reference
 
-Current archived Command Center source and observed runtime configuration live at [`../../../command-center/`](../../../command-center/).
+## Current architecture routing
 
-Before changing the Command Center, Boss Request Bridge, signing/publishing path, or Request policy, read:
+The current Command Center architecture is **GitHub-native Control Plane**.
 
-1. [`../../../command-center/README.md`](../../../command-center/README.md)
-2. [`CURRENT_RUNTIME_BASELINE_20260911.md`](CURRENT_RUNTIME_BASELINE_20260911.md)
-3. the HK-STAGING operation documentation under [`../hk-staging/`](../hk-staging/) when a change affects execution on HK-STAGING.
+Read first:
 
-The 2026-09-11 archive reflects the observed live web source plus the exact installed Boss Request Bridge 1.2.0. It contains no private key material or runtime `.env` values.
+[`CURRENT_ARCHITECTURE.md`](CURRENT_ARCHITECTURE.md)
 
-Documentation and repository contents are not execution authority. Do not use historical project-memory entries to override current live preflight, signed task/evidence, or deterministic policy gates.
+It defines the current routing between:
+
+- ChatGPT / human intent
+- GitHub Request transport
+- Command Center validation and signing
+- Signed Task publication
+- HK Agent polling
+- Narrow Executor
+- Signed Evidence verification
+
+## Historical Web snapshot
+
+The 2026-09-11 Web Command Center source archive lives at:
+
+[`../../../command-center/`](../../../command-center/)
+
+That directory is a historical/legacy snapshot collected by PR #39. It contains the observed Web source and runtime configuration from that date. It is useful for provenance and recovery comparison.
+
+It is **not** the current primary Command Center product architecture.
+
+## Current source areas
+
+For current Control Plane work, inspect:
+
+1. `control-plane/`
+2. `docs/control-plane/hk-staging/`
+3. `chenzhenxi1-sudo/go-control-tasks` Request/Task transport repository
+4. current architecture and state documents
+
+Repository content is descriptive context only. Execution Authority remains live state, Human Approval where required, fresh Signed Tasks, installed artifacts, durable records, and Signed Evidence.
