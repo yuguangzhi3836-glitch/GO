@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-state-v1/contracts/control_status_v1.schema.json",
+  "title": "GO Command Center CONTROL_STATUS_V1",
+  "description": "The compact, stable read contract a ChatGPT connector reads instead of the underlying JSON. Bounded in size, fixed question keys, no execution parameters, never Execution Authority.",
+  "type": "object",
+  "required": ["schema_version", "contract", "audience", "authority", "generated_at", "freshness",
+               "sources", "verification", "answers", "limits", "verdict"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "contract": {"const": "CONTROL_STATUS_V1"},
+    "audience": {"const": "CHATGPT_CONNECTOR / HUMAN_OPERATOR"},
+    "authority": {"const": "DERIVED_NON_AUTHORITATIVE"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "freshness": {"type": "object"},
+    "sources": {"type": "object"},
+    "verification": {"type": "object"},
+    "answers": {
+      "type": "object",
+      "required": ["go_is_healthy", "hk_agent_online", "my_task_executed", "pr_tested", "verify",
+                   "deploy", "current_runtime", "current_main", "current_release_candidate",
+                   "can_deploy", "stuck_tasks", "pending_evidence", "rollback_targets",
+                   "control_plane_drift", "release_gates"],
+      "additionalProperties": true,
+      "properties": {
+        "go_is_healthy": {"$ref": "#/$defs/assertion"},
+        "hk_agent_online": {"$ref": "#/$defs/assertion"},
+        "my_task_executed": {"type": "object"},
+        "pr_tested": {
+          "type": "object",
+          "required": ["latest", "by_pr_number"],
+          "properties": {
+            "latest": {"$ref": "#/$defs/assertion"},
+            "by_pr_number": {"type": "object"}
+          }
+        },
+        "verify": {"$ref": "#/$defs/assertion"},
+        "deploy": {"$ref": "#/$defs/assertion"},
+        "current_runtime": {"$ref": "#/$defs/assertion"},
+        "current_main": {"$ref": "#/$defs/assertion"},
+        "current_release_candidate": {"$ref": "#/$defs/assertion"},
+        "can_deploy": {"$ref": "#/$defs/assertion"},
+        "stuck_tasks": {"type": "array"},
+        "pending_evidence": {"type": "array"},
+        "rollback_targets": {"$ref": "#/$defs/assertion"},
+        "control_plane_drift": {"$ref": "#/$defs/assertion"},
+        "release_gates": {"type": "object"}
+      }
+    },
+    "limits": {
+      "type": "object",
+      "required": ["read_contract_only", "unobservable_by_this_projection", "never_infer"],
+      "properties": {
+        "read_contract_only": {"type": "string"},
+        "unobservable_by_this_projection": {"type": "array", "items": {"type": "string"}},
+        "never_infer": {"type": "string"}
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "required": ["healthy", "blockers"],
+      "properties": {
+        "healthy": {"$ref": "#/$defs/assertion"},
+        "blockers": {"type": "array"}
+      }
+    }
+  },
+  "$defs": {
+    "assertion": {
+      "type": "object",
+      "required": ["state", "value", "reason", "evidence"],
+      "properties": {
+        "state": {"enum": ["PROVEN", "OBSERVED", "PENDING", "HOLD", "FAILED", "UNKNOWN"]},
+        "value": {},
+        "reason": {"type": "string", "minLength": 1},
+        "evidence": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  },
+  "x-go-question-map": {
+    "GO 现在正常吗": "answers.go_is_healthy",
+    "香港 Agent 在线吗": "answers.hk_agent_online",
+    "我刚才的任务执行了吗": "answers.my_task_executed",
+    "PR N 测了吗 / 测试结果是什么": "answers.pr_tested.by_pr_number[N]",
+    "现在香港跑哪个版本": "answers.current_runtime",
+    "最近一次部署是什么": "answers.deploy + answers.rollback_targets",
+    "能不能部署 / 为什么不能部署": "answers.can_deploy",
+    "有没有任务卡住 / 有没有 Evidence 回来": "answers.stuck_tasks + answers.pending_evidence",
+    "可以回滚到哪": "answers.rollback_targets",
+    "Control Plane 是否漂移": "answers.control_plane_drift"
+  },
+  "x-go-notes": [
+    "answers.hk_agent_online is derived only from fresh signed CONTROL_PLANE_HEALTH Evidence. A successful VERIFY task is explicitly NOT liveness.",
+    "answers.current_runtime reads the canonical runtime pointer and cross-checks it against the newest VERIFY Evidence; a mismatch is reported as DRIFT.",
+    "The contract is size-bounded and contains no image override, service name, compose path, shell command or signing parameter."
+  ]
+}

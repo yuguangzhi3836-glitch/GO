@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-state-v1/contracts/control_state_v1.schema.json",
+  "title": "GO Command Center CURRENT_CONTROL_STATE",
+  "description": "Deterministic projection of the GitHub-native Control Plane. Derived, rebuildable and NON-AUTHORITATIVE. Every leaf is an assertion carrying a rank from {PROVEN, OBSERVED, PENDING, HOLD, FAILED, UNKNOWN}; UNKNOWN always carries value=null and never implies success.",
+  "type": "object",
+  "required": ["schema_version", "contract", "authority", "generated_at", "freshness", "sources",
+               "verification", "counts", "requests", "tasks", "control_state", "anomalies"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "contract": {"const": "CURRENT_CONTROL_STATE"},
+    "authority": {"const": "DERIVED_NON_AUTHORITATIVE"},
+    "authority_note": {"type": "string"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "freshness": {
+      "type": "object",
+      "required": ["stale_after_seconds", "liveness_window_seconds"],
+      "properties": {
+        "stale_after_seconds": {"type": "integer", "minimum": 1},
+        "liveness_window_seconds": {"type": "integer", "minimum": 1}
+      }
+    },
+    "sources": {"type": "object"},
+    "verification": {
+      "type": "object",
+      "required": ["signature_verification", "proven_requires_key"],
+      "properties": {
+        "task_key_fingerprint": {"type": ["string", "null"]},
+        "signature_verification": {"enum": ["PERFORMED", "NOT_PERFORMED"]},
+        "proven_requires_key": {"const": true}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["tasks", "evidence", "requests", "by_lifecycle", "anomalies"],
+      "properties": {
+        "tasks": {"type": "integer", "minimum": 0},
+        "evidence": {"type": "integer", "minimum": 0},
+        "requests": {"type": "integer", "minimum": 0},
+        "by_lifecycle": {"type": "object"},
+        "anomalies": {"type": "integer", "minimum": 0}
+      }
+    },
+    "requests": {"type": "array"},
+    "tasks": {"type": "array"},
+    "anomalies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "detail"],
+        "properties": {
+          "kind": {"enum": ["TASKS_DIRECTORY_MISSING", "EVIDENCE_DIRECTORY_MISSING",
+                            "REQUESTS_DIRECTORY_MISSING", "TASK_UNREADABLE", "EVIDENCE_UNREADABLE",
+                            "REQUEST_UNREADABLE", "TASK_ID_REUSED", "REQUEST_ID_REUSED",
+                            "REPLAY_REJECTED", "EVIDENCE_CONFLICT",
+                            "TASK_PARAMETER_CONTRACT_DRIFT"]},
+          "detail": {"type": "string"},
+          "ref": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "rebuild": {"type": "object"},
+    "control_state": {
+      "type": "object",
+      "required": ["health", "last_request", "last_task", "last_evidence", "hk_agent_liveness",
+                   "hk_runtime_identity", "verify_status", "test_pr_status", "deploy_status",
+                   "current_runtime", "current_main", "current_release_candidate", "inflight_tasks",
+                   "failed_tasks", "stale_tasks", "expired_without_evidence", "last_successful_deploy",
+                   "rollback_source", "control_plane_drift", "release_gates", "final_release",
+                   "hk_deploy", "production"],
+      "properties": {
+        "health": {"$ref": "#/$defs/assertion"},
+        "last_request": {"$ref": "#/$defs/assertion"},
+        "last_task": {"$ref": "#/$defs/assertion"},
+        "last_evidence": {"$ref": "#/$defs/assertion"},
+        "hk_agent_liveness": {"$ref": "#/$defs/assertion"},
+        "hk_runtime_identity": {"$ref": "#/$defs/assertion"},
+        "verify_status": {"$ref": "#/$defs/assertion"},
+        "test_pr_status": {"$ref": "#/$defs/assertion"},
+        "deploy_status": {"$ref": "#/$defs/assertion"},
+        "current_runtime": {"$ref": "#/$defs/assertion"},
+        "current_main": {"$ref": "#/$defs/assertion"},
+        "current_release_candidate": {"$ref": "#/$defs/assertion"},
+        "inflight_tasks": {"type": "array"},
+        "failed_tasks": {"type": "array"},
+        "stale_tasks": {"type": "array"},
+        "expired_without_evidence": {"type": "array"},
+        "last_successful_deploy": {"$ref": "#/$defs/assertion"},
+        "rollback_source": {"$ref": "#/$defs/assertion"},
+        "control_plane_drift": {"$ref": "#/$defs/assertion"},
+        "release_gates": {"type": "object"},
+        "final_release": {"$ref": "#/$defs/assertion"},
+        "hk_deploy": {"$ref": "#/$defs/assertion"},
+        "production": {"$ref": "#/$defs/assertion"}
+      }
+    }
+  },
+  "$defs": {
+    "assertion": {
+      "type": "object",
+      "required": ["state", "value", "reason", "evidence"],
+      "properties": {
+        "state": {"enum": ["PROVEN", "OBSERVED", "PENDING", "HOLD", "FAILED", "UNKNOWN"]},
+        "value": {},
+        "reason": {"type": "string", "minLength": 1},
+        "evidence": {"type": "array", "items": {"type": "string"}}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "UNKNOWN"}}, "required": ["state"]},
+          "then": {"properties": {"value": {"type": "null"}}}
+        }
+      ],
+      "x-go-rank-rules": [
+        "PROVEN requires a signature verified against a pinned public key.",
+        "OBSERVED means a published record was read but its signature was not checked, or the claim is a pointer rather than a live proof.",
+        "PENDING is reserved for an in-flight lifecycle stage still inside its bound.",
+        "HOLD means an explicit policy or release gate blocks the claim.",
+        "FAILED requires a terminal, evidence-backed failure record.",
+        "UNKNOWN means the control bus cannot answer; speculation is forbidden."
+      ]
+    }
+  }
+}

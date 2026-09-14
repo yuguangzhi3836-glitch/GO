@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-state-v1/contracts/agent_liveness_v1.schema.json",
+  "title": "GO Hong Kong Agent liveness representation V1",
+  "description": "How agent liveness is represented and what it may not claim. The mechanism already exists: a CONTROL_PLANE_HEALTH Task, already in the agent ALLOWLIST, whose executor path is read-only (uname nodename, /proc/meminfo, disk free) and whose result is published as ordinary signed Evidence. This contract adds no Hong Kong code and no monitoring system.",
+  "type": "object",
+  "required": ["task_action_id", "evidence_shape", "freshness_window_seconds", "rank_rules", "forbidden_inferences"],
+  "properties": {
+    "task_action_id": {"const": "CONTROL_PLANE_HEALTH"},
+    "task_parameters": {"const": {}},
+    "evidence_shape": {
+      "type": "object",
+      "description": "Payload carried by the signed Evidence for this action.",
+      "properties": {
+        "agent_version": {"type": "string"},
+        "hostname": {"type": "string", "pattern": "^i[-Zz]?[0-9a-z]{16,20}[Zz]?$"},
+        "current_time": {"type": "string", "format": "date-time"},
+        "disk_free_bytes": {"type": "integer"},
+        "memory_available_bytes": {"type": "integer"},
+        "tasks_repo_connectivity": {"type": "boolean"},
+        "evidence_repo_connectivity": {"type": "boolean"}
+      }
+    },
+    "freshness_window_seconds": {"type": "integer", "minimum": 60, "default": 1800},
+    "rank_rules": {
+      "type": "object",
+      "required": ["PROVEN", "OBSERVED", "UNKNOWN"],
+      "properties": {
+        "PROVEN": {"const": "signature-verified liveness Evidence whose completed_at is inside the freshness window"},
+        "OBSERVED": {"const": "liveness Evidence inside the window whose signature was not checked in this run"},
+        "UNKNOWN": {"const": "no liveness Evidence, or the newest liveness Evidence is older than the window"}
+      }
+    },
+    "forbidden_inferences": {
+      "type": "array",
+      "items": {"type": "string"},
+      "default": [
+        "a successful VERIFY / TEST_PR / DEPLOY task is not proof that the agent is online now",
+        "a newer Evidence timestamp does not prove the current process is alive",
+        "NULL from a failed liveness probe does not prove the agent is dead",
+        "the projection must never synthesise a heartbeat the agent did not sign"
+      ]
+    },
+    "properties_of_the_mechanism": {
+      "type": "object",
+      "properties": {
+        "read_only": {"const": true},
+        "mutates_business_runtime": {"const": false},
+        "requires_new_hong_kong_code": {"const": false},
+        "requires_new_signing_authority": {"const": false},
+        "bounded_frequency": {"const": "operator-chosen poll interval; recommend 10-30 minutes"},
+        "secret_leakage": {"const": "none: the payload contains no credential, path or token"},
+        "cost": {"const": "one signed Task + one signed Evidence per probe, on the existing repositories"}
+      }
+    },
+    "x-go-gap": "No scheduled producer exists yet. Until Command Center drives CONTROL_PLANE_HEALTH on a timer, answers.hk_agent_online will honestly read UNKNOWN even while the agent is healthy, because the control bus carries no fresh liveness Evidence."
+  }
+}

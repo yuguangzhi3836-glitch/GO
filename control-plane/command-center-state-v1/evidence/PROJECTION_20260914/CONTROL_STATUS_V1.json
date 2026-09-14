@@ -1,0 +1,378 @@
+{
+  "answers": {
+    "can_deploy": {
+      "evidence": [],
+      "reason": "deployment authorization is not established by this projection; RELEASE GATES: hk_deploy=HOLD, final_release=HOLD, production=HOLD. A verified DEPLOY capability is not deploy authorization: the live request switch, approved plan store and fresh CANARY/VERIFY proofs are Control Plane state that this projection cannot read",
+      "state": "HOLD",
+      "value": "NO"
+    },
+    "control_plane_drift": {
+      "evidence": [
+        "go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json"
+      ],
+      "reason": "the newest observed VERIFY Evidence refers to sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324 while the canonical pointer records sha256:57beafa250f42eb1319ae561e0b79f432bb80d7171592392303a31446cd8ac6c: no VERIFY Evidence of any rank exists for the runtime now recorded as deployed",
+      "state": "OBSERVED",
+      "value": "DRIFT"
+    },
+    "current_main": {
+      "evidence": [],
+      "reason": "canonical runtime pointer records the main commit the runtime was built from",
+      "state": "OBSERVED",
+      "value": "bba3b2589ec38404122fb9590fc8119410b96247"
+    },
+    "current_release_candidate": {
+      "evidence": [],
+      "reason": "canonical candidate pointer records the newest integrated source identity",
+      "state": "OBSERVED",
+      "value": "8a22a4fcbba4574f5a06e356e461d7d083c86ae1"
+    },
+    "current_runtime": {
+      "evidence": [
+        "go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json"
+      ],
+      "reason": "canonical pointer is authoritative for the runtime currently deployed on HK-STAGING",
+      "state": "OBSERVED",
+      "value": "sha256:57beafa250f42eb1319ae561e0b79f432bb80d7171592392303a31446cd8ac6c"
+    },
+    "deploy": {
+      "evidence": [],
+      "reason": "RELEASE GATES: hk_deploy=HOLD, final_release=HOLD, production=HOLD. A verified DEPLOY capability is not deploy authorization: the live request switch, approved plan store and fresh CANARY/VERIFY proofs are Control Plane state that this projection cannot read",
+      "state": "HOLD",
+      "value": {
+        "approved_plans": "UNKNOWN",
+        "canary_evidence": "UNKNOWN",
+        "deployment_requests_enabled": "UNKNOWN"
+      }
+    },
+    "go_is_healthy": {
+      "age_seconds": 116193,
+      "as_of": "2026-09-13T03:43:27Z",
+      "evidence": [
+        "go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json"
+      ],
+      "reason": "the newest VERIFY Evidence reports VERIFY_OK. This is the last proven moment, not present-moment liveness",
+      "stale": true,
+      "state": "OBSERVED",
+      "value": "HEALTHY_AS_OF_LAST_PROBE"
+    },
+    "hk_agent_online": {
+      "age_seconds": 690395,
+      "evidence": [
+        "go-m3-auto-health-20260906T115227992322Z-jzoWVgooSJWTldTOGkT57zLvcCOiQAGS.json"
+      ],
+      "last_seen": {
+        "agent_version": "0.4.5-rebuilt",
+        "completed_at": "2026-09-06T12:13:25Z",
+        "hostname": "iZj6ccs8t04f1p4d8pe69zZ"
+      },
+      "reason": "newest signed liveness Evidence is 690395 s old, outside the 1800 s window: a past success is not proof of current liveness",
+      "state": "UNKNOWN",
+      "value": null
+    },
+    "my_task_executed": {
+      "last_evidence": {
+        "evidence": [
+          "go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json"
+        ],
+        "reason": "newest signed Evidence on the control bus",
+        "state": "OBSERVED",
+        "value": {
+          "action_id": "HK_STAGING_VERIFY",
+          "completed_at": "2026-09-13T03:43:27Z",
+          "task_id": "go-boss-request-verify-20260913T034140Z-b22f51784808"
+        }
+      },
+      "last_request": {
+        "evidence": [
+          "boss-mobile-verify-e2e-20260911-01.json"
+        ],
+        "reason": "newest Request file observed on a control-bus ref",
+        "state": "OBSERVED",
+        "value": "boss-mobile-verify-e2e-20260911-01"
+      },
+      "last_task": {
+        "evidence": [
+          "go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json",
+          "go-boss-request-verify-20260913T034140Z-b22f51784808.json"
+        ],
+        "reason": "newest signed task of this class observed on the control bus",
+        "state": "OBSERVED",
+        "value": {
+          "action_id": "HK_STAGING_VERIFY",
+          "expires_at": "2026-09-13T03:56:40.478302Z",
+          "issued_at": "2026-09-13T03:41:40.478302Z",
+          "lifecycle": "EVIDENCE_PUBLISHED",
+          "task_id": "go-boss-request-verify-20260913T034140Z-b22f51784808"
+        }
+      }
+    },
+    "pending_evidence": [],
+    "pr_tested": {
+      "by_pr_number": {
+        "42": [
+          {
+            "built_image_id": null,
+            "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+            "completed_at": null,
+            "lifecycle": "TASK_EXPIRED",
+            "state": "OBSERVED",
+            "task_id": "go-boss-test-pr-42-fbf89c097cea"
+          },
+          {
+            "built_image_id": null,
+            "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+            "completed_at": null,
+            "lifecycle": "TASK_EXPIRED",
+            "state": "OBSERVED",
+            "task_id": "go-boss-test-pr-42-897d50e981e3"
+          },
+          {
+            "built_image_id": null,
+            "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+            "completed_at": null,
+            "lifecycle": "TASK_EXPIRED",
+            "state": "OBSERVED",
+            "task_id": "go-boss-test-pr-42-a9d5683be3e7"
+          },
+          {
+            "built_image_id": "sha256:625c05ee487c0de21a6db6db13991802802c219c96e407a2f78c391314c09983",
+            "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+            "completed_at": "2026-09-12T15:45:24Z",
+            "lifecycle": "EVIDENCE_PUBLISHED",
+            "state": "OBSERVED",
+            "task_id": "go-boss-test-pr-42-5c8d760d36cb"
+          },
+          {
+            "built_image_id": "sha256:c446b3d39861fb0a1055e906da82a6ef3cd0eec1b907a537f400d6bf3e6100a8",
+            "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+            "completed_at": "2026-09-12T16:02:38Z",
+            "lifecycle": "EVIDENCE_PUBLISHED",
+            "state": "OBSERVED",
+            "task_id": "go-boss-test-pr-42-81653232027c"
+          }
+        ],
+        "47": [
+          {
+            "built_image_id": "sha256:de90eb9e5df3534ca542f185fdcb658345261ac5b400add741b1126d2b03ac39",
+            "commit_sha": "3e8150fec9cc5ebcfc9694e7e73444c7592ddcb4",
+            "completed_at": "2026-09-12T17:08:32Z",
+            "lifecycle": "EVIDENCE_PUBLISHED",
+            "state": "OBSERVED",
+            "task_id": "go-boss-test-pr-47-c00da968ea3c"
+          }
+        ]
+      },
+      "latest": {
+        "evidence": [
+          "go-boss-test-pr-47-c00da968ea3c-kFYOCekZQgQet9rxzRaWgR3FT_n7hUmv.json",
+          "go-boss-test-pr-47-c00da968ea3c.json"
+        ],
+        "reason": "newest signed task of this class observed on the control bus",
+        "state": "OBSERVED",
+        "value": {
+          "action_id": "HK_STAGING_TEST_PR",
+          "expires_at": "2026-09-12T17:26:21.572557Z",
+          "issued_at": "2026-09-12T17:06:21.572557Z",
+          "lifecycle": "EVIDENCE_PUBLISHED",
+          "task_id": "go-boss-test-pr-47-c00da968ea3c"
+        }
+      },
+      "note": "look up by_pr_number for 'did you test PR N?'"
+    },
+    "release_gates": {
+      "final_release": "HOLD",
+      "hk_deploy": "HOLD",
+      "production": "HOLD",
+      "runtime_status": "ACTIVE"
+    },
+    "rollback_targets": {
+      "evidence": [
+        "go-boss02-final-deploy-20260911T025420Z-ZeLZ20u_3G163YURk-E55WXArlvCrupa.json"
+      ],
+      "reason": "rollback eligibility is a candidate set derived from successful DEPLOY Evidence; it is not an approval and not a signed ROLLBACK task",
+      "state": "OBSERVED",
+      "value": {
+        "newest_completed_at": "2026-09-11T02:57:16Z",
+        "releases": [
+          "go-boss02-deploy-r4-20260909T131418835006Z",
+          "go-boss02-deploy-v2-20260910T030827Z",
+          "go-boss02-deploy-v2-r7-20260910T075319Z",
+          "go-boss02-final-deploy-20260911T025420Z"
+        ],
+        "source_deploy_task_id": "go-boss02-final-deploy-20260911T025420Z"
+      }
+    },
+    "stuck_tasks": [
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "expires_at": "2026-09-04T15:58:27.299100+00:00",
+        "task_id": "go-m3-05-cp-health-20260904-001"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "expires_at": "2026-09-05T01:11:11.557002+00:00",
+        "task_id": "go-m3-06-auto-health-20260905-001"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "expires_at": "2026-09-05T15:57:33.846901+00:00",
+        "task_id": "go-m3-042-e2e-health-20260905T151233846901Z"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "expires_at": "2026-09-05T17:21:30.238921+00:00",
+        "task_id": "go-m3-042-e2e-health-20260905T152130238921Z"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "expires_at": "2026-09-06T05:18:15.978751+00:00",
+        "task_id": "go-m3-042-e2e-health-20260906T011815978751Z"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "expires_at": "2026-09-06T05:45:59.385419+00:00",
+        "task_id": "go-m3-043-e2e-health-20260906T014559385419Z"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "expires_at": "2026-09-06T10:48:14.284789+00:00",
+        "task_id": "go-m3-044-e2e-health-20260906T064814284789Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-07T04:54:59.419342+00:00",
+        "task_id": "go-boss02-verify-20260907T005459419342Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-08T03:39:18.213108+00:00",
+        "task_id": "go-boss02-verify-20260908T032418213108Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-08T07:13:20.243124+00:00",
+        "task_id": "go-boss02-verify-20260908T065820243124Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-08T12:20:49.317617+00:00",
+        "task_id": "go-boss02-verify-20260908T120549317617Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-08T12:42:38.708739+00:00",
+        "task_id": "go-boss02-verify-20260908T122738708739Z"
+      },
+      {
+        "action_id": "HK_STAGING_CANARY",
+        "expires_at": "2026-09-09T02:01:03.780244+00:00",
+        "task_id": "go-boss02-canary-20260909T014603780244Z"
+      },
+      {
+        "action_id": "HK_STAGING_DEPLOY",
+        "expires_at": "2026-09-09T16:37:29.218780+00:00",
+        "task_id": "go-boss02-deploy-20260909T123729218780Z"
+      },
+      {
+        "action_id": "HK_STAGING_DEPLOY",
+        "expires_at": "2026-09-09T16:56:48.094680+00:00",
+        "task_id": "go-boss02-deploy-r3-20260909T125648094680Z"
+      },
+      {
+        "action_id": "HK_STAGING_DEPLOY",
+        "expires_at": "2026-09-10T11:18:57.000000+00:00",
+        "task_id": "go-boss02-deploy-v2-r6-20260910T071857Z"
+      },
+      {
+        "action_id": "HK_STAGING_ROLLBACK",
+        "expires_at": "2026-09-11T04:11:21.564370+00:00",
+        "task_id": "go-boss02-rollback-r7-20260911T021121Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-11T10:08:56.682627Z",
+        "task_id": "go-boss-request-verify-20260911T095356Z"
+      },
+      {
+        "action_id": "HK_STAGING_TEST_PR",
+        "expires_at": "2026-09-12T09:31:04.561510Z",
+        "task_id": "go-boss-test-pr-42-fbf89c097cea"
+      },
+      {
+        "action_id": "HK_STAGING_TEST_PR",
+        "expires_at": "2026-09-12T10:44:39.878757Z",
+        "task_id": "go-boss-test-pr-42-897d50e981e3"
+      },
+      {
+        "action_id": "HK_STAGING_TEST_PR",
+        "expires_at": "2026-09-12T14:15:51.260269Z",
+        "task_id": "go-boss-test-pr-42-a9d5683be3e7"
+      }
+    ],
+    "verify": {
+      "evidence": [
+        "go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json",
+        "go-boss-request-verify-20260913T034140Z-b22f51784808.json"
+      ],
+      "reason": "newest signed task of this class observed on the control bus",
+      "state": "OBSERVED",
+      "value": {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-13T03:56:40.478302Z",
+        "issued_at": "2026-09-13T03:41:40.478302Z",
+        "lifecycle": "EVIDENCE_PUBLISHED",
+        "task_id": "go-boss-request-verify-20260913T034140Z-b22f51784808"
+      }
+    }
+  },
+  "audience": "CHATGPT_CONNECTOR / HUMAN_OPERATOR",
+  "authority": "DERIVED_NON_AUTHORITATIVE",
+  "contract": "CONTROL_STATUS_V1",
+  "freshness": {
+    "liveness_window_seconds": 1800,
+    "stale_after_seconds": 86400
+  },
+  "generated_at": "2026-09-14T12:00:00Z",
+  "limits": {
+    "never_infer": "last successful task != agent online; runtime ACTIVE != release accepted",
+    "read_contract_only": "This is a bounded read contract. It is not Execution Authority and it never contains execution parameters.",
+    "unobservable_by_this_projection": [
+      "the live Command Center channel switch and approved plan store",
+      "the Hong Kong agent ledger (attempts, failures, nonce claims)",
+      "runtime process state on HK-STAGING"
+    ]
+  },
+  "schema_version": "1",
+  "sources": {
+    "evidence_head": "350dc628075ebd4cea9a3a2d8040caf23f957f57",
+    "evidence_repo": "D:/Code/Workbuddy/.workbuddy/tmp/gct/ev",
+    "go_repo": "D:/Code/Workbuddy/GO-CCV1",
+    "requests_dir": "D:/Code/Workbuddy/.workbuddy/tmp/gct/requests",
+    "tasks_head": "5b7caecd8e47751b13e4661d14b27880f19d1d71",
+    "tasks_repo": "D:/Code/Workbuddy/.workbuddy/tmp/gct/repo"
+  },
+  "verdict": {
+    "blockers": [
+      {
+        "reason": "RELEASE GATES: hk_deploy=HOLD, final_release=HOLD, production=HOLD. A verified DEPLOY capability is not deploy authorization: the live request switch, approved plan store and fresh CANARY/VERIFY proofs are Control Plane state that this projection cannot read",
+        "source": "deploy_status"
+      }
+    ],
+    "healthy": {
+      "age_seconds": 116193,
+      "as_of": "2026-09-13T03:43:27Z",
+      "evidence": [
+        "go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json"
+      ],
+      "reason": "the newest VERIFY Evidence reports VERIFY_OK. This is the last proven moment, not present-moment liveness",
+      "stale": true,
+      "state": "OBSERVED",
+      "value": "HEALTHY_AS_OF_LAST_PROBE"
+    }
+  },
+  "verification": {
+    "proven_requires_key": true,
+    "signature_verification": "NOT_PERFORMED",
+    "task_key_fingerprint": null
+  }
+}
