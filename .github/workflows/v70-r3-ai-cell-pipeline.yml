@@ -1,0 +1,449 @@
+name: V7 R3 per-cell AI candidate pipeline
+
+on:
+  workflow_call:
+    inputs:
+      cell: {required: true, type: string}
+      task: {required: true, type: string}
+      issue: {required: true, type: string}
+      model: {required: true, type: string}
+      effort: {required: true, type: string}
+      baseline_test: {required: true, type: string}
+      scope: {required: true, type: string}
+      base_sha: {required: true, type: string}
+      runner_head_sha: {required: true, type: string}
+      expected_application_tree: {required: true, type: string}
+      r3_product_anchor: {required: true, type: string}
+
+jobs:
+  agent:
+    name: ${{ inputs.cell }} AI implementation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env: {POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres, POSTGRES_DB: go_test}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d go_test" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      CELL: ${{ inputs.cell }}
+      TASK_ID: ${{ inputs.task }}
+      ISSUE_NUMBER: ${{ inputs.issue }}
+      BASE_SHA: ${{ inputs.base_sha }}
+      RUNNER_HEAD_SHA: ${{ inputs.runner_head_sha }}
+      EXPECTED_APPLICATION_TREE: ${{ inputs.expected_application_tree }}
+      R3_PRODUCT_ANCHOR: ${{ inputs.r3_product_anchor }}
+      BASELINE_TEST: ${{ inputs.baseline_test }}
+      EDIT_SCOPE: ${{ inputs.scope }}
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      REDIS_URL: redis://127.0.0.1:6379/0
+      PYTHONPATH: application/src:application
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.runner_head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Copy trusted task config and reset to canonical base
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/agent"
+          cp automation/coding-runner/TASKS.json "$RUNNER_TEMP/agent/TASKS.json"
+          git reset --hard "$BASE_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE"
+
+      - name: Emit task-bound ACK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,os,pathlib,datetime
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'agent'
+          ack={'schema':'go.v70.r3.ai-runner.ack.v1','cell_id':os.environ['CELL'],'task_id':os.environ['TASK_ID'],
+               'issue_number':int(os.environ['ISSUE_NUMBER']),'repository_base_sha':os.environ['BASE_SHA'],
+               'r3_product_anchor':os.environ['R3_PRODUCT_ANCHOR'],'application_tree_before':os.environ['EXPECTED_APPLICATION_TREE'],
+               'run_id':os.environ['GITHUB_RUN_ID'],'run_attempt':os.environ['GITHUB_RUN_ATTEMPT'],'status':'ACK_STARTED',
+               'acknowledged_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+               'final_release':'HOLD','hk_deploy':'HOLD','production':'HOLD'}
+          raw=(json.dumps(ack,indent=2)+'\n').encode(); (out/'ACK.json').write_bytes(raw)
+          (out/'ACK.sha256').write_text(hashlib.sha256(raw).hexdigest()+'  ACK.json\n')
+          PY
+
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      - name: Install test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e 'application[dev]'
+
+      - name: Build immutable task prompt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os,pathlib
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'agent'; cfg=json.loads((out/'TASKS.json').read_text())
+          task=cfg['cells'][os.environ['CELL']]; rules=cfg['global_rules']
+          if os.environ['EDIT_SCOPE']=='application':
+              scope='Modify only application/src/** and application/tests/**. Never modify application/alembic/**.'
+              required='Leave at least one implementation diff under application/src/ and one regression-test diff under application/tests/.'
+              baseline=f"cd application && python -m pytest -q {os.environ['BASELINE_TEST']}"
+          else:
+              scope='Modify only ci/round2/validate_ledger.py, ci/round2/verify_execution_receipt.py, and ci/round2/test_*.py. Never modify command-center, control-plane, hk-staging, deploy, workflows, secrets or signing material.'
+              required='Leave at least one implementation diff in validate_ledger.py or verify_execution_receipt.py and one regression-test diff under ci/round2/test_*.py.'
+              baseline=f"python -m pytest -q {os.environ['BASELINE_TEST']}"
+          prompt=f'''GO V7.0 / V6.1 lineage + C14 controlled implementation.\nCell={os.environ['CELL']} Task={os.environ['TASK_ID']} Issue=#{os.environ['ISSUE_NUMBER']}\nBase={os.environ['BASE_SHA']} R3 anchor={os.environ['R3_PRODUCT_ANCHOR']} Starting application tree={os.environ['EXPECTED_APPLICATION_TREE']}\n\nOBJECTIVE\n{task['objective']}\n\nSCOPE\n{scope}\n{required}\n\nRULES\n- '''+'\n- '.join(rules)+f'''\n\nMETHOD\n1. Inspect current implementation and inherited tests. Preserve prior PASS and do not create cosmetic work.\n2. Find one concrete executable depth gap in this Cell.\n3. Add a regression test exposing the gap, then implement the smallest safe fix.\n4. Preserve/run baseline: {baseline}\n5. Run focused changed/new tests.\n6. Leave code/test edits in the working tree only. Do not commit, push, open PRs, merge, deploy or alter external systems.\n\nFinal response: gap, changed files, actual tests/results, remaining scoped risk. Never claim C14/C13/FINAL_RELEASE/HK_DEPLOY/PRODUCTION PASS.'''
+          (out/'PROMPT.md').write_text(prompt)
+          PY
+
+      - name: Run sandboxed code-modifying Codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ':workspace'
+          safety-strategy: drop-sudo
+          model: ${{ inputs.model }}
+          effort: ${{ inputs.effort }}
+          prompt-file: ${{ runner.temp }}/agent/PROMPT.md
+          output-file: ${{ runner.temp }}/agent/CODEX_FINAL.txt
+
+      - name: Scope gate and test
+        shell: bash
+        run: |
+          set -euo pipefail
+          { git diff --name-only "$BASE_SHA"; git ls-files --others --exclude-standard; } | sed '/^$/d' | sort -u > "$RUNNER_TEMP/agent/CHANGED_FILES.txt"
+          test -s "$RUNNER_TEMP/agent/CHANGED_FILES.txt"
+          python - <<'PY'
+          import os,pathlib,sys
+          paths=[p for p in (pathlib.Path(os.environ['RUNNER_TEMP'])/'agent'/'CHANGED_FILES.txt').read_text().splitlines() if p]
+          if os.environ['EDIT_SCOPE']=='application':
+              bad=[p for p in paths if not (p.startswith('application/src/') or p.startswith('application/tests/'))]
+              impl=any(p.startswith('application/src/') for p in paths); tests=any(p.startswith('application/tests/') for p in paths)
+          else:
+              impls={'ci/round2/validate_ledger.py','ci/round2/verify_execution_receipt.py'}
+              bad=[p for p in paths if not (p in impls or (p.startswith('ci/round2/test_') and p.endswith('.py')))]
+              impl=any(p in impls for p in paths); tests=any(p.startswith('ci/round2/test_') and p.endswith('.py') for p in paths)
+          if bad: print('OUT_OF_SCOPE='+','.join(bad),file=sys.stderr); raise SystemExit(31)
+          if not impl: raise SystemExit('NO_IMPLEMENTATION_DIFF')
+          if not tests: raise SystemExit('NO_REGRESSION_TEST_DIFF')
+          PY
+          changed_tests=$(grep -E '(^application/tests/.*\.py$|^ci/round2/test_.*\.py$)' "$RUNNER_TEMP/agent/CHANGED_FILES.txt" || true)
+          : > "$RUNNER_TEMP/agent/TESTS.log"
+          if [ "$EDIT_SCOPE" = application ]; then
+            pushd application >/dev/null; args=("$BASELINE_TEST")
+            while IFS= read -r p; do [ -z "$p" ] && continue; rel=${p#application/}; [ "$rel" = "$BASELINE_TEST" ] || args+=("$rel"); done <<< "$changed_tests"
+            python -m pytest -q "${args[@]}" 2>&1 | tee "$RUNNER_TEMP/agent/TESTS.log"; popd >/dev/null
+          else
+            args=("$BASELINE_TEST")
+            while IFS= read -r p; do [ -z "$p" ] && continue; [ "$p" = "$BASELINE_TEST" ] || args+=("$p"); done <<< "$changed_tests"
+            python -m pytest -q "${args[@]}" 2>&1 | tee "$RUNNER_TEMP/agent/TESTS.log"
+          fi
+
+      - name: Freeze patch and agent Evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r p; do [ -z "$p" ] && continue; git ls-files --error-unmatch "$p" >/dev/null 2>&1 || git add -N -- "$p"; done < "$RUNNER_TEMP/agent/CHANGED_FILES.txt"
+          git diff --binary --full-index "$BASE_SHA" > "$RUNNER_TEMP/agent/CANDIDATE.patch"
+          test -s "$RUNNER_TEMP/agent/CANDIDATE.patch"
+          python - <<'PY'
+          import hashlib,json,os,pathlib,datetime
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'agent'; changed=[p for p in (out/'CHANGED_FILES.txt').read_text().splitlines() if p]
+          def sha(p): return hashlib.sha256((out/p).read_bytes()).hexdigest()
+          data={'schema':'go.v70.r3.ai-agent-work-product.v1','cell_id':os.environ['CELL'],'task_id':os.environ['TASK_ID'],
+                'repository_base_sha':os.environ['BASE_SHA'],'r3_product_anchor':os.environ['R3_PRODUCT_ANCHOR'],
+                'application_tree_before':os.environ['EXPECTED_APPLICATION_TREE'],'changed_files':changed,
+                'patch_sha256':sha('CANDIDATE.patch'),'raw_test_log_sha256':sha('TESTS.log'),'task_bound_ack_sha256':sha('ACK.json'),
+                'model':'${{ inputs.model }}','reasoning_effort':'${{ inputs.effort }}','status':'AGENT_PATCH_READY_FOR_PROMOTION',
+                'candidate_sha':None,'c14':'HOLD_UNTIL_PROMOTED','c13':'HOLD','final_release':'HOLD','hk_deploy':'HOLD','production':'HOLD',
+                'created_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+          raw=(json.dumps(data,indent=2)+'\n').encode(); (out/'AGENT_EVIDENCE.json').write_bytes(raw)
+          (out/'AGENT_EVIDENCE.sha256').write_text(hashlib.sha256(raw).hexdigest()+'  AGENT_EVIDENCE.json\n')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-${{ inputs.cell }}-${{ inputs.task }}
+          path: ${{ runner.temp }}/agent
+          if-no-files-found: error
+          retention-days: 90
+
+  promote:
+    name: ${{ inputs.cell }} deterministic promotion
+    needs: agent
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      candidate_sha: ${{ steps.identity.outputs.candidate_sha }}
+      application_tree: ${{ steps.identity.outputs.application_tree }}
+      branch: ${{ steps.publish.outputs.branch }}
+      pr_number: ${{ steps.publish.outputs.pr_number }}
+      evidence_sha: ${{ steps.evidence.outputs.evidence_sha }}
+    services:
+      postgres:
+        image: postgres:16
+        env: {POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres, POSTGRES_DB: go_test}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d go_test" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      CELL: ${{ inputs.cell }}
+      TASK_ID: ${{ inputs.task }}
+      BASE_SHA: ${{ inputs.base_sha }}
+      EXPECTED_APPLICATION_TREE: ${{ inputs.expected_application_tree }}
+      R3_PRODUCT_ANCHOR: ${{ inputs.r3_product_anchor }}
+      BASELINE_TEST: ${{ inputs.baseline_test }}
+      EDIT_SCOPE: ${{ inputs.scope }}
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      REDIS_URL: redis://127.0.0.1:6379/0
+      PYTHONPATH: application/src:application
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ inputs.base_sha }}', fetch-depth: 0}
+      - uses: actions/download-artifact@v4
+        with: {name: 'agent-${{ inputs.cell }}-${{ inputs.task }}', path: candidate-input}
+      - name: Verify and apply frozen patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE"
+          sha256sum -c candidate-input/AGENT_EVIDENCE.sha256
+          git apply --index --binary candidate-input/CANDIDATE.patch
+          git diff --cached --name-only | sort > promoted.txt
+          sort candidate-input/CHANGED_FILES.txt > expected.txt
+          diff -u expected.txt promoted.txt
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Re-run task tests in clean promoter VM
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip >/dev/null
+          python -m pip install -e 'application[dev]' >/dev/null
+          changed_tests=$(grep -E '(^application/tests/.*\.py$|^ci/round2/test_.*\.py$)' candidate-input/CHANGED_FILES.txt || true)
+          : > promoter-tests.log
+          if [ "$EDIT_SCOPE" = application ]; then
+            pushd application >/dev/null; args=("$BASELINE_TEST")
+            while IFS= read -r p; do [ -z "$p" ] && continue; rel=${p#application/}; [ "$rel" = "$BASELINE_TEST" ] || args+=("$rel"); done <<< "$changed_tests"
+            python -m pytest -q "${args[@]}" 2>&1 | tee ../promoter-tests.log; popd >/dev/null
+          else
+            args=("$BASELINE_TEST")
+            while IFS= read -r p; do [ -z "$p" ] && continue; [ "$p" = "$BASELINE_TEST" ] || args+=("$p"); done <<< "$changed_tests"
+            python -m pytest -q "${args[@]}" 2>&1 | tee promoter-tests.log
+          fi
+      - name: Commit exact promoted candidate
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'GO Deterministic Candidate Promoter'
+          git config user.email 'go-promoter@users.noreply.github.com'
+          git -c core.hooksPath=/dev/null diff --cached --check
+          git -c core.hooksPath=/dev/null commit -m "${TASK_ID}: fixed candidate for ${CELL}"
+          echo "candidate_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "application_tree=$(git rev-parse HEAD:application)" >> "$GITHUB_OUTPUT"
+      - name: Generate final candidate Evidence
+        id: evidence
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ steps.identity.outputs.candidate_sha }}
+          APPLICATION_TREE_AFTER: ${{ steps.identity.outputs.application_tree }}
+        run: |
+          set -euo pipefail
+          mkdir -p candidate-output
+          cp candidate-input/ACK.json candidate-input/ACK.sha256 candidate-input/CHANGED_FILES.txt candidate-input/CANDIDATE.patch candidate-output/
+          cp promoter-tests.log candidate-output/PROMOTER_TESTS.log
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess,datetime
+          root=pathlib.Path.cwd(); out=root/'candidate-output'; changed=[p for p in (out/'CHANGED_FILES.txt').read_text().splitlines() if p]
+          tracked=subprocess.check_output(['git','ls-files','-z','application']).decode().split('\0'); pairs=[]
+          for p in sorted(x for x in tracked if x): pairs.append((p[len('application/'):],hashlib.sha256((root/p).read_bytes()).hexdigest()))
+          fp=hashlib.sha256(''.join(f'{p}\0{h}\n' for p,h in pairs).encode()).hexdigest()
+          def sha(p): return hashlib.sha256((out/p).read_bytes()).hexdigest()
+          data={'schema':'go.v70.r3.fixed-candidate.v1','cell_id':os.environ['CELL'],'task_id':os.environ['TASK_ID'],
+                'repository_base_sha':os.environ['BASE_SHA'],'r3_product_anchor':os.environ['R3_PRODUCT_ANCHOR'],
+                'candidate_sha':os.environ['CANDIDATE_SHA'],'application_tree_before':os.environ['EXPECTED_APPLICATION_TREE'],
+                'application_tree_after':os.environ['APPLICATION_TREE_AFTER'],'application_source_fingerprint_sha256':fp,
+                'changed_files':changed,'task_bound_ack_sha256':sha('ACK.json'),'promoter_test_log_sha256':sha('PROMOTER_TESTS.log'),
+                'patch_sha256':sha('CANDIDATE.patch'),'candidate_status':'FIXED_CANDIDATE_READY_FOR_C14',
+                'c14':'REQUIRED','c13':'HOLD_UNTIL_C14_PASS','final_release':'HOLD','hk_deploy':'HOLD','production':'HOLD',
+                'created_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+          raw=(json.dumps(data,indent=2)+'\n').encode(); (out/'EVIDENCE.json').write_bytes(raw)
+          digest=hashlib.sha256(raw).hexdigest(); (out/'EVIDENCE.sha256').write_text(digest+'  EVIDENCE.json\n')
+          (out/'SOURCE_FINGERPRINT.sha256').write_text(fp+'  application\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write('evidence_sha='+digest+'\n')
+          PY
+      - name: Publish isolated candidate and Draft PR
+        id: publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ steps.identity.outputs.candidate_sha }}
+          APPLICATION_TREE_AFTER: ${{ steps.identity.outputs.application_tree }}
+          EVIDENCE_SHA: ${{ steps.evidence.outputs.evidence_sha }}
+        run: |
+          set -euo pipefail
+          branch="candidate/r3-${CELL,,}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git push origin "HEAD:refs/heads/$branch"
+          pr_url=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --draft --title "${TASK_ID}: ${CELL} fixed candidate — C14 required" --body "Fixed candidate from isolated AI runner + independent deterministic promoter. Candidate SHA: ${CANDIDATE_SHA}. Application tree: ${APPLICATION_TREE_AFTER}. Evidence SHA256: ${EVIDENCE_SHA}. C14 REQUIRED; C13 HOLD until C14 PASS. FINAL_RELEASE/HK_DEPLOY/PRODUCTION remain HOLD.")
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "pr_number=${pr_url##*/}" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fixed-candidate-${{ inputs.cell }}-${{ inputs.task }}
+          path: candidate-output
+          if-no-files-found: error
+          retention-days: 90
+
+  c14:
+    name: ${{ inputs.cell }} C14 read-only gate
+    needs: promote
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions: {contents: read}
+    outputs:
+      status: ${{ steps.parse.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ needs.promote.outputs.candidate_sha }}', fetch-depth: 0, persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with: {name: 'fixed-candidate-${{ inputs.cell }}-${{ inputs.task }}', path: .gate-input}
+      - name: Verify exact C14 input identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '${{ needs.promote.outputs.candidate_sha }}'
+          sha256sum -c .gate-input/EVIDENCE.sha256
+          python - <<'PY'
+          import json,subprocess
+          e=json.load(open('.gate-input/EVIDENCE.json'))
+          assert e['candidate_sha']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert e['application_tree_after']==subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
+          actual=sorted(subprocess.check_output(['git','diff','--name-only',e['repository_base_sha'],e['candidate_sha']],text=True).splitlines())
+          assert actual==sorted(e['changed_files'])
+          PY
+      - name: Build C14 prompt
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/C14_PROMPT.md" <<'EOF'
+          You are C14, an independent read-only engineering/authority/boundary gate. Review ONLY the exact checked-out candidate and .gate-input/EVIDENCE.json. Compare candidate to its recorded repository_base_sha. Verify task binding, source identity, changed-file scope, regression evidence, inherited safety boundaries, authority limits and that no release/deployment claim is smuggled in. Do not edit files. Do not broaden scope. PASS_SCOPED only if this exact candidate is safe and sufficiently evidenced for its stated Cell task. Otherwise return BLOCKED or FAIL with concrete reasons. Historical PASS does not transfer to this SHA.
+          EOF
+      - name: Run independent C14 reviewer
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ':read-only'
+          safety-strategy: drop-sudo
+          model: gpt-6-astra
+          effort: high
+          prompt-file: ${{ runner.temp }}/C14_PROMPT.md
+          output-file: ${{ runner.temp }}/C14_RESULT.json
+          output-schema: '{"type":"object","required":["status","candidate_sha","summary","blocking_reasons"],"properties":{"status":{"type":"string","enum":["PASS_SCOPED","BLOCKED","FAIL"]},"candidate_sha":{"type":"string"},"summary":{"type":"string"},"blocking_reasons":{"type":"array","items":{"type":"string"}}},"additionalProperties":false}'
+      - name: Parse C14 verdict
+        id: parse
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir c14-output; cp "$RUNNER_TEMP/C14_RESULT.json" c14-output/C14_RESULT.json
+          python - <<'PY'
+          import hashlib,json,os
+          p='c14-output/C14_RESULT.json'; d=json.load(open(p)); assert d['candidate_sha']=='${{ needs.promote.outputs.candidate_sha }}'
+          raw=open(p,'rb').read(); open('c14-output/C14_RESULT.sha256','w').write(hashlib.sha256(raw).hexdigest()+'  C14_RESULT.json\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write('status='+d['status']+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: 'c14-${{ inputs.cell }}-${{ inputs.task }}', path: c14-output, retention-days: 90}
+      - name: Enforce C14
+        shell: bash
+        run: test '${{ steps.parse.outputs.status }}' = PASS_SCOPED
+
+  c13:
+    name: ${{ inputs.cell }} independent C13 acceptance
+    needs: [promote, c14]
+    if: ${{ needs.c14.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions: {contents: read}
+    outputs:
+      status: ${{ steps.parse.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ needs.promote.outputs.candidate_sha }}', fetch-depth: 0, persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with: {name: 'fixed-candidate-${{ inputs.cell }}-${{ inputs.task }}', path: .gate-input/candidate}
+      - uses: actions/download-artifact@v4
+        with: {name: 'c14-${{ inputs.cell }}-${{ inputs.task }}', path: .gate-input/c14}
+      - name: Verify independent acceptance input
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c .gate-input/candidate/EVIDENCE.sha256
+          sha256sum -c .gate-input/c14/C14_RESULT.sha256
+          python - <<'PY'
+          import json,subprocess
+          c=json.load(open('.gate-input/candidate/EVIDENCE.json')); g=json.load(open('.gate-input/c14/C14_RESULT.json'))
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(); assert c['candidate_sha']==sha==g['candidate_sha']; assert g['status']=='PASS_SCOPED'
+          PY
+      - name: Build C13 prompt
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/C13_PROMPT.md" <<'EOF'
+          You are C13, an independent acceptance reviewer. You did not implement this change and you are not C14. Review the exact checked-out candidate, .gate-input/candidate/EVIDENCE.json, and the C14 result. Independently decide whether the stated Cell task is actually closed at scoped level without inflating it to whole-domain completion. Check regression evidence, observable behavior, task contract, source identity, and remaining risks. Do not edit files. PASS_SCOPED only for this exact candidate and task. FINAL_RELEASE, HK_DEPLOY and PRODUCTION are outside this verdict and remain HOLD.
+          EOF
+      - name: Run independent C13 reviewer
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ':read-only'
+          safety-strategy: drop-sudo
+          model: gpt-6-astra
+          effort: high
+          prompt-file: ${{ runner.temp }}/C13_PROMPT.md
+          output-file: ${{ runner.temp }}/C13_RESULT.json
+          output-schema: '{"type":"object","required":["status","candidate_sha","summary","remaining_risks"],"properties":{"status":{"type":"string","enum":["PASS_SCOPED","BLOCKED","FAIL"]},"candidate_sha":{"type":"string"},"summary":{"type":"string"},"remaining_risks":{"type":"array","items":{"type":"string"}}},"additionalProperties":false}'
+      - name: Parse C13 verdict
+        id: parse
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir c13-output; cp "$RUNNER_TEMP/C13_RESULT.json" c13-output/C13_RESULT.json
+          python - <<'PY'
+          import hashlib,json,os
+          p='c13-output/C13_RESULT.json'; d=json.load(open(p)); assert d['candidate_sha']=='${{ needs.promote.outputs.candidate_sha }}'
+          raw=open(p,'rb').read(); open('c13-output/C13_RESULT.sha256','w').write(hashlib.sha256(raw).hexdigest()+'  C13_RESULT.json\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write('status='+d['status']+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: 'c13-${{ inputs.cell }}-${{ inputs.task }}', path: c13-output, retention-days: 90}
+      - name: Enforce C13
+        shell: bash
+        run: test '${{ steps.parse.outputs.status }}' = PASS_SCOPED
