@@ -1,0 +1,34 @@
+{
+  "schema": "go.v70.r3.ack-admission.v1",
+  "canonical_source": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+  "workflow_run": 34839544381,
+  "control_pr": 91,
+  "result": "PASS",
+  "valid_ack": 10,
+  "rejected_ack": 0,
+  "state_transition": "ASSIGNED_NO_ACK -> RUNNING",
+  "cells": {
+    "C01": {"task": "V70-R3-C01-01", "artifact_id": 10345104423, "artifact_sha256": "1b7d9a85ad4a91237b61ca2615aef90cf323f5854837b7ec6f8b614089d18679", "process_sha256": "fa52f07c404db22506516e7ca7a224a3bad4233dbf410a999efb331da15d33a0"},
+    "C02": {"task": "V70-R3-C02-01", "artifact_id": 10345452455, "artifact_sha256": "e1cfb6cf3ffaa83a14330d04c629da6d2a08d9c374fa2c8d6ea2b58dc605a727", "process_sha256": "cb0b007634ca70286e1fa5f110b5d6a8eae50c6c39a84f5a8ef8516b7c6aba96"},
+    "C03": {"task": "V70-R3-C03-01", "artifact_id": 10345765911, "artifact_sha256": "80b7e68747d8e1a253ad6d06b67238ac5ec35ac7ba35427d6c550e323fe552d9", "process_sha256": "5156b6c942d9ca5ab8bbc68ae4cb075793590814187bbd286f05a46b95d0ae81"},
+    "C04": {"task": "V70-R3-C04-01", "artifact_id": 10345492252, "artifact_sha256": "5eabac90f268ac48664dcc8920e01d5e4b84b0e696d513a860b8443ef22382aa", "process_sha256": "0ddbfb9a66836c9201f15b4f819906086bd155bc461d241133f492f983ba2593"},
+    "C05": {"task": "V70-R3-C05-01", "artifact_id": 10345776447, "artifact_sha256": "21f4abd8762a45a1810dbb56bf5ce4a04181b4c3eb4e0f6a03c2e79fcd9ca14c", "process_sha256": "6dff9fa80b3efe1ebbcf3b86e35c1894e53c93233558faad84ee68ea3d17d9dc"},
+    "C08": {"task": "V70-R3-C08-01", "artifact_id": 10345845568, "artifact_sha256": "ccabf04232d06c8a89160a40f083e4addacd0ccbf3ec509d53f484b01b12c32e", "process_sha256": "fc411cf1ce4bcf825a6f0ca66c748f3ff716cb6c14d329df1a164549701c2a87"},
+    "C09": {"task": "V70-R3-C09-01", "artifact_id": 10344694777, "artifact_sha256": "5dbe82b326cfe975717acaa3a05a2535925e17d6f3da21dd2efee55c779ae726", "process_sha256": "5b0c26edffc31d7ec0053a53692764a95f68d3b9e21158d4e1c9cd64dc89f3ff"},
+    "C10": {"task": "V70-R3-C10-01", "artifact_id": 10344959179, "artifact_sha256": "7d774f82331f3eebf8c53460bcf470cb093149b49f79cf68503939ebd8a496bf", "process_sha256": "61423c415b2be1d0ac481e394833b5cdf88f55af2436178c9fe30bb017f1dded"},
+    "C11": {"task": "V70-R3-C11-01", "artifact_id": 10345402737, "artifact_sha256": "60fc461ac950014cc88f0a96cbc8a4ba1f50a488721efa440c30a9bb5e524918", "process_sha256": "0022aeba7149a8d3ca1b3b7203af7a50f990db300ea0e458d3a3369858750784"},
+    "C12": {"task": "V70-R3-C12-01", "artifact_id": 10344629950, "artifact_sha256": "b2c9cad76635d761d4f564f98e824dc7dd89f37e5d6a0592f2698ee69b9b324a", "process_sha256": "a6479b8c80ff3495deceb4431982e11d69bcc645bad6d770dfb02ec213e4b034"}
+  },
+  "other_cells": {
+    "C06": "BLOCKED_EXTERNAL",
+    "C07": "DONE_SCOPED_WATCH",
+    "C13": "TRIGGER_ARMED",
+    "C14": "TRIGGER_ARMED"
+  },
+  "release_gates": {
+    "FINAL_RELEASE": "HOLD",
+    "HK_DEPLOY": "HOLD",
+    "PRODUCTION": "HOLD"
+  },
+  "scope_note": "ACK/start admission only. RUNNING does not imply task completion; each Cell still owes code/test/Evidence for its finite R3 scope."
+}
