@@ -1,0 +1,170 @@
+name: V7 R3 actual work-product runner
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/v70-r3-actual-work-product-runner.yml
+      - evidence/v70-main-8ffcde66-20260914/ACTUAL_RUNNER_TRIGGER.md
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v70-r3-actual-work-product-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  task-bound-execution:
+    name: execute-${{ matrix.cell }}-${{ matrix.task }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {cell: C01, task: V70-R3-C01-01, issue: '79', test: application/tests/test_v70_next_c01_unknown_funding.py}
+          - {cell: C02, task: V70-R3-C02-01, issue: '80', test: application/tests/test_v70_next_c02_coupon_plan.py}
+          - {cell: C03, task: V70-R3-C03-01, issue: '81', test: application/tests/test_next_depth_c03_payment_inventory_races.py}
+          - {cell: C04, task: V70-R3-C04-01, issue: '82', test: application/tests/test_v70_next_c04_readonly_reconciliation.py}
+          - {cell: C05, task: V70-R3-C05-01, issue: '83', test: application/tests/test_v70_next_c05_recovery_evidence.py}
+          - {cell: C07, task: V70-R3-C07-01, issue: '95', test: application/tests/test_round2_c07_explicit_preferences.py}
+          - {cell: C08, task: V70-R3-C08-01, issue: '84', test: application/tests/go_ai/test_c08_hard_exit_recovery.py}
+          - {cell: C09, task: V70-R3-C09-01, issue: '85', test: application/tests/judgment/test_next_depth_concurrent_judgment.py}
+          - {cell: C10, task: V70-R3-C10-01, issue: '86', test: application/tests/journey/test_c10_batch_list_projection.py}
+          - {cell: C11, task: V70-R3-C11-01, issue: '87', test: application/tests/payments/test_c11_flight_idempotency_recovery.py}
+          - {cell: C12, task: V70-R3-C12-01, issue: '88', test: ci/round2/test_validate_ledger.py}
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: go_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d go_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PRODUCT_SOURCE: 8ffcde66d36c1bbf849218529ef015f6e81725af
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      REDIS_URL: redis://127.0.0.1:6379/0
+      PYTHONPATH: application/src
+
+    steps:
+      - name: Checkout exact product source
+        uses: actions/checkout@v4
+        with:
+          ref: 8ffcde66d36c1bbf849218529ef015f6e81725af
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Bind source and task
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual=$(git rev-parse HEAD)
+          test "$actual" = "$PRODUCT_SOURCE"
+          test -f '${{ matrix.test }}'
+          app_tree=$(git rev-parse HEAD:application)
+          mkdir -p "$RUNNER_TEMP/r3-work-product"
+          printf 'cell=%s\ntask=%s\nissue=%s\nsource=%s\napplication_tree=%s\ntest=%s\n' \
+            '${{ matrix.cell }}' '${{ matrix.task }}' '${{ matrix.issue }}' "$actual" "$app_tree" '${{ matrix.test }}' \
+            | tee "$RUNNER_TEMP/r3-work-product/binding.log"
+          echo "APPLICATION_TREE=$app_tree" >> "$GITHUB_ENV"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install application test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e 'application[dev]'
+
+      - name: Execute task-bound test
+        id: execute
+        shell: bash
+        run: |
+          set +e
+          started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          python -m pytest -q '${{ matrix.test }}' 2>&1 | tee "$RUNNER_TEMP/r3-work-product/pytest.log"
+          rc=${PIPESTATUS[0]}
+          finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          printf 'started_at=%s\nfinished_at=%s\nexit_code=%s\n' "$started_at" "$finished_at" "$rc" | tee "$RUNNER_TEMP/r3-work-product/result.env"
+          echo "TEST_RC=$rc" >> "$GITHUB_ENV"
+          echo "STARTED_AT=$started_at" >> "$GITHUB_ENV"
+          echo "FINISHED_AT=$finished_at" >> "$GITHUB_ENV"
+          exit 0
+
+      - name: Emit raw execution Evidence
+        shell: bash
+        env:
+          CELL: ${{ matrix.cell }}
+          TASK: ${{ matrix.task }}
+          ISSUE: ${{ matrix.issue }}
+          TEST_PATH: ${{ matrix.test }}
+        run: |
+          set -euo pipefail
+          log_sha=$(sha256sum "$RUNNER_TEMP/r3-work-product/pytest.log" | awk '{print $1}')
+          bind_sha=$(sha256sum "$RUNNER_TEMP/r3-work-product/binding.log" | awk '{print $1}')
+          LOG_SHA="$log_sha" BIND_SHA="$bind_sha" python - <<'PY'
+          import json, os, pathlib
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'r3-work-product'
+          evidence = {
+            'schema': 'go.v70.r3.actual-work-product-runner.v1',
+            'cell_id': os.environ['CELL'],
+            'task_id': os.environ['TASK'],
+            'issue_number': int(os.environ['ISSUE']),
+            'product_source': os.environ['PRODUCT_SOURCE'],
+            'application_tree': os.environ['APPLICATION_TREE'],
+            'candidate_sha': None,
+            'changed_files': [],
+            'test_path': os.environ['TEST_PATH'],
+            'test_command': f"python -m pytest -q {os.environ['TEST_PATH']}",
+            'test_exit_code': int(os.environ['TEST_RC']),
+            'started_at': os.environ['STARTED_AT'],
+            'finished_at': os.environ['FINISHED_AT'],
+            'raw_test_log_sha256': os.environ['LOG_SHA'],
+            'binding_log_sha256': os.environ['BIND_SHA'],
+            'classification': 'ACTUAL_EXECUTION_EVIDENCE_ONLY',
+            'completion_claim': False,
+            'scope_note': 'Real task-bound pytest execution. This is not a coding-agent claim and does not create a fixed candidate by itself.',
+            'final_release': 'HOLD',
+            'hk_deploy': 'HOLD',
+            'production': 'HOLD'
+          }
+          (out / 'EVIDENCE.json').write_text(json.dumps(evidence, indent=2) + '\n')
+          PY
+          sha256sum "$RUNNER_TEMP/r3-work-product/EVIDENCE.json" | tee "$RUNNER_TEMP/r3-work-product/EVIDENCE.sha256"
+
+      - name: Upload raw Evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r3-actual-${{ matrix.cell }}-${{ matrix.task }}
+          path: ${{ runner.temp }}/r3-work-product
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Fail job if task-bound test failed
+        shell: bash
+        run: |
+          test "$TEST_RC" -eq 0
