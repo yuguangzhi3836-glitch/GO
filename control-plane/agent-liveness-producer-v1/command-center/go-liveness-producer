@@ -1,0 +1,596 @@
+#!/usr/bin/env python3
+"""Bounded HK Agent liveness producer for Command Center V1 (CC V1-03).
+
+What this is
+------------
+A controlled, low-frequency producer that mints exactly one kind of Request:
+`CONTROL_PLANE_HEALTH` for `HK-STAGING-01`. The action, its read-only executor
+path and its allowlist membership already exist; this component adds the timer
+that was missing, and nothing else.
+
+What this deliberately is NOT
+-----------------------------
+* It is not a signing authority. It holds no private key, never builds a Task
+  and never signs anything. It emits an untrusted Request, the same shape the
+  Boss Request Bridge already treats as a proposal.
+* It is not a monitor. It cannot express a cadence faster than
+  `MIN_INTERVAL_SECONDS`, and it cannot emit anything except
+  `CONTROL_PLANE_HEALTH`.
+* It never writes a liveness claim. It records what it *asked*, never what it
+  concluded. `ONLINE` / `STALE` / `UNKNOWN` are derived elsewhere, from signed
+  Evidence; a producer that could assert liveness would be a heartbeat without
+  a signer.
+
+Why the cadence is structurally bounded
+---------------------------------------
+A tick is idempotent per interval bucket: `request_id` is a pure function of
+`floor(now / interval)`. Two ticks inside one bucket mint the same `request_id`,
+so the existing duplicate-request detection already makes double-probing
+impossible even if the timer fires twice, restarts, or is driven by hand. The
+hard bounds below then cap the rate a policy can ask for at all.
+
+Authority boundary
+------------------
+Publishing here means "placing a Request where the existing Request channel can
+pick it up". It does not grant execution, does not consume a Task budget and
+does not touch Production. `VERIFY`, `TEST_PR`, `DEPLOY` and `ROLLBACK`
+authorizations are not referenced by this component in any form.
+"""
+import argparse
+import datetime as dt
+import hashlib
+import json
+import os
+import pathlib
+import re
+import sys
+import tempfile
+
+SCHEMA_VERSION = "1"
+ACTION_ID = "CONTROL_PLANE_HEALTH"
+ENVIRONMENT = "HK-STAGING-01"
+SCHEMA_REPOSITORY_ENTRY = "control-plane/agent-liveness-producer-v1"
+
+# --------------------------------------------------------------------------- #
+# Hard bounds.  A policy may tighten these; it can never loosen them.  Without
+# this floor the component could be reconfigured into the unbounded monitor the
+# issue forbids.
+# --------------------------------------------------------------------------- #
+MIN_INTERVAL_SECONDS = 600
+MAX_INTERVAL_SECONDS = 86400
+DEFAULT_INTERVAL_SECONDS = 1800
+MAX_PROBES_PER_WINDOW = 48
+WINDOW_SECONDS = 86400
+MAX_BACKOFF_INTERVAL_SECONDS = 21600
+REQUEST_MAX_BYTES = 4096
+
+ALLOWED_ACTIONS = frozenset({ACTION_ID})
+REQUEST_FIELDS = frozenset(
+    {"schema_version", "request_id", "action_id", "environment", "requested_at"}
+)
+REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$")
+
+# Any key whose presence would mean this component tried to answer rather than
+# ask.  Checked on every artifact it writes.
+FORBIDDEN_CLAIM_KEYS = frozenset(
+    {
+        "online", "is_online", "liveness", "heartbeat", "alive", "is_alive",
+        "status", "health_status", "proven", "proven_liveness", "last_seen",
+        "state", "verdict",
+    }
+)
+
+DECISION_PUBLISHED = "PUBLISHED"
+DECISION_DUPLICATE = "DUPLICATE"
+DECISION_THROTTLED = "THROTTLED"
+DECISION_REFUSED = "REFUSED"
+
+
+class Reject(Exception):
+    """Fail closed.  A rejection is a recorded decision, never a retry storm."""
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def now():
+    return dt.datetime.now(dt.timezone.utc)
+
+
+def iso(value):
+    return value.astimezone(dt.timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def parse_time(value):
+    if not isinstance(value, str):
+        raise Reject("time_not_string")
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise Reject("invalid_time") from exc
+    if parsed.tzinfo is None:
+        raise Reject("naive_time")
+    return parsed
+
+
+# --------------------------------------------------------------------------- #
+# Policy
+# --------------------------------------------------------------------------- #
+def load_policy(path):
+    """Load and hard-bound the policy, or refuse to run at all."""
+    try:
+        value = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise Reject("policy_unreadable") from exc
+    if not isinstance(value, dict):
+        raise Reject("policy_shape")
+    required = {
+        "schema_version", "action_id", "environment", "interval_seconds",
+        "max_probes_per_window", "repository", "read_only_actions_only",
+    }
+    if set(value) != required:
+        raise Reject("policy_fields")
+    if value["schema_version"] != SCHEMA_VERSION:
+        raise Reject("policy_schema_version")
+    if value["action_id"] not in ALLOWED_ACTIONS:
+        raise Reject("policy_action_not_permitted")
+    if value["environment"] != ENVIRONMENT:
+        raise Reject("policy_environment")
+    if value["read_only_actions_only"] is not True:
+        raise Reject("policy_read_only_flag")
+    if value["repository"] != SCHEMA_REPOSITORY_ENTRY:
+        raise Reject("policy_repository")
+    interval = value["interval_seconds"]
+    if not isinstance(interval, int) or isinstance(interval, bool):
+        raise Reject("policy_interval_type")
+    if interval < MIN_INTERVAL_SECONDS:
+        raise Reject("policy_interval_below_floor")
+    if interval > MAX_INTERVAL_SECONDS:
+        raise Reject("policy_interval_above_ceiling")
+    budget = value["max_probes_per_window"]
+    if not isinstance(budget, int) or isinstance(budget, bool):
+        raise Reject("policy_budget_type")
+    if budget < 1 or budget > MAX_PROBES_PER_WINDOW:
+        raise Reject("policy_budget_out_of_bounds")
+    return value
+
+
+# --------------------------------------------------------------------------- #
+# Request minting  (idempotent per bucket)
+# --------------------------------------------------------------------------- #
+def bucket_of(at, interval):
+    return int(at.timestamp()) // int(interval)
+
+
+def request_id_for(bucket):
+    return "liveness-%s-%d" % (ACTION_ID.lower().replace("_", "-"), bucket)
+
+
+def mint_request(at, interval):
+    """Mint the only Request this component is able to express."""
+    bucket = bucket_of(at, interval)
+    request = {
+        "schema_version": SCHEMA_VERSION,
+        "request_id": request_id_for(bucket),
+        "action_id": ACTION_ID,
+        "environment": ENVIRONMENT,
+        "requested_at": iso(at),
+    }
+    return validate_request(request, at)
+
+
+def validate_request(request, at=None):
+    """Same discipline as the Request channel: exact fields, pinned action."""
+    raw = canonical(request)
+    if len(raw) > REQUEST_MAX_BYTES:
+        raise Reject("request_oversized")
+    if not isinstance(request, dict) or set(request) != REQUEST_FIELDS:
+        raise Reject("request_fields")
+    if request["schema_version"] != SCHEMA_VERSION:
+        raise Reject("request_schema_version")
+    if not isinstance(request["request_id"], str) or not REQUEST_ID_RE.fullmatch(request["request_id"]):
+        raise Reject("request_id")
+    if request["action_id"] not in ALLOWED_ACTIONS:
+        raise Reject("request_action_not_permitted")
+    if request["environment"] != ENVIRONMENT:
+        raise Reject("request_environment")
+    when = parse_time(request["requested_at"])
+    at = at or now()
+    if when > at + dt.timedelta(seconds=60):
+        raise Reject("request_from_future")
+    if at - when > dt.timedelta(seconds=MAX_INTERVAL_SECONDS):
+        raise Reject("request_stale")
+    return request
+
+
+def assert_no_claim(payload, where):
+    """No artifact this component writes may carry a liveness conclusion."""
+    if isinstance(payload, dict):
+        for key, value in payload.items():
+            if str(key).lower() in FORBIDDEN_CLAIM_KEYS:
+                raise Reject("claim_key_forbidden:%s:%s" % (where, key))
+            assert_no_claim(value, where)
+    elif isinstance(payload, list):
+        for item in payload:
+            assert_no_claim(item, where)
+    return payload
+
+
+# --------------------------------------------------------------------------- #
+# Durable state  (append-only ledger + atomically replaced state file)
+# --------------------------------------------------------------------------- #
+class Store:
+    def __init__(self, root):
+        self.root = pathlib.Path(root)
+        self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        self.ledger = self.root / "ledger.jsonl"
+        self.state = self.root / "state.json"
+        self.outbox = self.root / "outbox"
+        self.lock = self.root / "tick.lock"
+
+    # -- single flight ----------------------------------------------------- #
+    def acquire(self):
+        try:
+            handle = os.open(str(self.lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        except FileExistsError:
+            raise Reject("tick_already_running")
+        os.write(handle, canonical({"at": iso(now())}))
+        os.close(handle)
+        return True
+
+    def release(self):
+        try:
+            self.lock.unlink()
+        except FileNotFoundError:
+            pass
+
+    # -- append-only ledger ------------------------------------------------ #
+    def append(self, record):
+        assert_no_claim(record, "ledger")
+        line = canonical(record).decode("utf-8") + "\n"
+        with open(self.ledger, "a", encoding="utf-8") as handle:
+            handle.write(line)
+            handle.flush()
+            os.fsync(handle.fileno())
+        try:
+            os.chmod(self.ledger, 0o600)
+        except (OSError, NotImplementedError):
+            pass
+
+    def entries(self):
+        if not self.ledger.exists():
+            return []
+        records = []
+        for line in self.ledger.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                records.append(json.loads(line))
+            except json.JSONDecodeError:
+                raise Reject("ledger_corrupt")
+        return records
+
+    # -- replaceable state ------------------------------------------------- #
+    def read_state(self):
+        if not self.state.exists():
+            return {"version": 1, "last_poll_at": None, "last_published_at": None,
+                    "last_published_request_id": None, "consecutive_refusals": 0}
+        try:
+            return json.loads(self.state.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise Reject("state_corrupt") from exc
+
+    def write_state(self, value):
+        assert_no_claim(value, "state")
+        handle, tmp = tempfile.mkstemp(dir=str(self.root), prefix="state.")
+        try:
+            with os.fdopen(handle, "wb") as fh:
+                fh.write(canonical(value))
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.chmod(tmp, 0o600)
+            os.replace(tmp, str(self.state))
+        except BaseException:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
+
+    # -- publication seam -------------------------------------------------- #
+    def publish(self, request):
+        """Place the Request where the existing Request channel can pick it up.
+
+        This is the whole external effect.  The producer does not submit, does
+        not sign and does not execute: submitting a Request is the channel's
+        job, unchanged by this component.
+        """
+        assert_no_claim(request, "outbox")
+        self.outbox.mkdir(mode=0o700, parents=True, exist_ok=True)
+        target = self.outbox / (request["request_id"] + ".json")
+        handle, tmp = tempfile.mkstemp(dir=str(self.outbox), prefix="req.")
+        try:
+            with os.fdopen(handle, "wb") as fh:
+                fh.write(canonical(request))
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.chmod(tmp, 0o600)
+            os.replace(tmp, str(target))
+        except BaseException:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
+        return target
+
+
+# --------------------------------------------------------------------------- #
+# Tick
+# --------------------------------------------------------------------------- #
+def probes_in_window(records, at, window=WINDOW_SECONDS):
+    floor = at - dt.timedelta(seconds=window)
+    count = 0
+    for record in records:
+        if record.get("decision") != DECISION_PUBLISHED:
+            continue
+        try:
+            if parse_time(record["at"]) >= floor:
+                count += 1
+        except (KeyError, Reject):
+            raise Reject("ledger_corrupt")
+    return count
+
+
+def decide(records, state, policy, at):
+    """Decide without any external effect, so it is fully testable."""
+    interval = policy["interval_seconds"]
+    request_id = request_id_for(bucket_of(at, interval))
+    if any(record.get("request_id") == request_id
+           for record in records if record.get("decision") == DECISION_PUBLISHED):
+        return DECISION_DUPLICATE, request_id, "this bucket already published a probe"
+    if probes_in_window(records, at) >= policy["max_probes_per_window"]:
+        return DECISION_THROTTLED, request_id, "rolling window budget exhausted"
+    # Rate is measured against the last *published* probe, never against the
+    # last tick.  A timer that fires faster than the policy interval must not be
+    # able to starve the bucket it was throttled in.
+    last = state.get("last_published_at")
+    if last is not None:
+        elapsed = (at - parse_time(last)).total_seconds()
+        refusals = int(state.get("consecutive_refusals") or 0)
+        required = min(interval * (2 ** min(refusals, 5)), MAX_BACKOFF_INTERVAL_SECONDS) if refusals else interval
+        if elapsed < required - 1:
+            return (DECISION_THROTTLED, request_id,
+                    "%.0fs since the last published probe, below the %ds interval" % (elapsed, required))
+    return DECISION_PUBLISHED, request_id, "due"
+
+
+def tick(store, policy, at=None):
+    at = at or now()
+    store.acquire()
+    try:
+        records = store.entries()
+        state = store.read_state()
+        decision, request_id, reason = decide(records, state, policy, at)
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "at": iso(at),
+            "action_id": ACTION_ID,
+            "environment": ENVIRONMENT,
+            "request_id": request_id,
+            "bucket": bucket_of(at, policy["interval_seconds"]),
+            "interval_seconds": policy["interval_seconds"],
+            "decision": decision,
+            "reason": reason,
+            "signed_by_producer": False,
+            "grants_execution": False,
+        }
+        state["last_poll_at"] = iso(at)
+        if decision == DECISION_PUBLISHED:
+            request = mint_request(at, policy["interval_seconds"])
+            if request["request_id"] != request_id:
+                raise Reject("request_id_mismatch")
+            store.publish(request)
+            record["request_published"] = True
+            state["last_published_request_id"] = request_id
+            state["last_published_at"] = iso(at)
+            state["consecutive_refusals"] = 0
+        elif decision == DECISION_REFUSED:
+            record["request_published"] = False
+            state["consecutive_refusals"] = int(state.get("consecutive_refusals") or 0) + 1
+        else:
+            record["request_published"] = False
+        store.append(record)
+        store.write_state(state)
+        return record
+    finally:
+        store.release()
+
+
+def observed_cadence(records, at):
+    """Prove the achieved rate, not the requested one."""
+    published = [r for r in records if r.get("decision") == DECISION_PUBLISHED]
+    if len(published) < 2:
+        return {"published": len(published), "span_seconds": 0, "min_gap_seconds": None,
+                "max_in_window": len(published)}
+    stamps = sorted(parse_time(r["at"]) for r in published)
+    gaps = [(b - a).total_seconds() for a, b in zip(stamps, stamps[1:])]
+    return {
+        "published": len(published),
+        "span_seconds": int((stamps[-1] - stamps[0]).total_seconds()),
+        "min_gap_seconds": int(min(gaps)),
+        "max_in_window": probes_in_window(records, at),
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Command line
+# --------------------------------------------------------------------------- #
+def build_parser():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--state-dir", default="/var/lib/go-command-center/liveness-producer-v1")
+    parser.add_argument("--policy", default=str(
+        pathlib.Path(__file__).resolve().parent / "liveness-producer-policy-v1.json"))
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("tick", help="one bounded tick")
+    sub.add_parser("status", help="report the achieved cadence, never a liveness claim")
+    sub.add_parser("selftest", help="run the built-in isolated checks")
+    return parser
+
+
+def cmd_tick(args):
+    policy = load_policy(args.policy)
+    record = tick(Store(args.state_dir), policy)
+    print("DECISION=%s" % record["decision"])
+    print("REQUEST_ID=%s" % record["request_id"])
+    print("REASON=%s" % record["reason"])
+    return 0
+
+
+def cmd_status(args):
+    policy = load_policy(args.policy)
+    store = Store(args.state_dir)
+    at = now()
+    records = store.entries()
+    cadence = observed_cadence(records, at)
+    print("ACTION_ID=%s" % ACTION_ID)
+    print("ENVIRONMENT=%s" % ENVIRONMENT)
+    print("INTERVAL_SECONDS=%d" % policy["interval_seconds"])
+    print("LAST_POLL=%s" % (store.read_state().get("last_poll_at") or "NEVER"))
+    print("PROBES_PUBLISHED=%d" % cadence["published"])
+    print("MIN_GAP_SECONDS=%s" % cadence["min_gap_seconds"])
+    print("PROBES_IN_WINDOW=%d" % cadence["max_in_window"])
+    print("WINDOW_BUDGET=%d" % policy["max_probes_per_window"])
+    print("LIVENESS_CLAIM=NONE (this component never answers online/stale/unknown)")
+    return 0
+
+
+# --------------------------------------------------------------------------- #
+# Built-in checks  (the same assertions live in tests/test_liveness_producer.py)
+# --------------------------------------------------------------------------- #
+def selftest():
+    import tempfile as _tf
+
+    passed = 0
+    policy_path = pathlib.Path(__file__).resolve().parent / "liveness-producer-policy-v1.json"
+    policy = load_policy(policy_path)
+
+    def check(condition, label):
+        nonlocal passed
+        if not condition:
+            raise AssertionError(label)
+        passed += 1
+
+    # 1. the shipped policy is inside the hard bounds
+    check(MIN_INTERVAL_SECONDS <= policy["interval_seconds"] <= MAX_INTERVAL_SECONDS, "policy_cadence")
+    check(policy["action_id"] == ACTION_ID, "policy_action")
+    check(policy["max_probes_per_window"] <= MAX_PROBES_PER_WINDOW, "policy_budget")
+
+    # 2. a policy below the floor is refused
+    bad_action = "HK_" + "STAGING_" + "DEPLOY"
+    bad_environment = "PRODU" + "CTION"
+    for bad, label in (
+        ({"interval_seconds": 1}, "floor"),
+        ({"interval_seconds": 60}, "floor2"),
+        ({"interval_seconds": 1800, "action_id": bad_action}, "action"),
+        ({"interval_seconds": 1800, "environment": bad_environment}, "environment"),
+        ({"interval_seconds": 1800, "read_only_actions_only": False}, "readonly"),
+        ({"interval_seconds": 1800, "max_probes_per_window": 1000}, "budget"),
+    ):
+        with _tf.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "p.json"
+            base = {"schema_version": SCHEMA_VERSION, "action_id": ACTION_ID,
+                    "environment": ENVIRONMENT, "interval_seconds": 1800,
+                    "max_probes_per_window": 24,
+                    "repository": SCHEMA_REPOSITORY_ENTRY, "read_only_actions_only": True}
+            base.update(bad)
+            path.write_text(json.dumps(base), encoding="utf-8")
+            try:
+                load_policy(path)
+            except Reject:
+                passed += 1
+            else:
+                raise AssertionError("policy_accepted:" + label)
+
+    at = dt.datetime(2026, 9, 14, 12, 0, 0, tzinfo=dt.timezone.utc)
+
+    # 3. idempotent per bucket
+    first = mint_request(at, 1800)
+    second = mint_request(at + dt.timedelta(seconds=300), 1800)
+    check(first["request_id"] == second["request_id"], "bucket_idempotence")
+    check(mint_request(at + dt.timedelta(seconds=1800), 1800)["request_id"] != first["request_id"],
+          "bucket_advance")
+
+    # 4. the request carries no execution authority and no claim
+    check(set(first) == REQUEST_FIELDS, "request_fields")
+    check("signature" not in first, "no_signature")
+
+    # 5. a publisher double is bounded by the ledger
+    with _tf.TemporaryDirectory() as tmp:
+        store = Store(tmp)
+        good = tick(store, policy, at)
+        check(good["decision"] == DECISION_PUBLISHED, "first_tick_publishes")
+        again = tick(store, policy, at + dt.timedelta(seconds=60))
+        check(again["decision"] == DECISION_DUPLICATE, "same_bucket_is_duplicate")
+        later = tick(store, policy, at + dt.timedelta(seconds=1800))
+        check(later["decision"] == DECISION_PUBLISHED, "next_bucket_publishes")
+        # A tick that lands in the very next bucket one second later must still
+        # not publish: the interval rule and the bucket rule are independent.
+        # The ledger is empty here on purpose so this isolates the interval rule.
+        state = {"last_published_at": iso(at + dt.timedelta(seconds=1799)),
+                 "consecutive_refusals": 0}
+        decision, _, _ = decide([], state, policy, at + dt.timedelta(seconds=1800))
+        check(decision == DECISION_THROTTLED, "interval_enforced")
+        already = tick(store, policy, at)
+        check(already["decision"] != DECISION_PUBLISHED, "replay_never_republishes")
+
+    # 6. the window budget is enforced
+    with _tf.TemporaryDirectory() as tmp:
+        store = Store(tmp)
+        tight = dict(policy)
+        tight["max_probes_per_window"] = 3
+        moment = at
+        for _ in range(3):
+            tick(store, tight, moment)
+            moment += dt.timedelta(seconds=1800)
+        blocked = tick(store, tight, moment)
+        check(blocked["decision"] == DECISION_THROTTLED, "window_budget")
+
+    # 7. no artifact may carry a claim
+    for payload in ({"online": True}, {"nested": {"liveness": "PROVEN"}}, {"last_seen": "x"}):
+        try:
+            assert_no_claim(payload, "selftest")
+        except Reject:
+            passed += 1
+        else:
+            raise AssertionError("claim_accepted")
+
+    # 8. nothing in this file can express another action, and Production is not
+    #    reachable.  The names are assembled so this check does not satisfy
+    #    itself by containing the very literals it looks for.
+    source = pathlib.Path(__file__).read_text(encoding="utf-8")
+    prefix = "HK_" + "STAGING_"
+    for forbidden_action in ("DEPLOY", "ROLLBACK", "VERIFY", "CANARY", "TEST_PR"):
+        check(prefix + forbidden_action not in source, "action_leak:" + forbidden_action)
+    check("PRODU" + "CTION" not in source, "production_leak")
+
+    print("SELFTEST_PASS=%d" % passed)
+    return 0
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
+    try:
+        if args.command == "tick":
+            return cmd_tick(args)
+        if args.command == "status":
+            return cmd_status(args)
+        return selftest()
+    except Reject as exc:
+        print("REFUSED=%s" % exc)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

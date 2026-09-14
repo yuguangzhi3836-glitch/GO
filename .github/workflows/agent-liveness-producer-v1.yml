@@ -1,0 +1,184 @@
+name: HK agent liveness producer (isolated)
+on:
+  push:
+    branches: [cc/github-native-delivery-v1, cc/v1-finalization-20260914]
+    paths:
+      - 'control-plane/agent-liveness-producer-v1/**'
+      - 'control-plane/command-center-state-v1/tests/test_state_projection.py'
+      - 'control-plane/command-center-state-v1/contracts/agent_liveness_v1.schema.json'
+      - '.github/workflows/agent-liveness-producer-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'control-plane/agent-liveness-producer-v1/**'
+      - 'control-plane/command-center-state-v1/tests/test_state_projection.py'
+      - 'control-plane/command-center-state-v1/contracts/agent_liveness_v1.schema.json'
+      - '.github/workflows/agent-liveness-producer-v1.yml'
+permissions:
+  contents: read
+concurrency:
+  group: hk-agent-liveness-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  isolated-liveness-producer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned test dependency
+        run: python -m pip install cryptography==46.0.0
+      - name: Check the producer manifest
+        working-directory: control-plane/agent-liveness-producer-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Check the state layer manifest is untouched by this change
+        working-directory: control-plane/command-center-state-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Run the producer suite on Linux
+        working-directory: control-plane/agent-liveness-producer-v1
+        run: python -m unittest discover -s tests -v
+      - name: Run the producer built-in checks
+        working-directory: control-plane/agent-liveness-producer-v1
+        run: python command-center/go-liveness-producer selftest
+      - name: Run the isolated verification and publish summary.json
+        working-directory: control-plane/agent-liveness-producer-v1
+        run: python run_checks.py "$RUNNER_TEMP/liveness-producer-checks"
+      - name: Run the projection liveness acceptance tests
+        working-directory: control-plane/command-center-state-v1
+        run: |
+          python - <<'PY'
+          import pathlib, sys, unittest
+          sys.path.insert(0, str(pathlib.Path('tests').resolve()))
+          import test_state_projection as t
+          names = ["test_no_health_evidence_is_unknown",
+                   "test_fresh_unverified_probe_is_observed_never_proven",
+                   "test_fresh_verified_probe_is_proven",
+                   "test_stale_probe_is_unknown_and_reports_last_seen",
+                   "test_stale_probe_still_reports_last_activity",
+                   "test_successful_verify_never_implies_agent_online"]
+          suite = unittest.TestSuite(t.LivenessTests(n) for n in names)
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          print("LIVENESS_ACCEPTANCE RUN=%d FAIL=%d ERR=%d"
+                % (result.testsRun, len(result.failures), len(result.errors)))
+          raise SystemExit(0 if result.wasSuccessful() else 1)
+          PY
+      - name: Confirm the state layer suite still passes
+        working-directory: control-plane/command-center-state-v1
+        run: python -m unittest discover -s tests -q
+      - name: Prove the producer is bounded, idempotent and claim-free end to end
+        run: |
+          python - <<'PY'
+          import datetime as dt, json, os, pathlib, subprocess, sys
+
+          root = pathlib.Path('control-plane/agent-liveness-producer-v1')
+          producer = root / 'command-center' / 'go-liveness-producer'
+          policy_path = root / 'command-center' / 'liveness-producer-policy-v1.json'
+          state = pathlib.Path('control-plane/command-center-state-v1')
+          work = pathlib.Path(os.environ['RUNNER_TEMP']) / 'liveness-producer'
+          work.mkdir(parents=True, exist_ok=True)
+          state_dir = work / 'state'
+
+          policy = json.loads(policy_path.read_text(encoding='utf-8'))
+          interval = policy['interval_seconds']
+
+          def run(*args):
+              result = subprocess.run([sys.executable, str(producer), '--state-dir',
+                                       str(state_dir), *args], capture_output=True, text=True)
+              assert result.returncode == 0, result.stderr
+              return dict(line.split('=', 1) for line in result.stdout.strip().splitlines()
+                          if '=' in line)
+
+          # 1. the producer emits exactly one Request, then refuses to repeat it
+          first = run('tick')
+          assert first['DECISION'] == 'PUBLISHED', first
+          second = run('tick')
+          assert second['DECISION'] != 'PUBLISHED', second
+          assert second['REQUEST_ID'] == first['REQUEST_ID'], second
+
+          outbox = state_dir / 'outbox'
+          requests = sorted(outbox.glob('*.json'))
+          assert len(requests) == 1, [str(p) for p in requests]
+          request = json.loads(requests[0].read_text(encoding='utf-8'))
+          assert set(request) == {'schema_version', 'request_id', 'action_id',
+                                  'environment', 'requested_at'}, request
+          assert request['action_id'] == 'CONTROL_PLANE_HEALTH', request
+          assert request['environment'] == 'HK-STAGING-01', request
+          assert 'signature' not in request, 'the producer must not sign anything'
+
+          # 2. no artifact may carry a liveness conclusion
+          blob = ''.join(p.read_text(encoding='utf-8') for p in state_dir.rglob('*') if p.is_file()).lower()
+          for forbidden in ('"online"', '"liveness"', 'heartbeat', '"proven"', '"last_seen"'):
+              assert forbidden not in blob, forbidden
+
+          # 3. a simulated day never exceeds the policy interval or the budget
+          ledger = [json.loads(line) for line in (state_dir / 'ledger.jsonl')
+                    .read_text(encoding='utf-8').splitlines() if line.strip()]
+          published = [r for r in ledger if r['decision'] == 'PUBLISHED']
+          assert len(published) == 1, published
+          assert all(r['signed_by_producer'] is False for r in ledger), ledger
+          assert all(r['grants_execution'] is False for r in ledger), ledger
+          assert all(r['action_id'] == 'CONTROL_PLANE_HEALTH' for r in ledger), ledger
+
+          # 4. the produced Request targets the action the state layer already expects
+          liveness = json.loads((state / 'contracts' / 'agent_liveness_v1.schema.json')
+                                .read_text(encoding='utf-8'))
+          assert liveness['properties']['task_action_id']['const'] == request['action_id']
+          assert interval <= liveness['properties']['freshness_window_seconds']['default']
+          assert interval >= 600, interval
+
+          # 5. the achieved cadence over a synthetic day, measured not assumed
+          sys.path.insert(0, str(root / 'command-center'))
+          import importlib.util, importlib.machinery
+          spec = importlib.util.spec_from_loader('lp', importlib.machinery.SourceFileLoader('lp', str(producer)))
+          lp = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(lp)
+          with __import__('tempfile').TemporaryDirectory() as tmp:
+              store = lp.Store(tmp)
+              loaded = lp.load_policy(policy_path)
+              moment = dt.datetime(2026, 9, 14, 12, 0, 0, tzinfo=dt.timezone.utc)
+              for _ in range(48):
+                  lp.tick(store, loaded, moment)
+                  moment += dt.timedelta(seconds=interval)
+              cadence = lp.observed_cadence(store.entries(), moment)
+          assert cadence['min_gap_seconds'] >= interval, cadence
+          assert cadence['max_in_window'] <= policy['max_probes_per_window'], cadence
+
+          binding = {
+              'event': os.environ['GITHUB_EVENT_NAME'],
+              'workflow_commit': os.environ['GITHUB_SHA'],
+              'run_id': os.environ['GITHUB_RUN_ID'],
+              'issue': '#98 CC V1-03',
+              'producer_exists': 'PROVEN',
+              'producer_holds_private_key': False,
+              'producer_signs_anything': False,
+              'producer_asserts_liveness': False,
+              'tick_idempotent_per_bucket': True,
+              'request_has_no_extra_fields': True,
+              'interval_seconds': interval,
+              'interval_floor_seconds': 600,
+              'observed_min_gap_seconds': cadence['min_gap_seconds'],
+              'fresh_signed_liveness_to_proven': 'ASSERTED_BY_LivenessTests.test_fresh_verified_probe_is_proven',
+              'unsigned_probe_never_proven': 'ASSERTED_BY_LivenessTests.test_fresh_unverified_probe_is_observed_never_proven',
+              'stale_liveness_to_unknown': 'ASSERTED_BY_LivenessTests.test_stale_probe_is_unknown_and_reports_last_seen',
+              'missing_liveness_to_unknown': 'ASSERTED_BY_LivenessTests.test_no_health_evidence_is_unknown',
+              'past_success_is_not_liveness': 'ASSERTED_BY_LivenessTests.test_successful_verify_never_implies_agent_online',
+              'verify_test_pr_deploy_permissions_changed': False,
+              'installed': False, 'deployed': False,
+              'hong_kong_accessed': False, 'production_accessed': False,
+          }
+          (work / 'binding.json').write_text(json.dumps(binding, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(binding, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hk-agent-liveness-${{ github.sha }}
+          path: ${{ runner.temp }}/liveness-producer/
+          if-no-files-found: error
+          retention-days: 30

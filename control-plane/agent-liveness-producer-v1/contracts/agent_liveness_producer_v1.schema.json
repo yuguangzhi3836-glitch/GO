@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/agent-liveness-producer-v1/contracts/agent_liveness_producer_v1.schema.json",
+  "title": "GO HK Agent liveness producer V1",
+  "description": "The controlled, low-frequency producer that drives the existing CONTROL_PLANE_HEALTH action on a timer, so that signed liveness Evidence exists on the control bus for the projection to read. This contract covers the policy the producer runs under and the ledger it must keep. It adds no signing authority, no Hong Kong code and no monitoring system, and it may never answer the liveness question itself.",
+  "type": "object",
+  "required": ["policy", "ledger", "request", "authority_boundary"],
+  "properties": {
+    "policy": {
+      "type": "object",
+      "description": "The only place cadence is expressed. Hard bounds are enforced in code, not by convention.",
+      "required": ["schema_version", "action_id", "environment", "interval_seconds",
+                   "max_probes_per_window", "repository", "read_only_actions_only"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "1"},
+        "action_id": {
+          "const": "CONTROL_PLANE_HEALTH",
+          "description": "The single action the producer may ever emit. Not a parameter."
+        },
+        "environment": {"const": "HK-STAGING-01"},
+        "interval_seconds": {
+          "type": "integer",
+          "minimum": 600,
+          "maximum": 86400,
+          "description": "Hard floor 600s and ceiling 86400s. A policy outside this range is refused at load, so the component cannot be reconfigured into high-frequency monitoring."
+        },
+        "max_probes_per_window": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 48,
+          "description": "Rolling 24h ceiling. Bounds a malfunction rather than the normal cadence; with the default 1800s interval it is not the binding constraint."
+        },
+        "repository": {"type": "string"},
+        "read_only_actions_only": {"const": true}
+      }
+    },
+    "ledger": {
+      "type": "object",
+      "description": "Append-only record of what the producer asked, never of what it concluded.",
+      "required": ["schema_version", "at", "action_id", "environment", "request_id",
+                   "bucket", "interval_seconds", "decision", "reason",
+                   "request_published", "signed_by_producer", "grants_execution"],
+      "properties": {
+        "decision": {"enum": ["PUBLISHED", "DUPLICATE", "THROTTLED", "REFUSED"]},
+        "bucket": {
+          "type": "integer",
+          "description": "floor(epoch / interval_seconds). request_id is a pure function of this, so a tick is idempotent per bucket and double-probing is structurally impossible."
+        },
+        "signed_by_producer": {"const": false},
+        "grants_execution": {"const": false}
+      },
+      "forbidden_keys": ["online", "liveness", "heartbeat", "alive", "status", "proven",
+                         "last_seen", "state", "verdict"]
+    },
+    "request": {
+      "type": "object",
+      "description": "Identical in shape to a Request already accepted by the Request channel: exact fields, pinned action, pinned environment, no signature.",
+      "required": ["schema_version", "request_id", "action_id", "environment", "requested_at"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "1"},
+        "request_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$"},
+        "action_id": {"const": "CONTROL_PLANE_HEALTH"},
+        "environment": {"const": "HK-STAGING-01"},
+        "requested_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "authority_boundary": {
+      "type": "object",
+      "properties": {
+        "holds_private_key": {"const": false},
+        "builds_task": {"const": false},
+        "signs_anything": {"const": false},
+        "may_expand_action_set": {"const": false},
+        "touches_production": {"const": false},
+        "changes_verify_test_pr_deploy_permissions": {"const": false},
+        "may_assert_liveness": {"const": false},
+        "note": {"const": "The producer emits an untrusted Request. Turning a Request into a signed Task stays with the existing bridge; deciding ONLINE/STALE/UNKNOWN stays with the projection, from signed Evidence."}
+      }
+    },
+    "answers_the_projection_may_still_derive": {
+      "type": "object",
+      "properties": {
+        "hk_agent_recent_activity": {"const": "newest signed CONTROL_PLANE_HEALTH Evidence, at any age"},
+        "hk_agent_online": {"const": "PROVEN only from signed liveness Evidence inside the freshness window; otherwise UNKNOWN with last_seen and age_seconds"},
+        "producer_contribution": {"const": "a bounded supply of fresh signed probes; never a liveness verdict"}
+      }
+    },
+    "x-go-gap": "This contract defines the producer. It does not install it: no systemd timer or scheduler change is made by CC V1, and the outbox it writes is picked up by the existing Request channel only once an operator wires it. Until then the control bus still carries no fresh liveness Evidence and hk_agent_online still honestly reads UNKNOWN."
+  }
+}
