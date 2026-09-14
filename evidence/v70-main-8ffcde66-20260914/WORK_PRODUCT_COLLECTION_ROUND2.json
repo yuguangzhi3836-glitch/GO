@@ -1,0 +1,52 @@
+{
+  "schema": "go.v70.r3.work-product-collection.v1",
+  "recorded_at": "2026-09-14T13:25:00Z",
+  "repository_main_head": "4b03281977a77263b1ce0dedb1b889c2008b6b00",
+  "r3_product_source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+  "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "source_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
+  "running_cells": [
+    {"cell":"C01","task":"V70-R3-C01-01","issue":79,"new_work_product":"NONE"},
+    {"cell":"C02","task":"V70-R3-C02-01","issue":80,"new_work_product":"NONE"},
+    {"cell":"C03","task":"V70-R3-C03-01","issue":81,"new_work_product":"NONE"},
+    {"cell":"C04","task":"V70-R3-C04-01","issue":82,"new_work_product":"NONE"},
+    {"cell":"C05","task":"V70-R3-C05-01","issue":83,"new_work_product":"NONE"},
+    {"cell":"C08","task":"V70-R3-C08-01","issue":84,"new_work_product":"NONE"},
+    {"cell":"C09","task":"V70-R3-C09-01","issue":85,"new_work_product":"NONE"},
+    {"cell":"C10","task":"V70-R3-C10-01","issue":86,"new_work_product":"NONE"},
+    {"cell":"C11","task":"V70-R3-C11-01","issue":87,"new_work_product":"NONE"},
+    {"cell":"C12","task":"V70-R3-C12-01","issue":88,"new_work_product":"NONE"}
+  ],
+  "checks": {
+    "issue_79_88_new_comments": 0,
+    "task_bound_prs_matching_V70_R3_C": 0,
+    "task_bound_commits_matching_V70_R3_C": 0,
+    "new_r3_product_candidate_branches": 0,
+    "ack_start_run": 34839544381,
+    "ack_start_is_completion_evidence": false
+  },
+  "first_complete_fixed_candidate": null,
+  "new_c14_trigger": false,
+  "new_c13_trigger": false,
+  "new_done_scoped": 0,
+  "other_cells": {
+    "C06": "BLOCKED_EXTERNAL",
+    "C07": {"status":"ASSIGNED_NO_ACK","task":"V70-R3-C07-01","issue":95},
+    "C13": "TRIGGER_ARMED",
+    "C14": "TRIGGER_ARMED"
+  },
+  "admission_contract": [
+    "exact R3 task ID",
+    "candidate SHA",
+    "application tree/fingerprint",
+    "changed files",
+    "actual test command/count/result",
+    "raw Evidence path and SHA256"
+  ],
+  "next_action": "The first Cell satisfying the complete contract proceeds immediately to C14 then independent C13 without waiting for other Cells.",
+  "release_gates": {
+    "FINAL_RELEASE": "HOLD",
+    "HK_DEPLOY": "HOLD",
+    "PRODUCTION": "HOLD"
+  }
+}
