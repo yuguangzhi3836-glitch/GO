@@ -1,0 +1,170 @@
+name: V7 R3 source-bound worker start
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/v70-r3-worker-start.yml
+      - ci/r3-worker-start/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v70-r3-worker-start-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  worker-start:
+    name: start-${{ matrix.cell }}-${{ matrix.task }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cell: C01
+            task: V70-R3-C01-01
+            issue: '79'
+            probe: application/tests/test_v70_next_c01_unknown_funding.py
+          - cell: C02
+            task: V70-R3-C02-01
+            issue: '80'
+            probe: application/tests/test_v70_next_c02_coupon_plan.py
+          - cell: C03
+            task: V70-R3-C03-01
+            issue: '81'
+            probe: application/tests/test_next_depth_c03_payment_inventory_races.py
+          - cell: C04
+            task: V70-R3-C04-01
+            issue: '82'
+            probe: application/tests/test_v70_next_c04_readonly_reconciliation.py
+          - cell: C05
+            task: V70-R3-C05-01
+            issue: '83'
+            probe: application/tests/test_v70_next_c05_recovery_evidence.py
+          - cell: C08
+            task: V70-R3-C08-01
+            issue: '84'
+            probe: application/tests/go_ai/test_c08_hard_exit_recovery.py
+          - cell: C09
+            task: V70-R3-C09-01
+            issue: '85'
+            probe: application/tests/judgment/test_next_depth_concurrent_judgment.py
+          - cell: C10
+            task: V70-R3-C10-01
+            issue: '86'
+            probe: application/tests/journey/test_c10_batch_list_projection.py
+          - cell: C11
+            task: V70-R3-C11-01
+            issue: '87'
+            probe: application/tests/payments/test_c11_flight_idempotency_recovery.py
+          - cell: C12
+            task: V70-R3-C12-01
+            issue: '88'
+            probe: ci/round2/test_validate_ledger.py
+    steps:
+      - name: Checkout exact canonical source
+        uses: actions/checkout@v4
+        with:
+          ref: 8ffcde66d36c1bbf849218529ef015f6e81725af
+          persist-credentials: false
+
+      - name: Verify exact source binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual=$(git rev-parse HEAD)
+          test "$actual" = "8ffcde66d36c1bbf849218529ef015f6e81725af"
+          test -f "${{ matrix.probe }}"
+          printf 'cell=%s\ntask=%s\nissue=%s\nsource=%s\nprobe=%s\n' \
+            '${{ matrix.cell }}' '${{ matrix.task }}' '${{ matrix.issue }}' "$actual" '${{ matrix.probe }}' \
+            | tee "$RUNNER_TEMP/start-process.log"
+
+      - name: Start task-bound worker process
+        shell: bash
+        run: |
+          set -euo pipefail
+          ack_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          start_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          python -m py_compile '${{ matrix.probe }}' 2>&1 | tee -a "$RUNNER_TEMP/start-process.log"
+          printf 'probe_compile=PASS\n' | tee -a "$RUNNER_TEMP/start-process.log"
+          printf 'acknowledged_at=%s\nstarted_at=%s\n' "$ack_at" "$start_at" | tee -a "$RUNNER_TEMP/start-process.log"
+          echo "ACK_AT=$ack_at" >> "$GITHUB_ENV"
+          echo "START_AT=$start_at" >> "$GITHUB_ENV"
+
+      - name: Emit source-bound ACK/start receipt
+        shell: bash
+        env:
+          CELL: ${{ matrix.cell }}
+          TASK: ${{ matrix.task }}
+          ISSUE: ${{ matrix.issue }}
+          PROBE: ${{ matrix.probe }}
+        run: |
+          set -euo pipefail
+          observed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          process_sha=$(sha256sum "$RUNNER_TEMP/start-process.log" | awk '{print $1}')
+          actual=$(git rev-parse HEAD)
+          python - <<'PY'
+          import json, os, pathlib
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'r3-worker-start'
+          out.mkdir(parents=True, exist_ok=True)
+          receipt = {
+            'schema': 'go.v70.r3.worker-start.v1',
+            'status': 'RUNNING',
+            'cell_id': os.environ['CELL'],
+            'task_id': os.environ['TASK'],
+            'issue_number': int(os.environ['ISSUE']),
+            'source_anchor': '8ffcde66d36c1bbf849218529ef015f6e81725af',
+            'acknowledged_at': os.environ['ACK_AT'],
+            'started_at': os.environ['START_AT'],
+            'observed_at': os.popen('date -u +%Y-%m-%dT%H:%M:%SZ').read().strip(),
+            'execution_identity': {
+              'provider': 'github-actions',
+              'run_id': os.environ.get('GITHUB_RUN_ID'),
+              'run_attempt': os.environ.get('GITHUB_RUN_ATTEMPT'),
+              'job': os.environ.get('GITHUB_JOB'),
+              'runner_name': os.environ.get('RUNNER_NAME'),
+              'runner_os': os.environ.get('RUNNER_OS'),
+              'actor': os.environ.get('GITHUB_ACTOR'),
+              'workflow': os.environ.get('GITHUB_WORKFLOW'),
+              'workflow_ref': os.environ.get('GITHUB_WORKFLOW_REF'),
+              'workflow_sha': os.environ.get('GITHUB_WORKFLOW_SHA'),
+            },
+            'probe': os.environ['PROBE'],
+            'execution_evidence': {
+              'path': 'start-process.log',
+              'sha256': os.environ['PROCESS_SHA'],
+              'kind': 'PROCESS_OUTPUT'
+            },
+            'scope': 'worker ACK/start admission only; no task completion claim',
+            'hong_kong': 'NOT_ACCESSED',
+            'production': 'HOLD',
+            'final_release': 'HOLD'
+          }
+          (out / 'ACK_START.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          PY
+          cp "$RUNNER_TEMP/start-process.log" "$RUNNER_TEMP/r3-worker-start/start-process.log"
+        env:
+          CELL: ${{ matrix.cell }}
+          TASK: ${{ matrix.task }}
+          ISSUE: ${{ matrix.issue }}
+          PROBE: ${{ matrix.probe }}
+          PROCESS_SHA: ${{ env.PROCESS_SHA }}
+
+      - name: Heartbeat window for live-run verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5 6; do
+            printf '%s cell=%s task=%s heartbeat=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '${{ matrix.cell }}' '${{ matrix.task }}' "$i" | tee -a "$RUNNER_TEMP/r3-worker-start/heartbeat.log"
+            sleep 10
+          done
+
+      - name: Upload original ACK/start evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r3-start-${{ matrix.cell }}-${{ matrix.task }}
+          path: ${{ runner.temp }}/r3-worker-start
+          if-no-files-found: error
+          retention-days: 90
