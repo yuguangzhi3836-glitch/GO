@@ -1364,7 +1364,7 @@ class FlightOrderRow(Base):
     order_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     account_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     prebook_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     total_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
     passengers: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
