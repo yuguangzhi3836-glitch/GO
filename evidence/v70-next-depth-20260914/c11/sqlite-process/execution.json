@@ -1,0 +1,51 @@
+{
+  "task_id": "V70-R2-C11-03",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "source_commit": "UNSPECIFIED",
+  "started_at": "2026-09-14T04:12:05.532050+00:00",
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "status": "EVIDENCE_READY",
+  "workers": "normal subprocesses",
+  "C14": "PENDING",
+  "C13": "PENDING",
+  "source_files": [
+    {
+      "path": "src/go_hotel/api/idempotency.py",
+      "sha256": "b265db3d98aa53113decdc5ee55ad686dafb1626640ebbbdec8021ad48a21269"
+    },
+    {
+      "path": "src/go_hotel/repositories/sql.py",
+      "sha256": "18a09119cc2727eb6f64e7c2933b98de3a7bd878e9bb2b1fd92049e1d69b98a7"
+    },
+    {
+      "path": "src/go_hotel/api/routes/flight.py",
+      "sha256": "f7270d34441903036a69067716cec3c39a87f092594ce736d0c3d5eb51902967"
+    },
+    {
+      "path": "src/go_hotel/flight/service.py",
+      "sha256": "b70d4e40aa33610c68a050ac50038236aa3c0fa6ffc2cbbe87d28678fbaf9369"
+    },
+    {
+      "path": "src/go_hotel/flight/payment_recovery.py",
+      "sha256": "60034e9a1722b8a396bf6d4d757a287ea418bbd331282fe0468799887d2817ca"
+    },
+    {
+      "path": "src/go_hotel/services/mutation_boundary.py",
+      "sha256": "611d9bbd6170c87d5c221c8d16eb897fc3dd8e4a6a89b160247ce92098e555d3"
+    },
+    {
+      "path": "ci/next_depth/c11_postgres.py",
+      "sha256": "7a8ace9209c972720672e3842af34da9f414e10c48e665de150ca3a6394aac55"
+    },
+    {
+      "path": "ci/next_depth/c11_process_actor.py",
+      "sha256": "481e4e057723ab89e17c2c6f07c2ea23267b579c3ca2c662089349269a6e458b"
+    }
+  ],
+  "database_backend": "sqlite",
+  "postgres_gate": "HOLD_NOT_POSTGRES",
+  "finished_at": "2026-09-14T04:13:26.582831+00:00",
+  "tests": 10,
+  "failures": 0,
+  "hard_death_auto_recovery": "HOLD: RUNNING is never automatically stolen; tests prove no duplicate execution"
+}

@@ -1,0 +1,48 @@
+{
+  "cell": "C04",
+  "task": "C04-R2-REFUND-LEDGER-RECEIPTS-EXACT-PLAN",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "task_state": "DONE_SCOPED_AWAITING_C14",
+  "scope": "A confirmed executor response must identify actual confirmed refund rows from this order owner/currency/original and positive-change roots, with the exact expected sum; reject missing/empty/capture/foreign receipts, then recover exactly once. Retain completed/order-state contradiction guard. Each confirmed receipt now matches the frozen cancellation plan allocation (payment intent, capture, amount, idempotency key) as an exact multiset; earlier equal same-order refunds cannot complete this cancellation.",
+  "test_progress": {
+    "passed": 6,
+    "selected": 6,
+    "percentage": 100
+  },
+  "full_cell_progress": "NOT_MEASURED_NO_FULL_DOMAIN_DENOMINATOR",
+  "C14": "PENDING_INDEPENDENT_REREVIEW_AFTER_REJECTION",
+  "C13": "PENDING_AFTER_C14",
+  "next_task": "Review completed historical rental refunds against frozen plan and ledger without executing money or auto-repairing state; determine a safe reconciliation task for real contradictions.",
+  "limitation": "Small service fix reuses existing shared validator without changing validator, models, migration, fee or permission rules. Deposit/bank/external acceptance remains unproved.",
+  "evidence": [
+    "after.raw.log",
+    "after.junit.xml",
+    "source-identity.json",
+    "runs.json",
+    "before.raw.log",
+    "before2.raw.log",
+    "before2.junit.xml",
+    "regression.raw.log",
+    "regression.junit.xml",
+    "source-before.sha256",
+    "receipt-plan-before.raw.log",
+    "receipt-plan-before.junit.xml",
+    "receipt-plan-before.sha256",
+    "receipt-plan-after.raw.log",
+    "receipt-plan-after.junit.xml",
+    "receipt-plan-source-identity.json",
+    "receipt-plan-runs.json"
+  ],
+  "regression_progress": {
+    "passed": 27,
+    "selected": 27
+  },
+  "combined_after_review_progress": {
+    "passed": 33,
+    "selected": 33,
+    "errors": 0,
+    "skipped": 0
+  },
+  "review_feedback": "C14 identified that owner/root/total checks alone accept prior same-order equal-amount refunds. Added red proof and exact frozen-plan matching. Original evidence remains preserved.",
+  "current_source_identity": "receipt-plan-source-identity.json"
+}

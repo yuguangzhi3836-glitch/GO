@@ -1,0 +1,36 @@
+[
+  {
+    "label": "readonly",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c04-next-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_next_c04_readonly_reconciliation.py -p no:cacheprovider --junitxml=../evidence/v70-next-depth-20260914/c04/readonly.junit.xml > ../evidence/v70-next-depth-20260914/c04/readonly.raw.log 2>&1",
+    "exit_code": 0,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "6",
+      "time": "3.444",
+      "timestamp": "2026-09-14T12:57:33.267659+09:00",
+      "hostname": "localhost"
+    },
+    "source_capture": "Earlier progressive-builder runs retained; final files are separately pinned in SOURCE_IDENTITY.json and must receive independent exact-candidate C13 validation."
+  },
+  {
+    "label": "readonly-final",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c04-next-readonly-final-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_next_c04_readonly_reconciliation.py -p no:cacheprovider --junitxml=../evidence/v70-next-depth-20260914/c04/readonly-final.junit.xml > ../evidence/v70-next-depth-20260914/c04/readonly-final.raw.log 2>&1",
+    "exit_code": 0,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "7",
+      "time": "3.634",
+      "timestamp": "2026-09-14T13:00:12.222180+09:00",
+      "hostname": "localhost"
+    },
+    "source_capture": "Earlier progressive-builder runs retained; final files are separately pinned in SOURCE_IDENTITY.json and must receive independent exact-candidate C13 validation."
+  }
+]

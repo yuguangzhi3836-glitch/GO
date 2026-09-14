@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.970" timestamp="2026-09-13T08:18:43.754396-07:00" hostname="localhost"><testcase classname="tests.test_depth41_transaction_views" name="test_admin_hotel_refund_amount_is_real_column" time="4.064"><failure message="AttributeError: 'Query' object has no attribute 'strip'">client = &lt;starlette.testclient.TestClient object at 0x7f24058def60&gt;
+
+    def test_admin_hotel_refund_amount_is_real_column(client):
+        oid,_,_,q,refund=booked('HOTEL',client);refund()
+        from go_hotel.api.routes.operations_console import vertical_snapshot
+&gt;       rows=vertical_snapshot('HOTEL',p=None)['data']['refunds']
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+application/tests/test_depth41_transaction_views.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+vertical = 'HOTEL', p = None, page = Query(1), refund_page = Query(1)
+page_size = Query(50), order_id = Query(None)
+
+    @router.get('/verticals/{vertical}')
+    def vertical_snapshot(
+        vertical: str,
+        p: Principal = Depends(admin_principal),
+        page: int = Query(1, ge=1, le=1000000),
+        refund_page: int = Query(1, ge=1, le=1000000),
+        page_size: int = Query(50, ge=1, le=100),
+        order_id: str | None = Query(None, max_length=64),
+    ):
+        v = vertical.upper()
+        if v not in VERTICALS:
+            raise HTTPException(404, detail='VERTICAL_NOT_FOUND')
+&gt;       query = (order_id or '').strip() or None
+                ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Query' object has no attribute 'strip'
+
+application/src/go_hotel/api/routes/operations_console.py:80: AttributeError</failure></testcase></testsuite></testsuites>

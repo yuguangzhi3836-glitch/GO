@@ -1,0 +1,20 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_post_commit_error_does_not_allow_duplicate_effect[sync] _________
+../evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py:42: in test_post_commit_error_does_not_allow_duplicate_effect
+    assert count == 1, "UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT"
+E   AssertionError: UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT
+E   assert 2 == 1
+----------------------------- Captured stdout call -----------------------------
+{'effects_committed': 2, 'claim_retained': False, 'errors': ['RuntimeError', 'RuntimeError']}
+________ test_post_commit_error_does_not_allow_duplicate_effect[async] _________
+../evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py:42: in test_post_commit_error_does_not_allow_duplicate_effect
+    assert count == 1, "UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT"
+E   AssertionError: UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT
+E   assert 2 == 1
+----------------------------- Captured stdout call -----------------------------
+{'effects_committed': 2, 'claim_retained': False, 'errors': ['RuntimeError', 'RuntimeError']}
+=========================== short test summary info ============================
+FAILED ::test_post_commit_error_does_not_allow_duplicate_effect[sync] - Asser...
+FAILED ::test_post_commit_error_does_not_allow_duplicate_effect[async] - Asse...
+2 failed in 1.76s

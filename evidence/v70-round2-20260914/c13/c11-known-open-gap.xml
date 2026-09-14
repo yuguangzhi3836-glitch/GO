@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="1.758" timestamp="2026-09-14T12:19:16.851248+09:00" hostname="localhost"><testcase classname="" name="test_post_commit_error_does_not_allow_duplicate_effect[sync]" time="0.285"><failure message="AssertionError: UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT&#10;assert 2 == 1">../evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py:42: in test_post_commit_error_does_not_allow_duplicate_effect
+    assert count == 1, "UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT"
+E   AssertionError: UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT
+E   assert 2 == 1</failure></testcase><testcase classname="" name="test_post_commit_error_does_not_allow_duplicate_effect[async]" time="0.006"><failure message="AssertionError: UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT&#10;assert 2 == 1">../evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py:42: in test_post_commit_error_does_not_allow_duplicate_effect
+    assert count == 1, "UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT"
+E   AssertionError: UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT
+E   assert 2 == 1</failure></testcase></testsuite></testsuites>

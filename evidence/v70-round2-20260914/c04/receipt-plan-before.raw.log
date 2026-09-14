@@ -1,0 +1,55 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_same_order_earlier_equal_refund_cannot_complete_current_cancellation ___
+
+client = <starlette.testclient.TestClient object at 0x7f368c0705c0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f3687114e30>
+
+    def test_same_order_earlier_equal_refund_cannot_complete_current_cancellation(client, monkeypatch):
+        from tests.test_depth06_rental_settlement import paid, move, balances
+        from go_hotel.mobility.rental.service import rental_service as svc
+        owner, oid, _ = paid(client)
+        move(owner, oid, 2)
+        move(owner, oid, 1)
+        quote = svc.refund_quote(owner, oid)
+        assert quote['refund_amount_minor'] == 42000
+        previous = refunded_movements()[0]
+        assert previous.amount_minor == quote['refund_amount_minor']
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: {
+            'state': 'CONFIRMED', 'money_movement_ids': [previous.money_movement_id]})
+>       with pytest.raises(ValueError, match='REFUND_RECEIPT_PLAN_MISMATCH'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_round2_c04_rental_receipts.py:67: Failed
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-14T03:10:59.395890+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3de34fa931824691b8f8f3a34dd58705","trace_id":"tr_947c77c982b24fdd846b2a1d5eb064f4","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":106.81}
+{"ts":"2026-09-14T03:10:59.396794+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-14T03:10:59.445791+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_cea971bfa9994e3586fc326d7426a364","trace_id":"tr_a33440c9600745f891fd1e66a2ffe775","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":48.19}
+{"ts":"2026-09-14T03:10:59.446271+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-14T03:10:59.485471+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_4967092ee5ae44fc923427871a5a7896","trace_id":"tr_412f153441b24758aec856b48a925518","path":"/v1/mobility/rentals/orders","method":"POST","status_code":200,"duration_ms":38.52}
+{"ts":"2026-09-14T03:10:59.485955+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/rentals/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-14T03:10:59.818830+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_6fd1276bc28d4835961377c95074ade4","trace_id":"tr_03e94b604b97448b85a0c9d5c1fc35fc","path":"/v1/consumer/checkout/RENTAL/rent_ord_d89f0ec029364aa6","method":"POST","status_code":200,"duration_ms":332.24}
+{"ts":"2026-09-14T03:10:59.819417+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/checkout/RENTAL/rent_ord_d89f0ec029364aa6 \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/rentals/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/checkout/RENTAL/rent_ord_d89f0ec029364aa6 "HTTP/1.1 200 OK"
+=============================== warnings summary ===============================
+tests/test_v70_round2_c04_rental_receipts.py::test_same_order_earlier_equal_refund_cannot_complete_current_cancellation
+  /workspace/scratch/948b51def3a9/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_v70_round2_c04_rental_receipts.py::test_same_order_earlier_equal_refund_cannot_complete_current_cancellation
+  /workspace/scratch/948b51def3a9/venv/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_v70_round2_c04_rental_receipts.py::test_same_order_earlier_equal_refund_cannot_complete_current_cancellation

@@ -1,0 +1,2149 @@
+﻿2026-09-13T20:47:00.7386546Z Current runner version: '2.337.0'
+2026-09-13T20:47:00.7408034Z ##[group]Runner Image Provisioner
+2026-09-13T20:47:00.7408755Z Hosted Compute Agent
+2026-09-13T20:47:00.7409358Z Version: 20260828.587
+2026-09-13T20:47:00.7409902Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-13T20:47:00.7410651Z Build Date: 2026-08-28T16:44:25Z
+2026-09-13T20:47:00.7411239Z Worker ID: {581fc40b-c924-49b2-b3d1-9dad696ecf67}
+2026-09-13T20:47:00.7411994Z Azure Region: westcentralus
+2026-09-13T20:47:00.7412581Z ##[endgroup]
+2026-09-13T20:47:00.7413671Z ##[group]Operating System
+2026-09-13T20:47:00.7414173Z Ubuntu
+2026-09-13T20:47:00.7414685Z 24.04.5
+2026-09-13T20:47:00.7415117Z LTS
+2026-09-13T20:47:00.7415575Z ##[endgroup]
+2026-09-13T20:47:00.7416090Z ##[group]Runner Image
+2026-09-13T20:47:00.7416622Z Image: ubuntu-24.04
+2026-09-13T20:47:00.7417154Z Version: 20260907.300.1
+2026-09-13T20:47:00.7418169Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-13T20:47:00.7419518Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-13T20:47:00.7420314Z ##[endgroup]
+2026-09-13T20:47:00.7421261Z ##[group]GITHUB_TOKEN Permissions
+2026-09-13T20:47:00.7422988Z Contents: read
+2026-09-13T20:47:00.7423616Z Metadata: read
+2026-09-13T20:47:00.7424091Z ##[endgroup]
+2026-09-13T20:47:00.7425797Z Secret source: Actions
+2026-09-13T20:47:00.7426619Z Cache mode: write
+2026-09-13T20:47:00.7427255Z Prepare workflow directory
+2026-09-13T20:47:00.7787208Z Prepare all required actions
+2026-09-13T20:47:00.7825609Z Getting action download info
+2026-09-13T20:47:01.0646844Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-13T20:47:02.5616936Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-13T20:47:03.7307592Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-13T20:47:04.6559020Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-13T20:47:06.7152047Z Complete job name: frontend-http-compat
+2026-09-13T20:47:06.7694056Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:47:06.7699862Z ##[group]Run actions/checkout@v4
+2026-09-13T20:47:06.7700196Z with:
+2026-09-13T20:47:06.7700398Z   ref: ddd2b9d82d560ba2657a7904f061fb20196d5924
+2026-09-13T20:47:06.7700667Z   persist-credentials: false
+2026-09-13T20:47:06.7700932Z   repository: yuguangzhi3836-glitch/GO
+2026-09-13T20:47:06.7703629Z   token: ***
+2026-09-13T20:47:06.7703848Z   ssh-strict: true
+2026-09-13T20:47:06.7704045Z   ssh-user: git
+2026-09-13T20:47:06.7704234Z   clean: true
+2026-09-13T20:47:06.7704457Z   sparse-checkout-cone-mode: true
+2026-09-13T20:47:06.7704700Z   fetch-depth: 1
+2026-09-13T20:47:06.7704884Z   fetch-tags: false
+2026-09-13T20:47:06.7705112Z   show-progress: true
+2026-09-13T20:47:06.7705294Z   lfs: false
+2026-09-13T20:47:06.7705468Z   submodules: false
+2026-09-13T20:47:06.7705653Z   set-safe-directory: true
+2026-09-13T20:47:06.7705870Z   allow-unsafe-pr-checkout: false
+2026-09-13T20:47:06.7706632Z env:
+2026-09-13T20:47:06.7706820Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:06.7707034Z ##[endgroup]
+2026-09-13T20:47:06.8631801Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-13T20:47:06.8633977Z ##[group]Getting Git version info
+2026-09-13T20:47:06.8635048Z Working directory is '/home/runner/work/GO/GO'
+2026-09-13T20:47:06.8636595Z [command]/usr/bin/git version
+2026-09-13T20:47:07.2449412Z git version 2.55.0
+2026-09-13T20:47:07.2474205Z ##[endgroup]
+2026-09-13T20:47:07.2478253Z Temporarily overriding HOME='/home/runner/work/_temp/9d7256cc-29d3-47f9-897c-868f387362bf' before making global git config changes
+2026-09-13T20:47:07.2479321Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-13T20:47:07.2480119Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-13T20:47:07.2523924Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-13T20:47:07.2526654Z ##[group]Initializing the repository
+2026-09-13T20:47:07.2530631Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-13T20:47:07.2834261Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-13T20:47:07.2834953Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-13T20:47:07.2835617Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-13T20:47:07.2836102Z hint: call:
+2026-09-13T20:47:07.2836351Z hint:
+2026-09-13T20:47:07.2836721Z hint: 	git config --global init.defaultBranch <name>
+2026-09-13T20:47:07.2837119Z hint:
+2026-09-13T20:47:07.2837527Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-13T20:47:07.2838185Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-13T20:47:07.2838665Z hint:
+2026-09-13T20:47:07.2838920Z hint: 	git branch -m <name>
+2026-09-13T20:47:07.2839221Z hint:
+2026-09-13T20:47:07.2839635Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-13T20:47:07.2840722Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-13T20:47:07.2844425Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-13T20:47:07.3688911Z ##[endgroup]
+2026-09-13T20:47:07.3690147Z ##[group]Disabling automatic garbage collection
+2026-09-13T20:47:07.3690903Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-13T20:47:07.4270565Z ##[endgroup]
+2026-09-13T20:47:07.4271406Z ##[group]Setting up auth
+2026-09-13T20:47:07.4277475Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-13T20:47:07.4378817Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-13T20:47:07.7844848Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-13T20:47:07.7846079Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-13T20:47:07.8011276Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-13T20:47:07.8047777Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-13T20:47:07.8249414Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-13T20:47:07.8978247Z ##[endgroup]
+2026-09-13T20:47:07.8978828Z ##[group]Fetching the repository
+2026-09-13T20:47:07.8979972Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ddd2b9d82d560ba2657a7904f061fb20196d5924
+2026-09-13T20:47:24.6792488Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-13T20:47:24.6805018Z  * branch            ddd2b9d82d560ba2657a7904f061fb20196d5924 -> FETCH_HEAD
+2026-09-13T20:47:24.6852853Z ##[endgroup]
+2026-09-13T20:47:24.6853649Z ##[group]Determining the checkout info
+2026-09-13T20:47:24.6854479Z ##[endgroup]
+2026-09-13T20:47:24.6855082Z [command]/usr/bin/git sparse-checkout disable
+2026-09-13T20:47:24.6860788Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-13T20:47:24.6918002Z ##[group]Checking out the ref
+2026-09-13T20:47:24.6929352Z [command]/usr/bin/git checkout --progress --force ddd2b9d82d560ba2657a7904f061fb20196d5924
+2026-09-13T20:47:26.0356336Z Updating files:  33% (1652/4950)
+2026-09-13T20:47:26.0392457Z Updating files:  34% (1683/4950)
+2026-09-13T20:47:26.0413474Z Updating files:  35% (1733/4950)
+2026-09-13T20:47:26.0432530Z Updating files:  36% (1782/4950)
+2026-09-13T20:47:26.0500053Z Updating files:  37% (1832/4950)
+2026-09-13T20:47:26.0535692Z Updating files:  38% (1881/4950)
+2026-09-13T20:47:26.0578195Z Updating files:  39% (1931/4950)
+2026-09-13T20:47:26.0611295Z Updating files:  40% (1980/4950)
+2026-09-13T20:47:26.0626790Z Updating files:  41% (2030/4950)
+2026-09-13T20:47:26.0645863Z Updating files:  42% (2079/4950)
+2026-09-13T20:47:26.0665194Z Updating files:  43% (2129/4950)
+2026-09-13T20:47:26.0690720Z Updating files:  44% (2178/4950)
+2026-09-13T20:47:26.0712570Z Updating files:  45% (2228/4950)
+2026-09-13T20:47:26.0744442Z Updating files:  46% (2277/4950)
+2026-09-13T20:47:26.0764933Z Updating files:  47% (2327/4950)
+2026-09-13T20:47:26.0788644Z Updating files:  48% (2376/4950)
+2026-09-13T20:47:26.0818621Z Updating files:  49% (2426/4950)
+2026-09-13T20:47:26.0850028Z Updating files:  50% (2475/4950)
+2026-09-13T20:47:26.0875166Z Updating files:  51% (2525/4950)
+2026-09-13T20:47:26.0902367Z Updating files:  52% (2574/4950)
+2026-09-13T20:47:26.0935318Z Updating files:  53% (2624/4950)
+2026-09-13T20:47:26.0958431Z Updating files:  54% (2673/4950)
+2026-09-13T20:47:26.0982419Z Updating files:  55% (2723/4950)
+2026-09-13T20:47:26.1015954Z Updating files:  56% (2772/4950)
+2026-09-13T20:47:26.1038776Z Updating files:  57% (2822/4950)
+2026-09-13T20:47:26.1068029Z Updating files:  58% (2871/4950)
+2026-09-13T20:47:26.1092109Z Updating files:  59% (2921/4950)
+2026-09-13T20:47:26.1430380Z Updating files:  60% (2970/4950)
+2026-09-13T20:47:26.1862261Z Updating files:  61% (3020/4950)
+2026-09-13T20:47:26.1882420Z Updating files:  62% (3069/4950)
+2026-09-13T20:47:26.1934625Z Updating files:  63% (3119/4950)
+2026-09-13T20:47:26.2117294Z Updating files:  64% (3168/4950)
+2026-09-13T20:47:26.2922406Z Updating files:  65% (3218/4950)
+2026-09-13T20:47:26.5203252Z Updating files:  66% (3267/4950)
+2026-09-13T20:47:26.5986599Z Updating files:  67% (3317/4950)
+2026-09-13T20:47:26.6120132Z Updating files:  68% (3366/4950)
+2026-09-13T20:47:26.6137526Z Updating files:  69% (3416/4950)
+2026-09-13T20:47:26.6156649Z Updating files:  70% (3465/4950)
+2026-09-13T20:47:26.6202140Z Updating files:  71% (3515/4950)
+2026-09-13T20:47:26.6244430Z Updating files:  72% (3564/4950)
+2026-09-13T20:47:26.6265148Z Updating files:  73% (3614/4950)
+2026-09-13T20:47:26.6283617Z Updating files:  74% (3663/4950)
+2026-09-13T20:47:26.6305003Z Updating files:  75% (3713/4950)
+2026-09-13T20:47:26.6338750Z Updating files:  76% (3762/4950)
+2026-09-13T20:47:26.6469471Z Updating files:  77% (3812/4950)
+2026-09-13T20:47:26.6496941Z Updating files:  78% (3861/4950)
+2026-09-13T20:47:26.6533864Z Updating files:  79% (3911/4950)
+2026-09-13T20:47:26.6555664Z Updating files:  80% (3960/4950)
+2026-09-13T20:47:26.6706584Z Updating files:  81% (4010/4950)
+2026-09-13T20:47:26.7256908Z Updating files:  82% (4059/4950)
+2026-09-13T20:47:26.7923510Z Updating files:  82% (4080/4950)
+2026-09-13T20:47:26.9309311Z Updating files:  83% (4109/4950)
+2026-09-13T20:47:27.4412936Z Updating files:  84% (4158/4950)
+2026-09-13T20:47:27.4610115Z Updating files:  85% (4208/4950)
+2026-09-13T20:47:27.4804908Z Updating files:  86% (4257/4950)
+2026-09-13T20:47:27.4830883Z Updating files:  87% (4307/4950)
+2026-09-13T20:47:27.4852178Z Updating files:  88% (4356/4950)
+2026-09-13T20:47:27.4872180Z Updating files:  89% (4406/4950)
+2026-09-13T20:47:27.4890458Z Updating files:  90% (4455/4950)
+2026-09-13T20:47:27.5099463Z Updating files:  91% (4505/4950)
+2026-09-13T20:47:27.5115773Z Updating files:  92% (4554/4950)
+2026-09-13T20:47:27.5132621Z Updating files:  93% (4604/4950)
+2026-09-13T20:47:27.5151508Z Updating files:  94% (4653/4950)
+2026-09-13T20:47:27.5296416Z Updating files:  95% (4703/4950)
+2026-09-13T20:47:27.5325731Z Updating files:  96% (4752/4950)
+2026-09-13T20:47:27.5355145Z Updating files:  97% (4802/4950)
+2026-09-13T20:47:27.5376886Z Updating files:  98% (4851/4950)
+2026-09-13T20:47:27.5500309Z Updating files:  99% (4901/4950)
+2026-09-13T20:47:27.5501499Z Updating files: 100% (4950/4950)
+2026-09-13T20:47:27.5502262Z Updating files: 100% (4950/4950), done.
+2026-09-13T20:47:27.9307793Z Note: switching to 'ddd2b9d82d560ba2657a7904f061fb20196d5924'.
+2026-09-13T20:47:27.9309239Z 
+2026-09-13T20:47:27.9309724Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-13T20:47:27.9310529Z changes and commit them, and you can discard any commits you make in this
+2026-09-13T20:47:27.9311318Z state without impacting any branches by switching back to a branch.
+2026-09-13T20:47:27.9312070Z 
+2026-09-13T20:47:27.9312415Z If you want to create a new branch to retain commits you create, you may
+2026-09-13T20:47:27.9313119Z do so (now or later) by using -c with the switch command. Example:
+2026-09-13T20:47:27.9313439Z 
+2026-09-13T20:47:27.9313578Z   git switch -c <new-branch-name>
+2026-09-13T20:47:27.9313796Z 
+2026-09-13T20:47:27.9313918Z Or undo this operation with:
+2026-09-13T20:47:27.9314149Z 
+2026-09-13T20:47:27.9314253Z   git switch -
+2026-09-13T20:47:27.9314408Z 
+2026-09-13T20:47:27.9314677Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-13T20:47:27.9315060Z 
+2026-09-13T20:47:27.9315746Z HEAD is now at ddd2b9d ci: bind authorized Query default repair to exact application fingerprint
+2026-09-13T20:47:28.0812018Z ##[endgroup]
+2026-09-13T20:47:28.0863214Z [command]/usr/bin/git log -1 --format=%H
+2026-09-13T20:47:28.0887423Z ddd2b9d82d560ba2657a7904f061fb20196d5924
+2026-09-13T20:47:28.0909972Z ##[group]Removing auth
+2026-09-13T20:47:28.0910548Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-13T20:47:28.0947922Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-13T20:47:28.1148912Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-13T20:47:28.1187966Z http.https://github.com/.extraheader
+2026-09-13T20:47:28.1197938Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-13T20:47:28.1392078Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-13T20:47:28.1597422Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-13T20:47:28.1632797Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-13T20:47:28.1866851Z ##[endgroup]
+2026-09-13T20:47:28.2084149Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:47:28.2085423Z ##[group]Run actions/setup-python@v5
+2026-09-13T20:47:28.2085650Z with:
+2026-09-13T20:47:28.2085826Z   python-version: 3.13.5
+2026-09-13T20:47:28.2086030Z   check-latest: false
+2026-09-13T20:47:28.2088052Z   token: ***
+2026-09-13T20:47:28.2088248Z   update-environment: true
+2026-09-13T20:47:28.2088463Z   allow-prereleases: false
+2026-09-13T20:47:28.2088661Z   freethreaded: false
+2026-09-13T20:47:28.2088849Z env:
+2026-09-13T20:47:28.2089017Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:28.2089220Z ##[endgroup]
+2026-09-13T20:47:28.3186596Z ##[group]Installed versions
+2026-09-13T20:47:28.3200856Z Version 3.13.5 was not found in the local cache
+2026-09-13T20:47:28.3290519Z (node:2084) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-13T20:47:28.3291559Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-13T20:47:29.4184937Z Version 3.13.5 is available for downloading
+2026-09-13T20:47:29.4186111Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-24.04-x64.tar.gz"
+2026-09-13T20:47:30.6035327Z Extract downloaded archive
+2026-09-13T20:47:30.6147623Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/1741aeff-1516-4696-87a1-4fcdc6bb7ca4 -f /home/runner/work/_temp/1c2b4cf6-72ce-4b7b-b9b4-45bcbc43023e
+2026-09-13T20:47:32.6377794Z Execute installation script
+2026-09-13T20:47:32.6465532Z Check if Python hostedtoolcache folder exist...
+2026-09-13T20:47:32.6473124Z Create Python 3.13.5 folder
+2026-09-13T20:47:32.6479493Z Copy Python binaries to hostedtoolcache folder
+2026-09-13T20:47:35.1974643Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-13T20:47:35.2022109Z Upgrading pip...
+2026-09-13T20:47:37.9313272Z Looking in links: /tmp/tmps561jgfp
+2026-09-13T20:47:37.9316316Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-13T20:47:39.8893280Z Collecting pip
+2026-09-13T20:47:39.9732774Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-13T20:47:40.3443942Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-13T20:47:40.6213971Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 7.0 MB/s eta 0:00:00
+2026-09-13T20:47:40.6215826Z 
+2026-09-13T20:47:40.6373303Z Installing collected packages: pip
+2026-09-13T20:47:40.6374901Z Attempting uninstall: pip
+2026-09-13T20:47:40.6397068Z Found existing installation: pip 25.1.1
+2026-09-13T20:47:40.6647823Z Uninstalling pip-25.1.1:
+2026-09-13T20:47:40.6697801Z Successfully uninstalled pip-25.1.1
+2026-09-13T20:47:41.9516710Z Successfully installed pip-26.2.1
+2026-09-13T20:47:41.9981338Z Create complete file
+2026-09-13T20:47:42.0016395Z Successfully set up CPython (3.13.5)
+2026-09-13T20:47:42.0017255Z ##[endgroup]
+2026-09-13T20:47:42.0198430Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:47:42.0199423Z ##[group]Run actions/setup-node@v4
+2026-09-13T20:47:42.0199636Z with:
+2026-09-13T20:47:42.0199810Z   node-version: 22.22.0
+2026-09-13T20:47:42.0200002Z   always-auth: false
+2026-09-13T20:47:42.0200191Z   check-latest: false
+2026-09-13T20:47:42.0202406Z   token: ***
+2026-09-13T20:47:42.0202576Z env:
+2026-09-13T20:47:42.0202753Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:42.0203014Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:42.0203367Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-13T20:47:42.0203710Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:42.0204053Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:42.0204362Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:42.0204662Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-13T20:47:42.0204928Z ##[endgroup]
+2026-09-13T20:47:42.2282139Z Attempting to download 22.22.0...
+2026-09-13T20:47:42.2394674Z (node:2160) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-13T20:47:42.2420412Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-13T20:47:43.0601605Z Acquiring 22.22.0 - x64 from https://github.com/actions/node-versions/releases/download/22.22.0-20981702931/node-22.22.0-linux-x64.tar.gz
+2026-09-13T20:47:43.8868945Z Extracting ...
+2026-09-13T20:47:43.8988485Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/f52f4e7f-702b-4b1f-988e-8c8adfed5a94 -f /home/runner/work/_temp/0ab94220-b6b0-4448-8536-faee6a3fb76d
+2026-09-13T20:47:45.0363430Z Adding to the cache ...
+2026-09-13T20:47:52.0606713Z ##[group]Environment details
+2026-09-13T20:47:52.2848742Z node: v22.22.0
+2026-09-13T20:47:52.2849320Z npm: 10.9.4
+2026-09-13T20:47:52.2850695Z yarn: 1.22.22
+2026-09-13T20:47:52.2866693Z ##[endgroup]
+2026-09-13T20:47:52.3021166Z ##[group]Run python ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"
+2026-09-13T20:47:52.3021856Z [36;1mpython ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"[0m
+2026-09-13T20:47:52.3022598Z [36;1mpython ci/retention/verify_alignment.py "$RUNNER_TEMP/evidence/source/ALIGNMENT_RESULT.json"[0m
+2026-09-13T20:47:52.3058584Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-13T20:47:52.3058866Z env:
+2026-09-13T20:47:52.3059048Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:52.3059312Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:52.3059659Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-13T20:47:52.3060002Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:52.3060314Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:52.3060621Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:52.3060953Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-13T20:47:52.3061222Z ##[endgroup]
+2026-09-13T20:47:52.5020212Z {"source_files": 1332, "source_tree_sha256": "1c4d78c3c1bb5f448d0ebdb99d16a2d76419bbc663cc9ed8fae831e1d18c10c4", "unchanged_parent_files": 1188, "new_files": 61, "repaired_existing_files": 83, "compatibility_files_unchanged": 19, "checkpoint_commit": "ddd2b9d82d560ba2657a7904f061fb20196d5924", "byte_retention": "PASS", "full_feature_retention": "HOLD_APPROVAL_BLOCKED_PROVIDER_GUARD", "deployment": "NOT_RUN", "production": "HOLD"}
+2026-09-13T20:47:52.6862628Z {"commit": "ddd2b9d82d560ba2657a7904f061fb20196d5924", "application_tree": "995d0d83faf883bec980c896fe8a17b0f12360fa", "selected_source_files": 1332, "retained_baseline_files": 1300, "registered_acceptance_repairs": 105, "selection_counts": {"BOTH": 1264, "PR47": 35, "PR48": 1}, "pr47_application_changes": ["application/frontend/shared/app.js"], "archived_tooling_files": 8, "alignment": "PASS", "historical_pass_transferred": false, "full_three_end_ux": "HOLD", "six_vertical_closed_loop": "HOLD", "sealed_node": "HOLD", "final_release": "HOLD"}
+2026-09-13T20:47:52.6949617Z ##[group]Run python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+2026-09-13T20:47:52.6950178Z [36;1mpython ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"[0m
+2026-09-13T20:47:52.6950751Z [36;1mpython -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock[0m
+2026-09-13T20:47:52.6983724Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-13T20:47:52.6984008Z env:
+2026-09-13T20:47:52.6984195Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:47:52.6984482Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:52.6984836Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-13T20:47:52.6985169Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:52.6985473Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:52.6985806Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:47:52.6986111Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-13T20:47:52.6986376Z ##[endgroup]
+2026-09-13T20:47:52.9913991Z {"archive_sha256": "b13a76ab9351f81da70e8e2c8873c20141abe953cd3f96aeb181ef86a34b58dd", "verified_wheels": 37, "source": "pinned GO repository ci/dependency_parts only", "application_source_restored": false}
+2026-09-13T20:47:53.7832630Z Looking in links: /home/runner/work/_temp/frozen/wheelhouse
+2026-09-13T20:47:53.7977573Z Processing /home/runner/work/_temp/frozen/wheelhouse/alembic-1.16.5-py3-none-any.whl (from -r ci/retention/requirements.lock (line 1))
+2026-09-13T20:47:53.8044807Z Processing /home/runner/work/_temp/frozen/wheelhouse/annotated_doc-0.0.4-py3-none-any.whl (from -r ci/retention/requirements.lock (line 2))
+2026-09-13T20:47:53.8065401Z Processing /home/runner/work/_temp/frozen/wheelhouse/annotated_types-0.7.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 3))
+2026-09-13T20:47:53.8087557Z Processing /home/runner/work/_temp/frozen/wheelhouse/anyio-4.13.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 4))
+2026-09-13T20:47:53.8117730Z Processing /home/runner/work/_temp/frozen/wheelhouse/certifi-2026.5.20-py3-none-any.whl (from -r ci/retention/requirements.lock (line 5))
+2026-09-13T20:47:53.8142974Z Processing /home/runner/work/_temp/frozen/wheelhouse/cffi-2.0.0-cp313-cp313-manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 6))
+2026-09-13T20:47:53.8162890Z Processing /home/runner/work/_temp/frozen/wheelhouse/click-8.5.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 7))
+2026-09-13T20:47:53.8184701Z Processing /home/runner/work/_temp/frozen/wheelhouse/cryptography-46.0.4-cp311-abi3-manylinux_2_34_x86_64.whl (from -r ci/retention/requirements.lock (line 8))
+2026-09-13T20:47:53.8258628Z Processing /home/runner/work/_temp/frozen/wheelhouse/fastapi-0.128.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 9))
+2026-09-13T20:47:53.8310977Z Processing /home/runner/work/_temp/frozen/wheelhouse/greenlet-3.5.1-cp313-cp313-manylinux_2_24_x86_64.whl (from -r ci/retention/requirements.lock (line 10))
+2026-09-13T20:47:53.8344882Z Processing /home/runner/work/_temp/frozen/wheelhouse/h11-0.16.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 11))
+2026-09-13T20:47:53.8367744Z Processing /home/runner/work/_temp/frozen/wheelhouse/httpcore-1.0.9-py3-none-any.whl (from -r ci/retention/requirements.lock (line 12))
+2026-09-13T20:47:53.8398749Z Processing /home/runner/work/_temp/frozen/wheelhouse/httpx-0.28.1-py3-none-any.whl (from -r ci/retention/requirements.lock (line 13))
+2026-09-13T20:47:53.8429677Z Processing /home/runner/work/_temp/frozen/wheelhouse/idna-3.17-py3-none-any.whl (from -r ci/retention/requirements.lock (line 14))
+2026-09-13T20:47:53.8476707Z Processing /home/runner/work/_temp/frozen/wheelhouse/iniconfig-2.3.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 15))
+2026-09-13T20:47:53.8514478Z Processing /home/runner/work/_temp/frozen/wheelhouse/mako-1.3.10-py3-none-any.whl (from -r ci/retention/requirements.lock (line 16))
+2026-09-13T20:47:53.8563388Z Processing /home/runner/work/_temp/frozen/wheelhouse/markupsafe-3.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from -r ci/retention/requirements.lock (line 17))
+2026-09-13T20:47:53.8582876Z Processing /home/runner/work/_temp/frozen/wheelhouse/packaging-25.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 18))
+2026-09-13T20:47:53.8623077Z Processing /home/runner/work/_temp/frozen/wheelhouse/pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.whl (from -r ci/retention/requirements.lock (line 19))
+2026-09-13T20:47:53.8729778Z Processing /home/runner/work/_temp/frozen/wheelhouse/pluggy-1.6.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 20))
+2026-09-13T20:47:53.8761433Z Processing /home/runner/work/_temp/frozen/wheelhouse/psycopg_binary-3.2.10-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 21))
+2026-09-13T20:47:53.8817425Z Processing /home/runner/work/_temp/frozen/wheelhouse/psycopg-3.2.10-py3-none-any.whl (from -r ci/retention/requirements.lock (line 22))
+2026-09-13T20:47:53.8856231Z Processing /home/runner/work/_temp/frozen/wheelhouse/pycparser-3.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 23))
+2026-09-13T20:47:53.8876368Z Processing /home/runner/work/_temp/frozen/wheelhouse/pydantic_settings-2.14.1-py3-none-any.whl (from -r ci/retention/requirements.lock (line 24))
+2026-09-13T20:47:53.8899706Z Processing /home/runner/work/_temp/frozen/wheelhouse/pydantic-2.13.4-py3-none-any.whl (from -r ci/retention/requirements.lock (line 25))
+2026-09-13T20:47:53.8985956Z Processing /home/runner/work/_temp/frozen/wheelhouse/pydantic_core-2.46.4-cp313-cp313-manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 26))
+2026-09-13T20:47:53.9026618Z Processing /home/runner/work/_temp/frozen/wheelhouse/Pygments-2.20.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 27))
+2026-09-13T20:47:53.9109690Z Processing /home/runner/work/_temp/frozen/wheelhouse/PyJWT-2.13.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 28))
+2026-09-13T20:47:53.9124048Z Processing /home/runner/work/_temp/frozen/wheelhouse/pytest_asyncio-1.3.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 29))
+2026-09-13T20:47:53.9146794Z Processing /home/runner/work/_temp/frozen/wheelhouse/pytest-9.0.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 30))
+2026-09-13T20:47:53.9187165Z Processing /home/runner/work/_temp/frozen/wheelhouse/python_dotenv-1.2.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 31))
+2026-09-13T20:47:53.9216029Z Processing /home/runner/work/_temp/frozen/wheelhouse/redis-5.2.1-py3-none-any.whl (from -r ci/retention/requirements.lock (line 32))
+2026-09-13T20:47:53.9242249Z Processing /home/runner/work/_temp/frozen/wheelhouse/SQLAlchemy-2.0.50-cp313-cp313-manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 33))
+2026-09-13T20:47:53.9360566Z Processing /home/runner/work/_temp/frozen/wheelhouse/starlette-0.50.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 34))
+2026-09-13T20:47:53.9388568Z Processing /home/runner/work/_temp/frozen/wheelhouse/typing_inspection-0.4.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 35))
+2026-09-13T20:47:53.9406836Z Processing /home/runner/work/_temp/frozen/wheelhouse/typing_extensions-4.16.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 36))
+2026-09-13T20:47:53.9425808Z Processing /home/runner/work/_temp/frozen/wheelhouse/uvicorn-0.35.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 37))
+2026-09-13T20:47:54.0411896Z Installing collected packages: typing_extensions, redis, python-dotenv, PyJWT, Pygments, pycparser, psycopg-binary, psycopg, pluggy, Pillow, packaging, MarkupSafe, iniconfig, idna, h11, greenlet, click, certifi, annotated-types, annotated-doc, uvicorn, typing-inspection, SQLAlchemy, pytest, pydantic_core, Mako, httpcore, cffi, anyio, starlette, pytest-asyncio, pydantic, httpx, cryptography, alembic, pydantic-settings, fastapi
+2026-09-13T20:48:02.6107821Z 
+2026-09-13T20:48:02.6141522Z Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 Pillow-12.3.0 PyJWT-2.13.0 Pygments-2.20.0 SQLAlchemy-2.0.50 alembic-1.16.5 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 certifi-2026.5.20 cffi-2.0.0 click-8.5.0 cryptography-46.0.4 fastapi-0.128.2 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.17 iniconfig-2.3.0 packaging-25.0 pluggy-1.6.0 psycopg-3.2.10 psycopg-binary-3.2.10 pycparser-3.0 pydantic-2.13.4 pydantic-settings-2.14.1 pydantic_core-2.46.4 pytest-9.0.2 pytest-asyncio-1.3.0 python-dotenv-1.2.2 redis-5.2.1 starlette-0.50.0 typing-inspection-0.4.2 typing_extensions-4.16.0 uvicorn-0.35.0
+2026-09-13T20:48:02.6635072Z ##[group]Run node --test tests_frontend/*.test.mjs | tee "$RUNNER_TEMP/evidence/frontend.log"
+2026-09-13T20:48:02.6635933Z [36;1mnode --test tests_frontend/*.test.mjs | tee "$RUNNER_TEMP/evidence/frontend.log"[0m
+2026-09-13T20:48:02.6682052Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-13T20:48:02.6682500Z env:
+2026-09-13T20:48:02.6682773Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:48:02.6683190Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:02.6683751Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-13T20:48:02.6684316Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:02.6684811Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:02.6685575Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:02.6686078Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-13T20:48:02.6686497Z ##[endgroup]
+2026-09-13T20:48:02.7145511Z TAP version 13
+2026-09-13T20:48:02.7454223Z # Subtest: HTTP helper retains CSRF together with idempotency header
+2026-09-13T20:48:02.7462753Z ok 1 - HTTP helper retains CSRF together with idempotency header
+2026-09-13T20:48:02.7463395Z   ---
+2026-09-13T20:48:02.7463812Z   duration_ms: 2.604469
+2026-09-13T20:48:02.7464221Z   type: 'test'
+2026-09-13T20:48:02.7464560Z   ...
+2026-09-13T20:48:02.7482839Z # Subtest: Escape cancels traveler selection without authorizing or creating an order
+2026-09-13T20:48:02.7486248Z ok 2 - Escape cancels traveler selection without authorizing or creating an order
+2026-09-13T20:48:02.7486893Z   ---
+2026-09-13T20:48:02.7487325Z   duration_ms: 6.555416
+2026-09-13T20:48:02.7487712Z   type: 'test'
+2026-09-13T20:48:02.7488055Z   ...
+2026-09-13T20:48:02.7501986Z # Subtest: rental consent is bound to the selected traveler, field and purpose
+2026-09-13T20:48:02.7503078Z ok 3 - rental consent is bound to the selected traveler, field and purpose
+2026-09-13T20:48:02.7503714Z   ---
+2026-09-13T20:48:02.7504075Z   duration_ms: 2.081371
+2026-09-13T20:48:02.7504477Z   type: 'test'
+2026-09-13T20:48:02.7504938Z   ...
+2026-09-13T20:48:02.7510088Z # Subtest: payment is cancelled without any checkout mutation
+2026-09-13T20:48:02.7515424Z ok 4 - payment is cancelled without any checkout mutation
+2026-09-13T20:48:02.7515969Z   ---
+2026-09-13T20:48:02.7516327Z   duration_ms: 1.361262
+2026-09-13T20:48:02.7516722Z   type: 'test'
+2026-09-13T20:48:02.7517061Z   ...
+2026-09-13T20:48:02.7526836Z # Subtest: a failed confirmed payment stays visible and can be retried
+2026-09-13T20:48:02.7531318Z ok 5 - a failed confirmed payment stays visible and can be retried
+2026-09-13T20:48:02.7532103Z   ---
+2026-09-13T20:48:02.7532434Z   duration_ms: 1.476914
+2026-09-13T20:48:02.7532783Z   type: 'test'
+2026-09-13T20:48:02.7533133Z   ...
+2026-09-13T20:48:02.7545999Z # Subtest: cancelling a party selection creates no order or grant
+2026-09-13T20:48:02.7562478Z ok 6 - cancelling a party selection creates no order or grant
+2026-09-13T20:48:02.7572257Z   ---
+2026-09-13T20:48:02.7592448Z   duration_ms: 1.36681
+2026-09-13T20:48:02.7592771Z   type: 'test'
+2026-09-13T20:48:02.7593046Z   ...
+2026-09-13T20:48:02.7593685Z # Subtest: a party must contain the exact number of different travelers
+2026-09-13T20:48:02.7595263Z ok 7 - a party must contain the exact number of different travelers
+2026-09-13T20:48:02.7595730Z   ---
+2026-09-13T20:48:02.7595999Z   duration_ms: 2.353371
+2026-09-13T20:48:02.7596310Z   type: 'test'
+2026-09-13T20:48:02.7596570Z   ...
+2026-09-13T20:48:02.7597160Z # Subtest: party confirmation returns only the explicitly selected traveler references
+2026-09-13T20:48:02.7598019Z ok 8 - party confirmation returns only the explicitly selected traveler references
+2026-09-13T20:48:02.7598548Z   ---
+2026-09-13T20:48:02.7598830Z   duration_ms: 1.360681
+2026-09-13T20:48:02.7599136Z   type: 'test'
+2026-09-13T20:48:02.7599394Z   ...
+2026-09-13T20:48:02.7600396Z # Subtest: party selection cannot submit without confirming adult travelers and purpose
+2026-09-13T20:48:02.7623039Z ok 9 - party selection cannot submit without confirming adult travelers and purpose
+2026-09-13T20:48:02.7625885Z   ---
+2026-09-13T20:48:02.7626490Z   duration_ms: 2.15508
+2026-09-13T20:48:02.7626979Z   type: 'test'
+2026-09-13T20:48:02.7627394Z   ...
+2026-09-13T20:48:02.8052793Z # Subtest: consumer uses locked V14 main and compact artwork with responsive selection
+2026-09-13T20:48:02.8069502Z ok 10 - consumer uses locked V14 main and compact artwork with responsive selection
+2026-09-13T20:48:02.8092269Z   ---
+2026-09-13T20:48:02.8092584Z   duration_ms: 1.404325
+2026-09-13T20:48:02.8092884Z   type: 'test'
+2026-09-13T20:48:02.8093126Z   ...
+2026-09-13T20:48:02.8093604Z # Subtest: supplier and admin share the locked reverse V14 compact lockup
+2026-09-13T20:48:02.8094580Z ok 11 - supplier and admin share the locked reverse V14 compact lockup
+2026-09-13T20:48:02.8095028Z   ---
+2026-09-13T20:48:02.8095286Z   duration_ms: 1.01653
+2026-09-13T20:48:02.8095587Z   type: 'test'
+2026-09-13T20:48:02.8095848Z   ...
+2026-09-13T20:48:02.8096273Z # Subtest: all three entry documents advance cache tokens together
+2026-09-13T20:48:02.8096883Z ok 12 - all three entry documents advance cache tokens together
+2026-09-13T20:48:02.8097276Z   ---
+2026-09-13T20:48:02.8097527Z   duration_ms: 0.220959
+2026-09-13T20:48:02.8097802Z   type: 'test'
+2026-09-13T20:48:02.8098053Z   ...
+2026-09-13T20:48:02.8098563Z # Subtest: GO subbrands use V14 geometry with a deliberately recessive GO tier
+2026-09-13T20:48:02.8099289Z ok 13 - GO subbrands use V14 geometry with a deliberately recessive GO tier
+2026-09-13T20:48:02.8099745Z   ---
+2026-09-13T20:48:02.8099993Z   duration_ms: 0.257903
+2026-09-13T20:48:02.8100272Z   type: 'test'
+2026-09-13T20:48:02.8100524Z   ...
+2026-09-13T20:48:02.8101009Z # Subtest: legacy runtime asset names also resolve to locked V14 geometry
+2026-09-13T20:48:02.8101872Z ok 14 - legacy runtime asset names also resolve to locked V14 geometry
+2026-09-13T20:48:02.8102313Z   ---
+2026-09-13T20:48:02.8102556Z   duration_ms: 0.301468
+2026-09-13T20:48:02.8102845Z   type: 'test'
+2026-09-13T20:48:02.8103104Z   ...
+2026-09-13T20:48:02.8973679Z # (node:2254) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/tripFacts.ts is not specified and it doesn't parse as CommonJS.
+2026-09-13T20:48:02.9002655Z # Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-13T20:48:02.9022740Z # To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+2026-09-13T20:48:02.9023730Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-13T20:48:02.9037297Z # Subtest: web trip keeps original and requested dates separate while supplement is pending
+2026-09-13T20:48:02.9046446Z ok 15 - web trip keeps original and requested dates separate while supplement is pending
+2026-09-13T20:48:02.9053075Z   ---
+2026-09-13T20:48:02.9053512Z   duration_ms: 4.97555
+2026-09-13T20:48:02.9053990Z   type: 'test'
+2026-09-13T20:48:02.9054434Z   ...
+2026-09-13T20:48:02.9055086Z # Subtest: native trip shows pending money honestly and completed refund total
+2026-09-13T20:48:02.9055974Z ok 16 - native trip shows pending money honestly and completed refund total
+2026-09-13T20:48:02.9056586Z   ---
+2026-09-13T20:48:02.9056963Z   duration_ms: 0.987377
+2026-09-13T20:48:02.9057397Z   type: 'test'
+2026-09-13T20:48:02.9057776Z   ...
+2026-09-13T20:48:02.9058404Z # Subtest: supplier workbench displays the same cumulative payment summary
+2026-09-13T20:48:02.9059364Z ok 17 - supplier workbench displays the same cumulative payment summary
+2026-09-13T20:48:02.9059985Z   ---
+2026-09-13T20:48:02.9060389Z   duration_ms: 1.942785
+2026-09-13T20:48:02.9060836Z   type: 'test'
+2026-09-13T20:48:02.9061220Z   ...
+2026-09-13T20:48:02.9649617Z # Subtest: cancel review shows every cash component and exact fee basis before submission
+2026-09-13T20:48:02.9669728Z ok 18 - cancel review shows every cash component and exact fee basis before submission
+2026-09-13T20:48:02.9692599Z   ---
+2026-09-13T20:48:02.9713694Z   duration_ms: 13.805915
+2026-09-13T20:48:02.9713983Z   type: 'test'
+2026-09-13T20:48:02.9714169Z   ...
+2026-09-13T20:48:02.9714531Z # Subtest: closing cancel review never sends cancellation or reloads as completed
+2026-09-13T20:48:02.9715031Z ok 19 - closing cancel review never sends cancellation or reloads as completed
+2026-09-13T20:48:02.9715359Z   ---
+2026-09-13T20:48:02.9715534Z   duration_ms: 0.641403
+2026-09-13T20:48:02.9715728Z   type: 'test'
+2026-09-13T20:48:02.9715898Z   ...
+2026-09-13T20:48:02.9716200Z # Subtest: unchecked money confirmation cannot submit a cash action
+2026-09-13T20:48:02.9716839Z ok 20 - unchecked money confirmation cannot submit a cash action
+2026-09-13T20:48:02.9717557Z   ---
+2026-09-13T20:48:02.9718264Z   duration_ms: 0.937333
+2026-09-13T20:48:02.9722209Z   type: 'test'
+2026-09-13T20:48:02.9722605Z   ...
+2026-09-13T20:48:02.9723471Z # Subtest: change confirmation shows positive difference, free change and fixed original deadline
+2026-09-13T20:48:02.9724515Z ok 21 - change confirmation shows positive difference, free change and fixed original deadline
+2026-09-13T20:48:02.9725158Z   ---
+2026-09-13T20:48:02.9725520Z   duration_ms: 0.863372
+2026-09-13T20:48:02.9726836Z   type: 'test'
+2026-09-13T20:48:02.9727245Z   ...
+2026-09-13T20:48:02.9727931Z # Subtest: cancelled date selection does not request new inventory or a payment
+2026-09-13T20:48:02.9728801Z ok 22 - cancelled date selection does not request new inventory or a payment
+2026-09-13T20:48:02.9729389Z   ---
+2026-09-13T20:48:02.9729774Z   duration_ms: 0.627312
+2026-09-13T20:48:02.9730169Z   type: 'test'
+2026-09-13T20:48:02.9730505Z   ...
+2026-09-13T20:48:02.9731206Z # Subtest: displayed quote hash stays bound across asynchronous source mutation
+2026-09-13T20:48:02.9732300Z ok 23 - displayed quote hash stays bound across asynchronous source mutation
+2026-09-13T20:48:02.9732950Z   ---
+2026-09-13T20:48:02.9733320Z   duration_ms: 0.615644
+2026-09-13T20:48:02.9733746Z   type: 'test'
+2026-09-13T20:48:02.9747353Z   ...
+2026-09-13T20:48:02.9747990Z # Subtest: unknown supplier progress offers query only and binds the saved operation
+2026-09-13T20:48:02.9748780Z ok 24 - unknown supplier progress offers query only and binds the saved operation
+2026-09-13T20:48:02.9749188Z   ---
+2026-09-13T20:48:02.9749414Z   duration_ms: 0.807149
+2026-09-13T20:48:02.9749695Z   type: 'test'
+2026-09-13T20:48:02.9749943Z   ...
+2026-09-13T20:48:02.9750548Z # Subtest: cancel confirmed and refund pending remain distinct in the customer progress card
+2026-09-13T20:48:02.9751440Z ok 25 - cancel confirmed and refund pending remain distinct in the customer progress card
+2026-09-13T20:48:02.9753183Z   ---
+2026-09-13T20:48:02.9753509Z   duration_ms: 0.553642
+2026-09-13T20:48:02.9753777Z   type: 'test'
+2026-09-13T20:48:02.9754025Z   ...
+2026-09-13T20:48:03.0288708Z # Subtest: credit conversion waits for explicit quoted consent and does not claim an unknown cancellation succeeded
+2026-09-13T20:48:03.0296305Z ok 26 - credit conversion waits for explicit quoted consent and does not claim an unknown cancellation succeeded
+2026-09-13T20:48:03.0312135Z   ---
+2026-09-13T20:48:03.0334490Z   duration_ms: 3.23894
+2026-09-13T20:48:03.0334973Z   type: 'test'
+2026-09-13T20:48:03.0335371Z   ...
+2026-09-13T20:48:03.0336089Z # Subtest: canceling traveler selection sends no redemption or automatic identity
+2026-09-13T20:48:03.0337023Z ok 27 - canceling traveler selection sends no redemption or automatic identity
+2026-09-13T20:48:03.0337657Z   ---
+2026-09-13T20:48:03.0338054Z   duration_ms: 0.839647
+2026-09-13T20:48:03.0338481Z   type: 'test'
+2026-09-13T20:48:03.0338864Z   ...
+2026-09-13T20:48:03.0339588Z # Subtest: redemption network retry binds the same quote and explicitly selected traveler
+2026-09-13T20:48:03.0340605Z ok 28 - redemption network retry binds the same quote and explicitly selected traveler
+2026-09-13T20:48:03.0341277Z   ---
+2026-09-13T20:48:03.0342157Z   duration_ms: 1.621488
+2026-09-13T20:48:03.0342657Z   type: 'test'
+2026-09-13T20:48:03.0343039Z   ...
+2026-09-13T20:48:03.0343791Z # Subtest: unknown booking and pending refund remain distinct from completed credit restoration
+2026-09-13T20:48:03.0344888Z ok 29 - unknown booking and pending refund remain distinct from completed credit restoration
+2026-09-13T20:48:03.0345596Z   ---
+2026-09-13T20:48:03.0345984Z   duration_ms: 0.710014
+2026-09-13T20:48:03.0346407Z   type: 'test'
+2026-09-13T20:48:03.0346791Z   ...
+2026-09-13T20:48:03.0347430Z # Subtest: canceling a supplementary payment dialog re-enables the action
+2026-09-13T20:48:03.0348307Z ok 30 - canceling a supplementary payment dialog re-enables the action
+2026-09-13T20:48:03.0348900Z   ---
+2026-09-13T20:48:03.0349279Z   duration_ms: 11.865653
+2026-09-13T20:48:03.0349922Z   type: 'test'
+2026-09-13T20:48:03.0350356Z   ...
+2026-09-13T20:48:03.0351104Z # Subtest: conversion separates prior cash refunds and forfeiture from retained credit
+2026-09-13T20:48:03.0352255Z ok 31 - conversion separates prior cash refunds and forfeiture from retained credit
+2026-09-13T20:48:03.0352947Z   ---
+2026-09-13T20:48:03.0353365Z   duration_ms: 1.493067
+2026-09-13T20:48:03.0353809Z   type: 'test'
+2026-09-13T20:48:03.0354208Z   ...
+2026-09-13T20:48:03.0355115Z # Subtest: forfeiture conversion confirmation stays bound to the displayed quote after source object changes
+2026-09-13T20:48:03.0356373Z ok 32 - forfeiture conversion confirmation stays bound to the displayed quote after source object changes
+2026-09-13T20:48:03.0357155Z   ---
+2026-09-13T20:48:03.0357570Z   duration_ms: 0.731396
+2026-09-13T20:48:03.0358021Z   type: 'test'
+2026-09-13T20:48:03.0358429Z   ...
+2026-09-13T20:48:03.0359160Z # Subtest: credit detail keeps original excluded value visible after redemption changes
+2026-09-13T20:48:03.0360201Z ok 33 - credit detail keeps original excluded value visible after redemption changes
+2026-09-13T20:48:03.0360894Z   ---
+2026-09-13T20:48:03.0361292Z   duration_ms: 0.710284
+2026-09-13T20:48:03.0361906Z   type: 'test'
+2026-09-13T20:48:03.0362322Z   ...
+2026-09-13T20:48:03.0363071Z # Subtest: historical credit without a forfeiture breakdown never renders invalid amounts
+2026-09-13T20:48:03.0364106Z ok 34 - historical credit without a forfeiture breakdown never renders invalid amounts
+2026-09-13T20:48:03.0364811Z   ---
+2026-09-13T20:48:03.0365229Z   duration_ms: 0.978273
+2026-09-13T20:48:03.0365674Z   type: 'test'
+2026-09-13T20:48:03.0366083Z   ...
+2026-09-13T20:48:03.0366824Z # Subtest: conversion displays the fixed credit deadline instead of promising a fresh year
+2026-09-13T20:48:03.0367899Z ok 35 - conversion displays the fixed credit deadline instead of promising a fresh year
+2026-09-13T20:48:03.0368614Z   ---
+2026-09-13T20:48:03.0369031Z   duration_ms: 0.885936
+2026-09-13T20:48:03.0369492Z   type: 'test'
+2026-09-13T20:48:03.0369895Z   ...
+2026-09-13T20:48:03.0867182Z # Subtest: fare confirmation separates fee tiers, cooling, change and property credit terms
+2026-09-13T20:48:03.0878398Z ok 36 - fare confirmation separates fee tiers, cooling, change and property credit terms
+2026-09-13T20:48:03.0883783Z   ---
+2026-09-13T20:48:03.0884293Z   duration_ms: 2.533473
+2026-09-13T20:48:03.0884793Z   type: 'test'
+2026-09-13T20:48:03.0885242Z   ...
+2026-09-13T20:48:03.0896440Z # Subtest: cancelling fare confirmation has no accepted contract
+2026-09-13T20:48:03.0905819Z ok 37 - cancelling fare confirmation has no accepted contract
+2026-09-13T20:48:03.0922296Z   ---
+2026-09-13T20:48:03.0941522Z   duration_ms: 2.256376
+2026-09-13T20:48:03.0942406Z   type: 'test'
+2026-09-13T20:48:03.0942830Z   ...
+2026-09-13T20:48:03.0950041Z # Subtest: accepted hash remains bound to the rules displayed before asynchronous state changes
+2026-09-13T20:48:03.0951182Z ok 38 - accepted hash remains bound to the rules displayed before asynchronous state changes
+2026-09-13T20:48:03.0952070Z   ---
+2026-09-13T20:48:03.0952434Z   duration_ms: 0.879546
+2026-09-13T20:48:03.0952815Z   type: 'test'
+2026-09-13T20:48:03.0953519Z   ...
+2026-09-13T20:48:03.0954471Z # Subtest: declining hotel rules never selects or authorizes a traveler or creates an order
+2026-09-13T20:48:03.0955449Z ok 39 - declining hotel rules never selects or authorizes a traveler or creates an order
+2026-09-13T20:48:03.0956040Z   ---
+2026-09-13T20:48:03.0968853Z   duration_ms: 1.761857
+2026-09-13T20:48:03.0969656Z   type: 'test'
+2026-09-13T20:48:03.0982964Z   ...
+2026-09-13T20:48:03.0983799Z # Subtest: accepted hotel contract is included with selected traveler and stable booking request identity
+2026-09-13T20:48:03.0984941Z ok 40 - accepted hotel contract is included with selected traveler and stable booking request identity
+2026-09-13T20:48:03.0985631Z   ---
+2026-09-13T20:48:03.0985984Z   duration_ms: 1.261223
+2026-09-13T20:48:03.0986601Z   type: 'test'
+2026-09-13T20:48:03.0986936Z   ...
+2026-09-13T20:48:03.0987496Z # Subtest: supplier money and percentage inputs use exact minor units
+2026-09-13T20:48:03.0988243Z ok 41 - supplier money and percentage inputs use exact minor units
+2026-09-13T20:48:03.0988747Z   ---
+2026-09-13T20:48:03.0989067Z   duration_ms: 1.135576
+2026-09-13T20:48:03.0989429Z   type: 'test'
+2026-09-13T20:48:03.0989745Z   ...
+2026-09-13T20:48:03.1426827Z # Subtest: supplier lost-response retry keeps request identity and sends only the claimed cause
+2026-09-13T20:48:03.1438838Z ok 42 - supplier lost-response retry keeps request identity and sends only the claimed cause
+2026-09-13T20:48:03.1452526Z   ---
+2026-09-13T20:48:03.1452978Z   duration_ms: 3.073325
+2026-09-13T20:48:03.1453391Z   type: 'test'
+2026-09-13T20:48:03.1453773Z   ...
+2026-09-13T20:48:03.1454537Z # Subtest: supplier duplicate clicks while a request is pending cannot create another request
+2026-09-13T20:48:03.1455612Z ok 43 - supplier duplicate clicks while a request is pending cannot create another request
+2026-09-13T20:48:03.1456368Z   ---
+2026-09-13T20:48:03.1460688Z   duration_ms: 0.8214
+2026-09-13T20:48:03.1461947Z   type: 'test'
+2026-09-13T20:48:03.1462293Z   ...
+2026-09-13T20:48:03.1463147Z # Subtest: unknown supplier cancellation shows approved refund waiting for confirmation, without a resend button
+2026-09-13T20:48:03.1464422Z ok 44 - unknown supplier cancellation shows approved refund waiting for confirmation, without a resend button
+2026-09-13T20:48:03.1465185Z   ---
+2026-09-13T20:48:03.1465563Z   duration_ms: 11.01515
+2026-09-13T20:48:03.1465946Z   type: 'test'
+2026-09-13T20:48:03.1466292Z   ...
+2026-09-13T20:48:03.1976951Z # Subtest: hotel funds distinguish frozen, charged, released and refunded cent amounts
+2026-09-13T20:48:03.2002711Z ok 45 - hotel funds distinguish frozen, charged, released and refunded cent amounts
+2026-09-13T20:48:03.2009915Z   ---
+2026-09-13T20:48:03.2032394Z   duration_ms: 12.368771
+2026-09-13T20:48:03.2052151Z   type: 'test'
+2026-09-13T20:48:03.2058689Z   ...
+2026-09-13T20:48:03.2063826Z # Subtest: only approved pending refunds expose retry and all server labels are escaped
+2026-09-13T20:48:03.2072599Z ok 46 - only approved pending refunds expose retry and all server labels are escaped
+2026-09-13T20:48:03.2073364Z   ---
+2026-09-13T20:48:03.2073725Z   duration_ms: 0.368728
+2026-09-13T20:48:03.2074114Z   type: 'test'
+2026-09-13T20:48:03.2074454Z   ...
+2026-09-13T20:48:03.2075131Z # Subtest: unknown funding shows reconciliation instead of a false payment claim
+2026-09-13T20:48:03.2076020Z ok 47 - unknown funding shows reconciliation instead of a false payment claim
+2026-09-13T20:48:03.2076616Z   ---
+2026-09-13T20:48:03.2076951Z   duration_ms: 0.362558
+2026-09-13T20:48:03.2077323Z   type: 'test'
+2026-09-13T20:48:03.2077656Z   ...
+2026-09-13T20:48:03.2078284Z # Subtest: trip links only open the exact canonical owned direct-reservation path
+2026-09-13T20:48:03.2079170Z ok 48 - trip links only open the exact canonical owned direct-reservation path
+2026-09-13T20:48:03.2079771Z   ---
+2026-09-13T20:48:03.2080116Z   duration_ms: 0.287217
+2026-09-13T20:48:03.2080488Z   type: 'test'
+2026-09-13T20:48:03.2080825Z   ...
+2026-09-13T20:48:03.2081808Z # Subtest: closing a stay complaint form makes no request
+2026-09-13T20:48:03.2082492Z ok 49 - closing a stay complaint form makes no request
+2026-09-13T20:48:03.2082981Z   ---
+2026-09-13T20:48:03.2083327Z   duration_ms: 0.82779
+2026-09-13T20:48:03.2083706Z   type: 'test'
+2026-09-13T20:48:03.2084047Z   ...
+2026-09-13T20:48:03.2084746Z # Subtest: complaint retries reuse the same request identity and have no refund approval fields
+2026-09-13T20:48:03.2085765Z ok 50 - complaint retries reuse the same request identity and have no refund approval fields
+2026-09-13T20:48:03.2086405Z   ---
+2026-09-13T20:48:03.2086761Z   duration_ms: 1.206262
+2026-09-13T20:48:03.2087135Z   type: 'test'
+2026-09-13T20:48:03.2087472Z   ...
+2026-09-13T20:48:03.2088125Z # Subtest: blank complaints and duplicate submission clicks cannot send extra requests
+2026-09-13T20:48:03.2089246Z ok 51 - blank complaints and duplicate submission clicks cannot send extra requests
+2026-09-13T20:48:03.2089827Z   ---
+2026-09-13T20:48:03.2090174Z   duration_ms: 0.682163
+2026-09-13T20:48:03.2090569Z   type: 'test'
+2026-09-13T20:48:03.2090905Z   ...
+2026-09-13T20:48:03.2511521Z # Subtest: closing hotel authorization leaves funds untouched
+2026-09-13T20:48:03.2513096Z ok 52 - closing hotel authorization leaves funds untouched
+2026-09-13T20:48:03.2513639Z   ---
+2026-09-13T20:48:03.2514011Z   duration_ms: 1.526417
+2026-09-13T20:48:03.2514409Z   type: 'test'
+2026-09-13T20:48:03.2514749Z   ...
+2026-09-13T20:48:03.2515387Z # Subtest: hotel checkout requires confirmation and binds the complete stay amount
+2026-09-13T20:48:03.2525431Z ok 53 - hotel checkout requires confirmation and binds the complete stay amount
+2026-09-13T20:48:03.2526244Z   ---
+2026-09-13T20:48:03.2526596Z   duration_ms: 1.788245
+2026-09-13T20:48:03.2527153Z   type: 'test'
+2026-09-13T20:48:03.2527686Z   ...
+2026-09-13T20:48:03.2528691Z # Subtest: a second click cannot create another hotel authorization while the first is pending
+2026-09-13T20:48:03.2530038Z ok 54 - a second click cannot create another hotel authorization while the first is pending
+2026-09-13T20:48:03.2530919Z   ---
+2026-09-13T20:48:03.2531560Z   duration_ms: 0.687992
+2026-09-13T20:48:03.2532282Z   type: 'test'
+2026-09-13T20:48:03.2532846Z   ...
+2026-09-13T20:48:03.2533682Z # Subtest: a failed hotel authorization remains visible and can be retried
+2026-09-13T20:48:03.2534721Z ok 55 - a failed hotel authorization remains visible and can be retried
+2026-09-13T20:48:03.2535559Z   ---
+2026-09-13T20:48:03.2551593Z   duration_ms: 0.643686
+2026-09-13T20:48:03.2554119Z   type: 'test'
+2026-09-13T20:48:03.2557721Z   ...
+2026-09-13T20:48:03.3137067Z # Subtest: conversion clearly shows capture and value and closing does not convert
+2026-09-13T20:48:03.3155582Z ok 56 - conversion clearly shows capture and value and closing does not convert
+2026-09-13T20:48:03.3156474Z   ---
+2026-09-13T20:48:03.3156985Z   duration_ms: 19.628963
+2026-09-13T20:48:03.3157986Z   type: 'test'
+2026-09-13T20:48:03.3158450Z   ...
+2026-09-13T20:48:03.3159261Z # Subtest: conversion retry keeps original quote, amount and original expiry
+2026-09-13T20:48:03.3160330Z ok 57 - conversion retry keeps original quote, amount and original expiry
+2026-09-13T20:48:03.3161024Z   ---
+2026-09-13T20:48:03.3161471Z   duration_ms: 1.611634
+2026-09-13T20:48:03.3162230Z   type: 'test'
+2026-09-13T20:48:03.3162644Z   ...
+2026-09-13T20:48:03.3163427Z # Subtest: redemption uses server quote policy and displays forfeiture before consent
+2026-09-13T20:48:03.3164464Z ok 58 - redemption uses server quote policy and displays forfeiture before consent
+2026-09-13T20:48:03.3165132Z   ---
+2026-09-13T20:48:03.3165559Z   duration_ms: 1.143198
+2026-09-13T20:48:03.3166015Z   type: 'test'
+2026-09-13T20:48:03.3166435Z   ...
+2026-09-13T20:48:03.3167152Z # Subtest: redemption confirms a fresh traveler and only releases hotel fields
+2026-09-13T20:48:03.3168120Z ok 59 - redemption confirms a fresh traveler and only releases hotel fields
+2026-09-13T20:48:03.3168781Z   ---
+2026-09-13T20:48:03.3169192Z   duration_ms: 1.256335
+2026-09-13T20:48:03.3169901Z   type: 'test'
+2026-09-13T20:48:03.3170331Z   ...
+2026-09-13T20:48:03.3183691Z # Subtest: double click and Escape cannot duplicate or dismiss pending redemption
+2026-09-13T20:48:03.3188620Z ok 60 - double click and Escape cannot duplicate or dismiss pending redemption
+2026-09-13T20:48:03.3193545Z   ---
+2026-09-13T20:48:03.3194187Z   duration_ms: 6.843935
+2026-09-13T20:48:03.3194697Z   type: 'test'
+2026-09-13T20:48:03.3195160Z   ...
+2026-09-13T20:48:03.3195986Z # Subtest: credit list filters property and disables frozen, expired or reconciliation credits
+2026-09-13T20:48:03.3197153Z ok 61 - credit list filters property and disables frozen, expired or reconciliation credits
+2026-09-13T20:48:03.3197930Z   ---
+2026-09-13T20:48:03.3198395Z   duration_ms: 1.184018
+2026-09-13T20:48:03.3199176Z   type: 'test'
+2026-09-13T20:48:03.3199617Z   ...
+2026-09-13T20:48:03.3811482Z # Subtest: a cancellation quote never cancels a booking and closing preserves it
+2026-09-13T20:48:03.3826120Z ok 62 - a cancellation quote never cancels a booking and closing preserves it
+2026-09-13T20:48:03.3834622Z   ---
+2026-09-13T20:48:03.3835078Z   duration_ms: 16.417284
+2026-09-13T20:48:03.3835532Z   type: 'test'
+2026-09-13T20:48:03.3835923Z   ...
+2026-09-13T20:48:03.3836645Z # Subtest: fee consent binds the server quote and keeps frozen release separate from cash refund
+2026-09-13T20:48:03.3837660Z ok 63 - fee consent binds the server quote and keeps frozen release separate from cash refund
+2026-09-13T20:48:03.3838347Z   ---
+2026-09-13T20:48:03.3838737Z   duration_ms: 1.502232
+2026-09-13T20:48:03.3839187Z   type: 'test'
+2026-09-13T20:48:03.3839631Z   ...
+2026-09-13T20:48:03.3840357Z # Subtest: interrupted cancellation retry uses exactly the same quote and fee
+2026-09-13T20:48:03.3841331Z ok 64 - interrupted cancellation retry uses exactly the same quote and fee
+2026-09-13T20:48:03.3842209Z   ---
+2026-09-13T20:48:03.3842656Z   duration_ms: 1.000115
+2026-09-13T20:48:03.3843206Z   type: 'test'
+2026-09-13T20:48:03.3843652Z   ...
+2026-09-13T20:48:03.3844374Z # Subtest: double clicks cannot settle twice while a cancellation is pending
+2026-09-13T20:48:03.3845358Z ok 65 - double clicks cannot settle twice while a cancellation is pending
+2026-09-13T20:48:03.3846010Z   ---
+2026-09-13T20:48:03.3846437Z   duration_ms: 0.962289
+2026-09-13T20:48:03.3846927Z   type: 'test'
+2026-09-13T20:48:03.3847364Z   ...
+2026-09-13T20:48:03.3848114Z # Subtest: unavailable fare actions have no executable buttons and rule text is escaped
+2026-09-13T20:48:03.3849169Z ok 66 - unavailable fare actions have no executable buttons and rule text is escaped
+2026-09-13T20:48:03.3849892Z   ---
+2026-09-13T20:48:03.3850337Z   duration_ms: 0.796403
+2026-09-13T20:48:03.3850809Z   type: 'test'
+2026-09-13T20:48:03.3851251Z   ...
+2026-09-13T20:48:03.3852115Z # Subtest: date changes quote first and require fresh consent after editing dates
+2026-09-13T20:48:03.3853147Z ok 67 - date changes quote first and require fresh consent after editing dates
+2026-09-13T20:48:03.3853835Z   ---
+2026-09-13T20:48:03.3854270Z   duration_ms: 1.705633
+2026-09-13T20:48:03.3854760Z   type: 'test'
+2026-09-13T20:48:03.3855187Z   ...
+2026-09-13T20:48:03.3855934Z # Subtest: extension keeps check-in fixed and explains replacement authorization
+2026-09-13T20:48:03.3856933Z ok 68 - extension keeps check-in fixed and explains replacement authorization
+2026-09-13T20:48:03.3857634Z   ---
+2026-09-13T20:48:03.3858087Z   duration_ms: 1.734296
+2026-09-13T20:48:03.3858576Z   type: 'test'
+2026-09-13T20:48:03.3859029Z   ...
+2026-09-13T20:48:03.4428102Z # Subtest: selected return leg has separate quote and exact confirmation, then reloads original order
+2026-09-13T20:48:03.4435012Z ok 69 - selected return leg has separate quote and exact confirmation, then reloads original order
+2026-09-13T20:48:03.4447188Z   ---
+2026-09-13T20:48:03.4471092Z   duration_ms: 14.224147
+2026-09-13T20:48:03.4471640Z   type: 'test'
+2026-09-13T20:48:03.4472228Z   ...
+2026-09-13T20:48:03.4472789Z # Subtest: closing dialog 1 never executes a change
+2026-09-13T20:48:03.4473747Z ok 70 - closing dialog 1 never executes a change
+2026-09-13T20:48:03.4474319Z   ---
+2026-09-13T20:48:03.4474745Z   duration_ms: 0.644507
+2026-09-13T20:48:03.4475207Z   type: 'test'
+2026-09-13T20:48:03.4475635Z   ...
+2026-09-13T20:48:03.4476171Z # Subtest: closing dialog 2 never executes a change
+2026-09-13T20:48:03.4476874Z ok 71 - closing dialog 2 never executes a change
+2026-09-13T20:48:03.4477438Z   ---
+2026-09-13T20:48:03.4477876Z   duration_ms: 0.742903
+2026-09-13T20:48:03.4478364Z   type: 'test'
+2026-09-13T20:48:03.4478802Z   ...
+2026-09-13T20:48:03.4479510Z # Subtest: mismatched or invalid quote cannot execute {"order_id":"other"}
+2026-09-13T20:48:03.4480459Z ok 72 - mismatched or invalid quote cannot execute {"order_id":"other"}
+2026-09-13T20:48:03.4481153Z   ---
+2026-09-13T20:48:03.4482186Z   duration_ms: 0.727951
+2026-09-13T20:48:03.4482695Z   type: 'test'
+2026-09-13T20:48:03.4483154Z   ...
+2026-09-13T20:48:03.4484117Z # Subtest: mismatched or invalid quote cannot execute {"changes":[{"leg_index":0,"new_departure_date":"2099-10-12"}]}
+2026-09-13T20:48:03.4485453Z ok 73 - mismatched or invalid quote cannot execute {"changes":[{"leg_index":0,"new_departure_date":"2099-10-12"}]}
+2026-09-13T20:48:03.4486310Z   ---
+2026-09-13T20:48:03.4486748Z   duration_ms: 0.603316
+2026-09-13T20:48:03.4487237Z   type: 'test'
+2026-09-13T20:48:03.4487660Z   ...
+2026-09-13T20:48:03.4488378Z # Subtest: mismatched or invalid quote cannot execute {"quote_hash":"bad"}
+2026-09-13T20:48:03.4489299Z ok 74 - mismatched or invalid quote cannot execute {"quote_hash":"bad"}
+2026-09-13T20:48:03.4489957Z   ---
+2026-09-13T20:48:03.4490415Z   duration_ms: 0.61941
+2026-09-13T20:48:03.4490886Z   type: 'test'
+2026-09-13T20:48:03.4491324Z   ...
+2026-09-13T20:48:03.4492186Z # Subtest: mismatched or invalid quote cannot execute {"total_due_minor":1.5}
+2026-09-13T20:48:03.4493138Z ok 75 - mismatched or invalid quote cannot execute {"total_due_minor":1.5}
+2026-09-13T20:48:03.4493838Z   ---
+2026-09-13T20:48:03.4494281Z   duration_ms: 0.634713
+2026-09-13T20:48:03.4494778Z   type: 'test'
+2026-09-13T20:48:03.4495212Z   ...
+2026-09-13T20:48:03.4495891Z # Subtest: mismatched or invalid quote cannot execute {"currency":"USD"}
+2026-09-13T20:48:03.4496826Z ok 76 - mismatched or invalid quote cannot execute {"currency":"USD"}
+2026-09-13T20:48:03.4497495Z   ---
+2026-09-13T20:48:03.4497934Z   duration_ms: 1.30621
+2026-09-13T20:48:03.4498405Z   type: 'test'
+2026-09-13T20:48:03.4498848Z   ...
+2026-09-13T20:48:03.4499550Z # Subtest: unknown result reloads and does not repeat the financial request
+2026-09-13T20:48:03.4500504Z ok 77 - unknown result reloads and does not repeat the financial request
+2026-09-13T20:48:03.4501173Z   ---
+2026-09-13T20:48:03.4501624Z   duration_ms: 1.414211
+2026-09-13T20:48:03.4502420Z   type: 'test'
+2026-09-13T20:48:03.4502818Z   ...
+2026-09-13T20:48:03.4503294Z # Subtest: no date changes cannot request a quote
+2026-09-13T20:48:03.4503886Z ok 78 - no date changes cannot request a quote
+2026-09-13T20:48:03.4504441Z   ---
+2026-09-13T20:48:03.4504883Z   duration_ms: 0.787299
+2026-09-13T20:48:03.4505326Z   type: 'test'
+2026-09-13T20:48:03.4505744Z   ...
+2026-09-13T20:48:03.4875812Z # Subtest: GO Trip shows all states, searches owned rows, opens the filtered order and restores all
+2026-09-13T20:48:03.4905403Z ok 79 - GO Trip shows all states, searches owned rows, opens the filtered order and restores all
+2026-09-13T20:48:03.4906609Z   ---
+2026-09-13T20:48:03.4926078Z   duration_ms: 1.712714
+2026-09-13T20:48:03.4938807Z   type: 'test'
+2026-09-13T20:48:03.4939311Z   ...
+2026-09-13T20:48:03.4939922Z # Subtest: legacy hotel return opens the same all-order GO Trip
+2026-09-13T20:48:03.4940712Z ok 80 - legacy hotel return opens the same all-order GO Trip
+2026-09-13T20:48:03.4941332Z   ---
+2026-09-13T20:48:03.4941992Z   duration_ms: 0.654391
+2026-09-13T20:48:03.4942418Z   type: 'test'
+2026-09-13T20:48:03.4942822Z   ...
+2026-09-13T20:48:03.5414467Z # Subtest: independent review requires an explicit checked attestation and chosen proof
+2026-09-13T20:48:03.5432482Z ok 81 - independent review requires an explicit checked attestation and chosen proof
+2026-09-13T20:48:03.5457740Z   ---
+2026-09-13T20:48:03.5459111Z   duration_ms: 1.722048
+2026-09-13T20:48:03.5459488Z   type: 'test'
+2026-09-13T20:48:03.5459790Z   ...
+2026-09-13T20:48:03.5460352Z # Subtest: review submits the exact evidence snapshot and no caller-selected money
+2026-09-13T20:48:03.5461176Z ok 82 - review submits the exact evidence snapshot and no caller-selected money
+2026-09-13T20:48:03.5461966Z   ---
+2026-09-13T20:48:03.5472385Z   duration_ms: 0.647492
+2026-09-13T20:48:03.5477353Z   type: 'test'
+2026-09-13T20:48:03.5478045Z   ...
+2026-09-13T20:48:03.5478746Z # Subtest: customer sees completed original refund separately from pending extra payment
+2026-09-13T20:48:03.5480084Z ok 83 - customer sees completed original refund separately from pending extra payment
+2026-09-13T20:48:03.5480843Z   ---
+2026-09-13T20:48:03.5481271Z   duration_ms: 11.058575
+2026-09-13T20:48:03.5481965Z   type: 'test'
+2026-09-13T20:48:03.5482409Z   ...
+2026-09-13T20:48:03.5483229Z # Subtest: unapproved guest liability is a review hold without a refund promise or pay button
+2026-09-13T20:48:03.5484358Z ok 84 - unapproved guest liability is a review hold without a refund promise or pay button
+2026-09-13T20:48:03.5485075Z   ---
+2026-09-13T20:48:03.5485488Z   duration_ms: 0.184244
+2026-09-13T20:48:03.5485931Z   type: 'test'
+2026-09-13T20:48:03.5486348Z   ...
+2026-09-13T20:48:03.5487185Z # Subtest: zero captured payment explains authorization release and completed case has no retry
+2026-09-13T20:48:03.5488375Z ok 85 - zero captured payment explains authorization release and completed case has no retry
+2026-09-13T20:48:03.5489149Z   ---
+2026-09-13T20:48:03.5489572Z   duration_ms: 0.252515
+2026-09-13T20:48:03.5490096Z   type: 'test'
+2026-09-13T20:48:03.5490526Z   ...
+2026-09-13T20:48:03.5491349Z # Subtest: finance entry converts decimal currency without fractional cents or silent rounding
+2026-09-13T20:48:03.5492651Z ok 86 - finance entry converts decimal currency without fractional cents or silent rounding
+2026-09-13T20:48:03.5493391Z   ---
+2026-09-13T20:48:03.5493790Z   duration_ms: 0.378492
+2026-09-13T20:48:03.5494285Z   type: 'test'
+2026-09-13T20:48:03.5494717Z   ...
+2026-09-13T20:48:03.5874058Z # Subtest: hotel detail requests the chosen stay and currency and excludes mixed historical quotes
+2026-09-13T20:48:03.5881889Z ok 87 - hotel detail requests the chosen stay and currency and excludes mixed historical quotes
+2026-09-13T20:48:03.5882868Z   ---
+2026-09-13T20:48:03.5883338Z   duration_ms: 2.005729
+2026-09-13T20:48:03.5883840Z   type: 'test'
+2026-09-13T20:48:03.5884289Z   ...
+2026-09-13T20:48:03.5885203Z # Subtest: a stale selection cannot start prebooking for another date or currency
+2026-09-13T20:48:03.5886251Z ok 88 - a stale selection cannot start prebooking for another date or currency
+2026-09-13T20:48:03.5886969Z   ---
+2026-09-13T20:48:03.5887528Z   duration_ms: 1.390565
+2026-09-13T20:48:03.5888019Z   type: 'test'
+2026-09-13T20:48:03.5888458Z   ...
+2026-09-13T20:48:03.5889242Z # Subtest: the accepted same-stay offer supplies the prebooking currency and review data
+2026-09-13T20:48:03.5890307Z ok 89 - the accepted same-stay offer supplies the prebooking currency and review data
+2026-09-13T20:48:03.5891013Z   ---
+2026-09-13T20:48:03.5891444Z   duration_ms: 0.63933
+2026-09-13T20:48:03.5892085Z   type: 'test'
+2026-09-13T20:48:03.5892522Z   ...
+2026-09-13T20:48:03.5902318Z # Subtest: a late hotel response cannot overwrite the next search
+2026-09-13T20:48:03.5903285Z ok 90 - a late hotel response cannot overwrite the next search
+2026-09-13T20:48:03.5903988Z   ---
+2026-09-13T20:48:03.5904407Z   duration_ms: 0.615855
+2026-09-13T20:48:03.5904881Z   type: 'test'
+2026-09-13T20:48:03.5905303Z   ...
+2026-09-13T20:48:03.5906043Z # Subtest: missing dates or a mismatched hotel response cannot show bookable offers
+2026-09-13T20:48:03.5907096Z ok 91 - missing dates or a mismatched hotel response cannot show bookable offers
+2026-09-13T20:48:03.5908054Z   ---
+2026-09-13T20:48:03.5908486Z   duration_ms: 1.094596
+2026-09-13T20:48:03.5908940Z   type: 'test'
+2026-09-13T20:48:03.5909361Z   ...
+2026-09-13T20:48:03.6298298Z # Subtest: local build preserves development API and unrelated Expo config
+2026-09-13T20:48:03.6304258Z ok 92 - local build preserves development API and unrelated Expo config
+2026-09-13T20:48:03.6315259Z   ---
+2026-09-13T20:48:03.6322455Z   duration_ms: 0.835561
+2026-09-13T20:48:03.6323965Z   type: 'test'
+2026-09-13T20:48:03.6324241Z   ...
+2026-09-13T20:48:03.6324720Z # Subtest: preview and production require an explicit API binding
+2026-09-13T20:48:03.6325429Z ok 93 - preview and production require an explicit API binding
+2026-09-13T20:48:03.6325876Z   ---
+2026-09-13T20:48:03.6326146Z   duration_ms: 0.496557
+2026-09-13T20:48:03.6326728Z   type: 'test'
+2026-09-13T20:48:03.6326985Z   ...
+2026-09-13T20:48:03.6327548Z # Subtest: external builds reject loopback, placeholder, plaintext and credential URLs
+2026-09-13T20:48:03.6328418Z ok 94 - external builds reject loopback, placeholder, plaintext and credential URLs
+2026-09-13T20:48:03.6328948Z   ---
+2026-09-13T20:48:03.6329220Z   duration_ms: 1.141506
+2026-09-13T20:48:03.6329524Z   type: 'test'
+2026-09-13T20:48:03.6329786Z   ...
+2026-09-13T20:48:03.6330354Z # Subtest: explicit HTTPS build API reaches the same extra field consumed by client.ts
+2026-09-13T20:48:03.6331269Z ok 95 - explicit HTTPS build API reaches the same extra field consumed by client.ts
+2026-09-13T20:48:03.6342415Z   ---
+2026-09-13T20:48:03.6342951Z   duration_ms: 0.189242
+2026-09-13T20:48:03.6343465Z   type: 'test'
+2026-09-13T20:48:03.6343924Z   ...
+2026-09-13T20:48:03.6344643Z # Subtest: existing environment names and release metadata remain compatible
+2026-09-13T20:48:03.6345638Z ok 96 - existing environment names and release metadata remain compatible
+2026-09-13T20:48:03.6346364Z   ---
+2026-09-13T20:48:03.6346812Z   duration_ms: 0.67966
+2026-09-13T20:48:03.6347301Z   type: 'test'
+2026-09-13T20:48:03.6347752Z   ...
+2026-09-13T20:48:03.7629686Z # (node:2352) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/changeActions.ts is not specified and it doesn't parse as CommonJS.
+2026-09-13T20:48:03.7660882Z # Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-13T20:48:03.7666466Z # To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+2026-09-13T20:48:03.7667446Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-13T20:48:03.7746258Z # Subtest: HOTEL: explicit confirmation consumes one quote and reads original order
+2026-09-13T20:48:03.7804239Z ok 97 - HOTEL: explicit confirmation consumes one quote and reads original order
+2026-09-13T20:48:03.7853054Z   ---
+2026-09-13T20:48:03.7884629Z   duration_ms: 19.780639
+2026-09-13T20:48:03.7924482Z   type: 'test'
+2026-09-13T20:48:03.7962042Z   ...
+2026-09-13T20:48:03.7962642Z # Subtest: HOTEL: expiry, edit and session changes prevent submission
+2026-09-13T20:48:03.7986246Z ok 98 - HOTEL: expiry, edit and session changes prevent submission
+2026-09-13T20:48:03.7992208Z   ---
+2026-09-13T20:48:03.7992618Z   duration_ms: 0.925675
+2026-09-13T20:48:03.7993044Z   type: 'test'
+2026-09-13T20:48:03.7993392Z   ...
+2026-09-13T20:48:03.7994049Z # Subtest: HOTEL: wrong identity or unavailable isolated channel cannot execute
+2026-09-13T20:48:03.7994910Z ok 99 - HOTEL: wrong identity or unavailable isolated channel cannot execute
+2026-09-13T20:48:03.7995505Z   ---
+2026-09-13T20:48:03.7995838Z   duration_ms: 0.582756
+2026-09-13T20:48:03.7996248Z   type: 'test'
+2026-09-13T20:48:03.7996576Z   ...
+2026-09-13T20:48:03.7997115Z # Subtest: HOTEL: timeout is unknown and never auto-retried
+2026-09-13T20:48:03.7997800Z ok 100 - HOTEL: timeout is unknown and never auto-retried
+2026-09-13T20:48:03.7998310Z   ---
+2026-09-13T20:48:03.7998646Z   duration_ms: 0.536687
+2026-09-13T20:48:03.7999297Z   type: 'test'
+2026-09-13T20:48:03.7999636Z   ...
+2026-09-13T20:48:03.8000308Z # Subtest: FLIGHT: explicit confirmation consumes one quote and reads original order
+2026-09-13T20:48:03.8001242Z ok 101 - FLIGHT: explicit confirmation consumes one quote and reads original order
+2026-09-13T20:48:03.8002362Z   ---
+2026-09-13T20:48:03.8002722Z   duration_ms: 0.543247
+2026-09-13T20:48:03.8003129Z   type: 'test'
+2026-09-13T20:48:03.8003460Z   ...
+2026-09-13T20:48:03.8004035Z # Subtest: FLIGHT: expiry, edit and session changes prevent submission
+2026-09-13T20:48:03.8004751Z ok 102 - FLIGHT: expiry, edit and session changes prevent submission
+2026-09-13T20:48:03.8005251Z   ---
+2026-09-13T20:48:03.8005556Z   duration_ms: 0.627021
+2026-09-13T20:48:03.8005914Z   type: 'test'
+2026-09-13T20:48:03.8006217Z   ...
+2026-09-13T20:48:03.8006964Z # Subtest: FLIGHT: wrong identity or unavailable isolated channel cannot execute
+2026-09-13T20:48:03.8007741Z ok 103 - FLIGHT: wrong identity or unavailable isolated channel cannot execute
+2026-09-13T20:48:03.8008285Z   ---
+2026-09-13T20:48:03.8008582Z   duration_ms: 0.328818
+2026-09-13T20:48:03.8008939Z   type: 'test'
+2026-09-13T20:48:03.8009233Z   ...
+2026-09-13T20:48:03.8009721Z # Subtest: FLIGHT: timeout is unknown and never auto-retried
+2026-09-13T20:48:03.8010325Z ok 104 - FLIGHT: timeout is unknown and never auto-retried
+2026-09-13T20:48:03.8010788Z   ---
+2026-09-13T20:48:03.8011091Z   duration_ms: 0.224985
+2026-09-13T20:48:03.8011471Z   type: 'test'
+2026-09-13T20:48:03.8011969Z   ...
+2026-09-13T20:48:03.8012560Z # Subtest: RAIL: explicit confirmation consumes one quote and reads original order
+2026-09-13T20:48:03.8013458Z ok 105 - RAIL: explicit confirmation consumes one quote and reads original order
+2026-09-13T20:48:03.8014071Z   ---
+2026-09-13T20:48:03.8014398Z   duration_ms: 0.455526
+2026-09-13T20:48:03.8014797Z   type: 'test'
+2026-09-13T20:48:03.8015127Z   ...
+2026-09-13T20:48:03.8015687Z # Subtest: RAIL: expiry, edit and session changes prevent submission
+2026-09-13T20:48:03.8016430Z ok 106 - RAIL: expiry, edit and session changes prevent submission
+2026-09-13T20:48:03.8016973Z   ---
+2026-09-13T20:48:03.8017297Z   duration_ms: 0.605029
+2026-09-13T20:48:03.8017692Z   type: 'test'
+2026-09-13T20:48:03.8018013Z   ...
+2026-09-13T20:48:03.8018635Z # Subtest: RAIL: wrong identity or unavailable isolated channel cannot execute
+2026-09-13T20:48:03.8019478Z ok 107 - RAIL: wrong identity or unavailable isolated channel cannot execute
+2026-09-13T20:48:03.8020073Z   ---
+2026-09-13T20:48:03.8020387Z   duration_ms: 0.372183
+2026-09-13T20:48:03.8020757Z   type: 'test'
+2026-09-13T20:48:03.8021083Z   ...
+2026-09-13T20:48:03.8021594Z # Subtest: RAIL: timeout is unknown and never auto-retried
+2026-09-13T20:48:03.8023210Z ok 108 - RAIL: timeout is unknown and never auto-retried
+2026-09-13T20:48:03.8023742Z   ---
+2026-09-13T20:48:03.8024067Z   duration_ms: 0.18868
+2026-09-13T20:48:03.8024459Z   type: 'test'
+2026-09-13T20:48:03.8024787Z   ...
+2026-09-13T20:48:03.8025478Z # Subtest: ATTRACTION: explicit confirmation consumes one quote and reads original order
+2026-09-13T20:48:03.8026459Z ok 109 - ATTRACTION: explicit confirmation consumes one quote and reads original order
+2026-09-13T20:48:03.8027113Z   ---
+2026-09-13T20:48:03.8027432Z   duration_ms: 0.999174
+2026-09-13T20:48:03.8027828Z   type: 'test'
+2026-09-13T20:48:03.8028162Z   ...
+2026-09-13T20:48:03.8028763Z # Subtest: ATTRACTION: expiry, edit and session changes prevent submission
+2026-09-13T20:48:03.8029574Z ok 110 - ATTRACTION: expiry, edit and session changes prevent submission
+2026-09-13T20:48:03.8030149Z   ---
+2026-09-13T20:48:03.8030469Z   duration_ms: 0.306886
+2026-09-13T20:48:03.8030868Z   type: 'test'
+2026-09-13T20:48:03.8031195Z   ...
+2026-09-13T20:48:03.8031967Z # Subtest: ATTRACTION: wrong identity or unavailable isolated channel cannot execute
+2026-09-13T20:48:03.8032909Z ok 111 - ATTRACTION: wrong identity or unavailable isolated channel cannot execute
+2026-09-13T20:48:03.8033532Z   ---
+2026-09-13T20:48:03.8033870Z   duration_ms: 0.216752
+2026-09-13T20:48:03.8034483Z   type: 'test'
+2026-09-13T20:48:03.8034879Z   ...
+2026-09-13T20:48:03.8035443Z # Subtest: ATTRACTION: timeout is unknown and never auto-retried
+2026-09-13T20:48:03.8036164Z ok 112 - ATTRACTION: timeout is unknown and never auto-retried
+2026-09-13T20:48:03.8036711Z   ---
+2026-09-13T20:48:03.8037032Z   duration_ms: 0.162231
+2026-09-13T20:48:03.8037434Z   type: 'test'
+2026-09-13T20:48:03.8037759Z   ...
+2026-09-13T20:48:03.8038430Z # Subtest: RENTAL: explicit confirmation consumes one quote and reads original order
+2026-09-13T20:48:03.8039360Z ok 113 - RENTAL: explicit confirmation consumes one quote and reads original order
+2026-09-13T20:48:03.8039980Z   ---
+2026-09-13T20:48:03.8040304Z   duration_ms: 0.479222
+2026-09-13T20:48:03.8040687Z   type: 'test'
+2026-09-13T20:48:03.8041157Z   ...
+2026-09-13T20:48:03.8041974Z # Subtest: RENTAL: expiry, edit and session changes prevent submission
+2026-09-13T20:48:03.8042596Z ok 114 - RENTAL: expiry, edit and session changes prevent submission
+2026-09-13T20:48:03.8043135Z   ---
+2026-09-13T20:48:03.8043442Z   duration_ms: 1.031743
+2026-09-13T20:48:03.8043819Z   type: 'test'
+2026-09-13T20:48:03.8044158Z   ...
+2026-09-13T20:48:03.8044756Z # Subtest: RENTAL: wrong identity or unavailable isolated channel cannot execute
+2026-09-13T20:48:03.8045567Z ok 115 - RENTAL: wrong identity or unavailable isolated channel cannot execute
+2026-09-13T20:48:03.8046128Z   ---
+2026-09-13T20:48:03.8046461Z   duration_ms: 0.252355
+2026-09-13T20:48:03.8046832Z   type: 'test'
+2026-09-13T20:48:03.8047142Z   ...
+2026-09-13T20:48:03.8047666Z # Subtest: RENTAL: timeout is unknown and never auto-retried
+2026-09-13T20:48:03.8048330Z ok 116 - RENTAL: timeout is unknown and never auto-retried
+2026-09-13T20:48:03.8048844Z   ---
+2026-09-13T20:48:03.8049176Z   duration_ms: 0.183603
+2026-09-13T20:48:03.8049576Z   type: 'test'
+2026-09-13T20:48:03.8049896Z   ...
+2026-09-13T20:48:03.8050508Z # Subtest: invalid replacement quote destroys old consent; dates are canonical
+2026-09-13T20:48:03.8051350Z ok 117 - invalid replacement quote destroys old consent; dates are canonical
+2026-09-13T20:48:03.8052088Z   ---
+2026-09-13T20:48:03.8052409Z   duration_ms: 0.435517
+2026-09-13T20:48:03.8052782Z   type: 'test'
+2026-09-13T20:48:03.8053067Z   ...
+2026-09-13T20:48:03.8053527Z # Subtest: double submit makes only one mutation
+2026-09-13T20:48:03.8054036Z ok 118 - double submit makes only one mutation
+2026-09-13T20:48:03.8054464Z   ---
+2026-09-13T20:48:03.8054780Z   duration_ms: 0.267037
+2026-09-13T20:48:03.8055164Z   type: 'test'
+2026-09-13T20:48:03.8055484Z   ...
+2026-09-13T20:48:03.8056251Z # Subtest: multi-leg flight requires selection and binds the selected leg
+2026-09-13T20:48:03.8057151Z ok 119 - multi-leg flight requires selection and binds the selected leg
+2026-09-13T20:48:03.8057712Z   ---
+2026-09-13T20:48:03.8058041Z   duration_ms: 0.499212
+2026-09-13T20:48:03.8058434Z   type: 'test'
+2026-09-13T20:48:03.8058703Z   ...
+2026-09-13T20:48:03.9283651Z # (node:2359) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/changeTerms.ts is not specified and it doesn't parse as CommonJS.
+2026-09-13T20:48:03.9305862Z # Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-13T20:48:03.9327793Z # To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+2026-09-13T20:48:03.9339078Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-13T20:48:03.9340058Z # Subtest: hotel lower price discloses loss, no fee and original fixed deadline
+2026-09-13T20:48:03.9340921Z ok 120 - hotel lower price discloses loss, no fee and original fixed deadline
+2026-09-13T20:48:03.9341485Z   ---
+2026-09-13T20:48:03.9342055Z   duration_ms: 22.416849
+2026-09-13T20:48:03.9342401Z   type: 'test'
+2026-09-13T20:48:03.9342711Z   ...
+2026-09-13T20:48:03.9344403Z # Subtest: missing or inconsistent hotel financial terms are not confirmable
+2026-09-13T20:48:03.9352949Z ok 121 - missing or inconsistent hotel financial terms are not confirmable
+2026-09-13T20:48:03.9353552Z   ---
+2026-09-13T20:48:03.9382170Z   duration_ms: 0.643085
+2026-09-13T20:48:03.9392455Z   type: 'test'
+2026-09-13T20:48:03.9413748Z   ...
+2026-09-13T20:48:03.9433742Z # Subtest: flight and rail disclose transport identity and reject inconsistent fee sums
+2026-09-13T20:48:03.9439046Z ok 122 - flight and rail disclose transport identity and reject inconsistent fee sums
+2026-09-13T20:48:03.9452085Z   ---
+2026-09-13T20:48:03.9472154Z   duration_ms: 0.288719
+2026-09-13T20:48:03.9497552Z   type: 'test'
+2026-09-13T20:48:03.9498287Z   ...
+2026-09-13T20:48:03.9508450Z # Subtest: rental lower cost specifies original payment and validates the rate calculation
+2026-09-13T20:48:03.9532705Z ok 123 - rental lower cost specifies original payment and validates the rate calculation
+2026-09-13T20:48:03.9537577Z   ---
+2026-09-13T20:48:03.9537979Z   duration_ms: 0.247458
+2026-09-13T20:48:03.9538416Z   type: 'test'
+2026-09-13T20:48:03.9538865Z   ...
+2026-09-13T20:48:03.9539823Z # Subtest: attraction free change never silently accepts a newly introduced charge
+2026-09-13T20:48:03.9540761Z ok 124 - attraction free change never silently accepts a newly introduced charge
+2026-09-13T20:48:03.9541419Z   ---
+2026-09-13T20:48:03.9542002Z   duration_ms: 0.282299
+2026-09-13T20:48:03.9542651Z   type: 'test'
+2026-09-13T20:48:03.9543026Z   ...
+2026-09-13T20:48:04.0198566Z # (node:2366) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/tripFacts.ts is not specified and it doesn't parse as CommonJS.
+2026-09-13T20:48:04.0226133Z # Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-13T20:48:04.0247795Z # To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+2026-09-13T20:48:04.0289985Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-13T20:48:04.0291864Z # Subtest: Direct navigation preserves the owned reservation identity
+2026-09-13T20:48:04.0329492Z ok 125 - Direct navigation preserves the owned reservation identity
+2026-09-13T20:48:04.0342216Z   ---
+2026-09-13T20:48:04.0346144Z   duration_ms: 1.472367
+2026-09-13T20:48:04.0346655Z   type: 'test'
+2026-09-13T20:48:04.0347080Z   ...
+2026-09-13T20:48:04.0347781Z # Subtest: Direct details read only the canonical reservation and matching events
+2026-09-13T20:48:04.0349108Z ok 126 - Direct details read only the canonical reservation and matching events
+2026-09-13T20:48:04.0349899Z   ---
+2026-09-13T20:48:04.0350380Z   duration_ms: 0.34974
+2026-09-13T20:48:04.0362631Z   type: 'test'
+2026-09-13T20:48:04.0363166Z   ...
+2026-09-13T20:48:04.0363970Z # Subtest: Direct mismatched or missing records cannot display confirmation
+2026-09-13T20:48:04.0364980Z ok 127 - Direct mismatched or missing records cannot display confirmation
+2026-09-13T20:48:04.0365630Z   ---
+2026-09-13T20:48:04.0366063Z   duration_ms: 0.684507
+2026-09-13T20:48:04.0366509Z   type: 'test'
+2026-09-13T20:48:04.0366920Z   ...
+2026-09-13T20:48:04.1444613Z # (node:2373) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/orderActions.ts is not specified and it doesn't parse as CommonJS.
+2026-09-13T20:48:04.1465442Z # Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-13T20:48:04.1482566Z # To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+2026-09-13T20:48:04.1483598Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-13T20:48:04.1484585Z # Subtest: hotel cancellation sends the displayed quote identity without silently creating another quote
+2026-09-13T20:48:04.1496748Z ok 128 - hotel cancellation sends the displayed quote identity without silently creating another quote
+2026-09-13T20:48:04.1515774Z   ---
+2026-09-13T20:48:04.1534149Z   duration_ms: 2.606341
+2026-09-13T20:48:04.1546795Z   type: 'test'
+2026-09-13T20:48:04.1552606Z   ...
+2026-09-13T20:48:04.1554439Z # Subtest: hotel server rejects a stale accepted quote without replacing it or retrying cancellation
+2026-09-13T20:48:04.1556462Z ok 129 - hotel server rejects a stale accepted quote without replacing it or retrying cancellation
+2026-09-13T20:48:04.1585208Z   ---
+2026-09-13T20:48:04.1586836Z   duration_ms: 0.862481
+2026-09-13T20:48:04.1587397Z   type: 'test'
+2026-09-13T20:48:04.1595806Z   ...
+2026-09-13T20:48:04.1596605Z # Subtest: hotel malformed, expired or foreign accepted quote cannot send cancellation
+2026-09-13T20:48:04.1597585Z ok 130 - hotel malformed, expired or foreign accepted quote cannot send cancellation
+2026-09-13T20:48:04.1598571Z   ---
+2026-09-13T20:48:04.1599005Z   duration_ms: 0.804695
+2026-09-13T20:48:04.1599417Z   type: 'test'
+2026-09-13T20:48:04.1599792Z   ...
+2026-09-13T20:48:04.2824181Z # (node:2380) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/orderActions.ts is not specified and it doesn't parse as CommonJS.
+2026-09-13T20:48:04.2825774Z # Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-13T20:48:04.2852720Z # To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+2026-09-13T20:48:04.2869615Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-13T20:48:04.2897479Z # Subtest: HOTEL: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.2910957Z ok 131 - HOTEL: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.2982466Z   ---
+2026-09-13T20:48:04.2998609Z   duration_ms: 2.4035
+2026-09-13T20:48:04.3016780Z   type: 'test'
+2026-09-13T20:48:04.3017065Z   ...
+2026-09-13T20:48:04.3017677Z # Subtest: HOTEL: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3052453Z ok 132 - HOTEL: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3059415Z   ---
+2026-09-13T20:48:04.3082381Z   duration_ms: 0.692779
+2026-09-13T20:48:04.3102316Z   type: 'test'
+2026-09-13T20:48:04.3119994Z   ...
+2026-09-13T20:48:04.3120881Z # Subtest: HOTEL: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3142874Z ok 133 - HOTEL: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3152344Z   ---
+2026-09-13T20:48:04.3152816Z   duration_ms: 1.377076
+2026-09-13T20:48:04.3153204Z   type: 'test'
+2026-09-13T20:48:04.3153583Z   ...
+2026-09-13T20:48:04.3154267Z # Subtest: HOTEL: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3155236Z ok 134 - HOTEL: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3155878Z   ---
+2026-09-13T20:48:04.3156277Z   duration_ms: 0.382618
+2026-09-13T20:48:04.3156701Z   type: 'test'
+2026-09-13T20:48:04.3157070Z   ...
+2026-09-13T20:48:04.3157773Z # Subtest: FLIGHT: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.3158837Z ok 135 - FLIGHT: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.3159538Z   ---
+2026-09-13T20:48:04.3159930Z   duration_ms: 0.207198
+2026-09-13T20:48:04.3160370Z   type: 'test'
+2026-09-13T20:48:04.3160771Z   ...
+2026-09-13T20:48:04.3161404Z # Subtest: FLIGHT: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3169232Z ok 136 - FLIGHT: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3169910Z   ---
+2026-09-13T20:48:04.3170302Z   duration_ms: 0.229121
+2026-09-13T20:48:04.3170751Z   type: 'test'
+2026-09-13T20:48:04.3171132Z   ...
+2026-09-13T20:48:04.3172070Z # Subtest: FLIGHT: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3173432Z ok 137 - FLIGHT: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3174119Z   ---
+2026-09-13T20:48:04.3174495Z   duration_ms: 0.492481
+2026-09-13T20:48:04.3174902Z   type: 'test'
+2026-09-13T20:48:04.3175285Z   ...
+2026-09-13T20:48:04.3175937Z # Subtest: FLIGHT: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3176837Z ok 138 - FLIGHT: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3177465Z   ---
+2026-09-13T20:48:04.3177831Z   duration_ms: 0.181249
+2026-09-13T20:48:04.3178249Z   type: 'test'
+2026-09-13T20:48:04.3178623Z   ...
+2026-09-13T20:48:04.3179315Z # Subtest: RAIL: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.3180474Z ok 139 - RAIL: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.3181115Z   ---
+2026-09-13T20:48:04.3181491Z   duration_ms: 0.42406
+2026-09-13T20:48:04.3182923Z   type: 'test'
+2026-09-13T20:48:04.3183298Z   ...
+2026-09-13T20:48:04.3184336Z # Subtest: RAIL: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3185264Z ok 140 - RAIL: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3185885Z   ---
+2026-09-13T20:48:04.3186269Z   duration_ms: 0.483778
+2026-09-13T20:48:04.3186693Z   type: 'test'
+2026-09-13T20:48:04.3187069Z   ...
+2026-09-13T20:48:04.3187817Z # Subtest: RAIL: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3188887Z ok 141 - RAIL: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3189579Z   ---
+2026-09-13T20:48:04.3190127Z   duration_ms: 1.049419
+2026-09-13T20:48:04.3190543Z   type: 'test'
+2026-09-13T20:48:04.3190932Z   ...
+2026-09-13T20:48:04.3191597Z # Subtest: RAIL: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3193881Z ok 142 - RAIL: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3194539Z   ---
+2026-09-13T20:48:04.3194917Z   duration_ms: 0.272495
+2026-09-13T20:48:04.3195334Z   type: 'test'
+2026-09-13T20:48:04.3195705Z   ...
+2026-09-13T20:48:04.3196440Z # Subtest: RENTAL: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.3197485Z ok 143 - RENTAL: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.3198157Z   ---
+2026-09-13T20:48:04.3198530Z   duration_ms: 1.255465
+2026-09-13T20:48:04.3198943Z   type: 'test'
+2026-09-13T20:48:04.3199326Z   ...
+2026-09-13T20:48:04.3199991Z # Subtest: RENTAL: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3200910Z ok 144 - RENTAL: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3201539Z   ---
+2026-09-13T20:48:04.3202057Z   duration_ms: 0.261248
+2026-09-13T20:48:04.3205535Z   type: 'test'
+2026-09-13T20:48:04.3208070Z   ...
+2026-09-13T20:48:04.3217649Z # Subtest: RENTAL: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3218680Z ok 145 - RENTAL: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3219256Z   ---
+2026-09-13T20:48:04.3219515Z   duration_ms: 0.317903
+2026-09-13T20:48:04.3219817Z   type: 'test'
+2026-09-13T20:48:04.3220074Z   ...
+2026-09-13T20:48:04.3220628Z # Subtest: RENTAL: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3221440Z ok 146 - RENTAL: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3222106Z   ---
+2026-09-13T20:48:04.3222313Z   duration_ms: 0.130403
+2026-09-13T20:48:04.3237735Z   type: 'test'
+2026-09-13T20:48:04.3238064Z   ...
+2026-09-13T20:48:04.3238700Z # Subtest: RIDE: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.3239806Z ok 147 - RIDE: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.3240356Z   ---
+2026-09-13T20:48:04.3240624Z   duration_ms: 0.578554
+2026-09-13T20:48:04.3240919Z   type: 'test'
+2026-09-13T20:48:04.3241212Z   ...
+2026-09-13T20:48:04.3241915Z # Subtest: RIDE: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3242636Z ok 148 - RIDE: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3243089Z   ---
+2026-09-13T20:48:04.3243314Z   duration_ms: 0.218425
+2026-09-13T20:48:04.3243595Z   type: 'test'
+2026-09-13T20:48:04.3243840Z   ...
+2026-09-13T20:48:04.3244316Z # Subtest: RIDE: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3245104Z ok 149 - RIDE: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3245835Z   ---
+2026-09-13T20:48:04.3246085Z   duration_ms: 0.345053
+2026-09-13T20:48:04.3246365Z   type: 'test'
+2026-09-13T20:48:04.3246607Z   ...
+2026-09-13T20:48:04.3247143Z # Subtest: RIDE: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3247908Z ok 150 - RIDE: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3253130Z   ---
+2026-09-13T20:48:04.3253424Z   duration_ms: 0.15449
+2026-09-13T20:48:04.3253713Z   type: 'test'
+2026-09-13T20:48:04.3254076Z   ...
+2026-09-13T20:48:04.3254749Z # Subtest: ATTRACTION: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.3255820Z ok 151 - ATTRACTION: payment binds fresh amount and re-reads the same order after lost response
+2026-09-13T20:48:04.3256468Z   ---
+2026-09-13T20:48:04.3256772Z   duration_ms: 0.145156
+2026-09-13T20:48:04.3257131Z   type: 'test'
+2026-09-13T20:48:04.3257443Z   ...
+2026-09-13T20:48:04.3258091Z # Subtest: ATTRACTION: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3259272Z ok 152 - ATTRACTION: changed amount and unavailable channel cannot execute payment
+2026-09-13T20:48:04.3260190Z   ---
+2026-09-13T20:48:04.3260753Z   duration_ms: 1.272389
+2026-09-13T20:48:04.3261315Z   type: 'test'
+2026-09-13T20:48:04.3261979Z   ...
+2026-09-13T20:48:04.3275926Z # Subtest: ATTRACTION: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3277005Z ok 153 - ATTRACTION: refund confirms quoted amount, submits once and does not invent refunded state
+2026-09-13T20:48:04.3277578Z   ---
+2026-09-13T20:48:04.3277829Z   duration_ms: 0.271173
+2026-09-13T20:48:04.3278126Z   type: 'test'
+2026-09-13T20:48:04.3278369Z   ...
+2026-09-13T20:48:04.3278924Z # Subtest: ATTRACTION: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3279751Z ok 154 - ATTRACTION: changed refund terms need reconfirmation before any cancellation
+2026-09-13T20:48:04.3280263Z   ---
+2026-09-13T20:48:04.3280509Z   duration_ms: 0.14864
+2026-09-13T20:48:04.3280828Z   type: 'test'
+2026-09-13T20:48:04.3281064Z   ...
+2026-09-13T20:48:04.3281553Z # Subtest: identity substitution and concurrent payment submission are blocked
+2026-09-13T20:48:04.3282449Z ok 155 - identity substitution and concurrent payment submission are blocked
+2026-09-13T20:48:04.3282955Z   ---
+2026-09-13T20:48:04.3283209Z   duration_ms: 0.486843
+2026-09-13T20:48:04.3283503Z   type: 'test'
+2026-09-13T20:48:04.3283752Z   ...
+2026-09-13T20:48:04.3284291Z # Subtest: screen/session change prevents a mutation after read-only preflight
+2026-09-13T20:48:04.3285081Z ok 156 - screen/session change prevents a mutation after read-only preflight
+2026-09-13T20:48:04.3285569Z   ---
+2026-09-13T20:48:04.3285820Z   duration_ms: 0.251193
+2026-09-13T20:48:04.3286119Z   type: 'test'
+2026-09-13T20:48:04.3286369Z   ...
+2026-09-13T20:48:04.3287055Z # Subtest: all six booking intents use explicit vault identities with stable keys and no fabricated people
+2026-09-13T20:48:04.3288125Z ok 157 - all six booking intents use explicit vault identities with stable keys and no fabricated people
+2026-09-13T20:48:04.3288735Z   ---
+2026-09-13T20:48:04.3289212Z   duration_ms: 4.062715
+2026-09-13T20:48:04.3289518Z   type: 'test'
+2026-09-13T20:48:04.3289769Z   ...
+2026-09-13T20:48:04.3297785Z # Subtest: portable request fingerprint matches standard SHA-256 for Unicode and block boundaries
+2026-09-13T20:48:04.3298880Z ok 158 - portable request fingerprint matches standard SHA-256 for Unicode and block boundaries
+2026-09-13T20:48:04.3299486Z   ---
+2026-09-13T20:48:04.3299759Z   duration_ms: 2.016976
+2026-09-13T20:48:04.3300054Z   type: 'test'
+2026-09-13T20:48:04.3300308Z   ...
+2026-09-13T20:48:04.4332823Z # (node:2387) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/api/transport.ts is not specified and it doesn't parse as CommonJS.
+2026-09-13T20:48:04.4352494Z # Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-13T20:48:04.4372669Z # To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+2026-09-13T20:48:04.4388858Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-13T20:48:04.4412544Z # Subtest: logout immediately invalidates old UI and blocks orders while remote revocation is pending
+2026-09-13T20:48:04.4413772Z ok 159 - logout immediately invalidates old UI and blocks orders while remote revocation is pending
+2026-09-13T20:48:04.4430861Z   ---
+2026-09-13T20:48:04.4431251Z   duration_ms: 24.658544
+2026-09-13T20:48:04.4431810Z   type: 'test'
+2026-09-13T20:48:04.4432163Z   ...
+2026-09-13T20:48:04.4432805Z # Subtest: read started before logout cannot return old account data
+2026-09-13T20:48:04.4433620Z ok 160 - read started before logout cannot return old account data
+2026-09-13T20:48:04.4434172Z   ---
+2026-09-13T20:48:04.4434532Z   duration_ms: 1.191549
+2026-09-13T20:48:04.4434951Z   type: 'test'
+2026-09-13T20:48:04.4435297Z   ...
+2026-09-13T20:48:04.4500892Z # Subtest: clear blocks stale stored credentials before slow deletion completes
+2026-09-13T20:48:04.4532447Z ok 161 - clear blocks stale stored credentials before slow deletion completes
+2026-09-13T20:48:04.4555445Z   ---
+2026-09-13T20:48:04.4573294Z   duration_ms: 6.715253
+2026-09-13T20:48:04.4589940Z   type: 'test'
+2026-09-13T20:48:04.4616640Z   ...
+2026-09-13T20:48:04.4617479Z # Subtest: logout supersedes a login waiting for secure storage without dispatching login
+2026-09-13T20:48:04.4618358Z ok 162 - logout supersedes a login waiting for secure storage without dispatching login
+2026-09-13T20:48:04.4618943Z   ---
+2026-09-13T20:48:04.4619280Z   duration_ms: 0.92863
+2026-09-13T20:48:04.4619721Z   type: 'test'
+2026-09-13T20:48:04.4620012Z   ...
+2026-09-13T20:48:04.4620574Z # Subtest: late failed logout cannot clear a later successful account login
+2026-09-13T20:48:04.4621313Z ok 163 - late failed logout cannot clear a later successful account login
+2026-09-13T20:48:04.4621996Z   ---
+2026-09-13T20:48:04.4622302Z   duration_ms: 1.625034
+2026-09-13T20:48:04.4622644Z   type: 'test'
+2026-09-13T20:48:04.4622943Z   ...
+2026-09-13T20:48:04.4633014Z # Subtest: missing refresh token after 401 invalidates the authenticated UI
+2026-09-13T20:48:04.4639753Z ok 164 - missing refresh token after 401 invalidates the authenticated UI
+2026-09-13T20:48:04.4640830Z   ---
+2026-09-13T20:48:04.4641168Z   duration_ms: 1.027416
+2026-09-13T20:48:04.4641535Z   type: 'test'
+2026-09-13T20:48:04.4642018Z   ...
+2026-09-13T20:48:04.4642924Z # Subtest: 401 after successful refresh invalidates the session without a third request
+2026-09-13T20:48:04.4643828Z ok 165 - 401 after successful refresh invalidates the session without a third request
+2026-09-13T20:48:04.4644418Z   ---
+2026-09-13T20:48:04.4644733Z   duration_ms: 2.223262
+2026-09-13T20:48:04.4645090Z   type: 'test'
+2026-09-13T20:48:04.4645429Z   ...
+2026-09-13T20:48:04.4645959Z # Subtest: a permission denial does not clear an otherwise valid account
+2026-09-13T20:48:04.4646758Z ok 166 - a permission denial does not clear an otherwise valid account
+2026-09-13T20:48:04.4647301Z   ---
+2026-09-13T20:48:04.4647937Z   duration_ms: 0.592436
+2026-09-13T20:48:04.4648317Z   type: 'test'
+2026-09-13T20:48:04.4648645Z   ...
+2026-09-13T20:48:04.4649262Z # Subtest: a broken UI subscriber cannot prevent token clearing or other subscribers
+2026-09-13T20:48:04.4650126Z ok 167 - a broken UI subscriber cannot prevent token clearing or other subscribers
+2026-09-13T20:48:04.4650681Z   ---
+2026-09-13T20:48:04.4650996Z   duration_ms: 0.460274
+2026-09-13T20:48:04.4651332Z   type: 'test'
+2026-09-13T20:48:04.4651632Z   ...
+2026-09-13T20:48:04.4652783Z # Subtest: failed token persistence cannot expose a partially saved login to requests
+2026-09-13T20:48:04.4653670Z ok 168 - failed token persistence cannot expose a partially saved login to requests
+2026-09-13T20:48:04.4654278Z   ---
+2026-09-13T20:48:04.4654610Z   duration_ms: 1.09781
+2026-09-13T20:48:04.4655175Z   type: 'test'
+2026-09-13T20:48:04.4655484Z   ...
+2026-09-13T20:48:04.4656159Z # Subtest: temporary refresh outage preserves the session and never retries the business mutation
+2026-09-13T20:48:04.4657107Z ok 169 - temporary refresh outage preserves the session and never retries the business mutation
+2026-09-13T20:48:04.4657814Z   ---
+2026-09-13T20:48:04.4658157Z   duration_ms: 0.857284
+2026-09-13T20:48:04.4658532Z   type: 'test'
+2026-09-13T20:48:04.4658868Z   ...
+2026-09-13T20:48:04.4659538Z # Subtest: a successful HTTP response without revocation evidence is not remote logout success
+2026-09-13T20:48:04.4660503Z ok 170 - a successful HTTP response without revocation evidence is not remote logout success
+2026-09-13T20:48:04.4661264Z   ---
+2026-09-13T20:48:04.4661597Z   duration_ms: 0.467915
+2026-09-13T20:48:04.4662664Z   type: 'test'
+2026-09-13T20:48:04.4662982Z   ...
+2026-09-13T20:48:04.5644677Z # (node:2394) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/stayCreditActions.ts is not specified and it doesn't parse as CommonJS.
+2026-09-13T20:48:04.5682769Z # Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-13T20:48:04.5696956Z # To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+2026-09-13T20:48:04.5716034Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-13T20:48:04.5733503Z # Subtest: native conversion sends exactly the displayed quote and explicit consent
+2026-09-13T20:48:04.5745350Z ok 171 - native conversion sends exactly the displayed quote and explicit consent
+2026-09-13T20:48:04.5748677Z   ---
+2026-09-13T20:48:04.5748998Z   duration_ms: 3.644934
+2026-09-13T20:48:04.5749462Z   type: 'test'
+2026-09-13T20:48:04.5749829Z   ...
+2026-09-13T20:48:04.5750526Z # Subtest: native lost conversion response reads original order without resending cancellation
+2026-09-13T20:48:04.5752042Z ok 172 - native lost conversion response reads original order without resending cancellation
+2026-09-13T20:48:04.5752792Z   ---
+2026-09-13T20:48:04.5753224Z   duration_ms: 0.631127
+2026-09-13T20:48:04.5753731Z   type: 'test'
+2026-09-13T20:48:04.5759199Z   ...
+2026-09-13T20:48:04.5760057Z # Subtest: native stale quote remains rejected and is never silently replaced
+2026-09-13T20:48:04.5761180Z ok 173 - native stale quote remains rejected and is never silently replaced
+2026-09-13T20:48:04.5762047Z   ---
+2026-09-13T20:48:04.5762464Z   duration_ms: 0.737625
+2026-09-13T20:48:04.5762940Z   type: 'test'
+2026-09-13T20:48:04.5763266Z   ...
+2026-09-13T20:48:04.5764101Z # Subtest: native expired, cross-order, wrong-currency or renewed-year quote cannot submit
+2026-09-13T20:48:04.5765273Z ok 174 - native expired, cross-order, wrong-currency or renewed-year quote cannot submit
+2026-09-13T20:48:04.5766009Z   ---
+2026-09-13T20:48:04.5766349Z   duration_ms: 0.503307
+2026-09-13T20:48:04.5766871Z   type: 'test'
+2026-09-13T20:48:04.5767202Z   ...
+2026-09-13T20:48:04.6984389Z # (node:2401) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/api/transport.ts is not specified and it doesn't parse as CommonJS.
+2026-09-13T20:48:04.7005741Z # Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-13T20:48:04.7027102Z # To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+2026-09-13T20:48:04.7056846Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-13T20:48:04.7059021Z # Subtest: concurrent expired mutations share one refresh and retain each original idempotency key/body
+2026-09-13T20:48:04.7060246Z ok 175 - concurrent expired mutations share one refresh and retain each original idempotency key/body
+2026-09-13T20:48:04.7092445Z   ---
+2026-09-13T20:48:04.7102131Z   duration_ms: 26.360311
+2026-09-13T20:48:04.7104224Z   type: 'test'
+2026-09-13T20:48:04.7122232Z   ...
+2026-09-13T20:48:04.7142569Z # Subtest: a mutation with lost response is uncertain and is never automatically retried
+2026-09-13T20:48:04.7143897Z ok 176 - a mutation with lost response is uncertain and is never automatically retried
+2026-09-13T20:48:04.7147092Z   ---
+2026-09-13T20:48:04.7147501Z   duration_ms: 0.876692
+2026-09-13T20:48:04.7147929Z   type: 'test'
+2026-09-13T20:48:04.7148306Z   ...
+2026-09-13T20:48:04.7149028Z # Subtest: account change discards pending reads and refresh tokens from the old account
+2026-09-13T20:48:04.7150045Z ok 177 - account change discards pending reads and refresh tokens from the old account
+2026-09-13T20:48:04.7150706Z   ---
+2026-09-13T20:48:04.7151081Z   duration_ms: 1.618614
+2026-09-13T20:48:04.7151491Z   type: 'test'
+2026-09-13T20:48:04.7152170Z   ...
+2026-09-13T20:48:04.7152829Z # Subtest: refresh rejection invalidates current session and notifies the UI
+2026-09-13T20:48:04.7153720Z ok 178 - refresh rejection invalidates current session and notifies the UI
+2026-09-13T20:48:04.7154340Z   ---
+2026-09-13T20:48:04.7154710Z   duration_ms: 1.527959
+2026-09-13T20:48:04.7155116Z   type: 'test'
+2026-09-13T20:48:04.7155490Z   ...
+2026-09-13T20:48:04.7156188Z # Subtest: logout revokes remotely and still clears locally after a transport failure
+2026-09-13T20:48:04.7157160Z ok 179 - logout revokes remotely and still clears locally after a transport failure
+2026-09-13T20:48:04.7157794Z   ---
+2026-09-13T20:48:04.7158155Z   duration_ms: 0.423919
+2026-09-13T20:48:04.7158563Z   type: 'test'
+2026-09-13T20:48:04.7158926Z   ...
+2026-09-13T20:48:04.7159504Z # Subtest: a previous logout cannot clear a newly logged-in account
+2026-09-13T20:48:04.7160287Z ok 180 - a previous logout cannot clear a newly logged-in account
+2026-09-13T20:48:04.7160840Z   ---
+2026-09-13T20:48:04.7161208Z   duration_ms: 1.127284
+2026-09-13T20:48:04.7161611Z   type: 'test'
+2026-09-13T20:48:04.7162192Z   ...
+2026-09-13T20:48:04.7163010Z # Subtest: only chosen API-relative paths are requested and caller auth cannot override the session
+2026-09-13T20:48:04.7202622Z ok 181 - only chosen API-relative paths are requested and caller auth cannot override the session
+2026-09-13T20:48:04.7222621Z   ---
+2026-09-13T20:48:04.7226660Z   duration_ms: 0.810474
+2026-09-13T20:48:04.7242476Z   type: 'test'
+2026-09-13T20:48:04.7246520Z   ...
+2026-09-13T20:48:04.7247414Z # Subtest: aborted mutations before dispatch are known not sent; malformed successful responses are uncertain
+2026-09-13T20:48:04.7248669Z ok 182 - aborted mutations before dispatch are known not sent; malformed successful responses are uncertain
+2026-09-13T20:48:04.7249425Z   ---
+2026-09-13T20:48:04.7249808Z   duration_ms: 0.838776
+2026-09-13T20:48:04.7250224Z   type: 'test'
+2026-09-13T20:48:04.7250597Z   ...
+2026-09-13T20:48:04.7980244Z # (node:2408) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/tripFacts.ts is not specified and it doesn't parse as CommonJS.
+2026-09-13T20:48:04.7982468Z # Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-09-13T20:48:04.8003204Z # To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+2026-09-13T20:48:04.8018014Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-09-13T20:48:04.8037381Z # Subtest: native navigation binds all six verticals to an owned canonical identity
+2026-09-13T20:48:04.8053917Z ok 183 - native navigation binds all six verticals to an owned canonical identity
+2026-09-13T20:48:04.8062203Z   ---
+2026-09-13T20:48:04.8090428Z   duration_ms: 1.660596
+2026-09-13T20:48:04.8112150Z   type: 'test'
+2026-09-13T20:48:04.8120312Z   ...
+2026-09-13T20:48:04.8121073Z # Subtest: native check-in renders each passenger and leg independently
+2026-09-13T20:48:04.8122210Z ok 184 - native check-in renders each passenger and leg independently
+2026-09-13T20:48:04.8122824Z   ---
+2026-09-13T20:48:04.8123514Z   duration_ms: 0.473984
+2026-09-13T20:48:04.8123943Z   type: 'test'
+2026-09-13T20:48:04.8124325Z   ...
+2026-09-13T20:48:04.8125162Z # Subtest: missing, stale, duplicate, future or wrong-order check-in evidence is unverified
+2026-09-13T20:48:04.8126259Z ok 185 - missing, stale, duplicate, future or wrong-order check-in evidence is unverified
+2026-09-13T20:48:04.8126971Z   ---
+2026-09-13T20:48:04.8127340Z   duration_ms: 0.41727
+2026-09-13T20:48:04.8133560Z   type: 'test'
+2026-09-13T20:48:04.8134036Z   ...
+2026-09-13T20:48:04.8134653Z # Subtest: only safe HTTPS links are offered by native travel facts
+2026-09-13T20:48:04.8135440Z ok 186 - only safe HTTPS links are offered by native travel facts
+2026-09-13T20:48:04.8136021Z   ---
+2026-09-13T20:48:04.8136448Z   duration_ms: 0.191965
+2026-09-13T20:48:04.8136909Z   type: 'test'
+2026-09-13T20:48:04.8137330Z   ...
+2026-09-13T20:48:04.8137914Z # Subtest: native rental details never request ride tracking
+2026-09-13T20:48:04.8138625Z ok 187 - native rental details never request ride tracking
+2026-09-13T20:48:04.8139222Z   ---
+2026-09-13T20:48:04.8139707Z   duration_ms: 0.301979
+2026-09-13T20:48:04.8140224Z   type: 'test'
+2026-09-13T20:48:04.8140677Z   ...
+2026-09-13T20:48:04.8141361Z # Subtest: ride tracking failure cannot hide the existing ride order
+2026-09-13T20:48:04.8142451Z ok 188 - ride tracking failure cannot hide the existing ride order
+2026-09-13T20:48:04.8143092Z   ---
+2026-09-13T20:48:04.8143554Z   duration_ms: 0.25608
+2026-09-13T20:48:04.8144031Z   type: 'test'
+2026-09-13T20:48:04.8144481Z   ...
+2026-09-13T20:48:04.8145197Z # Subtest: tracking and order identity mismatches cannot render another order
+2026-09-13T20:48:04.8146248Z ok 189 - tracking and order identity mismatches cannot render another order
+2026-09-13T20:48:04.8162894Z   ---
+2026-09-13T20:48:04.8171507Z   duration_ms: 0.603667
+2026-09-13T20:48:04.8172564Z   type: 'test'
+2026-09-13T20:48:04.8190053Z   ...
+2026-09-13T20:48:04.8571248Z # Subtest: rail order preserves party, immutable prebook and original total through payment cancellation
+2026-09-13T20:48:04.8577277Z ok 190 - rail order preserves party, immutable prebook and original total through payment cancellation
+2026-09-13T20:48:04.8584020Z   ---
+2026-09-13T20:48:04.8584470Z   duration_ms: 2.946887
+2026-09-13T20:48:04.8584920Z   type: 'test'
+2026-09-13T20:48:04.8585310Z   ...
+2026-09-13T20:48:04.8586008Z # Subtest: attraction order uses the quoted slot, quantity and prebook and shows eligibility
+2026-09-13T20:48:04.8586952Z ok 191 - attraction order uses the quoted slot, quantity and prebook and shows eligibility
+2026-09-13T20:48:04.8587592Z   ---
+2026-09-13T20:48:04.8587969Z   duration_ms: 0.400205
+2026-09-13T20:48:04.8588378Z   type: 'test'
+2026-09-13T20:48:04.8588765Z   ...
+2026-09-13T20:48:04.8589384Z # Subtest: cancelling confirmation step 1 never creates an order or payment
+2026-09-13T20:48:04.8590250Z ok 192 - cancelling confirmation step 1 never creates an order or payment
+2026-09-13T20:48:04.8590922Z   ---
+2026-09-13T20:48:04.8591368Z   duration_ms: 0.164144
+2026-09-13T20:48:04.8592136Z   type: 'test'
+2026-09-13T20:48:04.8592579Z   ...
+2026-09-13T20:48:04.8593679Z # Subtest: cancelling confirmation step 2 never creates an order or payment
+2026-09-13T20:48:04.8595287Z ok 193 - cancelling confirmation step 2 never creates an order or payment
+2026-09-13T20:48:04.8596004Z   ---
+2026-09-13T20:48:04.8596477Z   duration_ms: 0.249751
+2026-09-13T20:48:04.8596984Z   type: 'test'
+2026-09-13T20:48:04.8597448Z   ...
+2026-09-13T20:48:04.8604951Z # Subtest: cancelled party selection cannot reach order creation
+2026-09-13T20:48:04.8606295Z ok 194 - cancelled party selection cannot reach order creation
+2026-09-13T20:48:04.8622213Z   ---
+2026-09-13T20:48:04.8632979Z   duration_ms: 0.24222
+2026-09-13T20:48:04.8634404Z   type: 'test'
+2026-09-13T20:48:04.8635412Z   ...
+2026-09-13T20:48:04.8636232Z # Subtest: quote that expires during traveler selection cannot create or pay an order
+2026-09-13T20:48:04.8637275Z ok 195 - quote that expires during traveler selection cannot create or pay an order
+2026-09-13T20:48:04.8638255Z   ---
+2026-09-13T20:48:04.8638654Z   duration_ms: 0.569656
+2026-09-13T20:48:04.8639114Z   type: 'test'
+2026-09-13T20:48:04.8639529Z   ...
+2026-09-13T20:48:04.8640082Z # Subtest: missing final consent never creates an order
+2026-09-13T20:48:04.8640817Z ok 196 - missing final consent never creates an order
+2026-09-13T20:48:04.8641371Z   ---
+2026-09-13T20:48:04.8642035Z   duration_ms: 0.370871
+2026-09-13T20:48:04.8642485Z   type: 'test'
+2026-09-13T20:48:04.8642896Z   ...
+2026-09-13T20:48:04.8643499Z # Subtest: different people are required for every quoted place
+2026-09-13T20:48:04.8645268Z ok 197 - different people are required for every quoted place
+2026-09-13T20:48:04.8645912Z   ---
+2026-09-13T20:48:04.8646339Z   duration_ms: 0.278243
+2026-09-13T20:48:04.8646801Z   type: 'test'
+2026-09-13T20:48:04.8647227Z   ...
+2026-09-13T20:48:04.8647896Z # Subtest: an uncertain payment still opens the existing order for recovery
+2026-09-13T20:48:04.8648836Z ok 198 - an uncertain payment still opens the existing order for recovery
+2026-09-13T20:48:04.8649498Z   ---
+2026-09-13T20:48:04.8649920Z   duration_ms: 1.202395
+2026-09-13T20:48:04.8650322Z   type: 'test'
+2026-09-13T20:48:04.8650693Z   ...
+2026-09-13T20:48:04.8651349Z # Subtest: repeated clicks cannot start a second booking while confirmation is open
+2026-09-13T20:48:04.8652500Z ok 199 - repeated clicks cannot start a second booking while confirmation is open
+2026-09-13T20:48:04.8653018Z   ---
+2026-09-13T20:48:04.8653263Z   duration_ms: 0.407896
+2026-09-13T20:48:04.8653541Z   type: 'test'
+2026-09-13T20:48:04.8653783Z   ...
+2026-09-13T20:48:04.8654306Z # Subtest: mismatched total, journey or slot is refused before any traveler consent
+2026-09-13T20:48:04.8655078Z ok 200 - mismatched total, journey or slot is refused before any traveler consent
+2026-09-13T20:48:04.8655551Z   ---
+2026-09-13T20:48:04.8655784Z   duration_ms: 0.26302
+2026-09-13T20:48:04.8656061Z   type: 'test'
+2026-09-13T20:48:04.8656304Z   ...
+2026-09-13T20:48:04.9165566Z # Subtest: cancelling date selection never requests a quote or payment
+2026-09-13T20:48:04.9170104Z ok 201 - cancelling date selection never requests a quote or payment
+2026-09-13T20:48:04.9171593Z   ---
+2026-09-13T20:48:04.9172767Z   duration_ms: 1.551534
+2026-09-13T20:48:04.9173327Z   type: 'test'
+2026-09-13T20:48:04.9173869Z   ...
+2026-09-13T20:48:04.9174518Z # Subtest: ride changes continue to use their separate workflow
+2026-09-13T20:48:04.9175367Z ok 202 - ride changes continue to use their separate workflow
+2026-09-13T20:48:04.9175991Z   ---
+2026-09-13T20:48:04.9176422Z   duration_ms: 1.236546
+2026-09-13T20:48:04.9176898Z   type: 'test'
+2026-09-13T20:48:04.9177343Z   ...
+2026-09-13T20:48:04.9177990Z # Subtest: viewing a rental quote does not execute the change
+2026-09-13T20:48:04.9178785Z ok 203 - viewing a rental quote does not execute the change
+2026-09-13T20:48:04.9179387Z   ---
+2026-09-13T20:48:04.9179826Z   duration_ms: 0.637968
+2026-09-13T20:48:04.9180335Z   type: 'test'
+2026-09-13T20:48:04.9180770Z   ...
+2026-09-13T20:48:04.9182391Z # Subtest: confirmed refund difference retains its sign and server quote identity
+2026-09-13T20:48:04.9184886Z ok 204 - confirmed refund difference retains its sign and server quote identity
+2026-09-13T20:48:04.9185695Z   ---
+2026-09-13T20:48:04.9186158Z   duration_ms: 1.271188
+2026-09-13T20:48:04.9186644Z   type: 'test'
+2026-09-13T20:48:04.9187066Z   ...
+2026-09-13T20:48:04.9194710Z # Subtest: unchecked amount consent blocks executing a displayed quote
+2026-09-13T20:48:04.9198193Z ok 205 - unchecked amount consent blocks executing a displayed quote
+2026-09-13T20:48:04.9198994Z   ---
+2026-09-13T20:48:04.9199448Z   duration_ms: 0.920708
+2026-09-13T20:48:04.9199947Z   type: 'test'
+2026-09-13T20:48:04.9200385Z   ...
+2026-09-13T20:48:04.9201099Z # Subtest: the shared amount formatter preserves cents on confirmation screens
+2026-09-13T20:48:04.9202315Z ok 206 - the shared amount formatter preserves cents on confirmation screens
+2026-09-13T20:48:04.9203287Z   ---
+2026-09-13T20:48:04.9203747Z   duration_ms: 11.48612
+2026-09-13T20:48:04.9204220Z   type: 'test'
+2026-09-13T20:48:04.9204666Z   ...
+2026-09-13T20:48:04.9647267Z # Subtest: consumer: concurrent expired reads refresh once and preserve namespace
+2026-09-13T20:48:04.9648560Z ok 207 - consumer: concurrent expired reads refresh once and preserve namespace
+2026-09-13T20:48:04.9649257Z   ---
+2026-09-13T20:48:04.9649623Z   duration_ms: 7.011524
+2026-09-13T20:48:04.9650021Z   type: 'test'
+2026-09-13T20:48:04.9650375Z   ...
+2026-09-13T20:48:04.9664169Z # Subtest: consumer: a mutation without idempotency is never replayed after renewal
+2026-09-13T20:48:04.9665651Z ok 208 - consumer: a mutation without idempotency is never replayed after renewal
+2026-09-13T20:48:04.9666268Z   ---
+2026-09-13T20:48:04.9666594Z   duration_ms: 1.020716
+2026-09-13T20:48:04.9666956Z   type: 'test'
+2026-09-13T20:48:04.9667268Z   ...
+2026-09-13T20:48:04.9667822Z # Subtest: consumer: an idempotent retry retains the original key and body
+2026-09-13T20:48:04.9668575Z ok 209 - consumer: an idempotent retry retains the original key and body
+2026-09-13T20:48:04.9669097Z   ---
+2026-09-13T20:48:04.9669407Z   duration_ms: 0.683595
+2026-09-13T20:48:04.9669762Z   type: 'test'
+2026-09-13T20:48:04.9670085Z   ...
+2026-09-13T20:48:04.9670639Z # Subtest: consumer: failed refresh stops without retrying the operation
+2026-09-13T20:48:04.9671360Z ok 210 - consumer: failed refresh stops without retrying the operation
+2026-09-13T20:48:04.9672128Z   ---
+2026-09-13T20:48:04.9672450Z   duration_ms: 0.694522
+2026-09-13T20:48:04.9672807Z   type: 'test'
+2026-09-13T20:48:04.9673118Z   ...
+2026-09-13T20:48:04.9753842Z # Subtest: console: concurrent expired reads refresh once and preserve namespace
+2026-09-13T20:48:04.9762466Z ok 211 - console: concurrent expired reads refresh once and preserve namespace
+2026-09-13T20:48:04.9763281Z   ---
+2026-09-13T20:48:04.9763693Z   duration_ms: 2.556867
+2026-09-13T20:48:04.9764115Z   type: 'test'
+2026-09-13T20:48:04.9764499Z   ...
+2026-09-13T20:48:04.9765172Z # Subtest: console: a mutation without idempotency is never replayed after renewal
+2026-09-13T20:48:04.9766131Z ok 212 - console: a mutation without idempotency is never replayed after renewal
+2026-09-13T20:48:04.9766768Z   ---
+2026-09-13T20:48:04.9767136Z   duration_ms: 1.847314
+2026-09-13T20:48:04.9767537Z   type: 'test'
+2026-09-13T20:48:04.9767885Z   ...
+2026-09-13T20:48:04.9768650Z # Subtest: console: an idempotent retry retains the original key and body
+2026-09-13T20:48:04.9769504Z ok 213 - console: an idempotent retry retains the original key and body
+2026-09-13T20:48:04.9770081Z   ---
+2026-09-13T20:48:04.9770451Z   duration_ms: 0.630467
+2026-09-13T20:48:04.9771139Z   type: 'test'
+2026-09-13T20:48:04.9771493Z   ...
+2026-09-13T20:48:04.9772338Z # Subtest: console: failed refresh stops without retrying the operation
+2026-09-13T20:48:04.9773173Z ok 214 - console: failed refresh stops without retrying the operation
+2026-09-13T20:48:04.9773756Z   ---
+2026-09-13T20:48:04.9774121Z   duration_ms: 0.530718
+2026-09-13T20:48:04.9774515Z   type: 'test'
+2026-09-13T20:48:04.9774872Z   ...
+2026-09-13T20:48:04.9775887Z # Subtest: consumer logout failure preserves account and current page; success clears all private state
+2026-09-13T20:48:04.9777312Z ok 215 - consumer logout failure preserves account and current page; success clears all private state
+2026-09-13T20:48:04.9778067Z   ---
+2026-09-13T20:48:04.9778584Z   duration_ms: 0.963451
+2026-09-13T20:48:04.9779122Z   type: 'test'
+2026-09-13T20:48:04.9779497Z   ...
+2026-09-13T20:48:04.9780176Z # Subtest: console logout failure is surfaced instead of silently reporting success
+2026-09-13T20:48:04.9781129Z ok 216 - console logout failure is surfaced instead of silently reporting success
+2026-09-13T20:48:04.9781905Z   ---
+2026-09-13T20:48:04.9782300Z   duration_ms: 1.399519
+2026-09-13T20:48:04.9782706Z   type: 'test'
+2026-09-13T20:48:04.9783062Z   ...
+2026-09-13T20:48:04.9784812Z # Subtest: console requests work when randomUUID is unavailable in an HTTP preview
+2026-09-13T20:48:04.9786803Z ok 217 - console requests work when randomUUID is unavailable in an HTTP preview
+2026-09-13T20:48:04.9787480Z   ---
+2026-09-13T20:48:04.9787879Z   duration_ms: 0.748732
+2026-09-13T20:48:04.9788292Z   type: 'test'
+2026-09-13T20:48:04.9788644Z   ...
+2026-09-13T20:48:04.9792054Z # Subtest: console login binds the requested account type before establishing a session
+2026-09-13T20:48:04.9794083Z ok 218 - console login binds the requested account type before establishing a session
+2026-09-13T20:48:04.9794788Z   ---
+2026-09-13T20:48:04.9795143Z   duration_ms: 0.636835
+2026-09-13T20:48:04.9825417Z   type: 'test'
+2026-09-13T20:48:04.9825871Z   ...
+2026-09-13T20:48:04.9832145Z # Subtest: a changed console actor clears the stale UI and never refreshes or retries
+2026-09-13T20:48:04.9833312Z ok 219 - a changed console actor clears the stale UI and never refreshes or retries
+2026-09-13T20:48:04.9834014Z   ---
+2026-09-13T20:48:04.9834364Z   duration_ms: 0.577568
+2026-09-13T20:48:04.9834760Z   type: 'test'
+2026-09-13T20:48:04.9835117Z   ...
+2026-09-13T20:48:04.9835722Z # Subtest: consumer: expired access can renew once to revoke its own session
+2026-09-13T20:48:04.9836597Z ok 220 - consumer: expired access can renew once to revoke its own session
+2026-09-13T20:48:04.9837166Z   ---
+2026-09-13T20:48:04.9837504Z   duration_ms: 1.035368
+2026-09-13T20:48:04.9837893Z   type: 'test'
+2026-09-13T20:48:04.9838227Z   ...
+2026-09-13T20:48:04.9838846Z # Subtest: console: expired access can renew once to revoke its own session
+2026-09-13T20:48:04.9839672Z ok 221 - console: expired access can renew once to revoke its own session
+2026-09-13T20:48:04.9840230Z   ---
+2026-09-13T20:48:04.9840577Z   duration_ms: 0.544719
+2026-09-13T20:48:04.9840946Z   type: 'test'
+2026-09-13T20:48:04.9841271Z   ...
+2026-09-13T20:48:05.0315651Z # Subtest: unverified check-in never exposes links or boarding passes
+2026-09-13T20:48:05.0327544Z ok 222 - unverified check-in never exposes links or boarding passes
+2026-09-13T20:48:05.0328244Z   ---
+2026-09-13T20:48:05.0328622Z   duration_ms: 2.561465
+2026-09-13T20:48:05.0329017Z   type: 'test'
+2026-09-13T20:48:05.0329374Z   ...
+2026-09-13T20:48:05.0340945Z # Subtest: per-traveler boarding pass appears only for the verified pass state
+2026-09-13T20:48:05.0349328Z ok 223 - per-traveler boarding pass appears only for the verified pass state
+2026-09-13T20:48:05.0349906Z   ---
+2026-09-13T20:48:05.0350249Z   duration_ms: 0.768642
+2026-09-13T20:48:05.0350627Z   type: 'test'
+2026-09-13T20:48:05.0350937Z   ...
+2026-09-13T20:48:05.0351545Z # Subtest: invalid URL schemes and credentials do not become customer links
+2026-09-13T20:48:05.0352718Z ok 224 - invalid URL schemes and credentials do not become customer links
+2026-09-13T20:48:05.0353309Z   ---
+2026-09-13T20:48:05.0353665Z   duration_ms: 0.68667
+2026-09-13T20:48:05.0354017Z   type: 'test'
+2026-09-13T20:48:05.0354362Z   ...
+2026-09-13T20:48:05.0354994Z # Subtest: unknown fleet outcome clearly separates confirmed and proposed times
+2026-09-13T20:48:05.0355935Z ok 225 - unknown fleet outcome clearly separates confirmed and proposed times
+2026-09-13T20:48:05.0356525Z   ---
+2026-09-13T20:48:05.0356878Z   duration_ms: 0.662905
+2026-09-13T20:48:05.0357509Z   type: 'test'
+2026-09-13T20:48:05.0357879Z   ...
+2026-09-13T20:48:05.0358504Z # Subtest: cancelled tracking confirmation sends no binding mutation
+2026-09-13T20:48:05.0359277Z ok 226 - cancelled tracking confirmation sends no binding mutation
+2026-09-13T20:48:05.0359824Z   ---
+2026-09-13T20:48:05.0360153Z   duration_ms: 0.748672
+2026-09-13T20:48:05.0360529Z   type: 'test'
+2026-09-13T20:48:05.0360875Z   ...
+2026-09-13T20:48:05.0361619Z # Subtest: checked consent sends exact displayed revision and server authority, never wait overrides
+2026-09-13T20:48:05.0363007Z ok 227 - checked consent sends exact displayed revision and server authority, never wait overrides
+2026-09-13T20:48:05.0363699Z   ---
+2026-09-13T20:48:05.0364065Z   duration_ms: 0.726289
+2026-09-13T20:48:05.0364468Z   type: 'test'
+2026-09-13T20:48:05.0365130Z   ...
+2026-09-13T20:48:05.0365651Z # Subtest: missing consent prevents any tracking write
+2026-09-13T20:48:05.0366306Z ok 228 - missing consent prevents any tracking write
+2026-09-13T20:48:05.0366835Z   ---
+2026-09-13T20:48:05.0367178Z   duration_ms: 0.978383
+2026-09-13T20:48:05.0367565Z   type: 'test'
+2026-09-13T20:48:05.0367925Z   ...
+2026-09-13T20:48:05.0368541Z # Subtest: no authorized source does not open an unusable confirmation dialog
+2026-09-13T20:48:05.0369421Z ok 229 - no authorized source does not open an unusable confirmation dialog
+2026-09-13T20:48:05.0370011Z   ---
+2026-09-13T20:48:05.0370350Z   duration_ms: 0.594653
+2026-09-13T20:48:05.0370737Z   type: 'test'
+2026-09-13T20:48:05.0371069Z   ...
+2026-09-13T20:48:05.0371844Z # Subtest: waiting protection is conditional and shows the actual event allowance
+2026-09-13T20:48:05.0372768Z ok 230 - waiting protection is conditional and shows the actual event allowance
+2026-09-13T20:48:05.0375025Z   ---
+2026-09-13T20:48:05.0375362Z   duration_ms: 0.794169
+2026-09-13T20:48:05.0375728Z   type: 'test'
+2026-09-13T20:48:05.0376060Z   ...
+2026-09-13T20:48:05.0376600Z # Subtest: late check-in response cannot populate a detached screen
+2026-09-13T20:48:05.0377365Z ok 231 - late check-in response cannot populate a detached screen
+2026-09-13T20:48:05.0377889Z   ---
+2026-09-13T20:48:05.0378223Z   duration_ms: 9.18374
+2026-09-13T20:48:05.0378596Z   type: 'test'
+2026-09-13T20:48:05.0378926Z   ...
+2026-09-13T20:48:05.0945367Z # Subtest: HOTEL_CATALOG: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0948848Z ok 232 - HOTEL_CATALOG: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0951925Z   ---
+2026-09-13T20:48:05.0952531Z   duration_ms: 2.551419
+2026-09-13T20:48:05.0952927Z   type: 'test'
+2026-09-13T20:48:05.0953301Z   ...
+2026-09-13T20:48:05.0972595Z # Subtest: HOTEL_DIRECT: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0973512Z ok 233 - HOTEL_DIRECT: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0982167Z   ---
+2026-09-13T20:48:05.0982574Z   duration_ms: 1.080646
+2026-09-13T20:48:05.0982990Z   type: 'test'
+2026-09-13T20:48:05.0983380Z   ...
+2026-09-13T20:48:05.0984018Z # Subtest: FLIGHT: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0984876Z ok 234 - FLIGHT: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0985455Z   ---
+2026-09-13T20:48:05.0985808Z   duration_ms: 0.522536
+2026-09-13T20:48:05.0986204Z   type: 'test'
+2026-09-13T20:48:05.0986551Z   ...
+2026-09-13T20:48:05.0987145Z # Subtest: RAIL: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0987962Z ok 235 - RAIL: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0988526Z   ---
+2026-09-13T20:48:05.0988887Z   duration_ms: 0.594263
+2026-09-13T20:48:05.0989264Z   type: 'test'
+2026-09-13T20:48:05.0989620Z   ...
+2026-09-13T20:48:05.0990214Z # Subtest: RIDE: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0991044Z ok 236 - RIDE: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0991614Z   ---
+2026-09-13T20:48:05.0992377Z   duration_ms: 0.494324
+2026-09-13T20:48:05.0992801Z   type: 'test'
+2026-09-13T20:48:05.0993145Z   ...
+2026-09-13T20:48:05.0993710Z # Subtest: RENTAL: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0997633Z ok 237 - RENTAL: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.0998243Z   ---
+2026-09-13T20:48:05.0998588Z   duration_ms: 0.475176
+2026-09-13T20:48:05.0998975Z   type: 'test'
+2026-09-13T20:48:05.0999315Z   ...
+2026-09-13T20:48:05.0999982Z # Subtest: ATTRACTION: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.1012954Z ok 238 - ATTRACTION: reopen the existing order without a new order or payment
+2026-09-13T20:48:05.1013597Z   ---
+2026-09-13T20:48:05.1013970Z   duration_ms: 0.555686
+2026-09-13T20:48:05.1014639Z   type: 'test'
+2026-09-13T20:48:05.1015005Z   ...
+2026-09-13T20:48:05.1015685Z # Subtest: untrusted evidence URLs and unsupported identities never select an endpoint
+2026-09-13T20:48:05.1016687Z ok 239 - untrusted evidence URLs and unsupported identities never select an endpoint
+2026-09-13T20:48:05.1017339Z   ---
+2026-09-13T20:48:05.1017701Z   duration_ms: 0.805247
+2026-09-13T20:48:05.1018098Z   type: 'test'
+2026-09-13T20:48:05.1018454Z   ...
+2026-09-13T20:48:05.1019038Z # Subtest: card output escapes content and uses current canonical status
+2026-09-13T20:48:05.1019877Z ok 240 - card output escapes content and uses current canonical status
+2026-09-13T20:48:05.1020485Z   ---
+2026-09-13T20:48:05.1020828Z   duration_ms: 0.777625
+2026-09-13T20:48:05.1021210Z   type: 'test'
+2026-09-13T20:48:05.1021544Z   ...
+2026-09-13T20:48:05.1022292Z # Subtest: an order response cannot populate a different order or vertical
+2026-09-13T20:48:05.1023215Z ok 241 - an order response cannot populate a different order or vertical
+2026-09-13T20:48:05.1023793Z   ---
+2026-09-13T20:48:05.1024135Z   duration_ms: 1.85177
+2026-09-13T20:48:05.1024513Z   type: 'test'
+2026-09-13T20:48:05.1024848Z   ...
+2026-09-13T20:48:05.1025381Z # Subtest: late order response cannot overwrite a new screen
+2026-09-13T20:48:05.1026064Z ok 242 - late order response cannot overwrite a new screen
+2026-09-13T20:48:05.1026556Z   ---
+2026-09-13T20:48:05.1026900Z   duration_ms: 0.583477
+2026-09-13T20:48:05.1027277Z   type: 'test'
+2026-09-13T20:48:05.1027644Z   ...
+2026-09-13T20:48:05.1028263Z # Subtest: continuing payment re-reads amount and uses the original order only
+2026-09-13T20:48:05.1029189Z ok 243 - continuing payment re-reads amount and uses the original order only
+2026-09-13T20:48:05.1029781Z   ---
+2026-09-13T20:48:05.1030133Z   duration_ms: 0.692689
+2026-09-13T20:48:05.1030527Z   type: 'test'
+2026-09-13T20:48:05.1030871Z   ...
+2026-09-13T20:48:05.1031509Z # Subtest: already paid or expired orders cannot invoke payment from a stale card
+2026-09-13T20:48:05.1032620Z ok 244 - already paid or expired orders cannot invoke payment from a stale card
+2026-09-13T20:48:05.1033239Z   ---
+2026-09-13T20:48:05.1033640Z   duration_ms: 1.238429
+2026-09-13T20:48:05.1034045Z   type: 'test'
+2026-09-13T20:48:05.1034406Z   ...
+2026-09-13T20:48:05.1034997Z # Subtest: payment timeout reads the same order and never silently resends
+2026-09-13T20:48:05.1035850Z ok 245 - payment timeout reads the same order and never silently resends
+2026-09-13T20:48:05.1036457Z   ---
+2026-09-13T20:48:05.1036813Z   duration_ms: 0.574864
+2026-09-13T20:48:05.1037210Z   type: 'test'
+2026-09-13T20:48:05.1037563Z   ...
+2026-09-13T20:48:05.1038149Z # Subtest: leaving before the fresh order read prevents a payment dialog
+2026-09-13T20:48:05.1038988Z ok 246 - leaving before the fresh order read prevents a payment dialog
+2026-09-13T20:48:05.1039585Z   ---
+2026-09-13T20:48:05.1039938Z   duration_ms: 0.49159
+2026-09-13T20:48:05.1040309Z   type: 'test'
+2026-09-13T20:48:05.1040653Z   ...
+2026-09-13T20:48:05.1041248Z # Subtest: real app dispatch uses every existing enriched order renderer
+2026-09-13T20:48:05.1042247Z ok 247 - real app dispatch uses every existing enriched order renderer
+2026-09-13T20:48:05.1042812Z   ---
+2026-09-13T20:48:05.1043398Z   duration_ms: 2.793399
+2026-09-13T20:48:05.1043834Z   type: 'test'
+2026-09-13T20:48:05.1044177Z   ...
+2026-09-13T20:48:05.1472764Z # Subtest: closing permission confirmation sends no permission mutation
+2026-09-13T20:48:05.1473944Z ok 248 - closing permission confirmation sends no permission mutation
+2026-09-13T20:48:05.1474601Z   ---
+2026-09-13T20:48:05.1474989Z   duration_ms: 3.278119
+2026-09-13T20:48:05.1475429Z   type: 'test'
+2026-09-13T20:48:05.1475772Z   ...
+2026-09-13T20:48:05.1476492Z # Subtest: source disconnect remains explicit and retains server-directed semantics
+2026-09-13T20:48:05.1484490Z ok 249 - source disconnect remains explicit and retains server-directed semantics
+2026-09-13T20:48:05.1487180Z   ---
+2026-09-13T20:48:05.1487588Z   duration_ms: 1.716129
+2026-09-13T20:48:05.1488349Z   type: 'test'
+2026-09-13T20:48:05.1488711Z   ...
+2026-09-13T20:48:05.1489433Z # Subtest: person edit binds the displayed revision and leaves a blank birth date untouched
+2026-09-13T20:48:05.1490506Z ok 250 - person edit binds the displayed revision and leaves a blank birth date untouched
+2026-09-13T20:48:05.1491189Z   ---
+2026-09-13T20:48:05.1491560Z   duration_ms: 0.824254
+2026-09-13T20:48:05.1492279Z   type: 'test'
+2026-09-13T20:48:05.1492659Z   ...
+2026-09-13T20:48:05.1494158Z # Subtest: sensitive import inspection happens only after explicit confirmation, with no implicit acceptance
+2026-09-13T20:48:05.1496417Z ok 251 - sensitive import inspection happens only after explicit confirmation, with no implicit acceptance
+2026-09-13T20:48:05.1497258Z   ---
+2026-09-13T20:48:05.1497649Z   duration_ms: 5.588941
+2026-09-13T20:48:05.1498052Z   type: 'test'
+2026-09-13T20:48:05.1498401Z   ...
+2026-09-13T20:48:05.1510963Z # Subtest: untrusted imported content is escaped before display
+2026-09-13T20:48:05.1514226Z ok 252 - untrusted imported content is escaped before display
+2026-09-13T20:48:05.1514813Z   ---
+2026-09-13T20:48:05.1515186Z   duration_ms: 1.955745
+2026-09-13T20:48:05.1515613Z   type: 'test'
+2026-09-13T20:48:05.1515983Z   ...
+2026-09-13T20:48:05.1533772Z # Subtest: duplicate submits during a pending mutation call the server once
+2026-09-13T20:48:05.1541118Z ok 253 - duplicate submits during a pending mutation call the server once
+2026-09-13T20:48:05.1542099Z   ---
+2026-09-13T20:48:05.1542817Z   duration_ms: 1.526988
+2026-09-13T20:48:05.1557732Z   type: 'test'
+2026-09-13T20:48:05.1558115Z   ...
+2026-09-13T20:48:05.1558855Z # Subtest: import reassignment binds traveler and item revision and does not accept content
+2026-09-13T20:48:05.1559962Z ok 254 - import reassignment binds traveler and item revision and does not accept content
+2026-09-13T20:48:05.1560670Z   ---
+2026-09-13T20:48:05.1561039Z   duration_ms: 1.037701
+2026-09-13T20:48:05.1561432Z   type: 'test'
+2026-09-13T20:48:05.1562087Z   ...
+2026-09-13T20:48:05.1986625Z # Subtest: RAIL cancellation requires explicit confirmation
+2026-09-13T20:48:05.1998255Z ok 255 - RAIL cancellation requires explicit confirmation
+2026-09-13T20:48:05.2001840Z   ---
+2026-09-13T20:48:05.2014803Z   duration_ms: 1.555681
+2026-09-13T20:48:05.2015251Z   type: 'test'
+2026-09-13T20:48:05.2015676Z   ...
+2026-09-13T20:48:05.2016217Z # Subtest: RAIL response loss still reloads persisted order
+2026-09-13T20:48:05.2016938Z ok 256 - RAIL response loss still reloads persisted order
+2026-09-13T20:48:05.2017454Z   ---
+2026-09-13T20:48:05.2017815Z   duration_ms: 1.589595
+2026-09-13T20:48:05.2018214Z   type: 'test'
+2026-09-13T20:48:05.2018568Z   ...
+2026-09-13T20:48:05.2019217Z # Subtest: RAIL paid or uncertain orders cannot open unpaid cancellation
+2026-09-13T20:48:05.2020056Z ok 257 - RAIL paid or uncertain orders cannot open unpaid cancellation
+2026-09-13T20:48:05.2020655Z   ---
+2026-09-13T20:48:05.2021011Z   duration_ms: 1.942695
+2026-09-13T20:48:05.2021426Z   type: 'test'
+2026-09-13T20:48:05.2022081Z   ...
+2026-09-13T20:48:05.2022654Z # Subtest: ATTRACTION cancellation requires explicit confirmation
+2026-09-13T20:48:05.2023753Z ok 258 - ATTRACTION cancellation requires explicit confirmation
+2026-09-13T20:48:05.2024365Z   ---
+2026-09-13T20:48:05.2024749Z   duration_ms: 0.541925
+2026-09-13T20:48:05.2025150Z   type: 'test'
+2026-09-13T20:48:05.2025511Z   ...
+2026-09-13T20:48:05.2026066Z # Subtest: ATTRACTION response loss still reloads persisted order
+2026-09-13T20:48:05.2026839Z ok 259 - ATTRACTION response loss still reloads persisted order
+2026-09-13T20:48:05.2027410Z   ---
+2026-09-13T20:48:05.2027768Z   duration_ms: 0.620031
+2026-09-13T20:48:05.2028160Z   type: 'test'
+2026-09-13T20:48:05.2028518Z   ...
+2026-09-13T20:48:05.2029136Z # Subtest: ATTRACTION paid or uncertain orders cannot open unpaid cancellation
+2026-09-13T20:48:05.2030049Z ok 260 - ATTRACTION paid or uncertain orders cannot open unpaid cancellation
+2026-09-13T20:48:05.2030663Z   ---
+2026-09-13T20:48:05.2031276Z   duration_ms: 1.799582
+2026-09-13T20:48:05.2031834Z   type: 'test'
+2026-09-13T20:48:05.2032210Z   ...
+2026-09-13T20:48:05.2400495Z # Subtest: new unpaid reservation displays its frozen UTC deadline
+2026-09-13T20:48:05.2406767Z ok 261 - new unpaid reservation displays its frozen UTC deadline
+2026-09-13T20:48:05.2407711Z   ---
+2026-09-13T20:48:05.2408112Z   duration_ms: 0.88212
+2026-09-13T20:48:05.2408528Z   type: 'test'
+2026-09-13T20:48:05.2408906Z   ...
+2026-09-13T20:48:05.2409444Z # Subtest: legacy orders never receive a fabricated deadline
+2026-09-13T20:48:05.2410179Z ok 262 - legacy orders never receive a fabricated deadline
+2026-09-13T20:48:05.2410739Z   ---
+2026-09-13T20:48:05.2411103Z   duration_ms: 0.18856
+2026-09-13T20:48:05.2411501Z   type: 'test'
+2026-09-13T20:48:05.2412080Z   ...
+2026-09-13T20:48:05.2415810Z # Subtest: expiry display relies on persisted server state instead of browser clock
+2026-09-13T20:48:05.2420893Z ok 263 - expiry display relies on persisted server state instead of browser clock
+2026-09-13T20:48:05.2421594Z   ---
+2026-09-13T20:48:05.2422218Z   duration_ms: 0.124315
+2026-09-13T20:48:05.2422628Z   type: 'test'
+2026-09-13T20:48:05.2422995Z   ...
+2026-09-13T20:48:05.2423607Z # Subtest: started and uncertain payment keeps its reservation message
+2026-09-13T20:48:05.2424455Z ok 264 - started and uncertain payment keeps its reservation message
+2026-09-13T20:48:05.2425066Z   ---
+2026-09-13T20:48:05.2425437Z   duration_ms: 0.859176
+2026-09-13T20:48:05.2425835Z   type: 'test'
+2026-09-13T20:48:05.2426197Z   ...
+2026-09-13T20:48:05.2844506Z # Subtest: RAIL: opening recovery does not send a refund until confirmed
+2026-09-13T20:48:05.2855410Z ok 265 - RAIL: opening recovery does not send a refund until confirmed
+2026-09-13T20:48:05.2856029Z   ---
+2026-09-13T20:48:05.2856379Z   duration_ms: 1.645714
+2026-09-13T20:48:05.2856767Z   type: 'test'
+2026-09-13T20:48:05.2857117Z   ...
+2026-09-13T20:48:05.2857669Z # Subtest: RAIL: failed response still reloads persisted order state
+2026-09-13T20:48:05.2858464Z ok 266 - RAIL: failed response still reloads persisted order state
+2026-09-13T20:48:05.2858987Z   ---
+2026-09-13T20:48:05.2859329Z   duration_ms: 1.618174
+2026-09-13T20:48:05.2859723Z   type: 'test'
+2026-09-13T20:48:05.2860078Z   ...
+2026-09-13T20:48:05.2860673Z # Subtest: ATTRACTION: opening recovery does not send a refund until confirmed
+2026-09-13T20:48:05.2861541Z ok 267 - ATTRACTION: opening recovery does not send a refund until confirmed
+2026-09-13T20:48:05.2862389Z   ---
+2026-09-13T20:48:05.2862755Z   duration_ms: 0.669705
+2026-09-13T20:48:05.2863125Z   type: 'test'
+2026-09-13T20:48:05.2863455Z   ...
+2026-09-13T20:48:05.2868562Z # Subtest: ATTRACTION: failed response still reloads persisted order state
+2026-09-13T20:48:05.2875732Z ok 268 - ATTRACTION: failed response still reloads persisted order state
+2026-09-13T20:48:05.2876331Z   ---
+2026-09-13T20:48:05.2876682Z   duration_ms: 0.569546
+2026-09-13T20:48:05.2877065Z   type: 'test'
+2026-09-13T20:48:05.2877384Z   ...
+2026-09-13T20:48:05.2878015Z # Subtest: busy recovery gives a customer message and refreshes the existing order
+2026-09-13T20:48:05.2878832Z ok 269 - busy recovery gives a customer message and refreshes the existing order
+2026-09-13T20:48:05.2879578Z   ---
+2026-09-13T20:48:05.2879898Z   duration_ms: 0.638379
+2026-09-13T20:48:05.2880242Z   type: 'test'
+2026-09-13T20:48:05.2880551Z   ...
+2026-09-13T20:48:05.2881192Z # Subtest: rail interrupted change confirms the original quote instead of creating another
+2026-09-13T20:48:05.2885756Z ok 270 - rail interrupted change confirms the original quote instead of creating another
+2026-09-13T20:48:05.2886966Z   ---
+2026-09-13T20:48:05.2887334Z   duration_ms: 0.791866
+2026-09-13T20:48:05.2887738Z   type: 'test'
+2026-09-13T20:48:05.2888089Z   ...
+2026-09-13T20:48:05.2944435Z 1..270
+2026-09-13T20:48:05.2945091Z # tests 270
+2026-09-13T20:48:05.2945474Z # suites 0
+2026-09-13T20:48:05.2945826Z # pass 270
+2026-09-13T20:48:05.2947763Z # fail 0
+2026-09-13T20:48:05.2953506Z # cancelled 0
+2026-09-13T20:48:05.2954238Z # skipped 0
+2026-09-13T20:48:05.2954642Z # todo 0
+2026-09-13T20:48:05.2955018Z # duration_ms 2598.060077
+2026-09-13T20:48:05.3038898Z ##[group]Run python -B -m unittest discover -s control-plane/depth40-compat-v2/tests -v 2>&1 | tee "$RUNNER_TEMP/evidence/compatibility.log"
+2026-09-13T20:48:05.3039689Z [36;1mpython -B -m unittest discover -s control-plane/depth40-compat-v2/tests -v 2>&1 | tee "$RUNNER_TEMP/evidence/compatibility.log"[0m
+2026-09-13T20:48:05.3075174Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-13T20:48:05.3075463Z env:
+2026-09-13T20:48:05.3075656Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:48:05.3075946Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:05.3076319Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-13T20:48:05.3076672Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:05.3076995Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:05.3077318Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:05.3077677Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-13T20:48:05.3077948Z ##[endgroup]
+2026-09-13T20:48:05.8979239Z test_collector_uses_bound_candidate_paths_and_head (test_compatibility.Compatibility.test_collector_uses_bound_candidate_paths_and_head) ... ok
+2026-09-13T20:48:05.9071841Z test_consumed_source_cannot_be_replayed (test_compatibility.Compatibility.test_consumed_source_cannot_be_replayed) ... ok
+2026-09-13T20:48:05.9084057Z test_digest_resolving_to_wrong_config_rejected_before_mutation (test_compatibility.Compatibility.test_digest_resolving_to_wrong_config_rejected_before_mutation) ... ok
+2026-09-13T20:48:05.9119090Z test_distinct_config_and_registry_digests_are_accepted (test_compatibility.Compatibility.test_distinct_config_and_registry_digests_are_accepted) ... ok
+2026-09-13T20:48:05.9193225Z test_entrypoint_rejects_unsealed_site_without_docker_call (test_compatibility.Compatibility.test_entrypoint_rejects_unsealed_site_without_docker_call) ... ok
+2026-09-13T20:48:05.9209797Z test_expired_recovery_plan_rejected (test_compatibility.Compatibility.test_expired_recovery_plan_rejected) ... ok
+2026-09-13T20:48:05.9222070Z test_extra_service_rejected (test_compatibility.Compatibility.test_extra_service_rejected) ... ok
+2026-09-13T20:48:05.9264976Z test_failed_deploy_not_promoted_to_successful_rollback_source (test_compatibility.Compatibility.test_failed_deploy_not_promoted_to_successful_rollback_source) ... ok
+2026-09-13T20:48:05.9277213Z test_missing_persistent_media_rejected (test_compatibility.Compatibility.test_missing_persistent_media_rejected) ... ok
+2026-09-13T20:48:05.9293701Z test_missing_restore_evidence_rejected (test_compatibility.Compatibility.test_missing_restore_evidence_rejected) ... ok
+2026-09-13T20:48:05.9334617Z test_modified_source_signature_rejected (test_compatibility.Compatibility.test_modified_source_signature_rejected) ... ok
+2026-09-13T20:48:05.9373458Z test_mutation_failure_retains_previous_state_and_failure_record (test_compatibility.Compatibility.test_mutation_failure_retains_previous_state_and_failure_record) ... ok
+2026-09-13T20:48:05.9385466Z test_old_pythonpath_rejected (test_compatibility.Compatibility.test_old_pythonpath_rejected) ... ok
+2026-09-13T20:48:05.9397763Z test_old_worker_command_rejected (test_compatibility.Compatibility.test_old_worker_command_rejected) ... ok
+2026-09-13T20:48:05.9444690Z test_previous_runtime_record_drift_rejected (test_compatibility.Compatibility.test_previous_runtime_record_drift_rejected) ... ok
+2026-09-13T20:48:05.9455096Z test_production_site_binding_rejected (test_compatibility.Compatibility.test_production_site_binding_rejected) ... ok
+2026-09-13T20:48:05.9468861Z test_profile_drift_rejected (test_compatibility.Compatibility.test_profile_drift_rejected) ... ok
+2026-09-13T20:48:05.9480995Z test_pulling_policy_rejected (test_compatibility.Compatibility.test_pulling_policy_rejected) ... ok
+2026-09-13T20:48:05.9498028Z test_recovery_preparation_signature_and_binding (test_compatibility.Compatibility.test_recovery_preparation_signature_and_binding) ... ok
+2026-09-13T20:48:05.9547292Z test_replaced_protected_container_rejected_before_rollback (test_compatibility.Compatibility.test_replaced_protected_container_rejected_before_rollback) ... ok
+2026-09-13T20:48:06.1102043Z test_rollback_drives_recorded_images_and_checks_identity (test_compatibility.Compatibility.test_rollback_drives_recorded_images_and_checks_identity) ... ok
+2026-09-13T20:48:06.1122178Z test_tampered_recovery_signature_rejected (test_compatibility.Compatibility.test_tampered_recovery_signature_rejected) ... ok
+2026-09-13T20:48:06.1132311Z test_unbound_profile_rejected (test_compatibility.Compatibility.test_unbound_profile_rejected) ... ok
+2026-09-13T20:48:06.1216528Z test_unhealthy_api_cannot_return_rollback_pass (test_compatibility.Compatibility.test_unhealthy_api_cannot_return_rollback_pass) ... ok
+2026-09-13T20:48:06.1233693Z test_unplanned_schema_transition_rejected (test_compatibility.Compatibility.test_unplanned_schema_transition_rejected) ... ok
+2026-09-13T20:48:06.1243937Z test_unsealed_site_binding_rejected (test_compatibility.Compatibility.test_unsealed_site_binding_rejected) ... ok
+2026-09-13T20:48:06.1281588Z test_worker_restart_during_observation_rejected (test_compatibility.Compatibility.test_worker_restart_during_observation_rejected) ... ok
+2026-09-13T20:48:06.1360595Z test_wrong_image_cannot_return_rollback_pass (test_compatibility.Compatibility.test_wrong_image_cannot_return_rollback_pass) ... ok
+2026-09-13T20:48:06.1362667Z test_domain_or_unknown_type_rejected (test_compatibility.CriticalColumns.test_domain_or_unknown_type_rejected) ... ok
+2026-09-13T20:48:06.1364338Z test_exact_widths (test_compatibility.CriticalColumns.test_exact_widths) ... ok
+2026-09-13T20:48:06.1365565Z test_missing_column_rejected (test_compatibility.CriticalColumns.test_missing_column_rejected) ... ok
+2026-09-13T20:48:06.1366702Z test_narrow_varchar_rejected (test_compatibility.CriticalColumns.test_narrow_varchar_rejected) ... ok
+2026-09-13T20:48:06.1367906Z test_non_character_null_width_rejected (test_compatibility.CriticalColumns.test_non_character_null_width_rejected) ... ok
+2026-09-13T20:48:06.1368992Z test_unbounded_text (test_compatibility.CriticalColumns.test_unbounded_text) ... ok
+2026-09-13T20:48:06.1369529Z 
+2026-09-13T20:48:06.1369943Z ----------------------------------------------------------------------
+2026-09-13T20:48:06.1370500Z Ran 34 tests in 0.406s
+2026-09-13T20:48:06.1370802Z 
+2026-09-13T20:48:06.1371034Z OK
+2026-09-13T20:48:06.1556377Z ##[group]Run tree=$(python -c 'import json,os; print(json.load(open(os.environ["RUNNER_TEMP"]+"/evidence/source/RETENTION_RESULT.json"))["source_tree_sha256"])')
+2026-09-13T20:48:06.1557242Z [36;1mtree=$(python -c 'import json,os; print(json.load(open(os.environ["RUNNER_TEMP"]+"/evidence/source/RETENTION_RESULT.json"))["source_tree_sha256"])')[0m
+2026-09-13T20:48:06.1558268Z [36;1mpython -B application/scripts/acceptance_smoke.py --source application --fingerprint "$RUNNER_TEMP/evidence/source/SOURCE_FINGERPRINT.json" --expected-tree "$tree" --evidence "$RUNNER_TEMP/evidence/http"[0m
+2026-09-13T20:48:06.1597193Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-13T20:48:06.1597638Z env:
+2026-09-13T20:48:06.1597912Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:48:06.1598323Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:06.1598888Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-13T20:48:06.1599486Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:06.1599968Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:06.1600437Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:06.1600942Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-13T20:48:06.1601368Z ##[endgroup]
+2026-09-13T20:48:25.3093855Z {"checks_passed": 150, "failed": 0, "http_requests": 88, "scope": "LIVE_LOOPBACK_HTTP_ONLY", "browser_gate": "HOLD"}
+2026-09-13T20:48:25.3270998Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:48:25.3272260Z ##[group]Run actions/upload-artifact@v4
+2026-09-13T20:48:25.3272492Z with:
+2026-09-13T20:48:25.3272793Z   name: canonical-frontend-http-compat-ddd2b9d82d560ba2657a7904f061fb20196d5924
+2026-09-13T20:48:25.3273158Z   path: /home/runner/work/_temp/evidence
+2026-09-13T20:48:25.3273392Z   if-no-files-found: error
+2026-09-13T20:48:25.3273599Z   compression-level: 6
+2026-09-13T20:48:25.3273796Z   overwrite: false
+2026-09-13T20:48:25.3273984Z   include-hidden-files: false
+2026-09-13T20:48:25.3274227Z env:
+2026-09-13T20:48:25.3274462Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-13T20:48:25.3274726Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:25.3275112Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-13T20:48:25.3275464Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:25.3275769Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:25.3276069Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-13T20:48:25.3276366Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-13T20:48:25.3276630Z ##[endgroup]
+2026-09-13T20:48:25.4694116Z (node:2490) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-13T20:48:25.4695347Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-13T20:48:25.5019571Z With the provided path, there will be 8 files uploaded
+2026-09-13T20:48:25.5020288Z Artifact name is valid!
+2026-09-13T20:48:25.5020664Z Root directory input is valid!
+2026-09-13T20:48:25.8099391Z Beginning upload of artifact content to blob storage
+2026-09-13T20:48:25.8438067Z (node:2490) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-13T20:48:26.1678781Z Uploaded bytes 87647
+2026-09-13T20:48:26.2303549Z Finished uploading artifact content to blob storage!
+2026-09-13T20:48:26.2305898Z SHA256 digest of uploaded artifact zip is ea5dc90e91342d1dcf12ad057242eefef121854acbd6af028381601b6b261a52
+2026-09-13T20:48:26.2306940Z Finalizing artifact upload
+2026-09-13T20:48:26.4957549Z Artifact canonical-frontend-http-compat-ddd2b9d82d560ba2657a7904f061fb20196d5924.zip successfully finalized. Artifact ID 10325142405
+2026-09-13T20:48:26.4959819Z Artifact canonical-frontend-http-compat-ddd2b9d82d560ba2657a7904f061fb20196d5924 has been successfully uploaded! Final size is 87647 bytes. Artifact ID is 10325142405
+2026-09-13T20:48:26.4961814Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34781824271/artifacts/10325142405
+2026-09-13T20:48:26.5088560Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:48:26.5089499Z Post job cleanup.
+2026-09-13T20:48:26.6156676Z (node:2502) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-13T20:48:26.6158018Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-13T20:48:26.6338805Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:48:26.6340600Z Post job cleanup.
+2026-09-13T20:48:26.7645560Z (node:2510) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-13T20:48:26.7662796Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-13T20:48:26.7954136Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-13T20:48:26.7955794Z Post job cleanup.
+2026-09-13T20:48:26.8907137Z [command]/usr/bin/git version
+2026-09-13T20:48:26.8975751Z git version 2.55.0
+2026-09-13T20:48:26.9044458Z Temporarily overriding HOME='/home/runner/work/_temp/dacd2e93-3ead-4ffc-83b2-3f4dfe90f1ab' before making global git config changes
+2026-09-13T20:48:26.9045811Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-13T20:48:26.9046849Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-13T20:48:26.9093202Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-13T20:48:26.9141269Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-13T20:48:26.9472935Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-13T20:48:26.9495559Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-13T20:48:26.9802646Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-13T20:48:26.9830831Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-13T20:48:27.0271130Z Cleaning up orphan processes
+2026-09-13T20:48:27.0507616Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

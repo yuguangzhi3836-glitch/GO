@@ -1,0 +1,61 @@
+{
+  "cell_id": "C12",
+  "task_id": "V70-R2-C12-02",
+  "agent": "/root/c12_scheduler",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "started_at": "2026-09-14T03:49:37.709752+00:00",
+  "recorded_at": "2026-09-14T04:01:18.056124+00:00",
+  "implementation_and_local_validation": "PASS_SCOPED",
+  "C14": "PENDING_REVIEW",
+  "C13": "PENDING_INDEPENDENT_REVIEW",
+  "domain_completion": "NOT_CLAIMED",
+  "scope": "Additional ACK/start/output admission semantics plus frozen PR73 CI readback",
+  "outcome": "5 new receipt tests PASS; actual C08/C10/C12 receipts passed local admission; existing 16 scheduler tests inherited from fixed PR73 CI original, not rerun.",
+  "tests_passed": 5,
+  "new_tests": 5,
+  "green_command": {
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "-m",
+      "pytest",
+      "ci/round2/test_validate_ledger.py",
+      "-k",
+      "receipt",
+      "-p",
+      "no:cacheprovider",
+      "-q",
+      "--junitxml",
+      "/workspace/scratch/948b51def3a9/GO/evidence/v70-next-depth-20260914/c12/green.junit.xml"
+    ],
+    "cwd": "/workspace/scratch/948b51def3a9/GO",
+    "started_at": "2026-09-14T03:58:09.672398+00:00",
+    "finished_at": "2026-09-14T03:58:09.903701+00:00",
+    "exit_code": 0
+  },
+  "files_sha256": {
+    "ci/round2/verify_execution_receipt.py": "f2223793de9bc11386b43ce97ff01b8cd7e966b3e988db785b344544806b88c8",
+    "ci/round2/test_validate_ledger.py": "cc58570097ff580d7f70ef2aebf96022e2ba8269d277348992ce4967c83c9512"
+  },
+  "evidence_sha256": {
+    "evidence/v70-next-depth-20260914/c12/receipt-admission.command.json": "1e98f760c51b2777ff6d8ebb7b106d2961eaebf0ccd4d3b2e8e906d398411a24",
+    "evidence/v70-next-depth-20260914/c12/EXECUTION.json": "5af63e5bb325e36ac5462b3d5a69b3d99ec3aad1c97f6cd4117f3a58e21acd97",
+    "evidence/v70-next-depth-20260914/c12/ACK_RECEIPT.json": "5e8de67f7fb8bee87de594ac6bb32f8b40a6b7e16f9d897b1c873cd73540b2c0",
+    "evidence/v70-next-depth-20260914/c12/receipt-admission.raw.log": "5cac8b1d15816b664c5637d2baaf68d19d65133329fa5bc9a36f795423c2571d",
+    "evidence/v70-next-depth-20260914/c12/red.raw.log": "16b0c1f9e7c11a96ac397f0bbf9e6b9ef5896cff9c71bafc95f4a6dba0fecfdd",
+    "evidence/v70-next-depth-20260914/c12/EXECUTION_INITIAL.json": "847530fa0545596e9a6cc7d606829937015cfc5ea4b6280e4619a4ea0bebc91a",
+    "evidence/v70-next-depth-20260914/c12/green.command.json": "5506f2a768372e9ec17e86f2282de092c4b46165e2c95d600520bae10f176db3",
+    "evidence/v70-next-depth-20260914/c12/CI_ENTRY_RECOMMENDATION.md": "24040c85654df158fe2f57c0d97fffba9ed720a6f61d113296cc913e57e90588",
+    "evidence/v70-next-depth-20260914/c12/green.raw.log": "8c5ce1638ce00ce4b1b541ed0f2f5c86e17f4c47d2fe23e83ee52a9fdd7c94b4",
+    "evidence/v70-next-depth-20260914/c12/red.junit.xml": "baf26dfc8a15ec4c7c8cb08d0a2087c6201177ea542069cb8420d8e62bc4d3d7",
+    "evidence/v70-next-depth-20260914/c12/INHERITED_CI_READBACK.json": "d292533cd41427a612f7a20d0a3198d41a478aabf3734a385d6015ab44a14263",
+    "evidence/v70-next-depth-20260914/c12/red.command.json": "7442a68840948f8ac5925339dca31b547c8b185f381b0e6c1ee4348e22fd917f",
+    "evidence/v70-next-depth-20260914/c12/green.junit.xml": "b7e5d13485cc57040df75f62b86a32181a5e1f79e679ef64d2a5ed4671b19daa"
+  },
+  "limits": [
+    "Existing validate_ledger.py contract unchanged; new receipt helper is separate, awaiting CI integration",
+    "Record consistency cannot authenticate worker identities/signatures or verify current liveness",
+    "Artifact digest checked against original metadata; archive bytes not downloaded/hashed by C12"
+  ],
+  "next_task": "Root integrates optional receipt admission into frozen-candidate CI; retain independent reviewer identity verification and later heartbeat-expiry scope."
+}

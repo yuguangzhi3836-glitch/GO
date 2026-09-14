@@ -1,0 +1,54 @@
+{
+  "cell_id": "C05",
+  "task_id": "V70-R2-C05-02",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "status": "AWAITING_C14",
+  "scope": "Reject ride recovery when the current UNKNOWN evidence is missing, chain hashes are damaged, previous phase is invalid or contradicts the immediately prior proven state; preserve supplier binding and leave UNKNOWN without compensation.",
+  "builder_tests": {
+    "new_cases_passed": 10,
+    "new_cases_selected": 10,
+    "total_selected_passed": 14,
+    "total_selected": 14
+  },
+  "six_stage_progress": {
+    "completed": 4,
+    "denominator": 6,
+    "completed_stages": [
+      "GAP",
+      "TASK",
+      "TEST",
+      "EVIDENCE"
+    ],
+    "pending_stages": [
+      "C14",
+      "C13"
+    ]
+  },
+  "full_domain_completion": null,
+  "C14": "PENDING_INDEPENDENT",
+  "C13": "PENDING_AFTER_C14",
+  "limits": [
+    "One ride-service repair plus a local chain validator. Valid recovery and terminal protections inherited and rerun only because the changed path touches them.",
+    "This is evidence-integrity validation, not proof of a real fleet outcome or a cryptographic external signature. No production repair or compensation was added."
+  ],
+  "next_task_proposal": "V70-R2-C05-03: explicitly correlate fleet confirmation identity with the same current UNKNOWN episode and reject delayed confirmations from an earlier episode.",
+  "next_task_status": "PROPOSED_NOT_EXECUTED",
+  "evidence": [
+    "EXECUTION.json",
+    "SOURCE_IDENTITY.json",
+    "RUNS.json",
+    "phase-after.raw.log",
+    "phase-after.junit.xml"
+  ],
+  "red_evidence": [
+    {
+      "file": "before2.junit.xml",
+      "failures": 8
+    },
+    {
+      "file": "phase-before.junit.xml",
+      "failures": 2
+    }
+  ]
+}

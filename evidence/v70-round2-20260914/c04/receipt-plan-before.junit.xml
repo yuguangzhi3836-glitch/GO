@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="4.639" timestamp="2026-09-14T12:10:55.281399+09:00" hostname="localhost"><testcase classname="tests.test_v70_round2_c04_rental_receipts" name="test_same_order_earlier_equal_refund_cannot_complete_current_cancellation" time="3.268"><failure message="Failed: DID NOT RAISE ValueError">client = &lt;starlette.testclient.TestClient object at 0x7f368c0705c0&gt;
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3687114e30&gt;
+
+    def test_same_order_earlier_equal_refund_cannot_complete_current_cancellation(client, monkeypatch):
+        from tests.test_depth06_rental_settlement import paid, move, balances
+        from go_hotel.mobility.rental.service import rental_service as svc
+        owner, oid, _ = paid(client)
+        move(owner, oid, 2)
+        move(owner, oid, 1)
+        quote = svc.refund_quote(owner, oid)
+        assert quote['refund_amount_minor'] == 42000
+        previous = refunded_movements()[0]
+        assert previous.amount_minor == quote['refund_amount_minor']
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: {
+            'state': 'CONFIRMED', 'money_movement_ids': [previous.money_movement_id]})
+&gt;       with pytest.raises(ValueError, match='REFUND_RECEIPT_PLAN_MISMATCH'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_round2_c04_rental_receipts.py:67: Failed</failure></testcase></testsuite></testsuites>

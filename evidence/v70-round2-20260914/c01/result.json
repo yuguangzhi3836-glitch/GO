@@ -1,0 +1,23 @@
+{
+  "cell": "C01",
+  "task": "C01-R2-MIXED-FUNDING-ROLLBACK",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "task_state": "DONE_SCOPED_AWAITING_C14",
+  "scope": "Mixed prepaid credit and cash: 200000 redemption -> 140000 dated room -> 180000 dated room -> cancel; fault after credit release rolls back atomically; 60000 forfeiture never restored; original credit expiry retained.",
+  "test_progress": {
+    "passed": 2,
+    "selected": 2,
+    "percentage": 100
+  },
+  "full_cell_progress": "NOT_MEASURED_NO_FULL_DOMAIN_DENOMINATOR",
+  "C14": "PENDING_INDEPENDENT_REVIEW",
+  "C13": "PENDING_AFTER_C14",
+  "next_task": "Review unknown money outcomes during mixed cash/credit checkout, retaining zero change fee, 365-day original deadline and irreversible cheaper-price difference.",
+  "limitation": "No hotel business source change. This proves this two-case local simulator scope only.",
+  "evidence": [
+    "after.raw.log",
+    "after.junit.xml",
+    "source-identity.json",
+    "runs.json"
+  ]
+}

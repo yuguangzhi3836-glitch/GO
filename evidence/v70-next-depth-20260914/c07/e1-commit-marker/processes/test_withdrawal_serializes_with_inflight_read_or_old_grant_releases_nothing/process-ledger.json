@@ -1,0 +1,264 @@
+[
+  {
+    "index": 0,
+    "operation": "setup",
+    "started_at": "2026-09-14T04:11:13.238843+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "00-setup.stdout.log",
+    "stderr": "00-setup.stderr.log",
+    "pid": 12,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T04:11:15.357691+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 12,
+        "at": "2026-09-14T04:11:14.451756+00:00",
+        "monotonic_ns": 5025907194921,
+        "operation": "setup",
+        "source_sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1"
+      },
+      {
+        "kind": "result",
+        "pid": 12,
+        "at": "2026-09-14T04:11:14.873384+00:00",
+        "monotonic_ns": 5026328817389,
+        "result": {
+          "consent_id": "pcn_6f205bf758e149c1",
+          "status": "ACTIVE",
+          "traveler_id": "process-traveler",
+          "purpose": "HOTEL_PLANNING",
+          "scope": [
+            "TRAVEL_PREFERENCE:HOTEL_ROOM"
+          ],
+          "expires_at": "2026-09-15T04:11:14.460308+00:00"
+        }
+      }
+    ]
+  },
+  {
+    "index": 1,
+    "operation": "save",
+    "started_at": "2026-09-14T04:11:15.358235+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "01-save.stdout.log",
+    "stderr": "01-save.stderr.log",
+    "pid": 13,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T04:11:17.427584+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 13,
+        "at": "2026-09-14T04:11:16.547760+00:00",
+        "monotonic_ns": 5028003199692,
+        "operation": "save",
+        "source_sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1"
+      },
+      {
+        "kind": "result",
+        "pid": 13,
+        "at": "2026-09-14T04:11:16.956540+00:00",
+        "monotonic_ns": 5028411977720,
+        "result": {
+          "preference_id": "pff_6ee22ecd07f64e53",
+          "preference_key": "HOTEL_ROOM",
+          "value": {
+            "quiet": true
+          },
+          "purpose": "HOTEL_PLANNING",
+          "consent_id": "pcn_6f205bf758e149c1",
+          "status": "ACTIVE",
+          "source": "EXPLICIT_USER_CONFIRMATION"
+        }
+      }
+    ]
+  },
+  {
+    "index": 2,
+    "operation": "read",
+    "started_at": "2026-09-14T04:11:17.428220+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "02-read.stdout.log",
+    "stderr": "02-read.stderr.log",
+    "pid": 14,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T04:11:21.990540+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 14,
+        "at": "2026-09-14T04:11:18.615154+00:00",
+        "monotonic_ns": 5030070593220,
+        "operation": "read",
+        "source_sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1"
+      },
+      {
+        "kind": "paused",
+        "pid": 14,
+        "at": "2026-09-14T04:11:19.027997+00:00",
+        "monotonic_ns": 5030483438611,
+        "point": "after_consent"
+      },
+      {
+        "kind": "resumed",
+        "pid": 14,
+        "at": "2026-09-14T04:11:21.427453+00:00",
+        "monotonic_ns": 5032882899790,
+        "point": "after_consent"
+      },
+      {
+        "kind": "paused",
+        "pid": 14,
+        "at": "2026-09-14T04:11:21.440006+00:00",
+        "monotonic_ns": 5032895442414,
+        "point": "after_consent"
+      },
+      {
+        "kind": "resumed",
+        "pid": 14,
+        "at": "2026-09-14T04:11:21.440047+00:00",
+        "monotonic_ns": 5032895478888,
+        "point": "after_consent"
+      },
+      {
+        "kind": "paused",
+        "pid": 14,
+        "at": "2026-09-14T04:11:21.440563+00:00",
+        "monotonic_ns": 5032895997846,
+        "point": "after_consent"
+      },
+      {
+        "kind": "resumed",
+        "pid": 14,
+        "at": "2026-09-14T04:11:21.440642+00:00",
+        "monotonic_ns": 5032896074651,
+        "point": "after_consent"
+      },
+      {
+        "kind": "result",
+        "pid": 14,
+        "at": "2026-09-14T04:11:21.441510+00:00",
+        "monotonic_ns": 5032896944966,
+        "result": {
+          "traveler_id": "process-traveler",
+          "purpose": "HOTEL_PLANNING",
+          "preferences": [
+            {
+              "preference_id": "pff_6ee22ecd07f64e53",
+              "preference_key": "HOTEL_ROOM",
+              "value": {
+                "quiet": true
+              },
+              "purpose": "HOTEL_PLANNING",
+              "consent_id": "pcn_6f205bf758e149c1",
+              "status": "ACTIVE",
+              "source": "EXPLICIT_USER_CONFIRMATION"
+            }
+          ],
+          "projection": "EXPLICIT_PURPOSE_BOUND_V1",
+          "graph_preferences": [
+            {
+              "preference_id": "pff_6ee22ecd07f64e53",
+              "preference_key": "HOTEL_ROOM",
+              "value": {
+                "quiet": true
+              },
+              "purpose": "HOTEL_PLANNING",
+              "consent_id": "pcn_6f205bf758e149c1",
+              "status": "ACTIVE",
+              "source": "EXPLICIT_USER_CONFIRMATION"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "index": 3,
+    "operation": "revoke_consent",
+    "started_at": "2026-09-14T04:11:19.037968+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "03-revoke_consent.stdout.log",
+    "stderr": "03-revoke_consent.stderr.log",
+    "pid": 15,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T04:11:22.355472+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 15,
+        "at": "2026-09-14T04:11:20.420240+00:00",
+        "monotonic_ns": 5031875678404,
+        "operation": "revoke_consent",
+        "source_sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1"
+      },
+      {
+        "kind": "commit_ack_published",
+        "pid": 15,
+        "at": "2026-09-14T04:11:21.908933+00:00",
+        "monotonic_ns": 5033364370275,
+        "marker": "withdrawal-commit-ack.json"
+      },
+      {
+        "kind": "result",
+        "pid": 15,
+        "at": "2026-09-14T04:11:21.908969+00:00",
+        "monotonic_ns": 5033364401602,
+        "result": {
+          "consent_id": "pcn_6f205bf758e149c1",
+          "status": "REVOKED"
+        }
+      }
+    ]
+  },
+  {
+    "index": 4,
+    "operation": "read",
+    "started_at": "2026-09-14T04:11:22.356375+00:00",
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "/workspace/scratch/948b51def3a9/GO/application/tests/c07_preference_process_actor.py"
+    ],
+    "stdout": "04-read.stdout.log",
+    "stderr": "04-read.stderr.log",
+    "pid": 16,
+    "exit_code": 0,
+    "finished_at": "2026-09-14T04:11:24.375631+00:00",
+    "events": [
+      {
+        "kind": "started",
+        "pid": 16,
+        "at": "2026-09-14T04:11:23.513214+00:00",
+        "monotonic_ns": 5034968652392,
+        "operation": "read",
+        "source_sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1"
+      },
+      {
+        "kind": "result",
+        "pid": 16,
+        "at": "2026-09-14T04:11:23.923559+00:00",
+        "monotonic_ns": 5035378998635,
+        "result": {
+          "traveler_id": "process-traveler",
+          "purpose": "HOTEL_PLANNING",
+          "preferences": [],
+          "projection": "EXPLICIT_PURPOSE_BOUND_V1",
+          "graph_preferences": []
+        }
+      }
+    ]
+  }
+]

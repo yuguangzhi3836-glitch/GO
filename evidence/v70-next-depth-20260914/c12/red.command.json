@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/workspace/scratch/948b51def3a9/venv/bin/python",
+    "-m",
+    "pytest",
+    "ci/round2/test_validate_ledger.py",
+    "-k",
+    "receipt",
+    "-p",
+    "no:cacheprovider",
+    "-q",
+    "--junitxml",
+    "/workspace/scratch/948b51def3a9/GO/evidence/v70-next-depth-20260914/c12/red.junit.xml"
+  ],
+  "started_at": "2026-09-14T03:56:39.695864+00:00",
+  "finished_at": "2026-09-14T03:56:39.963346+00:00",
+  "exit_code": 1,
+  "scope": "New receipt semantics only; prior 16 tests inherited from fixed PR73 CI."
+}

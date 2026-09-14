@@ -20,7 +20,7 @@ def test_fresh_database_can_apply_entire_chain_without_stamp(tmp_path, monkeypat
     db, cfg = config(tmp_path, monkeypatch)
     command.upgrade(cfg, 'head')
     with sqlite3.connect(db) as s:
-        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0133_flight_change_plan'
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0134_flight_status_width'
         columns = {r[1] for r in s.execute('PRAGMA table_info(connector_runtime_reconciliation)')}
         assert {'claimed_by', 'lease_expires_at', 'resolution_payload_json', 'superseded_reason'} <= columns
         assert s.execute("SELECT name FROM sqlite_master WHERE name='vertical_payment_deadline'").fetchone()
@@ -106,3 +106,43 @@ def test_rail_width_upgrade_preserves_history_and_refuses_lossy_downgrade(tmp_pa
         assert s.execute("SELECT name FROM sqlite_master WHERE type='index' AND name='rail_ref_index'").fetchone()
         columns = {r[1]: r[2] for r in s.execute('PRAGMA table_info(rail_order_runtime)')}
         assert columns['status']=='VARCHAR(32)' and columns['booking_reference']=='VARCHAR(24)'
+
+
+def test_flight_width_absent_sqlite_table_is_not_fabricated(tmp_path, monkeypatch):
+    db, cfg = config(tmp_path, monkeypatch)
+    command.stamp(cfg, '0133_flight_change_plan')
+    command.upgrade(cfg, '0134_flight_status_width')
+    with sqlite3.connect(db) as s:
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0134_flight_status_width'
+        assert not s.execute("SELECT name FROM sqlite_master WHERE name='flight_order_runtime'").fetchone()
+    command.downgrade(cfg, '0133_flight_change_plan')
+    with sqlite3.connect(db) as s:
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0133_flight_change_plan'
+        assert not s.execute("SELECT name FROM sqlite_master WHERE name='flight_order_runtime'").fetchone()
+
+
+def test_flight_width_preserves_sqlite_history_and_blocks_lossy_downgrade(tmp_path, monkeypatch):
+    db, cfg = config(tmp_path, monkeypatch)
+    with sqlite3.connect(db) as s:
+        s.execute('CREATE TABLE flight_order_runtime (order_id VARCHAR(64) PRIMARY KEY, status VARCHAR(32) NOT NULL)')
+        s.execute('CREATE INDEX flight_status_history_index ON flight_order_runtime(status)')
+        s.execute("INSERT INTO flight_order_runtime VALUES ('old','PAYMENT_PENDING')")
+    command.stamp(cfg, '0133_flight_change_plan')
+    command.upgrade(cfg, '0134_flight_status_width')
+    state = 'PAYMENT_CONFIRMED_AWAITING_SUPPLIER'
+    with sqlite3.connect(db) as s:
+        assert s.execute('SELECT * FROM flight_order_runtime').fetchone() == ('old', 'PAYMENT_PENDING')
+        assert {r[1]: r[2] for r in s.execute('PRAGMA table_info(flight_order_runtime)')}['status'] == 'VARCHAR(64)'
+        assert s.execute("SELECT name FROM sqlite_master WHERE name='flight_status_history_index'").fetchone()
+        s.execute('UPDATE flight_order_runtime SET status=?', (state,))
+    with pytest.raises(RuntimeError, match='FLIGHT_STATUS_DOWNGRADE_WOULD_TRUNCATE_HISTORY'):
+        command.downgrade(cfg, '0133_flight_change_plan')
+    with sqlite3.connect(db) as s:
+        assert s.execute('SELECT status FROM flight_order_runtime').fetchone() == (state,)
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0134_flight_status_width'
+        s.execute("UPDATE flight_order_runtime SET status='PAYMENT_PENDING'")
+    command.downgrade(cfg, '0133_flight_change_plan')
+    with sqlite3.connect(db) as s:
+        assert s.execute('SELECT * FROM flight_order_runtime').fetchone() == ('old', 'PAYMENT_PENDING')
+        assert {r[1]: r[2] for r in s.execute('PRAGMA table_info(flight_order_runtime)')}['status'] == 'VARCHAR(32)'
+        assert s.execute("SELECT name FROM sqlite_master WHERE name='flight_status_history_index'").fetchone()

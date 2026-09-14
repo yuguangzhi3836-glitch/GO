@@ -117,16 +117,32 @@ class GOAIService:
             ))
 
     def _complete_request(self, request_id: str, *, provider_id: str | None = None, model: str | None = None, result=None, failure_code: str | None = None) -> None:
-        with SessionLocal.begin() as s:
-            row = s.get(GoAIRequestRow, request_id)
-            if not row:
-                return
-            row.state = "FAILED" if failure_code else "COMPLETED"
-            row.selected_provider = provider_id
-            row.selected_model = model
-            row.response_hash = _hash_json({"text": result.text, "provider": result.provider_id, "model": result.model}) if result else None
-            row.failure_code = failure_code
-            row.updated_at = now_utc()
+        try:
+            with SessionLocal.begin() as s:
+                row = s.get(GoAIRequestRow, request_id)
+                if not row:
+                    return
+                row.state = "FAILED" if failure_code else "COMPLETED"
+                row.selected_provider = provider_id
+                row.selected_model = model
+                row.response_hash = _hash_json({"text": result.text, "provider": result.provider_id, "model": result.model}) if result else None
+                row.failure_code = failure_code
+                row.updated_at = now_utc()
+        except Exception:
+            if not failure_code:
+                # A transient success-audit failure must not leave a request
+                # ROUTING forever. Use one fresh transaction, never re-run
+                # compute, and preserve an already committed terminal record.
+                try:
+                    with SessionLocal.begin() as s:
+                        row = s.get(GoAIRequestRow, request_id)
+                        if row and row.state == "ROUTING":
+                            row.state = "FAILED"
+                            row.failure_code = "GO_AI_AUDIT_FINALIZATION_FAILED"
+                            row.updated_at = now_utc()
+                except Exception:
+                    log.warning("GO_AI_AUDIT_FINALIZATION_FAILED request_id=%s", request_id)
+            raise
 
 
     @staticmethod
@@ -257,14 +273,22 @@ class GOAIService:
             "Reconcile conflicts, preserve uncertainty, do not invent supplier/payment facts, and do not expose provider/model identities.\n\n"
             f"Original request:\n{request.message}\n\nSubtask outputs:\n{synthesis_input}"
         )
-        synthesis_text, synthesis_provider, synthesis_model = self._execute_compute_task(
-            parent_request=request,
-            task_id="task_synthesis",
-            task_type="SYNTHESIS",
-            instruction=synthesis_instruction,
-            attempt_base=9000,
-            max_cost_tier=None if assessment.tier in {"TIER_3_DEEP_REASONING", "TIER_4_MULTI_AGENT", "TIER_5_HIGH_ASSURANCE"} else max_cost_tier,
-        )
+        try:
+            synthesis_text, synthesis_provider, synthesis_model = self._execute_compute_task(
+                parent_request=request,
+                task_id="task_synthesis",
+                task_type="SYNTHESIS",
+                instruction=synthesis_instruction,
+                attempt_base=9000,
+                max_cost_tier=None if assessment.tier in {"TIER_3_DEEP_REASONING", "TIER_4_MULTI_AGENT", "TIER_5_HIGH_ASSURANCE"} else max_cost_tier,
+            )
+        except Exception as exc:
+            # Synthesis is also an orchestration task: finalize its failure just
+            # like a subtask failure instead of leaving the request ROUTING.
+            self._complete_request(request.request_id, failure_code="GO_AI_ORCHESTRATION_TASK_FAILED")
+            if isinstance(exc, ValueError):
+                raise
+            raise ValueError("GO_AI_ORCHESTRATION_TASK_FAILED") from exc
 
         model_check_completed = False
         if assessment.requires_model_verification:
@@ -475,6 +499,38 @@ class GOAIService:
                 } for x in invocations],
                 "prompt_or_answer_body_persisted": False,
             }
+
+    def assess_recovery(self, request_id: str) -> dict[str, Any]:
+        """Inspect a durable audit after interruption; never replay model calls.
+
+        ROUTING alone cannot distinguish a crashed worker from a slow live one.
+        Successful invocation hashes also cannot reconstruct the final answer,
+        prove every planned task finished, or establish provider exactly-once
+        execution. Without those facts, even an old ROUTING row remains HOLD.
+        This local service helper introduces no scheduler or automatic write.
+        """
+        audit = self.request_audit(request_id)
+        terminal = audit["state"] in {"COMPLETED", "FAILED"}
+        missing = [] if terminal else [
+            "EXECUTION_OWNERSHIP_AND_TERMINATION_NOT_PROVEN",
+            "COMPLETE_TASK_PLAN_AND_CHECKPOINT_NOT_PERSISTED",
+            "COMPLETE_REPLAYABLE_RESULT_NOT_PERSISTED",
+            "PROVIDER_EXECUTION_OUTCOME_MAY_BE_UNCOMMITTED",
+        ]
+        return {
+            "request_id": audit["request_id"],
+            "state": audit["state"],
+            "gate": "NO_RECOVERY_REQUIRED" if terminal else "HOLD",
+            "recovery_action": "PRESERVE_TERMINAL_AUDIT" if terminal else "REQUIRE_VERIFIED_RECOVERY_FACTS",
+            "model_replay_allowed": False,
+            "safe_to_finalize": False,
+            "database_mutation_performed": False,
+            "persisted_invocation_count": len(audit["invocations"]),
+            "persisted_success_count": sum(item["state"] == "SUCCEEDED" for item in audit["invocations"]),
+            "missing_recovery_facts": missing,
+            "age_alone_authorizes_recovery": False,
+            "response_body_available": False,
+        }
 
     def provider_status(self) -> dict[str, Any]:
         return {

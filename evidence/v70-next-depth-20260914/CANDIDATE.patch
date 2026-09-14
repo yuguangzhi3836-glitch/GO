@@ -1,0 +1,720 @@
+--- a/application/src/go_hotel/api/idempotency.py
++++ b/application/src/go_hotel/api/idempotency.py
+@@ -1,8 +1,70 @@
+ from fastapi import HTTPException
+ from go_hotel.core.config import settings
+ from go_hotel.repositories.sql import repo
++import logging
++from uuid import uuid4
++from go_hotel.services.mutation_boundary import MutationBoundary
+ 
+ _PROD = {"prod", "production"}
++_RECOVERABLE = {'FLIGHT_CHECKOUT', 'FLIGHT_EXECUTE_CHANGE'}
++log = logging.getLogger(__name__)
++
++
++def run_recoverable_idempotent(operation, key, payload, resource_id, fn, recover):
++    """Opt-in flight contract; existing generic callback semantics are intact."""
++    if operation not in _RECOVERABLE:
++        raise ValueError('IDEMPOTENCY_RECOVERY_OPERATION_UNSUPPORTED')
++    _require_key(key)
++    if not key:
++        return fn(None)
++    token = uuid4().hex
++    try:
++        state, rec = repo.claim_idempotency(operation, key, payload)
++        if state == 'REPLAY':
++            if rec['response_code'] != 200:
++                raise ValueError('IDEMPOTENCY_RECONCILIATION_REQUIRED')
++            if rec['resource_id'] != resource_id:
++                # Pre-upgrade flight routes completed without resource_id.
++                # claim_idempotency already checked the complete payload hash
++                # (including actor/order/quote); additionally prove the stored
++                # response belongs to the same order before replaying it.
++                expected = payload.get('order_id') if operation == 'FLIGHT_CHECKOUT' else payload.get('quote_id')
++                data = rec.get('response', {}).get('data', {})
++                if not (rec['resource_id'] is None and resource_id == expected
++                        and isinstance(data, dict) and data.get('order_id') == payload.get('order_id')):
++                    raise ValueError('IDEMPOTENCY_RESOURCE_CONFLICT')
++            return rec['response']
++        mode, response = repo.bind_idempotency_resource(
++            operation, key, payload, resource_id, token, new_claim=state == 'CLAIMED')
++    except ValueError as exc:
++        if str(exc).startswith('IDEMPOTENCY_'):
++            raise HTTPException(409, detail={'code': str(exc), 'message': 'Request identity or execution conflicts'}) from exc
++        raise
++    if mode == 'REPLAY':
++        return response
++    if mode == 'IN_PROGRESS':
++        raise HTTPException(409, detail={'code': 'IDEMPOTENCY_IN_PROGRESS', 'message': 'Execution is active or requires recovery review'})
++    boundary = MutationBoundary(recovering=mode == 'RECOVER')
++    try:
++        response = (recover if boundary.recovering else fn)(boundary)
++    except BaseException:
++        try:
++            repo.finish_recoverable_idempotency(operation, key, payload, resource_id, token,
++                'RELEASE' if boundary.proven_no_effect else 'RECOVERY_REQUIRED')
++        except Exception:
++            # Database/classifier failure never becomes permission to repeat.
++            # Do not log request payloads, payment identifiers or raw secrets.
++            log.warning('IDEMPOTENCY_FAILURE_RECORDING_UNAVAILABLE operation=%s', operation)
++        raise
++    try:
++        repo.finish_recoverable_idempotency(operation, key, payload, resource_id, token, 'COMPLETE', response)
++    except BaseException:
++        try:
++            repo.finish_recoverable_idempotency(operation, key, payload, resource_id, token, 'RECOVERY_REQUIRED')
++        except Exception:
++            log.warning('IDEMPOTENCY_COMPLETION_RECOVERY_UNAVAILABLE operation=%s', operation)
++        raise
++    return response
+ 
+ def _require_key(key: str | None) -> None:
+     if settings.app_env.strip().lower() in _PROD and not key:
+--- a/application/src/go_hotel/api/routes/flight.py
++++ b/application/src/go_hotel/api/routes/flight.py
+@@ -4,7 +4,7 @@
+ from go_hotel.security.service import Principal
+ from go_hotel.flight.service import flight_service
+ from go_hotel.flight.journeys import JourneySearch, JourneyCompose, search_journey, compose_journey
+-from go_hotel.api.idempotency import run_idempotent
++from go_hotel.api.idempotency import run_idempotent, run_recoverable_idempotent
+ from go_hotel.api.refund_confirmation import RefundConfirmation
+ from go_hotel.services.booking_data_release import release_booking_data
+ from go_hotel.db.session import SessionLocal
+@@ -71,7 +71,9 @@
+ @router.post('/v1/flights/orders/{order_id}/checkout')
+ def checkout(order_id:str,body:CheckoutBody,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+     payload={'user_id':p.user_id,'order_id':order_id,**body.model_dump()}
+-    return run_idempotent('FLIGHT_CHECKOUT',idempotency_key,payload,lambda:wrap(flight_service.checkout,p.user_id,order_id,body.payment_method_id))
++    return run_recoverable_idempotent('FLIGHT_CHECKOUT',idempotency_key,payload,order_id,
++        lambda boundary:wrap(flight_service.checkout,p.user_id,order_id,body.payment_method_id,boundary),
++        lambda boundary:wrap(flight_service.recover_checkout,p.user_id,order_id,body.payment_method_id,boundary))
+ @router.get('/v1/flights/orders/{order_id}')
+ def order(order_id:str,p:Principal=Depends(consumer_principal)): return wrap(flight_service.order,p.user_id,order_id)
+ @router.get('/v1/flights/trips')
+@@ -82,7 +84,9 @@
+ def execute_change(order_id:str,quote_id:str,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key'),body:ChangeConfirmation|None=Body(default=None)):
+     confirmation=body.model_dump() if body else None
+     payload={'user_id':p.user_id,'order_id':order_id,'quote_id':quote_id,'confirmation':confirmation}
+-    return run_idempotent('FLIGHT_EXECUTE_CHANGE',idempotency_key,payload,lambda:wrap(flight_service.execute_change,p.user_id,order_id,quote_id,confirmation))
++    return run_recoverable_idempotent('FLIGHT_EXECUTE_CHANGE',idempotency_key,payload,quote_id,
++        lambda boundary:wrap(flight_service.execute_change,p.user_id,order_id,quote_id,confirmation,boundary),
++        lambda boundary:wrap(flight_service.recover_execute_change,p.user_id,order_id,quote_id,confirmation,boundary))
+ @router.get('/v1/flights/orders/{order_id}/refund-quote')
+ def refund_quote(order_id:str,p:Principal=Depends(consumer_principal)): return wrap(flight_service.refund_quote,p.user_id,order_id)
+ @router.post('/v1/flights/orders/{order_id}/refund')
+--- a/application/src/go_hotel/attractions/service.py
++++ b/application/src/go_hotel/attractions/service.py
+@@ -1,6 +1,7 @@
+ from go_hotel.services import vertical_reservation_expiry as reservation_expiry
+ from datetime import UTC, datetime, timedelta, date
+ from sqlalchemy import select
++from sqlalchemy.orm import object_session
+ from go_hotel.db.session import SessionLocal
+ from go_hotel.db.models import AttractionOrderRow,AttractionChangeQuoteRow,AttractionRefundRow
+ from go_hotel.domain.models import new_id
+@@ -9,7 +10,8 @@
+ from go_hotel.services.vertical_money_bridge import vertical_money_bridge
+ from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service
+ from go_hotel.core.production_truth_gate import production_truth_required
+-from go_hotel.autonomy.durable import transaction,digest
++from go_hotel.autonomy.durable import transaction,digest,db_now_ms
++from go_hotel.attractions import validity
+ from go_hotel.services import vertical_prebook_contract as contracts
+ from go_hotel.services import vertical_refund_recovery
+ from go_hotel.services import vertical_capacity as capacity
+@@ -72,7 +74,8 @@
+    'visit_date':visit_date,'session_time':session,'available_sessions':x['sessions'],'ticket_type':x['ticket_type'],
+    'quantity':quantity,'unit_amount_minor':x['price'],'total_amount_minor':x['price']*quantity,'currency':currency,
+    'eligibility':x['eligibility'],'voucher_type':x['voucher_type'],'changeable':x['changeable'],'refundable':x['refundable'],
+-   'inventory_observed_units':x['inventory'],'inventory_reserved':False}
++   'inventory_observed_units':x['inventory'],'inventory_reserved':False,
++   'redemption_window':validity.freeze(x.get('supplier_validity_policy'),visit_date,session)}
+   with transaction(SessionLocal) as s:
+    left=capacity.available_in(s,'ATTRACTION',capacity.attraction_resource(offer_id,visit_date,session),x['inventory'])
+    if left<quantity:raise ValueError('ATTRACTION_INVENTORY_CHANGED')
+@@ -82,6 +85,7 @@
+  def create_order(self,account,b):
+   production_truth_required('ATTRACTION','CREATE_ORDER')
+   if not b.get('prebook_id'):raise ValueError('ATTRACTION_PREBOOK_REQUIRED')
++  if {'supplier_validity_policy','redemption_window','destination_timezone'}.intersection(b):raise ValueError('ATTRACTION_VALIDITY_CLIENT_FIELD_FORBIDDEN')
+   with transaction(SessionLocal) as s:
+    request={k:b.get(k) for k in ('offer_id','visit_date','session_time','quantity','currency','attendees','traveler_ids')}
+    contract,replay=contracts.current_in(s,'ATTRACTION',b['prebook_id'],account,request)
+@@ -108,7 +112,12 @@
+    result=self.out(o)
+   vertical_source_runtime_service.decide('ATTRACTION',result['order_id'],[{'source_id':'attraction-engineering-source','source_type':'ATTRACTION_OFFICIAL','authorized':True,'available':True,'evidence_reference':f"attraction-prebook://{b['prebook_id']}"}])
+   return result
+- def out(self,o): return {"vertical":"ATTRACTION","order_id":o.order_id,"status":o.status,"product_id":o.product_id,"product_name":o.product_name,"product_type":o.product_type,"destination":o.destination,"visit_date":o.visit_date,"session_time":o.session_time,"ticket_type":o.ticket_type,"quantity":o.quantity,"eligibility":o.eligibility,"voucher_type":o.voucher_type,"voucher_code":o.voucher_code if o.status=="CONFIRMED" else None,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"attendees":o.attendees,"supplier_reference":o.supplier_reference if o.status=="CONFIRMED" else None,"external_live":False} | reservation_expiry.projection('ATTRACTION',o)
++ def _window_in(self,s,o):
++  if s is None:return {'state':'LEGACY_UNVERIFIED'}
++  row=s.scalar(select(VerticalPrebookContractRow).where(VerticalPrebookContractRow.vertical=='ATTRACTION',VerticalPrebookContractRow.order_id==o.order_id))
++  if not row:return {'state':'LEGACY_UNVERIFIED'}
++  return validity.for_order(self._order_terms(s,o.order_id),o.visit_date,o.session_time)
++ def out(self,o): return {"vertical":"ATTRACTION","order_id":o.order_id,"status":o.status,"product_id":o.product_id,"product_name":o.product_name,"product_type":o.product_type,"destination":o.destination,"visit_date":o.visit_date,"session_time":o.session_time,"ticket_type":o.ticket_type,"quantity":o.quantity,"eligibility":o.eligibility,"voucher_type":o.voucher_type,"voucher_code":o.voucher_code if o.status=="CONFIRMED" else None,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"attendees":o.attendees,"supplier_reference":o.supplier_reference if o.status=="CONFIRMED" else None,"external_live":False,"redemption_window":self._window_in(object_session(o),o)} | reservation_expiry.projection('ATTRACTION',o)
+  def get(self,account,order_id):
+   with SessionLocal() as s:
+    o=s.get(AttractionOrderRow,order_id,with_for_update=True)
+@@ -155,8 +164,9 @@
+    o=s.get(AttractionOrderRow,order_id,with_for_update=True)
+    if not o or o.account_id!=account: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
+    if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
++   window=validity.for_order(self._order_terms(s,order_id),o.visit_date,o.session_time);validity.guard(window,db_now_ms(s))
+    voucher_code=o.voucher_code; supplier_reference=o.supplier_reference
+-   o.status="FULFILLED";o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,"VOUCHER_REDEEMED",o.status,{"evidence_reference":evidence_reference,"voucher_code":voucher_code,"supplier_reference":supplier_reference,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"voucher_code":voucher_code,"supplier_reference":supplier_reference});return self.out(o)
++   o.status="FULFILLED";o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,"VOUCHER_REDEEMED",o.status,{"evidence_reference":evidence_reference,"voucher_code":voucher_code,"supplier_reference":supplier_reference,"redemption_window":window,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"voucher_code":voucher_code,"supplier_reference":supplier_reference});return self.out(o)
+  def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,voucher_code=None):
+   if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
+   state=state.upper()
+--- a/application/src/go_hotel/flight/service.py
++++ b/application/src/go_hotel/flight/service.py
+@@ -60,7 +60,15 @@
+                 raise ValueError('FLIGHT_PASSENGER_INVALID:ADULT_NAME_REQUIRED')
+             o=FlightOrderRow(order_id=new_id("flt_ord"),account_id=account_id,prebook_id=prebook_id,status="PAYMENT_PENDING",total_amount_minor=p.total_amount_minor,currency=p.currency,passengers=passengers,payment_method_id=None,pnr=None,ticket_numbers=[],current_itinerary=off.segments,created_at=now(),updated_at=now())
+             s.add(o); s.flush(); append_vertical_evidence(s,"FLIGHT",o.order_id,"ORDER_CREATED",o.status,{"prebook_id":prebook_id}); return self._order(o)
+-    def checkout(self,account_id,order_id,payment_method_id):
++    def recover_checkout(self,account_id,order_id,payment_method_id,boundary):
++        if not boundary or not boundary.recovering:
++            raise ValueError('FLIGHT_RECOVERY_CONTEXT_REQUIRED')
++        from .payment_recovery import checkout
++        return checkout(self,account_id,order_id,payment_method_id,boundary)
++    def checkout(self,account_id,order_id,payment_method_id,boundary=None):
++        if boundary is not None:
++            from .payment_recovery import checkout
++            return checkout(self,account_id,order_id,payment_method_id,boundary)
+         production_truth_required("FLIGHT", "CHECKOUT")
+         with SessionLocal.begin() as s:
+             o=s.get(FlightOrderRow,order_id)
+@@ -103,7 +111,15 @@
+     def change_quote(self,account_id,order_id,new_departure_date=None,leg_index=None,changes=None):
+         from go_hotel.flight.changes import create_quote
+         return create_quote(account_id,order_id,new_departure_date,leg_index,changes)
+-    def execute_change(self,account_id,order_id,quote_id,confirmation=None):
++    def recover_execute_change(self,account_id,order_id,quote_id,confirmation,boundary):
++        if not boundary or not boundary.recovering:
++            raise ValueError('FLIGHT_RECOVERY_CONTEXT_REQUIRED')
++        from .payment_recovery import execute_change
++        return execute_change(self,account_id,order_id,quote_id,confirmation,boundary)
++    def execute_change(self,account_id,order_id,quote_id,confirmation=None,boundary=None):
++        if boundary is not None:
++            from .payment_recovery import execute_change
++            return execute_change(self,account_id,order_id,quote_id,confirmation,boundary)
+         production_truth_required('FLIGHT','EXECUTE_CHANGE')
+         with SessionLocal() as s:
+             if s.bind.dialect.name=='sqlite':s.execute(text('BEGIN IMMEDIATE'))
+--- a/application/src/go_hotel/go_ai/service.py
++++ b/application/src/go_hotel/go_ai/service.py
+@@ -500,6 +500,38 @@
+                 "prompt_or_answer_body_persisted": False,
+             }
+ 
++    def assess_recovery(self, request_id: str) -> dict[str, Any]:
++        """Inspect a durable audit after interruption; never replay model calls.
++
++        ROUTING alone cannot distinguish a crashed worker from a slow live one.
++        Successful invocation hashes also cannot reconstruct the final answer,
++        prove every planned task finished, or establish provider exactly-once
++        execution. Without those facts, even an old ROUTING row remains HOLD.
++        This local service helper introduces no scheduler or automatic write.
++        """
++        audit = self.request_audit(request_id)
++        terminal = audit["state"] in {"COMPLETED", "FAILED"}
++        missing = [] if terminal else [
++            "EXECUTION_OWNERSHIP_AND_TERMINATION_NOT_PROVEN",
++            "COMPLETE_TASK_PLAN_AND_CHECKPOINT_NOT_PERSISTED",
++            "COMPLETE_REPLAYABLE_RESULT_NOT_PERSISTED",
++            "PROVIDER_EXECUTION_OUTCOME_MAY_BE_UNCOMMITTED",
++        ]
++        return {
++            "request_id": audit["request_id"],
++            "state": audit["state"],
++            "gate": "NO_RECOVERY_REQUIRED" if terminal else "HOLD",
++            "recovery_action": "PRESERVE_TERMINAL_AUDIT" if terminal else "REQUIRE_VERIFIED_RECOVERY_FACTS",
++            "model_replay_allowed": False,
++            "safe_to_finalize": False,
++            "database_mutation_performed": False,
++            "persisted_invocation_count": len(audit["invocations"]),
++            "persisted_success_count": sum(item["state"] == "SUCCEEDED" for item in audit["invocations"]),
++            "missing_recovery_facts": missing,
++            "age_alone_authorizes_recovery": False,
++            "response_body_available": False,
++        }
++
+     def provider_status(self) -> dict[str, Any]:
+         return {
+             "product_name": "GO AI",
+--- a/application/src/go_hotel/journey/service.py
++++ b/application/src/go_hotel/journey/service.py
+@@ -1,6 +1,6 @@
+ from datetime import datetime, timezone
+ from uuid import uuid4
+-from sqlalchemy import select
++from sqlalchemy import select, tuple_
+ from go_hotel.db.session import SessionLocal
+ from go_hotel.db.models import (
+     GoJourneyRow,GoJourneyItemRow,OrderRow,FlightOrderRow,RailOrderRow,
+@@ -62,23 +62,49 @@
+    shared=s.execute(select(GoJourneyRow).where(GoJourneyRow.journey_id.in_(member_ids))).scalars().all() if member_ids else []
+    rows={x.journey_id:x for x in [*owned,*shared]}.values()
+    rows=sorted(rows,key=lambda x:(x.starts_at or '',x.created_at))
+-   # List and detail must project the same current vertical order state.
+-   # Refresh is read-only; retain attachment snapshots as historical evidence.
+-   return [self._serialize(s,x,refresh=True) for x in rows]
++   # Fetch each item once and current states in bounded owner/order batches.
++   # Projection remains read-only and retains historical attachment facts.
++   items_by_journey={x.journey_id:[] for x in rows}
++   journey_ids=list(items_by_journey)
++   for offset in range(0,len(journey_ids),400):
++    items=s.execute(select(GoJourneyItemRow).where(GoJourneyItemRow.journey_id.in_(journey_ids[offset:offset+400])).order_by(GoJourneyItemRow.sort_key,GoJourneyItemRow.created_at)).scalars().all()
++    for item in items: items_by_journey[item.journey_id].append(item)
++   statuses=self._batch_order_statuses(s,rows,items_by_journey)
++   return [self._serialize(s,x,refresh=True,items=items_by_journey[x.journey_id],statuses=statuses) for x in rows]
++ def _batch_order_statuses(self,s,journeys,items_by_journey):
++  keys_by_vertical={}
++  for journey in journeys:
++   for item in items_by_journey[journey.journey_id]:
++    vertical=item.vertical.upper()
++    if vertical in VERTICALS:
++     keys_by_vertical.setdefault(vertical,set()).add((journey.account_id,item.order_id))
++  statuses={}
++  for vertical,keys in keys_by_vertical.items():
++   model=VERTICALS[vertical][0];keys=sorted(keys)
++   # Composite owner/order keys prevent a shared-trip member or corrupted
++   # attachment from projecting another account's private order state.
++   for offset in range(0,len(keys),400):
++    values=s.execute(select(model.account_id,model.order_id,model.status).where(tuple_(model.account_id,model.order_id).in_(keys[offset:offset+400]))).all()
++    for owner,order_id,status in values: statuses[(vertical,owner,order_id)]=status
++  return statuses
+  def get(self,account_id,journey_id):
+   with SessionLocal() as s:
+    j=s.get(GoJourneyRow,journey_id)
+    member=s.scalar(select(ConsumerTripMemberRow).where(ConsumerTripMemberRow.journey_id==journey_id,ConsumerTripMemberRow.user_id==account_id,ConsumerTripMemberRow.status=='ACTIVE')) if j else None
+    if not j or (j.account_id!=account_id and not member): raise ValueError("JOURNEY_NOT_FOUND")
+    return self._serialize(s,j,refresh=True)
+- def _serialize(self,s,j,refresh=False):
+-  items=s.execute(select(GoJourneyItemRow).where(GoJourneyItemRow.journey_id==j.journey_id).order_by(GoJourneyItemRow.sort_key,GoJourneyItemRow.created_at)).scalars().all()
++ def _serialize(self,s,j,refresh=False,items=None,statuses=None):
++  if items is None:
++   items=s.execute(select(GoJourneyItemRow).where(GoJourneyItemRow.journey_id==j.journey_id).order_by(GoJourneyItemRow.sort_key,GoJourneyItemRow.created_at)).scalars().all()
+   out=[]
+   for x in items:
+    status=x.status_snapshot
+    if refresh:
+-    try: status=self._order(s,j.account_id,x.vertical,x.order_id).status
+-    except ValueError: pass
++    if statuses is not None:
++     status=statuses.get((x.vertical.upper(),j.account_id,x.order_id),status)
++    else:
++     try: status=self._order(s,j.account_id,x.vertical,x.order_id).status
++     except ValueError: pass
+    out.append({"item_id":x.item_id,"vertical":x.vertical,"order_id":x.order_id,"title":x.title,"subtitle":x.subtitle,"location":x.location,"starts_at":x.starts_at,"ends_at":x.ends_at,"status":status,"facts":x.facts_json,"detail_route":x.detail_route})
+   return {"journey_id":j.journey_id,"title":j.title,"destination_summary":j.destination_summary,"starts_at":j.starts_at,"ends_at":j.ends_at,"status":j.status,"item_count":len(out),"verticals":sorted(set(x["vertical"] for x in out)),"timeline":out}
+ 
+--- a/application/src/go_hotel/judgment/good_hotel_standard.py
++++ b/application/src/go_hotel/judgment/good_hotel_standard.py
+@@ -1,6 +1,7 @@
+ from datetime import datetime,timezone
+ import hashlib,json,uuid
+-from sqlalchemy import select,func
++from sqlalchemy import select,func,text
++from go_hotel.autonomy.durable import transaction
+ from go_hotel.db.session import SessionLocal
+ from go_hotel.db.models import GoodHotelStandardVersionRow,GoodHotelStandardGovernanceEventRow
+ def now():return datetime.now(timezone.utc)
+@@ -14,7 +15,13 @@
+   with SessionLocal() as s:
+    row=s.scalar(select(GoodHotelStandardVersionRow).where(GoodHotelStandardVersionRow.state=='ACTIVE').order_by(GoodHotelStandardVersionRow.version_no.desc()))
+    if row:return row
+-   row=GoodHotelStandardVersionRow(good_hotel_standard_version_id='ghsv_system_v1',version_no=1,standard_key='GO_GOOD_HOTEL_STANDARD',dimensions_json=DEFAULT['dimensions'],thresholds_json=DEFAULT['thresholds'],disqualifiers_json=DEFAULT['disqualifiers'],evidence_requirements_json=DEFAULT['evidence_requirements'],content_hash=digest(DEFAULT),state='ACTIVE',requested_by='SYSTEM_BOOTSTRAP',approved_by='SYSTEM_CONSTITUTION',effective_at=now(),created_at=now());s.add(row);self._event(s,row,'INITIAL_STANDARD_ACTIVATED','SYSTEM_CONSTITUTION',{'immutable_baseline':True});s.commit();return row
++  with transaction(SessionLocal) as s:
++   # The initial version row does not exist yet. Serialize bootstrap across
++   # processes, then re-read; ordinary active reads above remain read-only.
++   if s.bind.dialect.name=='postgresql':s.execute(text('SELECT pg_advisory_xact_lock(7480209001)'))
++   row=s.scalar(select(GoodHotelStandardVersionRow).where(GoodHotelStandardVersionRow.state=='ACTIVE').order_by(GoodHotelStandardVersionRow.version_no.desc()))
++   if row:return row
++   row=GoodHotelStandardVersionRow(good_hotel_standard_version_id='ghsv_system_v1',version_no=1,standard_key='GO_GOOD_HOTEL_STANDARD',dimensions_json=DEFAULT['dimensions'],thresholds_json=DEFAULT['thresholds'],disqualifiers_json=DEFAULT['disqualifiers'],evidence_requirements_json=DEFAULT['evidence_requirements'],content_hash=digest(DEFAULT),state='ACTIVE',requested_by='SYSTEM_BOOTSTRAP',approved_by='SYSTEM_CONSTITUTION',effective_at=now(),created_at=now());s.add(row);self._event(s,row,'INITIAL_STANDARD_ACTIVATED','SYSTEM_CONSTITUTION',{'immutable_baseline':True});s.flush();return row
+  def active(self):return self.bootstrap()
+  def create(self,b,actor):
+   forbidden={'price_threshold','commission','subscription','advertising','gmv','popularity'};raw={k:b[k] for k in ('dimensions','thresholds','disqualifiers','evidence_requirements')}
+--- a/application/src/go_hotel/judgment/service.py
++++ b/application/src/go_hotel/judgment/service.py
+@@ -2,8 +2,9 @@
+ import json
+ from hashlib import sha256
+ from datetime import timedelta
+-from sqlalchemy import select
++from sqlalchemy import select, text
+ from go_hotel.db.session import SessionLocal
++from go_hotel.autonomy.durable import transaction
+ from go_hotel.db.models import (
+     ReviewSessionRow,RiskEventRuntimeRow,RiskRemediationRow,JudgmentHookRow,
+     JudgmentEvidencePackageRow,JudgmentRuntimeRow,RecommendationDecisionRow,GoodHotelStandardAssessmentRow
+@@ -18,6 +19,8 @@
+ RULE_VERSION="GO_JUDGMENT_RULES_1.0"
+ RECOMMENDATION_RULE_VERSION="GO_RECOMMENDATION_CONSTITUTION_1.0"
+ COMMERCIAL_FIELDS={"subscription_amount","advertising_budget","commission","rebate","partnership_tier","investment_relationship","commercial_revenue","gmv","clicks","favorites","popularity","user_preference","traveler_fit","traveler_context","candidate_scores","personalization_score"}
++PERSISTED_EVIDENCE_FIELDS={"completed_review_count","structured_experience_avg_milli","dimension_summary",
++    "confirmed_serious_risk_count","monitoring_risk_count","verified_remediation_count"}
+ 
+ RECOMMENDATION_DIMENSIONS=(
+     "WORK_OF_HOSPITALITY",
+@@ -32,11 +35,14 @@
+ class JudgmentService:
+     def _evidence(self, hotel_id:str)->dict:
+         with SessionLocal() as s:
+-            reviews=s.scalars(select(ReviewSessionRow).where(ReviewSessionRow.hotel_id==hotel_id,ReviewSessionRow.status=="COMPLETED").order_by(ReviewSessionRow.completed_at)).all()
+-            risks=s.scalars(select(RiskEventRuntimeRow).where(RiskEventRuntimeRow.hotel_id==hotel_id).order_by(RiskEventRuntimeRow.created_at)).all()
+-            rems=[]
+-            for r in risks:
+-                rems.extend(s.scalars(select(RiskRemediationRow).where(RiskRemediationRow.risk_event_id==r.risk_event_id)).all())
++            return self._evidence_in(s, hotel_id)
++
++    def _evidence_in(self, s, hotel_id):
++        reviews=s.scalars(select(ReviewSessionRow).where(ReviewSessionRow.hotel_id==hotel_id,ReviewSessionRow.status=="COMPLETED").order_by(ReviewSessionRow.completed_at)).all()
++        risks=s.scalars(select(RiskEventRuntimeRow).where(RiskEventRuntimeRow.hotel_id==hotel_id).order_by(RiskEventRuntimeRow.created_at)).all()
++        rems=[]
++        for r in risks:
++            rems.extend(s.scalars(select(RiskRemediationRow).where(RiskRemediationRow.risk_event_id==r.risk_event_id)).all())
+         source_refs=[]; dims={}; experience=[]
+         for r in reviews:
+             source_refs.append({"type":"GO_TRUTH_REVIEW","id":r.review_id,"at":r.completed_at.isoformat() if r.completed_at else None})
+@@ -127,45 +133,118 @@
+         elif isinstance(value,list):
+             for i,v in enumerate(value): self._assert_no_forbidden_features(v,f"{path}[{i}]")
+ 
+-    def reevaluate(self,hotel_id:str,extra_features:dict|None=None)->dict:
++    def _lock_hotel_in(self, s, hotel_id):
++        # An ACTIVE row cannot lock the first evaluation because it may not exist.
++        # The database transaction lock also fences separate API/worker processes.
++        if s.bind.dialect.name == "postgresql":
++            key = int.from_bytes(sha256(("GO_JUDGMENT:" + hotel_id).encode()).digest()[:8], "big", signed=True)
++            s.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": key})
++
++    def _complete_hooks_in(self, hooks, judgment_id, package_id, source_refs):
++        sources = {(x["type"], x["id"]) for x in source_refs}
++        for hook in hooks:
++            if (hook.source_type, hook.source_id) in sources:
++                hook.status = "COMPLETED"
++                hook.payload = {**(hook.payload or {}), "judgment_id": judgment_id,
++                                "evidence_package_id": package_id}
++
++    def _reevaluate_in(self, s, hotel_id, extra_features, standard):
++        now = now_utc()
++        # Capture pending hooks before the evidence read. Hooks arriving after this
++        # snapshot must remain REQUESTED for the next evaluation.
++        hooks = list(s.scalars(select(JudgmentHookRow).where(
++            JudgmentHookRow.hotel_id == hotel_id, JudgmentHookRow.status == "REQUESTED").with_for_update()))
++        ev = self._evidence_in(s, hotel_id)
++        feature = dict(ev["feature_snapshot"])
++        if extra_features:
++            protected = set(feature).intersection(extra_features)
++            if protected:
++                unprocessable("JUDGMENT_EVIDENCE_FIELD_FORBIDDEN", f"Persisted evidence fields cannot be overridden: {', '.join(sorted(protected))}")
++            feature.update(extra_features)
++        raw = json.dumps({"hotel_id": hotel_id, "source_refs": ev["source_refs"], "feature_snapshot": feature},
++                         sort_keys=True, separators=(",", ":"), default=str).encode()
++        digest = sha256(raw).hexdigest()
++        package = s.scalar(select(JudgmentEvidencePackageRow).where(JudgmentEvidencePackageRow.content_hash == digest))
++        if package and package.hotel_id != hotel_id:
++            unprocessable("JUDGMENT_EVIDENCE_IDENTITY_INVALID", "Sealed evidence belongs to another hotel")
++        priors = list(s.scalars(select(JudgmentRuntimeRow).where(
++            JudgmentRuntimeRow.hotel_id == hotel_id, JudgmentRuntimeRow.status == "ACTIVE").with_for_update()))
++        prior_recs = list(s.scalars(select(RecommendationDecisionRow).where(
++            RecommendationDecisionRow.hotel_id == hotel_id, RecommendationDecisionRow.valid_to.is_(None)).with_for_update()))
++        if len(priors) == len(prior_recs) == 1 and package:
++            prior, rec = priors[0], prior_recs[0]
++            if (prior.evidence_package_id == package.package_id and rec.judgment_id == prior.judgment_id
++                and prior.good_hotel_standard_version_id == standard.good_hotel_standard_version_id
++                and prior.model_version == MODEL_VERSION and prior.prompt_version == PROMPT_VERSION
++                and prior.rule_version == RULE_VERSION and rec.rule_version == RECOMMENDATION_RULE_VERSION):
++                self._complete_hooks_in(hooks, prior.judgment_id, package.package_id, ev["source_refs"])
++                return prior.judgment_id, None
++        package_id = package.package_id if package else new_id("evpkg")
++        judgment_id, decision_id = new_id("jud"), new_id("rec")
++        score, dims, explanation, confidence = self._score(feature)
++        rec_status, reasons, public_score = self._recommend(score, feature)
++        for prior in priors:
++            prior.status = "SUPERSEDED"
++            prior.valid_to = now
++        for prior in prior_recs:
++            prior.valid_to = now
++        if not package:
++            s.add(JudgmentEvidencePackageRow(package_id=package_id,hotel_id=hotel_id,source_refs=ev["source_refs"],source_summary=ev["source_summary"],feature_snapshot=feature,excluded_commercial_fields=sorted(COMMERCIAL_FIELDS),content_hash=digest,sealed_at=now,created_at=now))
++        s.add(GoodHotelStandardAssessmentRow(good_hotel_standard_assessment_id=new_id('ghsa'),hotel_id=hotel_id,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,evidence_package_id=package_id,dimension_result_json=dims,disqualifier_result_json=[x for x in standard.disqualifiers_json if x in reasons],assessment_state=rec_status,reason_codes_json=reasons,assessed_at=now))
++        s.add(JudgmentRuntimeRow(judgment_id=judgment_id,hotel_id=hotel_id,evidence_package_id=package_id,go_score_milli=score,dimension_result=dims,explanation=explanation,confidence_bps=confidence,model_version=MODEL_VERSION,prompt_version=PROMPT_VERSION,rule_version=RULE_VERSION,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,status="ACTIVE",public_at=now if rec_status=="GO_RECOMMENDED" else None,valid_from=now,valid_to=None,created_at=now))
++        s.add(RecommendationDecisionRow(decision_id=decision_id,hotel_id=hotel_id,judgment_id=judgment_id,status=rec_status,reason_codes=reasons,public_go_score_milli=public_score,rule_version=RECOMMENDATION_RULE_VERSION,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,valid_from=now,valid_to=None,created_at=now))
++        self._complete_hooks_in(hooks, judgment_id, package_id, ev["source_refs"])
++        return judgment_id, {"package_id": package_id, "score": score, "decision_id": decision_id, "status": rec_status}
++
++    def _publish_events(self, hotel_id, judgment_id, created):
++        if created is None:
++            return
++        repo.append_event(Event(new_id("evt"),"JUDGMENT_CREATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"evidence_package_id":created["package_id"],"go_score_milli":created["score"]}))
++        repo.append_event(Event(new_id("evt"),"GO_SCORE_UPDATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"go_score_milli":created["score"]}))
++        repo.append_event(Event(new_id("evt"),"RECOMMENDATION_STATUS_CHANGED","HOTEL",hotel_id,{"decision_id":created["decision_id"],"status":created["status"],"judgment_id":judgment_id}))
++
++    def reevaluate(self, hotel_id: str, extra_features: dict | None = None) -> dict:
+         if extra_features:
+             self._assert_no_forbidden_features(extra_features)
+-        now=now_utc();ev=self._evidence(hotel_id); feature=dict(ev["feature_snapshot"])
+-        if extra_features:
+-            protected=set(feature).intersection(extra_features)
++            # Reject caller replacement of persisted facts before even the lazy
++            # standard bootstrap can write. Recheck actual fields under lock too.
++            protected = PERSISTED_EVIDENCE_FIELDS.intersection(extra_features)
+             if protected:
+-                unprocessable("JUDGMENT_EVIDENCE_FIELD_FORBIDDEN",f"Persisted evidence fields cannot be overridden: {', '.join(sorted(protected))}")
+-            feature.update(extra_features)
+-        standard=good_hotel_standard_service.active()
+-        raw=json.dumps({"hotel_id":hotel_id,"source_refs":ev["source_refs"],"feature_snapshot":feature},sort_keys=True,separators=(",",":"),default=str).encode()
+-        digest=sha256(raw).hexdigest(); package_id=new_id("evpkg"); judgment_id=new_id("jud"); decision_id=new_id("rec")
+-        score,dims,explanation,confidence=self._score(feature)
+-        rec_status,reasons,public_score=self._recommend(score,feature)
+-        with SessionLocal.begin() as s:
+-            prior=s.scalar(select(JudgmentRuntimeRow).where(JudgmentRuntimeRow.hotel_id==hotel_id,JudgmentRuntimeRow.status=="ACTIVE").order_by(JudgmentRuntimeRow.created_at.desc()))
+-            if prior: prior.status="SUPERSEDED"; prior.valid_to=now
+-            prior_rec=s.scalar(select(RecommendationDecisionRow).where(RecommendationDecisionRow.hotel_id==hotel_id,RecommendationDecisionRow.valid_to.is_(None)).order_by(RecommendationDecisionRow.created_at.desc()))
+-            if prior_rec: prior_rec.valid_to=now
+-            s.add(JudgmentEvidencePackageRow(package_id=package_id,hotel_id=hotel_id,source_refs=ev["source_refs"],source_summary=ev["source_summary"],feature_snapshot=feature,excluded_commercial_fields=sorted(COMMERCIAL_FIELDS),content_hash=digest,sealed_at=now,created_at=now))
+-            s.add(GoodHotelStandardAssessmentRow(good_hotel_standard_assessment_id=new_id('ghsa'),hotel_id=hotel_id,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,evidence_package_id=package_id,dimension_result_json=dims,disqualifier_result_json=[x for x in standard.disqualifiers_json if x in reasons],assessment_state=rec_status,reason_codes_json=reasons,assessed_at=now))
+-            s.add(JudgmentRuntimeRow(judgment_id=judgment_id,hotel_id=hotel_id,evidence_package_id=package_id,go_score_milli=score,dimension_result=dims,explanation=explanation,confidence_bps=confidence,model_version=MODEL_VERSION,prompt_version=PROMPT_VERSION,rule_version=RULE_VERSION,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,status="ACTIVE",public_at=now if rec_status=="GO_RECOMMENDED" else None,valid_from=now,valid_to=None,created_at=now))
+-            s.add(RecommendationDecisionRow(decision_id=decision_id,hotel_id=hotel_id,judgment_id=judgment_id,status=rec_status,reason_codes=reasons,public_go_score_milli=public_score,rule_version=RECOMMENDATION_RULE_VERSION,good_hotel_standard_version_id=standard.good_hotel_standard_version_id,valid_from=now,valid_to=None,created_at=now))
+-            hooks=s.scalars(select(JudgmentHookRow).where(JudgmentHookRow.hotel_id==hotel_id,JudgmentHookRow.status=="REQUESTED")).all()
+-            for h in hooks: h.status="COMPLETED"
+-        repo.append_event(Event(new_id("evt"),"JUDGMENT_CREATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"evidence_package_id":package_id,"go_score_milli":score}))
+-        repo.append_event(Event(new_id("evt"),"GO_SCORE_UPDATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"go_score_milli":score}))
+-        repo.append_event(Event(new_id("evt"),"RECOMMENDATION_STATUS_CHANGED","HOTEL",hotel_id,{"decision_id":decision_id,"status":rec_status,"judgment_id":judgment_id}))
++                unprocessable("JUDGMENT_EVIDENCE_FIELD_FORBIDDEN", f"Persisted evidence fields cannot be overridden: {', '.join(sorted(protected))}")
++        standard = good_hotel_standard_service.active()
++        with transaction(SessionLocal) as s:
++            self._lock_hotel_in(s, hotel_id)
++            judgment_id, created = self._reevaluate_in(s, hotel_id, extra_features, standard)
++        self._publish_events(hotel_id, judgment_id, created)
+         return self.get_judgment(judgment_id)
+ 
+-    def process_hook(self,hook_id:str)->dict:
+-        with SessionLocal() as s:
+-            h=s.get(JudgmentHookRow,hook_id)
+-            if not h: not_found("JUDGMENT_HOOK_NOT_FOUND","Judgment hook not found")
+-            hotel_id=h.hotel_id
+-            if h.status=="COMPLETED":
+-                latest=s.scalar(select(JudgmentRuntimeRow).where(JudgmentRuntimeRow.hotel_id==hotel_id).order_by(JudgmentRuntimeRow.created_at.desc()))
+-                if latest: return self.get_judgment(latest.judgment_id)
+-        return self.reevaluate(hotel_id)
++    def process_hook(self, hook_id: str) -> dict:
++        standard = good_hotel_standard_service.active()
++        with transaction(SessionLocal) as s:
++            hook = s.get(JudgmentHookRow, hook_id)
++            if not hook:
++                not_found("JUDGMENT_HOOK_NOT_FOUND", "Judgment hook not found")
++            hotel_id = hook.hotel_id
++            self._lock_hotel_in(s, hotel_id)
++            # Re-read after waiting for the hotel lock (another worker may finish).
++            s.refresh(hook)
++            if hook.hotel_id != hotel_id:
++                unprocessable("JUDGMENT_HOOK_IDENTITY_INVALID", "Hook hotel changed")
++            if hook.status == "COMPLETED":
++                binding = hook.payload or {}
++                judgment = s.get(JudgmentRuntimeRow, binding.get("judgment_id")) if binding.get("judgment_id") else None
++                package = s.get(JudgmentEvidencePackageRow, binding.get("evidence_package_id")) if binding.get("evidence_package_id") else None
++                if (not judgment or not package or judgment.hotel_id != hotel_id or package.hotel_id != hotel_id
++                    or judgment.evidence_package_id != package.package_id
++                    or not any(x.get("type") == hook.source_type and x.get("id") == hook.source_id for x in package.source_refs)):
++                    unprocessable("JUDGMENT_HOOK_RESULT_REVIEW_REQUIRED", "Completed hook has no matching durable result binding")
++                judgment_id, created = judgment.judgment_id, None
++            elif hook.status == "REQUESTED":
++                judgment_id, created = self._reevaluate_in(s, hotel_id, None, standard)
++            else:
++                unprocessable("JUDGMENT_HOOK_STATE_INVALID", "Hook is not processable")
++        self._publish_events(hotel_id, judgment_id, created)
++        return self.get_judgment(judgment_id)
+ 
+     def process_pending(self,limit:int=100)->list[dict]:
+         with SessionLocal() as s:
+--- a/application/src/go_hotel/mobility/ride/service.py
++++ b/application/src/go_hotel/mobility/ride/service.py
+@@ -137,10 +137,8 @@
+             else:
+                 if o.status != "UNKNOWN_EXTERNAL_STATE":
+                     raise ValueError("MOBILITY_RECONCILIATION_NOT_REQUIRED")
+-                evidence=list_vertical_evidence(s, "RIDE", order_id)
+-                unknown=next((x for x in reversed(evidence) if x.get("kind")=="EXTERNAL_STATE_UNKNOWN"),None)
+-                previous_status=((unknown or {}).get("payload") or {}).get("previous_status") or "CONFIRMED"
+-                if previous_status not in {"CONFIRMED","IN_PROGRESS"}: previous_status="CONFIRMED"
++                from go_hotel.mobility.ride.recovery_evidence import previous_phase
++                previous_status=previous_phase(s,o)
+                 o.status = previous_status; kind = "RECONCILED_TO_"+previous_status
+                 payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference, "restored_status": previous_status}
+             o.updated_at = now(); append_vertical_evidence(s, "RIDE", order_id, kind, o.status, payload); project_vertical_lifecycle(s,"RIDE",o,evidence_reference,facts={"actor":actor,"native_status":o.status})
+--- a/application/src/go_hotel/repositories/sql.py
++++ b/application/src/go_hotel/repositories/sql.py
+@@ -2,7 +2,7 @@
+ from hashlib import sha256
+ import json
+ from datetime import timedelta
+-from sqlalchemy import select, or_
++from sqlalchemy import select, or_, text
+ from sqlalchemy.exc import IntegrityError
+ from go_hotel.db.models import (
+     OfferRow, PrebookRow, OrderRow, PaymentRow, EventRow, OutboxRow, IdempotencyRow,
+@@ -367,6 +367,110 @@
+             r = s.get(IdempotencyRow, {"idempotency_key": key, "operation": operation})
+             if r and r.request_hash == digest and r.response_code == 102:
+                 s.delete(r)
++
++    def bind_idempotency_resource(self, operation, key, payload, resource_id, token, *, new_claim):
++        """Bind before effects, or exclusively acquire a quiescent failed call.
++
++        RUNNING is never reclaimed by a timeout: a lease is not a fence around
++        an external side effect. A dead process therefore requires review.
++        """
++        if not isinstance(resource_id, str) or not 1 <= len(resource_id) <= 64:
++            raise ValueError("IDEMPOTENCY_RESOURCE_INVALID")
++        digest = self.hash_payload(payload)
++        with SessionLocal.begin() as s:
++            if s.bind.dialect.name == 'sqlite':
++                s.execute(text('BEGIN IMMEDIATE'))
++            row = s.get(IdempotencyRow, {'operation': operation, 'idempotency_key': key}, with_for_update=True)
++            if not row or row.request_hash != digest:
++                raise ValueError('IDEMPOTENCY_CLAIM_LOST')
++            if row.resource_id not in {None, resource_id}:
++                raise ValueError('IDEMPOTENCY_RESOURCE_CONFLICT')
++            if row.response_code != 102:
++                if row.response_code != 200:
++                    raise ValueError('IDEMPOTENCY_RECONCILIATION_REQUIRED')
++                if row.resource_id != resource_id:
++                    raise ValueError('IDEMPOTENCY_RESOURCE_CONFLICT')
++                return 'REPLAY', row.response_body
++            if new_claim:
++                if row.resource_id is not None or row.response_body != {'status': 'IN_PROGRESS'}:
++                    raise ValueError('IDEMPOTENCY_CLAIM_LOST')
++                mode = 'START'
++            else:
++                if row.resource_id != resource_id or row.response_body.get('status') not in {'RECOVERY_REQUIRED', 'WAITING_RESOURCE'}:
++                    return 'IN_PROGRESS', None
++                mode = 'RECOVER' if row.response_body.get('status') == 'RECOVERY_REQUIRED' else 'START'
++            # Different HTTP keys must not race the same payment callback.
++            # Lock order is always request row, then the resource row; no
++            # transaction locks another request row while holding the resource.
++            guard_id = {'operation': 'RESOURCE:' + operation, 'idempotency_key': resource_id}
++            guard = s.get(IdempotencyRow, guard_id, with_for_update=True)
++            if guard is None:
++                try:
++                    with s.begin_nested():
++                        guard = IdempotencyRow(**guard_id, request_hash=digest, response_code=102,
++                            response_body={'status': 'UNCLAIMED'}, resource_id=resource_id, created_at=now_utc())
++                        s.add(guard)
++                        s.flush()
++                except IntegrityError:
++                    guard = s.get(IdempotencyRow, guard_id, with_for_update=True)
++            if not guard or guard.request_hash != digest or guard.resource_id != resource_id:
++                raise ValueError('IDEMPOTENCY_RESOURCE_CONFLICT')
++            if guard.response_code != 102:
++                if guard.response_code != 200:
++                    raise ValueError('IDEMPOTENCY_RECONCILIATION_REQUIRED')
++                row.resource_id = resource_id
++                row.response_code = guard.response_code
++                row.response_body = guard.response_body
++                return 'REPLAY', guard.response_body
++            if guard.response_body.get('status') == 'RUNNING':
++                row.resource_id = resource_id
++                row.response_body = {'status': 'WAITING_RESOURCE'}
++                return 'IN_PROGRESS', None
++            if guard.response_body.get('status') == 'RECOVERY_REQUIRED':
++                mode = 'RECOVER'
++            elif guard.response_body.get('status') != 'UNCLAIMED':
++                return 'IN_PROGRESS', None
++            row.resource_id = resource_id
++            row.response_body = {'status': 'RUNNING', 'execution_token': token}
++            guard.response_body = {'status': 'RUNNING', 'execution_token': token}
++            return mode, None
++
++    def finish_recoverable_idempotency(self, operation, key, payload, resource_id, token, action, response=None):
++        """Fence every completion, failure marker and safe release by token."""
++        if action not in {'COMPLETE', 'RECOVERY_REQUIRED', 'RELEASE'}:
++            raise ValueError('IDEMPOTENCY_ACTION_INVALID')
++        digest = self.hash_payload(payload)
++        with SessionLocal.begin() as s:
++            if s.bind.dialect.name == 'sqlite':
++                s.execute(text('BEGIN IMMEDIATE'))
++            row = s.get(IdempotencyRow, {'operation': operation, 'idempotency_key': key}, with_for_update=True)
++            if not row or row.request_hash != digest or row.resource_id != resource_id:
++                raise ValueError('IDEMPOTENCY_CLAIM_LOST')
++            # A completion commit may succeed while its acknowledgement fails.
++            # Failure handling may observe it but must never replace its result.
++            if row.response_code != 102:
++                if action == 'RECOVERY_REQUIRED' and row.response_code == 200:
++                    return
++                raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
++            if row.response_body != {'status': 'RUNNING', 'execution_token': token}:
++                raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
++            guard = s.get(IdempotencyRow, {'operation': 'RESOURCE:' + operation,
++                'idempotency_key': resource_id}, with_for_update=True)
++            if (not guard or guard.request_hash != digest or guard.resource_id != resource_id
++                    or guard.response_code != 102
++                    or guard.response_body != {'status': 'RUNNING', 'execution_token': token}):
++                raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
++            if action == 'RELEASE':
++                s.delete(row)
++                s.delete(guard)
++            elif action == 'COMPLETE':
++                row.response_code = 200
++                row.response_body = response
++                guard.response_code = 200
++                guard.response_body = response
++            else:
++                row.response_body = {'status': 'RECOVERY_REQUIRED'}
++                guard.response_body = {'status': 'RECOVERY_REQUIRED'}
+ 
+     def save_idempotency(self, operation: str, key: str, payload: dict, response: dict, resource_id: str | None = None, response_code: int = 200) -> dict:
+         digest = self.hash_payload(payload)
+--- a/application/src/go_hotel/travel_intelligence/preferences.py
++++ b/application/src/go_hotel/travel_intelligence/preferences.py
+@@ -11,7 +11,6 @@
+ 
+ from go_hotel.db.models import (ProfileAccessAuditRow, ProfileConsentRow, ProfileFactRow,
+     TravelerProfileRow, TravelIntentRow, TravelBehaviorEventRow)
+-from go_hotel.db.session import SessionLocal
+ from go_hotel.domain.models import new_id
+ from go_hotel.security.crypto import encrypt_secret, decrypt_secret
+ from go_hotel.services.personal_vault_management import mutation_session, owned_traveler, permission
+@@ -39,14 +38,16 @@
+ 
+ 
+ def _active_consents(session, traveler, purpose, consent_type):
+-    t = _now()
++    # Share the consent-row lock with the existing vault's revocation UPDATE.
++    # Retain it through preference projection/write and its audit transaction.
+     rows = session.scalars(select(ProfileConsentRow).where(
+         ProfileConsentRow.user_id == traveler.user_id,
+         ProfileConsentRow.traveler_id == traveler.traveler_id,
+         ProfileConsentRow.consent_type == consent_type,
+         ProfileConsentRow.purpose == purpose,
+         ProfileConsentRow.status == "ACTIVE",
+-        ProfileConsentRow.revoked_at.is_(None))).all()
++        ProfileConsentRow.revoked_at.is_(None)).order_by(ProfileConsentRow.consent_id).with_for_update()).all()
++    t = _now()
+     return {c.consent_id:c for c in rows
+         if c.expires_at is not None and _aware(c.granted_at) <= t < _aware(c.expires_at)}
+ 
+@@ -179,7 +180,9 @@
+ 
+     def preferences(self, traveler_id, *, purpose, actor_id="C07", actor_type="GO_SYSTEM", user_id=None):
+         purpose = _purpose(purpose)
+-        with SessionLocal.begin() as s:
++        # SQLite needs BEGIN IMMEDIATE because its legacy SELECT handling does
++        # not otherwise retain a transaction that serializes consent withdrawal.
++        with mutation_session() as s:
+             tr = s.get(TravelerProfileRow, traveler_id)
+             if not tr or tr.status != "ACTIVE" or (user_id is not None and tr.user_id != user_id):
+                 raise ValueError("TRAVELER_NOT_FOUND")
+@@ -194,7 +197,7 @@
+ 
+     def preference_graph(self, traveler_id, *, purpose, actor_id="C07", actor_type="GO_SYSTEM"):
+         purpose = _purpose(purpose)
+-        with SessionLocal.begin() as s:
++        with mutation_session() as s:
+             tr = s.get(TravelerProfileRow, traveler_id)
+             if not tr or tr.status != "ACTIVE":
+                 raise ValueError("TRAVELER_NOT_FOUND")

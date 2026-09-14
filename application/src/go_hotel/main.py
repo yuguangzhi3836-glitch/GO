@@ -116,6 +116,7 @@ from go_hotel.api.routes.staging_execution_evidence import router as staging_exe
 from go_hotel.security.service import identity_service, audit_service
 from go_hotel.core.config import settings
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.concurrency import run_in_threadpool
 from go_hotel.observability.metrics import metrics, now_monotonic
 from go_hotel.observability.logging import configure_json_logging
 from go_hotel.incident.service import incident_service
@@ -204,13 +205,13 @@ install_agent_gateway(app)
 
 class Sprint1RAuditMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        request_id=request.headers.get("X-Request-ID") or f"req_{uuid.uuid4().hex}"
+        request_id=getattr(request.state,"request_id",None) or request.headers.get("X-Request-ID") or f"req_{uuid.uuid4().hex}"
         request.state.request_id=request_id
         response=await call_next(request)
         p=getattr(request.state,"principal",None)
         if p and request.method in {"POST","PUT","PATCH","DELETE"}:
             try:
-                audit_service.append(p, f"HTTP_{request.method}", "HTTP_RESOURCE", request.url.path, request_id=request_id, client_ip=request.client.host if request.client else None, http_method=request.method, path=request.url.path, metadata={"status_code":response.status_code})
+                await run_in_threadpool(audit_service.append, p, f"HTTP_{request.method}", "HTTP_RESOURCE", request.url.path, request_id=request_id, client_ip=request.client.host if request.client else None, http_method=request.method, path=request.url.path, metadata={"status_code":response.status_code})
             except Exception:
                 pass
         response.headers["X-Request-ID"]=request_id
@@ -243,8 +244,8 @@ class Sprint1USecurityMiddleware(BaseHTTPMiddleware):
                 access=request.cookies.get(access_name)
                 if access:
                     try:
-                        p=identity_service.authenticate(access)
-                        if not identity_service.verify_csrf(p.session_id,csrf_header):
+                        p=await run_in_threadpool(identity_service.authenticate, access)
+                        if not await run_in_threadpool(identity_service.verify_csrf, p.session_id, csrf_header):
                             from fastapi.responses import JSONResponse
                             return JSONResponse({"detail":"CSRF_SESSION_MISMATCH"},status_code=403)
                     except ValueError:
@@ -264,36 +265,62 @@ class Sprint1USecurityMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(Sprint1USecurityMiddleware)
 
+def _incident_writes_blocked(scope):
+    # Each service method owns and closes its Session inside the worker thread.
+    # Keep the original short circuit and fail-closed exception behavior.
+    return incident_service.active("GLOBAL_WRITES") or bool(scope and incident_service.active(scope))
+
+
 class Sprint1VObservabilityMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        start=now_monotonic(); trace_id=request.headers.get("traceparent") or request.headers.get("X-Trace-ID") or f"tr_{uuid.uuid4().hex}"
-        request.state.trace_id=trace_id
-        path=request.url.path
-        # Incident controls deliberately fail closed only on writes. Read-only diagnostics remain reachable.
-        if request.method not in {"GET","HEAD","OPTIONS"}:
-            scope=None
-            if path.startswith("/v1/orders") or "/orders/" in path: scope="BOOKING_WRITES"
-            if "payment" in path: scope="PAYMENT_WRITES"
-            if "refund" in path: scope="REFUND_WRITES"
-            if path.startswith("/v1/supplier"): scope="SUPPLIER_CONSOLE_WRITES"
-            if path.startswith("/internal/v1") and any(x in path for x in ("activate","suspend","risk","approval")): scope="ADMIN_HIGH_RISK_WRITES"
-            if incident_service.active("GLOBAL_WRITES") or (scope and incident_service.active(scope)):
-                from fastapi.responses import JSONResponse
-                return JSONResponse({"detail":"INCIDENT_CONTROL_ACTIVE","scope":scope or "GLOBAL_WRITES"},status_code=503,headers={"X-Trace-ID":trace_id})
+        start = now_monotonic()
+        trace_id = request.headers.get("traceparent") or request.headers.get("X-Trace-ID") or f"tr_{uuid.uuid4().hex}"
+        request_id = request.headers.get("X-Request-ID") or f"req_{uuid.uuid4().hex}"
+        request.state.trace_id = trace_id
+        request.state.request_id = request_id
+        path = request.url.path
         try:
-            response=await call_next(request)
+            response = None
+            # No cache or bypass: every write still checks current incident controls.
+            # Blocking DB calls use the existing bounded Starlette/AnyIO pool.
+            if request.method not in {"GET", "HEAD", "OPTIONS"}:
+                scope = None
+                if path.startswith("/v1/orders") or "/orders/" in path:
+                    scope = "BOOKING_WRITES"
+                if "payment" in path:
+                    scope = "PAYMENT_WRITES"
+                if "refund" in path:
+                    scope = "REFUND_WRITES"
+                if path.startswith("/v1/supplier"):
+                    scope = "SUPPLIER_CONSOLE_WRITES"
+                if path.startswith("/internal/v1") and any(x in path for x in ("activate", "suspend", "risk", "approval")):
+                    scope = "ADMIN_HIGH_RISK_WRITES"
+                if await run_in_threadpool(_incident_writes_blocked, scope):
+                    from fastapi.responses import JSONResponse
+                    response = JSONResponse({"detail": "INCIDENT_CONTROL_ACTIVE", "scope": scope or "GLOBAL_WRITES"}, status_code=503)
+            if response is None:
+                response = await call_next(request)
         except Exception:
-            duration=(now_monotonic()-start)*1000; metrics.inc("go_http_requests_total"); metrics.inc("go_http_requests_5xx_total"); metrics.observe("go_http_request_duration_ms",duration)
-            obs_logger.exception("request_failed",extra={"trace_id":trace_id,"path":path,"method":request.method,"duration_ms":round(duration,2)})
+            duration = (now_monotonic() - start) * 1000
+            metrics.inc("go_http_requests_total")
+            metrics.inc("go_http_requests_5xx_total")
+            metrics.observe("go_http_request_duration_ms", duration, method=request.method)
+            obs_logger.exception("request_failed", extra={"request_id": request_id, "trace_id": trace_id, "path": path, "method": request.method, "duration_ms": round(duration, 2)})
             raise
-        duration=(now_monotonic()-start)*1000
-        metrics.inc("go_http_requests_total"); metrics.observe("go_http_request_duration_ms",duration,method=request.method); metrics.inc("go_http_status_total",status=response.status_code)
-        if response.status_code>=500: metrics.inc("go_http_requests_5xx_total")
-        if response.status_code in (401,403):
-            try: incident_service.record_security_signal("AUTHZ_FAILURE","MEDIUM",request_id=getattr(request.state,"request_id",None),client_ip=request.client.host if request.client else None,metadata={"path":path,"status":response.status_code})
-            except Exception: pass
-        obs_logger.info("http_request",extra={"request_id":getattr(request.state,"request_id",None),"trace_id":trace_id,"path":path,"method":request.method,"status_code":response.status_code,"duration_ms":round(duration,2)})
-        response.headers["X-Trace-ID"]=trace_id
+        duration = (now_monotonic() - start) * 1000
+        metrics.inc("go_http_requests_total")
+        metrics.observe("go_http_request_duration_ms", duration, method=request.method)
+        metrics.inc("go_http_status_total", status=response.status_code)
+        if response.status_code >= 500:
+            metrics.inc("go_http_requests_5xx_total")
+        if response.status_code in (401, 403):
+            try:
+                await run_in_threadpool(incident_service.record_security_signal, "AUTHZ_FAILURE", "MEDIUM", request_id=request_id, client_ip=request.client.host if request.client else None, metadata={"path": path, "status": response.status_code})
+            except Exception:
+                pass
+        obs_logger.info("http_request", extra={"request_id": request_id, "trace_id": trace_id, "path": path, "method": request.method, "status_code": response.status_code, "duration_ms": round(duration, 2)})
+        response.headers["X-Trace-ID"] = trace_id
+        response.headers["X-Request-ID"] = request_id
         return response
 
 app.add_middleware(Sprint1VObservabilityMiddleware)

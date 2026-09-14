@@ -1,7 +1,32 @@
 {
-  "application_git_tree": "3025b2b6b36ea9211da561a4631f304216de9d90",
+  "application_git_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
   "baseline_application_tree": "a73b9b53a59c88ab995d0f9b123c9fb79e87e60d",
+  "capacity_repair": {
+    "application_git_tree": "89ccba02fd4cdf470b93eea6edc7edf121379faa",
+    "base_application_tree": "3025b2b6b36ea9211da561a4631f304216de9d90",
+    "base_commit": "286e294d92df4b7d1c0073116a8e628734abec6c",
+    "changed_application_files": 3,
+    "scope": "DEPTH48 capacity middleware, bounded telemetry and regression tests; HK NOT_DEPLOYED"
+  },
   "files": {
+    "application/.dockerignore": {
+      "base_git_blob": null,
+      "git_blob": "7b44f5c6eb68fccd80f88dbd9c3443aba75cfe8b",
+      "mode": "100644",
+      "sha256": "e7e6a46ac0a969c577d02ce13743a88eb21d65a2b05c141fdf6c65b5783196bb"
+    },
+    "application/Dockerfile": {
+      "base_git_blob": null,
+      "git_blob": "ad355e78615956e2e98efdfac4c2d82dc39c12fb",
+      "mode": "100644",
+      "sha256": "4b48ed235781635db325fc85c4662958595b67ee26506cb81fb99d7d890cdbcd"
+    },
+    "application/alembic/versions/0133_flight_change_plan.py": {
+      "base_git_blob": null,
+      "git_blob": "d9f9ae9ae643edf6c9bb179cf4c51ab07933e576",
+      "mode": "100644",
+      "sha256": "ddef08d68cf1e2bb24df6a83f8a6d43bf76ae7eb22d867ea9618ea6ae787a791"
+    },
     "application/frontend/consumer/app.js": {
       "base_git_blob": "2f38a8324bba29f89e73a2ac3bb530bd2b7e79fe",
       "git_blob": "192cd0b7c440b652b365217ac07f0ff412c04191",
@@ -38,6 +63,24 @@
       "mode": "100644",
       "sha256": "bd391078f1d11964d16a179ab354a98d03a58e83dcf6ec1a52cda14ac72a8a26"
     },
+    "application/frontend/consumer/flight-changes.js": {
+      "base_git_blob": null,
+      "git_blob": "f45fc88146b280c13c022bcc3df5c36150b51c09",
+      "mode": "100644",
+      "sha256": "fe96ca1d54769ac2d0db01c8cbb59b4b2107140acb4ec23cc4409d472734afcd"
+    },
+    "application/frontend/consumer/flight-journeys.js": {
+      "base_git_blob": "6910f49fb6212a42b155312e3b73359e39f93530",
+      "git_blob": "3ca505f0fa1a298e5e681a94d10599e88d85abd2",
+      "mode": "100644",
+      "sha256": "0bf11c3de683b50dd94b53097a9b91cf4ae6d0f1c248bfe01b429407017fb260"
+    },
+    "application/frontend/consumer/index.html": {
+      "base_git_blob": "cc45885076491f1592a1fa1c745990d9b63785a6",
+      "git_blob": "ffa0f53375551a8d844845536aaf78bfc2d31ccc",
+      "mode": "100644",
+      "sha256": "33f58986b9271e8a7b96d30c9d08e27084d8ec5a3a4df50684066b46f05f2212"
+    },
     "application/frontend/consumer/trip-navigation.js": {
       "base_git_blob": "5b2a0e6712e138dd7efdda544f168af773ad8aea",
       "git_blob": "1d4b11f7380b4cf04bc97456e1da778c87e7c60a",
@@ -45,10 +88,10 @@
       "sha256": "5cbe539e03195ba610576bbe7b07599992a804eeb526f6dcc9823e476ca7b2ca"
     },
     "application/frontend/shared/app.js": {
-      "base_git_blob": "4929cc90e917fd89bf93a6cb45b7c9cbf167d67a",
-      "git_blob": "6e6881617ca7fa8b95ddc0e8e828b7c8d7bb961f",
+      "git_blob": "f12395c6c3ba5887e63091f4a1ff43dc0a7f0846",
+      "sha256": "12663e73711d40684f5724c122f29cdc96ff46840f798fcb32750746436af7d0",
       "mode": "100644",
-      "sha256": "6b665ed41a5361a0ccb3e61947ec4bd8dc2ef4822c0250a7202bdb511dfc11b2"
+      "base_git_blob": "4929cc90e917fd89bf93a6cb45b7c9cbf167d67a"
     },
     "application/frontend/shared/styles.css": {
       "base_git_blob": "2019abbee518ee308a3f7e67a4caed2aaf544c52",
@@ -68,6 +111,12 @@
       "mode": "100644",
       "sha256": "7ac66afd7a74cc7d715cae556403a0a2d998753cceec58fe663c71053430cfa3"
     },
+    "application/mobile/go-app/src/domain/changeActions.ts": {
+      "base_git_blob": "3ea672c33ce3d4b7137183c7b3de32b19987d6f2",
+      "git_blob": "42e1c763fcc74306abb7bcf8c27c6e84874b759d",
+      "mode": "100644",
+      "sha256": "86b68e14c3590c45ac1e2ce571cced63c5674cd01bf3b83f2f254fc05f385d9f"
+    },
     "application/mobile/go-app/src/domain/changeTerms.ts": {
       "base_git_blob": "ec53893a8f34d0a30963f1027b8065c36af682f6",
       "git_blob": "2f57c87e94cbe653145927bbf2cb342adb81b71d",
@@ -86,6 +135,12 @@
       "mode": "100644",
       "sha256": "216a5e1ab994e76dea55ac138c443e3666dadc9b619a2f6a4d05c2d1c86c1169"
     },
+    "application/mobile/go-app/src/screens/ChangeBookingScreen.tsx": {
+      "base_git_blob": "f59fd7e52a97c2553d50736c87e6e0801c0d0ce5",
+      "git_blob": "c9c42a2e18564393f5cc28e04c7e0a91ee86fdc3",
+      "mode": "100644",
+      "sha256": "69e881354a3bea4cc3b598368673e0d6d3261f45a4235fbbfa1981e4ee7d6fb7"
+    },
     "application/mobile/go-app/src/screens/StayCreditScreen.tsx": {
       "base_git_blob": "de34a4b5ed824dc42e002c9a13865f6bfd54c29d",
       "git_blob": "d3a1e95d93a2a8545d0d86236843426feb57c9f3",
@@ -97,6 +152,12 @@
       "git_blob": "e25308f54d3d62074b89e2bf6d64e1481ff8b672",
       "mode": "100644",
       "sha256": "0c4c66b27503eedd57c849dffc7f8102dc0549ad5b73f7667160cc8b6a141310"
+    },
+    "application/pyproject.toml": {
+      "base_git_blob": "56a0808f434b36b658fe53620a93d380a7450419",
+      "git_blob": "bef88ca2402e06005a3d1a80bbe5facba3086f7b",
+      "mode": "100644",
+      "sha256": "37a68962ec8426d938cdced216443ce31998633fbee2780825dcf6e8b3aed346"
     },
     "application/scripts/acceptance_runtime.py": {
       "base_git_blob": "298530ad287e3ada55d26ba98ce4fbc300130f66",
@@ -116,6 +177,12 @@
       "mode": "100644",
       "sha256": "6edd05c92f18fd974ef078825b962791950ce8368a04d60facb1172bae3a19f6"
     },
+    "application/src/go_hotel/api/routes/flight.py": {
+      "mode": "100644",
+      "git_blob": "b29e17d3ea65b68c51c506d34c07b175fbbabf67",
+      "sha256": "f7270d34441903036a69067716cec3c39a87f092594ce736d0c3d5eb51902967",
+      "base_git_blob": "e8f4aa2aca0fb690bfb1f38d1d04b3e76d117c18"
+    },
     "application/src/go_hotel/api/routes/interactive.py": {
       "base_git_blob": "2854c68382f183f1e2af7691f8de7f9699d1fb51",
       "git_blob": "1fc601ea6373460a5ed378376988d8d568d57884",
@@ -123,10 +190,40 @@
       "sha256": "a91b933354ae56a9b422b77964b5ea57e2f6c2c94f5a11299d6bbd41debdea2d"
     },
     "application/src/go_hotel/api/routes/operations_console.py": {
-      "base_git_blob": "d5dbf9102ff30ce5d6d7c172936806a570af913c",
-      "git_blob": "9dd062850d3f6815db20c14cc332928bffa2c98f",
+      "git_blob": "2e6f85b7fc883fab0f74e505951ce751f19cbb37",
+      "sha256": "dd8ce37a8fa8def78d855012086f22c841aacdda8bbe7437f8322297e53a9a38",
       "mode": "100644",
-      "sha256": "bd86fafa9740a25d1ed3ab7848e192a2cf1b21f30e643f19654d01603a0f3847"
+      "base_git_blob": "d5dbf9102ff30ce5d6d7c172936806a570af913c"
+    },
+    "application/src/go_hotel/db/models.py": {
+      "base_git_blob": "a0ec29e4a7de6917f0e87db8839053115f30a922",
+      "git_blob": "4ea8deb0a0337a6f5290a44df2a838866c81b78b",
+      "mode": "100644",
+      "sha256": "07c000c12ff33a90b1436145c9efca87981ed9373fc708f18adbede046d2dde5"
+    },
+    "application/src/go_hotel/flight/changes.py": {
+      "base_git_blob": null,
+      "git_blob": "96918e8decc01cafeb081fd8a289750da8f91796",
+      "mode": "100644",
+      "sha256": "babfa1e13c0166f0f265c49dbdfb2d1a682390c4f4fce3a3d707a1145669ae99"
+    },
+    "application/src/go_hotel/flight/service.py": {
+      "mode": "100644",
+      "git_blob": "2c766cf540636203bc824d458b6294da18e34236",
+      "sha256": "b70d4e40aa33610c68a050ac50038236aa3c0fa6ffc2cbbe87d28678fbaf9369",
+      "base_git_blob": "55857a1b32b6e985de5f4bb132e1017097edf782"
+    },
+    "application/src/go_hotel/main.py": {
+      "git_blob": "d061d7f82b282b62a003b3784ce29e7c1eec4c76",
+      "sha256": "9b51b695c9bd4d11f4f9d6ee13db62ffe69e536e0d08e9f66cda4edee01a26b2",
+      "mode": "100644",
+      "base_git_blob": "2dd998a2f12692c55339f595056bf39fc747ef25"
+    },
+    "application/src/go_hotel/observability/metrics.py": {
+      "git_blob": "3b55a762e534a81d5f297a6dd6472feb89a15860",
+      "sha256": "254694230c1932ab02c3754035848076821d884f3dc2a4d856e5a8e3d08e83fb",
+      "mode": "100644",
+      "base_git_blob": "36b87f2d77ffbe50e2d3c1c9ed16deb44a8221b6"
     },
     "application/src/go_hotel/services/catalog_cash_fare.py": {
       "base_git_blob": "1bb327ca812becefaa0c0cb3fde579713974fc72",
@@ -164,6 +261,30 @@
       "mode": "100644",
       "sha256": "a4c619c3fc405f68ec3fbbc244399885dc82a984b29daa9f16b3340d2a85541d"
     },
+    "application/src/go_hotel/services/flight_change_resolution.py": {
+      "base_git_blob": null,
+      "git_blob": "f1e25506859c6a79fd037c8ca8956c02f5c92fef",
+      "mode": "100644",
+      "sha256": "5ac1b2da15ffdb3a127f70ccc10d4a57caba935654f5cc6c89873a3c78f48104"
+    },
+    "application/src/go_hotel/services/guest_stay_fulfillment.py": {
+      "base_git_blob": "caa7d8fcec765f6d4bfdbd207f5ec4ad1e04bf80",
+      "git_blob": "e7f4a9a3b906a6072d6d4454679d0b9881a02440",
+      "mode": "100644",
+      "sha256": "6fe70087d4229e8567adb30147a4302f24017df405646dae2ca95a721fe7023e"
+    },
+    "application/src/go_hotel/services/hosted_credit_refunds.py": {
+      "base_git_blob": "18424a1d29cd268f2a50ce7985962cfa3a6be2f1",
+      "git_blob": "b84fc34ab202b0178f79518a3bc88575641864fc",
+      "mode": "100644",
+      "sha256": "dacd85b3df1ee321dfd1cc0b2bd96ffe0dd955ee1a69ca7a2f87978369fc93b7"
+    },
+    "application/src/go_hotel/services/hosted_credit_value.py": {
+      "base_git_blob": "232aacae9eba7c0b7ab9a245958b39a6e3c15aae",
+      "git_blob": "7324742bcac64c05d3513580a6d48d510a07b188",
+      "mode": "100644",
+      "sha256": "0fc638dc70a8c48b096400410c6dfbe5cc42626e73f4aae8ff0ef10286625dae"
+    },
     "application/src/go_hotel/services/hosted_fare_change.py": {
       "base_git_blob": "6bc1a75732a9e488f53b10a88b5895bf98cde17c",
       "git_blob": "cfc6e1ddac4cd15d64b1d6206f1db0d3f5976562",
@@ -175,6 +296,18 @@
       "git_blob": "c47cb179c808fea1769dad59f1f9f5c99897c738",
       "mode": "100644",
       "sha256": "ece318b2f438cecb55254940c9ba458e3e471abacd412ae0750894ada7bbfc32"
+    },
+    "application/src/go_hotel/services/hosted_fare_value.py": {
+      "git_blob": "d088412ed37cd36bf7f4482041e062f49d3b3f14",
+      "sha256": "cf9f2c3ed701419e974f2c9144724238be3ea1d82b18d979fdfbb1b0815ee4e5",
+      "mode": "100644",
+      "base_git_blob": null
+    },
+    "application/src/go_hotel/services/hosted_money.py": {
+      "base_git_blob": "460b36525cdce4f5464d291a2e757b16cae8f3a0",
+      "git_blob": "da6b63f3fee5ec50363368f20a190e35eb4ed7a8",
+      "mode": "100644",
+      "sha256": "7859e1ac591eb1ecb7ca00d10ebf6c2b5acc08cf9e0b5236d27250ae5170de32"
     },
     "application/src/go_hotel/services/hosted_stay_credit.py": {
       "base_git_blob": "c158361b693464f9400eb6a854439326b114ad31",
@@ -194,11 +327,23 @@
       "mode": "100644",
       "sha256": "dfa466110962f5110445fbf26b5266988205b748c28a63eb473d7e4ee38f50f3"
     },
+    "application/src/go_hotel/services/post_stay_dispute.py": {
+      "base_git_blob": "0e2f5f0f45f380df0e81031b7a3592d99750c795",
+      "git_blob": "23e31c835c109f85d79bc3e1b038b7cbe536ae0f",
+      "mode": "100644",
+      "sha256": "8dd377d725366d1044a1eefa7da9d28e4450ab9440a886672a8483a240c17209"
+    },
     "application/src/go_hotel/services/transaction_order_view.py": {
       "base_git_blob": null,
       "git_blob": "ebf4b7b18ab01d823c4ecf3ce4635c088cf13470",
       "mode": "100644",
       "sha256": "8015b4b190f665ee9bd9cfa3f780287ac50fd6a59a06fcd5efa3d2be4df680ef"
+    },
+    "application/src/go_hotel/services/unified_money_movement.py": {
+      "base_git_blob": "18165aacb44af0f5bd925e3e12586e9c4420847c",
+      "git_blob": "60816d79f4ad8235d70cb6d5a88748d386d7d82b",
+      "mode": "100644",
+      "sha256": "dab22cc7369c7befc2e121ce38ae8e480d450faf166da126f0adc1c17c340ed6"
     },
     "application/src/go_hotel/services/vertical_lifecycle_projection.py": {
       "base_git_blob": "4999a942d26cfbcd18574d8a481552ef6c73448f",
@@ -266,6 +411,12 @@
       "mode": "100644",
       "sha256": "1a72f6ce9a7ff17dd27a73f2de116e60a6121be8717b12e87d89e1b8d2dc78fc"
     },
+    "application/tests/test_depth25_migration_history.py": {
+      "base_git_blob": "900c0ff94f92584ad91e7cc1ce467bff2a9ea3ed",
+      "git_blob": "7a17b8862ffc17c4eb15ffdb3a8aef2227a59dbd",
+      "mode": "100644",
+      "sha256": "efa0e86ccf88594d67e60df441a462c687d33514feb3892f0fc4ef322a98acbc"
+    },
     "application/tests/test_depth41_transaction_views.py": {
       "base_git_blob": null,
       "git_blob": "4e95ec0bb6f1cd0de229b577b947e9b0f9a11f9e",
@@ -302,11 +453,59 @@
       "mode": "100644",
       "sha256": "1a92bf6746f226c71cdbdd8c67e0c23cd5602708a85e42cab6939d1246d6d7eb"
     },
+    "application/tests/test_depth48_capacity.py": {
+      "git_blob": "6076e2084384b0d2bf1834511c5234ccef82ed2b",
+      "sha256": "15f5763d828d613ed837e8575b8feaae679978d47643c9be62e9244718ac499a",
+      "mode": "100644",
+      "base_git_blob": null
+    },
+    "application/tests/test_depth48_flight_changes.py": {
+      "base_git_blob": null,
+      "git_blob": "1529144b8e1bcf1fbfe6ee841b4636c63c99bde6",
+      "mode": "100644",
+      "sha256": "d1e348c3d12f90658eb5ef6e045b0b5456140e05892bb011072314026806f67e"
+    },
+    "application/tests/test_depth48_flight_migration.py": {
+      "base_git_blob": null,
+      "git_blob": "3e0a6719e8e49158ee6c9c3873142da89ba6eb67",
+      "mode": "100644",
+      "sha256": "d8ed83f91c0d7a5d1678505aca08d6eedbe7ee4c5a1a4918bb8ade57b936b5d3"
+    },
+    "application/tests/test_depth48_hosted_forfeiture.py": {
+      "base_git_blob": null,
+      "git_blob": "ed79ce5327682111fe89a7764859eb5eeaa0fdda",
+      "mode": "100644",
+      "sha256": "691ac6eede5132500c568b20b4b84fa540a820382c35acf626ba33842c88d925"
+    },
+    "application/tests/test_final_depth_terminal_hardening.py": {
+      "base_git_blob": "06e77b86077b97b1e5bcf87cbb12bb61414a125c",
+      "git_blob": "5b9807579a2f6a892e24d946f6dfa0cd45209394",
+      "mode": "100644",
+      "sha256": "08fe07ad0e12d18322d51e2fab9e0d34070accedc02a471557ad5f80a6299839"
+    },
+    "application/tests/test_flight_journey_depth.py": {
+      "base_git_blob": "9d783e918e889a7c90bfba17db5cbcccabf5a984",
+      "git_blob": "e70f4aad7f86dba04fdf862512ddfec1ce5e78dd",
+      "mode": "100644",
+      "sha256": "0091c18f9445b3b68c1033aa1ee90f8b4bb23561205e75ec133f65584afc6caf"
+    },
+    "application/tests/test_parent_implementation_code_review_debt_closure.py": {
+      "base_git_blob": "279d531530ad7d339a2f2e187095ac5473afa6e5",
+      "git_blob": "e5f16d80dbb546964452cfefea8e9c9537630dba",
+      "mode": "100644",
+      "sha256": "70fbd1f748c975e0be68ac8a965ac61bf1134b1c09d0b93e27c84d42c4cb1815"
+    },
     "application/tests/test_sprint1m_fare_runtime.py": {
       "base_git_blob": "111201a9e5a431f5a8dd8540cc0c060571af8dee",
       "git_blob": "19f49aa5f6aab62adcb3fa0f0bff3ca1369b3361",
       "mode": "100644",
       "sha256": "2ee921dd4df7590cfb73a93741d23d3431b4047f958d5beb21565c93d60966ac"
+    },
+    "application/tests/test_sprint3a_flight.py": {
+      "base_git_blob": "0241b68f6661d01717ab4ab4ab376d921ed6c62d",
+      "git_blob": "7ec15c49e11322ae6e08596096f13b3b36998e4b",
+      "mode": "100644",
+      "sha256": "f40d13f3c8ec5f12f0bd28d114ae7e5aa19691c97617064afa2b5b3dd17313bf"
     },
     "application/tests_frontend/cash_trip_summary.test.mjs": {
       "base_git_blob": null,
@@ -331,6 +530,12 @@
       "git_blob": "5f6362326427dbce0fbd5f5de0ab7a9435f56ccc",
       "mode": "100644",
       "sha256": "a6487221ce228e2511c978a6f7f92129295a7a73577fa63d2552ffc49b3210c2"
+    },
+    "application/tests_frontend/flight_changes.test.mjs": {
+      "base_git_blob": null,
+      "git_blob": "debdde6fca209280d0e63f89f48c668b0b029556",
+      "mode": "100644",
+      "sha256": "87a4f7c849c5d3d7c3e4eaad1af51c8f15b1730f5e56559b135e0fdcbbfc5310"
     },
     "application/tests_frontend/go_trip_all_orders.test.mjs": {
       "base_git_blob": null,
@@ -368,185 +573,305 @@
       "mode": "100644",
       "sha256": "952a6a666223f640cc7c0356c2066c0ea79627d675c553b33c866321aa9dd582"
     },
-    "application/tests_frontend/flight_changes.test.mjs": {
-      "base_git_blob": null,
-      "git_blob": "debdde6fca209280d0e63f89f48c668b0b029556",
+    "application/src/go_hotel/api/idempotency.py": {
       "mode": "100644",
-      "sha256": "87a4f7c849c5d3d7c3e4eaad1af51c8f15b1730f5e56559b135e0fdcbbfc5310"
+      "git_blob": "e726bbd6524bff4ea98de2f02befd065af315c69",
+      "sha256": "7389d027c67734303be604969b4f3c97f299444ea9d05a76de55d99682a82579",
+      "base_git_blob": "0cee4578710b632ff59fdd1426a2a65b0474b4fc"
     },
-    "application/tests/test_sprint3a_flight.py": {
-      "base_git_blob": "0241b68f6661d01717ab4ab4ab376d921ed6c62d",
-      "git_blob": "7ec15c49e11322ae6e08596096f13b3b36998e4b",
+    "application/src/go_hotel/autonomy/release.py": {
+      "git_blob": "1d5bb7efd29697c554b878a2777b6e5661b83a5e",
+      "sha256": "add9483e8e11e115a8bdb57791528a4137577088e396bdbcdb18cb302a1f3802",
       "mode": "100644",
-      "sha256": "f40d13f3c8ec5f12f0bd28d114ae7e5aa19691c97617064afa2b5b3dd17313bf"
+      "base_git_blob": "9e3deb62132f9f9068771102e9358f39988dd4e4"
     },
-    "application/tests/test_depth25_migration_history.py": {
-      "base_git_blob": "900c0ff94f92584ad91e7cc1ce467bff2a9ea3ed",
-      "git_blob": "7a17b8862ffc17c4eb15ffdb3a8aef2227a59dbd",
+    "application/src/go_hotel/go_ai/service.py": {
       "mode": "100644",
-      "sha256": "efa0e86ccf88594d67e60df441a462c687d33514feb3892f0fc4ef322a98acbc"
+      "git_blob": "c11b6a660c0c6a58fca807effb91b39918606614",
+      "sha256": "3f3f5feeb3a4da05a744d8b7874b8fcd0f7e0785da819983bd3fc6909ef6f2dc",
+      "base_git_blob": "672ffe3dbab8a7d2de253e198041c7c91381ea34"
     },
-    "application/tests/test_depth48_flight_migration.py": {
-      "base_git_blob": null,
-      "git_blob": "3e0a6719e8e49158ee6c9c3873142da89ba6eb67",
+    "application/src/go_hotel/journey/service.py": {
       "mode": "100644",
-      "sha256": "d8ed83f91c0d7a5d1678505aca08d6eedbe7ee4c5a1a4918bb8ade57b936b5d3"
+      "git_blob": "8354c8e070c056d2388217eed94bfe05afb3c93c",
+      "sha256": "e4d37195af8bf9d788e03ad37342d8b471395616d874088e317db895c8f715b2",
+      "base_git_blob": "02a36bd7de482ee9dac3c794334058407f779dd6"
     },
-    "application/tests/test_depth48_hosted_forfeiture.py": {
-      "base_git_blob": null,
-      "git_blob": "ed79ce5327682111fe89a7764859eb5eeaa0fdda",
+    "application/src/go_hotel/mobility/rental/service.py": {
       "mode": "100644",
-      "sha256": "691ac6eede5132500c568b20b4b84fa540a820382c35acf626ba33842c88d925"
+      "git_blob": "a8b1dc8f5ce551f186a823e79b040807a598c376",
+      "sha256": "f60fbe158bc458013ef45c0144b51e79d9dd216b1982ed9e2cad9458d68f13b6",
+      "base_git_blob": "ac0f7eea89656f4e37ef257551decd52ee1bb00b"
     },
-    "application/tests/test_depth48_flight_changes.py": {
-      "base_git_blob": null,
-      "git_blob": "1529144b8e1bcf1fbfe6ee841b4636c63c99bde6",
+    "application/tests/autonomy/test_c14_release_evidence_guards.py": {
+      "git_blob": "7d60677ea45e27381131ca3a26bf1c73d765d81a",
+      "sha256": "051e330942d6f969aeed58f43bd4d4d4621379bf3e8801e5a2978cc0d00508c2",
       "mode": "100644",
-      "sha256": "d1e348c3d12f90658eb5ef6e045b0b5456140e05892bb011072314026806f67e"
+      "base_git_blob": null
     },
-    "application/tests/test_parent_implementation_code_review_debt_closure.py": {
-      "base_git_blob": "279d531530ad7d339a2f2e187095ac5473afa6e5",
-      "git_blob": "e5f16d80dbb546964452cfefea8e9c9537630dba",
+    "application/tests/go_ai/test_c08_synthesis_audit_finalization.py": {
+      "git_blob": "8bb9a5b3514d32b32e8f400de7d3071922b79f1a",
+      "sha256": "1c431307f6c97dd2389950391bcaf0af93e99f9f3004088a8c0f31196d022327",
       "mode": "100644",
-      "sha256": "70fbd1f748c975e0be68ac8a965ac61bf1134b1c09d0b93e27c84d42c4cb1815"
+      "base_git_blob": null
     },
-    "application/tests/test_flight_journey_depth.py": {
-      "base_git_blob": "9d783e918e889a7c90bfba17db5cbcccabf5a984",
-      "git_blob": "e70f4aad7f86dba04fdf862512ddfec1ce5e78dd",
+    "application/tests/journey/test_c10_current_status_projection.py": {
+      "git_blob": "7720e8fb1d8b6465baf14b46d98b1def532480d8",
+      "sha256": "a87fb62bc980726a5ee5cb83ff57f1f452e9944b7a836c23b7f5ccd0a0059f16",
       "mode": "100644",
-      "sha256": "0091c18f9445b3b68c1033aa1ee90f8b4bb23561205e75ec133f65584afc6caf"
+      "base_git_blob": null
     },
-    "application/alembic/versions/0133_flight_change_plan.py": {
-      "base_git_blob": null,
-      "git_blob": "d9f9ae9ae643edf6c9bb179cf4c51ab07933e576",
+    "application/tests/test_c01_hosted_fare_value_integrity.py": {
+      "git_blob": "4e12d9db13ca24648970d440cc4a043cc2623db4",
+      "sha256": "d5c89d4a4d3d0f880659abce0a8be596da997327e92fd3859368a96b2ad72991",
       "mode": "100644",
-      "sha256": "ddef08d68cf1e2bb24df6a83f8a6d43bf76ae7eb22d867ea9618ea6ae787a791"
+      "base_git_blob": null
     },
-    "application/src/go_hotel/services/hosted_fare_value.py": {
-      "base_git_blob": null,
-      "git_blob": "a1c53d1228e70098e82d2e1fcfd819c32d9bd4c8",
+    "application/tests/test_c04_refund_terminal_integrity.py": {
+      "git_blob": "4ca8646f20a825638b5ad00337ef676f17804396",
+      "sha256": "b66b39fe48d6c56bd009ee73a2931845a1e553ad5b65a90fd16f8c669114820a",
       "mode": "100644",
-      "sha256": "4098dbb4d36de42454224c63c762d1cbdfb015136a8fd57655626c9deec428c0"
+      "base_git_blob": null
     },
-    "application/src/go_hotel/services/post_stay_dispute.py": {
-      "base_git_blob": "0e2f5f0f45f380df0e81031b7a3592d99750c795",
-      "git_blob": "23e31c835c109f85d79bc3e1b038b7cbe536ae0f",
+    "application/tests/test_c11_idempotency_completion_guard.py": {
+      "git_blob": "108739c240848f338cdb0b684282f8ff966a2d36",
+      "sha256": "9b40a65a8c1c36edeb3c036ae932a90f571ae17127dcc8f3b7c23e14813f04f5",
       "mode": "100644",
-      "sha256": "8dd377d725366d1044a1eefa7da9d28e4450ab9440a886672a8483a240c17209"
+      "base_git_blob": null
     },
-    "application/src/go_hotel/services/hosted_credit_value.py": {
-      "base_git_blob": "232aacae9eba7c0b7ab9a245958b39a6e3c15aae",
-      "git_blob": "7324742bcac64c05d3513580a6d48d510a07b188",
+    "application/src/go_hotel/api/routes/travel_intelligence.py": {
       "mode": "100644",
-      "sha256": "0fc638dc70a8c48b096400410c6dfbe5cc42626e73f4aae8ff0ef10286625dae"
+      "git_blob": "f3f5f7ed83fffc76279d98d34aae7f900001c9c4",
+      "sha256": "98b8a1e23a84caf03424a41236d075149f8221cfc9895a70ebd6ff7f5707ef88",
+      "base_git_blob": "3f3cf7243c62a1c691a32e6347a9ffae1949b175"
     },
-    "application/src/go_hotel/services/flight_change_resolution.py": {
-      "base_git_blob": null,
-      "git_blob": "f1e25506859c6a79fd037c8ca8956c02f5c92fef",
+    "application/src/go_hotel/judgment/service.py": {
       "mode": "100644",
-      "sha256": "5ac1b2da15ffdb3a127f70ccc10d4a57caba935654f5cc6c89873a3c78f48104"
+      "git_blob": "154770137bcdb592e3309d08bafbcca81729cad4",
+      "sha256": "ad955e64863cd7fc919adbb1f39735f94df0dc4bc9cf90784882f6ca8de68478",
+      "base_git_blob": "e04e4024c5a779b94ae2ac066e792868f6641050"
     },
-    "application/src/go_hotel/services/guest_stay_fulfillment.py": {
-      "base_git_blob": "caa7d8fcec765f6d4bfdbd207f5ec4ad1e04bf80",
-      "git_blob": "e7f4a9a3b906a6072d6d4454679d0b9881a02440",
+    "application/src/go_hotel/travel_intelligence/preferences.py": {
       "mode": "100644",
-      "sha256": "6fe70087d4229e8567adb30147a4302f24017df405646dae2ca95a721fe7023e"
+      "git_blob": "d8cff6e1b95f4778a0a61252bf86f2bfebf877f4",
+      "sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1",
+      "base_git_blob": null
     },
-    "application/src/go_hotel/services/hosted_credit_refunds.py": {
-      "base_git_blob": "18424a1d29cd268f2a50ce7985962cfa3a6be2f1",
-      "git_blob": "b84fc34ab202b0178f79518a3bc88575641864fc",
+    "application/src/go_hotel/travel_intelligence/service.py": {
       "mode": "100644",
-      "sha256": "dacd85b3df1ee321dfd1cc0b2bd96ffe0dd955ee1a69ca7a2f87978369fc93b7"
+      "git_blob": "4d016cd831809e78fdd16ccc1fbfe5b666d2e849",
+      "sha256": "328d0a39da80805f8a821b1b1166ac1467078b8f91c7db5189e7a0ba222a1c7c",
+      "base_git_blob": "412d6745922b12cbcf50555bed7dcc8f73a72f7b"
     },
-    "application/src/go_hotel/services/unified_money_movement.py": {
-      "base_git_blob": "18165aacb44af0f5bd925e3e12586e9c4420847c",
-      "git_blob": "60816d79f4ad8235d70cb6d5a88748d386d7d82b",
+    "application/tests/go_ai/test_c08_audit_commit_failure.py": {
       "mode": "100644",
-      "sha256": "dab22cc7369c7befc2e121ce38ae8e480d450faf166da126f0adc1c17c340ed6"
+      "git_blob": "3cd0f82b3b67efca323cc6cfa640915c6c2fa9aa",
+      "sha256": "aacdd4fd9e7d27cbac77fd76964817c6d5ce63bb73db9cbae56fb4d5afb4d066",
+      "base_git_blob": null
     },
-    "application/src/go_hotel/services/hosted_money.py": {
-      "base_git_blob": "460b36525cdce4f5464d291a2e757b16cae8f3a0",
-      "git_blob": "da6b63f3fee5ec50363368f20a190e35eb4ed7a8",
+    "application/tests/journey/test_c10_attachment_canonical_facts.py": {
       "mode": "100644",
-      "sha256": "7859e1ac591eb1ecb7ca00d10ebf6c2b5acc08cf9e0b5236d27250ae5170de32"
+      "git_blob": "7e539b074a74e536f80bad0d009e26beb28f7856",
+      "sha256": "11853c4c5ac3f98c42d79d689b5c5c79fb7da0e0b0038f2401af1f8564e73637",
+      "base_git_blob": null
     },
-    "application/src/go_hotel/db/models.py": {
-      "base_git_blob": "a0ec29e4a7de6917f0e87db8839053115f30a922",
-      "git_blob": "4ea8deb0a0337a6f5290a44df2a838866c81b78b",
+    "application/tests/judgment/test_round2_evidence_authority.py": {
       "mode": "100644",
-      "sha256": "07c000c12ff33a90b1436145c9efca87981ed9373fc708f18adbede046d2dde5"
+      "git_blob": "e633f21ea5199bea498084163f366a2418c97612",
+      "sha256": "465ef8827097bd1f002ef6f2d61eef4551e679bb6eb4566ce6aa1cb4d6b76cf7",
+      "base_git_blob": null
     },
-    "application/src/go_hotel/flight/changes.py": {
-      "base_git_blob": null,
-      "git_blob": "96918e8decc01cafeb081fd8a289750da8f91796",
+    "application/tests/test_round2_c07_explicit_preferences.py": {
       "mode": "100644",
-      "sha256": "babfa1e13c0166f0f265c49dbdfb2d1a682390c4f4fce3a3d707a1145669ae99"
+      "git_blob": "7b75fff13e21871f86f54c1335546e3294252e22",
+      "sha256": "d077f40d1e2975fa7ac1f5c3380174dcdbe2071f2652a1badd30e8a65791f1a5",
+      "base_git_blob": null
     },
-    "application/src/go_hotel/flight/service.py": {
-      "base_git_blob": "55857a1b32b6e985de5f4bb132e1017097edf782",
-      "git_blob": "b86a17612ff70710052db799939a25e819b4ef73",
+    "application/tests/test_v70_round2_c01_mixed_funding.py": {
       "mode": "100644",
-      "sha256": "d3f7c0e19f93980830410d67b7e82619a2db1596a31e1631be1596afc1c7b166"
+      "git_blob": "5ff241f2e13db368d2336c26343826445f1eb6ae",
+      "sha256": "f3a911a4ab9b74cf0f1c7cc12b8eff581cdcf5a8e7d21ebbc4a301886dbc80a2",
+      "base_git_blob": null
     },
-    "application/src/go_hotel/api/routes/flight.py": {
-      "base_git_blob": "e8f4aa2aca0fb690bfb1f38d1d04b3e76d117c18",
-      "git_blob": "7d0b6a5e5857848eff4ab1469695e9e76080fcd9",
+    "application/tests/test_v70_round2_c02_partial_party.py": {
       "mode": "100644",
-      "sha256": "23550f89a7b838d406a06c919a58421d7ef69e867872b2f1e2c1e9527edc0c2d"
+      "git_blob": "123e1e0fd334cfd8bc6833c0b48c5b0a3e6e6b0f",
+      "sha256": "a05bb805b4317260e2725b0073bcd147d9a6ebc60c7c49a3bfbd8fb350e4707a",
+      "base_git_blob": null
     },
-    "application/frontend/consumer/index.html": {
-      "base_git_blob": "cc45885076491f1592a1fa1c745990d9b63785a6",
-      "git_blob": "ffa0f53375551a8d844845536aaf78bfc2d31ccc",
+    "application/tests/test_v70_round2_c04_rental_receipts.py": {
       "mode": "100644",
-      "sha256": "33f58986b9271e8a7b96d30c9d08e27084d8ec5a3a4df50684066b46f05f2212"
+      "git_blob": "c2c330aff847922838318fc466d7a0fcaf3b7bd5",
+      "sha256": "08a7a91fe941806f1b66af8aa3f6e12c63e68e8feb3c2c3466d02d7af7fc94af",
+      "base_git_blob": null
     },
-    "application/frontend/consumer/flight-journeys.js": {
-      "base_git_blob": "6910f49fb6212a42b155312e3b73359e39f93530",
-      "git_blob": "3ca505f0fa1a298e5e681a94d10599e88d85abd2",
+    "application/tests/test_v70_round2_c05_recovery_fulfillment.py": {
       "mode": "100644",
-      "sha256": "0bf11c3de683b50dd94b53097a9b91cf4ae6d0f1c248bfe01b429407017fb260"
+      "git_blob": "fbda71ca973f0c89ddec9fd10b7da6fc1eab238c",
+      "sha256": "87df6622c5fbb65250d7a44a938c497d7830ac48b0107978644b185a36be8628",
+      "base_git_blob": null
     },
-    "application/frontend/consumer/flight-changes.js": {
-      "base_git_blob": null,
-      "git_blob": "f45fc88146b280c13c022bcc3df5c36150b51c09",
+    "application/ci/next_depth/c07_postgres.py": {
       "mode": "100644",
-      "sha256": "fe96ca1d54769ac2d0db01c8cbb59b4b2107140acb4ec23cc4409d472734afcd"
+      "git_blob": "7e634cc9f8dd77cc51568daf9a0f410673a4638a",
+      "sha256": "3eb3377f81e219cc4edfe035fbd185e1f4f1337bde4fdcb90957214efc7ea993",
+      "base_git_blob": null
     },
-    "application/mobile/go-app/src/domain/changeActions.ts": {
-      "base_git_blob": "3ea672c33ce3d4b7137183c7b3de32b19987d6f2",
-      "git_blob": "42e1c763fcc74306abb7bcf8c27c6e84874b759d",
+    "application/ci/next_depth/c09_postgres.py": {
       "mode": "100644",
-      "sha256": "86b68e14c3590c45ac1e2ce571cced63c5674cd01bf3b83f2f254fc05f385d9f"
+      "git_blob": "01111d44759f473756832645bfa1a48e7f1c61ee",
+      "sha256": "5ba3f05d6918e293c24f2df5f5defb6105c8e0de3f8212ad4141a636ba8ba6e0",
+      "base_git_blob": null
     },
-    "application/mobile/go-app/src/screens/ChangeBookingScreen.tsx": {
-      "base_git_blob": "f59fd7e52a97c2553d50736c87e6e0801c0d0ce5",
-      "git_blob": "c9c42a2e18564393f5cc28e04c7e0a91ee86fdc3",
+    "application/ci/next_depth/c11_postgres.py": {
       "mode": "100644",
-      "sha256": "69e881354a3bea4cc3b598368673e0d6d3261f45a4235fbbfa1981e4ee7d6fb7"
+      "git_blob": "8924bc99d21a216855f7836e6f0a0885bf375cf5",
+      "sha256": "7a8ace9209c972720672e3842af34da9f414e10c48e665de150ca3a6394aac55",
+      "base_git_blob": null
     },
-    "application/tests/test_final_depth_terminal_hardening.py": {
-      "base_git_blob": "06e77b86077b97b1e5bcf87cbb12bb61414a125c",
-      "git_blob": "5b9807579a2f6a892e24d946f6dfa0cd45209394",
+    "application/ci/next_depth/c11_process_actor.py": {
       "mode": "100644",
-      "sha256": "08fe07ad0e12d18322d51e2fab9e0d34070accedc02a471557ad5f80a6299839"
+      "git_blob": "bb7dc2f6837492144d865c524365629ef0244f44",
+      "sha256": "481e4e057723ab89e17c2c6f07c2ea23267b579c3ca2c662089349269a6e458b",
+      "base_git_blob": null
     },
-    "application/pyproject.toml": {
-      "base_git_blob": "56a0808f434b36b658fe53620a93d380a7450419",
-      "git_blob": "bef88ca2402e06005a3d1a80bbe5facba3086f7b",
+    "application/src/go_hotel/attractions/service.py": {
       "mode": "100644",
-      "sha256": "37a68962ec8426d938cdced216443ce31998633fbee2780825dcf6e8b3aed346"
+      "git_blob": "5f8b4819386848b2ab3eebb1b50f511aee4cfedb",
+      "sha256": "518e680f84f49b53caca21fc0eb0ce37634af8e05c2791ebf3f3550b0e47d2d4",
+      "base_git_blob": "18c9bf5116756afe490a810618f5e64ff94592d5"
     },
-    "application/Dockerfile": {
-      "base_git_blob": null,
-      "git_blob": "ad355e78615956e2e98efdfac4c2d82dc39c12fb",
+    "application/src/go_hotel/attractions/validity.py": {
       "mode": "100644",
-      "sha256": "4b48ed235781635db325fc85c4662958595b67ee26506cb81fb99d7d890cdbcd"
+      "git_blob": "de9a41eb136bef5f5f4be9803c406b904751956b",
+      "sha256": "93cb671e45afac616f5a284bf7310fc26354e5a25de5e6a853e9337c6e59875e",
+      "base_git_blob": null
     },
-    "application/.dockerignore": {
-      "base_git_blob": null,
-      "git_blob": "7b44f5c6eb68fccd80f88dbd9c3443aba75cfe8b",
+    "application/src/go_hotel/flight/coupon_plan.py": {
       "mode": "100644",
-      "sha256": "e7e6a46ac0a969c577d02ce13743a88eb21d65a2b05c141fdf6c65b5783196bb"
+      "git_blob": "cf24bdf75cfadbeafbdd8d5a541b6654cdd74133",
+      "sha256": "6242fe6e99bcbd9f77b2732ef175aa2a38351874f537d736505ccc2e627ebb89",
+      "base_git_blob": null
+    },
+    "application/src/go_hotel/flight/payment_recovery.py": {
+      "mode": "100644",
+      "git_blob": "810a9061a17566a55bcd30a18b7046c714926538",
+      "sha256": "60034e9a1722b8a396bf6d4d757a287ea418bbd331282fe0468799887d2817ca",
+      "base_git_blob": null
+    },
+    "application/src/go_hotel/judgment/good_hotel_standard.py": {
+      "mode": "100644",
+      "git_blob": "1f14ecc957c2ac0831473b744d7a5c7c7e2e56f7",
+      "sha256": "d15221f7925142869bd84cd8a7c955f838aa9d5ad78b1c2965307a53b9a3adad",
+      "base_git_blob": "de6e7fb11b08fce5a7133f31b005acd5f7922639"
+    },
+    "application/src/go_hotel/mobility/rental/reconciliation.py": {
+      "mode": "100644",
+      "git_blob": "0c38f9e17b9e58c2269e79ed7182ad3b1e562281",
+      "sha256": "eda26a527b91e6f59b66ce75f566c1da366aa19e2a0a7cabfd494a583700ea7e",
+      "base_git_blob": null
+    },
+    "application/src/go_hotel/mobility/ride/recovery_evidence.py": {
+      "mode": "100644",
+      "git_blob": "7fb7ac6c862f50f35d1d7f23e2e6073a29617c76",
+      "sha256": "437396d94c7ff0448855099937edc949429649ffa827397b10265d06eeb5d7ee",
+      "base_git_blob": null
+    },
+    "application/src/go_hotel/mobility/ride/service.py": {
+      "mode": "100644",
+      "git_blob": "c543af5c19237fc8ded6a293686e232b7ea07588",
+      "sha256": "ef10cd646a5f621416f17f47af9ea8ac0f1638c22f53f8da87359faf61770db5",
+      "base_git_blob": "fd2a193bdd4dcd9b863ddbc958ea00e9d2873806"
+    },
+    "application/src/go_hotel/repositories/sql.py": {
+      "mode": "100644",
+      "git_blob": "c948dfd8e89601a107296c12f4d0d6f948606d47",
+      "sha256": "36bb6fb7e64c531a283a89a47ddb98a317fdf89702aa16f4de46d8635b5c3824",
+      "base_git_blob": "dcc2dec0fb08aaee0a8598d688a71e45f7f2d0d5"
+    },
+    "application/src/go_hotel/services/mutation_boundary.py": {
+      "mode": "100644",
+      "git_blob": "f62fba3ef01e3f4d182314cfef7473670f882e33",
+      "sha256": "611d9bbd6170c87d5c221c8d16eb897fc3dd8e4a6a89b160247ce92098e555d3",
+      "base_git_blob": null
+    },
+    "application/tests/c07_preference_process_actor.py": {
+      "mode": "100644",
+      "git_blob": "a12aca195f0b8210d1267874d9505e11847914af",
+      "sha256": "6bd2e7d8f5e6d1b4eaad52c6cff50e8ac0d883b64e1ac3fd58e655cf2c6cadbe",
+      "base_git_blob": null
+    },
+    "application/tests/go_ai/c08_hard_exit_worker.py": {
+      "mode": "100644",
+      "git_blob": "2f1d31742e564ada9bea5c622cd922313b216e1b",
+      "sha256": "85702d024449720fbbccf49191e30229dc1dea38d5ac86b013cd9c0faffbecf8",
+      "base_git_blob": null
+    },
+    "application/tests/go_ai/test_c08_hard_exit_recovery.py": {
+      "mode": "100644",
+      "git_blob": "07f27dd1578a4cebe14baf28fc4a401f074f590d",
+      "sha256": "cb209b4f0dc76f746837560402182757bcadc5caeda7da19dfe89e8b050fd0c1",
+      "base_git_blob": null
+    },
+    "application/tests/journey/test_c10_batch_list_projection.py": {
+      "mode": "100644",
+      "git_blob": "b50d0ac54c803827639cb2d317fe4dd2d100c190",
+      "sha256": "99938833b59963eb641b0bc9971fd507ad174c9a8953d0d76eabbd210364962d",
+      "base_git_blob": null
+    },
+    "application/tests/judgment/test_next_depth_concurrent_judgment.py": {
+      "mode": "100644",
+      "git_blob": "c27a41d750fa64d0bcafc0cff1e9069a52168030",
+      "sha256": "c6c579c38c5ac65234f5b75c3f87bdb998de08b17add0697c85e50b59b19a5fb",
+      "base_git_blob": null
+    },
+    "application/tests/payments/test_c11_flight_idempotency_recovery.py": {
+      "mode": "100644",
+      "git_blob": "bfc245ff70951ef39dcfc9da030c5f9e8029a5c5",
+      "sha256": "783816041585a447e93d801c5450d924e619ad3d5a50b4b04afdd058673d77be",
+      "base_git_blob": null
+    },
+    "application/tests/test_next_depth_c03_payment_inventory_races.py": {
+      "mode": "100644",
+      "git_blob": "b68ba2d99a8538185873402e7cf7729af4350735",
+      "sha256": "a69c18f7264ec6b2f08f8a7bfe48d0eed2ecbd6720806f718ea233be727caa31",
+      "base_git_blob": null
+    },
+    "application/tests/test_next_depth_c06_supplier_validity.py": {
+      "mode": "100644",
+      "git_blob": "d321207145eb653efd531145c343e0f1fe4332c9",
+      "sha256": "12a783f49696a1dcadb9ea42632b38c2a6c6b2fb8a4d5e04e47b86782693ff58",
+      "base_git_blob": null
+    },
+    "application/tests/test_round2_c07_process_recovery.py": {
+      "mode": "100644",
+      "git_blob": "f3e2cc075a45e81f6b387e86ea1a5a63cad48d3e",
+      "sha256": "4f577c32240286c255cb0ffc6f6460b463bb3279f29ce03c4e071d26121ea65a",
+      "base_git_blob": null
+    },
+    "application/tests/test_v70_next_c01_unknown_funding.py": {
+      "mode": "100644",
+      "git_blob": "f1d284d3d961e3a8621ce523bb5faf3cdc997e6c",
+      "sha256": "8d38828184fde831bc4ba080b903350cd71b86064c159f198a2b60d08810f3cd",
+      "base_git_blob": null
+    },
+    "application/tests/test_v70_next_c02_coupon_plan.py": {
+      "mode": "100644",
+      "git_blob": "c065603824371c849ee769eacd95c6bc7cae2b25",
+      "sha256": "5419f02e5694f45d59a356784db8eb66572fb43599d8df8dcf97e33dcb0e5bd0",
+      "base_git_blob": null
+    },
+    "application/tests/test_v70_next_c04_readonly_reconciliation.py": {
+      "mode": "100644",
+      "git_blob": "42a1c6cb2800936dfec3431975a68126a4c303a2",
+      "sha256": "fe6f95dfa685803c189b1a86f82cb64500e8b6bba7d79303fd8f5ab4cb03c33d",
+      "base_git_blob": null
+    },
+    "application/tests/test_v70_next_c05_recovery_evidence.py": {
+      "mode": "100644",
+      "git_blob": "44d441cdad37bbbca7848772c4c1774dd9054a13",
+      "sha256": "e17dc0cc080650953185f2273e8afd2a055109fb5754eb775741070c0fd76a83",
+      "base_git_blob": null
     }
   },
   "hong_kong": "NOT_ACCESSED",
@@ -554,7 +879,70 @@
   "migration": "NONE",
   "parent_commit": "2d15536d2b65484e5a1c00067871387cefdfb235",
   "production": "HOLD",
+  "repair_generation": "DEPTH48_ORDERED_REPAIRS",
   "schema": "go.depth41.acceptance-patch.v1",
   "topology": "UNCHANGED",
-  "repair_generation": "DEPTH48_ORDERED_REPAIRS"
+  "v70_cell_closure": {
+    "base_commit": "286e294d92df4b7d1c0073116a8e628734abec6c",
+    "application_git_tree": "b9aee82e8c3932a540349b1f62b714c5ea52e837",
+    "source_files": 1332,
+    "changed_application_files": [
+      "application/frontend/shared/app.js",
+      "application/src/go_hotel/api/idempotency.py",
+      "application/src/go_hotel/api/routes/operations_console.py",
+      "application/src/go_hotel/autonomy/release.py",
+      "application/src/go_hotel/go_ai/service.py",
+      "application/src/go_hotel/journey/service.py",
+      "application/src/go_hotel/main.py",
+      "application/src/go_hotel/mobility/rental/service.py",
+      "application/src/go_hotel/observability/metrics.py",
+      "application/src/go_hotel/services/hosted_fare_value.py",
+      "application/tests/autonomy/test_c14_release_evidence_guards.py",
+      "application/tests/go_ai/test_c08_synthesis_audit_finalization.py",
+      "application/tests/journey/test_c10_current_status_projection.py",
+      "application/tests/test_c01_hosted_fare_value_integrity.py",
+      "application/tests/test_c04_refund_terminal_integrity.py",
+      "application/tests/test_c11_idempotency_completion_guard.py",
+      "application/tests/test_depth48_capacity.py"
+    ],
+    "scope": "Six P1 repairs plus inherited PR62/PR64; scoped evidence only; no deployment"
+  },
+  "query_defaults_repair": {
+    "source_commit": "8de489349c278b5976fdd58f8ab1e59468fc9d41",
+    "application_git_tree": "995d0d83faf883bec980c896fe8a17b0f12360fa",
+    "source_tree_sha256": "1c4d78c3c1bb5f448d0ebdb99d16a2d76419bbc663cc9ed8fae831e1d18c10c4",
+    "path": "application/src/go_hotel/api/routes/operations_console.py",
+    "git_blob": "2e6f85b7fc883fab0f74e505951ce751f19cbb37",
+    "sha256": "dd8ce37a8fa8def78d855012086f22c841aacdda8bbe7437f8322297e53a9a38",
+    "reason": "Authorized four Query defaults repair; retain all verification assertions and historical evidence."
+  },
+  "v70_round2": {
+    "schema": "go.v70.round2.candidate.v1",
+    "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+    "base_application_git_tree": "995d0d83faf883bec980c896fe8a17b0f12360fa",
+    "application_git_tree": "740d026e3723f5da015342ead3394969629541df",
+    "source_tree_sha256": "b4383b383dd54e472ef178f1804d925bebf55019dc17f3641712cc42d4aae7b4",
+    "source_files": 1341,
+    "inherited_application_files": 1326,
+    "new_application_files": 9,
+    "deleted_application_files": [],
+    "full_release": "HOLD",
+    "hong_kong": "NOT_ACCESSED",
+    "production": "HOLD"
+  },
+  "v70_next_depth": {
+    "schema": "go.v70.next-depth.candidate.v1",
+    "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+    "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+    "base_application_git_tree": "740d026e3723f5da015342ead3394969629541df",
+    "application_git_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
+    "source_tree_sha256": "dc6b8655e362991a7556b07f8ab2b038b81be89f9b0c32f816be5f52a2c6f70f",
+    "source_files": 1364,
+    "inherited_application_files": 1330,
+    "new_application_files": 23,
+    "deleted_application_files": [],
+    "full_release": "HOLD",
+    "hong_kong": "NOT_ACCESSED",
+    "production": "HOLD"
+  }
 }

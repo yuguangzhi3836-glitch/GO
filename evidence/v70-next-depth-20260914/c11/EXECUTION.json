@@ -1,0 +1,52 @@
+{
+  "task_id": "V70-R2-C11-03",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "parent_candidate": "PR73 a274f77e\u2026 application tree740d026e\u2026; parent-coordinator reports 1341 files hash verified against ../pr73-baseline/application",
+  "started_at": "2026-09-14T03:48:20.189374+00:00",
+  "agent": "/root/cross_domain_depth",
+  "status": "EVIDENCE_READY",
+  "task_scope": [
+    "FLIGHT_CHECKOUT durable idempotent recovery",
+    "FLIGHT_EXECUTE_CHANGE durable idempotent recovery"
+  ],
+  "C14": "PENDING_NOT_SELF_SIGNED",
+  "C13": "PENDING_NOT_SELF_SIGNED",
+  "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "parent_application_git_tree": "740d026e3723f5da015342ead3394969629541df",
+  "finished_at": "2026-09-14T04:17:27.339779+00:00",
+  "stage_progress": {
+    "completed": 4,
+    "denominator": 6,
+    "C14": "PENDING_INDEPENDENT_REVIEW",
+    "C13": "PENDING_INDEPENDENT_ACCEPTANCE"
+  },
+  "tests": {
+    "final_pytest": {
+      "passed": 100,
+      "total": 100,
+      "new_c11_cases": 40
+    },
+    "sqlite_process_smoke": {
+      "passed": 10,
+      "total": 10,
+      "final_unknown_response_code_tightening_after_smoke": true
+    },
+    "parent_red": {
+      "failed": 2,
+      "total": 2
+    }
+  },
+  "holds": [
+    "PostgreSQL actual CI pending",
+    "hard-death RUNNING automatic recovery",
+    "supplier-resolution commit interruption",
+    "other 35 callbacks / generic wrapper post-commit failure"
+  ],
+  "next_task": {
+    "status": "ASSIGNED_BY_ROOT",
+    "action": "Run isolated PostgreSQL CI on candidate, read back evidence, submit C14 then C13"
+  },
+  "source_freeze": "2026-09-14T04:17:27.339779+00:00",
+  "canonical_test": "application/tests/payments/test_c11_flight_idempotency_recovery.py",
+  "excluded_accidental_path": "application/application/tests/payments/test_c11_flight_idempotency_recovery.py"
+}

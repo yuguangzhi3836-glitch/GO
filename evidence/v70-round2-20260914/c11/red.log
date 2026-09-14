@@ -1,0 +1,90 @@
+{'effects_committed': 2, 'claim_retained': False, 'errors': ['RuntimeError', 'RuntimeError']}
+F{'effects_committed': 2, 'claim_retained': False, 'errors': ['RuntimeError', 'RuntimeError']}
+F
+=================================== FAILURES ===================================
+_________ test_post_commit_error_does_not_allow_duplicate_effect[sync] _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fbe7ce912b0>
+asynchronous = False
+
+    @pytest.mark.parametrize("asynchronous", [False,True], ids=["sync","async"])
+    def test_post_commit_error_does_not_allow_duplicate_effect(monkeypatch, asynchronous):
+        engine=create_engine("sqlite+pysqlite:///:memory:")
+        sessions=sessionmaker(bind=engine)
+        IdempotencyRow.__table__.create(engine)
+        effects=Table("c11_committed_effect",MetaData(),Column("id",Integer,primary_key=True))
+        effects.create(engine)
+        monkeypatch.setattr(sql,"SessionLocal",sessions)
+        repo=sql.SqlRepository()
+        monkeypatch.setattr(idempotency,"repo",repo)
+        errors=[]
+        def callback():
+            with sessions.begin() as session:
+                session.execute(effects.insert())
+            raise RuntimeError("CALLBACK_RESPONSE_FAILED_AFTER_COMMIT")
+        async def async_callback():
+            return callback()
+        try:
+            for _ in range(2):
+                try:
+                    args=("C11_PROBE","fixed-key",{"amount_minor":100})
+                    if asynchronous:
+                        asyncio.run(idempotency.run_idempotent_async(*args,async_callback))
+                    else:
+                        idempotency.run_idempotent(*args,callback)
+                except (RuntimeError,HTTPException) as exc:
+                    errors.append(type(exc).__name__)
+            with sessions() as session:
+                count=session.scalar(select(func.count()).select_from(effects))
+            claim=repo.get_idempotency("C11_PROBE","fixed-key")
+            print({"effects_committed":count,"claim_retained":claim is not None,"errors":errors})
+>           assert count == 1, "UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT"
+E           AssertionError: UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT
+E           assert 2 == 1
+
+../evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py:42: AssertionError
+________ test_post_commit_error_does_not_allow_duplicate_effect[async] _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fbe79ffc8f0>
+asynchronous = True
+
+    @pytest.mark.parametrize("asynchronous", [False,True], ids=["sync","async"])
+    def test_post_commit_error_does_not_allow_duplicate_effect(monkeypatch, asynchronous):
+        engine=create_engine("sqlite+pysqlite:///:memory:")
+        sessions=sessionmaker(bind=engine)
+        IdempotencyRow.__table__.create(engine)
+        effects=Table("c11_committed_effect",MetaData(),Column("id",Integer,primary_key=True))
+        effects.create(engine)
+        monkeypatch.setattr(sql,"SessionLocal",sessions)
+        repo=sql.SqlRepository()
+        monkeypatch.setattr(idempotency,"repo",repo)
+        errors=[]
+        def callback():
+            with sessions.begin() as session:
+                session.execute(effects.insert())
+            raise RuntimeError("CALLBACK_RESPONSE_FAILED_AFTER_COMMIT")
+        async def async_callback():
+            return callback()
+        try:
+            for _ in range(2):
+                try:
+                    args=("C11_PROBE","fixed-key",{"amount_minor":100})
+                    if asynchronous:
+                        asyncio.run(idempotency.run_idempotent_async(*args,async_callback))
+                    else:
+                        idempotency.run_idempotent(*args,callback)
+                except (RuntimeError,HTTPException) as exc:
+                    errors.append(type(exc).__name__)
+            with sessions() as session:
+                count=session.scalar(select(func.count()).select_from(effects))
+            claim=repo.get_idempotency("C11_PROBE","fixed-key")
+            print({"effects_committed":count,"claim_retained":claim is not None,"errors":errors})
+>           assert count == 1, "UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT"
+E           AssertionError: UNCERTAIN_CALLBACK_FAILURE_RELEASED_CLAIM_AND_DUPLICATED_COMMITTED_EFFECT
+E           assert 2 == 1
+
+../evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py:42: AssertionError
+=========================== short test summary info ============================
+FAILED ../evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py::test_post_commit_error_does_not_allow_duplicate_effect[sync]
+FAILED ../evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py::test_post_commit_error_does_not_allow_duplicate_effect[async]
+2 failed in 1.77s

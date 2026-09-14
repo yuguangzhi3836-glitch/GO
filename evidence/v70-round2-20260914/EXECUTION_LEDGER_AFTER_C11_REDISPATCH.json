@@ -1,0 +1,1017 @@
+{
+  "schema_version": 1,
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "round_id": "V70-R2-20260914",
+  "recorded_at": "2026-09-14T03:16:20.152844+00:00",
+  "snapshot_scope": "Observed C11 blocked report before actual V70-R2-C11-02 redispatch; captured here for immutable audit, not a claim of a current server worker state",
+  "cells": [
+    {
+      "cell_id": "C01",
+      "agent": "/root/vertical_depth",
+      "task": {
+        "id": "V70-R2-C01-01",
+        "description": "酒店金额完整性混合状态下一层验收",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C01-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c01/after.raw.log",
+            "sha256": "1030ae81b672c80f4db06edb3faa96fbff6bd7f339f8b20da5b68a4679a2a4ad",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C01-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c01/after.raw.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C01-02",
+        "description": "混合额度现金结账未知资金结果恢复，保留已通过酒店价格规则",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C02",
+      "agent": "/root/vertical_depth",
+      "task": {
+        "id": "V70-R2-C02-01",
+        "description": "多航段部分乘客请求边界与无资金副作用",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C02-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c02/after.raw.log",
+            "sha256": "7101a1356a2a0e720981d6ca015eb7060df278d6997d6475a2590ec74d4c2ddd",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C02-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c02/after.raw.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C02-02",
+        "description": "按乘客及票联拆分改签设计与隔离实现；保护未选乘客和航段、原金额分摊",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C03",
+      "agent": "/root/c03_c06_c09_runtime",
+      "task": {
+        "id": "V70-R2-C03-01",
+        "description": "铁路改签双库存与退款恢复运行补证",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C03-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c03/dual-inventory-refund.raw.log",
+            "sha256": "99db33d5c94c6f7da021687c7391181685cc33299c5435b1c861e2db3be3ec87",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C03-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c03/runtime-existing.raw.log",
+            "sha256": "5dc4df59da10be757fa131e4a2d4548f47d85d020921b557e3b44d979ebd3e03",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C03-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c03/dual-inventory-refund.raw.log",
+          "evidence/v70-round2-20260914/c03/runtime-existing.raw.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C03-02",
+        "description": "未付款到期与支付取消竞争，以及目标库存满额时不得补扣",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C04",
+      "agent": "/root/vertical_depth",
+      "task": {
+        "id": "V70-R2-C04-01",
+        "description": "租车退款资金回执配对与终态一致性",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C04-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c04/after.raw.log",
+            "sha256": "4d2df7a96ce4a667da3ccf295f2d16c728a65ed0e861a3baa919f7bb469b02b5",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C04-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c04/before.raw.log",
+            "sha256": "f48437c1818f4d3f2b540e0dcbddc3e75ecdd079fd40724c97aac47cf6861cfb",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C04-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c04/before2.raw.log",
+            "sha256": "de23a4fd06769ee3858fefd8a1a8bb701e7357cffd13e86d707c78cea19ef9f8",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C04-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c04/receipt-plan-after.raw.log",
+            "sha256": "d140760c16527c43a5185827cbeec43fa0deb015a8062358fd9a74bb86ab6f28",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C04-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c04/receipt-plan-before.raw.log",
+            "sha256": "e259de6cd88987b298883b5fccfeb2e9d5c99f209bc7336a47dcc13560fb90fd",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C04-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c04/regression.raw.log",
+            "sha256": "e837a173ec33d93b1abd07a04b38fc03bdbdeb6df44acf9db29177e484bf5824",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C04-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c04/after.raw.log",
+          "evidence/v70-round2-20260914/c04/before.raw.log",
+          "evidence/v70-round2-20260914/c04/before2.raw.log",
+          "evidence/v70-round2-20260914/c04/receipt-plan-after.raw.log",
+          "evidence/v70-round2-20260914/c04/receipt-plan-before.raw.log",
+          "evidence/v70-round2-20260914/c04/regression.raw.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C04-02",
+        "description": "历史租车退款与冻结计划账本只读对账，列出矛盾修复候选",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C05",
+      "agent": "/root/vertical_depth",
+      "task": {
+        "id": "V70-R2-C05-01",
+        "description": "用车未知结果恢复与退款履约下一层",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C05-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c05/after.raw.log",
+            "sha256": "423b1d0e014eb1eab96f4420f7b344c2615be505dd574b756ac884826ca74f2d",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C05-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c05/after.raw.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C05-02",
+        "description": "未知结果恢复中证据缺失或损坏的同阶段拒绝与恢复",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C06",
+      "agent": "/root/c03_c06_c09_runtime",
+      "task": {
+        "id": "V70-R2-C06-01",
+        "description": "景点核销退款互斥及合同运行补证",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C06-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c06/redemption-refund-exclusion.raw.log",
+            "sha256": "99db33d5c94c6f7da021687c7391181685cc33299c5435b1c861e2db3be3ec87",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C06-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c06/runtime-existing.raw.log",
+            "sha256": "6d82cf7c7a7bc54ae70215d162423db36c4bfe0ab0ef7fb69e10f3f7489b5701",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C06-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c06/redemption-refund-exclusion.raw.log",
+          "evidence/v70-round2-20260914/c06/runtime-existing.raw.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C06-02",
+        "description": "目的地时区及供应商有效窗口契约，补核销临界点测试",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C07",
+      "agent": "/root/c07_p0",
+      "task": {
+        "id": "V70-R2-C07-01",
+        "description": "P0显式偏好加密持久化及purpose-consent读取撤回",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C07-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c07/green-attempt1.log",
+            "sha256": "118984a8df75e866d5c3969ea0be9434e90e13613d7200734f297671f042e845",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C07-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c07/green-final.log",
+            "sha256": "bcbc1d5acfe60485c752ccd233634711b285b6d2b6cf6aac4477da52f552f61f",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C07-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c07/red-environment-failure.log",
+            "sha256": "6c7d09acac761ebeca504646eabd1c90209cf2154a106870bdf6b4dbaf58b89f",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C07-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c07/red.log",
+            "sha256": "fd203112e92d6784551291791fd13246eb17274dcc59827f37849785297de891",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C07-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c07/green-attempt1.log",
+          "evidence/v70-round2-20260914/c07/green-final.log",
+          "evidence/v70-round2-20260914/c07/red-environment-failure.log",
+          "evidence/v70-round2-20260914/c07/red.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C07-02",
+        "description": "隔离PostgreSQL并发更新撤回及跨进程重启持久化验收",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C08",
+      "agent": "/root/cross_domain_depth",
+      "task": {
+        "id": "V70-R2-C08-01",
+        "description": "规划成功结果审计提交故障收敛",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C08-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c08/green.log",
+            "sha256": "3778c5c90f5276339c6de23117314f593efa65b62332a11fb9ba1c55404fb3ad",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C08-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c08/red.log",
+            "sha256": "0d9225085a9ed3e10e58d6b6c6ecbecaea6d41df8e553288617316557dcd2c60",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C08-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c08/green.log",
+          "evidence/v70-round2-20260914/c08/red.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C08-02",
+        "description": "进程硬中断后的ROUTING审计恢复，禁止重放模型副作用",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C09",
+      "agent": "/root/c03_c06_c09_runtime",
+      "task": {
+        "id": "V70-R2-C09-01",
+        "description": "判断证据运行补齐及禁止调用方覆盖风险事实",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C09-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c09/evidence-authority-green.raw.log",
+            "sha256": "4e8371f9c620cfa4bc5d9ebdf7294ff64db14d8292266e6fd5f232f5168cd93a",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C09-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c09/evidence-authority-red.raw.log",
+            "sha256": "adc6700a781b4e4463b809451f0b782ed08e27ca7d49980a77c443067c865ed3",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C09-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c09/evidence-authority-green.raw.log",
+          "evidence/v70-round2-20260914/c09/evidence-authority-red.raw.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C09-02",
+        "description": "同酒店并发重评及钩子重放，仅一个ACTIVE判断和匹配证据",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C10",
+      "agent": "/root/cross_domain_depth",
+      "task": {
+        "id": "V70-R2-C10-01",
+        "description": "统一行程金额事实污染修复与查询成本复现",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C10-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c10/green.log",
+            "sha256": "03e1aed8b1368661cbe8cbe375edcf96b05759540bafcd8870fb1c51b108958a",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C10-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c10/query_scaling.log",
+            "sha256": "c4d81c1ae559234543adcd204b334832c943e2406677eaf49ef40a2870f954e4",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C10-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c10/red.log",
+            "sha256": "db36e6b33c18b237b95ba5f9d02f7b797cb4d5f296b2c2f8c20c23ca4d1c0df9",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C10-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c10/green.log",
+          "evidence/v70-round2-20260914/c10/query_scaling.log",
+          "evidence/v70-round2-20260914/c10/red.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C10-02",
+        "description": "行程列表批量投影，约束N+1且保留成员权限和缺单回退",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C11",
+      "agent": "/root/cross_domain_depth",
+      "task": {
+        "id": "V70-R2-C11-02",
+        "description": "37处幂等callback提交边界分类，先FLIGHT_CHECKOUT和EXECUTE_CHANGE",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+        "status": "ASSIGNED",
+        "completion": {
+          "percent": 0,
+          "definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS"
+        },
+        "evidence": [],
+        "execution_evidence_refs": [],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": null,
+      "task_history": [
+        {
+          "id": "V70-R2-C11-01",
+          "description": "幂等callback提交副作用后抛错重放复现",
+          "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+          "status": "BLOCKED",
+          "completion": {
+            "percent": 33.333333,
+            "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+          },
+          "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+          "evidence": [
+            {
+              "path": "evidence/v70-round2-20260914/DISPATCH.json",
+              "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/red.log",
+              "sha256": "0534b29ee6a4626ccadf8ac5a1897823fa890fc3bb69212af4212614fa985773",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-01"
+            },
+            {
+              "path": "evidence/v70-round2-20260914/c11/retained_regression.log",
+              "sha256": "01b6a7296138f4541706d10cd175e92188435626a74123b3058ab6cfcdcc30e9",
+              "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+              "task_id": "V70-R2-C11-01"
+            }
+          ],
+          "execution_evidence_refs": [
+            "evidence/v70-round2-20260914/DISPATCH.json",
+            "evidence/v70-round2-20260914/c11/red.log",
+            "evidence/v70-round2-20260914/c11/retained_regression.log"
+          ],
+          "gates": {
+            "tests": {
+              "status": "HOLD",
+              "evidence_refs": []
+            },
+            "evidence": {
+              "status": "HOLD",
+              "evidence_refs": []
+            },
+            "c14": {
+              "status": "HOLD",
+              "evidence_refs": []
+            },
+            "c13": {
+              "status": "HOLD",
+              "evidence_refs": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "cell_id": "C12",
+      "agent": "/root/c12_scheduler",
+      "task": {
+        "id": "V70-R2-C12-01",
+        "description": "14Cell调度校验与SCHEDULER_FAIL续派去重",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C12-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c12/validator-tests.raw.log",
+            "sha256": "93660ee7a1fb764547bfc654f7f2c2bd8f32253a29e18c296155364de63b5c5d",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C12-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c12/validator-tests.raw.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C12-02",
+        "description": "冻结CI运行调度校验器，验证下一任务承接证据及原件回读",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C13",
+      "agent": "/root",
+      "task": {
+        "id": "V70-R2-C13-01",
+        "description": "固定候选独立审查测试及证据校验",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 33.333333,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C13-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C13-02",
+        "description": "固定源码CI与独立原件验收，核对各Cell下一任务是否承接",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    },
+    {
+      "cell_id": "C14",
+      "agent": "/root/c14_review",
+      "task": {
+        "id": "V70-R2-C14-01",
+        "description": "目的同意权限/C07C09真源边界及候选独立审查",
+        "scope": "本轮有限缺口/测试及验收范围；不表示整个领域完工",
+        "status": "RUNNING",
+        "completion": {
+          "percent": 66.666667,
+          "definition": "六阶段分母：缺口、任务、测试、Evidence、C14、C13；100%只在四Gate原件完整后计本任务，领域比例未知"
+        },
+        "test_plan": "执行本域已登记测试及独立C14/C13，保留失败与运行环境边界",
+        "evidence": [
+          {
+            "path": "evidence/v70-round2-20260914/DISPATCH.json",
+            "sha256": "8224ebf1bb9c262388e052afb5182a95f7d28f209cbc83d40a2a182277e73473",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C14-01"
+          },
+          {
+            "path": "evidence/v70-round2-20260914/c14/authority-regression.log",
+            "sha256": "6fab4abd01b904f60845c4f53e68822b139fb9ced05986741e4cfac9efc0cad6",
+            "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+            "task_id": "V70-R2-C14-01"
+          }
+        ],
+        "execution_evidence_refs": [
+          "evidence/v70-round2-20260914/DISPATCH.json",
+          "evidence/v70-round2-20260914/c14/authority-regression.log"
+        ],
+        "gates": {
+          "tests": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "evidence": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c14": {
+            "status": "HOLD",
+            "evidence_refs": []
+          },
+          "c13": {
+            "status": "HOLD",
+            "evidence_refs": []
+          }
+        }
+      },
+      "executable_gap": true,
+      "domain_completion": null,
+      "next_task": {
+        "id": "V70-R2-C14-02",
+        "description": "审核下一层候选权限真源与Evidence边界，保留本轮PASS范围",
+        "scope": "本域下一层明确可执行工作，外部运行范围单列",
+        "completion_definition": "缺口→任务→测试→Evidence→C14→C13六阶段；不继承为新任务PASS",
+        "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据"
+      }
+    }
+  ],
+  "events": [
+    {
+      "event": "ROUND2_SESSION_AGENT_DISPATCH",
+      "at": "2026-09-14T03:16:20.152844+00:00",
+      "evidence": "evidence/v70-round2-20260914/DISPATCH.json"
+    },
+    {
+      "event": "C13_INDEPENDENT_AGENT_ASSIGNED",
+      "at": "2026-09-14T03:16:20.152844+00:00",
+      "agent": "/root/c13_independent"
+    },
+    {
+      "event": "SCHEDULER_FAIL",
+      "cell_id": "C11",
+      "at": "2026-09-14T03:16:20.188077+00:00",
+      "previous_task_id": "V70-R2-C11-01",
+      "previous_status": "BLOCKED"
+    },
+    {
+      "event": "LOCAL_TASK_ASSIGNED",
+      "cell_id": "C11",
+      "at": "2026-09-14T03:16:20.188077+00:00",
+      "assignment_id": "local-followup-f9b00392dac1d790e17c",
+      "task_id": "V70-R2-C11-02",
+      "status": "ASSIGNED"
+    }
+  ],
+  "followups": [
+    {
+      "id": "local-followup-f9b00392dac1d790e17c",
+      "cell_id": "C11",
+      "task_id": "V70-R2-C11-02",
+      "status": "ASSIGNED",
+      "assigned_at": "2026-09-14T03:16:20.188077+00:00",
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "description": "37处幂等callback提交边界分类，先FLIGHT_CHECKOUT和EXECUTE_CHANGE",
+      "scope": "本域下一层明确可执行工作，外部运行范围单列",
+      "test_plan": "定向验证任务所述不变量；使用固定候选及隔离环境，保存原始运行证据",
+      "transport": "LOCAL_DEVELOPMENT_RECORD",
+      "acknowledged_at": null,
+      "started_at": null
+    }
+  ]
+}

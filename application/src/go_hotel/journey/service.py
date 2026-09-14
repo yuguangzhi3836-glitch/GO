@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from uuid import uuid4
-from sqlalchemy import select
+from sqlalchemy import select, tuple_
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (
     GoJourneyRow,GoJourneyItemRow,OrderRow,FlightOrderRow,RailOrderRow,
@@ -48,7 +48,8 @@ class JourneyService:
   exists=s.execute(select(GoJourneyItemRow).where(GoJourneyItemRow.account_id==j.account_id,GoJourneyItemRow.vertical==v,GoJourneyItemRow.order_id==x["order_id"])).scalar_one_or_none()
   if exists: raise ValueError("ORDER_ALREADY_IN_JOURNEY")
   title,sub,loc,facts=self._default_snapshot(v,row);starts=x.get("starts_at") or getattr(row,"pickup_at",None) or getattr(row,"visit_date",None);ends=x.get("ends_at") or getattr(row,"return_at",None)
-  item=GoJourneyItemRow(item_id=f"jit_{uuid4().hex[:18]}",journey_id=j.journey_id,account_id=j.account_id,vertical=v,order_id=row.order_id,title=x.get("title") or title,subtitle=x.get("subtitle") or sub,location=x.get("location") or loc,starts_at=starts,ends_at=ends,status_snapshot=row.status,facts_json={**facts,**(x.get("facts") or {})},detail_route=VERTICALS[v][1],sort_key=x.get("sort_key") or starts or row.created_at.isoformat(),created_at=now());s.add(item);return item
+  # Caller notes may extend the snapshot; canonical order facts retain priority.
+  item=GoJourneyItemRow(item_id=f"jit_{uuid4().hex[:18]}",journey_id=j.journey_id,account_id=j.account_id,vertical=v,order_id=row.order_id,title=x.get("title") or title,subtitle=x.get("subtitle") or sub,location=x.get("location") or loc,starts_at=starts,ends_at=ends,status_snapshot=row.status,facts_json={**(x.get("facts") or {}),**facts},detail_route=VERTICALS[v][1],sort_key=x.get("sort_key") or starts or row.created_at.isoformat(),created_at=now());s.add(item);return item
  def attach(self,account_id,journey_id,x):
   with SessionLocal() as s:
    j=s.get(GoJourneyRow,journey_id)
@@ -61,21 +62,49 @@ class JourneyService:
    shared=s.execute(select(GoJourneyRow).where(GoJourneyRow.journey_id.in_(member_ids))).scalars().all() if member_ids else []
    rows={x.journey_id:x for x in [*owned,*shared]}.values()
    rows=sorted(rows,key=lambda x:(x.starts_at or '',x.created_at))
-   return [self._serialize(s,x) for x in rows]
+   # Fetch each item once and current states in bounded owner/order batches.
+   # Projection remains read-only and retains historical attachment facts.
+   items_by_journey={x.journey_id:[] for x in rows}
+   journey_ids=list(items_by_journey)
+   for offset in range(0,len(journey_ids),400):
+    items=s.execute(select(GoJourneyItemRow).where(GoJourneyItemRow.journey_id.in_(journey_ids[offset:offset+400])).order_by(GoJourneyItemRow.sort_key,GoJourneyItemRow.created_at)).scalars().all()
+    for item in items: items_by_journey[item.journey_id].append(item)
+   statuses=self._batch_order_statuses(s,rows,items_by_journey)
+   return [self._serialize(s,x,refresh=True,items=items_by_journey[x.journey_id],statuses=statuses) for x in rows]
+ def _batch_order_statuses(self,s,journeys,items_by_journey):
+  keys_by_vertical={}
+  for journey in journeys:
+   for item in items_by_journey[journey.journey_id]:
+    vertical=item.vertical.upper()
+    if vertical in VERTICALS:
+     keys_by_vertical.setdefault(vertical,set()).add((journey.account_id,item.order_id))
+  statuses={}
+  for vertical,keys in keys_by_vertical.items():
+   model=VERTICALS[vertical][0];keys=sorted(keys)
+   # Composite owner/order keys prevent a shared-trip member or corrupted
+   # attachment from projecting another account's private order state.
+   for offset in range(0,len(keys),400):
+    values=s.execute(select(model.account_id,model.order_id,model.status).where(tuple_(model.account_id,model.order_id).in_(keys[offset:offset+400]))).all()
+    for owner,order_id,status in values: statuses[(vertical,owner,order_id)]=status
+  return statuses
  def get(self,account_id,journey_id):
   with SessionLocal() as s:
    j=s.get(GoJourneyRow,journey_id)
    member=s.scalar(select(ConsumerTripMemberRow).where(ConsumerTripMemberRow.journey_id==journey_id,ConsumerTripMemberRow.user_id==account_id,ConsumerTripMemberRow.status=='ACTIVE')) if j else None
    if not j or (j.account_id!=account_id and not member): raise ValueError("JOURNEY_NOT_FOUND")
    return self._serialize(s,j,refresh=True)
- def _serialize(self,s,j,refresh=False):
-  items=s.execute(select(GoJourneyItemRow).where(GoJourneyItemRow.journey_id==j.journey_id).order_by(GoJourneyItemRow.sort_key,GoJourneyItemRow.created_at)).scalars().all()
+ def _serialize(self,s,j,refresh=False,items=None,statuses=None):
+  if items is None:
+   items=s.execute(select(GoJourneyItemRow).where(GoJourneyItemRow.journey_id==j.journey_id).order_by(GoJourneyItemRow.sort_key,GoJourneyItemRow.created_at)).scalars().all()
   out=[]
   for x in items:
    status=x.status_snapshot
    if refresh:
-    try: status=self._order(s,j.account_id,x.vertical,x.order_id).status
-    except ValueError: pass
+    if statuses is not None:
+     status=statuses.get((x.vertical.upper(),j.account_id,x.order_id),status)
+    else:
+     try: status=self._order(s,j.account_id,x.vertical,x.order_id).status
+     except ValueError: pass
    out.append({"item_id":x.item_id,"vertical":x.vertical,"order_id":x.order_id,"title":x.title,"subtitle":x.subtitle,"location":x.location,"starts_at":x.starts_at,"ends_at":x.ends_at,"status":status,"facts":x.facts_json,"detail_route":x.detail_route})
   return {"journey_id":j.journey_id,"title":j.title,"destination_summary":j.destination_summary,"starts_at":j.starts_at,"ends_at":j.ends_at,"status":j.status,"item_count":len(out),"verticals":sorted(set(x["vertical"] for x in out)),"timeline":out}
 

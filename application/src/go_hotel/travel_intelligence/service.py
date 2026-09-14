@@ -11,6 +11,7 @@ from go_hotel.db.models import (
 )
 from .contracts import EVENT_TYPES, ACTOR_TYPES, SOURCES, PRIVACY_CLASSES, RETENTION_CLASSES, ENTITY_TYPES, TRANSACTION_TRUTH_DOMAINS
 from .cost_governor import model_cost_governor
+from .preferences import TravelPreferenceMixin
 
 UTC=timezone.utc
 def now(): return datetime.now(UTC)
@@ -31,7 +32,7 @@ def _simple_intent(raw:str)->dict[str,Any]:
     if m: out["nights"]=int(m.group(1))
     return out
 
-class TravelIntelligenceService:
+class TravelIntelligenceService(TravelPreferenceMixin):
     def create_decision(self, *, input_snapshot:dict, evidence_snapshot:dict, output_snapshot:dict, correlation_id:str, rule_version:str="TI_P0_RULES_1.0", prompt_version:str="NONE", model_version:str="DETERMINISTIC") -> AIDecisionRow:
         with SessionLocal.begin() as s:
             prev=s.scalar(select(AIDecisionRow).order_by(AIDecisionRow.created_at.desc()).limit(1))
@@ -178,15 +179,8 @@ class TravelIntelligenceService:
             rid=uuid.uuid4(); s.add(TravelEntityRelationRow(relation_id=rid,from_entity_id=a,relation_type=relation_type.upper(),to_entity_id=b,valid_from=now(),valid_to=None,created_at=now()))
         return {"relation_id":str(rid),"idempotent":False}
 
-    def traveler_graph(self, traveler_id:str, *, purpose:str)->dict:
-        if not purpose.strip(): raise ValueError("TRAVELER_GRAPH_PURPOSE_REQUIRED")
-        with SessionLocal() as s:
-            traveler=s.get(TravelerProfileRow,traveler_id)
-            if not traveler or traveler.status!="ACTIVE": raise ValueError("TRAVELER_NOT_FOUND")
-            intents=s.scalars(select(TravelIntentRow).where(TravelIntentRow.traveler_id==traveler_id).order_by(TravelIntentRow.updated_at.desc()).limit(20)).all()
-            events=s.scalars(select(TravelBehaviorEventRow).where(TravelBehaviorEventRow.traveler_id==traveler_id).order_by(TravelBehaviorEventRow.occurred_at.desc()).limit(100)).all()
-        # Session behavior is evidence, not permanent preference. No implicit durable preference mutation.
-        return {"traveler_id":traveler_id,"purpose":purpose,"identity":{"relationship_type":traveler.relationship_type,"nationality":traveler.nationality},"recent_intents":[x.normalized_intent for x in intents],"behavior_evidence_count":len(events),"durable_preferences":[],"policy":"SESSION_SIGNAL_NEVER_AUTO_PROMOTES_TO_PERMANENT_PREFERENCE"}
+    def traveler_graph(self, traveler_id:str, *, purpose:str, actor_id:str="C07", actor_type:str="GO_SYSTEM")->dict:
+        return self.preference_graph(traveler_id, purpose=purpose, actor_id=actor_id, actor_type=actor_type)
 
     def independent_judgment(self, *, intent_id:str, candidate_entity_ids:list[str], context:dict, correlation_id:str)->dict:
         raise ValueError("C07_JUDGMENT_AUTHORITY_FORBIDDEN")

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="3" time="3.012" timestamp="2026-09-13T07:17:12.223047-07:00" hostname="localhost"><testcase classname="tests.go_ai.test_c08_synthesis_audit_finalization" name="test_synthesis_failure_finalizes_request_after_successful_subtask[error0-GO_AI_PROVIDER_TIMEOUT-expected_invocations0]" time="0.574"><failure message="AssertionError: assert 'ROUTING' == 'FAILED'&#10;  &#10;  - FAILED&#10;  + ROUTING">tests/go_ai/test_c08_synthesis_audit_finalization.py:73: in test_synthesis_failure_finalizes_request_after_successful_subtask
+    assert request.state == "FAILED"
+E   AssertionError: assert 'ROUTING' == 'FAILED'
+E     
+E     - FAILED
+E     + ROUTING</failure></testcase><testcase classname="tests.go_ai.test_c08_synthesis_audit_finalization" name="test_synthesis_failure_finalizes_request_after_successful_subtask[error1-GO_AI_ORCHESTRATION_TASK_FAILED-expected_invocations1]" time="0.025"><failure message="RuntimeError: synthetic unexpected provider failure">tests/go_ai/test_c08_synthesis_audit_finalization.py:66: in test_synthesis_failure_finalizes_request_after_successful_subtask
+    service.orchestrate(message="Hello", account_id="c08_owner")
+src/go_hotel/go_ai/service.py:260: in orchestrate
+    synthesis_text, synthesis_provider, synthesis_model = self._execute_compute_task(
+src/go_hotel/go_ai/service.py:171: in _execute_compute_task
+    result = provider.generate(child)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+tests/go_ai/test_c08_synthesis_audit_finalization.py:28: in generate
+    raise self.error
+E   RuntimeError: synthetic unexpected provider failure</failure></testcase><testcase classname="tests.go_ai.test_c08_synthesis_audit_finalization" name="test_successful_synthesis_keeps_completed_hash_only_audit" time="0.025" /></testsuite></testsuites>

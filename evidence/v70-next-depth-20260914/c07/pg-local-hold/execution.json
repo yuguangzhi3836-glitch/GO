@@ -1,0 +1,37 @@
+{
+  "task": "V70-R2-C07-02",
+  "started_at": "2026-09-14T04:00:11.188779+00:00",
+  "source_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "workers": "normal isolated subprocesses; no xdist",
+  "C14": "PENDING",
+  "C13": "PENDING",
+  "source_files": [
+    {
+      "path": "src/go_hotel/travel_intelligence/preferences.py",
+      "sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1"
+    },
+    {
+      "path": "src/go_hotel/travel_intelligence/service.py",
+      "sha256": "328d0a39da80805f8a821b1b1166ac1467078b8f91c7db5189e7a0ba222a1c7c"
+    },
+    {
+      "path": "src/go_hotel/api/routes/travel_intelligence.py",
+      "sha256": "98b8a1e23a84caf03424a41236d075149f8221cfc9895a70ebd6ff7f5707ef88"
+    },
+    {
+      "path": "tests/test_round2_c07_process_recovery.py",
+      "sha256": "9dd6ee472a86848eb0eaee9029222516602c9602889326d618b992ca7849c1aa"
+    },
+    {
+      "path": "tests/c07_preference_process_actor.py",
+      "sha256": "05f746dc9abda21cf0f9dbf6d97ce7ac0b0a40121bd061949c17ef279ff369bb"
+    },
+    {
+      "path": "ci/next_depth/c07_postgres.py",
+      "sha256": "3eb3377f81e219cc4edfe035fbd185e1f4f1337bde4fdcb90957214efc7ea993"
+    }
+  ],
+  "status": "HOLD",
+  "reason": "ISOLATED_POSTGRES_URL_NOT_SUPPLIED"
+}

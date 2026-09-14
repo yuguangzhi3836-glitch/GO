@@ -1,0 +1,34 @@
+[
+  {
+    "name": "receipt-plan-before",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c04-r2-receipt-plan-before-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_round2_c04_rental_receipts.py::test_same_order_earlier_equal_refund_cannot_complete_current_cancellation -p no:cacheprovider -q --junitxml=../evidence/v70-round2-20260914/c04/receipt-plan-before.junit.xml > ../evidence/v70-round2-20260914/c04/receipt-plan-before.raw.log 2>&1",
+    "exit_code": 1,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "1",
+      "skipped": "0",
+      "tests": "1",
+      "time": "4.639",
+      "timestamp": "2026-09-14T12:10:55.281399+09:00",
+      "hostname": "localhost"
+    }
+  },
+  {
+    "name": "receipt-plan-after",
+    "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+    "command": "PYTHONDONTWRITEBYTECODE=1 GO_TEST_DB_PATH=/tmp/c04-r2-receipt-plan-after-20260914-a.db PYTHONPATH=src /workspace/scratch/948b51def3a9/venv/bin/python -m pytest tests/test_v70_round2_c04_rental_receipts.py tests/test_depth06_rental_settlement.py tests/test_c04_refund_terminal_integrity.py tests/test_depth33_mobility_refund_consent.py -p no:cacheprovider -q --junitxml=../evidence/v70-round2-20260914/c04/receipt-plan-after.junit.xml > ../evidence/v70-round2-20260914/c04/receipt-plan-after.raw.log 2>&1",
+    "exit_code": 0,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "33",
+      "time": "9.163",
+      "timestamp": "2026-09-14T12:11:39.133293+09:00",
+      "hostname": "localhost"
+    }
+  }
+]
