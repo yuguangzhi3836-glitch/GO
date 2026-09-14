@@ -43,9 +43,13 @@ Executor surface                   NOT WIDENED
 | `contracts/control_state_v1.schema.json` | the projection format and the rank rules |
 | `contracts/control_status_v1.schema.json` | the bounded ChatGPT read contract and the question map |
 | `contracts/agent_liveness_v1.schema.json` | how liveness is represented, and what it may never claim |
+| `identity/VERIFIER_IDENTITIES_V1.json` | the published verifier identities, their fingerprints and their host provenance |
+| `identity/keys/*.pub` | the two published public keys. No private key is ever published |
+| `identity/README.md` | how the keys were obtained, how to bind them, and the five outcomes |
 | `LIFECYCLE_V1.md` | the closed lifecycle vocabulary and what the control bus can see |
 | `CHATGPT_CONTRACT_V1.md` | how a connector reads status and writes a Request |
-| `tests/test_state_projection.py` | isolated tests, including signer-identity separation |
+| `tests/test_state_projection.py` | isolated tests, including signer-identity separation and identity binding |
+| `tests/fixtures/real/` | 24 real signed Task/Evidence pairs, used as a live regression fixture |
 | `run_checks.py` | isolated runner: no network, no subprocess, no runtime paths |
 | `evidence/PROJECTION_20260914/` | a real projection of the live control bus at pinned revisions |
 
@@ -153,13 +157,14 @@ The closed vocabulary and the observable/unobservable boundary are in
 
 No new execution capability is introduced.
 
-## The six corrections this revision makes
+## The corrections and additions this revision makes
 
 ### 1. Task and Evidence use different verification identities
 
 ```sh
---task-verify-key      <cc-task.pub>        # hex signature, Command Center task-manifest signer
---evidence-verify-key  <hk-evidence.pub>    # base64 signature, Hong Kong agent evidence signer
+--task-verify-key     <cc-task.pub>        # hex signature, Command Center task-manifest signer
+--evidence-verify-key <hk-evidence.pub>    # base64 signature, Hong Kong agent evidence signer
+--verifier-identities <VERIFIER_IDENTITIES_V1.json>
 ```
 
 Two separate `Verifier` objects. A Task signed with the evidence key fails. An
@@ -168,6 +173,29 @@ public key the projection records a `VERIFIER_IDENTITY_COLLISION` anomaly and
 refuses every `PROVEN` claim. Missing key means `NOT_PERFORMED`, which can never
 become `PROVEN`. Tests use two independent ephemeral keys; no test uses one key
 for both roles.
+
+### 1b. A key that loads is not the right key (CC V1-01)
+
+Supplying a key is not the same as supplying *the* key. The projection therefore
+binds every verifier against the published identity contract:
+
+```text
+--verifier-identities defaults to identity/VERIFIER_IDENTITIES_V1.json
+```
+
+| Situation | `identity_binding` | Result |
+|---|---|---|
+| fingerprint matches the published pin | `BOUND` | `PROVEN` possible |
+| no key supplied | `MISSING_KEY` | fail-closed, never `PROVEN` |
+| key file does not load | `KEY_UNREADABLE` | fail-closed, never `PROVEN` |
+| key loads, fingerprint differs | `IDENTITY_MISMATCH` | fail-closed, never `PROVEN` |
+| no usable pin (contract missing/unreadable) | `IDENTITY_UNRESOLVED` | fail-closed, never `PROVEN` |
+| one key supplied for both roles | `IDENTITY_COLLISION` | fail-closed, never `PROVEN` |
+
+A verifier whose binding is not `BOUND` is disabled, so it cannot return `True`
+and therefore cannot produce `PROVEN`. Its binding is still reported, so **"wrong
+key" is never quietly downgraded to "no key"**. `verification.proven_allowed`
+summarises the gate and `verification.fail_closed_reasons` names each failure.
 
 ### 2. The repository runtime pointer is not the live runtime
 
@@ -225,6 +253,59 @@ No `D:/...`, no temp path, no user directory. Anomalies name
 `chenzhenxi1-sudo/go-control-tasks/tasks`, not a disk path. There is a built-in
 `LOCAL_PATH_LEAK` guard and a test that scans the whole output.
 
+### 7. The verifier identities are published (CC V1-01)
+
+Until CC V1-01 the repository archived **fingerprints only**, so nothing off the
+control bus could be raised above `OBSERVED`. `identity/` now publishes both
+verifier public keys with an identity contract, and the projection binds to it.
+
+```text
+GO-CC-TASK-MANIFEST-SIGNER   TASK       hex     SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns
+HK-AGENT-EVIDENCE-SIGNER     EVIDENCE   base64  SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw
+```
+
+The binding is anchored on both sides: the fingerprint the Command Center signs
+Tasks with is the same fingerprint the Hong Kong agent verifies them with, and
+both agree with the 2026-09-11 audit archives already committed in this
+repository. The two fingerprints differ, which is the separation requirement.
+
+The keys were obtained by a single **read-only** operation on the Command Center
+host with explicit human authorisation, verified twice, and are byte-identical to
+the files on the host:
+
+```text
+retrieved   2026-09-14T14:34:46Z  over the Alibaba Cloud Workbench tunnel
+read        /etc/go-command-center/keys/task-manifest-signing.pub
+            /etc/go-command-center/deployment-plans-v1/authority.pub
+            /etc/go-command-center/deployment-plans-v1/hk-evidence.pub
+not read    any .pem, any *token*, any private key
+not done    no write, no service change, no signing, no deployment
+```
+
+**No private key is published, and a test asserts it.**
+
+### 8. Real history now reaches PROVEN
+
+`tests/fixtures/real/` carries 24 real signed Task/Evidence pairs taken from the
+control bus. Against the published keys they resolve, with no synthetic key
+material:
+
+```text
+task_signature_verified       True   for all 24
+evidence signature_verified   True   for all 24
+lifecycle                     COMPLETE for all 24
+assertion state               PROVEN  for all 24
+actions covered               VERIFY 12, DEPLOY 4, TEST_PR 3, CANARY 2, health 2, ROLLBACK 1
+```
+
+Without the keys the same fixture stays at `OBSERVED`, which is the honest
+before/after the publication buys.
+
+The same binding was applied to the live-bus snapshot, which moved from
+`EVIDENCE_PUBLISHED 24 | TASK_EXPIRED 21 | POLICY_HOLD 1` to
+`COMPLETE 24 | TASK_EXPIRED 18 | POLICY_HOLD 4`. See
+`evidence/PROJECTION_20260914/README.md` for what the three new failures are.
+
 ## Verified current architecture
 
 Read from repository evidence, not from old notes.
@@ -281,6 +362,16 @@ TASK_LIFECYCLE_PROJECTION=PASS
 TASK_SIGNATURE_IDENTITY_SEPARATION=PASS
 EVIDENCE_SIGNATURE_IDENTITY_SEPARATION=PASS
 
+TASK_VERIFIER_IDENTITY_PUBLISHED=PASS
+EVIDENCE_VERIFIER_IDENTITY_PUBLISHED=PASS
+VERIFIER_FINGERPRINT_BINDING=PASS
+WRONG_KEY_REJECTED=PASS
+CROSSED_IDENTITY_REJECTED=PASS
+SAME_KEY_COLLISION_REJECTED=PASS
+MISSING_KEY_NEVER_PROVEN=PASS
+REAL_CONTROL_BUS_HISTORY_REACHES_PROVEN=PASS
+PRIVATE_KEY_PUBLISHED=NO
+
 REPOSITORY_RUNTIME_AND_LIVE_RUNTIME_SEPARATED=PASS
 ACTIVE_STUCK_TASK_CLASSIFICATION=PASS
 WORKSTATION_LOCAL_PATHS_REMOVED=PASS
@@ -307,6 +398,7 @@ python control-plane/command-center-state-v1/state_projection.py \
   --go-repo       <local checkout of GO, optional> \
   --task-verify-key     <pinned Command Center task public key, optional> \
   --evidence-verify-key <pinned Hong Kong evidence public key, optional> \
+  --verifier-identities <identity/VERIFIER_IDENTITIES_V1.json> \
   --tasks-head <sha> --evidence-head <sha> --go-head <sha> \
   --repository-main-sha <sha> \
   --now 2026-09-14T12:00:00Z \
@@ -316,7 +408,10 @@ python control-plane/command-center-state-v1/run_checks.py /tmp/go-cc-state-chec
 ```
 
 Pass `--now` to make the byte output reproducible. Without the two verifier keys
-the projection honestly caps at `OBSERVED` and never claims `PROVEN`.
+the projection honestly caps at `OBSERVED` and never claims `PROVEN`. With them,
+`PROVEN` additionally requires the keys to match the published identity contract;
+`--verifier-identities` defaults to that contract and the two published `.pub`
+files under `identity/keys/` are the intended inputs.
 
 ## Agent liveness
 
@@ -377,28 +472,40 @@ publish a Task, approve a plan, or reach Hong Kong.
 
 ## REMAINING_CC_V1_BLOCKERS
 
-1. **No verifier public key is published.** `command-center/audit/20260911/KEY_FINGERPRINTS.txt`
-   archives fingerprints only, so any projection off the Control Plane caps at
-   `OBSERVED`. Importing `PROVEN` control state into ChatGPT needs the public
-   verifier keys distributed read-only alongside the state.
+**Closed by CC V1-01:** verifier public keys are now published, bound and
+fingerprint-pinned (`identity/`). The Control Plane no longer caps at `OBSERVED`.
+
+1. **Three historical Tasks fail under the published Task signer.** With the
+   identity now bound, `go-m3-042-e2e-health-20260905T151233846901Z`,
+   `…20260905T152130238921Z` and `…20260906T011815978751Z` resolve as
+   `POLICY_HOLD` / `FAILED` instead of silently expiring. They are structurally
+   identical to Tasks that verify, and they verify under neither published
+   identity, so they appear to carry a **third, earlier Task-signing identity**
+   that was superseded before `2026-09-06T07:47:11Z` and whose public key is not
+   published anywhere. Attribution is open; this is a real finding, not a
+   defect introduced by CC V1-01.
 2. **A failed execution publishes no Evidence.** `transport.py` records a
    rejection in the agent-local SQLite ledger and never publishes signed Evidence,
    so `EXECUTION_FAILED` and `TASK_NOT_PICKED_UP` are unobservable from GitHub.
-   The failure half of the lifecycle is only half closed.
+   The failure half of the lifecycle is only half closed. → CC V1-02.
 3. **No liveness producer.** `CONTROL_PLANE_HEALTH` exists but nothing schedules
-   it, so `hk_agent_online` is honest and useless.
+   it, so `hk_agent_online` is honest and useless. → CC V1-03.
 4. **No publication target for the derived state.** The projector writes files;
-   nothing yet pushes them where ChatGPT reads. Until Command Center publishes
-   the state on the control bus, the contract exists but no reader sees it.
+   nothing yet pushes them where ChatGPT reads. Until Command Center publishes the
+   state on the control bus, the contract exists but no reader sees it. → CC V1-04.
 5. **Bridge ledger facts are not on the control bus.** Request rejection reasons,
    duplicate-request detection, ambiguity holds and plan/approval consumption live
    only in `/var/lib/go-command-center/boss-request-bridge-v1/ledger.json`.
-   `REQUEST_REJECTED` and Request-layer `REPLAY_REJECTED` stay invisible.
+   `REQUEST_REJECTED` and Request-layer `REPLAY_REJECTED` stay invisible. → CC V1-05.
 
 ## Not proven by this PR
 
-* Real HK-STAGING execution. All tests use ephemeral synthetic keys and fixtures.
+* Real HK-STAGING execution. The identity fixtures are real control-bus records,
+  but no live execution is performed or claimed here.
 * Deployment. `APPLICATION_HEALTH_PROVEN=false`, `DEPLOYMENT_PERFORMED=false`.
 * Any claim about the live Command Center switch, plan store, runtime processes or
   agent liveness. Those are Control Plane state, not control-bus state, and this
   projection explicitly reports them as `UNKNOWN`.
+* That the published identities are the *only* identities that have ever signed
+  in this ledger. They are not: three historical Tasks do not verify under either
+  of them, and that is reported rather than smoothed over.

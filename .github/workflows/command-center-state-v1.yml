@@ -1,7 +1,7 @@
 name: Command Center control state (isolated)
 on:
   push:
-    branches: [cc/github-native-delivery-v1]
+    branches: [cc/github-native-delivery-v1, cc/v1-finalization-20260914]
     paths:
       - 'control-plane/command-center-state-v1/**'
       - '.github/workflows/command-center-state-v1.yml'
@@ -57,6 +57,21 @@ jobs:
                   serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))
               return key
           task_key, evidence_key = newkey('cc-task'), newkey('hk-evidence')
+          newkey('wrong-role')
+
+          # CC V1-01: a key is only trusted when it matches a published identity.
+          def pin(pub_name):
+              return sp.Verifier(str(keys / pub_name), 'pin', 'hex').ssh_fingerprint
+          contract = out / 'VERIFIER_IDENTITIES_V1.json'
+          contract.write_text(json.dumps({
+              'schema_version': '1', 'contract': 'VERIFIER_IDENTITIES_V1',
+              'identities': [
+                  {'identity_id': 'CI-CC-TASK-SIGNER', 'role': 'TASK', 'algorithm': 'Ed25519',
+                   'signature_encoding': 'hex', 'public_key_ssh_sha256': pin('cc-task.pub')},
+                  {'identity_id': 'CI-HK-EVIDENCE-SIGNER', 'role': 'EVIDENCE',
+                   'algorithm': 'Ed25519', 'signature_encoding': 'base64',
+                   'public_key_ssh_sha256': pin('hk-evidence.pub')}]}))
+          assert pin('cc-task.pub') != pin('hk-evidence.pub'), 'fixture pins collided'
 
           def sign(obj, key, encoding):
               raw = key.sign(sp.canonical({k: v for k, v in obj.items() if k != 'signature'}))
@@ -80,21 +95,20 @@ jobs:
                       'gate_results': {'api_health': 'PASS'},
                       'signature': base64.b64encode(b'0' * 64).decode()}
 
-          def run_bus(label, task_obj, evidence_obj, with_keys=True):
+          def run_bus(label, task_obj, evidence_obj, task_key_name='cc-task.pub',
+                      evidence_key_name='hk-evidence.pub'):
               bus = out / label; (bus / 'tasks').mkdir(parents=True, exist_ok=True)
               (bus / 'evidence').mkdir(parents=True, exist_ok=True)
               (bus / 'tasks' / 't.json').write_text(json.dumps(task_obj))
               (bus / 'evidence' / 'e.json').write_text(json.dumps(evidence_obj))
               run = [sys.executable, str(root / 'state_projection.py'),
                      '--tasks-repo', str(bus), '--evidence-repo', str(bus),
-                     '--now', '2026-09-14T12:00:00Z', '--out', str(bus / 'state')]
-              if with_keys is True:
-                  run += ['--task-verify-key', str(keys / 'cc-task.pub'),
-                          '--evidence-verify-key', str(keys / 'hk-evidence.pub')]
-              elif with_keys == 'collision':
-                  # One key presented for both roles must never yield PROVEN.
-                  run += ['--task-verify-key', str(keys / 'cc-task.pub'),
-                          '--evidence-verify-key', str(keys / 'cc-task.pub')]
+                     '--now', '2026-09-14T12:00:00Z', '--out', str(bus / 'state'),
+                     '--verifier-identities', str(contract)]
+              if task_key_name:
+                  run += ['--task-verify-key', str(keys / task_key_name)]
+              if evidence_key_name:
+                  run += ['--evidence-verify-key', str(keys / evidence_key_name)]
               subprocess.run(run, capture_output=True, text=True, check=True)
               return json.loads((bus / 'state' / 'CURRENT_CONTROL_STATE.json').read_text())
 
@@ -106,6 +120,24 @@ jobs:
           assert entry['evidence']['signature_verified'] is True, 'evidence signature did not verify'
           assert entry['lifecycle'] == 'COMPLETE', entry['lifecycle']
           assert entry['assertion']['state'] == 'PROVEN', entry['assertion']['state']
+          assert good['verification']['identity_contract']['state'] == 'LOADED', 'contract not loaded'
+          assert good['verification']['proven_allowed'] is True, 'binding gate closed on a good run'
+          assert good['verification']['fail_closed_reasons'] == [], \
+                 good['verification']['fail_closed_reasons']
+          for role in ('task', 'evidence'):
+              assert good['verification'][role]['identity_binding'] == 'BOUND', role
+              assert good['verification'][role]['ssh_sha256_fingerprint'] == \
+                     good['verification'][role]['expected_ssh_sha256_fingerprint'], role
+
+          crossed_key = run_bus('wrong-key', sign(task, task_key, 'hex'),
+                                sign(evidence, evidence_key, 'base64'),
+                                task_key_name='wrong-role.pub')
+          assert crossed_key['verification']['task']['identity_binding'] == 'IDENTITY_MISMATCH', \
+                 'a key that is not the published identity was accepted'
+          assert crossed_key['verification']['evidence']['identity_binding'] == 'BOUND'
+          assert crossed_key['verification']['proven_allowed'] is False, 'wrong key reached PROVEN'
+          assert 'task:IDENTITY_MISMATCH' in crossed_key['verification']['fail_closed_reasons']
+          assert crossed_key['tasks'][0]['assertion']['state'] != 'PROVEN'
 
           cross = run_bus('crossed', sign(task, task_key, 'hex'),
                           sign(evidence, task_key, 'base64'))
@@ -118,19 +150,26 @@ jobs:
                                sign(evidence, evidence_key, 'base64'))
           assert cross_task['tasks'][0]['task_signature_verified'] is False, 'crossed task verified'
           assert cross_task['tasks'][0]['lifecycle'] == 'POLICY_HOLD'
+          assert cross_task['verification']['task']['identity_binding'] == 'IDENTITY_MISMATCH'
 
-          unsigned = run_bus('unsigned', task, evidence, with_keys=False)
+          unsigned = run_bus('unsigned', task, evidence,
+                             task_key_name=None, evidence_key_name=None)
           assert unsigned['tasks'][0]['task_signature_verified'] is None, 'missing key not reported'
           assert unsigned['tasks'][0]['evidence']['signature_verified'] is None
           assert unsigned['tasks'][0]['lifecycle'] == 'EVIDENCE_PUBLISHED'
           assert unsigned['tasks'][0]['assertion']['state'] == 'OBSERVED', 'missing keys claimed more'
           assert unsigned['verification']['task']['signature_verification'] == 'NOT_PERFORMED'
+          assert unsigned['verification']['task']['identity_binding'] == 'MISSING_KEY'
+          assert unsigned['verification']['evidence']['identity_binding'] == 'MISSING_KEY'
+          assert unsigned['verification']['proven_allowed'] is False, 'missing keys reached PROVEN'
 
           collision = run_bus('collision', sign(task, task_key, 'hex'),
-                              sign(evidence, evidence_key, 'base64'), with_keys='collision')
+                              sign(evidence, evidence_key, 'base64'),
+                              evidence_key_name='cc-task.pub')
           assert collision['verification']['identities_separated'] is False, 'collision not detected'
           assert 'VERIFIER_IDENTITY_COLLISION' in [a['kind'] for a in collision['anomalies']]
           assert collision['tasks'][0]['assertion']['state'] != 'PROVEN', 'collision produced PROVEN'
+          assert collision['verification']['proven_allowed'] is False
 
           status = json.loads((out / 'separated' / 'state' / 'CONTROL_STATUS_V1.json').read_text())
           first = (out / 'separated' / 'state' / 'CURRENT_CONTROL_STATE.json').read_text()

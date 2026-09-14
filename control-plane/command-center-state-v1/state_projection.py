@@ -44,6 +44,7 @@ Execution Authority and the Signed Evidence is the only proof.  This file is
 never hand-edited and is always rebuildable.
 """
 import argparse
+import base64
 import datetime as dt
 import hashlib
 import json
@@ -78,6 +79,31 @@ CANONICAL_CANDIDATE_POINTER = "docs/canonical-baseline/CURRENT_CANDIDATE.json"
 
 TASK_VERIFIER_IDENTITY = "GO Command Center task-manifest signer"
 EVIDENCE_VERIFIER_IDENTITY = "Hong Kong agent evidence signer"
+
+# The published verifier identity contract (CC V1-01). A verifier key is only
+# trusted when its fingerprint matches the published identity; a key that merely
+# loads is never treated as the right key.
+IDENTITY_CONTRACT_NAME = "VERIFIER_IDENTITIES_V1"
+IDENTITY_CONTRACT_RELPATH = "identity/VERIFIER_IDENTITIES_V1.json"
+ROLE_TASK = "TASK"
+ROLE_EVIDENCE = "EVIDENCE"
+
+BINDING_BOUND = "BOUND"
+BINDING_MISSING_KEY = "MISSING_KEY"
+BINDING_KEY_UNREADABLE = "KEY_UNREADABLE"
+BINDING_IDENTITY_MISMATCH = "IDENTITY_MISMATCH"
+BINDING_IDENTITY_UNRESOLVED = "IDENTITY_UNRESOLVED"
+BINDING_IDENTITY_COLLISION = "IDENTITY_COLLISION"
+
+# Every binding other than BOUND is fail-closed: it may never yield PROVEN.
+FAIL_CLOSED_BINDINGS = (BINDING_MISSING_KEY, BINDING_KEY_UNREADABLE,
+                        BINDING_IDENTITY_MISMATCH, BINDING_IDENTITY_UNRESOLVED,
+                        BINDING_IDENTITY_COLLISION)
+
+
+def default_identity_contract_path():
+    """The published contract, resolved relative to this file, not the cwd."""
+    return pathlib.Path(__file__).resolve().parent / IDENTITY_CONTRACT_RELPATH
 
 # Every action the Control Plane can execute.
 KNOWN_CAPABILITIES = (
@@ -207,21 +233,129 @@ def read_json(path):
 # --------------------------------------------------------------------------- #
 # signature verification — two separate identities
 # --------------------------------------------------------------------------- #
+class IdentityContract:
+    """The published verifier identity contract (VERIFIER_IDENTITIES_V1).
+
+    The contract pins one Ed25519 fingerprint per role. A supplied key is trusted
+    only when its fingerprint equals that pin, so "the key loaded" and "the key is
+    the published identity" stop being the same claim.
+
+    A contract that is missing, unreadable, malformed or that publishes one key for
+    both roles resolves nothing, and an unresolvable pin is fail-closed.
+    """
+
+    def __init__(self, path):
+        self.source = str(path) if path else None
+        self.available = False
+        self.reason = None
+        self.by_role = {}
+        self.name = None
+        # The reported location is repository-relative, so a caller-supplied
+        # absolute path can never leak a workstation path into the projection.
+        try:
+            published = (pathlib.Path(self.source).resolve()
+                         == default_identity_contract_path().resolve())
+        except Exception:  # noqa: BLE001
+            published = False
+        self.published = published
+        self.reported_path = (IDENTITY_CONTRACT_RELPATH if published
+                              else "<caller-supplied contract>")
+        if not self.source:
+            self.reason = "no identity contract was supplied"
+            return
+        try:
+            document = read_json(self.source)
+        except Exception as exc:  # noqa: BLE001
+            self.reason = "identity contract unreadable: %s" % type(exc).__name__
+            return
+        if not isinstance(document, dict) or document.get("contract") != IDENTITY_CONTRACT_NAME:
+            self.reason = "not a %s contract" % IDENTITY_CONTRACT_NAME
+            return
+        entries = document.get("identities")
+        if not isinstance(entries, list) or not entries:
+            self.reason = "identity contract carries no identities"
+            return
+        for entry in entries:
+            if isinstance(entry, dict) and entry.get("role") in (ROLE_TASK, ROLE_EVIDENCE):
+                self.by_role.setdefault(entry["role"], entry)
+        if set(self.by_role) != {ROLE_TASK, ROLE_EVIDENCE}:
+            self.reason = ("identity contract must define exactly one TASK and one EVIDENCE "
+                           "identity")
+            self.by_role = {}
+            return
+        task_pin = self.by_role[ROLE_TASK].get("public_key_ssh_sha256")
+        evidence_pin = self.by_role[ROLE_EVIDENCE].get("public_key_ssh_sha256")
+        if not task_pin or not evidence_pin:
+            self.reason = "identity contract does not pin a fingerprint for both roles"
+            self.by_role = {}
+            return
+        if task_pin == evidence_pin:
+            self.reason = "identity contract publishes one key for both roles"
+            self.by_role = {}
+            return
+        self.name = document.get("contract")
+        self.available = True
+
+    def expected(self, role):
+        entry = self.by_role.get(role)
+        if not entry:
+            return None
+        return {"identity_id": entry.get("identity_id"),
+                "display_name": entry.get("display_name"),
+                "encoding": entry.get("signature_encoding"),
+                "ssh_sha256": entry.get("public_key_ssh_sha256"),
+                "raw_sha256": entry.get("public_key_raw_sha256"),
+                "public_key_path": entry.get("public_key_path"),
+                "host_source_path": entry.get("host_source_path"),
+                "status": entry.get("status")}
+
+    def describe(self):
+        return {"contract": IDENTITY_CONTRACT_NAME,
+                "path": self.reported_path,
+                "is_the_published_contract": self.published,
+                "state": "LOADED" if self.available else "UNRESOLVED",
+                "reason": self.reason,
+                "publishes_private_keys": False}
+
+
 class Verifier:
     """One Ed25519 verifier identity.
 
     Reports NOT_PERFORMED rather than assuming success when no key is supplied.
     ``encoding`` is carried per artifact: tasks are hex, evidence is base64.
+
+    ``expected`` is the published identity pin from IdentityContract. It is what
+    separates the four cases the projection must never confuse:
+
+      no key supplied                 MISSING_KEY         fail-closed
+      key supplied, does not load     KEY_UNREADABLE      fail-closed
+      key loaded, pin does not match  IDENTITY_MISMATCH   fail-closed
+      no usable pin                   IDENTITY_UNRESOLVED fail-closed
+      key loaded and pin matches      BOUND               PROVEN possible
     """
 
-    def __init__(self, key_path, identity, encoding):
+    def __init__(self, key_path, identity, encoding, expected=None):
         self.identity = identity
         self.encoding = encoding
+        self.expected = expected or None
         self.key = None
         self.fingerprint = None
+        self.ssh_fingerprint = None
+        self.key_sha256 = None
         self.available = False
+        self.disabled = False
+        self.identity_id = (self.expected or {}).get("identity_id")
         if not key_path:
+            self.binding = BINDING_MISSING_KEY
+            self.binding_reason = "no key was supplied, so no signature can be checked"
             return
+        if not self.expected or not self.expected.get("ssh_sha256"):
+            self.binding = BINDING_IDENTITY_UNRESOLVED
+            self.binding_reason = ("no published identity pin is available to bind this key to, "
+                                   "so a valid signature would still not establish the identity")
+        else:
+            self.binding = None
+            self.binding_reason = None
         try:
             from cryptography.hazmat.primitives import serialization
             raw = pathlib.Path(key_path).read_bytes()
@@ -229,17 +363,49 @@ class Verifier:
                 self.key = serialization.load_ssh_public_key(raw)
             else:
                 self.key = serialization.load_pem_public_key(raw)
-            self.fingerprint = hashlib.sha256(
-                self.key.public_bytes(serialization.Encoding.Raw,
-                                      serialization.PublicFormat.Raw)).hexdigest()
+            raw_public = self.key.public_bytes(serialization.Encoding.Raw,
+                                               serialization.PublicFormat.Raw)
+            self.fingerprint = hashlib.sha256(raw_public).hexdigest()
+            # The SSH fingerprint is taken over the ssh wire blob, which is what
+            # ssh-keygen and the archived audit files report.
+            prefix = b"ssh-ed25519"
+            blob = (len(prefix).to_bytes(4, "big") + prefix
+                    + len(raw_public).to_bytes(4, "big") + raw_public)
+            self.ssh_fingerprint = "SHA256:" + base64.b64encode(
+                hashlib.sha256(blob).digest()).decode("ascii").rstrip("=")
+            self.key_sha256 = self.fingerprint
             self.available = True
         except Exception as exc:  # noqa: BLE001 - fail closed, report why
             self.key = None
             self.available = False
             self.fingerprint = "unavailable:%s" % type(exc).__name__
+            self.binding = BINDING_KEY_UNREADABLE
+            self.binding_reason = "the key file could not be loaded as an Ed25519 public key"
+            return
+        if self.binding is None:
+            if self.ssh_fingerprint == self.expected.get("ssh_sha256"):
+                self.binding = BINDING_BOUND
+                self.binding_reason = None
+            else:
+                self.binding = BINDING_IDENTITY_MISMATCH
+                self.binding_reason = ("the supplied key is not the published identity: expected "
+                                       "%s, observed %s" % (self.expected.get("ssh_sha256"),
+                                                            self.ssh_fingerprint))
+
+    @property
+    def fail_closed(self):
+        return self.binding in FAIL_CLOSED_BINDINGS
 
     def disabled_copy(self):
-        return Verifier(None, self.identity, self.encoding)
+        """The same identity reported, but with no ability to claim verification."""
+        clone = Verifier(None, self.identity, self.encoding, expected=self.expected)
+        clone.binding = self.binding
+        clone.binding_reason = self.binding_reason
+        clone.ssh_fingerprint = self.ssh_fingerprint
+        clone.key_sha256 = self.key_sha256
+        clone.fingerprint = self.fingerprint
+        clone.disabled = True
+        return clone
 
     def verify(self, obj, encoding=None):
         """Return True / False / None (None = could not be performed)."""
@@ -269,8 +435,14 @@ class Verifier:
             return False
 
     def describe(self):
-        return {"identity": self.identity, "encoding": self.encoding,
+        return {"identity": self.identity,
+                "identity_id": self.identity_id,
+                "encoding": self.encoding,
                 "key_fingerprint": self.fingerprint,
+                "ssh_sha256_fingerprint": self.ssh_fingerprint,
+                "expected_ssh_sha256_fingerprint": (self.expected or {}).get("ssh_sha256"),
+                "identity_binding": self.binding,
+                "identity_binding_reason": self.binding_reason,
                 "signature_verification": "PERFORMED" if self.available else "NOT_PERFORMED"}
 
 
@@ -285,6 +457,31 @@ def separated(task_verifier, evidence_verifier, loaded):
                        "made in this run", task_verifier.fingerprint)
         return False
     return True
+
+
+def bind_identities(task_verifier, evidence_verifier, loaded):
+    """Fail closed on any verifier that is not the published identity.
+
+    A verifier whose binding is not BOUND is disabled, so it cannot return True
+    and therefore cannot produce PROVEN. The binding itself is still reported, so
+    "wrong key" is never quietly downgraded to "no key".
+    """
+    task_ok = task_verifier.binding == BINDING_BOUND
+    evidence_ok = evidence_verifier.binding == BINDING_BOUND
+
+    for role, verifier in (("task", task_verifier), ("evidence", evidence_verifier)):
+        if verifier.binding == BINDING_IDENTITY_MISMATCH:
+            loaded.anomaly("VERIFIER_IDENTITY_MISMATCH",
+                           "the %s verifier key is not the published identity: %s"
+                           % (role, verifier.binding_reason), verifier.ssh_fingerprint)
+        elif verifier.binding == BINDING_IDENTITY_UNRESOLVED:
+            loaded.anomaly("VERIFIER_IDENTITY_UNRESOLVED",
+                           "the %s verifier could not be bound to a published identity: %s"
+                           % (role, verifier.binding_reason))
+        elif verifier.binding == BINDING_KEY_UNREADABLE:
+            loaded.anomaly("VERIFIER_KEY_UNREADABLE",
+                           "the %s verifier key could not be loaded" % role)
+    return task_ok, evidence_ok
 
 
 # --------------------------------------------------------------------------- #
@@ -1085,11 +1282,16 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
         "verification": {
             "task": task_verifier.describe(),
             "evidence": evidence_verifier.describe(),
+            "identity_contract": options["identity_contract"].describe(),
             "identities_separated": options["identities_separated"],
+            "proven_allowed": options["proven_allowed"],
+            "fail_closed_reasons": options["fail_closed_reasons"],
             "proven_requires_both_keys": True,
+            "proven_requires_both_identities_bound": True,
             "note": ("A Task must never validate against the evidence key and Evidence must never "
                      "validate against the task key. PROVEN requires the artifact's own identity to "
-                     "verify"),
+                     "verify, and it additionally requires that identity to be the one published in "
+                     "the verifier identity contract. A key that merely loads is not the right key"),
         },
         "counts": {
             "tasks": len(tasks), "evidence": len(loaded.evidence), "requests": len(requests),
@@ -1187,6 +1389,7 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
                         "--tasks-repo <go-control-tasks> --evidence-repo <go-control-evidence> "
                         "--requests-dir <collected-requests> --go-repo <GO> "
                         "--task-verify-key <cc-task.pub> --evidence-verify-key <hk-evidence.pub> "
+                        "--verifier-identities <identity/VERIFIER_IDENTITIES_V1.json> "
                         "--tasks-head <sha> --evidence-head <sha> --go-head <sha> "
                         "--repository-main-sha <sha> --now <ISO8601> --out <dir>"),
         },
@@ -1318,6 +1521,9 @@ def main(argv=None):
                         help="pinned Command Center task-manifest public key (hex-signature identity)")
     parser.add_argument("--evidence-verify-key",
                         help="pinned Hong Kong evidence public key (base64-signature identity)")
+    parser.add_argument("--verifier-identities", default=str(default_identity_contract_path()),
+                        help=("published verifier identity contract; a supplied key is only trusted "
+                              "when its fingerprint matches this contract"))
     parser.add_argument("--tasks-head", default=None, help="pinned commit SHA of the tasks source")
     parser.add_argument("--tasks-ref", default="main")
     parser.add_argument("--evidence-head", default=None, help="pinned commit SHA of the evidence source")
@@ -1342,12 +1548,28 @@ def main(argv=None):
     load_evidence(args.evidence_repo, loaded)
     load_requests(args.requests_dir, loaded)
 
-    task_verifier = Verifier(args.task_verify_key, TASK_VERIFIER_IDENTITY, "hex")
-    evidence_verifier = Verifier(args.evidence_verify_key, EVIDENCE_VERIFIER_IDENTITY, "base64")
+    identity_contract = IdentityContract(args.verifier_identities)
+    task_verifier = Verifier(args.task_verify_key, TASK_VERIFIER_IDENTITY, "hex",
+                             expected=identity_contract.expected(ROLE_TASK))
+    evidence_verifier = Verifier(args.evidence_verify_key, EVIDENCE_VERIFIER_IDENTITY, "base64",
+                                 expected=identity_contract.expected(ROLE_EVIDENCE))
     identities_separated = separated(task_verifier, evidence_verifier, loaded)
-    if not identities_separated:
+    task_bound, evidence_bound = bind_identities(task_verifier, evidence_verifier, loaded)
+    proven_allowed = bool(identities_separated and task_bound and evidence_bound)
+
+    # Fail closed. A verifier that is not the published identity, or that collides
+    # with the other role, is disabled so it can never return True and therefore
+    # can never produce PROVEN. Its identity_binding is still reported.
+    if not task_bound or not identities_separated:
         task_verifier = task_verifier.disabled_copy()
+    if not evidence_bound or not identities_separated:
         evidence_verifier = evidence_verifier.disabled_copy()
+
+    fail_closed_reasons = sorted({
+        "%s:%s" % (role, verifier.binding)
+        for role, verifier in (("task", task_verifier), ("evidence", evidence_verifier))
+        if verifier.binding != BINDING_BOUND
+    } | ({"roles:IDENTITY_COLLISION"} if not identities_separated else set()))
 
     options = {
         "stale_seconds": args.stale_after_seconds,
@@ -1358,6 +1580,9 @@ def main(argv=None):
         "go_repo": args.go_repo,
         "repository_main_sha": args.repository_main_sha,
         "identities_separated": identities_separated,
+        "identity_contract": identity_contract,
+        "proven_allowed": proven_allowed,
+        "fail_closed_reasons": fail_closed_reasons,
         "args": args,
     }
     state = build_state(loaded, task_verifier, evidence_verifier, at, options)
@@ -1425,6 +1650,9 @@ def main(argv=None):
         "by_lifecycle": state["counts"]["by_lifecycle"],
         "task_signature_verification": state["verification"]["task"]["signature_verification"],
         "evidence_signature_verification": state["verification"]["evidence"]["signature_verification"],
+        "task_identity_binding": state["verification"]["task"]["identity_binding"],
+        "evidence_identity_binding": state["verification"]["evidence"]["identity_binding"],
+        "proven_allowed": state["verification"]["proven_allowed"],
         "identities_separated": identities_separated,
         "hk_agent_liveness": status["answers"]["hk_agent_online"]["state"],
         "runtime_verification": state["control_state"]["runtime_verification_state"],

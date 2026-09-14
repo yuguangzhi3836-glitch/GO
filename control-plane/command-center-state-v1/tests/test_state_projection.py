@@ -128,18 +128,74 @@ def fake_args(**over):
     return argparse.Namespace(**base)
 
 
-def build(root, req_dir=None, task_pub=None, evidence_pub=None, go_repo=None, at=None, **flags):
-    """Build the state without going through the CLI."""
+def ssh_fingerprint(pub_path):
+    """The SSH SHA256 fingerprint of a public key file, or None."""
+    if not pub_path:
+        return None
+    return sp.Verifier(pub_path, sp.TASK_VERIFIER_IDENTITY, "hex").ssh_fingerprint
+
+
+def identity_contract(task_pub=None, evidence_pub=None, task_pin=None, evidence_pin=None):
+    """A temporary VERIFIER_IDENTITIES_V1 contract pinning the fixture keys.
+
+    Pins default to the fingerprints of the supplied keys. A role with no key is
+    pinned to a distinct placeholder, which is never compared because a verifier
+    with no key file reports MISSING_KEY before any fingerprint check.
+    """
+    directory = pathlib.Path(tempfile.mkdtemp(prefix="ccs-identity-"))
+    document = {
+        "schema_version": "1",
+        "contract": sp.IDENTITY_CONTRACT_NAME,
+        "scope": sp.CONTRACT_SCOPE,
+        "identities": [
+            {"identity_id": "TEST-CC-TASK-SIGNER", "role": sp.ROLE_TASK,
+             "display_name": sp.TASK_VERIFIER_IDENTITY, "algorithm": "Ed25519",
+             "signature_encoding": "hex",
+             "public_key_ssh_sha256": (task_pin or ssh_fingerprint(task_pub)
+                                       or "SHA256:no-task-key-in-this-fixture")},
+            {"identity_id": "TEST-HK-EVIDENCE-SIGNER", "role": sp.ROLE_EVIDENCE,
+             "display_name": sp.EVIDENCE_VERIFIER_IDENTITY, "algorithm": "Ed25519",
+             "signature_encoding": "base64",
+             "public_key_ssh_sha256": (evidence_pin or ssh_fingerprint(evidence_pub)
+                                       or "SHA256:no-evidence-key-in-this-fixture")},
+        ],
+    }
+    path = directory / "VERIFIER_IDENTITIES_V1.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    return str(path)
+
+
+def build(root, req_dir=None, task_pub=None, evidence_pub=None, go_repo=None, at=None,
+          contract=None, **flags):
+    """Build the state without going through the CLI.
+
+    A contract pinning the fixture keys is generated unless one is supplied, so
+    PROVEN in these tests always means "bound to a published identity", never
+    merely "a signature verified".
+    """
     loaded = sp.Loaded()
     sp.load_tasks(str(root), loaded)
     sp.load_evidence(str(root), loaded)
     sp.load_requests(str(req_dir) if req_dir else None, loaded)
-    task_verifier = sp.Verifier(task_pub, sp.TASK_VERIFIER_IDENTITY, "hex")
-    evidence_verifier = sp.Verifier(evidence_pub, sp.EVIDENCE_VERIFIER_IDENTITY, "base64")
+    if contract is None:
+        contract = identity_contract(task_pub, evidence_pub)
+    identity = sp.IdentityContract(contract)
+    task_verifier = sp.Verifier(task_pub, sp.TASK_VERIFIER_IDENTITY, "hex",
+                                expected=identity.expected(sp.ROLE_TASK))
+    evidence_verifier = sp.Verifier(evidence_pub, sp.EVIDENCE_VERIFIER_IDENTITY, "base64",
+                                    expected=identity.expected(sp.ROLE_EVIDENCE))
     separated = sp.separated(task_verifier, evidence_verifier, loaded)
-    if not separated:
+    task_bound, evidence_bound = sp.bind_identities(task_verifier, evidence_verifier, loaded)
+    binding_gate = bool(separated and task_bound and evidence_bound)
+    if not task_bound or not separated:
         task_verifier = task_verifier.disabled_copy()
+    if not evidence_bound or not separated:
         evidence_verifier = evidence_verifier.disabled_copy()
+    fail_closed_reasons = sorted({
+        "%s:%s" % (role, verifier.binding)
+        for role, verifier in (("task", task_verifier), ("evidence", evidence_verifier))
+        if verifier.binding != sp.BINDING_BOUND
+    } | ({"roles:IDENTITY_COLLISION"} if not separated else set()))
     options = {
         "stale_seconds": flags.pop("stale_seconds", 86400),
         "liveness_window": flags.pop("liveness_window", 1800),
@@ -149,6 +205,9 @@ def build(root, req_dir=None, task_pub=None, evidence_pub=None, go_repo=None, at
         "go_repo": go_repo,
         "repository_main_sha": flags.pop("repository_main_sha", None),
         "identities_separated": separated,
+        "identity_contract": identity,
+        "proven_allowed": binding_gate,
+        "fail_closed_reasons": fail_closed_reasons,
         "args": fake_args(),
     }
     state = sp.build_state(loaded, task_verifier, evidence_verifier, at or AT, options)
@@ -298,6 +357,219 @@ class VerifierIdentityTests(unittest.TestCase):
         self.assertEqual(described["encoding"], "hex")
         self.assertEqual(described["identity"], sp.TASK_VERIFIER_IDENTITY)
         self.assertEqual(described["signature_verification"], "PERFORMED")
+
+
+# --------------------------------------------------------------------------- #
+class PublishedVerifierIdentityTests(unittest.TestCase):
+    """CC V1-01. The published verifier identities and the binding they enable.
+
+    A key that merely loads is not the right key: PROVEN additionally requires the
+    supplied key to be the identity published in VERIFIER_IDENTITIES_V1.
+    """
+
+    REPO_ROOT = ROOT.parents[1]
+    IDENTITY_DIR = ROOT / "identity"
+    CONTRACT = IDENTITY_DIR / "VERIFIER_IDENTITIES_V1.json"
+    TASK_KEY = IDENTITY_DIR / "keys" / "cc-task-manifest-signing.pub"
+    EVIDENCE_KEY = IDENTITY_DIR / "keys" / "hk-evidence-signing.pub"
+    REAL = ROOT / "tests" / "fixtures" / "real"
+
+    TASK_SSH = "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns"
+    EVIDENCE_SSH = "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw"
+
+    def project_real(self, task_key=None, evidence_key=None, contract=None):
+        return build(str(self.REAL), task_pub=task_key, evidence_pub=evidence_key,
+                     contract=str(self.CONTRACT) if contract is None else contract)
+
+    def assert_no_success_claim(self, state):
+        """No Task may reach a verified-complete lifecycle or a PROVEN result.
+
+        ``execution_started`` is deliberately excluded: it records that the
+        Evidence carries a started_at for this task/nonce, which stays true even
+        when the Task's own identity was never established.
+        """
+        for entry in state["tasks"]:
+            self.assertNotEqual(entry["lifecycle"], "COMPLETE", entry["task_id"])
+            self.assertNotEqual(entry["assertion"]["state"], sp.STATE_PROVEN, entry["task_id"])
+
+    # -- the publication itself ------------------------------------------------
+    def test_the_published_contract_pins_two_distinct_identities(self):
+        identity = sp.IdentityContract(str(self.CONTRACT))
+        self.assertTrue(identity.available, identity.reason)
+        task = identity.expected(sp.ROLE_TASK)
+        evidence = identity.expected(sp.ROLE_EVIDENCE)
+        self.assertEqual(task["ssh_sha256"], self.TASK_SSH)
+        self.assertEqual(evidence["ssh_sha256"], self.EVIDENCE_SSH)
+        self.assertNotEqual(task["ssh_sha256"], evidence["ssh_sha256"])
+        self.assertEqual(task["encoding"], "hex")
+        self.assertEqual(evidence["encoding"], "base64")
+        self.assertEqual(task["identity_id"], "GO-CC-TASK-MANIFEST-SIGNER")
+        self.assertEqual(evidence["identity_id"], "HK-AGENT-EVIDENCE-SIGNER")
+
+    def test_the_published_key_files_match_their_published_fingerprints(self):
+        identity = sp.IdentityContract(str(self.CONTRACT))
+        for role, key_file in ((sp.ROLE_TASK, self.TASK_KEY), (sp.ROLE_EVIDENCE, self.EVIDENCE_KEY)):
+            verifier = sp.Verifier(str(key_file), identity.expected(role)["display_name"],
+                                   identity.expected(role)["encoding"],
+                                   expected=identity.expected(role))
+            self.assertTrue(verifier.available)
+            self.assertEqual(verifier.binding, sp.BINDING_BOUND, verifier.binding_reason)
+            self.assertEqual(verifier.ssh_fingerprint, identity.expected(role)["ssh_sha256"])
+            self.assertEqual(verifier.fingerprint, identity.expected(role)["raw_sha256"])
+
+    def test_the_published_key_file_hashes_match_the_contract(self):
+        document = json.loads(self.CONTRACT.read_text(encoding="utf-8"))
+        for entry in document["identities"]:
+            path = ROOT / entry["public_key_path"]
+            digest = __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+            self.assertEqual(digest, entry["public_key_file_sha256"], entry["identity_id"])
+
+    def test_the_published_fingerprints_match_the_archived_audit_files(self):
+        command_center = (self.REPO_ROOT / "command-center/audit/20260911/KEY_FINGERPRINTS.txt"
+                          ).read_text(encoding="utf-8")
+        hong_kong = (self.REPO_ROOT / "hk-staging/audit/20260911/KEY_FINGERPRINTS.txt"
+                     ).read_text(encoding="utf-8")
+        # The Command Center signs Tasks with this key.
+        self.assertIn(self.TASK_SSH, command_center)
+        # The Hong Kong agent verifies Tasks with the SAME key: two-sided binding.
+        self.assertIn(self.TASK_SSH, hong_kong)
+        self.assertIn(self.EVIDENCE_SSH, hong_kong)
+        self.assertNotIn(self.EVIDENCE_SSH, command_center.replace(
+            "/etc/go-command-center/deployment-plans-v1/hk-evidence.pub", ""))
+
+    def test_no_private_key_material_is_published(self):
+        markers = (b"PRIVATE KEY", b"OPENSSH PRIVATE", b"BEGIN RSA", b"BEGIN EC", b"BEGIN DSA")
+        for path in sorted(self.IDENTITY_DIR.rglob("*")):
+            if not path.is_file():
+                continue
+            blob = path.read_bytes()
+            for marker in markers:
+                self.assertNotIn(marker, blob, "%s carries private key material" % path.name)
+            if path.suffix == ".pub":
+                self.assertLess(len(blob), 200, "%s is not a single public key line" % path.name)
+        published = {p.name for p in (self.IDENTITY_DIR / "keys").iterdir() if p.is_file()}
+        self.assertEqual(published,
+                         {"cc-task-manifest-signing.pub", "hk-evidence-signing.pub"})
+
+    # -- the upgrade the publication buys --------------------------------------
+    def test_real_control_bus_history_reaches_proven_with_the_published_keys(self):
+        _, state, _ = self.project_real(str(self.TASK_KEY), str(self.EVIDENCE_KEY))
+        verification = state["verification"]
+        self.assertTrue(verification["proven_allowed"])
+        self.assertEqual(verification["task"]["identity_binding"], sp.BINDING_BOUND)
+        self.assertEqual(verification["evidence"]["identity_binding"], sp.BINDING_BOUND)
+        self.assertEqual(verification["fail_closed_reasons"], [])
+        self.assertEqual(verification["identity_contract"]["state"], "LOADED")
+        self.assertEqual(len(state["tasks"]), 24)
+        for entry in state["tasks"]:
+            self.assertIs(entry["task_signature_verified"], True, entry["task_id"])
+            self.assertIs(entry["evidence"]["signature_verified"], True, entry["task_id"])
+            self.assertEqual(entry["lifecycle"], "COMPLETE", entry["task_id"])
+            self.assertEqual(entry["assertion"]["state"], sp.STATE_PROVEN, entry["task_id"])
+        actions = {entry["action_id"] for entry in state["tasks"]}
+        self.assertEqual(actions, {"CONTROL_PLANE_HEALTH", "HK_STAGING_CANARY",
+                                   "HK_STAGING_DEPLOY", "HK_STAGING_ROLLBACK",
+                                   "HK_STAGING_TEST_PR", "HK_STAGING_VERIFY"})
+        self.assertEqual(sp.LOCAL_PATH_RE.findall(json.dumps(state)), [])
+
+    def test_real_control_bus_history_is_capped_at_observed_without_the_keys(self):
+        _, state, _ = self.project_real()
+        self.assertFalse(state["verification"]["proven_allowed"])
+        for entry in state["tasks"]:
+            self.assertIsNone(entry["task_signature_verified"], entry["task_id"])
+            self.assertIsNone(entry["evidence"]["signature_verified"], entry["task_id"])
+            self.assertNotEqual(entry["assertion"]["state"], sp.STATE_PROVEN)
+        self.assert_no_success_claim(state)
+
+    # -- the four fail-closed cases --------------------------------------------
+    def test_a_wrong_key_is_fail_closed_and_reaches_no_proven(self):
+        _, wrong_pub = key_pair("wrong-task")
+        _, state, _ = self.project_real(wrong_pub, str(self.EVIDENCE_KEY))
+        verification = state["verification"]
+        self.assertEqual(verification["task"]["identity_binding"], sp.BINDING_IDENTITY_MISMATCH)
+        self.assertEqual(verification["evidence"]["identity_binding"], sp.BINDING_BOUND)
+        self.assertFalse(verification["proven_allowed"])
+        self.assertIn("task:IDENTITY_MISMATCH", verification["fail_closed_reasons"])
+        self.assert_no_success_claim(state)
+
+    def test_a_crossed_published_identity_is_fail_closed(self):
+        _, state, _ = self.project_real(str(self.EVIDENCE_KEY), str(self.TASK_KEY))
+        verification = state["verification"]
+        self.assertEqual(verification["task"]["identity_binding"], sp.BINDING_IDENTITY_MISMATCH)
+        self.assertEqual(verification["evidence"]["identity_binding"], sp.BINDING_IDENTITY_MISMATCH)
+        self.assertFalse(verification["proven_allowed"])
+        self.assert_no_success_claim(state)
+
+    def test_the_published_key_for_both_roles_is_a_collision(self):
+        _, state, _ = self.project_real(str(self.TASK_KEY), str(self.TASK_KEY))
+        verification = state["verification"]
+        self.assertFalse(verification["identities_separated"])
+        self.assertFalse(verification["proven_allowed"])
+        self.assertIn("roles:IDENTITY_COLLISION", verification["fail_closed_reasons"])
+        self.assert_no_success_claim(state)
+
+    def test_a_missing_key_is_never_proven(self):
+        _, state, _ = self.project_real(str(self.TASK_KEY), None)
+        verification = state["verification"]
+        self.assertEqual(verification["evidence"]["identity_binding"], sp.BINDING_MISSING_KEY)
+        self.assertEqual(verification["task"]["identity_binding"], sp.BINDING_BOUND)
+        self.assertFalse(verification["proven_allowed"])
+        self.assertIn("evidence:MISSING_KEY", verification["fail_closed_reasons"])
+        self.assert_no_success_claim(state)
+
+    def test_an_unreadable_key_is_fail_closed(self):
+        bad = pathlib.Path(tempfile.mkdtemp(prefix="ccs-bad-")) / "bad.pub"
+        bad.write_bytes(b"not a key")
+        _, state, _ = self.project_real(str(bad), str(self.EVIDENCE_KEY))
+        verification = state["verification"]
+        self.assertEqual(verification["task"]["identity_binding"], sp.BINDING_KEY_UNREADABLE)
+        self.assertFalse(verification["proven_allowed"])
+        self.assert_no_success_claim(state)
+
+    # -- contract integrity -----------------------------------------------------
+    def test_a_contract_publishing_one_key_for_both_roles_is_rejected(self):
+        directory = pathlib.Path(tempfile.mkdtemp(prefix="ccs-contract-"))
+        path = directory / "VERIFIER_IDENTITIES_V1.json"
+        path.write_text(json.dumps({
+            "schema_version": "1", "contract": sp.IDENTITY_CONTRACT_NAME,
+            "identities": [
+                {"identity_id": "A", "role": sp.ROLE_TASK, "public_key_ssh_sha256": self.TASK_SSH},
+                {"identity_id": "B", "role": sp.ROLE_EVIDENCE,
+                 "public_key_ssh_sha256": self.TASK_SSH}]}), encoding="utf-8")
+        identity = sp.IdentityContract(str(path))
+        self.assertFalse(identity.available)
+        self.assertIn("one key for both roles", identity.reason)
+        self.assertIsNone(identity.expected(sp.ROLE_TASK))
+
+    def test_an_unresolvable_contract_never_yields_proven(self):
+        missing = pathlib.Path(tempfile.mkdtemp(prefix="ccs-none-")) / "absent.json"
+        identity = sp.IdentityContract(str(missing))
+        self.assertFalse(identity.available)
+        self.assertIn("unreadable", identity.reason)
+        _, state, _ = self.project_real(str(self.TASK_KEY), str(self.EVIDENCE_KEY),
+                                        contract=str(missing))
+        verification = state["verification"]
+        self.assertEqual(verification["identity_contract"]["state"], "UNRESOLVED")
+        self.assertEqual(verification["task"]["identity_binding"], sp.BINDING_IDENTITY_UNRESOLVED)
+        self.assertFalse(verification["proven_allowed"])
+        self.assert_no_success_claim(state)
+
+    def test_the_contract_is_reported_without_a_workstation_path(self):
+        published = sp.IdentityContract(str(self.CONTRACT))
+        self.assertEqual(published.describe()["path"], sp.IDENTITY_CONTRACT_RELPATH)
+        self.assertTrue(published.describe()["is_the_published_contract"])
+        outside = sp.IdentityContract("D:/somewhere/else/identities.json")
+        self.assertEqual(outside.describe()["path"], "<caller-supplied contract>")
+        self.assertFalse(outside.describe()["is_the_published_contract"])
+        self.assertFalse(outside.describe()["publishes_private_keys"])
+
+    def test_the_derived_state_declares_the_identity_gate(self):
+        _, state, _ = self.project_real(str(self.TASK_KEY), str(self.EVIDENCE_KEY))
+        verification = state["verification"]
+        self.assertIs(verification["proven_requires_both_keys"], True)
+        self.assertIs(verification["proven_requires_both_identities_bound"], True)
+        for binding in sp.FAIL_CLOSED_BINDINGS:
+            self.assertNotEqual(binding, sp.BINDING_BOUND)
 
 
 # --------------------------------------------------------------------------- #

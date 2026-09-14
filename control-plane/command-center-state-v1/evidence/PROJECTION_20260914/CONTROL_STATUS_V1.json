@@ -15,7 +15,7 @@
       ],
       "reason": "the newest VERIFY Evidence reports VERIFY_OK. This is the last proven moment, not present-moment liveness",
       "stale": true,
-      "state": "OBSERVED",
+      "state": "PROVEN",
       "value": "HEALTHY_AS_OF_LAST_PROBE"
     },
     "hk_agent_online": {
@@ -37,7 +37,7 @@
         "evidence/go-m3-auto-health-20260906T115227992322Z-jzoWVgooSJWTldTOGkT57zLvcCOiQAGS.json"
       ],
       "reason": "the newest signed CONTROL_PLANE_HEALTH Evidence, at any age. Activity is not liveness",
-      "state": "OBSERVED",
+      "state": "PROVEN",
       "value": {
         "age_seconds": 690395,
         "agent_version": "0.4.5-rebuilt",
@@ -50,7 +50,7 @@
         "evidence/go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json"
       ],
       "reason": "the newest signed Evidence on the control bus",
-      "state": "OBSERVED",
+      "state": "PROVEN",
       "value": {
         "action_id": "HK_STAGING_VERIFY",
         "completed_at": "2026-09-13T03:43:27Z",
@@ -78,12 +78,12 @@
         "tasks/go-boss-request-verify-20260913T034140Z-b22f51784808.json"
       ],
       "reason": "the newest signed task of this class observed on the control bus",
-      "state": "OBSERVED",
+      "state": "PROVEN",
       "value": {
         "action_id": "HK_STAGING_VERIFY",
         "expires_at": "2026-09-13T03:56:40.478302Z",
         "issued_at": "2026-09-13T03:41:40.478302Z",
-        "lifecycle": "EVIDENCE_PUBLISHED",
+        "lifecycle": "COMPLETE",
         "task_id": "go-boss-request-verify-20260913T034140Z-b22f51784808"
       }
     },
@@ -92,11 +92,11 @@
         "evidence/go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json"
       ],
       "reason": "the newest VERIFY Evidence names the image that was current at that moment. This is a point-in-time proof, not a continuous statement",
-      "state": "OBSERVED",
+      "state": "PROVEN",
       "value": {
         "age_seconds": 116193,
         "image_config_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
-        "verification_rank": "OBSERVED_ONLY",
+        "verification_rank": "SIGNATURE_VERIFIED",
         "verified_at": "2026-09-13T03:43:27Z"
       }
     },
@@ -107,22 +107,22 @@
             "built_image_id": "sha256:625c05ee487c0de21a6db6db13991802802c219c96e407a2f78c391314c09983",
             "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
             "completed_at": "2026-09-12T15:45:24Z",
-            "lifecycle": "EVIDENCE_PUBLISHED",
+            "lifecycle": "COMPLETE",
             "result": "TEST_PR_OK",
-            "signature_verified": null,
+            "signature_verified": true,
             "source_path": "evidence/go-boss-test-pr-42-5c8d760d36cb-xgQcFzIXtxj2IKjcJesfqtr0aY84k4vj.json",
-            "state": "OBSERVED",
+            "state": "PROVEN",
             "task_id": "go-boss-test-pr-42-5c8d760d36cb"
           },
           {
             "built_image_id": "sha256:c446b3d39861fb0a1055e906da82a6ef3cd0eec1b907a537f400d6bf3e6100a8",
             "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
             "completed_at": "2026-09-12T16:02:38Z",
-            "lifecycle": "EVIDENCE_PUBLISHED",
+            "lifecycle": "COMPLETE",
             "result": "TEST_PR_OK",
-            "signature_verified": null,
+            "signature_verified": true,
             "source_path": "evidence/go-boss-test-pr-42-81653232027c-FazaUqG2NOoKknSG-DjoOyrbxtmpcIp-.json",
-            "state": "OBSERVED",
+            "state": "PROVEN",
             "task_id": "go-boss-test-pr-42-81653232027c"
           }
         ],
@@ -131,11 +131,11 @@
             "built_image_id": "sha256:de90eb9e5df3534ca542f185fdcb658345261ac5b400add741b1126d2b03ac39",
             "commit_sha": "3e8150fec9cc5ebcfc9694e7e73444c7592ddcb4",
             "completed_at": "2026-09-12T17:08:32Z",
-            "lifecycle": "EVIDENCE_PUBLISHED",
+            "lifecycle": "COMPLETE",
             "result": "TEST_PR_OK",
-            "signature_verified": null,
+            "signature_verified": true,
             "source_path": "evidence/go-boss-test-pr-47-c00da968ea3c-kFYOCekZQgQet9rxzRaWgR3FT_n7hUmv.json",
-            "state": "OBSERVED",
+            "state": "PROVEN",
             "task_id": "go-boss-test-pr-47-c00da968ea3c"
           }
         ]
@@ -171,7 +171,7 @@
           "evidence/go-boss-test-pr-47-c00da968ea3c-kFYOCekZQgQet9rxzRaWgR3FT_n7hUmv.json"
         ],
         "reason": "the newest successful TEST_PR Evidence. An isolated offline build is not a deployment",
-        "state": "OBSERVED",
+        "state": "PROVEN",
         "value": {
           "application_health_proven": false,
           "built_image_id": "sha256:de90eb9e5df3534ca542f185fdcb658345261ac5b400add741b1126d2b03ac39",
@@ -203,7 +203,7 @@
       "evidence": [],
       "reason": "the repository main revision supplied to this run",
       "state": "OBSERVED",
-      "value": "4b03281977a77263b1ce0dedb1b889c2008b6b00"
+      "value": "8610a4dbfd58cbe595f3d161c049de37dd81d3cc"
     },
     "request_channel": {
       "capability_classification": {
@@ -256,7 +256,7 @@
         "image_relation": "DIFFER",
         "live_proven_image": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
         "live_verification_age_seconds": 116193,
-        "live_verification_rank": "OBSERVED_ONLY",
+        "live_verification_rank": "SIGNATURE_VERIFIED",
         "repository_declared_image": "sha256:57beafa250f42eb1319ae561e0b79f432bb80d7171592392303a31446cd8ac6c",
         "verdict": "NOT_RECENTLY_VERIFIED"
       }
@@ -265,7 +265,7 @@
       "active_stuck_tasks": [],
       "answer": {
         "evidence": [],
-        "reason": "no published task is overdue. 13 recently expired and 8 historical expired task(s) are indexed separately and do not affect current health",
+        "reason": "no published task is overdue. 13 recently expired and 5 historical expired task(s) are indexed separately and do not affect current health",
         "state": "OBSERVED",
         "value": "NO"
       },
@@ -286,30 +286,6 @@
           "lifecycle": "TASK_EXPIRED",
           "source_path": "tasks/go-m3-06-auto-health-20260905-001.json",
           "task_id": "go-m3-06-auto-health-20260905-001"
-        },
-        {
-          "action_id": "CONTROL_PLANE_HEALTH",
-          "expires_at": "2026-09-05T15:57:33.846901+00:00",
-          "issued_at": "2026-09-05T15:12:33.846901+00:00",
-          "lifecycle": "TASK_EXPIRED",
-          "source_path": "tasks/go-m3-042-e2e-health-20260905T151233846901Z.json",
-          "task_id": "go-m3-042-e2e-health-20260905T151233846901Z"
-        },
-        {
-          "action_id": "CONTROL_PLANE_HEALTH",
-          "expires_at": "2026-09-05T17:21:30.238921+00:00",
-          "issued_at": "2026-09-05T15:21:30.238921+00:00",
-          "lifecycle": "TASK_EXPIRED",
-          "source_path": "tasks/go-m3-042-e2e-health-20260905T152130238921Z.json",
-          "task_id": "go-m3-042-e2e-health-20260905T152130238921Z"
-        },
-        {
-          "action_id": "CONTROL_PLANE_HEALTH",
-          "expires_at": "2026-09-06T05:18:15.978751+00:00",
-          "issued_at": "2026-09-06T01:18:15.978751+00:00",
-          "lifecycle": "TASK_EXPIRED",
-          "source_path": "tasks/go-m3-042-e2e-health-20260906T011815978751Z.json",
-          "task_id": "go-m3-042-e2e-health-20260906T011815978751Z"
         },
         {
           "action_id": "CONTROL_PLANE_HEALTH",
@@ -450,12 +426,12 @@
         "tasks/go-boss-request-verify-20260913T034140Z-b22f51784808.json"
       ],
       "reason": "the newest signed task of this class observed on the control bus",
-      "state": "OBSERVED",
+      "state": "PROVEN",
       "value": {
         "action_id": "HK_STAGING_VERIFY",
         "expires_at": "2026-09-13T03:56:40.478302Z",
         "issued_at": "2026-09-13T03:41:40.478302Z",
-        "lifecycle": "EVIDENCE_PUBLISHED",
+        "lifecycle": "COMPLETE",
         "task_id": "go-boss-request-verify-20260913T034140Z-b22f51784808"
       }
     }
@@ -497,7 +473,7 @@
     "go": {
       "canonical_candidate_pointer": "docs/canonical-baseline/CURRENT_CANDIDATE.json",
       "canonical_runtime_pointer": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
-      "head_sha": "4b03281977a77263b1ce0dedb1b889c2008b6b00",
+      "head_sha": "bbd9d26966c146476bb976fe514f17c7b353f84c",
       "ref": "main",
       "repository": "yuguangzhi3836-glitch/GO"
     },
@@ -524,25 +500,46 @@
       ],
       "reason": "the newest VERIFY Evidence reports VERIFY_OK. This is the last proven moment, not present-moment liveness",
       "stale": true,
-      "state": "OBSERVED",
+      "state": "PROVEN",
       "value": "HEALTHY_AS_OF_LAST_PROBE"
     }
   },
   "verification": {
     "evidence": {
       "encoding": "base64",
+      "expected_ssh_sha256_fingerprint": "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw",
       "identity": "Hong Kong agent evidence signer",
-      "key_fingerprint": null,
-      "signature_verification": "NOT_PERFORMED"
+      "identity_binding": "BOUND",
+      "identity_binding_reason": null,
+      "identity_id": "HK-AGENT-EVIDENCE-SIGNER",
+      "key_fingerprint": "53febb3f28fa835f2f2d88cf34a5aefca124aa95a43335e5688157c89f4200c7",
+      "signature_verification": "PERFORMED",
+      "ssh_sha256_fingerprint": "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw"
     },
+    "fail_closed_reasons": [],
     "identities_separated": true,
-    "note": "A Task must never validate against the evidence key and Evidence must never validate against the task key. PROVEN requires the artifact's own identity to verify",
+    "identity_contract": {
+      "contract": "VERIFIER_IDENTITIES_V1",
+      "is_the_published_contract": true,
+      "path": "identity/VERIFIER_IDENTITIES_V1.json",
+      "publishes_private_keys": false,
+      "reason": null,
+      "state": "LOADED"
+    },
+    "note": "A Task must never validate against the evidence key and Evidence must never validate against the task key. PROVEN requires the artifact's own identity to verify, and it additionally requires that identity to be the one published in the verifier identity contract. A key that merely loads is not the right key",
+    "proven_allowed": true,
+    "proven_requires_both_identities_bound": true,
     "proven_requires_both_keys": true,
     "task": {
       "encoding": "hex",
+      "expected_ssh_sha256_fingerprint": "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns",
       "identity": "GO Command Center task-manifest signer",
-      "key_fingerprint": null,
-      "signature_verification": "NOT_PERFORMED"
+      "identity_binding": "BOUND",
+      "identity_binding_reason": null,
+      "identity_id": "GO-CC-TASK-MANIFEST-SIGNER",
+      "key_fingerprint": "b079fb544ed9efbed03f0641f9ecdbb4c738bf525ef440998d6b30fad86d30df",
+      "signature_verification": "PERFORMED",
+      "ssh_sha256_fingerprint": "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns"
     }
   }
 }

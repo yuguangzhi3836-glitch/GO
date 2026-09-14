@@ -40,14 +40,32 @@
     },
     "verification": {
       "type": "object",
-      "required": ["task", "evidence", "identities_separated", "proven_requires_both_keys"],
+      "required": ["task", "evidence", "identity_contract", "identities_separated",
+                   "proven_allowed", "fail_closed_reasons",
+                   "proven_requires_both_keys", "proven_requires_both_identities_bound"],
       "properties": {
         "task": {"$ref": "#/$defs/verifierIdentity"},
         "evidence": {"$ref": "#/$defs/verifierIdentity"},
+        "identity_contract": {"$ref": "#/$defs/identityContract"},
         "identities_separated": {"type": "boolean"},
+        "proven_allowed": {
+          "type": "boolean",
+          "description": "true only when both verifier identities are BOUND and the two roles resolve to different keys"
+        },
+        "fail_closed_reasons": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "for example 'task:IDENTITY_MISMATCH'; empty means nothing failed closed"
+        },
         "proven_requires_both_keys": {"const": true},
+        "proven_requires_both_identities_bound": {"const": true},
         "note": {"type": "string"}
-      }
+      },
+      "x-go-binding-rules": [
+        "BOUND means the supplied key's SSH SHA256 fingerprint equals the fingerprint published in the identity contract.",
+        "MISSING_KEY, KEY_UNREADABLE, IDENTITY_MISMATCH, IDENTITY_UNRESOLVED and IDENTITY_COLLISION are all fail-closed and may never yield PROVEN.",
+        "A key that merely loads is not the right key, so 'the signature verified' is never by itself an identity claim."
+      ]
     },
     "counts": {
       "type": "object",
@@ -179,12 +197,40 @@
     },
     "verifierIdentity": {
       "type": "object",
-      "required": ["identity", "encoding", "signature_verification"],
+      "required": ["identity", "encoding", "signature_verification", "identity_binding"],
       "properties": {
         "identity": {"type": "string"},
+        "identity_id": {"type": ["string", "null"],
+                        "description": "the published identity, e.g. GO-CC-TASK-MANIFEST-SIGNER"},
         "encoding": {"enum": ["hex", "base64"]},
         "key_fingerprint": {"type": ["string", "null"]},
+        "ssh_sha256_fingerprint": {
+          "type": ["string", "null"],
+          "description": "sha256 over the ssh wire blob, as ssh-keygen and the archived audit files report it"
+        },
+        "expected_ssh_sha256_fingerprint": {
+          "type": ["string", "null"],
+          "description": "the fingerprint pinned by the identity contract"
+        },
+        "identity_binding": {
+          "enum": ["BOUND", "MISSING_KEY", "KEY_UNREADABLE", "IDENTITY_MISMATCH",
+                   "IDENTITY_UNRESOLVED", "IDENTITY_COLLISION"]
+        },
+        "identity_binding_reason": {"type": ["string", "null"]},
         "signature_verification": {"enum": ["PERFORMED", "NOT_PERFORMED"]}
+      }
+    },
+    "identityContract": {
+      "type": "object",
+      "required": ["contract", "path", "state", "publishes_private_keys"],
+      "properties": {
+        "contract": {"const": "VERIFIER_IDENTITIES_V1"},
+        "path": {"type": "string",
+                 "description": "repository-relative when the published contract is used, otherwise a fixed marker; never a workstation path"},
+        "is_the_published_contract": {"type": "boolean"},
+        "state": {"enum": ["LOADED", "UNRESOLVED"]},
+        "reason": {"type": ["string", "null"]},
+        "publishes_private_keys": {"const": false}
       }
     },
     "assertion": {
@@ -204,6 +250,7 @@
       ],
       "x-go-rank-rules": [
         "PROVEN requires the artifact's own verifier identity to verify: a Task against the Command Center task key, Evidence against the Hong Kong evidence key, and COMPLETE requires both.",
+        "PROVEN additionally requires both identities to be BOUND to the published VERIFIER_IDENTITIES_V1 contract. An unbound, mismatched, unreadable, missing or colliding key caps the claim at OBSERVED.",
         "OBSERVED means a published record was read but its signature was not checked, or the claim is a pointer rather than a live proof.",
         "PENDING is reserved for an in-flight lifecycle stage still inside its bound.",
         "HOLD means an explicit policy or release gate blocks the claim.",
