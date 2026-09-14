@@ -20,7 +20,7 @@ def test_fresh_database_can_apply_entire_chain_without_stamp(tmp_path, monkeypat
     db, cfg = config(tmp_path, monkeypatch)
     command.upgrade(cfg, 'head')
     with sqlite3.connect(db) as s:
-        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0133_flight_change_plan'
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0134_flight_status_width'
         columns = {r[1] for r in s.execute('PRAGMA table_info(connector_runtime_reconciliation)')}
         assert {'claimed_by', 'lease_expires_at', 'resolution_payload_json', 'superseded_reason'} <= columns
         assert s.execute("SELECT name FROM sqlite_master WHERE name='vertical_payment_deadline'").fetchone()
@@ -85,6 +85,10 @@ def test_rail_width_upgrade_preserves_history_and_refuses_lossy_downgrade(tmp_pa
                   'status VARCHAR(32) NOT NULL, booking_reference VARCHAR(24))')
         s.execute('CREATE INDEX rail_ref_index ON rail_order_runtime(booking_reference)')
         s.execute("INSERT INTO rail_order_runtime VALUES ('old','TICKETED','old-reference')")
+        # A database legitimately stamped at 0131 has already traversed flight migration 0022,
+        # so the pre-0134 flight order table must exist in this synthetic historical fixture.
+        s.execute('CREATE TABLE flight_order_runtime (order_id VARCHAR(64) PRIMARY KEY, status VARCHAR(32) NOT NULL)')
+        s.execute("INSERT INTO flight_order_runtime VALUES ('old-flight','PAYMENT_PENDING')")
     command.stamp(cfg, '0131_vertical_payment_deadline')
     command.upgrade(cfg, 'head')
     state = 'PAYMENT_CONFIRMED_AWAITING_SUPPLIER'
@@ -93,6 +97,8 @@ def test_rail_width_upgrade_preserves_history_and_refuses_lossy_downgrade(tmp_pa
         assert s.execute('SELECT status,booking_reference FROM rail_order_runtime').fetchone() == ('TICKETED','old-reference')
         columns = {r[1]: r[2] for r in s.execute('PRAGMA table_info(rail_order_runtime)')}
         assert columns['status']=='VARCHAR(64)' and columns['booking_reference']=='VARCHAR(128)'
+        assert s.execute("SELECT status FROM flight_order_runtime WHERE order_id='old-flight'").fetchone()[0] == 'PAYMENT_PENDING'
+        assert {r[1]: r[2] for r in s.execute('PRAGMA table_info(flight_order_runtime)')}['status'] == 'VARCHAR(64)'
         s.execute('INSERT INTO rail_order_runtime VALUES (?,?,?)', ('long',state,reference))
     with pytest.raises(RuntimeError, match='RAIL_RUNTIME_DOWNGRADE_WOULD_TRUNCATE_HISTORY'):
         command.downgrade(cfg, '0131_vertical_payment_deadline')
@@ -106,3 +112,4 @@ def test_rail_width_upgrade_preserves_history_and_refuses_lossy_downgrade(tmp_pa
         assert s.execute("SELECT name FROM sqlite_master WHERE type='index' AND name='rail_ref_index'").fetchone()
         columns = {r[1]: r[2] for r in s.execute('PRAGMA table_info(rail_order_runtime)')}
         assert columns['status']=='VARCHAR(32)' and columns['booking_reference']=='VARCHAR(24)'
+        assert {r[1]: r[2] for r in s.execute('PRAGMA table_info(flight_order_runtime)')}['status'] == 'VARCHAR(32)'

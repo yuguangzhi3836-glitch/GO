@@ -1,7 +1,10 @@
 {
-  "schema": "go.v70.retention.rebind.v2",
+  "schema": "go.v70.retention.rebind.v3",
   "product_candidate_commit": "4d236353b0ec40d7506ffb3469cac09c98bc8c37",
-  "application_git_tree": "3293f1f748b832d3039e2f0fdb4729328a00333a",
+  "product_application_git_tree": "3293f1f748b832d3039e2f0fdb4729328a00333a",
+  "gate_application_git_tree": "73af9169eafc03979d995764d842afef786de4e6",
+  "application_git_tree": "73af9169eafc03979d995764d842afef786de4e6",
+  "product_source_tree_sha256": "30ec3ee9d8500e0a539bd72d109624f6af54fb08280eec786ccc4e1d9fc9d726",
   "source_anchor_main": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
   "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
@@ -11,25 +14,15 @@
     "policy": "byte-for-byte inherited PASS provenance; do not redevelop"
   },
   "approved_application_overrides": {
-    "src/go_hotel/db/models.py": {
-      "mode": "100644",
-      "git_blob": "f0e014f47560ca3f8ecae9ffc2af0cb3746efb38",
-      "reason": "C11 verified FlightOrderRow.status width 32->64"
-    },
-    "alembic/versions/0134_flight_status_width.py": {
-      "mode": "100644",
-      "git_blob": "079dfe9a992484e687aa8fcd3c669d2d60cb85d5",
-      "revision": "0134_flight_status_width",
-      "down_revision": "0133_flight_change_plan",
-      "reason": "C11 verified incremental status-width migration"
-    }
+    "src/go_hotel/db/models.py": {"mode":"100644","git_blob":"f0e014f47560ca3f8ecae9ffc2af0cb3746efb38","reason":"C11 verified FlightOrderRow.status width 32->64"},
+    "alembic/versions/0134_flight_status_width.py": {"mode":"100644","git_blob":"079dfe9a992484e687aa8fcd3c669d2d60cb85d5","revision":"0134_flight_status_width","down_revision":"0133_flight_change_plan","reason":"C11 verified incremental status-width migration"}
+  },
+  "approved_gate_test_overrides": {
+    "tests/test_parent_implementation_code_review_debt_closure.py": {"mode":"100644","product_git_blob":"e5f16d80dbb546964452cfefea8e9c9537630dba","product_sha256":"70fbd1f748c975e0be68ac8a965ac61bf1134b1c09d0b93e27c84d42c4cb1815","gate_git_blob":"27eb179446a34b6bab7bc32a9450dab6686aa6e5","reason":"update Alembic head contract 0133->0134 only"},
+    "tests/test_depth25_migration_history.py": {"mode":"100644","product_git_blob":"7a17b8862ffc17c4eb15ffdb3a8aef2227a59dbd","product_sha256":"efa0e86ccf88594d67e60df441a462c687d33514feb3892f0fc4ef322a98acbc","gate_git_blob":"435a66b13544f7339b6f563ab38908d41ba93fe4","reason":"update head to 0134 and make synthetic 0131 fixture historically complete with flight_order_runtime"}
   },
   "migration_head": "0134_flight_status_width",
-  "verified_inherited_evidence": {
-    "pr74_workflow_run": 34807203728,
-    "c11_original_postgresql_cases": "10/10 PASS",
-    "migration_preservation_downgrade_guard": "PASS"
-  },
+  "verified_inherited_evidence": {"pr74_workflow_run":34807203728,"c11_original_postgresql_cases":"10/10 PASS","migration_preservation_downgrade_guard":"PASS","next_depth_pg_run_34819009063":"C07/C09/C11 PASS","cell_closure_run_34819009061":"PASS"},
   "gate_order": ["RETENTION","C07_POSTGRES","C09_POSTGRES","C11_POSTGRES","REGRESSION","C14","C13"],
   "hk_deploy": "HOLD",
   "final_release": "HOLD",

@@ -1,39 +1,16 @@
 {
-  "schema": "go.v70.pr73.integrated-gate-binding.v3",
-  "status": "REBIND_RETENTION_PASS_CELL_CLOSURE_RETRY_REQUIRED",
+  "schema": "go.v70.pr73.integrated-gate-binding.v4",
+  "status": "REGRESSION_TEST_CONTRACT_OVERLAY_SUBMITTED",
   "product_candidate_commit": "4d236353b0ec40d7506ffb3469cac09c98bc8c37",
-  "candidate_git_tree": "c0cbae77a97b318c8b2b9411f5d42c1b794c3067",
-  "application_tree": "3293f1f748b832d3039e2f0fdb4729328a00333a",
-  "source_files": 1365,
-  "source_tree_sha256": "30ec3ee9d8500e0a539bd72d109624f6af54fb08280eec786ccc4e1d9fc9d726",
-  "canonical_main_before_gate": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
-  "manifests": {
-    "baseline": "ci/retention/BASELINE.json",
-    "baseline_inherited_blob": "8eda2e86ad5164c0e8203a068026ef195cb3f995",
-    "candidate": "ci/next-depth/CANDIDATE.json",
-    "candidate_inherited_blob": "d616e629a1d05f5955a04b60cb60d34bdf571917",
-    "cell_closure": "ci/cell-closure/CANDIDATE.json",
-    "cell_closure_inherited_blob": "b0801c355a1d32c7c888caa41c5bf81208b46da3"
-  },
-  "migration": {
-    "revision": "0134_flight_status_width",
-    "down_revision": "0133_flight_change_plan",
-    "git_blob": "079dfe9a992484e687aa8fcd3c669d2d60cb85d5"
-  },
-  "verified_evidence": {
-    "retention_at_5b0f7135": "PASS",
-    "alignment_at_5b0f7135": "PASS",
-    "canonical_mobile_retention_run_34818751283": "PASS",
-    "c09_postgresql_run_34818751325": "PASS",
-    "pr74_c11_postgresql_run_34807203728": "10/10 PASS"
-  },
-  "cell_closure_previous_failure": {
-    "run": 34818751312,
-    "classification": "STALE_CELL_CLOSURE_MANIFEST_ONLY",
-    "unlock_condition": "rebind cell-closure candidate to 3293f1f7 / 30ec3ee9 and rerun"
-  },
-  "execution_required": ["cell-closure retry","C07 PostgreSQL","C11 PostgreSQL","remaining regression"],
-  "gate_order_after_green": ["C14","C13"],
+  "product_application_tree": "3293f1f748b832d3039e2f0fdb4729328a00333a",
+  "gate_application_tree": "73af9169eafc03979d995764d842afef786de4e6",
+  "product_source_tree_sha256": "30ec3ee9d8500e0a539bd72d109624f6af54fb08280eec786ccc4e1d9fc9d726",
+  "migration": {"revision":"0134_flight_status_width","down_revision":"0133_flight_change_plan","git_blob":"079dfe9a992484e687aa8fcd3c669d2d60cb85d5"},
+  "verified_evidence": {"mobile_retention_34819009052":"PASS","depth48_acceptance_34819009057":"PASS","next_depth_pg_34819009063":"C07/C09/C11 PASS","cell_closure_34819009061":"PASS"},
+  "regression_34819009029": {"result":"FAIL_TEST_CONTRACT_ONLY","shard0":"stale Alembic head expected 0133 instead of 0134","shard2":"fresh head assertion stale plus synthetic 0131 fixture omitted flight_order_runtime created historically by migration 0022"},
+  "gate_test_overlay": {"application/tests/test_parent_implementation_code_review_debt_closure.py":"27eb179446a34b6bab7bc32a9450dab6686aa6e5","application/tests/test_depth25_migration_history.py":"435a66b13544f7339b6f563ab38908d41ba93fe4"},
+  "product_code_changed_by_overlay": false,
+  "execution_required": ["retention/regression rerun","C14 after all green","C13 after C14 PASS"],
   "already_pass_work_redevelopment": "PROHIBITED",
   "hk_deploy": "HOLD",
   "final_release": "HOLD",
