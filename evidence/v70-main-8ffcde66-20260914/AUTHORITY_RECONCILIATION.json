@@ -1,0 +1,41 @@
+{
+  "schema": "go.v70.authority-reconciliation.v1",
+  "authority": "V7.0 Ultimate / V6.1 lineage + C14",
+  "repository_main_head": "4b03281977a77263b1ce0dedb1b889c2008b6b00",
+  "r3_product_source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+  "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "application_source_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
+  "migration_head": "0134_flight_status_width",
+  "compare": {
+    "base": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+    "head": "4b03281977a77263b1ce0dedb1b889c2008b6b00",
+    "relation": "ahead",
+    "ahead_by": 13,
+    "application_changed": false,
+    "changed_scope": "repository context/docs only"
+  },
+  "product_lineage": {
+    "fixed_candidate": "37d9a42091938e26be538d3d410397182abec5c8",
+    "c14": "PASS_SCOPED",
+    "c13": "PASS_SCOPED",
+    "product_lineage_merge": "8ffcde66d36c1bbf849218529ef015f6e81725af"
+  },
+  "dispatch": {
+    "running_cells": ["C01", "C02", "C03", "C04", "C05", "C08", "C09", "C10", "C11", "C12"],
+    "running_admission_run": 34839544381,
+    "c07_successor": {
+      "task": "V70-R3-C07-01",
+      "issue": 95,
+      "status": "ASSIGNED_NO_ACK"
+    },
+    "c06": "BLOCKED_EXTERNAL",
+    "c13": "TRIGGER_ARMED",
+    "c14": "TRIGGER_ARMED"
+  },
+  "release_gates": {
+    "FINAL_RELEASE": "HOLD",
+    "HK_DEPLOY": "HOLD",
+    "PRODUCTION": "HOLD"
+  },
+  "decision": "Repository main HEAD and R3 product source anchor are distinct authority fields. Existing R3 work remains bound to 8ffcde66 because the 4b032819 advance contains no application/ changes. Any new fixed Cell candidate triggers C14 immediately, then independent C13, without waiting for other Cells."
+}
