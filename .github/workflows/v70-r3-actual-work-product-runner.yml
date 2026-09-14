@@ -23,17 +23,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {cell: C01, task: V70-R3-C01-01, issue: '79', test: application/tests/test_v70_next_c01_unknown_funding.py}
-          - {cell: C02, task: V70-R3-C02-01, issue: '80', test: application/tests/test_v70_next_c02_coupon_plan.py}
-          - {cell: C03, task: V70-R3-C03-01, issue: '81', test: application/tests/test_next_depth_c03_payment_inventory_races.py}
-          - {cell: C04, task: V70-R3-C04-01, issue: '82', test: application/tests/test_v70_next_c04_readonly_reconciliation.py}
-          - {cell: C05, task: V70-R3-C05-01, issue: '83', test: application/tests/test_v70_next_c05_recovery_evidence.py}
-          - {cell: C07, task: V70-R3-C07-01, issue: '95', test: application/tests/test_round2_c07_explicit_preferences.py}
-          - {cell: C08, task: V70-R3-C08-01, issue: '84', test: application/tests/go_ai/test_c08_hard_exit_recovery.py}
-          - {cell: C09, task: V70-R3-C09-01, issue: '85', test: application/tests/judgment/test_next_depth_concurrent_judgment.py}
-          - {cell: C10, task: V70-R3-C10-01, issue: '86', test: application/tests/journey/test_c10_batch_list_projection.py}
-          - {cell: C11, task: V70-R3-C11-01, issue: '87', test: application/tests/payments/test_c11_flight_idempotency_recovery.py}
-          - {cell: C12, task: V70-R3-C12-01, issue: '88', test: ci/round2/test_validate_ledger.py}
+          - {cell: C01, task: V70-R3-C01-01, issue: '79', cwd: application, test: tests/test_v70_next_c01_unknown_funding.py}
+          - {cell: C02, task: V70-R3-C02-01, issue: '80', cwd: application, test: tests/test_v70_next_c02_coupon_plan.py}
+          - {cell: C03, task: V70-R3-C03-01, issue: '81', cwd: application, test: tests/test_next_depth_c03_payment_inventory_races.py}
+          - {cell: C04, task: V70-R3-C04-01, issue: '82', cwd: application, test: tests/test_v70_next_c04_readonly_reconciliation.py}
+          - {cell: C05, task: V70-R3-C05-01, issue: '83', cwd: application, test: tests/test_v70_next_c05_recovery_evidence.py}
+          - {cell: C07, task: V70-R3-C07-01, issue: '95', cwd: application, test: tests/test_round2_c07_explicit_preferences.py}
+          - {cell: C08, task: V70-R3-C08-01, issue: '84', cwd: application, test: tests/go_ai/test_c08_hard_exit_recovery.py}
+          - {cell: C09, task: V70-R3-C09-01, issue: '85', cwd: application, test: tests/judgment/test_next_depth_concurrent_judgment.py}
+          - {cell: C10, task: V70-R3-C10-01, issue: '86', cwd: application, test: tests/journey/test_c10_batch_list_projection.py}
+          - {cell: C11, task: V70-R3-C11-01, issue: '87', cwd: application, test: tests/payments/test_c11_flight_idempotency_recovery.py}
+          - {cell: C12, task: V70-R3-C12-01, issue: '88', cwd: ., test: ci/round2/test_validate_ledger.py}
 
     services:
       postgres:
@@ -64,7 +64,7 @@ jobs:
       POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
       DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
       REDIS_URL: redis://127.0.0.1:6379/0
-      PYTHONPATH: application/src
+      PYTHONPATH: application/src:application
 
     steps:
       - name: Checkout exact product source
@@ -80,11 +80,11 @@ jobs:
           set -euo pipefail
           actual=$(git rev-parse HEAD)
           test "$actual" = "$PRODUCT_SOURCE"
-          test -f '${{ matrix.test }}'
+          test -f '${{ matrix.cwd }}/${{ matrix.test }}'
           app_tree=$(git rev-parse HEAD:application)
           mkdir -p "$RUNNER_TEMP/r3-work-product"
-          printf 'cell=%s\ntask=%s\nissue=%s\nsource=%s\napplication_tree=%s\ntest=%s\n' \
-            '${{ matrix.cell }}' '${{ matrix.task }}' '${{ matrix.issue }}' "$actual" "$app_tree" '${{ matrix.test }}' \
+          printf 'cell=%s\ntask=%s\nissue=%s\nsource=%s\napplication_tree=%s\ncwd=%s\ntest=%s\n' \
+            '${{ matrix.cell }}' '${{ matrix.task }}' '${{ matrix.issue }}' "$actual" "$app_tree" '${{ matrix.cwd }}' '${{ matrix.test }}' \
             | tee "$RUNNER_TEMP/r3-work-product/binding.log"
           echo "APPLICATION_TREE=$app_tree" >> "$GITHUB_ENV"
 
@@ -106,8 +106,10 @@ jobs:
         run: |
           set +e
           started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          pushd '${{ matrix.cwd }}' >/dev/null
           python -m pytest -q '${{ matrix.test }}' 2>&1 | tee "$RUNNER_TEMP/r3-work-product/pytest.log"
           rc=${PIPESTATUS[0]}
+          popd >/dev/null
           finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           printf 'started_at=%s\nfinished_at=%s\nexit_code=%s\n' "$started_at" "$finished_at" "$rc" | tee "$RUNNER_TEMP/r3-work-product/result.env"
           echo "TEST_RC=$rc" >> "$GITHUB_ENV"
@@ -121,6 +123,7 @@ jobs:
           CELL: ${{ matrix.cell }}
           TASK: ${{ matrix.task }}
           ISSUE: ${{ matrix.issue }}
+          TEST_CWD: ${{ matrix.cwd }}
           TEST_PATH: ${{ matrix.test }}
         run: |
           set -euo pipefail
@@ -130,7 +133,7 @@ jobs:
           import json, os, pathlib
           out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'r3-work-product'
           evidence = {
-            'schema': 'go.v70.r3.actual-work-product-runner.v1',
+            'schema': 'go.v70.r3.actual-work-product-runner.v2',
             'cell_id': os.environ['CELL'],
             'task_id': os.environ['TASK'],
             'issue_number': int(os.environ['ISSUE']),
@@ -138,8 +141,9 @@ jobs:
             'application_tree': os.environ['APPLICATION_TREE'],
             'candidate_sha': None,
             'changed_files': [],
+            'test_cwd': os.environ['TEST_CWD'],
             'test_path': os.environ['TEST_PATH'],
-            'test_command': f"python -m pytest -q {os.environ['TEST_PATH']}",
+            'test_command': f"cd {os.environ['TEST_CWD']} && python -m pytest -q {os.environ['TEST_PATH']}",
             'test_exit_code': int(os.environ['TEST_RC']),
             'started_at': os.environ['STARTED_AT'],
             'finished_at': os.environ['FINISHED_AT'],
