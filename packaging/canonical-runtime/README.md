@@ -9,6 +9,9 @@ and PR67 Evidence; it does not repeat them or alter application/.
 
 The package contains the exact source and deployment definitions, runnable
 Docker image, image inspection, installed dependencies and SHA256 inventory.
+All 1332 source files remain in the source archive. The unchanged canonical
+.dockerignore excludes four historical tracked pytest cache files; the image
+check explicitly verifies their absence and all other 1328 source files.
 A separate runner downloads the same package, verifies checksums, reloads the
 image without rebuilding, checks source bytes, seven worker imports, migration
 head, health and OpenAPI with image networking disabled.

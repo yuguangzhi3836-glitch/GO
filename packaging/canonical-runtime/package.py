@@ -13,6 +13,10 @@ SOURCE = 'c6ea4dd670db36e71f3839fb31e656a5c8806858'
 TREE = '995d0d83faf883bec980c896fe8a17b0f12360fa'
 DIGEST = '1c4d78c3c1bb5f448d0ebdb99d16a2d76419bbc663cc9ed8fae831e1d18c10c4'
 FILES = 1332
+IMAGE_EXCLUSIONS = {
+    '.pytest_cache/.gitignore', '.pytest_cache/CACHEDIR.TAG',
+    '.pytest_cache/README.md', '.pytest_cache/v/cache/nodeids',
+}
 TAG = 'go-hotel:canonical-995d0d83-20260914'
 CONTRACT_BLOBS = {
     'README.md': '6ff3ba8863c40b991d748c2b6572402a776ff89d',
@@ -84,8 +88,11 @@ def inspect(image):
 
 def check_image(image, fp, out):
     # Verify all source bytes from the image, with no host source mount.
-    code = 'import hashlib,json,pathlib; f=json.loads(input()); assert all(hashlib.sha256((pathlib.Path("/app")/p).read_bytes()).hexdigest()==h for p,h in f.items()); print(json.dumps({"image_source_files":len(f),"status":"PASS"}))'
-    result = run('docker', 'run', '--rm', '--network', 'none', '-i', '--entrypoint', 'python', image, '-c', code, input=json.dumps(fp))
+    if not IMAGE_EXCLUSIONS <= set(fp):
+        raise ValueError('unexpected canonical cache set')
+    runtime = {p: h for p, h in fp.items() if p not in IMAGE_EXCLUSIONS}
+    code = 'import hashlib,json,pathlib; f,x=json.loads(input()); root=pathlib.Path("/app"); assert all(hashlib.sha256((root/p).read_bytes()).hexdigest()==h for p,h in f.items()); assert all(not (root/p).exists() for p in x); print(json.dumps({"image_source_files":len(f),"canonical_cache_exclusions":x,"status":"PASS"}))'
+    result = run('docker', 'run', '--rm', '--network', 'none', '-i', '--entrypoint', 'python', image, '-c', code, input=json.dumps([runtime, sorted(IMAGE_EXCLUSIONS)]))
     (out / 'image-source.log').write_text(result + '\n')
     script = '''import importlib,json
 from alembic.config import Config
