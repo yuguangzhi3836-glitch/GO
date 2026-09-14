@@ -1,0 +1,48 @@
+name: Existing image three-end acceptance
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ci/image-acceptance/**
+      - .github/workflows/existing-image-acceptance.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: existing-image-acceptance-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+jobs:
+  browser:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: '10328889188'
+          run-id: '34795198840'
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/fixed-image
+      - name: Install external browser harness only
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.1
+          npx playwright install --with-deps chromium
+      - name: Verify and exercise existing image without rebuild or dependency changes
+        env:
+          FIXED_IMAGE_ARTIFACT: ${{ runner.temp }}/fixed-image
+        run: python3 -B ci/image-acceptance/run.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: existing-image-three-end-${{ github.event.pull_request.head.sha }}
+          path: image-acceptance-evidence/
+          if-no-files-found: error
+          retention-days: 90
+
