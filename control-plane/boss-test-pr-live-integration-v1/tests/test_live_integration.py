@@ -8,6 +8,7 @@ import json
 import pathlib
 import os
 import shlex
+import shutil
 import subprocess
 import stat
 import sys
@@ -113,7 +114,18 @@ class IntegrationTests(unittest.TestCase):
 
     @staticmethod
     def bash_path(path):
-        return subprocess.check_output(["cygpath", "-u", str(path)], text=True).strip()
+        """MSYS bash needs a translated path; a POSIX host already has one.
+
+        These rollback tests were written against a Git-Bash shell and called
+        cygpath unconditionally, which made them unrunnable on the Linux runner —
+        the only place install/uninstall.sh is genuinely exercised. Falling back
+        to the path unchanged removes the platform assumption without weakening a
+        single assertion.
+        """
+        cygpath = shutil.which("cygpath")
+        if cygpath is None:
+            return str(path)
+        return subprocess.check_output([cygpath, "-u", str(path)], text=True).strip()
 
     def run_rollback(self, role, env):
         return subprocess.run(
