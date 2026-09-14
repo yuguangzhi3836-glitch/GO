@@ -1,0 +1,53 @@
+{
+  "schema": "go.release-preparation.v1",
+  "status": "RELEASE_PREPARATION_HOLD",
+  "source": {
+    "commit": "c6ea4dd670db36e71f3839fb31e656a5c8806858",
+    "application_git_tree": "995d0d83faf883bec980c896fe8a17b0f12360fa",
+    "sha256": "1c4d78c3c1bb5f448d0ebdb99d16a2d76419bbc663cc9ed8fae831e1d18c10c4",
+    "files": 1332,
+    "source_acceptance_pr": 66,
+    "source_evidence_pr": 67
+  },
+  "runtime_package": {
+    "pr": 69,
+    "merge_commit": "bb887fe79df846611c22710c0470e24ad9e73127",
+    "run": 34795198840,
+    "package_sha256": "b297f139a236681019fe894f4f1a94068636649e1235a20502a383a610f16f63",
+    "image_id": "sha256:47bb66c429868689e922ecc1bee668e9c12bfa24e2cddca1717e16887f34115d",
+    "repo_digests": [],
+    "gate": "PASS_SCOPED",
+    "evidence": "evidence/canonical-runtime-package-20260914/BINDING.json"
+  },
+  "node_overlay": {
+    "pr": 70,
+    "run": 34795835590,
+    "package_sha256": "5d6121c4ad06083056cb5f0f5a95329d4684e6e3e66d1e408d65c27ad113c347",
+    "node_tree_sha256": "e744dfe9bddd2e2c63d92199ab97a428fd2c17203d8a84c120ea96a4bc76c469",
+    "gate": "PASS_SCOPED",
+    "installed_in_business_image": false,
+    "evidence": "evidence/canonical-node-seal-20260914/BINDING.json",
+    "merge_commit": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1"
+  },
+  "release_gates": {
+    "three_end_ux": "HOLD_FULL_RELEASE_SCOPE",
+    "six_vertical_closed_loop": "HOLD_FULL_RELEASE_SCOPE",
+    "sealed_node": "PASS_SCOPED_TOOLCHAIN_OVERLAY",
+    "final_release": "HOLD"
+  },
+  "remaining": [
+    "Runtime image uses Python3.12 and dependencies resolved at build; earlier frozen source CI uses another environment. Do not transfer full runtime certification from source-only CI.",
+    "Complete UX, native/device, external provider and per-Cell depth scopes are not all evidenced.",
+    "Real registry digest is absent; installed deployment contract requires a digest/config equality not generally true for OCI. Do not invent a digest or loosen the request validator.",
+    "Fresh signed CANARY/VERIFY, registered signed plan and runtime receipts are absent.",
+    "CI binary artifacts have finite retention; permanent binary archive is not claimed."
+  ],
+  "next_action": "Close Final Release evidence for the fixed runtime image and Node supplement.",
+  "hong_kong": {
+    "state_pointer": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+    "accessed_this_round": false,
+    "changed_this_round": false
+  },
+  "production": "HOLD",
+  "all_cells_100_percent": false
+}

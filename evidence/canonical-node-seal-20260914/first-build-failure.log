@@ -1,0 +1,421 @@
+﻿2026-09-14T01:22:12.4897427Z Current runner version: '2.337.0'
+2026-09-14T01:22:12.4936285Z ##[group]Runner Image Provisioner
+2026-09-14T01:22:12.4937983Z Hosted Compute Agent
+2026-09-14T01:22:12.4939124Z Version: 20260828.587
+2026-09-14T01:22:12.4940350Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-14T01:22:12.4942059Z Build Date: 2026-08-28T16:44:25Z
+2026-09-14T01:22:12.4943325Z Worker ID: {c863357e-98e6-44ab-a7cf-11998ca976d6}
+2026-09-14T01:22:12.4944843Z Azure Region: westcentralus
+2026-09-14T01:22:12.4945893Z ##[endgroup]
+2026-09-14T01:22:12.4948394Z ##[group]Operating System
+2026-09-14T01:22:12.4949493Z Ubuntu
+2026-09-14T01:22:12.4950385Z 22.04.5
+2026-09-14T01:22:12.4951731Z LTS
+2026-09-14T01:22:12.4952662Z ##[endgroup]
+2026-09-14T01:22:12.4953701Z ##[group]Runner Image
+2026-09-14T01:22:12.4954882Z Image: ubuntu-22.04
+2026-09-14T01:22:12.4955894Z Version: 20260907.292.1
+2026-09-14T01:22:12.4958129Z Included Software: https://github.com/actions/runner-images/blob/ubuntu22/20260907.292/images/ubuntu/Ubuntu2204-Readme.md
+2026-09-14T01:22:12.4961144Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu22%2F20260907.292
+2026-09-14T01:22:12.4963341Z ##[endgroup]
+2026-09-14T01:22:12.4977841Z ##[group]GITHUB_TOKEN Permissions
+2026-09-14T01:22:12.4980910Z Contents: read
+2026-09-14T01:22:12.4982557Z Metadata: read
+2026-09-14T01:22:12.4983701Z ##[endgroup]
+2026-09-14T01:22:12.4987308Z Secret source: Actions
+2026-09-14T01:22:12.4989213Z Cache mode: write
+2026-09-14T01:22:12.4990742Z Prepare workflow directory
+2026-09-14T01:22:12.5709781Z Prepare all required actions
+2026-09-14T01:22:12.5896632Z Getting action download info
+2026-09-14T01:22:12.9527480Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-14T01:22:13.0619348Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-14T01:22:13.3021621Z Complete job name: build
+2026-09-14T01:22:13.3832528Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-14T01:22:13.3841006Z ##[group]Run actions/checkout@v4
+2026-09-14T01:22:13.3842256Z with:
+2026-09-14T01:22:13.3842776Z   ref: 6010ac260b81560cf9cce8ba4092c1e42d6b148b
+2026-09-14T01:22:13.3843389Z   fetch-depth: 0
+2026-09-14T01:22:13.3843885Z   persist-credentials: false
+2026-09-14T01:22:13.3844446Z   repository: yuguangzhi3836-glitch/GO
+2026-09-14T01:22:13.3848216Z   token: ***
+2026-09-14T01:22:13.3848661Z   ssh-strict: true
+2026-09-14T01:22:13.3849107Z   ssh-user: git
+2026-09-14T01:22:13.3849540Z   clean: true
+2026-09-14T01:22:13.3849995Z   sparse-checkout-cone-mode: true
+2026-09-14T01:22:13.3850531Z   fetch-tags: false
+2026-09-14T01:22:13.3851027Z   show-progress: true
+2026-09-14T01:22:13.3851884Z   lfs: false
+2026-09-14T01:22:13.3852327Z   submodules: false
+2026-09-14T01:22:13.3852808Z   set-safe-directory: true
+2026-09-14T01:22:13.3853329Z   allow-unsafe-pr-checkout: false
+2026-09-14T01:22:13.3854243Z ##[endgroup]
+2026-09-14T01:22:13.6338143Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-14T01:22:13.6343450Z ##[group]Getting Git version info
+2026-09-14T01:22:13.6344530Z Working directory is '/home/runner/work/GO/GO'
+2026-09-14T01:22:13.6346051Z [command]/usr/bin/git version
+2026-09-14T01:22:13.6346871Z git version 2.55.0
+2026-09-14T01:22:13.6349574Z ##[endgroup]
+2026-09-14T01:22:13.6355699Z Temporarily overriding HOME='/home/runner/work/_temp/63a81a1f-4739-4a76-926e-eedbab7daf4e' before making global git config changes
+2026-09-14T01:22:13.6358022Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-14T01:22:13.6359778Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-14T01:22:13.6362499Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-14T01:22:13.6375216Z ##[group]Initializing the repository
+2026-09-14T01:22:13.6376238Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-14T01:22:13.6377609Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-14T01:22:13.6379222Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-14T01:22:13.6380816Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-14T01:22:13.6382634Z hint: call:
+2026-09-14T01:22:13.6383307Z hint:
+2026-09-14T01:22:13.6384092Z hint: 	git config --global init.defaultBranch <name>
+2026-09-14T01:22:13.6385113Z hint:
+2026-09-14T01:22:13.6386090Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-14T01:22:13.6387665Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-14T01:22:13.6388995Z hint:
+2026-09-14T01:22:13.6389743Z hint: 	git branch -m <name>
+2026-09-14T01:22:13.6390522Z hint:
+2026-09-14T01:22:13.6391781Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-14T01:22:13.6393432Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-14T01:22:13.6396001Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-14T01:22:13.6398747Z ##[endgroup]
+2026-09-14T01:22:13.6399997Z ##[group]Disabling automatic garbage collection
+2026-09-14T01:22:13.6401115Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-14T01:22:13.6403745Z ##[endgroup]
+2026-09-14T01:22:13.6405020Z ##[group]Setting up auth
+2026-09-14T01:22:13.6406243Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-14T01:22:13.6409962Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-14T01:22:13.7045326Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-14T01:22:13.7052223Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-14T01:22:13.7413500Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-14T01:22:13.7459782Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-14T01:22:13.7754873Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-14T01:22:13.7796643Z ##[endgroup]
+2026-09-14T01:22:13.7798969Z ##[group]Fetching the repository
+2026-09-14T01:22:13.7808483Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+2026-09-14T01:22:40.1956270Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-14T01:22:40.1962867Z  * [new branch]      acceptance/cp11-depth24-runtime -> origin/acceptance/cp11-depth24-runtime
+2026-09-14T01:22:40.1964514Z  * [new branch]      acceptance/cp11-depth25-evidence-export -> origin/acceptance/cp11-depth25-evidence-export
+2026-09-14T01:22:40.1966041Z  * [new branch]      acceptance/cp11-depth25-runtime -> origin/acceptance/cp11-depth25-runtime
+2026-09-14T01:22:40.1967428Z  * [new branch]      acceptance/cp11-depth26-runtime -> origin/acceptance/cp11-depth26-runtime
+2026-09-14T01:22:40.1968908Z  * [new branch]      acceptance/cp11-depth28-v14-ci -> origin/acceptance/cp11-depth28-v14-ci
+2026-09-14T01:22:40.1970327Z  * [new branch]      acceptance/cp11-depth29-isolated -> origin/acceptance/cp11-depth29-isolated
+2026-09-14T01:22:40.1972301Z  * [new branch]      acceptance/cp11-depth30-isolated -> origin/acceptance/cp11-depth30-isolated
+2026-09-14T01:22:40.1973987Z  * [new branch]      acceptance/cp11-depth31-isolated -> origin/acceptance/cp11-depth31-isolated
+2026-09-14T01:22:40.1975663Z  * [new branch]      acceptance/cp11-depth32-isolated -> origin/acceptance/cp11-depth32-isolated
+2026-09-14T01:22:40.1977727Z  * [new branch]      acceptance/cp11-depth32r2-isolated -> origin/acceptance/cp11-depth32r2-isolated
+2026-09-14T01:22:40.1979125Z  * [new branch]      acceptance/cp11-depth33-isolated -> origin/acceptance/cp11-depth33-isolated
+2026-09-14T01:22:40.1980485Z  * [new branch]      acceptance/cp11-depth34-isolated -> origin/acceptance/cp11-depth34-isolated
+2026-09-14T01:22:40.1982310Z  * [new branch]      acceptance/cp11-depth34r2-isolated -> origin/acceptance/cp11-depth34r2-isolated
+2026-09-14T01:22:40.1983774Z  * [new branch]      acceptance/cp11-depth35-isolated -> origin/acceptance/cp11-depth35-isolated
+2026-09-14T01:22:40.1985231Z  * [new branch]      acceptance/cp11-depth35r2-isolated -> origin/acceptance/cp11-depth35r2-isolated
+2026-09-14T01:22:40.1986665Z  * [new branch]      acceptance/cp11-depth36-auth-test-r2 -> origin/acceptance/cp11-depth36-auth-test-r2
+2026-09-14T01:22:40.1988064Z  * [new branch]      acceptance/cp11-depth36-isolated -> origin/acceptance/cp11-depth36-isolated
+2026-09-14T01:22:40.1989551Z  * [new branch]      acceptance/cp11-depth36r2-isolated -> origin/acceptance/cp11-depth36r2-isolated
+2026-09-14T01:22:40.1990894Z  * [new branch]      acceptance/cp11-depth36r3-isolated -> origin/acceptance/cp11-depth36r3-isolated
+2026-09-14T01:22:40.1992611Z  * [new branch]      acceptance/cp11-depth37-build-r2 -> origin/acceptance/cp11-depth37-build-r2
+2026-09-14T01:22:40.1994011Z  * [new branch]      acceptance/cp11-depth37-device-smoke -> origin/acceptance/cp11-depth37-device-smoke
+2026-09-14T01:22:40.1995394Z  * [new branch]      acceptance/cp11-depth37-postgres -> origin/acceptance/cp11-depth37-postgres
+2026-09-14T01:22:40.1996894Z  * [new branch]      acceptance/cp11-depth37-provider-inputs -> origin/acceptance/cp11-depth37-provider-inputs
+2026-09-14T01:22:40.1998803Z  * [new branch]      acceptance/cp11-depth37-readiness -> origin/acceptance/cp11-depth37-readiness
+2026-09-14T01:22:40.2000474Z  * [new branch]      acceptance/cp11-depth37r2-native-build -> origin/acceptance/cp11-depth37r2-native-build
+2026-09-14T01:22:40.2022795Z  * [new branch]      acceptance/depth37-agent-gateway -> origin/acceptance/depth37-agent-gateway
+2026-09-14T01:22:40.2037952Z  * [new branch]      acceptance/depth37-agent-gateway-r2 -> origin/acceptance/depth37-agent-gateway-r2
+2026-09-14T01:22:40.2039689Z  * [new branch]      acceptance/depth38-agent-lifecycle -> origin/acceptance/depth38-agent-lifecycle
+2026-09-14T01:22:40.2042344Z  * [new branch]      acceptance/depth40-isolated-runtime-review -> origin/acceptance/depth40-isolated-runtime-review
+2026-09-14T01:22:40.2044450Z  * [new branch]      acceptance/depth40-pg18-upgrade-recovery -> origin/acceptance/depth40-pg18-upgrade-recovery
+2026-09-14T01:22:40.2046328Z  * [new branch]      acceptance/depth40-staging-build-review -> origin/acceptance/depth40-staging-build-review
+2026-09-14T01:22:40.2047959Z  * [new branch]      acceptance/depth40-zero-restore -> origin/acceptance/depth40-zero-restore
+2026-09-14T01:22:40.2049693Z  * [new branch]      acceptance/depth41-cross-end-journeys-20260912 -> origin/acceptance/depth41-cross-end-journeys-20260912
+2026-09-14T01:22:40.2052290Z  * [new branch]      acceptance/depth48-1000-users-20260913 -> origin/acceptance/depth48-1000-users-20260913
+2026-09-14T01:22:40.2054311Z  * [new branch]      acceptance/depth48-hk-load1000-20260913-1115 -> origin/acceptance/depth48-hk-load1000-20260913-1115
+2026-09-14T01:22:40.2056098Z  * [new branch]      archive-command-center-20260911 -> origin/archive-command-center-20260911
+2026-09-14T01:22:40.2057486Z  * [new branch]      archive-hk-staging-20260911 -> origin/archive-hk-staging-20260911
+2026-09-14T01:22:40.2058961Z  * [new branch]      archive-tools/depth40-parent-34644569516 -> origin/archive-tools/depth40-parent-34644569516
+2026-09-14T01:22:40.2060829Z  * [new branch]      archive/depth40-p03-compat-v2-parent-34644569516 -> origin/archive/depth40-p03-compat-v2-parent-34644569516
+2026-09-14T01:22:40.2063684Z  * [new branch]      archive/depth48-source-parent-555c624d-20260913 -> origin/archive/depth48-source-parent-555c624d-20260913
+2026-09-14T01:22:40.2065284Z  * [new branch]      build/canonical-node-seal-20260914 -> origin/build/canonical-node-seal-20260914
+2026-09-14T01:22:40.2066783Z  * [new branch]      build/canonical-runtime-package-20260914 -> origin/build/canonical-runtime-package-20260914
+2026-09-14T01:22:40.2068469Z  * [new branch]      build/depth48-source-composite-parent-20260913 -> origin/build/depth48-source-composite-parent-20260913
+2026-09-14T01:22:40.2070086Z  * [new branch]      canonical/depth48-hk-runtime-20260913 -> origin/canonical/depth48-hk-runtime-20260913
+2026-09-14T01:22:40.2072244Z  * [new branch]      canonical/depth48-runtime-pointer-postmerge -> origin/canonical/depth48-runtime-pointer-postmerge
+2026-09-14T01:22:40.2074321Z  * [new branch]      capacity/depth48-1000vu-20260913T131404277Z -> origin/capacity/depth48-1000vu-20260913T131404277Z
+2026-09-14T01:22:40.2076141Z  * [new branch]      checkpoints/cp11-refund-ride-3f72a45 -> origin/checkpoints/cp11-refund-ride-3f72a45
+2026-09-14T01:22:40.2077800Z  * [new branch]      closeout/pr51-deploy-capability-20260913 -> origin/closeout/pr51-deploy-capability-20260913
+2026-09-14T01:22:40.2079766Z  * [new branch]      codex/docs-boss02-final-proven-operations-20260911 -> origin/codex/docs-boss02-final-proven-operations-20260911
+2026-09-14T01:22:40.2082201Z  * [new branch]      consolidation/canonical-go-application-baseline-20260912 -> origin/consolidation/canonical-go-application-baseline-20260912
+2026-09-14T01:22:40.2084396Z  * [new branch]      control-plane/boss-test-pr-live-integration-v1-20260912 -> origin/control-plane/boss-test-pr-live-integration-v1-20260912
+2026-09-14T01:22:40.2086268Z  * [new branch]      control-plane/boss-test-pr-v1-20260912 -> origin/control-plane/boss-test-pr-v1-20260912
+2026-09-14T01:22:40.2088081Z  * [new branch]      deliverables/cp11-depth19-5cb6034 -> origin/deliverables/cp11-depth19-5cb6034
+2026-09-14T01:22:40.2089553Z  * [new branch]      deliverables/cp11-depth20-fadcdca -> origin/deliverables/cp11-depth20-fadcdca
+2026-09-14T01:22:40.2091114Z  * [new branch]      deliverables/cp11-depth21-refund-recovery -> origin/deliverables/cp11-depth21-refund-recovery
+2026-09-14T01:22:40.2093026Z  * [new branch]      deliverables/cp11-depth23-shared-capacity -> origin/deliverables/cp11-depth23-shared-capacity
+2026-09-14T01:22:40.2094687Z  * [new branch]      deliverables/cp11-depth24-unpaid-expiry -> origin/deliverables/cp11-depth24-unpaid-expiry
+2026-09-14T01:22:40.2096325Z  * [new branch]      deliverables/cp11-depth25-postgres-runtime -> origin/deliverables/cp11-depth25-postgres-runtime
+2026-09-14T01:22:40.2097967Z  * [new branch]      deliverables/cp11-depth26-control-brand -> origin/deliverables/cp11-depth26-control-brand
+2026-09-14T01:22:40.2099613Z  * [new branch]      deliverables/cp11-depth27-brand-aligned-v3 -> origin/deliverables/cp11-depth27-brand-aligned-v3
+2026-09-14T01:22:40.2101197Z  * [new branch]      deliverables/cp11-depth27-brand-height -> origin/deliverables/cp11-depth27-brand-height
+2026-09-14T01:22:40.2103142Z  * [new branch]      deliverables/cp11-depth27-brand-light-v7-c28ae4ff -> origin/deliverables/cp11-depth27-brand-light-v7-c28ae4ff
+2026-09-14T01:22:40.2104892Z  * [new branch]      deliverables/cp11-depth27-brand-master-v12 -> origin/deliverables/cp11-depth27-brand-master-v12
+2026-09-14T01:22:40.2106641Z  * [new branch]      deliverables/cp11-depth27-brand-master-v13-38407a0e -> origin/deliverables/cp11-depth27-brand-master-v13-38407a0e
+2026-09-14T01:22:40.2108595Z  * [new branch]      deliverables/cp11-depth27-brand-master-v14-619f8035 -> origin/deliverables/cp11-depth27-brand-master-v14-619f8035
+2026-09-14T01:22:40.2110549Z  * [new branch]      deliverables/cp11-depth27-brand-master-v6-59136e88 -> origin/deliverables/cp11-depth27-brand-master-v6-59136e88
+2026-09-14T01:22:40.2112715Z  * [new branch]      deliverables/cp11-depth27-brand-master-v8 -> origin/deliverables/cp11-depth27-brand-master-v8
+2026-09-14T01:22:40.2114737Z  * [new branch]      deliverables/cp11-depth27-brand-plus-top-v5 -> origin/deliverables/cp11-depth27-brand-plus-top-v5
+2026-09-14T01:22:40.2116403Z  * [new branch]      deliverables/cp11-depth27-brand-refined-v4 -> origin/deliverables/cp11-depth27-brand-refined-v4
+2026-09-14T01:22:40.2118034Z  * [new branch]      deliverables/cp11-depth27-brand-text-safe -> origin/deliverables/cp11-depth27-brand-text-safe
+2026-09-14T01:22:40.2119622Z  * [new branch]      deliverables/cp11-depth27-session-brand -> origin/deliverables/cp11-depth27-session-brand
+2026-09-14T01:22:40.2121623Z  * [new branch]      deliverables/cp11-depth28-v14-integration -> origin/deliverables/cp11-depth28-v14-integration
+2026-09-14T01:22:40.2123322Z  * [new branch]      deliverables/cp11-depth29-trip-reentry -> origin/deliverables/cp11-depth29-trip-reentry
+2026-09-14T01:22:40.2124908Z  * [new branch]      deliverables/cp11-depth30-native-payment -> origin/deliverables/cp11-depth30-native-payment
+2026-09-14T01:22:40.2126704Z  * [new branch]      deliverables/cp11-depth31-consent-direct -> origin/deliverables/cp11-depth31-consent-direct
+2026-09-14T01:22:40.2128226Z  * [new branch]      deliverables/cp11-depth32-change-terms -> origin/deliverables/cp11-depth32-change-terms
+2026-09-14T01:22:40.2129734Z  * [new branch]      deliverables/cp11-depth32r2-change-terms -> origin/deliverables/cp11-depth32r2-change-terms
+2026-09-14T01:22:40.2131464Z  * [new branch]      deliverables/cp11-depth33-mobility-refund -> origin/deliverables/cp11-depth33-mobility-refund
+2026-09-14T01:22:40.2133035Z  * [new branch]      deliverables/cp11-depth34-hotel-quote -> origin/deliverables/cp11-depth34-hotel-quote
+2026-09-14T01:22:40.2134524Z  * [new branch]      deliverables/cp11-depth34r2-hotel-quote -> origin/deliverables/cp11-depth34r2-hotel-quote
+2026-09-14T01:22:40.2136446Z  * [new branch]      deliverables/cp11-depth35-session-transitions -> origin/deliverables/cp11-depth35-session-transitions
+2026-09-14T01:22:40.2138241Z  * [new branch]      deliverables/cp11-depth35r2-session-transitions -> origin/deliverables/cp11-depth35r2-session-transitions
+2026-09-14T01:22:40.2139870Z  * [new branch]      deliverables/cp11-depth36-auth-test-r2 -> origin/deliverables/cp11-depth36-auth-test-r2
+2026-09-14T01:22:40.2141778Z  * [new branch]      deliverables/cp11-depth36-isolated-runtime -> origin/deliverables/cp11-depth36-isolated-runtime
+2026-09-14T01:22:40.2143728Z  * [new branch]      deliverables/cp11-depth36r2-support-restore -> origin/deliverables/cp11-depth36r2-support-restore
+2026-09-14T01:22:40.2145582Z  * [new branch]      deliverables/cp11-depth36r3-mobile-contract -> origin/deliverables/cp11-depth36r3-mobile-contract
+2026-09-14T01:22:40.2147420Z  * [new branch]      deliverables/cp11-depth37-node-native-provider -> origin/deliverables/cp11-depth37-node-native-provider
+2026-09-14T01:22:40.2149109Z  * [new branch]      deliverables/cp11-depth37r2-native-linking -> origin/deliverables/cp11-depth37r2-native-linking
+2026-09-14T01:22:40.2150816Z  * [new branch]      deliverables/cp11-refund-ride-8384a51 -> origin/deliverables/cp11-refund-ride-8384a51
+2026-09-14T01:22:40.2152916Z  * [new branch]      deliverables/depth40-isolated-runtime-34560743096 -> origin/deliverables/depth40-isolated-runtime-34560743096
+2026-09-14T01:22:40.2154878Z  * [new branch]      deliverables/depth40-isolated-runtime-34564932860 -> origin/deliverables/depth40-isolated-runtime-34564932860
+2026-09-14T01:22:40.2156821Z  * [new branch]      deliverables/depth40-staging-build-34564932969 -> origin/deliverables/depth40-staging-build-34564932969
+2026-09-14T01:22:40.2158596Z  * [new branch]      deliverables/depth40-staging-build-34565633360 -> origin/deliverables/depth40-staging-build-34565633360
+2026-09-14T01:22:40.2160341Z  * [new branch]      deliverables/depth40-staging-build-34565938702 -> origin/deliverables/depth40-staging-build-34565938702
+2026-09-14T01:22:40.2162146Z  * [new branch]      depth10-chain-autonomy-masterpiece -> origin/depth10-chain-autonomy-masterpiece
+2026-09-14T01:22:40.2163745Z  * [new branch]      depth40-p03-parent-candidate -> origin/depth40-p03-parent-candidate
+2026-09-14T01:22:40.2165233Z  * [new branch]      docs/control-plane-connection-inventory-20260912 -> origin/docs/control-plane-connection-inventory-20260912
+2026-09-14T01:22:40.2166758Z  * [new branch]      docs/depth48-merge-receipt-20260913 -> origin/docs/depth48-merge-receipt-20260913
+2026-09-14T01:22:40.2168260Z  * [new branch]      docs/hk-agent-polling-runtime-20260910 -> origin/docs/hk-agent-polling-runtime-20260910
+2026-09-14T01:22:40.2169857Z  * [new branch]      docs/hk-staging-deploy-runbook-20260909 -> origin/docs/hk-staging-deploy-runbook-20260909
+2026-09-14T01:22:40.2171758Z  * [new branch]      evidence/cp11-depth25-runtime-34306784341 -> origin/evidence/cp11-depth25-runtime-34306784341
+2026-09-14T01:22:40.2173406Z  * [new branch]      evidence/cp11-depth28-ci-34343745354 -> origin/evidence/cp11-depth28-ci-34343745354
+2026-09-14T01:22:40.2175093Z  * [new branch]      evidence/cp11-depth29-browser-preflight-20260909 -> origin/evidence/cp11-depth29-browser-preflight-20260909
+2026-09-14T01:22:40.2176754Z  * [new branch]      evidence/cp11-depth29-ci-34352506603 -> origin/evidence/cp11-depth29-ci-34352506603
+2026-09-14T01:22:40.2178221Z  * [new branch]      evidence/cp11-depth30-ci-34372130831 -> origin/evidence/cp11-depth30-ci-34372130831
+2026-09-14T01:22:40.2179611Z  * [new branch]      evidence/cp11-depth31-ci-34422477135 -> origin/evidence/cp11-depth31-ci-34422477135
+2026-09-14T01:22:40.2181173Z  * [new branch]      evidence/cp11-depth32-ci-34427905965 -> origin/evidence/cp11-depth32-ci-34427905965
+2026-09-14T01:22:40.2182996Z  * [new branch]      evidence/cp11-depth33-ci-34432816747 -> origin/evidence/cp11-depth33-ci-34432816747
+2026-09-14T01:22:40.2184531Z  * [new branch]      evidence/cp11-depth34-ci-34434039448 -> origin/evidence/cp11-depth34-ci-34434039448
+2026-09-14T01:22:40.2186378Z  * [new branch]      evidence/cp11-depth35-ci-34440381225 -> origin/evidence/cp11-depth35-ci-34440381225
+2026-09-14T01:22:40.2188427Z  * [new branch]      evidence/cp11-depth35r2-browser-readiness-20260910 -> origin/evidence/cp11-depth35r2-browser-readiness-20260910
+2026-09-14T01:22:40.2190410Z  * [new branch]      evidence/cp11-depth36-predeployment-20260910 -> origin/evidence/cp11-depth36-predeployment-20260910
+2026-09-14T01:22:40.2192444Z  * [new branch]      evidence/cp11-depth36r3-ci-34453179558 -> origin/evidence/cp11-depth36r3-ci-34453179558
+2026-09-14T01:22:40.2194071Z  * [new branch]      evidence/cp11-depth36r3-predeployment-20260910 -> origin/evidence/cp11-depth36r3-predeployment-20260910
+2026-09-14T01:22:40.2195803Z  * [new branch]      evidence/cp11-depth37-predeployment-20260910 -> origin/evidence/cp11-depth37-predeployment-20260910
+2026-09-14T01:22:40.2197390Z  * [new branch]      evidence/depth40-compat-v2-34642554667 -> origin/evidence/depth40-compat-v2-34642554667
+2026-09-14T01:22:40.2199172Z  * [new branch]      evidence/depth40-staging-build-34565938702-independent -> origin/evidence/depth40-staging-build-34565938702-independent
+2026-09-14T01:22:40.2201077Z  * [new branch]      evidence/pr66-canonical-reconciliation-20260913 -> origin/evidence/pr66-canonical-reconciliation-20260913
+2026-09-14T01:22:40.2203089Z  * [new branch]      evidence/verify-20260911T095356Z-review-20260912 -> origin/evidence/verify-20260911T095356Z-review-20260912
+2026-09-14T01:22:40.2204732Z  * [new branch]      feature/boss-deploy-request-v1-20260912 -> origin/feature/boss-deploy-request-v1-20260912
+2026-09-14T01:22:40.2206282Z  * [new branch]      fix/canonical-parent-retention-20260912 -> origin/fix/canonical-parent-retention-20260912
+2026-09-14T01:22:40.2207762Z  * [new branch]      fix/credit-acceptance-clock-local -> origin/fix/credit-acceptance-clock-local
+2026-09-14T01:22:40.2209259Z  * [new branch]      fix/depth40-deployment-compat-v2-20260912 -> origin/fix/depth40-deployment-compat-v2-20260912
+2026-09-14T01:22:40.2210847Z  * [new branch]      fix/depth46-ledger-independence-review -> origin/fix/depth46-ledger-independence-review
+2026-09-14T01:22:40.2213377Z  * [new branch]      fix/depth47-credit-and-module-boundaries-20260913 -> origin/fix/depth47-credit-and-module-boundaries-20260913
+2026-09-14T01:22:40.2215374Z  * [new branch]      fix/depth48-admin-pagination-20260913 -> origin/fix/depth48-admin-pagination-20260913
+2026-09-14T01:22:40.2217107Z  * [new branch]      fix/v70-cell-gap-closure-20260913 -> origin/fix/v70-cell-gap-closure-20260913
+2026-09-14T01:22:40.2219157Z  * [new branch]      governance/command-center-development-authority-20260909 -> origin/governance/command-center-development-authority-20260909
+2026-09-14T01:22:40.2221675Z  * [new branch]      governance/versioned-deployment-topology-v1-20260912 -> origin/governance/versioned-deployment-topology-v1-20260912
+2026-09-14T01:22:40.2223206Z  * [new branch]      main       -> origin/main
+2026-09-14T01:22:40.2224408Z  * [new branch]      p0-agent-native-lifecycle-closure-v0-3 -> origin/p0-agent-native-lifecycle-closure-v0-3
+2026-09-14T01:22:40.2225882Z  * [new branch]      p0-agent-transaction-gateway-v1 -> origin/p0-agent-transaction-gateway-v1
+2026-09-14T01:22:40.2227295Z  * [new branch]      p0-agent-transaction-lifecycle-v0-2 -> origin/p0-agent-transaction-lifecycle-v0-2
+2026-09-14T01:22:40.2228873Z  * [new branch]      package/depth40-p03-compat-v2-parent-20260912 -> origin/package/depth40-p03-compat-v2-parent-20260912
+2026-09-14T01:22:40.2230535Z  * [new branch]      package/depth48-admin-pagination-20260913 -> origin/package/depth48-admin-pagination-20260913
+2026-09-14T01:22:40.2232329Z  * [new branch]      payment-center/reality-discovery-01 -> origin/payment-center/reality-discovery-01
+2026-09-14T01:22:40.2233717Z  * [new branch]      preparation/cp11-depth31-source -> origin/preparation/cp11-depth31-source
+2026-09-14T01:22:40.2235191Z  * [new branch]      project-context/current-state-v1 -> origin/project-context/current-state-v1
+2026-09-14T01:22:40.2237114Z  * [new branch]      review/depth46-depth47-expert-findings -> origin/review/depth46-depth47-expert-findings
+2026-09-14T01:22:40.2241009Z [command]/usr/bin/git rev-parse --verify --quiet 6010ac260b81560cf9cce8ba4092c1e42d6b148b^{object}
+2026-09-14T01:22:40.2242866Z 6010ac260b81560cf9cce8ba4092c1e42d6b148b
+2026-09-14T01:22:40.2245003Z ##[endgroup]
+2026-09-14T01:22:40.2245947Z ##[group]Determining the checkout info
+2026-09-14T01:22:40.2247016Z ##[endgroup]
+2026-09-14T01:22:40.2247803Z [command]/usr/bin/git sparse-checkout disable
+2026-09-14T01:22:40.2263574Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-14T01:22:40.2309814Z ##[group]Checking out the ref
+2026-09-14T01:22:40.2315380Z [command]/usr/bin/git checkout --progress --force 6010ac260b81560cf9cce8ba4092c1e42d6b148b
+2026-09-14T01:22:41.7817353Z Updating files:  32% (1626/5001)
+2026-09-14T01:22:42.2859958Z Updating files:  33% (1651/5001)
+2026-09-14T01:22:42.4247467Z Updating files:  33% (1663/5001)
+2026-09-14T01:22:42.4252599Z Updating files:  34% (1701/5001)
+2026-09-14T01:22:42.4253560Z Updating files:  35% (1751/5001)
+2026-09-14T01:22:42.4254498Z Updating files:  36% (1801/5001)
+2026-09-14T01:22:42.4346393Z Updating files:  37% (1851/5001)
+2026-09-14T01:22:42.4415304Z Updating files:  38% (1901/5001)
+2026-09-14T01:22:42.4488535Z Updating files:  39% (1951/5001)
+2026-09-14T01:22:42.4514867Z Updating files:  40% (2001/5001)
+2026-09-14T01:22:42.4538800Z Updating files:  41% (2051/5001)
+2026-09-14T01:22:42.4566161Z Updating files:  42% (2101/5001)
+2026-09-14T01:22:42.4594315Z Updating files:  43% (2151/5001)
+2026-09-14T01:22:42.4625872Z Updating files:  44% (2201/5001)
+2026-09-14T01:22:42.4655612Z Updating files:  45% (2251/5001)
+2026-09-14T01:22:42.4683963Z Updating files:  46% (2301/5001)
+2026-09-14T01:22:42.4709638Z Updating files:  47% (2351/5001)
+2026-09-14T01:22:42.4740976Z Updating files:  48% (2401/5001)
+2026-09-14T01:22:42.4790812Z Updating files:  49% (2451/5001)
+2026-09-14T01:22:42.4847919Z Updating files:  50% (2501/5001)
+2026-09-14T01:22:42.4877558Z Updating files:  51% (2551/5001)
+2026-09-14T01:22:42.4922257Z Updating files:  52% (2601/5001)
+2026-09-14T01:22:42.4965439Z Updating files:  53% (2651/5001)
+2026-09-14T01:22:42.4995219Z Updating files:  54% (2701/5001)
+2026-09-14T01:22:42.5030158Z Updating files:  55% (2751/5001)
+2026-09-14T01:22:42.5063879Z Updating files:  56% (2801/5001)
+2026-09-14T01:22:42.5094098Z Updating files:  57% (2851/5001)
+2026-09-14T01:22:42.5127443Z Updating files:  58% (2901/5001)
+2026-09-14T01:22:42.5159610Z Updating files:  59% (2951/5001)
+2026-09-14T01:22:42.6240048Z Updating files:  60% (3001/5001)
+2026-09-14T01:22:42.6268971Z Updating files:  61% (3051/5001)
+2026-09-14T01:22:42.6342154Z Updating files:  62% (3101/5001)
+2026-09-14T01:22:42.6463392Z Updating files:  63% (3151/5001)
+2026-09-14T01:22:42.7005013Z Updating files:  64% (3201/5001)
+2026-09-14T01:22:42.7532488Z Updating files:  65% (3251/5001)
+2026-09-14T01:22:42.8089225Z Updating files:  66% (3301/5001)
+2026-09-14T01:22:42.8128105Z Updating files:  67% (3351/5001)
+2026-09-14T01:22:42.8157572Z Updating files:  68% (3401/5001)
+2026-09-14T01:22:42.8184876Z Updating files:  69% (3451/5001)
+2026-09-14T01:22:42.8211809Z Updating files:  70% (3501/5001)
+2026-09-14T01:22:42.8269513Z Updating files:  71% (3551/5001)
+2026-09-14T01:22:42.8321278Z Updating files:  72% (3601/5001)
+2026-09-14T01:22:42.8346904Z Updating files:  73% (3651/5001)
+2026-09-14T01:22:42.8376682Z Updating files:  74% (3701/5001)
+2026-09-14T01:22:42.8420333Z Updating files:  75% (3751/5001)
+2026-09-14T01:22:42.8468860Z Updating files:  76% (3801/5001)
+2026-09-14T01:22:42.8504570Z Updating files:  77% (3851/5001)
+2026-09-14T01:22:42.8549975Z Updating files:  78% (3901/5001)
+2026-09-14T01:22:42.8581761Z Updating files:  79% (3951/5001)
+2026-09-14T01:22:42.8646040Z Updating files:  80% (4001/5001)
+2026-09-14T01:22:42.8889872Z Updating files:  81% (4051/5001)
+2026-09-14T01:22:42.9119204Z Updating files:  82% (4101/5001)
+2026-09-14T01:22:42.9564137Z Updating files:  83% (4151/5001)
+2026-09-14T01:22:42.9871729Z Updating files:  84% (4201/5001)
+2026-09-14T01:22:42.9942945Z Updating files:  85% (4251/5001)
+2026-09-14T01:22:43.0015328Z Updating files:  86% (4301/5001)
+2026-09-14T01:22:43.0051147Z Updating files:  87% (4351/5001)
+2026-09-14T01:22:43.0078369Z Updating files:  88% (4401/5001)
+2026-09-14T01:22:43.0105438Z Updating files:  89% (4451/5001)
+2026-09-14T01:22:43.0133840Z Updating files:  90% (4501/5001)
+2026-09-14T01:22:43.0208582Z Updating files:  91% (4551/5001)
+2026-09-14T01:22:43.0238279Z Updating files:  92% (4601/5001)
+2026-09-14T01:22:43.0263283Z Updating files:  93% (4651/5001)
+2026-09-14T01:22:43.0291415Z Updating files:  94% (4701/5001)
+2026-09-14T01:22:43.0386717Z Updating files:  95% (4751/5001)
+2026-09-14T01:22:43.0390961Z Updating files:  96% (4801/5001)
+2026-09-14T01:22:43.0423633Z Updating files:  97% (4851/5001)
+2026-09-14T01:22:43.0515097Z Updating files:  98% (4901/5001)
+2026-09-14T01:22:43.0515975Z Updating files:  99% (4951/5001)
+2026-09-14T01:22:43.0516868Z Updating files: 100% (5001/5001)
+2026-09-14T01:22:43.0517555Z Updating files: 100% (5001/5001), done.
+2026-09-14T01:22:43.1819326Z Note: switching to '6010ac260b81560cf9cce8ba4092c1e42d6b148b'.
+2026-09-14T01:22:43.1820124Z 
+2026-09-14T01:22:43.1820864Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-14T01:22:43.1827148Z changes and commit them, and you can discard any commits you make in this
+2026-09-14T01:22:43.1828226Z state without impacting any branches by switching back to a branch.
+2026-09-14T01:22:43.1828932Z 
+2026-09-14T01:22:43.1829446Z If you want to create a new branch to retain commits you create, you may
+2026-09-14T01:22:43.1830418Z do so (now or later) by using -c with the switch command. Example:
+2026-09-14T01:22:43.1831058Z 
+2026-09-14T01:22:43.1831720Z   git switch -c <new-branch-name>
+2026-09-14T01:22:43.1832241Z 
+2026-09-14T01:22:43.1832589Z Or undo this operation with:
+2026-09-14T01:22:43.1833049Z 
+2026-09-14T01:22:43.1833632Z   git switch -
+2026-09-14T01:22:43.1834376Z 
+2026-09-14T01:22:43.1862208Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-14T01:22:43.1873295Z 
+2026-09-14T01:22:43.1874183Z HEAD is now at 6010ac2 build: seal canonical Node overlay and retain runtime package evidence
+2026-09-14T01:22:43.2115865Z ##[endgroup]
+2026-09-14T01:22:43.2176829Z [command]/usr/bin/git log -1 --format=%H
+2026-09-14T01:22:43.2214017Z 6010ac260b81560cf9cce8ba4092c1e42d6b148b
+2026-09-14T01:22:43.2224111Z ##[group]Removing auth
+2026-09-14T01:22:43.2228777Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-14T01:22:43.2273861Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-14T01:22:43.2574085Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-14T01:22:43.2608219Z http.https://github.com/.extraheader
+2026-09-14T01:22:43.2618333Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-14T01:22:43.4375257Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-14T01:22:43.4699869Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-14T01:22:43.4740278Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-14T01:22:43.5024199Z ##[endgroup]
+2026-09-14T01:22:43.5252093Z ##[group]Run python3 -B -m unittest discover -s packaging/canonical-node-seal -p 'test_*.py' -v
+2026-09-14T01:22:43.5252939Z [36;1mpython3 -B -m unittest discover -s packaging/canonical-node-seal -p 'test_*.py' -v[0m
+2026-09-14T01:22:44.1994498Z shell: /usr/bin/bash -e {0}
+2026-09-14T01:22:44.1994787Z ##[endgroup]
+2026-09-14T01:22:44.3342157Z test_alias_duplicates_and_file_parents_rejected (test_seal.Safety) ... ok
+2026-09-14T01:22:44.3344297Z test_corrupt_package_rejected_before_commands (test_seal.Safety) ... ok
+2026-09-14T01:22:44.3352798Z test_escaping_dangling_chained_and_parent_links_rejected (test_seal.Safety) ... ok
+2026-09-14T01:22:44.3357083Z test_existing_destination_not_overwritten (test_seal.Safety) ... ok
+2026-09-14T01:22:44.3364023Z test_noncanonical_source_rejected (test_seal.Safety) ... ok
+2026-09-14T01:22:44.3396379Z test_unsafe_paths_and_types_rejected (test_seal.Safety) ... ok
+2026-09-14T01:22:44.3426556Z test_valid_node_relative_link_restores (test_seal.Safety) ... ERROR
+2026-09-14T01:22:44.3427299Z 
+2026-09-14T01:22:44.3427711Z ======================================================================
+2026-09-14T01:22:44.3428950Z ERROR: test_valid_node_relative_link_restores (test_seal.Safety)
+2026-09-14T01:22:44.3429863Z ----------------------------------------------------------------------
+2026-09-14T01:22:44.3431022Z Traceback (most recent call last):
+2026-09-14T01:22:44.3432545Z   File "/home/runner/work/GO/GO/packaging/canonical-node-seal/test_seal.py", line 31, in test_valid_node_relative_link_restores
+2026-09-14T01:22:44.3434115Z     seal.extract(self.archive(root, entries), root / 'out')
+2026-09-14T01:22:44.3435169Z   File "/home/runner/work/GO/GO/packaging/canonical-node-seal/seal.py", line 63, in extract
+2026-09-14T01:22:44.3436447Z     tf.extractall(dest, filter='data')
+2026-09-14T01:22:44.3437314Z   File "/usr/lib/python3.10/tarfile.py", line 2302, in extractall
+2026-09-14T01:22:44.3438580Z     tarinfo = self._get_extract_tarinfo(member, filter_function, path)
+2026-09-14T01:22:44.3439628Z   File "/usr/lib/python3.10/tarfile.py", line 2356, in _get_extract_tarinfo
+2026-09-14T01:22:44.3440816Z     self._handle_fatal_error(e)
+2026-09-14T01:22:44.3441976Z   File "/usr/lib/python3.10/tarfile.py", line 2354, in _get_extract_tarinfo
+2026-09-14T01:22:44.3443220Z     tarinfo = filter_function(tarinfo, path)
+2026-09-14T01:22:44.3445808Z   File "/usr/lib/python3.10/tarfile.py", line 819, in data_filter
+2026-09-14T01:22:44.3446767Z     new_attrs = _get_filtered_attrs(member, dest_path, True)
+2026-09-14T01:22:44.3447420Z   File "/usr/lib/python3.10/tarfile.py", line 806, in _get_filtered_attrs
+2026-09-14T01:22:44.3448126Z     raise LinkOutsideDestinationError(member, target_path)
+2026-09-14T01:22:44.3449183Z tarfile.LinkOutsideDestinationError: 'node/bin/npm' would link to '/tmp/tmprjech3qn/lib/npm.js', which is outside the destination
+2026-09-14T01:22:44.3449991Z 
+2026-09-14T01:22:44.3450299Z ----------------------------------------------------------------------
+2026-09-14T01:22:44.3450834Z Ran 7 tests in 0.017s
+2026-09-14T01:22:44.3451048Z 
+2026-09-14T01:22:44.3451169Z FAILED (errors=1)
+2026-09-14T01:22:44.3603776Z ##[error]Process completed with exit code 1.
+2026-09-14T01:22:44.3724131Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-14T01:22:44.3725917Z ##[group]Run actions/upload-artifact@v4
+2026-09-14T01:22:44.3726202Z with:
+2026-09-14T01:22:44.3726488Z   name: canonical-node-6010ac260b81560cf9cce8ba4092c1e42d6b148b
+2026-09-14T01:22:44.3727594Z   path: /home/runner/work/_temp/node-delivery/node-seal.tar.gz
+/home/runner/work/_temp/node-delivery/node-seal.sha256
+/home/runner/work/_temp/node-delivery/bundle/*.json
+/home/runner/work/_temp/node-delivery/bundle/*.log
+/home/runner/work/_temp/node-build.log
+
+2026-09-14T01:22:44.3728623Z   if-no-files-found: error
+2026-09-14T01:22:44.3728859Z   compression-level: 0
+2026-09-14T01:22:44.3729074Z   retention-days: 90
+2026-09-14T01:22:44.3729337Z   overwrite: false
+2026-09-14T01:22:44.3729555Z   include-hidden-files: false
+2026-09-14T01:22:44.3729798Z ##[endgroup]
+2026-09-14T01:22:44.6248642Z (node:1899) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-14T01:22:44.6257331Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-14T01:22:44.6270704Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-14T01:22:44.6313513Z The least common ancestor is /home/runner/work/_temp. This will be the root directory of the artifact
+2026-09-14T01:22:44.6330767Z ##[error]No files were found with the provided path: /home/runner/work/_temp/node-delivery/node-seal.tar.gz
+/home/runner/work/_temp/node-delivery/node-seal.sha256
+/home/runner/work/_temp/node-delivery/bundle/*.json
+/home/runner/work/_temp/node-delivery/bundle/*.log
+/home/runner/work/_temp/node-build.log. No artifacts will be uploaded.
+2026-09-14T01:22:44.6657173Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-14T01:22:44.6659437Z Post job cleanup.
+2026-09-14T01:22:44.8008192Z [command]/usr/bin/git version
+2026-09-14T01:22:44.8052134Z git version 2.55.0
+2026-09-14T01:22:44.8118662Z Temporarily overriding HOME='/home/runner/work/_temp/a33583a0-6946-4a8f-a515-eca350c0a7bb' before making global git config changes
+2026-09-14T01:22:44.8120483Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-14T01:22:44.8122449Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-14T01:22:44.8125306Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-14T01:22:44.8152871Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-14T01:22:44.8964763Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-14T01:22:44.8967631Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-14T01:22:44.9347574Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-14T01:22:44.9454549Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-14T01:22:45.0110490Z Cleaning up orphan processes
+2026-09-14T01:22:45.0436526Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
