@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only Deploy Readiness evaluator. (CC V1-06 / #101)
+"""Read-only Deploy Readiness evaluator. (CC V1-06 / #101, revised by #101.1)
 
 What it answers
 ---------------
@@ -15,16 +15,38 @@ UNKNOWN is the honest answer for a mandatory live fact nobody could prove, and
 it is never rounded up to YES. YES is an observation about the evidence: it is
 not an approval, and it authorises nothing.
 
+Why this revision exists
+------------------------
+The first revision treated CANARY and RELEASE_GATES as advisory and reported the
+plan's canary declaration without re-deriving it. That allowed a verdict of YES
+while the live Boss Request Bridge, which is the only component that actually
+decides whether a DEPLOY Request is accepted, would deterministically refuse the
+same plan. A readiness verdict that can disagree with the live gate in that
+direction is worse than no verdict: it reads as permission.
+
+So the live Bridge's own bundle contract is now the fact source. Its rules are
+ported here verbatim in behaviour (see BRIDGE_RULES / bridge_verdict), and the
+`BRIDGE_ACCEPTANCE` gate fails whenever those rules would refuse. Every gate is
+mandatory; there are no advisory gates left.
+
 What it reads (read-only, and never anything else)
 --------------------------------------------------
     --control-state   the derived CURRENT_CONTROL_STATE.json from the projector
     --go-repo         a GO checkout, for the two canonical pointer files the
-                      state document names
+                      state document names AND for the published verifier
+                      identities (identity/VERIFIER_IDENTITIES_V1.json and its
+                      keys). The approval-authority key is a separate identity
+                      from the task signer; if the published contract expresses
+                      one key in two roles this evaluator refuses to claim a
+                      proven approval.
     --live-bundle     OPTIONAL operator-supplied directory of live-host facts.
                       The approved plan store and the Command Center switch are
                       live facts an offline evaluator cannot read, so when the
                       bundle is absent those gates are UNKNOWN by construction
-                      rather than assumed.
+                      rather than assumed. Files it may contain:
+                        <plan_id>.json        the six-part approved plan bundle
+                        channel.json          the live channel configuration
+                        switch-provenance.json  the change record for the switch
 
 What it can never do
 --------------------
@@ -34,6 +56,7 @@ command, contacts no host, and does not touch Production. Every one of those is
 a `false` in the `authority_boundary` block of its own output.
 """
 import argparse
+import base64
 import datetime as dt
 import hashlib
 import json
@@ -50,19 +73,73 @@ STATE_CONTRACT = "CURRENT_CONTROL_STATE"
 ENVIRONMENT = "HK-STAGING-01"
 DEPLOY_ACTION = "HK_STAGING_DEPLOY"
 
+STATE_COMPONENT = "control-plane/command-center-state-v1"
+IDENTITY_CONTRACT = STATE_COMPONENT + "/identity/VERIFIER_IDENTITIES_V1.json"
+APPROVAL_AUTHORITY_ID = "GO-DEPLOY-HUMAN-APPROVAL-AUTHORITY"
+BUNDLE_NON_PLAN_FILES = ("channel.json", "switch-provenance.json")
+
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 SHA64 = re.compile(r"^[0-9a-f]{64}$")
 IMAGE_ID = re.compile(r"^sha256:[0-9a-f]{64}$")
-REPO_DIGEST = re.compile(r"^[^\s@]+@sha256:[0-9a-f]{64}$")
+REPO_DIGEST = re.compile(r"^[a-z0-9][a-z0-9._/-]*@sha256:[0-9a-f]{64}$")
 IDENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$")
+EXECUTOR_IDENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$")
 MAX_BUNDLE_BYTES = 131072          # the plan store's own 128 KiB ceiling
 
 MANDATORY_GATES = ("APPROVED_CANDIDATE", "SOURCE_BINDING", "PACKAGE_BINDING",
                    "DEPLOYMENT_PLAN", "HUMAN_APPROVAL", "TEST_PR", "VERIFY",
-                   "CURRENT_RUNTIME", "LIVE_SWITCH")
-ADVISORY_GATES = ("CANARY", "RELEASE_GATES")
+                   "CURRENT_RUNTIME", "LIVE_SWITCH", "LIVE_SWITCH_PROVENANCE",
+                   "CANARY", "RELEASE_GATES", "BRIDGE_ACCEPTANCE")
+ADVISORY_GATES = ()
+
+# --- ported from boss-deploy-request-v1/go_deploy_request.py ----------------
+# These are the live Bridge's own constants. A test re-reads that file and fails
+# if any of them drift, so this copy cannot silently diverge from the real gate.
 REQUIRED_PLAN_GATES = ("three_end_ux", "six_vertical_closed_loop", "sealed_node",
                        "final_release")
+PLAN_FIELDS = ("schema_version", "plan_id", "environment", "action_id", "candidate",
+               "expected_current_image_id", "target_services", "protected_non_targets",
+               "migration", "production", "automatic_rollback", "gates",
+               "canary_task_sha256", "canary_evidence_sha256", "preflight_task_sha256",
+               "preflight_evidence_sha256")
+CANDIDATE_FIELDS = ("repository", "source_commit", "application_git_tree",
+                    "source_tree_sha256", "package_sha256", "image_id", "repo_digest")
+APPROVAL_FIELDS = ("schema_version", "approval_id", "approved_by", "approved_at",
+                   "expires_at", "scope", "plan_sha256", "signature")
+APPROVAL_SCOPE = "HK_STAGING_DEPLOY_FIXED_EIGHT"
+TASK_FIELDS = ("schema_version", "task_id", "nonce", "issued_at", "expires_at",
+               "authority", "environment", "action_id", "parameters", "signature")
+TASK_AUTHORITY = "GO-COMMAND-CENTER"
+CANDIDATE_REPOSITORY = "yuguangzhi3836-glitch/GO"
+SERVICES = ("api", "recovery-worker", "outbox-worker", "mobile-push-receipt-worker",
+            "reconciliation-worker", "mobile-push-worker", "mobile-engagement-worker",
+            "judgment-worker")
+PROTECTED_NON_TARGETS = ("redis", "caddy")
+FORBIDDEN_OPERATIONS = ("migration", "production", "automatic_rollback")
+CANARY_GATES = ("compose_baseline", "env_baseline", "expected_current_image",
+                "candidate_image", "python_compile", "alembic_head",
+                "container_isolation", "container_cleanup")
+VERIFY_GATES = ("alembic_current", "alembic_head", "api_health", "candidate_image",
+                "compose_baseline", "env_baseline", "expected_current_image",
+                "worker_process_liveness")
+CANARY_MAX_AGE_SECONDS = 1800
+PREFLIGHT_MAX_AGE_SECONDS = 300
+APPROVAL_MAX_WINDOW_SECONDS = 900
+PROOF_COMPLETED_GRACE_SECONDS = 30
+
+# --- the identity posture this evaluator requires --------------------------
+BINDING_BOUND = "BOUND"
+BINDING_MISSING_KEY = "MISSING_KEY"
+BINDING_KEY_UNREADABLE = "KEY_UNREADABLE"
+BINDING_IDENTITY_MISMATCH = "IDENTITY_MISMATCH"
+BINDING_IDENTITY_UNRESOLVED = "IDENTITY_UNRESOLVED"
+BINDING_IDENTITY_COLLISION = "IDENTITY_COLLISION"
+FAIL_CLOSED_BINDINGS = (BINDING_MISSING_KEY, BINDING_KEY_UNREADABLE,
+                        BINDING_IDENTITY_MISMATCH, BINDING_IDENTITY_UNRESOLVED,
+                        BINDING_IDENTITY_COLLISION)
+ROLE_TASK = "TASK"
+ROLE_EVIDENCE = "EVIDENCE"
+ROLE_APPROVAL = "HUMAN_APPROVAL"
 
 AUTHORITY_BOUNDARY = {
     "is_execution_authority": False,
@@ -128,6 +205,410 @@ def gate(name, state, reason, **extra):
     return entry
 
 
+def exact_set(value, fields, reason):
+    if not isinstance(value, dict) or set(value) != set(fields):
+        raise Refuse(reason)
+
+
+def matches(value, pattern, reason):
+    if not isinstance(value, str) or pattern.fullmatch(value) is None:
+        raise Refuse(reason)
+
+
+def signed_unsigned(value):
+    """The bytes a Bridge-signed object's signature covers."""
+    if not isinstance(value, dict) or not isinstance(value.get("signature"), str):
+        raise Refuse("missing_signature")
+    return {k: v for k, v in value.items() if k != "signature"}
+
+
+# --------------------------------------------------------------------------- #
+# published identities
+# --------------------------------------------------------------------------- #
+class Identities:
+    """The three roles the live plan contract distinguishes.
+
+    The approval authority is a role of its own. If the published contract hands
+    the same key to two roles, every claim that depends on a distinguishable
+    approver is refused rather than reported as proven -- a collision is a real
+    finding, not a formatting problem.
+    """
+
+    def __init__(self, go_repo):
+        self.available = False
+        self.problem = None
+        self.contract_path = None
+        self.entries = {}          # role -> {identity_id, sha256, ssh_sha256, binding, path}
+        self.keys = {}             # role -> loaded public key or None
+        self.approval_published = False
+        if go_repo is None:
+            self.problem = "no_go_repository_supplied"
+            return
+        path = pathlib.Path(go_repo) / IDENTITY_CONTRACT
+        self.contract_path = str(path)
+        try:
+            document = read_json(path)
+        except Exception as exc:  # noqa: BLE001 - fail closed and say why
+            self.problem = "identity_contract_unreadable:%s" % type(exc).__name__
+            return
+        if not isinstance(document, dict) or document.get("contract") != "VERIFIER_IDENTITIES_V1":
+            self.problem = "not_an_identity_contract"
+            return
+        listed = document.get("identities")
+        if not isinstance(listed, list):
+            self.problem = "identity_list_missing"
+            return
+        root = pathlib.Path(go_repo) / STATE_COMPONENT
+        for role in (ROLE_TASK, ROLE_EVIDENCE, ROLE_APPROVAL):
+            self.entries[role] = self._load_role(root, listed, role)
+        self.approval_published = self.entries[ROLE_APPROVAL]["binding"] != BINDING_MISSING_KEY
+        self.available = all(self.entries[r]["binding"] == BINDING_BOUND
+                             for r in (ROLE_TASK, ROLE_EVIDENCE, ROLE_APPROVAL))
+
+    @staticmethod
+    def _load_role(root, listed, role):
+        entry = {"identity_id": None, "binding": BINDING_MISSING_KEY, "sha256": None,
+                 "ssh_sha256": None, "role": role, "path": None, "loaded": False,
+                 "problem": "no_published_identity_for_this_role"}
+        for item in listed:
+            if isinstance(item, dict) and item.get("role") == role:
+                entry["identity_id"] = item.get("identity_id")
+                entry["sha256"] = item.get("public_key_file_sha256")
+                entry["ssh_sha256"] = item.get("public_key_ssh_sha256")
+                rel = item.get("public_key_path")
+                if not isinstance(rel, str):
+                    entry["binding"] = BINDING_IDENTITY_UNRESOLVED
+                    entry["problem"] = "published_identity_has_no_key_path"
+                    return entry
+                key_path = root / rel
+                entry["path"] = str(key_path)
+                raw = None
+                try:
+                    raw = key_path.read_bytes()
+                except OSError:
+                    entry["binding"] = BINDING_MISSING_KEY
+                    entry["problem"] = "published_key_file_is_absent"
+                    return entry
+                if hashlib.sha256(raw).hexdigest() != entry["sha256"]:
+                    entry["binding"] = BINDING_IDENTITY_MISMATCH
+                    entry["problem"] = "published_key_bytes_do_not_match_the_declared_digest"
+                    return entry
+                try:
+                    from cryptography.hazmat.primitives import serialization
+                    key = (serialization.load_ssh_public_key(raw) if raw.startswith(b"ssh-")
+                           else serialization.load_pem_public_key(raw))
+                    raw_public = key.public_bytes(serialization.Encoding.Raw,
+                                                  serialization.PublicFormat.Raw)
+                except Exception as exc:  # noqa: BLE001 - fail closed
+                    entry["binding"] = BINDING_KEY_UNREADABLE
+                    entry["problem"] = "key_unloadable:%s" % type(exc).__name__
+                    return entry
+                prefix = b"ssh-ed25519"
+                blob = (len(prefix).to_bytes(4, "big") + prefix
+                        + len(raw_public).to_bytes(4, "big") + raw_public)
+                observed = "SHA256:" + base64.b64encode(
+                    hashlib.sha256(blob).digest()).decode("ascii").rstrip("=")
+                entry["ssh_sha256_observed"] = observed
+                if observed != entry["ssh_sha256"]:
+                    entry["binding"] = BINDING_IDENTITY_MISMATCH
+                    entry["problem"] = "key_fingerprint_does_not_match_the_published_pin"
+                    return entry
+                entry["binding"] = BINDING_BOUND
+                entry["problem"] = None
+                entry["loaded"] = True
+                return entry
+        return entry
+
+    def collision(self):
+        """Which roles share one key. Empty when every role is a distinct key."""
+        seen, clashes = {}, []
+        for role in (ROLE_TASK, ROLE_EVIDENCE, ROLE_APPROVAL):
+            entry = self.entries.get(role) or {}
+            pin = entry.get("ssh_sha256")
+            if not pin:
+                continue
+            if pin in seen:
+                clashes.append("%s==%s" % (seen[pin], role))
+            else:
+                seen[pin] = role
+        return clashes
+
+    def usable(self, role):
+        return (self.entries.get(role) or {}).get("binding") == BINDING_BOUND
+
+    def public_key(self, role):
+        entry = self.entries.get(role) or {}
+        if not entry.get("loaded"):
+            return None
+        from cryptography.hazmat.primitives import serialization
+        raw = pathlib.Path(entry["path"]).read_bytes()
+        return (serialization.load_ssh_public_key(raw) if raw.startswith(b"ssh-")
+                else serialization.load_pem_public_key(raw))
+
+    def report(self):
+        roles = {}
+        for role in (ROLE_TASK, ROLE_EVIDENCE, ROLE_APPROVAL):
+            entry = self.entries.get(role) or {}
+            roles[role] = {"identity_id": entry.get("identity_id"),
+                           "binding": entry.get("binding"),
+                           "public_key_ssh_sha256": entry.get("ssh_sha256"),
+                           "problem": entry.get("problem")}
+        clashes = self.collision()
+        return {
+            "contract": "VERIFIER_IDENTITIES_V1",
+            "contract_path": IDENTITY_CONTRACT,
+            "roles": roles,
+            "approval_authority_id": APPROVAL_AUTHORITY_ID,
+            "approval_authority_published": self.approval_published,
+            "task_and_evidence_distinct": not any("TASK==EVIDENCE" in c for c in clashes),
+            "approval_distinct_from_signer": not any("TASK==HUMAN_APPROVAL" in c or
+                                                     "EVIDENCE==HUMAN_APPROVAL" in c
+                                                     for c in clashes),
+            "collisions": clashes,
+            "problem": self.problem,
+            "note": ("The Human Approval authority must be a different key from the Task "
+                     "signer. A contract that expresses one key in both roles makes an "
+                     "approval indistinguishable from a Task, so no approval is reported "
+                     "as proven."),
+        }
+
+
+def verify_signature(key, value, encoding):
+    """True only when the signature is present, well formed and valid."""
+    if key is None:
+        return False, "no_key"
+    try:
+        unsigned = signed_unsigned(value)
+    except Refuse as exc:
+        # A missing or non-string signature is a finding, not a crash: the
+        # caller must be able to report it as a refused object.
+        return False, str(exc)
+    try:
+        signature = (bytes.fromhex(value["signature"]) if encoding == "hex"
+                     else base64.b64decode(value["signature"], validate=True))
+        key.verify(signature, canonical(unsigned))
+        return True, None
+    except Exception as exc:  # noqa: BLE001 - fail closed, report the class
+        return False, type(exc).__name__
+
+
+# --------------------------------------------------------------------------- #
+# the live Bridge's own rules, ported read-only
+# --------------------------------------------------------------------------- #
+def bridge_proof_problems(task, evidence, action, task_key, evidence_key, at, max_age):
+    """Port of go_deploy_request.proof(): every reason the Bridge would refuse."""
+    problems = []
+    for label, value, key, encoding in (("task", task, task_key, "hex"),
+                                        ("evidence", evidence, evidence_key, "base64")):
+        try:
+            signed_unsigned(value)
+        except Refuse as exc:
+            problems.append("%s_%s" % (label, exc))
+            continue
+        ok, why = verify_signature(key, value, encoding)
+        if not ok:
+            problems.append("%s_signature_%s" % (label, why or "invalid"))
+    if problems:
+        return problems
+    try:
+        exact_set(task, TASK_FIELDS, "task_fields")
+    except Refuse as exc:
+        return ["%s" % exc]
+    if task["schema_version"] != "1" or task["authority"] != TASK_AUTHORITY:
+        problems.append("task_authority")
+    if task["action_id"] != action or task["environment"] != ENVIRONMENT:
+        problems.append("proof_scope")
+    for field in ("task_id", "nonce", "action_id", "environment"):
+        if evidence.get(field) != task[field]:
+            problems.append("proof_binding_%s" % field)
+    try:
+        matches(task["task_id"], re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"), "task_id")
+        matches(task["nonce"], re.compile(r"^[A-Za-z0-9_-]{1,128}$"), "task_nonce")
+    except Refuse as exc:
+        problems.append("%s" % exc)
+    parameters = task["parameters"]
+    expected = {"release_id", "candidate_image_id", "expected_current_image_id"}
+    if action == "HK_STAGING_CANARY":
+        expected.add("candidate_repo_digest")
+    try:
+        exact_set(parameters, expected, "proof_parameters")
+    except Refuse as exc:
+        problems.append("%s" % exc)
+    if problems:
+        return problems
+    for field in ("release_id", "candidate_image_id", "expected_current_image_id"):
+        if evidence.get(field) != parameters[field]:
+            problems.append("proof_image_or_release_%s" % field)
+    try:
+        matches(parameters["release_id"], EXECUTOR_IDENT, "proof_release_id")
+    except Refuse as exc:
+        problems.append("%s" % exc)
+    if evidence.get("schema_version") != "1" or evidence.get("status") != "SUCCESS":
+        problems.append("proof_not_success")
+    if evidence.get("executor_result") != ("CANARY_OK" if action == "HK_STAGING_CANARY"
+                                           else "VERIFY_OK"):
+        problems.append("proof_result")
+    try:
+        issued = parse_time(task["issued_at"], "task_issued_at")
+        expires = parse_time(task["expires_at"], "task_expires_at")
+        started = parse_time(evidence.get("started_at"), "evidence_started_at")
+        completed = parse_time(evidence.get("completed_at"), "evidence_completed_at")
+    except Refuse as exc:
+        return problems + ["%s" % exc]
+    if not (issued <= started <= completed <= expires):
+        problems.append("proof_stale_or_unbound_time")
+    if completed > at + dt.timedelta(seconds=PROOF_COMPLETED_GRACE_SECONDS):
+        problems.append("proof_completed_in_the_future")
+    if at - completed > dt.timedelta(seconds=max_age):
+        problems.append("proof_stale")
+    gates = evidence.get("gate_results")
+    required = CANARY_GATES if action == "HK_STAGING_CANARY" else VERIFY_GATES
+    if not isinstance(gates, dict):
+        problems.append("proof_gate_results_missing")
+    else:
+        missing = sorted(name for name in required if gates.get(name) != "PASS")
+        if missing:
+            problems.append("proof_gate_failed:%s" % ",".join(missing))
+        if any(value != "PASS" and value is not False for value in gates.values()):
+            problems.append("proof_contains_failed_gate")
+    return problems, completed
+
+
+def bridge_bundle_problems(bundle, identities, at):
+    """Port of go_deploy_request.validate_bundle(). Returns (problems, detail)."""
+    problems, detail = [], {}
+    try:
+        exact_set(bundle, ("plan", "approval", "canary_task", "canary_evidence",
+                           "preflight_task", "preflight_evidence"), "bundle_fields")
+    except Refuse as exc:
+        return ["%s" % exc], detail
+    plan, approval = bundle["plan"], bundle["approval"]
+    try:
+        exact_set(plan, PLAN_FIELDS, "plan_fields")
+    except Refuse as exc:
+        return ["%s" % exc], detail
+    if (plan["schema_version"] != "1" or plan["environment"] != ENVIRONMENT
+            or plan["action_id"] != DEPLOY_ACTION):
+        problems.append("plan_scope")
+    try:
+        matches(plan["plan_id"], IDENT, "plan_id")
+    except Refuse as exc:
+        problems.append("%s" % exc)
+    if list(plan["target_services"]) != list(SERVICES):
+        problems.append("fixed_topology_required")
+    if list(plan["protected_non_targets"]) != list(PROTECTED_NON_TARGETS):
+        problems.append("protected_non_targets_required")
+    if any(plan.get(name) is not False for name in FORBIDDEN_OPERATIONS):
+        problems.append("forbidden_operation")
+    try:
+        exact_set(plan["gates"], REQUIRED_PLAN_GATES, "release_gate_fields")
+    except Refuse as exc:
+        problems.append("%s" % exc)
+    else:
+        not_pass = sorted(name for name in REQUIRED_PLAN_GATES
+                          if plan["gates"].get(name) != "PASS")
+        if not_pass:
+            problems.append("release_gates_not_pass:%s" % ",".join(not_pass))
+    candidate = plan.get("candidate")
+    try:
+        exact_set(candidate, CANDIDATE_FIELDS, "candidate_fields")
+    except Refuse as exc:
+        problems.append("%s" % exc)
+    else:
+        if candidate["repository"] != CANDIDATE_REPOSITORY:
+            problems.append("candidate_repository")
+        for field, pattern in (("source_commit", SHA40), ("application_git_tree", SHA40),
+                               ("source_tree_sha256", SHA64), ("package_sha256", SHA64)):
+            if not isinstance(candidate[field], str) or not pattern.fullmatch(candidate[field]):
+                problems.append("candidate_%s" % field)
+        if not isinstance(candidate["image_id"], str) or not IMAGE_ID.fullmatch(candidate["image_id"]):
+            problems.append("candidate_image")
+        if not isinstance(candidate["repo_digest"], str) or not REPO_DIGEST.fullmatch(candidate["repo_digest"]):
+            problems.append("candidate_digest")
+        elif isinstance(candidate["image_id"], str) and not candidate["repo_digest"].endswith(candidate["image_id"][7:]):
+            problems.append("executor_digest_contract")
+        detail["candidate"] = candidate
+    if not isinstance(plan.get("expected_current_image_id"), str) or \
+            not IMAGE_ID.fullmatch(str(plan.get("expected_current_image_id"))):
+        problems.append("current_image")
+    # approval
+    approval_key = identities.public_key(ROLE_APPROVAL) if identities.usable(ROLE_APPROVAL) else None
+    if identities.collision():
+        problems.append("approval_authority_collision:%s" % ",".join(identities.collision()))
+    ok, why = verify_signature(approval_key, approval, "hex")
+    if not ok:
+        problems.append("approval_signature_%s" % (why or "invalid"))
+    try:
+        exact_set(approval, APPROVAL_FIELDS, "approval_fields")
+    except Refuse as exc:
+        problems.append("%s" % exc)
+    else:
+        if approval["schema_version"] != "1" or approval["scope"] != APPROVAL_SCOPE \
+                or approval["plan_sha256"] != digest(plan):
+            problems.append("approval_binding")
+        try:
+            matches(approval["approval_id"], EXECUTOR_IDENT, "approval_id")
+            matches(approval["approved_by"], IDENT, "human_reviewer_id")
+        except Refuse as exc:
+            problems.append("%s" % exc)
+        try:
+            approved = parse_time(approval["approved_at"], "approval_approved_at")
+            expires = parse_time(approval["expires_at"], "approval_expires_at")
+        except Refuse as exc:
+            problems.append("%s" % exc)
+        else:
+            detail["approved_at"] = iso(approved)
+            detail["expires_at"] = iso(expires)
+            if approved > at or expires <= at + dt.timedelta(seconds=60) \
+                    or (expires - approved).total_seconds() > APPROVAL_MAX_WINDOW_SECONDS:
+                problems.append("approval_expired_or_invalid")
+    for name in ("canary_task", "canary_evidence", "preflight_task", "preflight_evidence"):
+        declared = plan.get(name + "_sha256")
+        if declared != digest(bundle[name]):
+            problems.append("proof_hash_binding_%s" % name)
+    task_key = identities.public_key(ROLE_TASK) if identities.usable(ROLE_TASK) else None
+    evidence_key = (identities.public_key(ROLE_EVIDENCE)
+                    if identities.usable(ROLE_EVIDENCE) else None)
+    canary = bridge_proof_problems(bundle["canary_task"], bundle["canary_evidence"],
+                                   "HK_STAGING_CANARY", task_key, evidence_key, at,
+                                   CANARY_MAX_AGE_SECONDS)
+    preflight = bridge_proof_problems(bundle["preflight_task"], bundle["preflight_evidence"],
+                                      "HK_STAGING_VERIFY", task_key, evidence_key, at,
+                                      PREFLIGHT_MAX_AGE_SECONDS)
+    problem_list, canary_checked = (canary if isinstance(canary, tuple) else (canary, None))
+    preflight_list, preflight_checked = (preflight if isinstance(preflight, tuple)
+                                         else (preflight, None))
+    problems += ["canary_" + p for p in problem_list]
+    problems += ["preflight_" + p for p in preflight_list]
+    detail["canary_checked_at"] = iso(canary_checked) if canary_checked else None
+    detail["preflight_checked_at"] = iso(preflight_checked) if preflight_checked else None
+    if "approved_at" in detail and canary_checked and preflight_checked:
+        approved = parse_time(detail["approved_at"], "approval_approved_at")
+        if approved < max(canary_checked, preflight_checked):
+            problems.append("approval_predates_evidence")
+    cp = (bundle["canary_task"].get("parameters") or {})
+    vp = (bundle["preflight_task"].get("parameters") or {})
+    if detail.get("candidate"):
+        candidate = detail["candidate"]
+        if (cp.get("candidate_image_id"), cp.get("candidate_repo_digest"),
+                cp.get("expected_current_image_id")) != (
+                candidate.get("image_id"), candidate.get("repo_digest"),
+                plan.get("expected_current_image_id")):
+            problems.append("canary_candidate_binding")
+    if (vp.get("candidate_image_id") != plan.get("expected_current_image_id")
+            or vp.get("expected_current_image_id") != plan.get("expected_current_image_id")):
+        problems.append("preflight_current_image_binding")
+    if preflight_checked:
+        deadline = min(parse_time(detail["expires_at"], "approval_expires_at")
+                       if "expires_at" in detail else at,
+                       preflight_checked + dt.timedelta(seconds=PREFLIGHT_MAX_AGE_SECONDS),
+                       at + dt.timedelta(seconds=300))
+        detail["deadline"] = iso(deadline)
+        if deadline <= at + dt.timedelta(seconds=60):
+            problems.append("preflight_near_expiry")
+    return problems, detail
+
+
 # --------------------------------------------------------------------------- #
 # inputs
 # --------------------------------------------------------------------------- #
@@ -147,16 +628,18 @@ class Inputs:
         self.cs = self.state.get("control_state") or {}
         self.freshness = self.state.get("freshness") or {}
         self.go_repo = pathlib.Path(go_repo) if go_repo else None
+        self.identities = Identities(self.go_repo)
         self.candidate, self.candidate_error = self._pointer("canonical_candidate_pointer")
-        self.runtime_pointer, self.runtime_error = self._pointer("canonical_runtime_pointer")
+        self.runtime_pointer, self.runtime_pointer_error = self._pointer("canonical_runtime_pointer")
         self.bundle, self.bundle_files, self.bundle_error = self._bundle(bundle_dir)
+        self._bridge = None
 
     def _pointer(self, key):
-        relative = self.go_source.get(key)
-        if not relative or self.go_repo is None:
-            return None, "pointer_not_named_by_the_state_document"
+        name = self.go_source.get(key)
+        if not name or self.go_repo is None:
+            return None, "pointer_not_named_or_no_repository"
         try:
-            return read_json(self.go_repo / relative), None
+            return read_json(self.go_repo / name), None
         except Refuse as exc:
             return None, "pointer_%s" % exc
         except (OSError, ValueError, UnicodeError) as exc:
@@ -169,14 +652,15 @@ class Inputs:
         if not folder.is_dir():
             return None, [], "bundle_directory_missing"
         names = sorted(p.name for p in folder.glob("*.json"))
-        plan_files = [n for n in names if n != "channel.json"]
-        channel = None
-        if "channel.json" in names:
-            try:
-                channel = read_json(folder / "channel.json")
-            except (Refuse, OSError, ValueError, UnicodeError) as exc:
-                channel = {"_unreadable": "%s" % exc}
-        plan = None
+        plan_files = [n for n in names if n not in BUNDLE_NON_PLAN_FILES]
+        bundle = {"plan": None, "channel": None, "switch_provenance": None}
+        for name, key in (("channel.json", "channel"),
+                          ("switch-provenance.json", "switch_provenance")):
+            if name in names:
+                try:
+                    bundle[key] = read_json(folder / name)
+                except (Refuse, OSError, ValueError, UnicodeError) as exc:
+                    bundle[key] = {"_unreadable": "%s" % exc}
         reason = "supplied"
         if len(plan_files) == 0:
             reason = "no_plan_file_in_the_bundle"
@@ -186,36 +670,30 @@ class Inputs:
             try:
                 plan = read_json(folder / plan_files[0])
                 if plan_files[0] != plan.get("plan", {}).get("plan_id", "") + ".json":
-                    # A plan whose file name disagrees with its own plan_id is not
-                    # a plan this evaluator will act on: the store binds the two.
                     plan, reason = None, "plan_file_name_does_not_match_plan_id"
+                bundle["plan"] = plan
             except (Refuse, OSError, ValueError, UnicodeError) as exc:
-                plan, reason = None, "plan_unreadable:%s" % exc
-        return {"plan": plan, "channel": channel}, names, reason
+                reason = "plan_unreadable:%s" % exc
+        return bundle, names, reason
 
     # -- convenience views ----------------------------------------------------
     def plan(self):
-        bundle = self.bundle or {}
-        plan = bundle.get("plan")
+        plan = (self.bundle or {}).get("plan")
         return plan if isinstance(plan, dict) else None
 
     def plan_body(self):
-        plan = self.plan()
-        body = plan.get("plan") if isinstance(plan, dict) else None
+        body = self.plan().get("plan") if isinstance(self.plan(), dict) else None
         return body if isinstance(body, dict) else None
 
-    def plan_candidate(self):
-        body = self.plan_body()
-        candidate = body.get("candidate") if isinstance(body, dict) else None
-        return candidate if isinstance(candidate, dict) else None
-
     def approval(self):
-        plan = self.plan()
-        value = plan.get("approval") if isinstance(plan, dict) else None
+        value = self.plan().get("approval") if isinstance(self.plan(), dict) else None
         return value if isinstance(value, dict) else None
 
     def channel(self):
         return (self.bundle or {}).get("channel")
+
+    def switch_provenance(self):
+        return (self.bundle or {}).get("switch_provenance")
 
     def verified_runtime(self):
         """The newest signature-verified VERIFY observation, or None."""
@@ -226,21 +704,34 @@ class Inputs:
         return value if isinstance(value, dict) else None
 
     def declared_runtime(self):
-        value = (self.cs.get("repository_runtime_pointer") or {}).get("value")
+        value = self.cs.get("repository_runtime_pointer") or {}
+        value = value.get("value")
         return value if isinstance(value, dict) else None
+
+    def runtime_pointer_file(self):
+        return self.runtime_pointer
 
     def test_pr_for(self, commit_sha):
         """The newest TEST_PR Task whose immutable commit SHA is this commit."""
-        matches = []
+        matches_ = []
         for task in self.state.get("tasks") or []:
             if not isinstance(task, dict) or task.get("action_id") != "HK_STAGING_TEST_PR":
                 continue
             source = ((task.get("parameters") or {}).get("source") or {})
             if source.get("commit_sha") == commit_sha:
-                matches.append(task)
-        if not matches:
+                matches_.append(task)
+        if not matches_:
             return None
-        return sorted(matches, key=lambda t: str(t.get("issued_at") or ""))[-1]
+        return sorted(matches_, key=lambda t: str(t.get("issued_at") or ""))[-1]
+
+    def bridge(self):
+        """(problems, detail) for the supplied bundle, computed once."""
+        if self._bridge is None:
+            if self.plan() is None:
+                self._bridge = (["no_plan_supplied"], {})
+            else:
+                self._bridge = bridge_bundle_problems(self.plan(), self.identities, self.at)
+        return self._bridge
 
 
 # --------------------------------------------------------------------------- #
@@ -248,20 +739,20 @@ class Inputs:
 # --------------------------------------------------------------------------- #
 def gate_approved_candidate(inputs):
     candidate = inputs.candidate
-    evidence = [str(inputs.go_source.get("canonical_candidate_pointer") or "-")]
     if candidate is None:
         return gate("APPROVED_CANDIDATE", "FAIL",
                     "no approved candidate is readable, so there is nothing to deploy: %s"
-                    % (inputs.candidate_error or "unknown"), evidence=evidence)
+                    % inputs.candidate_error,
+                    evidence=[inputs.go_source.get("canonical_candidate_pointer")])
     commit = candidate.get("source_commit")
     if not isinstance(commit, str) or not SHA40.fullmatch(commit):
         return gate("APPROVED_CANDIDATE", "FAIL",
-                    "the candidate pointer declares no usable source_commit", evidence=evidence)
+                    "the candidate pointer declares no usable source_commit",
+                    evidence=[inputs.go_source.get("canonical_candidate_pointer")])
     return gate("APPROVED_CANDIDATE", "PASS",
                 "an approved candidate exists at %s" % commit[:12],
                 observed={"source_commit": commit, "candidate_pr": candidate.get("candidate_pr"),
-                          "candidate_branch": candidate.get("candidate_branch")},
-                evidence=evidence)
+                          "candidate_branch": candidate.get("candidate_branch")})
 
 
 def gate_source_binding(inputs):
@@ -269,10 +760,9 @@ def gate_source_binding(inputs):
     if candidate is None:
         return gate("SOURCE_BINDING", "FAIL", "no readable candidate to bind")
     required = {"source_commit": SHA40, "application_git_tree": SHA40,
-                "previous_application_git_tree": SHA40, "source_tree_sha256": SHA64}
-    missing = []
-    observed = {}
-    for field, pattern in sorted(required.items()):
+                "source_tree_sha256": SHA64}
+    missing, observed = [], {}
+    for field, pattern in required.items():
         value = candidate.get(field)
         observed[field] = value
         if not isinstance(value, str) or not pattern.fullmatch(value):
@@ -287,38 +777,6 @@ def gate_source_binding(inputs):
                           "application_git_tree": candidate["application_git_tree"],
                           "source_tree_sha256": candidate["source_tree_sha256"]},
                 evidence=["docs/canonical-baseline/CURRENT_CANDIDATE.json"])
-
-
-def gate_deployment_plan(inputs):
-    bundle = inputs.bundle
-    if bundle is None:
-        return gate("DEPLOYMENT_PLAN", "UNKNOWN",
-                    "the approved plan store is a live Command Center fact and no read-only "
-                    "bundle was supplied, so no plan can be established")
-    if inputs.plan() is None:
-        return gate("DEPLOYMENT_PLAN", "FAIL",
-                    "a bundle was supplied but no usable plan is in it: %s" % inputs.bundle_error,
-                    evidence=inputs.bundle_files)
-    body = inputs.plan_body()
-    if body is None:
-        return gate("DEPLOYMENT_PLAN", "FAIL", "the plan bundle has no plan object",
-                    evidence=inputs.bundle_files)
-    problems = []
-    if body.get("environment") != ENVIRONMENT:
-        problems.append("environment")
-    if body.get("action_id") != DEPLOY_ACTION:
-        problems.append("action_id")
-    if not isinstance(body.get("plan_id"), str) or not IDENT.fullmatch(body["plan_id"]):
-        problems.append("plan_id")
-    if not isinstance(body.get("gates"), dict) or set(body["gates"]) != set(REQUIRED_PLAN_GATES):
-        problems.append("gates")
-    if problems:
-        return gate("DEPLOYMENT_PLAN", "FAIL",
-                    "the supplied plan is not a valid deploy plan: %s" % ", ".join(problems),
-                    observed={"plan_id": body.get("plan_id")}, evidence=inputs.bundle_files)
-    return gate("DEPLOYMENT_PLAN", "PASS",
-                "an approved deploy plan for %s was supplied read-only" % body["plan_id"],
-                observed={"plan_id": body["plan_id"]}, evidence=inputs.bundle_files)
 
 
 def gate_package_binding(inputs):
@@ -342,10 +800,7 @@ def gate_package_binding(inputs):
         mismatches.append("image_id")
     if not isinstance(repo_digest, str) or not REPO_DIGEST.fullmatch(repo_digest):
         mismatches.append("repo_digest")
-    elif isinstance(image_id, str) and not repo_digest.endswith(image_id):
-        # The existing Hong Kong contract requires the two to agree. Its own
-        # limit is recorded rather than worked around: a real image that does not
-        # satisfy it must be refused, never accommodated by inventing a digest.
+    elif isinstance(image_id, str) and not repo_digest.endswith(image_id[7:]):
         mismatches.append("repo_digest_suffix_must_equal_image_id")
     if mismatches:
         return gate("PACKAGE_BINDING", "FAIL",
@@ -356,6 +811,38 @@ def gate_package_binding(inputs):
                 observed={"image_id": image_id, "repo_digest": repo_digest})
 
 
+def gate_deployment_plan(inputs):
+    bundle = inputs.bundle
+    if bundle is None:
+        return gate("DEPLOYMENT_PLAN", "UNKNOWN",
+                    "the approved plan store is a live Command Center fact and no read-only "
+                    "bundle was supplied, so no plan can be established")
+    if inputs.plan() is None:
+        return gate("DEPLOYMENT_PLAN", "FAIL",
+                    "a bundle was supplied but no usable plan is in it: %s" % inputs.bundle_error,
+                    evidence=inputs.bundle_files)
+    body = inputs.plan_body()
+    if body is None:
+        return gate("DEPLOYMENT_PLAN", "FAIL", "the plan bundle has no plan object",
+                    evidence=inputs.bundle_files)
+    problems, detail = inputs.bridge()
+    plan_level = [p for p in problems if p in (
+        "bundle_fields", "plan_fields", "plan_scope", "plan_id", "fixed_topology_required",
+        "protected_non_targets_required", "forbidden_operation", "release_gate_fields",
+        "candidate_fields", "current_image") or p.startswith("release_gates_not_pass")
+        or p.startswith("candidate_")]
+    if plan_level:
+        return gate("DEPLOYMENT_PLAN", "FAIL",
+                    "the supplied plan would be refused by the live Bridge: %s"
+                    % ", ".join(plan_level),
+                    observed={"plan_id": body.get("plan_id")}, evidence=inputs.bundle_files)
+    return gate("DEPLOYMENT_PLAN", "PASS",
+                "an approved deploy plan for %s was supplied read-only and its own fields pass "
+                "the live Bridge's plan rules" % body["plan_id"],
+                observed={"plan_id": body["plan_id"], "deadline": detail.get("deadline")},
+                evidence=inputs.bundle_files)
+
+
 def gate_human_approval(inputs, at):
     body, approval = inputs.plan_body(), inputs.approval()
     if body is None:
@@ -364,35 +851,71 @@ def gate_human_approval(inputs, at):
     if approval is None:
         return gate("HUMAN_APPROVAL", "FAIL",
                     "the supplied plan carries no approval object", evidence=inputs.bundle_files)
-    problems = []
-    for field in ("approval_id", "approved_at", "expires_at"):
-        if not isinstance(approval.get(field), str) or not approval[field]:
-            problems.append(field)
-    if problems:
+    collisions = inputs.identities.collision()
+    if any("HUMAN_APPROVAL" in clash for clash in collisions):
         return gate("HUMAN_APPROVAL", "FAIL",
-                    "the approval is not well formed: %s" % ", ".join(problems),
+                    "the published identities give one key two roles (%s), so an approval cannot "
+                    "be told apart from a Task signature" % ", ".join(collisions),
+                    observed={"collisions": collisions,
+                              "approval_key": (inputs.identities.entries.get(ROLE_APPROVAL)
+                                               or {}).get("ssh_sha256")},
+                    evidence=[IDENTITY_CONTRACT])
+    if not inputs.identities.usable(ROLE_APPROVAL):
+        entry = inputs.identities.entries.get(ROLE_APPROVAL) or {}
+        return gate("HUMAN_APPROVAL", "FAIL",
+                    "no distinct Human Approval authority is published and usable: %s"
+                    % (entry.get("problem") or inputs.identities.problem or "unavailable"),
+                    observed={"approval_authority_binding": entry.get("binding")},
+                    evidence=[IDENTITY_CONTRACT])
+    key = inputs.identities.public_key(ROLE_APPROVAL)
+    ok, why = verify_signature(key, approval, "hex")
+    if not ok:
+        return gate("HUMAN_APPROVAL", "FAIL",
+                    "the approval's signature does not verify against the published Human "
+                    "Approval authority: %s" % (why or "invalid"),
                     evidence=inputs.bundle_files)
+    plan_sha = digest(body)
+    if approval.get("plan_sha256") != plan_sha:
+        return gate("HUMAN_APPROVAL", "FAIL",
+                    "the approval binds a different plan than the one supplied",
+                    observed={"approval_plan_sha256": approval.get("plan_sha256"),
+                              "plan_sha256": plan_sha}, evidence=inputs.bundle_files)
+    if approval.get("scope") != APPROVAL_SCOPE:
+        return gate("HUMAN_APPROVAL", "FAIL",
+                    "the approval's scope is not %s" % APPROVAL_SCOPE,
+                    observed={"scope": approval.get("scope")}, evidence=inputs.bundle_files)
     try:
+        approved = parse_time(approval["approved_at"], "approval_approved_at")
         expires = parse_time(approval["expires_at"], "approval_expires_at")
-        parse_time(approval["approved_at"], "approval_approved_at")
-    except Refuse as exc:
+    except (Refuse, KeyError) as exc:
         return gate("HUMAN_APPROVAL", "FAIL", "the approval's times are unusable: %s" % exc,
                     evidence=inputs.bundle_files)
-    if expires <= at:
-        return gate("HUMAN_APPROVAL", "FAIL", "the approval expired at %s" % approval["expires_at"],
-                    observed={"expires_at": approval["expires_at"], "as_of": iso(at)},
+    if approved > at or expires <= at + dt.timedelta(seconds=60):
+        return gate("HUMAN_APPROVAL", "FAIL", "the approval is not in force at %s" % iso(at),
+                    observed={"approved_at": iso(approved), "expires_at": iso(expires)},
                     evidence=inputs.bundle_files)
-    for field in ("source_commit", "application_git_tree"):
-        if isinstance(approval.get(field), str) and approval[field] != body.get(field):
+    if (expires - approved).total_seconds() > APPROVAL_MAX_WINDOW_SECONDS:
+        return gate("HUMAN_APPROVAL", "FAIL",
+                    "the approval window is longer than the %d s contract allows"
+                    % APPROVAL_MAX_WINDOW_SECONDS, evidence=inputs.bundle_files)
+    _, detail = inputs.bridge()
+    if "approved_at" in detail and detail.get("canary_checked_at"):
+        checks = [parse_time(detail["canary_checked_at"], "canary_checked_at")]
+        if detail.get("preflight_checked_at"):
+            checks.append(parse_time(detail["preflight_checked_at"], "preflight_checked_at"))
+        if approved < max(checks):
             return gate("HUMAN_APPROVAL", "FAIL",
-                        "the approval names a different %s than the plan" % field,
-                        observed={"approval": approval[field], "plan": body.get(field)},
+                        "the approval predates the evidence it is supposed to cover",
+                        observed={"approved_at": iso(approved),
+                                  "newest_proof_at": iso(max(checks))},
                         evidence=inputs.bundle_files)
     return gate("HUMAN_APPROVAL", "PASS",
-                "a well-formed approval %s is in force until %s"
-                % (approval["approval_id"], approval["expires_at"]),
+                "a signature-verified approval %s by a distinct approval authority is in force "
+                "until %s" % (approval["approval_id"], approval["expires_at"]),
                 observed={"approval_id": approval["approval_id"],
-                          "expires_at": approval["expires_at"]},
+                          "approved_by": approval.get("approved_by"),
+                          "expires_at": approval["expires_at"],
+                          "approval_authority": inputs.identities.entries[ROLE_APPROVAL]["ssh_sha256"]},
                 evidence=inputs.bundle_files)
 
 
@@ -441,6 +964,13 @@ def gate_verify(inputs):
         return gate("VERIFY", "FAIL",
                     "the verified live runtime is not the runtime the repository declares",
                     observed={"verified": verified.get("image_config_id"), "declared": declared})
+    if inputs.plan() is not None:
+        problems, _detail = inputs.bridge()
+        preflight = [p for p in problems if p.startswith("preflight_")]
+        if preflight:
+            return gate("VERIFY", "FAIL",
+                        "the plan's own preflight VERIFY proof would be refused by the live "
+                        "Bridge: %s" % ", ".join(preflight), evidence=inputs.bundle_files)
     return gate("VERIFY", "PASS",
                 "the live runtime is established by signature-verified Evidence inside its window",
                 observed={"image_config_id": verified.get("image_config_id"),
@@ -504,21 +1034,117 @@ def gate_live_switch(inputs):
                           "allowed_environment": channel.get("allowed_environment")})
 
 
+def gate_live_switch_provenance(inputs):
+    """A switch that is on is only usable if somebody was entitled to turn it on.
+
+    The record must be signed by the distinct Human Approval authority. A record
+    that merely asserts itself, or that was signed by the Task signer, proves
+    nothing: the whole point is that the party who can create work is not the
+    party who authorised the switch.
+    """
+    channel = inputs.channel()
+    enabled = channel.get("deployment_requests_enabled") if isinstance(channel, dict) else None
+    record = inputs.switch_provenance()
+    if record is None:
+        if enabled is True:
+            return gate("LIVE_SWITCH_PROVENANCE", "UNKNOWN",
+                        "the DEPLOY request switch is on and no change record was supplied, so "
+                        "the authority for the switch being on is not established",
+                        observed={"deployment_requests_enabled": True})
+        return gate("LIVE_SWITCH_PROVENANCE", "UNKNOWN",
+                    "no switch change record was supplied, so the switch's authorisation state "
+                    "is not established")
+    if isinstance(record, dict) and "_unreadable" in record:
+        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                    "the supplied switch change record is unreadable: %s" % record["_unreadable"])
+    fields = ("schema_version", "field", "value", "changed_at", "change_record",
+              "approved_by", "approval_id", "valid_from", "valid_until",
+              "before_sha256", "after_sha256", "signature")
+    try:
+        exact_set(record, fields, "switch_provenance_fields")
+    except Refuse as exc:
+        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                    "the switch change record is not well formed: %s" % exc,
+                    observed={"fields": sorted(record) if isinstance(record, dict) else None})
+    if record["field"] != "deployment_requests_enabled":
+        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                    "the change record names a different field: %s" % record["field"])
+    if record["value"] is not enabled:
+        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                    "the change record's value disagrees with the live channel configuration",
+                    observed={"record": record["value"], "live": enabled})
+    for name in ("before_sha256", "after_sha256"):
+        if not isinstance(record[name], str) or not SHA64.fullmatch(record[name]):
+            return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                        "the change record's %s is not a sha256" % name)
+    if not isinstance(record["change_record"], str) or not record["change_record"]:
+        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                    "the change record names no change_record to trace it to")
+    try:
+        changed = parse_time(record["changed_at"], "changed_at")
+        valid_from = parse_time(record["valid_from"], "valid_from")
+        valid_until = parse_time(record["valid_until"], "valid_until")
+    except Refuse as exc:
+        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                    "the change record's times are unusable: %s" % exc)
+    if not valid_from <= changed <= valid_until:
+        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                    "the switch was changed outside the window the record declares",
+                    observed={"changed_at": iso(changed), "valid_from": iso(valid_from),
+                              "valid_until": iso(valid_until)})
+    if inputs.at > valid_until:
+        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                    "the window that authorised the switch has closed",
+                    observed={"valid_until": iso(valid_until), "as_of": iso(inputs.at)})
+    collisions = inputs.identities.collision()
+    if any("HUMAN_APPROVAL" in clash for clash in collisions):
+        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                    "the published identities give one key two roles (%s), so a switch change "
+                    "signed by the Task signer would be indistinguishable from an authorised one"
+                    % ", ".join(collisions), observed={"collisions": collisions},
+                    evidence=[IDENTITY_CONTRACT])
+    if not inputs.identities.usable(ROLE_APPROVAL):
+        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                    "no distinct Human Approval authority is published, so the change record "
+                    "cannot be attributed to an approver",
+                    evidence=[IDENTITY_CONTRACT])
+    ok, why = verify_signature(inputs.identities.public_key(ROLE_APPROVAL), record, "hex")
+    if not ok:
+        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
+                    "the change record's signature does not verify against the published Human "
+                    "Approval authority: %s" % (why or "invalid"))
+    return gate("LIVE_SWITCH_PROVENANCE", "PASS",
+                "the switch state is covered by a change record signed by the distinct Human "
+                "Approval authority %s" % record["approval_id"],
+                observed={"change_record": record["change_record"],
+                          "changed_at": iso(changed), "value": record["value"],
+                          "approved_by": record["approved_by"],
+                          "signed_by": inputs.identities.entries[ROLE_APPROVAL]["ssh_sha256"]},
+                evidence=inputs.bundle_files)
+
+
 def gate_canary(inputs):
+    """The canary is only proven when the proof itself verifies.
+
+    The declaration in the plan is not evidence: the digests it carries are only
+    meaningful if the objects they name verify under the published identities,
+    bind to this candidate, and completed inside the canary window.
+    """
     body = inputs.plan_body()
     if body is None:
         return gate("CANARY", "UNKNOWN", "no plan was supplied, so its canary declaration is unknown")
-    problems = [f for f in ("canary_task_sha256", "canary_evidence_sha256")
-                if not isinstance(body.get(f), str) or not SHA64.fullmatch(str(body.get(f)))]
-    if problems:
+    problems, _detail = inputs.bridge()
+    canary = [p for p in problems if p.startswith("canary_")]
+    hash_binding = [p for p in problems if p.startswith("proof_hash_binding_")]
+    if canary or hash_binding:
         return gate("CANARY", "FAIL",
-                    "the plan declares no usable canary binding: %s" % ", ".join(problems))
+                    "the plan's canary proof does not establish a fresh successful canary: %s"
+                    % ", ".join(canary + hash_binding), evidence=inputs.bundle_files)
     return gate("CANARY", "PASS",
-                "the plan declares canary task and evidence digests. They are signed reviewer "
-                "declarations over a canonical form this evaluator does not re-derive, so the "
-                "declaration is reported and not re-computed",
-                observed={"canary_task_sha256": body["canary_task_sha256"],
-                          "canary_evidence_sha256": body["canary_evidence_sha256"]})
+                "a signature-verified canary proof bound to this candidate is inside its window",
+                observed={"canary_task_sha256": body.get("canary_task_sha256"),
+                          "canary_evidence_sha256": body.get("canary_evidence_sha256")},
+                evidence=inputs.bundle_files)
 
 
 def gate_release_gates(inputs):
@@ -535,6 +1161,28 @@ def gate_release_gates(inputs):
                 observed=declared)
 
 
+def gate_bridge_acceptance(inputs):
+    """The invariant: readiness may never say YES while the live gate would refuse.
+
+    This gate re-runs the live Bridge's own bundle rules over the same inputs. It
+    is the reason a YES verdict can be read as "the request would be accepted",
+    and it names the exact rule that would refuse otherwise.
+    """
+    if inputs.plan() is None:
+        return gate("BRIDGE_ACCEPTANCE", "UNKNOWN",
+                    "no plan bundle was supplied, so the live Bridge's acceptance decision "
+                    "cannot be re-derived")
+    problems, _detail = inputs.bridge()
+    if problems:
+        return gate("BRIDGE_ACCEPTANCE", "FAIL",
+                    "the live Bridge would deterministically refuse this request: %s"
+                    % ", ".join(problems), evidence=inputs.bundle_files)
+    return gate("BRIDGE_ACCEPTANCE", "PASS",
+                "the live Bridge's own bundle rules accept this request as far as this evaluator "
+                "can re-derive them offline",
+                evidence=inputs.bundle_files)
+
+
 # --------------------------------------------------------------------------- #
 # the document
 # --------------------------------------------------------------------------- #
@@ -543,8 +1191,9 @@ def evaluate(control_state, go_repo, bundle_dir, at, generated_at):
     gates = [gate_approved_candidate(inputs), gate_source_binding(inputs),
              gate_package_binding(inputs), gate_deployment_plan(inputs),
              gate_human_approval(inputs, at), gate_test_pr(inputs), gate_verify(inputs),
-             gate_current_runtime(inputs), gate_live_switch(inputs), gate_canary(inputs),
-             gate_release_gates(inputs)]
+             gate_current_runtime(inputs), gate_live_switch(inputs),
+             gate_live_switch_provenance(inputs), gate_canary(inputs),
+             gate_release_gates(inputs), gate_bridge_acceptance(inputs)]
     order = {name: index for index, name in enumerate(MANDATORY_GATES + ADVISORY_GATES)}
     gates.sort(key=lambda g: order[g["gate"]])
 
@@ -595,6 +1244,7 @@ def evaluate(control_state, go_repo, bundle_dir, at, generated_at):
                                    "note": ("live Command Center facts are read only from this "
                                             "operator-supplied bundle; the evaluator never contacts "
                                             "a host")}},
+        "identity": inputs.identities.report(),
         "gates": gates,
         "blocking_reasons": blocking,
         "advisory_holds": advisories,
@@ -607,14 +1257,24 @@ def evaluate(control_state, go_repo, bundle_dir, at, generated_at):
             "thing in this document that can carry one.",
             "UNKNOWN is a first-class answer: a mandatory gate nobody could establish keeps the "
             "verdict out of YES rather than being rounded up.",
-            "Advisory gates that did not PASS are listed in advisory_holds. They cannot change "
-            "the verdict and they are not omitted either.",
+            "Every gate is mandatory. CANARY and RELEASE_GATES block the verdict because the "
+            "live Bridge blocks on them: a readiness verdict that could say YES while the "
+            "request would be refused is worse than no verdict.",
+            "BRIDGE_ACCEPTANCE re-runs the live Bridge's own bundle rules. It exists so that YES "
+            "means 'the request would be accepted', and it names the rule that would refuse "
+            "otherwise.",
+            "The Human Approval authority must be a different key from the Task signer. If the "
+            "published identities express one key in both roles, no approval is reported as "
+            "proven.",
             "Nothing here creates, signs or publishes a Task, and nothing here can open the "
             "request switch.",
         ],
     }
 
 
+# --------------------------------------------------------------------------- #
+# selftest / CLI
+# --------------------------------------------------------------------------- #
 def run_selftest():
     """The evaluator's own rules, on synthetic inputs, with no live contact."""
     import tempfile
@@ -636,6 +1296,8 @@ def run_selftest():
     check("contract_agrees_on_which_gates_block",
           all(contract["x-go-gates"][g]["mandatory"] is (g in MANDATORY_GATES)
               for g in MANDATORY_GATES + ADVISORY_GATES))
+    check("every_gate_is_mandatory", ADVISORY_GATES == ()
+          and all(contract["x-go-gates"][g]["mandatory"] is True for g in MANDATORY_GATES))
     check("no_boundary_flag_is_true_except_reading",
           sum(1 for k, v in AUTHORITY_BOUNDARY.items() if v) == 1
           and AUTHORITY_BOUNDARY["may_read_live_command_center_state"] is True)
@@ -659,106 +1321,94 @@ def run_selftest():
                                "canonical_candidate_pointer":
                                    "docs/canonical-baseline/CURRENT_CANDIDATE.json",
                                "canonical_runtime_pointer":
-                                   "docs/canonical-baseline/CURRENT_HK_RUNTIME.json"}},
+                                   "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+                               "head_sha": "0" * 40}},
             "freshness": {"live_verification_window_seconds": 86400},
             "control_state": {
                 "live_verified_runtime": {"state": "PROVEN", "value": {
                     "image_config_id": "sha256:" + "e" * 64, "age_seconds": 60,
-                    "verified_at": "2026-09-15T00:00:00Z"}},
+                    "verified_at": "2026-09-15T00:30:00Z"}},
                 "repository_runtime_pointer": {"value": {"image_config_id": "sha256:" + "e" * 64}},
                 "runtime_verification_state": "MATCH"},
             "tasks": [{"task_id": "synthetic-test-pr", "action_id": "HK_STAGING_TEST_PR",
-                       "issued_at": "2026-09-15T00:00:00Z", "lifecycle": "COMPLETE",
+                       "issued_at": "2026-09-15T00:10:00Z", "lifecycle": "COMPLETE",
                        "parameters": {"source": {"commit_sha": commit}},
-                       "evidence": {"status": "SUCCESS", "source": {"path": "evidence/x.json"}}}]}
-        (root / "state.json").write_text(json.dumps(state), encoding="utf-8")
+                       "evidence": {"status": "SUCCESS", "source": {"path": "evidence/t.json"}}}]}
+        state_path = root / "CURRENT_CONTROL_STATE.json"
+        state_path.write_text(json.dumps(state), encoding="utf-8")
 
-        at = parse_time("2026-09-15T01:00:00Z")
-        bare = evaluate(root / "state.json", root / "GO", None, at, at)
-        check("without_a_bundle_the_live_gates_are_unknown",
-              bare["verdict"]["deploy_ready"] == "UNKNOWN", bare["verdict"])
-        check("absent_live_facts_are_never_YES",
-              set(bare["verdict"]["unknown"]) == {"PACKAGE_BINDING", "DEPLOYMENT_PLAN",
-                                                  "HUMAN_APPROVAL", "CURRENT_RUNTIME",
-                                                  "LIVE_SWITCH"}, bare["verdict"])
-        check("observable_gates_still_pass", bare["verdict"]["failed"] == [], bare["verdict"])
-        check("every_non_pass_gate_has_a_reason",
-              all(b["reason"] for b in bare["blocking_reasons"]), bare["blocking_reasons"])
-        check("the_document_never_claims_authority",
-              not any(v for k, v in bare["authority_boundary"].items()
-                      if k != "may_read_live_command_center_state"))
-        check("rollback_readiness_is_out_of_scope",
-              bare["not_evaluated"]["rollback_readiness"] == "NOT_IN_SCOPE")
+        at = dt.datetime(2026, 9, 15, 1, 0, 0, tzinfo=dt.timezone.utc)
+        generated = at + dt.timedelta(seconds=1)
 
-        bundle = root / "live"
-        bundle.mkdir()
-        (bundle / "approval-plan.json").write_text(json.dumps({"plan": {
-            "schema_version": "1", "plan_id": "approval-plan", "environment": ENVIRONMENT,
-            "action_id": DEPLOY_ACTION, "source_commit": commit,
-            "application_git_tree": "b" * 40,
-            "candidate": {"source_commit": commit, "application_git_tree": "b" * 40,
-                          "source_tree_sha256": "d" * 64, "image_id": "sha256:" + "f" * 64,
-                          "repo_digest": "go-hotel@sha256:" + "f" * 64},
-            "expected_current_image_id": "sha256:" + "e" * 64,
-            "canary_task_sha256": "1" * 64, "canary_evidence_sha256": "2" * 64,
-            "gates": {k: "PASS" for k in REQUIRED_PLAN_GATES}},
-            "approval": {"approval_id": "approval-1", "approved_at": "2026-09-15T00:00:00Z",
-                         "expires_at": "2026-09-16T00:00:00Z"}}), encoding="utf-8")
-        (bundle / "channel.json").write_text(json.dumps(
-            {"deployment_requests_enabled": True, "publish_enabled": True,
-             "allowed_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", DEPLOY_ACTION],
-             "allowed_environment": ENVIRONMENT}), encoding="utf-8")
-        full = evaluate(root / "state.json", root / "GO", bundle, at, at)
-        check("a_complete_bundle_reaches_YES", full["verdict"]["deploy_ready"] == "YES",
-              full["verdict"])
-        check("YES_carries_no_blocking_reason", full["blocking_reasons"] == [])
-        check("advisory_gates_are_reported",
-              {g["gate"] for g in full["gates"]} == set(MANDATORY_GATES) | set(ADVISORY_GATES))
+        absent = root / "no-bundle"
+        absent.mkdir()
+        document = evaluate(state_path, None, None, at, generated)
+        check("no_input_still_produces_a_document", document["contract"] == CONTRACT_NAME)
+        check("no_input_is_never_yes", document["verdict"]["deploy_ready"] != "YES")
+        check("no_repository_makes_the_candidate_unreadable",
+              "APPROVED_CANDIDATE" in document["verdict"]["failed"])
+        document = evaluate(state_path, root / "GO", None, at, generated)
+        check("candidate_read_without_a_bundle_is_unknown_not_no",
+              document["verdict"]["deploy_ready"] == "UNKNOWN"
+              and document["verdict"]["failed"] == [],
+              document["verdict"])
+        check("every_gate_is_reported", len(document["gates"]) == len(MANDATORY_GATES))
+        check("identity_absent_is_declared",
+              document["identity"]["approval_authority_published"] is False)
+        check("canary_blocks_when_unknown", "CANARY" in document["verdict"]["unknown"])
 
-        (bundle / "channel.json").write_text(json.dumps(
-            {"deployment_requests_enabled": False, "publish_enabled": True,
-             "allowed_actions": [DEPLOY_ACTION], "allowed_environment": ENVIRONMENT}),
+        channel_only = root / "channel-only"
+        channel_only.mkdir()
+        (channel_only / "channel.json").write_text(json.dumps(
+            {"version": 4, "mode": "PERSISTENT", "publish_enabled": True,
+             "allowed_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY"],
+             "allowed_environment": ENVIRONMENT, "deployment_requests_enabled": True}),
             encoding="utf-8")
-        closed = evaluate(root / "state.json", root / "GO", bundle, at, at)
-        check("a_closed_switch_is_NO", closed["verdict"]["deploy_ready"] == "NO", closed["verdict"])
-        check("the_switch_reason_is_concrete",
-              "deployment_requests_disabled" in json.dumps(closed["blocking_reasons"]))
+        document = evaluate(state_path, None, channel_only, at, generated)
+        switch = [g for g in document["gates"] if g["gate"] == "LIVE_SWITCH"][0]
+        provenance = [g for g in document["gates"] if g["gate"] == "LIVE_SWITCH_PROVENANCE"][0]
+        check("a_switch_on_without_a_record_is_unknown", switch["state"] == "PASS"
+              and provenance["state"] == "UNKNOWN")
+        check("an_unproven_switch_can_never_be_yes",
+              document["verdict"]["deploy_ready"] != "YES")
 
-    print("\nselftest: %s" % ("PASS" if not failures else "FAIL %s" % failures))
-    return 0 if not failures else 1
+    if failures:
+        print("SELFTEST FAILED: %s" % ", ".join(failures))
+        return 1
+    print("SELFTEST PASS")
+    return 0
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
-def main(argv=None):
+def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("command", choices=["evaluate", "selftest"])
     parser.add_argument("--control-state", help="the derived CURRENT_CONTROL_STATE.json")
     parser.add_argument("--go-repo", help="a GO checkout holding the canonical pointer files")
     parser.add_argument("--live-bundle",
-                        help="optional read-only directory of live-host facts (plan + channel)")
+                        help="operator-supplied read-only directory of live-host facts "
+                             "(plan bundle, channel.json, switch-provenance.json)")
     parser.add_argument("--out", help="directory to write DEPLOY_READINESS.json into")
     parser.add_argument("--now", help="the instant to evaluate at, so the output is reproducible")
-    args = parser.parse_args(argv)
-
+    args = parser.parse_args()
     if args.command == "selftest":
         return run_selftest()
     if not args.control_state or not args.out:
-        parser.error("evaluate requires --control-state and --out")
-    at = parse_time(args.now, "now") if args.now else dt.datetime.now(dt.timezone.utc)
+        parser.exit(2, "evaluate requires --control-state and --out\n")
+    at = (parse_time(args.now, "now") if args.now
+          else dt.datetime.now(dt.timezone.utc))
+    generated_at = dt.datetime.now(dt.timezone.utc)
     try:
-        document = evaluate(args.control_state, args.go_repo, args.live_bundle, at,
-                            dt.datetime.now(dt.timezone.utc))
+        document = evaluate(args.control_state, args.go_repo, args.live_bundle, at, generated_at)
     except Refuse as exc:
-        print("REFUSED=%s" % exc)
-        return 2
+        parser.exit(3, "REFUSED: %s\n" % exc)
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    (out / OUTPUT_NAME).write_bytes(canonical(document) + b"\n")
+    (out / OUTPUT_NAME).write_text(json.dumps(document, indent=2, sort_keys=True) + "\n",
+                                   encoding="utf-8", newline="\n")
+    blocking = ",".join(entry["gate"] for entry in document["blocking_reasons"])
     print("DEPLOY_READY=%s" % document["verdict"]["deploy_ready"])
-    print("BLOCKING=%s" % ",".join(b["gate"] for b in document["blocking_reasons"]) or "NONE")
-    print("ADVISORY=%s" % ",".join(a["gate"] for a in document["advisory_holds"]) or "NONE")
+    print("BLOCKING=%s" % (blocking or "none"))
+    print("ADVISORY=%s" % (",".join(document["verdict"]["advisory_failed"]) or "none"))
     print("OUT=%s" % (out / OUTPUT_NAME))
     return 0
 

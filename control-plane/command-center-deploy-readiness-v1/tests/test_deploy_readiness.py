@@ -1,26 +1,38 @@
 """Isolated tests for the read-only Deploy Readiness evaluator (CC V1-06 / #101).
 
-Standard library only. No network, no Git, no subprocess, no runtime credential
-or state path, no live Control Plane or Hong Kong contact.
+This revision exists because the first one could report YES while the live Boss
+Request Bridge would deterministically refuse the same request: CANARY and
+RELEASE_GATES were advisory, and the canary declaration was reported rather than
+re-derived. The rules pinned here are therefore:
 
-The three rules the issue states are pinned here as tests rather than as prose:
+  * every mandatory gate PASSes              -> YES
+  * any mandatory gate FAILs                 -> NO
+  * a live fact nobody can prove             -> UNKNOWN, never an inferred yes
+  * YES may never be reported while the live Bridge would refuse the same plan
+  * a switch that is on without a record signed by a distinct approval authority
+    is never PROVEN
+  * a readiness verdict authorises nothing
 
-  * every gate satisfied            -> YES
-  * any mandatory gate missing/fails -> NO
-  * a live fact nobody can prove     -> UNKNOWN, never an inferred yes
-
-and one more that matters just as much: a readiness verdict authorises nothing.
+Standard library plus `cryptography` for the Ed25519 fixtures. No network, no
+Git, no subprocess, no runtime credential or state path, no live contact.
 """
-import datetime as dt
+import base64
+import hashlib
 import importlib.machinery
 import importlib.util
 import json
 import pathlib
+import re
 import sys
 import tempfile
 import unittest
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+REPO = ROOT.parent
+BOSS = REPO / "boss-deploy-request-v1"
 sys.path.insert(0, str(ROOT))
 
 loader = importlib.machinery.SourceFileLoader(
@@ -33,402 +45,635 @@ CONTRACT = ROOT / R.CONTRACT_FILE
 AT = R.parse_time("2026-09-15T01:00:00Z")
 COMMIT = "a" * 40
 TREE = "b" * 40
-PREV = "c" * 40
 SOURCE_TREE = "d" * 64
 CURRENT_IMAGE = "sha256:" + "e" * 64
 CANDIDATE_IMAGE = "sha256:" + "f" * 64
+CANDIDATE_DIGEST = "go-hotel@" + CANDIDATE_IMAGE
+CHANNEL_SHA = "1" * 64
+PREV_CHANNEL_SHA = "2" * 64
+PROOF_OBJECTS = ("canary_task", "canary_evidence", "preflight_task", "preflight_evidence")
 
 
 def gate_of(document, name):
     return [g for g in document["gates"] if g["gate"] == name][0]
 
 
+def keypair():
+    """A private key plus the exact Openssh public-key line it publishes."""
+    private = Ed25519PrivateKey.generate()
+    raw = private.public_key().public_bytes(serialization.Encoding.Raw,
+                                            serialization.PublicFormat.Raw)
+    prefix = b"ssh-ed25519"
+    blob = (len(prefix).to_bytes(4, "big") + prefix
+            + len(raw).to_bytes(4, "big") + raw)
+    line = b"ssh-ed25519 " + base64.b64encode(blob) + b"\n"
+    ssh_sha = "SHA256:" + base64.b64encode(hashlib.sha256(blob).digest()).decode().rstrip("=")
+    return {"private": private, "line": line, "ssh_sha256": ssh_sha,
+            "file_sha256": hashlib.sha256(line).hexdigest()}
+
+
+def sign_hex(private, value):
+    unsigned = {k: v for k, v in value.items() if k != "signature"}
+    return dict(unsigned, signature=private.sign(R.canonical(unsigned)).hex())
+
+
+def sign_b64(private, value):
+    unsigned = {k: v for k, v in value.items() if k != "signature"}
+    return dict(unsigned, signature=base64.b64encode(
+        private.sign(R.canonical(unsigned))).decode("ascii"))
+
+
 def candidate_pointer(**over):
     value = {"schema": "go.depth48.current-candidate.v1", "source_commit": COMMIT,
-             "application_git_tree": TREE, "previous_application_git_tree": PREV,
+             "application_git_tree": TREE, "previous_application_git_tree": "c" * 40,
              "source_tree_sha256": SOURCE_TREE, "candidate_pr": 52, "candidate_branch": "main"}
     value.update(over)
     return value
 
 
-def plan_bundle(**over):
-    plan = {"schema_version": "1", "plan_id": "release-one", "environment": R.ENVIRONMENT,
-            "action_id": R.DEPLOY_ACTION, "source_commit": COMMIT, "application_git_tree": TREE,
-            "candidate": {"source_commit": COMMIT, "application_git_tree": TREE,
-                          "source_tree_sha256": SOURCE_TREE, "image_id": CANDIDATE_IMAGE,
-                          "repo_digest": "go-hotel@" + CANDIDATE_IMAGE},
-            "expected_current_image_id": CURRENT_IMAGE,
-            "canary_task_sha256": "1" * 64, "canary_evidence_sha256": "2" * 64,
-            "gates": {name: "PASS" for name in R.REQUIRED_PLAN_GATES}}
-    approval = {"approval_id": "approval-one", "approved_at": "2026-09-15T00:00:00Z",
-                "expires_at": "2026-09-16T00:00:00Z"}
-    plan.update(over.pop("plan", {}))
-    approval.update(over.pop("approval", {}))
-    return {"plan": plan, "approval": approval}
-
-
 def channel(**over):
-    value = {"deployment_requests_enabled": True, "publish_enabled": True,
+    value = {"version": 4, "mode": "PERSISTENT", "publish_enabled": True,
              "allowed_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", R.DEPLOY_ACTION],
-             "allowed_environment": R.ENVIRONMENT}
+             "allowed_environment": R.ENVIRONMENT, "deployment_requests_enabled": True}
     value.update(over)
     return value
 
 
 def control_state(**over):
-    state = {
+    value = {
         "schema_version": "1", "contract": R.STATE_CONTRACT,
         "sources": {"go": {"repository": "yuguangzhi3836-glitch/GO",
-                           "head_sha": "0" * 40,
                            "canonical_candidate_pointer":
                                "docs/canonical-baseline/CURRENT_CANDIDATE.json",
                            "canonical_runtime_pointer":
-                               "docs/canonical-baseline/CURRENT_HK_RUNTIME.json"}},
+                               "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+                           "head_sha": "0" * 40}},
         "freshness": {"live_verification_window_seconds": 86400},
         "control_state": {
             "live_verified_runtime": {"state": "PROVEN", "value": {
                 "image_config_id": CURRENT_IMAGE, "age_seconds": 60,
                 "verified_at": "2026-09-15T00:30:00Z"}},
-            "repository_runtime_pointer": {"value": {"image_config_id": CURRENT_IMAGE}},
+            "repository_runtime_pointer": {"value": {"image_config_id": CURRENT_IMAGE,
+                                                     "image_tag": "synthetic"}},
             "runtime_verification_state": "MATCH"},
-        "tasks": [{"task_id": "synthetic-test-pr", "action_id": "HK_STAGING_TEST_PR",
+        "tasks": [{"task_id": "go-boss-test-pr-52-synthetic", "action_id": "HK_STAGING_TEST_PR",
                    "issued_at": "2026-09-15T00:10:00Z", "lifecycle": "COMPLETE",
                    "parameters": {"source": {"commit_sha": COMMIT}},
-                   "evidence": {"status": "SUCCESS", "source": {"path": "evidence/t.json"}}}]}
-    state.update(over)
-    return state
+                   "evidence": {"status": "SUCCESS",
+                                "source": {"path": "evidence/synthetic.json"}}}]}
+    value.update(over)
+    return value
+
+
+def proof_pair(keys, action, executor_result, gate_names, parameters):
+    """One signed task plus the signed evidence it binds to."""
+    task = {"schema_version": "1", "task_id": "go-%s-synthetic" % action.lower(),
+            "nonce": "nonce-%s" % action.lower(), "issued_at": "2026-09-15T00:50:00Z",
+            "expires_at": "2026-09-15T01:10:00Z", "authority": R.TASK_AUTHORITY,
+            "environment": R.ENVIRONMENT, "action_id": action, "parameters": parameters}
+    task = sign_hex(keys["task"]["private"], task)
+    evidence = {"schema_version": "1", "status": "SUCCESS", "executor_result": executor_result,
+                "task_id": task["task_id"], "nonce": task["nonce"], "action_id": action,
+                "environment": R.ENVIRONMENT, "started_at": "2026-09-15T00:56:00Z",
+                "completed_at": "2026-09-15T00:58:00Z",
+                "gate_results": {name: "PASS" for name in gate_names}}
+    for field in ("release_id", "candidate_image_id", "expected_current_image_id",
+                  "candidate_repo_digest"):
+        if field in parameters:
+            evidence[field] = parameters[field]
+    return task, sign_b64(keys["evidence"]["private"], evidence)
+
+
+def plan_bundle(keys, **over):
+    canary_task, canary_evidence = proof_pair(
+        keys, "HK_STAGING_CANARY", "CANARY_OK", R.CANARY_GATES,
+        {"release_id": "canary-release-1", "candidate_image_id": CANDIDATE_IMAGE,
+         "candidate_repo_digest": CANDIDATE_DIGEST,
+         "expected_current_image_id": CURRENT_IMAGE})
+    preflight_task, preflight_evidence = proof_pair(
+        keys, "HK_STAGING_VERIFY", "VERIFY_OK", R.VERIFY_GATES,
+        {"release_id": "preflight-release-1", "candidate_image_id": CURRENT_IMAGE,
+         "expected_current_image_id": CURRENT_IMAGE})
+    plan = {"schema_version": "1", "plan_id": "release-one", "environment": R.ENVIRONMENT,
+            "action_id": R.DEPLOY_ACTION,
+            "candidate": {"repository": R.CANDIDATE_REPOSITORY, "source_commit": COMMIT,
+                          "application_git_tree": TREE, "source_tree_sha256": SOURCE_TREE,
+                          "package_sha256": "9" * 64, "image_id": CANDIDATE_IMAGE,
+                          "repo_digest": CANDIDATE_DIGEST},
+            "expected_current_image_id": CURRENT_IMAGE,
+            "target_services": list(R.SERVICES),
+            "protected_non_targets": list(R.PROTECTED_NON_TARGETS),
+            "migration": False, "production": False, "automatic_rollback": False,
+            "gates": {name: "PASS" for name in R.REQUIRED_PLAN_GATES},
+            "canary_task_sha256": R.digest(canary_task),
+            "canary_evidence_sha256": R.digest(canary_evidence),
+            "preflight_task_sha256": R.digest(preflight_task),
+            "preflight_evidence_sha256": R.digest(preflight_evidence)}
+    approval = {"schema_version": "1", "approval_id": "approval-synthetic-1",
+                "approved_by": "eason-13490", "approved_at": "2026-09-15T00:58:30Z",
+                "expires_at": "2026-09-15T01:05:00Z", "scope": R.APPROVAL_SCOPE,
+                "plan_sha256": R.digest(plan)}
+    approval = sign_hex(keys["approval"]["private"], approval)
+    bundle = {"plan": plan, "approval": approval, "canary_task": canary_task,
+              "canary_evidence": canary_evidence, "preflight_task": preflight_task,
+              "preflight_evidence": preflight_evidence}
+    bundle.update(over)
+    return bundle
+
+
+def switch_provenance(keys, **over):
+    record = {"schema_version": "1", "field": "deployment_requests_enabled", "value": True,
+              "changed_at": "2026-09-15T00:59:00Z", "change_record": "CC-CHANGE-SYNTHETIC-1",
+              "approved_by": "eason-13490", "approval_id": "approval-synthetic-1",
+              "valid_from": "2026-09-15T00:58:00Z", "valid_until": "2026-09-15T01:30:00Z",
+              "before_sha256": PREV_CHANNEL_SHA, "after_sha256": CHANNEL_SHA}
+    record.update(over)
+    return sign_hex(keys["approval"]["private"], record)
 
 
 class Fixture:
-    """A synthetic GO checkout, a derived state document and an optional bundle."""
+    """A synthetic GO checkout, control state and operator bundle.
 
-    def __init__(self, state=None, candidate=None, runtime=None, plan=None, channel_value=None,
-                 plan_name=None):
+    Unless `rebind` is off, the plan's proof digests and the approval's plan
+    digest are recomputed over the final objects and the approval is re-signed.
+    That is what an honest operator does, and it keeps each test expressing one
+    intended fault instead of an accidental digest mismatch.
+    """
+
+    def __init__(self, collide_approval_with_task=False, omit_approval_key=False,
+                 approval_signed_by_task=False, bundle=True, plan=True,
+                 channel_value=True, provenance=True, rebind=True, mutate=None,
+                 provenance_record=None, **overrides):
         self.root = pathlib.Path(tempfile.mkdtemp(prefix="ccv106-"))
-        go = self.root / "GO" / "docs" / "canonical-baseline"
-        go.mkdir(parents=True)
-        (go / "CURRENT_CANDIDATE.json").write_text(
-            json.dumps(candidate if candidate is not None else candidate_pointer()),
+        self.go = self.root / "GO"
+        component = self.go / R.STATE_COMPONENT
+        (component / "identity" / "keys").mkdir(parents=True)
+        (self.go / "docs" / "canonical-baseline").mkdir(parents=True)
+        self.keys = {"task": keypair(), "evidence": keypair(), "approval": keypair()}
+        if collide_approval_with_task:
+            self.keys["approval"] = self.keys["task"]
+        for role, key in self.keys.items():
+            (component / "identity" / "keys" / ("%s.pub" % role)).write_bytes(key["line"])
+        roles = {"task": R.ROLE_TASK, "evidence": R.ROLE_EVIDENCE, "approval": R.ROLE_APPROVAL}
+        names = {"task": "GO-CC-TASK-MANIFEST-SIGNER", "evidence": "HK-AGENT-EVIDENCE-SIGNER",
+                 "approval": R.APPROVAL_AUTHORITY_ID}
+        identities = [{"identity_id": names[role], "role": roles[role],
+                       "public_key_path": "identity/keys/%s.pub" % role,
+                       "public_key_file_sha256": self.keys[role]["file_sha256"],
+                       "public_key_ssh_sha256": self.keys[role]["ssh_sha256"]}
+                      for role in ("task", "evidence", "approval")
+                      if not (role == "approval" and omit_approval_key)]
+        (component / "identity" / "VERIFIER_IDENTITIES_V1.json").write_text(
+            json.dumps({"schema_version": "1", "contract": "VERIFIER_IDENTITIES_V1",
+                        "identities": identities}), encoding="utf-8")
+        (self.go / "docs" / "canonical-baseline" / "CURRENT_CANDIDATE.json").write_text(
+            json.dumps(candidate_pointer(**overrides.get("candidate", {}))), encoding="utf-8")
+        (self.go / "docs" / "canonical-baseline" / "CURRENT_HK_RUNTIME.json").write_text(
+            json.dumps({"image_config_id": CURRENT_IMAGE, "image_tag": "synthetic",
+                        "host": "i-synthetic", "runtime_generation": "SYNTHETIC"}),
             encoding="utf-8")
-        (go / "CURRENT_HK_RUNTIME.json").write_text(json.dumps(
-            runtime if runtime is not None else
-            {"image_config_id": CURRENT_IMAGE, "image_tag": "synthetic", "host": "i-synthetic",
-             "runtime_generation": "SYNTHETIC"}), encoding="utf-8")
-        self.state_path = self.root / "state.json"
-        self.state_path.write_text(json.dumps(state if state is not None else control_state()),
+        self.state_path = self.root / "CURRENT_CONTROL_STATE.json"
+        self.state_path.write_text(json.dumps(control_state(**overrides.get("state", {}))),
                                    encoding="utf-8")
-        self.go_repo = self.root / "GO"
-        self.bundle = None
-        if plan is not None or channel_value is not None:
-            self.bundle = self.root / "live"
-            self.bundle.mkdir()
-            if plan is not None:
-                name = plan_name or ("%s.json" % plan["plan"]["plan_id"])
-                (self.bundle / name).write_text(json.dumps(plan), encoding="utf-8")
-            if channel_value is not None:
-                (self.bundle / "channel.json").write_text(json.dumps(channel_value),
-                                                          encoding="utf-8")
+        signers = dict(self.keys)
+        if approval_signed_by_task:
+            signers["approval"] = self.keys["task"]
+        if not bundle:
+            self.bundle_dir = None
+            return
+        self.bundle_dir = self.root / "live"
+        self.bundle_dir.mkdir()
+        if plan:
+            built = plan_bundle(signers, **overrides.get("bundle", {}))
+            if mutate is not None:
+                mutate(self.keys, built)
+            if rebind:
+                for name in PROOF_OBJECTS:
+                    built["plan"][name + "_sha256"] = R.digest(built[name])
+                approval = {k: v for k, v in built["approval"].items() if k != "signature"}
+                approval["plan_sha256"] = R.digest(built["plan"])
+                built["approval"] = sign_hex(signers["approval"]["private"], approval)
+            (self.bundle_dir / "release-one.json").write_text(json.dumps(built), encoding="utf-8")
+        (self.bundle_dir / "channel.json").write_text(
+            json.dumps(channel(deployment_requests_enabled=channel_value)), encoding="utf-8")
+        if provenance:
+            record = (switch_provenance(signers, **provenance_record)
+                      if provenance_record is not None else switch_provenance(signers))
+            (self.bundle_dir / "switch-provenance.json").write_text(json.dumps(record),
+                                                                    encoding="utf-8")
 
-    def evaluate(self):
-        return R.evaluate(self.state_path, self.go_repo, self.bundle, AT, AT)
+    def evaluate(self, at=AT):
+        return R.evaluate(self.state_path, self.go, self.bundle_dir, at, at)
+
+
+class KeyProfileTests(unittest.TestCase):
+    """The approval authority must be a different key from the Task signer."""
+
+    def test_three_distinct_roles_bind_and_are_reported_distinct(self):
+        document = Fixture().evaluate()
+        identity = document["identity"]
+        self.assertTrue(identity["approval_authority_published"])
+        self.assertTrue(identity["task_and_evidence_distinct"])
+        self.assertTrue(identity["approval_distinct_from_signer"])
+        self.assertEqual(identity["collisions"], [])
+        for role in (R.ROLE_TASK, R.ROLE_EVIDENCE, R.ROLE_APPROVAL):
+            self.assertEqual(identity["roles"][role]["binding"], R.BINDING_BOUND)
+
+    def test_one_key_in_two_roles_is_reported_as_a_collision(self):
+        document = Fixture(collide_approval_with_task=True).evaluate()
+        self.assertFalse(document["identity"]["approval_distinct_from_signer"])
+        self.assertTrue(any("HUMAN_APPROVAL" in clash
+                            for clash in document["identity"]["collisions"]))
+
+    def test_a_collision_fails_the_approval_gate_closed(self):
+        document = Fixture(collide_approval_with_task=True).evaluate()
+        entry = gate_of(document, "HUMAN_APPROVAL")
+        self.assertEqual(entry["state"], "FAIL")
+        self.assertIn("one key two roles", entry["reason"])
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_a_collision_fails_the_switch_provenance_gate_closed(self):
+        document = Fixture(collide_approval_with_task=True).evaluate()
+        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+
+    def test_an_absent_approval_authority_is_never_proven(self):
+        document = Fixture(omit_approval_key=True).evaluate()
+        self.assertFalse(document["identity"]["approval_authority_published"])
+        self.assertEqual(gate_of(document, "HUMAN_APPROVAL")["state"], "FAIL")
+        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_a_replaced_key_file_is_mismatched_and_fails_closed(self):
+        fixture = Fixture()
+        (fixture.go / R.STATE_COMPONENT / "identity" / "keys" / "approval.pub").write_bytes(
+            fixture.keys["evidence"]["line"])
+        document = fixture.evaluate()
+        self.assertEqual(document["identity"]["roles"][R.ROLE_APPROVAL]["binding"],
+                         R.BINDING_IDENTITY_MISMATCH)
+        self.assertEqual(gate_of(document, "HUMAN_APPROVAL")["state"], "FAIL")
+
 
 class VerdictTests(unittest.TestCase):
-    def test_every_gate_satisfied_is_yes(self):
-        document = Fixture(plan=plan_bundle(), channel_value=channel()).evaluate()
-        self.assertEqual(document["verdict"]["deploy_ready"], "YES", document["verdict"])
-        self.assertEqual(document["blocking_reasons"], [])
-        self.assertEqual(document["verdict"]["failed"], [])
-        self.assertEqual(document["verdict"]["unknown"], [])
-
-    def test_a_failing_mandatory_gate_is_no(self):
-        document = Fixture(plan=plan_bundle(),
-                           channel_value=channel(deployment_requests_enabled=False)).evaluate()
-        self.assertEqual(document["verdict"]["deploy_ready"], "NO", document["verdict"])
-        self.assertEqual(document["verdict"]["failed"], ["LIVE_SWITCH"])
-        self.assertTrue(document["blocking_reasons"])
-
-    def test_a_missing_mandatory_live_fact_is_unknown_not_yes(self):
-        """The plan store and the switch are live facts: absent means unprovable."""
+    def test_a_fully_proven_bundle_is_yes(self):
         document = Fixture().evaluate()
-        self.assertEqual(document["verdict"]["deploy_ready"], "UNKNOWN", document["verdict"])
-        for name in ("DEPLOYMENT_PLAN", "HUMAN_APPROVAL", "LIVE_SWITCH", "PACKAGE_BINDING",
-                     "CURRENT_RUNTIME"):
-            self.assertIn(name, document["verdict"]["unknown"], name)
-        self.assertEqual(document["verdict"]["failed"], [])
+        self.assertEqual(document["verdict"]["deploy_ready"], "YES",
+                         document["blocking_reasons"])
+        self.assertEqual(document["blocking_reasons"], [])
+        self.assertEqual(document["verdict"]["mandatory_gates"], len(R.MANDATORY_GATES))
 
-    def test_unknown_outranks_nothing_and_yes_requires_every_mandatory_gate(self):
-        document = Fixture(plan=plan_bundle(), channel_value=channel()).evaluate()
-        mandatory = [g for g in document["gates"] if g["mandatory"]]
-        self.assertEqual(len(mandatory), len(R.MANDATORY_GATES))
-        self.assertTrue(all(g["state"] == "PASS" for g in mandatory))
-
-    def test_a_failure_wins_over_an_unknown(self):
-        """One definite refusal makes the verdict NO even if others are unprovable."""
-        document = Fixture(candidate=candidate_pointer(source_commit="not-a-sha"),
-                           plan=plan_bundle(), channel_value=channel()).evaluate()
-        self.assertEqual(document["verdict"]["deploy_ready"], "NO", document["verdict"])
-        self.assertIn("APPROVED_CANDIDATE", document["verdict"]["failed"])
-
-    def test_the_verdict_always_explains_itself(self):
-        for document in (Fixture().evaluate(),
-                         Fixture(plan=plan_bundle(), channel_value=channel()).evaluate(),
-                         Fixture(plan=plan_bundle(),
-                                 channel_value=channel(publish_enabled=False)).evaluate()):
-            self.assertTrue(document["verdict"]["reason"])
-            if document["verdict"]["deploy_ready"] != "YES":
-                self.assertTrue(document["blocking_reasons"])
-            for entry in document["blocking_reasons"]:
-                self.assertTrue(entry["reason"], entry)
-
-
-class FailClosedTests(unittest.TestCase):
-    def test_a_candidate_without_a_usable_commit_fails(self):
-        document = Fixture(candidate=candidate_pointer(source_commit=None)).evaluate()
-        self.assertEqual(gate_of(document, "APPROVED_CANDIDATE")["state"], "FAIL")
-
-    def test_an_incomplete_source_identity_fails(self):
-        document = Fixture(candidate=candidate_pointer(source_tree_sha256="short")).evaluate()
-        binding = gate_of(document, "SOURCE_BINDING")
-        self.assertEqual(binding["state"], "FAIL")
-        self.assertIn("source_tree_sha256", binding["reason"])
-
-    def test_a_source_mismatch_between_plan_and_candidate_fails(self):
-        bundle = plan_bundle()
-        bundle["plan"]["candidate"]["source_commit"] = "9" * 40
-        document = Fixture(plan=bundle, channel_value=channel()).evaluate()
-        binding = gate_of(document, "PACKAGE_BINDING")
-        self.assertEqual(binding["state"], "FAIL")
-        self.assertIn("source_commit", binding["reason"])
-        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
-
-    def test_an_image_whose_repo_digest_does_not_match_fails(self):
-        """The existing Hong Kong contract requires them equal; never accommodated."""
-        bundle = plan_bundle()
-        bundle["plan"]["candidate"]["repo_digest"] = "go-hotel@sha256:" + "7" * 64
-        document = Fixture(plan=bundle, channel_value=channel()).evaluate()
-        binding = gate_of(document, "PACKAGE_BINDING")
-        self.assertEqual(binding["state"], "FAIL")
-        self.assertIn("repo_digest_suffix_must_equal_image_id", binding["reason"])
-
-    def test_an_expired_approval_fails(self):
-        bundle = plan_bundle()
-        bundle["approval"]["expires_at"] = "2026-09-15T00:30:00Z"
-        document = Fixture(plan=bundle, channel_value=channel()).evaluate()
-        approval = gate_of(document, "HUMAN_APPROVAL")
-        self.assertEqual(approval["state"], "FAIL")
-        self.assertIn("expired", approval["reason"])
-
-    def test_an_approval_for_another_candidate_fails(self):
-        bundle = plan_bundle()
-        bundle["approval"]["source_commit"] = "8" * 40
-        document = Fixture(plan=bundle, channel_value=channel()).evaluate()
-        approval = gate_of(document, "HUMAN_APPROVAL")
-        self.assertEqual(approval["state"], "FAIL")
-        self.assertIn("different source_commit", approval["reason"])
-
-    def test_a_plan_file_must_match_its_plan_id(self):
-        document = Fixture(plan=plan_bundle(), plan_name="somewhere-else.json",
-                           channel_value=channel()).evaluate()
-        plan = gate_of(document, "DEPLOYMENT_PLAN")
-        self.assertEqual(plan["state"], "FAIL")
-        self.assertIn("file_name", plan["reason"])
-
-    def test_a_plan_for_another_environment_or_action_fails(self):
-        for over in ({"environment": "PRODUCTION"}, {"action_id": "HK_STAGING_VERIFY"}):
-            bundle = plan_bundle()
-            bundle["plan"].update(over)
-            document = Fixture(plan=bundle, channel_value=channel()).evaluate()
-            self.assertEqual(gate_of(document, "DEPLOYMENT_PLAN")["state"], "FAIL", over)
-
-    def test_a_candidate_without_a_test_pr_is_no(self):
-        state = control_state(tasks=[])
-        document = Fixture(state=state, plan=plan_bundle(), channel_value=channel()).evaluate()
-        self.assertEqual(gate_of(document, "TEST_PR")["state"], "FAIL")
-        self.assertIn("never been built and tested", gate_of(document, "TEST_PR")["reason"])
-        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
-
-    def test_a_test_pr_that_did_not_succeed_is_no(self):
-        state = control_state()
-        state["tasks"][0]["lifecycle"] = "TASK_EXPIRED"
-        state["tasks"][0]["evidence"] = None
-        document = Fixture(state=state, plan=plan_bundle(), channel_value=channel()).evaluate()
-        self.assertEqual(gate_of(document, "TEST_PR")["state"], "FAIL")
-
-    def test_a_test_pr_for_a_different_commit_does_not_count(self):
-        state = control_state()
-        state["tasks"][0]["parameters"]["source"]["commit_sha"] = "7" * 40
-        document = Fixture(state=state, plan=plan_bundle(), channel_value=channel()).evaluate()
-        self.assertEqual(gate_of(document, "TEST_PR")["state"], "FAIL")
-
-    def test_a_stale_verify_fails(self):
-        state = control_state()
-        state["control_state"]["live_verified_runtime"]["value"]["age_seconds"] = 200000
-        document = Fixture(state=state, plan=plan_bundle(), channel_value=channel()).evaluate()
-        verify = gate_of(document, "VERIFY")
-        self.assertEqual(verify["state"], "FAIL")
-        self.assertIn("outside the 86400 s window", verify["reason"])
-
-    def test_an_unverified_live_runtime_is_unknown_not_pass(self):
-        state = control_state()
-        state["control_state"]["live_verified_runtime"] = {"state": "UNKNOWN", "value": None,
-                                                           "reason": "no VERIFY at all"}
-        document = Fixture(state=state, plan=plan_bundle(), channel_value=channel()).evaluate()
-        self.assertEqual(gate_of(document, "VERIFY")["state"], "UNKNOWN")
-        self.assertEqual(document["verdict"]["deploy_ready"], "UNKNOWN")
-
-    def test_runtime_drift_is_a_definite_no(self):
-        state = control_state()
-        state["control_state"]["runtime_verification_state"] = "DRIFT"
-        document = Fixture(state=state, plan=plan_bundle(), channel_value=channel()).evaluate()
-        self.assertEqual(gate_of(document, "CURRENT_RUNTIME")["state"], "FAIL")
-        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
-
-    def test_a_plan_expecting_a_different_current_image_fails(self):
-        bundle = plan_bundle()
-        bundle["plan"]["expected_current_image_id"] = "sha256:" + "9" * 64
-        document = Fixture(plan=bundle, channel_value=channel()).evaluate()
-        runtime = gate_of(document, "CURRENT_RUNTIME")
-        self.assertEqual(runtime["state"], "FAIL")
-        self.assertEqual(runtime["expected"], "sha256:" + "9" * 64)
-
-    def test_a_document_that_is_not_a_control_state_is_refused(self):
-        fixture = Fixture()
-        fixture.state_path.write_text(json.dumps({"contract": "SOMETHING_ELSE"}),
-                                      encoding="utf-8")
-        with self.assertRaises(R.Refuse):
-            fixture.evaluate()
-
-    def test_a_missing_candidate_pointer_fails_rather_than_guess(self):
-        fixture = Fixture()
-        (fixture.go_repo / "docs/canonical-baseline/CURRENT_CANDIDATE.json").unlink()
-        document = fixture.evaluate()
-        self.assertEqual(gate_of(document, "APPROVED_CANDIDATE")["state"], "FAIL")
-        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
-
-    def test_a_symlinked_bundle_file_is_refused(self):
-        fixture = Fixture(plan=plan_bundle(), channel_value=channel())
-        target = fixture.bundle / "channel.json"
-        real = fixture.root / "real-channel.json"
-        real.write_bytes(target.read_bytes())
-        target.unlink()
-        try:
-            target.symlink_to(real)
-        except (OSError, NotImplementedError):
-            self.skipTest("symlinks are not available here")
-        document = fixture.evaluate()
-        self.assertEqual(gate_of(document, "LIVE_SWITCH")["state"], "FAIL")
-
-
-class AdvisoryTests(unittest.TestCase):
-    def test_an_advisory_gate_is_reported_and_never_blocks(self):
-        bundle = plan_bundle()
-        bundle["plan"]["gates"] = {name: "HOLD" for name in R.REQUIRED_PLAN_GATES}
-        document = Fixture(plan=bundle, channel_value=channel()).evaluate()
-        self.assertEqual(gate_of(document, "RELEASE_GATES")["state"], "FAIL")
-        self.assertFalse(gate_of(document, "RELEASE_GATES")["mandatory"])
-        self.assertEqual(document["verdict"]["deploy_ready"], "YES", document["verdict"])
-        self.assertEqual([a["gate"] for a in document["advisory_holds"]], ["RELEASE_GATES"])
-
-    def test_a_missing_canary_binding_is_reported(self):
-        bundle = plan_bundle()
-        bundle["plan"]["canary_evidence_sha256"] = None
-        document = Fixture(plan=bundle, channel_value=channel()).evaluate()
-        self.assertEqual(gate_of(document, "CANARY")["state"], "FAIL")
+    def test_yes_still_authorises_nothing(self):
+        document = Fixture().evaluate()
         self.assertEqual(document["verdict"]["deploy_ready"], "YES")
-        self.assertIn("CANARY", document["verdict"]["advisory_failed"])
-
-    def test_advisory_gates_are_still_listed_when_they_pass(self):
-        document = Fixture(plan=plan_bundle(), channel_value=channel()).evaluate()
-        self.assertEqual({g["gate"] for g in document["gates"]},
-                         set(R.MANDATORY_GATES) | set(R.ADVISORY_GATES))
-
-
-class BoundaryTests(unittest.TestCase):
-    def test_the_evaluator_holds_no_authority(self):
-        document = Fixture(plan=plan_bundle(), channel_value=channel()).evaluate()
         boundary = document["authority_boundary"]
+        self.assertFalse(boundary["is_a_deploy_approval"])
         self.assertFalse(boundary["is_execution_authority"])
-        self.assertFalse(boundary["can_create_task"])
         self.assertFalse(boundary["can_publish_task"])
         self.assertFalse(boundary["can_open_the_request_switch"])
-        self.assertFalse(boundary["holds_private_key"])
-        self.assertFalse(boundary["signs_anything"])
-        self.assertFalse(boundary["accepts_caller_supplied_parameters"])
-        self.assertFalse(boundary["touches_production"])
-        self.assertFalse(boundary["is_a_deploy_approval"])
 
-    def test_yes_is_explicitly_not_an_approval(self):
-        document = Fixture(plan=plan_bundle(), channel_value=channel()).evaluate()
-        self.assertIn("not an approval", document["verdict"]["reason"])
-        self.assertIn("not an approval", " ".join(document["notes"]))
+    def test_no_bundle_is_unknown_not_yes_and_never_fails(self):
+        document = Fixture(bundle=False).evaluate()
+        self.assertEqual(document["verdict"]["deploy_ready"], "UNKNOWN")
+        self.assertEqual(document["verdict"]["failed"], [])
+        self.assertIn("DEPLOYMENT_PLAN", document["verdict"]["unknown"])
 
-    def test_no_document_contains_a_task_or_a_signature(self):
-        document = Fixture(plan=plan_bundle(), channel_value=channel()).evaluate()
-        blob = R.canonical(document)
-        for forbidden in (b'"signature"', b'"signed_task"', b'"nonce"',
-                          b'"grants_execution"', b'"parameters"'):
-            self.assertNotIn(forbidden, blob, forbidden)
+    def test_a_bundle_without_a_plan_is_no(self):
+        document = Fixture(plan=False).evaluate()
+        self.assertEqual(gate_of(document, "DEPLOYMENT_PLAN")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
 
-    def test_production_is_never_a_target(self):
-        source = (ROOT / "command-center" / "go-deploy-readiness").read_text(encoding="utf-8")
-        # No production environment constant, no production branch: the only
-        # occurrences are the boundary flag that denies touching it.
-        self.assertNotIn('"PRODUCTION"', source)
-        self.assertNotIn("touches_production\": True", source)
-        self.assertIn('"touches_production": False', source)
+    def test_a_switch_that_is_off_is_no(self):
+        document = Fixture(channel_value=False).evaluate()
+        self.assertEqual(gate_of(document, "LIVE_SWITCH")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
 
-    def test_the_evaluator_reads_no_signing_key(self):
-        source = (ROOT / "command-center" / "go-deploy-readiness").read_text(encoding="utf-8")
-        for forbidden in ("cryptography", "load_pem_private_key", "import socket", "subprocess"):
-            self.assertNotIn(forbidden, source, forbidden)
-
-    def test_rollback_readiness_is_left_to_its_own_issue(self):
+    def test_every_gate_is_reported_and_mandatory(self):
         document = Fixture().evaluate()
-        self.assertEqual(document["not_evaluated"]["rollback_readiness"], "NOT_IN_SCOPE")
-        self.assertIn("#104", document["not_evaluated"]["note"])
+        self.assertEqual([g["gate"] for g in document["gates"]], list(R.MANDATORY_GATES))
+        self.assertTrue(all(g["mandatory"] for g in document["gates"]))
+        self.assertEqual(document["advisory_holds"], [])
 
-    def test_the_live_bundle_input_is_described_as_read_only(self):
+
+class CanaryTests(unittest.TestCase):
+    """CANARY is mandatory and is only proven when the proof itself verifies."""
+
+    def test_a_canary_whose_gate_failed_is_a_failure(self):
+        def mutate(keys, bundle):
+            task, evidence = proof_pair(
+                keys, "HK_STAGING_CANARY", "CANARY_OK", R.CANARY_GATES,
+                {"release_id": "canary-release-1", "candidate_image_id": CANDIDATE_IMAGE,
+                 "candidate_repo_digest": CANDIDATE_DIGEST,
+                 "expected_current_image_id": CURRENT_IMAGE})
+            gates = dict(evidence["gate_results"])
+            gates["container_cleanup"] = "FAIL"
+            evidence["gate_results"] = gates
+            bundle["canary_task"] = task
+            bundle["canary_evidence"] = sign_b64(keys["evidence"]["private"], evidence)
+
+        document = Fixture(mutate=mutate).evaluate()
+        entry = gate_of(document, "CANARY")
+        self.assertEqual(entry["state"], "FAIL")
+        self.assertIn("container_cleanup", entry["reason"])
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_a_canary_evidence_with_a_broken_signature_is_a_failure(self):
+        def mutate(keys, bundle):
+            evidence = dict(bundle["canary_evidence"])
+            evidence["signature"] = base64.b64encode(b"\x00" * 64).decode()
+            bundle["canary_evidence"] = evidence
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "CANARY")["state"], "FAIL")
+        self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_a_stale_canary_is_a_failure(self):
+        document = Fixture().evaluate(at=R.parse_time("2026-09-15T01:40:00Z"))
+        self.assertEqual(gate_of(document, "CANARY")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_a_canary_bound_to_another_image_is_a_failure(self):
+        def mutate(keys, bundle):
+            task, evidence = proof_pair(
+                keys, "HK_STAGING_CANARY", "CANARY_OK", R.CANARY_GATES,
+                {"release_id": "canary-release-1",
+                 "candidate_image_id": "sha256:" + "8" * 64,
+                 "candidate_repo_digest": "go-hotel@sha256:" + "8" * 64,
+                 "expected_current_image_id": CURRENT_IMAGE})
+            bundle["canary_task"] = task
+            bundle["canary_evidence"] = evidence
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "CANARY")["state"], "FAIL")
+        self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+
+class ReleaseGateTests(unittest.TestCase):
+    """RELEASE_GATES is mandatory now: a HOLD may not be a non-blocking note."""
+
+    def test_a_hold_release_gate_blocks_the_verdict(self):
+        def mutate(_keys, bundle):
+            bundle["plan"]["gates"]["sealed_node"] = "HOLD"
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "RELEASE_GATES")["state"], "FAIL")
+        self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+        self.assertEqual(document["advisory_holds"], [])
+
+    def test_the_contract_no_longer_declares_any_advisory_gate(self):
+        contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        declared = {k: v for k, v in contract["x-go-gates"].items() if k != "note"}
+        self.assertEqual(sorted(k for k, v in declared.items() if not v["mandatory"]), [])
+        self.assertTrue(declared["CANARY"]["mandatory"])
+        self.assertTrue(declared["RELEASE_GATES"]["mandatory"])
+        self.assertTrue(declared["BRIDGE_ACCEPTANCE"]["mandatory"])
+
+
+class SwitchProvenanceTests(unittest.TestCase):
+    def test_a_valid_record_is_proven(self):
         document = Fixture().evaluate()
-        self.assertFalse(document["inputs"]["live_bundle"]["supplied"])
-        self.assertTrue(document["inputs"]["live_bundle"]["files"] == [])
+        entry = gate_of(document, "LIVE_SWITCH_PROVENANCE")
+        self.assertEqual(entry["state"], "PASS")
+        self.assertEqual(entry["observed"]["change_record"], "CC-CHANGE-SYNTHETIC-1")
+
+    def test_an_absent_record_keeps_the_gate_unknown(self):
+        document = Fixture(provenance=False).evaluate()
+        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "UNKNOWN")
+        self.assertNotEqual(document["verdict"]["deploy_ready"], "YES")
+        self.assertIn("LIVE_SWITCH_PROVENANCE", document["verdict"]["unknown"])
+
+    def test_a_record_signed_by_the_task_signer_is_refused(self):
+        fixture = Fixture(approval_signed_by_task=True)
+        document = fixture.evaluate()
+        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_a_record_that_disagrees_with_the_live_channel_is_refused(self):
+        document = Fixture(provenance_record={"value": False}).evaluate()
+        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+
+    def test_a_closed_window_is_refused(self):
+        document = Fixture().evaluate(at=R.parse_time("2026-09-15T02:00:00Z"))
+        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+
+    def test_a_change_outside_its_window_is_refused(self):
+        document = Fixture(provenance_record={"changed_at": "2026-09-15T00:10:00Z"}).evaluate()
+        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+
+    def test_an_unsigned_record_is_refused(self):
+        fixture = Fixture()
+        record = switch_provenance(fixture.keys)
+        del record["signature"]
+        (fixture.bundle_dir / "switch-provenance.json").write_text(json.dumps(record),
+                                                                   encoding="utf-8")
+        document = fixture.evaluate()
+        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+
+    def test_the_record_must_name_the_field_it_covers(self):
+        document = Fixture(provenance_record={"field": "publish_enabled"}).evaluate()
+        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+
+
+class ApprovalTests(unittest.TestCase):
+    def test_an_approval_rebound_to_another_plan_is_refused(self):
+        def mutate(keys, bundle):
+            approval = {k: v for k, v in bundle["approval"].items() if k != "signature"}
+            approval["plan_sha256"] = "0" * 64
+            bundle["approval"] = sign_hex(keys["approval"]["private"], approval)
+
+        document = Fixture(mutate=mutate, rebind=False).evaluate()
+        self.assertEqual(gate_of(document, "HUMAN_APPROVAL")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_an_expired_approval_is_refused(self):
+        def mutate(_keys, bundle):
+            bundle["approval"]["expires_at"] = "2026-09-15T01:00:30Z"
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "HUMAN_APPROVAL")["state"], "FAIL")
+
+    def test_an_approval_window_wider_than_the_contract_is_refused(self):
+        def mutate(_keys, bundle):
+            bundle["approval"]["approved_at"] = "2026-09-15T00:40:00Z"
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "HUMAN_APPROVAL")["state"], "FAIL")
+
+    def test_an_approval_older_than_its_proofs_is_refused(self):
+        def mutate(_keys, bundle):
+            bundle["approval"]["approved_at"] = "2026-09-15T00:57:00Z"
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "HUMAN_APPROVAL")["state"], "FAIL")
+
+    def test_an_approval_with_the_wrong_scope_is_refused(self):
+        def mutate(_keys, bundle):
+            bundle["approval"]["scope"] = "SOMETHING_ELSE"
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "HUMAN_APPROVAL")["state"], "FAIL")
+
+
+class BridgeAcceptanceTests(unittest.TestCase):
+    """The invariant: readiness may never say YES while the Bridge would refuse."""
+
+    def mutations(self):
+        def topology(_keys, bundle):
+            bundle["plan"]["target_services"] = list(R.SERVICES)[:7]
+
+        def migration(_keys, bundle):
+            bundle["plan"]["migration"] = True
+
+        def release_gate(_keys, bundle):
+            bundle["plan"]["gates"]["three_end_ux"] = "HOLD"
+
+        def digest_suffix(_keys, bundle):
+            bundle["plan"]["candidate"]["repo_digest"] = "go-hotel@sha256:" + "7" * 64
+
+        def candidate_repository(_keys, bundle):
+            bundle["plan"]["candidate"]["repository"] = "someone/else"
+
+        def protected_non_targets(_keys, bundle):
+            bundle["plan"]["protected_non_targets"] = ["redis"]
+
+        def unknown_plan_field(_keys, bundle):
+            bundle["plan"]["extra"] = "x"
+
+        def approval_unsigned(_keys, bundle):
+            bundle["approval"] = {k: v for k, v in bundle["approval"].items()
+                                  if k != "signature"}
+
+        def approval_scope(_keys, bundle):
+            bundle["approval"]["scope"] = "SOMETHING_ELSE"
+
+        return {"topology": (topology, True), "migration": (migration, True),
+                "release_gate": (release_gate, True), "digest_suffix": (digest_suffix, True),
+                "candidate_repository": (candidate_repository, True),
+                "protected_non_targets": (protected_non_targets, True),
+                "unknown_plan_field": (unknown_plan_field, True),
+                # Removing the signature must survive: a rebind would re-sign it.
+                "approval_unsigned": (approval_unsigned, False),
+                "approval_scope": (approval_scope, True)}
+
+    def test_no_mutation_can_be_yes_while_the_bridge_gate_refuses(self):
+        for name, (mutate, rebind) in self.mutations().items():
+            with self.subTest(name):
+                document = Fixture(mutate=mutate, rebind=rebind).evaluate()
+                self.assertNotEqual(document["verdict"]["deploy_ready"], "YES",
+                                    "readiness said YES for %s" % name)
+                self.assertNotEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "PASS",
+                                    "the bridge gate accepted %s" % name)
+
+    def test_a_valid_plan_passes_the_bridge_gate(self):
+        document = Fixture().evaluate()
+        self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "PASS")
+
+    def test_the_bridge_gate_names_the_rule_that_would_refuse(self):
+        def mutate(_keys, bundle):
+            bundle["plan"]["automatic_rollback"] = True
+
+        document = Fixture(mutate=mutate).evaluate()
+        entry = gate_of(document, "BRIDGE_ACCEPTANCE")
+        self.assertEqual(entry["state"], "FAIL")
+        self.assertIn("forbidden_operation", entry["reason"])
+
+    def test_no_bridge_gate_without_a_bundle(self):
+        document = Fixture(bundle=False).evaluate()
+        self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "UNKNOWN")
+
+
+class LiveBridgeContractTests(unittest.TestCase):
+    """The ported constants must equal the live Bridge's own, or this component lies."""
+
+    def setUp(self):
+        self.source = (BOSS / "go_deploy_request.py").read_text(encoding="utf-8")
+
+    def brace_set(self, name):
+        found = re.search(r"^%s = \{(.*?)\}" % name, self.source, re.M | re.S)
+        self.assertIsNotNone(found, name)
+        return set(re.findall(r"'([a-z_]+)'", found.group(1)))
+
+    def exact_fields(self, marker):
+        found = re.search(r"exact\([A-Za-z_]+,\{([^}]*)\},'%s'\)" % marker, self.source)
+        self.assertIsNotNone(found, marker)
+        return set(re.findall(r"'([A-Za-z0-9_]+)'", found.group(1)))
+
+    def test_release_gate_names_match_the_live_contract(self):
+        self.assertEqual(self.brace_set("RELEASE_GATES"), set(R.REQUIRED_PLAN_GATES))
+
+    def test_canary_and_verify_gate_names_match(self):
+        self.assertEqual(self.brace_set("CANARY_GATES"), set(R.CANARY_GATES))
+        self.assertEqual(self.brace_set("VERIFY_GATES"), set(R.VERIFY_GATES))
+
+    def test_the_fixed_service_topology_matches(self):
+        found = re.search(r"^SERVICES = \[(.*?)\]", self.source, re.M | re.S)
+        self.assertIsNotNone(found)
+        self.assertEqual(re.findall(r"'([a-z-]+)'", found.group(1)), list(R.SERVICES))
+
+    def test_the_protected_non_targets_match(self):
+        self.assertIn("plan['protected_non_targets']!=['redis','caddy']", self.source)
+        self.assertEqual(list(R.PROTECTED_NON_TARGETS), ["redis", "caddy"])
+
+    def test_the_exact_field_sets_match(self):
+        self.assertEqual(self.exact_fields("plan_fields"), set(R.PLAN_FIELDS))
+        self.assertEqual(self.exact_fields("approval_fields"), set(R.APPROVAL_FIELDS))
+        self.assertEqual(self.exact_fields("candidate_fields"), set(R.CANDIDATE_FIELDS))
+        self.assertEqual(self.exact_fields("task_fields"), set(R.TASK_FIELDS))
+
+    def test_the_approval_scope_and_authority_match(self):
+        self.assertIn("'%s'" % R.APPROVAL_SCOPE, self.source)
+        self.assertIn("'%s'" % R.TASK_AUTHORITY, self.source)
+
+    def test_the_forbidden_operations_match(self):
+        found = re.search(r"plan\[k\] is not False for k in \[(.*?)\]", self.source)
+        self.assertIsNotNone(found)
+        self.assertEqual(set(re.findall(r"'([a-z_]+)'", found.group(1))),
+                         set(R.FORBIDDEN_OPERATIONS))
+
+    def test_the_freshness_windows_match(self):
+        self.assertIn("'HK_STAGING_CANARY',authority_key,hk_key,at,1800", self.source)
+        self.assertIn("'HK_STAGING_VERIFY',authority_key,hk_key,at,300", self.source)
+        self.assertEqual(R.CANARY_MAX_AGE_SECONDS, 1800)
+        self.assertEqual(R.PREFLIGHT_MAX_AGE_SECONDS, 300)
+        self.assertIn("expires-approved>dt.timedelta(minutes=15)", self.source)
+        self.assertEqual(R.APPROVAL_MAX_WINDOW_SECONDS, 900)
+
+    def test_the_bridge_still_verifies_the_approval_with_the_store_key(self):
+        self.assertIn("authority=public_key(read_secure(STORE/'authority.pub',4096))", self.source)
+        self.assertIn("validate_bundle(bundle,plan_id,authority,hk,at)", self.source)
 
 
 class ContractTests(unittest.TestCase):
-    def setUp(self):
-        self.schema = json.loads(CONTRACT.read_text(encoding="utf-8"))
+    def test_the_declared_gate_set_equals_the_implemented_one(self):
+        contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        declared = set(contract["x-go-gates"]) - {"note"}
+        self.assertEqual(declared, set(R.MANDATORY_GATES))
+        self.assertEqual(set(contract["properties"]["gates"]["items"]["properties"]["gate"]["enum"]),
+                         set(R.MANDATORY_GATES))
+        self.assertEqual(R.ADVISORY_GATES, ())
 
     def test_the_verdict_set_is_closed(self):
-        verdict = self.schema["properties"]["verdict"]["properties"]["deploy_ready"]
-        self.assertEqual(verdict["enum"], ["YES", "NO", "UNKNOWN"])
+        contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        self.assertEqual(contract["properties"]["verdict"]["properties"]["deploy_ready"]["enum"],
+                         ["YES", "NO", "UNKNOWN"])
 
-    def test_the_gate_set_is_closed_and_declares_mandatory(self):
-        declared = self.schema["x-go-gates"]
-        self.assertEqual(set(declared) - {"note"},
-                         set(R.MANDATORY_GATES) | set(R.ADVISORY_GATES))
-        self.assertEqual({name for name, value in declared.items()
-                          if name != "note" and value["mandatory"]}, set(R.MANDATORY_GATES))
+    def test_the_boundary_is_all_false_except_reading(self):
+        boundary = Fixture(bundle=False).evaluate()["authority_boundary"]
+        self.assertEqual(sum(1 for value in boundary.values() if value), 1)
+        self.assertTrue(boundary["may_read_live_command_center_state"])
 
-    def test_the_contract_forbids_everything_the_issue_forbids(self):
-        forbidden = " ".join(self.schema["x-go-forbidden"])
-        for phrase in ("Creating, signing or publishing a DEPLOY Task",
-                       "Opening, arming or toggling the DEPLOY request switch",
-                       "Any caller-supplied image", "Contacting Command Center or Hong Kong",
-                       "Production"):
-            self.assertIn(phrase, forbidden)
+    def test_the_identity_block_is_reported(self):
+        document = Fixture().evaluate()
+        self.assertEqual(document["identity"]["approval_authority_id"], R.APPROVAL_AUTHORITY_ID)
+        self.assertIn("roles", document["identity"])
 
-    def test_the_contract_states_that_unknown_is_never_promoted(self):
-        rules = " ".join(self.schema["x-go-verdict-rules"])
-        self.assertIn("never rounded up to YES", rules)
-        self.assertIn("authorises nothing", rules)
-
-    def test_the_boundary_block_is_all_false_except_reading(self):
-        boundary = self.schema["$defs"]["boundary"]["properties"]
-        for key, value in boundary.items():
-            if key == "may_read_live_command_center_state":
-                self.assertEqual(value["const"], True, key)
-            else:
-                self.assertEqual(value["const"], False, key)
+    def test_the_document_keeps_its_scope_statement(self):
+        document = Fixture().evaluate()
+        self.assertEqual(document["not_evaluated"]["rollback_readiness"], "NOT_IN_SCOPE")
+        self.assertEqual(document["scope"], "READ_ONLY_DEPLOY_READINESS")
+        self.assertEqual(document["authority"], "DERIVED_NON_AUTHORITATIVE")
 
 
 if __name__ == "__main__":
-    unittest.main(verbosity=2)
+    unittest.main()

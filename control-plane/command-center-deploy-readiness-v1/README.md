@@ -14,12 +14,51 @@ DEPLOY_READY = UNKNOWN   no mandatory gate FAILed, but at least one could not be
 verdict out of `YES` instead of being rounded up, and **`YES` is not an approval**
 and authorises nothing.
 
+## Why this revision exists (CC V1-06.1)
+
+The first revision treated `CANARY` and `RELEASE_GATES` as advisory and reported
+the plan's canary declaration instead of re-deriving it. That allowed
+
+```text
+DEPLOY_READY=YES   while   the live Bridge would deterministically reject
+```
+
+which is worse than no verdict: it reads as permission. So the live Boss Request
+Bridge is now the fact source. Its bundle contract
+(`boss-deploy-request-v1/go_deploy_request.py`) is ported here rule for rule, the
+`BRIDGE_ACCEPTANCE` gate fails whenever those rules would refuse, and **no gate
+is advisory any more**.
+
+Load-bearing consequences:
+
+* `CANARY` is `PASS` only when the canary proof itself verifies under the
+  published identities, binds to *this* candidate, and completed inside the
+  canary window — not because the plan says so.
+* `RELEASE_GATES` is `PASS` only when every release gate the live contract
+  requires carries `PASS`.
+* `LIVE_SWITCH_PROVENANCE` is `PASS` only when the switch state is covered by a
+  change record whose declared value equals the observed channel value and which
+  is signed by a **Human Approval authority distinct from the Task signer**. A
+  switch that is simply `on` keeps the verdict out of `YES`.
+* `HUMAN_APPROVAL` now verifies the approval's signature against that same
+  distinct authority. If the published contract expresses one key in both roles
+  the evaluator reports an identity collision and refuses to call any approval
+  proven.
+* The Human Approval authority is read from the published identity contract
+  (`identity/VERIFIER_IDENTITIES_V1.json`, role `HUMAN_APPROVAL`, identity
+  `GO-DEPLOY-HUMAN-APPROVAL-AUTHORITY`). A contract that does not publish it
+  fails closed.
+
+A test re-reads the live Bridge's source and fails if any ported constant, exact
+field set, topology list, gate name set or freshness window drifts. The copy in
+this component therefore cannot silently diverge from the real gate.
+
 ## What it reads
 
 | Input | What it is | Required |
 |---|---|---|
 | `--control-state` | the derived `CURRENT_CONTROL_STATE.json` | yes |
-| `--go-repo` | a GO checkout, for the two canonical pointer files the state document names | yes |
+| `--go-repo` | a GO checkout: the two canonical pointer files the state document names, **and** the published verifier identities under `identity/` | yes |
 | `--live-bundle` | an **operator-supplied, read-only** directory of live-host facts | no |
 
 The approved plan store (`/etc/go-command-center/deployment-plans-v1`) and the
@@ -34,6 +73,10 @@ live-bundle/
                      canary/preflight task and evidence objects)
   channel.json       {"deployment_requests_enabled", "publish_enabled",
                       "allowed_actions", "allowed_environment"}
+  switch-provenance.json
+                     the change record for the switch: field, value, changed_at,
+                     change_record, approved_by, approval_id, valid window and the
+                     before/after digests, signed by the Human Approval authority
 ```
 
 Symlinks are refused and every file is size-capped, matching the plan store's own
@@ -47,17 +90,18 @@ rules.
 | `SOURCE_BINDING` | yes | the candidate's own source identity is complete |
 | `PACKAGE_BINDING` | yes | the plan approves **this** candidate, and its image/repo-digest pair is consistent |
 | `DEPLOYMENT_PLAN` | yes | an approved plan exists for the release *(live fact)* |
-| `HUMAN_APPROVAL` | yes | a well-formed, unexpired approval binding the same release *(live fact)* |
+| `HUMAN_APPROVAL` | yes | an unexpired approval binding the same plan digest, verified against a Human Approval authority distinct from the Task signer |
 | `TEST_PR` | yes | the candidate commit has a signed, successful TEST_PR on the control bus |
 | `VERIFY` | yes | the live runtime was verified, by signed Evidence, inside the freshness window |
 | `CURRENT_RUNTIME` | yes | the verified runtime matches the image the plan expects to be current |
 | `LIVE_SWITCH` | yes | the live request switch would accept a DEPLOY request *(live fact)* |
-| `CANARY` | no | the plan declares canary digests |
-| `RELEASE_GATES` | no | the plan's declared release gates |
+| `LIVE_SWITCH_PROVENANCE` | yes | the switch state is covered by a change record, signed by the distinct approval authority, whose value matches the observed channel |
+| `CANARY` | yes | the plan's canary proof verifies, binds to this candidate and is inside its window |
+| `RELEASE_GATES` | yes | the plan carries PASS for every release gate the live contract requires |
+| `BRIDGE_ACCEPTANCE` | yes | the live Bridge's own rules, re-derived offline, would accept this request |
 
-Advisory gates are reported in `advisory_holds` and can never change the verdict —
-and they are never omitted either, so a declared gate sitting at `HOLD` stays
-visible.
+`advisory_holds` still exists so the document shape is stable, and it is always
+empty: a gate the live Bridge blocks on may not be advisory here.
 
 ## Failing closed, in every direction
 
@@ -120,20 +164,42 @@ per-gate detail, and moves
 
 ## The real answer, as of the committed projection
 
-Run against `PROJECTION_20260914` with no live bundle:
+Run against `PROJECTION_20260915`, first with no live bundle and then with the
+channel configuration that was read read-only on the Command Center. In both runs
+`mandatory_gates=13` and `advisory_holds` is empty.
 
 ```text
-DEPLOY_READY=NO
-blocking  TEST_PR (the candidate commit 8a22a4fc has never been TEST_PR'd on the
-                   control bus), VERIFY (the newest verified VERIFY is 116193 s old,
-                   outside the 86400 s window), CURRENT_RUNTIME, PACKAGE_BINDING,
-                   DEPLOYMENT_PLAN, HUMAN_APPROVAL, LIVE_SWITCH
-advisory  CANARY, RELEASE_GATES (both unprovable without a plan)
+DEPLOY_READY=NO                          (both runs)
+
+without a bundle
+  FAIL     TEST_PR                no signed TEST_PR exists for the declared
+                                  commit 8a22a4fc
+  FAIL     VERIFY                 the newest verified VERIFY is 164911 s old,
+                                  window 86400 s
+  UNKNOWN  PACKAGE_BINDING, DEPLOYMENT_PLAN, HUMAN_APPROVAL, CURRENT_RUNTIME,
+           LIVE_SWITCH, LIVE_SWITCH_PROVENANCE, CANARY, RELEASE_GATES,
+           BRIDGE_ACCEPTANCE
+
+with the verified channel bundle
+  FAIL     TEST_PR, VERIFY        as above
+  FAIL     DEPLOYMENT_PLAN        the plan store holds no plan
+  UNKNOWN  PACKAGE_BINDING, HUMAN_APPROVAL, CURRENT_RUNTIME,
+           LIVE_SWITCH_PROVENANCE, CANARY, RELEASE_GATES, BRIDGE_ACCEPTANCE
+  PASS     LIVE_SWITCH            the switch would accept a DEPLOY request
 ```
 
-That is the honest answer: two definite refusals and five facts nobody has
-established. It is not a statement that deploying is a bad idea, and it is
-definitely not permission.
+`LIVE_SWITCH=PASS` states only that the switch would accept a DEPLOY request. It
+is not permission: the switch is on without a proven provenance, so
+`LIVE_SWITCH_PROVENANCE` stays `UNKNOWN`, `BRIDGE_ACCEPTANCE` cannot be
+re-derived without a plan, and the verdict stays out of `YES`.
+
+The `identity` block also reports `approval_authority_published=false` for the
+current tree: no Human Approval authority distinct from the Task signer has been
+published yet, so any approval presented today would be refused rather than
+called proven.
+
+That is the honest answer. It is not a statement that deploying is a bad idea,
+and it is definitely not permission.
 
 ## Not installed, and not in scope
 
