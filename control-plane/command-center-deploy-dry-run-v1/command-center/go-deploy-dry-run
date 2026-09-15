@@ -56,7 +56,12 @@ PLAN_ID_RE = REQUEST_ID_RE
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 RECORD_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}--[0-9a-f]{16}\.json$")
 
-ADVISORY_GATES = ("CANARY", "RELEASE_GATES")
+# Which readiness gates are advisory is NOT decided here. It is read from the
+# readiness verdict's own `mandatory` flag, because a local copy of that decision
+# is exactly how this component would come to believe a gate is optional after
+# the readiness contract made it block. CC V1-06.1 made every gate mandatory, so
+# today no readiness-derived check is advisory; the flag is still derived rather
+# than assumed so the two contracts cannot drift apart.
 READINESS_BOUNDARY = {
     "is_execution_authority": False, "can_create_task": False, "can_publish_task": False,
     "can_open_the_request_switch": False, "holds_private_key": False, "signs_anything": False,
@@ -372,7 +377,9 @@ def evaluate_readiness(document, at):
         if not isinstance(gate, dict) or not isinstance(gate.get("gate"), str):
             raise Refuse("deploy_readiness_gate_malformed")
         by_name[gate["gate"]] = gate
-    for name in ("DEPLOYMENT_PLAN", "APPROVED_CANDIDATE", "PACKAGE_BINDING", "CURRENT_RUNTIME"):
+    for name in ("DEPLOYMENT_PLAN", "APPROVED_CANDIDATE", "PACKAGE_BINDING", "CURRENT_RUNTIME",
+                 "HUMAN_APPROVAL", "TEST_PR", "VERIFY", "SOURCE_BINDING", "LIVE_SWITCH",
+                 "LIVE_SWITCH_PROVENANCE", "CANARY", "RELEASE_GATES", "BRIDGE_ACCEPTANCE"):
         if name not in by_name:
             raise Refuse("deploy_readiness_gate_missing:%s" % name)
     for gate in document["gates"]:
@@ -380,7 +387,9 @@ def evaluate_readiness(document, at):
         state = gate.get("state")
         if state not in ("PASS", "FAIL", "UNKNOWN"):
             raise Refuse("deploy_readiness_gate_state:%s" % name)
-        advisory = name in ADVISORY_GATES
+        # Taken from the readiness verdict itself: if that contract says a gate
+        # blocks, this component must not treat it as advice.
+        advisory = gate.get("mandatory") is False
         reason = str(gate.get("reason") or "")
         observed = gate.get("observed")
         if state == "PASS":
@@ -593,6 +602,10 @@ def run_selftest():
                 {"gate": "HUMAN_APPROVAL", "mandatory": True, "state": "PASS", "reason": "synthetic"},
                 {"gate": "SOURCE_BINDING", "mandatory": True, "state": "PASS", "reason": "synthetic"},
                 {"gate": "LIVE_SWITCH", "mandatory": True, "state": "PASS", "reason": "synthetic"},
+                {"gate": "LIVE_SWITCH_PROVENANCE", "mandatory": True, "state": "PASS",
+                 "reason": "synthetic"},
+                {"gate": "BRIDGE_ACCEPTANCE", "mandatory": True, "state": "PASS",
+                 "reason": "synthetic"},
                 {"gate": "CANARY", "mandatory": False, "state": "PASS", "reason": "synthetic"},
                 {"gate": "RELEASE_GATES", "mandatory": False, "state": "PASS", "reason": "synthetic"}],
             "authority_boundary": dict(READINESS_BOUNDARY)}
@@ -670,8 +683,35 @@ def run_selftest():
         advisory_path = root / "readiness-advisory.json"
         advisory_path.write_text(json.dumps(advisory_only), encoding="utf-8")
         advisory_out = dry_run(request_path, advisory_path, root / "store7", history, at, at, checks)
-        check("an_advisory_gate_never_blocks",
+        check("a_gate_the_readiness_verdict_calls_advisory_never_blocks",
               advisory_out["decision"]["outcome"] == "TASK_CANDIDATE", advisory_out["decision"])
+
+        # The same gate, FAILing, but declared mandatory by the readiness verdict:
+        # the flag is derived, so this must block.
+        mandatory_only = json.loads(json.dumps(readiness))
+        for gate in mandatory_only["gates"]:
+            if gate["gate"] == "RELEASE_GATES":
+                gate["state"] = "FAIL"
+                gate["mandatory"] = True
+        mandatory_path = root / "readiness-mandatory.json"
+        mandatory_path.write_text(json.dumps(mandatory_only), encoding="utf-8")
+        mandatory_out = dry_run(request_path, mandatory_path, root / "store8", history, at, at, checks)
+        check("a_gate_the_readiness_verdict_calls_mandatory_blocks",
+              mandatory_out["decision"]["outcome"] == "REJECTED"
+              and "RELEASE_GATES" in mandatory_out["decision"]["refused"], mandatory_out["decision"])
+
+        # And the readiness contract itself must declare every gate mandatory. Read
+        # from the contract file rather than from the synthetic fixture above, which
+        # deliberately keeps a non-mandatory gate so the advisory path stays covered.
+        readiness_contract = pathlib.Path(__file__).resolve().parents[3] / (
+            "control-plane/command-center-deploy-readiness-v1/contracts/"
+            "deploy_readiness_v1.schema.json")
+        declared = json.loads(readiness_contract.read_text(encoding="utf-8"))["x-go-gates"]
+        check("no_readiness_gate_is_declared_advisory",
+              all(value["mandatory"] is True
+                  for name, value in declared.items() if name != "note"),
+              [name for name, value in declared.items()
+               if name != "note" and value["mandatory"] is not True])
 
     print("\nselftest: %s" % ("PASS" if not failures else "FAIL %s" % failures))
     return 0 if not failures else 1

@@ -60,7 +60,9 @@ def readiness(verdict="YES", gates=None, boundary=None, contract=None):
             ("CURRENT_RUNTIME", True, {"image_config_id": "sha256:" + "e" * 64}),
             ("SOURCE_BINDING", True, None), ("TEST_PR", True, None),
             ("VERIFY", True, None), ("HUMAN_APPROVAL", True, None),
-            ("LIVE_SWITCH", True, None), ("CANARY", False, None),
+            ("LIVE_SWITCH", True, None), ("LIVE_SWITCH_PROVENANCE", True, None),
+            ("BRIDGE_ACCEPTANCE", True, None),
+            ("CANARY", False, None),
             ("RELEASE_GATES", False, None)]
     document = {
         "schema_version": "1", "contract": D.READINESS_CONTRACT,
@@ -452,7 +454,8 @@ class ReadinessCompositionTests(unittest.TestCase):
         self.assertEqual(reported, {"readiness:%s" % name for name in
                                     ("DEPLOYMENT_PLAN", "APPROVED_CANDIDATE", "PACKAGE_BINDING",
                                      "CURRENT_RUNTIME", "SOURCE_BINDING", "TEST_PR", "VERIFY",
-                                     "HUMAN_APPROVAL", "LIVE_SWITCH", "CANARY", "RELEASE_GATES")})
+                                     "HUMAN_APPROVAL", "LIVE_SWITCH", "LIVE_SWITCH_PROVENANCE",
+                                     "CANARY", "RELEASE_GATES", "BRIDGE_ACCEPTANCE")})
 
 
 class BoundaryTests(unittest.TestCase):

@@ -56,7 +56,7 @@ jobs:
       - name: Confirm the state layer suite still passes
         working-directory: control-plane/command-center-state-v1
         run: python -m unittest discover -s tests -q
-      - name: Prove the rehearsal refuses deterministically and never publishes anything
+      - name: Prove every readiness gate blocks, and that the rehearsal still publishes nothing
         run: |
           python - <<'PY'
           import json
@@ -93,58 +93,25 @@ jobs:
               return path
 
 
-          # A real readiness verdict, produced by the CC V1-06 evaluator, never hand-written:
-          # this proves the two components compose rather than merely agreeing by accident.
-          go = work / 'GO' / 'docs' / 'canonical-baseline'
-          go.mkdir(parents=True)
-          (go / 'CURRENT_CANDIDATE.json').write_text(json.dumps({
-              'schema': 'go.depth48.current-candidate.v1', 'source_commit': COMMIT,
-              'application_git_tree': 'b' * 40, 'previous_application_git_tree': 'c' * 40,
-              'source_tree_sha256': 'd' * 64, 'candidate_pr': 52, 'candidate_branch': 'main'}),
-              encoding='utf-8')
-          (go / 'CURRENT_HK_RUNTIME.json').write_text(json.dumps({
-              'image_config_id': CURRENT_IMAGE, 'image_tag': 'synthetic', 'host': 'i-synthetic',
-              'runtime_generation': 'SYNTHETIC'}), encoding='utf-8')
-          state = {
-              'schema_version': '1', 'contract': 'CURRENT_CONTROL_STATE',
-              'sources': {'go': {'repository': 'yuguangzhi3836-glitch/GO', 'head_sha': '0' * 40,
-                                 'canonical_candidate_pointer':
-                                     'docs/canonical-baseline/CURRENT_CANDIDATE.json',
-                                 'canonical_runtime_pointer':
-                                     'docs/canonical-baseline/CURRENT_HK_RUNTIME.json'}},
-              'freshness': {'live_verification_window_seconds': 86400},
-              'control_state': {
-                  'live_verified_runtime': {'state': 'PROVEN', 'value': {
-                      'image_config_id': CURRENT_IMAGE, 'age_seconds': 60,
-                      'verified_at': '2026-09-15T00:30:00Z'}},
-                  'repository_runtime_pointer': {'value': {'image_config_id': CURRENT_IMAGE}},
-                  'runtime_verification_state': 'MATCH'},
-              'tasks': [{'task_id': 'synthetic-test-pr', 'action_id': 'HK_STAGING_TEST_PR',
-                         'issued_at': '2026-09-15T00:10:00Z', 'lifecycle': 'COMPLETE',
-                         'parameters': {'source': {'commit_sha': COMMIT}},
-                         'evidence': {'status': 'SUCCESS', 'source': {'path': 'evidence/t.json'}}}]}
-          state_path = work / 'CURRENT_CONTROL_STATE.json'
-          state_path.write_text(json.dumps(state), encoding='utf-8')
+          # A real readiness verdict, produced by the CC V1-06 evaluator over a genuinely
+          # signed plan bundle, never hand-written: this proves the two components compose
+          # rather than merely agreeing by accident. The fixtures are the ones the readiness
+          # suite already reviews, so the bundle really verifies under the published
+          # identities and the approval authority really is a distinct key.
+          sys.path.insert(0, 'control-plane/command-center-deploy-readiness-v1/tests')
+          import test_deploy_readiness as t  # noqa: E402
 
-          bundle = work / 'live'
-          bundle.mkdir()
-          (bundle / 'release-one.json').write_text(json.dumps({
-              'plan': {'schema_version': '1', 'plan_id': 'release-one', 'environment': 'HK-STAGING-01',
-                       'action_id': 'HK_STAGING_DEPLOY', 'source_commit': COMMIT,
-                       'application_git_tree': 'b' * 40,
-                       'candidate': {'source_commit': COMMIT, 'application_git_tree': 'b' * 40,
-                                     'source_tree_sha256': 'd' * 64, 'image_id': CANDIDATE_IMAGE,
-                                     'repo_digest': 'go-hotel@' + CANDIDATE_IMAGE},
-                       'expected_current_image_id': CURRENT_IMAGE,
-                       'canary_task_sha256': '1' * 64, 'canary_evidence_sha256': '2' * 64,
-                       'gates': {name: 'PASS' for name in GATES}},
-              'approval': {'approval_id': 'approval-one', 'approved_at': '2026-09-15T00:00:00Z',
-                           'expires_at': '2026-09-16T00:00:00Z'}}), encoding='utf-8')
+          fixture = t.Fixture()
+          GO = fixture.go
+          state_path = fixture.state_path
+          state = json.loads(state_path.read_text(encoding='utf-8'))
+          bundle = fixture.bundle_dir
+          COMMIT = t.COMMIT
+          CURRENT_IMAGE = t.CURRENT_IMAGE
+          CANDIDATE_IMAGE = t.CANDIDATE_IMAGE
+          GATES = list(t.R.REQUIRED_PLAN_GATES)
           channel = bundle / 'channel.json'
-          channel.write_text(json.dumps({
-              'deployment_requests_enabled': True, 'publish_enabled': True,
-              'allowed_actions': ['HK_STAGING_VERIFY', 'HK_STAGING_TEST_PR', 'HK_STAGING_DEPLOY'],
-              'allowed_environment': 'HK-STAGING-01'}), encoding='utf-8')
+
 
 
           def run(*args, expect=0):
@@ -155,7 +122,7 @@ jobs:
 
           def readiness(out, live=bundle):
               args = [str(evaluator), 'evaluate', '--control-state', str(state_path),
-                      '--go-repo', str(work / 'GO'), '--out', str(work / out), '--now', AT]
+                      '--go-repo', str(GO), '--out', str(work / out), '--now', AT]
               if live:
                   args += ['--live-bundle', str(live)]
               run(*args)
@@ -238,7 +205,8 @@ jobs:
           summary, document = rehearse('run-gate-live', path, bare, history, store_dir=work / 'store-live')
           assert summary['DECISION'] == 'UNPROVEN', summary
           for gate in ('PACKAGE_BINDING', 'DEPLOYMENT_PLAN', 'HUMAN_APPROVAL', 'CURRENT_RUNTIME',
-                       'LIVE_SWITCH'):
+                       'LIVE_SWITCH', 'LIVE_SWITCH_PROVENANCE', 'CANARY', 'RELEASE_GATES',
+                       'BRIDGE_ACCEPTANCE'):
               assert ('readiness:%s' % gate) in document['decision']['unproven'], (gate, document['decision'])
           assert document['candidate'] is None
 
@@ -252,7 +220,11 @@ jobs:
           summary, document = rehearse('run-gate-switch', path, switch_off, history,
                                        store_dir=work / 'store-switch')
           assert summary['DECISION'] == 'REJECTED', summary
-          assert document['decision']['refused'] == ['LIVE_SWITCH'], document['decision']
+          # the switch is off, and the change record still declares it on, so both the
+          # switch gate and its provenance gate refuse: the record has to agree with the
+          # live value, not merely exist
+          assert 'LIVE_SWITCH' in document['decision']['refused'], document['decision']
+          assert 'LIVE_SWITCH_PROVENANCE' in document['decision']['refused'], document['decision']
           assert document['candidate'] is None
           channel.write_text(json.dumps({
               'deployment_requests_enabled': True, 'publish_enabled': True,
@@ -272,24 +244,32 @@ jobs:
           assert document['decision']['refused'] == ['TEST_PR'], document['decision']
           assert document['candidate'] is None
 
-          # 4d. advisory gates are reported and never block
-          for gate, mangle, restore in (
-                  ('CANARY', 'canary_evidence_sha256', '2' * 64),
-                  ('RELEASE_GATES', 'gates', {name: 'PASS' for name in GATES})):
-              plan = json.loads((bundle / 'release-one.json').read_text(encoding='utf-8'))
-              plan['plan'][mangle] = None if gate == 'CANARY' else {name: 'HOLD' for name in GATES}
+          # 4d. the gates the live Bridge blocks on are mandatory here too: a HOLD release
+          # gate or an unverifiable canary refuses the request instead of being a note.
+          # CC V1-06.1 made CANARY and RELEASE_GATES block, so the dry-run must now see a
+          # refusal rather than an advisory entry.
+          def hold_gates(plan):
+              plan['plan']['gates'] = {name: 'HOLD' for name in GATES}
+
+
+          def break_canary(plan):
+              plan['plan']['canary_evidence_sha256'] = '0' * 64
+
+
+          for gate, mangle in (('RELEASE_GATES', hold_gates), ('CANARY', break_canary)):
+              original = (bundle / 'release-one.json').read_text(encoding='utf-8')
+              plan = json.loads(original)
+              mangle(plan)
               (bundle / 'release-one.json').write_text(json.dumps(plan), encoding='utf-8')
-              verdict = readiness('readiness-advisory-%s' % gate.lower())
+              verdict = readiness('readiness-mandatory-%s' % gate.lower())
               path = write_request('gate-%s' % gate)
               summary, document = rehearse('run-gate-%s' % gate, path, verdict, history,
                                            store_dir=work / ('store-%s' % gate))
-              assert summary['DECISION'] == 'TASK_CANDIDATE', (gate, summary)
-              entry = [e for e in document['checks'] if e['check'] == 'readiness:%s' % gate][0]
-              assert entry['advisory'] is True and entry['state'] == 'FAIL', (gate, entry)
-              assert gate not in document['decision']['refused'], gate
-              plan = json.loads((bundle / 'release-one.json').read_text(encoding='utf-8'))
-              plan['plan'][mangle] = restore
-              (bundle / 'release-one.json').write_text(json.dumps(plan), encoding='utf-8')
+              assert summary['DECISION'] == 'REJECTED', (gate, summary)
+              named = document['decision']['refused'] + document['decision']['unproven']
+              assert gate in named or ('readiness:%s' % gate) in named, (gate, named)
+              assert document['candidate'] is None, gate
+              (bundle / 'release-one.json').write_text(original, encoding='utf-8')
 
           # 5. a consumed plan is refused
           consumed = work / 'history-consumed.json'
@@ -348,6 +328,7 @@ jobs:
               'an_unknown_is_never_a_pass': True,
               'records_consume_nothing': True,
               'no_output_publishes_signs_or_deploys_anything': True,
+              'every_readiness_gate_is_mandatory': True,
               'task_published': False,
               'signed': False,
               'deploy_performed': False,
