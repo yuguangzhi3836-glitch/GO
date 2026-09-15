@@ -52,12 +52,21 @@ journal is an installation concern, and it has not been done.
 ## The closed fact vocabulary
 
 ```
-REQUEST_CREATED          the Request file is on the bus; no Bridge fact observed
+REQUEST_CREATED          the Bridge's own ledger is non-terminal (claiming,
+                         prepared, publishing): spoken, not settled -> the weakest
+                         kind, claims no Task, needs no proof
 REQUEST_VALIDATED        the Bridge recorded a published Task   -> proof required
 REQUEST_REJECTED         the Bridge refused it, reason preserved
 REQUEST_DUPLICATE        a distinct submission reused a consumed request_id
 REQUEST_REPLAY_REJECTED  a consumed submission identity was presented again
 ```
+
+`REQUEST_CREATED` is emitted rather than dropped because "the Bridge is still
+working on it" is an answer to "why did my Request not become a Task", and
+dropping it left an in-flight Request indistinguishable from one the Bridge never
+spoke about. It cannot be read as an acceptance: `binding.claimed` and
+`binding.proof_required` are false, no Task is named, no reason is claimed, and
+the projection ranks it `0`, below every settled fact.
 
 Every fact binds `request_id`, `action_id`, `submission` (pr + head), `source`
 (the control-bus ref the Request was read from) and `nonce` when a signed Task

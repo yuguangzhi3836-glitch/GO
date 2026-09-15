@@ -14,7 +14,9 @@ Request not become a Task?" from the control bus.
 This exporter is the missing half of the pipe. It reads the Bridge's own
 records, read-only, and writes one *Request fact* per Request identity:
 
-    REQUEST_CREATED          the Bridge has a non-terminal or no observation
+    REQUEST_CREATED          the Bridge's own ledger is non-terminal, i.e. it is
+                             claiming, prepared or publishing, so the Request is
+                             not settled -- neither accepted nor refused
     REQUEST_VALIDATED        the Bridge recorded a published Task  (proof required)
     REQUEST_REJECTED         the Bridge refused it, reason preserved
     REQUEST_DUPLICATE        a distinct submission reused a consumed request_id
@@ -491,14 +493,32 @@ def fact_from_ledger(key, record, vocabulary, by_head, by_identity, journaled_at
     status = record["status"]
     if status == "ignored":
         raise Refuse("submission_level_only")
-    if status in NON_TERMINAL_LEDGER_STATES:
-        # The Bridge has not settled. Nothing here may be read as an acceptance,
-        # and nothing may be read as a refusal either.
-        raise Refuse("submission_level_only_non_terminal")
-    if status not in SETTLED_LEDGER_STATES:
+    if status not in NON_TERMINAL_LEDGER_STATES and status not in SETTLED_LEDGER_STATES:
         raise Refuse("ledger_status_unknown:%s" % status)
     request_id, action_id, source, identity, task = resolve_identity(
         key, record, None, by_head, by_identity)
+    if status in NON_TERMINAL_LEDGER_STATES:
+        # The Bridge is mid-flight. It has spoken, and what it said is that this
+        # Request is *not settled yet*. That is neither an acceptance nor a
+        # refusal, so it is reported as REQUEST_CREATED -- the weakest kind in the
+        # vocabulary -- rather than dropped.
+        #
+        # It is reported because "the Bridge is still working on it" is an answer
+        # to "why did my Request not become a Task", and dropping it left the
+        # reader with no fact at all, unable to tell an in-flight Request from one
+        # the Bridge never spoke about. It cannot be read as an acceptance:
+        # fact_body derives claimed and proof_required from the kind, so both are
+        # false here, no reason is claimed, and the projection ranks
+        # REQUEST_CREATED 0 -- below every settled fact.
+        # The Task is deliberately NOT carried into the binding. `binding` is where a
+        # fact would name a Task, and naming one beside claimed=false is how a
+        # careless reader takes an unsettled Request for a bound one. An unsettled
+        # Request asserts nothing about a Task: that the Bridge has prepared one is
+        # the ledger's own statement, not this fact's. The Task is still used above
+        # to date the observation, and dating binds nothing.
+        observed_at, time_source = observed_at_for(record, None, journaled_at, identity, task)
+        return fact_body("REQUEST_CREATED", request_id, action_id, observed_at, time_source,
+                         key, source, no_reason())
     if status == "published":
         observed_at, time_source = observed_at_for(record, None, journaled_at, identity, task)
         return fact_body("REQUEST_VALIDATED", request_id, action_id, observed_at, time_source,
@@ -591,16 +611,23 @@ def aggregate(seen, vocabulary, by_head, by_identity, ledger):
         bodies, refusals = [], []
         # The ledger is durable; the poll journal only fills what the ledger does
         # not state, above all the refusal reasons. So the ledger is tried first,
-        # and the polls are read only when it states nothing usable -- a ledger
-        # record that is merely non-terminal must not hide the reason the Bridge
-        # gave in its own poll output.
+        # and the polls are read whenever it does not *settle* the submission -- a
+        # ledger record that is merely non-terminal must not hide the reason the
+        # Bridge gave in its own poll output.
+        #
+        # "Settled" cannot be read off whether the ledger produced a body: a
+        # non-terminal record now yields one (REQUEST_CREATED), and gating on that
+        # would have silently stopped reading the poll journal in exactly the case
+        # the rule above exists to protect. It is read off the record's own status.
+        settled = isinstance(record, dict) and record.get("status") in SETTLED_LEDGER_STATES \
+            and record.get("status") != "ignored"
         if record:
             try:
                 bodies.append(fact_from_ledger(key, record, vocabulary, by_head, by_identity,
                                                seen.newest_journal_instant(key)))
             except Refuse as exc:
                 refusals.append("LEDGER:%s" % exc)
-        if not bodies:
+        if not settled:
             for journaled, poll in seen.poll_observations(key):
                 try:
                     bodies.append(fact_from_poll(key, poll, vocabulary, by_head, by_identity,
@@ -949,9 +976,19 @@ def run_selftest():
                              dt.datetime(2026, 9, 14, 13, 0, tzinfo=dt.timezone.utc))
         check("non_terminal_state_is_never_an_acceptance",
               "REQUEST_VALIDATED" not in nonterminal["counts"]["by_kind"], nonterminal["counts"])
-        check("non_terminal_submission_is_still_listed",
-              nonterminal["counts"]["by_kind"] == {"REQUEST_REPLAY_REJECTED": 1},
+        check("non_terminal_submission_is_reported_not_dropped",
+              nonterminal["counts"]["by_kind"] == {"REQUEST_CREATED": 1,
+                                                   "REQUEST_REPLAY_REJECTED": 1},
               nonterminal["counts"])
+        created = [f for f in nonterminal["facts"] if f["kind"] == "REQUEST_CREATED"]
+        check("created_claims_nothing", len(created) == 1, created)
+        if created:
+            body = read_json(root / "out6" / "facts" / (created[0]["fact_id"] + ".json"))
+            check("created_claims_no_task", body["binding"]["claimed"] is False
+                  and body["binding"]["task_id"] is None
+                  and body["binding"]["proof_required"] is False, body["binding"])
+            check("created_claims_no_reason", body["reason"]["applicable"] is False,
+                  body["reason"])
 
     print("\nselftest: %s" % ("PASS" if not failures else "FAIL %s" % failures))
     return 0 if not failures else 1

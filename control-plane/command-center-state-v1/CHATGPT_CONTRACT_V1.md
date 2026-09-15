@@ -163,6 +163,7 @@ answers.request_fate.by_request_id["<request_id>"]
                            REFUSED
                            DUPLICATE_REQUEST_ID
                            REPLAYED_SUBMISSION
+                           NOT_SETTLED_BY_BRIDGE            the Bridge spoke: not settled yet
                            NO_BRIDGE_FACT_OBSERVED
                            REQUEST_NOT_ON_THE_BUS
     why_not_a_task.reason_code  the Bridge's own token, verbatim

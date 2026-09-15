@@ -1540,15 +1540,14 @@ class DeterminismTests(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
-class RequestVisibilityTests(unittest.TestCase):
-    """CC V1-05: a Request is a proposal, and only a signed Task proves acceptance.
+class RequestVisibilityFixture:
+    """The fixtures the Request visibility suites share.
 
-    Before this, Command Center acceptance was a Bridge-ledger fact that never
-    reached the control bus, so every Request could only be reported as CREATED
-    and "why was my Request refused?" had no answer. These tests pin the three
-    things that must not regress: an acceptance is never believed on a fact's
-    word, a refusal never loses the Bridge's reason, and a duplicate or a replay
-    is never a success.
+    A plain mixin, deliberately not a TestCase. Two of the suites below were
+    written as subclasses of the third, which quietly re-ran every test in it --
+    three times over -- and inflated the number of tests this component
+    reports. Sharing fixtures is what was wanted; inheriting test methods was
+    not.
     """
 
     def setUp(self):
@@ -1573,6 +1572,19 @@ class RequestVisibilityTests(unittest.TestCase):
                      facts_root=(facts_root if facts_root is not None
                                  else facts_root_of(facts, index)))
 
+
+
+class RequestVisibilityTests(RequestVisibilityFixture, unittest.TestCase):
+    """CC V1-05: a Request is a proposal, and only a signed Task proves acceptance.
+
+    Before this, Command Center acceptance was a Bridge-ledger fact that never
+    reached the control bus, so every Request could only be reported as CREATED
+    and "why was my Request refused?" had no answer. These tests pin the three
+    things that must not regress: an acceptance is never believed on a fact's
+    word, a refusal never loses the Bridge's reason, and a duplicate or a replay
+    is never a success.
+    """
+
     # -- a Request file is not an acceptance ----------------------------------
     def test_a_request_file_alone_is_only_created(self):
         _, state, status = self.project_one()
@@ -1583,6 +1595,65 @@ class RequestVisibilityTests(unittest.TestCase):
         self.assertFalse(entry["binding"]["proof_required"])
         self.assertEqual(status["answers"]["request_fate"]["accepted"], 0)
         self.assertEqual(status["answers"]["request_fate"]["waiting"], 1)
+
+    def test_a_created_fact_is_read_and_is_neither_an_acceptance_nor_a_refusal(self):
+        """The Bridge saying "not settled" is a fact, and the weakest one there is.
+
+        The exporter mints REQUEST_CREATED for a non-terminal Bridge record. The
+        projection has to read it without turning it into either of the two things
+        it is not, and without losing what it does say -- that the Bridge spoke,
+        which the no-fact case cannot say.
+        """
+        _, state, status = self.project_one(facts=[request_fact("REQUEST_CREATED", "request-1")])
+        entry = state["requests"][0]
+        self.assertEqual(entry["lifecycle"], "REQUEST_CREATED")
+        self.assertEqual(entry["lifecycle_source"], "BRIDGE_FACT")
+        self.assertEqual(entry["why_not_a_task"]["state"], "NOT_SETTLED_BY_BRIDGE")
+        self.assertEqual(entry["facts"][0]["first_observed_at"], "2026-09-14T11:30:00Z")
+        self.assertFalse(entry["binding"]["proof_required"])
+        self.assertIsNone(entry["binding"]["task_id"])
+        self.assertEqual(entry["binding"]["proof_state"], "NOT_APPLICABLE")
+        # Not an acceptance, and not an anomaly either: nothing was refused.
+        self.assertEqual(status["answers"]["request_fate"]["accepted"], 0)
+        self.assertEqual(status["answers"]["request_fate"]["refused"], 0)
+        self.assertEqual([a["kind"] for a in state["anomalies"]
+                          if a["kind"].startswith("REQUEST_")], [])
+        # And the three answers stay apart: settled, unsettled, never spoken of.
+        _, plain, _ = self.project_one()
+        self.assertEqual(plain["requests"][0]["why_not_a_task"]["state"],
+                         "NO_BRIDGE_FACT_OBSERVED")
+        self.assertEqual(plain["requests"][0]["lifecycle_source"], "CONTROL_BUS_ONLY")
+
+    def test_a_settled_fact_outranks_a_created_one_and_the_earlier_one_stays_visible(self):
+        """The transition is not a deduplication, and the strongest answer wins.
+
+        One Request, both facts on the bus: the Bridge was publishing at 11:00 and
+        published at 11:20. The projection reports the stronger, and still carries
+        the weaker, because the weaker is what says the Request was in flight
+        first.
+        """
+        request_id = "request-1"
+        tk = self.signed_task(request_id)
+        created = request_fact("REQUEST_CREATED", request_id,
+                               first_observed_at="2026-09-14T11:00:00Z")
+        validated = request_fact("REQUEST_VALIDATED", request_id,
+                                 first_observed_at="2026-09-14T11:20:00Z",
+                                 binding=accepted_binding(tk, request_id))
+        _, state, _ = self.project_one(tasks=[("%s.json" % tk["task_id"], tk)],
+                                       facts=[created, validated])
+        entry = state["requests"][0]
+        self.assertEqual(entry["lifecycle"], "REQUEST_VALIDATED")
+        self.assertEqual(entry["why_not_a_task"]["state"], "BECAME_A_TASK")
+        # Both are on the bus and both are reported; neither replaced the other.
+        self.assertEqual(sorted(f["kind"] for f in entry["facts"]),
+                         ["REQUEST_CREATED", "REQUEST_VALIDATED"])
+        self.assertEqual(state["counts"]["request_facts"], 2)
+        self.assertEqual(state["counts"]["request_facts_collapsed"], 0)
+        # Identity, not time, decides: the two are different facts, not one.
+        self.assertNotEqual(created["semantic_id"], validated["semantic_id"])
+        self.assertEqual(sp.REQUEST_FACT_RANK["REQUEST_CREATED"], 0)
+        self.assertTrue(all(sp.REQUEST_FACT_RANK[k] > 0
+                            for k in sp.REQUEST_FACT_KINDS if k != "REQUEST_CREATED"))
 
     def test_the_closed_lifecycle_set_is_exactly_the_issue_set(self):
         self.assertEqual(set(sp.REQUEST_FACT_KINDS),
@@ -2430,7 +2501,7 @@ class DeployReadinessIntegrationTests(unittest.TestCase):
 # both shapes at once. They are one business fact, and the projection has to say
 # so rather than count the same outcome twice.
 # --------------------------------------------------------------------------- #
-class RequestFactSemanticDedupTests(RequestVisibilityTests):
+class RequestFactSemanticDedupTests(RequestVisibilityFixture, unittest.TestCase):
     """Reading both shapes, and folding them into one fact per identity."""
 
     def test_a_legacy_fact_is_still_read(self):
@@ -2529,7 +2600,7 @@ class RequestFactSemanticDedupTests(RequestVisibilityTests):
 # would compare this file's constants with themselves, which is how the readiness
 # gate set drifted unnoticed for as long as it did.
 # --------------------------------------------------------------------------- #
-class RequestFactExporterIntegrationTests(RequestVisibilityTests):
+class RequestFactExporterIntegrationTests(RequestVisibilityFixture, unittest.TestCase):
     """Facts produced by the real exporter, consumed by the real projector."""
 
     T1, T2 = ("2026-09-14T11:00:00Z", "2026-09-14T11:20:00Z")

@@ -114,6 +114,7 @@
             "properties": {
               "state": {"enum": ["BECAME_A_TASK", "ACCEPTANCE_CLAIMED_BUT_UNPROVEN", "REFUSED",
                                  "DUPLICATE_REQUEST_ID", "REPLAYED_SUBMISSION",
+                                 "NOT_SETTLED_BY_BRIDGE",
                                  "NO_BRIDGE_FACT_OBSERVED", "REQUEST_NOT_ON_THE_BUS"]},
               "reason_code": {"type": ["string", "null"],
                 "description": "the refusing component's own token, preserved verbatim"},

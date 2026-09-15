@@ -279,14 +279,22 @@ REQUEST_TASK_DIGEST_LINK = 12
 REQUEST_FACTS_DIRNAME = "facts"
 REQUEST_FACT_INDEX_NAME = "INDEX.json"
 # The closed reasons a Request did not become a Task.
+#
+# NOT_SETTLED_BY_BRIDGE and NO_BRIDGE_FACT_OBSERVED are separate states on
+# purpose. They used to be one: the exporter never minted REQUEST_CREATED, so a
+# Request the Bridge had spoken about but not settled was indistinguishable from
+# one no Bridge record mentioned at all. Now that the in-flight state is reported
+# as a fact, the two answers stay apart -- "the Bridge is still working on it" is
+# not the same answer as "nothing was ever observed".
 REQUEST_FATE_STATES = ("BECAME_A_TASK", "ACCEPTANCE_CLAIMED_BUT_UNPROVEN", "REFUSED",
                        "DUPLICATE_REQUEST_ID", "REPLAYED_SUBMISSION",
+                       "NOT_SETTLED_BY_BRIDGE",
                        "NO_BRIDGE_FACT_OBSERVED", "REQUEST_NOT_ON_THE_BUS")
 REQUEST_FATE_BY_KIND = {"REQUEST_VALIDATED": "BECAME_A_TASK",
                         "REQUEST_REJECTED": "REFUSED",
                         "REQUEST_DUPLICATE": "DUPLICATE_REQUEST_ID",
                         "REQUEST_REPLAY_REJECTED": "REPLAYED_SUBMISSION",
-                        "REQUEST_CREATED": "NO_BRIDGE_FACT_OBSERVED"}
+                        "REQUEST_CREATED": "NOT_SETTLED_BY_BRIDGE"}
 
 # ---- CC V1-06: the read-only Deploy Readiness verdict --------------------- #
 # A separate component answers "can we deploy now, and why not" from the derived

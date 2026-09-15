@@ -283,15 +283,38 @@ class ExportTests(unittest.TestCase):
         self.assertFalse(fact["binding"]["claimed"])
         self.assertIsNone(fact["binding"]["task_id"])
 
-    def test_a_non_terminal_ledger_state_produces_no_lifecycle_fact(self):
+    def test_a_non_terminal_ledger_state_is_reported_and_never_an_acceptance(self):
+        """In flight is an answer; the property this test defends is unchanged.
+
+        A non-terminal ledger state used to produce no fact at all. That made an
+        in-flight Request indistinguishable from one the Bridge never mentioned,
+        in a component whose whole purpose is to answer "why did my Request not
+        become a Task". It is now reported as REQUEST_CREATED -- the weakest kind
+        there is -- and the property this test has always existed to defend is
+        pinned harder than before: no acceptance, no Task named, no proof needed,
+        no reason claimed.
+        """
+        task = signed_task()
         for status in ("claiming", "prepared", "publishing"):
             root = workdir(ledger={"version": 1, "requests": {"7:" + HEAD: {
-                            "status": status, "request_id": REQUEST_ID,
-                            "task": signed_task()}}}, requests=[collected()])
+                            "status": status, "request_id": REQUEST_ID, "task": task}}},
+                           poll=poll_output([{"pr": "7", "head": HEAD, "status": "published",
+                                              "task_id": task["task_id"]}]),
+                           requests=[collected()])
             index = run_export(root)
-            self.assertEqual(index["counts"]["facts"], 0, status)
-            self.assertEqual(index["counts"]["submissions_without_fact"], 1, status)
-            self.assertIn("SUBMISSION_WITHOUT_REQUEST_FACT", [a["kind"] for a in index["anomalies"]])
+            self.assertEqual(index["counts"]["by_kind"], {"REQUEST_CREATED": 1}, status)
+            fact = only_fact(root)[0]
+            self.assertEqual(fact["kind"], "REQUEST_CREATED", status)
+            self.assertFalse(fact["binding"]["claimed"], status)
+            self.assertFalse(fact["binding"]["proof_required"], status)
+            self.assertEqual(fact["binding"]["proof"], "NOT_APPLICABLE", status)
+            self.assertIsNone(fact["binding"]["task_id"], status)
+            self.assertFalse(fact["reason"]["applicable"], status)
+            self.assertIsNone(fact["reason"]["code"], status)
+            # And the observation is no longer a gap: the submission is a fact.
+            self.assertEqual(index["counts"]["submissions_without_fact"], 0, status)
+            self.assertNotIn("SUBMISSION_WITHOUT_REQUEST_FACT",
+                             [a["kind"] for a in index["anomalies"]], status)
 
     def test_the_ignored_status_is_submission_level_and_keeps_its_reason(self):
         root = workdir(ledger={"version": 1, "requests": {"7:" + HEAD: {
@@ -602,6 +625,57 @@ class SemanticDedupTests(unittest.TestCase):
         # Only the new semantics was minted, at its own first instant.
         fresh = [fact for fact in after if fact["fact_id"] != before["fact_id"]][0]
         self.assertEqual(fresh["first_observed_at"], self.T2)
+
+    def test_created_then_validated_is_exactly_two_semantic_facts(self):
+        """A lifecycle transition is a real change, and it is never deduplicated.
+
+        The Bridge speaks twice about one Request: first that it is publishing,
+        then that it published. Two different outcomes of one Request identity, so
+        two facts -- and the earlier one survives the later one, because the store
+        is append-only and the identity of a fact does not move.
+
+        REQUEST_CREATED is the interesting half. It is the state in which a Request
+        has neither become a Task nor been refused, so the semantic identity has to
+        treat it as an outcome of its own rather than as an absence of one.
+        """
+        root = workdir(requests=[collected()])
+        task = signed_task()
+        ledger = root / "ledger.json"
+
+        # T1: the Bridge is publishing. Its own poll output carries the instant.
+        ledger.write_bytes(X.canonical({"version": 1, "requests": {"7:" + HEAD: {
+            "status": "publishing", "request_id": REQUEST_ID, "task": task}}}) + b"\n")
+        in_flight = write_poll(root, "in-flight.json", self.T1, status="published")
+        first = run_export_with_ledger(root, [in_flight], observations="observations.json")
+        self.assertEqual(first["counts"]["by_kind"], {"REQUEST_CREATED": 1}, first["counts"])
+        created_bytes = fact_bytes(root)
+
+        # T2: the Bridge published. A different outcome, so a second fact.
+        ledger.write_bytes(X.canonical({"version": 1, "requests": {"7:" + HEAD: {
+            "status": "published", "request_id": REQUEST_ID, "task": task,
+            "task_sha256": X.digest(task), "task_commit": "b" * 40}}}) + b"\n")
+        published = write_poll(root, "published.json", self.T2, status="published")
+        second = run_export_with_ledger(root, [in_flight, published],
+                                        observations="observations.json")
+        self.assertEqual(second["counts"]["by_kind"], {"REQUEST_VALIDATED": 1},
+                         second["counts"])
+
+        facts = {fact["kind"]: fact for fact in only_fact(root)}
+        self.assertEqual(sorted(facts), ["REQUEST_CREATED", "REQUEST_VALIDATED"],
+                         "a lifecycle transition was deduplicated away")
+        self.assertEqual(facts["REQUEST_CREATED"]["first_observed_at"], self.T1)
+        self.assertEqual(facts["REQUEST_VALIDATED"]["first_observed_at"], self.T2)
+        self.assertNotEqual(facts["REQUEST_CREATED"]["semantic_id"],
+                            facts["REQUEST_VALIDATED"]["semantic_id"])
+        # The created fact asserts nothing; the validated one makes the claim.
+        self.assertFalse(facts["REQUEST_CREATED"]["binding"]["claimed"])
+        self.assertIsNone(facts["REQUEST_CREATED"]["binding"]["task_id"])
+        self.assertFalse(facts["REQUEST_CREATED"]["binding"]["proof_required"])
+        self.assertTrue(facts["REQUEST_VALIDATED"]["binding"]["claimed"])
+        # And the earlier fact was neither rewritten nor removed by the later one.
+        for name, body in created_bytes.items():
+            self.assertEqual(fact_bytes(root)[name], body, "an immutable fact moved")
+        self.assertEqual(len(fact_bytes(root)), 2)
 
     def test_the_same_id_with_different_bytes_is_refused_not_overwritten(self):
         root = workdir(requests=[collected()])
