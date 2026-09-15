@@ -3,8 +3,23 @@
   const PAGE_LABELS={PUBLISHED:'已发布',DRAFT:'待发布'};
   const DIRECT_LABELS={NOT_REGISTERED:'待酒店认领',REGISTRATION_PENDING:'已认领 · 待核验',GO_DIRECT_VERIFIED:'GO Direct 已核验',GO_DIRECT_LIVE:'GO Direct'};
   const RIGHTS_LABELS={RIGHTS_UNKNOWN:'待审核',AUTHORIZED:'已授权',HOTEL_SUBMITTED:'酒店提交',DISTRIBUTION_LICENSE:'分销授权',PUBLIC_BUSINESS_FACT:'公开商业事实'};
+  const ANOMALY_LABELS={
+    ADDRESS_MISSING:'酒店地址待完善',WEBSITE_CONFLICT:'官网地址存在冲突',ROOMS_MISSING:'房型资料缺失',
+    POLICIES_MISSING:'酒店政策缺失',FACILITIES_MISSING:'酒店设施缺失',CATALOG_MANIFEST_MISSING:'房型目录清单缺失',
+    MEDIA_CANDIDATES_MISSING:'媒体候选资料缺失',DECLARED_ROOM_IDENTITIES_REQUIRED:'房型唯一身份待确认',
+    ROOM_IDENTITIES_NOT_UNIQUE:'房型唯一身份存在重复',DECLARED_ROOM_PARITY_INCOMPLETE:'已声明房型尚未全部匹配',
+    FULL_ROOM_TYPE_INVENTORY_NOT_VERIFIED:'全部房型目录尚未核验',INVENTORY_REVIEW_DOCUMENT_MISMATCH:'房型核验文件不一致',
+    VERIFIED_OFFICIAL_HERO_MISSING:'官方主图未核验',ROOM_OFFICIAL_PHOTO_PARITY_INCOMPLETE:'房型官方图片绑定不完整',
+    ROOM_CORE_FACTS_INCOMPLETE:'房型核心资料不完整',WEBSITE_MISSING:'官方网站待补齐',NAME_MISSING:'酒店名称待补齐'
+  };
   const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const valueText=v=>v===null||v===undefined||v===''?'—':String(v);
+  function anomalyLabel(x){
+    const raw=String(x?.code||x?.error_code||x?.label||'').trim();
+    if(ANOMALY_LABELS[raw])return ANOMALY_LABELS[raw];
+    if(raw && /^[A-Z][A-Z0-9_]+$/.test(raw))return '资料项待人工确认';
+    return raw||'资料项待人工确认';
+  }
   function metric(label,value,sub=''){return `<div class="card structured-metric"><div class="metric-label">${esc(label)}</div><div class="metric-value">${esc(valueText(value))}</div>${sub?`<div class="metric-sub">${esc(sub)}</div>`:''}</div>`}
   function stageTabs(counts){return Object.keys(STAGE_LABELS).map(k=>`<button class="btn factory-stage" data-stage="${k}">${STAGE_LABELS[k]} <b>${Number(counts?.[k]||0)}</b></button>`).join('')}
   function addressText(v){if(!v)return '地址待完善';if(typeof v==='string')return v;return v.formatted||[v.street,v.city,v.region,v.country].filter(Boolean).join(' · ')||'地址待完善'}
@@ -18,7 +33,7 @@
   function contactRows(items){if(!items?.length)return '<p class="metric-sub">尚未发现公开联系方式。</p>';return items.slice(0,8).map(x=>`<div class="business-fact"><span>${esc(x.contact_type||'联系')}</span><b>${esc(x.value)}</b></div>`).join('')}
   function detailsHtml(d){const p=d.profile||{},f=d.factory||{},disp=d.display||{},an=d.anomalies||[],media=d.media||{};const canPublish=p.page_state!=='PUBLISHED';return `<div class="productized-admin-head"><div><h2>${esc(disp.name||'酒店网页')}</h2><p>${esc(addressText(disp.address))}</p></div><span class="status ${f.primary_stage==='GO_DIRECT'?'ok':''}">${esc(STAGE_LABELS[f.primary_stage]||f.primary_stage)}</span></div>
     <div class="grid structured-metrics">${metric('资料完整度',Math.round(Number(p.completeness_bps||0)/100)+'%')}${metric('来源数',f.source_count||0)}${metric('房型数',f.room_count||0)}${metric('图片数',media.count||0,media.rights_pending_count?`${media.rights_pending_count} 张待 Rights 审核`:'Rights 已无待审')}</div>
-    ${an.length?`<section class="card"><div class="section-head"><h2>待办与异常</h2><span class="status warn">${an.length} 项</span></div>${an.map(x=>`<div class="business-fact"><span>需要处理</span><b>${esc(x.label)}</b></div>`).join('')}</section>`:`<section class="card structured-section"><div><h3>当前无阻断异常</h3><p>页面仍需按来源证据、媒体 Rights 和酒店认领状态持续维护。</p></div><span class="status ok">正常</span></section>`}
+    ${an.length?`<section class="card"><div class="section-head"><h2>待办与异常</h2><span class="status warn">${an.length} 项</span></div>${an.map(x=>`<div class="business-fact factory-anomaly-row"><span>需要处理</span><b>${esc(anomalyLabel(x))}</b></div>`).join('')}</section>`:`<section class="card structured-section"><div><h3>当前无阻断异常</h3><p>页面仍需按来源证据、媒体 Rights 和酒店认领状态持续维护。</p></div><span class="status ok">正常</span></section>`}
     <section class="card"><div class="section-head"><h2>运营动作</h2><span>只执行单酒店受控动作</span></div><div class="structured-actions"><button class="btn" data-factory-action="recollect" ${f.latest_discovery_job_id?'':'disabled'}>重新采集</button><button class="btn" data-factory-action="compose">重新生成</button><button class="btn ${canPublish?'primary':'danger'}" data-factory-action="${canPublish?'publish':'unpublish'}">${canPublish?'发布网页':'下架网页'}</button>${d.preview_url?`<a class="btn" href="${esc(d.preview_url)}" target="_blank" rel="noopener">页面预览</a>`:''}</div></section>
     <div class="split"><section class="card"><div class="section-head"><h2>联系方式</h2><span>${Number(f.contact_count||0)} 条</span></div><div class="business-facts-grid">${contactRows(d.contacts||[])}</div></section><section class="card"><div class="section-head"><h2>媒体 Rights</h2><span>${Number(media.count||0)} 张</span></div>${Object.entries(media.rights_summary||{}).map(([k,v])=>`<div class="business-fact"><span>${esc(RIGHTS_LABELS[k]||k)}</span><b>${Number(v)}</b></div>`).join('')||'<p class="metric-sub">尚未下载媒体资产。</p>'}</section></div>
     <section class="section"><div class="section-head"><h2>来源与事实证据</h2><span>Source Snapshot</span></div>${sourceRows(d.sources||[])}</section>
