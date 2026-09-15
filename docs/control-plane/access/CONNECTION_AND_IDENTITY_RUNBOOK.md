@@ -126,12 +126,59 @@ scp local.file hk-staging:/tmp/
 
 | Target | SSH target | Local identity | Public fingerprint | Verified |
 | --- | --- | --- | --- | --- |
-| HK-STAGING-01 | `root@47.239.57.40:22` | `C:\Users\Eason-8845\Downloads\go-nexus-hk-stg-01-direct-20260903.pem` | `SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA` | YES, strict-host-key connection probe on 2026-09-12 |
-| GO Command Center | `root@47.242.94.212:22` | `C:\Users\Eason-8845\.ssh\go-command-center-codex-root-ed25519` | `SHA256:MN3etVe4N91QpsfZkhZECi5YbW6XocZ0tB8LmVebBTU` | YES, alias `go-command-center-root`, strict-host-key connection probe on 2026-09-12 |
+| HK-STAGING-01 | `root@47.239.57.40:22` | `C:\Users\Eason-8845\Downloads\go-nexus-hk-stg-01-direct-20260903.pem` | `SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA` (RSA 2048) | YES — 2026-09-12 probe; re-confirmed 2026-09-15 by the `Accepted publickey` fingerprint recorded in HK-STAGING-01's own sshd log |
+| GO Command Center | `root@47.242.94.212:22` | `C:\Users\Eason-8845\.ssh\go-command-center-codex-root-ed25519` | `SHA256:MN3etVe4N91QpsfZkhZECi5YbW6XocZ0tB8LmVebBTU` (ED25519) | YES — 2026-09-12 probe; re-confirmed 2026-09-15 by the `Accepted publickey` fingerprint recorded in the Command Center's own sshd log |
 
-**Naming discrepancy to resolve (raised 2026-09-15).** Observed from HK-STAGING-01, the `authorized_keys` entry carrying fingerprint `SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA` is annotated `skp-j6cdb9zcrqzwjcb4uug3`, while the name `go-nexus-hk-stg-01-direct-20260903` corresponds to a different fingerprint (`SHA256:Aweiz/cEV850c2AfKMQ8htAnLb8xnZUO41uOBH41GTs`). The local file name on Eason-8845 was not re-verified from this workstation. Either the local file name or the server-side annotation does not match the other. **Do not treat them as interchangeable** until re-checked on Eason-8845. Real usage confirms this edge is live: 2520 successful authentications from the proxy egress.
+**Naming discrepancy — RESOLVED on 2026-09-15.** The HK-STAGING-01 `authorized_keys` entry carrying fingerprint `SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA` is annotated `skp-j6cdb9zcrqzwjcb4uug3`, while the entry annotated `go-nexus-hk-stg-01-direct-20260903` carries a different fingerprint (`SHA256:Aweiz/cEV850c2AfKMQ8htAnLb8xnZUO41uOBH41GTs`).
 
-The Command Center SSH alias is defined in `C:\Users\Eason-8845\.ssh\config`. It sets `IdentitiesOnly yes`, strict host-key checking, and a dedicated known-hosts file. The exact dedicated `UserKnownHostsFile` path is **NOT_YET_RECORDED**; capture it later from this workstation's SSH config rather than rediscovering server credentials. Do not copy its private key to a server or repository.
+This was settled by using the local private key and reading the fingerprint the server itself recorded for that login, rather than by comparing names:
+
+```text
+2026-09-15  -i C:\Users\Eason-8845\Downloads\go-nexus-hk-stg-01-direct-20260903.pem  root@47.239.57.40
+            -> login succeeded
+            -> HK-STAGING-01 sshd logged:  Accepted publickey ... ssh2: RSA SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA
+
+Conclusion  the local file name and fingerprint 4wJ+PlUH... belong together
+            the server-side annotation `skp-j6cdb9zcrqzwjcb4uug3` is a stale free-text label, not this key's name
+            `go-nexus-hk-stg-01-direct-20260903` on the server is a DIFFERENT key (SHA256:Aweiz/cEV850c2AfKMQ8htAnLb8xnZUO41uOBH41GTs) that merely shares the name
+            => server-side annotations are labels, not identity. The fingerprint is authoritative.
+```
+
+Do not infer key identity from a local file name or from a server-side annotation. Compare fingerprints.
+
+The Command Center SSH alias is defined in `C:\Users\Eason-8845\.ssh\config`. That file contains exactly one `Host` entry — `go-command-center-root` — with:
+
+```text
+HostName             47.242.94.212
+User                 root
+IdentityFile         C:/Users/Eason-8845/.ssh/go-command-center-codex-root-ed25519
+IdentitiesOnly       yes
+StrictHostKeyChecking yes
+UserKnownHostsFile   C:/Users/Eason-8845/.ssh/go-command-center-root-known_hosts
+```
+
+There is **no** HK-STAGING-01 alias, so that edge is always invoked with an explicit `-i` argument. Do not copy either private key to a server or into this repository.
+
+### Eason-8845 key inventory (observed 2026-09-15)
+
+```text
+C:\Users\Eason-8845\.ssh\
+  config
+  go-command-center-codex-root-ed25519 (+ .pub)   -> root@GO Command Center        IN USE  (ED25519)
+  go-command-center-root-known_hosts              -> dedicated known-hosts for the alias above
+  go-nexus-hk-stg-01-direct-ed25519 (+ .pub)      -> fingerprint not yet captured
+  go-nexus-hk-stg-01-ed25519 (+ .pub)             -> fingerprint not yet captured
+  goai-command-admin                              -> fingerprint not yet captured (superseded predecessor?)
+  goai-command-admin-v2 (+ .pub)                  -> goadmin@GO Command Center     WITHDRAWN 2026-09-15
+  known_hosts, known_hosts.old
+
+C:\Users\Eason-8845\Downloads\
+  go-nexus-hk-stg-01-direct-20260903.pem          -> root@HK-STAGING-01            IN USE  (RSA 2048)
+```
+
+**Authorization withdrawn 2026-09-15.** The private-key body of `goai-command-admin-v2` (`SHA256:aOQ54zqSVfF1KlZtpYOswGGxk2rGUBxHmSzi9P6VUqM`, used as `goadmin@47.242.94.212`) was accidentally printed to a terminal by a mis-pasted multi-line command and is treated as exposed. Its `authorized_keys` entry was removed from `/home/goadmin/.ssh/authorized_keys` the same day, so `goadmin` currently has **no** SSH authorization on the Command Center. The `root` identities above are unaffected, and the account is unchanged — it can still be reached from the Command Center host via `su - goadmin`.
+
+Only paths and fingerprints are recorded in this section. No private-key body, token, password, AccessKey or session value appears in this document or its JSON companion.
 
 ## Codex access map
 

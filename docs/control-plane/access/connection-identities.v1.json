@@ -35,7 +35,14 @@
           "public_key_fingerprint_sha256": "SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA",
           "verified": true,
           "standard_command": "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i \"C:\\Users\\Eason-8845\\Downloads\\go-nexus-hk-stg-01-direct-20260903.pem\" root@47.239.57.40",
-          "naming_discrepancy_note": "As observed from HK-STAGING-01 on 2026-09-15, the authorized_keys entry carrying this exact fingerprint is annotated 'skp-j6cdb9zcrqzwjcb4uug3', and the name 'go-nexus-hk-stg-01-direct-20260903' corresponds to a different fingerprint (SHA256:Aweiz/cEV850c2AfKMQ8htAnLb8xnZ...). The local file name on Eason-8845 was not re-verified. Unresolved: either the Eason-8845 file name or the server-side annotation does not match the other. Do not assume they are interchangeable until re-checked on Eason-8845."
+          "key_type": "RSA 2048",
+          "naming_discrepancy_resolution": {
+            "status": "RESOLVED",
+            "resolved_on": "2026-09-15",
+            "method": "Used the local private key to authenticate to HK-STAGING-01 and read the fingerprint that the server itself recorded for that login (sshd 'Accepted publickey' entry).",
+            "server_observed_fingerprint": "SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA",
+            "conclusion": "The local file name and this fingerprint belong together. The server-side annotation 'skp-j6cdb9zcrqzwjcb4uug3' is a stale free-text label and does not describe this key. The entry annotated 'go-nexus-hk-stg-01-direct-20260903' on the server carries a different fingerprint (SHA256:Aweiz/cEV850c2AfKMQ8htAnLb8xnZUO41uOBH41GTs) and is a different key that merely shares the name. Server-side annotations are labels, not identity; the fingerprint is authoritative."
+          }
         },
         {
           "name": "GO Command Center",
@@ -44,15 +51,56 @@
           "user": "root",
           "ssh_alias": "go-command-center-root",
           "ssh_config_path": "C:\\Users\\Eason-8845\\.ssh\\config",
-          "user_known_hosts_file": null,
-          "user_known_hosts_file_status": "NOT_YET_RECORDED",
+          "user_known_hosts_file": "C:\\Users\\Eason-8845\\.ssh\\go-command-center-root-known_hosts",
+          "user_known_hosts_file_status": "RECORDED",
           "local_private_key_path": "C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519",
           "public_key_fingerprint_sha256": "SHA256:MN3etVe4N91QpsfZkhZECi5YbW6XocZ0tB8LmVebBTU",
           "verified": true,
           "standard_command": "ssh go-command-center-root",
-          "raw_fallback_command": "ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -i \"C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519\" root@47.242.94.212"
+          "raw_fallback_command": "ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -i \"C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519\" root@47.242.94.212",
+          "key_type": "ED25519",
+          "ssh_config_note": "C:\\Users\\Eason-8845\\.ssh\\config contains exactly one Host entry - \"go-command-center-root\" - with HostName 47.242.94.212, User root, IdentityFile go-command-center-codex-root-ed25519, IdentitiesOnly yes, StrictHostKeyChecking yes, and a dedicated UserKnownHostsFile. There is no HK-STAGING-01 alias, so that edge is always invoked with an explicit -i argument."
         }
-      ]
+      ],
+      "ssh_key_inventory_2026_09_15": {
+        "note": "Directory listing only, plus fingerprints actually observed. No private-key body is recorded.",
+        "ssh_directory": "C:\\Users\\Eason-8845\\.ssh",
+        "downloads_directory": "C:\\Users\\Eason-8845\\Downloads",
+        "in_use_by_this_workstation": [
+          {
+            "key": "go-nexus-hk-stg-01-direct-20260903.pem",
+            "role": "root@HK-STAGING-01",
+            "type": "RSA 2048",
+            "fingerprint": "SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA"
+          },
+          {
+            "key": "go-command-center-codex-root-ed25519",
+            "role": "root@GO Command Center (alias go-command-center-root)",
+            "type": "ED25519",
+            "fingerprint": "SHA256:MN3etVe4N91QpsfZkhZECi5YbW6XocZ0tB8LmVebBTU"
+          }
+        ],
+        "present_but_fingerprint_not_yet_captured": [
+          "go-nexus-hk-stg-01-direct-ed25519 (+ .pub)",
+          "go-nexus-hk-stg-01-ed25519 (+ .pub)",
+          "goai-command-admin (no v2 suffix; believed superseded predecessor)"
+        ],
+        "supporting_files": [
+          "config",
+          "go-command-center-root-known_hosts",
+          "known_hosts",
+          "known_hosts.old"
+        ],
+        "authorization_withdrawn_2026_09_15": {
+          "key": "goai-command-admin-v2",
+          "fingerprint": "SHA256:aOQ54zqSVfF1KlZtpYOswGGxk2rGUBxHmSzi9P6VUqM",
+          "role": "goadmin@GO Command Center",
+          "reason": "The private-key body was inadvertently printed to a terminal by a mis-pasted multi-line command and is treated as exposed.",
+          "action": "Its entry was removed from /home/goadmin/.ssh/authorized_keys on 2026-09-15 (backup: authorized_keys.bak-20260915-leaked-revoke). goadmin currently has no SSH authorization.",
+          "impact_on_root_identities": "NONE - the root SSH identities listed above are unaffected.",
+          "residual_access": "The account is unchanged and can still be reached from the Command Center host via su - goadmin."
+        }
+      }
     },
     "Eason-13490": {
       "id": "Eason-13490",
@@ -413,6 +461,7 @@
   "canonical_main_at_refresh": "8610a4dbfd58cbe595f3d161c049de37dd81d3cc",
   "refresh_note": "Refreshed 2026-09-15 against canonical main 8610a4d. On Eason-13490 the verified primary ECS path changed from Alibaba Cloud Workbench CLI to direct SSH key access; Workbench CLI is retained as fallback. Metadata only: no key body, token, password, AccessKey value or session value is recorded.",
   "changelog": [
+    "2026-09-15: Eason-8845 key inventory captured; naming discrepancy resolved by server-observed fingerprint; an exposed goadmin key authorization was withdrawn.",
     "2026-09-15: Eason-13490 primary ECS access changed Workbench CLI -> direct SSH key access; both HK-STAGING-01 and GO Command Center direct SSH moved from not-verified to VERIFIED; go_repository HEAD re-verified at main 8610a4d.",
     "2026-09-12: initial inventory (metadata only)."
   ]
