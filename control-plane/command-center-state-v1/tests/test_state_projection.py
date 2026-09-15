@@ -42,6 +42,12 @@ AT = sp.parse_time("2026-09-14T12:00:00Z")
 # outside instead of from a copy of itself.
 # --------------------------------------------------------------------------- #
 READINESS_COMPONENT = ROOT.parent / "command-center-deploy-readiness-v1"
+# The exporter that writes the facts this layer reads, loaded for the same reason
+# the readiness evaluator above is: a contract pinned only against a fixture built
+# from this component's own constants cannot fail, and therefore protects nothing.
+REQUESTS_COMPONENT = ROOT.parent / "command-center-request-visibility-v1"
+FACT_EXPORTER = REQUESTS_COMPONENT / "command-center" / "go-request-fact-export"
+FACT_CONTRACT = REQUESTS_COMPONENT / "contracts" / "request_fact_v1.schema.json"
 READINESS_EVALUATOR = READINESS_COMPONENT / "command-center" / "go-deploy-readiness"
 READINESS_FIXTURES = READINESS_COMPONENT / "tests" / "test_deploy_readiness.py"
 _SIBLINGS = {}
@@ -74,6 +80,11 @@ def real_evaluator():
 def real_readiness_fixture():
     """The evaluator's own fixture builder -- the authoritative input constructor."""
     return sibling("readiness_fixture", READINESS_FIXTURES)
+
+
+def real_fact_exporter():
+    """The real go-request-fact-export module."""
+    return sibling("fact_exporter", FACT_EXPORTER)
 
 
 def evaluator_gate_blocks():
@@ -313,11 +324,21 @@ def accepted_binding(task, request_id):
             "proof_required": True, "proof": "TASK_SIGNATURE_AND_DIGEST_PREFIX"}
 
 
-def request_fact(kind, request_id, action_id="HK_STAGING_VERIFY", **over):
+def request_fact(kind, request_id, action_id="HK_STAGING_VERIFY", legacy=False, **over):
+    """A Bridge Request fact.
+
+    The default is the shape the exporter writes now: a semantic identity, an
+    id covering the body except the two time fields, and first_observed_at.
+    `legacy=True` builds what was written before that: observed_at and no
+    semantic_id, with the id covering the whole body. Both shapes are on the
+    control bus at once, so both have to be constructible here.
+    """
+    instant = over.pop("first_observed_at", over.pop("observed_at",
+                                                     "2026-09-14T11:30:00Z"))
     fact = {
         "schema_version": "1", "kind": kind, "request_id": request_id, "action_id": action_id,
         "environment": "HK-STAGING-01", "nonce": over.pop("nonce", None),
-        "observed_at": over.pop("observed_at", "2026-09-14T11:30:00Z"),
+        "observed_at" if legacy else "first_observed_at": instant,
         "time_source": over.pop("time_source", "POLL_JOURNAL"),
         "submission": over.pop("submission",
                                {"pr_number": "7", "head_sha": "b" * 40,
@@ -333,8 +354,13 @@ def request_fact(kind, request_id, action_id="HK_STAGING_VERIFY", **over):
                               {k: False for k in sp.REQUEST_FACT_AUTHORITY_KEYS}),
     }
     fact.update(over)
+    if legacy:
+        fact["fact_id"] = "request-fact-" + sp.digest(
+            {k: v for k, v in fact.items() if k != "fact_id"})[:32]
+        return fact
+    fact["semantic_id"] = sp.digest({k: fact[k] for k in sp.REQUEST_FACT_IDENTITY_KEYS})
     fact["fact_id"] = "request-fact-" + sp.digest(
-        {k: v for k, v in fact.items() if k != "fact_id"})[:32]
+        {k: v for k, v in fact.items() if k not in sp.REQUEST_FACT_ID_EXCLUDED})[:32]
     return fact
 
 
@@ -1538,12 +1564,14 @@ class RequestVisibilityTests(unittest.TestCase):
                     self.task_key, "hex")
 
     def project_one(self, facts=(), index=None, requests=(("request-1.json", None),),
-                    tasks=(), task_pub="auto", evidence_pub=None):
+                    tasks=(), task_pub="auto", evidence_pub=None, facts_root=None):
         request_files = [(name, value if value is not None else request_file())
                          for name, value in requests]
         root, req_dir = layout(tasks=tasks, requests=request_files)
         return build(root, req_dir, task_pub=(self.task_pub if task_pub == "auto" else task_pub),
-                     evidence_pub=evidence_pub, facts_root=facts_root_of(facts, index))
+                     evidence_pub=evidence_pub,
+                     facts_root=(facts_root if facts_root is not None
+                                 else facts_root_of(facts, index)))
 
     # -- a Request file is not an acceptance ----------------------------------
     def test_a_request_file_alone_is_only_created(self):
@@ -1723,7 +1751,7 @@ class RequestVisibilityTests(unittest.TestCase):
                            reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"))
         bad["reason"]["class"] = "NOT_A_CLASS"
         bad["fact_id"] = "request-fact-" + sp.digest(
-            {k: v for k, v in bad.items() if k != "fact_id"})[:32]
+            {k: v for k, v in bad.items() if k not in sp.REQUEST_FACT_ID_EXCLUDED})[:32]
         _, state, _ = self.project_one(facts=[bad])
         self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_CREATED")
         self.assertIn("REQUEST_FACT_UNREADABLE", [a["kind"] for a in state["anomalies"]])
@@ -1731,11 +1759,43 @@ class RequestVisibilityTests(unittest.TestCase):
     def test_a_tampered_fact_is_detected(self):
         good = request_fact("REQUEST_REJECTED", "request-1",
                             reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"))
-        good["observed_at"] = "2026-09-14T23:59:59Z"          # id not recomputed
+        good["reason"]["code"] = "a_reason_it_never_had"      # id not recomputed
         _, state, _ = self.project_one(facts=[good])
         self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_CREATED")
         details = [a["detail"] for a in state["anomalies"] if a["kind"] == "REQUEST_FACT_UNREADABLE"]
         self.assertTrue(any("tampered" in d for d in details), details)
+
+    def test_a_forged_semantic_identity_is_detected_even_with_a_recomputed_id(self):
+        """The declared identity must be the identity of the body it declares.
+
+        Forging semantic_id and recomputing fact_id produces a self-consistent
+        document that lies about what it is a fact about. The id cannot catch
+        that, so the identity is derived from the body and compared.
+        """
+        good = request_fact("REQUEST_REJECTED", "request-1",
+                            reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"))
+        good["semantic_id"] = "f" * 64
+        good["fact_id"] = "request-fact-" + sp.digest(
+            {k: v for k, v in good.items() if k not in sp.REQUEST_FACT_ID_EXCLUDED})[:32]
+        _, state, _ = self.project_one(facts=[good])
+        self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_CREATED")
+        details = [a["detail"] for a in state["anomalies"] if a["kind"] == "REQUEST_FACT_UNREADABLE"]
+        self.assertEqual(details, ["request_fact_semantic_id"])
+
+    def test_the_two_time_fields_are_outside_the_id_by_design(self):
+        """The boundary, stated rather than implied.
+
+        The instant must not define identity -- that is the whole point of the
+        semantic identity -- so it is not covered by the id either. What is
+        covered is the semantic identity and everything a fact claims about a
+        Request; the instant is a claim the projection cannot verify from an
+        unsigned fact, and it does not let a fact change what it says happened.
+        """
+        self.assertEqual(set(sp.REQUEST_FACT_ID_EXCLUDED),
+                         {"fact_id", "first_observed_at", "time_source"})
+        self.assertIn("reason", sp.REQUEST_FACT_IDENTITY_KEYS)
+        self.assertIn("binding", sp.REQUEST_FACT_IDENTITY_KEYS)
+        self.assertNotIn("first_observed_at", sp.REQUEST_FACT_IDENTITY_KEYS)
 
     def test_a_fact_claiming_authority_is_refused(self):
         """A fact that says it authorizes something is not a fact."""
@@ -2359,6 +2419,205 @@ class DeployReadinessIntegrationTests(unittest.TestCase):
         self.assertTrue(all(entry["mandatory"] for entry in gates))
         self.assertEqual(state["control_state"]["deploy_readiness"]["value"],
                          document["verdict"]["deploy_ready"])
+
+
+# --------------------------------------------------------------------------- #
+# Semantic identity on the reading side
+#
+# The exporter now mints one immutable fact per semantic identity, at the earliest
+# instant it was observed. The bus, however, still carries every fact the earlier
+# exporter wrote -- one per observation -- so the same outcome can be present in
+# both shapes at once. They are one business fact, and the projection has to say
+# so rather than count the same outcome twice.
+# --------------------------------------------------------------------------- #
+class RequestFactSemanticDedupTests(RequestVisibilityTests):
+    """Reading both shapes, and folding them into one fact per identity."""
+
+    def test_a_legacy_fact_is_still_read(self):
+        _, state, _ = self.project_one(
+            facts=[request_fact("REQUEST_REJECTED", "request-1", legacy=True,
+                                reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"))])
+        self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_REJECTED")
+        entry = state["requests"][0]["facts"][0]
+        self.assertEqual(entry["identity_rule"], "LEGACY_TIMESTAMP")
+        self.assertEqual(entry["first_observed_at"], "2026-09-14T11:30:00Z")
+        self.assertNotIn("REQUEST_FACT_UNREADABLE", [a["kind"] for a in state["anomalies"]])
+
+    def test_a_current_fact_reports_its_rule_and_its_instant(self):
+        _, state, status = self.project_one(
+            facts=[request_fact("REQUEST_REJECTED", "request-1",
+                                reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"))])
+        entry = state["requests"][0]["facts"][0]
+        self.assertEqual(entry["identity_rule"], "SEMANTIC")
+        self.assertEqual(entry["observations_on_bus"], 1)
+        self.assertEqual(entry["first_observed_at"], "2026-09-14T11:30:00Z")
+        self.assertEqual(status["answers"]["request_fate"]["by_request_id"]["request-1"]
+                         ["lifecycle"], "REQUEST_REJECTED")
+
+    def test_the_same_outcome_in_both_shapes_is_one_fact(self):
+        """One outcome, five observations of it, one business fact."""
+        facts = [request_fact("REQUEST_VALIDATED", "request-1", legacy=True,
+                              observed_at="2026-09-14T11:30:00Z",
+                              binding=accepted_binding(self.signed_task("request-1"), "request-1")),
+                 request_fact("REQUEST_VALIDATED", "request-1", legacy=True,
+                              observed_at="2026-09-14T11:35:00Z",
+                              binding=accepted_binding(self.signed_task("request-1"), "request-1")),
+                 request_fact("REQUEST_VALIDATED", "request-1",
+                              first_observed_at="2026-09-14T11:30:00Z",
+                              binding=accepted_binding(self.signed_task("request-1"), "request-1"))]
+        tk = self.signed_task("request-1")
+        _, state, status = self.project_one(tasks=[("%s.json" % tk["task_id"], tk)], facts=facts)
+        visibility = state["request_visibility"]
+        self.assertEqual(visibility["facts_collected"], 1)
+        self.assertEqual(visibility["fact_observations_folded_into_a_semantic_fact"], 2)
+        self.assertEqual(state["counts"]["request_facts"], 1)
+        self.assertEqual(state["counts"]["request_fact_observations"], 3)
+        self.assertEqual(state["counts"]["request_facts_collapsed"], 2)
+        entry = state["requests"][0]["facts"][0]
+        self.assertEqual(entry["observations_on_bus"], 3)
+        self.assertEqual(len(entry["collapsed_fact_ids"]), 2)
+        # And the answer is unchanged by the duplicates.
+        self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_VALIDATED")
+
+    def test_the_earliest_observation_of_an_identity_is_the_one_kept(self):
+        early = request_fact("REQUEST_REJECTED", "request-1", legacy=True,
+                             observed_at="2026-09-14T11:00:00Z",
+                             reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"))
+        late = request_fact("REQUEST_REJECTED", "request-1",
+                            first_observed_at="2026-09-14T11:30:00Z",
+                            reason=fact_reason("pr_head_not_found", "UNRESOLVABLE"))
+        _, state, _ = self.project_one(facts=[late, early])
+        entry = state["requests"][0]["facts"][0]
+        self.assertEqual(entry["first_observed_at"], "2026-09-14T11:00:00Z")
+        self.assertEqual(entry["fact_id"], early["fact_id"])
+        self.assertEqual(entry["identity_rules"], ["LEGACY_TIMESTAMP", "SEMANTIC"])
+
+    def test_a_different_reason_is_a_different_fact_not_a_duplicate(self):
+        _, state, _ = self.project_one(
+            facts=[request_fact("REQUEST_REJECTED", "request-1",
+                                reason=fact_reason("pr_head_not_found", "UNRESOLVABLE")),
+                   request_fact("REQUEST_REJECTED", "request-1",
+                                first_observed_at="2026-09-14T11:45:00Z",
+                                reason=fact_reason("request_oversized", "INVALID_REQUEST"))])
+        self.assertEqual(state["counts"]["request_facts"], 2)
+        self.assertEqual(state["counts"]["request_facts_collapsed"], 0)
+        self.assertEqual(len(state["requests"][0]["facts"]), 2)
+
+    def test_dedup_never_hides_a_claim_that_could_not_be_proven(self):
+        """Folding observations must not turn an unproven claim into an acceptance."""
+        _, state, status = self.project_one(
+            facts=[request_fact("REQUEST_VALIDATED", "request-1", legacy=True,
+                                binding={"claimed": True, "task_id": "a-task-that-is-not-on-the-bus",
+                                         "task_sha256": "a" * 64, "task_commit": None,
+                                         "proof_required": True, "proof": sp.REQUEST_FACT_PROOF}),
+                   request_fact("REQUEST_VALIDATED", "request-1",
+                                binding={"claimed": True, "task_id": "a-task-that-is-not-on-the-bus",
+                                         "task_sha256": "a" * 64, "task_commit": None,
+                                         "proof_required": True, "proof": sp.REQUEST_FACT_PROOF})])
+        by_id = status["answers"]["request_fate"]["by_request_id"]
+        self.assertNotEqual(by_id["request-1"]["lifecycle"], "REQUEST_VALIDATED")
+        self.assertEqual(len(state["request_visibility"][
+            "acceptance_claims_without_a_signed_task"]), 1, "the claim was folded away")
+
+
+# --------------------------------------------------------------------------- #
+# The real exporter's output, read by the real projector
+#
+# Same rule as the readiness contract above, and for the same reason. The fact
+# shape, the semantic identity and the aggregation belong to the exporter; this
+# layer may only carry what it is given. Pinning that against a fixture built here
+# would compare this file's constants with themselves, which is how the readiness
+# gate set drifted unnoticed for as long as it did.
+# --------------------------------------------------------------------------- #
+class RequestFactExporterIntegrationTests(RequestVisibilityTests):
+    """Facts produced by the real exporter, consumed by the real projector."""
+
+    T1, T2 = ("2026-09-14T11:00:00Z", "2026-09-14T11:20:00Z")
+
+    def exported(self, instants=None):
+        """Run the real exporter over a small bus. Returns (root, export index)."""
+        exporter = real_fact_exporter()
+        root = pathlib.Path(tempfile.mkdtemp(prefix="ccs-exporter-"))
+        (root / "requests").mkdir()
+        request_id = "request-1"
+        (root / "requests" / (request_id + ".json")).write_bytes(exporter.canonical(
+            {"ref": "refs/remotes/origin/boss-request-" + request_id, "head_sha": "b" * 40,
+             "path": "requests/" + request_id + ".json",
+             "request": {"schema_version": "1", "request_id": request_id,
+                         "action_id": "HK_STAGING_VERIFY", "environment": "HK-STAGING-01",
+                         "requested_at": "2026-09-14T10:50:00Z"}}) + b"\n")
+        (root / "ledger.json").write_bytes(exporter.canonical(
+            {"version": 1, "requests": {}}) + b"\n")
+        polls = []
+        for index, instant in enumerate(instants if instants is not None else (self.T1, self.T2)):
+            path = root / ("poll-%02d.json" % index)
+            path.write_bytes(exporter.canonical(
+                {"schema_version": "1", "journaled_at": instant,
+                 "bridge_output": {"bridge_version": "synthetic", "channel_mode": "PERSISTENT",
+                                   "publish_enabled": True,
+                                   "results": [{"pr": "7", "head": "b" * 40, "status": "rejected",
+                                                "reason": "pr_head_not_found"}]}}) + b"\n")
+            polls.append(str(path))
+        index = exporter.export([str(root / "ledger.json")], polls, str(root / "requests"),
+                                str(root / "export"), str(FACT_CONTRACT),
+                                sp.parse_time("2026-09-14T12:00:00Z"),
+                                str(root / "observations.json"))
+        return root, index
+
+    def test_the_real_export_is_read_without_a_single_anomaly(self):
+        root, _ = self.exported()
+        _, state, _ = self.project_one(facts_root=(root / "export"))
+        self.assertEqual([a for a in state["anomalies"]
+                          if a["kind"].startswith("REQUEST_FACT")], [])
+
+    def test_the_real_semantic_fact_carries_the_earliest_observation(self):
+        root, index = self.exported(instants=(self.T2, self.T1))   # newest read first
+        exporter = real_fact_exporter()
+        self.assertEqual(index["counts"]["facts"], 1, index["counts"])
+        fact = exporter.read_json(root / "export" / exporter.FACTS_DIR
+                                  / (index["facts"][0]["fact_id"] + ".json"))
+        self.assertEqual(fact["first_observed_at"], self.T1)
+        # Two observations, one fact document: the aggregation already happened on
+        # the exporting side, and how many instants it folded is in the index and
+        # in the exporter's own local ledger, not in a second fact.
+        self.assertEqual(index["facts"][0]["observation_count"], 2)
+        self.assertEqual(index["facts"][0]["last_seen_at"], self.T2)
+        _, state, _ = self.project_one(facts_root=(root / "export"))
+        entry = state["requests"][0]["facts"][0]
+        self.assertEqual(entry["first_observed_at"], self.T1)
+        self.assertEqual(entry["identity_rule"], "SEMANTIC")
+        self.assertEqual(entry["observations_on_bus"], 1)
+        self.assertEqual(state["counts"]["request_facts"], 1)
+        self.assertEqual(state["counts"]["request_facts_collapsed"], 0)
+
+    def test_a_real_export_and_a_historical_fact_for_one_outcome_fold_to_one(self):
+        """What the live bus looks like across the change: both shapes at once.
+
+        The store still holds the facts the earlier exporter wrote -- one per
+        observation -- alongside the semantic one. They are one business fact, so
+        one is counted and the others are reported as folded, not discarded.
+        """
+        root, index = self.exported()
+        semantic = index["facts"][0]
+        folder = root / "export" / sp.REQUEST_FACTS_DIRNAME
+        written = json.loads((folder / (semantic["fact_id"] + ".json")).read_text(encoding="utf-8"))
+        historical = {
+            "schema_version": "1", "kind": written["kind"], "request_id": written["request_id"],
+            "action_id": written["action_id"], "environment": written["environment"], "nonce": None,
+            "observed_at": self.T2, "time_source": "POLL_JOURNAL",
+            "submission": written["submission"], "source": written["source"],
+            "reason": written["reason"], "binding": written["binding"],
+            "authority": written["authority"]}
+        historical["fact_id"] = "request-fact-" + sp.digest(
+            {k: v for k, v in historical.items() if k != "fact_id"})[:32]
+        (folder / (historical["fact_id"] + ".json")).write_text(
+            json.dumps(historical), encoding="utf-8")
+
+        _, state, _ = self.project_one(facts_root=(root / "export"))
+        self.assertEqual(state["counts"]["request_facts"], 1)
+        self.assertEqual(state["counts"]["request_facts_collapsed"], 1)
+        self.assertEqual(state["requests"][0]["facts"][0]["observations_on_bus"], 2)
+        self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_REJECTED")
 
 
 if __name__ == "__main__":

@@ -50,6 +50,10 @@ import sys
 
 STATE_DIR = pathlib.Path("/var/lib/go-command-center/state-publication-v1")
 EXPORT_DIR = STATE_DIR / "export"
+# Local and non-authoritative, and outside EXPORT_DIR on purpose: only
+# EXPORT_DIR/facts is published, so nothing that moves per observation --
+# last_seen_at, observation_count -- can ever reach the control bus.
+OBSERVATIONS = STATE_DIR / "observations.json"
 BUS_DIR = STATE_DIR / "bus"
 TASKS_CLONE = BUS_DIR / "tasks"
 EVIDENCE_CLONE = BUS_DIR / "evidence"
@@ -421,7 +425,8 @@ def main():
         print(json.dumps(out, sort_keys=True))
         return 0
     command = [sys.executable, str(EXPORTER), "export",
-               "--ledger", str(LEDGER), "--out", str(EXPORT_DIR), "--now", iso(now)]
+               "--ledger", str(LEDGER), "--out", str(EXPORT_DIR), "--now", iso(now),
+               "--observations", str(OBSERVATIONS)]
     for path in poll_paths:
         command += ["--poll-results", str(path)]
     proc = subprocess.run(command, capture_output=True, text=True, check=False)

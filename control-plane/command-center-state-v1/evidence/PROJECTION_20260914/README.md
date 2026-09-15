@@ -1,5 +1,17 @@
 # Projection of the live control bus — 2026-09-14
 
+```text
+HISTORICAL_SCHEMA_SNAPSHOT
+NOT_CURRENT_CONTRACT_COMPATIBLE
+```
+
+This directory is a record of what `state_projection.py` produced at a pinned
+instant from pinned revisions, under the contract **as it stood at that time**.
+Its bytes are immutable: it is deliberately not rewritten when a later contract
+revision adds a field, and it is not re-projected. The live contract is
+`contracts/`, and a current projection is produced from the current revision and
+current pinned inputs as a new run -- never by overwriting this one.
+
 A real, unedited projection produced by `state_projection.py` against the live
 control repositories and the **published verifier identities**, kept here so the
 value of the layer can be reviewed without re-running anything.

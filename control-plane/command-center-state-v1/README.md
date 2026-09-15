@@ -371,6 +371,18 @@ separately reports what the artifact claimed, so a record claiming otherwise is
 recorded and given no effect. `answers.last_failure` now carries the failure
 `kind`, `stage` and `reason_code` alongside the Task that caused it.
 
+**Both fact shapes are read, and folded by semantic identity.** The bus carries
+every fact the earlier exporter wrote — one per observation of an outcome — next to
+the semantic one the current exporter mints for it. They are one business fact, so
+the projection keeps the earliest observation of each identity and reports how many
+it collapsed (`facts_collected`, `fact_observations_folded_into_a_semantic_fact`,
+`facts_by_identity_rule`) rather than counting the same outcome twice. Nothing is
+deleted; the bus still carries every observation as a record. A fact whose
+`semantic_id` is not the identity of the body it declares is refused even when its
+id was recomputed to match. The two time fields are outside the id by design: the
+instant must not define identity, so it is not made tamper-evident either, and the
+projection claims nothing about it beyond carrying it.
+
 ### 10. What the Bridge did with a Request is now on the control bus (CC V1-05)
 
 Acceptance was a Bridge-ledger fact that never reached the control bus, and a
@@ -381,12 +393,16 @@ become a Task?"* had no answer on the bus.
 
 `control-plane/command-center-request-visibility-v1` reads the ledger, the
 operator's journalled copy of the Bridge's own poll output, and the collected
-Request files — all read-only — and emits one Request fact per Request identity:
+Request files — all read-only — and emits **one immutable fact per semantic
+identity**, at the earliest instant that semantics was observed:
 `REQUEST_CREATED`, `REQUEST_VALIDATED`, `REQUEST_REJECTED`, `REQUEST_DUPLICATE`,
 `REQUEST_REPLAY_REJECTED`. The projection consumes it through
 `--request-facts-dir` and publishes:
 
 ```
+requests[].facts[].first_observed_at   the earliest instant that semantics was seen
+requests[].facts[].identity_rule       SEMANTIC, or LEGACY_TIMESTAMP for the earlier shape
+requests[].facts[].observations_on_bus how many fact documents this identity has here
 requests[].lifecycle                  the strongest fact that could be proven
 requests[].lifecycle_source           BRIDGE_FACT / CONTROL_BUS_ONLY
 requests[].why_not_a_task.state       a closed set, plus the Bridge's reason code

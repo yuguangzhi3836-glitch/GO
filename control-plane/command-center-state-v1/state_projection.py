@@ -254,8 +254,19 @@ REQUEST_FACT_AUTHORITY_KEYS = ("is_execution_authority", "grants_execution", "ca
                                "can_sign", "holds_private_key", "may_authorize_retry",
                                "may_authorize_replay", "may_edit_a_request")
 REQUEST_FACT_REQUIRED = {"schema_version", "fact_id", "kind", "request_id", "action_id",
-                         "environment", "nonce", "observed_at", "time_source", "submission",
-                         "source", "reason", "binding", "authority"}
+                         "environment", "nonce", "semantic_id", "first_observed_at",
+                         "time_source", "submission", "source", "reason", "binding", "authority"}
+# Facts written before the semantic identity existed are still on the bus and are
+# still read: their instant is observed_at and they carry no semantic_id. A fact
+# must match exactly one of the two shapes.
+LEGACY_REQUEST_FACT_REQUIRED = (REQUEST_FACT_REQUIRED - {"semantic_id", "first_observed_at"}
+                                | {"observed_at"})
+# What a semantic identity is made of, and therefore what two facts have to agree
+# on to be the same business fact. The observation instant, where it came from,
+# and which submission it happened to be keyed by are all deliberately excluded.
+REQUEST_FACT_IDENTITY_KEYS = ("kind", "request_id", "action_id", "environment", "nonce",
+                              "source", "reason", "binding")
+REQUEST_FACT_ID_EXCLUDED = ("fact_id", "first_observed_at", "time_source")
 REQUEST_FACT_BINDING_KEYS = {"claimed", "task_id", "task_sha256", "task_commit",
                              "proof_required", "proof"}
 REQUEST_FACT_REASON_KEYS = {"applicable", "code", "class", "origin", "preserved_verbatim"}
@@ -736,13 +747,29 @@ def validate_request_fact(payload):
     """
     if not isinstance(payload, dict):
         raise Malformed("request_fact_not_object")
-    if set(payload) != REQUEST_FACT_REQUIRED:
+    legacy = "semantic_id" not in payload
+    if set(payload) != (LEGACY_REQUEST_FACT_REQUIRED if legacy else REQUEST_FACT_REQUIRED):
         raise Malformed("request_fact_fields")
     if not isinstance(payload["fact_id"], str) or not REQUEST_FACT_ID_RE.fullmatch(payload["fact_id"]):
         raise Malformed("request_fact_id")
-    recomputed = "request-fact-" + digest({k: v for k, v in payload.items() if k != "fact_id"})[:32]
+    identity = digest({name: payload[name] for name in REQUEST_FACT_IDENTITY_KEYS})
+    if legacy:
+        # Its id covers the whole body, and its identity is derived here so the
+        # two shapes can be deduplicated against each other.
+        recomputed = "request-fact-" + digest({k: v for k, v in payload.items()
+                                              if k != "fact_id"})[:32]
+    else:
+        recomputed = "request-fact-" + digest(
+            {k: v for k, v in payload.items() if k not in REQUEST_FACT_ID_EXCLUDED})[:32]
     if recomputed != payload["fact_id"]:
+        # Checked first because it is the general claim: any edit to the body
+        # breaks it, including an edit to a field the identity covers.
         raise Malformed("request_fact_tampered")
+    if not legacy and payload["semantic_id"] != identity:
+        # The id was recomputed, so the body is self-consistent, and yet the
+        # identity it declares is not the identity of what it says. That is a
+        # forged identity rather than a forged body, and it is refused as such.
+        raise Malformed("request_fact_semantic_id")
     if payload["schema_version"] != "1":
         raise Malformed("request_fact_schema_version")
     if payload["kind"] not in REQUEST_FACT_KINDS:
@@ -756,7 +783,8 @@ def validate_request_fact(payload):
         raise Malformed("request_fact_environment")
     if payload["nonce"] is not None and not isinstance(payload["nonce"], str):
         raise Malformed("request_fact_nonce")
-    parse_time(payload["observed_at"])
+    instant = payload["first_observed_at"] if not legacy else payload["observed_at"]
+    parse_time(instant)
     if payload["time_source"] not in REQUEST_FACT_TIME_SOURCES:
         raise Malformed("request_fact_time_source")
     submission = payload["submission"]
@@ -810,6 +838,14 @@ def validate_request_fact(payload):
     if any(value is not False for value in authority.values()):
         # A fact that claims any authority is not a fact.
         raise Malformed("request_fact_claims_authority")
+    # One shape for every consumer below: the validated fact always carries
+    # first_observed_at and the identity it will be deduplicated by, and says
+    # which rule its id was checked under, so a legacy fact is visibly legacy
+    # rather than silently indistinguishable.
+    payload.pop("observed_at", None)
+    payload["first_observed_at"] = instant
+    payload["_semantic_id"] = identity
+    payload["_identity_rule"] = "LEGACY_TIMESTAMP" if legacy else "SEMANTIC"
     return payload
 
 
@@ -821,7 +857,9 @@ class Loaded:
         self.tasks = []            # (file name, task)
         self.evidence = []         # (file name, evidence)
         self.requests = []         # (ref, head_sha, file name, request)
-        self.request_facts = []    # validated Bridge Request facts
+        self.request_facts = []    # validated Bridge Request facts, one per semantic identity
+        self.request_facts_collapsed = 0   # observations the semantic dedup folded away
+        self.request_fact_rules = {}       # identity rule -> how many facts arrived under it
         self.request_fact_index = None   # the exporter's submission-level index, if supplied
         self.deploy_readiness = None     # the evaluator's verdict, if supplied
         self.anomalies = []        # {kind, detail, ref}
@@ -881,6 +919,34 @@ def load_requests(root, loaded):
             loaded.anomaly("REQUEST_UNREADABLE", "%s" % exc, path.name)
 
 
+def dedup_request_facts(facts):
+    """One fact per semantic identity, chosen deterministically.
+
+    Facts written before the semantic identity existed are still on the bus, so an
+    outcome observed across that change has both shapes present and the store has
+    one file per observation of it. They are one business fact, not several: the
+    projection keeps the earliest observation of each identity, and reports how
+    many it collapsed so the reduction is visible instead of silent. Nothing is
+    deleted -- the bus still carries every observation as a record.
+    """
+    grouped = {}
+    for fact in facts:
+        grouped.setdefault(fact["_semantic_id"], []).append(fact)
+    kept, collapsed, rules = [], 0, {}
+    for identity in sorted(grouped):
+        members = sorted(grouped[identity],
+                         key=lambda f: (f["first_observed_at"], f["fact_id"]))
+        chosen = dict(members[0])
+        chosen["_observations_on_bus"] = len(members)
+        chosen["_collapsed_fact_ids"] = [member["fact_id"] for member in members[1:]]
+        chosen["_identity_rules"] = sorted({member["_identity_rule"] for member in members})
+        collapsed += len(members) - 1
+        for rule in chosen["_identity_rules"]:
+            rules[rule] = rules.get(rule, 0) + 1
+        kept.append(chosen)
+    return kept, collapsed, rules
+
+
 def load_request_facts(root, loaded):
     """Read the exported Bridge facts. Nothing here is trusted on its own word.
 
@@ -908,6 +974,8 @@ def load_request_facts(root, loaded):
                 loaded.request_facts.append(validate_request_fact(read_json(path)))
             except (Malformed, ValueError, OSError, UnicodeError) as exc:
                 loaded.anomaly("REQUEST_FACT_UNREADABLE", "%s" % exc, path.name)
+        loaded.request_facts, loaded.request_facts_collapsed, loaded.request_fact_rules = (
+            dedup_request_facts(loaded.request_facts))
     index_path = folder / REQUEST_FACT_INDEX_NAME
     if index_path.is_file():
         try:
@@ -1065,7 +1133,7 @@ def request_records(loaded, binding_context):
     for fact in loaded.request_facts:
         by_request.setdefault(fact["request_id"], []).append(fact)
     for facts in by_request.values():
-        facts.sort(key=lambda f: (f["observed_at"], f["fact_id"]))
+        facts.sort(key=lambda f: (f["first_observed_at"], f["fact_id"]))
 
     seen_fact_ids = set()
     out = []
@@ -1084,7 +1152,11 @@ def request_records(loaded, binding_context):
             proof, detail = evaluate_request_binding(fact, binding_context)
             seen_fact_ids.add(fact["fact_id"])
             projected.append({"fact_id": fact["fact_id"], "kind": fact["kind"],
-                              "observed_at": fact["observed_at"],
+                              "first_observed_at": fact["first_observed_at"],
+                              "identity_rule": fact["_identity_rule"],
+                              "observations_on_bus": fact["_observations_on_bus"],
+                              "identity_rules": fact["_identity_rules"],
+                              "collapsed_fact_ids": fact["_collapsed_fact_ids"],
                               "time_source": fact["time_source"],
                               "submission": fact["submission"],
                               "reason": fact["reason"],
@@ -1187,7 +1259,9 @@ def request_records(loaded, binding_context):
                         "proof_required": False, "proof_state": "NOT_APPLICABLE",
                         "proof_detail": "the Request file was not collected"},
             "facts": [{"fact_id": fact["fact_id"], "kind": fact["kind"],
-                       "observed_at": fact["observed_at"], "time_source": fact["time_source"],
+                       "first_observed_at": fact["first_observed_at"],
+                       "time_source": fact["time_source"],
+                       "identity_rule": fact["_identity_rule"],
                        "submission": fact["submission"], "reason": fact["reason"],
                        "binding": {"task_id": fact["binding"]["task_id"],
                                    "task_sha256": fact["binding"]["task_sha256"],
@@ -1220,14 +1294,14 @@ def request_visibility(loaded, requests, facts_source):
                                  "proof_detail": fact["binding"]["proof_detail"]})
             if fact["kind"] in ("REQUEST_DUPLICATE", "REQUEST_REPLAY_REJECTED"):
                 negatives.append({"request_id": entry["request_id"], "fact_id": fact["fact_id"],
-                                  "kind": fact["kind"], "observed_at": fact["observed_at"],
+                                  "kind": fact["kind"], "first_observed_at": fact["first_observed_at"],
                                   "submission": fact["submission"],
                                   "reason_code": fact["reason"]["code"],
                                   "reason_class": fact["reason"]["class"],
                                   "counted_as_success": False})
             if fact["reason"]["applicable"]:
                 rejected.append({"request_id": entry["request_id"], "fact_id": fact["fact_id"],
-                                 "kind": fact["kind"], "observed_at": fact["observed_at"],
+                                 "kind": fact["kind"], "first_observed_at": fact["first_observed_at"],
                                  "submission": fact["submission"],
                                  "reason_code": fact["reason"]["code"],
                                  "reason_class": fact["reason"]["class"],
@@ -1237,11 +1311,15 @@ def request_visibility(loaded, requests, facts_source):
     return {
         "facts_source": facts_source,
         "facts_collected": len(loaded.request_facts),
+        "fact_observations_folded_into_a_semantic_fact": loaded.request_facts_collapsed,
+        "facts_by_identity_rule": dict(sorted(loaded.request_fact_rules.items())),
         "submission_index_collected": index is not None,
         "submissions_observed": len((index or {}).get("submissions", [])),
         "by_lifecycle": dict(sorted(by_lifecycle.items())),
-        "rejected_or_refused": sorted(rejected, key=lambda r: (r["observed_at"], r["fact_id"])),
-        "duplicate_or_replay": sorted(negatives, key=lambda r: (r["observed_at"], r["fact_id"])),
+        "rejected_or_refused": sorted(rejected,
+                                      key=lambda r: (r["first_observed_at"], r["fact_id"])),
+        "duplicate_or_replay": sorted(negatives,
+                                      key=lambda r: (r["first_observed_at"], r["fact_id"])),
         "acceptance_claims_without_a_signed_task": sorted(
             unproven, key=lambda r: r["fact_id"]),
         "submissions_without_a_request_identity": sorted(unbound, key=lambda s: s["submission_key"]),
@@ -1971,6 +2049,9 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
         "counts": {
             "tasks": len(tasks), "evidence": len(loaded.evidence), "requests": len(requests),
             "request_facts": len(loaded.request_facts),
+            "request_fact_observations": (len(loaded.request_facts)
+                                         + loaded.request_facts_collapsed),
+            "request_facts_collapsed": loaded.request_facts_collapsed,
             "by_lifecycle": lifecycle_counts(tasks), "anomalies": len(loaded.anomalies),
         },
         "requests": requests,

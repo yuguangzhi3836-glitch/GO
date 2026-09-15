@@ -9,12 +9,17 @@ on:
       # this job. Without these paths a gate added to the evaluator alone would
       # break the live projection and no workflow here would say so.
       - 'control-plane/command-center-deploy-readiness-v1/**'
+      # Same for the fact exporter: the tests here run the real exporter and feed
+      # its real output to the real projector, so a change to the fact shape or the
+      # semantic identity must run this job too.
+      - 'control-plane/command-center-request-visibility-v1/**'
       - '.github/workflows/command-center-state-v1.yml'
   pull_request:
     branches: [main]
     paths:
       - 'control-plane/command-center-state-v1/**'
       - 'control-plane/command-center-deploy-readiness-v1/**'
+      - 'control-plane/command-center-request-visibility-v1/**'
       - '.github/workflows/command-center-state-v1.yml'
 permissions:
   contents: read

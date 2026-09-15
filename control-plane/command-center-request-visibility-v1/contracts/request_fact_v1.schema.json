@@ -13,7 +13,8 @@
     "action_id",
     "environment",
     "nonce",
-    "observed_at",
+    "semantic_id",
+    "first_observed_at",
     "time_source",
     "submission",
     "source",
@@ -62,9 +63,15 @@
       ],
       "description": "The nonce of the Task the Request produced, when there is one. A Request file carries no nonce, so this is null until a signed Task binds one."
     },
-    "observed_at": {
+    "semantic_id": {
       "type": "string",
-      "format": "date-time"
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "The semantic identity of this fact: the Request identity, the normalized outcome, the normalized reason and the normalized binding result, over exactly SEMANTIC_IDENTITY_KEYS. It is what fact_id is built around, so the same semantics always mints the same id and a repeated observation of an unchanged outcome mints nothing. A time field is deliberately not part of it, and neither is the submission the observation happened to be keyed by."
+    },
+    "first_observed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The earliest instant at which any observation of this semantics was placed. It is the MINIMUM over every observation of this semantic identity, so it never moves forward when the same outcome is seen again, and it is excluded from fact_id -- a fact's identity must not depend on when it was looked at."
     },
     "time_source": {
       "enum": [
@@ -72,7 +79,7 @@
         "TASK_ISSUED_AT",
         "REQUEST_REQUESTED_AT"
       ],
-      "description": "Where observed_at came from. Every fact must be placed in time by its inputs: an undated observation is refused rather than stamped with the export instant."
+      "description": "Where first_observed_at came from. Every fact must be placed in time by its inputs: an undated observation is refused rather than stamped with the export instant."
     },
     "submission": {
       "type": "object",
@@ -321,6 +328,16 @@
         }
       }
     }
+  },
+  "x-go-fact-identity": {
+    "rule": "fact_id covers the whole body except fact_id, first_observed_at and time_source. semantic_id is covered, so it cannot be edited without breaking the id.",
+    "semantic_identity_is": ["kind", "request_id", "action_id", "environment", "nonce",
+                             "source", "reason", "binding"],
+    "semantic_identity_is_not": ["first_observed_at", "time_source", "submission"],
+    "why": "A fact per (semantics, observation instant) grew the store and the Git history with observations rather than with outcomes: an unchanged observation sitting at a new instant minted a new immutable fact on every poll.",
+    "aggregation": "All observations are loaded first, normalized, grouped by semantic identity, and then exactly one immutable fact is minted per identity at MIN(first_observed_at). The result does not depend on poll file order, filesystem order, journal order or how many times the exporter ran.",
+    "collision": "A body that differs while the id does not is refused (fact_id_collision), never overwritten: the fact was supposed to be immutable.",
+    "local_only": "first_seen_at, first_seen_time_source, last_seen_at, observation_count and observed_instants live in a local, non-authoritative observation ledger outside the export root. None of them is published and none of them can reach an immutable fact id."
   },
   "x-go-binding-proof": [
     "REQUEST_VALIDATED is the only positive fact, and only for it is proof_required true.",

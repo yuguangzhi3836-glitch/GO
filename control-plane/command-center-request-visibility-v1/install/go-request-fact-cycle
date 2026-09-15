@@ -37,6 +37,10 @@ import sys
 STATE_DIR = pathlib.Path("/var/lib/go-command-center/request-visibility-v1")
 POLL_DIR = STATE_DIR / "poll"
 FACTS_DIR = STATE_DIR / "facts"
+# The exporter's local observation ledger, deliberately a sibling of the
+# fact store rather than part of it: it is never published and its moving
+# fields must never reach an immutable fact id.
+OBSERVATIONS = STATE_DIR / "observations.json"
 STATE_FILE = STATE_DIR / "state.json"
 LEDGER = pathlib.Path("/var/lib/go-command-center/boss-request-bridge-v1/ledger.json")
 EXPORTER = pathlib.Path(
@@ -152,7 +156,8 @@ def main(argv=None):
         return 0
 
     command = [sys.executable, str(EXPORTER), "export",
-               "--ledger", str(LEDGER), "--out", str(FACTS_DIR), "--now", iso(now)]
+               "--ledger", str(LEDGER), "--out", str(FACTS_DIR), "--now", iso(now),
+               "--observations", str(OBSERVATIONS)]
     for path in sorted(POLL_DIR.glob("*.json")):
         command += ["--poll-results", str(path)]
     proc = subprocess.run(command, capture_output=True, text=True, check=False)

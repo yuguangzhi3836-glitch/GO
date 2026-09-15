@@ -65,6 +65,25 @@ LEDGER_VERSION = 1
 NON_TERMINAL_LEDGER_STATES = ("claiming", "prepared", "publishing")
 SETTLED_LEDGER_STATES = ("published", "dry_run_consumed", "ignored")
 
+# What a semantic fact is: the Request identity, the normalized outcome, the
+# normalized reason and the normalized binding result. Everything that says
+# *when we looked* is deliberately outside this set, so the same semantics
+# observed at three instants is one immutable fact and not three. The defect this
+# replaces was exactly that -- a fact per (semantics, observation instant) -- so
+# unchanged semantics sitting at a new instant minted a new immutable fact on
+# every poll and grew the store and the Git history with observations rather than
+# with outcomes.
+SEMANTIC_IDENTITY_KEYS = ("kind", "request_id", "action_id", "environment", "nonce",
+                          "source", "reason", "binding")
+# The one instant an immutable fact keeps: the MINIMUM of every instant this
+# semantics was ever observed at. Like time_source it is excluded from the id, so
+# two runs over the same observations produce identical bytes whatever order the
+# poll files, the filesystem or the journal presented them in.
+FIRST_OBSERVED_FIELD = "first_observed_at"
+FACT_ID_EXCLUDED = ("fact_id", FIRST_OBSERVED_FIELD, "time_source")
+OBSERVATION_LEDGER_NAME = "observations.json"
+OBSERVATION_LEDGER_CONTRACT = "REQUEST_FACT_OBSERVATIONS"
+
 AUTHORITY = {"is_execution_authority": False, "grants_execution": False,
              "can_create_task": False, "can_sign": False, "holds_private_key": False,
              "may_authorize_retry": False, "may_authorize_replay": False,
@@ -168,12 +187,19 @@ class Vocabulary:
 # inputs
 # --------------------------------------------------------------------------- #
 class Observations:
-    """Every submission the Bridge spoke about, keyed by ``<pr>:<head>``."""
+    """Every submission the Bridge spoke about, keyed by ``<pr>:<head>``.
+
+    The poll journal is kept as a *list* per submission rather than a single
+    last-one-wins value. Loading every observation before deciding anything is
+    what allows one semantic fact to be minted at the earliest instant that
+    semantics was ever seen; a last-one-wins view places unchanged semantics at a
+    new instant on every poll and mints a fresh immutable fact each time.
+    """
 
     def __init__(self):
         self.ledger = {}          # submission_key -> ledger record
-        self.poll = {}            # submission_key -> poll result
-        self.journaled_at = {}    # submission_key -> poll journal instant
+        self.poll = {}            # submission_key -> [poll result, ...]
+        self.journaled_at = {}    # submission_key -> [poll journal instant, ...]
         self.anomalies = []
 
     def anomaly(self, kind, detail, ref=None):
@@ -181,6 +207,18 @@ class Observations:
 
     def keys(self):
         return sorted(set(self.ledger) | set(self.poll))
+
+    def poll_observations(self, key):
+        """Every poll observation of one submission, paired with its instant."""
+        results = self.poll.get(key) or []
+        instants = self.journaled_at.get(key) or []
+        return [(instants[index] if index < len(instants) else None, result)
+                for index, result in enumerate(results)]
+
+    def newest_journal_instant(self, key):
+        """The latest instant the Bridge was seen speaking about this submission."""
+        instants = [value for value in (self.journaled_at.get(key) or []) if value]
+        return max(instants) if instants else None
 
 
 def load_ledger(path, seen):
@@ -241,8 +279,10 @@ def load_poll_results(path, seen):
                          pathlib.Path(path).name)
             continue
         key = "%s:%s" % (number, head)
-        seen.poll[key] = result
-        seen.journaled_at[key] = journaled_at
+        # Append, never overwrite: an older poll document is still an observation
+        # of that state, and dropping it would move the earliest instant forward.
+        seen.poll.setdefault(key, []).append(result)
+        seen.journaled_at.setdefault(key, []).append(journaled_at)
 
 
 def load_requests(root):
@@ -362,8 +402,24 @@ def observed_at_for(record, poll, journaled_at, identity, task, require_journal_
     raise Refuse("observation_undated")
 
 
-def make_fact(kind, request_id, action_id, observed_at, time_source, key, source, reason,
+def semantic_id_for(fact):
+    """The semantic identity of a fact body.
+
+    Request identity plus normalized outcome, reason and binding result. A time
+    field never appears here: if one did, an unchanged observation would be a new
+    fact every time it was looked at again.
+    """
+    return digest({name: fact[name] for name in SEMANTIC_IDENTITY_KEYS})
+
+
+def fact_body(kind, request_id, action_id, first_observed_at, time_source, key, source, reason,
               task=None, task_sha256=None, task_commit=None):
+    """One observation, normalized.
+
+    Not yet an immutable fact: it has no id, and its instant is the instant of
+    this one observation. `aggregate` groups bodies by semantic identity and mints
+    exactly one fact per identity, at the earliest instant in the group.
+    """
     number, head = split_key(key)
     binding = {"claimed": kind == "REQUEST_VALIDATED",
                "task_id": None, "task_sha256": None, "task_commit": None,
@@ -384,13 +440,36 @@ def make_fact(kind, request_id, action_id, observed_at, time_source, key, source
         binding["note"] = ("an acceptance is a claim until the consumer corroborates it against "
                           "the signed Task on the control bus; this exporter never corroborates "
                           "anything itself")
-    fact = {"schema_version": "1", "kind": kind, "request_id": request_id,
+    return {"schema_version": "1", "kind": kind, "request_id": request_id,
             "action_id": action_id, "environment": "HK-STAGING-01", "nonce": nonce,
-            "observed_at": observed_at, "time_source": time_source,
+            FIRST_OBSERVED_FIELD: first_observed_at, "time_source": time_source,
             "submission": {"pr_number": number, "head_sha": head, "submission_key": key},
-            "source": source, "reason": reason, "binding": binding, "authority": dict(AUTHORITY)}
-    fact["fact_id"] = "request-fact-" + digest(fact)[:32]
+            "source": source, "reason": reason, "binding": binding,
+            "authority": dict(AUTHORITY)}
+
+
+def finalize_fact(body):
+    """Mint the immutable fact. The id covers the body except the two time fields.
+
+    Two consequences, both intended. The same semantics always yields the same id
+    and -- over the same observations -- the same bytes, so re-running mints
+    nothing and the store stops growing with observations. And a body that
+    differs while the id does not is a collision the writer refuses, rather than a
+    silent rewrite of a fact that is supposed to be immutable.
+    """
+    fact = dict(body)
+    fact["semantic_id"] = semantic_id_for(fact)
+    fact["fact_id"] = "request-fact-" + digest(
+        {k: v for k, v in fact.items() if k not in FACT_ID_EXCLUDED})[:32]
     return fact
+
+
+def make_fact(kind, request_id, action_id, first_observed_at, time_source, key, source, reason,
+              task=None, task_sha256=None, task_commit=None):
+    """One observation turned straight into a fact, for callers that have one."""
+    return finalize_fact(fact_body(kind, request_id, action_id, first_observed_at, time_source,
+                                   key, source, reason, task=task, task_sha256=task_sha256,
+                                   task_commit=task_commit))
 
 
 def no_reason():
@@ -422,7 +501,7 @@ def fact_from_ledger(key, record, vocabulary, by_head, by_identity, journaled_at
         key, record, None, by_head, by_identity)
     if status == "published":
         observed_at, time_source = observed_at_for(record, None, journaled_at, identity, task)
-        return make_fact("REQUEST_VALIDATED", request_id, action_id, observed_at, time_source,
+        return fact_body("REQUEST_VALIDATED", request_id, action_id, observed_at, time_source,
                          key, source, no_reason(), task=task,
                          task_sha256=record.get("task_sha256"),
                          task_commit=record.get("task_commit"))
@@ -433,7 +512,7 @@ def fact_from_ledger(key, record, vocabulary, by_head, by_identity, journaled_at
         raise Refuse("ledger_reason_unclassified")
     code = "dry_run_no_task_published"
     observed_at, time_source = observed_at_for(record, None, journaled_at, identity, task)
-    return make_fact(kind_for_reason(code, vocabulary), request_id, action_id, observed_at,
+    return fact_body(kind_for_reason(code, vocabulary), request_id, action_id, observed_at,
                      time_source, key, source,
                      reason_for(code, "BRIDGE_LEDGER_STATE", vocabulary))
 
@@ -451,7 +530,7 @@ def fact_from_poll(key, poll, vocabulary, by_head, by_identity, journaled_at):
             key, poll.get("record") or {}, poll, by_head, by_identity)
         observed_at, time_source = observed_at_for({}, poll, journaled_at, identity, task,
                                                    require_journal_time=True)
-        return make_fact("REQUEST_REPLAY_REJECTED", request_id, action_id, observed_at,
+        return fact_body("REQUEST_REPLAY_REJECTED", request_id, action_id, observed_at,
                          time_source, key, source,
                          reason_for("already_seen", "BRIDGE_POLL_STATUS", vocabulary))
     if status != "rejected":
@@ -463,12 +542,145 @@ def fact_from_poll(key, poll, vocabulary, by_head, by_identity, journaled_at):
         key, poll.get("record") or {}, poll, by_head, by_identity)
     observed_at, time_source = observed_at_for({}, poll, journaled_at, identity, task,
                                                require_journal_time=True)
-    return make_fact(kind_for_reason(token, vocabulary), request_id, action_id, observed_at,
+    return fact_body(kind_for_reason(token, vocabulary), request_id, action_id, observed_at,
                      time_source, key, source,
                      reason_for(token, "BRIDGE_REJECT_TOKEN", vocabulary))
 
 
-def export(ledger_paths, poll_paths, requests_dir, out_dir, contract_path, instant):
+def load_observation_ledger(path):
+    """The exporter's own local record of when each semantics was first seen.
+
+    This is NOT the control bus, and it is deliberately kept outside the export
+    root. It is a local, non-authoritative memory of earlier runs, and it exists
+    for one reason: the poll journal is pruned, and when the document a semantics
+    was first observed in falls off the end, the earliest known instant has to
+    come from somewhere or the immutable fact would have to move. Nothing here
+    becomes an answer on its own; only first_seen_at reaches a fact, and only as
+    the earliest instant, never as a status or a claim.
+    """
+    if not path:
+        return {}
+    try:
+        document = read_json(path)
+    except (OSError, UnicodeError, ValueError, Refuse):
+        return {}
+    entries = document.get("facts") if isinstance(document, dict) else None
+    return entries if isinstance(entries, dict) else {}
+
+
+def observation_order(body):
+    """The single order every choice in `aggregate` is made in.
+
+    Sorting on values rather than on arrival is what makes the output independent
+    of poll file order, filesystem order and how many times the exporter ran.
+    """
+    return (body[FIRST_OBSERVED_FIELD], body["time_source"],
+            body["submission"]["submission_key"])
+
+
+def aggregate(seen, vocabulary, by_head, by_identity, ledger):
+    """All observations first, then exactly one immutable fact per identity.
+
+    Returns (facts_by_fact_id, ledger_entries, submissions). Nothing is minted
+    while loading, so a poll document repeating a state already seen cannot become
+    a second fact for it.
+    """
+    groups, per_submission = {}, []
+    for key in seen.keys():
+        record = seen.ledger.get(key, {})
+        bodies, refusals = [], []
+        # The ledger is durable; the poll journal only fills what the ledger does
+        # not state, above all the refusal reasons. So the ledger is tried first,
+        # and the polls are read only when it states nothing usable -- a ledger
+        # record that is merely non-terminal must not hide the reason the Bridge
+        # gave in its own poll output.
+        if record:
+            try:
+                bodies.append(fact_from_ledger(key, record, vocabulary, by_head, by_identity,
+                                               seen.newest_journal_instant(key)))
+            except Refuse as exc:
+                refusals.append("LEDGER:%s" % exc)
+        if not bodies:
+            for journaled, poll in seen.poll_observations(key):
+                try:
+                    bodies.append(fact_from_poll(key, poll, vocabulary, by_head, by_identity,
+                                                 journaled))
+                except Refuse as exc:
+                    refusals.append("POLL:%s" % exc)
+        per_submission.append({"key": key, "record": record, "bodies": bodies,
+                               "refusals": sorted(refusals)})
+        for body in bodies:
+            groups.setdefault(semantic_id_for(body), []).append(body)
+
+    facts, ledger_entries, by_submission = {}, {}, {}
+    for identity in sorted(groups):
+        bodies = sorted(groups[identity], key=observation_order)
+        keys = sorted({b["submission"]["submission_key"] for b in bodies})
+        sources = sorted({canonical(b["source"]) for b in bodies})
+        if len(keys) != 1 or len(sources) != 1:
+            # One semantic identity observed under two submissions, or against two
+            # different Request files, is a conflict. Merging it would invent a
+            # fact, so it is refused and reported instead of merged.
+            seen.anomaly("SEMANTIC_IDENTITY_CONFLICT",
+                         "one identity under %d submissions and %d Request files"
+                         % (len(keys), len(sources)), ",".join(keys))
+            continue
+        recorded = ledger.get(identity) or {}
+        earliest, source_of = bodies[0][FIRST_OBSERVED_FIELD], bodies[0]["time_source"]
+        recorded_first = recorded.get("first_seen_at")
+        if isinstance(recorded_first, str) and recorded_first < earliest:
+            # The poll document this was first seen in has been pruned. That
+            # recorded instant is still the earliest known one, and keeping it is
+            # what stops the fact from moving when the journal is trimmed.
+            earliest = recorded_first
+            source_of = recorded.get("first_seen_time_source") or source_of
+        fact = finalize_fact(dict(bodies[0], **{FIRST_OBSERVED_FIELD: earliest,
+                                                "time_source": source_of}))
+        if fact["semantic_id"] != identity:
+            raise Refuse("semantic_id_mismatch")
+        facts[fact["fact_id"]] = fact
+        by_submission.setdefault(keys[0], []).append((fact[FIRST_OBSERVED_FIELD], fact["fact_id"]))
+        instants = sorted({b[FIRST_OBSERVED_FIELD] for b in bodies}
+                          | set(recorded.get("observed_instants") or []))
+        ledger_entries[identity] = {"semantic_fact_id": fact["fact_id"],
+                                    "semantic_id": identity,
+                                    "first_seen_at": earliest,
+                                    "first_seen_time_source": source_of,
+                                    "last_seen_at": instants[-1],
+                                    "observation_count": len(instants),
+                                    "observed_instants": instants}
+
+    submissions = []
+    for entry in per_submission:
+        key, record, bodies = entry["key"], entry["record"], entry["bodies"]
+        number, head = split_key(key)
+        polls = seen.poll_observations(key)
+        newest = polls[-1][1] if polls else {}
+        status = record.get("status") or newest.get("status") or "unknown"
+        if not bodies:
+            detail = "; ".join(entry["refusals"]) or "no observation"
+            reason = (newest.get("reason") if isinstance(newest.get("reason"), str)
+                      else record.get("reason"))
+            seen.anomaly("SUBMISSION_WITHOUT_REQUEST_FACT", detail, key)
+            submissions.append({"submission_key": key, "pr_number": number, "head_sha": head,
+                                "bridge_status": status, "reason": reason,
+                                "reason_class": (vocabulary.classify(reason)
+                                                 if isinstance(reason, str) else None),
+                                "fact_emitted": False, "detail": detail})
+            continue
+        first = sorted(bodies, key=observation_order)[0]
+        minted = sorted(by_submission.get(key) or [])
+        submissions.append({"submission_key": key, "pr_number": first["submission"]["pr_number"],
+                            "head_sha": first["submission"]["head_sha"], "bridge_status": status,
+                            "reason": first["reason"]["code"], "reason_class": first["reason"]["class"],
+                            "fact_emitted": True, "fact_id": minted[0][1],
+                            "semantic_fact_ids": [fact_id for _, fact_id in minted],
+                            "kind": first["kind"], "request_id": first["request_id"]})
+    return facts, ledger_entries, submissions
+
+
+def export(ledger_paths, poll_paths, requests_dir, out_dir, contract_path, instant,
+           observations_path=None):
     vocabulary = Vocabulary(contract_path)
     seen = Observations()
     for path in ledger_paths:
@@ -483,45 +695,13 @@ def export(ledger_paths, poll_paths, requests_dir, out_dir, contract_path, insta
             seen.anomaly("POLL_JOURNAL_UNREADABLE", "%s" % exc, pathlib.Path(path).name)
     by_head, by_identity = load_requests(requests_dir)
 
-    facts, submissions = {}, []
-    for key in seen.keys():
-        record = seen.ledger.get(key, {})
-        poll = seen.poll.get(key, {})
-        journaled = seen.journaled_at.get(key)
-        # The ledger is durable; the poll journal only fills what the ledger does
-        # not state, above all the refusal reasons.
-        attempts = []
-        if record:
-            attempts.append(("LEDGER", fact_from_ledger, (key, record, vocabulary, by_head,
-                                                           by_identity, journaled)))
-        if poll:
-            attempts.append(("POLL", fact_from_poll, (key, poll, vocabulary, by_head,
-                                                      by_identity, journaled)))
-        fact, refusals = None, []
-        for source_name, builder, args in attempts:
-            try:
-                fact = builder(*args)
-                break
-            except Refuse as exc:
-                refusals.append("%s:%s" % (source_name, exc))
-        status = record.get("status") or poll.get("status") or "unknown"
-        if fact is None:
-            detail = "; ".join(refusals) or "no observation"
-            seen.anomaly("SUBMISSION_WITHOUT_REQUEST_FACT", detail, key)
-            submissions.append({"submission_key": key, "pr_number": split_key(key)[0],
-                                "head_sha": split_key(key)[1], "bridge_status": status,
-                                "reason": (poll.get("reason") if isinstance(poll.get("reason"), str)
-                                           else record.get("reason")),
-                                "reason_class": (vocabulary.classify(poll["reason"])
-                                                 if isinstance(poll.get("reason"), str) else None),
-                                "fact_emitted": False, "detail": detail})
-            continue
-        facts[fact["fact_id"]] = fact
-        submissions.append({"submission_key": key, "pr_number": fact["submission"]["pr_number"],
-                            "head_sha": fact["submission"]["head_sha"], "bridge_status": status,
-                            "reason": fact["reason"]["code"], "reason_class": fact["reason"]["class"],
-                            "fact_emitted": True, "fact_id": fact["fact_id"],
-                            "kind": fact["kind"], "request_id": fact["request_id"]})
+    # Every observation is loaded before anything is minted, so a poll document
+    # repeating a state already seen cannot become a second fact for it. The
+    # observation ledger is read first because it supplies the earliest known
+    # instant for semantics whose oldest poll document has since been pruned.
+    observation_ledger = load_observation_ledger(observations_path)
+    facts, ledger_entries, submissions = aggregate(seen, vocabulary, by_head, by_identity,
+                                                   observation_ledger)
 
     out = pathlib.Path(out_dir)
     facts_dir = out / FACTS_DIR
@@ -530,6 +710,8 @@ def export(ledger_paths, poll_paths, requests_dir, out_dir, contract_path, insta
         blob = canonical(facts[fact_id]) + b"\n"
         path = facts_dir / (fact_id + ".json")
         if path.exists() and path.read_bytes() != blob:
+            # The same id with different bytes is a collision: the fact was meant
+            # to be immutable, so it is refused rather than quietly rewritten.
             raise Refuse("fact_id_collision:%s" % fact_id)
         path.write_bytes(blob)
 
@@ -546,9 +728,15 @@ def export(ledger_paths, poll_paths, requests_dir, out_dir, contract_path, insta
                        + ["UNCLASSIFIED_REJECT"],
                        "kinds": ["REQUEST_CREATED", "REQUEST_VALIDATED", "REQUEST_REJECTED",
                                  "REQUEST_DUPLICATE", "REQUEST_REPLAY_REJECTED"]},
-        "facts": [{"fact_id": fact["fact_id"], "kind": fact["kind"],
-                   "request_id": fact["request_id"], "action_id": fact["action_id"],
-                   "observed_at": fact["observed_at"],
+        "facts": [{"fact_id": fact["fact_id"], "semantic_id": fact["semantic_id"],
+                   "kind": fact["kind"], "request_id": fact["request_id"],
+                   "action_id": fact["action_id"],
+                   "first_observed_at": fact[FIRST_OBSERVED_FIELD],
+                   "time_source": fact["time_source"],
+                   "observation_count": (ledger_entries.get(fact["semantic_id"]) or {}
+                                         ).get("observation_count"),
+                   "last_seen_at": (ledger_entries.get(fact["semantic_id"]) or {}
+                                    ).get("last_seen_at"),
                    "submission_key": fact["submission"]["submission_key"],
                    "reason_code": fact["reason"]["code"],
                    "reason_class": fact["reason"]["class"],
@@ -569,10 +757,40 @@ def export(ledger_paths, poll_paths, requests_dir, out_dir, contract_path, insta
             "spoke about is silently dropped.",
             "A fact exists only where a request_id exists, because a Request fact binds an "
             "identity. The reason for an unidentifiable submission is preserved here instead.",
+            "One immutable fact per semantic identity: the Request identity, the normalized "
+            "outcome, the normalized reason and the normalized binding result. The instant a fact "
+            "carries is the earliest any observation of that semantics was placed at, and it does "
+            "not define the identity -- so observing the same outcome again mints nothing and the "
+            "store grows with outcomes rather than with observations.",
             "Nothing in this export is installed or scheduled by this component.",
         ],
     }
     (out / INDEX_NAME).write_bytes(canonical(index) + b"\n")
+
+    if observations_path:
+        # Local and non-authoritative, and deliberately written OUTSIDE the export
+        # root so it can never be published: last_seen_at and observation_count
+        # move, and neither may reach an immutable fact id. Entries for semantics
+        # not observed in this run are carried forward, because their recorded
+        # earliest instant is what keeps their fact from moving if the poll
+        # document they came from has been pruned.
+        merged = dict(observation_ledger)
+        merged.update(ledger_entries)
+        document = {
+            "schema_version": "1",
+            "contract": OBSERVATION_LEDGER_CONTRACT,
+            "generated_at": iso(instant),
+            "authority": dict(AUTHORITY),
+            "note": ("Local, non-authoritative, never published. Says when each semantic fact was "
+                     "first and last observed and at how many distinct instants, so an immutable "
+                     "fact keeps its earliest instant after the poll document it came from has "
+                     "been pruned. It is not an answer about any Request and nothing here can "
+                     "raise a status."),
+            "facts": dict(sorted(merged.items())),
+        }
+        ledger_path = pathlib.Path(observations_path)
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        ledger_path.write_bytes(canonical(document) + b"\n")
     return index
 
 
@@ -754,16 +972,22 @@ def main(argv=None):
     parser.add_argument("--out", help="directory to write facts and the index into")
     parser.add_argument("--contract", default=str(here / CONTRACT_FILE))
     parser.add_argument("--now", help="export instant, so the index is reproducible")
+    parser.add_argument("--observations",
+                        help="where to keep the local, non-authoritative observation ledger. "
+                             "Defaults to a sibling of --out, which is outside the export root, "
+                             "so it can never be published by a copy of that root")
     args = parser.parse_args(argv)
 
     if args.command == "selftest":
         return run_selftest()
     if not args.out:
         parser.error("export requires --out")
+    observations_path = args.observations or str(
+        pathlib.Path(args.out).resolve().parent / OBSERVATION_LEDGER_NAME)
     instant = parse_time(args.now) if args.now else dt.datetime.now(dt.timezone.utc)
     try:
         index = export(args.ledger, args.poll_results, args.requests_dir, args.out,
-                       args.contract, instant)
+                       args.contract, instant, observations_path)
     except Refuse as exc:
         print("REFUSED=%s" % exc)
         return 2

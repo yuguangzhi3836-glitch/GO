@@ -124,6 +124,47 @@ projection refuses any fact that claims otherwise. There is no code path from a
 fact to an executor. The exporter never writes a ledger, never signs, and never
 opens the ledger for writing.
 
+## One immutable fact per semantic identity
+
+A fact's identity is its **semantics**, not the moment it was looked at:
+
+```
+semantic identity = the Request identity + the normalized outcome
+                  + the normalized reason + the normalized binding result
+
+excluded from it  = first_observed_at, time_source, and the submission the
+                    observation happened to be keyed by
+```
+
+`fact_id` covers the body except `first_observed_at` and `time_source`;
+`semantic_id` is inside it. Everything is **aggregated before anything is
+minted**: every observation is loaded, normalized, grouped by semantic identity,
+and then exactly one immutable fact is written per identity, carrying
+`MIN(first_observed_at)` over its group. The result does not depend on poll file
+order, filesystem order, journal order, or how many times the exporter ran.
+
+```text
+same outcome at T1, T2, T3   ->  ONE fact, first_observed_at = T1
+timestamp-only change        ->  NO new fact, and not one changed byte
+outcome changed              ->  exactly one new fact, the earlier one kept
+same id, different bytes     ->  REFUSED (fact_id_collision), never overwritten
+```
+
+This replaces a rule under which a fact was minted per (semantics, observation
+instant): an unchanged outcome sitting at a new instant produced a new immutable
+fact on every poll, so the store and the Git history grew with **observations**
+instead of with **outcomes** -- 36 fact files for 18 submissions, measured.
+
+`first_seen_at`, `first_seen_time_source`, `last_seen_at`, `observation_count` and
+`observed_instants` live in a **local, non-authoritative observation ledger**
+written outside the export root (`--observations`, defaulting to a sibling of
+`--out`). It exists because the poll journal is pruned: when the document a
+semantics was first observed in falls off the end, the earliest known instant has
+to come from somewhere, or the immutable fact would have to move. None of it is
+published and none of it can reach a fact id. Facts written by the earlier rule are
+still on the bus and are still read -- the projection folds them into the same
+identity.
+
 ## Usage
 
 ```sh
@@ -132,7 +173,8 @@ python control-plane/command-center-request-visibility-v1/command-center/go-requ
   export --ledger /var/lib/go-command-center/boss-request-bridge-v1/ledger.json \
          --poll-results <journalled-bridge-output.json> \
          --requests-dir <collected-requests> \
-         --out <export-root> --now <ISO8601>
+         --out <export-root> --now <ISO8601> \
+         --observations <local-ledger.json>      # defaults to a sibling of --out
 
 # the exporter's own rules
 python control-plane/command-center-request-visibility-v1/command-center/go-request-fact-export selftest

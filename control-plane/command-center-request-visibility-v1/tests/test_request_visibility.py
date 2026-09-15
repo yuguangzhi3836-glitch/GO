@@ -112,6 +112,35 @@ def run_export(root, out="out"):
                     str(root / "requests"), str(root / out), str(CONTRACT), AT)
 
 
+def run_export_with_ledger(root, poll_paths, out="out", observations=None):
+    """Export against explicit poll documents, optionally recording observations."""
+    return X.export([str(root / "ledger.json")], poll_paths, str(root / "requests"),
+                    str(root / out), str(CONTRACT), AT,
+                    str(root / observations) if observations else None)
+
+
+def mult_poll(root, instants, status="rejected", reason="pr_head_not_found"):
+    """One poll document per instant, in the order given. Returns their paths."""
+    return [write_poll(root, "poll-%02d.json" % index, instant, status=status, reason=reason)
+            for index, instant in enumerate(instants)]
+
+
+def write_poll(root, name, instant, status="rejected", reason="pr_head_not_found"):
+    """One journalled Bridge poll output at a named path."""
+    document = {"schema_version": "1", "journaled_at": instant,
+                "bridge_output": poll_output([{"pr": "7", "head": HEAD, "status": status,
+                                               "reason": reason}])}
+    path = root / name
+    path.write_bytes(X.canonical(document) + b"\n")
+    return str(path)
+
+
+def fact_bytes(root, out="out"):
+    """Every file in the fact store, by name: the immutable store's exact bytes."""
+    folder = root / out / X.FACTS_DIR
+    return {path.name: path.read_bytes() for path in sorted(folder.glob("*.json"))}
+
+
 def only_fact(root, out="out"):
     folder = root / out / X.FACTS_DIR
     names = sorted(p.name for p in folder.glob("*.json"))
@@ -284,7 +313,7 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(fact["reason"]["class"], "UNRESOLVABLE")
         self.assertEqual(fact["reason"]["origin"], "BRIDGE_REJECT_TOKEN")
         self.assertTrue(fact["reason"]["preserved_verbatim"])
-        self.assertEqual(fact["observed_at"], "2026-09-14T12:00:00Z")
+        self.assertEqual(fact["first_observed_at"], "2026-09-14T12:00:00Z")
         self.assertEqual(index["counts"]["by_kind"], {"REQUEST_REJECTED": 1})
 
     def test_every_bridge_token_round_trips_into_a_fact(self):
@@ -467,6 +496,179 @@ class ContractTests(unittest.TestCase):
         derived = self.schema["x-go-ledger-derived-reasons"]["dry_run_no_task_published"]
         self.assertEqual(derived["class"], "NOT_ALLOWED")
         self.assertIn("published nothing", derived["meaning"])
+
+
+# --------------------------------------------------------------------------- #
+# Semantic identity: aggregate first, then mint
+#
+# The rule under test is that a fact's identity is its semantics -- the Request,
+# the normalized outcome, the normalized reason and the normalized binding
+# result -- and that the instant it carries is the earliest instant any
+# observation of those semantics was placed at, never the newest. Before this,
+# the identity included the observation instant, so a submission that sat in one
+# state while the Bridge was polled repeatedly minted one immutable fact per
+# poll: 36 fact files for 18 submissions, and a Git history that grew with
+# observations rather than with outcomes.
+# --------------------------------------------------------------------------- #
+class SemanticDedupTests(unittest.TestCase):
+    T1, T2, T3 = ("2026-09-14T12:00:00Z", "2026-09-14T12:05:00Z", "2026-09-14T12:10:00Z")
+
+    def test_one_outcome_observed_three_times_is_one_fact_at_the_first_instant(self):
+        root = workdir(requests=[collected()])
+        index = run_export_with_ledger(root, mult_poll(root, [self.T1, self.T2, self.T3]),
+                                       observations="observations.json")
+        self.assertEqual(index["counts"]["facts"], 1, index["counts"])
+        fact = only_fact(root)[0]
+        self.assertEqual(fact["first_observed_at"], self.T1)
+        self.assertEqual(fact["kind"], "REQUEST_REJECTED")
+        # The moving parts live in the local ledger, and nowhere else.
+        ledger = json.loads((root / "observations.json").read_text(encoding="utf-8"))
+        entry = ledger["facts"][fact["semantic_id"]]
+        self.assertEqual(entry["semantic_fact_id"], fact["fact_id"])
+        self.assertEqual(entry["first_seen_at"], self.T1)
+        self.assertEqual(entry["last_seen_at"], self.T3)
+        self.assertEqual(entry["observation_count"], 3)
+        self.assertEqual(entry["observed_instants"], [self.T1, self.T2, self.T3])
+        # And the fact itself must not carry any of them.
+        self.assertNotIn("last_seen_at", fact)
+        self.assertNotIn("observation_count", fact)
+
+    def test_the_first_seen_instant_never_moves_to_a_later_observation(self):
+        root = workdir(requests=[collected()])
+        run_export_with_ledger(root, mult_poll(root, [self.T1]), observations="observations.json")
+        before = only_fact(root)[0]
+        run_export_with_ledger(root, mult_poll(root, [self.T1, self.T2, self.T3]),
+                               observations="observations.json")
+        after = only_fact(root)[0]
+        self.assertEqual(before["fact_id"], after["fact_id"])
+        self.assertEqual(after["first_observed_at"], self.T1)
+
+    def test_reversing_the_input_order_changes_not_one_byte(self):
+        forward_root = workdir(requests=[collected()])
+        forward = mult_poll(forward_root, [self.T1, self.T2, self.T3])
+        run_export_with_ledger(forward_root, forward, observations="observations.json")
+
+        reverse_root = workdir(requests=[collected()])
+        same = mult_poll(reverse_root, [self.T1, self.T2, self.T3])
+        run_export_with_ledger(reverse_root, list(reversed(same)), observations="observations.json")
+
+        self.assertEqual(fact_bytes(forward_root), fact_bytes(reverse_root))
+        self.assertEqual(only_fact(forward_root)[0]["fact_id"], only_fact(reverse_root)[0]["fact_id"])
+
+    def test_a_new_observation_of_the_same_outcome_mints_nothing(self):
+        root = workdir(requests=[collected()])
+        first = run_export_with_ledger(root, mult_poll(root, [self.T1]),
+                                       observations="observations.json")
+        before = fact_bytes(root)
+        self.assertEqual(first["counts"]["facts"], 1)
+        # The same outcome, seen again later: a newer instant and nothing else.
+        again = run_export_with_ledger(root, mult_poll(root, [self.T1, self.T2]),
+                                       observations="observations.json")
+        self.assertEqual(again["counts"]["facts"], 1, again["counts"])
+        self.assertEqual(before, fact_bytes(root), "the immutable store moved")
+        third = run_export_with_ledger(root, mult_poll(root, [self.T1, self.T2, self.T3]),
+                                       observations="observations.json")
+        self.assertEqual(third["counts"]["facts"], 1, third["counts"])
+        self.assertEqual(before, fact_bytes(root), "the immutable store moved")
+
+    def test_a_changed_outcome_is_exactly_one_new_semantic_fact(self):
+        """A real state change adds one fact, and the earlier one stays.
+
+        The exporter has no REQUEST_CREATED kind -- that state is the projection's
+        "no fact was observed", not something the Bridge reports -- so the pair is
+        expressed with two refusal semantics for the same Request: the reason it
+        was refused changed between observations. What is pinned is the rule, not
+        the spelling of the pair: unchanged semantics mint nothing, changed
+        semantics mint exactly one.
+        """
+        root = workdir(requests=[collected()])
+        first_poll = write_poll(root, "a.json", self.T1, reason="pr_head_not_found")
+        first = run_export_with_ledger(root, [first_poll], observations="observations.json")
+        self.assertEqual(first["counts"]["facts"], 1, first["counts"])
+        before = only_fact(root)[0]
+
+        second_poll = write_poll(root, "b.json", self.T2, reason="duplicate_request_id")
+        index = run_export_with_ledger(root, [first_poll, second_poll],
+                                       observations="observations.json")
+        after = only_fact(root)
+        self.assertEqual(index["counts"]["facts"], 2, index["counts"])
+        self.assertEqual(len(after), 2)
+        ids = {fact["fact_id"] for fact in after}
+        self.assertIn(before["fact_id"], ids, "the earlier fact was rewritten away")
+        self.assertEqual({fact["reason"]["code"] for fact in after},
+                         {"pr_head_not_found", "duplicate_request_id"})
+        self.assertEqual({fact["kind"] for fact in after},
+                         {"REQUEST_REJECTED", "REQUEST_DUPLICATE"})
+        # Only the new semantics was minted, at its own first instant.
+        fresh = [fact for fact in after if fact["fact_id"] != before["fact_id"]][0]
+        self.assertEqual(fresh["first_observed_at"], self.T2)
+
+    def test_the_same_id_with_different_bytes_is_refused_not_overwritten(self):
+        root = workdir(requests=[collected()])
+        run_export_with_ledger(root, mult_poll(root, [self.T1]), observations="observations.json")
+        fact = only_fact(root)[0]
+        path = root / "out" / X.FACTS_DIR / (fact["fact_id"] + ".json")
+        # Same id, different body: the one thing an immutable store must never do
+        # is quietly accept this.
+        forged = dict(fact, binding=dict(fact["binding"], proof="TASK_SIGNATURE_AND_DIGEST_PREFIX"))
+        path.write_bytes(X.canonical(forged) + b"\n")
+        with self.assertRaises(X.Refuse) as caught:
+            run_export_with_ledger(root, mult_poll(root, [self.T1]),
+                                   observations="observations.json")
+        self.assertIn("fact_id_collision", str(caught.exception))
+        self.assertEqual(path.read_bytes(), X.canonical(forged) + b"\n")
+
+    def test_a_historical_timestamp_based_fact_is_preserved_untouched(self):
+        """The store is append-only across the change of identity rule."""
+        root = workdir(requests=[collected()])
+        folder = root / "out" / X.FACTS_DIR
+        folder.mkdir(parents=True)
+        historical_name = "request-fact-" + "0" * 32 + ".json"
+        historical = X.canonical({
+            "schema_version": "1", "kind": "REQUEST_VALIDATED",
+            "request_id": "an-earlier-request", "action_id": "HK_STAGING_VERIFY",
+            "environment": "HK-STAGING-01", "nonce": None,
+            "observed_at": "2026-09-01T00:00:00Z", "time_source": "POLL_JOURNAL",
+            "submission": {"pr_number": "1", "head_sha": "b" * 40,
+                           "submission_key": "1:" + "b" * 40},
+            "source": None,
+            "reason": {"applicable": False, "code": None, "class": None, "origin": None,
+                       "preserved_verbatim": True},
+            "binding": {"claimed": True, "task_id": None, "task_sha256": None,
+                        "task_commit": None, "proof_required": True, "proof": "X"},
+            "authority": {"is_execution_authority": False}}) + b"\n"
+        (folder / historical_name).write_bytes(historical)
+
+        index = run_export_with_ledger(root, mult_poll(root, [self.T1]),
+                                       observations="observations.json")
+        self.assertEqual((folder / historical_name).read_bytes(), historical,
+                         "the exporter rewrote a historical fact")
+        self.assertEqual(index["counts"]["facts"], 1, "only this run's facts are counted")
+        names = sorted(fact_bytes(root))
+        self.assertEqual(len(names), 2, names)
+        self.assertIn(historical_name, names)
+        minted = [name for name in names if name != historical_name][0]
+        self.assertEqual(json.loads((folder / minted).read_text(encoding="utf-8"))["kind"],
+                         "REQUEST_REJECTED")
+
+    def test_the_observation_ledger_is_never_written_inside_the_export_root(self):
+        root = workdir(requests=[collected()])
+        run_export_with_ledger(root, mult_poll(root, [self.T1]), observations="observations.json")
+        self.assertTrue((root / "observations.json").is_file())
+        self.assertFalse((root / "out" / X.OBSERVATION_LEDGER_NAME).exists())
+        self.assertFalse((root / "out" / X.FACTS_DIR / X.OBSERVATION_LEDGER_NAME).exists())
+
+    def test_the_identity_excludes_every_time_field_and_the_submission(self):
+        self.assertNotIn("first_observed_at", X.SEMANTIC_IDENTITY_KEYS)
+        self.assertNotIn("time_source", X.SEMANTIC_IDENTITY_KEYS)
+        self.assertNotIn("submission", X.SEMANTIC_IDENTITY_KEYS)
+        self.assertIn("request_id", X.SEMANTIC_IDENTITY_KEYS)
+        self.assertIn("reason", X.SEMANTIC_IDENTITY_KEYS)
+        self.assertIn("binding", X.SEMANTIC_IDENTITY_KEYS)
+        self.assertEqual(set(X.FACT_ID_EXCLUDED),
+                         {"fact_id", "first_observed_at", "time_source"})
+        # semantic_id is covered by the id digest, so it cannot be edited freely.
+        self.assertNotIn("semantic_id", X.FACT_ID_EXCLUDED)
 
 
 if __name__ == "__main__":
