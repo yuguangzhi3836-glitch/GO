@@ -1,0 +1,369 @@
+name: Command Center deploy dry-run (isolated)
+on:
+  push:
+    branches: [cc/github-native-delivery-v1, cc/v1-finalization-20260914]
+    paths:
+      - 'control-plane/command-center-deploy-dry-run-v1/**'
+      - 'control-plane/command-center-deploy-readiness-v1/**'
+      - '.github/workflows/command-center-deploy-dry-run-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'control-plane/command-center-deploy-dry-run-v1/**'
+      - 'control-plane/command-center-deploy-readiness-v1/**'
+      - '.github/workflows/command-center-deploy-dry-run-v1.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cc-deploy-dry-run-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  isolated-deploy-dry-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned test dependency
+        run: python -m pip install cryptography==46.0.0
+      - name: Check the dry-run manifest
+        working-directory: control-plane/command-center-deploy-dry-run-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Check the readiness manifest is untouched by this change
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Run the dry-run suite on Linux
+        working-directory: control-plane/command-center-deploy-dry-run-v1
+        run: python -m unittest discover -s tests -v
+      - name: Run the rehearsal built-in checks
+        working-directory: control-plane/command-center-deploy-dry-run-v1
+        run: python command-center/go-deploy-dry-run selftest
+      - name: Run the isolated verification and write summary.json
+        working-directory: control-plane/command-center-deploy-dry-run-v1
+        run: python run_checks.py "$RUNNER_TEMP/cc-deploy-dry-run-checks"
+      - name: Confirm the readiness evaluator is still green
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: python -m unittest discover -s tests -q
+      - name: Confirm the state layer is still green
+        working-directory: control-plane/command-center-state-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Confirm the state layer suite still passes
+        working-directory: control-plane/command-center-state-v1
+        run: python -m unittest discover -s tests -q
+      - name: Prove the rehearsal refuses deterministically and never publishes anything
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import pathlib
+          import subprocess
+          import sys
+
+          component = pathlib.Path('control-plane/command-center-deploy-dry-run-v1')
+          rehearsal = component / 'command-center' / 'go-deploy-dry-run'
+          evaluator = pathlib.Path(
+              'control-plane/command-center-deploy-readiness-v1/command-center/go-deploy-readiness')
+
+          work = pathlib.Path(os.environ['RUNNER_TEMP']) / 'ccv107'
+          if work.exists():
+              __import__('shutil').rmtree(work)
+          requests_dir = work / 'requests'
+          requests_dir.mkdir(parents=True)
+          store = work / 'store'
+          COMMIT = 'a' * 40
+          CURRENT_IMAGE = 'sha256:' + 'e' * 64
+          CANDIDATE_IMAGE = 'sha256:' + 'f' * 64
+          GATES = ['three_end_ux', 'six_vertical_closed_loop', 'sealed_node', 'final_release']
+          AT = '2026-09-15T01:00:00Z'
+
+
+          def write_request(name, **over):
+              body = {'schema_version': '1', 'request_id': name, 'action_id': 'HK_STAGING_DEPLOY',
+                      'environment': 'HK-STAGING-01', 'requested_at': '2026-09-15T00:59:30Z',
+                      'plan_id': 'release-one'}
+              body.update(over)
+              path = requests_dir / ('%s.json' % name)
+              path.write_text(json.dumps(body), encoding='utf-8')
+              return path
+
+
+          # A real readiness verdict, produced by the CC V1-06 evaluator, never hand-written:
+          # this proves the two components compose rather than merely agreeing by accident.
+          go = work / 'GO' / 'docs' / 'canonical-baseline'
+          go.mkdir(parents=True)
+          (go / 'CURRENT_CANDIDATE.json').write_text(json.dumps({
+              'schema': 'go.depth48.current-candidate.v1', 'source_commit': COMMIT,
+              'application_git_tree': 'b' * 40, 'previous_application_git_tree': 'c' * 40,
+              'source_tree_sha256': 'd' * 64, 'candidate_pr': 52, 'candidate_branch': 'main'}),
+              encoding='utf-8')
+          (go / 'CURRENT_HK_RUNTIME.json').write_text(json.dumps({
+              'image_config_id': CURRENT_IMAGE, 'image_tag': 'synthetic', 'host': 'i-synthetic',
+              'runtime_generation': 'SYNTHETIC'}), encoding='utf-8')
+          state = {
+              'schema_version': '1', 'contract': 'CURRENT_CONTROL_STATE',
+              'sources': {'go': {'repository': 'yuguangzhi3836-glitch/GO', 'head_sha': '0' * 40,
+                                 'canonical_candidate_pointer':
+                                     'docs/canonical-baseline/CURRENT_CANDIDATE.json',
+                                 'canonical_runtime_pointer':
+                                     'docs/canonical-baseline/CURRENT_HK_RUNTIME.json'}},
+              'freshness': {'live_verification_window_seconds': 86400},
+              'control_state': {
+                  'live_verified_runtime': {'state': 'PROVEN', 'value': {
+                      'image_config_id': CURRENT_IMAGE, 'age_seconds': 60,
+                      'verified_at': '2026-09-15T00:30:00Z'}},
+                  'repository_runtime_pointer': {'value': {'image_config_id': CURRENT_IMAGE}},
+                  'runtime_verification_state': 'MATCH'},
+              'tasks': [{'task_id': 'synthetic-test-pr', 'action_id': 'HK_STAGING_TEST_PR',
+                         'issued_at': '2026-09-15T00:10:00Z', 'lifecycle': 'COMPLETE',
+                         'parameters': {'source': {'commit_sha': COMMIT}},
+                         'evidence': {'status': 'SUCCESS', 'source': {'path': 'evidence/t.json'}}}]}
+          state_path = work / 'CURRENT_CONTROL_STATE.json'
+          state_path.write_text(json.dumps(state), encoding='utf-8')
+
+          bundle = work / 'live'
+          bundle.mkdir()
+          (bundle / 'release-one.json').write_text(json.dumps({
+              'plan': {'schema_version': '1', 'plan_id': 'release-one', 'environment': 'HK-STAGING-01',
+                       'action_id': 'HK_STAGING_DEPLOY', 'source_commit': COMMIT,
+                       'application_git_tree': 'b' * 40,
+                       'candidate': {'source_commit': COMMIT, 'application_git_tree': 'b' * 40,
+                                     'source_tree_sha256': 'd' * 64, 'image_id': CANDIDATE_IMAGE,
+                                     'repo_digest': 'go-hotel@' + CANDIDATE_IMAGE},
+                       'expected_current_image_id': CURRENT_IMAGE,
+                       'canary_task_sha256': '1' * 64, 'canary_evidence_sha256': '2' * 64,
+                       'gates': {name: 'PASS' for name in GATES}},
+              'approval': {'approval_id': 'approval-one', 'approved_at': '2026-09-15T00:00:00Z',
+                           'expires_at': '2026-09-16T00:00:00Z'}}), encoding='utf-8')
+          channel = bundle / 'channel.json'
+          channel.write_text(json.dumps({
+              'deployment_requests_enabled': True, 'publish_enabled': True,
+              'allowed_actions': ['HK_STAGING_VERIFY', 'HK_STAGING_TEST_PR', 'HK_STAGING_DEPLOY'],
+              'allowed_environment': 'HK-STAGING-01'}), encoding='utf-8')
+
+
+          def run(*args, expect=0):
+              result = subprocess.run([sys.executable, *args], capture_output=True, text=True)
+              assert result.returncode == expect, (result.returncode, result.stdout, result.stderr)
+              return dict(line.split('=', 1) for line in result.stdout.strip().splitlines() if '=' in line)
+
+
+          def readiness(out, live=bundle):
+              args = [str(evaluator), 'evaluate', '--control-state', str(state_path),
+                      '--go-repo', str(work / 'GO'), '--out', str(work / out), '--now', AT]
+              if live:
+                  args += ['--live-bundle', str(live)]
+              run(*args)
+              return work / out / 'DEPLOY_READINESS.json'
+
+
+          def rehearse(out, request_path, readiness_path, history=None, store_dir=store):
+              args = [str(rehearsal), 'dry-run', '--request', str(request_path),
+                      '--deploy-readiness', str(readiness_path), '--now', AT, '--out', str(work / out)]
+              if store_dir:
+                  args += ['--store', str(store_dir)]
+              if history:
+                  args += ['--consumed-history', str(history)]
+              summary = run(*args)
+              document = json.loads((work / out / 'DEPLOY_DRY_RUN.json').read_text(encoding='utf-8'))
+              return summary, document
+
+
+          history = work / 'history.json'
+          history.write_text(json.dumps({'consumed_plan_ids': [], 'consumed_approval_ids': [],
+                                         'consumed_request_ids': []}), encoding='utf-8')
+          yes = readiness('readiness-yes')
+
+          # 1. a legal Request produces a candidate and publishes nothing
+          legal = write_request('rehearsal-one')
+          summary, document = rehearse('run-legal', legal, yes, history)
+          assert summary['DECISION'] == 'TASK_CANDIDATE', summary
+          assert summary['TASK_PUBLISHED'] == 'NO' and summary['SIGNED'] == 'NO'
+          assert summary['DEPLOY_PERFORMED'] == 'NO'
+          candidate = document['candidate']
+          assert candidate['kind'] == 'TASK_CANDIDATE'
+          assert candidate['executable'] is False and candidate['signed'] is False
+          assert candidate['publish_authorized'] is False and candidate['signature'] is None
+          assert candidate['parameters_source'] == 'APPROVED_PLAN_BUNDLE'
+          assert candidate['source_commit'] == COMMIT
+          assert candidate['candidate_image_id'] == CANDIDATE_IMAGE
+          assert candidate['expected_current_image_id'] == CURRENT_IMAGE
+          assert not any(v for v in document['authority_boundary'].values())
+          assert document['record']['consumes_nothing'] is True
+          assert document['record']['written'] is True
+
+          # 2. the same Request is refused as a replay, and nothing new is recorded
+          summary, replay = rehearse('run-replay', legal, yes, history)
+          assert summary['DECISION'] == 'REJECTED', summary
+          assert replay['decision']['refused'] == ['duplicate_request_id'], replay['decision']
+          assert replay['record']['replayed'] is True and replay['record']['written'] is False
+          assert len(sorted(store.glob('*.json'))) == 1
+
+          # 3. every request-shape fault is a deterministic refusal with the Bridge's own token
+          cases = [
+              ('shape-action', {'action_id': 'HK_STAGING_ROLLBACK'}, 'action'),
+              ('shape-environment', {'environment': 'PRODUCTION'}, 'environment'),
+              ('shape-stale', {'requested_at': '2026-09-14T00:00:00Z'}, 'stale_or_future_request'),
+              ('shape-plan-id', {'plan_id': 'x'}, 'plan_id'),
+          ]
+          for name, over, token in cases:
+              path = write_request(name, **over)
+              summary, document = rehearse('run-%s' % name, path, yes, history)
+              assert summary['DECISION'] == 'REJECTED', (name, summary)
+              assert document['decision']['refused'] == [token], (name, document['decision'])
+              assert document['candidate'] is None, name
+
+          unparseable = write_request('shape-unparseable', requested_at='yesterday')
+          summary, document = rehearse('run-unparseable', unparseable, yes, history)
+          assert document['decision']['refused'] == ['invalid_requested_at'], document['decision']
+
+          # a wrong field set carries a token too
+          bad_fields = requests_dir / 'shape-fields.json'
+          bad_fields.write_text(json.dumps({'schema_version': '1', 'request_id': 'shape-fields',
+                                            'action_id': 'HK_STAGING_DEPLOY',
+                                            'environment': 'HK-STAGING-01',
+                                            'requested_at': '2026-09-15T00:59:30Z',
+                                            'plan_id': 'release-one', 'extra': 'x'}), encoding='utf-8')
+          summary, document = rehearse('run-fields', bad_fields, yes, history)
+          assert document['decision']['refused'] == ['schema_fields'], document['decision']
+
+          # 4a. the live gates cannot be established without a bundle, so each is UNPROVEN by name
+          bare = readiness('readiness-bare', live=None)
+          path = write_request('gate-live')
+          summary, document = rehearse('run-gate-live', path, bare, history, store_dir=work / 'store-live')
+          assert summary['DECISION'] == 'UNPROVEN', summary
+          for gate in ('PACKAGE_BINDING', 'DEPLOYMENT_PLAN', 'HUMAN_APPROVAL', 'CURRENT_RUNTIME',
+                       'LIVE_SWITCH'):
+              assert ('readiness:%s' % gate) in document['decision']['unproven'], (gate, document['decision'])
+          assert document['candidate'] is None
+
+          # 4b. a definite refusal from the live switch
+          channel.write_text(json.dumps({
+              'deployment_requests_enabled': False, 'publish_enabled': True,
+              'allowed_actions': ['HK_STAGING_DEPLOY'], 'allowed_environment': 'HK-STAGING-01'}),
+              encoding='utf-8')
+          switch_off = readiness('readiness-switch-off')
+          path = write_request('gate-switch')
+          summary, document = rehearse('run-gate-switch', path, switch_off, history,
+                                       store_dir=work / 'store-switch')
+          assert summary['DECISION'] == 'REJECTED', summary
+          assert document['decision']['refused'] == ['LIVE_SWITCH'], document['decision']
+          assert document['candidate'] is None
+          channel.write_text(json.dumps({
+              'deployment_requests_enabled': True, 'publish_enabled': True,
+              'allowed_actions': ['HK_STAGING_VERIFY', 'HK_STAGING_TEST_PR', 'HK_STAGING_DEPLOY'],
+              'allowed_environment': 'HK-STAGING-01'}), encoding='utf-8')
+
+          # 4c. a definite refusal that comes from the control bus instead: no TEST_PR for the commit
+          no_test = json.loads(json.dumps(state))
+          no_test['tasks'] = []
+          state_path.write_text(json.dumps(no_test), encoding='utf-8')
+          no_test_pr = readiness('readiness-no-test-pr')
+          state_path.write_text(json.dumps(state), encoding='utf-8')
+          path = write_request('gate-test-pr')
+          summary, document = rehearse('run-gate-test-pr', path, no_test_pr, history,
+                                       store_dir=work / 'store-test-pr')
+          assert summary['DECISION'] == 'REJECTED', summary
+          assert document['decision']['refused'] == ['TEST_PR'], document['decision']
+          assert document['candidate'] is None
+
+          # 4d. advisory gates are reported and never block
+          for gate, mangle, restore in (
+                  ('CANARY', 'canary_evidence_sha256', '2' * 64),
+                  ('RELEASE_GATES', 'gates', {name: 'PASS' for name in GATES})):
+              plan = json.loads((bundle / 'release-one.json').read_text(encoding='utf-8'))
+              plan['plan'][mangle] = None if gate == 'CANARY' else {name: 'HOLD' for name in GATES}
+              (bundle / 'release-one.json').write_text(json.dumps(plan), encoding='utf-8')
+              verdict = readiness('readiness-advisory-%s' % gate.lower())
+              path = write_request('gate-%s' % gate)
+              summary, document = rehearse('run-gate-%s' % gate, path, verdict, history,
+                                           store_dir=work / ('store-%s' % gate))
+              assert summary['DECISION'] == 'TASK_CANDIDATE', (gate, summary)
+              entry = [e for e in document['checks'] if e['check'] == 'readiness:%s' % gate][0]
+              assert entry['advisory'] is True and entry['state'] == 'FAIL', (gate, entry)
+              assert gate not in document['decision']['refused'], gate
+              plan = json.loads((bundle / 'release-one.json').read_text(encoding='utf-8'))
+              plan['plan'][mangle] = restore
+              (bundle / 'release-one.json').write_text(json.dumps(plan), encoding='utf-8')
+
+          # 5. a consumed plan is refused
+          consumed = work / 'history-consumed.json'
+          consumed.write_text(json.dumps({'consumed_plan_ids': ['release-one'],
+                                          'consumed_approval_ids': [],
+                                          'consumed_request_ids': []}), encoding='utf-8')
+          path = write_request('consumed-one')
+          summary, document = rehearse('run-consumed', path, yes, consumed, store_dir=work / 'store-c')
+          assert summary['DECISION'] == 'REJECTED', summary
+          assert document['decision']['refused'] == [
+              'deployment_plan_or_approval_already_consumed'], document['decision']
+
+          # 6. without a history nothing is proven, so the outcome is not a candidate
+          path = write_request('no-history-one')
+          summary, document = rehearse('run-no-history', path, yes, None, store_dir=work / 'store-n')
+          assert summary['DECISION'] == 'UNPROVEN', summary
+          assert document['candidate'] is None
+          assert 'plan_not_already_consumed' in document['decision']['unproven']
+
+          # 7. no check outside the Bridge's own refusal vocabulary, and no Task anywhere
+          checks = json.loads((component / 'contracts/deploy_dry_run_v1.schema.json')
+                              .read_text(encoding='utf-8'))
+          sys.path.insert(0, str(component / 'tests'))
+          import test_deploy_dry_run as t  # noqa: E402
+
+          vocabulary = t.bridge_tokens()
+          declared = [entry['token'] for entry in checks['x-go-request-checks']['checks']]
+          assert not [token for token in declared if token not in vocabulary], declared
+          assert len(vocabulary) >= 96
+
+          for produced in sorted(work.glob('run-*/DEPLOY_DRY_RUN.json')):
+              blob = json.dumps(json.loads(produced.read_text(encoding='utf-8')))
+              assert '"task_published": true' not in blob, produced
+              assert '"signed": true' not in blob, produced
+              assert '"deploy_performed": true' not in blob, produced
+              assert '"executable": true' not in blob, produced
+              assert '"publish_authorized": true' not in blob, produced
+
+          binding = {
+              'event': os.environ.get('GITHUB_EVENT_NAME', 'local'),
+              'workflow_commit': os.environ.get('GITHUB_SHA', 'local'),
+              'run_id': os.environ.get('GITHUB_RUN_ID', 'local'),
+              'issue': '#102 CC V1-07',
+              'outcomes': ['TASK_CANDIDATE', 'REJECTED', 'UNPROVEN'],
+              'stages': 4,
+              'request_checks': len(declared),
+              'bridge_refusal_tokens_available': len(vocabulary),
+              'request_checks_outside_the_bridge_vocabulary': 0,
+              'legal_dry_run_produces_a_candidate': True,
+              'a_candidate_is_not_a_task': True,
+              'every_shape_fault_is_a_deterministic_reject': True,
+              'every_failing_gate_is_a_named_reject': True,
+              'advisory_gates_never_block': True,
+              'replay_is_refused': True,
+              'a_consumed_plan_is_refused': True,
+              'an_unknown_is_never_a_pass': True,
+              'records_consume_nothing': True,
+              'no_output_publishes_signs_or_deploys_anything': True,
+              'task_published': False,
+              'signed': False,
+              'deploy_performed': False,
+              'accepts_caller_supplied_parameters': False,
+              'holds_private_key': False,
+              'installed': False,
+              'hong_kong_accessed': False,
+              'production_accessed': False,
+          }
+          (work / 'binding.json').write_text(json.dumps(binding, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(binding, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cc-deploy-dry-run-${{ github.sha }}
+          path: ${{ runner.temp }}/ccv107/
+          if-no-files-found: error
+          retention-days: 30

@@ -429,6 +429,15 @@ Four properties are enforced by tests rather than asserted in prose:
 Rollback readiness remains `NOT_IN_SCOPE`; CC V1-09 / #104 owns it and the
 evaluator says so instead of guessing.
 
+CC V1-07 / #102 adds a **rehearsal** of the DEPLOY Request path on top of that
+verdict (`control-plane/command-center-deploy-dry-run-v1`). It decides whether a
+Request would be accepted or refused and, for a legal one, produces only a
+TASK_CANDIDATE: unsigned, unpublishable, non-executable. Its result is **not**
+carried into this document -- it is its own auditable artifact plus an append-only
+record store, because a rehearsal is evidence about the path rather than a fact
+about control state. The boundary it keeps is the one that matters:
+`candidate_is_a_task=false` and `deploy_performed=false` in every outcome.
+
 As of the committed projection the verdict is **`NO`**: the candidate commit has
 never been TEST_PR'd on the control bus and the newest verified VERIFY is outside
 its freshness window, while five further gates are unprovable offline.
