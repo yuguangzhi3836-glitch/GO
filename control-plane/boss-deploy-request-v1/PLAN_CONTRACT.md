@@ -7,7 +7,7 @@
 ## 信任材料
 
 - `authority.pub`：既有指挥中心任务签名公钥的受控副本，必须与香港现有受信任务公钥核对指纹。**只用于核验 CANARY / 只读核验的 Task 签名**。
-- `approval-authority.pub`：**人工审批权限**的公钥，由实际审核人持有私钥。**不得与 `authority.pub` 相同**——同一把钥出现在两个角色里，审批就与 Task 签名不可区分，而指挥中心本身持有任务签名私钥，等于可以自行产出"看起来像人工授权"的东西。入口在读到任何 bundle 内容前就先比较两者公钥字节，相同即拒（`approval_authority_not_separated`）；未登记该文件亦拒（`approval_authority_missing`）。该身份在 readiness 合同里的 id 是 `GO-DEPLOY-HUMAN-APPROVAL-AUTHORITY`。
+- **不使用任何独立的审批签名公钥。**V1 的人工审批权威 = **经 GitHub 认证的身份** + 明确的审批意图 + 候选绑定 + 环境绑定（见 `docs/project/CC_V1_SCOPE_20260916.md`）。GitHub 决定谁写了 Request PR，指挥中心只读取平台给出的答案，并只接受本文件下方列出的授权身份；其他人写的 Request PR 在到达计划之前就被拒（`request_pr_author_not_authorised`）。此前的 `approval-authority.pub` 与独立审批签名者已被该范围重置取消。
 - `hk-evidence.pub`：既有香港回执签名公钥的受控副本，必须由运行档案和技术审核人员确认指纹。
 - 不创建新信任根，不轮换原有私钥，不从请求 PR 读取公钥。测试生成的临时密钥和样本不得登记到生产目录。
 
@@ -42,7 +42,7 @@
 
 精确字段：`schema_version`（字符串 1）、`approval_id`（1–80 个字母/数字/下划线/连字符，首字符字母或数字）、`approved_by`（3–80 个安全标识字符，记录实际审核人员）、`approved_at`、`expires_at`、`scope`（`HK_STAGING_DEPLOY_FIXED_EIGHT`）、`plan_sha256`、`signature`。
 
-由**人工审核人**在明确审批后用**其自己的** Ed25519 私钥签名：对去掉 signature 的 approval canonical JSON 计算签名，signature 为十六进制。私钥必须由审核人自行保管，**不得放在指挥中心主机上**（放在那里就等于取消分离）；`install/go-approval-sign` 是给审核人在自己机器上使用的签发工具，它会拒绝使用任务签名私钥、也拒绝读取 `/etc/go-command-center/` 下的私钥。审批最多 15 分钟，必须晚于两份回执的完成时间，校验时剩余超过 60 秒。只有受控操作流程持有签名能力，Bridge 不自动审批或签审批记录。
+**approval 不做密码学签名。**它的权威来自 GitHub 认证的身份：`approved_by` 必须**等于**指挥中心从 Request PR 读到的作者登录名（不等即拒 `approval_identity_mismatch`），该登录名必须在授权名单内（否则 `approval_identity_not_authorised`），其余绑定字段（`plan_sha256`、`scope`、审批时效）保持原义不变。**授权身份**（`go_deploy_request.APPROVAL_IDENTITIES`）：`yuguangzhi3836-glitch`、`chenzhenxi1-sudo`。审批最多 15 分钟，必须晚于两份回执的完成时间，校验时剩余超过 60 秒。只有受控操作流程持有签名能力，Bridge 不自动审批或签审批记录。
 
 ### CANARY 与只读核验
 

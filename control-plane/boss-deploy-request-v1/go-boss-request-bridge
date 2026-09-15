@@ -179,7 +179,13 @@ def check_deploy_pr(number,head):
         or value.get('base',{}).get('ref')!='main' or value.get('base',{}).get('repo',{}).get('full_name')!='chenzhenxi1-sudo/go-control-tasks'
         or value.get('head',{}).get('repo',{}).get('full_name')!='chenzhenxi1-sudo/go-control-tasks'
         or value.get('head',{}).get('sha')!=head): raise Reject('request_pr_not_open_exact_head')
-    return value
+    # The approval authority is who GitHub says authored this pull request. The
+    # reader token above reads GitHub's own answer, so an unauthorised author is
+    # refused here and never reaches the plan.
+    login=value.get('user',{}).get('login')
+    if not isinstance(login,str) or login not in deploy_gate.APPROVAL_IDENTITIES:
+        raise Reject('request_pr_author_not_authorised')
+    return value,login
 
 class Ledger:
     def __init__(self, root): self.root = pathlib.Path(root); self.root.mkdir(mode=0o700, parents=True, exist_ok=True); self.path=self.root/"ledger.json"; self.lock=self.root/"ledger.lock"
@@ -388,8 +394,8 @@ def persistent_process(number, head, ledger_root, key_path, channel_path):
         if request['action_id']==deploy_gate.ACTION:
             if channel.get('deployment_requests_enabled') is not True: raise Reject('deployment_requests_disabled')
             if proposal['path']!='requests/'+request['request_id']+'.json': raise Reject('request_filename_binding')
-            check_deploy_pr(number,head)
-            context=deploy_gate.load_context(request['plan_id'],now())
+            _,approval_identity=check_deploy_pr(number,head)
+            context=deploy_gate.load_context(request['plan_id'],now(),approval_identity)
             deploy_gate.ensure_unused(context,data['requests'])
             unsigned=derive_deployment(request,context)
             extra={k:v for k,v in context.items() if k not in {'deadline','parameters'}}
@@ -411,7 +417,7 @@ def persistent_process(number, head, ledger_root, key_path, channel_path):
         record=data['requests'][key]
         if load_channel(channel_path).get('deployment_requests_enabled') is not True: raise Reject('deployment_requests_disabled')
         check_deploy_pr(number,head)
-        current=deploy_gate.load_context(record['plan_id'],now())
+        current=deploy_gate.load_context(record['plan_id'],now(),record.get('approval_identity'))
         if current['bundle_sha256']!=record['bundle_sha256']: raise Reject('approved_plan_changed')
         if parse_time(task['expires_at'])<=now()+dt.timedelta(seconds=30): raise Reject('deployment_task_near_expiry')
     try: commit=publish_task(task)

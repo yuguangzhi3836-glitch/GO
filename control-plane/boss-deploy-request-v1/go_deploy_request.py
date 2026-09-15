@@ -23,11 +23,20 @@ DIGEST = re.compile(r'[a-z0-9][a-z0-9._/-]*@sha256:[0-9a-f]{64}\Z')
 SERVICES = ['api','recovery-worker','outbox-worker','mobile-push-receipt-worker',
             'reconciliation-worker','mobile-push-worker','mobile-engagement-worker','judgment-worker']
 RELEASE_GATES = {'three_end_ux','six_vertical_closed_loop','sealed_node','final_release'}
+# The V1 Human Approval authority: the GitHub users this project authorises.
+# GitHub decides who authored the Request PR, so the identity is authenticated
+# by the platform rather than asserted by the caller, and this list is what the
+# gate refuses against. It replaces a dedicated approval signing key, cancelled
+# by the 2026-09-16 scope reset: the Boss must not have to generate or handle a
+# key in order to authorise a deployment.
+APPROVAL_IDENTITIES = ('yuguangzhi3836-glitch','chenzhenxi1-sudo')
 # The approval's exact field set, named once. The approver-side signing tool and
 # the tests both read it from here, so a field added on one side cannot pass
 # unnoticed on the other.
+# No signature: the authority is the authenticated GitHub identity, so there is
+# nothing for a caller to sign and nothing for the gate to verify cryptographically.
 APPROVAL_FIELDS = ('schema_version','approval_id','approved_by','approved_at',
-                   'expires_at','scope','plan_sha256','signature')
+                   'expires_at','scope','plan_sha256')
 CANARY_GATES = {'compose_baseline','env_baseline','expected_current_image','candidate_image',
                 'python_compile','alembic_head','container_isolation','container_cleanup'}
 VERIFY_GATES = {'alembic_current','alembic_head','api_health','candidate_image',
@@ -85,13 +94,6 @@ def read_secure(path, max_bytes=131072):
             return data
     except OSError as exc: raise Reject('trusted_file_unavailable') from exc
 
-def key_identity(key):
-    # Two key objects can be the same key. Separation has to be decided on the
-    # bytes, or a caller can pass the same material twice and look separate.
-    return key.public_bytes(serialization.Encoding.DER,
-                            serialization.PublicFormat.SubjectPublicKeyInfo)
-
-
 def public_key(raw):
     try:
         key=serialization.load_ssh_public_key(raw) if raw.startswith(b'ssh-') else serialization.load_pem_public_key(raw)
@@ -137,15 +139,14 @@ def proof(task,evidence,action,authority_key,hk_key,at,max_age):
     if any(v != 'PASS' and v is not False for v in gates.values()): raise Reject('proof_contains_failed_gate')
     return completed
 
-def validate_bundle(bundle,plan_id,authority_key,approval_authority_key,hk_key,at):
-    # Fail closed on the separation before anything else is read. A Human Approval
-    # is an approval only if it is signed by an authority that is NOT the Task
-    # signer: one key in both roles makes the approval indistinguishable from a
-    # Task signature, and the Command Center holds the task signing key, so it
-    # would be able to produce something that reads as human authorisation.
-    if approval_authority_key is None: raise Reject('approval_authority_missing')
-    if key_identity(approval_authority_key)==key_identity(authority_key):
-        raise Reject('approval_authority_not_separated')
+def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=None):
+    # Fail closed on the approval authority before anything else is read. The
+    # authority is an authenticated GitHub identity: `approval_identity` is the
+    # login GitHub reports for the Request PR's author, and it is supplied by the
+    # Bridge from the platform's own answer rather than from anything the caller
+    # wrote into the Request.
+    if approval_identity is None: raise Reject('approval_identity_missing')
+    if approval_identity not in APPROVAL_IDENTITIES: raise Reject('approval_identity_not_authorised')
     exact(bundle,{'plan','approval','canary_task','canary_evidence','preflight_task','preflight_evidence'},'bundle_fields')
     plan=bundle['plan']; approval=bundle['approval']
     exact(plan,{'schema_version','plan_id','environment','action_id','candidate','expected_current_image_id',
@@ -166,11 +167,14 @@ def validate_bundle(bundle,plan_id,authority_key,approval_authority_key,hk_key,a
     match(candidate['image_id'],IMAGE,'candidate_image');match(candidate['repo_digest'],DIGEST,'candidate_digest')
     if not candidate['repo_digest'].endswith(candidate['image_id'][7:]): raise Reject('executor_digest_contract')
     match(plan['expected_current_image_id'],IMAGE,'current_image')
-    verify_signed(approval,approval_authority_key,'hex')
     exact(approval,APPROVAL_FIELDS,'approval_fields')
     if approval['schema_version']!='1' or approval['scope']!='HK_STAGING_DEPLOY_FIXED_EIGHT' or approval['plan_sha256']!=digest(plan):
         raise Reject('approval_binding')
-    match(approval['approval_id'],EXECUTOR_IDENT,'approval_id');match(approval['approved_by'],IDENT,'human_reviewer_id')
+    match(approval['approval_id'],EXECUTOR_IDENT,'approval_id')
+    match(approval['approved_by'],IDENT,'human_reviewer_id')
+    # The approval is the authenticated identity's own statement, so the name it
+    # carries must be that identity and nothing else.
+    if approval['approved_by']!=approval_identity: raise Reject('approval_identity_mismatch')
     approved,expires=timestamp(approval['approved_at']),timestamp(approval['expires_at'])
     if approved>at or expires<=at+dt.timedelta(seconds=60) or expires-approved>dt.timedelta(minutes=15): raise Reject('approval_expired_or_invalid')
     for k in ['canary_task','canary_evidence','preflight_task','preflight_evidence']:
@@ -186,23 +190,22 @@ def validate_bundle(bundle,plan_id,authority_key,approval_authority_key,hk_key,a
     deadline=min(expires,checked+dt.timedelta(seconds=300),at+dt.timedelta(minutes=5))
     if deadline<=at+dt.timedelta(seconds=60): raise Reject('preflight_near_expiry')
     return {'plan_id':plan_id,'plan_sha256':digest(plan),'bundle_sha256':digest(bundle),
+            # Who authorised this, so the reconciliation path re-reads the plan under
+            # the same authenticated identity rather than needing a new one.
+            'approval_identity':approval_identity,
             'approval_id':approval['approval_id'],'source_commit':candidate['source_commit'],
             'package_sha256':candidate['package_sha256'],'deadline':deadline,
             'parameters':{'candidate_image_id':candidate['image_id'],'candidate_repo_digest':candidate['repo_digest'],
              'expected_current_image_id':plan['expected_current_image_id'],
              'canary_evidence_id':bundle['canary_task']['parameters']['release_id'],'approval_id':approval['approval_id']}}
 
-def load_context(plan_id,at):
+def load_context(plan_id,at,approval_identity=None):
     match(plan_id,IDENT,'plan_id')
     try:
         bundle=parse_json(read_secure(STORE/(plan_id+'.json')))
         authority=public_key(read_secure(STORE/'authority.pub',4096))
-        # A distinct trust material, not another copy of the task signer. The
-        # separation is enforced in validate_bundle, so registering the same key
-        # here produces a refusal rather than a silently weaker approval.
-        approval_authority=public_key(read_secure(STORE/'approval-authority.pub',4096))
         hk=public_key(read_secure(STORE/'hk-evidence.pub',4096))
-        return validate_bundle(bundle,plan_id,authority,approval_authority,hk,at)
+        return validate_bundle(bundle,plan_id,authority,hk,at,approval_identity)
     except (OSError,TypeError,KeyError) as exc: raise Reject('deployment_plan_unavailable_or_invalid') from exc
 
 def ensure_unused(context,records):
