@@ -23,6 +23,11 @@ DIGEST = re.compile(r'[a-z0-9][a-z0-9._/-]*@sha256:[0-9a-f]{64}\Z')
 SERVICES = ['api','recovery-worker','outbox-worker','mobile-push-receipt-worker',
             'reconciliation-worker','mobile-push-worker','mobile-engagement-worker','judgment-worker']
 RELEASE_GATES = {'three_end_ux','six_vertical_closed_loop','sealed_node','final_release'}
+# The approval's exact field set, named once. The approver-side signing tool and
+# the tests both read it from here, so a field added on one side cannot pass
+# unnoticed on the other.
+APPROVAL_FIELDS = ('schema_version','approval_id','approved_by','approved_at',
+                   'expires_at','scope','plan_sha256','signature')
 CANARY_GATES = {'compose_baseline','env_baseline','expected_current_image','candidate_image',
                 'python_compile','alembic_head','container_isolation','container_cleanup'}
 VERIFY_GATES = {'alembic_current','alembic_head','api_health','candidate_image',
@@ -80,6 +85,13 @@ def read_secure(path, max_bytes=131072):
             return data
     except OSError as exc: raise Reject('trusted_file_unavailable') from exc
 
+def key_identity(key):
+    # Two key objects can be the same key. Separation has to be decided on the
+    # bytes, or a caller can pass the same material twice and look separate.
+    return key.public_bytes(serialization.Encoding.DER,
+                            serialization.PublicFormat.SubjectPublicKeyInfo)
+
+
 def public_key(raw):
     try:
         key=serialization.load_ssh_public_key(raw) if raw.startswith(b'ssh-') else serialization.load_pem_public_key(raw)
@@ -125,7 +137,15 @@ def proof(task,evidence,action,authority_key,hk_key,at,max_age):
     if any(v != 'PASS' and v is not False for v in gates.values()): raise Reject('proof_contains_failed_gate')
     return completed
 
-def validate_bundle(bundle,plan_id,authority_key,hk_key,at):
+def validate_bundle(bundle,plan_id,authority_key,approval_authority_key,hk_key,at):
+    # Fail closed on the separation before anything else is read. A Human Approval
+    # is an approval only if it is signed by an authority that is NOT the Task
+    # signer: one key in both roles makes the approval indistinguishable from a
+    # Task signature, and the Command Center holds the task signing key, so it
+    # would be able to produce something that reads as human authorisation.
+    if approval_authority_key is None: raise Reject('approval_authority_missing')
+    if key_identity(approval_authority_key)==key_identity(authority_key):
+        raise Reject('approval_authority_not_separated')
     exact(bundle,{'plan','approval','canary_task','canary_evidence','preflight_task','preflight_evidence'},'bundle_fields')
     plan=bundle['plan']; approval=bundle['approval']
     exact(plan,{'schema_version','plan_id','environment','action_id','candidate','expected_current_image_id',
@@ -146,8 +166,8 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at):
     match(candidate['image_id'],IMAGE,'candidate_image');match(candidate['repo_digest'],DIGEST,'candidate_digest')
     if not candidate['repo_digest'].endswith(candidate['image_id'][7:]): raise Reject('executor_digest_contract')
     match(plan['expected_current_image_id'],IMAGE,'current_image')
-    verify_signed(approval,authority_key,'hex')
-    exact(approval,{'schema_version','approval_id','approved_by','approved_at','expires_at','scope','plan_sha256','signature'},'approval_fields')
+    verify_signed(approval,approval_authority_key,'hex')
+    exact(approval,APPROVAL_FIELDS,'approval_fields')
     if approval['schema_version']!='1' or approval['scope']!='HK_STAGING_DEPLOY_FIXED_EIGHT' or approval['plan_sha256']!=digest(plan):
         raise Reject('approval_binding')
     match(approval['approval_id'],EXECUTOR_IDENT,'approval_id');match(approval['approved_by'],IDENT,'human_reviewer_id')
@@ -177,8 +197,12 @@ def load_context(plan_id,at):
     try:
         bundle=parse_json(read_secure(STORE/(plan_id+'.json')))
         authority=public_key(read_secure(STORE/'authority.pub',4096))
+        # A distinct trust material, not another copy of the task signer. The
+        # separation is enforced in validate_bundle, so registering the same key
+        # here produces a refusal rather than a silently weaker approval.
+        approval_authority=public_key(read_secure(STORE/'approval-authority.pub',4096))
         hk=public_key(read_secure(STORE/'hk-evidence.pub',4096))
-        return validate_bundle(bundle,plan_id,authority,hk,at)
+        return validate_bundle(bundle,plan_id,authority,approval_authority,hk,at)
     except (OSError,TypeError,KeyError) as exc: raise Reject('deployment_plan_unavailable_or_invalid') from exc
 
 def ensure_unused(context,records):

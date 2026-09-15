@@ -26,6 +26,9 @@ bridge = importlib.util.module_from_spec(spec)
 loader.exec_module(bridge)
 sys.path.insert(0, str(ROOT.parents[1] / 'hk-staging/source/agent'))
 from hk_agent import transport, deployment_actions
+signer_loader = importlib.machinery.SourceFileLoader('approval_signer', str(ROOT / 'install' / 'go-approval-sign'))
+approval_signer = importlib.util.module_from_spec(importlib.util.spec_from_loader(signer_loader.name, signer_loader))
+signer_loader.exec_module(approval_signer)
 
 
 def signed(value, key, encoding='hex'):
@@ -38,6 +41,11 @@ class Fixture:
     def __init__(self):
         self.at = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
         self.authority = Ed25519PrivateKey.generate()
+        # The Human Approval authority is a THIRD, distinct identity. Before this
+        # change the fixture signed the approval with self.authority, which is why
+        # nothing caught one key serving two roles: the test could not express the
+        # separation it was supposed to prove.
+        self.approval = Ed25519PrivateKey.generate()
         self.hk = Ed25519PrivateKey.generate()
         self.candidate = 'sha256:' + 'a' * 64
         self.current = 'sha256:' + 'b' * 64
@@ -82,10 +90,12 @@ class Fixture:
             self.bundle[k] = signed(self.bundle[k], key, 'base64' if k.endswith('evidence') else 'hex')
             self.bundle['plan'][k+'_sha256'] = gate.digest(self.bundle[k])
         self.bundle['approval']['plan_sha256'] = gate.digest(self.bundle['plan'])
-        self.bundle['approval'] = signed(self.bundle['approval'], self.authority)
+        self.bundle['approval'] = signed(self.bundle['approval'], self.approval)
 
     def validate(self):
-        return gate.validate_bundle(self.bundle, self.bundle['plan']['plan_id'], self.authority.public_key(), self.hk.public_key(), self.at)
+        return gate.validate_bundle(self.bundle, self.bundle['plan']['plan_id'],
+                                    self.authority.public_key(), self.approval.public_key(),
+                                    self.hk.public_key(), self.at)
 
     def request(self, number='001', **overrides):
         return {'schema_version':'1', 'request_id':'synthetic-request-'+str(number), 'action_id':gate.ACTION,
@@ -93,7 +103,8 @@ class Fixture:
 
     def install_synthetic(self, root):
         store = root / 'plans'; store.mkdir(mode=0o700)
-        for name, key in [('authority', self.authority), ('hk-evidence', self.hk)]:
+        for name, key in [('authority', self.authority), ('hk-evidence', self.hk),
+                          ('approval-authority', self.approval)]:
             (store/(name+'.pub')).write_bytes(key.public_key().public_bytes(serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH))
         (store/(self.bundle['plan']['plan_id']+'.json')).write_bytes(gate.canonical(self.bundle))
         keypath = root / 'synthetic.pem'
@@ -177,6 +188,38 @@ class ProofTests(unittest.TestCase):
             with self.subTest(key=key):
                 self.f=Fixture(); self.f.bundle['plan']['candidate'][key]=value; self.f.seal()
                 with self.assertRaises(gate.Reject): self.f.validate()
+    def test_one_key_for_both_roles_is_refused(self):
+        """The separation this whole change is about, asserted directly.
+
+        Handing the approval authority the task signer's key is exactly the state
+        blocker 3 of #103 recorded, and it must be a refusal rather than an
+        approval that happens to verify.
+        """
+        with self.assertRaises(gate.Reject) as caught:
+            gate.validate_bundle(self.f.bundle, self.f.bundle['plan']['plan_id'],
+                                 self.f.authority.public_key(), self.f.authority.public_key(),
+                                 self.f.hk.public_key(), self.f.at)
+        self.assertEqual(str(caught.exception), 'approval_authority_not_separated')
+
+    def test_a_missing_approval_authority_is_refused(self):
+        with self.assertRaises(gate.Reject) as caught:
+            gate.validate_bundle(self.f.bundle, self.f.bundle['plan']['plan_id'],
+                                 self.f.authority.public_key(), None,
+                                 self.f.hk.public_key(), self.f.at)
+        self.assertEqual(str(caught.exception), 'approval_authority_missing')
+
+    def test_the_task_signer_cannot_produce_an_approval(self):
+        """Signing the approval with the task key does not verify as an approval.
+
+        With two genuinely distinct authorities registered, an approval carrying
+        the task signer's signature fails against the approval authority -- so
+        possession of the task key is not possession of the approval authority.
+        """
+        self.f.bundle['approval'] = signed(self.f.bundle['approval'], self.f.authority)
+        with self.assertRaises(gate.Reject) as caught:
+            self.f.validate()
+        self.assertEqual(str(caught.exception), 'invalid_signature')
+
     def test_approval_hash_and_snapshot_hash(self):
         self.f.bundle['plan']['candidate']['source_commit']='a'*40
         with self.assertRaises(gate.Reject): self.f.validate()
@@ -394,6 +437,102 @@ class GitDiffTests(unittest.TestCase):
             with patch.object(bridge,'REPO',str(repo)),patch.object(bridge,'ssh_env',return_value=env),patch.object(bridge,'discover_heads',return_value={'2':head}):
                 self.assertEqual(bridge.read_pr('2',head)['path'],'requests/synthetic-request.json')
                 with self.assertRaisesRegex(gate.Reject,'head_changed'): bridge.read_pr('2','a'*40)
+
+class ApprovalSigningToolTests(unittest.TestCase):
+    """The approver-side signer, and the two ways the separation dies.
+
+    A tool that only signs would leave the separation unproven, so the two
+    refusals are what CI checks: it must not sign with the task signer, and it
+    must not read a private key from the automation host at all.
+    """
+
+    TOOL = ROOT / 'install' / 'go-approval-sign'
+
+    def pem(self, root, name, key):
+        path = root / name
+        path.write_bytes(key.private_bytes(serialization.Encoding.PEM,
+                                           serialization.PrivateFormat.PKCS8,
+                                           serialization.NoEncryption()))
+        return path
+
+    def prepared(self, root):
+        f = Fixture()
+        plan = root / 'plan.json'
+        plan.write_bytes(gate.canonical(f.bundle['plan']))
+        authority = root / 'authority.pub'
+        authority.write_bytes(f.authority.public_key().public_bytes(
+            serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH))
+        return f, plan, authority
+
+    def sign(self, plan, key, authority, out, approved_by='synthetic-reviewer',
+             minutes='10'):
+        """Call the tool's own main in-process.
+
+        This component's gate forbids subprocess, and rightly: a signing tool that
+        needs one would be harder to run on an approver's own laptop than the thing
+        it protects. The refusal paths raise SystemExit, so they are read here the
+        same way a shell would read them.
+        """
+        import io
+        from contextlib import redirect_stdout
+        argv = ['--plan', str(plan), '--key', str(key), '--task-authority-pub', str(authority),
+                '--approved-by', approved_by, '--minutes', str(minutes), '--out', str(out)]
+        try:
+            with redirect_stdout(io.StringIO()):
+                approval_signer.main(argv)
+        except SystemExit as exc:
+            return 1, str(exc.code)
+        return 0, ''
+
+    def test_a_distinct_approver_key_produces_an_approval_the_gate_accepts(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            f, plan, authority = self.prepared(root)
+            out = root / 'approval.json'
+            code, message = self.sign(plan, self.pem(root, 'human-approval.pem', f.approval),
+                                      authority, out)
+            self.assertEqual(code, 0, message)
+            approval = json.loads(out.read_text(encoding='utf-8'))
+            self.assertEqual(set(approval), set(gate.APPROVAL_FIELDS))
+            self.assertEqual(approval['plan_sha256'], gate.digest(f.bundle['plan']))
+            self.assertEqual(approval['scope'], 'HK_STAGING_DEPLOY_FIXED_EIGHT')
+            # The gate accepts it, which is the only thing that makes it an approval.
+            at = dt.datetime.now(dt.timezone.utc).replace(microsecond=0) + dt.timedelta(seconds=30)
+            f.bundle['approval'] = approval
+            context = gate.validate_bundle(f.bundle, f.bundle['plan']['plan_id'],
+                                           f.authority.public_key(), f.approval.public_key(),
+                                           f.hk.public_key(), at)
+            self.assertEqual(context['approval_id'], approval['approval_id'])
+
+    def test_signing_with_the_task_signer_is_refused(self):
+        """Possession of the task key must not yield an approval."""
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            f, plan, authority = self.prepared(root)
+            code, message = self.sign(plan, self.pem(root, 'task.pem', f.authority),
+                                      authority, root / 'approval.json')
+            self.assertNotEqual(code, 0)
+            self.assertIn('key_is_the_task_signer', message)
+
+    def test_a_key_on_the_automation_host_is_refused_before_it_is_read(self):
+        """The refusal is on the path, so it holds whether or not the file exists."""
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            f, plan, authority = self.prepared(root)
+            code, message = self.sign(plan, '/etc/go-command-center/keys/task-manifest-signing.pem',
+                                      authority, root / 'approval.json')
+            self.assertNotEqual(code, 0)
+            self.assertIn('approval_key_must_not_live_on_the_automation_host', message)
+
+    def test_the_window_cannot_exceed_the_contract(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            f, plan, authority = self.prepared(root)
+            code, message = self.sign(plan, self.pem(root, 'human-approval.pem', f.approval),
+                                      authority, root / 'approval.json', minutes='60')
+            self.assertNotEqual(code, 0)
+            self.assertIn('approval_window_outside_contract', message)
+
 
 
 if __name__ == '__main__': unittest.main(verbosity=2)

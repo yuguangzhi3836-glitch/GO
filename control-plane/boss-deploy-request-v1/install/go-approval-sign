@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""Sign one HK_STAGING_DEPLOY approval with the Human Approval authority.
+
+Run this on the approver's own machine, against the plan file they have reviewed,
+with the private key in their own custody:
+
+    ./go-approval-sign --plan plan.json --key ~/.keys/human-approval.pem \\
+        --task-authority-pub authority.pub --approved-by eason --minutes 10 \\
+        --out approval.json
+
+WHY THIS IS NOT INSTALLED ON THE COMMAND CENTER HOST
+
+The separation this tool exists for is that the automation cannot mint a human
+approval. The Command Center holds the task-manifest signing key and signs every
+Task with it; if a copy of the approval key were on that host, an approval would
+again be something the host could produce, and the separation would be a naming
+convention rather than a boundary. So the tool refuses to read a private key from
+/etc/go-command-center/ at all, and it refuses to sign with a key whose public half
+is the task signer -- both are checked rather than documented.
+
+It signs nothing else: not a Task, not Evidence, not a plan. It writes one
+approval object and exits.
+"""
+import argparse
+import base64
+import hashlib
+import json
+import pathlib
+import sys
+
+FORBIDDEN_KEY_DIRECTORY = pathlib.Path("/etc/go-command-center")
+APPROVAL_FIELDS = ("schema_version", "approval_id", "approved_by", "approved_at",
+                   "expires_at", "scope", "plan_sha256")
+
+
+class Refuse(Exception):
+    pass
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=False, allow_nan=False).encode()
+
+
+def digest(value):
+    return hashlib.sha256(canonical(value)).hexdigest()
+
+
+def iso(moment):
+    return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def load_private_key(path):
+    resolved = pathlib.Path(path).resolve()
+    for parent in (resolved, *resolved.parents):
+        if parent == FORBIDDEN_KEY_DIRECTORY:
+            raise Refuse("approval_key_must_not_live_on_the_automation_host")
+    from cryptography.hazmat.primitives import serialization
+    raw = resolved.read_bytes()
+    key = (serialization.load_pem_private_key(raw, password=None)
+           if raw.startswith(b"-----BEGIN") else None)
+    if key is None:
+        raise Refuse("approval_key_unreadable")
+    return key
+
+
+def public_bytes(key):
+    """DER bytes for a private or public Ed25519 key, so the two can be compared."""
+    from cryptography.hazmat.primitives import serialization
+    public = key.public_key() if hasattr(key, "private_bytes") else key
+    return public.public_bytes(
+        serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--plan", required=True, help="the plan file that was reviewed")
+    parser.add_argument("--key", required=True, help="the approver's own Ed25519 private key")
+    parser.add_argument("--task-authority-pub", required=True,
+                        help="the task signer's public key, so a shared key can be refused")
+    parser.add_argument("--approved-by", required=True, help="the actual human reviewer")
+    parser.add_argument("--minutes", type=int, default=10,
+                        help="validity, at most 15 minutes (the contract's ceiling)")
+    parser.add_argument("--approval-id", default=None)
+    parser.add_argument("--out", required=True)
+    args = parser.parse_args(argv)
+
+    import datetime as dt
+    from cryptography.hazmat.primitives import serialization
+
+    if not 1 <= args.minutes <= 15:
+        raise SystemExit("REFUSED approval_window_outside_contract")
+
+    plan_path = pathlib.Path(args.plan)
+    try:
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise SystemExit("REFUSED plan_unreadable:%s" % type(exc).__name__)
+    if not isinstance(plan, dict) or plan.get("plan_id") is None:
+        raise SystemExit("REFUSED plan_not_a_plan")
+
+    try:
+        key = load_private_key(args.key)
+        task_key = serialization.load_ssh_public_key(
+            pathlib.Path(args.task_authority_pub).read_bytes())
+    except Refuse as exc:
+        raise SystemExit("REFUSED %s" % exc)
+    except (OSError, ValueError) as exc:
+        raise SystemExit("REFUSED task_authority_unreadable:%s" % type(exc).__name__)
+    if public_bytes(key) == public_bytes(task_key):
+        raise SystemExit("REFUSED key_is_the_task_signer")
+
+    at = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+    approval = {
+        "schema_version": "1",
+        "approval_id": args.approval_id or ("approval-" + digest({"plan": digest(plan),
+                                                                  "at": iso(at)})[:16]),
+        "approved_by": args.approved_by,
+        "approved_at": iso(at),
+        "expires_at": iso(at + dt.timedelta(minutes=args.minutes)),
+        "scope": "HK_STAGING_DEPLOY_FIXED_EIGHT",
+        "plan_sha256": digest(plan),
+    }
+    signature = key.sign(canonical(approval))
+    approval["signature"] = signature.hex()
+    if set(approval) != set(APPROVAL_FIELDS) | {"signature"}:
+        raise SystemExit("REFUSED approval_shape")
+    out = pathlib.Path(args.out)
+    out.write_bytes(canonical(approval) + b"\n")
+    print(json.dumps({"approval_id": approval["approval_id"],
+                      "approved_by": approval["approved_by"],
+                      "expires_at": approval["expires_at"],
+                      "plan_sha256": approval["plan_sha256"],
+                      "approval_sha256": digest(approval),
+                      "approval_authority_ssh_sha256": base64.b64encode(
+                          hashlib.sha256(public_bytes(key)).digest()).decode(),
+                      "wrote": str(out)}, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
