@@ -34,6 +34,23 @@ def allocation_state(order):
                 sorted((e.event_id, e.event_hash) for e in events))
 
 
+def test_active_authorization_currency_mismatch_requires_reconciliation(client, monkeypatch):
+    original, owner, _, _, _, credit = issued(client, monkeypatch)
+    quote = redemption(original, owner, credit, 100000)
+    redeemed = redeem(original, owner, credit, quote)
+    reservation_id = redeemed['reservation_id']
+    with SessionLocal.begin() as session:
+        authorization = session.scalar(select(Authorization).where(
+            Authorization.hosted_reservation_id == reservation_id))
+        authorization.currency = 'USD'
+    with pytest.raises(ValueError, match='PAYMENT_RECONCILIATION_REQUIRED'):
+        payment.authorize(reservation_id, {'mode': 'CONTRACT_DRY_RUN'}, 'currency-mismatch-retry')
+    with SessionLocal() as session:
+        authorizations = list(session.scalars(select(Authorization).where(
+            Authorization.hosted_reservation_id == reservation_id)))
+        assert len(authorizations) == 1 and authorizations[0].currency == 'USD'
+
+
 @pytest.mark.parametrize('source', ['cash_authorization', 'credit_capture'])
 def test_unknown_source_blocks_both_funding_legs_until_test_fixture_reconciles(client, monkeypatch, source):
     order, aid, credit = ready(client, monkeypatch)

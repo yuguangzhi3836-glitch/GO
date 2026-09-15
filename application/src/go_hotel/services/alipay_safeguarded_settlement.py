@@ -62,7 +62,7 @@ class Service:
    if r.reservation_state not in {'PENDING_HOTEL_CONFIRMATION','HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING'}:raise ValueError('RESERVATION_NOT_AUTHORIZABLE')
    active=s.scalars(select(AlipayAuthorizationRow).where(AlipayAuthorizationRow.hosted_reservation_id==reservation_id,AlipayAuthorizationRow.state!='CONTRACT_RELEASED_NOT_ALIPAY')).all()
    if active:
-    if len(active)!=1 or active[0].amount_minor!=r.amount_minor:raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+    if len(active)!=1 or (active[0].amount_minor,active[0].currency)!=(r.amount_minor,r.currency):raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
     return out(active[0])
    if s.scalar(select(AlipayAuthorizationRow).where(AlipayAuthorizationRow.hosted_reservation_id==reservation_id)):raise ValueError('RELEASED_AUTHORIZATION_REBOOK_REQUIRED')
    a=AlipayAuthorizationRow(authorization_id=ident('aauth'),hosted_reservation_id=reservation_id,amount_minor=r.amount_minor,currency=r.currency,state='CONTRACT_FROZEN_NOT_ALIPAY',external_invoked=False,external_authorization_reference=None,settlement_eligible=False,idempotency_key=key,updated_at=now());s.add(a);s.flush();self._event(s,a.authorization_id,'AUTHORIZATION_CONTRACT_FROZEN',{'amount_minor':a.amount_minor},False,False)
