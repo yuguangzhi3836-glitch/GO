@@ -372,6 +372,7 @@
     ],
     "NOT_ALLOWED": [
       "action_not_enabled_in_channel",
+      "approval_identity_not_authorised",
       "deployment_context_required",
       "deployment_requests_disabled",
       "fixed_topology_required",
@@ -384,13 +385,15 @@
       "plan_scope",
       "release_gates_not_pass",
       "request_filename_binding",
-      "request_not_currently_armed"
+      "request_not_currently_armed",
+      "request_pr_author_not_authorised"
     ],
     "UNRESOLVABLE": [
       "approval_binding",
       "approval_expired_or_invalid",
       "approval_fields",
       "approval_id",
+      "approval_identity_missing",
       "approval_predates_evidence",
       "bundle_fields",
       "canary_candidate_binding",
@@ -442,6 +445,7 @@
       "untrusted_file"
     ],
     "CONFLICT": [
+      "approval_identity_mismatch",
       "approved_plan_changed",
       "candidate_digest",
       "candidate_image",
