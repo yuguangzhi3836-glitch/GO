@@ -125,9 +125,9 @@ jobs:
                 sum(1 for v in emitted['authority_boundary'].values() if v) == 1
                 and emitted['authority_boundary']['may_read_live_command_center_state'] is True
                 and emitted['authority_boundary']['is_a_deploy_approval'] is False)
-          check('the_approval_authority_is_a_distinct_published_key',
-                emitted['identity']['approval_distinct_from_signer'] is True
-                and emitted['identity']['approval_authority_published'] is True)
+          check('the_approval_authority_is_an_authorised_github_identity',
+                emitted['identity']['approval_identities'] == list(R.APPROVAL_IDENTITIES)
+                and sorted(emitted['identity']['roles']) == sorted([R.ROLE_TASK, R.ROLE_EVIDENCE]))
           check('the_document_leaks_no_local_path',
                 str(work) not in json.dumps(emitted) and '/home/' not in json.dumps(emitted))
 
@@ -136,14 +136,18 @@ jobs:
           check('a_switch_on_without_a_record_is_never_yes',
                 document['verdict']['deploy_ready'] != 'YES'
                 and t.gate_of(document, 'LIVE_SWITCH_PROVENANCE')['state'] == 'UNKNOWN')
-          document = t.Fixture(approval_signed_by_task=True).evaluate()
-          check('a_record_signed_by_the_task_signer_is_refused',
-                t.gate_of(document, 'LIVE_SWITCH_PROVENANCE')['state'] == 'FAIL'
-                and document['verdict']['deploy_ready'] == 'NO')
-          document = t.Fixture(collide_approval_with_task=True).evaluate()
-          check('one_key_in_two_roles_fails_the_approval_closed',
+          def unauthorised_approver(_keys, bundle):
+              bundle['approval']['approved_by'] = 'someone-else-entirely'
+
+          document = t.Fixture(mutate=unauthorised_approver).evaluate()
+          check('an_approval_from_an_unauthorised_identity_is_refused',
                 t.gate_of(document, 'HUMAN_APPROVAL')['state'] == 'FAIL'
-                and document['identity']['approval_distinct_from_signer'] is False)
+                and document['verdict']['deploy_ready'] == 'NO')
+          document = t.Fixture(collide_task_with_evidence=True).evaluate()
+          check('one_key_in_two_roles_is_never_yes',
+                t.gate_of(document, 'BRIDGE_ACCEPTANCE')['state'] == 'FAIL'
+                and document['identity']['task_and_evidence_distinct'] is False
+                and document['verdict']['deploy_ready'] == 'NO')
           document = t.Fixture(bundle=False).evaluate()
           check('no_bundle_is_unknown_and_never_a_failure',
                 document['verdict']['deploy_ready'] == 'UNKNOWN' and document['verdict']['failed'] == [])
