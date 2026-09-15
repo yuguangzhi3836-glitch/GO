@@ -1,6 +1,6 @@
 # GO Control Plane connection and identity runbook
 
-Verified on 2026-09-12 from the two fixed operator workstations used for GO work. This is a metadata-only inventory for recovery and automation. It is not Execution Authority: live state, Human Approval, Signed Tasks, installed artifacts, and Signed Evidence remain authoritative.
+Verified on 2026-09-12 from the two fixed operator workstations used for GO work; **refreshed 2026-09-15** against canonical `main` `8610a4d`. On `Eason-13490` the verified primary ECS path changed from Alibaba Cloud Workbench CLI to **direct SSH key access** (Workbench CLI retained as fallback) - see the changelog in `connection-identities.v1.json`. This is a metadata-only inventory for recovery and automation. It is not Execution Authority: live state, Human Approval, Signed Tasks, installed artifacts, and Signed Evidence remain authoritative.
 
 Never add a private-key body, PEM body, token, password, cookie, credential-manager secret, Alibaba Cloud AccessKey value, or runtime `.env` value to this document or its JSON companion.
 
@@ -39,54 +39,87 @@ ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -i "C:\U
 - Windows hostname: `EASON`
 - Windows user/profile: `EASON\Eason`, `C:\Users\Eason`
 - Operating system: Windows 10 Enterprise LTSC 2021, 21H2, build 19044.7725.
-- GO working copy currently observed: `C:\Users\Eason\Desktop\1\go-ai-webapp\.tmp-pr5-20260909\repo`. It was the only clone found within the approved search scope whose `origin` is `https://github.com/yuguangzhi3836-glitch/GO.git`; it tracks this PR branch. This is a temporary-looking path and should not be assumed to be a permanent canonical clone without a later intentional cleanup.
+- GO working copy: `D:\Code\Workbuddy\GO` (canonical WorkBuddy working copy; branch `main`, re-verified at `8610a4d` on 2026-09-15). The earlier temporary-looking path recorded on 2026-09-12 is superseded and must not be treated as the canonical clone.
 - Git remote access: HTTPS, using Git Credential Manager configured by PortableGit. Credentials themselves were not inspected or recorded.
 - Browser required for normal GO source access: **NO**. HTTPS `git ls-remote` succeeded.
 - Codex GitHub plugin/app integration: **UNAVAILABLE** in this Codex session. Normal work does not require it because local HTTPS Git access is available.
 
-### Primary ECS access: Alibaba Cloud Workbench CLI
+### Primary ECS access: direct SSH key access
 
-For `Eason-13490`, the verified primary operational path to both ECS hosts is Alibaba Cloud Workbench CLI, not direct SSH.
+For `Eason-13490`, the verified primary operational path to both ECS hosts is **direct SSH key access**. This was established and verified on 2026-09-15, replacing the earlier Workbench-CLI-primary conclusion.
 
-- Tool: `Alibaba Cloud Workbench CLI`
+- SSH config: `C:\Users\Eason\.ssh\config`
+- Aliases: `hk-staging` -> `47.239.57.40`, `go-cc` -> `47.242.94.212`
+- Local identity: `C:\Users\Eason\.ssh\id_ed25519_workbuddy` (ED25519, no passphrase, owner-only file ACL)
+- Public key fingerprint: `SHA256:BhBEojejK53/yjbihKppoQQs1LJje/nLcIBensKUqBc`
+- Public key deployed to `/root/.ssh/authorized_keys` on both hosts
+- Server side: `pubkeyauthentication yes`, `passwordauthentication no` on both hosts
+- Egress: the local Clash configuration maps both instance IPs to `DIRECT`, so SSH does not traverse a proxy
+- Interactive authentication requirement for the existing Codex invocation: **NO**
+
+| Target | ECS identity | Standard command | Verified probe |
+| --- | --- | --- | --- |
+| HK-STAGING-01 | instance `i-j6ccs8t04f1p4d8pe69z`, region `cn-hongkong`, `root`, target `47.239.57.40 / go-nexus-hk-stg-01` | `ssh hk-staging` | **PASS** - `iZj6ccs8t04f1p4d8pe69zZ` on 2026-09-15 |
+| GO Command Center | instance `i-j6c7k6k01biwlbnwutu5`, region `cn-hongkong`, `root`, target `47.242.94.212 / GO-AI指挥中心` | `ssh go-cc` | **PASS** - `iZj6c7k6k01biwlbnwutu5Z` on 2026-09-15 |
+
+Verified capabilities: interactive login, non-interactive invocation (`ssh <alias> <command>`), and `scp` upload with remote read-back.
+
+This is a real local key path, not remote command execution through a cloud credential profile. It is still **capability, not authorization**: SSH access to a host does not grant deployment, migration, signing or Production authority.
+
+### Fallback ECS access: Alibaba Cloud Workbench CLI
+
+Alibaba Cloud Workbench CLI remains available on this workstation and is retained as the **fallback** path, not the primary one.
+
 - Executable: `C:\Users\Eason\.workbench\bin\workbench.exe`
 - Version: `workbench v1.0.1 (commit: 86c0aff, built: 2026-08-24T07:12:39Z)`
-- Credential mechanism: existing **AK profile**; credential values were not read or recorded.
-- Interactive authentication required for the existing Codex CLI invocation: **NO**.
-- Codex can invoke the existing Workbench CLI path directly: **YES**.
+- Credential mechanism: existing **AK profile**; credential values are not read or recorded here
 
-| Target | ECS identity | Workbench command | Verified probe |
-| --- | --- | --- | --- |
-| HK-STAGING-01 | instance `i-j6ccs8t04f1p4d8pe69z`, region `cn-hongkong`, `root`, target `47.239.57.40 / go-nexus-hk-stg-01` | `workbench exec --instance-id i-j6ccs8t04f1p4d8pe69z --region cn-hongkong --command "hostname; whoami"` | **PASS** — `iZj6ccs8t04f1p4d8pe69zZ / root` on 2026-09-12 |
-| GO Command Center | instance `i-j6c7k6k01biwlbnwutu5`, region `cn-hongkong`, `root`, target `47.242.94.212 / GO-AI指挥中心` | `workbench exec --instance-id i-j6c7k6k01biwlbnwutu5 --region cn-hongkong --command "hostname; whoami"` | **PASS** — `iZj6c7k6k01biwlbnwutu5Z / root` on 2026-09-12 |
+| Target | ECS identity | Workbench command |
+| --- | --- | --- |
+| HK-STAGING-01 | instance `i-j6ccs8t04f1p4d8pe69z`, region `cn-hongkong`, `root` | `workbench exec --instance-id i-j6ccs8t04f1p4d8pe69z --region cn-hongkong --command "hostname; whoami"` |
+| GO Command Center | instance `i-j6c7k6k01biwlbnwutu5`, region `cn-hongkong`, `root` | `workbench exec --instance-id i-j6c7k6k01biwlbnwutu5 --region cn-hongkong --command "hostname; whoami"` |
 
-Workbench access is remote command execution through the existing Alibaba Cloud credential profile. It must not be confused with a local SSH key path. Future recovery on this workstation should try the verified Workbench CLI path before spending time diagnosing or creating direct SSH identities.
+**Why it is no longer primary.** Two account-level constraints were reproduced in practice on 2026-09-15:
+
+1. The Workbench **session manager can be disabled wholesale by account risk control**. When that happens the CLI reports a *fixed-delay connection timeout* ("请检查安全组规则或网络连通性") rather than a permission error, so it reads like a security-group or network fault and sends diagnosis in the wrong direction.
+2. **Concurrent sessions are capped**, and the CLI cannot list or close its own historical sessions (its session-listing call is denied). Once the cap is reached there is no self-service recovery — only waiting for idle reclamation.
+
+Neither constraint applies to direct SSH key access. Workbench CLI is therefore demoted to fallback.
 
 ### Direct SSH status on Eason-13490
 
-Direct SSH is secondary/non-primary on this workstation and is not required for normal Codex ECS operations while Workbench remains available.
+Direct SSH is the **primary** path on this workstation and is verified for both targets.
 
 | Target | SSH target | Local identity / alias | Host-key configuration | Probe result |
 | --- | --- | --- | --- | --- |
-| HK-STAGING-01 | `root@47.239.57.40:22` | `C:\Users\Eason\.ssh\go-nexus-hk-stg-01`; no alias or SSH config entry | Default `C:\Users\Eason\.ssh\known_hosts`; probe used `IdentitiesOnly=yes` and `StrictHostKeyChecking=yes` | **NO** — existing key was rejected with `Permission denied (publickey)` on 2026-09-12. Fingerprint: `SHA256:jIcdy7HEdhsBREuoECUOrnLbLR51oqLS46lF4/jEPk4`. This does not block Workbench access. |
-| GO Command Center | `root@47.242.94.212:22` | **NOT_CONFIGURED** — no dedicated local identity, alias, or SSH config entry found | Default `C:\Users\Eason\.ssh\known_hosts` exists, but no Command Center-specific mapping is configured | **NO** — no direct identity is available; a bounded probe timed out during banner exchange on 2026-09-12. This does not block Workbench access. |
+| HK-STAGING-01 | `root@47.239.57.40:22` | alias `hk-staging`; key `C:\Users\Eason\.ssh\id_ed25519_workbuddy` | `C:\Users\Eason\.ssh\config` + default `known_hosts`; `IdentitiesOnly=yes`, `StrictHostKeyChecking=yes` | **PASS** - hostname `iZj6ccs8t04f1p4d8pe69zZ`, 2026-09-15 |
+| GO Command Center | `root@47.242.94.212:22` | alias `go-cc`; key `C:\Users\Eason\.ssh\id_ed25519_workbuddy` | same config; `IdentitiesOnly=yes`, `StrictHostKeyChecking=yes` | **PASS** - hostname `iZj6c7k6k01biwlbnwutu5Z`, 2026-09-15 |
+
+Public key fingerprint on both edges: `SHA256:BhBEojejK53/yjbihKppoQQs1LJje/nLcIBensKUqBc`.
+
+Historical note: at the 2026-09-12 inventory this machine had no working direct SSH to either host - HK was `CONFIGURED_AUTHORIZATION_FAILED` with a passphrase-protected key, and Command Center was `NOT_CONFIGURED`. The former key (`C:\Users\Eason\.ssh\go-nexus-hk-stg-01`, fingerprint `SHA256:jIcdy7HEdhsBREuoECUOrnLbLR51oqLS46lF4/jEPk4`) has since been archived locally and its `authorized_keys` entries removed from both hosts. See `connection-identities.v1.json` for the recorded previous state.
 
 ### Quick recovery commands
 
 ```powershell
-cd C:\Users\Eason\Desktop\1\go-ai-webapp\.tmp-pr5-20260909\repo
-git status
+cd D:\Code\Workbuddy\GO
+git status --short --branch
 git remote -v
 
-# Preferred HK-STAGING-01 remote execution from Eason-13490
+# Preferred HK-STAGING-01 access from Eason-13490 (direct SSH key)
+ssh hk-staging
+ssh -o BatchMode=yes hk-staging "hostname; whoami"
+
+# Preferred GO Command Center access from Eason-13490 (direct SSH key)
+ssh go-cc
+ssh -o BatchMode=yes go-cc "hostname; whoami"
+
+# File transfer
+scp local.file hk-staging:/tmp/
+
+# Fallback only - Alibaba Cloud Workbench CLI, subject to account-level session limits
 & "C:\Users\Eason\.workbench\bin\workbench.exe" exec --instance-id i-j6ccs8t04f1p4d8pe69z --region cn-hongkong --command "hostname; whoami"
-
-# Preferred GO Command Center remote execution from Eason-13490
 & "C:\Users\Eason\.workbench\bin\workbench.exe" exec --instance-id i-j6c7k6k01biwlbnwutu5 --region cn-hongkong --command "hostname; whoami"
-
-# HK direct SSH diagnostic only. It was verified to fail authorization on 2026-09-12.
-# Do not create a replacement key or copy a key from another workstation merely to replace the working Workbench path.
-ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="C:\Users\Eason\.ssh\known_hosts" -i "C:\Users\Eason\.ssh\go-nexus-hk-stg-01" root@47.239.57.40
 ```
 
 ## Eason-8845 direct SSH identities
@@ -95,6 +128,8 @@ ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserK
 | --- | --- | --- | --- | --- |
 | HK-STAGING-01 | `root@47.239.57.40:22` | `C:\Users\Eason-8845\Downloads\go-nexus-hk-stg-01-direct-20260903.pem` | `SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA` | YES, strict-host-key connection probe on 2026-09-12 |
 | GO Command Center | `root@47.242.94.212:22` | `C:\Users\Eason-8845\.ssh\go-command-center-codex-root-ed25519` | `SHA256:MN3etVe4N91QpsfZkhZECi5YbW6XocZ0tB8LmVebBTU` | YES, alias `go-command-center-root`, strict-host-key connection probe on 2026-09-12 |
+
+**Naming discrepancy to resolve (raised 2026-09-15).** Observed from HK-STAGING-01, the `authorized_keys` entry carrying fingerprint `SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA` is annotated `skp-j6cdb9zcrqzwjcb4uug3`, while the name `go-nexus-hk-stg-01-direct-20260903` corresponds to a different fingerprint (`SHA256:Aweiz/cEV850c2AfKMQ8htAnLb8xnZUO41uOBH41GTs`). The local file name on Eason-8845 was not re-verified from this workstation. Either the local file name or the server-side annotation does not match the other. **Do not treat them as interchangeable** until re-checked on Eason-8845. Real usage confirms this edge is live: 2520 successful authentications from the proxy egress.
 
 The Command Center SSH alias is defined in `C:\Users\Eason-8845\.ssh\config`. It sets `IdentitiesOnly yes`, strict host-key checking, and a dedicated known-hosts file. The exact dedicated `UserKnownHostsFile` path is **NOT_YET_RECORDED**; capture it later from this workstation's SSH config rather than rediscovering server credentials. Do not copy its private key to a server or repository.
 
@@ -112,18 +147,21 @@ Eason-8845 / Codex
  |
  +-- SSH + local key --> GO Command Center (root@47.242.94.212:22)
 
-Eason-13490 / Codex
+Eason-13490 / WorkBuddy + Codex
  |
  +-- HTTPS Git --> yuguangzhi3836-glitch/GO
  |                 credential: Git Credential Manager; plugin not required
  |
- +-- Alibaba Cloud Workbench CLI --> HK-STAGING-01
- |                                  instance: i-j6ccs8t04f1p4d8pe69z
- |                                  user: root
+ +-- SSH key (direct) --> HK-STAGING-01     alias: hk-staging
+ |                                           instance: i-j6ccs8t04f1p4d8pe69z
+ |                                           user: root
  |
- +-- Alibaba Cloud Workbench CLI --> GO Command Center
-                                    instance: i-j6c7k6k01biwlbnwutu5
-                                    user: root
+ +-- SSH key (direct) --> GO Command Center  alias: go-cc
+ |                                           instance: i-j6c7k6k01biwlbnwutu5
+ |                                           user: root
+ |
+ +-- (fallback) Alibaba Cloud Workbench CLI --> both hosts
+                                               subject to account-level session limits
 
 HK-STAGING-01
  |

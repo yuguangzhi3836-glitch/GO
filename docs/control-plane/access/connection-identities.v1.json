@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "inventory_date": "2026-09-12",
+  "inventory_date": "2026-09-15",
   "security": {
     "metadata_only": true,
     "private_key_content_recorded": false,
@@ -34,7 +34,8 @@
           "local_private_key_path": "C:\\Users\\Eason-8845\\Downloads\\go-nexus-hk-stg-01-direct-20260903.pem",
           "public_key_fingerprint_sha256": "SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA",
           "verified": true,
-          "standard_command": "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i \"C:\\Users\\Eason-8845\\Downloads\\go-nexus-hk-stg-01-direct-20260903.pem\" root@47.239.57.40"
+          "standard_command": "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i \"C:\\Users\\Eason-8845\\Downloads\\go-nexus-hk-stg-01-direct-20260903.pem\" root@47.239.57.40",
+          "naming_discrepancy_note": "As observed from HK-STAGING-01 on 2026-09-15, the authorized_keys entry carrying this exact fingerprint is annotated 'skp-j6cdb9zcrqzwjcb4uug3', and the name 'go-nexus-hk-stg-01-direct-20260903' corresponds to a different fingerprint (SHA256:Aweiz/cEV850c2AfKMQ8htAnLb8xnZ...). The local file name on Eason-8845 was not re-verified. Unresolved: either the Eason-8845 file name or the server-side annotation does not match the other. Do not assume they are interchangeable until re-checked on Eason-8845."
         },
         {
           "name": "GO Command Center",
@@ -77,12 +78,73 @@
         "credential_mechanism": "Git Credential Manager configured by PortableGit; secret not recorded",
         "browser_required_for_source_reading": false,
         "branch_at_verification": "main",
-        "head_at_verification": "9645c6f522544d0751ee658e0ab9f131043e7df2",
-        "working_tree_status_at_verification": "clean",
+        "head_at_verification": "8610a4dbfd58cbe595f3d161c049de37dd81d3cc",
+        "working_tree_status_at_verification": "one pre-existing local modification: docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
         "workbuddy_sandbox_enabled": false,
-        "native_git_gate": "PASS"
+        "native_git_gate": "PASS",
+        "head_at_verification_note": "was 9645c6f5 at 2026-09-12; re-verified after fetching 52 commits"
       },
-      "primary_ecs_access": {
+      "ssh_targets": [
+        {
+          "name": "HK-STAGING-01",
+          "host": "47.239.57.40",
+          "port": 22,
+          "user": "root",
+          "access_role": "primary",
+          "ssh_alias": "hk-staging",
+          "ssh_config_path": "C:\\Users\\Eason\\.ssh\\config",
+          "local_private_key_path": "C:\\Users\\Eason\\.ssh\\id_ed25519_workbuddy",
+          "public_key_fingerprint_sha256": "SHA256:BhBEojejK53/yjbihKppoQQs1LJje/nLcIBensKUqBc",
+          "identities_only": true,
+          "strict_host_key_checking": true,
+          "user_known_hosts_file": "C:\\Users\\Eason\\.ssh\\known_hosts",
+          "tcp_22_reachable": true,
+          "ssh_banner": "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.17",
+          "direct_ssh_status": "VERIFIED",
+          "verified": true,
+          "probe_result": "iZj6ccs8t04f1p4d8pe69zZ via ssh alias hk-staging on 2026-09-15",
+          "standard_command": "ssh hk-staging",
+          "previous_state_2026_09_12": {
+            "direct_ssh_status": "CONFIGURED_AUTHORIZATION_FAILED",
+            "verified": false,
+            "local_private_key_path": "C:\\Users\\Eason\\.ssh\\go-nexus-hk-stg-01",
+            "public_key_fingerprint_sha256": "SHA256:jIcdy7HEdhsBREuoECUOrnLbLR51oqLS46lF4/jEPk4",
+            "probe_result": "Network and SSH banner succeeded; configured key was rejected with Permission denied (publickey), 2026-09-12"
+          },
+          "verified_on": "2026-09-15"
+        },
+        {
+          "name": "GO Command Center",
+          "host": "47.242.94.212",
+          "port": 22,
+          "user": "root",
+          "access_role": "primary",
+          "ssh_alias": "go-cc",
+          "ssh_config_path": "C:\\Users\\Eason\\.ssh\\config",
+          "local_private_key_path": "C:\\Users\\Eason\\.ssh\\id_ed25519_workbuddy",
+          "public_key_fingerprint_sha256": "SHA256:BhBEojejK53/yjbihKppoQQs1LJje/nLcIBensKUqBc",
+          "identities_only": true,
+          "strict_host_key_checking": true,
+          "user_known_hosts_file": "C:\\Users\\Eason\\.ssh\\known_hosts",
+          "user_known_hosts_file_status": "ENTRY_ADDED_BY_NON_STRICT_PROBE_NOT_INDEPENDENTLY_PINNED",
+          "tcp_22_reachable": true,
+          "ssh_banner": "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.17",
+          "direct_ssh_status": "VERIFIED",
+          "verified": true,
+          "probe_result": "iZj6c7k6k01biwlbnwutu5Z via ssh alias go-cc on 2026-09-15",
+          "standard_command": "ssh go-cc",
+          "raw_fallback_command": null,
+          "previous_state_2026_09_12": {
+            "direct_ssh_status": "NOT_CONFIGURED",
+            "verified": false,
+            "local_private_key_path": null,
+            "public_key_fingerprint_sha256": null,
+            "probe_result": "Network and SSH banner succeeded; no dedicated local identity is configured, so direct SSH authentication is unavailable (Permission denied (publickey)), 2026-09-12"
+          },
+          "verified_on": "2026-09-15"
+        }
+      ],
+      "fallback_ecs_access": {
         "method": "Alibaba Cloud Workbench CLI",
         "tool": "Alibaba Cloud Workbench CLI",
         "executable": "C:\\Users\\Eason\\.workbench\\bin\\workbench.exe",
@@ -117,54 +179,34 @@
             "probe_command": "workbench exec --instance-id i-j6c7k6k01biwlbnwutu5 --region cn-hongkong --command \"hostname; whoami; uptime\"",
             "probe_result": "iZj6c7k6k01biwlbnwutu5Z / root / up 8 days, 13:11"
           }
-        ]
+        ],
+        "access_role": "fallback_non_primary",
+        "why_not_primary": "Two account-level constraints reproduced in practice: (1) the Workbench session manager can be disabled wholesale by account risk control, which surfaces as a fixed-delay connection timeout rather than a permission error; (2) concurrent sessions are capped and the CLI cannot list or close its own historical sessions, so reaching the cap leaves no recovery short of waiting for idle reclamation."
       },
-      "ssh_targets": [
-        {
-          "name": "HK-STAGING-01",
-          "host": "47.239.57.40",
-          "port": 22,
-          "user": "root",
-          "access_role": "secondary_non_primary",
-          "ssh_alias": null,
-          "ssh_config_path": null,
-          "local_private_key_path": "C:\\Users\\Eason\\.ssh\\go-nexus-hk-stg-01",
-          "public_key_fingerprint_sha256": "SHA256:jIcdy7HEdhsBREuoECUOrnLbLR51oqLS46lF4/jEPk4",
-          "identities_only": true,
-          "strict_host_key_checking": true,
-          "user_known_hosts_file": "C:\\Users\\Eason\\.ssh\\known_hosts",
-          "tcp_22_reachable": true,
-          "ssh_banner": "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.17",
-          "direct_ssh_status": "CONFIGURED_AUTHORIZATION_FAILED",
-          "verified": false,
-          "probe_result": "Network and SSH banner succeeded; configured key was rejected with Permission denied (publickey), 2026-09-12",
-          "operational_impact": "NONE_WHILE_WORKBENCH_AVAILABLE",
-          "standard_command": "ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=\"C:\\Users\\Eason\\.ssh\\known_hosts\" -i \"C:\\Users\\Eason\\.ssh\\go-nexus-hk-stg-01\" root@47.239.57.40"
-        },
-        {
-          "name": "GO Command Center",
-          "host": "47.242.94.212",
-          "port": 22,
-          "user": "root",
-          "access_role": "secondary_non_primary",
-          "ssh_alias": null,
-          "ssh_config_path": null,
-          "local_private_key_path": null,
-          "public_key_fingerprint_sha256": null,
-          "identities_only": null,
-          "strict_host_key_checking": null,
-          "user_known_hosts_file": "C:\\Users\\Eason\\.ssh\\known_hosts",
-          "user_known_hosts_file_status": "ENTRY_ADDED_BY_NON_STRICT_PROBE_NOT_INDEPENDENTLY_PINNED",
-          "tcp_22_reachable": true,
-          "ssh_banner": "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.17",
-          "direct_ssh_status": "NOT_CONFIGURED",
-          "verified": false,
-          "probe_result": "Network and SSH banner succeeded; no dedicated local identity is configured, so direct SSH authentication is unavailable (Permission denied (publickey)), 2026-09-12",
-          "operational_impact": "NONE_WHILE_WORKBENCH_AVAILABLE",
-          "standard_command": null,
-          "raw_fallback_command": null
-        }
-      ]
+      "primary_ecs_access": {
+        "method": "Direct SSH key access",
+        "access_role": "primary",
+        "ssh_alias_hk_staging": "hk-staging",
+        "ssh_alias_go_cc": "go-cc",
+        "ssh_config_path": "C:\\Users\\Eason\\.ssh\\config",
+        "local_private_key_path": "C:\\Users\\Eason\\.ssh\\id_ed25519_workbuddy",
+        "key_type": "ED25519",
+        "key_passphrase_protected": false,
+        "public_key_fingerprint_sha256": "SHA256:BhBEojejK53/yjbihKppoQQs1LJje/nLcIBensKUqBc",
+        "key_file_acl": "owner-only (icacls: EASON\\Eason:(R), inheritance disabled)",
+        "public_key_deployed_to": "both hosts, /root/.ssh/authorized_keys",
+        "server_side_sshd": "pubkeyauthentication yes; passwordauthentication no (both hosts)",
+        "verified_on": "2026-09-15",
+        "verified_capabilities": [
+          "interactive login",
+          "non-interactive invocation: ssh <alias> <command>",
+          "scp upload and remote read-back"
+        ],
+        "egress_path": "local Clash maps both instance IPs to DIRECT; SSH does not traverse a proxy",
+        "interactive_auth_required_for_existing_codex_invocation": false,
+        "codex_can_invoke": true,
+        "credential_mechanism": "local SSH private key; key body never recorded in this repository"
+      }
     }
   },
   "connection_edges": [
@@ -205,24 +247,34 @@
     {
       "source": "Eason-13490 / Codex",
       "destination": "HK-STAGING-01",
-      "protocol": "Alibaba Cloud Workbench CLI",
-      "credential_path": "local AK profile; credential values not recorded in repository",
-      "permission": "root remote command execution via existing Workbench authorization",
-      "purpose": "primary approved HK Control Plane operations from this workstation",
+      "protocol": "SSH",
+      "credential_path": "local SSH private key C:\\Users\\Eason\\.ssh\\id_ed25519_workbuddy; key body not recorded",
+      "permission": "root shell on the target host (capability only, not deployment authority)",
+      "purpose": "primary approved ECS operations from this workstation",
       "instance_id": "i-j6ccs8t04f1p4d8pe69z",
       "region": "cn-hongkong",
-      "verified": true
+      "verified": true,
+      "access_role": "primary",
+      "ssh_alias": "hk-staging",
+      "standard_command": "ssh hk-staging",
+      "fallback_protocol": "Alibaba Cloud Workbench CLI",
+      "verified_on": "2026-09-15"
     },
     {
       "source": "Eason-13490 / Codex",
       "destination": "GO Command Center",
-      "protocol": "Alibaba Cloud Workbench CLI",
-      "credential_path": "local AK profile; credential values not recorded in repository",
-      "permission": "root remote command execution via existing Workbench authorization",
-      "purpose": "primary approved Command Center operations from this workstation",
+      "protocol": "SSH",
+      "credential_path": "local SSH private key C:\\Users\\Eason\\.ssh\\id_ed25519_workbuddy; key body not recorded",
+      "permission": "root shell on the target host (capability only, not deployment authority)",
+      "purpose": "primary approved ECS operations from this workstation",
       "instance_id": "i-j6c7k6k01biwlbnwutu5",
       "region": "cn-hongkong",
-      "verified": true
+      "verified": true,
+      "access_role": "primary",
+      "ssh_alias": "go-cc",
+      "standard_command": "ssh go-cc",
+      "fallback_protocol": "Alibaba Cloud Workbench CLI",
+      "verified_on": "2026-09-15"
     }
   ],
   "command_center": {
@@ -356,5 +408,12 @@
         "public_key_fingerprint_sha256": "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw"
       }
     ]
-  }
+  },
+  "inventory_date_at_creation": "2026-09-12",
+  "canonical_main_at_refresh": "8610a4dbfd58cbe595f3d161c049de37dd81d3cc",
+  "refresh_note": "Refreshed 2026-09-15 against canonical main 8610a4d. On Eason-13490 the verified primary ECS path changed from Alibaba Cloud Workbench CLI to direct SSH key access; Workbench CLI is retained as fallback. Metadata only: no key body, token, password, AccessKey value or session value is recorded.",
+  "changelog": [
+    "2026-09-15: Eason-13490 primary ECS access changed Workbench CLI -> direct SSH key access; both HK-STAGING-01 and GO Command Center direct SSH moved from not-verified to VERIFIED; go_repository HEAD re-verified at main 8610a4d.",
+    "2026-09-12: initial inventory (metadata only)."
+  ]
 }
