@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""CC V1-05 request visibility - operator timer wrapper (PHASE 1).
+
+What this does, and only this:
+
+  1. captures the Bridge's own stdout from journald -- the exact object the Bridge
+     already prints every poll -- and writes it to a durable journal wrapped with
+     the instant it was observed. The Bridge keeps nothing and is not modified.
+     A poll is journalled only when the Bridge's own output actually changes: the
+     Bridge re-reports the same view every 60 s, and journalling that again would
+     place an unchanged observation at a new instant and mint a fresh fact per
+     submission per cycle, growing the store without bound.
+  2. runs the read-only exporter over the Bridge ledger plus that journal, so
+     every refusal reason the Bridge printed becomes a Request fact on disk.
+
+What this deliberately does NOT do:
+
+  * it holds no private key, signs nothing, and creates no Task;
+  * it never opens, arms or reads the DEPLOY request switch;
+  * it does not publish to the control bus. That is PHASE 2 and it is not
+    installed here; until it is, the facts live only in this host's store and the
+    control bus still carries no Request facts.
+
+  PHASE_2_PUBLISH_NOT_INSTALLED=true
+
+Everything it writes is under its own state directory. It touches neither the
+runtime nor Production.
+"""
+import datetime as dt
+import hashlib
+import json
+import os
+import pathlib
+import subprocess
+import sys
+
+STATE_DIR = pathlib.Path("/var/lib/go-command-center/request-visibility-v1")
+POLL_DIR = STATE_DIR / "poll"
+FACTS_DIR = STATE_DIR / "facts"
+STATE_FILE = STATE_DIR / "state.json"
+LEDGER = pathlib.Path("/var/lib/go-command-center/boss-request-bridge-v1/ledger.json")
+EXPORTER = pathlib.Path(
+    "/opt/go-command-center/request-visibility-v1/command-center/go-request-fact-export")
+BRIDGE_UNIT = "go-boss-request-bridge.service"
+MAX_JOURNAL_FILES = 240
+DEFAULT_LOOKBACK_SECONDS = 3600
+
+
+def iso(instant):
+    return instant.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def read_state():
+    try:
+        return json.loads(STATE_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def write_state(state):
+    tmp = STATE_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(tmp, STATE_FILE)
+
+
+def last_bridge_object(since_epoch):
+    """The newest object the Bridge printed. Anything unparseable is skipped."""
+    proc = subprocess.run(
+        ["journalctl", "-u", BRIDGE_UNIT, "-o", "cat", "--no-pager",
+         "--since", "@%d" % since_epoch],
+        capture_output=True, text=True, check=False)
+    if proc.returncode != 0:
+        return None, "journalctl_rc_%d" % proc.returncode
+    found = None
+    for line in proc.stdout.splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            value = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(value, dict) and isinstance(value.get("results"), list):
+            found = value
+    return found, None if found else "no_bridge_object_in_window"
+
+
+def prune():
+    files = sorted(POLL_DIR.glob("*.json"))
+    for path in files[:-MAX_JOURNAL_FILES]:
+        try:
+            path.unlink()
+        except OSError:
+            pass
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] != "cycle":
+        print("usage: go-request-fact-cycle cycle")
+        return 2
+
+    POLL_DIR.mkdir(parents=True, exist_ok=True)
+    FACTS_DIR.mkdir(parents=True, exist_ok=True)
+    now = dt.datetime.now(dt.timezone.utc)
+    state = read_state()
+
+    since = int(state.get("last_capture_epoch") or 0)
+    if not since or since > int(now.timestamp()):
+        since = int(now.timestamp()) - DEFAULT_LOOKBACK_SECONDS
+
+    captured, problem = last_bridge_object(since)
+    out = {"component": "go-request-fact-cycle", "phase": 1, "captured_at": iso(now)}
+    if captured is None:
+        out["journal"] = "NOT_CAPTURED"
+        out["journal_reason"] = problem
+    else:
+        digest = hashlib.sha256(
+            json.dumps(captured, sort_keys=True, separators=(",", ":"),
+                       ensure_ascii=False).encode()).hexdigest()
+        if digest == state.get("last_bridge_sha256"):
+            # The Bridge re-reports the same view every poll. Journaling it again
+            # would place the same observation at a new instant, which would mint
+            # a fresh fact per submission per cycle for no reason and grow the
+            # store without bound. An observation is only new when the Bridge's
+            # own output changes.
+            out["journal"] = "UNCHANGED"
+            out["bridge_sha256"] = digest[:16]
+        else:
+            document = {"schema_version": "1", "journaled_at": iso(now),
+                        "bridge_output": captured}
+            name = now.strftime("%Y%m%dT%H%M%SZ.json")
+            (POLL_DIR / name).write_text(
+                json.dumps(document, sort_keys=True, ensure_ascii=False) + "\n",
+                encoding="utf-8")
+            prune()
+            state["last_capture_epoch"] = int(now.timestamp())
+            state["last_bridge_sha256"] = digest
+            write_state(state)
+            out["journal"] = name
+            out["bridge_results"] = len(captured.get("results") or [])
+
+    if not LEDGER.is_file():
+        out["exporter"] = "SKIPPED"
+        out["exporter_reason"] = "ledger_absent"
+        print(json.dumps(out, sort_keys=True))
+        return 0
+    if not EXPORTER.is_file():
+        out["exporter"] = "SKIPPED"
+        out["exporter_reason"] = "exporter_not_installed"
+        print(json.dumps(out, sort_keys=True))
+        return 0
+
+    command = [sys.executable, str(EXPORTER), "export",
+               "--ledger", str(LEDGER), "--out", str(FACTS_DIR), "--now", iso(now)]
+    for path in sorted(POLL_DIR.glob("*.json")):
+        command += ["--poll-results", str(path)]
+    proc = subprocess.run(command, capture_output=True, text=True, check=False)
+    out["exporter"] = "RUN" if proc.returncode == 0 else "REFUSED"
+    out["exporter_rc"] = proc.returncode
+    out["exporter_stdout"] = proc.stdout.strip().splitlines()[:6]
+    if proc.returncode != 0:
+        out["exporter_stderr"] = proc.stderr.strip().splitlines()[:4]
+    print(json.dumps(out, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

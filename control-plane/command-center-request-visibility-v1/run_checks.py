@@ -96,7 +96,16 @@ summary = {
     "live_control_plane_state": "NOT_ACCESSED",
     "bridge_ledger_read": "NO_LOCAL_COPY_AVAILABLE",
     "deployed": "NO",
-    "installed": "NO",
+    # PHASE 1 is installed: the operator wrapper journalling the Bridge's own
+    # poll output and driving this exporter now runs on the Command Center host
+    # on a timer. PHASE 2 -- publishing the facts to the control bus -- is NOT
+    # installed, so the bus still carries no Request facts and the projection
+    # still sees zero. Reported as split rather than as a single NO.
+    "installed": "PHASE_1_EXPORT_ONLY",
+    "installed_export_side": "YES",
+    "installed_publish_side": "NO",
+    "installed_note": ("the timer drives journal capture and the read-only export on the "
+                       "Command Center host; publication to the control bus is not installed"),
     "files": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
               for p in sorted(ROOT.rglob("*"))
               if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc"},

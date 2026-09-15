@@ -152,15 +152,28 @@ Re-exporting the same Bridge outcome reproduces the same `fact_id`, so the store
 is append-only and idempotent; a hand-edited fact is detected because the
 projection recomputes the id over the whole body.
 
-## Verified, not installed
+## Installed in two phases
 
 ```
-INSTALLED=NO     the exporter exists and CI verifies it, but nothing drives it on
-                 a timer and nothing publishes its output to the control bus yet.
-                 Until an approved change connects it, CURRENT.json carries zero
-                 facts, every collected Request stays REQUEST_CREATED, and refusal
-                 reasons remain unobservable from the control bus.
-TARGET_INSTALLED=NO
+PHASE 1  journal the Bridge's own poll output + drive the read-only exporter   INSTALLED
+PHASE 2  publish the facts to the control bus                                  NOT INSTALLED
 ```
 
-The remaining gap is the **missing wiring, not the missing mechanism**.
+Phase 1 runs on the Command Center host: `go-request-fact-cycle.timer` (300 s,
+oneshot, root, hardened) captures the object the Bridge already prints every poll
+into an append-only journal — only when that object actually changes — and then
+runs this exporter over the Bridge ledger plus that journal. Installed artifacts,
+before/after hashes, live smoke output and the rollback procedure are in
+`install/INSTALL.md`.
+
+Found and fixed during that install: journalling unconditionally would have
+placed an unchanged observation at a new instant every cycle and minted a fresh
+fact per submission per cycle — 2 cycles produced 36 fact files for 18 facts.
+The wrapper now journals on change only; 3 cycles produce 18 fact files.
+
+Phase 2 is not installed, and it is not useful on its own either: the projection
+side that consumes `--request-facts-dir` is not installed yet, so the facts have
+nothing to feed. Until both halves exist the control bus carries no Request facts,
+every collected Request still reads `REQUEST_CREATED`, and refusal reasons remain
+unobservable from the bus. `run_checks.py` reports the split as
+`installed = PHASE_1_EXPORT_ONLY`, `installed_publish_side = NO`.
