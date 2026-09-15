@@ -1,6 +1,9 @@
 name: OpenAI API Smoke
 
 on:
+  push:
+    branches:
+      - ops/openai-api-smoke-20260915
   workflow_dispatch:
 
 permissions:
