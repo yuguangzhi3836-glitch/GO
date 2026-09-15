@@ -511,8 +511,16 @@ def main():
     out["state_counts"] = state_doc.get("counts")
     out["request_visibility_by_lifecycle"] = (
         state_doc.get("request_visibility") or {}).get("by_lifecycle")
-    out["hk_agent_online"] = (((state_doc.get("control_state") or {}).get("agent") or {})
-                              .get("hk_agent_online"))
+    # The two documents answer two different questions and the answer surface is
+    # the status contract, not the state contract: CURRENT_CONTROL_STATE.json
+    # carries control_state.hk_agent_liveness (the assertion), while
+    # CONTROL_STATUS_V1.json carries answers.hk_agent_online (the answer a reader
+    # asks for). Reading the wrong one reports null and makes a live agent look
+    # unobserved.
+    online = ((documents["CONTROL_STATUS_V1.json"].get("answers") or {})
+              .get("hk_agent_online") or {})
+    out["hk_agent_online"] = online.get("state")
+    out["hk_agent_online_age_seconds"] = (online.get("value") or {}).get("age_seconds")
 
     # Publish when the sources it derives from move, and at least hourly so that a
     # long quiet period cannot leave a pointer behind the reader's window. The gate
