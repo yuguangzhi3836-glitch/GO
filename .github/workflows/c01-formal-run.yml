@@ -1,0 +1,453 @@
+name: C01 formal fixed-candidate pipeline
+
+on:
+  push:
+    branches:
+      - ops/c01-formal-20260915
+    paths:
+      - .github/workflows/c01-formal-run.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: c01-formal-fixed-candidate
+  cancel-in-progress: true
+
+env:
+  BASE_SHA: dcb68a652429aa01e8428ce9f582e4bab6a6175e
+  EXPECTED_APPLICATION_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+  R3_PRODUCT_ANCHOR: 8ffcde66d36c1bbf849218529ef015f6e81725af
+  TASK_ID: V70-R3-C01-01
+  ISSUE_NUMBER: '79'
+  PYTHONPATH: application/src:application
+
+jobs:
+  preflight:
+    name: C01 preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: go_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d go_test" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      REDIS_URL: redis://127.0.0.1:6379/0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BASE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify canonical source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prove inherited C01 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip >/dev/null
+          python -m pip install -e 'application[dev]' >/dev/null
+          cd application
+          python -m pytest -q tests/test_v70_next_c01_unknown_funding.py
+
+  agent:
+    name: C01 AI implementation
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BASE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build bounded C01 prompt
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE"
+          cat > "$RUNNER_TEMP/C01_PROMPT.md" <<'EOF'
+          GO V7.0 / V6.1 lineage + C14 controlled implementation.
+          Cell=C01 Task=V70-R3-C01-01 Issue=#79
+          Base=dcb68a652429aa01e8428ce9f582e4bab6a6175e R3 anchor=8ffcde66d36c1bbf849218529ef015f6e81725af Starting application tree=dd815baf0105cce603e9a28b002cfb9d8b95d186
+
+          OBJECTIVE
+          Close exactly one real next executable C01 hotel funds/integrity depth gap around mixed hotel funds, hotel amount/change/refund invariants, or read-only diagnosis. Preserve existing PASS and do not invent money/state repair authority.
+
+          HARD SCOPE
+          - Working directory is application/.
+          - Inspect only these existing files unless a directly imported helper is strictly necessary:
+            1) src/go_hotel/services/hosted_money.py
+            2) src/go_hotel/services/hosted_credit_value.py
+            3) src/go_hotel/services/alipay_safeguarded_settlement.py
+            4) tests/test_v70_next_c01_unknown_funding.py
+          - Do not scan git history, ../evidence, ../deliverables, ../hk-staging, ../docs, ../ci, workflows, secrets or unrelated tests.
+          - Modify only src/go_hotel/services/*.py and tests/test_v70*_c01*.py.
+          - Never modify migrations or deployment/governance material.
+          - Do not commit, push, open PRs, merge or deploy.
+
+          METHOD
+          1. Preserve inherited PASS; do not redo the already-PASS unknown-funding and lost-response invariants merely to create activity.
+          2. Identify one concrete adjacent gap supported by the allowed code.
+          3. Add one focused regression test exposing it.
+          4. Make the smallest safe implementation fix.
+          5. Do not run the full suite in this AI job; deterministic validation happens in a separate clean VM.
+          6. If no real bounded gap exists, leave the tree unchanged and answer exactly BOUNDED_NO_GAP.
+
+          SAFETY
+          Unknown or contradictory money facts must never create a second charge, state repair, invented external confirmation, unauthorized settlement, weakened idempotency, or silent reconciliation.
+          FINAL_RELEASE, HK_DEPLOY and PRODUCTION remain HOLD.
+
+          Final response only: GAP=<short>; FILES=<comma-separated>; TEST=<test name>.
+          EOF
+      - name: Run bounded C01 Codex editor
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ':workspace'
+          safety-strategy: drop-sudo
+          working-directory: application
+          model: gpt-5.6-sol
+          effort: medium
+          prompt-file: ${{ runner.temp }}/C01_PROMPT.md
+          output-file: ${{ runner.temp }}/C01_FINAL.txt
+      - name: Freeze agent work product
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/c01"
+          cp "$RUNNER_TEMP/C01_FINAL.txt" "$RUNNER_TEMP/c01/C01_FINAL.txt"
+          { git diff --name-only "$BASE_SHA"; git ls-files --others --exclude-standard; } | sed '/^$/d' | sort -u > "$RUNNER_TEMP/c01/CHANGED_FILES.txt"
+          test -s "$RUNNER_TEMP/c01/CHANGED_FILES.txt"
+          python - <<'PY'
+          import os,pathlib,sys
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'c01'/'CHANGED_FILES.txt'
+          paths=[x for x in p.read_text().splitlines() if x]
+          allowed_impl={
+            'application/src/go_hotel/services/hosted_money.py',
+            'application/src/go_hotel/services/hosted_credit_value.py',
+            'application/src/go_hotel/services/alipay_safeguarded_settlement.py',
+          }
+          bad=[x for x in paths if not (x in allowed_impl or (x.startswith('application/tests/test_v70') and '_c01' in x and x.endswith('.py')))]
+          if bad:
+              print('OUT_OF_SCOPE='+','.join(bad),file=sys.stderr); raise SystemExit(31)
+          if not any(x in allowed_impl for x in paths): raise SystemExit('NO_IMPLEMENTATION_DIFF')
+          if not any(x.startswith('application/tests/') for x in paths): raise SystemExit('NO_REGRESSION_TEST_DIFF')
+          PY
+          while IFS= read -r p; do git ls-files --error-unmatch "$p" >/dev/null 2>&1 || git add -N -- "$p"; done < "$RUNNER_TEMP/c01/CHANGED_FILES.txt"
+          git diff --binary --full-index "$BASE_SHA" > "$RUNNER_TEMP/c01/CANDIDATE.patch"
+          test -s "$RUNNER_TEMP/c01/CANDIDATE.patch"
+          sha256sum "$RUNNER_TEMP/c01/CANDIDATE.patch" > "$RUNNER_TEMP/c01/CANDIDATE.patch.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c01-formal-agent
+          path: ${{ runner.temp }}/c01
+          if-no-files-found: error
+          retention-days: 90
+
+  promote:
+    name: C01 deterministic promotion
+    needs: agent
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      candidate_sha: ${{ steps.identity.outputs.candidate_sha }}
+      application_tree: ${{ steps.identity.outputs.application_tree }}
+      pr_number: ${{ steps.publish.outputs.pr_number }}
+      evidence_sha: ${{ steps.evidence.outputs.evidence_sha }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: go_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d go_test" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      REDIS_URL: redis://127.0.0.1:6379/0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BASE_SHA }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-formal-agent
+          path: candidate-input
+      - name: Verify and apply exact patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE"
+          sha256sum -c candidate-input/CANDIDATE.patch.sha256
+          git apply --index --binary candidate-input/CANDIDATE.patch
+          git diff --cached --name-only | sort > actual.txt
+          sort candidate-input/CHANGED_FILES.txt > expected.txt
+          diff -u expected.txt actual.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Re-run C01 tests in clean promoter VM
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip >/dev/null
+          python -m pip install -e 'application[dev]' >/dev/null
+          changed_tests=$(grep '^application/tests/.*\.py$' candidate-input/CHANGED_FILES.txt || true)
+          cd application
+          args=(tests/test_v70_next_c01_unknown_funding.py)
+          while IFS= read -r p; do
+            [ -z "$p" ] && continue
+            rel=${p#application/}
+            [ "$rel" = 'tests/test_v70_next_c01_unknown_funding.py' ] || args+=("$rel")
+          done <<< "$changed_tests"
+          python -m pytest -q "${args[@]}" 2>&1 | tee "$RUNNER_TEMP/C01_TESTS.log"
+      - name: Commit exact fixed candidate
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'GO Deterministic Candidate Promoter'
+          git config user.email 'go-promoter@users.noreply.github.com'
+          git -c core.hooksPath=/dev/null diff --cached --check
+          git -c core.hooksPath=/dev/null commit -m "V70-R3-C01-01: fixed candidate for C01"
+          echo "candidate_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "application_tree=$(git rev-parse HEAD:application)" >> "$GITHUB_OUTPUT"
+      - name: Generate fixed-candidate Evidence
+        id: evidence
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ steps.identity.outputs.candidate_sha }}
+          APPLICATION_TREE_AFTER: ${{ steps.identity.outputs.application_tree }}
+        run: |
+          set -euo pipefail
+          mkdir -p candidate-output
+          cp candidate-input/CHANGED_FILES.txt candidate-input/CANDIDATE.patch candidate-input/CANDIDATE.patch.sha256 candidate-output/
+          cp "$RUNNER_TEMP/C01_TESTS.log" candidate-output/PROMOTER_TESTS.log
+          cp candidate-input/C01_FINAL.txt candidate-output/
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess,datetime
+          root=pathlib.Path.cwd(); out=root/'candidate-output'
+          changed=[x for x in (out/'CHANGED_FILES.txt').read_text().splitlines() if x]
+          tracked=subprocess.check_output(['git','ls-files','-z','application']).decode().split('\0')
+          pairs=[]
+          for p in sorted(x for x in tracked if x):
+              pairs.append((p[len('application/'):],hashlib.sha256((root/p).read_bytes()).hexdigest()))
+          fp=hashlib.sha256(''.join(f'{p}\0{h}\n' for p,h in pairs).encode()).hexdigest()
+          data={
+            'schema':'go.v70.r3.fixed-candidate.v1','cell_id':'C01','task_id':os.environ['TASK_ID'],
+            'issue_number':79,'repository_base_sha':os.environ['BASE_SHA'],'r3_product_anchor':os.environ['R3_PRODUCT_ANCHOR'],
+            'candidate_sha':os.environ['CANDIDATE_SHA'],'application_tree_before':os.environ['EXPECTED_APPLICATION_TREE'],
+            'application_tree_after':os.environ['APPLICATION_TREE_AFTER'],'application_source_fingerprint_sha256':fp,
+            'changed_files':changed,'patch_sha256':hashlib.sha256((out/'CANDIDATE.patch').read_bytes()).hexdigest(),
+            'promoter_test_log_sha256':hashlib.sha256((out/'PROMOTER_TESTS.log').read_bytes()).hexdigest(),
+            'candidate_status':'FIXED_CANDIDATE_READY_FOR_C14','c14':'REQUIRED','c13':'HOLD_UNTIL_C14_PASS',
+            'final_release':'HOLD','hk_deploy':'HOLD','production':'HOLD',
+            'created_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+          }
+          raw=(json.dumps(data,indent=2)+'\n').encode(); (out/'EVIDENCE.json').write_bytes(raw)
+          digest=hashlib.sha256(raw).hexdigest(); (out/'EVIDENCE.sha256').write_text(digest+'  EVIDENCE.json\n')
+          (out/'SOURCE_FINGERPRINT.sha256').write_text(fp+'  application\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write('evidence_sha='+digest+'\n')
+          PY
+      - name: Publish isolated candidate and Draft PR
+        id: publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ steps.identity.outputs.candidate_sha }}
+          APPLICATION_TREE_AFTER: ${{ steps.identity.outputs.application_tree }}
+          EVIDENCE_SHA: ${{ steps.evidence.outputs.evidence_sha }}
+        run: |
+          set -euo pipefail
+          branch="candidate/r3-c01-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git push origin "HEAD:refs/heads/$branch"
+          pr_url=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --draft --title "V70-R3-C01-01: C01 fixed candidate — C14 required" --body "Formal isolated C01 candidate. Candidate SHA: ${CANDIDATE_SHA}. Application tree: ${APPLICATION_TREE_AFTER}. Evidence SHA256: ${EVIDENCE_SHA}. C14 REQUIRED; C13 HOLD until C14 PASS. FINAL_RELEASE/HK_DEPLOY/PRODUCTION remain HOLD.")
+          echo "pr_number=${pr_url##*/}" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c01-fixed-candidate
+          path: candidate-output
+          if-no-files-found: error
+          retention-days: 90
+
+  c14:
+    name: C01 C14 read-only gate
+    needs: promote
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      status: ${{ steps.parse.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.promote.outputs.candidate_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-fixed-candidate
+          path: .gate-input
+      - name: Verify exact C14 input
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c .gate-input/EVIDENCE.sha256
+          python - <<'PY'
+          import json,subprocess
+          e=json.load(open('.gate-input/EVIDENCE.json'))
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert e['candidate_sha']==sha
+          assert e['application_tree_after']==subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
+          actual=sorted(subprocess.check_output(['git','diff','--name-only',e['repository_base_sha'],e['candidate_sha']],text=True).splitlines())
+          assert actual==sorted(e['changed_files'])
+          PY
+      - name: Build C14 prompt
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/C14_PROMPT.md" <<'EOF'
+          You are C14, an independent read-only engineering/authority/boundary gate. Review only the exact checked-out C01 candidate and .gate-input/EVIDENCE.json. Compare it with repository_base_sha. Verify task binding, source identity, changed-file scope, regression evidence, money/idempotency/reconciliation safety, authority limits, and that no deployment/release claim is smuggled in. Do not edit files. Historical PASS does not transfer. PASS_SCOPED only if this exact candidate safely closes the stated C01 task at scoped level; otherwise BLOCKED or FAIL.
+          EOF
+      - name: Run independent C14 reviewer
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ':read-only'
+          safety-strategy: drop-sudo
+          model: gpt-5.6-sol
+          effort: high
+          prompt-file: ${{ runner.temp }}/C14_PROMPT.md
+          output-file: ${{ runner.temp }}/C14_RESULT.json
+          output-schema: '{"type":"object","required":["status","candidate_sha","summary","blocking_reasons"],"properties":{"status":{"type":"string","enum":["PASS_SCOPED","BLOCKED","FAIL"]},"candidate_sha":{"type":"string"},"summary":{"type":"string"},"blocking_reasons":{"type":"array","items":{"type":"string"}}},"additionalProperties":false}'
+      - name: Parse C14 verdict
+        id: parse
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir c14-output; cp "$RUNNER_TEMP/C14_RESULT.json" c14-output/C14_RESULT.json
+          python - <<'PY'
+          import hashlib,json,os
+          p='c14-output/C14_RESULT.json'; d=json.load(open(p)); assert d['candidate_sha']=='${{ needs.promote.outputs.candidate_sha }}'
+          raw=open(p,'rb').read(); open('c14-output/C14_RESULT.sha256','w').write(hashlib.sha256(raw).hexdigest()+'  C14_RESULT.json\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write('status='+d['status']+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c01-c14
+          path: c14-output
+          retention-days: 90
+      - name: Enforce C14
+        run: test '${{ steps.parse.outputs.status }}' = PASS_SCOPED
+
+  c13:
+    name: C01 independent C13 acceptance
+    needs: [promote, c14]
+    if: ${{ needs.c14.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      status: ${{ steps.parse.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.promote.outputs.candidate_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-fixed-candidate
+          path: .gate-input/candidate
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-c14
+          path: .gate-input/c14
+      - name: Verify independent acceptance input
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c .gate-input/candidate/EVIDENCE.sha256
+          sha256sum -c .gate-input/c14/C14_RESULT.sha256
+          python - <<'PY'
+          import json,subprocess
+          c=json.load(open('.gate-input/candidate/EVIDENCE.json')); g=json.load(open('.gate-input/c14/C14_RESULT.json'))
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert c['candidate_sha']==sha==g['candidate_sha']; assert g['status']=='PASS_SCOPED'
+          PY
+      - name: Build C13 prompt
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/C13_PROMPT.md" <<'EOF'
+          You are C13, an independent acceptance reviewer. You did not implement this change and you are not C14. Review the exact checked-out C01 candidate, candidate Evidence, and C14 result. Independently decide whether V70-R3-C01-01 is actually closed at scoped level without inflating it to whole-domain completion. Check observable behavior, regression evidence, source identity and remaining risks. Do not edit files. FINAL_RELEASE/HK_DEPLOY/PRODUCTION remain HOLD.
+          EOF
+      - name: Run independent C13 reviewer
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ':read-only'
+          safety-strategy: drop-sudo
+          model: gpt-5.6-sol
+          effort: high
+          prompt-file: ${{ runner.temp }}/C13_PROMPT.md
+          output-file: ${{ runner.temp }}/C13_RESULT.json
+          output-schema: '{"type":"object","required":["status","candidate_sha","summary","remaining_risks"],"properties":{"status":{"type":"string","enum":["PASS_SCOPED","BLOCKED","FAIL"]},"candidate_sha":{"type":"string"},"summary":{"type":"string"},"remaining_risks":{"type":"array","items":{"type":"string"}}},"additionalProperties":false}'
+      - name: Parse C13 verdict
+        id: parse
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir c13-output; cp "$RUNNER_TEMP/C13_RESULT.json" c13-output/C13_RESULT.json
+          python - <<'PY'
+          import hashlib,json,os
+          p='c13-output/C13_RESULT.json'; d=json.load(open(p)); assert d['candidate_sha']=='${{ needs.promote.outputs.candidate_sha }}'
+          raw=open(p,'rb').read(); open('c13-output/C13_RESULT.sha256','w').write(hashlib.sha256(raw).hexdigest()+'  C13_RESULT.json\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write('status='+d['status']+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c01-c13
+          path: c13-output
+          retention-days: 90
+      - name: Enforce C13
+        run: test '${{ steps.parse.outputs.status }}' = PASS_SCOPED
