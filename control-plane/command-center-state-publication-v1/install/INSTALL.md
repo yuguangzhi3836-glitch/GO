@@ -158,3 +158,47 @@ STILL OUTSTANDING
     prove an agent is online; only fresh signed liveness Evidence can, and the
     producer that would create it is CC V1-08 / #98.
 ```
+
+---
+
+## Change: the projector folds the fact shapes (2026-09-15, source `846fb0a`)
+
+The bus carries facts written under two rules at once. They are one business fact
+per outcome, so the projector now says so instead of counting the same outcome
+twice.
+
+```
+BEFORE   projector  6ac4b9dd472d78ba50ae56f15abb25d8e8de6910c92efd227105e0e89776d175
+         wrapper    895e269a6973ea0c2a41c6717c3d6fa10b82608376091afb9ae6042ddc2fa1d4
+AFTER    projector  c3cb6448754203b42bc7e0da0809cc5e6495dd1d454f69caa99806a5a50efaa8
+         wrapper    a3324a501300686c9030319e22a8b5059a54bea13d6102df01247e2bc89f6f69
+         installed.json projector_sha256 updated in the same step, because the
+         wrapper re-hashes the installed projector every cycle and refuses to
+         publish if it no longer matches: PROJECTOR_INTEGRITY=OK
+STATE    go-command-center-state-cycle.timer active/enabled; the request-visibility
+         timer, the Bridge timer and the command center service untouched
+SMOKE    request_facts 56 -> 19; request_fact_observations 75;
+         request_facts_collapsed 56;
+         facts_by_identity_rule {LEGACY_TIMESTAMP: 19, SEMANTIC: 19};
+         a sample identity on_bus=4 collapsed=3 -> one business fact;
+         anomalies 7; a repeat cycle reports everything UNCHANGED with the pointer
+         CURRENT and verify OK
+         answers.hk_agent_online UNKNOWN with the age in the reason, and
+         freshness reporting liveness_window 2400 / interval 1800 / grace 600
+ROLLBACK restore the four files from
+         /var/backups/CC-CHANGE-20260915T143916Z-semantic-facts/ and the wrapper
+         from /var/backups/CC-CHANGE-20260915T144827Z-liveness-answer/, put
+         projector_sha256 back, daemon-reload and start the timer. Nothing in the
+         published branch is deleted: the facts and the target are records.
+```
+
+Reading the wrong document for the liveness answer was its own defect and is
+recorded in the commit that fixed it: `CURRENT_CONTROL_STATE.json` carries
+`control_state.hk_agent_liveness` (the assertion) while `CONTROL_STATUS_V1.json`
+carries `answers.hk_agent_online` (the answer). A reader that asks the wrong one
+gets null and concludes the agent is unobserved.
+
+The line above saying `hk_agent_online` is still null describes the state before
+the producer was installed; the producer, the Bridge extension that lets its Task
+be signed, and one full probe through the real path are all in place now, and the
+answer returns to UNKNOWN between probes by design.

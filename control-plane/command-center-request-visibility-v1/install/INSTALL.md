@@ -118,3 +118,39 @@ Phase 2 — publishing the facts to the control bus — is not installed. It is 
 not useful yet: the projection side that consumes `--request-facts-dir` is not
 installed either (CC V1-04), so there is nothing for the facts to feed. Both
 belong to the same wiring task and should be installed together.
+
+---
+
+## Change: the semantic fact identity (2026-09-15, install source `846fb0a`)
+
+Replaced the per-observation identity with the semantic one, and with it the
+growth. Nothing was deleted and no historical fact was rewritten.
+
+```
+BEFORE   exporter  a72abb97b2e2d283828495bed0cf66015e53f0a7ed22a3ac55a3998cdabe9c2c
+         wrapper   1edc398dda739572e0431c6fa14412419b1d4c03d4f92e7f5659cca353bf5e6c
+AFTER    exporter  fb89272efb5ad0b7c4fed78975ddf4df9eda8bafc04ad90de1002739773462a1
+         contract  3275e452ce207c28810a3c2f1fd869acf0e4afd3bd5ab7a922faa49a3e359a52
+         wrapper   f5ca548272fd8af30e3325d72cadf2c24d21dd9f57d06b4cd390f0a2d5815a71
+STATE    go-request-fact-cycle.timer active/enabled throughout except for the
+         bounded stop-and-restart of this change; exporter selftest PASS on the
+         installed copy
+SMOKE    cycle -> FACTS=19 SUBMISSIONS=22 SUBMISSIONS_WITHOUT_FACT=3 AUTHORITY=NONE
+         and the store stopped growing on a repeat observation of one outcome
+ROLLBACK disable --now the timer, restore the four files from
+         /var/backups/CC-CHANGE-20260915T143916Z-semantic-facts/, daemon-reload.
+         The Bridge, its ledger, its config, the keys and the runtime are not part
+         of this change and must not be touched by the rollback. Facts already
+         written under the new rule are valid under both rules and are left alone.
+```
+
+The wrapper now passes `--observations` explicitly at
+`/var/lib/go-command-center/request-visibility-v1/observations.json`, a sibling of
+the fact store rather than part of it, so the moving fields cannot be published by
+a copy of the store.
+
+### The phase-2 gap recorded above is now closed
+
+It was closed by the state-publication install; see that component's `INSTALL.md`.
+This file's note that phase 2 "is not installed" describes the state at the time
+of the phase-1 install and is kept as the record of it.

@@ -520,7 +520,12 @@ def main():
     online = ((documents["CONTROL_STATUS_V1.json"].get("answers") or {})
               .get("hk_agent_online") or {})
     out["hk_agent_online"] = online.get("state")
-    out["hk_agent_online_age_seconds"] = (online.get("value") or {}).get("age_seconds")
+    # When the answer is UNKNOWN the value is null and the age sits beside the
+    # assertion rather than inside the value, so read both rather than reporting a
+    # bare null next to a state that plainly has an age.
+    out["hk_agent_online_age_seconds"] = (
+        (online.get("value") or {}).get("age_seconds")
+        if isinstance(online.get("value"), dict) else online.get("age_seconds"))
 
     # Publish when the sources it derives from move, and at least hourly so that a
     # long quiet period cannot leave a pointer behind the reader's window. The gate
