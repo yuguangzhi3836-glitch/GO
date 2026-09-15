@@ -41,7 +41,7 @@ class IntegrationTests(unittest.TestCase):
         names = (
             ("go-boss-request-bridge", "boss-request-bridge-v1.json")
             if role == "command-center"
-            else ("transport.py", "agent.json", "test_pr.py", "Dockerfile.go-application-python-v1", "docker-access.conf")
+            else ("transport.py", "agent.json", "test_pr.py", "Dockerfile.go-application-python-v2", "docker-access.conf")
         )
         present = names if role == "command-center" else names[:2]
         records, installed, target_paths = [], [], {}
@@ -103,7 +103,7 @@ class IntegrationTests(unittest.TestCase):
                 "GO_HK_TRANSPORT_PATH": self.bash_path(target_paths["transport.py"]),
                 "GO_HK_AGENT_CONFIG_PATH": self.bash_path(target_paths["agent.json"]),
                 "GO_HK_TEST_PR_PATH": self.bash_path(target_paths["test_pr.py"]),
-                "GO_HK_DOCKERFILE_PATH": self.bash_path(target_paths["Dockerfile.go-application-python-v1"]),
+                "GO_HK_DOCKERFILE_PATH": self.bash_path(target_paths["Dockerfile.go-application-python-v2"]),
                 "GO_HK_DOCKER_DROPIN_PATH": self.bash_path(target_paths["docker-access.conf"]),
                 "GO_HK_RUNTIME_ROOT": self.bash_path(runtime_root),
                 "GO_HK_BUILD_ROOT": self.bash_path(build_root),
@@ -177,7 +177,7 @@ class IntegrationTests(unittest.TestCase):
             original = test_pr.execute
             try:
                 test_pr.execute = lambda _: {
-                    "schema_version": "1", "executor_version": "test-pr-v1", "action_id": "HK_STAGING_TEST_PR",
+                    "schema_version": "1", "executor_version": "test-pr-v2", "action_id": "HK_STAGING_TEST_PR",
                     "status": "SUCCESS", "result": "TEST_PR_OK", "source_pr_number": "42",
                     "source_commit_sha": task["parameters"]["source"]["commit_sha"],
                     "task_canonical_sha256": hashlib.sha256(transport.canonical(signed)).hexdigest(),
@@ -231,9 +231,21 @@ class IntegrationTests(unittest.TestCase):
             self.assertNotEqual(invalid.returncode, 0)
 
     def test_offline_builder_profile_is_pinned_and_non_networked(self):
-        dockerfile = (ROOT / "hk-staging" / "Dockerfile.go-application-python-v1").read_text(encoding="utf-8").lower()
+        dockerfile = (ROOT / "hk-staging" / "Dockerfile.go-application-python-v2").read_text(encoding="utf-8").lower()
         source = (ROOT / "hk-staging" / "hk_agent" / "test_pr.py").read_text(encoding="utf-8")
         self.assertNotIn("pip install", dockerfile)
+        # V2: the base is pinned by tag here and by id at run time, and the profile
+        # name is deliberately NOT versioned -- see hk_agent/test_pr.py.
+        self.assertIn("from %s" % "go-hotel:depth48-runtime-6d0fd905", dockerfile)
+        self.assertIn('BUILDER_IMAGE = "go-hotel:depth48-runtime-6d0fd905"', source)
+        self.assertIn('BUILDER_IMAGE_ID = "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"', source)
+        self.assertIn('executor_version": "test-pr-v2"', source)
+        # Nothing executable may still name the environment that is gone, or the
+        # rename left a second, dead pin behind.
+        stale_scope = sorted((ROOT / "hk-staging").rglob("*")) + sorted((ROOT / "install").glob("*.sh"))
+        for stale in stale_scope:
+            if stale.is_file() and "Dockerfile.go-application-python-v1" in stale.read_text(encoding="utf-8", errors="ignore"):
+                self.fail("%s still names the v1 build environment" % stale)
         self.assertNotIn("apt", dockerfile)
         self.assertNotIn("curl", dockerfile)
         self.assertIn('"--network", "none", "--pull=false"', source)
@@ -339,7 +351,7 @@ class IntegrationTests(unittest.TestCase):
             "record /opt/go-hk-agent-rebuilt/hk_agent/transport.py transport.py",
             "record /etc/go-hk-agent/agent.json agent.json",
             "record /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py test_pr.py",
-            "record /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1 Dockerfile.go-application-python-v1",
+            "record /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2 Dockerfile.go-application-python-v2",
             "record \"$docker_dropin\" docker-access.conf",
             "record_dir \"$runtime_root\" runtime_root",
             "record_dir \"$build_root\" builds",
@@ -347,7 +359,7 @@ class IntegrationTests(unittest.TestCase):
             self.assertIn(statement, install)
         self.assertIn("82ab805b921081ec0299ffa20576963476e12f57e711438f46ada2342a7c7b30", preflight)
         self.assertIn("test ! -e /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py", preflight)
-        self.assertIn("test ! -e /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1", preflight)
+        self.assertIn("test ! -e /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2", preflight)
         self.assertIn('install -d -o root -g root -m 0711 "$runtime_root"', install)
         self.assertIn('install -d -o "$agent_uid" -g "$agent_gid" -m 0700 "$build_root"', install)
         self.assertIn("SupplementaryGroups=docker", install)
@@ -358,7 +370,7 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn('validate transport.py "$transport"', rollback)
         self.assertIn('validate agent.json "$agent_config"', rollback)
         self.assertIn('validate test_pr.py "$test_pr"', rollback)
-        self.assertIn('validate Dockerfile.go-application-python-v1 "$dockerfile"', rollback)
+        self.assertIn('validate Dockerfile.go-application-python-v2 "$dockerfile"', rollback)
         self.assertIn('validate docker-access.conf "$docker_dropin"', rollback)
         self.assertIn('validate_dir runtime_root "$runtime_root"', rollback)
         self.assertIn('validate_dir builds "$build_root"', rollback)
@@ -415,7 +427,7 @@ class IntegrationTests(unittest.TestCase):
         raw, backup, targets, env = self.rollback_sandbox("hk-staging")
         with raw:
             expected = targets["transport.py"].read_bytes()
-            targets["Dockerfile.go-application-python-v1"].write_text("drift", encoding="utf-8")
+            targets["Dockerfile.go-application-python-v2"].write_text("drift", encoding="utf-8")
             self.assertNotEqual(self.run_rollback("hk-staging", env).returncode, 0)
             self.assertEqual(targets["transport.py"].read_bytes(), expected)
         raw, backup, targets, env = self.rollback_sandbox("hk-staging")

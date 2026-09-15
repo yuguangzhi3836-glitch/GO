@@ -29,7 +29,7 @@ case "$role" in
         test "$(sha256sum /etc/go-hk-agent/agent.json | awk '{print $1}')" = "82ab805b921081ec0299ffa20576963476e12f57e711438f46ada2342a7c7b30"
         test "$(sha256sum /opt/go-hk-agent-rebuilt/hk_agent/deployment_actions.py | awk '{print $1}')" = "7400ef03caf9473db73eccca5206233c81707ae742547489f0ed93728e5b323e"
         test ! -e /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py
-        test ! -e /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1
+        test ! -e /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2
         test ! -e /var/lib/go-hk-test-pr
         test ! -e /etc/systemd/system/go-hk-agent.service.d/30-test-pr-docker-access.conf
         ;;

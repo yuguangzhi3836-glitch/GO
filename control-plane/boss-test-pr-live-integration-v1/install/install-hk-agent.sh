@@ -34,14 +34,14 @@ record_dir() {
 record /opt/go-hk-agent-rebuilt/hk_agent/transport.py transport.py
 record /etc/go-hk-agent/agent.json agent.json
 record /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py test_pr.py
-record /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1 Dockerfile.go-application-python-v1
+record /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2 Dockerfile.go-application-python-v2
 record "$docker_dropin" docker-access.conf
 record_dir "$runtime_root" runtime_root
 record_dir "$build_root" builds
 install -o root -g root -m 0644 "$root/hk-staging/hk_agent/transport.py" /opt/go-hk-agent-rebuilt/hk_agent/transport.py
 install -o root -g root -m 0644 "$root/hk-staging/hk_agent/test_pr.py" /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py
 install -d -o root -g root -m 0755 /usr/local/libexec/go-hk-test-pr
-install -o root -g root -m 0644 "$root/hk-staging/Dockerfile.go-application-python-v1" /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1
+install -o root -g root -m 0644 "$root/hk-staging/Dockerfile.go-application-python-v2" /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2
 agent_uid=$(id -u go-hk-agent)
 agent_gid=$(id -g go-hk-agent)
 install -d -o root -g root -m 0711 "$runtime_root"
@@ -72,13 +72,13 @@ chmod "$agent_mode" /etc/go-hk-agent/agent.json
 printf 'transport.py|%s\n' "$(sha256sum /opt/go-hk-agent-rebuilt/hk_agent/transport.py | awk '{print $1}')" > "$backup/installed.tsv"
 printf 'agent.json|%s\n' "$(sha256sum /etc/go-hk-agent/agent.json | awk '{print $1}')" >> "$backup/installed.tsv"
 printf 'test_pr.py|%s\n' "$(sha256sum /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py | awk '{print $1}')" >> "$backup/installed.tsv"
-printf 'Dockerfile.go-application-python-v1|%s\n' "$(sha256sum /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1 | awk '{print $1}')" >> "$backup/installed.tsv"
+printf 'Dockerfile.go-application-python-v2|%s\n' "$(sha256sum /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2 | awk '{print $1}')" >> "$backup/installed.tsv"
 printf 'docker-access.conf|%s\n' "$(sha256sum "$docker_dropin" | awk '{print $1}')" >> "$backup/installed.tsv"
 printf 'runtime_root|directory|%s|%s\n' "$(stat -c %u:%g "$runtime_root")" "$(stat -c %a "$runtime_root")" >> "$backup/installed.tsv"
 printf 'builds|directory|%s|%s\n' "$(stat -c %u:%g "$build_root")" "$(stat -c %a "$build_root")" >> "$backup/installed.tsv"
 test "$(awk '$2=="hk-staging/hk_agent/transport.py"{print $1}' "$root/SHA256SUMS")" = "$(awk -F'|' '$1=="transport.py"{print $2}' "$backup/installed.tsv")"
 test "$(awk '$2=="hk-staging/hk_agent/test_pr.py"{print $1}' "$root/SHA256SUMS")" = "$(awk -F'|' '$1=="test_pr.py"{print $2}' "$backup/installed.tsv")"
-test "$(awk '$2=="hk-staging/Dockerfile.go-application-python-v1"{print $1}' "$root/SHA256SUMS")" = "$(awk -F'|' '$1=="Dockerfile.go-application-python-v1"{print $2}' "$backup/installed.tsv")"
+test "$(awk '$2=="hk-staging/Dockerfile.go-application-python-v2"{print $1}' "$root/SHA256SUMS")" = "$(awk -F'|' '$1=="Dockerfile.go-application-python-v2"{print $2}' "$backup/installed.tsv")"
 test "$(stat -c %u:%g "$runtime_root")" = 0:0
 test "$(stat -c %a "$runtime_root")" = 711
 test "$(stat -c %u:%g "$build_root")" = "$agent_uid:$agent_gid"

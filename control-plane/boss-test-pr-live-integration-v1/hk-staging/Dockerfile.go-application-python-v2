@@ -1,0 +1,15 @@
+# The builder environment for the go-application-python profile, revision 2.
+#
+# Revision 1 built FROM go-hotel:aoluguya-direct-r3-1-20260906, which no longer
+# exists on the Hong Kong host, so every HK_STAGING_TEST_PR failed at
+# `docker image inspect` before any container was created.
+#
+# This base is the same application generation's runtime image, pinned by id in
+# hk_agent/test_pr.py. It carries Python 3.12.14 (so tomllib is available for the
+# dependency-profile check), alembic 1.20.0, and the application's dependencies,
+# so the build and the runtime check need no network at all.
+
+FROM go-hotel:depth48-runtime-6d0fd905
+WORKDIR /workspace
+COPY . /workspace
+ENV PYTHONPATH=/workspace/src
