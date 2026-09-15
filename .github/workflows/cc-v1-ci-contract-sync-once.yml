@@ -1,0 +1,127 @@
+name: CC V1 scope-reset CI contract sync (one-shot)
+
+on:
+  push:
+    branches: [cc/v1-finalization-20260914]
+    paths:
+      - '.github/workflows/cc-v1-ci-contract-sync-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cc/v1-finalization-20260914
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned test dependency
+        run: python -m pip install cryptography==46.0.0
+      - name: Synchronize scope-reset contracts
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+
+          ready = Path('control-plane/command-center-deploy-readiness-v1')
+          test = ready / 'tests/test_deploy_readiness.py'
+          text = test.read_text(encoding='utf-8')
+
+          old = '''    def test_the_exact_field_sets_match(self):
+              self.assertEqual(self.exact_fields("plan_fields"), set(R.PLAN_FIELDS))
+              self.assertEqual(self.exact_fields("approval_fields"), set(R.APPROVAL_FIELDS))
+              self.assertEqual(self.exact_fields("candidate_fields"), set(R.CANDIDATE_FIELDS))
+              self.assertEqual(self.exact_fields("task_fields"), set(R.TASK_FIELDS))
+          '''
+          new = '''    def test_the_exact_field_sets_match(self):
+              self.assertEqual(self.exact_fields("plan_fields"), set(R.PLAN_FIELDS))
+              self.assertIn("exact(approval,APPROVAL_FIELDS,'approval_fields')", self.source)
+              found = re.search(r"^APPROVAL_FIELDS = \\((.*?)\\)", self.source, re.M | re.S)
+              self.assertIsNotNone(found, "APPROVAL_FIELDS")
+              self.assertEqual(set(re.findall(r"'([A-Za-z0-9_]+)'", found.group(1))),
+                               set(R.APPROVAL_FIELDS))
+              self.assertEqual(self.exact_fields("candidate_fields"), set(R.CANDIDATE_FIELDS))
+              self.assertEqual(self.exact_fields("task_fields"), set(R.TASK_FIELDS))
+          '''
+          if old not in text:
+              raise SystemExit('readiness exact-field test anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '''    def test_the_bridge_still_verifies_the_approval_with_the_store_key(self):
+              self.assertIn("authority=public_key(read_secure(STORE/'authority.pub',4096))", self.source)
+              self.assertIn("validate_bundle(bundle,plan_id,authority,hk,at)", self.source)
+          '''
+          new = '''    def test_the_bridge_uses_authenticated_github_identity_for_approval(self):
+              self.assertIn("APPROVAL_IDENTITIES = ('yuguangzhi3836-glitch','chenzhenxi1-sudo')", self.source)
+              self.assertIn("if approval_identity is None: raise Reject('approval_identity_missing')", self.source)
+              self.assertIn("if approval_identity not in APPROVAL_IDENTITIES: raise Reject('approval_identity_not_authorised')", self.source)
+              self.assertIn("if approval['approved_by']!=approval_identity: raise Reject('approval_identity_mismatch')", self.source)
+              self.assertIn("return validate_bundle(bundle,plan_id,authority,hk,at,approval_identity)", self.source)
+              self.assertNotIn("verify_signed(approval", self.source)
+          '''
+          if old not in text:
+              raise SystemExit('readiness approval test anchor not found')
+          test.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
+
+          visibility = Path('control-plane/command-center-request-visibility-v1')
+          schema = visibility / 'contracts/request_fact_v1.schema.json'
+          text = schema.read_text(encoding='utf-8')
+          replacements = {
+              '      "deployment_requests_disabled",\n': '      "deployment_requests_disabled",\n      "approval_identity_not_authorised",\n      "request_pr_author_not_authorised",\n',
+              '      "approved_plan_changed",\n': '      "approved_plan_changed",\n      "approval_identity_mismatch",\n',
+              '      "approval_binding",\n': '      "approval_binding",\n      "approval_identity_missing",\n',
+          }
+          for before, after in replacements.items():
+              if before not in text:
+                  raise SystemExit('visibility schema anchor not found: ' + before.strip())
+              text = text.replace(before, after, 1)
+          schema.write_text(text, encoding='utf-8', newline='\n')
+
+          def refresh_manifest(component, changed):
+              manifest = component / 'SHA256SUMS'
+              lines = manifest.read_text(encoding='utf-8').splitlines()
+              wanted = {str(Path(p).as_posix()) for p in changed}
+              out = []
+              seen = set()
+              for line in lines:
+                  if not line.strip():
+                      out.append(line)
+                      continue
+                  digest, rel = line.split(None, 1)
+                  rel = rel.strip().lstrip('*')
+                  if rel in wanted:
+                      digest = hashlib.sha256((component / rel).read_bytes()).hexdigest()
+                      seen.add(rel)
+                  out.append(f'{digest}  {rel}')
+              missing = wanted - seen
+              if missing:
+                  raise SystemExit('manifest paths missing: ' + ','.join(sorted(missing)))
+              manifest.write_text('\n'.join(out) + '\n', encoding='utf-8', newline='\n')
+
+          refresh_manifest(ready, ['tests/test_deploy_readiness.py'])
+          refresh_manifest(visibility, ['contracts/request_fact_v1.schema.json'])
+          PY
+
+          (cd control-plane/command-center-deploy-readiness-v1 && sha256sum -c SHA256SUMS && python -m unittest discover -s tests -q)
+          (cd control-plane/command-center-request-visibility-v1 && sha256sum -c SHA256SUMS && python -m unittest discover -s tests -q)
+          (cd control-plane/command-center-deploy-dry-run-v1 && sha256sum -c SHA256SUMS && python -m unittest discover -s tests -q)
+      - name: Commit synchronized contracts
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add control-plane/command-center-deploy-readiness-v1/tests/test_deploy_readiness.py \
+                  control-plane/command-center-deploy-readiness-v1/SHA256SUMS \
+                  control-plane/command-center-request-visibility-v1/contracts/request_fact_v1.schema.json \
+                  control-plane/command-center-request-visibility-v1/SHA256SUMS
+          git diff --cached --check
+          git commit -m 'CC V1: sync CI contracts with GitHub approval identity'
+          git push origin HEAD:cc/v1-finalization-20260914
