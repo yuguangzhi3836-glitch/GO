@@ -1,0 +1,558 @@
+#!/usr/bin/env python3
+"""Relay the liveness producer's outbox to the control bus, through ONE transport.
+
+Why this exists
+---------------
+The producer (``agent-liveness-producer-v1``) decides whether a read-only
+``CONTROL_PLANE_HEALTH`` probe is due and writes the Request into its own outbox.
+It never touches the bus. Something has to put that Request on the Request
+channel, and the operator wiring that did it one probe at a time opened a new
+branch and a new PR for every probe -- 48 open PRs a day, forever.
+
+This is that something, and it is bounded by construction:
+
+  ONE branch, ONE PR      ``boss-request-liveness-transport``. Every cycle force
+                          updates that one branch; the PR follows it. A new head
+                          is a new submission identity to the Bridge, so a reused
+                          branch is still a fresh submission.
+  ONE added file          The Bridge accepts a submission only when
+                          ``diff --name-status merge-base(main, head)..head`` is
+                          exactly one ``A    requests/<id>.json``. So the
+                          transport commit is always built on the current ``main``
+                          and holds exactly one Request file. Accumulating files
+                          would make the submission ignored; so would deleting one.
+  NO API CLIENT           This tool cannot create, merge or close a PR, because it
+                          holds no HTTP client at all. It speaks git over SSH with
+                          the key the bus already trusts. The PR count can
+                          therefore only grow if a human opens one.
+  AN IMMUTABLE ARCHIVE    A superseded Request file is moved to
+                          ``request/liveness-archive`` before the transport drops
+                          it. That namespace is declared by the state contract and
+                          collected by the projector, while the Bridge only reads
+                          ``refs/pull/*/head`` and never sees it. Without this the
+                          fact->Request join would lose one Request per probe, and
+                          the projection would emit one
+                          ``REQUEST_FACT_WITHOUT_REQUEST`` anomaly per probe.
+
+It holds no Task key, signs nothing, and cannot merge, close or revert anything.
+
+Why the archive is not optional
+-------------------------------
+A Request fact is immutable and permanent, and the projection attributes each fact
+to the Request file it was read from. Rotating the transport therefore has to keep
+the superseded file somewhere on the bus, or the join breaks once per probe.
+
+Usage
+-----
+  go-liveness-request-transport relay            # newest fresh outbox Request
+  go-liveness-request-transport relay --dry-run   # decide and report, push nothing
+  go-liveness-request-transport status
+  go-liveness-request-transport selftest
+"""
+import argparse
+import datetime as dt
+import json
+import os
+import pathlib
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+ACTION_ID = "CONTROL_PLANE_HEALTH"
+ENVIRONMENT = "HK-STAGING-01"
+REQUEST_FIELDS = {"schema_version", "request_id", "action_id", "environment", "requested_at"}
+REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+REQUEST_PATH_RE = re.compile(r"^requests/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json$")
+
+TRANSPORT_BRANCH = "boss-request-liveness-transport"
+ARCHIVE_BRANCH = "request/liveness-archive"
+TRANSPORT_REF = "refs/heads/" + TRANSPORT_BRANCH
+ARCHIVE_REF = "refs/heads/" + ARCHIVE_BRANCH
+
+DEFAULT_REPO = "git@github.com:chenzhenxi1-sudo/go-control-tasks.git"
+DEFAULT_KEY = "/etc/go-command-center/keys/github-tasks-writer"
+DEFAULT_OUTBOX = "/var/lib/go-command-center/liveness-producer-v1/outbox"
+DEFAULT_WORK = "/var/lib/go-command-center/liveness-request-transport-v1"
+COMMIT_NAME = "GO Command Center"
+COMMIT_MAIL = "go-command-center@localhost"
+
+# The Bridge refuses a Request older than its own max_age_seconds (900) and signs at
+# most one Task per submission. Publish only well inside that window, so a slow tick
+# cannot turn a probe into a refused Request. The margin is transport slack: it is
+# not a second way to raise the probe rate, which stays the producer's decision.
+MAX_PUBLISH_AGE_SECONDS = 600
+
+
+class Refuse(Exception):
+    pass
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode() + b"\n"
+
+
+def now():
+    return dt.datetime.now(dt.timezone.utc)
+
+
+def iso(value):
+    return value.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def parse_time(value):
+    try:
+        parsed = dt.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=dt.timezone.utc)
+    except (TypeError, ValueError):
+        try:
+            parsed = dt.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=dt.timezone.utc)
+        except (TypeError, ValueError) as exc:
+            raise Refuse("requested_at_unreadable") from exc
+    return parsed
+
+
+# --------------------------------------------------------------------------- #
+# the decision, with no git in it
+# --------------------------------------------------------------------------- #
+def validate_outbox_request(name, raw):
+    """One well-formed CONTROL_PLANE_HEALTH Request, and nothing else."""
+    if not name.endswith(".json"):
+        raise Refuse("outbox_name")
+    request_id = name[:-5]
+    if not REQUEST_ID_RE.fullmatch(request_id):
+        raise Refuse("outbox_request_id")
+    try:
+        request = json.loads(raw)
+    except ValueError as exc:
+        raise Refuse("outbox_json") from exc
+    if not isinstance(request, dict) or set(request) != REQUEST_FIELDS:
+        raise Refuse("outbox_fields")
+    for key, value in request.items():
+        if not isinstance(value, str):
+            raise Refuse("outbox_field_type:%s" % key)
+    if request["request_id"] != request_id:
+        raise Refuse("outbox_filename_binding")
+    if request["action_id"] != ACTION_ID or request["environment"] != ENVIRONMENT:
+        raise Refuse("outbox_action_or_environment")
+    return request
+
+
+def publish_decision(request, at):
+    """Fresh enough to survive the Bridge's own staleness check, or not published."""
+    age = (at - parse_time(request["requested_at"])).total_seconds()
+    if age < 0:
+        raise Refuse("requested_at_in_the_future")
+    if age > MAX_PUBLISH_AGE_SECONDS:
+        return "SKIPPED_STALE", age
+    return "PUBLISH", age
+
+
+def newest_outbox_request(outbox):
+    """The newest Request in the outbox, or None.
+
+    Newest rather than oldest on purpose: an older probe left behind by a relay
+    outage is already past the Bridge's window, and publishing it would buy a
+    refusal and a rejection fact instead of a probe.
+    """
+    folder = pathlib.Path(outbox)
+    if not folder.is_dir():
+        return None
+    names = sorted(p.name for p in folder.glob("*.json"))
+    if not names:
+        return None
+    name = names[-1]
+    return validate_outbox_request(name, (folder / name).read_bytes())
+
+
+def request_path(request_id):
+    path = "requests/%s.json" % request_id
+    if not REQUEST_PATH_RE.fullmatch(path):
+        raise Refuse("request_path")
+    return path
+
+
+def assert_submission_is_bounded(base_names, head_names, path):
+    """The Bridge's own rule, asserted here rather than discovered by a refusal.
+
+    A submission is accepted only when the diff against the merge base is exactly
+    one ``A    requests/<id>.json``. So the commit must add that one file to the
+    base tree and remove nothing: a deletion would be a second diff entry and the
+    Bridge would ignore the submission entirely.
+    """
+    added = sorted(set(head_names) - set(base_names))
+    removed = sorted(set(base_names) - set(head_names))
+    if added != [path] or removed:
+        raise Refuse("submission_not_bounded:added=%s:removed=%s" % (added, removed))
+    return added
+
+
+def archive_plan(present, incoming):
+    """Which files the archive is missing, refusing to rewrite one it already has."""
+    additions = {}
+    for path, blob in (incoming or {}).items():
+        if not REQUEST_PATH_RE.fullmatch(path):
+            raise Refuse("archive_path:%s" % path)
+        if path in (present or {}):
+            if present[path] != blob:
+                raise Refuse("archive_path_conflict:%s" % path)
+            continue
+        additions[path] = blob
+    return additions
+
+
+# --------------------------------------------------------------------------- #
+# git, and only git
+# --------------------------------------------------------------------------- #
+def ssh_env(key):
+    env = os.environ.copy()
+    env["GIT_SSH_COMMAND"] = (
+        "ssh -i %s -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes" % key)
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
+
+
+def git(*args, cwd=None, env=None, check=True):
+    result = subprocess.run(["git", *args], cwd=str(cwd) if cwd else None, env=env,
+                            capture_output=True, text=True)
+    if check and result.returncode != 0:
+        raise Refuse("git_failed:%s:%s" % (" ".join(args[:2]),
+                                           (result.stderr or result.stdout).strip()[:300]))
+    return result
+
+
+def git_ok(*args, cwd=None, env=None):
+    return git(*args, cwd=cwd, env=env, check=False).returncode == 0
+
+
+def remote_ref(env, repo, ref):
+    """The sha a remote ref points at, or None."""
+    result = git("ls-remote", repo, ref, env=env, check=False)
+    if result.returncode != 0:
+        raise Refuse("ls_remote_failed:%s" % (result.stderr.strip()[:200]))
+    for line in result.stdout.splitlines():
+        sha, _, name = line.partition("\t")
+        if name.strip() == ref:
+            return sha.strip()
+    return None
+
+
+def ensure_clone(env, repo, work):
+    clone = pathlib.Path(work) / "bus"
+    if (clone / ".git").is_dir():
+        git("remote", "set-url", "origin", repo, cwd=clone, env=env)
+    else:
+        clone.parent.mkdir(parents=True, exist_ok=True)
+        git("clone", "--quiet", "--no-checkout", repo, str(clone), env=env)
+        git("config", "user.name", COMMIT_NAME, cwd=clone, env=env)
+        git("config", "user.email", COMMIT_MAIL, cwd=clone, env=env)
+    return clone
+
+
+def git_bytes(*args, cwd=None, env=None, input_bytes=None):
+    """git where the output is content, not text.
+
+    Text mode would translate line endings and could not carry an arbitrary
+    Request file back unchanged; the archive has to hold the bytes the bus held.
+    """
+    result = subprocess.run(["git", *args], cwd=str(cwd) if cwd else None, env=env,
+                            input=input_bytes, capture_output=True)
+    return result.returncode, result.stdout, result.stderr.decode("utf-8", "replace")
+
+
+def blob_bytes(env, clone, ref, path):
+    code, stdout, stderr = git_bytes("show", "%s:%s" % (ref, path), cwd=clone, env=env)
+    if code != 0:
+        raise Refuse("blob_unreadable:%s:%s" % (path, stderr.strip()[:160]))
+    return stdout
+
+
+def fetch_ref(env, clone, repo, branch, expected):
+    """Fetch one branch by name into a private namespace, and prove it did not move.
+
+    Fetching an arbitrary sha would need the remote to allow it, which a plain git
+    remote does not; and reading the ref and then fetching it is a race, so the sha
+    read by ``ls-remote`` is checked against what actually arrived. A remote that
+    moved under us is refused rather than raced: the next tick sees the new state.
+    """
+    local = "refs/remotes/relay/" + branch
+    git("fetch", "--quiet", "--no-tags", repo,
+        "+refs/heads/%s:%s" % (branch, local), cwd=clone, env=env)
+    arrived = git("rev-parse", local, cwd=clone, env=env).stdout.strip()
+    if arrived != expected:
+        raise Refuse("remote_moved:%s" % branch)
+    return local
+
+
+def write_tree_commit(env, clone, parent, files, message):
+    """One commit: ``parent``'s tree plus ``files``, and nothing else.
+
+    There is deliberately no way to say "replace the tree": a submission has to be
+    the base plus one added file, so the operation that builds it is the base plus
+    one added file.
+    """
+    # Work in a throwaway index so the clone's own checkout is never disturbed.
+    index = tempfile.NamedTemporaryFile(prefix="git-index-", delete=False)
+    index.close()
+    environment = dict(env)
+    environment["GIT_INDEX_FILE"] = index.name
+    try:
+        git("read-tree", parent, cwd=clone, env=environment)
+        for path, body in sorted(files.items()):
+            code, stdout, stderr = git_bytes("hash-object", "-w", "--stdin", cwd=clone,
+                                             env=environment, input_bytes=body)
+            if code != 0:
+                raise Refuse("hash_object_failed:%s" % stderr.strip()[:160])
+            sha = stdout.decode().strip()
+            git("update-index", "--add", "--cacheinfo", "100644,%s,%s" % (sha, path),
+                cwd=clone, env=environment)
+        tree = git("write-tree", cwd=clone, env=environment).stdout.strip()
+        commit = git("-c", "user.name=" + COMMIT_NAME, "-c", "user.email=" + COMMIT_MAIL,
+                     "commit-tree", tree, "-p", parent, "-m", message,
+                     cwd=clone, env=environment).stdout.strip()
+        return commit, tree
+    finally:
+        pathlib.Path(index.name).unlink(missing_ok=True)
+
+
+def update_ref(env, clone, ref, sha, expected):
+    """Create the ref, or move it, refusing to clobber a move we did not make."""
+    if expected is None:
+        git("push", "--quiet", "origin", "%s:%s" % (sha, ref), cwd=clone, env=env)
+        return "CREATED"
+    git("push", "--quiet", "--force-with-lease=%s:%s" % (ref, expected),
+        "origin", "%s:%s" % (sha, ref), cwd=clone, env=env)
+    return "MOVED"
+
+
+def tree_names(env, clone, ref):
+    listed = git("ls-tree", "-r", "--name-only", ref, cwd=clone, env=env, check=False)
+    return sorted(listed.stdout.split()) if listed.returncode == 0 else []
+
+
+# --------------------------------------------------------------------------- #
+def bounds():
+    """What is bounded, stated on every run rather than only when it succeeds.
+
+    The Bridge refuses a Request older than its own max_age_seconds and signs at
+    most one Task per submission, so this transport publishes well inside that
+    window: the margin is transport slack, never a way to raise the probe rate,
+    which stays the producer's decision.
+    """
+    return {"transport_branch": TRANSPORT_BRANCH, "archive_branch": ARCHIVE_BRANCH,
+            "transport_branches": 1, "archive_branches": 1,
+            "submissions_per_cycle": 1, "requests_per_submission": 1,
+            "pr_creation_capability": "ABSENT", "merge_capability": "ABSENT",
+            "close_capability": "ABSENT", "api_client": "ABSENT",
+            "archive_is_append_only": True,
+            "max_publish_age_seconds": MAX_PUBLISH_AGE_SECONDS,
+            "bridge_max_age_seconds": 900}
+
+
+def relay(outbox, work, repo, key, at, dry_run=False):
+    """Put the newest fresh outbox Request on the bus, through the one transport."""
+    request = newest_outbox_request(outbox)
+    if request is None:
+        return {"result": "SKIPPED_NO_REQUEST", "outbox": str(outbox), "bounds": bounds()}
+    decision, age = publish_decision(request, at)
+    report = {"request_id": request["request_id"], "action_id": request["action_id"],
+              "environment": request["environment"], "age_seconds": round(age, 3),
+              "bounds": bounds()}
+    if decision != "PUBLISH":
+        return {"result": decision, **report}
+
+    path = request_path(request["request_id"])
+    body = canonical(request)
+    env = ssh_env(key)
+    clone = ensure_clone(env, repo, work)
+
+    main_sha = remote_ref(env, repo, "refs/heads/main")
+    if main_sha is None:
+        raise Refuse("main_unreadable")
+    transport_sha = remote_ref(env, repo, TRANSPORT_REF)
+    archive_sha = remote_ref(env, repo, ARCHIVE_REF)
+
+    main_ref = fetch_ref(env, clone, repo, "main", main_sha)
+    transport_ref = (fetch_ref(env, clone, repo, TRANSPORT_BRANCH, transport_sha)
+                     if transport_sha else None)
+    archive_ref = (fetch_ref(env, clone, repo, ARCHIVE_BRANCH, archive_sha)
+                   if archive_sha else None)
+
+    on_bus = tree_names(env, clone, transport_ref) if transport_ref else []
+    in_archive = tree_names(env, clone, archive_ref) if archive_ref else []
+    if path in on_bus or path in in_archive:
+        # Already relayed: this is what makes the timer idempotent per bucket.
+        return {"result": "ALREADY_PUBLISHED", **report,
+                "transport_files": len([n for n in on_bus if n.startswith("requests/")]),
+                "archive_files": len([n for n in in_archive if n.startswith("requests/")])}
+
+    # 1. Archive what the transport is about to drop, before it drops it.
+    superseded = {}
+    for name in on_bus:
+        if name.startswith("requests/") and name.endswith(".json") and name != path:
+            superseded[name] = blob_bytes(env, clone, transport_sha, name)
+    present = {name: blob_bytes(env, clone, archive_sha, name) for name in in_archive
+               if name.startswith("requests/") and name.endswith(".json")}
+    additions = archive_plan(present, superseded)
+    archived_commit, archive_files = (None, len(present))
+    if additions:
+        base = archive_sha or main_sha
+        archived_commit, _ = write_tree_commit(
+            env, clone, base, additions,
+            "archive: superseded liveness Request(s) %s" % ", ".join(sorted(additions)))
+        archive_files = len(present) + len(additions)
+        if not dry_run:
+            update_ref(env, clone, ARCHIVE_REF, archived_commit, archive_sha)
+
+    # 2. Rebuild the transport on the current main, adding exactly one Request.
+    #     The base is main, never the transport's own previous commit: the Bridge
+    #     diffs against the merge base with main, so a commit that descended from
+    #     the last one would show two added files and be ignored.
+    base_names = tree_names(env, clone, main_sha)
+    transport_commit, _ = write_tree_commit(
+        env, clone, main_sha, {path: body}, "request: %s" % request["request_id"])
+    staged = tree_names(env, clone, transport_commit)
+    assert_submission_is_bounded(base_names, staged, path)
+    if not dry_run:
+        update_ref(env, clone, TRANSPORT_REF, transport_commit, transport_sha)
+
+    return {"result": "PUBLISHED", **report,
+            "dry_run": dry_run,
+            "transport_head": transport_commit,
+            "transport_parent_is_main": True,
+            "added_vs_main": sorted(set(staged) - set(base_names)),
+            "removed_vs_main": sorted(set(base_names) - set(staged)),
+            "transport_previous_head": transport_sha,
+            "archived_now": sorted(additions),
+            "archive_files": archive_files,
+            "archive_head": archived_commit or archive_sha,
+            "request_bytes": len(body)}
+
+
+def status(work, repo, key):
+    env = ssh_env(key)
+    return {"component": "liveness-request-transport-v1",
+            "transport_branch": TRANSPORT_BRANCH,
+            "transport_remote_head": remote_ref(env, repo, TRANSPORT_REF),
+            "archive_branch": ARCHIVE_BRANCH,
+            "archive_remote_head": remote_ref(env, repo, ARCHIVE_REF),
+            "work": str(work), "bounds": bounds()}
+
+
+def build_parser():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("command", choices=["relay", "status", "selftest"])
+    parser.add_argument("--outbox", default=DEFAULT_OUTBOX)
+    parser.add_argument("--work", default=DEFAULT_WORK)
+    parser.add_argument("--repo-url", default=DEFAULT_REPO)
+    parser.add_argument("--git-key", default=DEFAULT_KEY)
+    parser.add_argument("--now")
+    parser.add_argument("--dry-run", action="store_true")
+    return parser
+
+
+def selftest():
+    failures = []
+
+    def check(name, condition, detail=None):
+        if condition:
+            print("PASS  %s" % name)
+        else:
+            failures.append(name)
+            print("FAIL  %s %s" % (name, detail if detail is not None else ""))
+
+    root = pathlib.Path(tempfile.mkdtemp(prefix="lrt-selftest-"))
+    outbox = root / "outbox"
+    outbox.mkdir()
+    moment = dt.datetime(2026, 9, 15, 12, 0, 0, tzinfo=dt.timezone.utc)
+
+    def put(request_id, age_seconds=0, **over):
+        request = {"schema_version": "1", "request_id": request_id, "action_id": ACTION_ID,
+                   "environment": ENVIRONMENT,
+                   "requested_at": iso(moment - dt.timedelta(seconds=age_seconds))}
+        request.update(over)
+        (outbox / (request_id + ".json")).write_bytes(canonical(request))
+        return request
+
+    put("liveness-control-plane-health-1")
+    read = newest_outbox_request(outbox)
+    check("a_well_formed_probe_is_read", read["action_id"] == ACTION_ID, read)
+    check("fresh_probe_publishes", publish_decision(read, moment)[0] == "PUBLISH")
+
+    put("liveness-control-plane-health-2", age_seconds=MAX_PUBLISH_AGE_SECONDS + 1)
+    stale = newest_outbox_request(outbox)
+    check("a_stale_probe_is_skipped_not_published",
+          publish_decision(stale, moment)[0] == "SKIPPED_STALE", stale["request_id"])
+    check("the_newest_probe_wins",
+          stale["request_id"] == "liveness-control-plane-health-2")
+
+    for name, request in (
+            ("wrong_action", {"action_id": "HK_STAGING_VERIFY"}),
+            ("wrong_environment", {"environment": "PRODUCTION"}),
+            ("extra_field", {"parameters": {}}),
+            ("non_string", {"requested_at": 0})):
+        put("probe-" + name, **request)
+        try:
+            newest_outbox_request(outbox)
+            check("refused_" + name, False, "accepted")
+        except Refuse:
+            check("refused_" + name, True)
+        (outbox / ("probe-" + name + ".json")).unlink()
+
+    base = ["README.md", "tasks/one.json"]
+    check("a_submission_that_adds_exactly_one_request_is_bounded",
+          assert_submission_is_bounded(base, base + ["requests/a.json"],
+                                       "requests/a.json") == ["requests/a.json"])
+    for label, head in (
+            ("two_added_files", base + ["requests/a.json", "requests/b.json"]),
+            ("a_wrong_path", base + ["tasks/two.json"]),
+            ("a_removed_file", ["README.md"]),
+            ("nothing_added", list(base))):
+        try:
+            assert_submission_is_bounded(base, head, "requests/a.json")
+            check("refused_" + label, False, "accepted")
+        except Refuse:
+            check("refused_" + label, True)
+
+    check("archive_adds_only_what_is_missing",
+          archive_plan({"requests/a.json": b"a"}, {"requests/a.json": b"a",
+                                                   "requests/b.json": b"b"})
+          == {"requests/b.json": b"b"})
+    try:
+        archive_plan({"requests/a.json": b"a"}, {"requests/a.json": b"CHANGED"})
+        check("archive_never_rewrites_a_file_it_holds", False, "accepted")
+    except Refuse:
+        check("archive_never_rewrites_a_file_it_holds", True)
+
+    check("only_the_declared_action_and_environment_are_relayable",
+          ACTION_ID == "CONTROL_PLANE_HEALTH" and ENVIRONMENT == "HK-STAGING-01")
+    check("one_transport_branch_and_one_archive_branch",
+          TRANSPORT_BRANCH == "boss-request-liveness-transport"
+          and ARCHIVE_BRANCH.startswith("request/"))
+    check("no_http_client_in_this_tool", True)   # asserted against the source by run_checks
+
+    shutil.rmtree(root, ignore_errors=True)
+    print("\nselftest: %s" % ("PASS" if not failures else "FAIL %s" % failures))
+    return 0 if not failures else 1
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
+    if args.command == "selftest":
+        return selftest()
+    try:
+        if args.command == "status":
+            print(json.dumps(status(args.work, args.repo_url, args.git_key), sort_keys=True))
+            return 0
+        moment = parse_time(args.now) if args.now else now()
+        report = relay(args.outbox, args.work, args.repo_url, args.git_key, moment,
+                       dry_run=args.dry_run)
+    except Refuse as exc:
+        print(json.dumps({"result": "REFUSED", "reason": str(exc)}, sort_keys=True))
+        return 1
+    print(json.dumps(report, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

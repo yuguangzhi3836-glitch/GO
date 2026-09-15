@@ -1,0 +1,16 @@
+[Unit]
+Description=Relay a due liveness probe onto the Request channel, through the one transport
+
+[Timer]
+OnBootSec=180s
+OnUnitActiveSec=300s
+Persistent=false
+Unit=go-liveness-request-transport.service
+
+[Install]
+WantedBy=timers.target
+
+# 300 s against a 1800 s probe interval, so a probe is on the bus within five
+# minutes of being produced. The producer decides the probe rate; this timer only
+# decides how quickly a decision reaches the bus, and a tick that finds the current
+# bucket already relayed does nothing at all.

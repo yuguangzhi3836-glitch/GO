@@ -78,11 +78,13 @@ summary = {
     "live_control_plane_state": "NOT_ACCESSED",
     "deployed": "NO",
     # Installed on the Command Center host and driven by go-liveness-producer.timer.
-    # The wiring that turns an outbox Request into a Request PR stays an operator
-    # step, deliberately: see install/INSTALL.md for the measured reason.
+    # The wiring that turns an outbox Request into a Request on the bus is a separate
+    # component with its own timer and gate: control-plane/liveness-request-transport-v1.
+    # It is separate because the bound has to be proved there, not asserted here.
     "installed": "YES",
     "producer_timer_installed": "YES",
-    "outbox_wiring_scheduled": "NO",
+    "outbox_wiring_scheduled": "YES",
+    "outbox_wiring_component": "liveness-request-transport-v1",
     "authority_boundary_declared_in_schema": sorted(
         schema["properties"]["authority_boundary"]["properties"]),
     "files": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()

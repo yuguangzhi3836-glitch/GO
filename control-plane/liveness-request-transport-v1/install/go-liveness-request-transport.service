@@ -1,0 +1,22 @@
+[Unit]
+Description=GO Command Center liveness Request transport (one branch, one pull request)
+Documentation=file:///opt/go-command-center/liveness-request-transport-v1/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/opt/go-command-center/liveness-request-transport-v1/command-center/go-liveness-request-transport relay
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/go-command-center/liveness-request-transport-v1
+
+# This service publishes ONE read-only CONTROL_PLANE_HEALTH probe Request onto the
+# Request channel, through one long-lived branch, and nothing else. It holds no
+# Task key, signs nothing, cannot sign a Task, and has no HTTP client, so it cannot
+# create, merge or close a pull request.

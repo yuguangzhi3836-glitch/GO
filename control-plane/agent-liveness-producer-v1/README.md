@@ -145,12 +145,19 @@ hk_agent_online = PROVEN
 
 Two things to keep straight:
 
-* **The producer is installed; the wiring is an operator step.** The producer's
-  timer decides whether a probe is due and places one Request in its outbox. It
-  never publishes to the bus. `install/liveness_request_wiring.py` is the wiring:
-  it reads the outbox and opens the Request PR the Bridge already knows how to
-  consume. Running it manually is the narrowest useful thing; scheduling it makes
-  the probe rate real, which is why it is not scheduled yet -- see the note below.
+* **The producer is installed, and the wiring is now scheduled -- but it is not
+  here.** The producer's timer decides whether a probe is due and places one
+  Request in its outbox. It never publishes to the bus.
+  `control-plane/liveness-request-transport-v1` is the wiring, and it is a separate
+  component with its own timer and its own gate, because the wiring is where the
+  bound had to be proved rather than asserted. It relays the newest fresh outbox
+  Request through ONE long-lived branch and ONE pull request, and moves a
+  superseded probe into `request/liveness-archive` so the fact-to-Request join
+  survives the rotation.
+
+  The wiring that used to live here opened a new branch and a new pull request for
+  every probe -- 48 open pull requests a day -- and has been removed rather than
+  left as a footgun.
 * **The Bridge needed a revision for this.** `CONTROL_PLANE_HEALTH` was valid on
   the agent and understood by the projector, but the Bridge -- the only Task
   signer -- rejected the action outright. `control-plane/boss-deploy-request-v1`
@@ -167,9 +174,10 @@ more at `12:56:27Z`. Nothing is wrong with any single fact, but the store grows
 with the number of *observations*, not with the number of *Request outcomes*, so a
 scheduled probe every 30 minutes would mint roughly 18 facts per probe.
 
-That is why the wiring above is deliberately left as an operator step: the probe
-chain is proven, and the rate is under operator control until the exporter is
-narrowed to mint a fact only when a submission's Bridge outcome actually changes
-(keeping the newest observation, dropping the restated ones). Until then, running
-the wiring on a timer grows the store on a timer.
+That is why the wiring above was held back as an operator step rather than
+scheduled. The precondition it named has since been met: a fact's identity is now
+its semantics rather than the instant it was seen, so an unchanged outcome observed
+again mints nothing at all. **This is the record of why the delay existed, not a
+current limitation** -- the transport is now a component with a timer, and it is
+`liveness-request-transport-v1`.
 

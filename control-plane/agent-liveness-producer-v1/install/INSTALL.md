@@ -69,11 +69,17 @@ semantics. No health Request can reach any of them.
 /etc/go-command-center/boss-request-bridge-v1.manifest.json       the revision record
 ```
 
-The producer never publishes to the bus. `install/liveness_request_wiring.py` is the
-operator wiring: it reads the outbox over SSH, refuses anything that is not a
-well-formed `CONTROL_PLANE_HEALTH` Request with the five fields, and opens the
-Request PR the Bridge consumes. It cannot merge, cannot close, and is idempotent per
-request id.
+The producer never publishes to the bus. The wiring that does is
+`control-plane/liveness-request-transport-v1`, a separate component with its own
+timer and its own gate: it reads the outbox, refuses anything that is not a
+well-formed `CONTROL_PLANE_HEALTH` Request with the five fields, and relays it
+through ONE long-lived branch and ONE pull request. It cannot merge, cannot close,
+and is idempotent per request id.
+
+`install/liveness_request_wiring.py` -- the operator wiring that used to live here --
+has been **removed**, not deprecated. It opened a new branch and a new pull request
+for every probe, which is 48 open pull requests a day, and leaving it in the tree
+would have left the forbidden shape one `python` call away.
 
 ## Evidence
 

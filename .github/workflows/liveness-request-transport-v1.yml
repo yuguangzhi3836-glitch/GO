@@ -1,0 +1,144 @@
+name: Liveness Request transport (isolated)
+
+on:
+  push:
+    branches: [cc/github-native-delivery-v1, cc/v1-finalization-20260914]
+    paths:
+      - 'control-plane/liveness-request-transport-v1/**'
+      - 'control-plane/agent-liveness-producer-v1/**'
+      - '.github/workflows/liveness-request-transport-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'control-plane/liveness-request-transport-v1/**'
+      - 'control-plane/agent-liveness-producer-v1/**'
+      - '.github/workflows/liveness-request-transport-v1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: liveness-request-transport-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  isolated-liveness-request-transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Check the component manifest
+        working-directory: control-plane/liveness-request-transport-v1
+        run: sha256sum -c SHA256SUMS
+
+      - name: Check the producer manifest is untouched by this change
+        working-directory: control-plane/agent-liveness-producer-v1
+        run: sha256sum -c SHA256SUMS
+
+      - name: Run the transport suite on Linux
+        working-directory: control-plane/liveness-request-transport-v1
+        run: python -m unittest discover -s tests -v
+
+      - name: Run the transport built-in checks
+        working-directory: control-plane/liveness-request-transport-v1
+        run: python command-center/go-liveness-request-transport selftest
+
+      - name: Run the isolated verification and publish summary.json
+        working-directory: control-plane/liveness-request-transport-v1
+        run: python run_checks.py "$RUNNER_TEMP/liveness-transport-checks"
+
+      - name: Pin the transport against the producer's own vocabulary
+        run: |
+          python - <<'PY'
+          import importlib.machinery, importlib.util, json, pathlib, sys
+
+          # The producer decides what a probe Request is; this tool decides how it
+          # reaches the bus. Reading the producer's own source is the only way to
+          # pin the two against each other -- comparing each against its own copy
+          # of the same constants is a comparison that cannot fail.
+          def load(name, path):
+              loader = importlib.machinery.SourceFileLoader(name, str(path))
+              spec = importlib.util.spec_from_loader(loader.name, loader)
+              module = importlib.util.module_from_spec(spec)
+              loader.exec_module(module)
+              return module
+
+          transport = load('lrt', pathlib.Path(
+              'control-plane/liveness-request-transport-v1/command-center/go-liveness-request-transport'))
+          producer = load('lp', pathlib.Path(
+              'control-plane/agent-liveness-producer-v1/command-center/go-liveness-producer'))
+          policy = producer.load_policy(pathlib.Path(
+              'control-plane/agent-liveness-producer-v1/command-center/liveness-producer-policy-v1.json'))
+
+          assert transport.ACTION_ID == policy['action_id'] == producer.ACTION_ID, policy['action_id']
+          assert transport.ENVIRONMENT == policy['environment'] == 'HK-STAGING-01'
+          assert transport.REQUEST_FIELDS == producer.REQUEST_FIELDS, (
+              sorted(transport.REQUEST_FIELDS), sorted(producer.REQUEST_FIELDS))
+          assert transport.ACTION_ID in producer.ALLOWED_ACTIONS
+          source = pathlib.Path(
+              'control-plane/liveness-request-transport-v1/command-center/go-liveness-request-transport'
+          ).read_text(encoding='utf-8')
+          assert 'urllib' not in source and 'http.client' not in source, 'an API client appeared'
+          binding = {
+              'producer_action_id': policy['action_id'],
+              'transport_action_id': transport.ACTION_ID,
+              'request_fields_agree': True,
+              'producer_interval_seconds': policy['interval_seconds'],
+              'transport_max_publish_age_seconds': transport.MAX_PUBLISH_AGE_SECONDS,
+              'publish_window_inside_the_bridge_limit':
+                  transport.MAX_PUBLISH_AGE_SECONDS < 900,
+              'producer_interval_exceeds_publish_window':
+                  policy['interval_seconds'] > transport.MAX_PUBLISH_AGE_SECONDS,
+              'transport_holds_no_http_client': True,
+          }
+          print(json.dumps(binding, sort_keys=True))
+          PY
+
+      - name: Prove the transport is bounded against a real git repository
+        run: |
+          python control-plane/liveness-request-transport-v1/install/verify_transport_is_bounded.py \
+            --work "$RUNNER_TEMP/liveness-transport"
+
+      - name: Publish the boundedness record
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, subprocess, sys
+          work = pathlib.Path(os.environ['RUNNER_TEMP']) / 'liveness-transport'
+          record = {
+              'event': os.environ['GITHUB_EVENT_NAME'],
+              'workflow_commit': os.environ['GITHUB_SHA'],
+              'run_id': os.environ['GITHUB_RUN_ID'],
+              'issue': '#98 CC V1-03 wiring',
+              'one_transport_branch': 'PROVEN_BY_verify_transport_is_bounded',
+              'one_added_file_per_submission': 'PROVEN_BY_verify_transport_is_bounded',
+              'archive_never_loses_a_probe': 'PROVEN_BY_verify_transport_is_bounded',
+              'no_pull_request_capability': 'PROVEN_BY_run_checks',
+              'manual_relay_removed': True,
+              'hong_kong_accessed': False,
+              'production_accessed': False,
+              'deployed': False,
+          }
+          work.mkdir(parents=True, exist_ok=True)
+          (work / 'binding.json').write_text(json.dumps(record, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(record, sort_keys=True))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: liveness-request-transport-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/liveness-transport/
+            ${{ runner.temp }}/liveness-transport-checks/
+          if-no-files-found: error
+          retention-days: 30
