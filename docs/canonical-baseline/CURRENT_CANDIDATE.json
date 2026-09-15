@@ -15,7 +15,7 @@
   "existing_parent_unchanged": true,
   "candidate_branch": "main",
   "candidate_pr": 52,
-  "source_commit": "8a22a4fcbba4574f5a06e356e461d7d083c86ae1",
+  "source_commit": "bd25d7acca1b5f54a7fb555008ed60b76ee45f21",
   "current_status": "SOURCE_COMPOSITE_PARENT_ARCHIVED_FULL_ACCEPTANCE_AND_RUNTIME_PENDING",
   "local_results": "evidence/depth48-ordered-repairs/LOCAL_RESULTS.json",
   "deployment_package": "CP11_DEPTH46_CONSOLIDATED_PARENT_20260913",
@@ -44,7 +44,7 @@
   "source_composite_index": "docs/canonical-baseline/CURRENT_SOURCE_PARENT.json",
   "new_runtime_rebuilt": false,
   "pointer_scope": "SOURCE_LINEAGE_POINTER",
-  "pointer_note": "This file records the PR52 source-integration moment and is a SOURCE LINEAGE pointer, not the runtime pointer. For the active business runtime use docs/canonical-baseline/CURRENT_HK_RUNTIME.json.",
+  "pointer_note": "This file records the PR52 source-integration moment and is a SOURCE LINEAGE pointer, not the runtime pointer. For the active business runtime use docs/canonical-baseline/CURRENT_HK_RUNTIME.json. On 2026-09-15 the recorded source_commit was moved from the last code commit of PR52 to the PR head itself, because only a PR head is resolvable by the controlled TEST_PR channel; see the canonicalization block. The application tree and its fingerprint are unchanged and were re-derived rather than copied.",
   "runtime_pointer": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
   "runtime_status_20260913": {
     "note": "Written 2026-09-13. Does not rewrite the historical fields above.",
@@ -54,5 +54,34 @@
     "hk_staging": "DEPTH48_ACTIVE",
     "database_head": "0133_flight_change_plan",
     "runtime_definition": "application/Dockerfile + deploy/hk-staging/docker-compose.business-runtime.yml"
+  },
+  "source_commit_basis": "PR52 head, resolved from refs/pull/52/head",
+  "source_commit_previously_recorded": "8a22a4fcbba4574f5a06e356e461d7d083c86ae1",
+  "canonicalization": {
+    "schema": "go.depth48.candidate-canonicalization.v1",
+    "changed_at": "2026-09-15T05:00:00Z",
+    "from_source_commit": "8a22a4fcbba4574f5a06e356e461d7d083c86ae1",
+    "to_source_commit": "bd25d7acca1b5f54a7fb555008ed60b76ee45f21",
+    "anchor_pr_created": false,
+    "pr_head_ref": "refs/pull/52/head",
+    "reason": "The controlled TEST_PR channel resolves a Request's pr_number to refs/pull/<n>/head and nothing else. The previously recorded source_commit is an intermediate commit of the same branch and is no PR's head, so no signed TEST_PR could ever bind to it and the readiness TEST_PR gate could never pass however many times the round was repeated.",
+    "re_derived_not_copied": "application_git_tree, source_tree_sha256 and the file count were recomputed from the object store at the PR head rather than copied forward. They equal the previously recorded values because the application tree is byte-identical between the two commits: same 1323 paths, same content for every path.",
+    "application_git_tree_recomputed": "ad7d1de1190f86ad29d1c6cdafbcedd592e27206",
+    "source_tree_sha256_recomputed": "8e91fcf25e66478d5dac105c2608a195a98290640f2ecbfcec24fda27f212ac8",
+    "application_files_recomputed": 1323,
+    "application_git_tree_unchanged": true,
+    "application_content_unchanged": true,
+    "deploy_relevant_content_changed": false,
+    "candidate_canonicalization": "PASS",
+    "blocked": false,
+    "historical_records_not_rewritten": [
+      "docs/canonical-baseline/DEPTH48_SOURCE_IDENTITY.json",
+      "evidence/depth48-ordered-repairs/SOURCE_READBACK.json",
+      "evidence/depth48-ordered-repairs/LOCAL_RESULTS.json",
+      "evidence/depth48-ordered-repairs/CI_STARTUP_FAILURE.json",
+      "packaging/depth48-source-composite/compose_metadata.py",
+      "deliverables/CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913/"
+    ],
+    "historical_records_rationale": "Those files record the DEPTH48 source-integration moment and the packaging input that produced an already-built parent. Rewriting them would falsify evidence rather than correct a pointer."
   }
 }

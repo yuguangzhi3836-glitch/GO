@@ -1,0 +1,96 @@
+{
+  "schema_version": "1",
+  "contract": "CC_CHANGE_RECORD_V1",
+  "change_record": "CC-CHANGE-20260915T0445Z-DEPLOY-SWITCH-DISABLE-01",
+  "direction": "SAFE_TIGHTENING",
+  "summary": "Restore the Command Center DEPLOY request switch to the repository default. The switch had been left on by a change whose authority was never established; turning it off removes an open door and cannot enable anything.",
+  "target": {
+    "host": "i-j6c7k6k01biwlbnwutu5",
+    "host_hostname": "iZj6c7k6k01biwlbnwutu5Z",
+    "region": "cn-hongkong",
+    "component": "go-boss-request-bridge",
+    "config_path": "/etc/go-command-center/boss-request-bridge-v1.json",
+    "field": "deployment_requests_enabled"
+  },
+  "before": {
+    "value": true,
+    "sha256": "1ac0ad42f24e7ba86c342f3f57c0f039743d0333f0aada4f0ba6cd7b0a4d03a7",
+    "bytes": 254,
+    "mtime": "2026-09-13T15:55:34.131764422+08:00",
+    "ctime": "2026-09-13T15:55:34.135764566+08:00"
+  },
+  "after": {
+    "value": false,
+    "sha256": "46915edf708db82dcb68d30b68e32870988a38f5c3dfd3cdc2f85e9309a20164",
+    "bytes": 255,
+    "mtime": "2026-09-15T12:43:15.634659205+08:00",
+    "ctime": "2026-09-15T12:43:33.619306672+08:00"
+  },
+  "changed_at": "2026-09-15T04:43:33Z",
+  "change_instant_basis": "ctime of the rename, i.e. the instant the new bytes became visible",
+  "method": {
+    "type": "atomic_rename",
+    "steps": [
+      "copy the live config to the backup directory, preserving ownership and mode",
+      "produce the new bytes with a single anchored substitution on that one line",
+      "write them to a sibling temp file in the same directory, root:root 0600",
+      "verify exactly one target line matched and the diff is exactly that one line",
+      "rename(2) the temp file over the live file"
+    ]
+  },
+  "diff": "11c11  <   \"deployment_requests_enabled\": true   ---   >   \"deployment_requests_enabled\": false",
+  "diff_is_exactly_one_line": true,
+  "line_count_before": 12,
+  "line_count_after": 12,
+  "unchanged": {
+    "version": 4,
+    "mode": "PERSISTENT",
+    "publish_enabled": true,
+    "allowed_actions": [
+      "HK_STAGING_VERIFY",
+      "HK_STAGING_TEST_PR",
+      "HK_STAGING_DEPLOY"
+    ],
+    "allowed_environment": "HK-STAGING-01",
+    "statement": "Every other field is byte-identical to the backup. VERIFY and TEST_PR were not touched, the allowed action list was not touched, and publish_enabled was not touched."
+  },
+  "backup": {
+    "path": "/var/backups/CC-CHANGE-20260915T0445Z-DEPLOY-SWITCH-DISABLE-01/boss-request-bridge-v1.before.json",
+    "mode": "0600 root:root",
+    "purpose": "the exact bytes that were live before this record, so the change is reversible"
+  },
+  "authority": {
+    "approved_by": "eason",
+    "approval_reference": "APPROVAL_SCOPE=PRE_DEPLOY_REMEDIATION_ONLY",
+    "operator": "workbuddy on EASON / Eason-13490",
+    "signed_by_human_approval_authority": false,
+    "signature_note": "This record is digest-bound but not signed by a Human Approval authority, because no authority distinct from the Task signer is published yet (CC V1-06.1 reports approval_authority_published=false). It will be re-issued signed once that separate authority is installed, which is what LIVE_SWITCH_PROVENANCE requires."
+  },
+  "historical_enable": {
+    "status": "UNPROVEN",
+    "changed_at": "2026-09-13T07:55:34Z",
+    "evidence": "the only file written in that second was the config, and a backup directory named go-command-center-enable-20260913T075534Z holds the previous bytes whose sha256 c73c02a6 matches the config hash the PR51 closeout record pins",
+    "statement": "This record does NOT retroactively approve the 2026-09-13 enable. No authority record for it was ever recovered, it left no receipt while the installs it succeeded did, and every operator in the window shared one Workbench tunnel exit pool. It stays UNPROVEN and is not pursued further."
+  },
+  "not_done": {
+    "deployment_performed": false,
+    "deploy_task_created": false,
+    "plan_registered": false,
+    "ledger_deleted": false,
+    "hong_kong_touched": false,
+    "production_touched": false,
+    "retroactive_approval_granted": false
+  },
+  "post_change_verification": {
+    "bridge_polls_after_change": 2,
+    "bridge_poll_result": "result=success, ExecMainStatus=0, no rejection, no traceback",
+    "config_accepted": true,
+    "ledger_statuses": {
+      "published": 18,
+      "ignored": 2
+    },
+    "ledger_plan_ids": 0,
+    "timer": "active/waiting",
+    "stray_temp_file_left": false
+  }
+}

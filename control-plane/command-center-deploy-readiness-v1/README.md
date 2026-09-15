@@ -165,38 +165,40 @@ per-gate detail, and moves
 ## The real answer, as of the committed projection
 
 Run against `PROJECTION_20260915`, first with no live bundle and then with the
-channel configuration that was read read-only on the Command Center. In both runs
+channel configuration read read-only on the Command Center. In both runs
 `mandatory_gates=13` and `advisory_holds` is empty.
 
 ```text
 DEPLOY_READY=NO                          (both runs)
 
 without a bundle
-  FAIL     TEST_PR                no signed TEST_PR exists for the declared
-                                  commit 8a22a4fc
-  FAIL     VERIFY                 the newest verified VERIFY is 164911 s old,
-                                  window 86400 s
-  UNKNOWN  PACKAGE_BINDING, DEPLOYMENT_PLAN, HUMAN_APPROVAL, CURRENT_RUNTIME,
-           LIVE_SWITCH, LIVE_SWITCH_PROVENANCE, CANARY, RELEASE_GATES,
-           BRIDGE_ACCEPTANCE
+  FAIL     TEST_PR   the TEST_PR for this commit did not succeed: TASK_EXPIRED
+  FAIL     VERIFY    the newest verified VERIFY is 164911 s old, window 86400 s
+  UNKNOWN  everything not listed, including LIVE_SWITCH and LIVE_SWITCH_PROVENANCE
 
-with the verified channel bundle
-  FAIL     TEST_PR, VERIFY        as above
-  FAIL     DEPLOYMENT_PLAN        the plan store holds no plan
+with the read-only channel bundle
+  FAIL     LIVE_SWITCH              deployment_requests_disabled
+  FAIL     DEPLOYMENT_PLAN          the plan store holds no plan
+  FAIL     TEST_PR, VERIFY          as above
   UNKNOWN  PACKAGE_BINDING, HUMAN_APPROVAL, CURRENT_RUNTIME,
            LIVE_SWITCH_PROVENANCE, CANARY, RELEASE_GATES, BRIDGE_ACCEPTANCE
-  PASS     LIVE_SWITCH            the switch would accept a DEPLOY request
 ```
 
-`LIVE_SWITCH=PASS` states only that the switch would accept a DEPLOY request. It
-is not permission: the switch is on without a proven provenance, so
-`LIVE_SWITCH_PROVENANCE` stays `UNKNOWN`, `BRIDGE_ACCEPTANCE` cannot be
-re-derived without a plan, and the verdict stays out of `YES`.
+`LIVE_SWITCH` reports `deployment_requests_disabled`, which is the intended
+fail-closed posture: the switch is off, so no DEPLOY Request would be accepted.
+`LIVE_SWITCH_PROVENANCE` stays `UNKNOWN` because the change record for that
+switch state is not yet signed by a Human Approval authority distinct from the
+Task signer.
 
-The `identity` block also reports `approval_authority_published=false` for the
-current tree: no Human Approval authority distinct from the Task signer has been
-published yet, so any approval presented today would be refused rather than
-called proven.
+The `identity` block reports `approval_authority_published=false` for this tree:
+no separate Human Approval authority is published yet, so an approval presented
+today would be refused rather than called proven.
+
+The `TEST_PR` reason changed once the canonical candidate was moved to the PR
+head. It used to be "no signed TEST_PR exists for the declared commit 8a22a4fc" —
+unsatisfiable, because the controlled channel can only resolve a PR head. It now
+names the real failure: the Task exists, was signed, and expired unclaimed. That
+is a failure a future round can actually clear.
 
 That is the honest answer. It is not a statement that deploying is a bad idea,
 and it is definitely not permission.
