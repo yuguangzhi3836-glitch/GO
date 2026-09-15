@@ -1,0 +1,37 @@
+{
+  "working_directory": "/workspace/scratch/948b51def3a9/GO/application",
+  "environment": {
+    "PYTHONPATH": "src",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "database": "per-case local temporary SQLite file; GO_TEST_DB_PATH only outer controller",
+    "pytest_workers": "normal, with -p no:cacheprovider; no xdist"
+  },
+  "runs": [
+    {
+      "name": "red",
+      "command": "/workspace/scratch/948b51def3a9/venv/bin/python -m pytest -ra -p no:cacheprovider tests/test_round2_c07_process_recovery.py --junitxml=../evidence/v70-next-depth-20260914/c07/sqlite-junit.xml --tb=short",
+      "exit_code": 1,
+      "passed": 5,
+      "failed": 1,
+      "duration_seconds": 60.42,
+      "evidence": "red/",
+      "note": "Logs/JUnit/process directory moved unchanged into red/ after completion."
+    },
+    {
+      "name": "targeted-green",
+      "command": "/workspace/scratch/948b51def3a9/venv/bin/python -m pytest -ra -p no:cacheprovider tests/test_round2_c07_process_recovery.py::test_withdrawal_serializes_with_inflight_read_or_old_grant_releases_nothing --junitxml=../evidence/v70-next-depth-20260914/c07/targeted-green-junit.xml --tb=short",
+      "exit_code": 0,
+      "passed": 1,
+      "duration_seconds": 11.34
+    },
+    {
+      "name": "green",
+      "command": "/workspace/scratch/948b51def3a9/venv/bin/python -m pytest -ra -p no:cacheprovider tests/test_round2_c07_process_recovery.py tests/test_round2_c07_explicit_preferences.py --junitxml=../evidence/v70-next-depth-20260914/c07/green-junit.xml --tb=short",
+      "exit_code": 0,
+      "passed": 40,
+      "failed": 0,
+      "duration_seconds": 72.01
+    }
+  ],
+  "timing": "Task ACK/start and per-child PID/start/finish captured; JUnit suite timestamps retained. No invented outer process start times."
+}

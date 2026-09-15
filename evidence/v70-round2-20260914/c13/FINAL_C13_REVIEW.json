@@ -1,0 +1,271 @@
+{
+  "schema": "go.v70.round2.c13.review.v1",
+  "reviewer": "/root/c13_independent",
+  "reviewer_cell": "C13",
+  "status": "PASS_SCOPED",
+  "candidate_overall_result": "HOLD_C11_KNOWN_FAILURE_AND_UNPROVEN_RELEASE_SCOPES",
+  "completed_at_utc": "2026-09-14T03:22:39.466826+00:00",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "application_git_tree": "740d026e3723f5da015342ead3394969629541df",
+  "source_tree_sha256": "b4383b383dd54e472ef178f1804d925bebf55019dc17f3641712cc42d4aae7b4",
+  "source_files": 1341,
+  "candidate_manifest_path": "evidence/v70-round2-20260914/CANDIDATE_SOURCE.json",
+  "candidate_manifest_sha256": "4c2ef63069380c023bc72ad6971b2ec88583abf01a36fb0156fcaf7377d5a959",
+  "c14_record": {
+    "path": "evidence/v70-round2-20260914/c14/FINAL_C14_REVIEW.json",
+    "sha256": "6406436910f6c5cb7f1bf6684fbb35e7069f8a2787dedae110b9108dce549c2c",
+    "completed_at_utc": "2026-09-14T03:17:15.048729+00:00",
+    "status": "PASS_SCOPED",
+    "reviewer": "/root/c14_review"
+  },
+  "independent_scoped_tests": {
+    "tests": 210,
+    "passed": 210,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "reviewer_authored_new_boundaries": 11,
+    "pytest_duration_seconds": 25.3,
+    "result": {
+      "reviewer": "/root/c13_independent",
+      "started_at": "2026-09-14T03:18:12.795567+00:00",
+      "command": [
+        "/workspace/scratch/948b51def3a9/venv/bin/python",
+        "-m",
+        "pytest",
+        "-c",
+        "pyproject.toml",
+        "-p",
+        "no:cacheprovider",
+        "-ra",
+        "--tb=short",
+        "tests/test_v70_round2_c01_mixed_funding.py",
+        "tests/test_v70_round2_c02_partial_party.py",
+        "tests/test_sprint3b_rail.py",
+        "tests/test_depth22_rail_resolution.py",
+        "tests/test_depth23_capacity.py::test_rail_change_holds_both_dates_until_result_then_releases_correct_pool",
+        "tests/test_v70_round2_c04_rental_receipts.py",
+        "tests/test_v70_round2_c05_recovery_fulfillment.py",
+        "tests/test_sprint3d_attractions.py",
+        "tests/test_depth20_attraction_contract.py",
+        "tests/test_depth26_attraction_terms.py",
+        "tests/test_depth21_refund_recovery.py::test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem[ATTRACTION]",
+        "tests/test_depth23_capacity.py::test_attraction_change_and_redemption_retain_current_session_capacity",
+        "tests/test_round2_c07_explicit_preferences.py",
+        "tests/test_travel_intelligence_p0.py",
+        "tests/test_wave03_c07_c09_authority_contract.py",
+        "tests/test_personal_travel_vault.py",
+        "tests/test_parent_p0_travel_intelligence_hotel_infra.py",
+        "tests/go_ai/test_c08_audit_commit_failure.py",
+        "tests/go_ai/test_c08_synthesis_audit_finalization.py",
+        "tests/test_go_ai_multimodel.py",
+        "tests/judgment/test_round2_evidence_authority.py",
+        "tests/test_sprint1p_judgment_runtime.py",
+        "tests/journey/test_c10_attachment_canonical_facts.py",
+        "tests/journey/test_c10_current_status_projection.py",
+        "tests/test_c11_idempotency_completion_guard.py",
+        "../evidence/v70-round2-20260914/c13/test_independent_boundaries.py",
+        "--junitxml=/workspace/scratch/948b51def3a9/GO/evidence/v70-round2-20260914/c13/independent-scopes.xml"
+      ],
+      "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "src",
+        "GO_TEST_DB_PATH": "/tmp/go-r2-c13-independent-scopes-2.db"
+      },
+      "worker_settings": "UNCHANGED_DEFAULTS",
+      "test_and_tool_sha256": {
+        "evidence/v70-round2-20260914/c13/run_independent.py": "3b7f1dce2190969ef82be167fc970062e5501f85cc99fcb4449acaed0a06100a",
+        "evidence/v70-round2-20260914/c13/conftest.py": "b95344e53aa02bfd1a05fefa448a2e196b80e338f54fc45001d8c0a39d4a1213",
+        "evidence/v70-round2-20260914/c13/test_independent_boundaries.py": "74179b009722f4aeff98e55da7a3f847d0e25977783de0420e0dfca8eb1aa2f4",
+        "ci/round2/validate_ledger.py": "c64086f3280d936f40f6ceb26efaa81002905676a87126c38c9cd2b3610dd4a5"
+      },
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "source_tree_sha256": "b4383b383dd54e472ef178f1804d925bebf55019dc17f3641712cc42d4aae7b4",
+      "application_git_tree": "740d026e3723f5da015342ead3394969629541df",
+      "finished_at": "2026-09-14T03:18:40.389411+00:00",
+      "exit_code": 0,
+      "source_unchanged": true,
+      "log_sha256": "43ce50745a3ef22327c10ad40f4f09d2bddbbda0c98254d8d03da935264122b7"
+    }
+  },
+  "known_open_gap_tests": {
+    "cell": "C11",
+    "tests": 2,
+    "passed": 0,
+    "failed": 2,
+    "errors": 0,
+    "skipped": 0,
+    "pytest_exit_code": 1,
+    "result": {
+      "reviewer": "/root/c13_independent",
+      "started_at": "2026-09-14T03:19:16.693178+00:00",
+      "command": [
+        "/workspace/scratch/948b51def3a9/venv/bin/python",
+        "-m",
+        "pytest",
+        "-c",
+        "pyproject.toml",
+        "-p",
+        "no:cacheprovider",
+        "-ra",
+        "--tb=short",
+        "../evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py",
+        "--junitxml=/workspace/scratch/948b51def3a9/GO/evidence/v70-round2-20260914/c13/c11-known-open-gap.xml"
+      ],
+      "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "src",
+        "GO_TEST_DB_PATH": "/tmp/go-r2-c13-c11-known-open-gap-5.db"
+      },
+      "worker_settings": "UNCHANGED_DEFAULTS",
+      "test_and_tool_sha256": {
+        "evidence/v70-round2-20260914/c13/run_independent.py": "3b7f1dce2190969ef82be167fc970062e5501f85cc99fcb4449acaed0a06100a",
+        "evidence/v70-round2-20260914/c13/conftest.py": "b95344e53aa02bfd1a05fefa448a2e196b80e338f54fc45001d8c0a39d4a1213",
+        "evidence/v70-round2-20260914/c13/test_independent_boundaries.py": "74179b009722f4aeff98e55da7a3f847d0e25977783de0420e0dfca8eb1aa2f4",
+        "ci/round2/validate_ledger.py": "c64086f3280d936f40f6ceb26efaa81002905676a87126c38c9cd2b3610dd4a5"
+      },
+      "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+      "source_tree_sha256": "b4383b383dd54e472ef178f1804d925bebf55019dc17f3641712cc42d4aae7b4",
+      "application_git_tree": "740d026e3723f5da015342ead3394969629541df",
+      "finished_at": "2026-09-14T03:19:19.574226+00:00",
+      "exit_code": 1,
+      "source_unchanged": true,
+      "log_sha256": "6e3b6b59a09a83b149e8d497f79621b1bf56332147c9feb07b437ddb9e5a7863"
+    },
+    "meaning": "Known real failing tests; not skipped, xfailed, repaired or counted as passing."
+  },
+  "source_identity_checks": {
+    "before_after_1341_files_equal": true,
+    "each_declared_file_git_blob_and_sha256_verified": true,
+    "application_git_tree_independently_reconstructed": true,
+    "source_sha256_independently_recomputed": true,
+    "integration_files_remain_equal_to_c14": true,
+    "local_git_head": "NOT_AVAILABLE_MATERIALIZED_SOURCE_ONLY"
+  },
+  "original_evidence_audit": {
+    "path": "evidence/v70-round2-20260914/c13/ORIGINAL_EVIDENCE_AUDIT.json",
+    "sha256": "50e945436821aba693de39a6765ff8a6b26c1a97b111d1443cccc78ba64fe6fe",
+    "missing_blocking_red_or_green_originals": []
+  },
+  "cells": [
+    {
+      "cell": "C01",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Mixed hotel credit/cash changes and cancellation retain forfeiture and original expiry; isolated rollback cases.",
+      "allowed_next_task": "Unknown money outcomes during mixed credit/cash checkout.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C02",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Partial-passenger body/leg requests rejected with no quote/money/ticket side effects; unsupported feature remains explicit.",
+      "allowed_next_task": "Passenger-coupon selection and allocation design/implementation; no claim of partial-party change completion.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C03",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Local rail API/change recovery, dual inventory holds, confirmed/failed resolution and final refund pool release.",
+      "allowed_next_task": "Unpaid-expiry versus payment/cancellation race and full target-inventory rejection; PostgreSQL remains unproved.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C04",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Refund completion matches exact frozen-plan payment intent, capture, amount and operation key. Historical equal-amount, duplicate, amount/currency/parent/key faults stay pending and safely retry.",
+      "allowed_next_task": "Read-only reconciliation design for historical refunded-state versus frozen-plan contradictions; no auto-repair or money execution.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C05",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Repeated unknown result episodes restore correct ride phase and preserve fulfillment terminal guards.",
+      "allowed_next_task": "Evidence-loss/corruption recovery for unknown results and same-phase provider confirmation.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C06",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Attraction consumed quote contract, refund/redemption exclusion and changed-session capacity; SQLite synthetic runtime.",
+      "allowed_next_task": "Destination timezone and validity-window facts plus local-session redemption boundary implementation.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C07",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "P0 explicit SELF owner preference write/read, encrypted persistence, exact consent/purpose/key, revision, revocation and expiry; no admin impersonation or session auto-promotion.",
+      "allowed_next_task": "PostgreSQL concurrent consent withdrawal and actual process-restart durability; companion preference graph remains outside this SELF-only scope.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C08",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Transient success-audit commit failure is bounded and fail closed; already-committed completion survives lost acknowledgement without repeating compute.",
+      "allowed_next_task": "Durable restart recovery for persistent audit outage / process termination; ROUTING rows under permanent outage remain unclosed.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C09",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Persisted risk/review/remediation fields reject overrides; existing ACTIVE decision and sealed evidence remain unchanged on rejected input; serious risk veto retained.",
+      "allowed_next_task": "Concurrent same-hotel reevaluation and durable hook replay preserve a single current judgment/evidence snapshot.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C10",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Six vertical create/attach preserve canonical order facts over caller amounts/currency while retaining notes and ownership behavior.",
+      "allowed_next_task": "Batch N+1 current-state reads; historical attachment monetary snapshots not rewritten in this scope.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C11",
+      "decision": "HOLD",
+      "accepted_or_observed_scope": "16 inherited completion-guard cases pass, but sync/async post-commit callback probes independently fail 2/2 on this candidate.",
+      "allowed_next_task": "Explicit proven-no-side-effect versus uncertain outcome contract, then reconcile/replay implementation for flight checkout/change and reviewed call sites.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C12",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Local validator requires gate sequence and distinct reviewers; all 14 idle cells trigger SCHEDULER_FAIL and history-preserving ASSIGNED followups with no invented ACK/RUNNING.",
+      "allowed_next_task": "Apply validator to actual central ledger; actual ongoing worker liveness and remote scheduler automation are unproved.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C13",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Independent exact-candidate source verification, 210 scoped passes, 11 new reviewer-authored boundaries, plus separate two-case known-failure hold.",
+      "allowed_next_task": "Verify immutable archive/CI candidate binding and final central ledger references without manufacturing remote execution.",
+      "domain_completion_percent": null
+    },
+    {
+      "cell": "C14",
+      "decision": "PASS_SCOPED",
+      "accepted_or_observed_scope": "Independent C14 record, source manifest, timestamps and integration hashes verified; C04 change request is closed for this candidate.",
+      "allowed_next_task": "Review subsequent depth changes as new exact candidates; this acceptance cannot transfer to changed source.",
+      "domain_completion_percent": null
+    }
+  ],
+  "independence": {
+    "source_or_implementer_tests_modified_by_c13": false,
+    "c14_and_c13_are_distinct_agents": true,
+    "c13_runtime_started_after_c14_final_pass": true,
+    "only_new_c13_diagnostic_tests_and_evidence_written": true
+  },
+  "limitations": [
+    "SQLite and FastAPI TestClient synthetic data; no PostgreSQL, external provider or real funds acceptance.",
+    "No frozen-image, browser/physical-device, HK or Production acceptance.",
+    "C07 connection dispose/reopen is not an operating-system process restart.",
+    "C02 partial passengers, C06 timezone validity, C08 permanent outage, C10 N+1 and C11 uncertain outcomes remain depth work.",
+    "Local scheduler validation proves record consistency, not remote 14-worker liveness.",
+    "210 passing scoped tests and 2 failing C11 tests must be reported separately; whole-domain or complete-system 100 percent is not established."
+  ],
+  "whole_domain_complete_count": 0,
+  "full_release": "HOLD",
+  "hong_kong": "NOT_ACCESSED",
+  "production": "HOLD",
+  "remote_write_merge_deploy": false
+}

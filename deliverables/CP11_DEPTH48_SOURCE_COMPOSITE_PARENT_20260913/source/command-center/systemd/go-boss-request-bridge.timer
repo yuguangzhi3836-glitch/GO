@@ -1,0 +1,11 @@
+[Unit]
+Description=Poll Boss Request PR heads for Command Center (publish disabled)
+
+[Timer]
+OnBootSec=60s
+OnUnitActiveSec=60s
+Persistent=false
+Unit=go-boss-request-bridge.service
+
+[Install]
+WantedBy=timers.target

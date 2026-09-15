@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="12" skipped="0" tests="15" time="2.452" timestamp="2026-09-13T07:13:05.666169-07:00" hostname="localhost"><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_owner-ATTRACTION]" time="0.349"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_owner-FLIGHT]" time="0.018"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_owner-HOTEL]" time="0.018"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_owner-RAIL]" time="0.020"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_owner-RENTAL]" time="0.016"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_owner-RIDE]" time="0.015"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_member-ATTRACTION]" time="0.017"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_member-FLIGHT]" time="0.015"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_member-HOTEL]" time="0.017"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_member-RAIL]" time="0.019"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_member-RENTAL]" time="0.016"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_reflects_same_canonical_status_as_detail_without_mutation[c10_member-RIDE]" time="0.016"><failure message="AssertionError: assert 'CONFIRMED' == 'CANCELLED'&#10;  &#10;  - CANCELLED&#10;  + CONFIRMED">tests/journey/test_c10_current_status_projection.py:117: in test_list_reflects_same_canonical_status_as_detail_without_mutation
+    assert listed[0]["timeline"][0]["status"] == detail["timeline"][0]["status"]
+E   AssertionError: assert 'CONFIRMED' == 'CANCELLED'
+E     
+E     - CANCELLED
+E     + CONFIRMED</failure></testcase><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_does_not_grant_access_to_nonmember_or_revoked_member" time="0.013" /><testcase classname="tests.journey.test_c10_current_status_projection" name="test_refresh_does_not_expose_another_accounts_order_status" time="0.019" /><testcase classname="tests.journey.test_c10_current_status_projection" name="test_list_preserves_existing_missing_order_fallback" time="0.023" /></testsuite></testsuites>

@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "GO",
+    "slug": "go-consumer",
+    "scheme": "go",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "travel.go.consumer",
+      "associatedDomains": ["applinks:go.travel"]
+    },
+    "android": {
+      "package": "travel.go.consumer",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{"scheme":"https","host":"go.travel","pathPrefix":"/app"}],
+          "category": ["BROWSABLE","DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [{"scheme":"go"}],
+          "category": ["BROWSABLE","DEFAULT"]
+        }
+      ]
+    },
+    "plugins": ["expo-secure-store", "expo-notifications"],
+    "extra": {
+      "apiBaseUrl": "http://localhost:8000"
+    }
+  }
+}

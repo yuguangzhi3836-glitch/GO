@@ -1,0 +1,64 @@
+services:
+  api:
+    image: ${R31_IMAGE_TAG:-go-hotel:aoluguya-direct-r3-1-20260906}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    environment:
+      PYTHONPATH: /app/src
+      AOLUGUYA_DIRECT_TEST_MODE: "true"
+      AOLUGUYA_REAL_INVENTORY_CONFIGURED: "false"
+      AOLUGUYA_REAL_RATE_CONFIGURED: "false"
+      AOLUGUYA_REAL_PAYMENT_CONFIGURED: "false"
+    ports: ["127.0.0.1:8000:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  outbox-worker:
+    image: ${R31_IMAGE_TAG:-go-hotel:aoluguya-direct-r3-1-20260906}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.outbox_worker"]
+    restart: unless-stopped
+
+  recovery-worker:
+    image: ${R31_IMAGE_TAG:-go-hotel:aoluguya-direct-r3-1-20260906}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    environment:
+      AOLUGUYA_DIRECT_TEST_MODE: "true"
+      AOLUGUYA_REAL_INVENTORY_CONFIGURED: "false"
+      AOLUGUYA_REAL_RATE_CONFIGURED: "false"
+      AOLUGUYA_REAL_PAYMENT_CONFIGURED: "false"
+    command: ["python", "-m", "go_hotel.workers.recovery_worker"]
+    restart: unless-stopped
+
+  reconciliation-worker:
+    image: ${R31_IMAGE_TAG:-go-hotel:aoluguya-direct-r3-1-20260906}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.reconciliation_worker"]
+    restart: unless-stopped
+
+  judgment-worker:
+    image: ${R31_IMAGE_TAG:-go-hotel:aoluguya-direct-r3-1-20260906}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.judgment_worker"]
+    restart: unless-stopped
+
+  mobile-engagement-worker:
+    image: ${R31_IMAGE_TAG:-go-hotel:aoluguya-direct-r3-1-20260906}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.mobile_engagement_worker"]
+    restart: unless-stopped
+
+  mobile-push-worker:
+    image: ${R31_IMAGE_TAG:-go-hotel:aoluguya-direct-r3-1-20260906}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.mobile_push_worker"]
+    restart: unless-stopped
+
+  mobile-push-receipt-worker:
+    image: ${R31_IMAGE_TAG:-go-hotel:aoluguya-direct-r3-1-20260906}
+    env_file: ["${GO_RUNTIME_ENV_FILE:?GO_RUNTIME_ENV_FILE is required}"]
+    command: ["python", "-m", "go_hotel.workers.mobile_push_receipt_worker"]
+    restart: unless-stopped

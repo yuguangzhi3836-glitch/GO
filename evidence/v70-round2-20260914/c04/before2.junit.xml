@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="5" time="3.826" timestamp="2026-09-14T12:01:46.332788+09:00" hostname="localhost"><testcase classname="tests.test_v70_round2_c04_rental_receipts" name="test_unverified_confirmed_receipt_keeps_rental_pending_and_resumes_once[absent]" time="1.800"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f2768673bf0&gt;
+fault = 'absent'
+
+    @pytest.mark.parametrize('fault', ['absent', 'empty', 'capture', 'foreign'])
+    def test_unverified_confirmed_receipt_keeps_rental_pending_and_resumes_once(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = svc.refund_quote(owner, oid)
+        receipt = {'state': 'CONFIRMED', 'money_movement_ids': ['absent']}
+        if fault == 'empty':
+            receipt['money_movement_ids'] = []
+        elif fault == 'capture':
+            receipt['money_movement_ids'] = [money.original('RENTAL', oid)[2].money_movement_id]
+        elif fault == 'foreign':
+            other_svc, other_owner, other_oid = booked('RENTAL')
+            other_quote = other_svc.refund_quote(other_owner, other_oid)
+            other_svc.cancel(other_owner, other_oid, other_quote['quote_hash'])
+            receipt['money_movement_ids'] = [refunded_movements()[0].money_movement_id]
+        before = len(refunded_movements())
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: receipt)
+&gt;       with pytest.raises(ValueError, match='MONEY_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_round2_c04_rental_receipts.py:28: Failed</failure></testcase><testcase classname="tests.test_v70_round2_c04_rental_receipts" name="test_unverified_confirmed_receipt_keeps_rental_pending_and_resumes_once[empty]" time="0.124"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f276785d370&gt;
+fault = 'empty'
+
+    @pytest.mark.parametrize('fault', ['absent', 'empty', 'capture', 'foreign'])
+    def test_unverified_confirmed_receipt_keeps_rental_pending_and_resumes_once(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = svc.refund_quote(owner, oid)
+        receipt = {'state': 'CONFIRMED', 'money_movement_ids': ['absent']}
+        if fault == 'empty':
+            receipt['money_movement_ids'] = []
+        elif fault == 'capture':
+            receipt['money_movement_ids'] = [money.original('RENTAL', oid)[2].money_movement_id]
+        elif fault == 'foreign':
+            other_svc, other_owner, other_oid = booked('RENTAL')
+            other_quote = other_svc.refund_quote(other_owner, other_oid)
+            other_svc.cancel(other_owner, other_oid, other_quote['quote_hash'])
+            receipt['money_movement_ids'] = [refunded_movements()[0].money_movement_id]
+        before = len(refunded_movements())
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: receipt)
+&gt;       with pytest.raises(ValueError, match='MONEY_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_round2_c04_rental_receipts.py:28: Failed</failure></testcase><testcase classname="tests.test_v70_round2_c04_rental_receipts" name="test_unverified_confirmed_receipt_keeps_rental_pending_and_resumes_once[capture]" time="0.093"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f2767895fd0&gt;
+fault = 'capture'
+
+    @pytest.mark.parametrize('fault', ['absent', 'empty', 'capture', 'foreign'])
+    def test_unverified_confirmed_receipt_keeps_rental_pending_and_resumes_once(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = svc.refund_quote(owner, oid)
+        receipt = {'state': 'CONFIRMED', 'money_movement_ids': ['absent']}
+        if fault == 'empty':
+            receipt['money_movement_ids'] = []
+        elif fault == 'capture':
+            receipt['money_movement_ids'] = [money.original('RENTAL', oid)[2].money_movement_id]
+        elif fault == 'foreign':
+            other_svc, other_owner, other_oid = booked('RENTAL')
+            other_quote = other_svc.refund_quote(other_owner, other_oid)
+            other_svc.cancel(other_owner, other_oid, other_quote['quote_hash'])
+            receipt['money_movement_ids'] = [refunded_movements()[0].money_movement_id]
+        before = len(refunded_movements())
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: receipt)
+&gt;       with pytest.raises(ValueError, match='MONEY_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_round2_c04_rental_receipts.py:28: Failed</failure></testcase><testcase classname="tests.test_v70_round2_c04_rental_receipts" name="test_unverified_confirmed_receipt_keeps_rental_pending_and_resumes_once[foreign]" time="0.109"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f27678975f0&gt;
+fault = 'foreign'
+
+    @pytest.mark.parametrize('fault', ['absent', 'empty', 'capture', 'foreign'])
+    def test_unverified_confirmed_receipt_keeps_rental_pending_and_resumes_once(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = svc.refund_quote(owner, oid)
+        receipt = {'state': 'CONFIRMED', 'money_movement_ids': ['absent']}
+        if fault == 'empty':
+            receipt['money_movement_ids'] = []
+        elif fault == 'capture':
+            receipt['money_movement_ids'] = [money.original('RENTAL', oid)[2].money_movement_id]
+        elif fault == 'foreign':
+            other_svc, other_owner, other_oid = booked('RENTAL')
+            other_quote = other_svc.refund_quote(other_owner, other_oid)
+            other_svc.cancel(other_owner, other_oid, other_quote['quote_hash'])
+            receipt['money_movement_ids'] = [refunded_movements()[0].money_movement_id]
+        before = len(refunded_movements())
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: receipt)
+&gt;       with pytest.raises(ValueError, match='MONEY_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_round2_c04_rental_receipts.py:28: Failed</failure></testcase><testcase classname="tests.test_v70_round2_c04_rental_receipts" name="test_completed_refund_cannot_claim_success_with_contradictory_order_state" time="0.087" /></testsuite></testsuites>

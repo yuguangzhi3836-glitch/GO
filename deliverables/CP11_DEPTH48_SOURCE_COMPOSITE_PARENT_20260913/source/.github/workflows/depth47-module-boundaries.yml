@@ -1,0 +1,102 @@
+name: DEPTH48 ordered repair acceptance
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/**
+      - ci/depth47/**
+      - ci/journey-v2/**
+      - ci/retention/**
+      - .github/workflows/depth47-module-boundaries.yml
+permissions:
+  contents: read
+concurrency:
+  group: depth47-boundaries-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+      - name: Verify unique source and complete inherited file set
+        run: python -B ci/journey-v2/prepare.py
+      - name: Install parent-bound Python dependencies and pinned browser
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+          npm install --no-save --ignore-scripts playwright@1.55.1
+          npx playwright install --with-deps chromium
+      - name: Three actor API refresh relogin and independent SQL audit
+        run: python -B ci/journey-v2/same_order_api.py journey-evidence/same-order-api journey-evidence/source-binding.json
+      - name: Consumer supplier administrator same-order journeys
+        run: python -B ci/journey-v2/run.py
+      - name: Hash public evidence
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('journey-evidence');p.mkdir(exist_ok=True)
+          files={str(x.relative_to(p)):hashlib.sha256(x.read_bytes()).hexdigest() for x in sorted(p.rglob('*')) if x.is_file() and x.name!='SHA256.json'}
+          (p/'SHA256.json').write_text(json.dumps(files,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: depth47-browser-${{ github.event.pull_request.head.sha }}
+          path: journey-evidence/
+          if-no-files-found: error
+          retention-days: 90
+
+  postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16.4
+        env:
+          POSTGRES_DB: go_ci
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Bind exact application source
+        run: |
+          python ci/retention/verify_source.py "$RUNNER_TEMP/postgres-evidence/source"
+          python ci/retention/verify_alignment.py "$RUNNER_TEMP/postgres-evidence/alignment.json"
+      - name: Install frozen parent-bound dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Migrate disposable PostgreSQL and verify six unskipped concurrency checks
+        env:
+          PYTHONPATH: application/src
+        run: python -B ci/depth47/postgres.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: depth47-postgres-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/postgres-evidence
+          if-no-files-found: error
+          retention-days: 90

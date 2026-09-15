@@ -1,0 +1,37 @@
+{
+  "argv": [
+    "/workspace/scratch/948b51def3a9/venv/bin/python",
+    "-m",
+    "pytest",
+    "-p",
+    "no:cacheprovider",
+    "-q",
+    "tests/judgment/test_next_depth_concurrent_judgment.py",
+    "-k",
+    "invalid_evidence_supplement",
+    "--junitxml=/workspace/scratch/948b51def3a9/GO/evidence/v70-next-depth-20260914/c09/review-red.junit.xml"
+  ],
+  "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+  "env": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONPATH": "src",
+    "GO_TEST_DB_PATH": "/tmp/go-c09-a672187389e4418e908535831f39dfc4.db"
+  },
+  "started_at": "2026-09-14T04:08:09.607304+00:00",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "inherited_candidate": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "hashes_before": {
+    "application/src/go_hotel/judgment/__init__.py": "dd8a8ed13ac582e5311cb7805ed882a61e89ef77cc5064f573729ad3d84bfc57",
+    "application/src/go_hotel/judgment/service.py": "22c0f96d5e5e2060b11d9cc191d6c5ab36a9a5445e2117365a7f34baad6bf4cd",
+    "application/src/go_hotel/judgment/good_hotel_standard.py": "d15221f7925142869bd84cd8a7c955f838aa9d5ad78b1c2965307a53b9a3adad",
+    "application/tests/judgment/test_next_depth_concurrent_judgment.py": "c6c579c38c5ac65234f5b75c3f87bdb998de08b17add0697c85e50b59b19a5fb"
+  },
+  "exit_code": 1,
+  "finished_at": "2026-09-14T04:08:13.851368+00:00",
+  "hashes_after": {
+    "application/src/go_hotel/judgment/__init__.py": "dd8a8ed13ac582e5311cb7805ed882a61e89ef77cc5064f573729ad3d84bfc57",
+    "application/src/go_hotel/judgment/service.py": "22c0f96d5e5e2060b11d9cc191d6c5ab36a9a5445e2117365a7f34baad6bf4cd",
+    "application/src/go_hotel/judgment/good_hotel_standard.py": "d15221f7925142869bd84cd8a7c955f838aa9d5ad78b1c2965307a53b9a3adad",
+    "application/tests/judgment/test_next_depth_concurrent_judgment.py": "c6c579c38c5ac65234f5b75c3f87bdb998de08b17add0697c85e50b59b19a5fb"
+  }
+}

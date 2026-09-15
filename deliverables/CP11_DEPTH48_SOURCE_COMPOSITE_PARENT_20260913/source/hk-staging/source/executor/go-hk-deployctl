@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""Fixed HK-STAGING VERIFY plus isolated candidate-image CANARY executor."""
+import json
+import hashlib
+import importlib
+import importlib.util
+import os
+import re
+import stat
+import sys
+
+VERSION = "0.4.3-rollback-runtime"
+_IMAGE = re.compile(r"^sha256:[0-9a-f]{64}$")
+_RELEASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
+_COLLECTOR_SHA256 = "a0eeda9e270757cc8fbf70f112ac593d3da6e89e2884bd6ae01df8638126aed2"
+_CANARY_SHA256 = "040b171976beb4d43cc9caf346fd4c2246797b2535e65577d25d507df01da520"
+_DEPLOY_SHA256 = "bbe2fefc471b637c625405a2ef8b18d40712040d3331b7a7a732388d51099516"
+_ROLLBACK_SHA256 = "a49e12eafab85331477241a4db791ad1c38133b9a7925eade627c1c27cf5e9f5"
+
+
+def _load_collector():
+    """Load only the immutable sibling runtime after validating its bytes."""
+    executable_dir = os.path.dirname(os.path.abspath(__file__))
+    runtime_dir = os.path.join(executable_dir, "go-hk-deployctl-runtime")
+    collector_path = os.path.join(runtime_dir, "collector_runtime.py")
+    try:
+        if not stat.S_ISDIR(os.lstat(runtime_dir).st_mode):
+            raise ValueError("runtime directory")
+        mode = os.lstat(collector_path).st_mode
+        if not stat.S_ISREG(mode):
+            raise ValueError("collector path")
+        with open(collector_path, "rb") as handle:
+            if hashlib.sha256(handle.read()).hexdigest() != _COLLECTOR_SHA256:
+                raise ValueError("collector integrity")
+    except (OSError, ValueError):
+        raise ValueError("collector runtime rejected")
+    spec = importlib.util.spec_from_file_location("_go_hk_collector_runtime", collector_path)
+    if spec is None or spec.loader is None:
+        raise ValueError("collector loader")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    if os.path.abspath(getattr(module, "__file__", "")) != os.path.abspath(collector_path):
+        raise ValueError("collector import source")
+    return module
+
+
+def _document(status, release_id, candidate_image_id, expected_current_image_id,
+              gates, result):
+    return {
+        "schema_version": "1",
+        "executor_version": VERSION,
+        "action_id": "HK_STAGING_VERIFY",
+        "status": status,
+        "release_id": release_id,
+        "candidate_image_id": candidate_image_id,
+        "expected_current_image_id": expected_current_image_id,
+        "result": result,
+        "gate_results": gates,
+    }
+
+def _load_canary():
+    executable_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(executable_dir, "go-hk-deployctl-runtime", "canary_runtime.py")
+    try:
+        if not stat.S_ISREG(os.lstat(path).st_mode): raise ValueError("canary path")
+        with open(path,"rb") as handle:
+            if hashlib.sha256(handle.read()).hexdigest() != _CANARY_SHA256: raise ValueError("canary integrity")
+    except (OSError, ValueError): raise ValueError("canary runtime rejected")
+    spec = importlib.util.spec_from_file_location("_go_hk_canary_runtime", path)
+    if spec is None or spec.loader is None: raise ValueError("canary loader")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    if os.path.abspath(getattr(module,"__file__", "")) != os.path.abspath(path): raise ValueError("canary import source")
+    return module
+
+def _load_deploy():
+    executable_dir=os.path.dirname(os.path.abspath(__file__))
+    path=os.path.join(executable_dir,"go-hk-deployctl-runtime","deploy_runtime.py")
+    try:
+        if not stat.S_ISREG(os.lstat(path).st_mode): raise ValueError("deploy path")
+        with open(path,"rb") as handle:
+            if hashlib.sha256(handle.read()).hexdigest()!=_DEPLOY_SHA256: raise ValueError("deploy integrity")
+    except (OSError,ValueError): raise ValueError("deploy runtime rejected")
+    spec=importlib.util.spec_from_file_location("_go_hk_deploy_runtime",path)
+    if spec is None or spec.loader is None: raise ValueError("deploy loader")
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+def _load_rollback():
+    executable_dir=os.path.dirname(os.path.abspath(__file__))
+    path=os.path.join(executable_dir,"go-hk-deployctl-runtime","rollback_runtime.py")
+    try:
+        if not stat.S_ISREG(os.lstat(path).st_mode): raise ValueError("rollback path")
+        with open(path,"rb") as handle:
+            if hashlib.sha256(handle.read()).hexdigest()!=_ROLLBACK_SHA256: raise ValueError("rollback integrity")
+    except (OSError,ValueError): raise ValueError("rollback runtime rejected")
+    spec=importlib.util.spec_from_file_location("_go_hk_rollback_runtime",path)
+    if spec is None or spec.loader is None: raise ValueError("rollback loader")
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+def _deploy(release,candidate,digest,expected,approval,canary_evidence,binding,runner=None):
+    gates={}
+    try:
+        if not isinstance(approval,str) or not _RELEASE.fullmatch(approval): raise ValueError("approval")
+        if not isinstance(canary_evidence,str) or not _RELEASE.fullmatch(canary_evidence): raise ValueError("canary evidence")
+        runtime=_load_deploy(); collector=_load_collector()
+        gates=runtime.run_deploy(release,candidate,digest,expected,binding,runner or collector.ProductionRunner(),collector)
+        record={key:gates.pop(key) for key in ("deploy_record_schema_version","deploy_record_id","deploy_record_sha256")}
+        out=_document("SUCCESS",release,candidate,expected,gates,"DEPLOY_OK"); out["action_id"]="HK_STAGING_DEPLOY"; out.update(record); return out,0
+    except (OSError,ValueError,TypeError) as exc:
+        out=_document("REJECTED",release,candidate,expected,gates,"DEPLOY_REJECTED"); out["action_id"]="HK_STAGING_DEPLOY"; out["error_code"]=str(exc)[:80]; return out,2
+
+def _canary(release_id,candidate_image_id,candidate_repo_digest,expected_current_image_id,runner=None,inputs=None):
+    gates={}
+    try:
+        runtime=_load_canary()
+        gates=runtime.run_canary(release_id,candidate_image_id,candidate_repo_digest,expected_current_image_id,runner,inputs)
+        output=_document("SUCCESS",release_id,candidate_image_id,expected_current_image_id,gates,"CANARY_OK")
+        output["action_id"]="HK_STAGING_CANARY"
+        return output,0
+    except (OSError,ValueError,TypeError) as exc:
+        output=_document("REJECTED",release_id,candidate_image_id,expected_current_image_id,gates,"CANARY_REJECTED")
+        output["action_id"]="HK_STAGING_CANARY"; output["error_code"]=str(exc)[:80]
+        return output,2
+
+def _rollback(release,source_task_id,binding,runner=None):
+    gates={}
+    try:
+        runtime=_load_rollback(); collector=_load_collector()
+        gates=runtime.run_rollback(release,source_task_id,binding,runner or collector.ProductionRunner(),collector)
+        out=_document("SUCCESS",release,"","",gates,"ROLLBACK_OK"); out["action_id"]="HK_STAGING_ROLLBACK"
+        out.update({key:gates[key] for key in ("source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256")})
+        return out,0
+    except (OSError,ValueError,TypeError) as exc:
+        out=_document("REJECTED",release,"","",gates,"ROLLBACK_REJECTED"); out["action_id"]="HK_STAGING_ROLLBACK"; out["error_code"]=str(exc)[:80]
+        return out,2
+
+
+def _verify(release_id, candidate_image_id, expected_current_image_id,
+            runner=None, inputs=None, sleeper=None):
+    gates = {}
+    try:
+        if not isinstance(release_id, str) or not _RELEASE.fullmatch(release_id):
+            raise ValueError("release id")
+        if not isinstance(candidate_image_id, str) or not _IMAGE.fullmatch(candidate_image_id):
+            raise ValueError("candidate image")
+        if not isinstance(expected_current_image_id, str) or not _IMAGE.fullmatch(expected_current_image_id):
+            raise ValueError("expected image")
+        collector = _load_collector()
+        result = collector._collect_verify(
+            runner or collector.ProductionRunner(),
+            candidate_image_id,
+            expected_current_image_id,
+            inputs or collector._PRODUCTION_VERIFY_INPUTS,
+            sleeper or __import__("time").sleep,
+        )
+        gates = {
+            "compose_baseline": "PASS",
+            "env_baseline": "PASS",
+            "candidate_image": "PASS",
+            "expected_current_image": "PASS",
+            "api_health": "PASS",
+            "worker_process_liveness": "PASS",
+            "application_health_proven": False,
+            "alembic_current": "PASS",
+            "alembic_head": "PASS",
+        }
+        if result["target_service_count"] != 8 or result["application_health_proven_count"] != 0:
+            raise ValueError("collector result")
+        return _document("SUCCESS", release_id, candidate_image_id,
+                         expected_current_image_id, gates, "VERIFY_OK"), 0
+    except (OSError, ValueError, TypeError):
+        return _document("REJECTED", release_id, candidate_image_id,
+                         expected_current_image_id, gates, "VERIFY_REJECTED"), 2
+
+
+def main(argv=None, runner=None, inputs=None, sleeper=None):
+    values = list(sys.argv[1:] if argv is None else argv)
+    canary = values[:1] == ["canary"]
+    deploy = values[:1] == ["deploy"]
+    rollback=values[:1]==["rollback"]
+    expected_flags = ["--release-id","--candidate-image-id","--candidate-repo-digest","--expected-current-image-id","--canary-evidence-id","--approval-id","--task-id","--task-nonce","--task-authority","--task-canonical-sha256"] if deploy else (["--release-id","--source-deploy-task-id","--approval-id","--task-id","--task-nonce","--task-authority","--task-canonical-sha256"] if rollback else (["--release-id","--candidate-image-id","--candidate-repo-digest","--expected-current-image-id"] if canary else ["--release-id","--candidate-image-id","--expected-current-image-id"]))
+    if (values[0:1] not in (["verify"],["canary"],["deploy"],["rollback"]) or len(values) != 1+2*len(expected_flags) or values[1::2] != expected_flags):
+        release = values[2] if len(values) > 2 and values[1] == "--release-id" else ""
+        output = _document("REJECTED", release, "", "", {}, "VERIFY_REJECTED")
+        print(json.dumps(output, separators=(",", ":")))
+        return 2
+    if values[0]=="canary": output, code = _canary(values[2], values[4], values[6], values[8], runner, inputs)
+    elif values[0]=="deploy": output, code = _deploy(values[2],values[4],values[6],values[8],values[12],values[10],{"task_id":values[14],"nonce":values[16],"authority":values[18],"canonical_sha256":values[20]},runner)
+    elif values[0]=="rollback": output, code = _rollback(values[2],values[4],{"task_id":values[8],"nonce":values[10],"authority":values[12],"canonical_sha256":values[14]},runner)
+    else: output, code = _verify(values[2], values[4], values[6], runner, inputs, sleeper)
+    print(json.dumps(output, separators=(",", ":")))
+    return code
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

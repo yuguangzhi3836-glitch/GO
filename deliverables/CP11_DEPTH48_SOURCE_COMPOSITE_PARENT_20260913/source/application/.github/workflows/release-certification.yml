@@ -1,0 +1,68 @@
+name: release-certification-2c
+on:
+  workflow_dispatch:
+    inputs:
+      run_store_builds:
+        type: boolean
+        default: false
+jobs:
+  backend-staging-gate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.4
+        env:
+          POSTGRES_USER: go
+          POSTGRES_PASSWORD: go
+          POSTGRES_DB: go
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U go" --health-interval=5s --health-timeout=5s --health-retries=20
+      redis:
+        image: redis:7.4
+        ports: ['6379:6379']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e '.[test]'
+      - run: alembic upgrade head
+        env: {DATABASE_URL: 'postgresql+psycopg://go:go@localhost:5432/go'}
+      - run: pytest -q tests_postgres tests/test_golden_path.py tests/test_sprint2b_mobile_release.py
+        env:
+          DATABASE_URL: postgresql+psycopg://go:go@localhost:5432/go
+          REDIS_URL: redis://localhost:6379/0
+      - run: python scripts/queue_smoke.py
+        env: {REDIS_URL: 'redis://localhost:6379/0'}
+  mobile-static-gate:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: mobile/go-app}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '20'}
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx expo-doctor
+      - run: npm run typecheck
+      - run: npm run test:contract
+      - run: cd ../.. && python scripts/store_release_static_check.py
+  store-build-submit:
+    if: ${{ inputs.run_store_builds }}
+    needs: [backend-staging-gate, mobile-static-gate]
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: mobile/go-app}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '20'}
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx eas-cli build --platform ios --profile production --non-interactive --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_EAS_PROJECT_ID }}
+          EXPO_PUBLIC_API_URL: ${{ secrets.STAGING_API_URL }}
+      - run: npx eas-cli build --platform android --profile production --non-interactive --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_EAS_PROJECT_ID }}
+          EXPO_PUBLIC_API_URL: ${{ secrets.STAGING_API_URL }}

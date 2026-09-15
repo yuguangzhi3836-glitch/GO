@@ -1,0 +1,58 @@
+# DEPTH44 GO Trip 搜索与酒店复杂售后浏览器验收
+
+变更类别：PRODUCT_FIX / TEST_ONLY / DOCUMENTATION。
+
+基于 PR47 当前头 `026f4b5c0287eabbcc4f9a1bca97fd2d69f41785`，继续使用唯一分支 `fix/canonical-parent-retention-20260912`。本次初始变更仅增加隔离验收，不修改 application/；应用树仍为 `60b254702a53b3f78180db6934e8cdaf1566d2e3`，源码 SHA256 树为 `530086b348bdc8e935d32bae738e8b201f249e1085a09ae9bd0742139a3b2964`，1307 文件。
+
+## 验收范围
+
+1. 在 375 / 390 / 430 / 1440 四种网页视口实际输入订单号、名称、酒店品类和无匹配词，清空恢复全部订单；过滤后卡片打开其自身订单。
+2. 从真实界面创建酒店未付款订单，在 GO Trip 查询并从原订单继续付款；不重复创建订单。
+3. 在同价改期仍需支付改期费的合成场景中，通过现有模拟器令首次补款失败；核对原日期、申请日期、累计付款及三端同单状态。
+4. 从原订单继续补款，确认复选框不可跳过；核对同一操作完成、日期更新和累计金额。
+5. 再次改期，只补本次费用；完成后取消，模拟服务器已成功而浏览器丢失响应，刷新原订单并重放原请求，确认没有重复退款。
+6. 对这一额外酒店订单的原付款及两笔改期付款，独立只读 SQLite 核对三个支付根、每笔扣款与退款关联、逐资金动作借贷分录、报价与最终日期、原退款回执及最终净额。
+
+原有六品类 39 个浏览器场景、72 项详情视口和六单原支付独立审计继续保留，新增酒店多支付根审计单独输出，不改变原审计的 ORIGINAL_PAYMENT_ROOT 范围。
+
+## 故障注入与证明边界
+
+- 补款失败：CI 浏览器仅将一次同源改期请求中的现有模拟支付标识改为 `pm_capture_fail`。不修改业务响应、数据库、身份或认证边界。
+- 退款响应丢失：先向同一隔离服务提交已确认的退款请求，取得服务端成功后中止向页面交付该响应。这证明客户端结果不明后的恢复，不证明内部第二笔退款写入失败。
+- 浏览器记录新增 GitHub Run / attempt / job 和独立运行时间；未提供的字段为 UNKNOWN。
+- 此次使用既有 CI 隔离入口，不重试 4187。旧 4187 原消息原件、时间及唯一会话标识的缺失仍独立保留，不由新结果补填。
+- 同价改期、原生设备、涨价／降价组合、全品类高级资金组合、真实银行、PostgreSQL 和完整视觉验收须按各自证据判断。
+
+## 初始验证状态
+
+新增脚本语法检查通过；新增浏览器流程和独立审计尚未实际完成，状态为 CI_PENDING。后续结果必须绑定运行的固定提交；任何失败均保留，不能转移此前 PASS。
+
+完整三端 UX、原生设备、PostgreSQL、Sealed Node、完整部署包和最终发布保持 HOLD。未合并 PR，未访问或变更 HK-STAGING、RDS 或 Production。
+
+## 首轮真实缺口与修复
+
+源码 `47b6a06cdb63a90d549663cb0a73b99b2d919bdc`，Run 34700777402：四个屏宽的实际搜索与过滤后导航通过；未付款酒店订单可查询，但“核对金额并继续付款”按钮被固定底部导航遮挡，普通点击超时。后续酒店流程未完成，新增酒店账目审计 HOLD。原六单原支付审计通过，不能用于关闭本次新缺口。
+
+修复把继续付款按钮放入现有订单内容区域，沿用该区域为底部导航预留的空间。没有强制点击或移除导航来绕过问题。新增浏览器检查在四个屏宽核对按钮可实际点击，然后由 390 视口继续付款。
+
+修复后应用树：`af2df84ebf7e5ad66f27b3ee5d2bf0219eec8336`；源码 SHA256 树：`554bf6cd1775f8524027bc0bb928e98f3a7d0967cf63d215d9b7cb6eede4017a`。原 1307 文件保留，仅修改 `frontend/consumer/app.js`。精确差异见 DEPTH44_GO_TRIP_REPAIRS.json。
+
+本地导航相关前端检查 18 项通过。独立审计器已在实际隔离酒店业务产生的数据库上通过正向检查，并拒绝缺失借贷配对、错误币种、退款关联错误、改期金额错误四类损坏；这项本地检查不属于浏览器旅程。
+
+审计器同时修正了一个初始错误假设：已完成取消应保留对应的资金占用记录，以防剩余费用被再次退款。新审计检查该记录准确绑定取消操作，不要求删除它。
+
+修复后的实际浏览器和完整 CI 尚待运行；首轮失败和后续运行分别归档，不能转移 PASS。
+
+## 第二轮发现：重复搜索混入旧入住日期
+
+源码 `35812e087e6501071b2af7cda233b88a91ee2054`，Run 34701225984：四种屏宽的搜索、未付款订单查询、四屏宽付款按钮可点击以及原订单继续付款均通过。之后酒店退改检查发现原订单日期与本次搜索日期不同，复杂旅程仍 HOLD。
+
+独立接口复现确认：酒店详情此前按酒店返回历史报价，未绑定搜索日期与币种；同房型同价比较可选到此前日期的报价，确认页却显示当前搜索日期。本轮修复酒店详情按完整入住日期和币种筛选，并在历史条数限制前完成过滤；绑定日期的请求排除过期报价。响应包含报价真实日期，消费者选择预订前再次核对，确认页展示所选报价的日期。无参数的旧读取接口保持兼容。
+
+新增 9 项后端验证覆盖不同日期和币种、历史记录超过上限、过期／无匹配报价及无效日期参数；新增 5 项前端检查覆盖参数传递、历史报价排除、预订前核对与迟到响应隔离。包含酒店原退改规则的本地相关回归共 31 项通过，前端全量 254 项通过。
+
+当前应用树为 `0458fcee1a6f086906746e75ba22b43b50f33fef`，原 1307 文件保留，修改 2 个应用文件并新增 2 个测试文件，共 1309 个。具体指纹和当前运行绑定以 CURRENT_CANDIDATE.json / DEPTH44_SOURCE_FINGERPRINT.json 为准；以上两个失败尝试按各自源码保留。
+
+## Third run: test navigation correction
+
+Run 34701843097 on 4570436f2053b654b59ecdd5ac9df3ed6a963373 passed both product-fix checks, capture-failure retention and same-operation payment retry. The next supplier list lookup timed out: the script navigated to the same #/orders URL while the workbench retained that hash. Same-document navigation did not redraw the list. The harness now clicks the existing visible 返回订单 button and reloads the admin page when revisiting the same URL. This is a TEST_ONLY correction; application tree 0458fcee1a6f086906746e75ba22b43b50f33fef and its source fingerprint remain unchanged. The failed run is not PASS and its browser ZIP is preserved separately (artifact 10300785100, SHA256 7958c01c74e8ca2608ed68a4f455569826a34adc72c723047883de17482cfd86). Full CI is pending for the next commit.

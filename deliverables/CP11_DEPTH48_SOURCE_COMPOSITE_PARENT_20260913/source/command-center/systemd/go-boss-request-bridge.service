@@ -1,0 +1,16 @@
+[Unit]
+Description=GO Command Center Boss Request Bridge V1 persistent VERIFY channel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/usr/local/libexec/go-boss-request-bridge --once --channel-config /etc/go-command-center/boss-request-bridge-v1.json
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/go-command-center/boss-request-bridge-v1 /etc/go-command-center/boss-request-bridge-v1.json

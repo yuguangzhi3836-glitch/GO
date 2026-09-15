@@ -1,0 +1,60 @@
+{
+  "cell_id": "C08",
+  "task_id": "V70-R2-C08-02",
+  "agent": "/root/c12_scheduler",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "started_at": "2026-09-14T03:49:37.709867+00:00",
+  "recorded_at": "2026-09-14T04:01:18.053645+00:00",
+  "implementation_and_local_validation": "PASS_SCOPED",
+  "C14": "PENDING_REVIEW",
+  "C13": "PENDING_INDEPENDENT_REVIEW",
+  "domain_completion": "NOT_CLAIMED",
+  "scope": "Three genuine abrupt-process-exit checkpoints and explicit read-only recovery assessment",
+  "outcome": "Local interruption assessment PASS_SCOPED; automatic ROUTING recovery remains HOLD. No model replay or database mutation.",
+  "tests_passed": 9,
+  "new_tests": 3,
+  "green_command": {
+    "command": [
+      "/workspace/scratch/948b51def3a9/venv/bin/python",
+      "-m",
+      "pytest",
+      "tests/go_ai/test_c08_hard_exit_recovery.py",
+      "tests/go_ai/test_c08_synthesis_audit_finalization.py",
+      "tests/go_ai/test_c08_audit_commit_failure.py",
+      "-p",
+      "no:cacheprovider",
+      "-s",
+      "--junitxml",
+      "/workspace/scratch/948b51def3a9/GO/evidence/v70-next-depth-20260914/c08/green.junit.xml"
+    ],
+    "started_at": "2026-09-14T03:55:25.772337+00:00",
+    "finished_at": "2026-09-14T03:55:34.825273+00:00",
+    "exit_code": 0
+  },
+  "files_sha256": {
+    "application/src/go_hotel/go_ai/service.py": "3f3f5feeb3a4da05a744d8b7874b8fcd0f7e0785da819983bd3fc6909ef6f2dc",
+    "application/tests/go_ai/c08_hard_exit_worker.py": "85702d024449720fbbccf49191e30229dc1dea38d5ac86b013cd9c0faffbecf8",
+    "application/tests/go_ai/test_c08_hard_exit_recovery.py": "cb209b4f0dc76f746837560402182757bcadc5caeda7da19dfe89e8b050fd0c1"
+  },
+  "evidence_sha256": {
+    "evidence/v70-next-depth-20260914/c08/receipt-admission.command.json": "68a605bc667c10a1ac3ef39cb9c03be8b09af32856b17c4af5a56687f473f714",
+    "evidence/v70-next-depth-20260914/c08/RECOVERY_CONTRACT.md": "494a3ad6a7ead0607dd78b869987e6601edbba5f498e0edc4cd2db5aceff929c",
+    "evidence/v70-next-depth-20260914/c08/EXECUTION.json": "59868d7e4b64463f4c98c0468e778cc18bfabf8675b501452ad623d8a5a44de3",
+    "evidence/v70-next-depth-20260914/c08/ACK_RECEIPT.json": "12519f18f8ba0a0c8b528ad6b1fa8155915f565a3390527f2b57c359b7ff01f8",
+    "evidence/v70-next-depth-20260914/c08/receipt-admission.raw.log": "5cac8b1d15816b664c5637d2baaf68d19d65133329fa5bc9a36f795423c2571d",
+    "evidence/v70-next-depth-20260914/c08/red.raw.log": "cbde9972848ce009675b647467fac90cb5b45ea65aee06a315fedc01fd8a453f",
+    "evidence/v70-next-depth-20260914/c08/EXECUTION_INITIAL.json": "1c43967bebf449da31d75ea574c611bda98c7e7b7f47f584e036bd640cc1c077",
+    "evidence/v70-next-depth-20260914/c08/green.command.json": "b8b34ca4db8f73fc5f152d238e6327ae04c143508042d60df70355535b51fdc5",
+    "evidence/v70-next-depth-20260914/c08/green.raw.log": "399033c33db5b919bb98c54dd08165d7e673665284c9365de8730263f2e57c0a",
+    "evidence/v70-next-depth-20260914/c08/red.junit.xml": "bf8afd0ea7b326b09b82300d7af1f6fa201c49aa15c2bce2cca6724832c6d13a",
+    "evidence/v70-next-depth-20260914/c08/red.command.json": "61d223f8e980726c74b6f1b1c7fe3523e586565d90f108956e7ab156be68cce6",
+    "evidence/v70-next-depth-20260914/c08/green.junit.xml": "0054a22ee35fcbfe4d80eb031bad74a0d082e28f1b2fafb4adb94b222ebd2a3c"
+  },
+  "limits": [
+    "SQLite/deterministic provider only, not PostgreSQL/real-provider exactly-once",
+    "ROUTING termination/ownership, complete task plan and reconstructable output remain unproven",
+    "No automatic recovery, new endpoint, scheduler, migration or deployment"
+  ],
+  "next_task": "Design reviewed durable execution ownership/lease and complete checkpoint contract without automatic model replay."
+}

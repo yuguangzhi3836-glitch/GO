@@ -1,0 +1,52 @@
+{
+  "root_ids": [
+    "opi_c687d4383752413f92f574fde1b12132"
+  ],
+  "money": [
+    {
+      "id": "omm_56a9eeb60150415695ef70e7c0a50ff8",
+      "root": "opi_c687d4383752413f92f574fde1b12132",
+      "type": "AUTHORIZATION",
+      "state": "CONFIRMED",
+      "amount": 468000,
+      "currency": "CNY",
+      "key": "flight-auth:c11o_aa72acd633e94431a99ee126c373aeeb",
+      "parent": null
+    },
+    {
+      "id": "omm_fd558f412c4f4083a065c9ee3f0e1c82",
+      "root": "opi_c687d4383752413f92f574fde1b12132",
+      "type": "CAPTURE",
+      "state": "CONFIRMED",
+      "amount": 468000,
+      "currency": "CNY",
+      "key": "flight-cap:c11o_aa72acd633e94431a99ee126c373aeeb",
+      "parent": "omm_56a9eeb60150415695ef70e7c0a50ff8"
+    }
+  ],
+  "attempt_ids": [
+    "opa_739d04e518c6457b9d83ffca44905178"
+  ],
+  "claims": [
+    {
+      "operation": "FLIGHT_CHECKOUT",
+      "key": "request-checkout-recover",
+      "resource": "c11o_aa72acd633e94431a99ee126c373aeeb",
+      "code": 102,
+      "body": {
+        "status": "RECOVERY_REQUIRED"
+      }
+    },
+    {
+      "operation": "RESOURCE:FLIGHT_CHECKOUT",
+      "key": "c11o_aa72acd633e94431a99ee126c373aeeb",
+      "resource": "c11o_aa72acd633e94431a99ee126c373aeeb",
+      "code": 102,
+      "body": {
+        "status": "RECOVERY_REQUIRED"
+      }
+    }
+  ],
+  "order_status": "PAYMENT_AUTHORIZED",
+  "quote_status": null
+}

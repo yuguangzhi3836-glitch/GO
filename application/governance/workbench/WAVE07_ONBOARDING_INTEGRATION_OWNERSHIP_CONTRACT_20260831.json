@@ -1,0 +1,33 @@
+{
+  "contract_id": "WAVE07-C01-C12-ONBOARDING-INTEGRATION-OWNERSHIP-20260831",
+  "version": "1.0",
+  "scope": "Owned-path correction for Wave 07 Provider Onboarding & Certification governance only",
+  "parties": {
+    "C01": {
+      "role": "legacy services-path custodian / no ownership of carved-out onboarding integration file"
+    },
+    "C12": {
+      "role": "Provider onboarding control-plane governance and security integration owner"
+    }
+  },
+  "exact_path_assignment": {
+    "src/go_hotel/services/onboarding.py": "C12",
+    "src/go_hotel/api/routes/onboarding.py": "C12",
+    "src/go_hotel/core/provider_onboarding_governance_v1.py": "C12",
+    "tests/workbench/test_wave07_provider_onboarding_governance_v1.py": "C12"
+  },
+  "carve_out": {
+    "from_c01_prefix": "src/go_hotel/services/",
+    "exact_exception": "src/go_hotel/services/onboarding.py",
+    "mechanism": "C01 forbidden exact path + C12 owned exact path"
+  },
+  "truth_boundary": [
+    "Path ownership does not grant C12 HOTEL or any six-Vertical business Truth authority",
+    "Provider mapping continues to consume Provider Adapter Contract v2 and may not mutate Vertical Truth",
+    "Provider eligibility remains governance truth only and is capped at ELIGIBLE_FOR_SANDBOX_ONLY",
+    "C09 Recommendation Constitution remains isolated",
+    "No real Provider, Secret, LIVE call, DB schema, money movement, or deployment is authorized"
+  ],
+  "collaboration_mode": "CONTRACT",
+  "status": "ACTIVE_FOR_WAVE07_AND_FUTURE_CHANGES_TO_THESE_EXACT_INTEGRATION_PATHS_UNTIL_EXPLICITLY_REVISED"
+}

@@ -1,0 +1,25 @@
+{
+  "anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "cell": "C06",
+  "run": "runtime-existing",
+  "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+  "argv": [
+    "/workspace/scratch/948b51def3a9/venv/bin/python",
+    "-m",
+    "pytest",
+    "tests/test_sprint3d_attractions.py",
+    "tests/test_depth20_attraction_contract.py",
+    "tests/test_depth26_attraction_terms.py",
+    "-q",
+    "--junitxml=/workspace/scratch/948b51def3a9/GO/evidence/v70-round2-20260914/c06/runtime-existing.junit.xml"
+  ],
+  "environment_overrides": {
+    "PYTHONPATH": "src",
+    "GO_TEST_DB_PATH": "/tmp/go-v70-r2-c06-13c0fabe07b04481b1d0427129b25ffe.db"
+  },
+  "runtime": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "started_at": "2026-09-14T03:02:11.530232+00:00",
+  "database_backend": "isolated SQLite",
+  "external_provider": "simulated",
+  "hk_or_browser_acceptance": false
+}

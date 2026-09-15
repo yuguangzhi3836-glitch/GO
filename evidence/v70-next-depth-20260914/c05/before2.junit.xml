@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="8" time="3.447" timestamp="2026-09-14T12:50:27.424011+09:00" hostname="localhost"><testcase classname="tests.test_v70_next_c05_recovery_evidence" name="test_missing_or_corrupt_unknown_evidence_does_not_restore_ride[missing_last-CONFIRMED]" time="1.519"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', fault = 'missing_last'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('fault', ['missing_last', 'missing_all', 'payload_corruption', 'invalid_phase'])
+    def test_missing_or_corrupt_unknown_evidence_does_not_restore_ride(phase, fault):
+        svc, owner, oid = booked('RIDE')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'START', 'isolated://start')
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://unknown', 'ops')
+        with SessionLocal.begin() as session:
+            query = select(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid).order_by(Evidence.sequence_no)
+            rows = list(session.scalars(query))
+            latest = rows[-1]
+            assert latest.evidence_kind == 'EXTERNAL_STATE_UNKNOWN'
+            if fault == 'missing_last':
+                session.delete(latest)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid))
+            else:
+                body = deepcopy(latest.evidence_json)
+                body['payload']['previous_status'] = 'CONFIRMED' if phase == 'IN_PROGRESS' else 'IN_PROGRESS'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                    latest.evidence_hash = _stable_hash(body)
+                    latest.entry_hash = _stable_hash({'evidence_hash': latest.evidence_hash,
+                        'previous_hash': latest.previous_hash, 'sequence_no': latest.sequence_no})
+                latest.evidence_json = body
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RIDE_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_next_c05_recovery_evidence.py:37: Failed</failure></testcase><testcase classname="tests.test_v70_next_c05_recovery_evidence" name="test_missing_or_corrupt_unknown_evidence_does_not_restore_ride[missing_last-IN_PROGRESS]" time="0.076"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', fault = 'missing_last'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('fault', ['missing_last', 'missing_all', 'payload_corruption', 'invalid_phase'])
+    def test_missing_or_corrupt_unknown_evidence_does_not_restore_ride(phase, fault):
+        svc, owner, oid = booked('RIDE')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'START', 'isolated://start')
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://unknown', 'ops')
+        with SessionLocal.begin() as session:
+            query = select(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid).order_by(Evidence.sequence_no)
+            rows = list(session.scalars(query))
+            latest = rows[-1]
+            assert latest.evidence_kind == 'EXTERNAL_STATE_UNKNOWN'
+            if fault == 'missing_last':
+                session.delete(latest)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid))
+            else:
+                body = deepcopy(latest.evidence_json)
+                body['payload']['previous_status'] = 'CONFIRMED' if phase == 'IN_PROGRESS' else 'IN_PROGRESS'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                    latest.evidence_hash = _stable_hash(body)
+                    latest.entry_hash = _stable_hash({'evidence_hash': latest.evidence_hash,
+                        'previous_hash': latest.previous_hash, 'sequence_no': latest.sequence_no})
+                latest.evidence_json = body
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RIDE_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_next_c05_recovery_evidence.py:37: Failed</failure></testcase><testcase classname="tests.test_v70_next_c05_recovery_evidence" name="test_missing_or_corrupt_unknown_evidence_does_not_restore_ride[missing_all-CONFIRMED]" time="0.073"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', fault = 'missing_all'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('fault', ['missing_last', 'missing_all', 'payload_corruption', 'invalid_phase'])
+    def test_missing_or_corrupt_unknown_evidence_does_not_restore_ride(phase, fault):
+        svc, owner, oid = booked('RIDE')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'START', 'isolated://start')
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://unknown', 'ops')
+        with SessionLocal.begin() as session:
+            query = select(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid).order_by(Evidence.sequence_no)
+            rows = list(session.scalars(query))
+            latest = rows[-1]
+            assert latest.evidence_kind == 'EXTERNAL_STATE_UNKNOWN'
+            if fault == 'missing_last':
+                session.delete(latest)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid))
+            else:
+                body = deepcopy(latest.evidence_json)
+                body['payload']['previous_status'] = 'CONFIRMED' if phase == 'IN_PROGRESS' else 'IN_PROGRESS'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                    latest.evidence_hash = _stable_hash(body)
+                    latest.entry_hash = _stable_hash({'evidence_hash': latest.evidence_hash,
+                        'previous_hash': latest.previous_hash, 'sequence_no': latest.sequence_no})
+                latest.evidence_json = body
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RIDE_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_next_c05_recovery_evidence.py:37: Failed</failure></testcase><testcase classname="tests.test_v70_next_c05_recovery_evidence" name="test_missing_or_corrupt_unknown_evidence_does_not_restore_ride[missing_all-IN_PROGRESS]" time="0.074"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', fault = 'missing_all'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('fault', ['missing_last', 'missing_all', 'payload_corruption', 'invalid_phase'])
+    def test_missing_or_corrupt_unknown_evidence_does_not_restore_ride(phase, fault):
+        svc, owner, oid = booked('RIDE')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'START', 'isolated://start')
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://unknown', 'ops')
+        with SessionLocal.begin() as session:
+            query = select(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid).order_by(Evidence.sequence_no)
+            rows = list(session.scalars(query))
+            latest = rows[-1]
+            assert latest.evidence_kind == 'EXTERNAL_STATE_UNKNOWN'
+            if fault == 'missing_last':
+                session.delete(latest)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid))
+            else:
+                body = deepcopy(latest.evidence_json)
+                body['payload']['previous_status'] = 'CONFIRMED' if phase == 'IN_PROGRESS' else 'IN_PROGRESS'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                    latest.evidence_hash = _stable_hash(body)
+                    latest.entry_hash = _stable_hash({'evidence_hash': latest.evidence_hash,
+                        'previous_hash': latest.previous_hash, 'sequence_no': latest.sequence_no})
+                latest.evidence_json = body
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RIDE_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_next_c05_recovery_evidence.py:37: Failed</failure></testcase><testcase classname="tests.test_v70_next_c05_recovery_evidence" name="test_missing_or_corrupt_unknown_evidence_does_not_restore_ride[payload_corruption-CONFIRMED]" time="0.079"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', fault = 'payload_corruption'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('fault', ['missing_last', 'missing_all', 'payload_corruption', 'invalid_phase'])
+    def test_missing_or_corrupt_unknown_evidence_does_not_restore_ride(phase, fault):
+        svc, owner, oid = booked('RIDE')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'START', 'isolated://start')
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://unknown', 'ops')
+        with SessionLocal.begin() as session:
+            query = select(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid).order_by(Evidence.sequence_no)
+            rows = list(session.scalars(query))
+            latest = rows[-1]
+            assert latest.evidence_kind == 'EXTERNAL_STATE_UNKNOWN'
+            if fault == 'missing_last':
+                session.delete(latest)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid))
+            else:
+                body = deepcopy(latest.evidence_json)
+                body['payload']['previous_status'] = 'CONFIRMED' if phase == 'IN_PROGRESS' else 'IN_PROGRESS'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                    latest.evidence_hash = _stable_hash(body)
+                    latest.entry_hash = _stable_hash({'evidence_hash': latest.evidence_hash,
+                        'previous_hash': latest.previous_hash, 'sequence_no': latest.sequence_no})
+                latest.evidence_json = body
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RIDE_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_next_c05_recovery_evidence.py:37: Failed</failure></testcase><testcase classname="tests.test_v70_next_c05_recovery_evidence" name="test_missing_or_corrupt_unknown_evidence_does_not_restore_ride[payload_corruption-IN_PROGRESS]" time="0.075"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', fault = 'payload_corruption'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('fault', ['missing_last', 'missing_all', 'payload_corruption', 'invalid_phase'])
+    def test_missing_or_corrupt_unknown_evidence_does_not_restore_ride(phase, fault):
+        svc, owner, oid = booked('RIDE')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'START', 'isolated://start')
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://unknown', 'ops')
+        with SessionLocal.begin() as session:
+            query = select(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid).order_by(Evidence.sequence_no)
+            rows = list(session.scalars(query))
+            latest = rows[-1]
+            assert latest.evidence_kind == 'EXTERNAL_STATE_UNKNOWN'
+            if fault == 'missing_last':
+                session.delete(latest)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid))
+            else:
+                body = deepcopy(latest.evidence_json)
+                body['payload']['previous_status'] = 'CONFIRMED' if phase == 'IN_PROGRESS' else 'IN_PROGRESS'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                    latest.evidence_hash = _stable_hash(body)
+                    latest.entry_hash = _stable_hash({'evidence_hash': latest.evidence_hash,
+                        'previous_hash': latest.previous_hash, 'sequence_no': latest.sequence_no})
+                latest.evidence_json = body
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RIDE_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_next_c05_recovery_evidence.py:37: Failed</failure></testcase><testcase classname="tests.test_v70_next_c05_recovery_evidence" name="test_missing_or_corrupt_unknown_evidence_does_not_restore_ride[invalid_phase-CONFIRMED]" time="0.074"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', fault = 'invalid_phase'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('fault', ['missing_last', 'missing_all', 'payload_corruption', 'invalid_phase'])
+    def test_missing_or_corrupt_unknown_evidence_does_not_restore_ride(phase, fault):
+        svc, owner, oid = booked('RIDE')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'START', 'isolated://start')
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://unknown', 'ops')
+        with SessionLocal.begin() as session:
+            query = select(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid).order_by(Evidence.sequence_no)
+            rows = list(session.scalars(query))
+            latest = rows[-1]
+            assert latest.evidence_kind == 'EXTERNAL_STATE_UNKNOWN'
+            if fault == 'missing_last':
+                session.delete(latest)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid))
+            else:
+                body = deepcopy(latest.evidence_json)
+                body['payload']['previous_status'] = 'CONFIRMED' if phase == 'IN_PROGRESS' else 'IN_PROGRESS'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                    latest.evidence_hash = _stable_hash(body)
+                    latest.entry_hash = _stable_hash({'evidence_hash': latest.evidence_hash,
+                        'previous_hash': latest.previous_hash, 'sequence_no': latest.sequence_no})
+                latest.evidence_json = body
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RIDE_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_next_c05_recovery_evidence.py:37: Failed</failure></testcase><testcase classname="tests.test_v70_next_c05_recovery_evidence" name="test_missing_or_corrupt_unknown_evidence_does_not_restore_ride[invalid_phase-IN_PROGRESS]" time="0.075"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', fault = 'invalid_phase'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('fault', ['missing_last', 'missing_all', 'payload_corruption', 'invalid_phase'])
+    def test_missing_or_corrupt_unknown_evidence_does_not_restore_ride(phase, fault):
+        svc, owner, oid = booked('RIDE')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'START', 'isolated://start')
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://unknown', 'ops')
+        with SessionLocal.begin() as session:
+            query = select(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid).order_by(Evidence.sequence_no)
+            rows = list(session.scalars(query))
+            latest = rows[-1]
+            assert latest.evidence_kind == 'EXTERNAL_STATE_UNKNOWN'
+            if fault == 'missing_last':
+                session.delete(latest)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RIDE:' + oid))
+            else:
+                body = deepcopy(latest.evidence_json)
+                body['payload']['previous_status'] = 'CONFIRMED' if phase == 'IN_PROGRESS' else 'IN_PROGRESS'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                    latest.evidence_hash = _stable_hash(body)
+                    latest.entry_hash = _stable_hash({'evidence_hash': latest.evidence_hash,
+                        'previous_hash': latest.previous_hash, 'sequence_no': latest.sequence_no})
+                latest.evidence_json = body
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RIDE_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_v70_next_c05_recovery_evidence.py:37: Failed</failure></testcase></testsuite></testsuites>

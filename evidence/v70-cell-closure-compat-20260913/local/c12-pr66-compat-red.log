@@ -1,0 +1,70 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_admin_hotel_refund_amount_is_real_column _________________
+
+client = <starlette.testclient.TestClient object at 0x7f24058def60>
+
+    def test_admin_hotel_refund_amount_is_real_column(client):
+        oid,_,_,q,refund=booked('HOTEL',client);refund()
+        from go_hotel.api.routes.operations_console import vertical_snapshot
+>       rows=vertical_snapshot('HOTEL',p=None)['data']['refunds']
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+application/tests/test_depth41_transaction_views.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+vertical = 'HOTEL', p = None, page = Query(1), refund_page = Query(1)
+page_size = Query(50), order_id = Query(None)
+
+    @router.get('/verticals/{vertical}')
+    def vertical_snapshot(
+        vertical: str,
+        p: Principal = Depends(admin_principal),
+        page: int = Query(1, ge=1, le=1000000),
+        refund_page: int = Query(1, ge=1, le=1000000),
+        page_size: int = Query(50, ge=1, le=100),
+        order_id: str | None = Query(None, max_length=64),
+    ):
+        v = vertical.upper()
+        if v not in VERTICALS:
+            raise HTTPException(404, detail='VERTICAL_NOT_FOUND')
+>       query = (order_id or '').strip() or None
+                ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Query' object has no attribute 'strip'
+
+application/src/go_hotel/api/routes/operations_console.py:80: AttributeError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-13T15:18:49.207198+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_2bebde3deeba4672b5c0e10cc06e3a4b","trace_id":"tr_bb4465fdc82a43878df8ff9fdf14fe8c","path":"/v1/search/hotels","method":"POST","status_code":200,"duration_ms":54.35}
+{"ts":"2026-09-13T15:18:49.208365+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/search/hotels \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-13T15:18:49.223913+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_745c1869430e44d1a1c2b607b00e92cf","trace_id":"tr_541c50c61b814548901705f12b03efb5","path":"/v1/offers/off_78ac9119ce2446c7/prebook","method":"POST","status_code":200,"duration_ms":14.04}
+{"ts":"2026-09-13T15:18:49.224489+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/offers/off_78ac9119ce2446c7/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-13T15:18:49.524005+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_e0c025574840470a9e306f96f50474d1","trace_id":"tr_e497528de0d74f45b04c89f70b46a921","path":"/v1/orders","method":"POST","status_code":200,"duration_ms":298.54}
+{"ts":"2026-09-13T15:18:49.524628+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-13T15:18:49.547436+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_9211590c74974bef96ca40d7d5f4e30e","trace_id":"tr_f2ba8a571046474e9bd2d9360470c48e","path":"/v1/orders/ord_e5a75ab993844f6e/payments","method":"POST","status_code":200,"duration_ms":21.88}
+{"ts":"2026-09-13T15:18:49.547948+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/orders/ord_e5a75ab993844f6e/payments \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-13T15:18:49.593354+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_95c025350cda46bbaf9fd107a7b516b8","trace_id":"tr_da7f360eaaf54f4d90f71bf1941221d5","path":"/internal/v1/orders/ord_e5a75ab993844f6e/confirm","method":"POST","status_code":200,"duration_ms":44.57}
+{"ts":"2026-09-13T15:18:49.593866+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/orders/ord_e5a75ab993844f6e/confirm \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/search/hotels "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/offers/off_78ac9119ce2446c7/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/orders/ord_e5a75ab993844f6e/payments "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/orders/ord_e5a75ab993844f6e/confirm "HTTP/1.1 200 OK"
+=============================== warnings summary ===============================
+tests/test_depth41_transaction_views.py::test_admin_hotel_refund_amount_is_real_column
+  /workspace/scratch/2d68c25b0133/go-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_depth41_transaction_views.py::test_admin_hotel_refund_amount_is_real_column
+  /workspace/scratch/2d68c25b0133/go-venv/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED application/tests/test_depth41_transaction_views.py::test_admin_hotel_refund_amount_is_real_column
+1 failed, 2 warnings in 5.97s

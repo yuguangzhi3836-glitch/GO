@@ -1,0 +1,123 @@
+FFFFFF..........                                                         [100%]
+=================================== FAILURES ===================================
+_ test_supplement_cannot_override_persisted_evidence_or_publish[confirmed_serious_risk_count-0] _
+
+key = 'confirmed_serious_risk_count', value = 0
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+>       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed
+_ test_supplement_cannot_override_persisted_evidence_or_publish[completed_review_count-100000] _
+
+key = 'completed_review_count', value = 100000
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+>       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed
+_ test_supplement_cannot_override_persisted_evidence_or_publish[structured_experience_avg_milli-5000] _
+
+key = 'structured_experience_avg_milli', value = 5000
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+>       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed
+_ test_supplement_cannot_override_persisted_evidence_or_publish[dimension_summary-value3] _
+
+key = 'dimension_summary', value = {'SAFETY': {'positive': 100, 'negative': 0}}
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+>       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed
+_ test_supplement_cannot_override_persisted_evidence_or_publish[monitoring_risk_count-0] _
+
+key = 'monitoring_risk_count', value = 0
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+>       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed
+_ test_supplement_cannot_override_persisted_evidence_or_publish[verified_remediation_count-100] _
+
+key = 'verified_remediation_count', value = 100
+
+    @pytest.mark.parametrize("key,value", [
+        ("confirmed_serious_risk_count", 0),
+        ("completed_review_count", 100000),
+        ("structured_experience_avg_milli", 5000),
+        ("dimension_summary", {"SAFETY": {"positive": 100, "negative": 0}}),
+        ("monitoring_risk_count", 0),
+        ("verified_remediation_count", 100),
+    ])
+    def test_supplement_cannot_override_persisted_evidence_or_publish(key, value):
+        confirmed_risk()
+>       with pytest.raises(HTTPException) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE HTTPException
+
+tests/judgment/test_round2_evidence_authority.py:47: Failed
+=========================== short test summary info ============================
+FAILED tests/judgment/test_round2_evidence_authority.py::test_supplement_cannot_override_persisted_evidence_or_publish[confirmed_serious_risk_count-0]
+FAILED tests/judgment/test_round2_evidence_authority.py::test_supplement_cannot_override_persisted_evidence_or_publish[completed_review_count-100000]
+FAILED tests/judgment/test_round2_evidence_authority.py::test_supplement_cannot_override_persisted_evidence_or_publish[structured_experience_avg_milli-5000]
+FAILED tests/judgment/test_round2_evidence_authority.py::test_supplement_cannot_override_persisted_evidence_or_publish[dimension_summary-value3]
+FAILED tests/judgment/test_round2_evidence_authority.py::test_supplement_cannot_override_persisted_evidence_or_publish[monitoring_risk_count-0]
+FAILED tests/judgment/test_round2_evidence_authority.py::test_supplement_cannot_override_persisted_evidence_or_publish[verified_remediation_count-100]

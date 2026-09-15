@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/workspace/scratch/948b51def3a9/venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "-p",
+    "no:cacheprovider",
+    "/tmp/c11-parent-red-8_zj9jbd/test_c11_parent_red.py",
+    "--junitxml=/workspace/scratch/948b51def3a9/GO/evidence/v70-next-depth-20260914/c11/red-parent-reverified.xml"
+  ],
+  "cwd": "/tmp/c11-parent-red-8_zj9jbd",
+  "environment": {
+    "PYTHONPATH": "/workspace/scratch/948b51def3a9/pr73-baseline/application/src",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "GO_TEST_DB_PATH": "/tmp/c11-parent-red-20260914.db"
+  },
+  "started_at": "2026-09-14T04:15:42.369068+00:00",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "test_sha256": "2b64b0f66812ce4073bee1102b110c17c577c32f384efa722ca7272cc0f8b440"
+}

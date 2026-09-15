@@ -1,0 +1,252 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_first_hotel_writers_also_serialize_uninitialized_standard ________
+
+self = <sqlalchemy.engine.base.Connection object at 0x7fa0a6998740>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7fa0a83495e0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7fa0a6999a90>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7fa0a6999940>
+parameters = [('ghsv_system_v1', 1, 'GO_GOOD_HOTEL_STANDARD', '["FULFILLMENT_TRUTH", "ROOM_ACCURACY", "CLEANLINESS", "SAFETY", "SLE... "WORTH_THE_JOURNEY"]', '{"minimum_completed_reviews_for_go_score": 1}', '["UNRESOLVED_CONFIRMED_SERIOUS_RISK"]', ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7fa0a83495e0>
+cursor = <sqlite3.Cursor object at 0x7fa0a76d3040>
+statement = 'INSERT INTO good_hotel_standard_version (good_hotel_standard_version_id, version_no, standard_key, dimensions_json, t...te, requested_by, approved_by, effective_at, retired_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('ghsv_system_v1', 1, 'GO_GOOD_HOTEL_STANDARD', '["FULFILLMENT_TRUTH", "ROOM_ACCURACY", "CLEANLINESS", "SAFETY", "SLEE..., "WORTH_THE_JOURNEY"]', '{"minimum_completed_reviews_for_go_score": 1}', '["UNRESOLVED_CONFIRMED_SERIOUS_RISK"]', ...)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7fa0a6999a90>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: good_hotel_standard_version.content_hash
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fa0a814e330>
+
+    def test_first_hotel_writers_also_serialize_uninitialized_standard(monkeypatch):
+        barrier = Barrier(2)
+        first_read = local()
+        original = Session.scalar
+        def observed_read(session, statement, *args, **kwargs):
+            value = original(session, statement, *args, **kwargs)
+            if 'FROM good_hotel_standard_version' in str(statement) and not getattr(first_read, 'done', False):
+                first_read.done = True
+                try:
+                    barrier.wait(timeout=0.3)
+                except BrokenBarrierError:
+                    pass
+            return value
+        monkeypatch.setattr(Session, 'scalar', observed_read)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+>           results = [f.result(timeout=15) for f in [pool.submit(svc.reevaluate, 'next-hotel'), pool.submit(svc.reevaluate, 'next-hotel')]]
+                       ^^^^^^^^^^^^^^^^^^^^
+
+tests/judgment/test_next_depth_concurrent_judgment.py:175: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:449: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/judgment/service.py:207: in reevaluate
+    standard = good_hotel_standard_service.active()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/judgment/good_hotel_standard.py:18: in active
+    def active(self):return self.bootstrap()
+                            ^^^^^^^^^^^^^^^^
+src/go_hotel/judgment/good_hotel_standard.py:17: in bootstrap
+    row=GoodHotelStandardVersionRow(good_hotel_standard_version_id='ghsv_system_v1',version_no=1,standard_key='GO_GOOD_HOTEL_STANDARD',dimensions_json=DEFAULT['dimensions'],thresholds_json=DEFAULT['thresholds'],disqualifiers_json=DEFAULT['disqualifiers'],evidence_requirements_json=DEFAULT['evidence_requirements'],content_hash=digest(DEFAULT),state='ACTIVE',requested_by='SYSTEM_BOOTSTRAP',approved_by='SYSTEM_CONSTITUTION',effective_at=now(),created_at=now());s.add(row);self._event(s,row,'INITIAL_STANDARD_ACTIVATED','SYSTEM_CONSTITUTION',{'immutable_baseline':True});s.commit();return row
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2035: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+../../venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+../../venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7fa0a83495e0>
+cursor = <sqlite3.Cursor object at 0x7fa0a76d3040>
+statement = 'INSERT INTO good_hotel_standard_version (good_hotel_standard_version_id, version_no, standard_key, dimensions_json, t...te, requested_by, approved_by, effective_at, retired_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('ghsv_system_v1', 1, 'GO_GOOD_HOTEL_STANDARD', '["FULFILLMENT_TRUTH", "ROOM_ACCURACY", "CLEANLINESS", "SAFETY", "SLEE..., "WORTH_THE_JOURNEY"]', '{"minimum_completed_reviews_for_go_score": 1}', '["UNRESOLVED_CONFIRMED_SERIOUS_RISK"]', ...)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7fa0a6999a90>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: good_hotel_standard_version.content_hash
+E       [SQL: INSERT INTO good_hotel_standard_version (good_hotel_standard_version_id, version_no, standard_key, dimensions_json, thresholds_json, disqualifiers_json, evidence_requirements_json, content_hash, state, requested_by, approved_by, effective_at, retired_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('ghsv_system_v1', 1, 'GO_GOOD_HOTEL_STANDARD', '["FULFILLMENT_TRUTH", "ROOM_ACCURACY", "CLEANLINESS", "SAFETY", "SLEEP_QUALITY", "SERVICE_RECOVERY", "POLICY_TRANSPARENCY", "WORK_OF_HOSPITALITY", "IRREPLACEABILITY", "SENSE_OF_PLACE", "AESTHETIC_JUDGMENT", "EMOTIONAL_RESONANCE", "WORTH_THE_JOURNEY"]', '{"minimum_completed_reviews_for_go_score": 1}', '["UNRESOLVED_CONFIRMED_SERIOUS_RISK"]', '{"required": ["GO_TRUTH_OR_VERIFIED_OPERATIONAL_EVIDENCE"], "recommendation_requires_independent_assessment": true, "recommendation_not_derived_from_ ... (120 characters truncated) ... "commercial_fields_forbidden": true, "price_value_fields_excluded": true, "city_quota_forbidden": true, "fixed_recommendation_ratio_forbidden": true}', 'ed010de3b203fbf9c59568110e157d115fa1a70d09b8a6a7d0aa9c2205d8624d', 'ACTIVE', 'SYSTEM_BOOTSTRAP', 'SYSTEM_CONSTITUTION', '2026-09-14 04:04:32.649706', None, '2026-09-14 04:04:32.649710')]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+../../venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+=========================== short test summary info ============================
+FAILED tests/judgment/test_next_depth_concurrent_judgment.py::test_first_hotel_writers_also_serialize_uninitialized_standard

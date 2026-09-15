@@ -1,0 +1,49 @@
+{
+  "cell": "C11",
+  "task": "C11-R2-POST-COMMIT-CALLBACK",
+  "status": "BLOCKED_CONTRACT_REVIEW",
+  "task_scope": "Reproduce committed callback side effect followed by exception; preserve existing tested release contract until explicit outcome classification is reviewed.",
+  "stages": {
+    "gap": "DONE",
+    "task": "REPRODUCED_CONTRACT_REVIEW_REQUIRED",
+    "test": "FAIL_KNOWN_GAP",
+    "evidence": "DONE",
+    "C14": "PENDING_INDEPENDENT_REVIEW",
+    "C13": "PENDING_INDEPENDENT_REVIEW"
+  },
+  "chain_completed": 2,
+  "chain_total": 6,
+  "new_failing_tests": 2,
+  "retained_regression_passed": 16,
+  "production_files": [],
+  "test_files": [
+    "evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py"
+  ],
+  "remaining": [
+    "Sync and async callbacks both allow two committed effects with one idempotency key after callback error.",
+    "A generic exception/HTTP status cannot certify no side effects."
+  ],
+  "next_task": {
+    "id": "C11-R2-EXPLICIT-OUTCOME-CONTRACT",
+    "owner": "C11",
+    "state": "ASSIGNED",
+    "task": "Review FLIGHT_CHECKOUT/FLIGHT_EXECUTE_CHANGE with C02 and specify proven-no-side-effect versus uncertain outcome; preserve safe validation retries and add reconciliation proof."
+  },
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "created_at": "2026-09-14T03:07:41.693958+00:00",
+  "completion_scope": "Only this assigned finite task; not whole-domain completion.",
+  "authority": "Local source candidate and isolated test evidence; no remote write, merge or deployment; C14/C13 not self-signed.",
+  "evidence_files": [
+    "evidence/v70-round2-20260914/c11/CONTRACT_REVIEW.md",
+    "evidence/v70-round2-20260914/c11/red.command.json",
+    "evidence/v70-round2-20260914/c11/red.log",
+    "evidence/v70-round2-20260914/c11/red.xml",
+    "evidence/v70-round2-20260914/c11/retained_regression.command.json",
+    "evidence/v70-round2-20260914/c11/retained_regression.log",
+    "evidence/v70-round2-20260914/c11/retained_regression.xml",
+    "evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py"
+  ],
+  "candidate_sha256": {
+    "evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py": "bd58419249da0bd5eb842032839e836832465b9d25adabf46aa2fefa84610694"
+  }
+}

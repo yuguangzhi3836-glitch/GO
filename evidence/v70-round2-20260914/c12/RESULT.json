@@ -1,0 +1,29 @@
+{
+  "cell_id": "C12",
+  "task_scope": "Local development scheduler validator and evidence-preserving followup generation",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "command": [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+    "ci/round2/test_validate_ledger.py",
+    "-v"
+  ],
+  "cwd": "/workspace/scratch/948b51def3a9/GO",
+  "started_at": "2026-09-14T03:07:02.936951+00:00",
+  "finished_at": "2026-09-14T03:07:03.044473+00:00",
+  "exit_code": 0,
+  "tests_passed": 16,
+  "files_sha256": {
+    "ci/round2/validate_ledger.py": "c64086f3280d936f40f6ceb26efaa81002905676a87126c38c9cd2b3610dd4a5",
+    "ci/round2/test_validate_ledger.py": "ceb372457019fc9ce46f97528c05ef094dd7bcbccb19e6f3d5b482588852dcf7",
+    "ci/round2/README.md": "8838070fc63c2992f32946ce4b128bca401ce7edc04267906f25440eb770052c",
+    "ci/round2/example-ledger.json": "a9a4a4a8d91e0f1fe62e6c62856e850c526cc17cc4e74e8a7c12849ada069998"
+  },
+  "test_log_sha256": "93660ee7a1fb764547bfc654f7f2c2bd8f32253a29e18c296155364de63b5c5d",
+  "c14": "HOLD_PENDING_REVIEW",
+  "c13": "HOLD_PENDING_INDEPENDENT_REVIEW",
+  "limitations": [
+    "Synthetic input tests are not actual 14-worker execution evidence",
+    "No network, HK, production, runtime, signed tasks or remote ACK operations",
+    "Repository materialized source tree has no .git; parent supplied exact source lineage anchor"
+  ]
+}

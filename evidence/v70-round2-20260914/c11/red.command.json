@@ -1,0 +1,49 @@
+{
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "source_binding": "parent-verified per-file materialization; no .git metadata",
+  "command": [
+    "/workspace/scratch/948b51def3a9/venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "../evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py",
+    "--junitxml=/workspace/scratch/948b51def3a9/GO/evidence/v70-round2-20260914/c11/red.xml"
+  ],
+  "cwd": "/workspace/scratch/948b51def3a9/GO/application",
+  "environment": {
+    "PYTHONPATH": "src",
+    "GO_TEST_DB_PATH": "/tmp/go_round2_c11_red_2.db",
+    "DATABASE_URL": "sqlite+pysqlite:////tmp/go_round2_c11_red_2.db"
+  },
+  "started_at": "2026-09-14T03:02:47.245759+00:00",
+  "sha256": {
+    "application/src/go_hotel/go_ai/verification.py": "36ff7cefa829291377ba72a25829728f8f4f27f4dc30dfa07e0a8535cc190a26",
+    "application/src/go_hotel/go_ai/providers.py": "a6fbf36de0f737acf6d8f10c2b4e438fa56a12af7892760078bef276079a6a28",
+    "application/src/go_hotel/go_ai/registry.py": "8551044309ea2a16027d2aaf182856256e152f53447ad46319cbdf8132b0108b",
+    "application/src/go_hotel/go_ai/__init__.py": "902f700a18d815f198c416f972e1ca7ab61f527ae971c0e2d78a78953f30d2a2",
+    "application/src/go_hotel/go_ai/service.py": "9b0ef8d9907155a60c143f55c8ecb32ec18dc2262a44354144d2fad71e1adf45",
+    "application/src/go_hotel/go_ai/planner.py": "840cf2e83ef93e6d494e2a4da8454fd971532f82311133a10d9f8419b2b78afc",
+    "application/src/go_hotel/go_ai/router.py": "68efdbb7d3eeebe296e975ecc150c1a3f8d29a0d0a48aa9afe47157edc65b43a",
+    "application/src/go_hotel/go_ai/complexity.py": "806ed08a24b5bea772ff6f2b97de69b1308941ffeb0afc28b25c1010edc0f154",
+    "application/src/go_hotel/go_ai/models.py": "593a698aa6dcf235764de772553e2484f1d613f66d3c6f48a67f99f46b50494c",
+    "application/src/go_hotel/journey/service.py": "cbb4ad735e6a3a6632154dace37a80ef7945e95706bbfc17e1a32f674e0ab67b",
+    "application/src/go_hotel/api/idempotency.py": "260a12d78f7e4b1cb375ee71e200486146feb3b8946ad1805ba5c15534f86c58",
+    "application/src/go_hotel/repositories/sql.py": "c22ea50d9a47c6a45aefacb5c77d71767891186745b693a1fe8689728ca7dfe1",
+    "application/tests/conftest.py": "52ce17e787753b0f827e8b249aa857176729ce1139779e05031412fa88caa17b",
+    "application/../evidence/v70-round2-20260914/c11/test_post_commit_callback_probe.py": "bd58419249da0bd5eb842032839e836832465b9d25adabf46aa2fefa84610694"
+  },
+  "exit_code": 1,
+  "finished_at": "2026-09-14T03:02:50.148238+00:00",
+  "orchestration_interpreter_python": "3.12.14",
+  "test_interpreter": {
+    "executable": "/workspace/scratch/948b51def3a9/venv/bin/python",
+    "version": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+    "packages": {
+      "pytest": "9.1.1",
+      "SQLAlchemy": "2.0.52",
+      "fastapi": "0.141.1",
+      "pydantic": "2.13.5"
+    }
+  }
+}

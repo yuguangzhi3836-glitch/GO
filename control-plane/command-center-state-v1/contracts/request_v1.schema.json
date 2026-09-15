@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-state-v1/contracts/request_v1.schema.json",
+  "title": "GO Command Center Request V1",
+  "description": "Human intent submitted as an untrusted proposal through the GitHub control bus. A Request never carries execution parameters and never holds Execution Authority. Command Center resolves every sensitive value deterministically.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_id", "action_id", "environment", "requested_at"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "request_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$",
+      "description": "Fresh and unique per Request. Reuse is rejected."
+    },
+    "action_id": {
+      "enum": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY"],
+      "description": "The only actions a human may name. ROLLBACK and CANARY are not human-requestable actions."
+    },
+    "environment": {"const": "HK-STAGING-01"},
+    "requested_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"action_id": {"const": "HK_STAGING_TEST_PR"}}, "required": ["action_id"]},
+      "then": {"required": ["pr_number"], "properties": {"pr_number": {"type": "string", "pattern": "^[1-9][0-9]{0,8}$"}}}
+    },
+    {
+      "if": {"properties": {"action_id": {"const": "HK_STAGING_DEPLOY"}}, "required": ["action_id"]},
+      "then": {"required": ["plan_id"], "properties": {"plan_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$"}}}
+    }
+  ],
+  "x-go-forbidden-fields": [
+    "shell", "command", "argv", "docker", "dockerfile", "image", "image_id", "repo_digest",
+    "service", "services", "compose_file", "compose_path", "env_file", "environment_path",
+    "executor", "executor_path", "signature", "authority", "task_id", "nonce", "release_id",
+    "expires_at", "approval_id", "canary_evidence_id", "source_deploy_task_id", "migration",
+    "rollback_image", "target", "path", "key", "secret", "token", "force_recreate", "production"
+  ],
+  "x-go-capability-vs-enablement": {
+    "note": "A Request schema describes what is structurally expressible. It is NOT a statement of what the channel currently accepts. ChatGPT must use currently_enabled_request_action only.",
+    "known_capabilities": [
+      "HK_STAGING_VERIFY",
+      "HK_STAGING_TEST_PR",
+      "HK_STAGING_DEPLOY",
+      "HK_STAGING_CANARY",
+      "HK_STAGING_ROLLBACK"
+    ],
+    "currently_enabled_request_action": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR"],
+    "capability_classification": {
+      "HK_STAGING_VERIFY": "SUPPORTED_PROVEN",
+      "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
+      "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
+      "HK_STAGING_CANARY": "NOT_REQUESTABLE",
+      "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE"
+    },
+    "deploy_request_enabled": false,
+    "deploy_note": "The DEPLOY request capability exists in the repository and was installed by its closeout, but request enablement is fail-closed. Do not submit, imply or plan a DEPLOY Request. The live Command Center channel switch is a live-host fact that a derived control-state document must not assert."
+  },
+  "x-go-notes": [
+    "pr_number is a target selector, not an execution parameter: Command Center resolves it once to an immutable commit SHA with its own read-only resolver key.",
+    "plan_id refers to an operator-registered, human-approved deployment plan read from a fixed root-owned store. The Request cannot supply any value inside that plan. It is NOT an enabled action today.",
+    "A Request PR must add exactly one requests/<request_id>.json file and nothing else.",
+    "A Request never creates, signs, publishes or executes anything. Command Center is the only component that can turn a validated Request into a Signed Task."
+  ]
+}

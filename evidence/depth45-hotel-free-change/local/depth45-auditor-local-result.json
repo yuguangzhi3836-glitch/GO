@@ -1,0 +1,60 @@
+{
+  "scope": "LOCAL_PYTHON_FIXTURE_NOT_BROWSER",
+  "positive": {
+    "order_id": "ord_87d844f9b62c4dfe",
+    "result": "PASS",
+    "payment_roots": [
+      {
+        "business_type": "HOTEL_ORDER",
+        "business_id": "ord_87d844f9b62c4dfe",
+        "payment_intent_id": "opi_715904a21b2b4a1b98b87676fbe9282c",
+        "capture_id": "omm_affa4ae63e9c4cd2b791ced02c2fb597",
+        "refund_parent_id": "omm_affa4ae63e9c4cd2b791ced02c2fb597",
+        "amount_minor": 1443200,
+        "refunded_minor": 1400000,
+        "currency": "CNY",
+        "ledger_pairs": 2,
+        "result": "PASS"
+      },
+      {
+        "business_type": "HOTEL_CHANGE",
+        "business_id": "chgq_cf5b81688e5f41149780f9db4f8e5db6",
+        "payment_intent_id": "opi_cdb0274192a34dfc9fe57322dcb3d441",
+        "capture_id": "omm_e3830b50b79f4ed195a9e4efc30f327d",
+        "refund_parent_id": null,
+        "amount_minor": 80000,
+        "refunded_minor": 0,
+        "currency": "CNY",
+        "ledger_pairs": 1,
+        "result": "PASS"
+      },
+      {
+        "business_type": "HOTEL_CHANGE",
+        "business_id": "chgq_d9f4f2e881d3466687d659dd2151fdb3",
+        "payment_intent_id": "opi_751d510e740f4e29a0d6d47afa02d17a",
+        "capture_id": "omm_c2fd5071e4984017a729b7d7e5ae9b02",
+        "refund_parent_id": null,
+        "amount_minor": 40000,
+        "refunded_minor": 0,
+        "currency": "CNY",
+        "ledger_pairs": 1,
+        "result": "PASS"
+      }
+    ],
+    "capture_count": 3,
+    "refund_count": 1,
+    "gross_paid_minor": 1563200,
+    "refunded_minor": 1400000,
+    "net_paid_minor": 163200,
+    "forfeited_change_value_minor": 163200,
+    "confirmed_changes": 4,
+    "cash_operations": 5
+  },
+  "corruptions_rejected": [
+    "missing_ledger_pair",
+    "wrong_currency",
+    "wrong_refund_parent",
+    "wrong_change_amount"
+  ],
+  "audit_sha256": "28a28b6ea0c81069ceeb97881e7edb5305d93b5241f4b915f118c0244f034c87"
+}

@@ -1,0 +1,162 @@
+{
+  "schema": "go.current-hk-runtime.v1",
+  "status": "ACTIVE",
+  "environment": "HK-STAGING",
+  "host": "i-j6ccs8t04f1p4d8pe69z",
+  "runtime_generation": "DEPTH48",
+  "deployed_date": "2026-09-13",
+
+  "source_of_truth": {
+    "statement": "This file is the single authoritative pointer for the runtime that is actually running on HK-STAGING. Live state, Human Approval, Signed Task, installed artifact, durable previous-state record and Signed Evidence outrank this file for any execution decision.",
+    "business_source": "application/",
+    "build_definition": "application/Dockerfile",
+    "runtime_compose": "deploy/hk-staging/docker-compose.business-runtime.yml",
+    "runtime_env_contract": "deploy/hk-staging/RUNTIME_ENV_CONTRACT.md"
+  },
+
+  "product_source_identity": {
+    "note": "Identity of the DEPTH48 product source as integrated into main. Unchanged by this runtime sync.",
+    "source_commit": "6d0fd905d1b6004fd5cc5cf8d69d1bf26a0f700a",
+    "application_git_tree": "ad7d1de1190f86ad29d1c6cdafbcedd592e27206",
+    "application_files": 1323,
+    "application_source_sha256": "8e91fcf25e66478d5dac105c2608a195a98290640f2ecbfcec24fda27f212ac8"
+  },
+
+  "canonical_runtime_identity": {
+    "note": "Identity of the runnable application tree: product source plus the runtime build files that were required to make it run. This is the tree that a fresh clone builds.",
+    "canonical_branch": "canonical/depth48-hk-runtime-20260913",
+    "canonical_definition_commit": "dc0c31ddf2a1dac84396e71ca7811526c3d0131d",
+    "canonical_runtime_fix_commit": "1290526",
+    "canonical_main_commit": "bba3b2589ec38404122fb9590fc8119410b96247",
+    "canonical_main_commit_note": "Merge commit of the canonical sync PR. Verified post-merge: main:application tree equals canonical_runtime_application_tree.",
+    "canonical_runtime_application_tree": "3025b2b6b36ea9211da561a4631f304216de9d90",
+    "canonical_runtime_application_files": 1325,
+    "canonical_runtime_source_sha256": "d90a9e26c3a64b98009aaf170056f4b3acfa6acebd41baaed276b7baf17c6925"
+  },
+
+  "runtime_files": {
+    "dockerfile_path": "application/Dockerfile",
+    "compose_path": "deploy/hk-staging/docker-compose.business-runtime.yml",
+    "env_contract_path": "deploy/hk-staging/RUNTIME_ENV_CONTRACT.md",
+    "build_context": "application/",
+    "build_command": "docker build -t <tag> application/"
+  },
+
+  "image": {
+    "image_tag": "go-hotel:depth48-runtime-6d0fd905",
+    "image_config_id": "sha256:57beafa250f42eb1319ae561e0b79f432bb80d7171592392303a31446cd8ac6c",
+    "image_id_short": "1c9598d699c2",
+    "base_image": "python:3.12-slim",
+    "startup": "uvicorn go_hotel.main:app --host 0.0.0.0 --port 8000"
+  },
+
+  "database": {
+    "engine": "PostgreSQL 18.4",
+    "database": "go_hotel_stg",
+    "alembic_head": "0133_flight_change_plan",
+    "tables_after_migration": 551,
+    "previous_revision": "0114_ext_truth_incident_hard",
+    "migration_direction": "FORWARD_ONLY",
+    "migration_steps": 19,
+    "policy": "Never drop, reset, or destructively downgrade business data."
+  },
+
+  "compose": {
+    "project": "go-822-staging",
+    "cutover_command": "docker compose -p go-822-staging --env-file \"$GO_RUNTIME_ENV_FILE\" -f deploy/hk-staging/docker-compose.business-runtime.yml up -d --no-deps <service list>",
+    "image_variable": "GO_BUSINESS_IMAGE_TAG"
+  },
+
+  "business_services": [
+    "api",
+    "outbox-worker",
+    "recovery-worker",
+    "reconciliation-worker",
+    "judgment-worker",
+    "mobile-engagement-worker",
+    "mobile-push-worker",
+    "mobile-push-receipt-worker"
+  ],
+
+  "protected_non_targets": [
+    "caddy",
+    "redis",
+    "postgresql-rds-business-data",
+    "persistent-media-volumes",
+    "hk-agent",
+    "executor",
+    "signing-keys",
+    "task-evidence-ledger",
+    "control-plane-authority-data",
+    "ssh-access-and-key-material",
+    "production"
+  ],
+
+  "health_endpoint": {
+    "local": "http://127.0.0.1:8000/health",
+    "public": "https://staging-api.goaidirect.com/health",
+    "expected_body": "{\"status\":\"ok\",\"service\":\"go-hotel-platform\"}",
+    "openapi_paths": 972
+  },
+
+  "runtime_env": {
+    "host_path": "/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env",
+    "values_archived": false,
+    "contract_path": "deploy/hk-staging/RUNTIME_ENV_CONTRACT.md"
+  },
+
+  "fresh_checkout_build": {
+    "github_only": true,
+    "host_files_required": false,
+    "previous_parent_required": false,
+    "result": "PASS",
+    "build_ref": "edff13f36e0ad1eed0ec6f8f9c24b124facca088",
+    "build_context_source": "git archive of the pushed branch; no host-side file copied",
+    "build_exit": 0,
+    "image_size_mb": 428,
+    "alembic_heads": ["0133_flight_change_plan"],
+    "alembic_revisions": 133,
+    "empty_db_migrate_exit": 0,
+    "empty_db_tables": 551,
+    "health_http": 200,
+    "openapi_http": 200,
+    "container_fatal_errors": 0,
+    "note": "Dockerfile, .dockerignore and pyproject.toml digests in the build context were verified against the GitHub blobs; the context had zero references to any host path. The empty-database migration produced 551 tables, matching the live HK database structurally."
+  },
+
+  "previous_runtime_status": "SUPERSEDED",
+  "previous_runtime": {
+    "generation": "R3.1.x / HYATT direct booking",
+    "image_tag": "go-hotel:aoluguya-direct-r3-1-20260906",
+    "image_config_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+    "rollback_required": false,
+    "images_removed_from_host": true
+  },
+
+  "superseded_pointers": [
+    {
+      "item": "CP11_DEPTH46_CONSOLIDATED_PARENT_20260913",
+      "status": "SUPERSEDED_HISTORICAL_RUNTIME_PARENT"
+    },
+    {
+      "item": "CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913",
+      "status": "SOURCE_INPUT_AND_ASSEMBLY_ARTIFACT",
+      "note": "Its inner image carries source at /opt/go/source/ and has no runtime entrypoint. It is not a business runtime image."
+    },
+    {
+      "item": "hk-staging/",
+      "status": "HISTORICAL_SNAPSHOT_2026-09-11",
+      "note": "Archive of the previous HK runtime generation. Not active."
+    },
+    {
+      "item": "docs/canonical-baseline/CURRENT_CANDIDATE.json",
+      "status": "SOURCE_LINEAGE_POINTER",
+      "note": "Describes the DEPTH48 product source lineage. It is not the runtime pointer; use this file instead."
+    }
+  ],
+
+  "axes": {
+    "business_runtime": "This file. application/ + deploy/hk-staging/ define the business runtime.",
+    "control_plane": "Separate axis: command-center/, control-plane/, hk-staging/source/{agent,executor}. Do not conflate with the business runtime."
+  }
+}

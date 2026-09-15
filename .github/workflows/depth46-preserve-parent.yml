@@ -1,0 +1,58 @@
+name: DEPTH46 preserve verified parent bytes
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/depth46-preserve-parent.yml]
+permissions:
+  contents: read
+jobs:
+  preserve-parent:
+    if: ${{ github.event.pull_request.number == 47 && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+      pull-requests: read
+    env:
+      GO_SOURCE_SHA: 1abbbcac3f3078a4a12a2980d47498f9432b7751
+      GO_ARCHIVE_HEAD: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: 10306052578
+          run-id: 34718705172
+          repository: yuguangzhi3836-glitch/GO
+          github-token: ${{ github.token }}
+          path: downloaded-parent
+          merge-multiple: true
+      - name: Restore exact completed build payload without rebuilding
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,shutil
+          files=list(Path('downloaded-parent').rglob('CP11_DEPTH46_CONSOLIDATED_PARENT_20260913.zip'))
+          assert len(files)==1,files
+          p=files[0]
+          assert p.stat().st_size==314723816
+          assert hashlib.file_digest(p.open('rb'),'sha256').hexdigest()=='cc9b16be9555a2499db29a9ce0ebc25879fedd2953577bedc1f5e6e833451ce9'
+          shutil.copytree(p.parent,'parent-delivery')
+          PY
+      - name: Read-only restore verification
+        run: python -B packaging/depth46-consolidated-parent/verify_parent.py --zip parent-delivery/CP11_DEPTH46_CONSOLIDATED_PARENT_20260913.zip --sha256 cc9b16be9555a2499db29a9ce0ebc25879fedd2953577bedc1f5e6e833451ce9 --restore-to "${{ runner.temp }}/verified-restored-parent"
+      - name: Preserve and read every Git blob without updating refs
+        env:
+          GO_ARCHIVE_TOKEN: ${{ github.token }}
+        run: python -B packaging/depth46-consolidated-parent/archive_objects.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GO-DEPTH46-ARCHIVE-RECEIPT-${{ github.event.pull_request.head.sha }}
+          path: ARCHIVE_OBJECTS.json
+          if-no-files-found: error

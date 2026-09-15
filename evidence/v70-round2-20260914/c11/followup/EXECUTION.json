@@ -1,0 +1,38 @@
+{
+  "task_id": "V70-R2-C11-02",
+  "ack": "Delivered by collaboration.send_message to /root before analysis; no reconstructed ACK timestamp.",
+  "status": "EVIDENCE_READY",
+  "task_scope": "Static classification of all idempotency route callbacks; review-ready recovery design and future test acceptance conditions; no runtime implementation.",
+  "scope_completion": {
+    "classified_callsites": 37,
+    "total_callsites": 37,
+    "distinct_operations": 34,
+    "route_files": 9,
+    "priority_paths_designed": 2,
+    "priority_paths_total": 2,
+    "future_acceptance_conditions": 20
+  },
+  "verification": {
+    "kind": "STATIC_INVENTORY_AND_IMMUTABILITY",
+    "status": "PASS",
+    "source_files": 42,
+    "prior_c11_evidence_files": 9,
+    "runtime_tests_executed": 0
+  },
+  "original_C11_post_commit_gap": "HOLD_UNFIXED: original two failing cases retained; old scoped regression passes do not close this gap.",
+  "C14": "PENDING_REVIEW_NOT_SELF_SIGNED",
+  "C13": "PENDING_REVIEW_NOT_SELF_SIGNED",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "source_binding": "Actual frozen candidate files under SOURCE_SHA256.json; this followup writes evidence only.",
+  "completed_at": "2026-09-14T03:20:07.085661+00:00",
+  "next_task_proposal": {
+    "id": "V70-R2-C11-03",
+    "status": "PROPOSED_PENDING_ROOT_DISPATCH",
+    "owner": "C11 with C02 boundary review",
+    "task": "Implement durable resource binding and explicit outcome policy only for FLIGHT_CHECKOUT and FLIGHT_EXECUTE_CHANGE, then run targeted fault injection and independent money-state checks.",
+    "dispatch_authority": "Proposal only; root scheduler must assign execution after design review."
+  },
+  "source_mutations": [],
+  "remote_writes": [],
+  "deployment": false
+}

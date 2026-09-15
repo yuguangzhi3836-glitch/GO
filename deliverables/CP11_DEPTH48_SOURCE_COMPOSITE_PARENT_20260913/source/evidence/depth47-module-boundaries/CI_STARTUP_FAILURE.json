@@ -1,0 +1,47 @@
+{
+  "schema": "go.depth47.ci-startup-failure.v1",
+  "source_commit": "1df7c3592f6818114363c078c2509445923f974d",
+  "pr": 52,
+  "runs": [
+    {
+      "id": 34720499007,
+      "name": "Canonical parent retention",
+      "url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34720499007",
+      "conclusion": "failure",
+      "executed_steps": 0
+    },
+    {
+      "id": 34720499023,
+      "name": "Canonical mobile retention",
+      "url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34720499023",
+      "conclusion": "failure",
+      "executed_steps": 0
+    },
+    {
+      "id": 34720499068,
+      "name": "DEPTH47 module boundaries",
+      "url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/34720499068",
+      "conclusion": "failure",
+      "executed_steps": 0
+    }
+  ],
+  "initial_failed_jobs": 8,
+  "single_postgres_retry": {
+    "requested_job": 103625353709,
+    "latest_job": 103625564303,
+    "conclusion": "failure",
+    "executed_steps": 0
+  },
+  "postgres_checks_executed": 0,
+  "browser_checks_executed": 0,
+  "logs_available": false,
+  "log_endpoint_result": "BlobNotFound",
+  "cause": "UNKNOWN_CONNECTOR_DOES_NOT_EXPOSE_STARTUP_ANNOTATIONS",
+  "not_inferred": [
+    "billing",
+    "spending_limit",
+    "runner_capacity"
+  ],
+  "merge52": "HOLD_PENDING_CI",
+  "deployment": "NOT_RUN"
+}

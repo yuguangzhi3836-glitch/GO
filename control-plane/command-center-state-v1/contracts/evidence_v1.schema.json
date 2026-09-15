@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-state-v1/contracts/evidence_v1.schema.json",
+  "title": "GO Command Center Signed Evidence V1",
+  "description": "The machine-verifiable result of a signed Task. Published by the Hong Kong Agent to chenzhenxi1-sudo/go-control-evidence under evidence/<task_id>-<nonce>.json. Evidence is not a log: it binds identity, action, environment, time window and result under an Ed25519 signature that the Command Center verifies with the living Hong Kong evidence key.",
+  "type": "object",
+  "required": ["schema_version", "task_id", "nonce", "action_id", "environment", "status",
+               "started_at", "agent_version", "signature"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "task_id": {"type": "string"},
+    "nonce": {"type": "string"},
+    "action_id": {"type": "string"},
+    "environment": {"const": "HK-STAGING-01"},
+    "status": {"enum": ["SUCCESS", "REJECTED", "FAILED"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "agent_version": {"type": "string"},
+    "signature": {"type": "string", "description": "Ed25519, base64. Verifies against /etc/go-hk-agent/keys/evidence-signing.pub."}
+  },
+  "oneOf": [
+    {
+      "title": "current generation",
+      "required": ["completed_at", "executor_version", "executor_result", "gate_results"],
+      "properties": {
+        "completed_at": {"type": "string", "format": "date-time"},
+        "executor_version": {"type": "string"},
+        "executor_result": {},
+        "gate_results": {"type": "object"}
+      }
+    },
+    {
+      "title": "legacy generation (pre 0.5.x agent)",
+      "required": ["finished_at", "result"],
+      "properties": {
+        "finished_at": {"type": "string", "format": "date-time"},
+        "result": {}
+      }
+    }
+  ],
+  "x-go-terminal-results": {
+    "HK_STAGING_VERIFY": "VERIFY_OK",
+    "HK_STAGING_CANARY": "CANARY_OK",
+    "HK_STAGING_DEPLOY": "DEPLOY_OK",
+    "HK_STAGING_ROLLBACK": "ROLLBACK_OK",
+    "HK_STAGING_TEST_PR": "TEST_PR_OK",
+    "CONTROL_PLANE_HEALTH": null
+  },
+  "x-go-notes": [
+    "Two generations exist on the control bus. completed_at/executor_result/gate_results is current; finished_at/result is legacy. A projection must normalise both and must not silently drop either.",
+    "A rejected Task publishes NO Evidence. The attempt budget is consumed in the agent-local SQLite ledger, which is not on the control bus. Absence of Evidence therefore cannot distinguish 'never picked up' from 'picked up and failed'.",
+    "TEST_PR Evidence must carry application_health_proven=false and deployment_performed=false. It proves an isolated offline build, not a deployment."
+  ]
+}

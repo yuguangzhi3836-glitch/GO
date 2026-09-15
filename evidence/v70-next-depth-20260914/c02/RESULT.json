@@ -1,0 +1,45 @@
+{
+  "cell_id": "C02",
+  "task_id": "V70-R2-C02-02",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "status": "AWAITING_C14",
+  "scope": "Pure partial-passenger/coupon plan with explicit nonuniform original fare allocations, exact selected leg/passenger/ticket identity, owner/order/PNR/hash/expiry checks and receipt-indexed result preview; unselected coupons remain identical.",
+  "builder_tests": {
+    "new_cases_passed": 25,
+    "new_cases_selected": 25,
+    "total_selected_passed": 25,
+    "total_selected": 25
+  },
+  "six_stage_progress": {
+    "completed": 4,
+    "denominator": 6,
+    "completed_stages": [
+      "GAP",
+      "TASK",
+      "TEST",
+      "EVIDENCE"
+    ],
+    "pending_stages": [
+      "C14",
+      "C13"
+    ]
+  },
+  "full_domain_completion": null,
+  "C14": "PENDING_INDEPENDENT",
+  "C13": "PENDING_AFTER_C14",
+  "limits": [
+    "Not integrated with HTTP, persistent plan storage, consent capture, payments, ticket supplier, or order execution. Existing HTTP partial-passenger requests still reject422.",
+    "plan_hash is a content checksum, not source authentication or execution authority; integration must bind a trusted stored hash and semantic validation.",
+    "This finite planner rejects negative fare differences and same-day adjacent itinerary dates; it does not claim complete airline fare rules or full partial-party reissue."
+  ],
+  "next_task_proposal": "V70-R2-C02-03: specify trusted persisted coupon-plan and exact-consent integration with C11, including same-day segments and negative fare-difference treatment before enabling HTTP.",
+  "next_task_status": "PROPOSED_NOT_EXECUTED",
+  "evidence": [
+    "EXECUTION.json",
+    "SOURCE_IDENTITY.json",
+    "RUNS.json",
+    "plan-bound.raw.log",
+    "plan-bound.junit.xml"
+  ]
+}

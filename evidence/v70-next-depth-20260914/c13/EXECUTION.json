@@ -1,0 +1,27 @@
+{
+  "schema": "go.cell.ack.v1",
+  "cell_id": "C13",
+  "task_id": "V70-R2-C13-02",
+  "agent": "/root/c13_independent",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "acknowledged_at": "2026-09-14T04:03:23.806585+00:00",
+  "started_at": "2026-09-14T04:03:23.806585+00:00",
+  "status": "RUNNING",
+  "phase": "READ_ONLY_ACCEPTANCE_PREPARATION",
+  "acceptance_tests_executed": false,
+  "final_gate": "NOT_REQUESTED_YET",
+  "scope": "Inspect new-depth source/evidence and prepare independent tests; final acceptance only after frozen candidate, CI originals and final C14.",
+  "recorded_at": "2026-09-14T04:03:23.806585+00:00",
+  "task_scope": [
+    "Original source/evidence audit",
+    "Risk-based independent acceptance plan",
+    "No final-source runtime before C14"
+  ],
+  "C14": "PENDING_FINAL_FIXED_CANDIDATE",
+  "C13": "PENDING_FINAL_ACCEPTANCE",
+  "business_source_written": false,
+  "source_tests_run": false,
+  "actual_running_activity": "Read c08/c10/c12 results and C11/C07/C09 scope records; inspect baseline source and prepare bounded test plan",
+  "next_transition": "Frozen candidate and original PG18.4 CI -> final C14 review -> explicit root signal -> independent runtime"
+}

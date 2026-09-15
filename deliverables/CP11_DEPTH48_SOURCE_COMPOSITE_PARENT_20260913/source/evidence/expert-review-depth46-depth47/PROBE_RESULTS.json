@@ -1,0 +1,78 @@
+{
+  "recorded_at_utc": "2026-09-12T22:06:06.764139+00:00",
+  "review_type": "single AI reviewer, five professional perspectives",
+  "application_source_commit": "1df7c3592f6818114363c078c2509445923f974d",
+  "application_git_tree": "e6d3aaad6deca1f0801e8c7e4182f353eca93b91",
+  "application_sha256_tree": "e695ced13e9a85ebe068774ee0a4ee1be8ec6af75a77353ed3b29b84aa447057",
+  "candidate_pr": 52,
+  "candidate_head": "5c65a58f700b557843f6642f1671997f104e8edc",
+  "environment": {
+    "python": "3.12.14",
+    "database": "isolated SQLite",
+    "external_network": "guarded; no external provider or payment calls",
+    "postgresql": false,
+    "browser": false,
+    "application_mutated": false
+  },
+  "summary": {
+    "unique_cases": 5,
+    "passed": 2,
+    "failed": 3,
+    "errors": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "name": "test_direct_lower_then_higher_cannot_reuse_forfeited_difference",
+      "status": "FAIL",
+      "failure_message": "AssertionError: {'additional_amount_minor': 0, 'lower_price_rule': 'NO_REFUND_NO_CASH_NO_BALANCE', 'new_amount_minor': 162000, 'new_room_quote_minor': 150000, ...}\nassert 0 == 10000"
+    },
+    {
+      "name": "test_catalog_lower_then_higher_collects_current_room_difference",
+      "status": "PASS",
+      "failure_message": null
+    },
+    {
+      "name": "test_direct_lower_then_credit_excludes_forfeited_value",
+      "status": "FAIL",
+      "failure_message": "AssertionError: {'available_minor': 162000, 'issued_minor': 162000, 'state': 'ACTIVE'}\nassert 162000 == 140000"
+    },
+    {
+      "name": "test_nonrefundable_leg_cannot_be_refunded_and_multi_change_is_not_silently_first_leg",
+      "status": "PASS",
+      "failure_message": null
+    },
+    {
+      "name": "test_round_trip_with_changeable_fares_can_request_change_quote",
+      "status": "FAIL",
+      "failure_message": "AssertionError: {\"detail\":\"FLIGHT_ORDER_NOT_CHANGEABLE:MULTI_LEG_CHANGE_NOT_IMPLEMENTED\"}\nassert 422 == 200\n +  where 422 = <Response [422 Unprocessable Entity]>.status_code"
+    }
+  ],
+  "interpretation": "Three unmet business acceptance assertions were reproduced; two controls passed. The passing legacy flight test validates rejection, not multi-leg change functionality.",
+  "runs": [
+    {
+      "junit_file": "results.xml",
+      "tests": 4,
+      "failures": 2,
+      "time_seconds": 7.522
+    },
+    {
+      "junit_file": "flight-results.xml",
+      "tests": 1,
+      "failures": 1,
+      "time_seconds": 6.18
+    }
+  ],
+  "historical_regression": "1761 passed / 6 PostgreSQL skipped and 259 frontend passed are prior DEPTH47 evidence, not the result of this review run.",
+  "reproduce": {
+    "working_directory": "application",
+    "environment": {
+      "PYTHONPATH": "src:.:tests",
+      "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
+      "APP_ENV": "test",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "command": "python -m pytest -p pytest_asyncio.plugin -p no:cacheprovider -o addopts= -q ../evidence/expert-review-depth46-depth47/test_business_acceptance_probes.py tests/test_flight_journey_depth.py::test_nonrefundable_leg_cannot_be_refunded_and_multi_change_is_not_silently_first_leg",
+    "expected_before_fix": "3 failed, 2 passed; Python environment must already have application test dependencies and the isolated network guard"
+  }
+}

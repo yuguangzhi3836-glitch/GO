@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="7.308" timestamp="2026-09-14T12:53:07.024344+09:00" hostname="localhost"><testcase classname="tests.go_ai.test_c08_hard_exit_recovery" name="test_hard_exit_recovery_never_replays_or_invents_terminal_state[before_invocation_commit-ROUTING-0-1]" time="2.166"><failure message="AttributeError: 'GOAIService' object has no attribute 'assess_recovery'">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-4/test_hard_exit_recovery_never_0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fed5809c320&gt;
+checkpoint = 'before_invocation_commit', expected_state = 'ROUTING'
+invocations = 0, calls = 1
+
+    @pytest.mark.parametrize("checkpoint,expected_state,invocations,calls", [
+        ("before_invocation_commit", "ROUTING", 0, 1),
+        ("after_invocation_commit", "ROUTING", 1, 1),
+        ("after_completion_commit", "COMPLETED", 2, 2),
+    ])
+    def test_hard_exit_recovery_never_replays_or_invents_terminal_state(tmp_path, monkeypatch, checkpoint, expected_state, invocations, calls):
+        database, calls_path = tmp_path / "audit.sqlite", tmp_path / "compute-calls.txt"
+        worker = Path(__file__).with_name("c08_hard_exit_worker.py")
+        env = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[2] / "src"), "DATABASE_URL": f"sqlite+pysqlite:///{database}", "PYTHONDONTWRITEBYTECODE": "1"}
+        result = subprocess.run([sys.executable, str(worker), str(database), str(calls_path), checkpoint], env=env, capture_output=True, text=True, timeout=45)
+        print(f"C08_HARD_EXIT checkpoint={checkpoint} actual_exit={result.returncode} persisted_compute_calls={calls_path.read_text() if calls_path.exists() else 'NONE'}")
+        assert result.returncode == 73, result.stderr
+        engine = create_engine(f"sqlite+pysqlite:///{database}")
+        factory = sessionmaker(bind=engine, expire_on_commit=False)
+        monkeypatch.setattr(service_module, "SessionLocal", factory)
+        service = service_module.GOAIService(GOAIProviderRegistry([]))
+        try:
+            with factory() as session:
+                request_id = session.scalar(select(GoAIRequestRow.go_ai_request_id))
+            before = service.request_audit(request_id)
+            assert before["state"] == expected_state
+            assert len(before["invocations"]) == invocations
+            call_bytes = calls_path.read_bytes()
+            assert len(call_bytes.splitlines()) == calls
+&gt;           assessment = service.assess_recovery(request_id)
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'GOAIService' object has no attribute 'assess_recovery'
+
+tests/go_ai/test_c08_hard_exit_recovery.py:42: AttributeError</failure></testcase><testcase classname="tests.go_ai.test_c08_hard_exit_recovery" name="test_hard_exit_recovery_never_replays_or_invents_terminal_state[after_invocation_commit-ROUTING-1-1]" time="1.738"><failure message="AttributeError: 'GOAIService' object has no attribute 'assess_recovery'">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-4/test_hard_exit_recovery_never_1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fed5373aa50&gt;
+checkpoint = 'after_invocation_commit', expected_state = 'ROUTING'
+invocations = 1, calls = 1
+
+    @pytest.mark.parametrize("checkpoint,expected_state,invocations,calls", [
+        ("before_invocation_commit", "ROUTING", 0, 1),
+        ("after_invocation_commit", "ROUTING", 1, 1),
+        ("after_completion_commit", "COMPLETED", 2, 2),
+    ])
+    def test_hard_exit_recovery_never_replays_or_invents_terminal_state(tmp_path, monkeypatch, checkpoint, expected_state, invocations, calls):
+        database, calls_path = tmp_path / "audit.sqlite", tmp_path / "compute-calls.txt"
+        worker = Path(__file__).with_name("c08_hard_exit_worker.py")
+        env = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[2] / "src"), "DATABASE_URL": f"sqlite+pysqlite:///{database}", "PYTHONDONTWRITEBYTECODE": "1"}
+        result = subprocess.run([sys.executable, str(worker), str(database), str(calls_path), checkpoint], env=env, capture_output=True, text=True, timeout=45)
+        print(f"C08_HARD_EXIT checkpoint={checkpoint} actual_exit={result.returncode} persisted_compute_calls={calls_path.read_text() if calls_path.exists() else 'NONE'}")
+        assert result.returncode == 73, result.stderr
+        engine = create_engine(f"sqlite+pysqlite:///{database}")
+        factory = sessionmaker(bind=engine, expire_on_commit=False)
+        monkeypatch.setattr(service_module, "SessionLocal", factory)
+        service = service_module.GOAIService(GOAIProviderRegistry([]))
+        try:
+            with factory() as session:
+                request_id = session.scalar(select(GoAIRequestRow.go_ai_request_id))
+            before = service.request_audit(request_id)
+            assert before["state"] == expected_state
+            assert len(before["invocations"]) == invocations
+            call_bytes = calls_path.read_bytes()
+            assert len(call_bytes.splitlines()) == calls
+&gt;           assessment = service.assess_recovery(request_id)
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'GOAIService' object has no attribute 'assess_recovery'
+
+tests/go_ai/test_c08_hard_exit_recovery.py:42: AttributeError</failure></testcase><testcase classname="tests.go_ai.test_c08_hard_exit_recovery" name="test_hard_exit_recovery_never_replays_or_invents_terminal_state[after_completion_commit-COMPLETED-2-2]" time="2.004"><failure message="AttributeError: 'GOAIService' object has no attribute 'assess_recovery'">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-4/test_hard_exit_recovery_never_2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fed537a1370&gt;
+checkpoint = 'after_completion_commit', expected_state = 'COMPLETED'
+invocations = 2, calls = 2
+
+    @pytest.mark.parametrize("checkpoint,expected_state,invocations,calls", [
+        ("before_invocation_commit", "ROUTING", 0, 1),
+        ("after_invocation_commit", "ROUTING", 1, 1),
+        ("after_completion_commit", "COMPLETED", 2, 2),
+    ])
+    def test_hard_exit_recovery_never_replays_or_invents_terminal_state(tmp_path, monkeypatch, checkpoint, expected_state, invocations, calls):
+        database, calls_path = tmp_path / "audit.sqlite", tmp_path / "compute-calls.txt"
+        worker = Path(__file__).with_name("c08_hard_exit_worker.py")
+        env = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[2] / "src"), "DATABASE_URL": f"sqlite+pysqlite:///{database}", "PYTHONDONTWRITEBYTECODE": "1"}
+        result = subprocess.run([sys.executable, str(worker), str(database), str(calls_path), checkpoint], env=env, capture_output=True, text=True, timeout=45)
+        print(f"C08_HARD_EXIT checkpoint={checkpoint} actual_exit={result.returncode} persisted_compute_calls={calls_path.read_text() if calls_path.exists() else 'NONE'}")
+        assert result.returncode == 73, result.stderr
+        engine = create_engine(f"sqlite+pysqlite:///{database}")
+        factory = sessionmaker(bind=engine, expire_on_commit=False)
+        monkeypatch.setattr(service_module, "SessionLocal", factory)
+        service = service_module.GOAIService(GOAIProviderRegistry([]))
+        try:
+            with factory() as session:
+                request_id = session.scalar(select(GoAIRequestRow.go_ai_request_id))
+            before = service.request_audit(request_id)
+            assert before["state"] == expected_state
+            assert len(before["invocations"]) == invocations
+            call_bytes = calls_path.read_bytes()
+            assert len(call_bytes.splitlines()) == calls
+&gt;           assessment = service.assess_recovery(request_id)
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'GOAIService' object has no attribute 'assess_recovery'
+
+tests/go_ai/test_c08_hard_exit_recovery.py:42: AttributeError</failure></testcase></testsuite></testsuites>

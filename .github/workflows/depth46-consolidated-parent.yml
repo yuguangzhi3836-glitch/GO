@@ -1,0 +1,69 @@
+name: DEPTH46 consolidated parent build and preserve
+on:
+  push:
+    branches: [fix/canonical-parent-retention-20260912]
+    paths:
+      - packaging/depth46-consolidated-parent/**
+      - .github/workflows/depth46-consolidated-parent.yml
+permissions:
+  contents: read
+concurrency:
+  group: depth46-consolidated-parent
+  cancel-in-progress: false
+jobs:
+  parent-package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+      pull-requests: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_SOURCE_SHA: ${{ github.sha }}
+      GO_ARCHIVE_HEAD: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: b65a07c2aea9ac1e79013540d9cf28a69a190935
+          path: inputs/previous-parent
+          sparse-checkout: deliverables/CP11_DEPTH40_P03_COMPAT_V2_PARENT_20260912
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: a7e18cf33c0d2342a7b090fc7c61dc3290eb1d43
+          path: inputs/boss-deploy
+          sparse-checkout: |
+            control-plane/boss-deploy-request-v1
+            hk-staging
+            command-center
+            docs/control-plane
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Use existing verified Python dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Verify restore safeguards
+        run: python -B -m unittest discover -s packaging/depth46-consolidated-parent -p test_package_safety.py -v
+      - name: Build exact application image and verify complete parent restoration
+        run: python -B packaging/depth46-consolidated-parent/build_parent.py
+      - name: Preserve ZIP and read every Git blob back without changing refs
+        env:
+          GO_ARCHIVE_TOKEN: ${{ github.token }}
+        run: python -B packaging/depth46-consolidated-parent/archive_objects.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: GO-DEPTH46-PARENT-${{ github.sha }}
+          path: |
+            parent-delivery/
+            ARCHIVE_OBJECTS.json
+          if-no-files-found: error
+          retention-days: 90

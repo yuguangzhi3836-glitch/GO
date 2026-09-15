@@ -1,0 +1,26 @@
+{
+  "cell_id": "C04",
+  "name": "Rental AI Operations Cell",
+  "domain": "RENTAL",
+  "workspace": {
+    "branch_prefix": "cell/c04",
+    "worktree_prefix": "worktrees/c04"
+  },
+  "owned_paths": [
+    "src/go_hotel/mobility/rental/",
+    "tests/mobility/rental/"
+  ],
+  "forbidden_paths": [
+    "src/go_hotel/mobility/ride/",
+    "src/go_hotel/mobility/service.py"
+  ],
+  "candidate_manifest_required": true,
+  "cross_domain_collaboration": [
+    "CONTRACT",
+    "EVENT"
+  ],
+  "shared_parent_direct_write": false,
+  "final_merge_authority": "MERGE_CONTROLLER_AFTER_C13_C14_GATES",
+  "c09_recommendation_constitution_protection": "READ_ONLY_PROTECTED",
+  "shared_mobility_facade_policy": "MERGE_CONTROLLER_COMPATIBILITY_FACADE_ONLY_NO_BUSINESS_TRUTH"
+}

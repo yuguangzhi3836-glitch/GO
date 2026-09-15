@@ -1,0 +1,1 @@
+(() => {let started=false;function start(){if(started||document.querySelector('#app').hidden)return;started=true;const stream=new EventSource('/api/events');stream.onmessage=()=>{if(typeof load==='function')load()};stream.onerror=()=>{stream.close();started=false;setTimeout(start,3000)}}setInterval(start,800);})();

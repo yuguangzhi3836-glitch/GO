@@ -1,0 +1,183 @@
+FFFFFFFFFFFFFFFFFFF                                                      [100%]
+=================================== FAILURES ===================================
+_______ test_explicit_preference_survives_engine_reopen_and_is_encrypted _______
+tests/test_round2_c07_explicit_preferences.py:40: in test_explicit_preference_survives_engine_reopen_and_is_encrypted
+    traveler(); cid=consent(); first=save(cid)
+                                     ^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+_________________ test_wrong_purpose_never_releases_preference _________________
+tests/test_round2_c07_explicit_preferences.py:55: in test_wrong_purpose_never_releases_preference
+    traveler(); save(consent())
+                ^^^^^^^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+_______ test_live_consent_invalidates_reads_and_rejects_writes[revoked] ________
+tests/test_round2_c07_explicit_preferences.py:64: in test_live_consent_invalidates_reads_and_rejects_writes
+    traveler(); traveler(tid="other"); cid=consent(); save(cid)
+                                                      ^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+_______ test_live_consent_invalidates_reads_and_rejects_writes[expired] ________
+tests/test_round2_c07_explicit_preferences.py:64: in test_live_consent_invalidates_reads_and_rejects_writes
+    traveler(); traveler(tid="other"); cid=consent(); save(cid)
+                                                      ^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+________ test_live_consent_invalidates_reads_and_rejects_writes[future] ________
+tests/test_round2_c07_explicit_preferences.py:64: in test_live_consent_invalidates_reads_and_rejects_writes
+    traveler(); traveler(tid="other"); cid=consent(); save(cid)
+                                                      ^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+_____ test_live_consent_invalidates_reads_and_rejects_writes[wrong_scope] ______
+tests/test_round2_c07_explicit_preferences.py:64: in test_live_consent_invalidates_reads_and_rejects_writes
+    traveler(); traveler(tid="other"); cid=consent(); save(cid)
+                                                      ^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+______ test_live_consent_invalidates_reads_and_rejects_writes[wrong_type] ______
+tests/test_round2_c07_explicit_preferences.py:64: in test_live_consent_invalidates_reads_and_rejects_writes
+    traveler(); traveler(tid="other"); cid=consent(); save(cid)
+                                                      ^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+____ test_live_consent_invalidates_reads_and_rejects_writes[wrong_traveler] ____
+tests/test_round2_c07_explicit_preferences.py:64: in test_live_consent_invalidates_reads_and_rejects_writes
+    traveler(); traveler(tid="other"); cid=consent(); save(cid)
+                                                      ^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+_____ test_live_consent_invalidates_reads_and_rejects_writes[wrong_owner] ______
+tests/test_round2_c07_explicit_preferences.py:64: in test_live_consent_invalidates_reads_and_rejects_writes
+    traveler(); traveler(tid="other"); cid=consent(); save(cid)
+                                                      ^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+______ test_live_consent_invalidates_reads_and_rejects_writes[revoked_at] ______
+tests/test_round2_c07_explicit_preferences.py:64: in test_live_consent_invalidates_reads_and_rejects_writes
+    traveler(); traveler(tid="other"); cid=consent(); save(cid)
+                                                      ^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+_________ test_no_implicit_promotion_and_graph_scopes_are_independent __________
+tests/test_round2_c07_explicit_preferences.py:87: in test_no_implicit_promotion_and_graph_scopes_are_independent
+    assert graph["durable_preferences"] == [] and graph["recent_intents"] == []
+E   AssertionError: assert ([] == []
+E     
+E     Use -v to get more diff and [{'raw_normal..._max': 500.0}] == []
+E     
+E     Left contains one more item: {'raw_normalized': 'quiet room budget 500', 'budget_max': 500.0}
+E     Use -v to get more diff)
+_________ test_save_retry_revision_conflict_and_withdrawal_are_durable _________
+tests/test_round2_c07_explicit_preferences.py:101: in test_save_retry_revision_conflict_and_withdrawal_are_durable
+    traveler(); cid=consent(); first=save(cid)
+                                     ^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+_______ test_existing_vault_consent_withdrawal_takes_effect_immediately ________
+tests/test_round2_c07_explicit_preferences.py:121: in test_existing_vault_consent_withdrawal_takes_effect_immediately
+    traveler(); cid=consent(); save(cid)
+                               ^^^^^^^^^
+tests/test_round2_c07_explicit_preferences.py:31: in save
+    return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
+           ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+__________________ test_explicit_confirmation_required[False] __________________
+tests/test_round2_c07_explicit_preferences.py:134: in test_explicit_confirmation_required
+    svc.save_preference("owner","traveler",preference_key="HOTEL_ROOM",value={"quiet":True},
+    ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+__________________ test_explicit_confirmation_required[None] ___________________
+tests/test_round2_c07_explicit_preferences.py:134: in test_explicit_confirmation_required
+    svc.save_preference("owner","traveler",preference_key="HOTEL_ROOM",value={"quiet":True},
+    ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+____________________ test_explicit_confirmation_required[1] ____________________
+tests/test_round2_c07_explicit_preferences.py:134: in test_explicit_confirmation_required
+    svc.save_preference("owner","traveler",preference_key="HOTEL_ROOM",value={"quiet":True},
+    ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+__________________ test_explicit_confirmation_required[true] ___________________
+tests/test_round2_c07_explicit_preferences.py:134: in test_explicit_confirmation_required
+    svc.save_preference("owner","traveler",preference_key="HOTEL_ROOM",value={"quiet":True},
+    ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+______________ test_owner_and_companion_edit_permission_enforced _______________
+tests/test_round2_c07_explicit_preferences.py:141: in test_owner_and_companion_edit_permission_enforced
+    svc.save_preference("other-owner","traveler",preference_key="HOTEL_ROOM",value={"quiet":True},
+    ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'TravelIntelligenceService' object has no attribute 'save_preference'
+_____ test_preferences_http_authenticated_owner_internal_read_and_no_cache _____
+tests/test_round2_c07_explicit_preferences.py:161: in test_preferences_http_authenticated_owner_internal_read_and_no_cache
+    assert client.put(base+"/HOTEL_ROOM",json=body).status_code==401
+E   AssertionError: assert 404 == 401
+E    +  where 404 = <Response [404 Not Found]>.status_code
+E    +    where <Response [404 Not Found]> = put(('/v1/consumer/travelers/traveler/preferences' + '/HOTEL_ROOM'), json={'value': {'quiet': True}, 'purpose': 'HOTEL_PLANNING', 'consent_id': 'pcn_dd5a85cd0d164342', 'confirmed': True})
+E    +      where put = <starlette.testclient.TestClient object at 0x7fd138995be0>.put
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-14T03:02:18.915994+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_340375b083c24ba495155484f1c968e0","trace_id":"tr_9a9762b90d294e7baa4dcc5a8aad952d","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":102.55}
+{"ts":"2026-09-14T03:02:18.921130+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-14T03:02:18.970704+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_5032830b99e84c4582be22531a864b63","trace_id":"tr_941270a8d3a74f40ad54310ee3390cc1","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":48.69}
+{"ts":"2026-09-14T03:02:18.971137+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-14T03:02:19.682997+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_4fa2ecb7fe8646c4b2a34e05c776da6c","trace_id":"tr_2c2e1fc3fae442f9bc567ea5cdcdfe1e","path":"/v1/consumer/travelers/traveler/preferences/HOTEL_ROOM","method":"PUT","status_code":404,"duration_ms":709.55}
+{"ts":"2026-09-14T03:02:19.684866+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: PUT http://testserver/v1/consumer/travelers/traveler/preferences/HOTEL_ROOM \"HTTP/1.1 404 Not Found\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: PUT http://testserver/v1/consumer/travelers/traveler/preferences/HOTEL_ROOM "HTTP/1.1 404 Not Found"
+=============================== warnings summary ===============================
+tests/test_round2_c07_explicit_preferences.py::test_preferences_http_authenticated_owner_internal_read_and_no_cache
+  /workspace/scratch/948b51def3a9/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_round2_c07_explicit_preferences.py::test_preferences_http_authenticated_owner_internal_read_and_no_cache
+  /workspace/scratch/948b51def3a9/venv/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_round2_c07_explicit_preferences.py::test_explicit_preference_survives_engine_reopen_and_is_encrypted
+FAILED tests/test_round2_c07_explicit_preferences.py::test_wrong_purpose_never_releases_preference
+FAILED tests/test_round2_c07_explicit_preferences.py::test_live_consent_invalidates_reads_and_rejects_writes[revoked]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_live_consent_invalidates_reads_and_rejects_writes[expired]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_live_consent_invalidates_reads_and_rejects_writes[future]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_live_consent_invalidates_reads_and_rejects_writes[wrong_scope]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_live_consent_invalidates_reads_and_rejects_writes[wrong_type]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_live_consent_invalidates_reads_and_rejects_writes[wrong_traveler]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_live_consent_invalidates_reads_and_rejects_writes[wrong_owner]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_live_consent_invalidates_reads_and_rejects_writes[revoked_at]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_no_implicit_promotion_and_graph_scopes_are_independent
+FAILED tests/test_round2_c07_explicit_preferences.py::test_save_retry_revision_conflict_and_withdrawal_are_durable
+FAILED tests/test_round2_c07_explicit_preferences.py::test_existing_vault_consent_withdrawal_takes_effect_immediately
+FAILED tests/test_round2_c07_explicit_preferences.py::test_explicit_confirmation_required[False]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_explicit_confirmation_required[None]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_explicit_confirmation_required[1]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_explicit_confirmation_required[true]
+FAILED tests/test_round2_c07_explicit_preferences.py::test_owner_and_companion_edit_permission_enforced
+FAILED tests/test_round2_c07_explicit_preferences.py::test_preferences_http_authenticated_owner_internal_read_and_no_cache

@@ -1,0 +1,42 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_repeated_search_keeps_only_requested_dates_and_currency _________
+
+client = <starlette.testclient.TestClient object at 0x7fafdec93740>
+
+    def test_repeated_search_keeps_only_requested_dates_and_currency(client):
+        old = search(client, 30)
+        chosen = search(client, 40)
+        other_currency = search(client, 40, 'USD')
+        response = client.get('/v1/consumer/hotels/htl_conrad_tokyo', params=query(40))
+        assert response.status_code == 200
+        offers = response.json()['data']['offers']
+>       assert [x['offer_id'] for x in offers] == [chosen['offer_id']]
+E       AssertionError: assert ['off_7431137...732f76064509'] == ['off_b91307d091a9426f']
+E         
+E         At index 0 diff: 'off_74311373a3334f1d' != 'off_b91307d091a9426f'
+E         Left contains 2 more items, first extra item: 'off_b91307d091a9426f'
+E         Use -v to get more diff
+
+tests/test_depth44_hotel_date_binding.py:31: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-12T15:11:06.572986+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_1e55e3b331f34b0abfaadf7574b11f94","trace_id":"tr_ef80fbe03a094c089fec723212deaff6","path":"/v1/search/hotels","method":"POST","status_code":200,"duration_ms":35.75}
+{"ts":"2026-09-12T15:11:06.573847+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/search/hotels \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-12T15:11:06.581881+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_153fd4fb88fd4183a6a837c8b7dc881d","trace_id":"tr_b1ca670ff409474b88398f602114cf3f","path":"/v1/search/hotels","method":"POST","status_code":200,"duration_ms":7.22}
+{"ts":"2026-09-12T15:11:06.582365+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/search/hotels \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-12T15:11:06.590909+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_da7d34f5f9ec40f5b90f21a18f0d2fdd","trace_id":"tr_54df2d5b619d4d4e9e2fa214a58e3b07","path":"/v1/search/hotels","method":"POST","status_code":200,"duration_ms":7.86}
+{"ts":"2026-09-12T15:11:06.591411+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/search/hotels \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-12T15:11:06.598568+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_cad0ebdd8c51476c97e32e582fbe4735","trace_id":"tr_402a2eed1c1244c282133871d1fdf2a2","path":"/v1/consumer/hotels/htl_conrad_tokyo","method":"GET","status_code":200,"duration_ms":6.47}
+{"ts":"2026-09-12T15:11:06.598991+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/consumer/hotels/htl_conrad_tokyo?check_in=2026-10-22&check_out=2026-10-24&currency=CNY \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:295 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/search/hotels "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:295 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/search/hotels "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:295 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/search/hotels "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:295 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/consumer/hotels/htl_conrad_tokyo?check_in=2026-10-22&check_out=2026-10-24&currency=CNY "HTTP/1.1 200 OK"
+=========================== short test summary info ============================
+FAILED tests/test_depth44_hotel_date_binding.py::test_repeated_search_keeps_only_requested_dates_and_currency
+1 failed in 5.61s

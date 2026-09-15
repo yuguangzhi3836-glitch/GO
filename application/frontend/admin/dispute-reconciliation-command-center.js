@@ -1,0 +1,1 @@
+if(window.GO_CONSOLE){window.GO_CONSOLE.nav.unshift({route:'/dispute-reconciliation-command-center',label:'Dispute & Reconciliation',endpoint:'/internal/v1/hosted-direct/dashboard',kind:'dashboard'});}

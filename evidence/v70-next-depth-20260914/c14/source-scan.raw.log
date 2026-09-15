@@ -1,0 +1,154 @@
+{
+  "tool_activity": "C14 read-only source comparison to immutable PR73 parent",
+  "observed_at": "2026-09-14T03:59:31.272449+00:00",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+  "changed_python_paths": [
+    {
+      "path": "application/application/tests/payments/test_c11_flight_idempotency_recovery.py",
+      "sha256": "2b64b0f66812ce4073bee1102b110c17c577c32f384efa722ca7272cc0f8b440",
+      "base_present": false
+    },
+    {
+      "path": "application/ci/next_depth/c07_postgres.py",
+      "sha256": "3eb3377f81e219cc4edfe035fbd185e1f4f1337bde4fdcb90957214efc7ea993",
+      "base_present": false
+    },
+    {
+      "path": "application/src/go_hotel/api/idempotency.py",
+      "sha256": "b265db3d98aa53113decdc5ee55ad686dafb1626640ebbbdec8021ad48a21269",
+      "base_present": true
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/flight.py",
+      "sha256": "f7270d34441903036a69067716cec3c39a87f092594ce736d0c3d5eb51902967",
+      "base_present": true
+    },
+    {
+      "path": "application/src/go_hotel/attractions/service.py",
+      "sha256": "a9fb587512c718b1da2306c01e156d719188f03fc74f0f7fbc09a9dd8feb3266",
+      "base_present": true
+    },
+    {
+      "path": "application/src/go_hotel/attractions/validity.py",
+      "sha256": "93cb671e45afac616f5a284bf7310fc26354e5a25de5e6a853e9337c6e59875e",
+      "base_present": false
+    },
+    {
+      "path": "application/src/go_hotel/flight/coupon_plan.py",
+      "sha256": "f5b32b497544b152e8ecb131ffd9227e25389042d93213e78e1be267c09e58d7",
+      "base_present": false
+    },
+    {
+      "path": "application/src/go_hotel/go_ai/service.py",
+      "sha256": "3f3f5feeb3a4da05a744d8b7874b8fcd0f7e0785da819983bd3fc6909ef6f2dc",
+      "base_present": true
+    },
+    {
+      "path": "application/src/go_hotel/journey/service.py",
+      "sha256": "e4d37195af8bf9d788e03ad37342d8b471395616d874088e317db895c8f715b2",
+      "base_present": true
+    },
+    {
+      "path": "application/src/go_hotel/judgment/service.py",
+      "sha256": "22c0f96d5e5e2060b11d9cc191d6c5ab36a9a5445e2117365a7f34baad6bf4cd",
+      "base_present": true
+    },
+    {
+      "path": "application/src/go_hotel/mobility/rental/reconciliation.py",
+      "sha256": "eda26a527b91e6f59b66ce75f566c1da366aa19e2a0a7cabfd494a583700ea7e",
+      "base_present": false
+    },
+    {
+      "path": "application/src/go_hotel/mobility/ride/recovery_evidence.py",
+      "sha256": "437396d94c7ff0448855099937edc949429649ffa827397b10265d06eeb5d7ee",
+      "base_present": false
+    },
+    {
+      "path": "application/src/go_hotel/mobility/ride/service.py",
+      "sha256": "ef10cd646a5f621416f17f47af9ea8ac0f1638c22f53f8da87359faf61770db5",
+      "base_present": true
+    },
+    {
+      "path": "application/src/go_hotel/repositories/sql.py",
+      "sha256": "2471ee0e88bd3e3b8aac21b4b64c4d79a3aa1044929b976cdd02cdde79b5476e",
+      "base_present": true
+    },
+    {
+      "path": "application/src/go_hotel/services/mutation_boundary.py",
+      "sha256": "611d9bbd6170c87d5c221c8d16eb897fc3dd8e4a6a89b160247ce92098e555d3",
+      "base_present": false
+    },
+    {
+      "path": "application/src/go_hotel/travel_intelligence/preferences.py",
+      "sha256": "b9cb30b204be2993e77f8a09d76a5244858d82007e53c44058b13815a4053dd1",
+      "base_present": true
+    },
+    {
+      "path": "application/tests/c07_preference_process_actor.py",
+      "sha256": "05f746dc9abda21cf0f9dbf6d97ce7ac0b0a40121bd061949c17ef279ff369bb",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/go_ai/c08_hard_exit_worker.py",
+      "sha256": "85702d024449720fbbccf49191e30229dc1dea38d5ac86b013cd9c0faffbecf8",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/go_ai/test_c08_hard_exit_recovery.py",
+      "sha256": "cb209b4f0dc76f746837560402182757bcadc5caeda7da19dfe89e8b050fd0c1",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/journey/test_c10_batch_list_projection.py",
+      "sha256": "99938833b59963eb641b0bc9971fd507ad174c9a8953d0d76eabbd210364962d",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/judgment/test_next_depth_concurrent_judgment.py",
+      "sha256": "2ca93335be17585e283394c7205b1a5f2dd6a05122ed7058cb1c35336e044f59",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/payments/test_c11_flight_idempotency_recovery.py",
+      "sha256": "2b64b0f66812ce4073bee1102b110c17c577c32f384efa722ca7272cc0f8b440",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/test_next_depth_c03_payment_inventory_races.py",
+      "sha256": "a69c18f7264ec6b2f08f8a7bfe48d0eed2ecbd6720806f718ea233be727caa31",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/test_next_depth_c06_supplier_validity.py",
+      "sha256": "d7fd659e526f690f85e04df6a5a9aace101432c528bc7d358e9e3acf2923a7fd",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/test_round2_c07_process_recovery.py",
+      "sha256": "9dd6ee472a86848eb0eaee9029222516602c9602889326d618b992ca7849c1aa",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/test_v70_next_c01_unknown_funding.py",
+      "sha256": "8d38828184fde831bc4ba080b903350cd71b86064c159f198a2b60d08810f3cd",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/test_v70_next_c02_coupon_plan.py",
+      "sha256": "b5f828878228d3545957a64852d238f69a162fd22742b59a81271aa1607166f3",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/test_v70_next_c04_readonly_reconciliation.py",
+      "sha256": "89fc7ef287078f2bf2e8df2aafb5add3bc9d7bac3cca90d16dc55cd735b2cd06",
+      "base_present": false
+    },
+    {
+      "path": "application/tests/test_v70_next_c05_recovery_evidence.py",
+      "sha256": "e17dc0cc080650953185f2273e8afd2a055109fb5754eb775741070c0fd76a83",
+      "base_present": false
+    }
+  ],
+  "review_status": "IN_PROGRESS_NOT_FINAL_GATE"
+}

@@ -1,0 +1,26 @@
+{
+  "cell_id": "C05",
+  "name": "Ride AI Operations Cell",
+  "domain": "RIDE",
+  "workspace": {
+    "branch_prefix": "cell/c05",
+    "worktree_prefix": "worktrees/c05"
+  },
+  "owned_paths": [
+    "src/go_hotel/mobility/ride/",
+    "tests/mobility/ride/"
+  ],
+  "forbidden_paths": [
+    "src/go_hotel/mobility/rental/",
+    "src/go_hotel/mobility/service.py"
+  ],
+  "candidate_manifest_required": true,
+  "cross_domain_collaboration": [
+    "CONTRACT",
+    "EVENT"
+  ],
+  "shared_parent_direct_write": false,
+  "final_merge_authority": "MERGE_CONTROLLER_AFTER_C13_C14_GATES",
+  "c09_recommendation_constitution_protection": "READ_ONLY_PROTECTED",
+  "shared_mobility_facade_policy": "MERGE_CONTROLLER_COMPATIBILITY_FACADE_ONLY_NO_BUSINESS_TRUTH"
+}

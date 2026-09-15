@@ -1,0 +1,36 @@
+...............FF.                                                       [100%]
+=================================== FAILURES ===================================
+___ test_deleting_frozen_window_without_resealing_cannot_downgrade_to_legacy ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f11fbca8800>
+
+    def test_deleting_frozen_window_without_resealing_cannot_downgrade_to_legacy(monkeypatch):
+        install(monkeypatch)
+        _, owner, oid = booked('ATTRACTION')
+        with SessionLocal.begin() as session:
+            contract = session.scalar(select(Contract).where(Contract.order_id == oid))
+            changed = dict(contract.terms_json)
+            changed.pop('redemption_window')
+            contract.terms_json = changed
+>       with pytest.raises(ValueError, match='ATTRACTION_LEGACY_TERMS_REVIEW_REQUIRED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:121: Failed
+______ test_missing_contract_cannot_downgrade_a_confirmed_order_to_legacy ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f11fbcabcb0>
+
+    def test_missing_contract_cannot_downgrade_a_confirmed_order_to_legacy(monkeypatch):
+        install(monkeypatch)
+        _, owner, oid = booked('ATTRACTION')
+        with SessionLocal.begin() as session:
+            session.delete(session.scalar(select(Contract).where(Contract.order_id == oid)))
+>       with pytest.raises(ValueError, match='ATTRACTION_LEGACY_TERMS_REVIEW_REQUIRED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_next_depth_c06_supplier_validity.py:132: Failed
+=========================== short test summary info ============================
+FAILED tests/test_next_depth_c06_supplier_validity.py::test_deleting_frozen_window_without_resealing_cannot_downgrade_to_legacy
+FAILED tests/test_next_depth_c06_supplier_validity.py::test_missing_contract_cannot_downgrade_a_confirmed_order_to_legacy

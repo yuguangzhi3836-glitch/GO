@@ -1,0 +1,49 @@
+{
+  "candidate": "CP11_DEPTH41_JOURNEY_RETENTION_20260912",
+  "parent_package": "CP11_DEPTH40_P03_COMPAT_V2_PARENT_20260912",
+  "parent_zip_sha256": "421b11f95d0400bdfc69d4053a6d3b54599fa791a0d6b43311b83094bcd51c6a",
+  "canonical_parent_commit": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+  "parent_source_tree_sha256": "64f5d78a17b2fa2194b18f9bc1ba0cafbf0f2547f0171a859dd4300c75e37667",
+  "candidate_commit": "c8d2b8021dce80388b8f548257db6a86d227c98a",
+  "source_tree_sha256": "f835be08e9ef94c1cc2abb410b0de9f43fedd33950251cc4c2543a4ec38228cd",
+  "source_files": 1273,
+  "retained_parent_files": 1271,
+  "restored_revisions": [
+    {
+      "path": "tests/test_sprint2b_mobile_release.py",
+      "revision": "delta36",
+      "parent_sha256": "7adcfdb3fdd960090dde851232809aa568c45242dad0019ff70ec59f97b57d2f",
+      "restored_sha256": "ae02a298c1596cbe4caf50b2304ee40d965f74151b4989676af41fd93f993c22"
+    },
+    {
+      "path": "mobile/go-app/package-lock.json",
+      "revision": "delta37",
+      "parent_sha256": null,
+      "restored_sha256": "86afba42927483ca21a094ccb5ea14154a9d5561ed391a535313122dd443e86a"
+    },
+    {
+      "path": "mobile/go-app/package.json",
+      "revision": "delta37",
+      "parent_sha256": "761a7aa6dcab275d805328fb1f28e4955a67a6db0717f7e9239f9b663efe9cb5",
+      "restored_sha256": "d20f0366f8723155ebcd8fe142b5877fda40ec4b5aaae6a2ab5a5563054903d8"
+    },
+    {
+      "path": "mobile/go-app/scripts/native-modules-check.mjs",
+      "revision": "delta37",
+      "parent_sha256": null,
+      "restored_sha256": "57ca8e71236416e929411e51e980d76ede984b573256056dcd587c71e398dc0d"
+    }
+  ],
+  "business_fixes": {
+    "frontend/shared/app.js": {
+      "before_sha256": "20f3b7e34a6eb7668243ac33d59759f91654db738d3db5810f4301bb187f399e",
+      "after_sha256": "885a1eb3d109c57027cd1a55ddf2ed7a7195924d029bd6d7ff8b3ebc133470c6",
+      "reason": "Real Chromium run 34666667001: supplierCommandCenter undefined left supplier landing page blank; implement tenant-scoped dashboard and explicit load failure."
+    }
+  },
+  "source_integrity": "PASS",
+  "compatibility_component_commit": "d49465a56a7768bc4e657858272a597c5d1f05d6",
+  "runtime_image_reused_for_new_source": false,
+  "hong_kong": "NOT_RUN",
+  "production": "HOLD"
+}

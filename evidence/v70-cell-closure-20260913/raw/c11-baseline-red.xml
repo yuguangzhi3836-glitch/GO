@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="14" time="2.486" timestamp="2026-09-13T07:12:42.335419-07:00" hostname="localhost"><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_successful_mutation_keeps_claim_if_result_recording_fails[sync-completion_storage]" time="0.002"><failure message="assert 1 == 0&#10; +  where 1 = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3cff110&gt;.release_calls">claim_repo = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3cff110&gt;
+invoke = &lt;function invoke.&lt;locals&gt;.run at 0x7ff0b3d1d8a0&gt;
+failure = 'completion_storage'
+
+    @pytest.mark.parametrize("failure", ["completion_storage", "resource_id"])
+    def test_successful_mutation_keeps_claim_if_result_recording_fails(claim_repo, invoke, failure):
+        side_effects = []
+    
+        def mutate():
+            side_effects.append("performed")
+            return {"order_id": "order-1"}
+    
+        def extract_resource_id(response):
+            if failure == "resource_id":
+                raise RuntimeError("RESOURCE_ID_EXTRACTION_FAILED")
+            return response["order_id"]
+    
+        claim_repo.fail_completion = failure == "completion_storage"
+        with pytest.raises(RuntimeError):
+            invoke(mutate, resource_id_fn=extract_resource_id)
+    
+        assert side_effects == ["performed"]
+&gt;       assert claim_repo.release_calls == 0
+E       assert 1 == 0
+E        +  where 1 = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3cff110&gt;.release_calls
+
+tests/test_c11_idempotency_completion_guard.py:87: AssertionError</failure></testcase><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_successful_mutation_keeps_claim_if_result_recording_fails[sync-resource_id]" time="0.001"><failure message="assert 1 == 0&#10; +  where 1 = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3cfe630&gt;.release_calls">claim_repo = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3cfe630&gt;
+invoke = &lt;function invoke.&lt;locals&gt;.run at 0x7ff0b3d1c540&gt;
+failure = 'resource_id'
+
+    @pytest.mark.parametrize("failure", ["completion_storage", "resource_id"])
+    def test_successful_mutation_keeps_claim_if_result_recording_fails(claim_repo, invoke, failure):
+        side_effects = []
+    
+        def mutate():
+            side_effects.append("performed")
+            return {"order_id": "order-1"}
+    
+        def extract_resource_id(response):
+            if failure == "resource_id":
+                raise RuntimeError("RESOURCE_ID_EXTRACTION_FAILED")
+            return response["order_id"]
+    
+        claim_repo.fail_completion = failure == "completion_storage"
+        with pytest.raises(RuntimeError):
+            invoke(mutate, resource_id_fn=extract_resource_id)
+    
+        assert side_effects == ["performed"]
+&gt;       assert claim_repo.release_calls == 0
+E       assert 1 == 0
+E        +  where 1 = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3cfe630&gt;.release_calls
+
+tests/test_c11_idempotency_completion_guard.py:87: AssertionError</failure></testcase><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_successful_mutation_keeps_claim_if_result_recording_fails[async-completion_storage]" time="0.002"><failure message="assert 1 == 0&#10; +  where 1 = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3cffda0&gt;.release_calls">claim_repo = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3cffda0&gt;
+invoke = &lt;function invoke.&lt;locals&gt;.run at 0x7ff0b3d38900&gt;
+failure = 'completion_storage'
+
+    @pytest.mark.parametrize("failure", ["completion_storage", "resource_id"])
+    def test_successful_mutation_keeps_claim_if_result_recording_fails(claim_repo, invoke, failure):
+        side_effects = []
+    
+        def mutate():
+            side_effects.append("performed")
+            return {"order_id": "order-1"}
+    
+        def extract_resource_id(response):
+            if failure == "resource_id":
+                raise RuntimeError("RESOURCE_ID_EXTRACTION_FAILED")
+            return response["order_id"]
+    
+        claim_repo.fail_completion = failure == "completion_storage"
+        with pytest.raises(RuntimeError):
+            invoke(mutate, resource_id_fn=extract_resource_id)
+    
+        assert side_effects == ["performed"]
+&gt;       assert claim_repo.release_calls == 0
+E       assert 1 == 0
+E        +  where 1 = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3cffda0&gt;.release_calls
+
+tests/test_c11_idempotency_completion_guard.py:87: AssertionError</failure></testcase><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_successful_mutation_keeps_claim_if_result_recording_fails[async-resource_id]" time="0.001"><failure message="assert 1 == 0&#10; +  where 1 = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3b4c0e0&gt;.release_calls">claim_repo = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3b4c0e0&gt;
+invoke = &lt;function invoke.&lt;locals&gt;.run at 0x7ff0b3d38fe0&gt;
+failure = 'resource_id'
+
+    @pytest.mark.parametrize("failure", ["completion_storage", "resource_id"])
+    def test_successful_mutation_keeps_claim_if_result_recording_fails(claim_repo, invoke, failure):
+        side_effects = []
+    
+        def mutate():
+            side_effects.append("performed")
+            return {"order_id": "order-1"}
+    
+        def extract_resource_id(response):
+            if failure == "resource_id":
+                raise RuntimeError("RESOURCE_ID_EXTRACTION_FAILED")
+            return response["order_id"]
+    
+        claim_repo.fail_completion = failure == "completion_storage"
+        with pytest.raises(RuntimeError):
+            invoke(mutate, resource_id_fn=extract_resource_id)
+    
+        assert side_effects == ["performed"]
+&gt;       assert claim_repo.release_calls == 0
+E       assert 1 == 0
+E        +  where 1 = &lt;test_c11_idempotency_completion_guard.ClaimRepository object at 0x7ff0b3b4c0e0&gt;.release_calls
+
+tests/test_c11_idempotency_completion_guard.py:87: AssertionError</failure></testcase><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_completed_result_is_replayed_without_second_mutation[sync]" time="0.001" /><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_completed_result_is_replayed_without_second_mutation[async]" time="0.001" /><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_callback_failure_preserves_existing_release_contract[sync]" time="0.001" /><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_callback_failure_preserves_existing_release_contract[async]" time="0.001" /><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_existing_in_progress_claim_blocks_callback[sync]" time="0.002" /><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_existing_in_progress_claim_blocks_callback[async]" time="0.004" /><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_changed_payload_cannot_reuse_claim[sync]" time="0.002" /><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_changed_payload_cannot_reuse_claim[async]" time="0.001" /><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_production_key_requirement_is_retained[sync]" time="0.001" /><testcase classname="tests.test_c11_idempotency_completion_guard" name="test_production_key_requirement_is_retained[async]" time="0.001" /></testsuite></testsuites>

@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-state-v1/contracts/control_state_v1.schema.json",
+  "title": "GO Command Center CURRENT_CONTROL_STATE",
+  "description": "Deterministic projection of the GitHub-native Control Plane. Scope: CONTROL_STATE_AND_STATUS_ONLY. Derived, rebuildable and NON-AUTHORITATIVE. Every leaf is an assertion ranked PROVEN / OBSERVED / PENDING / HOLD / FAILED / UNKNOWN; UNKNOWN always carries value=null and never implies success. Deploy readiness and rollback readiness are NOT evaluated: recorded release-gate and rollback-candidate facts live under control_state.informational with contract=false. The document carries no workstation path, no temp directory and no local absolute path: sources are identified by repository, ref, commit SHA and repository-relative path only.",
+  "type": "object",
+  "required": ["schema_version", "contract", "scope", "authority", "generated_at", "freshness",
+               "sources", "verification", "counts", "requests", "tasks", "request_channel",
+               "control_state", "anomalies", "rebuild"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "contract": {"const": "CURRENT_CONTROL_STATE"},
+    "scope": {"const": "CONTROL_STATE_AND_STATUS_ONLY"},
+    "authority": {"const": "DERIVED_NON_AUTHORITATIVE"},
+    "authority_note": {"type": "string"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "freshness": {
+      "type": "object",
+      "required": ["stale_after_seconds", "liveness_window_seconds",
+                   "live_verification_window_seconds", "stuck_after_seconds",
+                   "recent_expired_window_seconds"],
+      "properties": {
+        "stale_after_seconds": {"type": "integer", "minimum": 1},
+        "liveness_window_seconds": {"type": "integer", "minimum": 1},
+        "live_verification_window_seconds": {"type": "integer", "minimum": 1},
+        "stuck_after_seconds": {"type": "integer", "minimum": 1},
+        "recent_expired_window_seconds": {"type": "integer", "minimum": 1}
+      }
+    },
+    "sources": {
+      "type": "object",
+      "description": "Portable provenance: repository, ref, commit SHA and repository-relative pointer path only.",
+      "required": ["tasks", "evidence", "requests", "go"],
+      "properties": {
+        "tasks": {"$ref": "#/$defs/repoRef"},
+        "evidence": {"$ref": "#/$defs/repoRef"},
+        "requests": {"type": "object"},
+        "go": {"type": "object"}
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["task", "evidence", "identities_separated", "proven_requires_both_keys"],
+      "properties": {
+        "task": {"$ref": "#/$defs/verifierIdentity"},
+        "evidence": {"$ref": "#/$defs/verifierIdentity"},
+        "identities_separated": {"type": "boolean"},
+        "proven_requires_both_keys": {"const": true},
+        "note": {"type": "string"}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["tasks", "evidence", "requests", "by_lifecycle", "anomalies"],
+      "properties": {
+        "tasks": {"type": "integer", "minimum": 0},
+        "evidence": {"type": "integer", "minimum": 0},
+        "requests": {"type": "integer", "minimum": 0},
+        "by_lifecycle": {"type": "object"},
+        "anomalies": {"type": "integer", "minimum": 0}
+      }
+    },
+    "requests": {"type": "array"},
+    "tasks": {"type": "array"},
+    "request_channel": {
+      "type": "object",
+      "required": ["enabled_request_actions", "known_capabilities", "capability_classification",
+                   "deploy_request_enabled", "live_request_switch"],
+      "properties": {
+        "enabled_request_actions": {"type": "array", "items": {"type": "string"},
+          "description": "The only actions a human / ChatGPT Request channel may currently create."},
+        "known_capabilities": {"type": "array", "items": {"type": "string"},
+          "description": "Everything the Control Plane can execute, whether or not it is requestable."},
+        "capability_classification": {"type": "object"},
+        "deploy_request_enabled": {"const": false},
+        "live_request_switch": {"$ref": "#/$defs/assertion"},
+        "note": {"type": "string"}
+      }
+    },
+    "anomalies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "detail"],
+        "properties": {
+          "kind": {"enum": ["TASKS_DIRECTORY_MISSING", "EVIDENCE_DIRECTORY_MISSING",
+                            "REQUESTS_DIRECTORY_MISSING", "TASK_UNREADABLE", "EVIDENCE_UNREADABLE",
+                            "REQUEST_UNREADABLE", "TASK_ID_REUSED", "REQUEST_ID_REUSED",
+                            "REPLAY_REJECTED", "EVIDENCE_CONFLICT",
+                            "TASK_PARAMETER_CONTRACT_DRIFT", "VERIFIER_IDENTITY_COLLISION",
+                            "LOCAL_PATH_LEAK"]},
+          "detail": {"type": "string"},
+          "ref": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "rebuild": {"type": "object"},
+    "control_state": {
+      "type": "object",
+      "required": ["health", "last_request", "last_task", "last_evidence", "last_failure",
+                   "hk_agent_last_activity", "hk_agent_liveness", "hk_runtime_identity",
+                   "verify_status", "test_pr_status", "deploy_capability",
+                   "repository_runtime_pointer", "live_verified_runtime", "runtime_verification",
+                   "runtime_verification_state", "repository_main_sha",
+                   "runtime_built_from_main_sha", "runtime_canonical_main_sha",
+                   "stuck_answer", "active_tasks", "active_stuck_tasks", "recent_expired_tasks",
+                   "historical_expired_tasks", "failed_or_invalid_tasks", "stale_tasks",
+                   "last_successful_deploy", "informational", "out_of_scope"],
+      "properties": {
+        "health": {"$ref": "#/$defs/assertion"},
+        "last_request": {"$ref": "#/$defs/assertion"},
+        "last_task": {"$ref": "#/$defs/assertion"},
+        "last_evidence": {"$ref": "#/$defs/assertion"},
+        "last_failure": {"$ref": "#/$defs/assertion"},
+        "hk_agent_last_activity": {"$ref": "#/$defs/assertion",
+          "description": "Newest signed CONTROL_PLANE_HEALTH Evidence at any age. Activity is NOT liveness."},
+        "hk_agent_liveness": {"$ref": "#/$defs/assertion"},
+        "hk_runtime_identity": {"$ref": "#/$defs/assertion"},
+        "verify_status": {"$ref": "#/$defs/assertion"},
+        "test_pr_status": {"$ref": "#/$defs/assertion"},
+        "deploy_capability": {"$ref": "#/$defs/assertion",
+          "description": "Capability classification only: CAPABILITY_PRESENT_BUT_DISABLED with request_enabled=false and readiness_evaluation=NOT_IN_SCOPE. Never a readiness verdict."},
+        "repository_runtime_pointer": {"$ref": "#/$defs/assertion",
+          "description": "What the repository DECLARES. Never the truth about what is running on Hong Kong, so never PROVEN."},
+        "live_verified_runtime": {"$ref": "#/$defs/assertion",
+          "description": "The image named by the newest VERIFY Evidence. PROVEN only when that Evidence's signature verified."},
+        "runtime_verification": {"$ref": "#/$defs/assertion"},
+        "runtime_verification_state": {
+          "enum": ["MATCH", "DRIFT", "NOT_RECENTLY_VERIFIED", "UNKNOWN"]
+        },
+        "repository_main_sha": {"$ref": "#/$defs/assertion",
+          "description": "UNKNOWN unless supplied explicitly. Never substituted by a runtime source SHA."},
+        "runtime_built_from_main_sha": {"$ref": "#/$defs/assertion"},
+        "runtime_canonical_main_sha": {"$ref": "#/$defs/assertion"},
+        "stuck_answer": {"$ref": "#/$defs/assertion",
+          "description": "Answers 'is anything stuck right now' from active_stuck_tasks only."},
+        "active_tasks": {"type": "array", "description": "Published, still inside the validity window."},
+        "active_stuck_tasks": {"type": "array", "description": "Published, still inside the validity window, older than stuck_after_seconds with no Evidence."},
+        "recent_expired_tasks": {"type": "array"},
+        "historical_expired_tasks": {"type": "array"},
+        "failed_or_invalid_tasks": {"type": "array"},
+        "stale_tasks": {"type": "array"},
+        "last_successful_deploy": {"$ref": "#/$defs/assertion"},
+        "informational": {
+          "type": "object",
+          "description": "Non-contract recorded facts. contract=false. Deploy and rollback readiness are NOT evaluated.",
+          "required": ["contract", "rollback_candidate_history", "release_gates"],
+          "properties": {
+            "contract": {"const": false},
+            "note": {"type": "string"},
+            "rollback_candidate_history": {"$ref": "#/$defs/assertion"},
+            "release_gates": {"type": "object"},
+            "final_release_gate": {"$ref": "#/$defs/assertion"},
+            "hk_deploy_gate": {"$ref": "#/$defs/assertion"},
+            "production": {"$ref": "#/$defs/assertion"}
+          }
+        },
+        "out_of_scope": {
+          "type": "object",
+          "required": ["deploy_readiness_evaluation", "rollback_readiness_evaluation"],
+          "properties": {
+            "deploy_readiness_evaluation": {"const": "NOT_IN_SCOPE"},
+            "rollback_readiness_evaluation": {"const": "NOT_IN_SCOPE"},
+            "note": {"type": "string"}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "repoRef": {
+      "type": "object",
+      "required": ["repository"],
+      "properties": {
+        "repository": {"type": "string"},
+        "ref": {"type": ["string", "null"]},
+        "head_sha": {"type": ["string", "null"]}
+      }
+    },
+    "verifierIdentity": {
+      "type": "object",
+      "required": ["identity", "encoding", "signature_verification"],
+      "properties": {
+        "identity": {"type": "string"},
+        "encoding": {"enum": ["hex", "base64"]},
+        "key_fingerprint": {"type": ["string", "null"]},
+        "signature_verification": {"enum": ["PERFORMED", "NOT_PERFORMED"]}
+      }
+    },
+    "assertion": {
+      "type": "object",
+      "required": ["state", "value", "reason", "evidence"],
+      "properties": {
+        "state": {"enum": ["PROVEN", "OBSERVED", "PENDING", "HOLD", "FAILED", "UNKNOWN"]},
+        "value": {},
+        "reason": {"type": "string", "minLength": 1},
+        "evidence": {"type": "array", "items": {"type": "string"}}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "UNKNOWN"}}, "required": ["state"]},
+          "then": {"properties": {"value": {"type": "null"}}}
+        }
+      ],
+      "x-go-rank-rules": [
+        "PROVEN requires the artifact's own verifier identity to verify: a Task against the Command Center task key, Evidence against the Hong Kong evidence key, and COMPLETE requires both.",
+        "OBSERVED means a published record was read but its signature was not checked, or the claim is a pointer rather than a live proof.",
+        "PENDING is reserved for an in-flight lifecycle stage still inside its bound.",
+        "HOLD means an explicit policy or release gate blocks the claim.",
+        "FAILED requires a terminal, evidence-backed failure record.",
+        "UNKNOWN means the control bus cannot answer; speculation is forbidden."
+      ]
+    }
+  }
+}

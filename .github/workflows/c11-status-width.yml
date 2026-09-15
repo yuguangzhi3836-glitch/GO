@@ -1,0 +1,96 @@
+name: C11 flight status width PostgreSQL acceptance
+on:
+  pull_request:
+    branches: [fix/v70-round2-fef9c748-20260914]
+    paths:
+      - application/**
+      - ci/c11-status-width/**
+      - .github/workflows/c11-status-width.yml
+permissions:
+  contents: read
+jobs:
+  c11:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_c11_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_c11_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_C11_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+      GO_C11_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify fixed parent and exact minimal source delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/c11-width"
+          python - <<'PY' | tee "$RUNNER_TEMP/c11-width/source.json"
+          import json, subprocess
+          def git(*args): return subprocess.check_output(['git',*args],text=True).strip()
+          parent='6c7dd392b61368dcd11addea93dcb0de4ef2042f'
+          assert git('rev-parse','HEAD^')==parent
+          actual=set(git('diff','--name-only',parent,'HEAD','--','application/').splitlines())
+          assert actual=={'application/src/go_hotel/db/models.py','application/alembic/versions/0134_flight_status_width.py'},actual
+          for path in ['application/ci/next_depth/c11_postgres.py','application/ci/next_depth/c11_process_actor.py','ci/retention/requirements.lock','ci/retention/dependencies.py']:
+              assert git('rev-parse','HEAD:'+path)==git('rev-parse',parent+':'+path),path
+          print(json.dumps({'source_commit':git('rev-parse','HEAD'),'parent':parent,'application_tree':git('rev-parse','HEAD:application'),'changed_application_files':sorted(actual),'original_10_case_driver_unchanged':True,'dependencies_unchanged':True}))
+          PY
+      - name: Install inherited frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Verify upgrade data preservation and downgrade guard
+        env:
+          PYTHONPATH: application/src
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ci/c11-status-width/verify_migration.py | tee "$RUNNER_TEMP/c11-width/migration.json"
+      - name: Run original ten C11 PostgreSQL cases unchanged
+        working-directory: application
+        env:
+          PYTHONPATH: src
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B ci/next_depth/c11_postgres.py --evidence-dir "$RUNNER_TEMP/c11-width/C11" 2>&1 | tee "$RUNNER_TEMP/c11-width/driver.log"
+      - name: Bind original evidence
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'c11-width';out.mkdir(exist_ok=True)
+          files={str(p.relative_to(out)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.rglob('*')) if p.is_file()}
+          report={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'files':files,'environment':'disposable PostgreSQL 18.4','hong_kong':'NOT_ACCESSED','production':'HOLD','full_release':'HOLD'}
+          (out/'EVIDENCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
+          for name in ['migration.json','C11/execution.json','C11/results.json']:
+              p=out/name
+              if p.exists(): print(name+'\n'+p.read_text())
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c11-status-width-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/c11-width
+          if-no-files-found: error
+          retention-days: 90
