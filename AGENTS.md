@@ -68,11 +68,11 @@ A repository migration that has not been executed is not the live database revis
 ### Fixed workstation convention
 
 - **Eason-8845**: default **Codex main execution workstation**. Use it for local mainline/source work, testing, Git, and tasks that benefit from its verified direct SSH paths to HK-STAGING and GO Command Center.
-- **Eason-13490** (observed Windows hostname `EASON`): default **WorkBuddy / second development workstation**. Its verified primary ECS path is Alibaba Cloud Workbench CLI; direct SSH is secondary/non-primary.
+- **Eason-13490** (observed Windows hostname `EASON`): default **WorkBuddy / second development workstation**. Its verified primary ECS path is **direct SSH key access** (`ssh hk-staging` / `ssh go-cc`); Alibaba Cloud Workbench CLI is retained as fallback only.
 - Both workstations are operated by Eason. A branch is not owned by a workstation merely because it was created there.
 - Before continuing work on either workstation, verify repository, branch, HEAD, working-tree state, and remote state. Never assume uncommitted state from the other workstation exists locally.
 
-Detailed workstation connection identities and recovery commands are maintained through PR #49 and `docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md` when that documentation is being used/reviewed.
+Workstation roles and the current access-channel state are recorded in `docs/project/OPERATING_CONTEXT.md` (section 「服务器访问通道」). The detailed per-identity inventory and recovery commands are on canonical main at `docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md`, with the machine-readable form in `docs/control-plane/access/connection-identities.v1.json`.
 
 ### Product-lineage rule
 

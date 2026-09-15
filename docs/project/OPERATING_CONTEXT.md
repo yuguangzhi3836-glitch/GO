@@ -129,14 +129,53 @@ WorkBuddy 同样受 Git 状态、项目文档、Runbook 和人工授权约束。
 
 - WorkBuddy 的恢复与长期工作环境优先放在这台机器；
 - 也可以运行 Codex 或其他本地工具，但 WorkBuddy 是当前计划中的主要开发 Agent；
-- 对 GitHub 使用本地 HTTPS Git；
-- 对 HK-STAGING 和 GO Command Center，已验证的主要 ECS 通道是 Alibaba Cloud Workbench CLI；
-- direct SSH 在这台机器上属于次要诊断通道，不需要为了和 8845 对称而强行重建。
+- 对 GitHub 使用本地 HTTPS Git（凭据来自 Windows 凭据管理器，不使用 SSH key）；
+- 对 HK-STAGING 和 GO Command Center，**已建立 SSH 密钥直连，并以此为默认主通道**（见下方「服务器访问通道」）；
+- Alibaba Cloud Workbench CLI 保留为备用通道 —— 注意它受账号级会话约束（详见下节）。
 
 更详细的连接方式、身份、恢复命令和已验证状态请看：
 
-- PR #49
-- `docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md`（PR #49 当前候选文档）
+- 本节「服务器访问通道（当前已验证状态）」
+- `docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md`（详细层：每个身份的指纹、用途与恢复命令）
+- `docs/control-plane/access/connection-identities.v1.json`（机器可读的通道与身份清单）
+- `CODEBUDDY.md`（WorkBuddy / CodeBuddy 在本仓库的操作约定）
+
+### 服务器访问通道（当前已验证状态）
+
+> 更新时间：2026-09-15。本节只描述**通道形态与验证状态**，不包含任何私钥、token、AccessKey 或会话凭据。
+
+两台 ECS 的访问通道如下。**连接能力不等于部署授权** —— 能连上去不代表该操作被允许。
+
+| 目标 | 地址 | 主通道 | 备用通道 |
+| --- | --- | --- | --- |
+| HK-STAGING-01 | `47.239.57.40` | `ssh hk-staging`（密钥直连） | Alibaba Cloud Workbench CLI |
+| GO-AI 指挥中心 | `47.242.94.212` | `ssh go-cc`（密钥直连） | Alibaba Cloud Workbench CLI |
+
+**Eason-13490（本机）上的密钥直连现状**
+
+```text
+专用密钥   ~/.ssh/id_ed25519_workbuddy   （ED25519，无口令，文件 ACL 仅限本人可读）
+公钥部署   已加入两台实例的 /root/.ssh/authorized_keys
+sshd 模式  两台均为 pubkeyauthentication yes + passwordauthentication no
+别名定义   ~/.ssh/config ：hk-staging → 47.239.57.40 ； go-cc → 47.242.94.212
+已验证     交互式登录 / 非交互 `ssh <alias> <command>` / scp 均可用
+出网路径   本机 Clash 已为这两个实例 IP 配置 DIRECT，SSH 不经代理
+```
+
+**为什么以 SSH 为主通道**
+
+Alibaba Cloud Workbench CLI 存在两类**账号级**约束，均已实测复现：
+
+1. 会话管理器可能被账号风控整体禁用（表现为固定延迟后的连接超时，而非权限错误）；
+2. 并发会话有上限，且 CLI 无法列出或关闭自己的历史会话，撞到上限后只能等待闲置回收。
+
+SSH 密钥直连不受上述约束，因此作为默认通道；Workbench CLI 降级为备用。
+
+**维护约定**
+
+- 本仓库任何文档**不得**写入私钥、token、AccessKey、密码或会话凭据；
+- 新增通道、轮换密钥或改变主/备关系时，先更新本节，再对外引用；
+- 撤销某台机器的访问：从该实例的 `/root/.ssh/authorized_keys` 移除对应公钥行即可。
 
 ## 4. 默认任务流
 

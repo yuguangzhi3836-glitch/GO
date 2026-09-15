@@ -65,11 +65,11 @@ It defines the current human / AI / workstation responsibilities:
 - **Eason's ChatGPT** — technical coordination, context, review, and task-decomposition layer; not product owner or execution authority.
 - **Codex / WorkBuddy** — local execution agents under Eason's control.
 - **Eason-8845** — default Codex main execution workstation; direct SSH paths to HK-STAGING and Command Center are verified.
-- **Eason-13490** (Windows hostname `EASON`) — default WorkBuddy / second development workstation; Alibaba Cloud Workbench CLI is the verified primary ECS path.
+- **Eason-13490** (Windows hostname `EASON`) — default WorkBuddy / second development workstation; verified primary ECS path is **direct SSH key access** (`ssh hk-staging` / `ssh go-cc`), with Alibaba Cloud Workbench CLI as fallback.
 
 Both fixed workstations are operated by Eason. A workstation or AI agent does not independently own a branch, decide product direction, or gain deployment authority merely because it can execute commands.
 
-Detailed connection identities and recovery paths are being maintained through PR #49 and its control-plane access runbook.
+Access channels and verified connection state are recorded in [OPERATING_CONTEXT.md](docs/project/OPERATING_CONTEXT.md) (section 「服务器访问通道」), with the detailed identity inventory and recovery commands in [CONNECTION_AND_IDENTITY_RUNBOOK.md](docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md).
 
 ## Important: PR numbers are not DEPTH numbers
 
