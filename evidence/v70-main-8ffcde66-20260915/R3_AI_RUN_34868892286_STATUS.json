@@ -1,0 +1,55 @@
+{
+  "schema": "go.v70.r3.ai-run-status.v1",
+  "authority": "V7.0 Ultimate / V6.1 lineage + C14",
+  "recorded_at_utc": "2026-09-15T03:05:00Z",
+  "repository_main_head": "8610a4dbfd58cbe595f3d161c049de37dd81d3cc",
+  "r3_product_source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+  "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "runner_pr": 111,
+  "runner_head": "b000598dd396fb5d87b5d71e41ba98317238c45f",
+  "workflow_run": 34868892286,
+  "run_attempt": 5,
+  "workflow_status": "completed",
+  "workflow_conclusion": "failure",
+  "verified_execution": {
+    "credential_preflight": "PASS",
+    "task_bound_ack": "PASS_FOR_C01_C05_C07_C12",
+    "dependencies_and_prompt": "PASS_FOR_C01_C05_C07_C12",
+    "codex_execution": "FAILED",
+    "scope_gate_and_test": "SKIPPED",
+    "freeze_patch_and_agent_evidence": "SKIPPED",
+    "deterministic_promotion": "SKIPPED",
+    "c14": "NOT_TRIGGERED",
+    "c13": "NOT_TRIGGERED"
+  },
+  "verified_blocker": {
+    "class": "OPENAI_API_CREDITS",
+    "evidence_cell": "C01",
+    "evidence_job_id": 104077960306,
+    "message": "You have no credits remaining. Add credits to continue using the API.",
+    "not_a_dispatch_failure": true
+  },
+  "cell_states": {
+    "C01": "BLOCKED_BILLING",
+    "C02": "BLOCKED_BILLING",
+    "C03": "BLOCKED_BILLING",
+    "C04": "BLOCKED_BILLING",
+    "C05": "BLOCKED_BILLING",
+    "C06": "BLOCKED_EXTERNAL",
+    "C07": "BLOCKED_BILLING",
+    "C08": "BLOCKED_BILLING",
+    "C09": "BLOCKED_BILLING",
+    "C10": "BLOCKED_BILLING",
+    "C11": "BLOCKED_BILLING",
+    "C12": "BLOCKED_BILLING",
+    "C13": "TRIGGER_ARMED",
+    "C14": "TRIGGER_ARMED"
+  },
+  "preservation_rule": "Preserve all inherited PASS and historical Evidence. Do not overwrite or reinterpret prior scoped PASS as whole-module completion.",
+  "continuity_rule": "Archive generated source, tests, raw logs and Evidence as soon as they exist; archiving must not pause remaining executable work. The first complete fixed candidate proceeds immediately to deterministic promotion -> C14 -> independent C13 without waiting for other Cells.",
+  "release_gates": {
+    "FINAL_RELEASE": "HOLD",
+    "HK_DEPLOY": "HOLD",
+    "PRODUCTION": "HOLD"
+  }
+}
