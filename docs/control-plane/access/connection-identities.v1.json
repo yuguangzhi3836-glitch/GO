@@ -1,0 +1,419 @@
+{
+  "schema_version": "1.0",
+  "inventory_date": "2026-09-15",
+  "security": {
+    "metadata_only": true,
+    "private_key_content_recorded": false,
+    "secrets_recorded": false,
+    "alibaba_cloud_access_key_value_recorded": false
+  },
+  "workstations": {
+    "Eason-8845": {
+      "id": "Eason-8845",
+      "windows_user": "Eason-8845",
+      "user_profile": "C:\\Users\\Eason-8845",
+      "operating_system": "Windows 11 Enterprise LTSC",
+      "codex_github_plugin": {
+        "status": "UNAVAILABLE_UNRESOLVED",
+        "as_of": "2026-09-12",
+        "operational_guidance": "Use the local GO-BOSS working copy over HTTPS Git. Do not repeatedly spend recovery time attempting to install the Codex GitHub plugin unless the limitation is intentionally re-investigated."
+      },
+      "go_repository": {
+        "local_path": "C:\\Users\\Eason-8845\\Documents\\Code\\GO-BOSS",
+        "remote_origin": "https://github.com/yuguangzhi3836-glitch/GO.git",
+        "remote_access_method": "HTTPS",
+        "browser_required_for_source_reading": false,
+        "credential_mechanism": "local Git credential helper (manager); secret not recorded"
+      },
+      "ssh_targets": [
+        {
+          "name": "HK-STAGING-01",
+          "host": "47.239.57.40",
+          "port": 22,
+          "user": "root",
+          "local_private_key_path": "C:\\Users\\Eason-8845\\Downloads\\go-nexus-hk-stg-01-direct-20260903.pem",
+          "public_key_fingerprint_sha256": "SHA256:4wJ+PlUHmNCf+YcOYytYPmcz1g9v8+WHtuP/3HMbofA",
+          "verified": true,
+          "standard_command": "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i \"C:\\Users\\Eason-8845\\Downloads\\go-nexus-hk-stg-01-direct-20260903.pem\" root@47.239.57.40",
+          "naming_discrepancy_note": "As observed from HK-STAGING-01 on 2026-09-15, the authorized_keys entry carrying this exact fingerprint is annotated 'skp-j6cdb9zcrqzwjcb4uug3', and the name 'go-nexus-hk-stg-01-direct-20260903' corresponds to a different fingerprint (SHA256:Aweiz/cEV850c2AfKMQ8htAnLb8xnZ...). The local file name on Eason-8845 was not re-verified. Unresolved: either the Eason-8845 file name or the server-side annotation does not match the other. Do not assume they are interchangeable until re-checked on Eason-8845."
+        },
+        {
+          "name": "GO Command Center",
+          "host": "47.242.94.212",
+          "port": 22,
+          "user": "root",
+          "ssh_alias": "go-command-center-root",
+          "ssh_config_path": "C:\\Users\\Eason-8845\\.ssh\\config",
+          "user_known_hosts_file": null,
+          "user_known_hosts_file_status": "NOT_YET_RECORDED",
+          "local_private_key_path": "C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519",
+          "public_key_fingerprint_sha256": "SHA256:MN3etVe4N91QpsfZkhZECi5YbW6XocZ0tB8LmVebBTU",
+          "verified": true,
+          "standard_command": "ssh go-command-center-root",
+          "raw_fallback_command": "ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -i \"C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519\" root@47.242.94.212"
+        }
+      ]
+    },
+    "Eason-13490": {
+      "id": "Eason-13490",
+      "observed_hostname": "EASON",
+      "hostname_matches_workstation_id": false,
+      "hostname_status": "CONFIRMED_MAPPING",
+      "hostname_mapping_confirmed_by_user_on": "2026-09-12",
+      "windows_user": "EASON\\Eason",
+      "user_profile": "C:\\Users\\Eason",
+      "operating_system": "Windows 10 Enterprise LTSC 2021 21H2 build 19044.7725",
+      "codex_github_plugin": {
+        "status": "UNAVAILABLE",
+        "scope": "current Codex session",
+        "plugin_required_for_normal_work": false
+      },
+      "go_repository": {
+        "local_path": "D:\\Code\\Workbuddy\\GO",
+        "repository_root": "D:\\Code\\Workbuddy\\GO",
+        "path_status": "FORMAL_WORKBUDDY_WORKING_COPY",
+        "selection_basis": "fresh verified clone created on 2026-09-12 after native Git was validated with WorkBuddy sandbox disabled",
+        "remote_origin": "https://github.com/yuguangzhi3836-glitch/GO.git",
+        "remote_access_method": "HTTPS",
+        "credential_mechanism": "Git Credential Manager configured by PortableGit; secret not recorded",
+        "browser_required_for_source_reading": false,
+        "branch_at_verification": "main",
+        "head_at_verification": "8610a4dbfd58cbe595f3d161c049de37dd81d3cc",
+        "working_tree_status_at_verification": "one pre-existing local modification: docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+        "workbuddy_sandbox_enabled": false,
+        "native_git_gate": "PASS",
+        "head_at_verification_note": "was 9645c6f5 at 2026-09-12; re-verified after fetching 52 commits"
+      },
+      "ssh_targets": [
+        {
+          "name": "HK-STAGING-01",
+          "host": "47.239.57.40",
+          "port": 22,
+          "user": "root",
+          "access_role": "primary",
+          "ssh_alias": "hk-staging",
+          "ssh_config_path": "C:\\Users\\Eason\\.ssh\\config",
+          "local_private_key_path": "C:\\Users\\Eason\\.ssh\\id_ed25519_workbuddy",
+          "public_key_fingerprint_sha256": "SHA256:BhBEojejK53/yjbihKppoQQs1LJje/nLcIBensKUqBc",
+          "identities_only": true,
+          "strict_host_key_checking": true,
+          "user_known_hosts_file": "C:\\Users\\Eason\\.ssh\\known_hosts",
+          "tcp_22_reachable": true,
+          "ssh_banner": "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.17",
+          "direct_ssh_status": "VERIFIED",
+          "verified": true,
+          "probe_result": "iZj6ccs8t04f1p4d8pe69zZ via ssh alias hk-staging on 2026-09-15",
+          "standard_command": "ssh hk-staging",
+          "previous_state_2026_09_12": {
+            "direct_ssh_status": "CONFIGURED_AUTHORIZATION_FAILED",
+            "verified": false,
+            "local_private_key_path": "C:\\Users\\Eason\\.ssh\\go-nexus-hk-stg-01",
+            "public_key_fingerprint_sha256": "SHA256:jIcdy7HEdhsBREuoECUOrnLbLR51oqLS46lF4/jEPk4",
+            "probe_result": "Network and SSH banner succeeded; configured key was rejected with Permission denied (publickey), 2026-09-12"
+          },
+          "verified_on": "2026-09-15"
+        },
+        {
+          "name": "GO Command Center",
+          "host": "47.242.94.212",
+          "port": 22,
+          "user": "root",
+          "access_role": "primary",
+          "ssh_alias": "go-cc",
+          "ssh_config_path": "C:\\Users\\Eason\\.ssh\\config",
+          "local_private_key_path": "C:\\Users\\Eason\\.ssh\\id_ed25519_workbuddy",
+          "public_key_fingerprint_sha256": "SHA256:BhBEojejK53/yjbihKppoQQs1LJje/nLcIBensKUqBc",
+          "identities_only": true,
+          "strict_host_key_checking": true,
+          "user_known_hosts_file": "C:\\Users\\Eason\\.ssh\\known_hosts",
+          "user_known_hosts_file_status": "ENTRY_ADDED_BY_NON_STRICT_PROBE_NOT_INDEPENDENTLY_PINNED",
+          "tcp_22_reachable": true,
+          "ssh_banner": "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.17",
+          "direct_ssh_status": "VERIFIED",
+          "verified": true,
+          "probe_result": "iZj6c7k6k01biwlbnwutu5Z via ssh alias go-cc on 2026-09-15",
+          "standard_command": "ssh go-cc",
+          "raw_fallback_command": null,
+          "previous_state_2026_09_12": {
+            "direct_ssh_status": "NOT_CONFIGURED",
+            "verified": false,
+            "local_private_key_path": null,
+            "public_key_fingerprint_sha256": null,
+            "probe_result": "Network and SSH banner succeeded; no dedicated local identity is configured, so direct SSH authentication is unavailable (Permission denied (publickey)), 2026-09-12"
+          },
+          "verified_on": "2026-09-15"
+        }
+      ],
+      "fallback_ecs_access": {
+        "method": "Alibaba Cloud Workbench CLI",
+        "tool": "Alibaba Cloud Workbench CLI",
+        "executable": "C:\\Users\\Eason\\.workbench\\bin\\workbench.exe",
+        "version": "workbench v1.0.1 (commit: 86c0aff, built: 2026-08-24T07:12:39Z)",
+        "credential_mechanism": "AK profile stored in local Workbench config; credential values are not recorded in this repository",
+        "credential_profile_path": "C:\\Users\\Eason\\.workbench\\config.json",
+        "credential_storage_observation": "access_key_id and access_key_secret fields are stored in plaintext in the local profile; values were not echoed or recorded",
+        "do_not_commit_credential_profile": true,
+        "proxy_note": "Inherited HTTP(S)_PROXY/ALL_PROXY settings may interfere with Workbench CLI; connectivity probe passed after clearing those proxy variables for the invocation",
+        "interactive_auth_required_for_existing_codex_invocation": false,
+        "codex_can_invoke": true,
+        "targets": [
+          {
+            "name": "HK-STAGING-01",
+            "host": "47.239.57.40",
+            "display_name": "go-nexus-hk-stg-01",
+            "instance_id": "i-j6ccs8t04f1p4d8pe69z",
+            "region": "cn-hongkong",
+            "user": "root",
+            "verified": true,
+            "probe_command": "workbench exec --instance-id i-j6ccs8t04f1p4d8pe69z --region cn-hongkong --command \"hostname; whoami; uptime\"",
+            "probe_result": "iZj6ccs8t04f1p4d8pe69zZ / root / up 9 days, 4:24"
+          },
+          {
+            "name": "GO Command Center",
+            "host": "47.242.94.212",
+            "display_name": "GO-AI指挥中心",
+            "instance_id": "i-j6c7k6k01biwlbnwutu5",
+            "region": "cn-hongkong",
+            "user": "root",
+            "verified": true,
+            "probe_command": "workbench exec --instance-id i-j6c7k6k01biwlbnwutu5 --region cn-hongkong --command \"hostname; whoami; uptime\"",
+            "probe_result": "iZj6c7k6k01biwlbnwutu5Z / root / up 8 days, 13:11"
+          }
+        ],
+        "access_role": "fallback_non_primary",
+        "why_not_primary": "Two account-level constraints reproduced in practice: (1) the Workbench session manager can be disabled wholesale by account risk control, which surfaces as a fixed-delay connection timeout rather than a permission error; (2) concurrent sessions are capped and the CLI cannot list or close its own historical sessions, so reaching the cap leaves no recovery short of waiting for idle reclamation."
+      },
+      "primary_ecs_access": {
+        "method": "Direct SSH key access",
+        "access_role": "primary",
+        "ssh_alias_hk_staging": "hk-staging",
+        "ssh_alias_go_cc": "go-cc",
+        "ssh_config_path": "C:\\Users\\Eason\\.ssh\\config",
+        "local_private_key_path": "C:\\Users\\Eason\\.ssh\\id_ed25519_workbuddy",
+        "key_type": "ED25519",
+        "key_passphrase_protected": false,
+        "public_key_fingerprint_sha256": "SHA256:BhBEojejK53/yjbihKppoQQs1LJje/nLcIBensKUqBc",
+        "key_file_acl": "owner-only (icacls: EASON\\Eason:(R), inheritance disabled)",
+        "public_key_deployed_to": "both hosts, /root/.ssh/authorized_keys",
+        "server_side_sshd": "pubkeyauthentication yes; passwordauthentication no (both hosts)",
+        "verified_on": "2026-09-15",
+        "verified_capabilities": [
+          "interactive login",
+          "non-interactive invocation: ssh <alias> <command>",
+          "scp upload and remote read-back"
+        ],
+        "egress_path": "local Clash maps both instance IPs to DIRECT; SSH does not traverse a proxy",
+        "interactive_auth_required_for_existing_codex_invocation": false,
+        "codex_can_invoke": true,
+        "credential_mechanism": "local SSH private key; key body never recorded in this repository"
+      }
+    }
+  },
+  "connection_edges": [
+    {
+      "source": "Eason-8845 / Codex",
+      "destination": "yuguangzhi3836-glitch/GO",
+      "protocol": "HTTPS Git",
+      "credential_path": "local Git credential helper; secret not recorded",
+      "permission": "developer access",
+      "purpose": "local GO source and Git operations",
+      "codex_github_plugin_required": false
+    },
+    {
+      "source": "Eason-8845 / Codex",
+      "destination": "HK-STAGING-01",
+      "protocol": "SSH",
+      "credential_path": "C:\\Users\\Eason-8845\\Downloads\\go-nexus-hk-stg-01-direct-20260903.pem",
+      "permission": "server administration",
+      "purpose": "approved HK Control Plane operations"
+    },
+    {
+      "source": "Eason-8845 / Codex",
+      "destination": "GO Command Center",
+      "protocol": "SSH",
+      "credential_path": "C:\\Users\\Eason-8845\\.ssh\\go-command-center-codex-root-ed25519",
+      "permission": "server administration",
+      "purpose": "approved Command Center operations"
+    },
+    {
+      "source": "Eason-13490 / Codex",
+      "destination": "yuguangzhi3836-glitch/GO",
+      "protocol": "HTTPS Git",
+      "credential_path": "Git Credential Manager; secret not recorded",
+      "permission": "repository read verified; write authorization not tested",
+      "purpose": "local GO source and Git operations",
+      "codex_github_plugin_required": false
+    },
+    {
+      "source": "Eason-13490 / Codex",
+      "destination": "HK-STAGING-01",
+      "protocol": "SSH",
+      "credential_path": "local SSH private key C:\\Users\\Eason\\.ssh\\id_ed25519_workbuddy; key body not recorded",
+      "permission": "root shell on the target host (capability only, not deployment authority)",
+      "purpose": "primary approved ECS operations from this workstation",
+      "instance_id": "i-j6ccs8t04f1p4d8pe69z",
+      "region": "cn-hongkong",
+      "verified": true,
+      "access_role": "primary",
+      "ssh_alias": "hk-staging",
+      "standard_command": "ssh hk-staging",
+      "fallback_protocol": "Alibaba Cloud Workbench CLI",
+      "verified_on": "2026-09-15"
+    },
+    {
+      "source": "Eason-13490 / Codex",
+      "destination": "GO Command Center",
+      "protocol": "SSH",
+      "credential_path": "local SSH private key C:\\Users\\Eason\\.ssh\\id_ed25519_workbuddy; key body not recorded",
+      "permission": "root shell on the target host (capability only, not deployment authority)",
+      "purpose": "primary approved ECS operations from this workstation",
+      "instance_id": "i-j6c7k6k01biwlbnwutu5",
+      "region": "cn-hongkong",
+      "verified": true,
+      "access_role": "primary",
+      "ssh_alias": "go-cc",
+      "standard_command": "ssh go-cc",
+      "fallback_protocol": "Alibaba Cloud Workbench CLI",
+      "verified_on": "2026-09-15"
+    }
+  ],
+  "command_center": {
+    "host": "47.242.94.212",
+    "identities": [
+      {
+        "name": "github-tasks-writer",
+        "purpose": "publish formal tasks",
+        "repository": "chenzhenxi1-sudo/go-control-tasks",
+        "permission": "read/write",
+        "private_key_path": "/etc/go-command-center/keys/github-tasks-writer",
+        "public_key_path": "/etc/go-command-center/keys/github-tasks-writer.pub",
+        "owner": "root:root",
+        "private_mode": "0600",
+        "public_mode": "0644",
+        "public_key_fingerprint_sha256": "SHA256:lbORd4Kax3TYUswvLhk7pUU9Iz608MrlFIA1JoSnurQ"
+      },
+      {
+        "name": "github-evidence-reader",
+        "purpose": "read signed evidence",
+        "repository": "chenzhenxi1-sudo/go-control-evidence",
+        "permission": "read-only",
+        "private_key_path": "/etc/go-command-center/keys/github-evidence-reader",
+        "public_key_path": "/etc/go-command-center/keys/github-evidence-reader.pub",
+        "owner": "root:root",
+        "private_mode": "0600",
+        "public_mode": "0644",
+        "public_key_fingerprint_sha256": "SHA256:+bWFnClf++LZHvzUcGN/2Q2lrhPdWUi0/TtpyIg6DXo"
+      },
+      {
+        "name": "github-go-pr-resolver",
+        "purpose": "resolve refs/pull/<N>/head to immutable commit SHA",
+        "repository": "yuguangzhi3836-glitch/GO",
+        "permission": "read-only",
+        "deploy_key_title": "GO Command Center PR Resolver",
+        "expected_github_identity": "yuguangzhi3836-glitch/GO",
+        "private_key_path": "/etc/go-command-center/keys/github-go-pr-resolver",
+        "public_key_path": "/etc/go-command-center/keys/github-go-pr-resolver.pub",
+        "owner": "root:root",
+        "private_mode": "0600",
+        "public_mode": "0644",
+        "public_key_fingerprint_sha256": "SHA256:0lB7R/eqKeGnXeJyrBWpLIp/d1l1tpHmaH4GHtIi6Dw",
+        "last_verified": {
+          "go_read_access": "PASS",
+          "pr_number": 42,
+          "resolved_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996"
+        }
+      },
+      {
+        "name": "task-manifest-signing",
+        "purpose": "sign Command Center task manifests",
+        "permission": "signing only",
+        "private_key_path": "/etc/go-command-center/keys/task-manifest-signing.pem",
+        "public_key_path": null,
+        "owner": "root:root",
+        "private_mode": "0600",
+        "public_key_fingerprint_sha256": "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns"
+      },
+      {
+        "name": "legacy-github-go-source-reader",
+        "status": "RETIRED_AND_DELETED",
+        "retired_date": "2026-09-12",
+        "reason": "abandoned direct-GO-repository-read design",
+        "do_not_recreate": true,
+        "do_not_use": true,
+        "public_key_fingerprint_sha256": "SHA256:Zvv0eA2aKm3HiTuV7MrWrnPBbVolPBrNjTI1q2s57CA"
+      }
+    ]
+  },
+  "hk_staging": {
+    "name": "HK-STAGING-01",
+    "host": "47.239.57.40",
+    "identities": [
+      {
+        "name": "github-go-source-reader",
+        "purpose": "fetch exact immutable GO commit SHA",
+        "repository": "yuguangzhi3836-glitch/GO",
+        "permission": "read-only",
+        "deploy_key_title": "HK-STAGING-01 GO source reader",
+        "expected_github_identity": "yuguangzhi3836-glitch/GO",
+        "private_key_path": "/etc/go-hk-agent/keys/github-go-source-reader",
+        "public_key_path": "/etc/go-hk-agent/keys/github-go-source-reader.pub",
+        "owner": "go-hk-agent:go-hk-agent",
+        "private_mode": "0600",
+        "public_mode": "0644",
+        "public_key_fingerprint_sha256": "SHA256:XvbkNhs8HWFzkrZrvQFXAEAtBEdnzI0O7Y0nNpO7gLs",
+        "last_verified_go_read_access": "PASS"
+      },
+      {
+        "name": "tasks-read",
+        "purpose": "read formal tasks",
+        "repository": "chenzhenxi1-sudo/go-control-tasks",
+        "permission": "read-only",
+        "private_key_path": "/etc/go-hk-agent/keys/tasks-read",
+        "public_key_path": null,
+        "owner": "go-hk-agent:go-hk-agent",
+        "private_mode": "0600",
+        "public_key_fingerprint_sha256": "SHA256:ONnJNvzDHi9q7JWcoPrYI/Hiw+pzT3kd/Xfht1liYGY"
+      },
+      {
+        "name": "evidence-write",
+        "purpose": "publish signed evidence",
+        "repository": "chenzhenxi1-sudo/go-control-evidence",
+        "permission": "read/write",
+        "private_key_path": "/etc/go-hk-agent/keys/evidence-write",
+        "public_key_path": null,
+        "owner": "go-hk-agent:go-hk-agent",
+        "private_mode": "0600",
+        "public_key_fingerprint_sha256": "SHA256:Pibr/vn6nLpTgk9mN4Anb5vjDkXTyDKuQyxRHYtxQ5c"
+      },
+      {
+        "name": "task-verify",
+        "purpose": "verify Command Center signed tasks",
+        "permission": "verification only",
+        "private_key_path": null,
+        "public_key_path": "/etc/go-hk-agent/keys/task-verify.pub",
+        "owner": "root:go-hk-agent",
+        "public_mode": "0640",
+        "public_key_fingerprint_sha256": "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns"
+      },
+      {
+        "name": "evidence-signing",
+        "purpose": "sign HK execution evidence",
+        "permission": "signing only",
+        "private_key_path": "/etc/go-hk-agent/keys/evidence-signing.pem",
+        "public_key_path": "/etc/go-hk-agent/keys/evidence-signing.pub",
+        "owner": "go-hk-agent:go-hk-agent",
+        "private_mode": "0600",
+        "public_owner": "root:go-hk-agent",
+        "public_mode": "0640",
+        "public_key_fingerprint_sha256": "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw"
+      }
+    ]
+  },
+  "inventory_date_at_creation": "2026-09-12",
+  "canonical_main_at_refresh": "8610a4dbfd58cbe595f3d161c049de37dd81d3cc",
+  "refresh_note": "Refreshed 2026-09-15 against canonical main 8610a4d. On Eason-13490 the verified primary ECS path changed from Alibaba Cloud Workbench CLI to direct SSH key access; Workbench CLI is retained as fallback. Metadata only: no key body, token, password, AccessKey value or session value is recorded.",
+  "changelog": [
+    "2026-09-15: Eason-13490 primary ECS access changed Workbench CLI -> direct SSH key access; both HK-STAGING-01 and GO Command Center direct SSH moved from not-verified to VERIFIED; go_repository HEAD re-verified at main 8610a4d.",
+    "2026-09-12: initial inventory (metadata only)."
+  ]
+}
