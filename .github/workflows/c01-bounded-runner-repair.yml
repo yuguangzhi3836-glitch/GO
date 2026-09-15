@@ -24,7 +24,7 @@ env:
 jobs:
   preflight:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 10
     services:
       postgres:
         image: postgres:16
@@ -47,14 +47,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: ${{ env.BASE_SHA }}
+          fetch-depth: 1
           persist-credentials: false
-      - name: Pin canonical source
+          sparse-checkout: application
+          sparse-checkout-cone-mode: true
+      - name: Verify canonical product source
         shell: bash
         run: |
           set -euo pipefail
-          git reset --hard "$BASE_SHA"
-          git clean -fdx
           test "$(git rev-parse HEAD)" = "$BASE_SHA"
           test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE"
       - uses: actions/setup-python@v5
@@ -72,34 +73,36 @@ jobs:
   agent:
     needs: preflight
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: ${{ env.BASE_SHA }}
+          fetch-depth: 1
           persist-credentials: false
-      - name: Pin canonical source and build bounded prompt
+          sparse-checkout: application
+          sparse-checkout-cone-mode: true
+      - name: Verify canonical source and build bounded prompt
         shell: bash
         run: |
           set -euo pipefail
-          git reset --hard "$BASE_SHA"
-          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
           test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE"
           cat > "$RUNNER_TEMP/C01_PROMPT.md" <<'EOF'
-          GO V7.0 C01 bounded code task. This run exists to validate the repaired C01 code-modifying runner while closing one real, small C01 hotel-funds integrity gap.
+          GO V7.0 C01 bounded code task. This run validates the repaired C01 code-modifying runner while closing one real, small C01 hotel-funds integrity gap.
 
           HARD BOUNDARY
-          - Working directory is application/.
+          - The checkout is sparse and contains only application/. Working directory is application/.
           - Inspect only these existing files unless a directly imported helper is strictly necessary:
             1) src/go_hotel/services/hosted_money.py
             2) src/go_hotel/services/hosted_credit_value.py
             3) src/go_hotel/services/alipay_safeguarded_settlement.py
             4) tests/test_v70_next_c01_unknown_funding.py
-          - Do not scan the repository, git history, ../evidence, ../deliverables, ../hk-staging, ../docs, ../ci or unrelated tests.
-          - Modify only src/go_hotel/services/*.py and tests/test_v70*_c01*.py.
-          - Never modify migrations, workflows, deployment, governance, secrets or evidence history.
+          - Do not scan git history or unrelated tests.
+          - Modify only src/go_hotel/services/hosted_money.py, src/go_hotel/services/hosted_credit_value.py, src/go_hotel/services/alipay_safeguarded_settlement.py, and tests/test_v70*_c01*.py.
+          - Never modify migrations, workflow/deployment/governance/secrets/evidence material.
           - Do not commit, push, open PRs or deploy.
 
           OBJECTIVE
@@ -107,7 +110,7 @@ jobs:
 
           EXECUTION BUDGET
           - Keep the change small: ideally 1 implementation file + 1 test file.
-          - Do not run the test suite in this AI job; deterministic validation runs in a separate clean job with PostgreSQL and Redis.
+          - Do not run tests in this AI job; deterministic validation runs in a separate clean PostgreSQL/Redis job.
           - If no real bounded gap is supported by the allowed files, do not invent work. Leave the tree unchanged and final-answer exactly BOUNDED_NO_GAP.
           - Otherwise final answer must contain only: GAP=<short>; FILES=<comma-separated>; TEST=<test name>.
           EOF
@@ -138,24 +141,21 @@ jobs:
           import os,pathlib,sys
           p=pathlib.Path(os.environ['RUNNER_TEMP'])/'c01'/'CHANGED_FILES.txt'
           paths=[x for x in p.read_text().splitlines() if x]
-          ok=[]
-          for x in paths:
-              if x in {
-                  'application/src/go_hotel/services/hosted_money.py',
-                  'application/src/go_hotel/services/hosted_credit_value.py',
-                  'application/src/go_hotel/services/alipay_safeguarded_settlement.py',
-              } or (x.startswith('application/tests/test_v70') and '_c01' in x and x.endswith('.py')):
-                  ok.append(x)
-          bad=sorted(set(paths)-set(ok))
+          allowed={
+              'application/src/go_hotel/services/hosted_money.py',
+              'application/src/go_hotel/services/hosted_credit_value.py',
+              'application/src/go_hotel/services/alipay_safeguarded_settlement.py',
+          }
+          bad=[x for x in paths if not (x in allowed or (x.startswith('application/tests/test_v70') and '_c01' in x and x.endswith('.py')))]
           if bad:
-              print('OUT_OF_SCOPE='+','.join(bad),file=sys.stderr); raise SystemExit(31)
+              print('OUT_OF_SCOPE='+','.join(sorted(bad)),file=sys.stderr); raise SystemExit(31)
           if not any(x.startswith('application/src/') for x in paths): raise SystemExit('NO_IMPLEMENTATION_DIFF')
           if not any(x.startswith('application/tests/') for x in paths): raise SystemExit('NO_REGRESSION_TEST_DIFF')
           PY
           while IFS= read -r p; do git ls-files --error-unmatch "$p" >/dev/null 2>&1 || git add -N -- "$p"; done < "$RUNNER_TEMP/c01/CHANGED_FILES.txt"
           git diff --binary --full-index "$BASE_SHA" > "$RUNNER_TEMP/c01/CANDIDATE.patch"
           test -s "$RUNNER_TEMP/c01/CANDIDATE.patch"
-          sha256sum "$RUNNER_TEMP/c01/CANDIDATE.patch" > "$RUNNER_TEMP/c01/CANDIDATE.patch.sha256"
+          (cd "$RUNNER_TEMP/c01" && sha256sum CANDIDATE.patch > CANDIDATE.patch.sha256)
       - uses: actions/upload-artifact@v4
         with:
           name: c01-bounded-agent
@@ -166,7 +166,7 @@ jobs:
   validate:
     needs: agent
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 12
     services:
       postgres:
         image: postgres:16
@@ -190,8 +190,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.BASE_SHA }}
-          fetch-depth: 0
+          fetch-depth: 1
           persist-credentials: false
+          sparse-checkout: application
+          sparse-checkout-cone-mode: true
       - uses: actions/download-artifact@v4
         with:
           name: c01-bounded-agent
@@ -202,7 +204,7 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$BASE_SHA"
           test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE"
-          sha256sum -c candidate-input/CANDIDATE.patch.sha256
+          (cd candidate-input && sha256sum -c CANDIDATE.patch.sha256)
           git apply --index --binary candidate-input/CANDIDATE.patch
           git diff --cached --name-only | sort > actual.txt
           sort candidate-input/CHANGED_FILES.txt > expected.txt
@@ -233,7 +235,7 @@ jobs:
           cp candidate-input/CHANGED_FILES.txt candidate-input/CANDIDATE.patch candidate-input/CANDIDATE.patch.sha256 evidence-out/
           cp "$RUNNER_TEMP/C01_TESTS.log" evidence-out/TESTS.log
           python - <<'PY'
-          import hashlib,json,os,pathlib,subprocess,datetime
+          import hashlib,json,os,pathlib,datetime
           out=pathlib.Path('evidence-out')
           data={
             'schema':'go.v70.r3.c01-runner-repair.v1',
@@ -245,8 +247,7 @@ jobs:
             'test_log_sha256':hashlib.sha256((out/'TESTS.log').read_bytes()).hexdigest(),
             'status':'C01_RUNNER_REPAIRED_AGENT_AND_VALIDATION_PASS',
             'candidate_sha':None,
-            'c14':'NOT_RUN_IN_REPAIR_VALIDATION',
-            'c13':'HOLD',
+            'c14':'NOT_RUN_IN_REPAIR_VALIDATION','c13':'HOLD',
             'final_release':'HOLD','hk_deploy':'HOLD','production':'HOLD',
             'created_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
           }
