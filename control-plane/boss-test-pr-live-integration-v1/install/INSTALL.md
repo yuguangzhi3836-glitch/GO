@@ -116,3 +116,63 @@ rm -f /opt/go-hk-agent-rebuilt/hk_agent/__pycache__/transport.*.pyc
 The rollback touches one file. It does not touch the published failure record, the
 Task, the business runtime, the agent's ledger or Production. Nothing in this install
 writes to the CC host.
+
+
+## 2026-09-15 — builder V2 installed on HK-STAGING-01
+
+```text
+WHY      Revision 1 built FROM go-hotel:aoluguya-direct-r3-1-20260906, which is gone
+         from the host (docker image inspect -> No such image), so every
+         HK_STAGING_TEST_PR stopped at TEST_PR_BUILDER_IMAGE_REJECT before a container
+         was created. That is the failure the #97 controlled-failure case used; no
+         TEST_PR could succeed.
+WHAT     The build environment is repinned; the Task-facing profile name is not.
+         PROFILE = go-application-python-v1            UNCHANGED (no Bridge, agent or
+                                                       projector change needed)
+         DOCKERFILE = ...-v2                           renames the environment
+         BUILDER_IMAGE = go-hotel:depth48-runtime-6d0fd905   the same application
+                                                       generation's runtime image, on
+                                                       the host, Python 3.12.14 with
+                                                       tomllib and alembic 1.20.0
+         BUILDER_IMAGE_ID = sha256:1c9598d6...          pinned by id as well as tag
+         DEPENDENCY_PROFILE_SHA256                       UNCHANGED: 904ede5e... is the
+                                                       candidate's own dependency set,
+                                                       recomputed in the new base and
+                                                       confirmed equal before patching
+         executor_version = test-pr-v2                  the axis that did change
+FILES    /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py
+         97fe8c17ccbbf6a0bafdb0026bfa0c34dcdb817eb4d5cbc5ccd4ef8f7b84a198
+      -> 654403023d599b78ec2a61776ab133ec0dc46d069e61fd7b3717d400eaedc2ac
+         /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2
+      -> caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b
+         (the v1 Dockerfile is left in place: nothing reads it once test_pr.py is v2,
+          and removing a file is not part of an additive install)
+METHOD   atomic and windowless, so the agent timer never had to be stopped: stage
+         beside the target, sha256 against the expected value, py_compile with
+         PYTHONPYCACHEPREFIX outside the agent's tree, then rename into place. The
+         agent runs --run-once per timer tick as a fresh process, so it reads whichever
+         file is complete.
+BACKUP   /var/backups/HK-CHANGE-20260915T161514Z-builder-v2/{test_pr.py.before,
+         Dockerfile.go-application-python-v1.before,installed.tsv}
+PROOF    a fresh Request (HK_STAGING_TEST_PR, pr_number 52, request
+         boss-hk-test-pr52-builderv2-20260915T161616Z; Request PR
+         chenzhenxi1-sudo/go-control-tasks#24, one added file) was polled by the
+         Bridge, which resolved refs/pull/52/head itself and signed
+         go-boss-test-pr-52-83b0e20f3980 at 16:17:25Z for
+         bd25d7acca1b5f54a7fb555008ed60b76ee45f21. The agent claimed it at 16:18:33Z
+         and published signed Evidence at 16:20:28Z (commit 39d11b5e102e):
+           executor_version       test-pr-v2
+           executor_result        TEST_PR_OK
+           source_commit_sha      bd25d7acca1b5f54a7fb555008ed60b76ee45f21
+           built_image_id         sha256:bed9eddeb94b4fe93cd41fa4a071a3700ef0a93343432a4c77e1e11fb7aae984
+           gate_results           offline_build PASS / isolated_runtime_checks PASS /
+                                  source_commit PASS
+           application_health_proven false   deployment_performed false
+         This is the first successful TEST_PR in the project's history.
+         Readiness then flipped: with the control state republished AFTER the Task was
+         issued, gate_test_pr PASSes and DEPLOY_READY's blocking list no longer contains
+         TEST_PR.
+ROLLBACK cp -p the two .before files back, and restore nothing else: the profile
+         contract, the contracts and the installed.json record of the state component
+         are all untouched by this change.
+```
