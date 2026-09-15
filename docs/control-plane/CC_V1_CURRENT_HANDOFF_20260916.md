@@ -371,6 +371,31 @@ then select one real compliant product candidate and drive it through real TEST_
 
 ---
 
+## 12. CI 状态（**红色，必须最先处理**）
+
+```text
+在 eef48f8（Scope Reset 提交，改了部署闸的 validate_bundle / load_context 签名并删除 approval 签名）
+与 789d6ba（本文件）上，三个 workflow 为 failure：
+
+  isolated-deploy-readiness       failure
+  isolated-deploy-dry-run         failure
+  isolated-request-visibility     failure
+
+其余 6 个 success（contract / failure-closure / liveness-producer /
+liveness-request-transport / projection / state-publication）。
+
+判断：这两个 deploy 消费方（dry-run 派生 DEPLOY Task、readiness 装载计划）与
+`validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=None)` 的
+签名变更一致地失败 —— 即 eef48f8 改了调用契约但**没有同步这两个消费方**。
+本会话被要求只做交接，因此【未修】。
+
+⇒ 下一次会话的第一件事（在 RELEASE_CANDIDATE_V1 之前）：取这三个 job 的日志，
+  把没有传 approval_identity / 仍按旧签名调用 / 仍期待 approval 带 signature 的调用点补上，
+  让 CI 回到全绿，再进入 §11 的 NEXT_ACTION。
+  ⚠ 不要为了让 CI 变绿而放宽 fail-closed：正确修法是让调用方带上身份，
+    而不是让 validate_bundle 接受缺失的身份。
+```
+
 ## 附：本文件的读数口径
 
 ```text
