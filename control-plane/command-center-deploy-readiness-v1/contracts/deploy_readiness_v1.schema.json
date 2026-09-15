@@ -282,10 +282,8 @@
         "contract",
         "contract_path",
         "roles",
-        "approval_authority_id",
-        "approval_authority_published",
+        "approval_identities",
         "task_and_evidence_distinct",
-        "approval_distinct_from_signer",
         "collisions",
         "problem",
         "note"
@@ -299,20 +297,17 @@
         },
         "roles": {
           "type": "object",
-          "description": "One entry per role the plan contract distinguishes. A role whose binding is not BOUND may not be used to claim anything."
+          "description": "One entry per published signing role the plan contract distinguishes. A role whose binding is not BOUND may not be used to claim anything."
         },
-        "approval_authority_id": {
-          "const": "GO-DEPLOY-HUMAN-APPROVAL-AUTHORITY"
-        },
-        "approval_authority_published": {
-          "type": "boolean"
+        "approval_identities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The GitHub logins this project authorises as the V1 Human Approval authority. The authority is an authenticated identity rather than a published key, so it is carried as an allowlist and an approval is judged on the identity it names."
         },
         "task_and_evidence_distinct": {
           "type": "boolean"
-        },
-        "approval_distinct_from_signer": {
-          "type": "boolean",
-          "description": "False when one published key serves both the Task signer and the Human Approval authority. That is a real finding: it makes an approval indistinguishable from a Task, so no approval is proven."
         },
         "collisions": {
           "type": "array",
@@ -461,7 +456,7 @@
     },
     "HUMAN_APPROVAL": {
       "mandatory": true,
-      "meaning": "an unexpired approval binding the same plan digest, verifying against a Human Approval authority distinct from the Task signer"
+      "meaning": "an unexpired approval binding the same plan digest, scope and environment, naming one of the GitHub identities this project authorises as the Human Approval authority"
     },
     "TEST_PR": {
       "mandatory": true,
@@ -501,7 +496,7 @@
     "A mandatory gate that cannot be established makes the verdict UNKNOWN. It is never rounded up to YES, and it never becomes an inferred approval.",
     "YES requires every mandatory gate to PASS, and it still authorises nothing: it means the evidence currently supports deploying, not that anyone has agreed to.",
     "YES may never be reported while the live Bridge would deterministically refuse the same request. BRIDGE_ACCEPTANCE is the gate that makes this impossible, not a convention.",
-    "A switch that is on without a change record signed by the Human Approval authority keeps LIVE_SWITCH_PROVENANCE out of PASS, and therefore keeps the verdict out of YES.",
+    "A switch that is on without a change record attributed to the Human Approval authority keeps LIVE_SWITCH_PROVENANCE out of PASS, and therefore keeps the verdict out of YES.",
     "advisory_holds exists for contract stability and is always empty: no gate is advisory."
   ],
   "x-go-forbidden": [
@@ -513,6 +508,6 @@
     "Reporting YES while a mandatory gate is UNKNOWN, or while a gate it could not read exists.",
     "Reporting YES while the live Boss Request Bridge would refuse the same request.",
     "Clamping CANARY or RELEASE_GATES to advisory, or otherwise letting this evaluator block less than the live gate does.",
-    "Treating a Task signer key, or the Task signer key reused in the approval role, as a Human Approval authority."
+    "Treating a published signing key, or an approval that names an identity outside the authorised GitHub set, as a Human Approval authority."
   ]
 }

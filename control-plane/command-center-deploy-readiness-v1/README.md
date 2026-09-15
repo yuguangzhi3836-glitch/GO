@@ -38,16 +38,17 @@ Load-bearing consequences:
   requires carries `PASS`.
 * `LIVE_SWITCH_PROVENANCE` is `PASS` only when the switch state is covered by a
   change record whose declared value equals the observed channel value and which
-  is signed by a **Human Approval authority distinct from the Task signer**. A
-  switch that is simply `on` keeps the verdict out of `YES`.
-* `HUMAN_APPROVAL` now verifies the approval's signature against that same
-  distinct authority. If the published contract expresses one key in both roles
-  the evaluator reports an identity collision and refuses to call any approval
-  proven.
-* The Human Approval authority is read from the published identity contract
-  (`identity/VERIFIER_IDENTITIES_V1.json`, role `HUMAN_APPROVAL`, identity
-  `GO-DEPLOY-HUMAN-APPROVAL-AUTHORITY`). A contract that does not publish it
-  fails closed.
+  is **attributed to one of the authorised GitHub identities**. A switch that is
+  simply `on` keeps the verdict out of `YES`.
+* `HUMAN_APPROVAL` `PASS`es only when the approval is unexpired, binds the same
+  plan digest, scope and environment, and names one of those authorised GitHub
+  identities. An approval that names anyone else fails the gate, and the live
+  Bridge refuses such a request before it reads the plan at all.
+* The authority is an **authenticated GitHub identity, not a key** (2026-09-16
+  scope reset): no approval is signed, no approval public key is published and
+  none has to be rotated. The authorised logins are ported from the live gate and
+  a test re-reads `go_deploy_request.py` so the two allowlists cannot drift. See
+  `docs/project/CC_V1_SCOPE_20260916.md`.
 
 A test re-reads the live Bridge's source and fails if any ported constant, exact
 field set, topology list, gate name set or freshness window drifts. The copy in
@@ -76,7 +77,7 @@ live-bundle/
   switch-provenance.json
                      the change record for the switch: field, value, changed_at,
                      change_record, approved_by, approval_id, valid window and the
-                     before/after digests, signed by the Human Approval authority
+                     before/after digests, attributed to an authorised identity
 ```
 
 Symlinks are refused and every file is size-capped, matching the plan store's own
@@ -90,12 +91,12 @@ rules.
 | `SOURCE_BINDING` | yes | the candidate's own source identity is complete |
 | `PACKAGE_BINDING` | yes | the plan approves **this** candidate, and its image/repo-digest pair is consistent |
 | `DEPLOYMENT_PLAN` | yes | an approved plan exists for the release *(live fact)* |
-| `HUMAN_APPROVAL` | yes | an unexpired approval binding the same plan digest, verified against a Human Approval authority distinct from the Task signer |
+| `HUMAN_APPROVAL` | yes | an unexpired approval binding the same plan digest, scope and environment, naming one of the authorised GitHub identities |
 | `TEST_PR` | yes | the candidate commit has a signed, successful TEST_PR on the control bus |
 | `VERIFY` | yes | the live runtime was verified, by signed Evidence, inside the freshness window |
 | `CURRENT_RUNTIME` | yes | the verified runtime matches the image the plan expects to be current |
 | `LIVE_SWITCH` | yes | the live request switch would accept a DEPLOY request *(live fact)* |
-| `LIVE_SWITCH_PROVENANCE` | yes | the switch state is covered by a change record, signed by the distinct approval authority, whose value matches the observed channel |
+| `LIVE_SWITCH_PROVENANCE` | yes | the switch state is covered by a change record, attributed to an authorised identity, whose value matches the observed channel |
 | `CANARY` | yes | the plan's canary proof verifies, binds to this candidate and is inside its window |
 | `RELEASE_GATES` | yes | the plan carries PASS for every release gate the live contract requires |
 | `BRIDGE_ACCEPTANCE` | yes | the live Bridge's own rules, re-derived offline, would accept this request |
@@ -187,12 +188,12 @@ with the read-only channel bundle
 `LIVE_SWITCH` reports `deployment_requests_disabled`, which is the intended
 fail-closed posture: the switch is off, so no DEPLOY Request would be accepted.
 `LIVE_SWITCH_PROVENANCE` stays `UNKNOWN` because the change record for that
-switch state is not yet signed by a Human Approval authority distinct from the
-Task signer.
+switch state has not been supplied, so its attribution to an authorised identity
+is not established.
 
-The `identity` block reports `approval_authority_published=false` for this tree:
-no separate Human Approval authority is published yet, so an approval presented
-today would be refused rather than called proven.
+The `identity` block reports the two published signing roles and the authorised
+approval identities (`approval_identities`). No approval public key is published
+or expected: the Human Approval authority is an authenticated GitHub identity.
 
 The `TEST_PR` reason changed once the canonical candidate was moved to the PR
 head. It used to be "no signed TEST_PR exists for the declared commit 8a22a4fc" —

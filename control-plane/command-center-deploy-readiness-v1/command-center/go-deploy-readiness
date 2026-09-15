@@ -35,10 +35,10 @@ What it reads (read-only, and never anything else)
     --go-repo         a GO checkout, for the two canonical pointer files the
                       state document names AND for the published verifier
                       identities (identity/VERIFIER_IDENTITIES_V1.json and its
-                      keys). The approval-authority key is a separate identity
-                      from the task signer; if the published contract expresses
-                      one key in two roles this evaluator refuses to claim a
-                      proven approval.
+                      keys). Two signing roles are published, the Task signer and
+                      the HK Agent Evidence signer; if the published contract
+                      expresses one key in both roles this evaluator refuses to
+                      claim a proven Task or a proven proof.
     --live-bundle     OPTIONAL operator-supplied directory of live-host facts.
                       The approved plan store and the Command Center switch are
                       live facts an offline evaluator cannot read, so when the
@@ -47,6 +47,18 @@ What it reads (read-only, and never anything else)
                         <plan_id>.json        the six-part approved plan bundle
                         channel.json          the live channel configuration
                         switch-provenance.json  the change record for the switch
+
+The Human Approval authority
+----------------------------
+An approval is not signed, and no approval public key exists. The 2026-09-16
+scope reset made the authority an *authenticated GitHub identity* identified by
+the two logins this project authorises, so the approval is judged on the
+identity it names and on its binding to the plan, the scope and the environment.
+GitHub itself decides who authored the Request PR; the live Bridge refuses an
+unauthorised author before it reads the plan. This evaluator fails closed on the
+same identity set, but it is a read-only evaluator and cannot re-perform the
+platform's authentication, so on this one gate the live Bridge remains the
+enforcement point and this verdict is the pre-check, not the authority.
 
 What it can never do
 --------------------
@@ -75,7 +87,12 @@ DEPLOY_ACTION = "HK_STAGING_DEPLOY"
 
 STATE_COMPONENT = "control-plane/command-center-state-v1"
 IDENTITY_CONTRACT = STATE_COMPONENT + "/identity/VERIFIER_IDENTITIES_V1.json"
-APPROVAL_AUTHORITY_ID = "GO-DEPLOY-HUMAN-APPROVAL-AUTHORITY"
+# The V1 Human Approval authority. It is the set of GitHub users this project
+# authorises, ported from the live Bridge so a test re-reads that file and fails
+# on drift. The authority is an authenticated identity, not a key: the 2026-09-16
+# scope reset cancelled the dedicated approval signing key, so an approval is
+# never signed and there is no approval public key to publish or to rotate.
+APPROVAL_IDENTITIES = ("yuguangzhi3836-glitch", "chenzhenxi1-sudo")
 BUNDLE_NON_PLAN_FILES = ("channel.json", "switch-provenance.json")
 
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
@@ -105,7 +122,7 @@ PLAN_FIELDS = ("schema_version", "plan_id", "environment", "action_id", "candida
 CANDIDATE_FIELDS = ("repository", "source_commit", "application_git_tree",
                     "source_tree_sha256", "package_sha256", "image_id", "repo_digest")
 APPROVAL_FIELDS = ("schema_version", "approval_id", "approved_by", "approved_at",
-                   "expires_at", "scope", "plan_sha256", "signature")
+                   "expires_at", "scope", "plan_sha256")
 APPROVAL_SCOPE = "HK_STAGING_DEPLOY_FIXED_EIGHT"
 TASK_FIELDS = ("schema_version", "task_id", "nonce", "issued_at", "expires_at",
                "authority", "environment", "action_id", "parameters", "signature")
@@ -139,7 +156,6 @@ FAIL_CLOSED_BINDINGS = (BINDING_MISSING_KEY, BINDING_KEY_UNREADABLE,
                         BINDING_IDENTITY_COLLISION)
 ROLE_TASK = "TASK"
 ROLE_EVIDENCE = "EVIDENCE"
-ROLE_APPROVAL = "HUMAN_APPROVAL"
 
 AUTHORITY_BOUNDARY = {
     "is_execution_authority": False,
@@ -226,12 +242,15 @@ def signed_unsigned(value):
 # published identities
 # --------------------------------------------------------------------------- #
 class Identities:
-    """The three roles the live plan contract distinguishes.
+    """The two published signing roles the live plan contract distinguishes.
 
-    The approval authority is a role of its own. If the published contract hands
-    the same key to two roles, every claim that depends on a distinguishable
-    approver is refused rather than reported as proven -- a collision is a real
-    finding, not a formatting problem.
+    The Human Approval authority is deliberately not one of them. Since the
+    2026-09-16 scope reset it is an authenticated GitHub identity rather than a
+    signing key, so there is no approval public key to publish and nothing on an
+    approval for anyone to sign. If the published contract hands the same key to
+    both remaining roles, every claim that depends on telling a Task from an
+    Evidence apart is refused rather than reported as proven -- a collision is a
+    real finding, not a formatting problem.
     """
 
     def __init__(self, go_repo):
@@ -240,7 +259,6 @@ class Identities:
         self.contract_path = None
         self.entries = {}          # role -> {identity_id, sha256, ssh_sha256, binding, path}
         self.keys = {}             # role -> loaded public key or None
-        self.approval_published = False
         if go_repo is None:
             self.problem = "no_go_repository_supplied"
             return
@@ -259,11 +277,10 @@ class Identities:
             self.problem = "identity_list_missing"
             return
         root = pathlib.Path(go_repo) / STATE_COMPONENT
-        for role in (ROLE_TASK, ROLE_EVIDENCE, ROLE_APPROVAL):
+        for role in (ROLE_TASK, ROLE_EVIDENCE):
             self.entries[role] = self._load_role(root, listed, role)
-        self.approval_published = self.entries[ROLE_APPROVAL]["binding"] != BINDING_MISSING_KEY
         self.available = all(self.entries[r]["binding"] == BINDING_BOUND
-                             for r in (ROLE_TASK, ROLE_EVIDENCE, ROLE_APPROVAL))
+                             for r in (ROLE_TASK, ROLE_EVIDENCE))
 
     @staticmethod
     def _load_role(root, listed, role):
@@ -322,7 +339,7 @@ class Identities:
     def collision(self):
         """Which roles share one key. Empty when every role is a distinct key."""
         seen, clashes = {}, []
-        for role in (ROLE_TASK, ROLE_EVIDENCE, ROLE_APPROVAL):
+        for role in (ROLE_TASK, ROLE_EVIDENCE):
             entry = self.entries.get(role) or {}
             pin = entry.get("ssh_sha256")
             if not pin:
@@ -347,7 +364,7 @@ class Identities:
 
     def report(self):
         roles = {}
-        for role in (ROLE_TASK, ROLE_EVIDENCE, ROLE_APPROVAL):
+        for role in (ROLE_TASK, ROLE_EVIDENCE):
             entry = self.entries.get(role) or {}
             roles[role] = {"identity_id": entry.get("identity_id"),
                            "binding": entry.get("binding"),
@@ -358,18 +375,14 @@ class Identities:
             "contract": "VERIFIER_IDENTITIES_V1",
             "contract_path": IDENTITY_CONTRACT,
             "roles": roles,
-            "approval_authority_id": APPROVAL_AUTHORITY_ID,
-            "approval_authority_published": self.approval_published,
+            "approval_identities": list(APPROVAL_IDENTITIES),
             "task_and_evidence_distinct": not any("TASK==EVIDENCE" in c for c in clashes),
-            "approval_distinct_from_signer": not any("TASK==HUMAN_APPROVAL" in c or
-                                                     "EVIDENCE==HUMAN_APPROVAL" in c
-                                                     for c in clashes),
             "collisions": clashes,
             "problem": self.problem,
-            "note": ("The Human Approval authority must be a different key from the Task "
-                     "signer. A contract that expresses one key in both roles makes an "
-                     "approval indistinguishable from a Task, so no approval is reported "
-                     "as proven."),
+            "note": ("The Human Approval authority is an authenticated GitHub identity, not a "
+                     "key, so it is carried here as the authorised identity set rather than as "
+                     "a published public key: there is nothing on an approval to sign and "
+                     "nothing for this evaluator to verify cryptographically."),
         }
 
 
@@ -483,6 +496,12 @@ def bridge_bundle_problems(bundle, identities, at):
     except Refuse as exc:
         return ["%s" % exc], detail
     plan, approval = bundle["plan"], bundle["approval"]
+    # The two signing roles must stay distinct. They are the only cryptographic
+    # identities left, and a contract that gives one key both roles makes a Task
+    # indistinguishable from the Evidence that is supposed to prove it, so the
+    # proofs below cannot be trusted and every gate that reads them says so.
+    if identities.collision():
+        problems.append("proof_identities_not_distinct:%s" % ",".join(identities.collision()))
     try:
         exact_set(plan, PLAN_FIELDS, "plan_fields")
     except Refuse as exc:
@@ -531,13 +550,9 @@ def bridge_bundle_problems(bundle, identities, at):
     if not isinstance(plan.get("expected_current_image_id"), str) or \
             not IMAGE_ID.fullmatch(str(plan.get("expected_current_image_id"))):
         problems.append("current_image")
-    # approval
-    approval_key = identities.public_key(ROLE_APPROVAL) if identities.usable(ROLE_APPROVAL) else None
-    if identities.collision():
-        problems.append("approval_authority_collision:%s" % ",".join(identities.collision()))
-    ok, why = verify_signature(approval_key, approval, "hex")
-    if not ok:
-        problems.append("approval_signature_%s" % (why or "invalid"))
+    # approval. The authority is an authenticated GitHub identity, so the rule the
+    # live gate applies is membership in the authorised identity set: there is no
+    # approval signature to verify and no approval key to look up.
     try:
         exact_set(approval, APPROVAL_FIELDS, "approval_fields")
     except Refuse as exc:
@@ -551,6 +566,8 @@ def bridge_bundle_problems(bundle, identities, at):
             matches(approval["approved_by"], IDENT, "human_reviewer_id")
         except Refuse as exc:
             problems.append("%s" % exc)
+        if approval.get("approved_by") not in APPROVAL_IDENTITIES:
+            problems.append("approval_identity_not_authorised")
         try:
             approved = parse_time(approval["approved_at"], "approval_approved_at")
             expires = parse_time(approval["expires_at"], "approval_expires_at")
@@ -851,28 +868,18 @@ def gate_human_approval(inputs, at):
     if approval is None:
         return gate("HUMAN_APPROVAL", "FAIL",
                     "the supplied plan carries no approval object", evidence=inputs.bundle_files)
-    collisions = inputs.identities.collision()
-    if any("HUMAN_APPROVAL" in clash for clash in collisions):
+    # The authority is the authenticated GitHub identity, so the first thing to
+    # establish is that the approval names one of the identities this project
+    # authorises. GitHub is what authenticates the Request PR's author; the live
+    # Bridge refuses an unauthorised author before it reads the plan at all, and
+    # this gate fails closed on the same set.
+    approver = approval.get("approved_by")
+    if approver not in APPROVAL_IDENTITIES:
         return gate("HUMAN_APPROVAL", "FAIL",
-                    "the published identities give one key two roles (%s), so an approval cannot "
-                    "be told apart from a Task signature" % ", ".join(collisions),
-                    observed={"collisions": collisions,
-                              "approval_key": (inputs.identities.entries.get(ROLE_APPROVAL)
-                                               or {}).get("ssh_sha256")},
-                    evidence=[IDENTITY_CONTRACT])
-    if not inputs.identities.usable(ROLE_APPROVAL):
-        entry = inputs.identities.entries.get(ROLE_APPROVAL) or {}
-        return gate("HUMAN_APPROVAL", "FAIL",
-                    "no distinct Human Approval authority is published and usable: %s"
-                    % (entry.get("problem") or inputs.identities.problem or "unavailable"),
-                    observed={"approval_authority_binding": entry.get("binding")},
-                    evidence=[IDENTITY_CONTRACT])
-    key = inputs.identities.public_key(ROLE_APPROVAL)
-    ok, why = verify_signature(key, approval, "hex")
-    if not ok:
-        return gate("HUMAN_APPROVAL", "FAIL",
-                    "the approval's signature does not verify against the published Human "
-                    "Approval authority: %s" % (why or "invalid"),
+                    "the approval names an approver that is not one of the authorised GitHub "
+                    "identities: %s" % str(approver),
+                    observed={"approved_by": approver,
+                              "authorised_identities": list(APPROVAL_IDENTITIES)},
                     evidence=inputs.bundle_files)
     plan_sha = digest(body)
     if approval.get("plan_sha256") != plan_sha:
@@ -910,12 +917,12 @@ def gate_human_approval(inputs, at):
                                   "newest_proof_at": iso(max(checks))},
                         evidence=inputs.bundle_files)
     return gate("HUMAN_APPROVAL", "PASS",
-                "a signature-verified approval %s by a distinct approval authority is in force "
-                "until %s" % (approval["approval_id"], approval["expires_at"]),
+                "an approval from the authorised GitHub identity %s is in force until %s"
+                % (approval.get("approved_by"), approval["expires_at"]),
                 observed={"approval_id": approval["approval_id"],
                           "approved_by": approval.get("approved_by"),
                           "expires_at": approval["expires_at"],
-                          "approval_authority": inputs.identities.entries[ROLE_APPROVAL]["ssh_sha256"]},
+                          "authorised_identities": list(APPROVAL_IDENTITIES)},
                 evidence=inputs.bundle_files)
 
 
@@ -1059,7 +1066,7 @@ def gate_live_switch_provenance(inputs):
                     "the supplied switch change record is unreadable: %s" % record["_unreadable"])
     fields = ("schema_version", "field", "value", "changed_at", "change_record",
               "approved_by", "approval_id", "valid_from", "valid_until",
-              "before_sha256", "after_sha256", "signature")
+              "before_sha256", "after_sha256")
     try:
         exact_set(record, fields, "switch_provenance_fields")
     except Refuse as exc:
@@ -1096,30 +1103,22 @@ def gate_live_switch_provenance(inputs):
         return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
                     "the window that authorised the switch has closed",
                     observed={"valid_until": iso(valid_until), "as_of": iso(inputs.at)})
-    collisions = inputs.identities.collision()
-    if any("HUMAN_APPROVAL" in clash for clash in collisions):
+    # The authority that may open the switch is the same authority that may
+    # approve a deployment: an authorised, authenticated GitHub identity. There
+    # is no approval key left to sign this record with, so attribution is the
+    # rule rather than a signature.
+    if record.get("approved_by") not in APPROVAL_IDENTITIES:
         return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "the published identities give one key two roles (%s), so a switch change "
-                    "signed by the Task signer would be indistinguishable from an authorised one"
-                    % ", ".join(collisions), observed={"collisions": collisions},
-                    evidence=[IDENTITY_CONTRACT])
-    if not inputs.identities.usable(ROLE_APPROVAL):
-        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "no distinct Human Approval authority is published, so the change record "
-                    "cannot be attributed to an approver",
-                    evidence=[IDENTITY_CONTRACT])
-    ok, why = verify_signature(inputs.identities.public_key(ROLE_APPROVAL), record, "hex")
-    if not ok:
-        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "the change record's signature does not verify against the published Human "
-                    "Approval authority: %s" % (why or "invalid"))
+                    "the change record is not attributed to an authorised GitHub identity: %s"
+                    % str(record.get("approved_by")),
+                    observed={"approved_by": record.get("approved_by"),
+                              "authorised_identities": list(APPROVAL_IDENTITIES)})
     return gate("LIVE_SWITCH_PROVENANCE", "PASS",
-                "the switch state is covered by a change record signed by the distinct Human "
-                "Approval authority %s" % record["approval_id"],
+                "the switch state is covered by a change record attributed to the authorised "
+                "GitHub identity %s" % record["approved_by"],
                 observed={"change_record": record["change_record"],
                           "changed_at": iso(changed), "value": record["value"],
-                          "approved_by": record["approved_by"],
-                          "signed_by": inputs.identities.entries[ROLE_APPROVAL]["ssh_sha256"]},
+                          "approved_by": record["approved_by"]},
                 evidence=inputs.bundle_files)
 
 
@@ -1354,7 +1353,7 @@ def run_selftest():
               document["verdict"])
         check("every_gate_is_reported", len(document["gates"]) == len(MANDATORY_GATES))
         check("identity_absent_is_declared",
-              document["identity"]["approval_authority_published"] is False)
+              document["identity"]["roles"]["TASK"]["binding"] != "BOUND")
         check("canary_blocks_when_unknown", "CANARY" in document["verdict"]["unknown"])
 
         channel_only = root / "channel-only"

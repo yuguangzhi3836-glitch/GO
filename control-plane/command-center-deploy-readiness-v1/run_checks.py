@@ -73,7 +73,9 @@ summary = {
     "yes_implies_the_live_bridge_would_accept": True,
     "bridge_rules_are_read_from_the_live_bridge_component": str(
         (ROOT.parent / "boss-deploy-request-v1" / "go_deploy_request.py").is_file()).upper(),
-    "approval_authority_must_be_distinct_from_the_task_signer": True,
+    "approval_authority_is_an_authenticated_github_identity": True,
+    "approval_identities_are_ported_from_the_live_bridge": True,
+    "no_approval_private_key_is_required_or_expected": True,
     "a_yes_is_not_an_approval": True,
     "reads_only_the_derived_state_and_the_supplied_bundle": True,
     "evaluator_holds_private_key": "NO",

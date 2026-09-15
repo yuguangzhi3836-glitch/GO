@@ -52,6 +52,10 @@ CANDIDATE_DIGEST = "go-hotel@" + CANDIDATE_IMAGE
 CHANNEL_SHA = "1" * 64
 PREV_CHANNEL_SHA = "2" * 64
 PROOF_OBJECTS = ("canary_task", "canary_evidence", "preflight_task", "preflight_evidence")
+# The authorised approver, taken from the evaluator's own allowlist so the two can
+# never drift, and a login that is deliberately outside it.
+APPROVER = R.APPROVAL_IDENTITIES[0]
+UNAUTHORISED = "someone-else-entirely"
 
 
 def gate_of(document, name):
@@ -169,11 +173,13 @@ def plan_bundle(keys, **over):
             "canary_evidence_sha256": R.digest(canary_evidence),
             "preflight_task_sha256": R.digest(preflight_task),
             "preflight_evidence_sha256": R.digest(preflight_evidence)}
+    # No signature: the authority is an authenticated GitHub identity, so an
+    # approval is a statement about who approved, bound to the plan, and there
+    # is nothing for anyone to sign.
     approval = {"schema_version": "1", "approval_id": "approval-synthetic-1",
-                "approved_by": "eason-13490", "approved_at": "2026-09-15T00:58:30Z",
+                "approved_by": APPROVER, "approved_at": "2026-09-15T00:58:30Z",
                 "expires_at": "2026-09-15T01:05:00Z", "scope": R.APPROVAL_SCOPE,
                 "plan_sha256": R.digest(plan)}
-    approval = sign_hex(keys["approval"]["private"], approval)
     bundle = {"plan": plan, "approval": approval, "canary_task": canary_task,
               "canary_evidence": canary_evidence, "preflight_task": preflight_task,
               "preflight_evidence": preflight_evidence}
@@ -181,14 +187,14 @@ def plan_bundle(keys, **over):
     return bundle
 
 
-def switch_provenance(keys, **over):
+def switch_provenance(**over):
     record = {"schema_version": "1", "field": "deployment_requests_enabled", "value": True,
               "changed_at": "2026-09-15T00:59:00Z", "change_record": "CC-CHANGE-SYNTHETIC-1",
-              "approved_by": "eason-13490", "approval_id": "approval-synthetic-1",
+              "approved_by": APPROVER, "approval_id": "approval-synthetic-1",
               "valid_from": "2026-09-15T00:58:00Z", "valid_until": "2026-09-15T01:30:00Z",
               "before_sha256": PREV_CHANNEL_SHA, "after_sha256": CHANNEL_SHA}
     record.update(over)
-    return sign_hex(keys["approval"]["private"], record)
+    return record
 
 
 class Fixture:
@@ -200,8 +206,7 @@ class Fixture:
     intended fault instead of an accidental digest mismatch.
     """
 
-    def __init__(self, collide_approval_with_task=False, omit_approval_key=False,
-                 approval_signed_by_task=False, bundle=True, plan=True,
+    def __init__(self, collide_task_with_evidence=False, bundle=True, plan=True,
                  channel_value=True, provenance=True, rebind=True, mutate=None,
                  provenance_record=None, **overrides):
         self.root = pathlib.Path(tempfile.mkdtemp(prefix="ccv106-"))
@@ -209,20 +214,18 @@ class Fixture:
         component = self.go / R.STATE_COMPONENT
         (component / "identity" / "keys").mkdir(parents=True)
         (self.go / "docs" / "canonical-baseline").mkdir(parents=True)
-        self.keys = {"task": keypair(), "evidence": keypair(), "approval": keypair()}
-        if collide_approval_with_task:
-            self.keys["approval"] = self.keys["task"]
+        self.keys = {"task": keypair(), "evidence": keypair()}
+        if collide_task_with_evidence:
+            self.keys["evidence"] = self.keys["task"]
         for role, key in self.keys.items():
             (component / "identity" / "keys" / ("%s.pub" % role)).write_bytes(key["line"])
-        roles = {"task": R.ROLE_TASK, "evidence": R.ROLE_EVIDENCE, "approval": R.ROLE_APPROVAL}
-        names = {"task": "GO-CC-TASK-MANIFEST-SIGNER", "evidence": "HK-AGENT-EVIDENCE-SIGNER",
-                 "approval": R.APPROVAL_AUTHORITY_ID}
+        roles = {"task": R.ROLE_TASK, "evidence": R.ROLE_EVIDENCE}
+        names = {"task": "GO-CC-TASK-MANIFEST-SIGNER", "evidence": "HK-AGENT-EVIDENCE-SIGNER"}
         identities = [{"identity_id": names[role], "role": roles[role],
                        "public_key_path": "identity/keys/%s.pub" % role,
                        "public_key_file_sha256": self.keys[role]["file_sha256"],
                        "public_key_ssh_sha256": self.keys[role]["ssh_sha256"]}
-                      for role in ("task", "evidence", "approval")
-                      if not (role == "approval" and omit_approval_key)]
+                      for role in ("task", "evidence")]
         (component / "identity" / "VERIFIER_IDENTITIES_V1.json").write_text(
             json.dumps({"schema_version": "1", "contract": "VERIFIER_IDENTITIES_V1",
                         "identities": identities}), encoding="utf-8")
@@ -235,30 +238,25 @@ class Fixture:
         self.state_path = self.root / "CURRENT_CONTROL_STATE.json"
         self.state_path.write_text(json.dumps(control_state(**overrides.get("state", {}))),
                                    encoding="utf-8")
-        signers = dict(self.keys)
-        if approval_signed_by_task:
-            signers["approval"] = self.keys["task"]
         if not bundle:
             self.bundle_dir = None
             return
         self.bundle_dir = self.root / "live"
         self.bundle_dir.mkdir()
         if plan:
-            built = plan_bundle(signers, **overrides.get("bundle", {}))
+            built = plan_bundle(self.keys, **overrides.get("bundle", {}))
             if mutate is not None:
                 mutate(self.keys, built)
             if rebind:
                 for name in PROOF_OBJECTS:
                     built["plan"][name + "_sha256"] = R.digest(built[name])
-                approval = {k: v for k, v in built["approval"].items() if k != "signature"}
-                approval["plan_sha256"] = R.digest(built["plan"])
-                built["approval"] = sign_hex(signers["approval"]["private"], approval)
+                built["approval"]["plan_sha256"] = R.digest(built["plan"])
             (self.bundle_dir / "release-one.json").write_text(json.dumps(built), encoding="utf-8")
         (self.bundle_dir / "channel.json").write_text(
             json.dumps(channel(deployment_requests_enabled=channel_value)), encoding="utf-8")
         if provenance:
-            record = (switch_provenance(signers, **provenance_record)
-                      if provenance_record is not None else switch_provenance(signers))
+            record = (switch_provenance(**provenance_record)
+                      if provenance_record is not None else switch_provenance())
             (self.bundle_dir / "switch-provenance.json").write_text(json.dumps(record),
                                                                     encoding="utf-8")
 
@@ -267,50 +265,45 @@ class Fixture:
 
 
 class KeyProfileTests(unittest.TestCase):
-    """The approval authority must be a different key from the Task signer."""
+    """Two signing roles are published, and the approval authority is an identity."""
 
-    def test_three_distinct_roles_bind_and_are_reported_distinct(self):
+    def test_two_distinct_signing_roles_bind_and_are_reported_distinct(self):
         document = Fixture().evaluate()
         identity = document["identity"]
-        self.assertTrue(identity["approval_authority_published"])
         self.assertTrue(identity["task_and_evidence_distinct"])
-        self.assertTrue(identity["approval_distinct_from_signer"])
         self.assertEqual(identity["collisions"], [])
-        for role in (R.ROLE_TASK, R.ROLE_EVIDENCE, R.ROLE_APPROVAL):
+        for role in (R.ROLE_TASK, R.ROLE_EVIDENCE):
             self.assertEqual(identity["roles"][role]["binding"], R.BINDING_BOUND)
 
+    def test_the_approval_authority_is_published_as_an_identity_allowlist(self):
+        document = Fixture().evaluate()
+        self.assertEqual(document["identity"]["approval_identities"],
+                         list(R.APPROVAL_IDENTITIES))
+        # The cancelled role must be gone: an approval is no longer a published
+        # key, so no signing role for it may survive anywhere in the report.
+        self.assertEqual(sorted(document["identity"]["roles"]),
+                         sorted([R.ROLE_TASK, R.ROLE_EVIDENCE]))
+        self.assertFalse(hasattr(R, "APPROVAL_AUTHORITY_ID"))
+        self.assertFalse(hasattr(R, "ROLE_APPROVAL"))
+
     def test_one_key_in_two_roles_is_reported_as_a_collision(self):
-        document = Fixture(collide_approval_with_task=True).evaluate()
-        self.assertFalse(document["identity"]["approval_distinct_from_signer"])
-        self.assertTrue(any("HUMAN_APPROVAL" in clash
+        document = Fixture(collide_task_with_evidence=True).evaluate()
+        self.assertFalse(document["identity"]["task_and_evidence_distinct"])
+        self.assertTrue(any("TASK==EVIDENCE" in clash
                             for clash in document["identity"]["collisions"]))
 
-    def test_a_collision_fails_the_approval_gate_closed(self):
-        document = Fixture(collide_approval_with_task=True).evaluate()
-        entry = gate_of(document, "HUMAN_APPROVAL")
-        self.assertEqual(entry["state"], "FAIL")
-        self.assertIn("one key two roles", entry["reason"])
-        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
-
-    def test_a_collision_fails_the_switch_provenance_gate_closed(self):
-        document = Fixture(collide_approval_with_task=True).evaluate()
-        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
-
-    def test_an_absent_approval_authority_is_never_proven(self):
-        document = Fixture(omit_approval_key=True).evaluate()
-        self.assertFalse(document["identity"]["approval_authority_published"])
-        self.assertEqual(gate_of(document, "HUMAN_APPROVAL")["state"], "FAIL")
-        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+    def test_a_collision_keeps_the_verdict_out_of_yes(self):
+        document = Fixture(collide_task_with_evidence=True).evaluate()
         self.assertEqual(document["verdict"]["deploy_ready"], "NO")
 
     def test_a_replaced_key_file_is_mismatched_and_fails_closed(self):
         fixture = Fixture()
-        (fixture.go / R.STATE_COMPONENT / "identity" / "keys" / "approval.pub").write_bytes(
-            fixture.keys["evidence"]["line"])
+        (fixture.go / R.STATE_COMPONENT / "identity" / "keys" / "evidence.pub").write_bytes(
+            fixture.keys["task"]["line"])
         document = fixture.evaluate()
-        self.assertEqual(document["identity"]["roles"][R.ROLE_APPROVAL]["binding"],
+        self.assertEqual(document["identity"]["roles"][R.ROLE_EVIDENCE]["binding"],
                          R.BINDING_IDENTITY_MISMATCH)
-        self.assertEqual(gate_of(document, "HUMAN_APPROVAL")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
 
 
 class VerdictTests(unittest.TestCase):
@@ -443,9 +436,10 @@ class SwitchProvenanceTests(unittest.TestCase):
         self.assertNotEqual(document["verdict"]["deploy_ready"], "YES")
         self.assertIn("LIVE_SWITCH_PROVENANCE", document["verdict"]["unknown"])
 
-    def test_a_record_signed_by_the_task_signer_is_refused(self):
-        fixture = Fixture(approval_signed_by_task=True)
-        document = fixture.evaluate()
+    def test_a_record_that_still_carries_the_cancelled_signature_is_refused(self):
+        """The cancelling is one-way: the old signed shape is not accepted back."""
+
+        document = Fixture(provenance_record={"signature": "0" * 128}).evaluate()
         self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
         self.assertEqual(document["verdict"]["deploy_ready"], "NO")
 
@@ -461,10 +455,15 @@ class SwitchProvenanceTests(unittest.TestCase):
         document = Fixture(provenance_record={"changed_at": "2026-09-15T00:10:00Z"}).evaluate()
         self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
 
-    def test_an_unsigned_record_is_refused(self):
+    def test_a_record_attributed_to_an_unauthorised_identity_is_refused(self):
+        document = Fixture(provenance_record={"approved_by": UNAUTHORISED}).evaluate()
+        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_a_record_without_an_attribution_is_refused(self):
         fixture = Fixture()
-        record = switch_provenance(fixture.keys)
-        del record["signature"]
+        record = switch_provenance()
+        del record["approved_by"]
         (fixture.bundle_dir / "switch-provenance.json").write_text(json.dumps(record),
                                                                    encoding="utf-8")
         document = fixture.evaluate()
@@ -477,14 +476,33 @@ class SwitchProvenanceTests(unittest.TestCase):
 
 class ApprovalTests(unittest.TestCase):
     def test_an_approval_rebound_to_another_plan_is_refused(self):
-        def mutate(keys, bundle):
-            approval = {k: v for k, v in bundle["approval"].items() if k != "signature"}
-            approval["plan_sha256"] = "0" * 64
-            bundle["approval"] = sign_hex(keys["approval"]["private"], approval)
+        def mutate(_keys, bundle):
+            bundle["approval"]["plan_sha256"] = "0" * 64
 
         document = Fixture(mutate=mutate, rebind=False).evaluate()
         self.assertEqual(gate_of(document, "HUMAN_APPROVAL")["state"], "FAIL")
         self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_an_approval_naming_an_unauthorised_identity_is_refused(self):
+        def mutate(_keys, bundle):
+            bundle["approval"]["approved_by"] = UNAUTHORISED
+
+        document = Fixture(mutate=mutate).evaluate()
+        entry = gate_of(document, "HUMAN_APPROVAL")
+        self.assertEqual(entry["state"], "FAIL")
+        self.assertEqual(entry["observed"]["approved_by"], UNAUTHORISED)
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_an_approval_carrying_a_signature_is_refused(self):
+        """A signed approval is the cancelled contract, not a stronger one."""
+
+        def mutate(_keys, bundle):
+            bundle["approval"]["signature"] = "0" * 128
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "FAIL")
+        self.assertIn("approval_fields", gate_of(document, "BRIDGE_ACCEPTANCE")["reason"])
+        self.assertNotEqual(document["verdict"]["deploy_ready"], "YES")
 
     def test_an_expired_approval_is_refused(self):
         def mutate(_keys, bundle):
@@ -540,9 +558,8 @@ class BridgeAcceptanceTests(unittest.TestCase):
         def unknown_plan_field(_keys, bundle):
             bundle["plan"]["extra"] = "x"
 
-        def approval_unsigned(_keys, bundle):
-            bundle["approval"] = {k: v for k, v in bundle["approval"].items()
-                                  if k != "signature"}
+        def approval_identity(_keys, bundle):
+            bundle["approval"]["approved_by"] = UNAUTHORISED
 
         def approval_scope(_keys, bundle):
             bundle["approval"]["scope"] = "SOMETHING_ELSE"
@@ -552,8 +569,7 @@ class BridgeAcceptanceTests(unittest.TestCase):
                 "candidate_repository": (candidate_repository, True),
                 "protected_non_targets": (protected_non_targets, True),
                 "unknown_plan_field": (unknown_plan_field, True),
-                # Removing the signature must survive: a rebind would re-sign it.
-                "approval_unsigned": (approval_unsigned, False),
+                "approval_identity": (approval_identity, True),
                 "approval_scope": (approval_scope, True)}
 
     def test_no_mutation_can_be_yes_while_the_bridge_gate_refuses(self):
@@ -595,9 +611,23 @@ class LiveBridgeContractTests(unittest.TestCase):
         return set(re.findall(r"'([a-z_]+)'", found.group(1)))
 
     def exact_fields(self, marker):
-        found = re.search(r"exact\([A-Za-z_]+,\{([^}]*)\},'%s'\)" % marker, self.source)
-        self.assertIsNotNone(found, marker)
-        return set(re.findall(r"'([A-Za-z0-9_]+)'", found.group(1)))
+        """The field set the live gate compares that object against.
+
+        The gate names the set either inline or through a module constant: eef48f8
+        named the approval's set once so the approver-side tool and the tests read
+        the same one. Both forms have to be resolved, or the drift this test exists
+        to catch would hide behind a rename.
+        """
+        inline = re.search(r"exact\([^,]+,\{([^}]*)\},'%s'\)" % marker, self.source)
+        if inline is not None:
+            return set(re.findall(r"'([A-Za-z0-9_]+)'", inline.group(1)))
+        named = re.search(r"exact\([^,]+,\s*([A-Z][A-Z0-9_]*)\s*,'%s'\)" % marker, self.source)
+        self.assertIsNotNone(named, marker)
+        constant = named.group(1)
+        declared = re.search(r"^%s = [\(\{]([^\)\}]*)[\)\}]" % re.escape(constant),
+                             self.source, re.M)
+        self.assertIsNotNone(declared, "the field set %s is never declared" % constant)
+        return set(re.findall(r"'([A-Za-z0-9_]+)'", declared.group(1)))
 
     def test_release_gate_names_match_the_live_contract(self):
         self.assertEqual(self.brace_set("RELEASE_GATES"), set(R.REQUIRED_PLAN_GATES))
@@ -639,9 +669,24 @@ class LiveBridgeContractTests(unittest.TestCase):
         self.assertIn("expires-approved>dt.timedelta(minutes=15)", self.source)
         self.assertEqual(R.APPROVAL_MAX_WINDOW_SECONDS, 900)
 
-    def test_the_bridge_still_verifies_the_approval_with_the_store_key(self):
+    def test_the_bridge_still_takes_the_task_key_from_the_store(self):
         self.assertIn("authority=public_key(read_secure(STORE/'authority.pub',4096))", self.source)
-        self.assertIn("validate_bundle(bundle,plan_id,authority,hk,at)", self.source)
+        self.assertIn("validate_bundle(bundle,plan_id,authority,hk,at,approval_identity)",
+                      self.source)
+
+    def test_the_two_authorised_approval_identities_match_the_live_gate(self):
+        """The allowlist the scope reset introduced, read from the live gate."""
+
+        found = re.search(r"^APPROVAL_IDENTITIES = \(([^)]*)\)", self.source, re.M)
+        self.assertIsNotNone(found)
+        self.assertEqual(tuple(re.findall(r"'([^']+)'", found.group(1))),
+                         tuple(R.APPROVAL_IDENTITIES))
+
+    def test_the_cancelled_approval_key_is_gone_from_the_live_gate(self):
+        """The scope reset deleted the dedicated approval key; it must not return."""
+
+        self.assertNotIn("approval-authority.pub", self.source)
+        self.assertNotIn("approval_authority", self.source)
 
 
 class ContractTests(unittest.TestCase):
@@ -665,8 +710,17 @@ class ContractTests(unittest.TestCase):
 
     def test_the_identity_block_is_reported(self):
         document = Fixture().evaluate()
-        self.assertEqual(document["identity"]["approval_authority_id"], R.APPROVAL_AUTHORITY_ID)
+        self.assertEqual(document["identity"]["approval_identities"],
+                         list(R.APPROVAL_IDENTITIES))
         self.assertIn("roles", document["identity"])
+
+    def test_the_identity_block_still_validates_against_its_own_contract(self):
+        """The published schema must describe the identity block actually emitted."""
+
+        contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        declared = set(contract["properties"]["identity"]["required"])
+        emitted = set(Fixture().evaluate()["identity"])
+        self.assertEqual(declared, emitted)
 
     def test_the_document_keeps_its_scope_statement(self):
         document = Fixture().evaluate()
