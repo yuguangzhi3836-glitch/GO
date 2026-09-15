@@ -13,6 +13,7 @@ name would mean this component ships a blind spot.
 import datetime as dt
 import importlib.machinery
 import importlib.util
+import hashlib
 import json
 import pathlib
 import re
@@ -743,6 +744,100 @@ class SemanticDedupTests(unittest.TestCase):
                          {"fact_id", "first_observed_at", "time_source"})
         # semantic_id is covered by the id digest, so it cannot be edited freely.
         self.assertNotIn("semantic_id", X.FACT_ID_EXCLUDED)
+
+
+# --------------------------------------------------------------------------- #
+# The action registry, pinned against the peer that owns it
+# --------------------------------------------------------------------------- #
+BRIDGE_COMPONENT = ROOT.parent / "boss-deploy-request-v1"
+BRIDGE_SOURCE = BRIDGE_COMPONENT / "go-boss-request-bridge"
+
+
+def health_task(request_id=REQUEST_ID):
+    """A read-only CONTROL_PLANE_HEALTH Task, as the Bridge signs one.
+
+    `parameters` is empty, which is the whole point of the action: there is no
+    image, service, path, environment file, command or plan for a caller to steer.
+    """
+    return {"schema_version": "1",
+            "task_id": "go-boss-health-20260915T153628Z-"
+                       + hashlib.sha256(request_id.encode()).hexdigest()[:12],
+            "nonce": "synthetic-health-nonce", "issued_at": "2026-09-14T11:00:05Z",
+            "expires_at": "2026-09-14T11:15:05Z", "authority": "GO-COMMAND-CENTER",
+            "environment": "HK-STAGING-01", "action_id": "CONTROL_PLANE_HEALTH",
+            "parameters": {}, "signature": "0" * 128}
+
+
+class ActionRegistryTests(unittest.TestCase):
+    """The exporter's action list is the Bridge's channel contract."""
+
+    def test_the_registry_is_exactly_the_bridge_channel_actions(self):
+        """Pinned to the peer's own configuration, not to a copy of this tuple.
+
+        Comparing this constant with a fixture built from this constant cannot
+        fail, so it protects nothing. The Bridge is where a submission is accepted
+        or refused, and its config is the authority for what an action may be.
+        """
+        config = json.loads((BRIDGE_COMPONENT / "config.json").read_text(encoding="utf-8"))
+        self.assertEqual(sorted(X.ACTION_IDS), sorted(config["allowed_actions"]))
+
+    def test_the_bridge_really_treats_that_config_as_its_channel_contract(self):
+        """So that the file above is the contract, and not just a file."""
+        source = BRIDGE_SOURCE.read_text(encoding="utf-8")
+        self.assertIn("!=CHANNEL_ACTIONS", source,
+                      "the Bridge no longer checks its config against the exact list")
+        self.assertIn("allowed_actions", source)
+
+    def test_a_published_health_request_mints_a_validated_fact(self):
+        """The live defect, pinned. Measured on the Command Center host:
+
+            export_facts            19
+            submissions_without_fact 5   (three of them liveness probes)
+            anomaly per probe        SUBMISSION_WITHOUT_REQUEST_FACT
+                                     detail LEDGER:request_action_unresolved
+            projection               lifecycle REQUEST_CREATED, fate
+                                     NO_BRIDGE_FACT_OBSERVED, facts 0
+
+        The Bridge had settled and executed each probe and the agent had published
+        signed Evidence for it; the fact store said nothing had been observed, and
+        every probe added one more permanent anomaly -- growth on a timer, which is
+        the thing this whole line of work exists to prevent.
+        """
+        task = health_task()
+        root = workdir(ledger={"version": 1, "requests": {"7:" + HEAD: {
+                        "status": "published", "request_id": REQUEST_ID, "task": task,
+                        "task_sha256": X.digest(task), "task_commit": "b" * 40}}},
+                       poll=poll_output([{"pr": "7", "head": HEAD, "status": "published",
+                                          "task_id": task["task_id"]}]),
+                       requests=[collected(body=request_body(
+                           action_id="CONTROL_PLANE_HEALTH"))])
+        index = run_export(root)
+        self.assertEqual(index["counts"]["by_kind"], {"REQUEST_VALIDATED": 1},
+                         index["anomalies"])
+        self.assertEqual(index["counts"]["submissions_without_fact"], 0)
+        self.assertEqual([a["kind"] for a in index["anomalies"]], [])
+        fact = only_fact(root)[0]
+        self.assertEqual(fact["action_id"], "CONTROL_PLANE_HEALTH")
+        self.assertEqual(fact["kind"], "REQUEST_VALIDATED")
+        self.assertEqual(fact["binding"]["task_id"], task["task_id"])
+
+    def test_an_action_outside_the_registry_is_still_refused(self):
+        """Widening the registry must not turn it into a membership-free pass.
+
+        An action the Bridge would refuse is one nothing may be built on, so a
+        submission claiming it yields no fact and keeps saying so.
+        """
+        task = dict(health_task(), action_id="HK_STAGING_CANARY")
+        root = workdir(ledger={"version": 1, "requests": {"7:" + HEAD: {
+                        "status": "published", "request_id": REQUEST_ID, "task": task,
+                        "task_sha256": X.digest(task)}}},
+                       requests=[collected(body=request_body(
+                           action_id="HK_STAGING_CANARY"))])
+        index = run_export(root)
+        self.assertEqual(index["counts"]["facts"], 0)
+        self.assertEqual([a["kind"] for a in index["anomalies"]],
+                         ["SUBMISSION_WITHOUT_REQUEST_FACT"])
+        self.assertIn("request_action_unresolved", index["anomalies"][0]["detail"])
 
 
 if __name__ == "__main__":

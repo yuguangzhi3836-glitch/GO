@@ -5,12 +5,22 @@ on:
     paths:
       - 'control-plane/command-center-request-visibility-v1/**'
       - 'control-plane/command-center-state-v1/**'
+      # The action registry is pinned against the Bridge's own config, so a
+      # channel change on the Bridge side has to run this job: otherwise an
+      # action added there is silently unseen here, which is the defect that
+      # left every liveness probe without a fact.
+      - 'control-plane/boss-deploy-request-v1/**'
       - '.github/workflows/command-center-request-visibility-v1.yml'
   pull_request:
     branches: [main]
     paths:
       - 'control-plane/command-center-request-visibility-v1/**'
       - 'control-plane/command-center-state-v1/**'
+      # The action registry is pinned against the Bridge's own config, so a
+      # channel change on the Bridge side has to run this job: otherwise an
+      # action added there is silently unseen here, which is the defect that
+      # left every liveness probe without a fact.
+      - 'control-plane/boss-deploy-request-v1/**'
       - '.github/workflows/command-center-request-visibility-v1.yml'
 permissions:
   contents: read
