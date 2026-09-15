@@ -1,5 +1,26 @@
 #!/usr/bin/env python3
-"""Candidate Bridge 1.4: VERIFY / TEST_PR plus explicitly approved DEPLOY plans."""
+"""Candidate Bridge 1.5: VERIFY / TEST_PR / approved DEPLOY plans, plus a read-only
+CONTROL_PLANE_HEALTH probe.
+
+The health action is not a fourth member of the same family; it is deliberately kept
+apart from the other three.
+
+* It carries no parameters. Its Request schema is the five common fields and nothing
+  else, so there is no field a caller could use to steer an execution; the parameter
+  block on the Task is a fixed constant rather than anything read out of the Request.
+* It is signed with the existing task identity, because what is signed is a Task
+  identity and not an approval. It grants no execution, takes no part in the DEPLOY
+  arm, the approved plan or the release budget, and does not touch
+  `deployment_requests_enabled`.
+* It exists for one purpose: to let the HK agent publish fresh signed liveness
+  Evidence, so `hk_agent_online` can be answered from a signature instead of from a
+  reachability guess.
+
+Dispatch is explicit and fail-closed. An action that is not named in
+`derive_formal_task` is refused; it can never fall through into VERIFY, TEST_PR,
+DEPLOY or ROLLBACK, and before this revision an unnamed action silently became a
+VERIFY. Nothing that the other three actions do or are allowed to do is changed.
+"""
 import argparse, datetime as dt, fcntl, hashlib, json, os, pathlib, re, secrets, subprocess, sys, tempfile
 from cryptography.hazmat.primitives import serialization
 import go_deploy_request as deploy_gate
@@ -12,6 +33,17 @@ POLICY = {"schema_version": "1", "action_id": "HK_STAGING_VERIFY", "environment"
 BASELINE_CONFIG = "/etc/go-command-center/boss-request-verify-baseline-v1.json"
 TEST_ACTION = "HK_STAGING_TEST_PR"
 TEST_ALLOWED = ALLOWED | {"pr_number"}
+HEALTH_ACTION = "CONTROL_PLANE_HEALTH"
+# The one and only parameter block a health Task may carry. It is a constant, not
+# anything derived from the Request: the Request for this action is the five common
+# fields, so it has no field that could contribute here even if someone tried.
+HEALTH_PARAMETERS = {}
+# The channel action contract, in full. The config has always been checked against an
+# exact list rather than a membership test; health is a member of that contract, not a
+# free-form toggle, so removing it takes a new Bridge revision rather than an edit to a
+# root-owned config file. `deployment_requests_enabled` is untouched and still defaults
+# to refusing.
+CHANNEL_ACTIONS = [POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, HEALTH_ACTION]
 GO_REPOSITORY = "git@github.com:yuguangzhi3836-glitch/GO.git"
 PR_RESOLVER_KEY = "/etc/go-command-center/keys/github-go-pr-resolver"
 COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -38,7 +70,7 @@ def validate_request(raw, at=None):
     if set(request) != fields: raise Reject("schema_fields")
     if request["schema_version"] != POLICY["schema_version"]: raise Reject("schema_version")
     if not isinstance(request["request_id"], str) or not REQUEST_ID_RE.fullmatch(request["request_id"]): raise Reject("request_id")
-    if request["action_id"] not in {POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION}: raise Reject("action")
+    if request["action_id"] not in {POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, HEALTH_ACTION}: raise Reject("action")
     if request["environment"] != POLICY["environment"]: raise Reject("environment")
     when = parse_time(request["requested_at"])
     at = at or now()
@@ -93,10 +125,31 @@ def derive_test_pr(request, at=None, resolver=resolve_pr):
     at=at or now(); suffix=hashlib.sha256(request["request_id"].encode()).hexdigest()[:12]
     return {"schema_version":"1","task_id":"go-boss-test-pr-%s-%s"%(request["pr_number"],suffix),"nonce":secrets.token_urlsafe(24),"issued_at":iso(at),"expires_at":iso(at+dt.timedelta(minutes=20)),"authority":"GO-COMMAND-CENTER","environment":POLICY["environment"],"action_id":TEST_ACTION,"parameters":{"builder_profile":"go-application-python-v1","source":{"repository":GO_REPOSITORY,"pr_number":request["pr_number"],"commit_sha":commit}}}
 
+def derive_health(request, at=None):
+    """A read-only liveness probe Task. It takes nothing at all from the Request.
+
+    The Request schema for this action is the five common fields -- no image, no
+    service, no path, no env, no command, no plan, no pr_number -- so there is no
+    caller-controlled field to pass through. The parameter block is the module
+    constant, copied rather than derived.
+    """
+    at = at or now(); suffix = hashlib.sha256(request["request_id"].encode()).hexdigest()[:12]
+    return {"schema_version":"1", "task_id":"go-boss-health-"+at.strftime("%Y%m%dT%H%M%SZ")+"-"+suffix,
+      "nonce":secrets.token_urlsafe(24), "issued_at":iso(at), "expires_at":iso(at + dt.timedelta(minutes=15)),
+      "authority":"GO-COMMAND-CENTER", "environment":POLICY["environment"],
+      "action_id":HEALTH_ACTION, "parameters":dict(HEALTH_PARAMETERS)}
+
 def derive_formal_task(request, at=None, resolver=resolve_pr):
-    if request["action_id"] == TEST_ACTION: return derive_test_pr(request,at,resolver)
-    if request['action_id']==deploy_gate.ACTION: raise Reject('deployment_context_required')
-    return derive(request,load_baseline(),at)
+    # Explicit dispatch, fail-closed. Every named action is bound to its own builder
+    # and anything else is refused. The order matters for readability only; no branch
+    # can hand a Request to another action's builder, and there is no fallthrough:
+    # an unnamed action used to reach derive(), i.e. it silently became a VERIFY.
+    action = request["action_id"]
+    if action == HEALTH_ACTION: return derive_health(request, at)
+    if action == TEST_ACTION: return derive_test_pr(request, at, resolver)
+    if action == POLICY["action_id"]: return derive(request, load_baseline(), at)
+    if action == deploy_gate.ACTION: raise Reject("deployment_context_required")
+    raise Reject("action_not_enabled_in_channel")
 
 def derive_deployment(request,context,at=None):
     at=at or now(); suffix=secrets.token_hex(12)
@@ -276,18 +329,29 @@ def armed_process(number, head, ledger_root, key_path, arm_path):
         except StopIteration: pass
     return {"status":"published","task_id":task["task_id"],"task_commit":commit}
 
+def channel_v4(value):
+    """The persistent channel contract, as a pure function.
+
+    Split out of load_channel so the contract can be verified without a root-owned
+    file: "the file must be root-owned and not writable by others" is a property of
+    reading it, not of the contract. The action list is still compared for exact
+    equality -- one fixed contract rather than a membership test -- so the health
+    action cannot be enabled or disabled by hand-editing a field to something the
+    Bridge would accept loosely.
+    """
+    deploy_gate.exact(value,{'version','mode','publish_enabled','allowed_actions','allowed_environment','deployment_requests_enabled'},'channel_fields')
+    if value['version']!=4 or value['mode']!='PERSISTENT' or value['publish_enabled'] is not True or value['allowed_environment']!=POLICY['environment']:
+        raise Reject('invalid_channel_configuration')
+    if value['allowed_actions']!=CHANNEL_ACTIONS or type(value['deployment_requests_enabled']) is not bool:
+        raise Reject('invalid_channel_configuration')
+    return value
+
 def load_channel(path):
     try: value=deploy_gate.parse_json(pathlib.Path(path).read_bytes())
     except OSError as exc: raise Reject('channel_unavailable') from exc
     if not isinstance(value,dict): raise Reject('invalid_channel_configuration')
-    if isinstance(value,dict) and value.get('version')==4:
-        value=deploy_gate.parse_json(deploy_gate.read_secure(path))
-        deploy_gate.exact(value,{'version','mode','publish_enabled','allowed_actions','allowed_environment','deployment_requests_enabled'},'channel_fields')
-        if value['mode']!='PERSISTENT' or value['publish_enabled'] is not True or value['allowed_environment']!=POLICY['environment']:
-            raise Reject('invalid_channel_configuration')
-        if value['allowed_actions']!=[POLICY['action_id'],TEST_ACTION,deploy_gate.ACTION] or type(value['deployment_requests_enabled']) is not bool:
-            raise Reject('invalid_channel_configuration')
-        return value
+    if value.get('version')==4:
+        return channel_v4(deploy_gate.parse_json(deploy_gate.read_secure(path)))
     if set(value)=={"version","mode","publish_enabled","allowed_actions","allowed_environment"}:
         if value["version"]!=3 or value["mode"]!="PERSISTENT" or value["publish_enabled"] is not True: raise Reject("invalid_channel_configuration")
         if value["allowed_environment"]!=POLICY["environment"] or value["allowed_actions"] != [POLICY["action_id"],TEST_ACTION]: raise Reject("invalid_channel_configuration")
@@ -372,7 +436,7 @@ def main():
         try: result.append({"pr":number,"head":head,**persistent_process(number,head,args.ledger_root,args.key,args.channel_config)})
         except Reject as exc: result.append({"pr":number,"head":head,"status":"rejected","reason":str(exc)})
     channel = load_channel(args.channel_config)
-    print(json.dumps({"bridge_version":"1.4.0-candidate", "channel_mode":channel["mode"],
+    print(json.dumps({"bridge_version":"1.5.0-control-plane-health", "channel_mode":channel["mode"],
                       "publish_enabled":channel["publish_enabled"], "results":result},sort_keys=True)); return 0
 
 def run_tests():
@@ -484,5 +548,84 @@ def run_tests():
           try:
             with self.assertRaises(Reject): persistent_process("15","e"*40,root,key.name,config.name)
           finally: globals()["remote_task"]=original
-    suite=unittest.defaultTestLoader.loadTestsFromTestCase(Tests); result=unittest.TextTestRunner(verbosity=2).run(suite); return 0 if result.wasSuccessful() else 1
+      def health(self, **x):
+        value={"schema_version":"1","request_id":"liveness-control-plane-health-987654","action_id":HEALTH_ACTION,"environment":"HK-STAGING-01","requested_at":iso(now())}; value.update(x); return canonical(value)
+      def test_health_request_is_accepted_and_carries_nothing_else(self):
+        request=validate_request(self.health()); self.assertEqual(request["action_id"],HEALTH_ACTION)
+        self.assertEqual(set(request),ALLOWED)
+      def test_health_request_with_any_parameter_is_rejected(self):
+        for extra in ("image_id","service","path","env","command","plan_id","pr_number","parameters","release_id","expected_current_image_id"):
+          with self.assertRaises(Reject): validate_request(self.health(**{extra:"x"}))
+      def test_health_wrong_environment_is_rejected(self):
+        with self.assertRaises(Reject): validate_request(self.health(environment="PRODUCTION"))
+      def test_health_unknown_action_is_rejected(self):
+        for bogus in ("HK_STAGING_ROLLBACK","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH_","control_plane_health"):
+          with self.assertRaises(Reject): validate_request(self.health(action_id=bogus))
+      def test_health_task_is_read_only_with_fixed_empty_parameters(self):
+        task=derive_formal_task(validate_request(self.health()))
+        self.assertEqual(task["action_id"],HEALTH_ACTION)
+        self.assertEqual(task["parameters"],{})
+        self.assertEqual(task["environment"],"HK-STAGING-01")
+        self.assertEqual(task["authority"],"GO-COMMAND-CENTER")
+        self.assertEqual(set(task),{"schema_version","task_id","nonce","issued_at","expires_at","authority","environment","action_id","parameters"})
+      def test_health_cannot_fall_through_into_the_other_actions(self):
+        task=derive_formal_task(validate_request(self.health()))
+        for other in (POLICY["action_id"],TEST_ACTION,deploy_gate.ACTION,"HK_STAGING_ROLLBACK","HK_STAGING_CANARY"):
+          self.assertNotEqual(task["action_id"],other)
+        for parameter in ("candidate_image_id","expected_current_image_id","release_id","source","builder_profile","deployment_id"):
+          self.assertNotIn(parameter,task["parameters"])
+      def test_unnamed_action_cannot_become_a_verify_task(self):
+        for bogus in ("HK_STAGING_CANARY","HK_STAGING_ROLLBACK","CONTROL_PLANE_HEALTH_","OTHER"):
+          with self.assertRaises(Reject) as caught: derive_formal_task({"action_id":bogus,"request_id":"liveness-x-1"})
+          self.assertEqual(str(caught.exception),"action_not_enabled_in_channel")
+      def test_health_cannot_participate_in_the_deploy_arm(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
+          arm=pathlib.Path(root,"arm.json")
+          arm.write_bytes(canonical({"version":1,"state":"ARMED","expected_request_id":"liveness-control-plane-health-987654","max_formal_task_issuances":1,"publish_enabled":True}))
+          original=globals()["read_pr"]
+          globals()["read_pr"]=lambda n,h:{"path":"requests/liveness-control-plane-health-987654.json","raw":self.health()}
+          try:
+            with self.assertRaises(Reject) as caught: armed_process("21","a"*40,root,key.name,str(arm))
+            self.assertEqual(str(caught.exception),"legacy_mode_verify_only")
+            self.assertEqual(load_arm(str(arm))["state"],"ARMED")
+          finally: globals()["read_pr"]=original
+      def test_channel_contract_expresses_exactly_four_actions(self):
+        value=channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
+        self.assertEqual(value["allowed_actions"],["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","CONTROL_PLANE_HEALTH"])
+        self.assertIs(value["deployment_requests_enabled"],False)
+      def test_channel_without_the_health_action_is_refused(self):
+        with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY"],"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
+      def test_channel_rejects_an_unknown_or_reordered_action(self):
+        for actions in (["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","CONTROL_PLANE_HEALTH","HK_STAGING_ROLLBACK"],
+                        ["CONTROL_PLANE_HEALTH","HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY"],
+                        "CONTROL_PLANE_HEALTH"):
+          with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":actions,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
+      def test_existing_actions_are_unchanged_by_the_health_extension(self):
+        baseline={"image_id":"sha256:"+"3"*64}
+        verify=derive(validate_request(self.request()),baseline)
+        self.assertEqual(verify["action_id"],POLICY["action_id"])
+        self.assertEqual(set(verify["parameters"]),{"release_id","candidate_image_id","expected_current_image_id"})
+        self.assertEqual(verify["parameters"]["candidate_image_id"],baseline["image_id"])
+        with self.assertRaises(Reject): derive_test_pr(validate_request(self.request(action_id=TEST_ACTION,pr_number="1")),resolver=lambda number:(_ for _ in ()).throw(Reject("pr_head_not_found")))
+      def test_persistent_health_request_publishes_a_read_only_task(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
+          private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate(); key.write(private.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())); key.flush()
+          tasks={}
+          saved={name:globals()[name] for name in ("read_pr","load_channel","publish_task","remote_task")}
+          try:
+            globals()["read_pr"]=lambda n,h:{"path":"requests/liveness-control-plane-health-987654.json","raw":self.health()}
+            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False}
+            globals()["publish_task"]=lambda task:(tasks.setdefault(task["task_id"],canonical(task)+b"\n") and "commit")
+            globals()["remote_task"]=lambda task_id:tasks.get(task_id)
+            out=persistent_process("31","a"*40,root,key.name,"channel-not-read")
+            self.assertEqual(out["status"],"published")
+            body=json.loads(tasks[out["task_id"]].decode())
+            self.assertEqual(body["action_id"],HEALTH_ACTION)
+            self.assertEqual(body["parameters"],{})
+            self.assertEqual(body["environment"],"HK-STAGING-01")
+            private.public_key().verify(bytes.fromhex(body["signature"]),canonical({k:v for k,v in body.items() if k!="signature"}))
+          finally:
+            for name,value in saved.items(): globals()[name]=value
+    suite=unittest.defaultTestLoader.loadTestsFromTestCase(Tests); result=unittest.TextTestRunner(verbosity=2).run(suite)
+    globals()["LAST_TEST_COUNT"]=result.testsRun; return 0 if result.wasSuccessful() else 1
 if __name__ == "__main__": sys.exit(main())

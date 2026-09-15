@@ -128,13 +128,48 @@ Every decision is appended to `ledger.jsonl`, tagged
 HONG_KONG_TOUCHED=NO        CONTROL_PLANE_TOUCHED=NO
 DEPLOY_PERFORMED=NO         ROLLBACK_PERFORMED=NO
 PRODUCTION_TOUCHED=NO       PRIVATE_KEY_HELD=NO
-INSTALLED=NO                DEPLOYED=NO
+INSTALLED=YES               DEPLOYED=NO
 ```
 
-**This PR defines the producer. It does not install it.** No systemd unit, timer
-or scheduler change is made here, and the outbox the producer writes is picked
-up by the existing Request channel only once an operator wires it. Until that
-happens the control bus still carries no fresh liveness Evidence and
-`hk_agent_online` still honestly reads `UNKNOWN`. That gap is reported, not
-smoothed over: the producer removes the *missing mechanism*, not the
-*missing installation*.
+**The producer is installed on the Command Center host and driven by a timer.** The
+whole chain was proven end to end on 2026-09-15; the install record, the
+before/after hashes, the live smoke output and the rollback are in
+`install/INSTALL.md`.
+
+```text
+producer tick -> outbox Request -> Request PR on the control bus -> the Bridge
+validates it and signs a read-only Task -> HK agent picks it up, executes the
+read-only probe and publishes signed Evidence -> the projector derives
+hk_agent_online = PROVEN
+```
+
+Two things to keep straight:
+
+* **The producer is installed; the wiring is an operator step.** The producer's
+  timer decides whether a probe is due and places one Request in its outbox. It
+  never publishes to the bus. `install/liveness_request_wiring.py` is the wiring:
+  it reads the outbox and opens the Request PR the Bridge already knows how to
+  consume. Running it manually is the narrowest useful thing; scheduling it makes
+  the probe rate real, which is why it is not scheduled yet -- see the note below.
+* **The Bridge needed a revision for this.** `CONTROL_PLANE_HEALTH` was valid on
+  the agent and understood by the projector, but the Bridge -- the only Task
+  signer -- rejected the action outright. `control-plane/boss-deploy-request-v1`
+  now accepts it (Bridge `1.5.0-control-plane-health`), read-only, parameterless,
+  with an explicit fail-closed dispatch. The Request was never the hard part; the
+  signer was.
+
+### A measured growth defect this install exposed
+
+Facts are minted per `(submission, observation instant)`, and every change in the
+Bridge's own poll output creates a new observation instant. Measured on the host
+after one such change: **36 facts for 18 submissions** -- 18 at `10:59:56Z` and 18
+more at `12:56:27Z`. Nothing is wrong with any single fact, but the store grows
+with the number of *observations*, not with the number of *Request outcomes*, so a
+scheduled probe every 30 minutes would mint roughly 18 facts per probe.
+
+That is why the wiring above is deliberately left as an operator step: the probe
+chain is proven, and the rate is under operator control until the exporter is
+narrowed to mint a fact only when a submission's Bridge outcome actually changes
+(keeping the newest observation, dropping the restated ones). Until then, running
+the wiring on a timer grows the store on a timer.
+

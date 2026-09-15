@@ -77,7 +77,12 @@ summary = {
     "production": "NOT_ACCESSED",
     "live_control_plane_state": "NOT_ACCESSED",
     "deployed": "NO",
-    "installed": "NO",
+    # Installed on the Command Center host and driven by go-liveness-producer.timer.
+    # The wiring that turns an outbox Request into a Request PR stays an operator
+    # step, deliberately: see install/INSTALL.md for the measured reason.
+    "installed": "YES",
+    "producer_timer_installed": "YES",
+    "outbox_wiring_scheduled": "NO",
     "authority_boundary_declared_in_schema": sorted(
         schema["properties"]["authority_boundary"]["properties"]),
     "files": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()

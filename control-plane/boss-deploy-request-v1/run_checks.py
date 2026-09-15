@@ -36,7 +36,16 @@ result=unittest.TextTestRunner(stream=log,verbosity=2).run(suite)
 with redirect_stderr(log): legacy_exit=test_deploy_entry.bridge.run_tests()
 summary={'schema_version':'1','status':'PASS' if result.wasSuccessful() and not legacy_exit else 'FAIL',
     'new_tests':result.testsRun,'new_failures':len(result.failures),'new_errors':len(result.errors),'new_skips':len(result.skipped),
-    'legacy_self_test_exit':legacy_exit,'legacy_tests':22,'network_access':'FORBIDDEN',
+    'legacy_self_test_exit':legacy_exit,'legacy_tests':getattr(test_deploy_entry.bridge,'LAST_TEST_COUNT',0),'network_access':'FORBIDDEN',
+    # The read-only health action, reported as what it is: a Task identity with no
+    # parameters, reachable only through its own builder, and wired to nothing else.
+    'channel_action_contract':list(test_deploy_entry.bridge.CHANNEL_ACTIONS),
+    'health_request_fields':sorted(test_deploy_entry.bridge.ALLOWED),
+    'health_task_parameters':test_deploy_entry.bridge.HEALTH_PARAMETERS,
+    'health_can_become_verify_test_pr_deploy_or_rollback':'NO',
+    'health_participates_in_deploy_arm_or_plan_budget':'NO',
+    'health_changes_verify_test_pr_deploy_permissions':'NO',
+    'shipped_channel_config_deployment_requests_enabled':json.loads((ROOT/'config.json').read_text())['deployment_requests_enabled'],
     'hong_kong':'NOT_ACCESSED','production':'NOT_ACCESSED','live_tasks_published':0,
     'crypto_keys':'EPHEMERAL_SYNTHETIC_ONLY','hk_executor':'ARCHIVED_ADAPTER_WITH_FAKE_EXECUTOR',
     'different_image_formal_hk_e2e':'NOT_PROVEN',

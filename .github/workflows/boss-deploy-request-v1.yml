@@ -1,7 +1,7 @@
 name: Boss deployment request entry (isolated)
 on:
   push:
-    branches: [feature/boss-deploy-request-v1-20260912]
+    branches: [feature/boss-deploy-request-v1-20260912, cc/v1-finalization-20260914]
     paths: ['control-plane/boss-deploy-request-v1/**', '.github/workflows/boss-deploy-request-v1.yml']
   pull_request:
     branches: [main]
