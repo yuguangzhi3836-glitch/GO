@@ -1,0 +1,259 @@
+name: C01 gates from fixed candidate
+
+on:
+  push:
+    branches:
+      - ops/c01-formal-20260915
+    paths:
+      - .github/workflows/c01-gates-from-candidate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BASE_SHA: dcb68a652429aa01e8428ce9f582e4bab6a6175e
+  CANDIDATE_SHA: 3a7ebba703cd998fc5c5c328ff97f4c7b6f191db
+  EXPECTED_APPLICATION_TREE_AFTER: f00e970fc3d54a20b0593d89cf29f6bad402e530
+  R3_PRODUCT_ANCHOR: 8ffcde66d36c1bbf849218529ef015f6e81725af
+  TASK_ID: V70-R3-C01-01
+  PYTHONPATH: application/src:application
+  POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+  DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+  REDIS_URL: redis://127.0.0.1:6379/0
+
+jobs:
+  evidence:
+    name: C01 candidate evidence replay
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: go_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d go_test" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact candidate identity and changed scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE_AFTER"
+          git diff --name-only "$BASE_SHA" "$CANDIDATE_SHA" | sort > changed.txt
+          cat > expected.txt <<'EOF'
+          application/src/go_hotel/services/alipay_safeguarded_settlement.py
+          application/tests/test_v70_next_c01_unknown_funding.py
+          EOF
+          sort -o expected.txt expected.txt
+          diff -u expected.txt changed.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Replay C01 regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip >/dev/null
+          python -m pip install -e 'application[dev]' >/dev/null
+          cd application
+          python -m pytest -q tests/test_v70_next_c01_unknown_funding.py 2>&1 | tee "$RUNNER_TEMP/C01_TESTS.log"
+      - name: Freeze exact candidate evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence-out
+          cp changed.txt evidence-out/CHANGED_FILES.txt
+          cp "$RUNNER_TEMP/C01_TESTS.log" evidence-out/PROMOTER_TESTS.log
+          git diff --binary --full-index "$BASE_SHA" "$CANDIDATE_SHA" > evidence-out/CANDIDATE.patch
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess,datetime
+          root=pathlib.Path.cwd(); out=root/'evidence-out'
+          tracked=subprocess.check_output(['git','ls-files','-z','application']).decode().split('\0')
+          pairs=[]
+          for p in sorted(x for x in tracked if x):
+              pairs.append((p[len('application/'):],hashlib.sha256((root/p).read_bytes()).hexdigest()))
+          fp=hashlib.sha256(''.join(f'{p}\0{h}\n' for p,h in pairs).encode()).hexdigest()
+          changed=[x for x in (out/'CHANGED_FILES.txt').read_text().splitlines() if x]
+          data={
+            'schema':'go.v70.r3.fixed-candidate.v1','cell_id':'C01','task_id':os.environ['TASK_ID'],
+            'issue_number':79,'repository_base_sha':os.environ['BASE_SHA'],'r3_product_anchor':os.environ['R3_PRODUCT_ANCHOR'],
+            'candidate_sha':os.environ['CANDIDATE_SHA'],'application_tree_before':'dd815baf0105cce603e9a28b002cfb9d8b95d186',
+            'application_tree_after':os.environ['EXPECTED_APPLICATION_TREE_AFTER'],'application_source_fingerprint_sha256':fp,
+            'changed_files':changed,'patch_sha256':hashlib.sha256((out/'CANDIDATE.patch').read_bytes()).hexdigest(),
+            'promoter_test_log_sha256':hashlib.sha256((out/'PROMOTER_TESTS.log').read_bytes()).hexdigest(),
+            'candidate_status':'FIXED_CANDIDATE_READY_FOR_C14','c14':'REQUIRED','c13':'HOLD_UNTIL_C14_PASS',
+            'final_release':'HOLD','hk_deploy':'HOLD','production':'HOLD',
+            'created_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+          }
+          raw=(json.dumps(data,indent=2)+'\n').encode(); (out/'EVIDENCE.json').write_bytes(raw)
+          (out/'EVIDENCE.sha256').write_text(hashlib.sha256(raw).hexdigest()+'  EVIDENCE.json\n')
+          (out/'SOURCE_FINGERPRINT.sha256').write_text(fp+'  application\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c01-fixed-candidate-evidence
+          path: evidence-out
+          if-no-files-found: error
+          retention-days: 90
+
+  c14:
+    name: C01 C14 read-only gate
+    needs: evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      status: ${{ steps.parse.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-fixed-candidate-evidence
+          path: .gate-input
+      - name: Verify exact C14 input
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd .gate-input && sha256sum -c EVIDENCE.sha256)
+          python - <<'PY'
+          import json,subprocess
+          e=json.load(open('.gate-input/EVIDENCE.json'))
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert e['candidate_sha']==sha
+          assert e['application_tree_after']==subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
+          actual=sorted(subprocess.check_output(['git','diff','--name-only',e['repository_base_sha'],e['candidate_sha']],text=True).splitlines())
+          assert actual==sorted(e['changed_files'])
+          PY
+      - name: Build C14 prompt
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/C14_PROMPT.md" <<'EOF'
+          You are C14, an independent read-only source/authority/evidence gate. Review only the exact checked-out C01 candidate and .gate-input/EVIDENCE.json. Verify task binding, source identity, changed-file scope, money/idempotency/reconciliation safety, regression evidence, and absence of unauthorized repair or deployment authority. Historical PASS does not transfer. Do not edit. PASS_SCOPED only if this exact candidate is safe and sufficiently evidenced for V70-R3-C01-01; otherwise BLOCKED or FAIL. FINAL_RELEASE, HK_DEPLOY and PRODUCTION remain HOLD.
+          EOF
+      - name: Run C14 reviewer
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ':read-only'
+          safety-strategy: drop-sudo
+          model: gpt-5.6-sol
+          effort: medium
+          prompt-file: ${{ runner.temp }}/C14_PROMPT.md
+          output-file: ${{ runner.temp }}/C14_RESULT.json
+          output-schema: '{"type":"object","required":["status","candidate_sha","summary","blocking_reasons"],"properties":{"status":{"type":"string","enum":["PASS_SCOPED","BLOCKED","FAIL"]},"candidate_sha":{"type":"string"},"summary":{"type":"string"},"blocking_reasons":{"type":"array","items":{"type":"string"}}},"additionalProperties":false}'
+      - name: Parse C14 verdict
+        id: parse
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir c14-output
+          cp "$RUNNER_TEMP/C14_RESULT.json" c14-output/C14_RESULT.json
+          python - <<'PY'
+          import hashlib,json,os
+          p='c14-output/C14_RESULT.json'; d=json.load(open(p)); assert d['candidate_sha']==os.environ['CANDIDATE_SHA']
+          raw=open(p,'rb').read(); open('c14-output/C14_RESULT.sha256','w').write(hashlib.sha256(raw).hexdigest()+'  C14_RESULT.json\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write('status='+d['status']+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c01-c14-result
+          path: c14-output
+          retention-days: 90
+      - name: Enforce C14
+        run: test '${{ steps.parse.outputs.status }}' = PASS_SCOPED
+
+  c13:
+    name: C01 independent C13 acceptance
+    needs: [evidence, c14]
+    if: ${{ needs.c14.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-fixed-candidate-evidence
+          path: .gate-input/candidate
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-c14-result
+          path: .gate-input/c14
+      - name: Verify independent C13 input
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd .gate-input/candidate && sha256sum -c EVIDENCE.sha256)
+          (cd .gate-input/c14 && sha256sum -c C14_RESULT.sha256)
+          python - <<'PY'
+          import json,subprocess
+          c=json.load(open('.gate-input/candidate/EVIDENCE.json')); g=json.load(open('.gate-input/c14/C14_RESULT.json'))
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert c['candidate_sha']==sha==g['candidate_sha']
+          assert g['status']=='PASS_SCOPED'
+          PY
+      - name: Build C13 prompt
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/C13_PROMPT.md" <<'EOF'
+          You are C13, an independent acceptance reviewer. You did not implement this C01 change and you are not C14. Review the exact candidate, candidate Evidence, and C14 verdict. Decide only whether V70-R3-C01-01 is actually closed at scoped level with its regression behavior and safety boundaries. Do not inflate this to whole C01/domain completion. Do not edit. FINAL_RELEASE, HK_DEPLOY and PRODUCTION remain HOLD.
+          EOF
+      - name: Run independent C13 reviewer
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ':read-only'
+          safety-strategy: drop-sudo
+          model: gpt-5.6-sol
+          effort: medium
+          prompt-file: ${{ runner.temp }}/C13_PROMPT.md
+          output-file: ${{ runner.temp }}/C13_RESULT.json
+          output-schema: '{"type":"object","required":["status","candidate_sha","summary","remaining_risks"],"properties":{"status":{"type":"string","enum":["PASS_SCOPED","BLOCKED","FAIL"]},"candidate_sha":{"type":"string"},"summary":{"type":"string"},"remaining_risks":{"type":"array","items":{"type":"string"}}},"additionalProperties":false}'
+      - name: Parse C13 verdict
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir c13-output
+          cp "$RUNNER_TEMP/C13_RESULT.json" c13-output/C13_RESULT.json
+          python - <<'PY'
+          import hashlib,json,os
+          p='c13-output/C13_RESULT.json'; d=json.load(open(p)); assert d['candidate_sha']==os.environ['CANDIDATE_SHA']
+          raw=open(p,'rb').read(); open('c13-output/C13_RESULT.sha256','w').write(hashlib.sha256(raw).hexdigest()+'  C13_RESULT.json\n')
+          assert d['status']=='PASS_SCOPED'
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c01-c13-result
+          path: c13-output
+          retention-days: 90
