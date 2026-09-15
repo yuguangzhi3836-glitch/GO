@@ -27,7 +27,7 @@ For Command Center work, use the current Command Center sources identified by `A
 
 ## ACTIVE CANDIDATES
 
-- PR #49 is an open Draft control-plane connection/identity documentation candidate. The runbook it proposes (`docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md`) is **not present** on canonical main and must not be quoted as repository fact.
+- PR #49 is a **closed, unmerged** control-plane connection/identity documentation candidate. The runbook it proposes (`docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md`) is **not present** on canonical main and must not be quoted as repository fact. The current access-channel state is recorded in `docs/project/OPERATING_CONTEXT.md` (section "服务器访问通道").
 - PR #78, #89, #90 and #91 are open Draft operations/evidence candidates (`ASSIGNED_NO_ACK` dispatch, pointer rebind, runner canary, R3 worker ACK). Their internal claims are candidates.
 - Other open governance/control-plane PRs exist; a higher PR number does not make them canonical.
 
