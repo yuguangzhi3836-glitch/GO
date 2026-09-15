@@ -116,12 +116,24 @@ subcommand.
 HONG_KONG_TOUCHED=NO        CONTROL_PLANE_TOUCHED=NO
 DEPLOY_PERFORMED=NO         PRODUCTION_TOUCHED=NO
 PRIVATE_KEY_HELD=NO         EXECUTION_AUTHORITY=NO
-TARGET_INSTALLED=NO         SCHEDULED_PUBLICATION=NO
+TARGET_INSTALLED=YES        SCHEDULED_PUBLICATION=YES
 ```
 
-**This PR defines the target and the publisher. It does not install a scheduled
-publication.** No workflow or timer is changed here to push to a publication
-branch. Until an operator wires it, `CURRENT.json` does not exist, a reader
-reports `UNKNOWN`, and the committed `PROJECTION_20260914` snapshot remains a
-manual record rather than a published state. That gap is reported rather than
-smoothed over.
+**The target and the publisher are installed and driven.** On the Command Center
+host `go-command-center-state-cycle.timer` (900 s) refreshes the control-bus
+checkouts, collects the Request files the bus carries, runs the projector
+read-only, and hands the projection to this publisher. The publisher still does
+the two-phase write; the schedule only decides when it is asked to. The install
+record, before/after hashes, live smoke output and rollback are in
+`install/INSTALL.md`.
+
+Two things this install deliberately does not do:
+
+* the target lives on the Command Center host. Mirroring it to a branch, so that a
+  remote reader can follow `CURRENT.json`, is a separate decision rather than a
+  detail of this publisher;
+* `runs/` is append-only by contract and is not pruned. The schedule republishes
+  when its sources move and at least hourly, which bounds growth to roughly 24
+  snapshots a day. A retention policy is a decision, not something to hide inside
+  the publisher.
+

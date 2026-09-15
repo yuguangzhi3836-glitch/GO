@@ -1,0 +1,11 @@
+[Unit]
+Description=Publish Request facts to the control bus and publish the derived Control State
+
+[Timer]
+OnBootSec=240s
+OnUnitActiveSec=900s
+Persistent=false
+Unit=go-command-center-state-cycle.service
+
+[Install]
+WantedBy=timers.target

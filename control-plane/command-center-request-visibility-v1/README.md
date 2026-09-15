@@ -156,24 +156,41 @@ projection recomputes the id over the whole body.
 
 ```
 PHASE 1  journal the Bridge's own poll output + drive the read-only exporter   INSTALLED
-PHASE 2  publish the facts to the control bus                                  NOT INSTALLED
+PHASE 2  publish the facts to the control bus                                  INSTALLED
 ```
 
-Phase 1 runs on the Command Center host: `go-request-fact-cycle.timer` (300 s,
-oneshot, root, hardened) captures the object the Bridge already prints every poll
-into an append-only journal — only when that object actually changes — and then
-runs this exporter over the Bridge ledger plus that journal. Installed artifacts,
-before/after hashes, live smoke output and the rollback procedure are in
-`install/INSTALL.md`.
+Both phases run on the Command Center host.
 
-Found and fixed during that install: journalling unconditionally would have
-placed an unchanged observation at a new instant every cycle and minted a fresh
-fact per submission per cycle — 2 cycles produced 36 fact files for 18 facts.
-The wrapper now journals on change only; 3 cycles produce 18 fact files.
+Phase 1: `go-request-fact-cycle.timer` (300 s, oneshot, root, hardened) captures
+the object the Bridge already prints every poll into an append-only journal — only
+when that object actually changes — and then runs this exporter over the Bridge
+ledger plus that journal. Installed artifacts, before/after hashes, live smoke
+output and the rollback procedure are in `install/INSTALL.md`.
 
-Phase 2 is not installed, and it is not useful on its own either: the projection
-side that consumes `--request-facts-dir` is not installed yet, so the facts have
-nothing to feed. Until both halves exist the control bus carries no Request facts,
-every collected Request still reads `REQUEST_CREATED`, and refusal reasons remain
-unobservable from the bus. `run_checks.py` reports the split as
-`installed = PHASE_1_EXPORT_ONLY`, `installed_publish_side = NO`.
+Phase 2: `go-command-center-state-cycle.timer` (900 s) re-exports the facts,
+publishes the export to branch `request-facts/live` of `go-control-tasks` — the ref
+namespace the state contract already declares for facts — and then drives the
+projection and the publication target, so the derived state is built from what is
+on the control bus rather than from the host that produced it. That install's
+record and evidence are in
+`../command-center-state-publication-v1/install/INSTALL.md`.
+
+Two defects were found by installing rather than by reading:
+
+* journalling unconditionally placed an unchanged observation at a new instant
+  every cycle and minted a fresh fact per submission per cycle — 2 cycles
+  produced 36 fact files for 18 facts. Journal capture is now on change only;
+* publishing on "the index file differs" would have committed to the bus on every
+  cycle, because the exporter stamps `INDEX.json` with the instant of the run. The
+  publication gate is a digest over the facts plus the index with that one instant
+  field removed, so three consecutive cycles leave the branch at the same commit.
+
+A third thing only installing could show: a fact alone does not put a Request on
+the bus. Projected without the Request files, every Request read `UNKNOWN` and the
+projection recorded 18 `REQUEST_FACT_WITHOUT_REQUEST` anomalies. Collecting the
+Request files the bus carries on its `boss-request-*` branches took the anomalies
+19 → 7 and produced real lifecycles —
+`REQUEST_VALIDATED 13 / REQUEST_CREATED 1 / UNKNOWN 4`.
+
+`run_checks.py` reports `installed = PHASE_1_AND_2`, `installed_publish_side = YES`.
+

@@ -1,0 +1,16 @@
+[Unit]
+Description=GO Command Center derived-state cycle (Request facts -> control bus -> Control State -> publication target)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/usr/local/libexec/go-command-center-state-cycle cycle
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/go-command-center/state-publication-v1

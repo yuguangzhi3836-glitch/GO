@@ -71,8 +71,14 @@ summary = {
     "hong_kong": "NOT_ACCESSED",
     "production": "NOT_ACCESSED",
     "live_control_plane_state": "NOT_ACCESSED",
-    "publication_target_installed": "NO",
-    "scheduled_publication": "NO",
+    # The target and the publisher are installed and driven on the Command Center
+    # host by go-command-center-state-cycle.timer (900 s), which also publishes the
+    # Request facts the projection consumes. This is still not execution authority:
+    # the wrapper holds no key and the publisher signs nothing.
+    "publication_target_installed": "YES",
+    "scheduled_publication": "YES",
+    "publication_driver": ("go-command-center-state-cycle.timer on the Command Center "
+                           "host; install record in install/INSTALL.md"),
     "authority_boundary_declared_in_contract": sorted(
         contract["properties"]["authority_boundary"]["properties"]),
     "files": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()

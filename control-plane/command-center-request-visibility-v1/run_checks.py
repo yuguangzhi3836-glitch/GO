@@ -96,16 +96,19 @@ summary = {
     "live_control_plane_state": "NOT_ACCESSED",
     "bridge_ledger_read": "NO_LOCAL_COPY_AVAILABLE",
     "deployed": "NO",
-    # PHASE 1 is installed: the operator wrapper journalling the Bridge's own
-    # poll output and driving this exporter now runs on the Command Center host
-    # on a timer. PHASE 2 -- publishing the facts to the control bus -- is NOT
-    # installed, so the bus still carries no Request facts and the projection
-    # still sees zero. Reported as split rather than as a single NO.
-    "installed": "PHASE_1_EXPORT_ONLY",
+    # PHASE 1 and PHASE 2 are both installed on the Command Center host. PHASE 1 is
+    # the operator wrapper journalling the Bridge's own poll output and driving
+    # this exporter. PHASE 2 publishes the export to branch request-facts/live of
+    # the control bus and then drives the projection and the publication, so the
+    # facts are read back off the bus rather than off the host that produced them.
+    "installed": "PHASE_1_AND_2",
     "installed_export_side": "YES",
-    "installed_publish_side": "NO",
-    "installed_note": ("the timer drives journal capture and the read-only export on the "
-                       "Command Center host; publication to the control bus is not installed"),
+    "installed_publish_side": "YES",
+    "installed_note": ("go-request-fact-cycle.timer drives journal capture and the "
+                       "read-only export; go-command-center-state-cycle.timer publishes "
+                       "the export to refs/heads/request-facts/live and drives the "
+                       "projection and the publication. Install records live in "
+                       "install/INSTALL.md of each component"),
     "files": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
               for p in sorted(ROOT.rglob("*"))
               if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc"},
