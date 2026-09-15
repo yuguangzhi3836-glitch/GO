@@ -52,9 +52,8 @@ exporter = t.X
 schema = json.loads(t.CONTRACT.read_text(encoding="utf-8"))
 vocabulary = exporter.Vocabulary(t.CONTRACT)
 
-bridge_tokens = sorted(set(
-    token for path in t.BRIDGE_SOURCES
-    for token in t.REJECT_CALL.findall(path.read_text(encoding="utf-8"))))
+direct_tokens, argument_tokens = t.bridge_refusal_tokens()
+bridge_tokens = sorted(direct_tokens | argument_tokens)
 unclassified = sorted(token for token in bridge_tokens
                       if vocabulary.classify(token) == "UNCLASSIFIED_REJECT")
 
@@ -74,6 +73,9 @@ summary = {
     "reason_classes_source": "contracts/request_fact_v1.schema.json",
     "bridge_sources_scanned": [str(p.relative_to(t.REPO)) for p in t.BRIDGE_SOURCES],
     "bridge_refusal_tokens_observed": len(bridge_tokens),
+    "bridge_refusal_tokens_direct": len(direct_tokens),
+    "bridge_refusal_tokens_via_the_reason_argument": len(argument_tokens),
+    "bridge_refusal_call_shapes_scanned": 2,
     "bridge_refusal_tokens_unclassified": unclassified,
     "every_bridge_refusal_is_classified": unclassified == [],
     "unknown_token_preserved_as": "UNCLASSIFIED_REJECT",

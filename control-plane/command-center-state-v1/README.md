@@ -378,7 +378,7 @@ Four properties are enforced by tests rather than asserted in prose:
 * **A refusal never loses its reason.** The Bridge's token is carried verbatim
   with an `origin`; a token the contract cannot classify is
   `UNCLASSIFIED_REJECT`, and the contract is checked against every refusing token
-  the Bridge sources can emit (81 today, zero unclassified).
+  the Bridge sources can emit (96 today, zero unclassified).
 * **A duplicate or a replay is never a success.** Each is its own lifecycle and
   each is reported with `counted_as_success = false`.
 * **Nothing here is authority.** Every fact carries the same eight `false` values

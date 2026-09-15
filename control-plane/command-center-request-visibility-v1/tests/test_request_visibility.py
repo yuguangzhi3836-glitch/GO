@@ -42,7 +42,24 @@ BRIDGE_SOURCES = (
     REPO / "control-plane" / "boss-deploy-request-v1" / "go-boss-request-bridge",
     REPO / "control-plane" / "boss-deploy-request-v1" / "go_deploy_request.py",
 )
+# Every refusing token is a literal string at its call site, but there are two
+# call shapes and they must both be scanned: ``Reject("token")`` raised directly,
+# and the ``reason`` argument of ``exact(...)`` / ``match(...)``, which raise
+# ``Reject(reason)`` inside the helper. Scanning only the first shape silently
+# under-counts the vocabulary, which is exactly the blind spot this test exists
+# to prevent.
 REJECT_CALL = re.compile(r"Reject\(\s*['\"]([a-z0-9_]+)['\"]")
+REASON_ARGUMENT = re.compile(r"(?:exact|match)\([^()]*?['\"]([a-z0-9_]+)['\"]\s*\)")
+
+
+def bridge_refusal_tokens():
+    """The union of both call shapes. This is the claim the contract must cover."""
+    direct, passed = set(), set()
+    for path in BRIDGE_SOURCES:
+        text = path.read_text(encoding="utf-8")
+        direct |= set(REJECT_CALL.findall(text))
+        passed |= set(REASON_ARGUMENT.findall(text))
+    return direct, passed
 
 
 def request_body(request_id=REQUEST_ID, **over):
@@ -112,16 +129,27 @@ class VocabularyCoverageTests(unittest.TestCase):
         for path in BRIDGE_SOURCES:
             self.assertTrue(path.is_file(), "Bridge source moved or vanished: %s" % path)
 
+    def test_both_refusal_call_shapes_are_scanned(self):
+        direct, passed = bridge_refusal_tokens()
+        self.assertGreater(len(direct), 50, "the direct extraction found too few tokens")
+        self.assertGreater(len(passed), 10, "the reason-argument extraction found too few tokens")
+        self.assertTrue(passed - direct, "the two shapes must not be identical")
+
     def test_every_refusal_token_the_bridge_can_emit_is_classified(self):
-        tokens = set()
-        for path in BRIDGE_SOURCES:
-            tokens |= set(REJECT_CALL.findall(path.read_text(encoding="utf-8")))
-        self.assertGreater(len(tokens), 50, "the extraction found suspiciously few tokens")
+        direct, passed = bridge_refusal_tokens()
+        tokens = direct | passed
+        self.assertGreaterEqual(len(tokens), 96,
+                                "the extraction found suspiciously few tokens: %d" % len(tokens))
         unclassified = sorted(t for t in tokens
                               if self.vocabulary.classify(t) == "UNCLASSIFIED_REJECT")
         self.assertEqual(unclassified, [],
                          "the Bridge can emit a refusal the contract never classifies: %s"
                          % unclassified)
+        # A token reachable only through the reason argument must be classified
+        # too: those are the ones a single-shape scan misses.
+        missed = sorted(t for t in (passed - direct)
+                        if self.vocabulary.classify(t) == "UNCLASSIFIED_REJECT")
+        self.assertEqual(missed, [], "unclassified reason arguments: %s" % missed)
 
     def test_every_class_maps_to_exactly_one_kind(self):
         schema = json.loads(CONTRACT.read_text(encoding="utf-8"))
@@ -260,8 +288,8 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(index["counts"]["by_kind"], {"REQUEST_REJECTED": 1})
 
     def test_every_bridge_token_round_trips_into_a_fact(self):
-        for token in sorted(set(t for path in BRIDGE_SOURCES
-                                for t in REJECT_CALL.findall(path.read_text(encoding="utf-8")))):
+        direct, passed = bridge_refusal_tokens()
+        for token in sorted(direct | passed):
             root = workdir(poll=poll_output([{"pr": "7", "head": HEAD, "status": "rejected",
                                               "reason": token}]),
                            requests=[collected()])
