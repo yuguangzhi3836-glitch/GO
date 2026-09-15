@@ -25,7 +25,7 @@
     "base_sha": "8610a4dbfd58cbe595f3d161c049de37dd81d3cc",
     "credential_preflight": "PASS",
     "confirmed_blocker": "OPENAI_API_NO_CREDITS",
-    "evidence_note": "C04 attempt 6 again reached Codex and returned 'You have no credits remaining'. C01 is the current single-Cell probe and is still executing at ledger-write time. Other attempted Cells reached ACK/prompt/Codex then failed before Scope Gate/Frozen Evidence.",
+    "evidence_note": "Attempt 6 confirms C01 and C04 both reached Codex after real source-bound ACK/start and failed before Scope Gate/Frozen Evidence. C04 log explicitly returned 'You have no credits remaining'; C01 Codex step also concluded failure in the same billing-blocked attempt.",
     "frozen_artifact_created": false
   },
   "release_gates": {
@@ -39,7 +39,7 @@
     "PRODUCTION": "HOLD"
   },
   "cells": [
-    {"cell":"C01","status":"RUNNING_PROBE","task":"V70-R3-C01-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","evidence":"run 34868892286 attempt 6 job 104237190737","next_gate":"If code + regression test + Frozen Evidence form, promote immediately to C14 then independent C13."},
+    {"cell":"C01","status":"BLOCKED_BILLING","task":"V70-R3-C01-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","evidence":"run 34868892286 attempt 6 job 104237190737 reached ACK/prompt/Codex; Codex failed before Scope Gate/Frozen Evidence","blocker":"OpenAI API credits unavailable.","unlock_condition":"Restore API credits; rerun existing finite task without redoing inherited PASS."},
     {"cell":"C02","status":"BLOCKED_BILLING","task":"V70-R3-C02-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","blocker":"OpenAI API credits unavailable after real ACK/start.","unlock_condition":"Restore API credits; rerun existing finite task without redoing inherited PASS."},
     {"cell":"C03","status":"BLOCKED_BILLING","task":"V70-R3-C03-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","blocker":"OpenAI API credits unavailable after real ACK/start.","constraint":"Existing scoped PostgreSQL PASS is inherited; fresh R3 scope still owes code/test Evidence."},
     {"cell":"C04","status":"BLOCKED_BILLING","task":"V70-R3-C04-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","evidence":"run 34868892286 attempt 6 job 104237191281","blocker":"Codex returned no credits remaining.","unlock_condition":"Restore API credits."},
@@ -55,8 +55,7 @@
     {"cell":"C14","status":"TRIGGER_ARMED","task":null,"trigger":"ANY_NEW_FIXED_CELL_CANDIDATE","description":"Source/authority gate; activates immediately when any Cell forms a fixed candidate."}
   ],
   "scheduler_summary": {
-    "running_probe": ["C01"],
-    "blocked_billing": ["C02","C03","C04","C05","C07","C08","C09","C10","C11","C12"],
+    "blocked_billing": ["C01","C02","C03","C04","C05","C07","C08","C09","C10","C11","C12"],
     "blocked_external": ["C06"],
     "trigger_armed": ["C13","C14"],
     "scheduler_fail_cells": [],
