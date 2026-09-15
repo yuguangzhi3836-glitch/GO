@@ -1,182 +1,66 @@
 {
-  "schema_version": 3,
-  "ledger_id": "V70-R3-AUTHORITY-RECONCILED-20260914",
+  "schema_version": 4,
+  "ledger_id": "V70-R3-AUTHORITY-RECONCILED-20260915",
   "authority": "V7.0 Ultimate / V6.1 lineage + C14",
   "authority_split": {
-    "repository_main_head": "4b03281977a77263b1ce0dedb1b889c2008b6b00",
+    "repository_main_head": "8610a4dbfd58cbe595f3d161c049de37dd81d3cc",
     "r3_product_source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
     "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
     "source_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
     "migration_head": "0134_flight_status_width",
-    "repository_head_relation": "4b032819 is 13 commits ahead of 8ffcde66 and changes only repository context/docs files; application/ is unchanged",
-    "rule": "R3 finite product work remains source-bound to 8ffcde66 unless and until a new product candidate is explicitly frozen and rebound. Repository main HEAD must be recorded separately from the product-source anchor."
+    "repository_head_relation": "8610a4db is a later control-state merge; application/ remains unchanged from the accepted R3 product lineage.",
+    "rule": "Current finite R3 product work remains source-bound to 8ffcde66 unless a new product candidate is explicitly frozen and rebound. Repository main HEAD and product-source anchor are separate authority fields."
   },
-  "rebound_gate_originals": {
-    "c14": {
-      "status": "PASS_SCOPED",
-      "candidate": "37d9a42091938e26be538d3d410397182abec5c8",
-      "evidence": "PR #76 review pullrequestreview-5196279543"
-    },
-    "c13": {
-      "status": "PASS_SCOPED",
-      "candidate": "37d9a42091938e26be538d3d410397182abec5c8",
-      "evidence": "Issue #77 comment 5662413937 / PR #76 review 5196456000"
-    },
-    "main_merge": {
-      "status": "PASS",
-      "product_lineage_merge_commit": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "current_repository_main_head": "4b03281977a77263b1ce0dedb1b889c2008b6b00"
-    }
+  "inherited_gate_originals": {
+    "fixed_candidate": "37d9a42091938e26be538d3d410397182abec5c8",
+    "c14": "PASS_SCOPED",
+    "c13": "PASS_SCOPED",
+    "product_lineage_merge_commit": "8ffcde66d36c1bbf849218529ef015f6e81725af",
+    "historical_pass_transferred_to_new_candidates": false
   },
-  "ack_admission": {
-    "status": "PASS",
-    "workflow_run": 34839544381,
-    "control_pr": 91,
-    "evidence": "evidence/v70-main-8ffcde66-20260914/ACK_ADMISSION_34839544381.json",
-    "valid_ack": 10,
-    "rejected_ack": 0,
-    "admitted_cells": ["C01", "C02", "C03", "C04", "C05", "C08", "C09", "C10", "C11", "C12"]
+  "latest_execution": {
+    "workflow_run": 34868892286,
+    "run_attempt": 6,
+    "runner_head": "b000598dd396fb5d87b5d71e41ba98317238c45f",
+    "base_sha": "8610a4dbfd58cbe595f3d161c049de37dd81d3cc",
+    "credential_preflight": "PASS",
+    "confirmed_blocker": "OPENAI_API_NO_CREDITS",
+    "evidence_note": "C04 attempt 6 again reached Codex and returned 'You have no credits remaining'. C01 is the current single-Cell probe and is still executing at ledger-write time. Other attempted Cells reached ACK/prompt/Codex then failed before Scope Gate/Frozen Evidence.",
+    "frozen_artifact_created": false
   },
   "release_gates": {
     "MAIN_PRODUCT_LINEAGE_MERGE": "PASS",
     "HISTORICAL_C14": "PASS_SCOPED",
     "HISTORICAL_C13": "PASS_SCOPED",
+    "CURRENT_R3_C14": "TRIGGER_ARMED",
+    "CURRENT_R3_C13": "TRIGGER_ARMED",
     "FINAL_RELEASE": "HOLD",
     "HK_DEPLOY": "HOLD",
     "PRODUCTION": "HOLD"
   },
   "cells": [
-    {
-      "cell": "C01",
-      "status": "RUNNING",
-      "task": "V70-R3-C01-01",
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "description": "Source-bound read-only diagnosis of mixed hotel funds before any controlled reconciliation decision.",
-      "ack_artifact_id": 10345104423,
-      "next_gate": "first real code/test Evidence -> C14 -> C13"
-    },
-    {
-      "cell": "C02",
-      "status": "RUNNING",
-      "task": "V70-R3-C02-01",
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "description": "Trusted persisted coupon-plan and exact-consent integration, including same-day segments and negative fare-difference treatment.",
-      "ack_artifact_id": 10345452455,
-      "next_gate": "first real code/test Evidence -> C14 -> C13"
-    },
-    {
-      "cell": "C03",
-      "status": "RUNNING",
-      "task": "V70-R3-C03-01",
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "description": "Four rail payment/inventory races under isolated PostgreSQL plus post-exit convergence audit.",
-      "ack_artifact_id": 10345765911,
-      "constraint": "SQLite does not satisfy the PostgreSQL acceptance requirement.",
-      "next_gate": "fresh PG code/test Evidence -> C14 -> C13"
-    },
-    {
-      "cell": "C04",
-      "status": "RUNNING",
-      "task": "V70-R3-C04-01",
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "description": "Bounded read-only administrative presentation and operator review of reconciliation findings without automatic money/state repair.",
-      "ack_artifact_id": 10345492252,
-      "next_gate": "first real code/test Evidence -> C14 -> C13"
-    },
-    {
-      "cell": "C05",
-      "status": "RUNNING",
-      "task": "V70-R3-C05-01",
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "description": "Bind fleet confirmation identity to the current UNKNOWN episode and reject delayed prior-episode confirmations.",
-      "ack_artifact_id": 10345776447,
-      "next_gate": "first real code/test Evidence -> C14 -> C13"
-    },
-    {
-      "cell": "C06",
-      "status": "BLOCKED_EXTERNAL",
-      "task": "V70-R3-C06-01",
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "blocker": "Authorized supplier validity-policy data/evidence and provenance are not available.",
-      "unlock_condition": "Provide authorized supplier policy data and provenance suitable for import testing."
-    },
-    {
-      "cell": "C07",
-      "status": "ASSIGNED_NO_ACK",
-      "task": "V70-R3-C07-01",
-      "issue": 95,
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "description": "Explicit preferences, purpose/context integrity and cross-journey consistency while preserving inherited consent-withdrawal/process-durability guarantees.",
-      "inherit": ["evidence/v70-next-depth-20260914/c07/REPORT.md", "prior C07 PostgreSQL recovery PASS"],
-      "next_gate": "original source-bound ACK/start required before RUNNING"
-    },
-    {
-      "cell": "C08",
-      "status": "RUNNING",
-      "task": "V70-R3-C08-01",
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "description": "Durable execution ownership/lease and complete checkpoint contract without automatic model replay.",
-      "ack_artifact_id": 10345845568,
-      "next_gate": "first real code/test Evidence -> C14 -> C13"
-    },
-    {
-      "cell": "C09",
-      "status": "RUNNING",
-      "task": "V70-R3-C09-01",
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "description": "Post-commit judgment-event/outbox interruption closure without duplicate publication.",
-      "ack_artifact_id": 10344694777,
-      "next_gate": "first real code/test Evidence -> C14 -> C13"
-    },
-    {
-      "cell": "C10",
-      "status": "RUNNING",
-      "task": "V70-R3-C10-01",
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "description": "Bound Journey list memory/result size with pagination and verify PostgreSQL query plans.",
-      "ack_artifact_id": 10344959179,
-      "constraint": "No PostgreSQL EXPLAIN claim without fresh isolated-PG Evidence.",
-      "next_gate": "first real code/test Evidence -> C14 -> C13"
-    },
-    {
-      "cell": "C11",
-      "status": "RUNNING",
-      "task": "V70-R3-C11-01",
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "description": "Supplier-resolution commit interruption for the two keyed flight operations; other callbacks remain outside this finite task.",
-      "ack_artifact_id": 10345402737,
-      "next_gate": "first real code/test Evidence -> C14 -> C13"
-    },
-    {
-      "cell": "C12",
-      "status": "RUNNING",
-      "task": "V70-R3-C12-01",
-      "source_anchor": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-      "description": "Durable worker identity/liveness, heartbeat expiry and stale-RUNNING handling.",
-      "ack_artifact_id": 10344629950,
-      "next_gate": "first real code/test Evidence -> C14 -> C13"
-    },
-    {
-      "cell": "C13",
-      "status": "TRIGGER_ARMED",
-      "task": null,
-      "trigger": "ANY_NEW_FIXED_CELL_CANDIDATE_AFTER_C14_PASS",
-      "description": "Independent source-bound acceptance; do not wait for other Cells."
-    },
-    {
-      "cell": "C14",
-      "status": "TRIGGER_ARMED",
-      "task": null,
-      "trigger": "ANY_NEW_FIXED_CELL_CANDIDATE",
-      "description": "Source/authority gate; activates immediately when any Cell forms a fixed candidate, before C13."
-    }
+    {"cell":"C01","status":"RUNNING_PROBE","task":"V70-R3-C01-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","evidence":"run 34868892286 attempt 6 job 104237190737","next_gate":"If code + regression test + Frozen Evidence form, promote immediately to C14 then independent C13."},
+    {"cell":"C02","status":"BLOCKED_BILLING","task":"V70-R3-C02-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","blocker":"OpenAI API credits unavailable after real ACK/start.","unlock_condition":"Restore API credits; rerun existing finite task without redoing inherited PASS."},
+    {"cell":"C03","status":"BLOCKED_BILLING","task":"V70-R3-C03-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","blocker":"OpenAI API credits unavailable after real ACK/start.","constraint":"Existing scoped PostgreSQL PASS is inherited; fresh R3 scope still owes code/test Evidence."},
+    {"cell":"C04","status":"BLOCKED_BILLING","task":"V70-R3-C04-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","evidence":"run 34868892286 attempt 6 job 104237191281","blocker":"Codex returned no credits remaining.","unlock_condition":"Restore API credits."},
+    {"cell":"C05","status":"BLOCKED_BILLING","task":"V70-R3-C05-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","blocker":"OpenAI API credits unavailable after real ACK/start."},
+    {"cell":"C06","status":"BLOCKED_EXTERNAL","task":"V70-R3-C06-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","blocker":"Authorized supplier validity-policy data/evidence and provenance are unavailable.","unlock_condition":"Provide authorized supplier policy data and provenance suitable for import testing."},
+    {"cell":"C07","status":"BLOCKED_BILLING","task":"V70-R3-C07-01","issue":95,"source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","evidence":"Later runner attempts supersede the old ASSIGNED_NO_ACK state; source-bound ACK/start exists.","blocker":"OpenAI API credits unavailable before code/test Evidence."},
+    {"cell":"C08","status":"BLOCKED_BILLING","task":"V70-R3-C08-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","blocker":"OpenAI API credits unavailable after real ACK/start."},
+    {"cell":"C09","status":"BLOCKED_BILLING","task":"V70-R3-C09-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","blocker":"OpenAI API credits unavailable after real ACK/start.","constraint":"Historical scoped runtime/PostgreSQL PASS remains inherited only."},
+    {"cell":"C10","status":"BLOCKED_BILLING","task":"V70-R3-C10-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","blocker":"OpenAI API credits unavailable after real ACK/start.","constraint":"No fresh PostgreSQL EXPLAIN/load claim without new Evidence."},
+    {"cell":"C11","status":"BLOCKED_BILLING","task":"V70-R3-C11-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","blocker":"OpenAI API credits unavailable after real ACK/start.","constraint":"Existing C11 PostgreSQL 10/10 and 0134 evidence are preserved but do not close this R3 task."},
+    {"cell":"C12","status":"BLOCKED_BILLING","task":"V70-R3-C12-01","source_anchor":"8ffcde66d36c1bbf849218529ef015f6e81725af","blocker":"OpenAI API credits unavailable after real ACK/start."},
+    {"cell":"C13","status":"TRIGGER_ARMED","task":null,"trigger":"ANY_NEW_FIXED_CELL_CANDIDATE_AFTER_C14_PASS","description":"Independent source-bound acceptance; do not wait for other Cells."},
+    {"cell":"C14","status":"TRIGGER_ARMED","task":null,"trigger":"ANY_NEW_FIXED_CELL_CANDIDATE","description":"Source/authority gate; activates immediately when any Cell forms a fixed candidate."}
   ],
   "scheduler_summary": {
-    "running": ["C01", "C02", "C03", "C04", "C05", "C08", "C09", "C10", "C11", "C12"],
-    "assigned_no_ack": ["C07"],
+    "running_probe": ["C01"],
+    "blocked_billing": ["C02","C03","C04","C05","C07","C08","C09","C10","C11","C12"],
     "blocked_external": ["C06"],
-    "trigger_armed": ["C13", "C14"],
+    "trigger_armed": ["C13","C14"],
     "scheduler_fail_cells": [],
-    "rule": "A RUNNING Cell that forms a complete finite candidate proceeds immediately to C14 then independent C13; no cross-Cell waiting. DONE_SCOPED with another executable gap requires immediate successor dispatch."
+    "done_without_successor": [],
+    "rule": "Assignment is not execution proof. A complete finite candidate proceeds immediately to C14 then independent C13. Existing PASS is inherited and must not be redone merely to create activity."
   }
 }
