@@ -137,3 +137,9 @@
 
 /* DEPTH26: one precise mark for supplier and administrator surfaces. */
 .go-brand-lockup img{display:block;width:190px;height:48px;object-fit:contain;object-position:left center}.go-login-mark{display:block;margin:0 0 24px;width:98px;height:48px;object-fit:contain}
+
+/* AOLUGUYA Golden recovery: keep anomaly facts readable on narrow mobile viewports. */
+.factory-anomaly-row{display:grid;grid-template-columns:minmax(72px,max-content) minmax(0,1fr);align-items:start;gap:12px}
+.factory-anomaly-row span,.factory-anomaly-row b{min-width:0;white-space:normal}
+.factory-anomaly-row b{overflow-wrap:anywhere;word-break:break-word;text-align:right;line-height:1.45}
+@media(max-width:620px){.factory-anomaly-row{grid-template-columns:76px minmax(0,1fr);padding:13px 14px}.factory-anomaly-row b{font-size:14px}.table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
