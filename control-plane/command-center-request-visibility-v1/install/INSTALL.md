@@ -154,3 +154,46 @@ a copy of the store.
 It was closed by the state-publication install; see that component's `INSTALL.md`.
 This file's note that phase 2 "is not installed" describes the state at the time
 of the phase-1 install and is kept as the record of it.
+
+
+## 2026-09-15 — an unsettled Request is reported (REQUEST_CREATED)
+
+```text
+WHY      The exporter's own docstring promised REQUEST_CREATED for a non-terminal
+         Bridge record and the projection already ranked it, but the exporter
+         refused to mint it, so an in-flight Request produced no fact at all.
+WHAT     A non-terminal ledger state (claiming / prepared / publishing) now mints
+         REQUEST_CREATED when the Request identity resolves. It claims nothing:
+         claimed=false, proof_required=false, NO task_id, no reason, rank 0.
+         An unknown ledger status is still refused.
+FILES    command-center/go-request-fact-export
+         contracts/request_fact_v1.schema.json  (unchanged this round)
+         /opt/go-command-center/state-publication-v1/projection/state_projection.py
+         /opt/go-command-center/state-publication-v1/installed.json (integrity)
+HASHES   exporter   fb89272efb5ad0b7c4fed78975ddf4df9eda8bafc04ad90de1002739773462a1
+                    -> 1e984c03ff9c59a06aff887eeeefbb9c4b328b23f14bd1df5e32c5420880236c
+         projector  c3cb6448754203b42bc7e0da0809cc5e6495dd1d454f69caa99806a5a50efaa8
+                    -> 15111da6f0224aafe1278cc0df09f5f922e3601da4ac670cdc8baab550162561
+         contract   3275e452ce207c28810a3c2f1fd869acf0e4afd3bd5ab7a922faa49a3e359a52
+                    (unchanged)
+BACKUP   /var/backups/CC-CHANGE-20260915T150835Z-unsettled-request/*.before
+STATE    both timers stopped for the bounded window, then active/enabled
+SMOKE    installed exporter selftest PASS on the host
+         live cycle: OK, projector_integrity OK, fact store 75 files unchanged
+         (no live ledger record was in a non-terminal state at install time, so
+         the new path was proved on the host in an isolated directory instead:
+         /tmp/ccv120/proof.py, installed exporter -> installed projector)
+PROOF    phase 1  instance publishing  -> exporter mints REQUEST_CREATED@T1,
+                                          claimed=false, task_id=NULL, reason=NULL;
+                                          projector: lifecycle REQUEST_CREATED,
+                                          source BRIDGE_FACT,
+                                          fate NOT_SETTLED_BY_BRIDGE, no anomaly
+         phase 2  instance published   -> two semantic facts, CREATED@T1 and
+                                          VALIDATED@T2, collapsed=0, the earlier
+                                          one untouched; the uncorroborated claim
+                                          is reported ACCEPTANCE_CLAIMED_BUT_UNPROVEN
+         live store untouched: 75 files before and after
+ROLLBACK disable --now both timers, restore the three files from
+         /var/backups/CC-CHANGE-20260915T150835Z-unsettled-request/, restore
+         installed.json's projector_sha256 with them, daemon-reload. Facts already
+         written are valid under both rules and are left alone.
