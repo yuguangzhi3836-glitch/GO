@@ -1,0 +1,261 @@
+name: C01 bounded runner repair
+
+on:
+  push:
+    branches:
+      - ops/c01-runner-repair-20260915
+    paths:
+      - .github/workflows/c01-bounded-runner-repair.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: c01-bounded-runner-repair
+  cancel-in-progress: true
+
+env:
+  BASE_SHA: 626af1b818ac00534bf933ed61f9954fc7efe362
+  EXPECTED_APPLICATION_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+  TASK_ID: V70-R3-C01-01-RUNNER-REPAIR
+  PYTHONPATH: application/src:application
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: go_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d go_test" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      REDIS_URL: redis://127.0.0.1:6379/0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Pin canonical source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$BASE_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install and prove inherited C01 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip >/dev/null
+          python -m pip install -e 'application[dev]' >/dev/null
+          cd application
+          python -m pytest -q tests/test_v70_next_c01_unknown_funding.py
+
+  agent:
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Pin canonical source and build bounded prompt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard "$BASE_SHA"
+          git clean -fdx
+          test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE"
+          cat > "$RUNNER_TEMP/C01_PROMPT.md" <<'EOF'
+          GO V7.0 C01 bounded code task. This run exists to validate the repaired C01 code-modifying runner while closing one real, small C01 hotel-funds integrity gap.
+
+          HARD BOUNDARY
+          - Working directory is application/.
+          - Inspect only these existing files unless a directly imported helper is strictly necessary:
+            1) src/go_hotel/services/hosted_money.py
+            2) src/go_hotel/services/hosted_credit_value.py
+            3) src/go_hotel/services/alipay_safeguarded_settlement.py
+            4) tests/test_v70_next_c01_unknown_funding.py
+          - Do not scan the repository, git history, ../evidence, ../deliverables, ../hk-staging, ../docs, ../ci or unrelated tests.
+          - Modify only src/go_hotel/services/*.py and tests/test_v70*_c01*.py.
+          - Never modify migrations, workflows, deployment, governance, secrets or evidence history.
+          - Do not commit, push, open PRs or deploy.
+
+          OBJECTIVE
+          Find exactly one concrete next executable gap adjacent to the already-PASS mixed cash/credit unknown-funding invariant. Add one focused regression test and the smallest safe implementation fix. Preserve fail-closed behavior: unknown or contradictory money facts must never create a second charge, state repair, invented external confirmation, or unauthorized settlement.
+
+          EXECUTION BUDGET
+          - Keep the change small: ideally 1 implementation file + 1 test file.
+          - Do not run the test suite in this AI job; deterministic validation runs in a separate clean job with PostgreSQL and Redis.
+          - If no real bounded gap is supported by the allowed files, do not invent work. Leave the tree unchanged and final-answer exactly BOUNDED_NO_GAP.
+          - Otherwise final answer must contain only: GAP=<short>; FILES=<comma-separated>; TEST=<test name>.
+          EOF
+      - name: Run bounded C01 Codex editor
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ':workspace'
+          safety-strategy: drop-sudo
+          working-directory: application
+          model: gpt-5.6-sol
+          effort: medium
+          prompt-file: ${{ runner.temp }}/C01_PROMPT.md
+          output-file: ${{ runner.temp }}/C01_FINAL.txt
+      - name: Freeze bounded patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/c01"
+          cp "$RUNNER_TEMP/C01_FINAL.txt" "$RUNNER_TEMP/c01/C01_FINAL.txt"
+          { git diff --name-only "$BASE_SHA"; git ls-files --others --exclude-standard; } | sed '/^$/d' | sort -u > "$RUNNER_TEMP/c01/CHANGED_FILES.txt"
+          if [ ! -s "$RUNNER_TEMP/c01/CHANGED_FILES.txt" ]; then
+            cat "$RUNNER_TEMP/c01/C01_FINAL.txt"
+            echo 'C01_BOUNDED_NO_DIFF' >&2
+            exit 42
+          fi
+          python - <<'PY'
+          import os,pathlib,sys
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'c01'/'CHANGED_FILES.txt'
+          paths=[x for x in p.read_text().splitlines() if x]
+          ok=[]
+          for x in paths:
+              if x in {
+                  'application/src/go_hotel/services/hosted_money.py',
+                  'application/src/go_hotel/services/hosted_credit_value.py',
+                  'application/src/go_hotel/services/alipay_safeguarded_settlement.py',
+              } or (x.startswith('application/tests/test_v70') and '_c01' in x and x.endswith('.py')):
+                  ok.append(x)
+          bad=sorted(set(paths)-set(ok))
+          if bad:
+              print('OUT_OF_SCOPE='+','.join(bad),file=sys.stderr); raise SystemExit(31)
+          if not any(x.startswith('application/src/') for x in paths): raise SystemExit('NO_IMPLEMENTATION_DIFF')
+          if not any(x.startswith('application/tests/') for x in paths): raise SystemExit('NO_REGRESSION_TEST_DIFF')
+          PY
+          while IFS= read -r p; do git ls-files --error-unmatch "$p" >/dev/null 2>&1 || git add -N -- "$p"; done < "$RUNNER_TEMP/c01/CHANGED_FILES.txt"
+          git diff --binary --full-index "$BASE_SHA" > "$RUNNER_TEMP/c01/CANDIDATE.patch"
+          test -s "$RUNNER_TEMP/c01/CANDIDATE.patch"
+          sha256sum "$RUNNER_TEMP/c01/CANDIDATE.patch" > "$RUNNER_TEMP/c01/CANDIDATE.patch.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c01-bounded-agent
+          path: ${{ runner.temp }}/c01
+          if-no-files-found: error
+          retention-days: 30
+
+  validate:
+    needs: agent
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: go_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d go_test" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/go_test
+      REDIS_URL: redis://127.0.0.1:6379/0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BASE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-bounded-agent
+          path: candidate-input
+      - name: Verify and apply exact patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$EXPECTED_APPLICATION_TREE"
+          sha256sum -c candidate-input/CANDIDATE.patch.sha256
+          git apply --index --binary candidate-input/CANDIDATE.patch
+          git diff --cached --name-only | sort > actual.txt
+          sort candidate-input/CHANGED_FILES.txt > expected.txt
+          diff -u expected.txt actual.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run inherited plus changed C01 tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip >/dev/null
+          python -m pip install -e 'application[dev]' >/dev/null
+          changed_tests=$(grep '^application/tests/.*\.py$' candidate-input/CHANGED_FILES.txt || true)
+          cd application
+          args=(tests/test_v70_next_c01_unknown_funding.py)
+          while IFS= read -r p; do
+            [ -z "$p" ] && continue
+            rel=${p#application/}
+            [ "$rel" = 'tests/test_v70_next_c01_unknown_funding.py' ] || args+=("$rel")
+          done <<< "$changed_tests"
+          python -m pytest -q "${args[@]}" 2>&1 | tee "$RUNNER_TEMP/C01_TESTS.log"
+      - name: Freeze runner-repair evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence-out
+          cp candidate-input/CHANGED_FILES.txt candidate-input/CANDIDATE.patch candidate-input/CANDIDATE.patch.sha256 evidence-out/
+          cp "$RUNNER_TEMP/C01_TESTS.log" evidence-out/TESTS.log
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess,datetime
+          out=pathlib.Path('evidence-out')
+          data={
+            'schema':'go.v70.r3.c01-runner-repair.v1',
+            'task_id':os.environ['TASK_ID'],
+            'repository_base_sha':os.environ['BASE_SHA'],
+            'application_tree_before':os.environ['EXPECTED_APPLICATION_TREE'],
+            'changed_files':[x for x in (out/'CHANGED_FILES.txt').read_text().splitlines() if x],
+            'patch_sha256':hashlib.sha256((out/'CANDIDATE.patch').read_bytes()).hexdigest(),
+            'test_log_sha256':hashlib.sha256((out/'TESTS.log').read_bytes()).hexdigest(),
+            'status':'C01_RUNNER_REPAIRED_AGENT_AND_VALIDATION_PASS',
+            'candidate_sha':None,
+            'c14':'NOT_RUN_IN_REPAIR_VALIDATION',
+            'c13':'HOLD',
+            'final_release':'HOLD','hk_deploy':'HOLD','production':'HOLD',
+            'created_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+          }
+          raw=(json.dumps(data,indent=2)+'\n').encode(); (out/'EVIDENCE.json').write_bytes(raw)
+          (out/'EVIDENCE.sha256').write_text(hashlib.sha256(raw).hexdigest()+'  EVIDENCE.json\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c01-runner-repair-evidence
+          path: evidence-out
+          if-no-files-found: error
+          retention-days: 90
