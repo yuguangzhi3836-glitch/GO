@@ -72,7 +72,7 @@ A repository migration that has not been executed is not the live database revis
 - Both workstations are operated by Eason. A branch is not owned by a workstation merely because it was created there.
 - Before continuing work on either workstation, verify repository, branch, HEAD, working-tree state, and remote state. Never assume uncommitted state from the other workstation exists locally.
 
-Workstation roles, access channels, and verified connection state are recorded in `docs/project/OPERATING_CONTEXT.md` (section 「服务器访问通道」). PR #49's proposed runbook was never merged and is **not present** on canonical main — do not quote it as repository fact.
+Workstation roles and the current access-channel state are recorded in `docs/project/OPERATING_CONTEXT.md` (section 「服务器访问通道」). The detailed per-identity inventory and recovery commands are on canonical main at `docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md`, with the machine-readable form in `docs/control-plane/access/connection-identities.v1.json`.
 
 ### Product-lineage rule
 

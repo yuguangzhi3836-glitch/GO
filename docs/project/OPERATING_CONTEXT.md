@@ -136,6 +136,8 @@ WorkBuddy 同样受 Git 状态、项目文档、Runbook 和人工授权约束。
 更详细的连接方式、身份、恢复命令和已验证状态请看：
 
 - 本节「服务器访问通道（当前已验证状态）」
+- `docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md`（详细层：每个身份的指纹、用途与恢复命令）
+- `docs/control-plane/access/connection-identities.v1.json`（机器可读的通道与身份清单）
 - `CODEBUDDY.md`（WorkBuddy / CodeBuddy 在本仓库的操作约定）
 
 ### 服务器访问通道（当前已验证状态）

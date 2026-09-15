@@ -13,6 +13,7 @@ Truth classes: `CURRENT_MAIN_FACT` · `ACTIVE_CANDIDATE` · `UNKNOWN / HOLD / BL
 - HK deploy capability closeout is recorded in the repository: `docs/control-plane/PR51_DEPLOY_CAPABILITY_CLOSEOUT_20260913.md`.
 - Documentation, repository access, or the ability to execute commands does not itself grant deployment/runtime authority.
 - The presence of Control Plane code in a merged PR does **not** mean the corresponding capability is installed on any host. Installed state must be read from the live host, not from Git.
+- The control-plane connection/identity documentation is on canonical main: `docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md` (narrative runbook) and `docs/control-plane/access/connection-identities.v1.json` (machine-readable inventory). Both are metadata-only — they record paths, fingerprints and mechanisms, and no secret value.
 
 ## CURRENT OPERATING BOUNDARY
 
@@ -27,7 +28,6 @@ For Command Center work, use the current Command Center sources identified by `A
 
 ## ACTIVE CANDIDATES
 
-- PR #49 is a **closed, unmerged** control-plane connection/identity documentation candidate. The runbook it proposes (`docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md`) is **not present** on canonical main and must not be quoted as repository fact. The current access-channel state is recorded in `docs/project/OPERATING_CONTEXT.md` (section "服务器访问通道").
 - PR #78, #89, #90 and #91 are open Draft operations/evidence candidates (`ASSIGNED_NO_ACK` dispatch, pointer rebind, runner canary, R3 worker ACK). Their internal claims are candidates.
 - Other open governance/control-plane PRs exist; a higher PR number does not make them canonical.
 
@@ -44,6 +44,8 @@ For Command Center work, use the current Command Center sources identified by `A
 - `AGENTS.md`
 - `GO_REPOSITORY_INDEX.md`
 - `docs/project/OPERATING_CONTEXT.md`
+- `docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md`
+- `docs/control-plane/access/connection-identities.v1.json`
 - `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`
 - `docs/control-plane/PR51_DEPLOY_CAPABILITY_CLOSEOUT_20260913.md`
 - `docs/control-plane/hk-staging/README.md`

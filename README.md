@@ -69,7 +69,7 @@ It defines the current human / AI / workstation responsibilities:
 
 Both fixed workstations are operated by Eason. A workstation or AI agent does not independently own a branch, decide product direction, or gain deployment authority merely because it can execute commands.
 
-Access channels and verified connection state are recorded in [OPERATING_CONTEXT.md](docs/project/OPERATING_CONTEXT.md) (section 「服务器访问通道」). PR #49's runbook was never merged and is not present on canonical main.
+Access channels and verified connection state are recorded in [OPERATING_CONTEXT.md](docs/project/OPERATING_CONTEXT.md) (section 「服务器访问通道」), with the detailed identity inventory and recovery commands in [CONNECTION_AND_IDENTITY_RUNBOOK.md](docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md).
 
 ## Important: PR numbers are not DEPTH numbers
 
