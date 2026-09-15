@@ -1,0 +1,49 @@
+name: C01 Codex Action Smoke
+
+on:
+  push:
+    branches:
+      - ops/c01-runner-repair-20260915
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare tiny workspace task
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runner-probe
+          printf 'C01_RUNNER_PROBE=PENDING\n' > runner-probe/result.txt
+          cat > "$RUNNER_TEMP/c01-smoke-prompt.md" <<'EOF'
+          This is an isolated runner smoke test, not product development.
+          Do exactly one filesystem edit and stop:
+          replace the entire contents of runner-probe/result.txt with exactly:
+          C01_RUNNER_PROBE=PASS
+          Do not inspect the repository, do not run tests, do not modify any other file, do not commit or push.
+          Final response must be exactly: DONE
+          EOF
+      - name: Run minimal Codex action
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ':workspace'
+          safety-strategy: drop-sudo
+          model: gpt-5.6-sol
+          effort: low
+          prompt-file: ${{ runner.temp }}/c01-smoke-prompt.md
+          output-file: ${{ runner.temp }}/c01-smoke-final.txt
+      - name: Verify exact runner result
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat runner-probe/result.txt)" = 'C01_RUNNER_PROBE=PASS'
+          grep -qx 'DONE' "$RUNNER_TEMP/c01-smoke-final.txt"
