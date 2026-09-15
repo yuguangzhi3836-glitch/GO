@@ -14,6 +14,7 @@ import importlib.machinery
 import importlib.util
 import json
 import pathlib
+import re
 import sys
 import tempfile
 import unittest
@@ -26,6 +27,69 @@ sp = importlib.util.module_from_spec(spec)
 loader.exec_module(sp)
 
 AT = sp.parse_time("2026-09-14T12:00:00Z")
+
+
+# --------------------------------------------------------------------------- #
+# The sibling Deploy Readiness evaluator, loaded for real
+#
+# This component used to be pinned only against a document built from its own
+# DEPLOY_READINESS_GATES constant, so the two sides could disagree while every
+# test here still passed. They did: the evaluator made every gate mandatory and
+# added LIVE_SWITCH_PROVENANCE and BRIDGE_ACCEPTANCE, and the projector went on
+# refusing the real document with DEPLOY_READINESS_UNREADABLE. The tests below
+# therefore load the real evaluator and the evaluator's own fixture builder --
+# neither of which knows this file's constants -- and pin the contract from the
+# outside instead of from a copy of itself.
+# --------------------------------------------------------------------------- #
+READINESS_COMPONENT = ROOT.parent / "command-center-deploy-readiness-v1"
+READINESS_EVALUATOR = READINESS_COMPONENT / "command-center" / "go-deploy-readiness"
+READINESS_FIXTURES = READINESS_COMPONENT / "tests" / "test_deploy_readiness.py"
+_SIBLINGS = {}
+
+
+def sibling(name, path):
+    """Load a sibling component module on demand, with a usable failure message.
+
+    Loaded lazily so a copy of this component without its sibling reports one
+    clear error instead of an import-time crash naming no test.
+    """
+    if name not in _SIBLINGS:
+        if not path.is_file():
+            raise AssertionError(
+                "%s is missing at %s. This test pins two components against each other on "
+                "purpose, so it cannot run against a copy of only one of them." % (name, path))
+        loader = importlib.machinery.SourceFileLoader("sibling_" + name, str(path))
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        _SIBLINGS[name] = module
+    return _SIBLINGS[name]
+
+
+def real_evaluator():
+    """The real go-deploy-readiness module, not a description of it."""
+    return sibling("readiness", READINESS_EVALUATOR)
+
+
+def real_readiness_fixture():
+    """The evaluator's own fixture builder -- the authoritative input constructor."""
+    return sibling("readiness_fixture", READINESS_FIXTURES)
+
+
+def evaluator_gate_blocks():
+    """The evaluator's gate tuples as its source declares them.
+
+    Read from the source rather than imported, so a gate the evaluator adds or
+    removes is visible here even when it keeps exporting the same names.
+    """
+    source = READINESS_EVALUATOR.read_text(encoding="utf-8")
+    blocks = {}
+    for name in ("MANDATORY_GATES", "ADVISORY_GATES"):
+        match = re.search(r"^%s = \(([^)]*)\)" % name, source, re.M)
+        if match is None:
+            raise AssertionError("the evaluator no longer declares %s" % name)
+        blocks[name] = tuple(re.findall(r'"([A-Z_]+)"', match.group(1)))
+    return blocks
 
 
 # --------------------------------------------------------------------------- #
@@ -200,7 +264,7 @@ def build(root, req_dir=None, task_pub=None, evidence_pub=None, go_repo=None, at
     } | ({"roles:IDENTITY_COLLISION"} if not separated else set()))
     options = {
         "stale_seconds": flags.pop("stale_seconds", 86400),
-        "liveness_window": flags.pop("liveness_window", 1800),
+        "liveness_window": flags.pop("liveness_window", sp.LIVENESS_FRESHNESS_WINDOW_SECONDS),
         "verification_window": flags.pop("verification_window", 86400),
         "stuck_after": flags.pop("stuck_after", 900),
         "recent_window": flags.pop("recent_window", 604800),
@@ -909,6 +973,113 @@ class LivenessTests(unittest.TestCase):
         self.assertEqual(state["control_state"]["hk_agent_liveness"]["state"], sp.STATE_UNKNOWN)
 
 
+class LivenessWindowTests(unittest.TestCase):
+    """P1: the freshness window carries transport margin over the probe interval.
+
+    A probe issued exactly on schedule still has to travel GitHub -> Bridge ->
+    Hong Kong -> Evidence -> Projection before it can be read here. A window
+    equal to the interval would declare the agent stale for the whole time its
+    own Evidence is in flight, which is a mis-report, not caution. The grace is
+    delivery slack and nothing else: every answer below still requires
+    signature-verified Evidence, and nothing infers liveness from a transport
+    success.
+    """
+
+    def proven_at(self, seconds):
+        """A signature-verified probe whose Evidence is exactly `seconds` old."""
+        task_key, task_pub = key_pair("cc-task")
+        evidence_key, evidence_pub = key_pair("hk-evidence")
+        # issued 42 minutes before AT, so a probe 2399 s old is still after issue.
+        tk, ev = health_pair(41, completed_at=sp.iso(AT - dt.timedelta(seconds=seconds)))
+        return build(*layout(tasks=[("h.json", sign(tk, task_key, "hex"))],
+                             evidences=[("he.json", sign(ev, evidence_key, "base64"))]),
+                     task_pub=task_pub, evidence_pub=evidence_pub)
+
+    def test_the_window_is_the_interval_plus_the_transport_grace(self):
+        self.assertEqual(sp.LIVENESS_PROBE_INTERVAL_SECONDS, 1800)
+        self.assertEqual(sp.LIVENESS_TRANSPORT_GRACE_SECONDS, 600)
+        self.assertEqual(sp.LIVENESS_FRESHNESS_WINDOW_SECONDS, 2400)
+        self.assertEqual(sp.LIVENESS_FRESHNESS_WINDOW_SECONDS,
+                         sp.LIVENESS_PROBE_INTERVAL_SECONDS + sp.LIVENESS_TRANSPORT_GRACE_SECONDS)
+        # Neither the cadence nor the daily budget is raised to buy freshness.
+        self.assertEqual(sp.LIVENESS_MAX_PROBES_PER_24H, 48)
+
+    def test_the_window_is_reported_so_a_reader_can_see_the_margin(self):
+        state = project(*layout())
+        freshness = state["freshness"]
+        self.assertEqual(freshness["liveness_window_seconds"], 2400)
+        self.assertEqual(freshness["liveness_probe_interval_seconds"], 1800)
+        self.assertEqual(freshness["liveness_transport_grace_seconds"], 600)
+        self.assertEqual(freshness["liveness_max_probes_per_24h"], 48)
+
+    def test_2399_seconds_is_still_proven(self):
+        _, state, status = self.proven_at(2399)
+        liveness = state["control_state"]["hk_agent_liveness"]
+        self.assertEqual(liveness["state"], sp.STATE_PROVEN)
+        self.assertEqual(liveness["value"]["age_seconds"], 2399)
+        self.assertEqual(status["answers"]["hk_agent_online"]["state"], sp.STATE_PROVEN)
+
+    def test_2401_seconds_is_not_online(self):
+        _, state, status = self.proven_at(2401)
+        liveness = state["control_state"]["hk_agent_liveness"]
+        self.assertEqual(liveness["state"], sp.STATE_UNKNOWN)
+        self.assertIsNone(liveness["value"])
+        self.assertEqual(liveness["age_seconds"], 2401)
+        self.assertEqual(status["answers"]["hk_agent_online"]["state"], sp.STATE_UNKNOWN)
+        # The margin does not lose the observation: last_seen is still reported.
+        self.assertEqual(liveness["last_seen"]["hostname"], "iZj6ccs8t04f1p4d8pe69zZ")
+        # And activity, which is a different question, is still answered.
+        self.assertEqual(state["control_state"]["hk_agent_last_activity"]["state"],
+                         sp.STATE_PROVEN)
+
+    def test_a_transport_success_alone_is_never_online(self):
+        """SSH success, an HTTP 200 and a past Task success are all absent here.
+
+        The projector has no SSH client, no HTTP client and no socket: the only
+        inputs it is given are the signed Tasks, the signed Evidence and the
+        Request files on the control bus. A fresh successful VERIFY, a fresh
+        successful TEST_PR and a fresh runtime pointer therefore leave liveness
+        exactly where it was.
+        """
+        task_key, task_pub = key_pair("cc-task")
+        evidence_key, evidence_pub = key_pair("hk-evidence")
+        verify_task = task()
+        test_pr = task(action="HK_STAGING_TEST_PR", task_id="test-pr-52",
+                       parameters={"builder_profile": "go-application-python-v1",
+                                   "source": {"repository": "yuguangzhi3836-glitch/GO",
+                                              "pr_number": "52",
+                                              # the real PR 52 head, so the fixture is a
+                                              # fixture of something that exists
+                                              "commit_sha": "bd25d7acca1b5f54a7fb555008ed60b76ee45f21"}})
+        # Inside each task's own validity window, which opens 30 minutes before AT.
+        stamp = sp.iso(AT - dt.timedelta(minutes=20))
+        evidences = [("v.json", sign(evidence(verify_task, executor_result="VERIFY_OK",
+                                              started_at=stamp, completed_at=stamp),
+                                     evidence_key, "base64")),
+                     ("p.json", sign(evidence(test_pr, executor_result="TEST_PR_OK",
+                                              started_at=stamp, completed_at=stamp),
+                                     evidence_key, "base64"))]
+        tasks = [("v.json", sign(verify_task, task_key, "hex")),
+                 ("p.json", sign(test_pr, task_key, "hex"))]
+        _, state, status = build(*layout(tasks=tasks, evidences=evidences),
+                                 task_pub=task_pub, evidence_pub=evidence_pub)
+        # The strongest non-liveness signals available are present and fresh...
+        self.assertIn(state["control_state"]["verify_status"]["state"],
+                      (sp.STATE_OBSERVED, sp.STATE_PROVEN))
+        self.assertIn(state["control_state"]["test_pr_status"]["state"],
+                      (sp.STATE_OBSERVED, sp.STATE_PROVEN))
+        # ...and liveness has not moved, because none of them is liveness Evidence.
+        self.assertEqual(state["control_state"]["hk_agent_liveness"]["state"], sp.STATE_UNKNOWN)
+        self.assertEqual(status["answers"]["hk_agent_online"]["state"], sp.STATE_UNKNOWN)
+
+    def test_only_signed_liveness_evidence_can_answer_the_online_question(self):
+        """An unverified probe is OBSERVED, never PROVEN, and never ONLINE."""
+        tk, ev = health_pair(1)
+        _, state, status = build(*layout(tasks=[("h.json", tk)], evidences=[("he.json", ev)]))
+        self.assertEqual(state["control_state"]["hk_agent_liveness"]["state"], sp.STATE_OBSERVED)
+        self.assertNotEqual(status["answers"]["hk_agent_online"]["state"], sp.STATE_PROVEN)
+
+
 # --------------------------------------------------------------------------- #
 class RuntimeSeparationTests(unittest.TestCase):
     DECLARED = "sha256:" + "d" * 64
@@ -1024,9 +1195,85 @@ class RequestChannelTests(unittest.TestCase):
         value.update(extra)
         return value
 
-    def test_only_verify_and_test_pr_are_enabled(self):
+    def test_a_health_request_cannot_carry_any_parameter(self):
+        # The platform action's request field set is the five common fields and
+        # nothing else, so there is no image, service, path or command to carry.
+        self.assertEqual(sp.REQUEST_EXTRA_FIELDS["CONTROL_PLANE_HEALTH"], set())
+        for extra in ("image_id", "candidate_image_id", "plan_id", "pr_number",
+                      "service", "path", "env", "command", "parameters"):
+            payload = self.request("CONTROL_PLANE_HEALTH")
+            payload[extra] = "x"
+            with self.assertRaises(sp.Malformed, msg=extra):
+                sp.validate_request(payload)
+
+    def test_a_health_request_in_the_wrong_environment_is_refused(self):
+        with self.assertRaises(sp.Malformed):
+            sp.validate_request(self.request("CONTROL_PLANE_HEALTH", environment="PRODUCTION"))
+
+    def test_an_unknown_action_is_still_refused(self):
+        for bogus in ("CONTROL_PLANE_HEALTH_V2", "HK_STAGING_ROLLBACK", "HK_STAGING_CANARY"):
+            with self.assertRaises(sp.Malformed, msg=bogus):
+                sp.validate_request(self.request(bogus))
+
+    def test_health_can_never_be_read_as_one_of_the_execution_actions(self):
+        """A platform probe is not a degraded VERIFY / TEST_PR / DEPLOY."""
+        for execution in ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY"):
+            self.assertNotEqual(sp.REQUEST_ACTION_SOURCE_CLASS["CONTROL_PLANE_HEALTH"],
+                                sp.REQUEST_ACTION_SOURCE_CLASS[execution])
+            self.assertNotEqual(sp.ACTION_PARAMETERS["CONTROL_PLANE_HEALTH"],
+                                sp.ACTION_PARAMETERS[execution])
+
+    def test_the_human_and_platform_classes_are_separate(self):
+        self.assertEqual(list(sp.HUMAN_REQUEST_ACTIONS),
+                         ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY"])
+        self.assertEqual(list(sp.PLATFORM_REQUEST_ACTIONS), ["CONTROL_PLANE_HEALTH"])
+        self.assertEqual(set(sp.HUMAN_REQUEST_ACTIONS) & set(sp.PLATFORM_REQUEST_ACTIONS), set())
+
+    def test_health_is_enabled_for_the_platform_class_and_never_for_the_human_one(self):
+        self.assertNotIn("CONTROL_PLANE_HEALTH", sp.ENABLED_HUMAN_REQUEST_ACTIONS)
+        self.assertIn("CONTROL_PLANE_HEALTH", sp.ENABLED_PLATFORM_REQUEST_ACTIONS)
         self.assertEqual(list(sp.ENABLED_REQUEST_ACTIONS),
-                         ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR"])
+                         ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "CONTROL_PLANE_HEALTH"])
+        # Expressing DEPLOY as a human Request is a different claim from the
+        # channel being able to create one; the switch is still off.
+        self.assertNotIn("HK_STAGING_DEPLOY", sp.ENABLED_REQUEST_ACTIONS)
+
+    def test_a_real_health_request_is_not_reported_as_forbidden(self):
+        root, req = layout(requests=[("h.json", self.request("CONTROL_PLANE_HEALTH"))])
+        state = project(root, req)
+        entry = state["requests"][0]
+        self.assertTrue(entry["requestable_by_current_channel"])
+        self.assertEqual(entry["request_source_class"], "PLATFORM_AUTOMATION")
+        self.assertFalse(entry["holding_execution_authority"])
+
+    def test_health_is_not_promoted_into_a_human_execution_right(self):
+        _, _, status = build(*layout())
+        channel = status["answers"]["request_channel"]
+        self.assertNotIn("CONTROL_PLANE_HEALTH", channel["human_request_actions"])
+        self.assertIn("CONTROL_PLANE_HEALTH", channel["platform_request_actions"])
+        self.assertEqual(channel["request_action_source_class"]["CONTROL_PLANE_HEALTH"],
+                         "PLATFORM_AUTOMATION")
+        properties = channel["platform_action_properties"]["CONTROL_PLANE_HEALTH"]
+        self.assertEqual(properties["source_class"], "PLATFORM_AUTOMATION")
+        self.assertEqual(properties["parameters"], {})
+        self.assertIs(properties["read_only"], True)
+        self.assertIs(properties["human_deploy_authority"], False)
+        self.assertEqual(channel["capability_classification"]["CONTROL_PLANE_HEALTH"],
+                         "SUPPORTED_PROVEN_PLATFORM_ONLY")
+        self.assertFalse(channel["deploy_request_enabled"])
+
+    def test_the_platform_properties_are_constants_not_read_from_a_request(self):
+        for action, properties in sp.PLATFORM_ACTION_PROPERTIES.items():
+            self.assertIn(action, sp.PLATFORM_REQUEST_ACTIONS)
+            self.assertEqual(properties["parameters"], {})
+            self.assertIs(properties["human_deploy_authority"], False)
+            self.assertIs(properties["read_only"], True)
+
+    def test_every_human_request_action_is_classified_as_human(self):
+        _, _, status = build(*layout())
+        source = status["answers"]["request_channel"]["request_action_source_class"]
+        for action in sp.HUMAN_REQUEST_ACTIONS:
+            self.assertEqual(source[action], "HUMAN_REQUEST", action)
 
     def test_deploy_is_a_known_capability_that_is_not_enabled(self):
         _, _, status = build(*layout())
@@ -1627,6 +1874,11 @@ class DeployReadinessTests(unittest.TestCase):
         self.evidence_key, self.evidence_pub = key_pair("hk-evidence")
 
     def document(self, deploy_ready="NO", gates=None, boundary=None, contract=None, **over):
+        # The gate list comes from the evaluator's own declaration, never from
+        # this component's constant: a fixture built from the reader's constant
+        # can never disagree with the reader, which is how the P0-1 regression
+        # stayed invisible.
+        evaluator_gates = evaluator_gate_blocks()["MANDATORY_GATES"]
         value = {
             "schema_version": "1",
             "contract": contract or sp.DEPLOY_READINESS_CONTRACT,
@@ -1635,19 +1887,19 @@ class DeployReadinessTests(unittest.TestCase):
             "generated_at": "2026-09-15T00:30:00Z",
             "as_of": "2026-09-15T00:30:00Z",
             "verdict": {"deploy_ready": deploy_ready, "reason": "synthetic",
-                        "mandatory_gates": len(sp.DEPLOY_READINESS_MANDATORY),
-                        "failed": ([g for g in sp.DEPLOY_READINESS_MANDATORY
+                        "mandatory_gates": len(evaluator_gates),
+                        "failed": ([g for g in evaluator_gates
                                     if g == "TEST_PR"] if deploy_ready == "NO" else []),
-                        "unknown": ([g for g in sp.DEPLOY_READINESS_MANDATORY
+                        "unknown": ([g for g in evaluator_gates
                                      if g == "LIVE_SWITCH"] if deploy_ready == "UNKNOWN" else []),
                         "advisory_failed": []},
             "gates": gates if gates is not None else [
-                {"gate": name, "mandatory": name in sp.DEPLOY_READINESS_MANDATORY,
+                {"gate": name, "mandatory": True,
                  "state": ("FAIL" if (name == "TEST_PR" and deploy_ready == "NO")
                            else "UNKNOWN" if (name == "LIVE_SWITCH" and deploy_ready == "UNKNOWN")
                            else "PASS"),
                  "reason": "synthetic %s" % name}
-                for name in sp.DEPLOY_READINESS_GATES],
+                for name in evaluator_gates],
             "blocking_reasons": [{"gate": "TEST_PR", "state": "FAIL", "reason": "synthetic"}]
             if deploy_ready == "NO" else [],
             "authority_boundary": dict(boundary or sp.DEPLOY_READINESS_BOUNDARY),
@@ -1957,6 +2209,156 @@ class FailureEvidenceTests(unittest.TestCase):
                       block["properties"]["reason_code"]["enum"])
         self.assertIn("AGENT_REJECT", block["properties"]["kind"]["enum"])
         self.assertIn("attempt_budget_exhausted", block["required"])
+
+
+# --------------------------------------------------------------------------- #
+# P0-1: the projector's gate set is the evaluator's gate set, and the real
+# evaluator's document is consumed by the real projector.
+#
+# Both halves used to be pinned only against documents built from this
+# component's own constants. That is a check that cannot fail: it compares a
+# constant with a fixture derived from it. When the evaluator made every gate
+# mandatory and added LIVE_SWITCH_PROVENANCE and BRIDGE_ACCEPTANCE, the
+# projector silently went on refusing the real document, and no test here
+# noticed. The tests below take their gate list from the evaluator's source and
+# their document from the evaluator's own run.
+# --------------------------------------------------------------------------- #
+class DeployReadinessContractTests(unittest.TestCase):
+    """The evaluator decides what a gate is; this side may only carry the verdict."""
+
+    def test_the_projector_carries_exactly_the_evaluators_mandatory_gates(self):
+        self.assertEqual(tuple(sp.DEPLOY_READINESS_GATES),
+                         evaluator_gate_blocks()["MANDATORY_GATES"])
+
+    def test_the_projector_has_no_advisory_gate_that_the_evaluator_dropped(self):
+        self.assertEqual(tuple(sp.DEPLOY_READINESS_ADVISORY_GATES),
+                         evaluator_gate_blocks()["ADVISORY_GATES"])
+
+    def test_the_evaluator_has_no_advisory_gate_left(self):
+        self.assertEqual(evaluator_gate_blocks()["ADVISORY_GATES"], ())
+
+    def test_canary_and_release_gates_are_mandatory_on_both_sides(self):
+        evaluator = evaluator_gate_blocks()["MANDATORY_GATES"]
+        for name in ("CANARY", "RELEASE_GATES"):
+            self.assertIn(name, evaluator)
+            self.assertIn(name, sp.DEPLOY_READINESS_MANDATORY)
+            self.assertNotIn(name, sp.DEPLOY_READINESS_ADVISORY_GATES)
+
+    def test_every_gate_the_projector_knows_is_mandatory(self):
+        self.assertEqual(set(sp.DEPLOY_READINESS_MANDATORY), set(sp.DEPLOY_READINESS_GATES))
+        self.assertEqual(len(sp.DEPLOY_READINESS_GATES), 13)
+
+
+class DeployReadinessIntegrationTests(unittest.TestCase):
+    """The real evaluator's DEPLOY_READINESS.json, read by the real projector.
+
+    No copy of the document is written here: the evaluator builds it from its own
+    authoritative inputs and this side only reads it. That is what makes the two
+    components pinned against each other instead of each against itself.
+    """
+
+    def produced(self, **fixture_flags):
+        """Run the real evaluator and place its document where the projector looks."""
+        fixture = real_readiness_fixture().Fixture(**fixture_flags)
+        document = fixture.evaluate()
+        path = fixture.go / sp.DEPLOY_READINESS_DOCUMENT
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(document, indent=2, sort_keys=True), encoding="utf-8")
+        return document, path
+
+    def load(self, path):
+        loaded = sp.Loaded()
+        sp.load_deploy_readiness(str(path), loaded)
+        return loaded
+
+    def test_a_gate_removed_from_the_document_is_refused_not_partially_quoted(self):
+        """This is what makes the drift guard bite rather than merely compare.
+
+        The reader requires the whole gate set, so a gate the evaluator adds and
+        the projector lacks does not degrade into a partial quotation -- the
+        document is refused outright. Together with the guard above, a gate added
+        on one side only fails CI here instead of silently mis-reading live state.
+        """
+        document, path = self.produced()
+        document["gates"] = [entry for entry in document["gates"]
+                             if entry["gate"] != "BRIDGE_ACCEPTANCE"]
+        path.write_text(json.dumps(document, indent=2, sort_keys=True), encoding="utf-8")
+        loaded = self.load(path)
+        self.assertIsNone(loaded.deploy_readiness)
+        self.assertEqual([a["kind"] for a in loaded.anomalies],
+                         ["DEPLOY_READINESS_UNREADABLE"])
+
+    def test_the_real_document_is_read_without_a_single_anomaly(self):
+        _, path = self.produced()
+        loaded = self.load(path)
+        self.assertEqual([a["kind"] for a in loaded.anomalies], [])
+        self.assertIsNotNone(loaded.deploy_readiness)
+
+    def test_the_real_gate_set_survives_the_contract_unchanged(self):
+        document, path = self.produced()
+        loaded = self.load(path)
+        carried = [entry["gate"] for entry in loaded.deploy_readiness["gates"]]
+        self.assertEqual(carried, [entry["gate"] for entry in document["gates"]])
+        self.assertEqual(carried, list(sp.DEPLOY_READINESS_GATES))
+        self.assertEqual(len(carried), document["verdict"]["mandatory_gates"])
+        self.assertEqual(len(carried), 13)
+
+    def test_every_gate_of_the_real_document_is_mandatory_here_too(self):
+        _, path = self.produced()
+        loaded = self.load(path)
+        self.assertTrue(loaded.deploy_readiness["gates"])
+        for entry in loaded.deploy_readiness["gates"]:
+            self.assertTrue(entry["mandatory"], entry["gate"])
+            self.assertIn(entry["gate"], sp.DEPLOY_READINESS_MANDATORY)
+
+    def test_a_real_yes_verdict_is_carried_verbatim_and_is_not_an_approval(self):
+        document, path = self.produced()
+        self.assertEqual(document["verdict"]["deploy_ready"], "YES")
+        loaded = self.load(path)
+        self.assertEqual(loaded.deploy_readiness["deploy_ready"], "YES")
+        root, req_dir = layout()
+        state = project(root, req_dir, readiness=path)
+        readiness = state["control_state"]["deploy_readiness"]
+        self.assertEqual(readiness["state"], sp.STATE_OBSERVED)
+        self.assertEqual(readiness["value"], "YES")
+        self.assertIn("authorises nothing", readiness["reason"])
+        self.assertEqual(state["control_state"]["out_of_scope"]["deploy_readiness_evaluation"],
+                         "EVALUATED_READ_ONLY")
+
+    def test_a_real_no_verdict_is_carried_verbatim(self):
+        document, path = self.produced(channel_value=False)
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+        loaded = self.load(path)
+        self.assertEqual(loaded.deploy_readiness["deploy_ready"], "NO")
+        root, req_dir = layout()
+        state = project(root, req_dir, readiness=path)
+        self.assertEqual(state["control_state"]["deploy_readiness"]["value"], "NO")
+        self.assertIn("LIVE_SWITCH", state["control_state"]["deploy_readiness"]["reason"])
+
+    def test_a_real_unknown_verdict_is_unknown_and_never_yes(self):
+        document, path = self.produced(bundle=False)
+        self.assertEqual(document["verdict"]["deploy_ready"], "UNKNOWN")
+        loaded = self.load(path)
+        self.assertEqual(loaded.deploy_readiness["deploy_ready"], "UNKNOWN")
+        root, req_dir = layout()
+        state = project(root, req_dir, readiness=path)
+        self.assertEqual(state["control_state"]["deploy_readiness"]["state"], sp.STATE_UNKNOWN)
+        self.assertIsNone(state["control_state"]["deploy_readiness"]["value"])
+        # The per-gate detail is not lost when the verdict is unknown.
+        self.assertEqual(len(state["control_state"]["deploy_readiness_gates"]), 13)
+
+    def test_the_full_projection_reports_the_real_gates_and_the_real_verdict(self):
+        document, path = self.produced()
+        root, req_dir = layout()
+        state = project(root, req_dir, readiness=path)
+        self.assertEqual([a["kind"] for a in state["anomalies"]
+                          if a["kind"] == "DEPLOY_READINESS_UNREADABLE"], [])
+        gates = state["control_state"]["deploy_readiness_gates"]
+        self.assertEqual([entry["gate"] for entry in gates],
+                         [entry["gate"] for entry in document["gates"]])
+        self.assertTrue(all(entry["mandatory"] for entry in gates))
+        self.assertEqual(state["control_state"]["deploy_readiness"]["value"],
+                         document["verdict"]["deploy_ready"])
 
 
 if __name__ == "__main__":

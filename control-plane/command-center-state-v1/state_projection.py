@@ -71,6 +71,20 @@ RUNTIME_UNKNOWN = "UNKNOWN"
 
 AUTHORITY = "DERIVED_NON_AUTHORITATIVE"
 
+# Liveness freshness. The probe interval and the freshness window are not the
+# same number: a probe that is issued exactly on schedule still has to travel
+# GitHub -> Bridge -> Hong Kong -> Evidence -> Projection before it can be read
+# here, so a window equal to the interval declares the agent stale for the whole
+# time its own evidence is in flight. The grace is transport slack, not a second
+# way to infer liveness: ONLINE still requires signature-verified Evidence.
+#   age <= LIVENESS_FRESHNESS_WINDOW_SECONDS -> PROVEN
+#   age >  LIVENESS_FRESHNESS_WINDOW_SECONDS -> UNKNOWN, never PROVEN
+LIVENESS_PROBE_INTERVAL_SECONDS = 1800
+LIVENESS_TRANSPORT_GRACE_SECONDS = 600
+LIVENESS_FRESHNESS_WINDOW_SECONDS = (LIVENESS_PROBE_INTERVAL_SECONDS
+                                     + LIVENESS_TRANSPORT_GRACE_SECONDS)
+LIVENESS_MAX_PROBES_PER_24H = 48
+
 TASKS_REPOSITORY = "chenzhenxi1-sudo/go-control-tasks"
 EVIDENCE_REPOSITORY = "chenzhenxi1-sudo/go-control-evidence"
 GO_REPOSITORY = "yuguangzhi3836-glitch/GO"
@@ -114,15 +128,43 @@ KNOWN_CAPABILITIES = (
     "HK_STAGING_CANARY",
     "HK_STAGING_ROLLBACK",
 )
-# The only actions a human / ChatGPT Request channel may currently create.
-ENABLED_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR")
+# Who can express an action as a Request. The human / ChatGPT channel and the
+# platform's own automated producer are different classes of caller. Conflating
+# them would either mis-report a real liveness Request as forbidden or promote a
+# read-only probe into a human execution right, so the source class is carried
+# explicitly rather than inferred from the action name.
+HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY")
+PLATFORM_REQUEST_ACTIONS = ("CONTROL_PLANE_HEALTH",)
+# What the channel can create *right now*, per class. DEPLOY is human-expressible
+# but its switch is off, so it is absent from the enabled set; the platform
+# producer drives a read-only probe on a timer today, so HEALTH is present.
+ENABLED_HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR")
+ENABLED_PLATFORM_REQUEST_ACTIONS = ("CONTROL_PLANE_HEALTH",)
+ENABLED_REQUEST_ACTIONS = (ENABLED_HUMAN_REQUEST_ACTIONS
+                           + ENABLED_PLATFORM_REQUEST_ACTIONS)
+REQUEST_ACTION_SOURCE_CLASS = {
+    "HK_STAGING_VERIFY": "HUMAN_REQUEST",
+    "HK_STAGING_TEST_PR": "HUMAN_REQUEST",
+    "HK_STAGING_DEPLOY": "HUMAN_REQUEST",
+    "CONTROL_PLANE_HEALTH": "PLATFORM_AUTOMATION",
+}
+# What a platform action is allowed to be. These are constants copied from the
+# channel and Task contracts, never derived from a Request: a Request that could
+# change them would make the platform class a way to carry parameters.
+PLATFORM_ACTION_PROPERTIES = {
+    "CONTROL_PLANE_HEALTH": {"source_class": "PLATFORM_AUTOMATION",
+                             "parameters": {}, "read_only": True,
+                             "human_deploy_authority": False},
+}
 CAPABILITY_CLASSIFICATION = {
     "HK_STAGING_VERIFY": "SUPPORTED_PROVEN",
     "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
     "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
     "HK_STAGING_CANARY": "NOT_REQUESTABLE",
     "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE",
-    "CONTROL_PLANE_HEALTH": "PLATFORM_ADMIN_ONLY",
+    # Proven, but only for the platform class: it says nothing about whether a
+    # human may request it, and it confers no execution right on anyone.
+    "CONTROL_PLANE_HEALTH": "SUPPORTED_PROVEN_PLATFORM_ONLY",
 }
 
 TASK_REQUIRED = {"schema_version", "task_id", "environment", "action_id", "issued_at",
@@ -153,6 +195,12 @@ REQUEST_EXTRA_FIELDS = {
     "HK_STAGING_VERIFY": set(),
     "HK_STAGING_TEST_PR": {"pr_number"},
     "HK_STAGING_DEPLOY": {"plan_id"},
+    # The platform probe carries nothing beyond the five common fields. Until
+    # this entry existed the projector refused a real CONTROL_PLANE_HEALTH
+    # Request as request_action_unknown and reported it REQUEST_UNREADABLE,
+    # which read as "chat asked for something it may not ask for" when in fact
+    # the platform's own producer had asked correctly.
+    "CONTROL_PLANE_HEALTH": set(),
 }
 
 TASK_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -240,9 +288,15 @@ DEPLOY_READINESS_DOCUMENT = ("control-plane/command-center-deploy-readiness-v1/"
 DEPLOY_READY_VALUES = ("YES", "NO", "UNKNOWN")
 DEPLOY_READINESS_GATES = ("APPROVED_CANDIDATE", "SOURCE_BINDING", "PACKAGE_BINDING",
                           "DEPLOYMENT_PLAN", "HUMAN_APPROVAL", "TEST_PR", "VERIFY",
-                          "CURRENT_RUNTIME", "LIVE_SWITCH", "CANARY", "RELEASE_GATES")
-DEPLOY_READINESS_MANDATORY = tuple(name for name in DEPLOY_READINESS_GATES
-                                   if name not in ("CANARY", "RELEASE_GATES"))
+                          "CURRENT_RUNTIME", "LIVE_SWITCH", "LIVE_SWITCH_PROVENANCE",
+                          "CANARY", "RELEASE_GATES", "BRIDGE_ACCEPTANCE")
+# The evaluator has no advisory gates left: treating CANARY and RELEASE_GATES as
+# advisory let it report YES while the live Bridge would deterministically refuse
+# the same plan. Every gate blocks. If the evaluator ever reintroduces an advisory
+# gate this tuple is what has to move with it, and DeployReadinessContractTests
+# reads the evaluator's own source and fails until it does.
+DEPLOY_READINESS_ADVISORY_GATES = ()
+DEPLOY_READINESS_MANDATORY = DEPLOY_READINESS_GATES
 DEPLOY_READINESS_GATE_STATES = ("PASS", "FAIL", "UNKNOWN")
 # The verdict block may carry exactly these boundary flags, all false except the
 # one that says it only reads what it was handed.
@@ -1087,6 +1141,7 @@ def request_records(loaded, binding_context):
             "source": {"repository": TASKS_REPOSITORY, "ref": ref,
                        "head_sha": head, "path": "requests/" + source},
             "requestable_by_current_channel": requestable,
+            "request_source_class": REQUEST_ACTION_SOURCE_CLASS.get(action, "UNKNOWN"),
             "capability_classification": CAPABILITY_CLASSIFICATION.get(action, "UNKNOWN"),
             "holding_execution_authority": False,
             "lifecycle": lifecycle,
@@ -1797,20 +1852,30 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
     # ---- request channel and deploy capability ---------------------------- #
     request_channel = {
         "enabled_request_actions": list(ENABLED_REQUEST_ACTIONS),
+        "human_request_actions": list(HUMAN_REQUEST_ACTIONS),
+        "platform_request_actions": list(PLATFORM_REQUEST_ACTIONS),
+        "enabled_human_request_actions": list(ENABLED_HUMAN_REQUEST_ACTIONS),
+        "enabled_platform_request_actions": list(ENABLED_PLATFORM_REQUEST_ACTIONS),
+        "request_action_source_class": dict(REQUEST_ACTION_SOURCE_CLASS),
+        "platform_action_properties": {k: dict(v)
+                                       for k, v in sorted(PLATFORM_ACTION_PROPERTIES.items())},
         "known_capabilities": list(KNOWN_CAPABILITIES),
         "capability_classification": dict(CAPABILITY_CLASSIFICATION),
         "deploy_request_enabled": False,
         "deploy_request_enabled_source": (
-            "the authoritative Boss Request contract currently exposes VERIFY and TEST_PR only; "
-            "the DEPLOY request capability is present in the repository and installed per its "
-            "closeout, but its request enablement remains fail-closed"),
+            "the authoritative Boss Request contract currently exposes VERIFY, TEST_PR and "
+            "CONTROL_PLANE_HEALTH, and DEPLOY under its plan and approval gates; the DEPLOY "
+            "request enablement remains fail-closed"),
         "live_request_switch": unknown(
             "the live Command Center channel switch is a live-host fact. It is not on the control "
             "bus and this projection must not assert it"),
         "readiness_evaluation": "NOT_IN_SCOPE",
-        "note": ("ChatGPT may create Request files only for enabled_request_actions. HK_STAGING_DEPLOY "
-                 "is reported as a capability classification; computing deploy or rollback readiness "
-                 "is out of scope for this contract"),
+        "note": ("ChatGPT may create Request files only for enabled_human_request_actions. A "
+                 "platform_request_actions entry is created by the platform's own bounded producer, "
+                 "not by a human, and carries fixed empty parameters and no execution right: "
+                 "read_only=true and human_deploy_authority=false. HK_STAGING_DEPLOY is reported as "
+                 "a capability classification; computing deploy or rollback readiness is out of "
+                 "scope for this contract"),
     }
 
     # ---- repository main vs runtime build source --------------------------- #
@@ -1882,6 +1947,9 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
         "generated_at": iso(at),
         "freshness": {"stale_after_seconds": stale_seconds,
                       "liveness_window_seconds": liveness_window,
+                      "liveness_probe_interval_seconds": LIVENESS_PROBE_INTERVAL_SECONDS,
+                      "liveness_transport_grace_seconds": LIVENESS_TRANSPORT_GRACE_SECONDS,
+                      "liveness_max_probes_per_24h": LIVENESS_MAX_PROBES_PER_24H,
                       "live_verification_window_seconds": verification_window,
                       "stuck_after_seconds": stuck_after,
                       "recent_expired_window_seconds": recent_window},
@@ -2185,7 +2253,11 @@ def main(argv=None):
     parser.add_argument("--out", required=True, help="output directory (created if absent)")
     parser.add_argument("--now", help="ISO 8601 instant to project at (default: current UTC)")
     parser.add_argument("--stale-after-seconds", type=int, default=86400)
-    parser.add_argument("--liveness-window-seconds", type=int, default=1800)
+    parser.add_argument("--liveness-window-seconds", type=int,
+                        default=LIVENESS_FRESHNESS_WINDOW_SECONDS,
+                        help="how old the newest signed liveness Evidence may be and still be "
+                             "PROVEN. Defaults to the probe interval plus the transport grace, "
+                             "which is %d s" % LIVENESS_FRESHNESS_WINDOW_SECONDS)
     parser.add_argument("--live-verification-window-seconds", type=int, default=86400)
     parser.add_argument("--stuck-after-seconds", type=int, default=900)
     parser.add_argument("--recent-expired-window-seconds", type=int, default=604800)

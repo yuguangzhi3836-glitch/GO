@@ -216,22 +216,42 @@ Older proof reports `NOT_RECENTLY_VERIFIED` even when the images agree.
 
 ### 3. DEPLOY is not exposed to chat, and its readiness is not evaluated
 
+A Request can be created by a human or by the platform's own producer, and the
+two are not the same class of caller. Conflating them would either mis-report a
+real liveness Request as forbidden or promote a read-only probe into a human
+execution right, so the source class is carried explicitly.
+
 ```json
-{"enabled_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR"],
+{"human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY"],
+ "platform_request_actions": ["CONTROL_PLANE_HEALTH"],
+ "enabled_human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR"],
+ "enabled_platform_request_actions": ["CONTROL_PLANE_HEALTH"],
+ "enabled_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "CONTROL_PLANE_HEALTH"],
+ "request_action_source_class": {
+   "HK_STAGING_VERIFY": "HUMAN_REQUEST", "HK_STAGING_TEST_PR": "HUMAN_REQUEST",
+   "HK_STAGING_DEPLOY": "HUMAN_REQUEST", "CONTROL_PLANE_HEALTH": "PLATFORM_AUTOMATION"},
+ "platform_action_properties": {
+   "CONTROL_PLANE_HEALTH": {"source_class": "PLATFORM_AUTOMATION",
+                            "parameters": {}, "read_only": true,
+                            "human_deploy_authority": false}},
  "capability_classification": {
    "HK_STAGING_VERIFY": "SUPPORTED_PROVEN",
    "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
    "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
    "HK_STAGING_CANARY": "NOT_REQUESTABLE",
-   "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE"},
+   "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE",
+   "CONTROL_PLANE_HEALTH": "SUPPORTED_PROVEN_PLATFORM_ONLY"},
  "deploy_request_enabled": false,
  "readiness_evaluation": "NOT_IN_SCOPE"}
 ```
 
-`known_capability` and `currently_enabled_request_action` are separate concepts
-throughout the schema. The live Command Center channel switch is a live-host fact
-and is reported as `UNKNOWN`, never asserted. No deployment plan is created, no
-switch is modified, no DEPLOY Task is signed.
+`known_capability`, `currently_enabled_request_action` and `who may express it`
+are separate concepts throughout the schema. A `platform_request_actions` entry
+is created by the platform's own bounded producer, not by a human: it carries
+fixed empty parameters, it is read-only, and `human_deploy_authority` is false.
+The live Command Center channel switch is a live-host fact and is reported as
+`UNKNOWN`, never asserted. No deployment plan is created, no switch is modified,
+no DEPLOY Task is signed.
 
 The contract computes no `can_deploy`, no deployment eligibility, no rollback
 target selection and no release-gate verdict. Release-gate and rollback-candidate
@@ -311,6 +331,19 @@ The same binding was applied to the live-bus snapshot, which moved from
 `EVIDENCE_PUBLISHED 24 | TASK_EXPIRED 21 | POLICY_HOLD 1` to
 `COMPLETE 24 | TASK_EXPIRED 18 | POLICY_HOLD 4`. See
 `evidence/PROJECTION_20260914/README.md` for what the three new failures are.
+
+A note on the committed snapshots, because a contract change can leave them
+behind. Each `evidence/PROJECTION_<date>/` directory is a record of what the
+projector produced at a pinned instant from pinned revisions. It is **not**
+re-projected when this component gains a field, and it is deliberately not edited
+to match. The `request_channel` block here gained six fields
+(`human_request_actions`, `platform_request_actions`,
+`enabled_human_request_actions`, `enabled_platform_request_actions`,
+`request_action_source_class`, `platform_action_properties`), so a reader
+validating `evidence/PROJECTION_20260914` or `PROJECTION_20260915` against the
+contract as it now stands will find those six absent. That is the record being
+older than the contract, not a claim that the record is wrong. Regenerating a
+snapshot is a separate, dated act against freshly pinned inputs.
 
 ### 9. A failure is published, not swallowed (CC V1-02)
 
@@ -426,6 +459,30 @@ Four properties are enforced by tests rather than asserted in prose:
   `can_deploy`, no deployment eligibility, no `release_gates` and no
   `rollback_targets`. Surfacing readiness there is #107's decision, not this one.
 
+The gate set is the evaluator's, not this component's opinion of it. The
+evaluator has **thirteen gates and no advisory gate left** — `CANARY` and
+`RELEASE_GATES` used to be advisory on both sides, which let a `YES` be reported
+while the live Bridge would deterministically refuse the same plan. This layer
+carries exactly those thirteen, each `mandatory: true`.
+
+That agreement is checked from the outside rather than by a fixture derived from
+this component's own constant. `DeployReadinessContractTests` reads the
+evaluator's source and fails when the two gate lists differ, and
+`DeployReadinessIntegrationTests` runs the **real evaluator** over its own
+authoritative inputs and feeds the resulting document to the **real projector**,
+requiring zero anomalies, the same thirteen gates in the same order, every one
+mandatory, and the verdict carried verbatim. Nothing in those tests is a
+hand-written `DEPLOY_READINESS.json`.
+
+It was not always so, and the difference is the point: with an eleven-gate list
+here the projector refused the real document with
+`DEPLOY_READINESS_UNREADABLE: deploy_readiness_gate`, so live readiness could
+never be quoted at all, while every test still passed because both sides were
+being compared against the same constant. The workflow that runs this component
+also triggers on changes to the evaluator's own paths
+(`control-plane/command-center-deploy-readiness-v1/**`), so a gate added on one
+side alone now fails CI instead of silently blanking the live verdict.
+
 Rollback readiness remains `NOT_IN_SCOPE`; CC V1-09 / #104 owns it and the
 evaluator says so instead of guessing.
 
@@ -440,7 +497,8 @@ about control state. The boundary it keeps is the one that matters:
 
 As of the committed projection the verdict is **`NO`**: the candidate commit has
 never been TEST_PR'd on the control bus and the newest verified VERIFY is outside
-its freshness window, while five further gates are unprovable offline.
+its freshness window, while the remaining gates are unprovable without the
+operator-supplied bundle of live-host facts.
 
 ## Verified current architecture
 
@@ -571,9 +629,40 @@ hk_agent_recent_activity   the newest signed probe at any age  → "when did we 
 hk_agent_online            PROVEN only from liveness Evidence inside the window → "is it online now"
 ```
 
-What is still missing is the **producer**: nothing drives `CONTROL_PLANE_HEALTH`
-on a timer, so the control bus carries no fresh liveness Evidence and
-`hk_agent_online` honestly reads `UNKNOWN` even when the agent is healthy.
+What is still missing is the **relay**, not the mechanism. The producer
+(`control-plane/agent-liveness-producer-v1`, a 300 s timer) now places a bounded
+read-only probe in its outbox, and the Boss Request Bridge signs
+`CONTROL_PLANE_HEALTH`, so one probe has already travelled the whole path and
+come back as signed Evidence with `answers.hk_agent_online` reading `PROVEN`.
+Moving the outbox to a Request on the control bus is still an operator step, so
+between probes the answer honestly returns to `UNKNOWN`.
+
+### The freshness window carries transport margin
+
+The probe interval and the freshness window are not the same number. A probe
+issued exactly on schedule still has to travel GitHub -> Bridge -> Hong Kong ->
+Evidence -> Projection before it can be read here, so a window equal to the
+interval would declare the agent stale for the whole time its own Evidence is in
+flight: a mis-report, not caution.
+
+```
+LIVENESS_PROBE_INTERVAL_SECONDS    1800   unchanged; the cadence is not raised
+LIVENESS_TRANSPORT_GRACE_SECONDS    600   delivery slack between the two
+LIVENESS_FRESHNESS_WINDOW_SECONDS  2400   interval + grace; both are reported
+LIVENESS_MAX_PROBES_PER_24H          48   unchanged; the budget is not raised
+```
+
+```
+age <= 2400 s   -> PROVEN   (and only from signature-verified liveness Evidence)
+age >  2400 s   -> UNKNOWN  but last_seen and age_seconds are still reported
+```
+
+The grace is delivery slack and nothing else. It is not a second way to infer
+liveness: SSH success, an HTTP 200 and a past Task success never substitute for a
+fresh signed probe, and the projector has no SSH client, no HTTP client and no
+socket, so it could not consult one even by mistake. `LivenessWindowTests` pins
+2399 s as `PROVEN`, 2401 s as not online, and pins that a fresh verified VERIFY
+and TEST_PR leave liveness exactly where it was.
 
 ## Relationship to the project context layer
 
