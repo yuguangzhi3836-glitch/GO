@@ -83,5 +83,48 @@
       "deliverables/CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913/"
     ],
     "historical_records_rationale": "Those files record the DEPTH48 source-integration moment and the packaging input that produced an already-built parent. Rewriting them would falsify evidence rather than correct a pointer."
-  }
+  },
+  "release_candidate_v1": {
+    "schema": "go.release-candidate.v1",
+    "candidate_id": "rc1-depth48-pr52-bd25d7ac",
+    "source_repository": "yuguangzhi3836-glitch/GO",
+    "source_commit": "bd25d7acca1b5f54a7fb555008ed60b76ee45f21",
+    "application_tree": "ad7d1de1190f86ad29d1c6cdafbcedd592e27206",
+    "source_fingerprint": "8e91fcf25e66478d5dac105c2608a195a98290640f2ecbfcec24fda27f212ac8",
+    "migration_head": "0133_flight_change_plan",
+    "migration_required": false,
+    "build_definition": {
+      "profile": "go-application-python-v1",
+      "dockerfile": "Dockerfile.go-application-python-v2",
+      "dockerfile_sha256": "caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b",
+      "executor_version": "test-pr-v2",
+      "builder_image_tag": "go-hotel:depth48-runtime-6d0fd905",
+      "builder_image_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"
+    },
+    "artifact_digest": "sha256:bed9eddeb94b4fe93cd41fa4a071a3700ef0a93343432a4c77e1e11fb7aae984",
+    "required_services": [
+      "api",
+      "recovery-worker",
+      "outbox-worker",
+      "mobile-push-receipt-worker",
+      "reconciliation-worker",
+      "mobile-push-worker",
+      "mobile-engagement-worker",
+      "judgment-worker"
+    ],
+    "test_result_identity": {
+      "action_id": "HK_STAGING_TEST_PR",
+      "task_id": "go-boss-test-pr-52-83b0e20f3980",
+      "evidence_id": "39d11b5e102edd61d431200a94a8331e9f6d4680",
+      "source_pr_number": "52",
+      "source_commit_sha": "bd25d7acca1b5f54a7fb555008ed60b76ee45f21",
+      "artifact_digest": "sha256:bed9eddeb94b4fe93cd41fa4a071a3700ef0a93343432a4c77e1e11fb7aae984",
+      "executor_result": "TEST_PR_OK"
+    },
+    "rollback_relation": {
+      "relation": "REPLACES_CURRENT_KNOWN_GOOD",
+      "previous_known_good_image_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"
+    }
+  },
+  "release_candidate_note": "Added 2026-09-16 by CC V1-08 candidate admission (#103). This block is the RELEASE_CANDIDATE_V1 identity for the candidate the source fields above already describe; the source fields stay authoritative and this block has to agree with them, or admission refuses the candidate as two identities rather than one. Every value here is derived from an artifact that already existed: the signed TEST_PR Evidence go-boss-test-pr-52-83b0e20f3980 (evidence commit 39d11b5e102e) supplied artifact_digest and test_result_identity, the staged builder (Dockerfile.go-application-python-v2, sha256 caad37b1...) supplied build_definition, the live runtime supplied the rollback target, and the live deploy contract supplied required_services. Nothing here is an approval and nothing here authorises a deployment."
 }

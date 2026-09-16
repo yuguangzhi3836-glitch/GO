@@ -440,15 +440,15 @@
     "note": "The closed gate set. Every gate is mandatory: a gate the live Bridge blocks on cannot be advisory here without letting this document disagree with the live gate. advisory_holds therefore exists as a stable field and is always empty.",
     "APPROVED_CANDIDATE": {
       "mandatory": true,
-      "meaning": "an approved candidate exists and declares a candidate source at all"
+      "meaning": "an approved candidate exists and is a complete RELEASE_CANDIDATE_V1: the contract owned by the candidate admission component, whose block must carry every required identity. A pointer that only names a commit is not deployable."
     },
     "SOURCE_BINDING": {
       "mandatory": true,
-      "meaning": "the candidate own source identity is complete and well-formed"
+      "meaning": "the candidate own source identity is complete, well-formed, and agrees with the RELEASE_CANDIDATE_V1 block it carries about the commit, application tree and fingerprint"
     },
     "PACKAGE_BINDING": {
       "mandatory": true,
-      "meaning": "the deployment plan candidate identity equals the candidate, and its image and repo-digest pairing is internally consistent"
+      "meaning": "the deployment plan candidate identity equals the candidate, the plan approves the artifact the RELEASE_CANDIDATE_V1 claims, and the image/repo-digest pairing is internally consistent"
     },
     "DEPLOYMENT_PLAN": {
       "mandatory": true,

@@ -87,11 +87,39 @@ def sign_b64(private, value):
         private.sign(R.canonical(unsigned))).decode("ascii"))
 
 
+def release_candidate(**over):
+    """The RELEASE_CANDIDATE_V1 block: what makes a version deployable at all."""
+    value = {"schema": "go.release-candidate.v1", "candidate_id": "rc1-synthetic",
+             "source_repository": R.CANDIDATE_REPOSITORY, "source_commit": COMMIT,
+             "application_tree": TREE, "source_fingerprint": SOURCE_TREE,
+             "migration_head": "0133_flight_change_plan", "migration_required": False,
+             "build_definition": {"profile": "go-application-python-v1",
+                                  "dockerfile": "Dockerfile.go-application-python-v2",
+                                  "dockerfile_sha256": "7" * 64,
+                                  "executor_version": "test-pr-v2",
+                                  "builder_image_tag": "go-hotel:depth48-runtime-synthetic",
+                                  "builder_image_id": CURRENT_IMAGE},
+             "artifact_digest": CANDIDATE_IMAGE, "required_services": list(R.SERVICES),
+             "test_result_identity": {"action_id": "HK_STAGING_TEST_PR",
+                                      "task_id": "go-boss-test-pr-52-synthetic",
+                                      "evidence_id": "synthetic-evidence",
+                                      "source_pr_number": "52",
+                                      "source_commit_sha": COMMIT,
+                                      "artifact_digest": CANDIDATE_IMAGE,
+                                      "executor_result": "TEST_PR_OK"},
+             "rollback_relation": {"relation": "REPLACES_CURRENT_KNOWN_GOOD",
+                                   "previous_known_good_image_id": CURRENT_IMAGE}}
+    value.update(over)
+    return value
+
+
 def candidate_pointer(**over):
+    block_over = over.pop("release_candidate", {})
     value = {"schema": "go.depth48.current-candidate.v1", "source_commit": COMMIT,
              "application_git_tree": TREE, "previous_application_git_tree": "c" * 40,
              "source_tree_sha256": SOURCE_TREE, "candidate_pr": 52, "candidate_branch": "main"}
     value.update(over)
+    value["release_candidate_v1"] = release_candidate(**block_over)
     return value
 
 
@@ -727,6 +755,84 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(document["not_evaluated"]["rollback_readiness"], "NOT_IN_SCOPE")
         self.assertEqual(document["scope"], "READ_ONLY_DEPLOY_READINESS")
         self.assertEqual(document["authority"], "DERIVED_NON_AUTHORITATIVE")
+
+
+class CandidateAdmissionTests(unittest.TestCase):
+    """A candidate pointer is only deployable if it is a RELEASE_CANDIDATE_V1.
+
+    The definition of deployable lives in the candidate admission component; these
+    gates read that contract rather than a weaker second one of their own.
+    """
+
+    def rewrite(self, change):
+        fixture = Fixture()
+        path = fixture.go / "docs" / "canonical-baseline" / "CURRENT_CANDIDATE.json"
+        document = json.loads(path.read_text(encoding="utf-8"))
+        change(document)
+        path.write_text(json.dumps(document), encoding="utf-8")
+        return fixture
+
+    def drop_block(self, document):
+        del document["release_candidate_v1"]
+
+    def test_the_candidate_contract_is_read_from_the_other_component(self):
+        contract = json.loads((REPO.parent / R.RELEASE_CANDIDATE_CONTRACT).read_text(encoding="utf-8"))
+        self.assertEqual(contract["$id"], "go.release-candidate.v1")
+        self.assertEqual(set(contract["required"]), set(R.RELEASE_CANDIDATE_FIELDS))
+
+    def test_a_pointer_that_is_not_a_release_candidate_fails_the_candidate_gate(self):
+        document = self.rewrite(self.drop_block).evaluate()
+        entry = gate_of(document, "APPROVED_CANDIDATE")
+        self.assertEqual(entry["state"], "FAIL")
+        self.assertIn("release_candidate_absent", entry["reason"])
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_a_pointer_that_is_not_a_release_candidate_fails_the_source_binding(self):
+        document = self.rewrite(self.drop_block).evaluate()
+        self.assertEqual(gate_of(document, "SOURCE_BINDING")["state"], "FAIL")
+
+    def test_a_pointer_that_is_not_a_release_candidate_fails_the_package_binding(self):
+        document = self.rewrite(self.drop_block).evaluate()
+        self.assertEqual(gate_of(document, "PACKAGE_BINDING")["state"], "FAIL")
+
+    def test_an_incomplete_block_fails_the_candidate_gate(self):
+        def change(document):
+            del document["release_candidate_v1"]["rollback_relation"]
+
+        entry = gate_of(self.rewrite(change).evaluate(), "APPROVED_CANDIDATE")
+        self.assertEqual(entry["state"], "FAIL")
+        self.assertIn("release_candidate_fields", entry["reason"])
+
+    def test_a_block_with_an_extra_field_is_refused(self):
+        def change(document):
+            document["release_candidate_v1"]["something_else"] = True
+
+        self.assertEqual(gate_of(self.rewrite(change).evaluate(),
+                                 "APPROVED_CANDIDATE")["state"], "FAIL")
+
+    def test_a_block_that_disagrees_about_the_source_is_two_candidates(self):
+        def change(document):
+            document["release_candidate_v1"]["source_fingerprint"] = "9" * 64
+
+        entry = gate_of(self.rewrite(change).evaluate(), "SOURCE_BINDING")
+        self.assertEqual(entry["state"], "FAIL")
+        self.assertIn("two source identities", entry["reason"])
+
+    def test_a_plan_that_approves_another_artifact_is_refused(self):
+        def mutate(_keys, bundle):
+            bundle["plan"]["candidate"]["image_id"] = "sha256:" + "8" * 64
+            bundle["plan"]["candidate"]["repo_digest"] = "go-hotel@sha256:" + "8" * 64
+
+        document = Fixture(mutate=mutate).evaluate()
+        entry = gate_of(document, "PACKAGE_BINDING")
+        self.assertEqual(entry["state"], "FAIL")
+        self.assertIn("does not claim", entry["reason"])
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_the_admitted_candidate_is_named_in_the_gate(self):
+        entry = gate_of(Fixture().evaluate(), "APPROVED_CANDIDATE")
+        self.assertEqual(entry["state"], "PASS")
+        self.assertEqual(entry["observed"]["candidate_id"], "rc1-synthetic")
 
 
 if __name__ == "__main__":

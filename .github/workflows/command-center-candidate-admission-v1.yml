@@ -1,0 +1,207 @@
+name: Command Center candidate admission (isolated)
+on:
+  push:
+    branches: [cc/github-native-delivery-v1, cc/v1-finalization-20260914]
+    paths:
+      - 'control-plane/command-center-candidate-admission-v1/**'
+      # The admission ports the deploy gate's candidate and service rules and the
+      # executor's build definition, so a change on either side has to run this job:
+      # otherwise the ported copy silently stops describing the real system.
+      - 'control-plane/boss-deploy-request-v1/**'
+      - 'control-plane/boss-test-pr-live-integration-v1/**'
+      # The canonical candidate is the thing being admitted.
+      - 'docs/canonical-baseline/CURRENT_CANDIDATE.json'
+      # The deploy readiness evaluator reads this contract, so it is in scope too.
+      - 'control-plane/command-center-deploy-readiness-v1/**'
+      - '.github/workflows/command-center-candidate-admission-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'control-plane/command-center-candidate-admission-v1/**'
+      - 'control-plane/boss-deploy-request-v1/**'
+      - 'control-plane/boss-test-pr-live-integration-v1/**'
+      - 'docs/canonical-baseline/CURRENT_CANDIDATE.json'
+      - 'control-plane/command-center-deploy-readiness-v1/**'
+      - '.github/workflows/command-center-candidate-admission-v1.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cc-candidate-admission-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  isolated-candidate-admission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Check the candidate admission manifest
+        working-directory: control-plane/command-center-candidate-admission-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Run the admission suite on Linux
+        working-directory: control-plane/command-center-candidate-admission-v1
+        run: python -m unittest discover -s tests -v
+      - name: Run the admission built-in checks
+        working-directory: control-plane/command-center-candidate-admission-v1
+        run: python command-center/go-candidate-admission selftest
+      - name: Run the isolated verification and write summary.json
+        working-directory: control-plane/command-center-candidate-admission-v1
+        run: python run_checks.py "$RUNNER_TEMP/cc-candidate-admission-checks"
+      - name: Confirm the readiness evaluator is still green
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Confirm the readiness suite still passes
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: python -m unittest discover -s tests -q
+      - name: Prove the canonical candidate is admitted, and that YES needs one
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import pathlib
+          import subprocess
+          import sys
+
+          repo = pathlib.Path('.').resolve()
+          component = repo / 'control-plane' / 'command-center-candidate-admission-v1'
+          cli = component / 'command-center' / 'go-candidate-admission'
+          work = pathlib.Path(os.environ['RUNNER_TEMP']) / 'ccv1-admission'
+          work.mkdir(parents=True, exist_ok=True)
+
+          sys.path.insert(0, str(component / 'tests'))
+          import test_candidate_admission as t
+
+          A = t.A
+          contract = json.loads((component / A.CONTRACT_FILE).read_text(encoding='utf-8'))
+          failures = []
+
+
+          def check(name, condition, detail=''):
+              if condition:
+                  print('PASS  %s' % name, flush=True)
+              else:
+                  failures.append(name)
+                  print('FAIL  %s %s' % (name, detail), flush=True)
+
+
+          # 1. the contract is closed, complete and grants nothing
+          check('the_contract_is_the_one_being_implemented',
+                contract['$id'] == A.SCHEMA
+                and set(contract['required']) == set(A.RELEASE_CANDIDATE_FIELDS))
+          check('the_verdict_set_is_closed',
+                contract['x-go-verdicts']['values'] == ['ACCEPT', 'REJECT', 'UNKNOWN'])
+          check('the_contract_grants_no_authority',
+                not [k for k, v in contract['x-go-authority'].items() if v is True])
+          check('every_refusal_reason_is_declared',
+                len(contract['x-go-refusals']['source']) >= 40)
+
+          # 2. the real CLI, on the real canonical candidate, with its real evidence
+          canonical = repo / A.LINEAGE_POINTER
+          evidence = t.REAL_EVIDENCE
+          check('the_canonical_candidate_is_in_this_checkout', canonical.is_file())
+          check('the_signed_test_pr_evidence_is_in_this_checkout', evidence.is_file())
+          out = work / 'admission'
+          proc = subprocess.run(
+              [sys.executable, str(cli), '--candidate', str(canonical),
+               '--test-pr-evidence', str(evidence), '--go-repo', str(repo),
+               '--out', str(out)],
+              cwd=str(repo), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          check('the_real_candidate_is_admitted', proc.returncode == 0, proc.stdout[-800:])
+          admitted = json.loads((out / A.OUTPUT_NAME).read_text(encoding='utf-8'))
+          check('the_admission_reports_accept',
+                admitted['verdict']['admission'] == 'ACCEPT', admitted['verdict'])
+          check('the_admission_names_the_candidate_it_admitted',
+                admitted['release_candidate']['candidate_id']
+                and admitted['release_candidate']['source_commit'])
+          check('the_admission_authorises_nothing',
+                sorted(k for k, v in admitted['authority_boundary'].items()
+                       if v and k != 'may_read_the_candidate_and_its_evidence') == [])
+
+          # 3. the artifact binding is to the artifact the test result actually produced
+          block = json.loads(canonical.read_text(encoding='utf-8'))['release_candidate_v1']
+          signed = json.loads(evidence.read_text(encoding='utf-8'))
+          check('the_admitted_artifact_is_the_one_the_signed_test_pr_built',
+                signed['built_image_id'] == block['artifact_digest'])
+          check('the_admitted_source_is_the_one_the_signed_test_pr_read',
+                signed['source_commit_sha'] == block['source_commit'])
+
+          # 4. each rejection class, through the real validator
+          def refused(mutation, reason):
+              scratch = work / ('%s.json' % reason)
+              document = json.loads(canonical.read_text(encoding='utf-8'))
+              mutation(document['release_candidate_v1'])
+              scratch.write_text(json.dumps(document), encoding='utf-8')
+              result = A.admit(component / A.CONTRACT_FILE, scratch, evidence, None, repo)
+              return (result['verdict']['admission'] == 'REJECT'
+                      and reason in result['verdict']['rejected']), result['verdict']
+
+
+          def drop(block_, name):
+              def apply(value):
+                  del value[name]
+              return apply
+
+          cases = {
+              'a_missing_identity_is_refused':
+                  (drop(None, 'rollback_relation'), 'release_candidate_fields'),
+              'a_mutable_source_is_refused':
+                  (lambda v: v.update(source_commit='main'),
+                   'candidate_source_commit_not_immutable'),
+              'a_source_that_disagrees_with_the_pointer_is_refused':
+                  (lambda v: v.update(source_fingerprint='9' * 64),
+                   'source_identity_disagrees_with_the_lineage_pointer'),
+              'another_artifact_is_refused':
+                  (lambda v: v.update(artifact_digest='sha256:' + '0' * 64),
+                   'candidate_test_result_artifact_digest'),
+              'a_service_outside_the_topology_is_refused':
+                  (lambda v: v.update(required_services=['api']), 'fixed_topology_required'),
+              'a_broken_rollback_relation_is_refused':
+                  (lambda v: v.update(rollback_relation={'relation': 'MAYBE',
+                                                         'previous_known_good_image_id': None}),
+                   'candidate_rollback_relation_unknown'),
+          }
+          for name, (mutation, reason) in cases.items():
+              ok, verdict = refused(mutation, reason)
+              check(name, ok, verdict)
+
+          # 5. an unproven input is UNKNOWN, never ACCEPT
+          result = A.admit(component / A.CONTRACT_FILE, canonical, None, None, repo)
+          check('an_absent_test_result_context_is_unknown_not_accepted',
+                result['verdict']['admission'] == 'UNKNOWN'
+                and 'candidate_test_result_evidence_absent' in result['verdict']['unknown'],
+                result['verdict'])
+
+          # 6. readiness refuses a candidate that is not a RELEASE_CANDIDATE_V1
+          sys.path.insert(0, str(repo / 'control-plane' / 'command-center-deploy-readiness-v1'
+                                 / 'tests'))
+          import test_deploy_readiness as r
+          document = r.Fixture()
+          pointer = document.go / 'docs' / 'canonical-baseline' / 'CURRENT_CANDIDATE.json'
+          body = json.loads(pointer.read_text(encoding='utf-8'))
+          del body['release_candidate_v1']
+          pointer.write_text(json.dumps(body), encoding='utf-8')
+          emitted = document.evaluate()
+          check('readiness_refuses_a_pointer_that_is_not_a_release_candidate',
+                r.gate_of(emitted, 'APPROVED_CANDIDATE')['state'] == 'FAIL'
+                and emitted['verdict']['deploy_ready'] != 'YES')
+          check('readiness_reads_this_components_contract',
+                json.loads((repo / r.R.RELEASE_CANDIDATE_CONTRACT).read_text(encoding='utf-8'))
+                ['$id'] == A.SCHEMA)
+
+          if failures:
+              print('E2E_FAILED: %s' % ', '.join(failures), flush=True)
+              sys.exit(1)
+          print('E2E PASS', flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cc-candidate-admission-checks
+          path: ${{ runner.temp }}/cc-candidate-admission-checks
+          if-no-files-found: warn

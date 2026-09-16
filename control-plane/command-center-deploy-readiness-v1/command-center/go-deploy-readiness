@@ -87,6 +87,23 @@ DEPLOY_ACTION = "HK_STAGING_DEPLOY"
 
 STATE_COMPONENT = "control-plane/command-center-state-v1"
 IDENTITY_CONTRACT = STATE_COMPONENT + "/identity/VERIFIER_IDENTITIES_V1.json"
+# The RELEASE_CANDIDATE_V1 contract that defines what may be deployed at all, and
+# the identities it requires of a candidate. It is owned by the candidate admission
+# component and ported here so the two gates that read a candidate use that
+# definition rather than a weaker second one of their own. A test re-reads the file
+# from the other component and fails on drift.
+CANDIDATE_COMPONENT = "control-plane/command-center-candidate-admission-v1"
+RELEASE_CANDIDATE_CONTRACT = CANDIDATE_COMPONENT + "/contracts/release_candidate_v1.schema.json"
+RELEASE_CANDIDATE_BLOCK = "release_candidate_v1"
+RELEASE_CANDIDATE_FIELDS = ("schema", "candidate_id", "source_repository", "source_commit",
+                            "application_tree", "source_fingerprint", "migration_head",
+                            "migration_required", "build_definition", "artifact_digest",
+                            "required_services", "test_result_identity", "rollback_relation")
+# The three identities the block must agree with the lineage pointer about. The
+# document stays authoritative; the block may not contradict it.
+CANDIDATE_SOURCE_AGREEMENT = (("source_commit", "source_commit"),
+                              ("application_tree", "application_git_tree"),
+                              ("source_fingerprint", "source_tree_sha256"))
 # The V1 Human Approval authority. It is the set of GitHub users this project
 # authorises, ported from the live Bridge so a test re-reads that file and fails
 # on drift. The authority is an authenticated identity, not a key: the 2026-09-16
@@ -754,6 +771,27 @@ class Inputs:
 # --------------------------------------------------------------------------- #
 # gates
 # --------------------------------------------------------------------------- #
+def release_candidate_block(candidate):
+    """The candidate's RELEASE_CANDIDATE_V1 block, or a reason it is unusable.
+
+    Read-only and shape-only: the identity rules themselves live in the candidate
+    admission component, and this evaluator refuses anything that is not a complete
+    block rather than deciding a candidate is fine without one.
+    """
+    if not isinstance(candidate, dict):
+        return None, "no_candidate"
+    block = candidate.get(RELEASE_CANDIDATE_BLOCK)
+    if block is None:
+        return None, "release_candidate_absent"
+    if not isinstance(block, dict):
+        return None, "release_candidate_not_an_object"
+    missing = sorted(set(RELEASE_CANDIDATE_FIELDS) - set(block))
+    extra = sorted(set(block) - set(RELEASE_CANDIDATE_FIELDS))
+    if missing or extra:
+        return None, "release_candidate_fields:%s" % ",".join(missing + extra)
+    return block, None
+
+
 def gate_approved_candidate(inputs):
     candidate = inputs.candidate
     if candidate is None:
@@ -766,10 +804,24 @@ def gate_approved_candidate(inputs):
         return gate("APPROVED_CANDIDATE", "FAIL",
                     "the candidate pointer declares no usable source_commit",
                     evidence=[inputs.go_source.get("canonical_candidate_pointer")])
+    # A pointer that only names a commit is not a candidate the Command Center can
+    # deploy: it has to be a RELEASE_CANDIDATE_V1, which is what defines the
+    # version as deployable at all.
+    block, problem = release_candidate_block(candidate)
+    if problem:
+        return gate("APPROVED_CANDIDATE", "FAIL",
+                    "the approved candidate is not a RELEASE_CANDIDATE_V1: %s" % problem,
+                    observed={"block": RELEASE_CANDIDATE_BLOCK,
+                              "contract": RELEASE_CANDIDATE_CONTRACT},
+                    evidence=[RELEASE_CANDIDATE_CONTRACT,
+                              inputs.go_source.get("canonical_candidate_pointer")])
     return gate("APPROVED_CANDIDATE", "PASS",
-                "an approved candidate exists at %s" % commit[:12],
-                observed={"source_commit": commit, "candidate_pr": candidate.get("candidate_pr"),
-                          "candidate_branch": candidate.get("candidate_branch")})
+                "an approved RELEASE_CANDIDATE_V1 %s exists at %s"
+                % (block.get("candidate_id"), commit[:12]),
+                observed={"source_commit": commit, "candidate_id": block.get("candidate_id"),
+                          "candidate_pr": candidate.get("candidate_pr"),
+                          "candidate_branch": candidate.get("candidate_branch")},
+                evidence=[RELEASE_CANDIDATE_CONTRACT])
 
 
 def gate_source_binding(inputs):
@@ -788,12 +840,29 @@ def gate_source_binding(inputs):
         return gate("SOURCE_BINDING", "FAIL",
                     "the candidate's own source identity is incomplete: %s" % ", ".join(missing),
                     observed=observed, evidence=["docs/canonical-baseline/CURRENT_CANDIDATE.json"])
+    block, problem = release_candidate_block(candidate)
+    if problem:
+        return gate("SOURCE_BINDING", "FAIL",
+                    "the candidate carries no RELEASE_CANDIDATE_V1 block to bind: %s" % problem,
+                    observed=observed, evidence=[RELEASE_CANDIDATE_CONTRACT])
+    # One candidate, one source identity: the block may not disagree with the
+    # lineage pointer it came from.
+    disagreement = [name for name, top in CANDIDATE_SOURCE_AGREEMENT
+                    if block.get(name) != candidate.get(top)]
+    if disagreement:
+        return gate("SOURCE_BINDING", "FAIL",
+                    "the candidate carries two source identities: the block disagrees with "
+                    "the lineage pointer about %s" % ", ".join(disagreement),
+                    observed={"fields": disagreement}, evidence=[RELEASE_CANDIDATE_CONTRACT])
     return gate("SOURCE_BINDING", "PASS",
-                "candidate source identity is complete (commit, application tree, source tree sha256)",
+                "candidate source identity is complete, and its RELEASE_CANDIDATE_V1 block "
+                "agrees with the lineage pointer about commit, application tree and fingerprint",
                 observed={"source_commit": candidate["source_commit"],
                           "application_git_tree": candidate["application_git_tree"],
-                          "source_tree_sha256": candidate["source_tree_sha256"]},
-                evidence=["docs/canonical-baseline/CURRENT_CANDIDATE.json"])
+                          "source_tree_sha256": candidate["source_tree_sha256"],
+                          "candidate_id": block.get("candidate_id")},
+                evidence=[RELEASE_CANDIDATE_CONTRACT,
+                          "docs/canonical-baseline/CURRENT_CANDIDATE.json"])
 
 
 def gate_package_binding(inputs):
@@ -802,6 +871,24 @@ def gate_package_binding(inputs):
         return gate("PACKAGE_BINDING", "UNKNOWN",
                     "the plan or the candidate is missing, so the candidate identity cannot be "
                     "compared with what the plan approves")
+    block, problem = release_candidate_block(candidate)
+    if problem:
+        return gate("PACKAGE_BINDING", "FAIL",
+                    "the candidate carries no RELEASE_CANDIDATE_V1 block, so what the plan "
+                    "approves cannot be bound to a release candidate: %s" % problem,
+                    evidence=[RELEASE_CANDIDATE_CONTRACT])
+    # The plan and the candidate must agree about the artifact. A plan that approves
+    # a different image than the candidate's RELEASE_CANDIDATE_V1 claims is the
+    # conflict that would otherwise reach the executor.
+    approved_image = (body.get("candidate") or {}).get("image_id")
+    if approved_image != block["artifact_digest"]:
+        return gate("PACKAGE_BINDING", "FAIL",
+                    "the plan approves an artifact the candidate does not claim: the plan names "
+                    "%s and the RELEASE_CANDIDATE_V1 artifact is %s"
+                    % (approved_image, block["artifact_digest"]),
+                    observed={"plan_image_id": approved_image,
+                              "candidate_artifact_digest": block["artifact_digest"]},
+                    evidence=[RELEASE_CANDIDATE_CONTRACT])
     fields = (("source_commit", SHA40), ("application_git_tree", SHA40),
               ("source_tree_sha256", SHA64))
     mismatches, observed = [], {}
