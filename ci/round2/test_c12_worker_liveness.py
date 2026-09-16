@@ -79,6 +79,11 @@ class SignedWorkerIdentityAssertionTests(unittest.TestCase):
         "candidate_sha": "9b3f3b023e7e67fad39b105b72811f2952c62689",
     }
 
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+
     def assertion(self, **changes):
         value = {
             "algorithm": verifier.IDENTITY_ASSERTION_ALGORITHM,
