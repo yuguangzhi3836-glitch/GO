@@ -132,6 +132,7 @@ def _present_rental_reconciliation(result):
             'refund_id': result['refund_id'],
             'next_review_action': result['next_action'],
             'confirmed_movement_ids': sorted(result['confirmed_movement_ids']),
+            'evidence_observed_at': result['evidence_observed_at'],
             'read_only': True,
         },
         'status': {
