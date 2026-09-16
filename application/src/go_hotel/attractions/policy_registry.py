@@ -61,6 +61,30 @@ def validate(policy):
 
 class Registry:
     def __init__(self): self._policies={}; self.audit=[]
+
+    def import_bound_batch(self, entries):
+        """Import only policies whose claimed digest matches supplied raw bytes.
+
+        This proves local byte binding, not supplier identity or authorization.
+        Every digest is checked before registry mutation, so one mismatch rejects
+        the entire batch without partial policy or audit writes.
+        """
+        policies = []
+        if not isinstance(entries, (list, tuple)):
+            raise ValueError(ERR+"RAW_BATCH_INVALID")
+        for entry in entries:
+            if (not isinstance(entry, (list, tuple)) or len(entry) != 2
+                    or not isinstance(entry[0], dict)
+                    or type(entry[1]) is not bytes):
+                raise ValueError(ERR+"RAW_PAYLOAD_BYTES_REQUIRED")
+            policy, raw_payload = entry
+            claimed = policy.get("raw_payload_sha256")
+            actual = sha256(raw_payload).hexdigest()
+            if claimed != actual:
+                raise ValueError(ERR+"RAW_HASH_MISMATCH")
+            policies.append(policy)
+        return self.import_batch(policies)
+
     @staticmethod
     def _key(p): return p["supplier_id"],p["product_id"],p["go_offer_id"]
     def import_batch(self, policies):
