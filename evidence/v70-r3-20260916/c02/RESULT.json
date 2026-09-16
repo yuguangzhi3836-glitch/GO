@@ -1,0 +1,10 @@
+{
+  "cell_id": "C02",
+  "task_id": "V70-R3-C02-01",
+  "base_sha": "dcb68a652429aa01e8428ce9f582e4bab6a6175e",
+  "status": "FIXED_CANDIDATE_PENDING_C14",
+  "scope": "Trusted immutable HMAC-authorized coupon-plan persistence contract, exact consent, C11-shaped charge allocation, same-day chronological segment validation, and explicit non-netted negative fare credit instruction.",
+  "tests": {"passed": 6, "failed": 0, "syntax": "PASS"},
+  "limitations": ["Contract layer only: no HTTP endpoint enabled.", "No supplier, payment, database, migration, HK Staging, or production execution.", "CREDIT_NOT_NETTED is an explicit frozen instruction; settlement remains outside this candidate."],
+  "release_gates": {"C14": "PENDING", "C13": "PENDING_AFTER_C14", "FINAL_RELEASE": "HOLD", "HK_DEPLOY": "HOLD", "PRODUCTION": "HOLD"}
+}
