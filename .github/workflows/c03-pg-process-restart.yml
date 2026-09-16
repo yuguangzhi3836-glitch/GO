@@ -31,13 +31,14 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.13.5'
       - name: Bind source
         run: |
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git rev-parse HEAD:application)" = "9c83d92434301356228c1b79294fcd829d675ebf"
       - name: Install frozen dependencies
-        run: python -m pip install --no-index --find-links ci/retention/wheelhouse -r ci/retention/requirements.lock
+        run: python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
       - name: Run actual PostgreSQL process-exit recovery
         run: |
           mkdir -p evidence-out
