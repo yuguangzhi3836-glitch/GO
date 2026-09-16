@@ -41,7 +41,7 @@ def verify(receipt, evidence_root, *, expected_cell, expected_task, expected_age
     errors = []
     result = {"gate": "HOLD", "errors": errors, "authenticated_worker_identity": False,
               "live_worker_liveness_verified": False, "heartbeat_fresh": False,
-              "stale_running": False,
+              "stale_running": False, "required_transition": None,
               "meaning": "Local source-bound ACK/start/heartbeat record admission only"}
     if not isinstance(receipt, dict):
         errors.append("receipt must be an object")
@@ -74,6 +74,7 @@ def verify(receipt, evidence_root, *, expected_cell, expected_task, expected_age
                 errors.append("timestamps must satisfy acknowledged_at <= started_at <= heartbeat_at <= observed_at")
             elif observation - times["heartbeat_at"] > timedelta(seconds=max_heartbeat_age_seconds):
                 result["stale_running"] = True
+                result["required_transition"] = "STALE"
                 errors.append("RUNNING heartbeat expired; receipt is stale and must not remain RUNNING")
             else:
                 result["heartbeat_fresh"] = True

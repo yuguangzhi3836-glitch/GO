@@ -44,12 +44,20 @@ class WorkerLivenessTests(unittest.TestCase):
         self.assertTrue(result["heartbeat_fresh"])
         self.assertFalse(result["authenticated_worker_identity"])
         self.assertFalse(result["live_worker_liveness_verified"])
+        self.assertIsNone(result["required_transition"])
 
     def test_expired_heartbeat_marks_running_stale_and_holds(self):
         result = self.check(self.receipt(heartbeat_at="2026-09-16T02:00:02Z"), "2026-09-16T02:10:00Z")
         self.assertEqual(result["gate"], "HOLD")
         self.assertTrue(result["stale_running"])
+        self.assertEqual(result["required_transition"], "STALE")
         self.assertIn("must not remain RUNNING", " ".join(result["errors"]))
+
+    def test_stale_transition_never_claims_identity_authentication(self):
+        result = self.check(self.receipt(heartbeat_at="2026-09-16T02:00:02Z"), "2026-09-16T02:10:00Z")
+        self.assertEqual(result["required_transition"], "STALE")
+        self.assertFalse(result["authenticated_worker_identity"])
+        self.assertFalse(result["live_worker_liveness_verified"])
 
     def test_future_or_missing_heartbeat_is_not_admitted(self):
         self.assertEqual(self.check(self.receipt(heartbeat_at="2026-09-16T02:06:00Z"))["gate"], "HOLD")
