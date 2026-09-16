@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.task-bound.v3",
-  "product_candidate_commit": "e4245eeb521c1465ba62bdf3a46d10b732f27eb3",
-  "application_git_tree": "9c0f72e2d2523c539f7530a0e536111981ae96c1",
+  "product_candidate_commit": "fc8d295b901421c8ec78a79a3ab3aa56aa04d0fb",
+  "application_git_tree": "86bd384e4d0d899926b3ca171b14d92bd199b6ec",
   "source_anchor_main": "dcb68a652429aa01e8428ce9f582e4bab6a6175e",
   "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
@@ -40,6 +40,11 @@
       "mode": "100644",
       "git_blob": "55626ec9debbcc902d2115550b7b14c8f6632815",
       "reason": "V70-R3-C07-01 task-bound candidate; CI admission binding only"
+    },
+    "tests/c07_preference_process_actor.py": {
+      "mode": "100644",
+      "git_blob": "f2941b467293affda87732be656c6b04725df5f9",
+      "reason": "V70-R3-C07-01 consent-contract compatibility fixture: explicit same-purpose graph context grant"
     }
   },
   "migration_head": "0134_flight_status_width",
@@ -62,7 +67,7 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "source_tree_sha256": "effd97ff2527197d728cadfba7aabb603637b789d6ae838047c39d6c3c455c74",
+  "source_tree_sha256": "f99e50bd1b3b933c8d0f2a3f32235812fcdb8699c9f787eec5b4f3a5ecc1462c",
   "historical_pass_transferred": false,
   "task_id": "V70-R3-C07-01",
   "cell": "C07"
