@@ -223,7 +223,9 @@ class TravelPreferenceMixin:
             # must opt this graph purpose into preference context explicitly.
             preferences = _read_preferences(s, tr, purpose) if "TRAVEL_PREFERENCES" in scope else []
             _audit(s, tr, actor_id, actor_type, "TRAVELER_CONTEXT_READ", purpose, sorted(scope),
-                {"preference_count":len(preferences), "intent_count":len(intents), "behavior_count":count})
+                {"preference_count":len(preferences), "intent_count":len(intents),
+                 "behavior_count":count,
+                 "context_consent_ids":sorted(grants)})
             return {"traveler_id":traveler_id, "purpose":purpose, "identity":identity,
                 "recent_intents":intents, "behavior_evidence_count":count, "durable_preferences":preferences,
                 "policy":"SESSION_SIGNAL_NEVER_AUTO_PROMOTES_TO_PERMANENT_PREFERENCE"}
