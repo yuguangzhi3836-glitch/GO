@@ -203,8 +203,10 @@ class SchedulerContractTests(unittest.TestCase):
         log_path.write_text("TEST FIXTURE: actual fixture receipt bytes\n")
         return {
             "cell_id": "C12", "task_id": "V70-R2-C12-02", "agent": "/root/c12_scheduler",
-            "source_anchor": validator.SOURCE_ANCHOR,
-            "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
+            "canonical_base": "dcb68a652429aa01e8428ce9f582e4bab6a6175e",
+            "fixed_candidate_sha": "911d6e13bceaf83bb62c775f33a325bbd68af885",
+            "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+            "application_source_fingerprint_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
             "status": "RUNNING", "acknowledged_at": "2026-09-14T00:00:01Z",
             "started_at": "2026-09-14T00:00:02Z", "heartbeat_at": "2026-09-14T00:00:03Z",
             "execution_evidence": [{"kind": "PROCESS_OUTPUT", "path": log_path.name,
@@ -228,8 +230,9 @@ class SchedulerContractTests(unittest.TestCase):
         self.assertEqual(result["authenticated_worker_identity"], False)
         self.assertEqual(result["live_worker_liveness_verified"], False)
 
-    def test_receipt_rejects_wrong_task_agent_parent_and_source(self):
-        for field in ("task_id", "agent", "parent_candidate_commit", "source_anchor"):
+    def test_receipt_rejects_wrong_task_agent_and_source_bindings(self):
+        for field in ("task_id", "agent", "canonical_base", "fixed_candidate_sha",
+                      "application_git_tree", "application_source_fingerprint_sha256"):
             receipt = self.receipt()
             receipt[field] = "WRONG_IDENTITY"
             result = self.receipt_check(receipt)

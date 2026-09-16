@@ -21,8 +21,10 @@ class WorkerLivenessTests(unittest.TestCase):
         log.write_text("bounded C12 worker output\n")
         value = {
             "cell_id": "C12", "task_id": "V70-R3-C12-01", "agent": "/root/cell_c12",
-            "source_anchor": verifier.SOURCE_ANCHOR,
-            "parent_candidate_commit": verifier.PARENT_CANDIDATE,
+            "canonical_base": verifier.CANONICAL_BASE,
+            "fixed_candidate_sha": verifier.FIXED_CANDIDATE_SHA,
+            "application_git_tree": verifier.APPLICATION_GIT_TREE,
+            "application_source_fingerprint_sha256": verifier.APPLICATION_SOURCE_FINGERPRINT_SHA256,
             "status": "RUNNING", "acknowledged_at": "2026-09-16T02:00:00Z",
             "started_at": "2026-09-16T02:00:01Z", "heartbeat_at": "2026-09-16T02:04:00Z",
             "execution_evidence": [{"kind": "PROCESS_OUTPUT", "path": log.name,
