@@ -34,3 +34,10 @@ def test_list_page_shared_access_search_and_limit_clamp(isolated_session):
     assert [row["journey_id"] for row in found["items"]] == ["c10_batch_j0003"]
     assert found["query"] == "j0003"
     assert missing["items"] == []
+
+
+def test_list_page_clamps_pathological_deep_offset(isolated_session):
+    _seed(isolated_session, "HOTEL")
+    page = journey_module.journey_service.list_page(OWNER, limit=20, offset=10**9)
+    assert page["page"]["offset"] == 10000
+    assert page["items"] == []

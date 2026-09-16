@@ -78,7 +78,7 @@ class JourneyService:
   tie-breaker prevents duplicate ordering inside a fixed snapshot; callers
   receive has_more/next_offset and never a full-result count query.
   """
-  limit=max(1,min(int(limit),100));offset=max(0,int(offset))
+  limit=max(1,min(int(limit),100));offset=max(0,min(int(offset),10000))
   with SessionLocal() as s:
    active_member=exists(select(ConsumerTripMemberRow.trip_member_id).where(
     ConsumerTripMemberRow.journey_id==GoJourneyRow.journey_id,
