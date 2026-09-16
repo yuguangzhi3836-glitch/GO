@@ -380,8 +380,10 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn('validate agent.json "$agent_config"', rollback)
         self.assertIn('validate test_pr.py "$test_pr"', rollback)
         self.assertIn('validate artifact_store.py "$artifact_store_module"', rollback)
-        self.assertIn('install -d -o root -g root -m 0700 "$store_root"', install)
-        self.assertIn('install -d -o root -g root -m 0700 "$store_root/objects"', install)
+        self.assertIn('install -d -o "$artifact_uid" -g "$artifact_gid" -m 0700 "$store_path"', install)
+        self.assertIn('artifact_user=go-hk-agent', install)
+        self.assertIn('artifact_group=go-hk-agent', install)
+        self.assertIn('STORE_OWNER_MISMATCH', install)
         # The sealed-artifact store is deliberately outside the rollback unit: what
         # it holds is immutable artifact evidence, and deleting it would destroy the
         # only copy of a built candidate.

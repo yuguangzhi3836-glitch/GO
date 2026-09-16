@@ -42,13 +42,37 @@ record_dir "$build_root" builds
 install -o root -g root -m 0644 "$root/hk-staging/hk_agent/transport.py" /opt/go-hk-agent-rebuilt/hk_agent/transport.py
 install -o root -g root -m 0644 "$root/hk-staging/hk_agent/test_pr.py" /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py
 install -o root -g root -m 0644 "$root/hk-staging/hk_agent/artifact_store.py" /opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py
-# The sealed-artifact store.  Created once, never re-created over existing
-# content, and deliberately OUTSIDE this install/rollback unit: what it holds is
-# immutable artifact evidence referenced by signed Evidence, not configuration.
-# A rollback that deleted it would destroy the only copy of a built candidate.
+# The sealed-artifact store.  It is owned by the agent's own account, not by root:
+# the agent writes it (systemd User=go-hk-agent) while the Hong Kong executor only
+# reads it, through sudo, as root.  "Which account may have written this evidence"
+# must not depend on who happens to be reading, so the trusted owner is the writer.
+#
+# Created once and never re-created over existing content, and deliberately OUTSIDE
+# this install/rollback unit: what it holds is immutable artifact evidence
+# referenced by signed Evidence, not configuration.  A rollback that deleted it
+# would destroy the only copy of a built candidate.  For the same reason an
+# existing store is never re-owned to match this contract -- a mismatch is an
+# operator review, not a chmod, because the directory is the sole copy of every
+# candidate ever built here.
 store_root=/var/lib/go-hk-artifacts
-install -d -o root -g root -m 0700 "$store_root"
-install -d -o root -g root -m 0700 "$store_root/objects"
+artifact_user=go-hk-agent
+artifact_group=go-hk-agent
+getent passwd "$artifact_user" >/dev/null 2>&1 || { echo "trusted writer account missing: $artifact_user" >&2; exit 1; }
+getent group "$artifact_group" >/dev/null 2>&1 || { echo "trusted writer group missing: $artifact_group" >&2; exit 1; }
+artifact_uid=$(id -u "$artifact_user")
+artifact_gid=$(id -g "$artifact_user")
+test "$artifact_uid" != 0 || { echo "trusted writer account resolves to root: $artifact_user" >&2; exit 1; }
+for store_path in "$store_root" "$store_root/objects"; do
+  test ! -L "$store_path" || { echo "refusing a symlinked store path: $store_path" >&2; exit 1; }
+  if test -e "$store_path"; then
+    test "$(stat -c %u:%g "$store_path")" = "$artifact_uid:$artifact_gid" \
+      || { echo "STORE_OWNER_MISMATCH ($store_path): operator review required" >&2; exit 1; }
+    test "$(stat -c %a "$store_path")" = 700 \
+      || { echo "STORE_MODE_MISMATCH ($store_path): operator review required" >&2; exit 1; }
+  else
+    install -d -o "$artifact_uid" -g "$artifact_gid" -m 0700 "$store_path"
+  fi
+done
 install -d -o root -g root -m 0755 /usr/local/libexec/go-hk-test-pr
 install -o root -g root -m 0644 "$root/hk-staging/Dockerfile.go-application-python-v2" /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2
 agent_uid=$(id -u go-hk-agent)
@@ -94,5 +118,10 @@ test "$(stat -c %u:%g "$runtime_root")" = 0:0
 test "$(stat -c %a "$runtime_root")" = 711
 test "$(stat -c %u:%g "$build_root")" = "$agent_uid:$agent_gid"
 test "$(stat -c %a "$build_root")" = 700
+# Read back the artifact store the agent will write and root will only read.
+test "$(stat -c %u:%g "$store_root")" = "$artifact_uid:$artifact_gid"
+test "$(stat -c %a "$store_root")" = 700
+test "$(stat -c %u:%g "$store_root/objects")" = "$artifact_uid:$artifact_gid"
+test "$(stat -c %a "$store_root/objects")" = 700
 "$root/install/preflight.sh" hk-staging postinstall
 echo "INSTALL_STAGED_ONLY: restart is a separately approved operation"

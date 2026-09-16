@@ -127,6 +127,11 @@ class TestPrDurabilityTests(unittest.TestCase):
         self._patch(test_pr, "_build_root", lambda: self.root)
         self._patch(test_pr, "ARTIFACT_STORE", str(self.store))
         self._patch(test_pr, "BUILDER_IMAGE", "go-hotel:depth48-runtime-6d0fd905")
+        # The store's trust anchor is the account that writes it.  In production
+        # that is go-hk-agent (systemd User=go-hk-agent); here it is whatever owns
+        # the temporary store, so the ownership rule itself stays live.
+        self.identity = (os.stat(self.store).st_uid, os.stat(self.store).st_gid)
+        self._patch(artifact_store, "_IDENTITY_RESOLVER", lambda: self.identity)
         if not POSIX:
             self._patch(artifact_store, "DIRECTORY_MODE",
                         stat.S_IMODE(os.stat(self.store).st_mode))

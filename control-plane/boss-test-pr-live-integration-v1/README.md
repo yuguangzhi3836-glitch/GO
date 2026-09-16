@@ -80,6 +80,52 @@ The previous revision recorded `c4413d17…` for `tests/test_live_integration.py
 and `550eecc8…` for `test_pr.py`; the values actually committed were `f5962641…`
 and `65440302…`. Each `was` above is the committed value.
 
+### B4-B1.1 superseded hashes — the store's ownership contract across two uids
+
+The store has exactly one trusted author, and it is not the reader. The agent
+writes it (systemd `User=go-hk-agent` / `Group=go-hk-agent`) while root only reads
+it, through `sudo -n /usr/local/libexec/go-hk-deployctl`. Both halves used to
+compare an object's owner with the reading process's own effective uid, so a
+package written by `go-hk-agent` could never be read by root and a package root
+owned looked legitimate; the install contract then created the store `root:root`,
+which the writer refuses outright. The anchor is now the account name
+`go-hk-agent`, resolved per check, and `seal()` re-verifies the final object
+through the same primitive `resolve()` uses before reporting it sealed.
+
+```
+hk-staging/hk_agent/artifact_store.py   was d5b182b693d2f6be469a2f2dbb9ced7299db00074f1b3d1c64ee4cc9515e8c76
+                                        now 5dddc742b7ca668033547cb56073e6d65ba492d747d271622c9ca2b3df4335a4
+tests/test_artifact_store.py            was c684bd5298012823d3047e3ad524a8537df1072953b22790cd1bfaf4b0cb5c29
+                                        now cbff46199b16affdeca4b268da760192839851b306f3f15235f6e6ec2f438ed7
+tests/test_live_integration.py          was 67af7de8f26e214ab1d05575e8564f0a504b647b6252f988f38f8f232683826c
+                                        now ff10e997abf8846ea9328e3f8074f6a3afcf2ea7faec9c44f7c7e1b354ac47bd
+tests/test_test_pr_durability.py        was c16a057421cc17f88e834e7ad586f6cb4da19412e1c04a9e0d33bf0291ae51cb
+                                        now c9f216ca49c4d3464edf1afc90afc0e2c707082c0ab2d605dcfd9549763d186d
+install/install-hk-agent.sh             was a70c797e5a8cc3436e06681b0368959cae05b5f7f51152b3bef1861605fae245
+                                        now c3469382e111c4994018ba2e29de2651667dc0c8c37254f9a60e26fee4033be9
+install/preflight.sh                    was aac9d5f34c45b82a7cfa70015b1b1dfa94e6b372e6232d02c41c4ba2abdfceb6
+                                        now 52300c0416fb0da51cb6cced249c6be4b9e91e59d88565fa23e39c34a14b11a3
+```
+
+In the executor tree (tracked by `hk-staging/SOURCE_SHA256SUMS.txt`, and for the
+first two by `go-hk-deployctl`'s own runtime pins):
+
+```
+hk-staging/source/executor/runtime/artifact_runtime.py   91f93f7f… → 81f91c7c…
+hk-staging/source/executor/go-hk-deployctl               a47ea608… → db9d1584…
+```
+
+`_CANARY_SHA256` and `_DEPLOY_SHA256` had been computed over a CRLF working tree,
+so they never matched the bytes this repository ships and no `_load_*` could
+succeed. Every runtime pin is now taken from the committed bytes, and each one is
+verified by loading the runtime in an installed layout.
+
+```
+INSTALLATION_PERFORMED=NO
+DEPLOYMENT_PERFORMED=NO
+HONG_KONG_TOUCHED=NO
+```
+
 ## B4-B1 — the built image is sealed, and the artifact identity is re-contracted
 
 `test_pr.py` V2 built an image, reported `built_image_id` in signed Evidence, and

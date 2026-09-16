@@ -54,7 +54,7 @@ rewrites the historical Evidence; the signed result stays exactly as published.
 | ARTIFACT_DURABILITY | survives host loss | survives process death, not disk loss |
 | BOSS_AUTONOMY | requires a credential the Boss must never handle | no credential, no human |
 | FAIL_CLOSED_STRENGTH | digest ∈ `RepoDigests` and a real pull | content address + archive config digest + loaded `.Id` equality |
-| INSTALL_COMPLEXITY | registry provisioning, credentials, egress | one directory, created 0700 root:root |
+| INSTALL_COMPLEXITY | registry provisioning, credentials, egress | one directory, created 0700 and owned by the agent account |
 
 Both options re-contract the frozen Hong Kong deploy contract, because the current
 contract demands a registry digest whose suffix equals the image ID — a condition
@@ -75,7 +75,8 @@ no secret and no service.
 ```
 write side   control-plane/boss-test-pr-live-integration-v1/hk-staging/hk_agent/artifact_store.py
 read side    hk-staging/source/executor/runtime/artifact_runtime.py
-store        /var/lib/go-hk-artifacts/objects/<package_sha256>.tar   root:root 0700 / 0600
+store        /var/lib/go-hk-artifacts/objects/<package_sha256>.tar
+             go-hk-agent:go-hk-agent 0700 (directory) / 0600 (object)
 ```
 
 The package is the raw `docker save` output; its own SHA256 **is** its identity, so
@@ -199,7 +200,7 @@ files        /opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py          (new)
              /usr/local/libexec/go-hk-deployctl                          (pins + flag)
              /usr/local/libexec/go-hk-deployctl-runtime/artifact_runtime.py   (new)
              /usr/local/libexec/go-hk-deployctl-runtime/{deploy,canary}_runtime.py
-directory    /var/lib/go-hk-artifacts/{,objects}   root:root 0700
+directory    /var/lib/go-hk-artifacts/{,objects}   go-hk-agent:go-hk-agent 0700
 restart      none for the agent (oneshot per timer tick); the executor is invoked per
              Task, so no long-lived process carries the old code
 rollback     restore the four agent files and the four executor files from the backup,
@@ -236,10 +237,63 @@ correct one.
 and the evaluator both define without one. It is a different drift from the one this
 round fixes, and mixing the two would make both harder to review.
 
+## 7. Revision B4-B1.1 — the store's ownership contract across the two uids
+
+The store above had a defect that no test could see, because every test ran as one
+account.
+
+```
+writer  go-hk-agent   systemd User=go-hk-agent / Group=go-hk-agent
+reader  root          the agent invokes the executor as
+                      /usr/bin/sudo -n /usr/local/libexec/go-hk-deployctl
+```
+
+Both halves compared an object's owner with **the reading process's own effective
+uid**.  One operation therefore had two mutually exclusive requirements: a package
+written by `go-hk-agent` could never be read by root, and a package root owned could
+never have been written by the agent.  The install contract made it worse by
+creating the store `root:root 0700`, which the writer would have refused outright.
+
+```
+SEALED_ARTIFACT_CROSS_UID_OWNERSHIP = CONFIRMED (before the fix)
+```
+
+What the contract says now:
+
+* the trust anchor is the account **name** `go-hk-agent` / `go-hk-agent`, resolved
+  from the account database on every check — never a numeric uid, and no fallback to
+  the current process, to root, or to the file's own owner; an unresolvable account
+  is a refusal (`*_ACCOUNT_UNAVAILABLE`), and a resolved uid of 0 is refused too;
+* the writer additionally requires its own effective identity to be that account
+  (`SEALED_ARTIFACT_WRITER_IDENTITY`) — sealing is authoring;
+* the reader deliberately has no such requirement: root is a privileged **consumer**
+  of the evidence, and consuming an artifact does not make root its author.  The
+  reader never consults its own identity at all (asserted on its source);
+* directory `0700`, object `0600`, ownership `go-hk-agent:go-hk-agent`, no symlinks,
+  regular files, size bounded, content SHA256 exact, archive config digest exact,
+  loaded `.Id` equal to the candidate;
+* `seal()` now re-verifies the final stored object through the same primitive
+  `resolve()` uses before it reports the package sealed, and publishes with an atomic
+  no-overwrite hard link, so a planted or re-owned object can no longer be reported
+  `PROVEN` and refused later at CANARY time.  An existing content address is verified
+  for identity and never rewritten.
+
+The install contract changed with it: the store is created as
+`go-hk-agent:go-hk-agent 0700`, and an existing store whose owner or mode disagrees
+is **not** re-owned — it is `STORE_OWNER_MISMATCH` / `STORE_MODE_MISMATCH`, an
+operator review, because that directory is the only copy of every candidate ever
+built there.  Install and preflight both read the owner back afterwards.
+
+Pins realigned in the same commit: `go-hk-deployctl`'s `_CANARY_SHA256` and
+`_DEPLOY_SHA256` had been computed over a working tree with CRLF line endings, so
+they did not match the bytes the repository actually ships and no `_load_*` could
+succeed.  Every runtime pin is now taken from the committed bytes and verified by
+loading each runtime in an installed layout.
+
 ## 6. What a next round needs
 
 1. Install the above on HK-STAGING-01 under a fresh, explicit authorisation, and
-   create the store directory.
+   create the store directory **owned by `go-hk-agent`** (not root).
 2. Issue one fresh bounded TEST_PR against the canonical candidate's source. V3
    seals the image, and the new Evidence carries a real `package_sha256`.
 3. Record that package in `CURRENT_CANDIDATE.json` so durability becomes PROVEN, and

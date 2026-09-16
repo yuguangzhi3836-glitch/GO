@@ -389,6 +389,29 @@ B4  没有可用的部署计划 bundle（plan + approval + canary/preflight task
       `B4_AUTONOMY`（注册 plan / 开开关 / 写 provenance 仍需 CC 主机人工操作）。
     记录：`docs/control-plane/hk-staging/B4B1_DURABLE_ARTIFACT_20260916.md`
 
+    **2026-09-16 / B4-B1.1 修订（仓库侧，仍未安装）**：
+    · `SEALED_ARTIFACT_CROSS_UID_OWNERSHIP` = **CONFIRMED 并已修**。writer 是
+      `go-hk-agent`（systemd `User=`/`Group=`），reader 是 root（agent 用
+      `sudo -n /usr/local/libexec/go-hk-deployctl` 调执行器）；两侧却都拿
+      **读进程自己的 euid** 去比对象 owner ⇒ 同一个操作的两个要求互斥，
+      而安装合同还把 store 建成 `root:root 0700`，writer 第一次就必然拒绝。
+    · 现在信任锚是**账户名** `go-hk-agent`/`go-hk-agent`，每次从账户库解析；
+      解析不到就拒绝（`*_ACCOUNT_UNAVAILABLE`），uid 解析为 0 也拒绝；
+      **不写死任何数字 uid**，也不回退到当前进程 / root / 文件自身 owner。
+    · writer 额外要求自身 euid == 该账户（`SEALED_ARTIFACT_WRITER_IDENTITY`）；
+      reader **故意没有**这条：root 是 privileged consumer，读者**完全不读自身身份**。
+      目录 `0700` / 对象 `0600` / `go-hk-agent:go-hk-agent`，其余校验全部保留。
+    · `seal()` 在报告 PROVEN **之前**用与 `resolve()` 同一个 primitive 复核最终对象，
+      并以原子 no-overwrite 硬链接发布：已有内容地址只校验、永不重写。
+    · 安装合同：store 建成 `go-hk-agent:go-hk-agent 0700`；已存在而 owner/mode 不符
+      ⇒ `STORE_OWNER_MISMATCH` / `STORE_MODE_MISMATCH`，**operator review，不递归 chown**
+      （那是这台机器上每个候选的唯一副本）。install 与 preflight 都做 post-install readback。
+    · 同一次提交顺带修正 pin 错位：`go-hk-deployctl` 的 `_CANARY_SHA256` / `_DEPLOY_SHA256`
+      原先按**工作树 CRLF 字节**计算，与仓库实际发布的字节不符 ⇒ 任何 `_load_*` 都不可能成功。
+      现在全部 pin 取自 committed bytes，并在模拟安装布局里逐个装载验证。
+    · 本轮**无 live 变更**；`LIVE_INSTALL=NO`、`NEW_TEST_PR=NO`、`DURABLE_ARTIFACT_EXISTS=NO`、
+      `PACKAGE_BINDING=BLOCKED`、`DEPLOY_READY=UNKNOWN` 均未变。
+
 B5  deployment_requests_enabled=false（**正确的 fail-closed 姿态**，不是缺陷）
     真实 DEPLOY 必须等人类当次批准后才开；ROLLBACK 同理（#105 另需独立批准）
 ```
@@ -451,10 +474,12 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 
 ```text
 NEXT_ACTION=
-在 HK-STAGING-01 上受控安装 B4-B1（八个文件 + 创建 /var/lib/go-hk-artifacts），
+在 HK-STAGING-01 上受控安装 B4-B1（八个文件 + 创建 /var/lib/go-hk-artifacts，**owner 必须是
+go-hk-agent:go-hk-agent 0700，不是 root**；已存在而 owner/mode 不符 ⇒ 停下做 operator review），
 然后对同一 canonical RELEASE_CANDIDATE_V1 的源码发起**一张** fresh bounded TEST_PR，
 让 test-pr-v3 把该镜像封存成 package_sha256，并把该 package 写进 CURRENT_CANDIDATE.json。
 之后 readiness 的 PACKAGE_BINDING 才有机会变为 PASS。
+安装与第一次 TEST_PR 分两轮授权，便于区分 installation defect 与 build/durability defect。
 不得执行真实 DEPLOY；不得在没有新的当次授权前安装。
 RELEASE_GATES / CANARY（含 0114→0133 基线）/ AUTONOMY 是各自独立的 blocker，需分别处理。
 ```
