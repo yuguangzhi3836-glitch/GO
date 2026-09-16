@@ -587,11 +587,31 @@ class GOAIService:
         allowed_outcomes = {"NOT_STARTED", "FAILED_CONFIRMED", "SUCCEEDED", "UNKNOWN"}
         if provider_outcome not in allowed_outcomes:
             raise ValueError("GO_AI_PROVIDER_OUTCOME_INVALID")
-        required = {"plan_hash", "completed_task_ids", "pending_task_ids"}
-        if complete and (not required.issubset(checkpoint) or
-                         not isinstance(checkpoint.get("completed_task_ids"), list) or
-                         not isinstance(checkpoint.get("pending_task_ids"), list)):
-            raise ValueError("GO_AI_COMPLETE_CHECKPOINT_FIELDS_REQUIRED")
+        required = {"plan_hash", "completed_task_ids", "pending_task_ids", "replayable_result_refs"}
+        if complete:
+            if not required.issubset(checkpoint):
+                raise ValueError("GO_AI_COMPLETE_CHECKPOINT_FIELDS_REQUIRED")
+            plan_hash = checkpoint.get("plan_hash")
+            if (not isinstance(plan_hash, str) or len(plan_hash) != 64 or
+                    any(char not in "0123456789abcdef" for char in plan_hash)):
+                raise ValueError("GO_AI_CHECKPOINT_PLAN_HASH_INVALID")
+            task_lists = {
+                name: checkpoint.get(name)
+                for name in ("completed_task_ids", "pending_task_ids")
+            }
+            if any(not isinstance(items, list) or
+                   any(not isinstance(item, str) or not item.strip() for item in items) or
+                   len(items) != len(set(items)) for items in task_lists.values()):
+                raise ValueError("GO_AI_CHECKPOINT_TASK_SET_INVALID")
+            if set(task_lists["completed_task_ids"]) & set(task_lists["pending_task_ids"]):
+                raise ValueError("GO_AI_CHECKPOINT_TASK_SET_OVERLAP")
+            refs = checkpoint.get("replayable_result_refs")
+            if (not isinstance(refs, list) or
+                    any(not isinstance(ref, str) or not ref.strip() for ref in refs) or
+                    len(refs) != len(set(refs))):
+                raise ValueError("GO_AI_CHECKPOINT_RESULT_REFS_INVALID")
+            if provider_outcome == "SUCCEEDED" and not refs:
+                raise ValueError("GO_AI_SUCCEEDED_RESULT_REFERENCE_REQUIRED")
         with SessionLocal.begin() as session:
             now = self._database_now(session)
             row = session.scalar(
