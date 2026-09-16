@@ -1,8 +1,8 @@
 {
-  "schema": "go.v70.retention.rebind.v2",
-  "product_candidate_commit": "cb1181bf40b0e24f55ef095d8f1ee8857bdd6517",
-  "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
-  "source_anchor_main": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "schema": "go.v70.retention.task-bound.v3",
+  "product_candidate_commit": "dbd5fbbccc50d39636f7becb117ac58ce2c89c23",
+  "application_git_tree": "615771589dd17930b417633fff75d920074e433a",
+  "source_anchor_main": "dcb68a652429aa01e8428ce9f582e4bab6a6175e",
   "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
   "inherited_manifest": {
@@ -30,6 +30,41 @@
       "mode": "100644",
       "git_blob": "27eb179446a34b6bab7bc32a9450dab6686aa6e5",
       "reason": "TEST_ONLY: align stale Alembic current-head expectation from 0133 to 0134; no product or runtime behavior change"
+    },
+    "src/go_hotel/api/routes/mobility.py": {
+      "mode": "100644",
+      "git_blob": "c91ff19ef319f4bec5b686a4bb561cfda27c244c",
+      "reason": "V70-R3-C05-01 task-bound candidate; CI admission binding only"
+    },
+    "src/go_hotel/mobility/ride/recovery_evidence.py": {
+      "mode": "100644",
+      "git_blob": "f9ed1162812c80356cc6de55a785c18a2f51345e",
+      "reason": "V70-R3-C05-01 task-bound candidate; CI admission binding only"
+    },
+    "src/go_hotel/mobility/ride/service.py": {
+      "mode": "100644",
+      "git_blob": "5174486eee92786de6f4c8a3eba2e885bb281fca",
+      "reason": "V70-R3-C05-01 task-bound candidate; CI admission binding only"
+    },
+    "src/go_hotel/mobility/service.py": {
+      "mode": "100644",
+      "git_blob": "093fe7884d08fc8d402de97877ab4cda92610186",
+      "reason": "V70-R3-C05-01 task-bound candidate; CI admission binding only"
+    },
+    "tests/test_rc20_2_all_b_to_a.py": {
+      "mode": "100644",
+      "git_blob": "6618ab07297284c5308739170338c7b78b825d0e",
+      "reason": "V70-R3-C05-01 task-bound candidate; CI admission binding only"
+    },
+    "tests/test_v70_r3_c05_current_unknown_episode.py": {
+      "mode": "100644",
+      "git_blob": "d2967e27be0661c56f969177a1006b3b27e5f832",
+      "reason": "V70-R3-C05-01 task-bound candidate; CI admission binding only"
+    },
+    "tests/test_v70_round2_c05_recovery_fulfillment.py": {
+      "mode": "100644",
+      "git_blob": "5c0d06f9e8abacdb70d0b9e49ef643c2a9faee80",
+      "reason": "V70-R3-C05-01 task-bound candidate; CI admission binding only"
     }
   },
   "migration_head": "0134_flight_status_width",
@@ -52,6 +87,8 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "source_tree_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
-  "historical_pass_transferred": false
+  "source_tree_sha256": "920aaf3365f1638e0cb7a9ddd462b5cf67fe086ecf885f88acd414cb49baab34",
+  "historical_pass_transferred": false,
+  "task_id": "V70-R3-C05-01",
+  "cell": "C05"
 }
