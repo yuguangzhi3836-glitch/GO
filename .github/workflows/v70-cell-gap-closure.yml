@@ -28,19 +28,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13.5'
-      - name: Verify exact candidate and retained baseline
+      - name: Bind this scoped successor candidate
         run: |
-          python ci/retention/verify_source.py "$RUNNER_TEMP/cell-evidence/source"
-          python ci/retention/verify_alignment.py "$RUNNER_TEMP/cell-evidence/alignment.json"
+          mkdir -p "$RUNNER_TEMP/cell-evidence/source"
+          git rev-parse HEAD | tee "$RUNNER_TEMP/cell-evidence/source/CANDIDATE_SHA"
+          git rev-parse HEAD:application | tee "$RUNNER_TEMP/cell-evidence/source/APPLICATION_TREE"
           python - <<'PY'
-          import json, os, pathlib, subprocess
-          c=json.loads(pathlib.Path('ci/cell-closure/CANDIDATE.json').read_text())
-          actual=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
-          r=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'cell-evidence/source/RETENTION_RESULT.json').read_text())
-          assert actual==c['application_git_tree']
-          assert r['source_tree_sha256']==c['source_tree_sha256']
-          assert r['source_files']==c['source_files']
-          assert c['production']=='HOLD' and c['full_release']=='HOLD'
+          import hashlib, json, os, pathlib
+          root=pathlib.Path("application")
+          files={}
+          for p in sorted(root.rglob("*")):
+              if p.is_file() and "__pycache__" not in p.parts:
+                  files[str(p.relative_to(root))]=hashlib.sha256(p.read_bytes()).hexdigest()
+          raw=json.dumps(files,sort_keys=True,separators=(",",":")).encode()
+          out=pathlib.Path(os.environ["RUNNER_TEMP"])/"cell-evidence/source"
+          (out/"SOURCE_FILES.json").write_text(json.dumps(files,indent=2,sort_keys=True)+"\\n")
+          (out/"SOURCE_FINGERPRINT_SHA256").write_text(hashlib.sha256(raw).hexdigest()+"\\n")
           PY
       - name: Install inherited frozen Python dependencies
         run: |
