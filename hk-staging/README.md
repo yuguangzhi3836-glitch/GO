@@ -41,7 +41,13 @@ The two trees have 577 common paths, 576 byte-identical files, and exactly one d
 - Agent transport SHA-256: `4301a7e920fc25d98ea8403ac00ebbdb6a864bcb092d33caf343ad28603ff490`
 - Installed Agent entrypoint SHA-256: `73f7e407dcd97d5ed7bff2bcf171d717a281087ced0ecfc0a8d51c87b8861cf5`
 - Executor version: `0.4.3-rollback-runtime`
-- Installed Executor main SHA-256: `323c30a7dda9bfa86c45a505854022ee161ef85b3bf41673c018987c88028388`
+- Installed Executor main SHA-256: `b9aea31e3617e8d94326eef9234708ade5575a05b871b7e2e76c3a0252c5e475`
+- Installed Executor collector SHA-256: `2b05e3a76845128195c931772b4927ef682e8b36e7f11ba8178c99a9d99452a9`
+
+The Executor main and collector digests above are the ones installed on
+HK-STAGING-01 as of the 2026-09-16 controlled VERIFY baseline migration to
+DEPTH48. Their earlier values (`323c30a7…` / `a0eeda9e…`) described the retired
+R3.1.5 runtime and are kept in the change record, not here.
 
 The Executor's four runtime modules are included under `source/executor/runtime/` and were independently hash-verified before archival.
 

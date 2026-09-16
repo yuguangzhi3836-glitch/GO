@@ -17,7 +17,16 @@
     "env_sha256": "6682ff61f336fb8ff95a6585e9133c88c52a4eaa440a7aea6a6e06f771e607fc",
     "api_container": "go-822-staging-api-1",
     "api_health": "healthy",
-    "business_services_checked": ["api", "recovery-worker", "outbox-worker", "mobile-push-receipt-worker", "reconciliation-worker", "mobile-push-worker", "mobile-engagement-worker", "judgment-worker"],
+    "business_services_checked": [
+      "api",
+      "recovery-worker",
+      "outbox-worker",
+      "mobile-push-receipt-worker",
+      "reconciliation-worker",
+      "mobile-push-worker",
+      "mobile-engagement-worker",
+      "judgment-worker"
+    ],
     "all_8_services_same_image": true,
     "image_identity_semantics": "docker inspect <container>[0].Image, the exact field the VERIFY executor compares; not a config digest, not a repo digest, not a manifest digest",
     "verified_image_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132",
@@ -63,14 +72,16 @@
     {
       "path": "docs/control-plane/hk-staging/HK_STAGING_DEPLOY_BASELINE.md",
       "line": "Installed Executor main SHA-256: 323c30a7...",
-      "status": "NOT_CHANGED",
-      "why": "A statement about what is installed on the host. It stays true until the install happens; it must be updated as part of the install, not before."
+      "status": "UPDATED_WITH_THE_INSTALL",
+      "why": "An installed-state statement. It was left alone at migration time because it was still true; it was updated on 2026-09-16 when the install actually happened, which is what makes it false otherwise. The digest it now records is the one verified on the host after the install.",
+      "updated_to": "b9aea31e3617e8d94326eef9234708ade5575a05b871b7e2e76c3a0252c5e475"
     },
     {
       "path": "hk-staging/README.md",
       "line": "Installed Executor main SHA-256: 323c30a7...",
-      "status": "NOT_CHANGED",
-      "why": "Same reason: an installed-state statement, updated with the install."
+      "status": "UPDATED_WITH_THE_INSTALL",
+      "why": "An installed-state statement. It was left alone at migration time because it was still true; it was updated on 2026-09-16 when the install actually happened, which is what makes it false otherwise. The digest it now records is the one verified on the host after the install.",
+      "updated_to": "b9aea31e3617e8d94326eef9234708ade5575a05b871b7e2e76c3a0252c5e475"
     },
     {
       "path": "control-plane/boss-deploy-request-v1/PROVENANCE.json",
