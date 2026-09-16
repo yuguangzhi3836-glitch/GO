@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timedelta, timezone
 import hashlib
+import hmac
 import json
 from pathlib import Path
 import re
@@ -113,6 +114,96 @@ def verify(receipt, evidence_root, *, expected_cell, expected_task, expected_age
         result["gate"] = "PASS_SCOPED"
     return result
 
+
+
+IDENTITY_ASSERTION_ALGORITHM = "HMAC-SHA256"
+DEFAULT_MAX_ASSERTION_LIFETIME_SECONDS = 300
+_NONCE = re.compile(r"^[A-Za-z0-9_-]{16,128}$")
+
+
+def _assertion_payload(assertion):
+    fields = ("algorithm", "key_id", "worker_id", "task_id", "candidate_sha",
+              "nonce", "issued_at", "expires_at")
+    return {name: assertion.get(name) for name in fields}
+
+
+def sign_identity_assertion(assertion, trust_key):
+    """Return a lowercase hex signature over the canonical assertion payload."""
+    if not isinstance(trust_key, bytes) or len(trust_key) < 32:
+        raise ValueError("identity trust key must contain at least 32 bytes")
+    payload = json.dumps(_assertion_payload(assertion), sort_keys=True,
+                         separators=(",", ":"), ensure_ascii=False).encode()
+    return hmac.new(trust_key, payload, hashlib.sha256).hexdigest()
+
+
+def verify_identity_assertion(assertion, *, trusted_keys, expected_worker_id,
+                              expected_task_id, expected_candidate_sha,
+                              observed_at=None, seen_nonces=None,
+                              max_lifetime_seconds=DEFAULT_MAX_ASSERTION_LIFETIME_SECONDS):
+    """Verify a bounded signed identity assertion without claiming process liveness."""
+    errors = []
+    result = {
+        "gate": "HOLD",
+        "errors": errors,
+        "authenticated_worker_identity": False,
+        "assertion_signature_verified": False,
+        "live_worker_liveness_verified": False,
+        "replay_detected": False,
+        "meaning": "Signed worker identity assertion only; not live process liveness",
+    }
+    if not isinstance(assertion, dict):
+        errors.append("identity assertion must be an object")
+        return result
+    if not isinstance(trusted_keys, dict):
+        errors.append("trusted_keys must be an explicit key-id mapping")
+        return result
+    if (isinstance(max_lifetime_seconds, bool) or
+            not isinstance(max_lifetime_seconds, int) or max_lifetime_seconds <= 0):
+        errors.append("max_lifetime_seconds must be a positive integer")
+        return result
+    expected = {
+        "algorithm": IDENTITY_ASSERTION_ALGORITHM,
+        "worker_id": expected_worker_id,
+        "task_id": expected_task_id,
+        "candidate_sha": expected_candidate_sha,
+    }
+    for name, value in expected.items():
+        if not isinstance(value, str) or not value or assertion.get(name) != value:
+            errors.append(f"{name} identity mismatch")
+    key_id = assertion.get("key_id")
+    trust_key = trusted_keys.get(key_id) if isinstance(key_id, str) else None
+    if not isinstance(trust_key, bytes) or len(trust_key) < 32:
+        errors.append("identity assertion key is not trusted")
+    nonce = assertion.get("nonce")
+    if not isinstance(nonce, str) or not _NONCE.fullmatch(nonce):
+        errors.append("identity assertion nonce invalid")
+    issued = _instant(assertion.get("issued_at"), "issued_at", errors)
+    expires = _instant(assertion.get("expires_at"), "expires_at", errors)
+    observed = _instant(observed_at or datetime.now(timezone.utc).isoformat(),
+                        "observed_at", errors)
+    if issued and expires and observed:
+        if not issued <= observed <= expires:
+            errors.append("identity assertion is not currently valid")
+        if expires - issued > timedelta(seconds=max_lifetime_seconds):
+            errors.append("identity assertion lifetime exceeds policy")
+    signature = assertion.get("signature")
+    if not isinstance(signature, str) or not re.fullmatch(r"[0-9a-f]{64}", signature):
+        errors.append("identity assertion signature invalid")
+    elif isinstance(trust_key, bytes) and len(trust_key) >= 32:
+        expected_signature = sign_identity_assertion(assertion, trust_key)
+        if not hmac.compare_digest(signature, expected_signature):
+            errors.append("identity assertion signature mismatch")
+        else:
+            result["assertion_signature_verified"] = True
+    nonce_store = seen_nonces if seen_nonces is not None else set()
+    if isinstance(nonce, str) and nonce in nonce_store:
+        result["replay_detected"] = True
+        errors.append("identity assertion nonce replayed")
+    if not errors:
+        nonce_store.add(nonce)
+        result["gate"] = "PASS_SCOPED"
+        result["authenticated_worker_identity"] = True
+    return result
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
