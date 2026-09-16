@@ -22,5 +22,16 @@ jobs:
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
       - name: Run focused zero-write tests
         run: |
+          mkdir -p evidence-out
           cd application
-          python -m pytest -p no:cacheprovider tests/test_v70_r3_c04_admin_reconciliation.py -vv
+          set -o pipefail
+          python -m pytest -p no:cacheprovider tests/test_v70_r3_c04_admin_reconciliation.py -vv --junitxml=../evidence-out/junit.xml 2>&1 | tee ../evidence-out/raw.log
+          cd ..
+          git rev-parse HEAD > evidence-out/candidate.txt
+          git rev-parse HEAD:application > evidence-out/application-tree.txt
+          sha256sum evidence-out/raw.log evidence-out/junit.xml > evidence-out/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c04-read-only-case-envelope
+          path: evidence-out
+          retention-days: 90
