@@ -91,6 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pytest ci/round2/test_validate_ledger.py -k receipt -p no:cacheprovider --junitxml "$RUNNER_TEMP/cell-evidence/receipt-tests.xml"
+          python -m unittest -v ci.round2.test_c12_worker_liveness 2>&1 | tee "$RUNNER_TEMP/cell-evidence/c12-worker-liveness.log"
           for cell in C08 C10 C12; do
             lower=$(echo "$cell" | tr '[:upper:]' '[:lower:]')
             python ci/round2/verify_execution_receipt.py "evidence/v70-next-depth-20260914/$lower/ACK_RECEIPT.json" --evidence-root . --expected-cell "$cell" --expected-task "V70-R2-$cell-02" --expected-agent /root/c12_scheduler | tee "$RUNNER_TEMP/cell-evidence/$lower-receipt-admission.json"
