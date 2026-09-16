@@ -3,7 +3,7 @@
   "product_candidate_commit": "cb1181bf40b0e24f55ef095d8f1ee8857bdd6517",
   "gate_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
   "baseline_commit": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
-  "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "application_git_tree": "fe61815225a94517ccc8b57ead4739dcfaba14ef",
   "source_files": 1365,
   "source_tree_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
   "inherited_candidate": {
@@ -12,10 +12,9 @@
     "policy": "preserve prior scoped Cell evidence; no redevelopment"
   },
   "approved_integration_delta": [
-    "application/src/go_hotel/db/models.py",
-    "application/alembic/versions/0134_flight_status_width.py",
-    "application/tests/test_depth25_migration_history.py",
-    "application/tests/test_parent_implementation_code_review_debt_closure.py"
+    "application/src/go_hotel/repositories/sql.py",
+    "application/src/go_hotel/judgment/service.py",
+    "application/tests/judgment/test_next_depth_concurrent_judgment.py"
   ],
   "migration_head": "0134_flight_status_width",
   "retention_rebind": "PASS_RUN_34825183779",
@@ -23,5 +22,9 @@
   "production": "HOLD",
   "full_release": "HOLD",
   "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "historical_pass_transferred": false
+  "historical_pass_transferred": false,
+  "task_id": "V70-R3-C09-01",
+  "cell_id": "C09",
+  "candidate_head": "6c4a70370e75d3c4e1c02fd654b85d58a3c9cbbf",
+  "scope_claim": "atomic judgment/event/outbox persistence; outbox transport remains at-least-once"
 }
