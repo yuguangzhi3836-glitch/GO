@@ -687,12 +687,13 @@ class FailureClosureTests(unittest.TestCase):
         record = transport.failure_evidence(task, transport.Reject("GITHUB_TRANSPORT_REJECT"),
                                             stage=transport.STAGE_EVIDENCE_PUBLISH)
         name = (task["task_id"] + "-" + task["nonce"]) + ".json"
-        existing = self.workspace / "evidence-failure" / "evidence" / name
+        existing = self.workspace / "staged-evidence" / "evidence" / name
         existing.parent.mkdir(parents=True, exist_ok=True)
         existing.write_text('{"published":"first"}', encoding="utf-8")
 
         def fake_clone(repo, key, target):
-            self.assertEqual(pathlib.Path(target).name, "evidence-failure")
+            # A real clone carries whatever the repository already holds, so the
+            # previously published record must be staged into the workspace.
             pathlib.Path(target).mkdir(parents=True, exist_ok=True)
             (pathlib.Path(target) / "evidence").mkdir(exist_ok=True)
             (pathlib.Path(target) / "evidence" / name).write_text(existing.read_text(encoding="utf-8"), encoding="utf-8")
@@ -774,6 +775,237 @@ class FailureClosureTests(unittest.TestCase):
         self.assertIsInstance(staged, transport.Reject)
         self.assertEqual(staged.stage, "parser")
         self.assertEqual(staged.stdout, "raw")
+
+
+class SamePassPublicationTests(unittest.TestCase):
+    """TD-J.  One ``run_once`` pass must be able to publish more than one record.
+
+    Every publication used to clone into a fixed ``work/<dirname>``.  ``git
+    clone`` refuses a destination that already holds a work tree, so the second
+    publication of a pass failed and was reported as ``GITHUB_TRANSPORT_REJECT``
+    at stage ``evidence_publish`` -- although its Task had in fact executed and
+    succeeded.  On 2026-09-16 that is exactly how a fresh, successful VERIFY lost
+    its Evidence: the liveness record of the very same pass was published first,
+    because ``go-boss-health-…`` sorts before ``go-boss-request-verify-…``.
+
+    These tests drive the real ``run_once`` and the real ``push_evidence``; only
+    ``git`` and ``clone`` are fixtures, and they carry real ``git clone``
+    destination semantics so a collision fails the way it fails on the host.
+    """
+
+    HEALTH_FIRST = "go-boss-health-20260916T050328Z-e869ddd14462"
+    HEALTH_SECOND = "go-boss-health-20260916T060748Z-3a02213889ab"
+    VERIFY = "go-boss-request-verify-20260916T050220Z-1e244b2b26e9"
+    VERIFY_BROKEN = "go-boss-request-verify-20260916T070000Z-broken000000"
+
+    def setUp(self):
+        self.workspace = pathlib.Path(tempfile.mkdtemp(prefix="tdj-"))
+        self.task_key = Ed25519PrivateKey.generate()
+        self.evidence_private = Ed25519PrivateKey.generate()
+        (self.workspace / "task.pub").write_bytes(self.task_key.public_key().public_bytes(
+            serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH))
+        (self.workspace / "evidence.pem").write_bytes(self.evidence_private.private_bytes(
+            serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption()))
+
+    class BrokenExecutor:
+        def __init__(self, stage, stdout):
+            self.stage, self.stdout = stage, stdout
+
+        def run(self, argv):
+            return {"stdout": self.stdout, "stderr": "", "returncode": 1}
+
+    def iso(self, moment):
+        return moment.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+    def signed(self, action, task_id, nonce):
+        now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+        image = "sha256:" + "1c9598d6" + "0" * 56
+        parameters = {} if action == "CONTROL_PLANE_HEALTH" else {
+            "release_id": "release-" + nonce, "candidate_image_id": image,
+            "expected_current_image_id": image}
+        value = {"schema_version": "1", "task_id": task_id, "nonce": nonce,
+                 "issued_at": self.iso(now), "expires_at": self.iso(now + dt.timedelta(minutes=15)),
+                 "authority": "GO-COMMAND-CENTER", "environment": "HK-STAGING-01",
+                 "action_id": action, "parameters": parameters}
+        value["signature"] = self.task_key.sign(transport.canonical(value)).hex()
+        return value
+
+    def run_pass(self, tasks):
+        """One run_once over every Task in the clone, in `select_task_sources` order."""
+        clones, adds, pushes, pending = [], [], [], {}
+
+        def fake_clone(repo, key, target):
+            target = pathlib.Path(target)
+            clones.append(target.name)
+            if target.exists() and any(target.iterdir()):
+                # Real `git clone` refuses an existing work tree.
+                raise transport.Reject("GITHUB_TRANSPORT_REJECT")
+            (target / "tasks").mkdir(parents=True, exist_ok=True)
+            (target / "evidence").mkdir(parents=True, exist_ok=True)
+            if target.name == "tasks":
+                for name, value in tasks.items():
+                    (target / "tasks" / name).write_text(json.dumps(value), encoding="utf-8")
+
+        def fake_git(key, args, cwd=None):
+            repo = pathlib.Path(args[1]).name if args and args[0] == "-C" else None
+            if "add" in args:
+                pending[repo] = str(args[-1])
+                adds.append((repo, str(args[-1])))
+            if "push" in args:
+                pushes.append((repo, pending.get(repo)))
+            return "c" * 40
+
+        real_dispatch = transport.dispatch_action
+
+        def dispatch(task, executor=None):
+            if task["task_id"] == self.VERIFY_BROKEN:
+                return real_dispatch(task, self.BrokenExecutor("parser", "{not json"))
+            return real_dispatch(task, executor or deployment_actions.FakeExecutor())
+
+        config = {"environment": "HK-STAGING-01", "authority": "GO-COMMAND-CENTER",
+                  "tasks_repo": "git@example.invalid:tasks.git", "tasks_key": "unused",
+                  "evidence_repo": "git@example.invalid:evidence.git", "evidence_key": "unused",
+                  "task_verify_key": str(self.workspace / "task.pub"),
+                  "evidence_signing_key": str(self.workspace / "evidence.pem")}
+        config_path = self.workspace / "agent.json"
+        config_path.write_text(json.dumps(config), encoding="utf-8")
+
+        originals = (transport.clone, transport.git, transport.dispatch_action,
+                     transport.control_plane_health)
+        # The liveness *content* is another component's contract; the publication
+        # of the record it produces is what this pass is about, so the probe is a
+        # fixture and the pass stays platform-independent.
+        transport.clone, transport.git, transport.dispatch_action = fake_clone, fake_git, dispatch
+        transport.control_plane_health = lambda: {
+            "agent_version": transport.VERSION, "hostname": "liveness-fixture",
+            "current_time": transport.utcnow(), "disk_free_bytes": 1,
+            "memory_available_bytes": 1, "tasks_repo_connectivity": True,
+            "evidence_repo_connectivity": True}
+        try:
+            result = transport.run_once(str(config_path), str(self.workspace / "ledger.sqlite3"), None)
+        finally:
+            (transport.clone, transport.git, transport.dispatch_action,
+             transport.control_plane_health) = originals
+        return result, {"clones": clones, "adds": adds, "pushes": pushes}
+
+    def test_a_pass_publishes_liveness_then_verify_without_colliding(self):
+        tasks = {"%s.json" % self.HEALTH_FIRST: self.signed("CONTROL_PLANE_HEALTH", self.HEALTH_FIRST, "n-health-1"),
+                 "%s.json" % self.VERIFY: self.signed("HK_STAGING_VERIFY", self.VERIFY, "n-verify-1"),
+                 "%s.json" % self.VERIFY_BROKEN: self.signed("HK_STAGING_VERIFY", self.VERIFY_BROKEN, "n-verify-2")}
+        result, seen = self.run_pass(tasks)
+
+        # the real ordering that lost the Evidence on 2026-09-16
+        def workspace(dirname, task_id, nonce):
+            return "%s-%s" % (dirname, hashlib.sha256(
+                ("%s\0%s" % (task_id, nonce)).encode("utf-8")).hexdigest()[:16])
+
+        self.assertEqual(seen["clones"][0], "tasks")
+        self.assertEqual(seen["clones"][1:], [workspace("evidence", self.HEALTH_FIRST, "n-health-1"),
+                                             workspace("evidence", self.VERIFY, "n-verify-1"),
+                                             workspace("evidence-failure", self.VERIFY_BROKEN, "n-verify-2")],
+                         "the pass did not clone one workspace per publication")
+
+        published = {pathlib.PurePosixPath(path.replace("\\", "/")).name.split(".json")[0]: repo
+                     for repo, path in seen["pushes"]}
+        self.assertIn("%s-n-health-1" % self.HEALTH_FIRST, published)
+        self.assertIn("%s-n-verify-1" % self.VERIFY, published)
+        self.assertIn("%s-n-verify-2" % self.VERIFY_BROKEN, published, "a failure record was not published")
+
+        self.assertEqual(result["processed"], 2)
+        self.assertEqual(result["rejected"], 1)
+        self.assertEqual(len(result["evidence_commits"]), 2)
+        # the second publication is no longer refused as a transport failure
+        self.assertEqual([p.get("reason_code") for p in result["failure_evidence"]],
+                         ["EXECUTOR_OUTPUT_REJECTED"])
+        self.assertTrue(result["failure_evidence"][0]["published"])
+
+        # the durable identity of every record is still evidence/<task_id>-<nonce>.json
+        relative = [pathlib.PurePosixPath(path.replace("\\", "/")) for _, path in seen["adds"]]
+        self.assertEqual(sorted(entry.name for entry in relative),
+                         sorted("%s.json" % name for name in (
+                             "%s-n-health-1" % self.HEALTH_FIRST,
+                             "%s-n-verify-1" % self.VERIFY,
+                             "%s-n-verify-2" % self.VERIFY_BROKEN)))
+        self.assertEqual({entry.parent.name for entry in relative}, {"evidence"})
+        # and every workspace served exactly one record
+        self.assertEqual(len({repo for repo, _ in seen["pushes"]}), len(seen["pushes"]))
+
+    def test_more_than_two_records_publish_in_one_pass(self):
+        tasks = {"%s.json" % name: self.signed(action, name, "n-" + name)
+                 for name, action in ((self.HEALTH_FIRST, "CONTROL_PLANE_HEALTH"),
+                                      (self.HEALTH_SECOND, "CONTROL_PLANE_HEALTH"),
+                                      (self.VERIFY, "HK_STAGING_VERIFY"))}
+        result, seen = self.run_pass(tasks)
+
+        self.assertEqual(result["processed"], 3)
+        self.assertEqual(result["rejected"], 0)
+        self.assertEqual(result["failure_evidence"], [], "a publication was refused")
+        self.assertEqual(len(result["evidence_commits"]), 3)
+        self.assertEqual(len({repo for repo, _ in seen["pushes"]}), 3)
+        self.assertEqual(len(seen["clones"]), 4, "the tasks clone plus one workspace per publication")
+
+    def test_the_record_itself_is_unchanged_by_the_workspace_fix(self):
+        """Only where the clone happens changed; the published bytes did not."""
+        tasks = {"%s.json" % self.VERIFY: self.signed("HK_STAGING_VERIFY", self.VERIFY, "n-verify-1")}
+        captured = []
+
+        def fake_clone(repo, key, target):
+            target = pathlib.Path(target)
+            (target / "tasks").mkdir(parents=True, exist_ok=True)
+            for name, value in tasks.items():
+                (target / "tasks" / name).write_text(json.dumps(value), encoding="utf-8")
+
+        def dispatch(task, executor=None):
+            return deployment_actions.dispatch(task, deployment_actions.FakeExecutor(), None)
+
+        def capture(data, cfg, work, stage=None, refuse_overwrite=False, dirname="evidence"):
+            captured.append((data, dirname, stage))
+            return "c" * 40
+
+        config = {"environment": "HK-STAGING-01", "authority": "GO-COMMAND-CENTER",
+                  "tasks_repo": "git@example.invalid:tasks.git", "tasks_key": "unused",
+                  "evidence_repo": "git@example.invalid:evidence.git", "evidence_key": "unused",
+                  "task_verify_key": str(self.workspace / "task.pub"),
+                  "evidence_signing_key": str(self.workspace / "evidence.pem")}
+        path = self.workspace / "agent-3.json"
+        path.write_text(json.dumps(config), encoding="utf-8")
+
+        originals = (transport.clone, transport.git, transport.dispatch_action, transport.push_evidence)
+        transport.clone, transport.git = fake_clone, (lambda key, args, cwd=None: "c" * 40)
+        transport.dispatch_action, transport.push_evidence = dispatch, capture
+        try:
+            transport.run_once(str(path), str(self.workspace / "ledger-2.sqlite3"), None)
+        finally:
+            transport.clone, transport.git, transport.dispatch_action, transport.push_evidence = originals
+
+        record, dirname, stage = captured[0]
+        self.assertEqual(dirname, "evidence")
+        self.assertEqual(stage, transport.STAGE_EVIDENCE_PUBLISH)
+        self.assertEqual(record["status"], "SUCCESS")
+        self.assertEqual(record["executor_result"], "VERIFY_OK")
+        self.assertEqual(record["action_id"], "HK_STAGING_VERIFY")
+        self.assertEqual(record["task_id"], self.VERIFY)
+        self.assertNotIn("failure", record)
+        self.assertNotIn("retry_permitted", record)
+        self.evidence_private.public_key().verify(base64.b64decode(record["signature"]),
+                                                 transport.canonical(record))
+
+    def test_a_task_identity_never_becomes_a_path_component(self):
+        work = pathlib.Path(self.workspace)
+        hostile = transport._publish_workspace(work, "evidence",
+                                               {"task_id": "../../etc/passwd", "nonce": "../../x"})
+        self.assertEqual(hostile.parent, work)
+        self.assertTrue(hostile.name.startswith("evidence-"))
+        self.assertNotIn("/", hostile.name)
+        self.assertNotIn("\\", hostile.name)
+        # two identities never share a workspace, and the same identity is stable
+        first = transport._publish_workspace(work, "evidence", {"task_id": "a", "nonce": "b"})
+        second = transport._publish_workspace(work, "evidence", {"task_id": "a", "nonce": "c"})
+        self.assertNotEqual(first, second)
+        self.assertEqual(first, transport._publish_workspace(work, "evidence", {"task_id": "a", "nonce": "b"}))
+        self.assertNotEqual(first.name, transport._publish_workspace(work, "evidence-failure",
+                                                                     {"task_id": "a", "nonce": "b"}).name)
 
 
 if __name__ == "__main__":

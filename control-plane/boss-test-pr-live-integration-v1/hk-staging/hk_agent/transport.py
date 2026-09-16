@@ -429,15 +429,37 @@ def dispatch_action(task, executor=None):
     except deployment_actions.Reject as exc:
         raise _staged(exc, STAGE_EXECUTOR) from exc
 
+def _publish_workspace(work, dirname, data):
+    """A private clone target for one publication.
+
+    A single ``run_once`` publishes every Task it claims, in one order, inside
+    one temporary work root.  Publishing into a fixed ``work/<dirname>`` made the
+    second publication fail: ``git clone`` refuses a destination that already
+    holds a work tree, so the second Evidence of a pass was reported as
+    GITHUB_TRANSPORT_REJECT at stage ``evidence_publish`` while its Task had in
+    fact executed and succeeded.  Each record therefore gets its own workspace.
+
+    The Task identity is hashed rather than interpolated, so no Task-supplied
+    string can become a path component.  This changes where the clone happens,
+    not what is published: repository, branch, ``evidence/<task_id>-<nonce>.json``
+    filename, signature and signer are all untouched.
+    """
+    identity = "%s\0%s" % (data.get("task_id", ""), data.get("nonce", ""))
+    digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:16]
+    return pathlib.Path(work) / ("%s-%s" % (dirname, digest))
+
 def push_evidence(data,cfg,work,stage=None,refuse_overwrite=False,dirname="evidence"):
     """Publish one record.  ``refuse_overwrite`` never replaces an existing one.
 
     One Task identity has at most one Evidence record.  A second record for the
     same task/nonce could be read as either outcome, so it is refused instead of
     merged or overwritten.
+
+    Each call publishes from its own clone workspace, so several Tasks can be
+    published in the same ``run_once`` pass without colliding.
     """
     try:
-        repo=work/dirname; clone(cfg["evidence_repo"],cfg["evidence_key"],repo)
+        repo=_publish_workspace(work,dirname,data); clone(cfg["evidence_repo"],cfg["evidence_key"],repo)
         out=repo/"evidence"; out.mkdir(exist_ok=True)
         name=(data["task_id"]+"-"+data["nonce"]).replace("/","_")+".json"; path=out/name
         if refuse_overwrite and (path.exists() or path.is_symlink()):
