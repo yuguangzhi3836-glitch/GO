@@ -473,6 +473,16 @@ B4  没有可用的部署计划 bundle（plan + approval + canary/preflight task
       属另一轮；本轮不做。
     记录：`docs/control-plane/command-center/B4B15_PAIRED_RECONCILIATION_20260916.md`
 
+    **2026-09-16 / B4-B1.6 实况刷新（只读，未改代码）**：用**当前**总线/证据仓
+    （`go-control-tasks` main `c381c801…`、`go-control-evidence` permission-test `3ae4c96c…`）
+    重新投影并重跑 readiness ⇒ **0 mandatory FAIL**：`APPROVED_CANDIDATE` / `SOURCE_BINDING` /
+    `TEST_PR` / `VERIFY` 全部 **PASS**，其余 9 门 **UNKNOWN（缺 approved plan bundle / live channel
+    bundle）**，`deploy_ready=UNKNOWN`。
+    ⚠ 仓库里已提交的 `PROJECTION_20260914/20260915` 是**不可改写的历史记录**；用 09-15 那份旧输入跑
+    readiness 会报 `TEST_PR=FAIL(TASK_EXPIRED)` 与 `VERIFY=FAIL(过大 age)` —— 那是**旧输入的假象**，
+    不是当前缺陷。当前投影内嵌 `live_verified_runtime` = `sha256:1c9598d6…`（age ≈ 8.3h，窗口内）。
+    ⇒ 真实断点已经不是"再跑 TEST_PR/VERIFY"，而是**已批准 plan / live 开关**这条 live 路径。    记录：`docs/control-plane/command-center/B4B15_PAIRED_RECONCILIATION_20260916.md`
+
 B5  deployment_requests_enabled=false（**正确的 fail-closed 姿态**，不是缺陷）
     真实 DEPLOY 必须等人类当次批准后才开；ROLLBACK 同理（#105 另需独立批准）
 ```
@@ -572,6 +582,40 @@ RELEASE_GATES / CANARY（含 0114→0133 基线）/ AUTONOMY 是各自独立的 
 durability=PROVEN。先有真实封存包，plan bundle 才有可绑定的交付身份。
 当前 readiness 仍是 `DEPLOY_READY=UNKNOWN`，无 mandatory FAIL，九门因缺 plan bundle 为 UNKNOWN。）
 
+（2026-09-16 / B4-B1.6 更新 —— **上面那段 NEXT_ACTION 已过期，勿照做**：它描述的
+「安装 B4-B1.2 的 5 个文件 + 两张 fresh TEST_PR」在 B4-B1.3 / 第 2 轮 / B4-B1.5 里早已完成并证明
+（B4-B1.3 已装机、TEST_PR 成功、seal 落库、canonical candidate 已成套对账）。保留原文只为历史可读。）
+
+**当前 NEXT_ACTION（唯一一条）—— 进真实 DEPLOY 的 live 路径，需当次人类授权：**
+
+```text
+已就绪（仓库侧无 mandatory FAIL，见 §9 的 B4-B1.6）
+  APPROVED_CANDIDATE / SOURCE_BINDING / TEST_PR / VERIFY = PASS
+  candidate admission = ACCEPT（artifact 6b92050e… / executor test-pr-v3 /
+                                evidence_id 1865b17d… / package e70238c7… / durability PROVEN）
+仍缺（9 门 UNKNOWN，全部是 live / 上游 / 人类输入）
+  plan 一族（7 门）  PACKAGE_BINDING / DEPLOYMENT_PLAN / HUMAN_APPROVAL / CURRENT_RUNTIME /
+                     CANARY / RELEASE_GATES / BRIDGE_ACCEPTANCE
+                     ⇒ 需要一份 approved plan bundle，其内含：四个 release gates 的
+                       exact-bound PASS（上游 Boss GPT / Cells 声明）、本候选的 CANARY
+                       Task+Evidence（窗口 1800s）、preflight Task+Evidence（窗口 300s）、
+                       以及 authenticated GitHub Human Approval
+  live switch（2 门） LIVE_SWITCH / LIVE_SWITCH_PROVENANCE ⇒ 需要 CC 主机的 channel bundle
+  通道现状          enabled_request_actions = [HK_STAGING_VERIFY, HK_STAGING_TEST_PR,
+                     CONTROL_PLANE_HEALTH]；CANARY / DEPLOY 未启用，deployment_requests_enabled=false
+                     ⇒ **要跑 CANARY/DEPLOY 必须先由人类授权开启通道**
+第一步（需人类当次批准）
+  授权在本机（CC）开启 CANARY/DEPLOY 请求通道 → 跑本候选的 CANARY + preflight →
+  形成 plan（含 release gates 声明）→ 人类审批 → DEPLOY_READY=YES → dry-run PASS → 真实 DEPLOY
+⛔ 本轮到此为止：真实 DEPLOY / RDS 迁移 / 人类审批都不得代替人类执行。
+```
+
+**#103 新增能力（不是本轮断点，但必须排上）**：新版 #103 把受控 Alembic forward migration 纳入 V1。
+现状是三层一起硬拒（准入 `MIGRATION_REQUIRED=False`、deploy gate `forbidden_operation`、
+HK 执行器无该能力）。这不阻断当前 image-only 候选的部署，但阻断老板侧真实产品版本
+（live head `0133_flight_change_plan`，候选已到 `0136_merge_go_ai_journey` / `0137`）。
+按 #103 的最小链实现，**不要无边界改契约**；不得新增 gate / signer / 命令 / 通用 DBA 平台。
+
 （次会话动手前先读 `docs/project/CC_V1_SCOPE_20260916.md`，并遵守 §8 的 DO_NOT_REOPEN。）
 
 ---
@@ -599,6 +643,12 @@ liveness-request-transport / projection / state-publication）。
   让 CI 回到全绿，再进入 §11 的 NEXT_ACTION。
   ⚠ 不要为了让 CI 变绿而放宽 fail-closed：正确修法是让调用方带上身份，
     而不是让 validate_bundle 接受缺失的身份。
+```
+
+**2026-09-16 / B4-B1.6 更新：CI 已全绿，本节描述的是 `eef48f8`/`789d6ba` 当时的红色状态。**
+实测 `1c36153`（PR #109 当前 HEAD）：**11 check-runs，0 failure**（push 与 pull_request 各一套，
+`isolated-candidate-admission` 12/12 steps success，`isolated-deploy-readiness` /
+`isolated-deploy-dry-run` / `isolated-request-visibility` 均 success）。三个失败 job 已随后续提交修复。    而不是让 validate_bundle 接受缺失的身份。
 ```
 
 ## 附：本文件的读数口径
