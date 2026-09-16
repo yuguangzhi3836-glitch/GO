@@ -1,0 +1,26 @@
+name: Runtime liveness gate
+
+on:
+  pull_request:
+    paths:
+      - "ci/runtime_liveness/**"
+      - ".github/workflows/runtime-liveness.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-liveness-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile runtime liveness modules
+        run: python -m py_compile ci/runtime_liveness/validate_runtime_liveness.py ci/runtime_liveness/probe_external_orchestrator.py
+      - name: Run runtime liveness tests
+        working-directory: ci/runtime_liveness
+        run: python -m unittest -v test_runtime_liveness.py test_external_orchestrator_probe.py
