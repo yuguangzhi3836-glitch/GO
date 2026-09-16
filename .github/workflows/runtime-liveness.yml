@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compile runtime liveness modules
-        run: python -m py_compile ci/runtime_liveness/validate_runtime_liveness.py ci/runtime_liveness/probe_external_orchestrator.py
+        run: python -m py_compile ci/runtime_liveness/validate_runtime_liveness.py ci/runtime_liveness/probe_external_orchestrator.py ci/runtime_liveness/durable_orchestrator.py
       - name: Run runtime liveness tests
         working-directory: ci/runtime_liveness
-        run: python -m unittest -v test_runtime_liveness.py test_external_orchestrator_probe.py
+        run: python -m unittest -v test_runtime_liveness.py test_external_orchestrator_probe.py test_durable_orchestrator.py
