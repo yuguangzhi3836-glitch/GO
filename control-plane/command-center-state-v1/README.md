@@ -222,14 +222,17 @@ real liveness Request as forbidden or promote a read-only probe into a human
 execution right, so the source class is carried explicitly.
 
 ```json
-{"human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY"],
+{"human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
+                          "HK_STAGING_CANARY"],
  "platform_request_actions": ["CONTROL_PLANE_HEALTH"],
- "enabled_human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR"],
+ "enabled_human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY"],
  "enabled_platform_request_actions": ["CONTROL_PLANE_HEALTH"],
- "enabled_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "CONTROL_PLANE_HEALTH"],
+ "enabled_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY",
+                             "CONTROL_PLANE_HEALTH"],
  "request_action_source_class": {
    "HK_STAGING_VERIFY": "HUMAN_REQUEST", "HK_STAGING_TEST_PR": "HUMAN_REQUEST",
-   "HK_STAGING_DEPLOY": "HUMAN_REQUEST", "CONTROL_PLANE_HEALTH": "PLATFORM_AUTOMATION"},
+   "HK_STAGING_DEPLOY": "HUMAN_REQUEST", "HK_STAGING_CANARY": "HUMAN_REQUEST",
+   "CONTROL_PLANE_HEALTH": "PLATFORM_AUTOMATION"},
  "platform_action_properties": {
    "CONTROL_PLANE_HEALTH": {"source_class": "PLATFORM_AUTOMATION",
                             "parameters": {}, "read_only": true,
@@ -238,7 +241,7 @@ execution right, so the source class is carried explicitly.
    "HK_STAGING_VERIFY": "SUPPORTED_PROVEN",
    "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
    "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
-   "HK_STAGING_CANARY": "NOT_REQUESTABLE",
+   "HK_STAGING_CANARY": "CAPABILITY_PRESENT_REQUESTABLE",
    "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE",
    "CONTROL_PLANE_HEALTH": "SUPPORTED_PROVEN_PLATFORM_ONLY"},
  "deploy_request_enabled": false,

@@ -552,6 +552,24 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 
 ## 11. 下一会话唯一入口
 
+> **2026-09-17 / B4-B1.8（CCV1-45 → CCV1-47）—— 再优先读这一段。**
+>
+> **① HK 侧已装**：`canary_runtime.py`（`a75dcb85…`）、`go-hk-deployctl`（`95c0b33d…`）、
+> `go-hk-staging-preflight-probe`（`1fd9381a…`）三个文件已受控换装，另外四个 runtime pin 未动；
+> live preflight socket 实测 `alembic_gate` **false → true**。⇒ `B4_CANARY_BASELINE` 仓库侧与 live 侧都闭合。
+> **② CANARY 已通道化**：Bridge 修订 `1.6.0-canary-channel`，v4 action 合同由四项变五项
+> （`HK_STAGING_VERIFY` / `HK_STAGING_TEST_PR` / `HK_STAGING_DEPLOY` / `HK_STAGING_CANARY` /
+> `CONTROL_PLANE_HEALTH`）。CANARY 与 VERIFY 同形：Request 只有五个公共字段，Task 的四个参数
+> （`release_id` / `candidate_image_id` / `candidate_package_sha256` / `expected_current_image_id`）
+> 全部读自 root-only `/etc/go-command-center/boss-request-canary-baseline-v1.json`（0600）；该文件缺失或
+> 不合规一律 `invalid_canary_authority` **拒绝**。CANARY **不受 `deployment_requests_enabled` 约束**
+> —— 它是 plan 必须先引用的证据，用部署开关拦它会让 plan 永远无法成立。`HK_STAGING_ROLLBACK` 仍不可请求。
+> **③ `deployment_requests_enabled` 仍为 false**：`PLAN_CONTRACT.md` 的顺序是「准予本次具体版本部署后
+> 才开启 v4 开关并发布 Request」。先出 canary 证据 → 再登记 plan（含上游四项 release gates 声明）
+> 与 approval → 最后才开开关。
+> **④ 本候选下一步**：CANARY（1800s 窗口）→ preflight（300s）→ plan + Human Approval → 开开关 →
+> 单个 Request PR → `DEPLOY_READY=YES` → dry-run PASS → 真实 DEPLOY → post-deploy VERIFY。
+>
 > **2026-09-17 / B4-B1.7（CCV1-43）—— 本节之下的入口已被这里取代，优先读这一段。**
 >
 > **① 协作规范变了**（Eason 2026-09-17 指令，**覆盖本分支 `CODEBUDDY.md` 第 155 / 200–205 行的旧规则**）：

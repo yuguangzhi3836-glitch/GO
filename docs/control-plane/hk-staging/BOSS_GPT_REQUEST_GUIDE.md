@@ -25,9 +25,17 @@ Confirmed Boss Request capability:
   formal deployment-plan directory. Treat DEPLOY as fail-closed and unavailable
   for a normal Boss Request unless a later authoritative change explicitly
   enables it under the approved deployment contract.
-- CANARY / ROLLBACK — do not invent a Boss Request schema. The underlying
-  Control Plane may have action runbooks, but that does not by itself expose a
-  Boss Request action.
+- `HK_STAGING_CANARY` — **SUPPORTED / REQUESTABLE** since Command Center channel
+  revision `1.6.0-canary-channel`. A CANARY Request carries the five common fields
+  only: Command Center reads the candidate image, that candidate's sealed package
+  and the expected current image from its own root-owned canary authority file, so
+  a Request cannot name an image. Running it is read-only and isolated, it needs no
+  approved plan, and it is **not** gated by `deployment_requests_enabled` — the
+  canary is the evidence a deployment plan must cite, so it has to be obtainable
+  before a plan can exist. A canary older than 30 minutes cannot be used by a plan,
+  so run it per candidate, close to the deployment.
+- ROLLBACK — do not invent a Boss Request schema. The underlying Control Plane may
+  have action runbooks, but that does not by itself expose a Boss Request action.
 
 Do not use the archived 2026-09-11 Bridge 1.2.0 / VERIFY-only snapshot under
 `command-center/` as the current capability inventory.
@@ -39,6 +47,11 @@ Treat requests such as these as `HK_STAGING_VERIFY`:
 - "Check whether HK-STAGING is healthy."
 - "Check the Hong Kong staging environment."
 - "Verify the current HK-STAGING state."
+
+Treat requests such as these as `HK_STAGING_CANARY`:
+
+- "Run a canary for the current candidate."
+- "Canary the candidate on Hong Kong."
 
 Treat requests such as these as `HK_STAGING_TEST_PR`:
 

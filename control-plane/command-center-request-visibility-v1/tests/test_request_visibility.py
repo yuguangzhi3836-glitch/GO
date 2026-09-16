@@ -826,13 +826,17 @@ class ActionRegistryTests(unittest.TestCase):
 
         An action the Bridge would refuse is one nothing may be built on, so a
         submission claiming it yields no fact and keeps saying so.
+
+        HK_STAGING_CANARY was this test's example until it joined the registry.
+        ROLLBACK is still outside it -- the channel contract has never accepted it
+        -- so it carries the same property.
         """
-        task = dict(health_task(), action_id="HK_STAGING_CANARY")
+        task = dict(health_task(), action_id="HK_STAGING_ROLLBACK")
         root = workdir(ledger={"version": 1, "requests": {"7:" + HEAD: {
                         "status": "published", "request_id": REQUEST_ID, "task": task,
                         "task_sha256": X.digest(task)}}},
                        requests=[collected(body=request_body(
-                           action_id="HK_STAGING_CANARY"))])
+                           action_id="HK_STAGING_ROLLBACK"))])
         index = run_export(root)
         self.assertEqual(index["counts"]["facts"], 0)
         self.assertEqual([a["kind"] for a in index["anomalies"]],

@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
-"""Candidate Bridge 1.5: VERIFY / TEST_PR / approved DEPLOY plans, plus a read-only
-CONTROL_PLANE_HEALTH probe.
+"""Candidate Bridge 1.6: VERIFY / TEST_PR / approved DEPLOY plans / CANARY, plus a
+read-only CONTROL_PLANE_HEALTH probe.
 
-The health action is not a fourth member of the same family; it is deliberately kept
-apart from the other three.
+The canary action takes nothing from the Request either.  A CANARY Request is the five
+common fields; the candidate image, its sealed package and the image the canary expects
+to be current are read from a root-owned authority file, so no caller can steer what the
+canary executes.  CANARY is deliberately *not* gated by `deployment_requests_enabled`:
+the canary is the evidence a deployment plan must cite before that plan can exist, so the
+deploy switch cannot be a precondition for producing it.  Installing this revision does
+not turn the deploy switch on.
+
+The health action is kept apart from the rest: it is deliberately not a member of the
+same family.
 
 * It carries no parameters. Its Request schema is the five common fields and nothing
   else, so there is no field a caller could use to steer an execution; the parameter
@@ -31,8 +39,10 @@ REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$")
 ALLOWED = {"schema_version", "request_id", "action_id", "environment", "requested_at"}
 POLICY = {"schema_version": "1", "action_id": "HK_STAGING_VERIFY", "environment": "HK-STAGING-01", "max_bytes": 4096, "max_age_seconds": 900}
 BASELINE_CONFIG = "/etc/go-command-center/boss-request-verify-baseline-v1.json"
+CANARY_BASELINE_CONFIG = "/etc/go-command-center/boss-request-canary-baseline-v1.json"
 TEST_ACTION = "HK_STAGING_TEST_PR"
 TEST_ALLOWED = ALLOWED | {"pr_number"}
+CANARY_ACTION = "HK_STAGING_CANARY"
 HEALTH_ACTION = "CONTROL_PLANE_HEALTH"
 # The one and only parameter block a health Task may carry. It is a constant, not
 # anything derived from the Request: the Request for this action is the five common
@@ -43,7 +53,7 @@ HEALTH_PARAMETERS = {}
 # free-form toggle, so removing it takes a new Bridge revision rather than an edit to a
 # root-owned config file. `deployment_requests_enabled` is untouched and still defaults
 # to refusing.
-CHANNEL_ACTIONS = [POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, HEALTH_ACTION]
+CHANNEL_ACTIONS = [POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, CANARY_ACTION, HEALTH_ACTION]
 GO_REPOSITORY = "git@github.com:yuguangzhi3836-glitch/GO.git"
 PR_RESOLVER_KEY = "/etc/go-command-center/keys/github-go-pr-resolver"
 COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -70,7 +80,7 @@ def validate_request(raw, at=None):
     if set(request) != fields: raise Reject("schema_fields")
     if request["schema_version"] != POLICY["schema_version"]: raise Reject("schema_version")
     if not isinstance(request["request_id"], str) or not REQUEST_ID_RE.fullmatch(request["request_id"]): raise Reject("request_id")
-    if request["action_id"] not in {POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, HEALTH_ACTION}: raise Reject("action")
+    if request["action_id"] not in {POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, CANARY_ACTION, HEALTH_ACTION}: raise Reject("action")
     if request["environment"] != POLICY["environment"]: raise Reject("environment")
     when = parse_time(request["requested_at"])
     at = at or now()
@@ -86,6 +96,29 @@ def load_baseline(path=BASELINE_CONFIG):
     if not re.fullmatch(r"sha256:[0-9a-f]{64}",value["image_id"]): raise Reject("invalid_authoritative_baseline")
     if not all(isinstance(value[x],str) and value[x] for x in ("evidence_task_id","evidence_commit","evidence_path")): raise Reject("invalid_authoritative_baseline")
     return value
+def load_canary_baseline(path=CANARY_BASELINE_CONFIG):
+    """The root-owned binding a CANARY Request may not influence.
+
+    A canary Task names a candidate image, that candidate's sealed package, and the
+    image the canary expects to be current.  None of the three may come from a
+    Request: the Request is an untrusted proposal and the canary is evidence, so the
+    values come from this file, which the operator writes (root:root 0600) and the
+    Bridge only reads.  A file that is missing, unreadable, malformed, incomplete,
+    over-broad or off-environment is refused rather than defaulted -- and it is
+    refused as a Reject, so the polling tick reports a rejection instead of dying.
+    """
+    try:
+        value=json.loads(pathlib.Path(path).read_text())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise Reject("invalid_canary_authority") from exc
+    required={"version","environment","candidate_image_id","candidate_package_sha256","expected_current_image_id"}
+    if not isinstance(value,dict) or set(value) != required or value.get("version") != 1 or value.get("environment") != POLICY["environment"]:
+        raise Reject("invalid_canary_authority")
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}",value["candidate_image_id"]): raise Reject("invalid_canary_authority")
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}",value["expected_current_image_id"]): raise Reject("invalid_canary_authority")
+    if not re.fullmatch(r"[0-9a-f]{64}",value["candidate_package_sha256"]): raise Reject("invalid_canary_authority")
+    return value
+
 def derive(request, baseline, at=None):
     at = at or now(); stamp = at.strftime("%Y%m%dT%H%M%SZ")
     # Seconds alone are insufficient for a persistent channel: two independent
@@ -98,6 +131,30 @@ def derive(request, baseline, at=None):
       "nonce":secrets.token_urlsafe(24), "issued_at":iso(at), "expires_at":iso(at + dt.timedelta(minutes=15)),
       "authority":"GO-COMMAND-CENTER", "environment":POLICY["environment"], "action_id":POLICY["action_id"],
       "parameters":{"release_id":"boss-request-verify-" + unique_stamp, "candidate_image_id":baseline["image_id"], "expected_current_image_id":baseline["image_id"]}}
+
+def derive_canary(request, baseline, at=None):
+    """A candidate canary Task. It takes nothing at all from the Request.
+
+    The Request schema for this action is the five common fields -- no image, no
+    package, no service, no path, no env, no command, no plan, no pr_number -- so
+    there is no caller-controlled field to pass through.  Every parameter is copied
+    from the root-owned canary authority, which means two Requests against the same
+    authority can differ only in identity and timing.
+
+    The canary runs the candidate image in an isolated container (no network, read-only
+    root, dropped capabilities) and asserts the pre-migration Alembic head.  It mutates
+    no business runtime, which is why it does not need the deploy switch.
+    """
+    at = at or now(); stamp = at.strftime("%Y%m%dT%H%M%SZ")
+    suffix = hashlib.sha256(request["request_id"].encode()).hexdigest()[:12]
+    unique_stamp = stamp + "-" + suffix
+    return {"schema_version":"1", "task_id":"go-boss-request-canary-" + unique_stamp,
+      "nonce":secrets.token_urlsafe(24), "issued_at":iso(at), "expires_at":iso(at + dt.timedelta(minutes=15)),
+      "authority":"GO-COMMAND-CENTER", "environment":POLICY["environment"], "action_id":CANARY_ACTION,
+      "parameters":{"release_id":"boss-request-canary-" + unique_stamp,
+                    "candidate_image_id":baseline["candidate_image_id"],
+                    "candidate_package_sha256":baseline["candidate_package_sha256"],
+                    "expected_current_image_id":baseline["expected_current_image_id"]}}
 
 def sign(task, key_path):
     key = serialization.load_pem_private_key(pathlib.Path(key_path).read_bytes(), password=None)
@@ -148,6 +205,7 @@ def derive_formal_task(request, at=None, resolver=resolve_pr):
     if action == HEALTH_ACTION: return derive_health(request, at)
     if action == TEST_ACTION: return derive_test_pr(request, at, resolver)
     if action == POLICY["action_id"]: return derive(request, load_baseline(), at)
+    if action == CANARY_ACTION: return derive_canary(request, load_canary_baseline(), at)
     if action == deploy_gate.ACTION: raise Reject("deployment_context_required")
     raise Reject("action_not_enabled_in_channel")
 
@@ -442,7 +500,7 @@ def main():
         try: result.append({"pr":number,"head":head,**persistent_process(number,head,args.ledger_root,args.key,args.channel_config)})
         except Reject as exc: result.append({"pr":number,"head":head,"status":"rejected","reason":str(exc)})
     channel = load_channel(args.channel_config)
-    print(json.dumps({"bridge_version":"1.5.0-control-plane-health", "channel_mode":channel["mode"],
+    print(json.dumps({"bridge_version":"1.6.0-canary-channel", "channel_mode":channel["mode"],
                       "publish_enabled":channel["publish_enabled"], "results":result},sort_keys=True)); return 0
 
 def run_tests():
@@ -565,7 +623,9 @@ def run_tests():
       def test_health_wrong_environment_is_rejected(self):
         with self.assertRaises(Reject): validate_request(self.health(environment="PRODUCTION"))
       def test_health_unknown_action_is_rejected(self):
-        for bogus in ("HK_STAGING_ROLLBACK","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH_","control_plane_health"):
+        # HK_STAGING_CANARY left this list when it became a channel action; ROLLBACK is
+        # still refused here, and the canary's own refusals are asserted separately.
+        for bogus in ("HK_STAGING_ROLLBACK","CONTROL_PLANE_HEALTH_","control_plane_health"):
           with self.assertRaises(Reject): validate_request(self.health(action_id=bogus))
       def test_health_task_is_read_only_with_fixed_empty_parameters(self):
         task=derive_formal_task(validate_request(self.health()))
@@ -581,7 +641,7 @@ def run_tests():
         for parameter in ("candidate_image_id","expected_current_image_id","release_id","source","builder_profile","deployment_id"):
           self.assertNotIn(parameter,task["parameters"])
       def test_unnamed_action_cannot_become_a_verify_task(self):
-        for bogus in ("HK_STAGING_CANARY","HK_STAGING_ROLLBACK","CONTROL_PLANE_HEALTH_","OTHER"):
+        for bogus in ("HK_STAGING_ROLLBACK","CONTROL_PLANE_HEALTH_","OTHER"):
           with self.assertRaises(Reject) as caught: derive_formal_task({"action_id":bogus,"request_id":"liveness-x-1"})
           self.assertEqual(str(caught.exception),"action_not_enabled_in_channel")
       def test_health_cannot_participate_in_the_deploy_arm(self):
@@ -595,15 +655,18 @@ def run_tests():
             self.assertEqual(str(caught.exception),"legacy_mode_verify_only")
             self.assertEqual(load_arm(str(arm))["state"],"ARMED")
           finally: globals()["read_pr"]=original
-      def test_channel_contract_expresses_exactly_four_actions(self):
+      def test_channel_contract_expresses_exactly_five_actions(self):
         value=channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
-        self.assertEqual(value["allowed_actions"],["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","CONTROL_PLANE_HEALTH"])
+        self.assertEqual(value["allowed_actions"],["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH"])
         self.assertIs(value["deployment_requests_enabled"],False)
       def test_channel_without_the_health_action_is_refused(self):
-        with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY"],"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
+        with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY"],"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
+      def test_channel_without_the_canary_action_is_refused(self):
+        with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","CONTROL_PLANE_HEALTH"],"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
       def test_channel_rejects_an_unknown_or_reordered_action(self):
-        for actions in (["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","CONTROL_PLANE_HEALTH","HK_STAGING_ROLLBACK"],
-                        ["CONTROL_PLANE_HEALTH","HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY"],
+        for actions in (["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH","HK_STAGING_ROLLBACK"],
+                        ["CONTROL_PLANE_HEALTH","HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY"],
+                        ["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_ROLLBACK","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH"],
                         "CONTROL_PLANE_HEALTH"):
           with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":actions,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
       def test_existing_actions_are_unchanged_by_the_health_extension(self):
@@ -632,6 +695,144 @@ def run_tests():
             private.public_key().verify(bytes.fromhex(body["signature"]),canonical({k:v for k,v in body.items() if k!="signature"}))
           finally:
             for name,value in saved.items(): globals()[name]=value
+      def canary(self, **x):
+        value={"schema_version":"1","request_id":"canary-hk-staging-987654","action_id":CANARY_ACTION,"environment":"HK-STAGING-01","requested_at":iso(now())}; value.update(x); return canonical(value)
+      def canary_authority(self, **x):
+        value={"version":1,"environment":"HK-STAGING-01","candidate_image_id":"sha256:"+"6"*64,"candidate_package_sha256":"7"*64,"expected_current_image_id":"sha256:"+"1"*64}; value.update(x); return value
+      def test_canary_request_is_accepted_and_carries_nothing_else(self):
+        request=validate_request(self.canary()); self.assertEqual(request["action_id"],CANARY_ACTION)
+        self.assertEqual(set(request),ALLOWED)
+      def test_canary_request_with_any_parameter_is_rejected(self):
+        for extra in ("image","image_id","candidate_image_id","candidate_package_sha256","expected_current_image_id","package_sha256","service","services","path","env","command","plan_id","pr_number","parameters","release_id","force_recreate","production"):
+          with self.assertRaises(Reject): validate_request(self.canary(**{extra:"x"}))
+      def test_canary_wrong_environment_and_unknown_action_are_rejected(self):
+        with self.assertRaises(Reject): validate_request(self.canary(environment="PRODUCTION"))
+        with self.assertRaises(Reject): validate_request(self.canary(action_id="canary"))
+      def test_canary_task_carries_exactly_four_parameters_taken_from_the_authority(self):
+        authority=self.canary_authority()
+        with tempfile.NamedTemporaryFile("w",suffix=".json",delete=False) as handle:
+          handle.write(json.dumps(authority)); handle.flush()
+          original=globals()["load_canary_baseline"]
+          globals()["load_canary_baseline"]=lambda _orig=original, _path=handle.name: _orig(_path)
+          try: task=derive_formal_task(validate_request(self.canary()))
+          finally: globals()["load_canary_baseline"]=original
+        self.assertEqual(task["action_id"],CANARY_ACTION)
+        self.assertEqual(set(task["parameters"]),{"release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id"})
+        self.assertEqual(task["parameters"]["candidate_image_id"],authority["candidate_image_id"])
+        self.assertEqual(task["parameters"]["candidate_package_sha256"],authority["candidate_package_sha256"])
+        self.assertEqual(task["parameters"]["expected_current_image_id"],authority["expected_current_image_id"])
+        self.assertEqual(task["authority"],"GO-COMMAND-CENTER")
+        self.assertEqual(task["environment"],"HK-STAGING-01")
+        for forbidden in ("force_recreate","compose_path","runtime_env_path","service","command","executor","image"):
+          self.assertNotIn(forbidden,task["parameters"])
+      def test_canary_parameters_are_not_caller_controllable(self):
+        authority=self.canary_authority(candidate_image_id="sha256:"+"a"*64,expected_current_image_id="sha256:"+"b"*64)
+        with tempfile.NamedTemporaryFile("w",suffix=".json",delete=False) as handle:
+          handle.write(json.dumps(authority)); handle.flush()
+          original=globals()["load_canary_baseline"]
+          globals()["load_canary_baseline"]=lambda _orig=original, _path=handle.name: _orig(_path)
+          try:
+            first=derive_canary(validate_request(self.canary()),load_canary_baseline())
+            second=derive_canary(validate_request(self.canary(request_id="canary-hk-staging-000001")),load_canary_baseline())
+          finally: globals()["load_canary_baseline"]=original
+        self.assertEqual(first["parameters"]["candidate_image_id"],"sha256:"+"a"*64)
+        self.assertEqual(second["parameters"]["candidate_image_id"],"sha256:"+"a"*64)
+        self.assertEqual(first["parameters"]["candidate_package_sha256"],"7"*64)
+        self.assertEqual(second["parameters"]["expected_current_image_id"],"sha256:"+"b"*64)
+        self.assertNotEqual(first["task_id"],second["task_id"])
+        self.assertNotEqual(first["nonce"],second["nonce"])
+        self.assertNotEqual(first["parameters"]["release_id"],second["parameters"]["release_id"])
+      def test_canary_authority_is_fail_closed(self):
+        good=self.canary_authority()
+        bad=(None,{},[good],good|{"extra":"x"},{k:v for k,v in good.items() if k!="candidate_package_sha256"},
+             good|{"version":2},good|{"environment":"PRODUCTION"},
+             good|{"candidate_image_id":"6"*64},good|{"candidate_image_id":"sha256:"+"6"*63},
+             good|{"candidate_image_id":"sha256:"+"G"*64},good|{"expected_current_image_id":"sha256:"+"1"*63},
+             good|{"candidate_package_sha256":"sha256:"+"7"*64},good|{"candidate_package_sha256":"7"*63},
+             good|{"candidate_package_sha256":"7"*65})
+        for index,value in enumerate(bad):
+          with tempfile.NamedTemporaryFile("w",suffix=".json",delete=False) as handle:
+            handle.write(json.dumps(value)); handle.flush()
+            with self.assertRaises(Reject) as caught: load_canary_baseline(handle.name)
+            self.assertEqual(str(caught.exception),"invalid_canary_authority",index)
+      def test_canary_authority_that_is_missing_or_unreadable_is_a_rejection_not_a_traceback(self):
+        with self.assertRaises(Reject) as caught: load_canary_baseline("/nonexistent/canary-authority.json")
+        self.assertEqual(str(caught.exception),"invalid_canary_authority")
+        with tempfile.NamedTemporaryFile("w",suffix=".json",delete=False) as handle:
+          handle.write("{not json"); handle.flush()
+          with self.assertRaises(Reject) as caught: load_canary_baseline(handle.name)
+          self.assertEqual(str(caught.exception),"invalid_canary_authority")
+      def test_canary_cannot_fall_through_into_the_other_actions(self):
+        with tempfile.NamedTemporaryFile("w",suffix=".json",delete=False) as handle:
+          handle.write(json.dumps(self.canary_authority())); handle.flush()
+          original=globals()["load_canary_baseline"]
+          globals()["load_canary_baseline"]=lambda _orig=original, _path=handle.name: _orig(_path)
+          try: task=derive_formal_task(validate_request(self.canary()))
+          finally: globals()["load_canary_baseline"]=original
+        for other in (POLICY["action_id"],TEST_ACTION,deploy_gate.ACTION,HEALTH_ACTION,"HK_STAGING_ROLLBACK"):
+          self.assertNotEqual(task["action_id"],other)
+        for parameter in ("source","builder_profile","canary_evidence_id","approval_id","source_deploy_task_id","plan_id","task_id"):
+          self.assertNotIn(parameter,task["parameters"])
+      def test_canary_is_reachable_while_the_deploy_switch_is_off(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key, tempfile.NamedTemporaryFile("w",suffix=".json",delete=False) as authority:
+          authority.write(json.dumps(self.canary_authority())); authority.flush()
+          private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate()
+          key.write(private.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())); key.flush()
+          tasks={}
+          saved={name:globals()[name] for name in ("read_pr","load_channel","publish_task","remote_task","load_canary_baseline")}
+          try:
+            globals()["read_pr"]=lambda n,h:{"path":"requests/canary-hk-staging-987654.json","raw":self.canary()}
+            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False}
+            globals()["load_canary_baseline"]=lambda _orig=saved["load_canary_baseline"], _path=authority.name: _orig(_path)
+            globals()["publish_task"]=lambda task:(tasks.setdefault(task["task_id"],canonical(task)+b"\n") and "commit")
+            globals()["remote_task"]=lambda task_id:tasks.get(task_id)
+            out=persistent_process("41","a"*40,root,key.name,"channel-not-read")
+            self.assertEqual(out["status"],"published")
+            body=json.loads(tasks[out["task_id"]].decode())
+            self.assertEqual(body["action_id"],CANARY_ACTION)
+            self.assertEqual(set(body["parameters"]),{"release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id"})
+            self.assertRegex(body["task_id"],r"^go-boss-request-canary-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}$")
+            private.public_key().verify(bytes.fromhex(body["signature"]),canonical({k:v for k,v in body.items() if k!="signature"}))
+          finally:
+            for name,value in saved.items(): globals()[name]=value
+      def test_canary_request_is_refused_when_the_action_is_not_in_the_channel(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
+          saved={name:globals()[name] for name in ("read_pr","load_channel","publish_task","remote_task")}
+          try:
+            globals()["read_pr"]=lambda n,h:{"path":"requests/canary-hk-staging-987654.json","raw":self.canary()}
+            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY"],"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False}
+            globals()["publish_task"]=lambda task:(_ for _ in ()).throw(AssertionError("a disabled action published a task"))
+            globals()["remote_task"]=lambda task_id:None
+            with self.assertRaises(Reject) as caught: persistent_process("42","b"*40,root,key.name,"channel-not-read")
+            self.assertEqual(str(caught.exception),"action_not_enabled_in_channel")
+          finally:
+            for name,value in saved.items(): globals()[name]=value
+      def test_canary_does_not_arm_or_consume_a_deployment_plan(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key, tempfile.NamedTemporaryFile("w",suffix=".json",delete=False) as authority:
+          authority.write(json.dumps(self.canary_authority())); authority.flush()
+          private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate()
+          key.write(private.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())); key.flush()
+          saved={name:globals()[name] for name in ("read_pr","load_channel","publish_task","remote_task","load_canary_baseline")}
+          original_context=deploy_gate.load_context
+          def explosion(*a,**k): raise AssertionError("a canary request consulted a deployment plan")
+          deploy_gate.load_context=explosion
+          tasks={}
+          try:
+            globals()["read_pr"]=lambda n,h:{"path":"requests/canary-hk-staging-987654.json","raw":self.canary()}
+            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False}
+            globals()["load_canary_baseline"]=lambda _orig=saved["load_canary_baseline"], _path=authority.name: _orig(_path)
+            globals()["publish_task"]=lambda task:(tasks.setdefault(task["task_id"],canonical(task)+b"\n") and "commit")
+            globals()["remote_task"]=lambda task_id:tasks.get(task_id)
+            out=persistent_process("43","c"*40,root,key.name,"channel-not-read")
+            self.assertEqual(out["status"],"published")
+          finally:
+            deploy_gate.load_context=original_context
+            for name,value in saved.items(): globals()[name]=value
+          ledger=json.loads(pathlib.Path(root,"ledger.json").read_text())
+          record=ledger["requests"]["43:"+"c"*40]
+          for field in ("plan_id","approval_identity","bundle_sha256","plan","approval"):
+            self.assertNotIn(field,record)
+          self.assertEqual(record["status"],"published")
     suite=unittest.defaultTestLoader.loadTestsFromTestCase(Tests); result=unittest.TextTestRunner(verbosity=2).run(suite)
     globals()["LAST_TEST_COUNT"]=result.testsRun; return 0 if result.wasSuccessful() else 1
 if __name__ == "__main__": sys.exit(main())

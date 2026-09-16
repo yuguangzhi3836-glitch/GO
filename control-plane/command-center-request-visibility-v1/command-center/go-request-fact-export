@@ -68,7 +68,7 @@ PR_RE = re.compile(r"^[1-9][0-9]{0,8}$")
 # Bridge would have refused. Kept here only as the vocabulary of the fact shape;
 # ActionRegistryTests pins it against that file so the two cannot drift.
 ACTION_IDS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
-              "CONTROL_PLANE_HEALTH")
+              "HK_STAGING_CANARY", "CONTROL_PLANE_HEALTH")
 
 LEDGER_VERSION = 1
 NON_TERMINAL_LEDGER_STATES = ("claiming", "prepared", "publishing")

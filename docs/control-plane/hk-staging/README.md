@@ -45,8 +45,14 @@ Current confirmed Boss Request classification:
 - `HK_STAGING_DEPLOY` — capability is **INSTALLED but DISABLED / FAIL-CLOSED**.
   PR #57 records `deployment_requests_enabled=false`; capability presence is not
   deployment authorization.
-- CANARY / ROLLBACK — no current Boss Request schema should be invented merely
-  because the underlying Control Plane has those operation paths.
+- `HK_STAGING_CANARY` — **REQUESTABLE** since channel revision
+  `1.6.0-canary-channel`. The Request carries the five common fields and nothing
+  else; the candidate image, its sealed package and the expected current image come
+  from the Command Center's root-owned canary authority file. It mutates no business
+  runtime, so it needs no plan and no switch, and a plan cannot be registered
+  without a canary for the same candidate.
+- ROLLBACK — no current Boss Request schema should be invented merely because the
+  underlying Control Plane has that operation path.
 
 See [BOSS_GPT_REQUEST_GUIDE.md](BOSS_GPT_REQUEST_GUIDE.md) for the exact current
 VERIFY and TEST_PR request schemas and boundaries.

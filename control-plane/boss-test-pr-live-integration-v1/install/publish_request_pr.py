@@ -40,6 +40,7 @@ SHAPES = {
     "HK_STAGING_TEST_PR": COMMON | {"pr_number"},
     "HK_STAGING_VERIFY": COMMON,
     "HK_STAGING_DEPLOY": COMMON | {"plan_id"},
+    "HK_STAGING_CANARY": COMMON,
     "CONTROL_PLANE_HEALTH": COMMON,
 }
 TOK = gh.get_token()

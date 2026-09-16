@@ -45,6 +45,18 @@ summary={'schema_version':'1','status':'PASS' if result.wasSuccessful() and not 
     'health_can_become_verify_test_pr_deploy_or_rollback':'NO',
     'health_participates_in_deploy_arm_or_plan_budget':'NO',
     'health_changes_verify_test_pr_deploy_permissions':'NO',
+    # The canary action, reported the same way: a Request with no caller-controlled
+    # field at all, whose Task parameters exist only because a root-owned authority
+    # file states them.  It is not gated by the deploy switch, and it cannot reach
+    # the plan/approval path.
+    'canary_request_fields':sorted(test_deploy_entry.bridge.ALLOWED),
+    'canary_task_parameters':['release_id','candidate_image_id','candidate_package_sha256','expected_current_image_id'],
+    'canary_parameters_source':'ROOT_OWNED_CANARY_AUTHORITY_FILE',
+    'canary_authority_config':test_deploy_entry.bridge.CANARY_BASELINE_CONFIG,
+    'canary_gated_by_deployment_requests_enabled':'NO',
+    'canary_can_become_verify_test_pr_deploy_or_rollback':'NO',
+    'canary_participates_in_deploy_arm_or_plan_budget':'NO',
+    'rollback_requestable':'NO',
     'shipped_channel_config_deployment_requests_enabled':json.loads((ROOT/'config.json').read_text())['deployment_requests_enabled'],
     'hong_kong':'NOT_ACCESSED','production':'NOT_ACCESSED','live_tasks_published':0,
     'crypto_keys':'EPHEMERAL_SYNTHETIC_ONLY','hk_executor':'ARCHIVED_ADAPTER_WITH_FAKE_EXECUTOR',

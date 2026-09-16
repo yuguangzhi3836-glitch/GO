@@ -29,7 +29,13 @@
 4. CANARY 必须针对同一候选且不超过 30 分钟；只读 VERIFY 必须针对预期当前镜像且不超过 5 分钟；发布任务的有效期受审批和只读核验窗口共同约束。三端 UX、六品类闭环、Sealed Node、最终发布四项必须全部明确 PASS。
 5. 每个计划和每个审批只消费一次。先将原始签名 Task 和版本绑定以锁、原子替换和 fsync 持久化，再复核开关、PR HEAD、计划和时效，最后通过既有 Tasks writer 发布并逐字节回读。发送结果不明时只查询原 Task，绝不自动重签或重发。
 
-保留既有 VERIFY 与 TEST_PR 请求格式、固定 TEST_PR 构建配置、签名和证据通道；兼容 v2/v3 配置。v4 配置的 action 合同是固定的四项：`HK_STAGING_VERIFY`、`HK_STAGING_TEST_PR`、`HK_STAGING_DEPLOY`、`CONTROL_PLANE_HEALTH`，比较方式是**整份列表精确相等**而非成员判断，因此增删动作需要新的 Bridge 修订，不能靠改一个 root 文件蒙混。新部署动作仍只在 `deployment_requests_enabled=true` 时接受，该字段默认 false 且本次改动未触碰。旧单次/预演模式仍限定 VERIFY，不能把 DEPLOY 降格为 VERIFY。
+保留既有 VERIFY 与 TEST_PR 请求格式、固定 TEST_PR 构建配置、签名和证据通道；兼容 v2/v3 配置。v4 配置的 action 合同自 **Bridge 修订 `1.6.0-canary-channel`** 起固定为五项：`HK_STAGING_VERIFY`、`HK_STAGING_TEST_PR`、`HK_STAGING_DEPLOY`、`HK_STAGING_CANARY`、`CONTROL_PLANE_HEALTH`，比较方式是**整份列表精确相等**而非成员判断，因此增删动作需要新的 Bridge 修订，不能靠改一个 root 文件蒙混。新部署动作仍只在 `deployment_requests_enabled=true` 时接受，该字段默认 false 且本次改动未触碰。旧单次/预演模式仍限定 VERIFY，不能把 DEPLOY 降格为 VERIFY。
+
+### CANARY 请求（Bridge 1.6 新增）
+
+CANARY 与 VERIFY 同形：Request 只有五个公共字段，**没有任何调用者可控参数**——没有 image、没有 package、没有 service、没有 path、没有 env、没有 command、没有 plan_id、没有 pr_number。Task 的四个参数（`release_id`、`candidate_image_id`、`candidate_package_sha256`、`expected_current_image_id`）全部读自 root-only 权威文件 `/etc/go-command-center/boss-request-canary-baseline-v1.json`（`root:root 0600`，操作人员写入，Bridge 只读）。该文件缺失、不可读、JSON 非法、字段多余或缺失、镜像不是 `sha256:<64hex>`、包不是 64 位十六进制或环境不符，一律以 `invalid_canary_authority` **拒绝**（是拒绝，不是异常——轮询 tick 不会因此死掉）。
+
+CANARY **不受 `deployment_requests_enabled` 约束**：它不触碰业务运行时（隔离容器、无网络、只读根、drop 全部能力），而且它正是部署计划必须先引用、再登记的那份证据——若用部署开关去拦它，计划就永远无法成立。CANARY 也不读取部署计划、不占用 approval / plan 预算、不能变成 VERIFY / TEST_PR / DEPLOY / ROLLBACK。`HK_STAGING_ROLLBACK` 仍然不可请求。
 
 ## 只读 liveness 探活（`CONTROL_PLANE_HEALTH`）
 

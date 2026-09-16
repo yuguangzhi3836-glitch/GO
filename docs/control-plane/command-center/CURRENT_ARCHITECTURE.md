@@ -57,7 +57,7 @@ When repository documentation and observed live state disagree, stop and verify 
 | `HK_STAGING_VERIFY` | PRESENT / live-proven | Persistent Boss Request / Signed Task / Evidence path exists. |
 | `HK_STAGING_TEST_PR` | PRESENT / live-proven | PR #50 acceptance records live install, E2E and independent blind retest PASS; caller supplies only the allowed PR number and Command Center resolves/binds immutable source. |
 | `HK_STAGING_DEPLOY` | CAPABILITY PRESENT, **DISABLED** | PR #57 records the capability installed while `deployment_requests_enabled=false`; no formal deployment plan directory was created at closeout. This is not deployment authorization. |
-| CANARY through Boss Request | NOT CLAIMED OPEN | Underlying Control Plane semantics may exist, but do not invent a Boss Request surface. |
+| CANARY through Boss Request | **OPEN** (channel revision 1.6.0-canary-channel) | A CANARY Request is the five common fields; the candidate image, its sealed package and the expected-current image come from the root-owned `/etc/go-command-center/boss-request-canary-baseline-v1.json`. It needs no plan and no switch, because it mutates no business runtime and is the evidence a plan must cite. ROLLBACK is still not requestable. |
 | ROLLBACK through Boss Request | NOT CLAIMED OPEN | Underlying formal rollback path exists; do not invent a Boss Request surface. |
 
 A future live capability change must update this routing document or supersede it with a newer current-state record.

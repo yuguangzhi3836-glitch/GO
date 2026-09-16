@@ -50,7 +50,8 @@
       "enum": [
         "HK_STAGING_VERIFY",
         "HK_STAGING_TEST_PR",
-        "HK_STAGING_DEPLOY"
+        "HK_STAGING_DEPLOY",
+        "HK_STAGING_CANARY"
       ]
     },
     "environment": {
@@ -404,6 +405,7 @@
       "deployment_plan_unavailable_or_invalid",
       "human_reviewer_id",
       "invalid_authoritative_baseline",
+      "invalid_canary_authority",
       "invalid_signature",
       "invalid_time",
       "invalid_trust_key",

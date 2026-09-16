@@ -121,7 +121,7 @@ from the canonical pointer, Production). They are facts, not a verdict.
 HUMAN_REQUEST_ACTIONS       HK_STAGING_VERIFY     SUPPORTED_PROVEN                enabled
                             HK_STAGING_TEST_PR    SUPPORTED_PROVEN                enabled
                             HK_STAGING_DEPLOY     CAPABILITY_PRESENT_BUT_DISABLED not enabled
-                            HK_STAGING_CANARY     NOT_REQUESTABLE                 not requestable
+                            HK_STAGING_CANARY     CAPABILITY_PRESENT_REQUESTABLE  enabled
                             HK_STAGING_ROLLBACK   NOT_REQUESTABLE                 not requestable
 PLATFORM_REQUEST_ACTIONS    CONTROL_PLANE_HEALTH  SUPPORTED_PROVEN_PLATFORM_ONLY  enabled
 ```

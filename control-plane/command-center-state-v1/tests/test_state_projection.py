@@ -1270,7 +1270,10 @@ class RequestChannelTests(unittest.TestCase):
             sp.validate_request(self.request("CONTROL_PLANE_HEALTH", environment="PRODUCTION"))
 
     def test_an_unknown_action_is_still_refused(self):
-        for bogus in ("CONTROL_PLANE_HEALTH_V2", "HK_STAGING_ROLLBACK", "HK_STAGING_CANARY"):
+        # HK_STAGING_CANARY left this list when it became a requestable action;
+        # ROLLBACK and every unknown token are still refused outright.
+        for bogus in ("CONTROL_PLANE_HEALTH_V2", "HK_STAGING_ROLLBACK", "HK_STAGING_CANARY_V2",
+                      "canary", "HK_STAGING_CANARY "):
             with self.assertRaises(sp.Malformed, msg=bogus):
                 sp.validate_request(self.request(bogus))
 
@@ -1284,7 +1287,8 @@ class RequestChannelTests(unittest.TestCase):
 
     def test_the_human_and_platform_classes_are_separate(self):
         self.assertEqual(list(sp.HUMAN_REQUEST_ACTIONS),
-                         ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY"])
+                         ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
+                          "HK_STAGING_CANARY"])
         self.assertEqual(list(sp.PLATFORM_REQUEST_ACTIONS), ["CONTROL_PLANE_HEALTH"])
         self.assertEqual(set(sp.HUMAN_REQUEST_ACTIONS) & set(sp.PLATFORM_REQUEST_ACTIONS), set())
 
@@ -1292,7 +1296,8 @@ class RequestChannelTests(unittest.TestCase):
         self.assertNotIn("CONTROL_PLANE_HEALTH", sp.ENABLED_HUMAN_REQUEST_ACTIONS)
         self.assertIn("CONTROL_PLANE_HEALTH", sp.ENABLED_PLATFORM_REQUEST_ACTIONS)
         self.assertEqual(list(sp.ENABLED_REQUEST_ACTIONS),
-                         ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "CONTROL_PLANE_HEALTH"])
+                         ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY",
+                          "CONTROL_PLANE_HEALTH"])
         # Expressing DEPLOY as a human Request is a different claim from the
         # channel being able to create one; the switch is still off.
         self.assertNotIn("HK_STAGING_DEPLOY", sp.ENABLED_REQUEST_ACTIONS)
@@ -1344,11 +1349,33 @@ class RequestChannelTests(unittest.TestCase):
         self.assertFalse(channel["deploy_request_enabled"])
         self.assertEqual(channel["live_request_switch"]["state"], sp.STATE_UNKNOWN)
 
-    def test_canary_and_rollback_are_not_requestable(self):
+    def test_canary_is_requestable_without_a_switch_while_rollback_is_not(self):
+        # CANARY left "not requestable" when it became a channel action.  It stays
+        # outside the deploy switch on purpose: a canary is what a deployment plan
+        # must cite, so it has to be obtainable before a plan can exist at all.
         _, _, status = build(*layout())
-        classification = status["answers"]["request_channel"]["capability_classification"]
-        self.assertEqual(classification["HK_STAGING_CANARY"], "NOT_REQUESTABLE")
+        channel = status["answers"]["request_channel"]
+        classification = channel["capability_classification"]
+        self.assertEqual(classification["HK_STAGING_CANARY"], "CAPABILITY_PRESENT_REQUESTABLE")
         self.assertEqual(classification["HK_STAGING_ROLLBACK"], "NOT_REQUESTABLE")
+        self.assertIn("HK_STAGING_CANARY", channel["enabled_human_request_actions"])
+        self.assertIn("HK_STAGING_CANARY", channel["known_capabilities"])
+        self.assertNotIn("HK_STAGING_ROLLBACK", channel["human_request_actions"])
+        self.assertEqual(channel["request_action_source_class"]["HK_STAGING_CANARY"], "HUMAN_REQUEST")
+        # The canary carries the candidate binding, and nothing else.
+        self.assertEqual(sp.ACTION_PARAMETERS["HK_STAGING_CANARY"],
+                         {"release_id", "candidate_image_id", "candidate_package_sha256",
+                          "expected_current_image_id"})
+
+    def test_a_canary_request_is_reported_as_requestable_and_is_not_deploy(self):
+        root, req = layout(requests=[("c.json", self.request("HK_STAGING_CANARY"))])
+        state = project(root, req)
+        entry = state["requests"][0]
+        self.assertTrue(entry["requestable_by_current_channel"])
+        self.assertEqual(entry["request_source_class"], "HUMAN_REQUEST")
+        self.assertEqual(entry["capability_classification"], "CAPABILITY_PRESENT_REQUESTABLE")
+        self.assertFalse(entry["holding_execution_authority"])
+        self.assertEqual(entry["target"], {})
 
     def test_verify_request_is_requestable(self):
         root, req = layout(requests=[("r.json", self.request("HK_STAGING_VERIFY"))])

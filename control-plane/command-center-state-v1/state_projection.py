@@ -133,12 +133,15 @@ KNOWN_CAPABILITIES = (
 # them would either mis-report a real liveness Request as forbidden or promote a
 # read-only probe into a human execution right, so the source class is carried
 # explicitly rather than inferred from the action name.
-HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY")
+HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY", "HK_STAGING_CANARY")
 PLATFORM_REQUEST_ACTIONS = ("CONTROL_PLANE_HEALTH",)
 # What the channel can create *right now*, per class. DEPLOY is human-expressible
-# but its switch is off, so it is absent from the enabled set; the platform
-# producer drives a read-only probe on a timer today, so HEALTH is present.
-ENABLED_HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR")
+# but its switch is off, so it is absent from the enabled set. CANARY is present:
+# it is read-only, it mutates no business runtime, and it is the evidence a
+# deployment plan must cite before that plan -- and therefore the switch -- can
+# exist. The platform producer drives a read-only probe on a timer, so HEALTH is
+# present too.
+ENABLED_HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY")
 ENABLED_PLATFORM_REQUEST_ACTIONS = ("CONTROL_PLANE_HEALTH",)
 ENABLED_REQUEST_ACTIONS = (ENABLED_HUMAN_REQUEST_ACTIONS
                            + ENABLED_PLATFORM_REQUEST_ACTIONS)
@@ -146,6 +149,7 @@ REQUEST_ACTION_SOURCE_CLASS = {
     "HK_STAGING_VERIFY": "HUMAN_REQUEST",
     "HK_STAGING_TEST_PR": "HUMAN_REQUEST",
     "HK_STAGING_DEPLOY": "HUMAN_REQUEST",
+    "HK_STAGING_CANARY": "HUMAN_REQUEST",
     "CONTROL_PLANE_HEALTH": "PLATFORM_AUTOMATION",
 }
 # What a platform action is allowed to be. These are constants copied from the
@@ -160,7 +164,9 @@ CAPABILITY_CLASSIFICATION = {
     "HK_STAGING_VERIFY": "SUPPORTED_PROVEN",
     "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
     "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
-    "HK_STAGING_CANARY": "NOT_REQUESTABLE",
+    # Requestable without a switch: a canary mutates no business runtime, and it has
+    # to exist before a deployment plan can be registered at all.
+    "HK_STAGING_CANARY": "CAPABILITY_PRESENT_REQUESTABLE",
     "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE",
     # Proven, but only for the platform class: it says nothing about whether a
     # human may request it, and it confers no execution right on anyone.
@@ -215,6 +221,11 @@ REQUEST_EXTRA_FIELDS = {
     "HK_STAGING_VERIFY": set(),
     "HK_STAGING_TEST_PR": {"pr_number"},
     "HK_STAGING_DEPLOY": {"plan_id"},
+    # The canary carries exactly what VERIFY carries: the five common fields. The
+    # candidate image, its sealed package and the expected current image come from
+    # the Command Center's own root-owned canary authority, so there is no field
+    # here a request could use to steer one.
+    "HK_STAGING_CANARY": set(),
     # The platform probe carries nothing beyond the five common fields. Until
     # this entry existed the projector refused a real CONTROL_PLANE_HEALTH
     # Request as request_action_unknown and reported it REQUEST_UNREADABLE,
