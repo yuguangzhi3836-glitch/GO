@@ -10,7 +10,7 @@ COMPOSE_SHA='7ef4ab181c1250d8cec0e348b29c24bfbb8e5dce4fc2a57f6faaa59363c26895'
 ENV_SHA='6682ff61f336fb8ff95a6585e9133c88c52a4eaa440a7aea6a6e06f771e607fc'
 PROJECT='go-822-staging'
 SERVICES=('api','recovery-worker','outbox-worker','mobile-push-receipt-worker','reconciliation-worker','mobile-push-worker','mobile-engagement-worker','judgment-worker')
-HEAD='0114_ext_truth_incident_hard'
+HEAD='0133_flight_change_plan'
 HEAD_LINE=re.compile(r'^([0-9][0-9a-z_]*) \(head\)\n?$')
 
 class Reject(ValueError): pass
