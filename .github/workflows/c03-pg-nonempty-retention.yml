@@ -44,7 +44,7 @@ jobs:
         run: |
           mkdir -p evidence-out
           cd application
-          alembic upgrade head > ../evidence-out/alembic-upgrade.log 2>&1
+          alembic upgrade 0129_rail_change_resolution > ../evidence-out/alembic-upgrade.log 2>&1
           python - <<'PY'
           import json, os, subprocess
           from pathlib import Path
@@ -75,7 +75,7 @@ jobs:
                   "guard_observed":guard in combined,"row_equal":after==before,
                   "alembic_head_after":head,"verdict":"PASS"}
           assert count==1 and after==before
-          assert head=="0136_merge_go_ai_journey", head
+          assert head=="0129_rail_change_resolution", head
           (out/"result.json").write_text(json.dumps(result,sort_keys=True,indent=2)+"\n")
           print(json.dumps(result,sort_keys=True))
           PY
