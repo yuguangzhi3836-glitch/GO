@@ -49,6 +49,21 @@ def test_admin_rental_reconciliation_presents_findings_without_writes_or_repair(
         'label': '订单、退款或资金证据存在矛盾',
     }
     assert presentation['review_required'] is True
+    case = presentation['case']
+    assert case == {
+        'case_id': f'RENTAL_REFUND:{order_id}:{refund_id}',
+        'vertical': 'RENTAL',
+        'order_id': order_id,
+        'refund_id': refund_id,
+        'next_review_action': diagnosis['next_action'],
+        'confirmed_movement_ids': sorted(diagnosis['confirmed_movement_ids']),
+        'read_only': True,
+    }
+    # Re-reading the same diagnosis yields the same handoff identity and does
+    # not manufacture an acknowledgement or mutate business state.
+    repeated = ops.rental_refund_reconciliation(order_id, refund_id, p=None)['data']
+    assert repeated['presentation']['case'] == case
+    assert service.get(owner, order_id) == before
     assert presentation['read_only'] is True
     assert presentation['automatic_repair'] is False
     assert any(
