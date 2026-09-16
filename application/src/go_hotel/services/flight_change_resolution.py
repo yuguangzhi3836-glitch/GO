@@ -97,8 +97,8 @@ def _money_in(s, op, result):
 
 
 def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ticket_numbers, quote_id, output):
-    if not str(evidence_reference or '').strip() or not str(actor or '').strip():
-        raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
+    _printable_token(evidence_reference, 512, 'EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
+    _printable_token(actor, 128, 'EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
     state = state.upper()
     if state not in {'TICKETED', 'FAILED', 'UNKNOWN_EXTERNAL_STATE'}:
         raise ValueError('FLIGHT_EXTERNAL_STATE_INVALID')
