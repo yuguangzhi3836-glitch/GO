@@ -1,0 +1,5 @@
+V70-R3-C02-01 bounded contract test
+runtime: python stdlib, isolated no HTTP/no DB/no supplier/no payment execution
+result: 6 passed
+covered: authenticated persistence; exact consent; charge-only allocation; negative fare credit isolation; same-day chronological segments; immutable record; tamper rejection
+syntax: python -m py_compile coupon_authority.py test_coupon_authority.py => PASS
