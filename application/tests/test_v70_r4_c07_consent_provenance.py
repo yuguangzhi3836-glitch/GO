@@ -1,5 +1,6 @@
 """V70-R4-C07-01: graph release audit carries exact consent provenance."""
 from datetime import datetime, timedelta, timezone
+import hashlib
 
 from sqlalchemy import select
 
@@ -56,6 +57,16 @@ def test_graph_audit_attributes_only_active_exact_purpose_context_grants():
     audit = last_graph_audit()
     assert audit.metadata_json["context_consent_ids"] == [active]
     assert audit.metadata_json["preference_consent_ids"] == [explicit]
+    for key in (
+        "context_consent_snapshot_sha256",
+        "preference_consent_snapshot_sha256",
+    ):
+        digest = audit.metadata_json[key]
+        assert len(digest) == 64
+        assert set(digest) <= set("0123456789abcdef")
+    assert audit.metadata_json["context_consent_snapshot_sha256"] != (
+        audit.metadata_json["preference_consent_snapshot_sha256"]
+    )
     assert saved["value"] not in audit.metadata_json.values()
     assert explicit not in audit.metadata_json["context_consent_ids"]
     assert wrong_purpose not in audit.metadata_json["context_consent_ids"]
@@ -70,3 +81,6 @@ def test_graph_with_no_context_grant_records_empty_provenance_and_releases_nothi
     audit = last_graph_audit()
     assert audit.metadata_json["context_consent_ids"] == []
     assert audit.metadata_json["preference_consent_ids"] == []
+    empty_snapshot = hashlib.sha256(b"[]").hexdigest()
+    assert audit.metadata_json["context_consent_snapshot_sha256"] == empty_snapshot
+    assert audit.metadata_json["preference_consent_snapshot_sha256"] == empty_snapshot
