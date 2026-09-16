@@ -48,9 +48,9 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from hk_agent import artifact_store  # noqa: E402
 
 from archive_fixtures import (  # noqa: E402
-    OCI_CONFIG_TYPE, OCI_INDEX_TYPE, OCI_LAYOUT, OCI_MANIFEST_TYPE, append_member, appended,
-    hybrid_save, multiplatform_save, mutated, oci_save, read_tar, refile, synthetic_save,
-    write_tar)
+    ATTESTATION_CONFIG, OCI_CONFIG_TYPE, OCI_INDEX_TYPE, OCI_LAYOUT, OCI_MANIFEST_TYPE,
+    append_member, appended, hybrid_save, multiplatform_save, mutated, oci_save, read_tar,
+    refile, synthetic_save, write_tar)
 
 POSIX = os.name == "posix"
 
@@ -475,6 +475,28 @@ class OciArchiveTests(StoreFixture):
     def test_an_attestation_manifest_is_not_the_candidate(self):
         """Docker writes attestations into the same index; they are not the image."""
         self.assertEqual(self.oci(attestation=True)["image_id"], self.image_id)
+        self.assertEqual(self.oci(attestation=True)["config_digests"], [self.config_digest])
+
+    def test_an_attestations_own_config_never_names_the_candidate(self):
+        """The pulled form marks the attestation only in the descriptor.
+
+        Measured on the host: for a *pulled* reference the attestation manifest has no
+        ``artifactType`` in its body, and its config blob is an ordinary-looking image
+        config.  A reader that only looked at the body would let that config digest
+        stand as the candidate.
+        """
+        attestation = "sha256:" + hashlib.sha256(ATTESTATION_CONFIG).hexdigest()
+        record = self.sealed(save_writer=multiplatform_save)
+        self.assertEqual(record["config_digests"], [self.config_digest])
+        self.assertNotIn(attestation.split(":", 1)[1], record["config_digests"])
+        before = sorted(p.name for p in (self.store / "objects").iterdir())
+        with self.assertRaisesRegex(artifact_store.Reject,
+                                    "SEALED_ARTIFACT_IMAGE_IDENTITY_MISMATCH"):
+            artifact_store.seal(
+                self.runner(image_id=attestation, save_writer=multiplatform_save),
+                self.ref, attestation, self.root)
+        self.assertEqual(sorted(p.name for p in (self.store / "objects").iterdir()), before,
+                         "a refused identity must leave no object behind")
 
     def test_an_unrelated_member_is_ignored(self):
         """An archive may carry anything else; none of it can change which image it is."""
@@ -1037,6 +1059,7 @@ class CrossSideContractTests(unittest.TestCase):
              # artifact that CANARY and DEPLOY could never use.
              "LAYOUT_NAME", "INDEX_NAME", "BLOB_DIR", "OCI_LAYOUT_VERSION",
              "INDEX_MEDIA_TYPES", "MANIFEST_MEDIA_TYPES", "CONFIG_MEDIA_TYPES",
+             "REFERENCE_TYPE_ANNOTATION", "ATTESTATION_REFERENCE_TYPE",
              "MAX_DESCRIPTOR_DEPTH", "MAX_DESCRIPTOR_COUNT", "MAX_ARCHIVE_MEMBERS",
              "MAX_DOCUMENT_BYTES", "ARCHIVE_REFUSALS")
 
@@ -1204,6 +1227,8 @@ class CrossSideContractTests(unittest.TestCase):
         write("multi-platform", multiplatform_save)
         write("multi-platform-nothing-absent",
               lambda path, payload: multiplatform_save(path, payload, absent=0))
+        write("attestation-config-as-candidate", multiplatform_save,
+              identity="sha256:" + hashlib.sha256(ATTESTATION_CONFIG).hexdigest())
         probe = work / "root-identity.tar"
         multiplatform_save(str(probe), config)
         cases.append(("root-identity", str(probe),

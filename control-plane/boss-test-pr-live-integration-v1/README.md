@@ -233,7 +233,7 @@ Both formats are now read by one grammar, on both sides of the contract:
   an index digest, a config digest and the package's own SHA256 are four identities
   and are never interchanged;
 * the executor's reader applies the identical grammar, and a cross-side test runs
-  both implementations over the same 31-archive corpus and fails if either side
+  both implementations over the same 32-archive corpus and fails if either side
   disagrees about any one of them.
 
 **B. The store's refusal killed the whole pass.** `run_once` catches a closed set
@@ -327,7 +327,8 @@ image's config digest is a different value. B4-B1's store required the config bl
 hash to the reported id, so `seal()` could not have succeeded on this host for **any**
 image: installing B4-B1.2 would have changed nothing but the failure code.
 
-Two further things were wrong for the same reason:
+Two further things were wrong for the same reason, and a third only became visible
+once the corrected grammar could walk a real archive far enough to reach it:
 
 * **Real archives carry descriptors whose blobs they did not export.**
   `docker save redis:7.4-alpine` names sixteen manifests and ships two — the platform
@@ -337,6 +338,13 @@ Two further things were wrong for the same reason:
   `digest == image_id.split(':')[1]`, which passes on a GitHub runner because *that*
   runner's Docker reports the config digest. The assertion was about a coincidence of
   one runner's image store, not about the contract.
+* **An attestation's config could stand as the candidate.** Docker writes an
+  attestation manifest beside every image, and for a *pulled* reference it marks that
+  manifest only in the descriptor that names it — no `artifactType` in the body — while
+  its config blob is an ordinary-looking image config. Checking only the manifest body
+  let that config digest into the set of identities that could name the candidate. Both
+  signals are now checked, and the read-only probe against the host's own archives is
+  what found it: the walk had never reached an attestation before.
 
 What this revision changes:
 
@@ -364,17 +372,17 @@ What this revision changes:
 ```
 control-plane/…/hk-staging/hk_agent/artifact_store.py
               was 5dddc742b7ca668033547cb56073e6d65ba492d747d271622c9ca2b3df4335a4
-              now b6f51ba9ceeb5a554ae647f018eea7ddc99b82918486909e3a17752329c63784
+              now 61731061062883013c7f9eed8196485a6bd22bd96b9770613225a3ef9c408c92
 control-plane/…/hk-staging/hk_agent/transport.py
               was b35ace2289d9b8e64805d584a893f0e3c5efb7c6050fbbdbfaaf492dee3d700d
               now af8261568fb7158f3bd6f620f3a405118b1ae77d3d662b764e62c3fe260e5fcb
 hk-staging/source/executor/runtime/artifact_runtime.py
               was 81f91c7cf8630ae57687676f3d6e9ec194b1c064488004a2593c1cd58cd76818
-              now 11ffc5143174ed21b8f9fc96a6e9155d392b52e1e7051fba59a942d486d53a5b
+              now 736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b
               _ARTIFACT_SHA256 in go-hk-deployctl follows it; the other four pins do not move
 hk-staging/source/executor/go-hk-deployctl
               was db9d1584e56781e9b73d3db50495ee4b7422c05deb6fdaa315b9a7033393b53e
-              now 7318f81b63a487ccabfe817be985c65169f8f86fb2dabeb5d3ccb6e3c85bc8d0
+              now 2f0073e892e7fb37dff0009eb03fd611b996e8539f54c92730ddbec51e5d7c6a
 ```
 
 `test_pr.py` is deliberately unchanged: the identities it reports (`built_image_id`

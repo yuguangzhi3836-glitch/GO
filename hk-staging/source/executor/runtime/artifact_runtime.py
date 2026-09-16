@@ -98,6 +98,15 @@ MANIFEST_MEDIA_TYPES = ("application/vnd.oci.image.manifest.v1+json",
                         "application/vnd.docker.distribution.manifest.v2+json")
 CONFIG_MEDIA_TYPES = ("application/vnd.oci.image.config.v1+json",
                       "application/vnd.docker.container.image.v1+json")
+# Docker writes attestation manifests beside an image and marks them in two
+# different ways depending on how the archive was produced: the manifest body
+# carries an ``artifactType`` when the image was built with attestations, and the
+# descriptor that names it carries this annotation when the image was *pulled*.
+# Measured: a pulled reference's attestation has the annotation and no artifactType,
+# and its config blob is a normal-looking image config.  Without both signals the
+# attestation's config would enter the set of identities that can name the candidate.
+REFERENCE_TYPE_ANNOTATION = "vnd.docker.reference.type"
+ATTESTATION_REFERENCE_TYPE = "attestation-manifest"
 # A bounded traversal: real archives nest at most one index inside another and
 # carry a handful of descriptors.  A hostile archive must not be able to make the
 # reader walk without limit, so both the depth and the descriptor count are
@@ -354,21 +363,28 @@ def _descriptor(value):
     return media_type, digest[7:], size
 
 
-def _image_config(tar, regular, manifest, configs):
+def _is_attestation(annotations):
+    """Whether the descriptor that named a manifest said it is an attestation."""
+    return (isinstance(annotations, dict)
+            and annotations.get(REFERENCE_TYPE_ANNOTATION) == ATTESTATION_REFERENCE_TYPE)
+
+
+def _image_config(tar, regular, manifest, configs, named_by=None):
     """Bind one image manifest's own content into the graph and record its config.
 
     A manifest this contract follows is claiming to be the image, so its config and
     every layer it names are the image's own content: they must be in the archive
     and must hash to the descriptor that named them.  An attestation manifest is
     hashed like everything else, but its config is not an image, so it never becomes
-    candidate authority.
+    candidate authority -- and Docker marks attestations either in the manifest body
+    or in the descriptor that names it, so both are checked.
     """
     if manifest.get("schemaVersion") != 2:
         _refuse("OCI_INVALID")
     if (manifest.get("mediaType") is not None
             and manifest["mediaType"] not in MANIFEST_MEDIA_TYPES):
         _refuse("DESCRIPTOR_INVALID")
-    if manifest.get("artifactType"):
+    if manifest.get("artifactType") or _is_attestation(named_by):
         return
     config_type, config_digest, config_size = _descriptor(manifest.get("config"))
     if config_type not in CONFIG_MEDIA_TYPES:
@@ -426,13 +442,13 @@ def _oci_identity(tar, regular):
     configs, seen, count = set(), {target: target_type}, 0
     # ``index.json`` is level 0, so the descriptor it names is level 1 and the bound
     # is the depth of the index graph below the archive's own index.
-    pending = [(target_type, target_document, 1)]
+    pending = [(target_type, target_document, entries[0].get("annotations"), 1)]
     while pending:
-        media_type, document, depth = pending.pop()
+        media_type, document, named_by, depth = pending.pop()
         if depth > MAX_DESCRIPTOR_DEPTH:
             _refuse("DESCRIPTOR_LIMIT")
         if media_type in MANIFEST_MEDIA_TYPES:
-            _image_config(tar, regular, document, configs)
+            _image_config(tar, regular, document, configs, named_by)
             continue
         if document.get("schemaVersion") != 2:
             _refuse("OCI_INVALID")
@@ -463,9 +479,10 @@ def _oci_identity(tar, regular):
                 _blob(tar, regular, child, child_size, [BLOB_DIR + "/" + child],
                       document=True), "OCI_INVALID")
             if child_type in INDEX_MEDIA_TYPES:
-                pending.append((child_type, child_document, depth + 1))
+                pending.append((child_type, child_document, entry.get("annotations"),
+                                depth + 1))
                 continue
-            _image_config(tar, regular, child_document, configs)
+            _image_config(tar, regular, child_document, configs, entry.get("annotations"))
     if not configs:
         # An index that ends up naming no image at all is not an image archive.
         _refuse("OCI_INVALID")

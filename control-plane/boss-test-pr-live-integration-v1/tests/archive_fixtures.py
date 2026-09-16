@@ -25,6 +25,11 @@ OCI_INDEX_TYPE = "application/vnd.oci.image.index.v1+json"
 OCI_MANIFEST_TYPE = "application/vnd.oci.image.manifest.v1+json"
 OCI_CONFIG_TYPE = "application/vnd.oci.image.config.v1+json"
 OCI_LAYER_TYPE = "application/vnd.oci.image.layer.v1.tar"
+# The attestation Docker writes beside an image has an ordinary-looking image config,
+# so its digest is exactly the kind of value a reader could mistake for the candidate.
+ATTESTATION_CONFIG = b'{"architecture":"unknown","os":"unknown"}'
+REFERENCE_TYPE_ANNOTATION = "vnd.docker.reference.type"
+ATTESTATION_REFERENCE_TYPE = "attestation-manifest"
 
 
 def write_tar(path, entries):
@@ -79,12 +84,11 @@ def oci_save(path, config_bytes, *, nesting=1, attestation=False, layers=(b"laye
     manifest_bytes = json.dumps(manifest).encode()
     descriptors = [descriptor(OCI_MANIFEST_TYPE, store(manifest_bytes), manifest_bytes)]
     if attestation:
-        attestation_config = b'{"architecture":"unknown","os":"unknown"}'
         attestation_manifest = {"schemaVersion": 2, "mediaType": OCI_MANIFEST_TYPE,
                                 "artifactType": "application/vnd.in-toto+json",
                                 "config": descriptor(OCI_CONFIG_TYPE,
-                                                     store(attestation_config),
-                                                     attestation_config),
+                                                     store(ATTESTATION_CONFIG),
+                                                     ATTESTATION_CONFIG),
                                 "layers": []}
         payload = json.dumps(attestation_manifest).encode()
         descriptors.append(descriptor(OCI_MANIFEST_TYPE, store(payload), payload))
@@ -134,15 +138,19 @@ def multiplatform_save(path, config_bytes, *, absent=14, attestation=True,
     manifest_bytes = json.dumps(manifest).encode()
     catalogue = [descriptor(OCI_MANIFEST_TYPE, store(manifest_bytes), manifest_bytes)]
     if attestation:
-        attestation_config = b'{"architecture":"unknown","os":"unknown"}'
+        # The *pulled* form, measured on the host: Docker marks the attestation in the
+        # descriptor that names it and puts no ``artifactType`` in the manifest body.
+        # Its config is an ordinary-looking image config, so a reader that only checks
+        # the manifest body would let that config name the candidate.
         attestation_manifest = {"schemaVersion": 2, "mediaType": OCI_MANIFEST_TYPE,
-                                "artifactType": "application/vnd.in-toto+json",
                                 "config": descriptor(OCI_CONFIG_TYPE,
-                                                     store(attestation_config),
-                                                     attestation_config),
+                                                     store(ATTESTATION_CONFIG),
+                                                     ATTESTATION_CONFIG),
                                 "layers": []}
         payload = json.dumps(attestation_manifest).encode()
-        catalogue.append(descriptor(OCI_MANIFEST_TYPE, store(payload), payload))
+        reference = descriptor(OCI_MANIFEST_TYPE, store(payload), payload)
+        reference["annotations"] = {REFERENCE_TYPE_ANNOTATION: ATTESTATION_REFERENCE_TYPE}
+        catalogue.append(reference)
     for position in range(absent):
         # A platform this host never pulled: the catalogue names it, the archive does
         # not carry it, and its digest is not a digest of anything in this file.

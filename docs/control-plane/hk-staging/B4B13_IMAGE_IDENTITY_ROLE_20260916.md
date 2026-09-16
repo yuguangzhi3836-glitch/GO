@@ -32,6 +32,15 @@ pulled, and its attestation. Everything else is simply absent. The B4-B1.2 reade
 required every described blob to be present, so it refused every multi-platform
 archive as well.
 
+A third was found once the corrected grammar could walk a real archive far enough to
+reach it. Docker writes an attestation manifest beside every image, and for a *pulled*
+reference that manifest is marked **only** in the descriptor that names it
+(`vnd.docker.reference.type: attestation-manifest`) — there is no `artifactType` in the
+manifest body — and its config blob is an ordinary-looking
+`application/vnd.oci.image.config.v1+json`. A reader that checked only the manifest body
+therefore admitted the attestation's config digest into the set of identities that could
+name the candidate. Both signals are now checked.
+
 Neither defect could have been seen from this workstation or from CI: the smoke step
 asserted `digest == image_id.split(':')[1]`, which is true on a GitHub runner because
 *that* runner's Docker reports the config digest. The assertion was about a property
@@ -77,18 +86,30 @@ names only the build id cannot be audited against the archive it came from.
   environment, not code).
 * New coverage: the multi-platform catalogue shape on both sides, sealing under the
   root-descriptor role and under the config role on both sides, an absent root
-  descriptor, an index naming two images, the two identities recorded separately, and
-  the agent refusing an Evidence package that does not say which role it bound.
-* The cross-side corpus grew from 26 archives to **31**, and an accepted archive must
+  descriptor, an index naming two images, an attestation's config digest refused as a
+  candidate, the two identities recorded separately, and the agent refusing an Evidence
+  package that does not say which role it bound.
+* The cross-side corpus grew from 26 archives to **32**, and an accepted archive must
   now report the candidate id, a role that exists, and its own config digest.
 * The smoke step's assertions were rehearsed on this workstation against fixture
   archives of all four shapes (multi-platform by root, multi-platform by config, OCI
   by config, legacy by config) before pushing, since the runner's Docker is not
   available here; the step itself cannot be executed locally.
-* On the host, the same three real archives are the acceptance test for the next
-  install round: `root` must equal `docker .Id`, `configs` must be non-empty, and the
-  config digest passed as the candidate must be refused as a *role* the archive does
-  not report for that id.
+* The read-only probe was then run **on the host with the corrected code**, against
+  freshly written real archives, before anything was installed:
+
+  ```
+  pulled multi-platform   .Id ff02b58f…  role root_descriptor  configs [5509c009…]
+  locally built image     .Id 1c9598d6…  role root_descriptor  configs [57beafa2…]
+  writer == reader        True, both archives
+  config digest as id     accepted, in the config role
+  an identity the archive does not prove   refused, …IMAGE_IDENTITY_MISMATCH
+  a pulled archive that used to be BLOB_MISSING   now parsed
+  ```
+
+  The first run of that probe reported two config digests for the pulled archive
+  (`5509c009…` and the attestation's `a58a9ba4…`), which is how the third defect above
+  was found.
 
 ## Install delta for the next round
 
