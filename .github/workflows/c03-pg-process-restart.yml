@@ -1,13 +1,13 @@
-name: C03 PostgreSQL process restart durability
+name: C03 PostgreSQL rail resolution matrix
 on:
   pull_request:
     branches: [integration/v70-final-scoped-20260916]
   push:
-    branches: [cell/c03-v70-r3-02-pg-process-restart]
+    branches: [cell/c03-v70-r3-03-pg-resolution-matrix]
 permissions:
   contents: read
 jobs:
-  c03-pg-restart:
+  c03-pg-resolution-matrix:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -40,18 +40,18 @@ jobs:
         run: |
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
-      - name: Run actual PostgreSQL process-exit recovery
+      - name: Run actual PostgreSQL resolution matrix
         run: |
           mkdir -p evidence-out
           cd application
           set -o pipefail
-          python -m pytest -p no:cacheprovider tests/test_depth22_rail_resolution.py -k process_exit_after_money_recovers -vv --junitxml=../evidence-out/junit.xml 2>&1 | tee ../evidence-out/raw.log
+          python -m pytest -p no:cacheprovider tests/test_depth22_rail_resolution.py -k 'not process_exit_after_money_recovers and not migration_retains_nonempty_journal' -vv --junitxml=../evidence-out/junit.xml 2>&1 | tee ../evidence-out/raw.log
           cd ..
           git rev-parse HEAD > evidence-out/candidate.txt
           git rev-parse HEAD:application > evidence-out/application-tree.txt
           sha256sum evidence-out/raw.log evidence-out/junit.xml > evidence-out/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: c03-pg-process-restart
+          name: c03-pg-resolution-matrix
           path: evidence-out
           retention-days: 90
