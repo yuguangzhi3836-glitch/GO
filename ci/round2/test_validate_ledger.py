@@ -214,6 +214,33 @@ class SchedulerContractTests(unittest.TestCase):
     def receipt_check(self, receipt):
         return self.receipt_verifier().verify(receipt, self.root, expected_cell="C12", expected_task="V70-R2-C12-02", expected_agent="/root/c12_scheduler", observed_at="2026-09-14T00:00:04Z")
 
+    def test_c12_r3_receipt_is_bound_to_exact_dispatched_candidate(self):
+        log_path = self.root / "c12-r3-output.log"
+        log_path.write_text("bounded C12 R3 admission output\n")
+        receipt = {
+            "cell_id": "C12", "task_id": "V70-R3-C12-01", "agent": "/root/cell_c12",
+            "canonical_base": "dcb68a652429aa01e8428ce9f582e4bab6a6175e",
+            "fixed_candidate_sha": "911d6e13bceaf83bb62c775f33a325bbd68af885",
+            "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+            "application_source_fingerprint_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
+            "status": "RUNNING", "acknowledged_at": "2026-09-16T02:00:00Z",
+            "started_at": "2026-09-16T02:00:01Z", "heartbeat_at": "2026-09-16T02:04:00Z",
+            "execution_evidence": [{"kind": "PROCESS_OUTPUT", "path": log_path.name,
+                                    "sha256": hashlib.sha256(log_path.read_bytes()).hexdigest()}],
+        }
+        verifier = self.receipt_verifier()
+        result = verifier.verify(receipt, self.root, expected_cell="C12",
+                                 expected_task="V70-R3-C12-01", expected_agent="/root/cell_c12",
+                                 observed_at="2026-09-16T02:05:00Z")
+        self.assertEqual(result["gate"], "PASS_SCOPED")
+        for field in ("canonical_base", "fixed_candidate_sha", "application_git_tree",
+                      "application_source_fingerprint_sha256"):
+            wrong = copy.deepcopy(receipt)
+            wrong[field] = "WRONG_BINDING"
+            self.assertEqual(verifier.verify(
+                wrong, self.root, expected_cell="C12", expected_task="V70-R3-C12-01",
+                expected_agent="/root/cell_c12", observed_at="2026-09-16T02:05:00Z")["gate"], "HOLD")
+
     def test_receipt_assigned_without_ack_cannot_be_admitted_as_running(self):
         receipt = self.receipt()
         receipt.update(status="ASSIGNED", acknowledged_at=None, started_at=None)
