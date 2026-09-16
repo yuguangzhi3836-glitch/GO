@@ -44,7 +44,7 @@ jobs:
           out=pathlib.Path(os.environ["RUNNER_TEMP"])/"cell-evidence/source"
           (out/"SOURCE_FILES.json").write_text(json.dumps(files,indent=2,sort_keys=True)+"\\n")
           (out/"SOURCE_FINGERPRINT_SHA256").write_text(hashlib.sha256(raw).hexdigest()+"\\n")
-          PY
+          # Fail the Evidence gate here if either machine-readable binding is malformed.\n          assert json.loads((out/"SOURCE_FILES.json").read_text()) == files\n          assert (out/"SOURCE_FINGERPRINT_SHA256").read_text().strip() == hashlib.sha256(raw).hexdigest()\n          PY
       - name: Install inherited frozen Python dependencies
         run: |
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
