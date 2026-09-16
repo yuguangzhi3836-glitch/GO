@@ -13,6 +13,8 @@ import hmac
 import json
 from pathlib import Path
 import re
+import sqlite3
+import threading
 
 CANONICAL_BASE = "dcb68a652429aa01e8428ce9f582e4bab6a6175e"
 FIXED_CANDIDATE_SHA = "911d6e13bceaf83bb62c775f33a325bbd68af885"
@@ -136,9 +138,43 @@ def sign_identity_assertion(assertion, trust_key):
     return hmac.new(trust_key, payload, hashlib.sha256).hexdigest()
 
 
+class DurableNonceStore:
+    """SQLite-backed atomic nonce consumption durable across process restarts."""
+
+    def __init__(self, path):
+        self.path = str(path)
+        self._init_lock = threading.Lock()
+        with self._init_lock, sqlite3.connect(self.path) as db:
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("""CREATE TABLE IF NOT EXISTS identity_nonce (
+                nonce TEXT PRIMARY KEY,
+                expires_at TEXT NOT NULL,
+                consumed_at TEXT NOT NULL
+            )""")
+
+    def consume(self, nonce, expires_at, observed_at):
+        """Atomically consume once. Storage errors propagate so admission fails closed."""
+        with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
+            db.execute("BEGIN IMMEDIATE")
+            try:
+                db.execute("DELETE FROM identity_nonce WHERE expires_at < ?", (observed_at,))
+                db.execute(
+                    "INSERT INTO identity_nonce(nonce, expires_at, consumed_at) VALUES (?, ?, ?)",
+                    (nonce, expires_at, observed_at),
+                )
+                db.execute("COMMIT")
+                return True
+            except sqlite3.IntegrityError:
+                db.execute("ROLLBACK")
+                return False
+            except Exception:
+                db.execute("ROLLBACK")
+                raise
+
+
 def verify_identity_assertion(assertion, *, trusted_keys, expected_worker_id,
                               expected_task_id, expected_candidate_sha,
-                              observed_at=None, seen_nonces=None,
+                              observed_at=None, seen_nonces=None, nonce_store=None,
                               max_lifetime_seconds=DEFAULT_MAX_ASSERTION_LIFETIME_SECONDS):
     """Verify a bounded signed identity assertion without claiming process liveness."""
     errors = []
@@ -195,12 +231,23 @@ def verify_identity_assertion(assertion, *, trusted_keys, expected_worker_id,
             errors.append("identity assertion signature mismatch")
         else:
             result["assertion_signature_verified"] = True
-    nonce_store = seen_nonces if seen_nonces is not None else set()
-    if isinstance(nonce, str) and nonce in nonce_store:
+    memory_store = seen_nonces if seen_nonces is not None else set()
+    if nonce_store is None and isinstance(nonce, str) and nonce in memory_store:
         result["replay_detected"] = True
         errors.append("identity assertion nonce replayed")
     if not errors:
-        nonce_store.add(nonce)
+        if nonce_store is not None:
+            try:
+                consumed = nonce_store.consume(nonce, assertion["expires_at"], observed.isoformat())
+            except Exception as error:
+                errors.append(f"identity nonce storage unavailable: {error}")
+                consumed = None
+            if consumed is False:
+                result["replay_detected"] = True
+                errors.append("identity assertion nonce replayed")
+        else:
+            memory_store.add(nonce)
+    if not errors:
         result["gate"] = "PASS_SCOPED"
         result["authenticated_worker_identity"] = True
     return result
