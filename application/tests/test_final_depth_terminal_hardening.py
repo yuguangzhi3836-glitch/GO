@@ -42,7 +42,10 @@ def test_ride_unknown_from_in_progress_restores_in_progress(client):
     assert client.post(f"/v1/mobility/orders/{o['order_id']}/fulfillment",headers=h,json={'action':'START','evidence_reference':'ride-start'}).json()['data']['status']=='IN_PROGRESS'
     x=mobility_service.admin_external_state(o['order_id'],'UNKNOWN_EXTERNAL_STATE','unknown-proof','ops')
     assert x['status']=='UNKNOWN_EXTERNAL_STATE'
-    y=mobility_service.admin_external_state(o['order_id'],'CONFIRMED','reconcile-proof','ops')
+    from go_hotel.mobility.ride.recovery_evidence import current_unknown_episode
+    with SessionLocal() as s:
+        _,episode=current_unknown_episode(s,s.get(MobilityRideOrderRow,o['order_id']))
+    y=mobility_service.admin_external_state(o['order_id'],'CONFIRMED','reconcile-proof','ops',episode)
     assert y['status']=='IN_PROGRESS'
     repeat=client.post(f"/v1/mobility/orders/{o['order_id']}/fulfillment",headers=h,json={'action':'START','evidence_reference':'repeat-start'})
     assert repeat.status_code in {404,422}
