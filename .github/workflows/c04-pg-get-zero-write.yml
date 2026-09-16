@@ -1,4 +1,4 @@
-name: C04 PostgreSQL GET zero-write proof
+name: C04 PostgreSQL authenticated HTTP GET zero-write proof
 on:
   push:
     branches: [cell/c04-v70-r3-04-pg-get-zero-write]
@@ -54,7 +54,7 @@ jobs:
           git diff -- application/tests/conftest.py > evidence-out/temporary-harness.patch
           cd application
           set -o pipefail
-          python -m pytest -p no:cacheprovider tests/test_v70_r3_c04_admin_reconciliation.py -vv --junitxml=../evidence-out/junit.xml 2>&1 | tee ../evidence-out/raw.log
+          python -m pytest -p no:cacheprovider tests/test_v70_r3_c04_http_zero_write.py -vv --junitxml=../evidence-out/junit.xml 2>&1 | tee ../evidence-out/raw.log
           cd ..
           git checkout -- application/tests/conftest.py
           test -z "$(git diff -- application)"
@@ -63,6 +63,6 @@ jobs:
           sha256sum evidence-out/* > evidence-out/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: c04-pg-get-zero-write
+          name: c04-pg-http-get-zero-write
           path: evidence-out
           retention-days: 90
