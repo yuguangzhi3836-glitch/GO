@@ -69,13 +69,15 @@ for path,row in overlay.items():
 for row in record['archived_pr48_tooling']:
     assert blob(row['path'])==row['git_blob'],'HISTORY_CHANGED:'+row['path']
 assert not (root/'.github/workflows/depth41-journey.yml').exists(),'OLD_JOURNEY_WORKFLOW_MUST_REMAIN_INACTIVE'
-migration=(root/'application/alembic/versions/0134_flight_status_width.py').read_text()
-assert 'revision = "0134_flight_status_width"' in migration and 'down_revision = "0133_flight_change_plan"' in migration
+migration_0134=(root/'application/alembic/versions/0134_flight_status_width.py').read_text()
+migration_0135=(root/'application/alembic/versions/0135_journey_search_trigram.py').read_text()
+assert 'revision = "0134_flight_status_width"' in migration_0134 and 'down_revision = "0133_flight_change_plan"' in migration_0134
+assert 'revision = "0135_journey_search_trigram"' in migration_0135 and 'down_revision = "0134_flight_status_width"' in migration_0135
 report={'commit':git('rev-parse','HEAD'),'product_candidate_commit':current['product_candidate_commit'],
         'application_tree':actual_tree,'selected_source_files':len(tracked),'retained_baseline_files':len(expected),
         'registered_acceptance_repairs':len(repairs),'approved_integration_overrides':sorted(overlay),
         'selection_counts':counts,'pr47_application_changes':changed,'archived_tooling_files':len(record['archived_pr48_tooling']),
-        'alignment':'PASS','migration_head':'0134_flight_status_width','historical_pass_transferred':False,
+        'alignment':'PASS','migration_head':'0135_journey_search_trigram','historical_pass_transferred':False,
         'full_three_end_ux':'HOLD','six_vertical_closed_loop':'HOLD','sealed_node':'HOLD','final_release':'HOLD'}
 if len(sys.argv)>1:
     out=Path(sys.argv[1]);out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(report,indent=2)+'\n')
