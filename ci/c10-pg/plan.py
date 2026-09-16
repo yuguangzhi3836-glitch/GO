@@ -1,4 +1,4 @@
-"""C10 candidate-bound PostgreSQL online-migration and before/after plan evidence."""
+"""C10 candidate-bound PostgreSQL online migration, permission, and before/after plan evidence."""
 import argparse, hashlib, json, os, pathlib, subprocess, time
 import psycopg
 
