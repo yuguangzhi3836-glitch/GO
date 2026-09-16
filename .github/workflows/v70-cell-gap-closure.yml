@@ -33,7 +33,18 @@ jobs:
           mkdir -p "$RUNNER_TEMP/cell-evidence/source"
           git rev-parse HEAD | tee "$RUNNER_TEMP/cell-evidence/source/CANDIDATE_SHA"
           git rev-parse HEAD:application | tee "$RUNNER_TEMP/cell-evidence/source/APPLICATION_TREE"
-          python ci/retention/verify_source.py "$RUNNER_TEMP/cell-evidence/source"
+          python - <<'PY'
+          import hashlib, json, os, pathlib
+          root=pathlib.Path("application")
+          files={}
+          for p in sorted(root.rglob("*")):
+              if p.is_file() and "__pycache__" not in p.parts:
+                  files[str(p.relative_to(root))]=hashlib.sha256(p.read_bytes()).hexdigest()
+          raw=json.dumps(files,sort_keys=True,separators=(",",":")).encode()
+          out=pathlib.Path(os.environ["RUNNER_TEMP"])/"cell-evidence/source"
+          (out/"SOURCE_FILES.json").write_text(json.dumps(files,indent=2,sort_keys=True)+"\\n")
+          (out/"SOURCE_FINGERPRINT_SHA256").write_text(hashlib.sha256(raw).hexdigest()+"\\n")
+          PY
       - name: Install inherited frozen Python dependencies
         run: |
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
