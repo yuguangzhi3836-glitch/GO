@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from go_hotel.flight import coupon_authority as auth
 
@@ -94,3 +96,77 @@ def test_missing_or_noncanonical_currency_is_rejected(currency):
     candidate["order"]["currency"] = currency
     with pytest.raises(ValueError, match="CURRENCY_INVALID"):
         auth.persist(candidate, {}, key_id="c02-test", authority_key=KEY)
+
+
+def bound_consent(record, **updates):
+    value = consent(record) | {
+        "consent_subject": "traveler-7",
+        "consent_nonce": "nonce-1",
+        "consent_expires_at": "2026-10-01T07:55:00+08:00",
+    }
+    value.update(updates)
+    return value
+
+
+def authorize_once(store, record, approval, replay_store, **kwargs):
+    return auth.authorize_once(
+        store, record["plan_id"], approval,
+        [{"source_id": "capture-1", "amount_minor": 9000}],
+        authority_keys=KEYS, consent_subject="traveler-7",
+        now=kwargs.pop("now", datetime.fromisoformat("2026-10-01T07:50:00+08:00")),
+        replay_store=replay_store, **kwargs)
+
+
+def test_bound_consent_is_single_use_and_returns_durable_receipt():
+    store, replay = {}, {}
+    record = auth.persist(plan(), store, key_id="c02-test", authority_key=KEY)
+    result = authorize_once(store, record, bound_consent(record), replay)
+    assert result["consent_receipt"] == {
+        "plan_id": "plan-1", "consent_subject": "traveler-7",
+        "authority_mac": record["authority_mac"],
+        "consent_expires_at": "2026-10-01T07:55:00+08:00",
+        "consent_nonce": "nonce-1",
+    }
+    with pytest.raises(ValueError, match="CONSENT_REPLAY"):
+        authorize_once(store, record, bound_consent(record), replay)
+
+
+@pytest.mark.parametrize(
+    ("updates", "subject", "now", "error"),
+    [
+        ({"consent_subject": "other"}, "traveler-7", None, "CONTEXT_INVALID"),
+        ({"consent_nonce": ""}, "traveler-7", None, "CONTEXT_INVALID"),
+        ({"consent_expires_at": "2026-10-01T07:55:00"}, "traveler-7", None,
+         "EXPIRY_INVALID"),
+        ({}, "traveler-7", "2026-10-01T07:55:00+08:00", "CONSENT_EXPIRED"),
+    ],
+)
+def test_bound_consent_rejects_wrong_subject_nonce_or_expiry(
+        updates, subject, now, error):
+    store, replay = {}, {}
+    record = auth.persist(plan(), store, key_id="c02-test", authority_key=KEY)
+    approval = bound_consent(record, **updates)
+    call_now = datetime.fromisoformat(now) if now else datetime.fromisoformat(
+        "2026-10-01T07:50:00+08:00")
+    with pytest.raises(ValueError, match=error):
+        auth.authorize_once(
+            store, record["plan_id"], approval,
+            [{"source_id": "capture-1", "amount_minor": 9000}],
+            authority_keys=KEYS, consent_subject=subject, now=call_now,
+            replay_store=replay)
+    assert replay == {}
+
+
+def test_failed_authority_or_allocation_does_not_consume_nonce():
+    store, replay = {}, {}
+    record = auth.persist(plan(), store, key_id="c02-test", authority_key=KEY)
+    approval = bound_consent(record)
+    with pytest.raises(ValueError, match="ALLOCATION_INVALID"):
+        auth.authorize_once(
+            store, record["plan_id"], approval,
+            [{"source_id": "capture-1", "amount_minor": 8999}],
+            authority_keys=KEYS, consent_subject="traveler-7",
+            now=datetime.fromisoformat("2026-10-01T07:50:00+08:00"),
+            replay_store=replay)
+    assert replay == {}
+    assert authorize_once(store, record, approval, replay)["plan_id"] == "plan-1"
