@@ -1,4 +1,4 @@
-name: C02 candidate-bound evidence gate
+name: C03 PostgreSQL candidate-bound evidence
 
 on:
   workflow_dispatch:
@@ -12,35 +12,48 @@ permissions:
   contents: read
 
 env:
-  TASK_ID: V70-R3-C02-01
-  BASE_SHA: dcb68a652429aa01e8428ce9f582e4bab6a6175e
-  CANDIDATE_SHA: bd895536c39518b98aa15cd50100a593e392365e
-  APPLICATION_TREE: 64591f3078dc1d4d760c7b06e1dd941eaddf65ba
-  EVIDENCE_DIR: c02-candidate-evidence
+  TASK_ID: V70-R3-C03-01
+  CANDIDATE_SHA: dcb68a652429aa01e8428ce9f582e4bab6a6175e
+  APPLICATION_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+  DATABASE_URL: postgresql+psycopg://go:go@localhost:5432/go_hotel
+  EVIDENCE_DIR: c03-postgresql-evidence
 
 jobs:
-  candidate-bound-tests:
-    name: C02 exact candidate tests and immutable evidence
+  postgresql-race-tests:
+    name: C03 PG rail payment inventory races
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go
+          POSTGRES_PASSWORD: go
+          POSTGRES_DB: go_hotel
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U go -d go_hotel"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.CANDIDATE_SHA }}
-          fetch-depth: 0
+          fetch-depth: 1
           persist-credentials: false
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13.5'
 
-      - name: Verify exact candidate and application tree
+      - name: Verify exact source
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
           test "$(git rev-parse HEAD:application)" = "$APPLICATION_TREE"
-          test "$(git merge-base "$BASE_SHA" "$CANDIDATE_SHA")" = "$BASE_SHA"
 
       - name: Install inherited frozen Python dependencies
         shell: bash
@@ -49,68 +62,88 @@ jobs:
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
 
-      - name: Run exact scoped tests and capture original evidence
-        id: scoped
+      - name: Prepare explicit PostgreSQL test harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          cp application/tests/conftest.py "$RUNNER_TEMP/conftest.original.py"
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("application/tests/conftest.py")
+          old='os.environ["DATABASE_URL"] = f"sqlite+pysqlite:///{DB}"'
+          new='os.environ.setdefault("DATABASE_URL", f"sqlite+pysqlite:///{DB}")'
+          text=p.read_text()
+          assert text.count(old)==1
+          p.write_text(text.replace(old,new))
+          PY
+          git diff -- application/tests/conftest.py > "$EVIDENCE_DIR/PG_HARNESS.patch"
+          sha256sum "$RUNNER_TEMP/conftest.original.py" application/tests/conftest.py "$EVIDENCE_DIR/PG_HARNESS.patch" > "$EVIDENCE_DIR/PG_HARNESS.sha256"
+          pg_isready -h localhost -p 5432 -U go -d go_hotel
+
+      - name: Execute task-bound PostgreSQL race and convergence tests
+        id: pgtests
         shell: bash
         run: |
           set +e
-          mkdir -p "$EVIDENCE_DIR"
           RAW="$EVIDENCE_DIR/TEST_RUN.raw.log"
-          STARTED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           {
             echo "TASK_ID=$TASK_ID"
-            echo "STARTED_AT_UTC=$STARTED"
+            echo "STARTED_AT_UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "RUNNER_OS=$RUNNER_OS"
             echo "PYTHON_VERSION=$(python --version 2>&1)"
             echo "COMMAND=git rev-parse HEAD"
             git rev-parse HEAD
             echo "COMMAND=git rev-parse HEAD:application"
             git rev-parse HEAD:application
-            echo "COMMAND=cd application && python -m pytest -p no:cacheprovider tests/test_v70_r3_c02_coupon_authority.py -vv"
-          } >"$RAW" 2>&1
+            echo "COMMAND=psql server_version"
+            PGPASSWORD=go psql -h localhost -U go -d go_hotel -Atc "show server_version;"
+            echo "DATABASE_BACKEND=postgresql+psycopg"
+            echo "COMMAND=cd application && DATABASE_URL=postgresql+psycopg://go:REDACTED@localhost:5432/go_hotel python -m pytest -p no:cacheprovider tests/test_next_depth_c03_payment_inventory_races.py -vv"
+          } > "$RAW" 2>&1
           (
             cd application
-            python -m pytest -p no:cacheprovider tests/test_v70_r3_c02_coupon_authority.py -vv
-          ) >>"$RAW" 2>&1
+            DATABASE_URL="$DATABASE_URL" python -m pytest -p no:cacheprovider tests/test_next_depth_c03_payment_inventory_races.py -vv
+          ) >> "$RAW" 2>&1
           TEST_EXIT=$?
           {
             echo "EXIT_CODE=$TEST_EXIT"
             echo "FINISHED_AT_UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          } >>"$RAW"
+          } >> "$RAW"
           sha256sum "$RAW" > "$EVIDENCE_DIR/TEST_RUN.raw.log.sha256"
           printf '%s\n' "$TEST_EXIT" > "$EVIDENCE_DIR/TEST_EXIT_CODE.txt"
           exit "$TEST_EXIT"
 
-      - name: Bind evidence to checkout
+      - name: Bind immutable evidence
         if: always()
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_DIR"
-          ACTUAL_SHA="$(git rev-parse HEAD)"
-          ACTUAL_TREE="$(git rev-parse HEAD:application)"
           {
             echo "task_id=$TASK_ID"
-            echo "candidate_sha=$ACTUAL_SHA"
-            echo "application_tree=$ACTUAL_TREE"
-            echo "expected_candidate_sha=$CANDIDATE_SHA"
-            echo "expected_application_tree=$APPLICATION_TREE"
+            echo "candidate_sha=$(git rev-parse HEAD)"
+            echo "application_tree=$(git rev-parse HEAD:application)"
             echo "workflow_run_id=${{ github.run_id }}"
             echo "workflow_job=${{ github.job }}"
             echo "workflow_attempt=${{ github.run_attempt }}"
-            echo "repository=${{ github.repository }}"
+            echo "postgres_image=postgres:18.4"
+            echo "test_file=application/tests/test_next_depth_c03_payment_inventory_races.py"
+            echo "product_source_changed=false"
             echo "final_release=HOLD"
             echo "hk_deploy=HOLD"
             echo "production=HOLD"
           } > "$EVIDENCE_DIR/BINDING.txt"
-          test "$ACTUAL_SHA" = "$CANDIDATE_SHA"
-          test "$ACTUAL_TREE" = "$APPLICATION_TREE"
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$APPLICATION_TREE"
           find "$EVIDENCE_DIR" -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > "$EVIDENCE_DIR/SHA256SUMS.txt"
+          cat "$EVIDENCE_DIR/TEST_RUN.raw.log.sha256" || true
+          cat "$EVIDENCE_DIR/SHA256SUMS.txt"
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: c02-${{ env.TASK_ID }}-${{ env.CANDIDATE_SHA }}
+          name: c03-${{ env.TASK_ID }}-${{ env.CANDIDATE_SHA }}-postgresql
           path: ${{ env.EVIDENCE_DIR }}
           if-no-files-found: error
           retention-days: 90
