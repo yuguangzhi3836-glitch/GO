@@ -69,7 +69,6 @@ def test_expiry_alone_never_authorizes_takeover(durable_service):
     with pytest.raises(ValueError, match="GO_AI_PREVIOUS_OWNER_TERMINATION_NOT_PROVEN"):
         service.claim_execution(
             "goai_c08_durable", worker_id="go-ai-worker-b", lease_seconds=60,
-            observed_at=now + timedelta(seconds=11),
         )
 
 
@@ -112,7 +111,6 @@ def test_complete_checkpoint_and_verified_termination_issue_new_fence(durable_se
             checkpoint=checkpoint,
             complete=True,
         )
-
 
 
 def test_same_worker_renewal_requires_exact_fence(durable_service):
@@ -165,7 +163,6 @@ def test_unknown_provider_outcome_blocks_takeover_and_assessment_stays_read_only
             worker_id="go-ai-worker-b",
             lease_seconds=60,
             verified_previous_owner_terminated=True,
-            observed_at=now + timedelta(seconds=11),
         )
     before = service.request_audit("goai_c08_durable")
     assessment = service.assess_recovery("goai_c08_durable")
