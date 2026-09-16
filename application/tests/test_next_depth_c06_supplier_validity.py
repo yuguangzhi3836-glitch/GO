@@ -156,3 +156,7 @@ def test_valid_window_does_not_bypass_inflight_refund_exclusion(monkeypatch):
     install(monkeypatch)
     monkeypatch.setattr(service, 'db_now_ms', lambda session: int(datetime(2026,9,15,8,0,tzinfo=UTC).timestamp()*1000))
     test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem('ATTRACTION', monkeypatch)
+
+
+# Collect the Issue #146 internal fixture matrix in the already-admitted C06 shard.
+from tests.test_c06_internal_policy_registry import *  # noqa: F401,F403,E402
