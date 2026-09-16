@@ -83,12 +83,13 @@ class IdentityService:
         out={'access_token':encode_jwt(claims),'token_type':'bearer','expires_in':settings.access_token_minutes*60,'refresh_token':refresh}
         if csrf: out['csrf_token']=csrf
         return out
-    def authenticate(self, token:str)->Principal:
+    def authenticate(self, token:str, *, touch_session:bool=True)->Principal:
         c=decode_jwt(token)
         with SessionLocal() as s:
             u=s.get(IdentityUserRow,c['sub']); ses=s.get(AuthSessionRow,c['sid'])
             if not u or u.status!='ACTIVE' or u.token_version!=c.get('ver') or not ses or ses.status!='ACTIVE' or aware(ses.expires_at)<now(): raise ValueError('SESSION_REVOKED')
-            ses.last_seen_at=now(); s.commit()
+            if touch_session:
+                ses.last_seen_at=now(); s.commit()
             return Principal(u.user_id,u.username,u.actor_type,u.supplier_id,list(u.roles or []),ses.session_id,permissions_for(list(u.roles or [])))
     def refresh(self, refresh_token:str, *, allowed_actor_types=None):
         h=token_hash(refresh_token)
