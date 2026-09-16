@@ -24,6 +24,8 @@ Expired leases are atomically returned to `QUEUED`; a stale worker cannot renew
 an attempt after another worker acquires it. Completion preserves
 `DONE_SCOPED` and automatically claims the next queued task for the same Cell,
 so accepted PASS work is not redeveloped merely to keep an executor busy.
+The service also runs an internal lease reaper, so expiry is processed even
+when no claim or snapshot request arrives.
 
 The source-only `go-cell-orchestrator.service.example` runs the control plane as
 a restartable least-privilege service. Activation still requires an authorized
