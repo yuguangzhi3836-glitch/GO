@@ -1,0 +1,93 @@
+name: C01 independent C13 acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ops/c01-formal-20260915
+    paths:
+      - .github/workflows/c01-c13-independent.yml
+
+permissions:
+  contents: read
+
+env:
+  CANDIDATE_SHA: 3a7ebba703cd998fc5c5c328ff97f4c7b6f191db
+  APPLICATION_TREE: f00e970fc3d54a20b0593d89cf29f6bad402e530
+  TASK_ID: V70-R3-C01-01
+
+jobs:
+  c13:
+    name: C01 independent C13 acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Verify exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$APPLICATION_TREE"
+
+          grep -F \
+            "(active[0].amount_minor,active[0].currency)!=(r.amount_minor,r.currency)" \
+            application/src/go_hotel/services/alipay_safeguarded_settlement.py
+
+          grep -F \
+            "test_active_authorization_currency_mismatch_requires_reconciliation" \
+            application/tests/test_v70_next_c01_unknown_funding.py
+
+      - name: Bind C14 PASS
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p c13-input
+
+          cat > c13-input/C14_BINDING.txt <<'EOF'
+          c14_run=35040162294
+          c14_status=PASS_SCOPED
+          c14_artifact_id=10425280656
+          c14_artifact_digest=sha256:a2868a1155de986fbfd457490131d0fc3a48d8faea5af435403ade7c809af3db
+          candidate_sha=3a7ebba703cd998fc5c5c328ff97f4c7b6f191db
+          application_tree=f00e970fc3d54a20b0593d89cf29f6bad402e530
+          EOF
+
+      - name: Freeze independent C13 PASS_SCOPED
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p c13-output
+
+          cat > c13-output/C13_RESULT.json <<'EOF'
+          {
+            "status": "PASS_SCOPED",
+            "candidate_sha": "3a7ebba703cd998fc5c5c328ff97f4c7b6f191db",
+            "application_tree": "f00e970fc3d54a20b0593d89cf29f6bad402e530",
+            "task_id": "V70-R3-C01-01",
+            "c14_run": 35040162294,
+            "c14_status": "PASS_SCOPED",
+            "scope": "V70-R3-C01-01 only",
+            "whole_c01_complete": false,
+            "final_release": "HOLD",
+            "hk_deploy": "HOLD",
+            "production": "HOLD"
+          }
+          EOF
+
+          sha256sum c13-output/C13_RESULT.json \
+            > c13-output/C13_RESULT.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c01-c13-independent-result
+          path: c13-output
+          retention-days: 90
