@@ -3,7 +3,7 @@ from datetime import timedelta
 from threading import Barrier
 
 import pytest
-from sqlalchemy import select, func, update
+from sqlalchemy import select, func, update, delete
 from go_hotel.core.config import settings
 from go_hotel.db.models import OutboxRow, OutboxDeadLetterRow
 from go_hotel.db.session import SessionLocal
@@ -74,7 +74,8 @@ def test_database_time_ignores_application_clock_skew(client, monkeypatch):
         db_now = session.scalar(select(func.current_timestamp()))
         row = session.get(OutboxRow, claimed[0]["outbox_id"])
         locked = row.locked_at.replace(tzinfo=None) if row.locked_at.tzinfo else row.locked_at
-        assert abs((locked - db_now).total_seconds()) < 10
+        database_now = db_now.replace(tzinfo=None) if db_now.tzinfo else db_now
+        assert abs((locked - database_now).total_seconds()) < 10
 
 
 def test_postgresql_two_workers_claim_one_row_once(client):
@@ -82,6 +83,12 @@ def test_postgresql_two_workers_claim_one_row_once(client):
         if session.get_bind().dialect.name != "postgresql":
             pytest.skip("requires PostgreSQL row-lock semantics")
     seed_event(client)
+    # Hotel search stages more than one independent outbox event. This case proves
+    # two workers contend for one row, so retain one eligible row explicitly.
+    with SessionLocal.begin() as session:
+        outbox_ids = list(session.scalars(select(OutboxRow.outbox_id).order_by(OutboxRow.outbox_id)))
+        assert outbox_ids
+        session.execute(delete(OutboxRow).where(OutboxRow.outbox_id != outbox_ids[0]))
     barrier = Barrier(2)
     def claim(worker_id):
         barrier.wait()
