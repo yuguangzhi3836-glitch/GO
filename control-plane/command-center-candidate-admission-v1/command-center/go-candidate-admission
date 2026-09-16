@@ -560,50 +560,6 @@ def check_artifact_durability(adm, block):
     return adm.passes("artifact_durability", package_sha256=package)
 
 
-def check_artifact_durability(adm, block):
-    """Whether the artifact this candidate was built as still exists anywhere.
-
-    An image ID proves a build happened.  It does not prove the built bytes are
-    still anywhere, and the ephemeral-artifact defect was exactly that gap: a
-    signed TEST_PR reported ``built_image_id`` and deleted the image in its own
-    ``finally`` block, so the Evidence was true and nothing was deliverable.  The
-    question is therefore asked separately, and answered in the report whether or
-    not the answer is favourable.
-    """
-    declared = block.get("artifact_package")
-    if declared is None:
-        adm.checks.append({"rule": "artifact_durability", "state": "NOT_PROVEN",
-                           "reason": "candidate_artifact_package_absent"})
-        return False
-    if not isinstance(declared, dict) or set(declared) != set(ARTIFACT_PACKAGE_FIELDS):
-        return adm.fails("artifact_durability", "candidate_artifact_package",
-                         observed={"fields": (sorted(declared)
-                                              if isinstance(declared, dict) else None)})
-    if declared.get("durability") not in ARTIFACT_DURABILITY_VALUES:
-        return adm.fails("artifact_durability", "candidate_artifact_package",
-                         observed={"durability": declared.get("durability")},
-                         expected={"durability": list(ARTIFACT_DURABILITY_VALUES)})
-    if declared["durability"] == "NOT_PROVEN":
-        adm.checks.append({"rule": "artifact_durability", "state": "NOT_PROVEN",
-                           "reason": "candidate_artifact_package_not_proven"})
-        return False
-    package = declared.get("package_sha256")
-    if not isinstance(package, str) or SHA64.fullmatch(package) is None:
-        return adm.fails("artifact_durability", "candidate_artifact_package_identity",
-                         observed={"package_sha256": package})
-    # A claimed package is only credible if the signed TEST_PR result is about the
-    # same package AND the same image.  Anything else is a candidate describing an
-    # artifact no proof covers.
-    sealed = (getattr(adm, "evidence", None) or {}).get("artifact_package") or {}
-    if (sealed.get("package_sha256") != package
-            or sealed.get("image_id") != block.get("artifact_digest")):
-        return adm.fails("artifact_durability", "candidate_artifact_package_mismatch",
-                         observed={"declared_package_sha256": package,
-                                   "evidence": sealed,
-                                   "candidate_artifact_digest": block.get("artifact_digest")})
-    return adm.passes("artifact_durability", package_sha256=package)
-
-
 def check_rollback(adm, block):
     relation = block.get("rollback_relation")
     if not isinstance(relation, dict) or set(relation) != set(ROLLBACK_FIELDS):
@@ -720,22 +676,6 @@ def admit(contract_path, candidate_path, evidence_path=None, plan_path=None,
         verdict = UNKNOWN
     else:
         verdict = ACCEPT
-
-    durability = {"state": "NOT_PROVEN", "package_sha256": None, "reason": None}
-    for entry in adm.checks:
-        if entry.get("rule") != "artifact_durability":
-            continue
-        if entry.get("state") == "PASS":
-            durability = {"state": "PROVEN", "package_sha256": entry.get("package_sha256"),
-                          "reason": None}
-        elif entry.get("state") == "NOT_PROVEN":
-            durability = {"state": "NOT_PROVEN", "package_sha256": None,
-                          "reason": entry.get("reason")}
-        else:
-            durability = {"state": "NOT_ESTABLISHED", "package_sha256": None,
-                          "reason": entry.get("reason")}
-    deployable = verdict == ACCEPT and durability["state"] == "PROVEN"
-
 
     durability = {"state": "NOT_PROVEN", "package_sha256": None, "reason": None}
     for entry in adm.checks:
