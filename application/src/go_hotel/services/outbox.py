@@ -53,7 +53,13 @@ class OutboxWorker:
     @staticmethod
     def _database_now(session):
         value = session.scalar(select(func.current_timestamp()))
-        return value.replace(tzinfo=timezone.utc) if value is not None and value.tzinfo is None else value
+        if value is None:
+            return value
+        # SQLite drops timezone information for DateTime(timezone=True); keep the
+        # comparison/storage representation native to the active database.
+        if session.get_bind().dialect.name == "sqlite":
+            return value.replace(tzinfo=None)
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
 
     def claim(self, limit: int | None = None) -> list[dict]:
         limit = limit or settings.outbox_batch_size
