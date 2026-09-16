@@ -1,12 +1,12 @@
 {
   "schema": "go.v70.next-depth.candidate.rebind.v2",
   "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
-  "product_candidate_commit": "9b2d0e395a37e3a0c6d2502bc27643fb6e00cc06",
-  "application_git_tree": "d4e37e828766cb3ba6d2c9d1e5d741892ff7df98",
+  "product_candidate_commit": "ecb76b22a6ce504e95004fbc819d673e88df07c8",
+  "application_git_tree": "95f945c4e80716febf0a30d33e8b4884f0c6d5b8",
   "preintegration_candidate_commit": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_git_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
   "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
-  "source_files": 1370,
+  "source_files": 1372,
   "inherited_candidate_manifest": {
     "path": "ci/next-depth/CANDIDATE_INHERITED_85FB.json",
     "git_blob": "d616e629a1d05f5955a04b60cb60d34bdf571917"
@@ -15,41 +15,42 @@
     "application/src/go_hotel/db/models.py": {
       "mode": "100644",
       "git_blob": "76efb41530a132e1f19b82c2b14b61a81f7c04ae",
-      "reason": "V70-R3-C08-01 GO AI durable execution"
+      "reason": "V70-R3-C08-01 GO AI-specific durable ownership/checkpoint boundary"
     },
     "application/alembic/versions/0134_flight_status_width.py": {
       "mode": "100644",
-      "git_blob": "cfcf69eefc3eee35b3e282d034b276764eadb0c3"
+      "git_blob": "cfcf69eefc3eee35b3e282d034b276764eadb0c3",
+      "reason": "0134 SQLite partial history compatibility and current-head assertions; original data guards retained"
     },
     "application/tests/test_depth25_migration_history.py": {
       "mode": "100644",
       "git_blob": "e5117e28b6209cd345a4cc29c189657f94e95144",
-      "reason": "TEST_ONLY: fresh install merged head"
+      "reason": "TEST_ONLY: fresh install reaches merged head"
     },
     "application/tests/test_parent_implementation_code_review_debt_closure.py": {
       "mode": "100644",
       "git_blob": "b8a88b7397086e42e68353568dd2797768827694",
-      "reason": "TEST_ONLY: assert merged head"
+      "reason": "TEST_ONLY: assert unique merged head"
     },
     "application/src/go_hotel/go_ai/service.py": {
       "mode": "100644",
       "git_blob": "93e3ba494b3ead01082708bd70e91ec81ac6b58e",
-      "reason": "V70-R3-C08-01 GO AI durable execution"
+      "reason": "V70-R3-C08-01 GO AI-specific durable ownership/checkpoint boundary"
     },
     "application/alembic/versions/0135_go_ai_execution.py": {
       "mode": "100644",
       "git_blob": "e6a17650c3d404db48c3340d3a89c28c03510fb6",
-      "reason": "V70-R3-C08-01 GO AI durable execution"
+      "reason": "V70-R3-C08-01 GO AI-specific durable ownership/checkpoint boundary"
     },
     "application/tests/go_ai/test_c08_durable_execution.py": {
       "mode": "100644",
       "git_blob": "f24a782525b24a31bad0a4fbb08ea35a5c9b0e70",
-      "reason": "V70-R3-C08-01 GO AI durable execution"
+      "reason": "V70-R3-C08-01 GO AI-specific durable ownership/checkpoint boundary"
     },
     "application/tests/go_ai/c08_hard_exit_worker.py": {
       "mode": "100644",
       "git_blob": "4991a791846ceb44a797367d587eb90a55ea13eb",
-      "reason": "TEST_ONLY: provision GO AI durable execution table in hard-exit fixture"
+      "reason": "TEST_ONLY: provision GO AI durable execution table in hard-exit recovery fixture"
     },
     "application/alembic/versions/0135_journey_search_trigram.py": {
       "mode": "100644",
@@ -80,6 +81,96 @@
       "mode": "100644",
       "git_blob": "92f58ebecf5bf61a21d89df01368c26e7ac4a671",
       "reason": "TEST_ONLY: merged head includes GO AI table"
+    },
+    "application/src/go_hotel/services/alipay_safeguarded_settlement.py": {
+      "mode": "100644",
+      "git_blob": "df03dc7a4f36626bbdee2599c6d223d32a1f489a",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/tests/test_v70_next_c01_unknown_funding.py": {
+      "mode": "100644",
+      "git_blob": "f2c0bb64c456d53bee89c05d98fb613941a371ea",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/src/go_hotel/api/routes/operations_console.py": {
+      "mode": "100644",
+      "git_blob": "c0b86c3f68ff3b67d1092578d418280f1bb6b45b",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/tests/test_v70_r3_c04_admin_reconciliation.py": {
+      "mode": "100644",
+      "git_blob": "7be27e65cda83d7decfac3fe3edebf210f5012c6",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/src/go_hotel/api/routes/mobility.py": {
+      "mode": "100644",
+      "git_blob": "c91ff19ef319f4bec5b686a4bb561cfda27c244c",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/src/go_hotel/mobility/ride/recovery_evidence.py": {
+      "mode": "100644",
+      "git_blob": "f9ed1162812c80356cc6de55a785c18a2f51345e",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/src/go_hotel/mobility/ride/service.py": {
+      "mode": "100644",
+      "git_blob": "5174486eee92786de6f4c8a3eba2e885bb281fca",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/src/go_hotel/mobility/service.py": {
+      "mode": "100644",
+      "git_blob": "093fe7884d08fc8d402de97877ab4cda92610186",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/tests/test_rc20_2_all_b_to_a.py": {
+      "mode": "100644",
+      "git_blob": "6618ab07297284c5308739170338c7b78b825d0e",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/tests/test_v70_r3_c05_current_unknown_episode.py": {
+      "mode": "100644",
+      "git_blob": "d2967e27be0661c56f969177a1006b3b27e5f832",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/tests/test_v70_round2_c05_recovery_fulfillment.py": {
+      "mode": "100644",
+      "git_blob": "5c0d06f9e8abacdb70d0b9e49ef643c2a9faee80",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/src/go_hotel/travel_intelligence/preferences.py": {
+      "mode": "100644",
+      "git_blob": "86d03a058b2b3a5c4888622df4ea429496015cd7",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/tests/c07_preference_process_actor.py": {
+      "mode": "100644",
+      "git_blob": "f2941b467293affda87732be656c6b04725df5f9",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/tests/test_round2_c07_explicit_preferences.py": {
+      "mode": "100644",
+      "git_blob": "55626ec9debbcc902d2115550b7b14c8f6632815",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/src/go_hotel/judgment/service.py": {
+      "mode": "100644",
+      "git_blob": "74d6d17099ff850babc9e6d38355cd83375f3b80",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/src/go_hotel/repositories/sql.py": {
+      "mode": "100644",
+      "git_blob": "601dd9fb443fb300b0b5da0ed4504f341b9aa2bb",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/tests/judgment/test_next_depth_concurrent_judgment.py": {
+      "mode": "100644",
+      "git_blob": "946b0dfab11463c61691cb74d0e18be7413377eb",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "application/tests/payments/test_c11_flight_idempotency_recovery.py": {
+      "mode": "100644",
+      "git_blob": "d3f8c1b051aba1fee2c1453bffe5640963b2d61a",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
     }
   },
   "source_tree_sha256_status": "BOUND",
@@ -102,6 +193,6 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "source_tree_sha256": "bb242795cd59e205d14a6eb5115be654658a5bc1efdd090df7c3047792296b45",
+  "source_tree_sha256": "9597d187aad3b00044e8b5133d45d1472566c8149879b9d45553d82aba1ddd88",
   "historical_pass_transferred": false
 }
