@@ -1,8 +1,8 @@
 {
-  "schema": "go.v70.retention.rebind.v2",
-  "product_candidate_commit": "cb1181bf40b0e24f55ef095d8f1ee8857bdd6517",
-  "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
-  "source_anchor_main": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "schema": "go.v70.retention.task-bound.v3",
+  "product_candidate_commit": "e4245eeb521c1465ba62bdf3a46d10b732f27eb3",
+  "application_git_tree": "9c0f72e2d2523c539f7530a0e536111981ae96c1",
+  "source_anchor_main": "dcb68a652429aa01e8428ce9f582e4bab6a6175e",
   "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
   "inherited_manifest": {
@@ -30,6 +30,16 @@
       "mode": "100644",
       "git_blob": "27eb179446a34b6bab7bc32a9450dab6686aa6e5",
       "reason": "TEST_ONLY: align stale Alembic current-head expectation from 0133 to 0134; no product or runtime behavior change"
+    },
+    "src/go_hotel/travel_intelligence/preferences.py": {
+      "mode": "100644",
+      "git_blob": "86d03a058b2b3a5c4888622df4ea429496015cd7",
+      "reason": "V70-R3-C07-01 task-bound candidate; CI admission binding only"
+    },
+    "tests/test_round2_c07_explicit_preferences.py": {
+      "mode": "100644",
+      "git_blob": "55626ec9debbcc902d2115550b7b14c8f6632815",
+      "reason": "V70-R3-C07-01 task-bound candidate; CI admission binding only"
     }
   },
   "migration_head": "0134_flight_status_width",
@@ -52,6 +62,8 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "source_tree_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
-  "historical_pass_transferred": false
+  "source_tree_sha256": "effd97ff2527197d728cadfba7aabb603637b789d6ae838047c39d6c3c455c74",
+  "historical_pass_transferred": false,
+  "task_id": "V70-R3-C07-01",
+  "cell": "C07"
 }
