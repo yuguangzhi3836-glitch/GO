@@ -173,12 +173,32 @@ EVIDENCE_COMMON = {"schema_version", "task_id", "nonce", "action_id", "environme
                    "status", "started_at", "signature"}
 REQUEST_REQUIRED = {"schema_version", "request_id", "action_id", "environment", "requested_at"}
 
+
+# Shapes this Control Plane is still able to READ, but which are no longer what it
+# would accept from a fresh Task.  They are exact, named and closed -- never a
+# wildcard -- and they exist because the 2026-09-16 sealed-artifact re-contract
+# renamed the candidate delivery identity: the old name carried a registry digest
+# that had to end in the image id, which no real candidate could ever satisfy.
+#
+# A Task in one of these shapes predates the rename.  It stays readable and keeps
+# its Evidence, and it is marked SUPERSEDED rather than held, because holding it
+# would silently erase real historical proof.  A generated Task is never written
+# in these shapes: the deploy entry and the Hong Kong executor only emit the
+# current one.
+SUPERSEDED_PARAMETERS = {
+    "HK_STAGING_CANARY": ({"release_id", "candidate_image_id", "candidate_repo_digest",
+                           "expected_current_image_id"},),
+    "HK_STAGING_DEPLOY": ({"release_id", "candidate_image_id", "candidate_repo_digest",
+                           "expected_current_image_id", "canary_evidence_id",
+                           "approval_id"},),
+}
+
 ACTION_PARAMETERS = {
     "CONTROL_PLANE_HEALTH": set(),
     "HK_STAGING_VERIFY": {"release_id", "candidate_image_id", "expected_current_image_id"},
-    "HK_STAGING_CANARY": {"release_id", "candidate_image_id", "candidate_repo_digest",
+    "HK_STAGING_CANARY": {"release_id", "candidate_image_id", "candidate_package_sha256",
                           "expected_current_image_id"},
-    "HK_STAGING_DEPLOY": {"release_id", "candidate_image_id", "candidate_repo_digest",
+    "HK_STAGING_DEPLOY": {"release_id", "candidate_image_id", "candidate_package_sha256",
                           "expected_current_image_id", "canary_evidence_id", "approval_id"},
     "HK_STAGING_ROLLBACK": {"release_id", "source_deploy_task_id", "approval_id"},
     "HK_STAGING_TEST_PR": {"builder_profile", "source"},
@@ -657,7 +677,10 @@ def validate_task(task):
     # the projection with an explicit drift marker instead of being dropped, so
     # the state is never silently incomplete.
     current = set(task["parameters"]) == ACTION_PARAMETERS[action]
-    task["_parameter_contract"] = "CURRENT" if current else "LEGACY_OR_UNKNOWN"
+    superseded = set(task["parameters"]) in SUPERSEDED_PARAMETERS.get(action, ())
+    task["_parameter_contract"] = ("CURRENT" if current
+                                   else "SUPERSEDED" if superseded
+                                   else "LEGACY_OR_UNKNOWN")
     if current and action == "HK_STAGING_TEST_PR":
         source = task["parameters"]["source"]
         if (task["parameters"]["builder_profile"] != "go-application-python-v1"
@@ -1406,7 +1429,7 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
                                                  "Command Center task verifier identity", refs)})
             records.append(entry)
             continue
-        if entry["parameter_contract"] != "CURRENT":
+        if entry["parameter_contract"] == "LEGACY_OR_UNKNOWN":
             loaded.anomaly("TASK_PARAMETER_CONTRACT_DRIFT",
                            "observed parameters %s are not the current %s contract"
                            % (sorted(task["parameters"]), task["action_id"]), task["task_id"])

@@ -38,16 +38,18 @@ def _inspect(runner,ids):
     except Exception as exc: raise Reject('E_DEPLOY_INSPECT_PARSE') from exc
     if not isinstance(data,list) or len(data)!=8: raise Reject('E_DEPLOY_TARGET_COUNT')
     return data
-def _precheck(runner,candidate,digest,expected):
+def _precheck(runner,candidate,package,expected,artifact):
     if not IMAGE.fullmatch(candidate): raise Reject('E_DEPLOY_CANDIDATE_IMAGE')
     if not IMAGE.fullmatch(expected): raise Reject('E_DEPLOY_EXPECTED_IMAGE')
-    if not DIGEST.fullmatch(digest) or not digest.endswith(candidate[7:]): raise Reject('E_DEPLOY_REPO_DIGEST')
+    if not SHA256.fullmatch(package): raise Reject('E_DEPLOY_CANDIDATE_PACKAGE')
     if _sha(COMPOSE)!=COMPOSE_SHA: raise Reject('E_DEPLOY_COMPOSE_DRIFT')
     if _sha(ENV)!=ENV_SHA: raise Reject('E_DEPLOY_ENV_DRIFT')
-    image=_run(runner,[DOCKER,'image','inspect',candidate,'--format','{{.Id}}'],20).strip()
-    if image!=candidate: raise Reject('E_DEPLOY_CANDIDATE_MISSING')
-    digs=_run(runner,[DOCKER,'image','inspect',candidate,'--format','{{join .RepoDigests "\\n"}}'],20).splitlines()
-    if digest not in digs: raise Reject('E_DEPLOY_REPO_DIGEST_BINDING')
+    # The candidate arrives as a sealed package rather than as something that has
+    # to be lying around already. Resolving and loading it IS the delivery step,
+    # and it only completes once Docker reports the candidate image id; a registry
+    # digest was never satisfiable here, because a manifest digest is not an image
+    # config ID and a host-built image has no digest at all.
+    artifact.materialise(runner,package,candidate)
     data=_inspect(runner,_ids(runner))
     if any(x.get('Image')!=expected for x in data): raise Reject('E_DEPLOY_CURRENT_IMAGE_DRIFT')
     return data
@@ -99,7 +101,7 @@ def _atomic_record(record):
         except OSError: pass
         raise Reject('E_DEPLOY_RECORD_PERSIST') from exc
     return {'deploy_record_schema_version':'2','deploy_record_id':record['record_id'],'deploy_record_sha256':hashlib.sha256(payload).hexdigest(),'record_path':str(final)}
-def _record_v2(release,candidate,digest,expected,data,runner,binding):
+def _record_v2(release,candidate,package,expected,data,runner,binding):
     binding=_task_binding(binding)
     targets=[]
     for service,container in zip(SERVICES,data):
@@ -109,7 +111,7 @@ def _record_v2(release,candidate,digest,expected,data,runner,binding):
         targets.append({'service':service,'container_id':container['Id'],'image_id':image,'repo_digest':_repo_digest(runner,image)})
     record_identity=hashlib.sha256(json.dumps({'task_id':binding['task_id'],'nonce':binding['nonce'],'release_id':release},sort_keys=True,separators=(',',':')).encode()).hexdigest()
     protected_inventory,protected_hash=_protected_non_target_snapshot(runner)
-    record={'deploy_record_schema_version':'2','record_id':record_identity,'created_at':int(time.time()),'environment':'HK-STAGING-01','action_id':'HK_STAGING_DEPLOY','task_id':binding['task_id'],'nonce':binding['nonce'],'authority':binding['authority'],'task_canonical_sha256':binding['canonical_sha256'],'release_id':release,'candidate_image_id':candidate,'candidate_repo_digest':digest,'expected_current_image_id':expected,'compose_path':COMPOSE,'compose_sha256':COMPOSE_SHA,'runtime_env_path':ENV,'env_sha256':ENV_SHA,'target_count':8,'targets':targets,'non_target_container_inventory_sha256':_non_target_snapshot(runner,[x['container_id'] for x in targets]),'protected_non_target_inventory':protected_inventory,'protected_non_target_inventory_sha256':protected_hash}
+    record={'deploy_record_schema_version':'2','record_id':record_identity,'created_at':int(time.time()),'environment':'HK-STAGING-01','action_id':'HK_STAGING_DEPLOY','task_id':binding['task_id'],'nonce':binding['nonce'],'authority':binding['authority'],'task_canonical_sha256':binding['canonical_sha256'],'release_id':release,'candidate_image_id':candidate,'candidate_package_sha256':package,'expected_current_image_id':expected,'compose_path':COMPOSE,'compose_sha256':COMPOSE_SHA,'runtime_env_path':ENV,'env_sha256':ENV_SHA,'target_count':8,'targets':targets,'non_target_container_inventory_sha256':_non_target_snapshot(runner,[x['container_id'] for x in targets]),'protected_non_target_inventory':protected_inventory,'protected_non_target_inventory_sha256':protected_hash}
     return _atomic_record(record)
 def rollback_source_eligible(record,record_sha256,task,evidence):
     """Pure future-rollback source validator; it performs no Docker operation."""
@@ -163,9 +165,9 @@ def _wait_for_api_health(runner,candidate,sleeper=time.sleep):
             if attempt + 1 == API_READINESS_ATTEMPTS:
                 raise Reject('E_DEPLOY_API_READINESS_TIMEOUT')
             sleeper(API_READINESS_INTERVAL_SECONDS)
-def run_deploy(release,candidate,digest,expected,binding,runner,collector,sleeper=time.sleep):
-    data=_precheck(runner,candidate,digest,expected)
-    record=_record_v2(release,candidate,digest,expected,data,runner,binding)
+def run_deploy(release,candidate,package,expected,binding,runner,collector,artifact,sleeper=time.sleep):
+    data=_precheck(runner,candidate,package,expected,artifact)
+    record=_record_v2(release,candidate,package,expected,data,runner,binding)
     override=None
     try:
         try:

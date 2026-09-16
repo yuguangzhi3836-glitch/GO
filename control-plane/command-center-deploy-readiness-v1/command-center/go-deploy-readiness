@@ -99,6 +99,11 @@ RELEASE_CANDIDATE_FIELDS = ("schema", "candidate_id", "source_repository", "sour
                             "application_tree", "source_fingerprint", "migration_head",
                             "migration_required", "build_definition", "artifact_digest",
                             "required_services", "test_result_identity", "rollback_relation")
+# Fields a candidate may also carry.  `artifact_package` records whether the image
+# the candidate was built as still exists as a sealed, deliverable package; a
+# candidate written before that store existed simply omits it, and omission is
+# never read as PROVEN.
+RELEASE_CANDIDATE_OPTIONAL_FIELDS = ("artifact_package",)
 # The three identities the block must agree with the lineage pointer about. The
 # document stays authoritative; the block may not contradict it.
 CANDIDATE_SOURCE_AGREEMENT = (("source_commit", "source_commit"),
@@ -137,7 +142,7 @@ PLAN_FIELDS = ("schema_version", "plan_id", "environment", "action_id", "candida
                "canary_task_sha256", "canary_evidence_sha256", "preflight_task_sha256",
                "preflight_evidence_sha256")
 CANDIDATE_FIELDS = ("repository", "source_commit", "application_git_tree",
-                    "source_tree_sha256", "package_sha256", "image_id", "repo_digest")
+                    "source_tree_sha256", "package_sha256", "image_id")
 APPROVAL_FIELDS = ("schema_version", "approval_id", "approved_by", "approved_at",
                    "expires_at", "scope", "plan_sha256")
 APPROVAL_SCOPE = "HK_STAGING_DEPLOY_FIXED_EIGHT"
@@ -459,7 +464,7 @@ def bridge_proof_problems(task, evidence, action, task_key, evidence_key, at, ma
     parameters = task["parameters"]
     expected = {"release_id", "candidate_image_id", "expected_current_image_id"}
     if action == "HK_STAGING_CANARY":
-        expected.add("candidate_repo_digest")
+        expected.add("candidate_package_sha256")
     try:
         exact_set(parameters, expected, "proof_parameters")
     except Refuse as exc:
@@ -559,10 +564,6 @@ def bridge_bundle_problems(bundle, identities, at):
                 problems.append("candidate_%s" % field)
         if not isinstance(candidate["image_id"], str) or not IMAGE_ID.fullmatch(candidate["image_id"]):
             problems.append("candidate_image")
-        if not isinstance(candidate["repo_digest"], str) or not REPO_DIGEST.fullmatch(candidate["repo_digest"]):
-            problems.append("candidate_digest")
-        elif isinstance(candidate["image_id"], str) and not candidate["repo_digest"].endswith(candidate["image_id"][7:]):
-            problems.append("executor_digest_contract")
         detail["candidate"] = candidate
     if not isinstance(plan.get("expected_current_image_id"), str) or \
             not IMAGE_ID.fullmatch(str(plan.get("expected_current_image_id"))):
@@ -624,9 +625,9 @@ def bridge_bundle_problems(bundle, identities, at):
     vp = (bundle["preflight_task"].get("parameters") or {})
     if detail.get("candidate"):
         candidate = detail["candidate"]
-        if (cp.get("candidate_image_id"), cp.get("candidate_repo_digest"),
+        if (cp.get("candidate_image_id"), cp.get("candidate_package_sha256"),
                 cp.get("expected_current_image_id")) != (
-                candidate.get("image_id"), candidate.get("repo_digest"),
+                candidate.get("image_id"), candidate.get("package_sha256"),
                 plan.get("expected_current_image_id")):
             problems.append("canary_candidate_binding")
     if (vp.get("candidate_image_id") != plan.get("expected_current_image_id")
@@ -786,7 +787,8 @@ def release_candidate_block(candidate):
     if not isinstance(block, dict):
         return None, "release_candidate_not_an_object"
     missing = sorted(set(RELEASE_CANDIDATE_FIELDS) - set(block))
-    extra = sorted(set(block) - set(RELEASE_CANDIDATE_FIELDS))
+    extra = sorted(set(block) - set(RELEASE_CANDIDATE_FIELDS)
+                   - set(RELEASE_CANDIDATE_OPTIONAL_FIELDS))
     if missing or extra:
         return None, "release_candidate_fields:%s" % ",".join(missing + extra)
     return block, None
@@ -899,20 +901,31 @@ def gate_package_binding(inputs):
         if approved != declared:
             mismatches.append(field)
     image_id = (body.get("candidate") or {}).get("image_id")
-    repo_digest = (body.get("candidate") or {}).get("repo_digest")
+    package_sha256 = (body.get("candidate") or {}).get("package_sha256")
     if not isinstance(image_id, str) or not IMAGE_ID.fullmatch(image_id):
         mismatches.append("image_id")
-    if not isinstance(repo_digest, str) or not REPO_DIGEST.fullmatch(repo_digest):
-        mismatches.append("repo_digest")
-    elif isinstance(image_id, str) and not repo_digest.endswith(image_id[7:]):
-        mismatches.append("repo_digest_suffix_must_equal_image_id")
+    if not isinstance(package_sha256, str) or not SHA64.fullmatch(package_sha256):
+        mismatches.append("package_sha256")
+    # A package identity is only a delivery identity if the candidate can show
+    # that the artifact was actually sealed: an image identity proves a build, never
+    # that the built bytes still exist anywhere.  This is the gate the ephemeral
+    # artifact used to pass, because "the signed TEST_PR reported an image id" was
+    # read as "there is an artifact".
+    proof = block.get("artifact_package") or {}
+    if proof.get("durability") != "PROVEN":
+        mismatches.append("artifact_package_not_proven")
+    elif proof.get("package_sha256") != package_sha256:
+        mismatches.append("artifact_package_binding")
     if mismatches:
         return gate("PACKAGE_BINDING", "FAIL",
                     "the plan does not approve what the candidate is: %s" % ", ".join(mismatches),
-                    observed=observed, expected={f: candidate.get(f) for f, _ in fields})
+                    observed=dict(observed, plan_package_sha256=package_sha256,
+                                  candidate_artifact_package=proof),
+                    expected={f: candidate.get(f) for f, _ in fields})
     return gate("PACKAGE_BINDING", "PASS",
-                "the plan approves this candidate's source identity and a self-consistent image",
-                observed={"image_id": image_id, "repo_digest": repo_digest})
+                "the plan approves this candidate's source identity, the image it was "
+                "built as, and the sealed package that image is delivered from",
+                observed={"image_id": image_id, "package_sha256": package_sha256})
 
 
 def gate_deployment_plan(inputs):

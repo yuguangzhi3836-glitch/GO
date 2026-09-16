@@ -24,9 +24,9 @@
 | environment / action_id | `HK-STAGING-01` / `HK_STAGING_DEPLOY` |
 | candidate.repository | `yuguangzhi3836-glitch/GO` |
 | candidate.source_commit / application_git_tree | 完整 40 位小写十六进制 Git SHA |
-| candidate.source_tree_sha256 / package_sha256 | 完整 64 位小写十六进制 SHA256；审核人核实来源与打包/构建谱系 |
+| candidate.source_tree_sha256 | 完整 64 位小写十六进制 SHA256；审核人核实来源与构建谱系 |
+| candidate.package_sha256 | 完整 64 位小写十六进制 SHA256：封存包的**内容地址**（delivery identity）。审核人核实该地址就是候选封存后不可变包的 SHA256 |
 | candidate.image_id | `sha256:` + 64 位十六进制；审核人核实由上述源码和包构建 |
-| candidate.repo_digest | 仓库名加 `@sha256:...`，受现有执行器限制，后缀须与 image_id 相同 |
 | expected_current_image_id | 由新鲜香港 VERIFY 回执绑定的当前镜像 |
 | target_services | 顺序固定为 api、recovery-worker、outbox-worker、mobile-push-receipt-worker、reconciliation-worker、mobile-push-worker、mobile-engagement-worker、judgment-worker |
 | protected_non_targets | 按顺序 `redis`, `caddy` |
@@ -36,7 +36,10 @@
 
 镜像来源与 gate 结论是经过签名绑定的审核声明；入口并不从 Git 仓库或银行系统独立重做业务验收。技术审核必须核对原始源码、构建证明和验收材料，禁止将旧候选 PASS 转用于新候选。源码树 SHA256 的生成方法随原始构建证明归档，本入口将其视为固定指纹，不自行重新解释。
 
-**已存在的执行器限制：** 一般 OCI image ID 与 manifest digest 不保证相等。本入口准确保留当前香港合同的相等约束；真实镜像不满足时必须拒绝，并另行修订和验收香港合同，不能编造 digest 或放宽本入口校验。
+**候选的两个身份：** `candidate.image_id` 是构建产物身份（Docker config ID），`candidate.package_sha256` 是交付身份（封存包内容地址）。
+本入口**不要求也不接受 repo digest**：registry manifest digest 只在推送之后才存在，且一般不等于 image config ID；由 TEST_PR 在本机构建、且从未推送的候选根本没有 digest。
+旧合同曾要求 digest 后缀等于 image_id，该约束对任何真实候选都不可能满足，已删除。执行器按 `package_sha256` 从固定 store 解析并载入同一个镜像，载入后校验 `.Id == candidate.image_id`。
+`PACKAGE_BINDING` 还要求候选能证明该 artifact 已被**封存**（durability=PROVEN）：仅有构建身份不能证明字节仍然存在——这正是「签名的 TEST_PR 报告的镜像随后被删除」这一缺陷原先得以通过之处。
 
 ### approval
 
@@ -48,7 +51,7 @@
 
 Task 的签名沿用 Ed25519/hex，回执沿用 Ed25519/base64。验证 action、environment、task_id、nonce、release_id、候选/当前镜像、成功结果、各项门禁以及 issued ≤ started ≤ completed ≤ expires。
 
-CANARY Task 须与 candidate.image_id、candidate.repo_digest、expected_current_image_id 完全一致，回执为 CANARY_OK、必要八项 gate PASS、完成距当前不超过 30 分钟。VERIFY Task 两个 image 字段都必须等于 expected_current_image_id，回执为 VERIFY_OK、必要八项 gate PASS，完成距当前不超过 5 分钟。存在未知失败结果拒绝；原有 `application_*_proven=false` 等字段保持原义，不伪装应用验收 PASS。
+CANARY Task 须与 candidate.image_id、candidate.package_sha256、expected_current_image_id 完全一致，回执为 CANARY_OK、必要八项 gate PASS、完成距当前不超过 30 分钟。VERIFY Task 两个 image 字段都必须等于 expected_current_image_id，回执为 VERIFY_OK、必要八项 gate PASS，完成距当前不超过 5 分钟。存在未知失败结果拒绝；原有 `application_*_proven=false` 等字段保持原义，不伪装应用验收 PASS。
 
 `canary_evidence_id` 沿用当前执行器 ID 合同，填写已验 CANARY 的 release_id；完整 Task/回执身份和 SHA256 保存在被审批签名绑定的 bundle 及 Bridge ledger 中。香港执行器本身仍独立核验实时状态，不依赖这份快照替代现场 preflight。
 
@@ -58,4 +61,4 @@ CANARY Task 须与 candidate.image_id、candidate.repo_digest、expected_current
 
 准予本次具体版本部署后才开启 v4 开关并发布 Request。计划和审批 ID 一旦在 ledger 留下 prepared/publishing/published 记录即视为已消费，即使最终发送失败也不可自动重用。中断后先核对同一 Task 的远端原始字节和香港执行状态，再由审核人决定是否需要全新计划/审批；禁止删除 ledger 来重试。
 
-正式 Task 的 parameters 精确为 release_id、candidate_image_id、candidate_repo_digest、expected_current_image_id、canary_evidence_id、approval_id。release_id、task_id、nonce 由指挥中心生成；签名、发布和回读仍使用原有通道。
+正式 Task 的 parameters 精确为 release_id、candidate_image_id、candidate_package_sha256、expected_current_image_id、canary_evidence_id、approval_id。release_id、task_id、nonce 由指挥中心生成；签名、发布和回读仍使用原有通道。

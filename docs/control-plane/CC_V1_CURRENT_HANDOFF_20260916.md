@@ -5,8 +5,17 @@
 >
 > 读取顺序建议：本文件 → `docs/project/CC_V1_SCOPE_20260916.md`（范围权威）→ 才动手。
 
-> **2026-09-16 修订说明（TD-J 安装 / B3 与 B3-R 清掉 / NEXT_ACTION 替换；§4 §6 §9 §11 已就地更新）**：本文件 01:26 CST 的读数之后，以下事实已被
+> **2026-09-16 修订说明（TD-J 安装 / B3 与 B3-R 清掉 / B4-B1 封存产物 / NEXT_ACTION 替换；§4 §6 §9 §11 已就地更新）**：本文件 01:26 CST 的读数之后，以下事实已被
 > 后续工作取代；读时以更晚的权威件为准，**不要按本文的旧描述行动**：
+>
+> * **B4-B1（本轮，仓库侧）**：TEST_PR 构建产物此前是**临时**的（V2 在 finally 里删镜像），
+>   签名 Evidence 的 `built_image_id` 只是构建身份、不是可交付物。现在 V3 在全部门 PASS 后
+>   把同一镜像封存进固定 store（契约 `go.sealed-artifact.v1`），Evidence 记录
+>   `artifact_durability` + `artifact_package`；`candidate_repo_digest` 这条**不可能满足**的
+>   假规则（digest 后缀 == image_id）已从 plan / Task / HK agent / executor / 投影中删除，
+>   改为 `image_id` + `package_sha256`。admission 现在分开报告构建身份与产物可用性；
+>   当前 canonical candidate = `NOT_PROVEN` / not deployable。**live 未安装。**
+>   记录：`docs/control-plane/hk-staging/B4B1_DURABLE_ARTIFACT_20260916.md`
 >
 > * B2（没有 RELEASE_CANDIDATE_V1 准入 Gate）**已落地** ——
 >   `control-plane/command-center-candidate-admission-v1/`，契约 `go.release-candidate.v1`，
@@ -349,9 +358,36 @@ B3-R **CLEARED**（2026-09-16，B3 的孪生阻塞，先前被 freshness 掩盖�
     历史投影 `PROJECTION_2026091{4,5}` 里当时记录的 DIFFER **保持原样**（当时确实不一致）
 
 B4  没有可用的部署计划 bundle（plan + approval + canary/preflight task+evidence）
-    ⇒ PACKAGE_BINDING / DEPLOYMENT_PLAN / CURRENT_RUNTIME / CANARY / RELEASE_GATES /
-      BRIDGE_ACCEPTANCE 六门 UNKNOWN，无法到 DEPLOY_READY=YES
+    ⇒ PACKAGE_BINDING / DEPLOYMENT_PLAN / HUMAN_APPROVAL / CURRENT_RUNTIME /
+      LIVE_SWITCH / LIVE_SWITCH_PROVENANCE / CANARY / RELEASE_GATES /
+      BRIDGE_ACCEPTANCE **九门 UNKNOWN**，无法到 DEPLOY_READY=YES
     （CANARY 在现存 live executor 要求它时必须 PASS；不要新增 gate）
+
+    **2026-09-16 / B4-B1 细分（仓库侧已完成，未安装）**：
+    · `EPHEMERAL_ARTIFACT_BUG` = CONFIRMED。test-pr-v2 构建后 `docker image rm --force`
+      删掉了镜像，所以签名 Evidence 里的 `built_image_id` 只是**构建身份**，
+      不是可交付物；`BUILD_IDENTITY_PROVEN` 被当成了 `ARTIFACT_DURABILITY_PROVEN`。
+      `sha256:fe0d2c36…` **不可恢复**，未来可部署产物只能来自一次新的 TEST_PR。
+    · 选 local sealed store（Option B）而非私registry：无新密钥、无新外部服务、
+      无新网络依赖，且复用仓内已有的 `docker save` / 内容寻址 / 校验式 `docker load` 能力。
+      契约 `go.sealed-artifact.v1`，store `/var/lib/go-hk-artifacts/objects/<package_sha256>.tar`。
+    · TEST_PR Builder V3：全部门 PASS **之后**才封存同一个 built_image_id，
+      临时 tag 仍删除；Evidence 记录 `artifact_durability` + `artifact_package`。
+      新失败阶段 `artifact_durability` → `ARTIFACT_DURABILITY_FAILED`。
+    · 假规则已删除：`candidate.repo_digest` 后缀 == image_id 不再存在；
+      改为 `image_id`（构建身份）+ `package_sha256`（交付身份）。
+      `candidate_repo_digest` 已从 plan / Task / HK agent / 两个 executor / 投影中消失。
+    · 投影把旧参数形状显式命名为 `SUPERSEDED`（精确、封闭、非通配）：
+      真实总线里 6 条历史 CANARY/DEPLOY Task 仍可读且保留 Evidence。
+    · admission：新增可选 `artifact_package`，分开报告 `artifact_durability` /
+      `deployability`；当前 canonical candidate = `durability NOT_PROVEN` /
+      `deployable false`（事实如此），`admission` 仍 ACCEPT（身份完整，未被改写）。
+      `PACKAGE_BINDING` 现在要求 durability=PROVEN 且 package 与 plan 一致。
+    · **仍未清**：`B4_RELEASE_GATES`（无 exact-bound PASS）、
+      `B4_CANARY_BASELINE`（canary_runtime 仍 pin `0114_ext_truth_incident_hard`，
+      而候选声明 `0133_flight_change_plan`；CANARY 通道化必须同时做 A 通道 + B 基线迁移）、
+      `B4_AUTONOMY`（注册 plan / 开开关 / 写 provenance 仍需 CC 主机人工操作）。
+    记录：`docs/control-plane/hk-staging/B4B1_DURABLE_ARTIFACT_20260916.md`
 
 B5  deployment_requests_enabled=false（**正确的 fail-closed 姿态**，不是缺陷）
     真实 DEPLOY 必须等人类当次批准后才开；ROLLBACK 同理（#105 另需独立批准）
@@ -415,15 +451,22 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 
 ```text
 NEXT_ACTION=
-为已 admission 且 TEST_PR PASS 的同一个 canonical RELEASE_CANDIDATE_V1 构建 B4 deployment plan bundle，
-补齐 PACKAGE_BINDING / DEPLOYMENT_PLAN / HUMAN_APPROVAL / CURRENT_RUNTIME /
-LIVE_SWITCH / LIVE_SWITCH_PROVENANCE / CANARY / RELEASE_GATES / BRIDGE_ACCEPTANCE。
-不得执行真实 DEPLOY；先把 readiness 推到 DEPLOY_READY=YES 后停止，等待当次 Human Approval。
+在 HK-STAGING-01 上受控安装 B4-B1（八个文件 + 创建 /var/lib/go-hk-artifacts），
+然后对同一 canonical RELEASE_CANDIDATE_V1 的源码发起**一张** fresh bounded TEST_PR，
+让 test-pr-v3 把该镜像封存成 package_sha256，并把该 package 写进 CURRENT_CANDIDATE.json。
+之后 readiness 的 PACKAGE_BINDING 才有机会变为 PASS。
+不得执行真实 DEPLOY；不得在没有新的当次授权前安装。
+RELEASE_GATES / CANARY（含 0114→0133 基线）/ AUTONOMY 是各自独立的 blocker，需分别处理。
 ```
 
 （2026-09-16 更新：旧的 NEXT_ACTION「再发一张 fresh bounded VERIFY Request」**已失效** ——
-新鲜的签名 VERIFY_OK Evidence 已经存在且在窗口内，读取它的门已 PASS。
-当前 readiness = `DEPLOY_READY=UNKNOWN`，无 mandatory FAIL，九门因缺 plan bundle 为 UNKNOWN。）
+新鲜的签名 VERIFY_OK Evidence 已经存在且在窗口内，读取它的门已 PASS。）
+
+（2026-09-16 / B4-B1 更新：NEXT_ACTION 的**第一步**现在是「安装 B4-B1 + 一张新的 TEST_PR」，
+不是「直接构建 plan bundle」。原因：候选目前没有任何可交付 artifact
+（`artifact_package.durability = NOT_PROVEN`），而 `PACKAGE_BINDING` 现在要求
+durability=PROVEN。先有真实封存包，plan bundle 才有可绑定的交付身份。
+当前 readiness 仍是 `DEPLOY_READY=UNKNOWN`，无 mandatory FAIL，九门因缺 plan bundle 为 UNKNOWN。）
 
 （次会话动手前先读 `docs/project/CC_V1_SCOPE_20260916.md`，并遵守 §8 的 DO_NOT_REOPEN。）
 

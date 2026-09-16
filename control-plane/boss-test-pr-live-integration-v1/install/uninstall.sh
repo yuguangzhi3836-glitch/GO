@@ -58,6 +58,7 @@ case "$role" in
    transport=${GO_HK_TRANSPORT_PATH:-/opt/go-hk-agent-rebuilt/hk_agent/transport.py}
    agent_config=${GO_HK_AGENT_CONFIG_PATH:-/etc/go-hk-agent/agent.json}
    test_pr=${GO_HK_TEST_PR_PATH:-/opt/go-hk-agent-rebuilt/hk_agent/test_pr.py}
+   artifact_store_module=${GO_HK_ARTIFACT_STORE_MODULE:-/opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py}
    dockerfile=${GO_HK_DOCKERFILE_PATH:-/usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2}
    docker_dropin=${GO_HK_DOCKER_DROPIN_PATH:-/etc/systemd/system/go-hk-agent.service.d/30-test-pr-docker-access.conf}
    runtime_root=${GO_HK_RUNTIME_ROOT:-/var/lib/go-hk-test-pr}
@@ -136,6 +137,7 @@ case "$role" in
    validate transport.py "$transport"
    validate agent.json "$agent_config"
    validate test_pr.py "$test_pr"
+   validate artifact_store.py "$artifact_store_module"
    validate Dockerfile.go-application-python-v2 "$dockerfile"
    validate docker-access.conf "$docker_dropin"
    "$systemctl_bin" is-active --quiet "$agent_unit" && exit 1 || true
@@ -147,11 +149,13 @@ case "$role" in
    restore transport.py "$transport"
    restore agent.json "$agent_config"
    restore test_pr.py "$test_pr"
+   restore artifact_store.py "$artifact_store_module"
    restore Dockerfile.go-application-python-v2 "$dockerfile"
    restore docker-access.conf "$docker_dropin"
    verify_restored transport.py "$transport"
    verify_restored agent.json "$agent_config"
    verify_restored test_pr.py "$test_pr"
+   verify_restored artifact_store.py "$artifact_store_module"
    verify_restored Dockerfile.go-application-python-v2 "$dockerfile"
    verify_restored docker-access.conf "$docker_dropin"
    test ! -e "$runtime_root" && test ! -e "$build_root"

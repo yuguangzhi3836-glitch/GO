@@ -72,7 +72,13 @@ DEPLOY_ACTION = "HK_STAGING_DEPLOY"
 TEST_PR_ACTION = "HK_STAGING_TEST_PR"
 BUILDER_PROFILE = "go-application-python-v1"
 BUILDER_DOCKERFILE = "Dockerfile.go-application-python-v2"
-BUILDER_EXECUTOR_VERSION = "test-pr-v2"
+BUILDER_EXECUTOR_VERSION = "test-pr-v3"
+# Builders whose artifacts are still recognised.  A v3 build seals its image into
+# the fixed store; a v2 build reported an image id and then deleted the image, so a
+# v2-built candidate is still an admissible *candidate* but can never have
+# durability PROVEN.  Re-labelling an old candidate as v3 would be a false
+# statement about how it was produced.
+BUILDER_EXECUTOR_VERSIONS = ("test-pr-v3", "test-pr-v2")
 # The staged builder's own digest, from boss-test-pr-live-integration-v1. A test
 # recomputes it from that file; --go-repo re-verifies it at admission time.
 BUILDER_DOCKERFILE_SHA256 = \
@@ -102,6 +108,14 @@ RELEASE_CANDIDATE_FIELDS = ("schema", "candidate_id", "source_repository", "sour
                             "application_tree", "source_fingerprint", "migration_head",
                             "migration_required", "build_definition", "artifact_digest",
                             "required_services", "test_result_identity", "rollback_relation")
+# OPTIONAL_FIELDS are declared by a candidate that has more to say about its
+# artifact.  `artifact_package` is where a candidate records whether the image it
+# was built as still exists as a sealed, deliverable package.  It is optional so
+# that a candidate written before the store existed stays readable, and its absence
+# is reported as NOT_PROVEN rather than guessed at.
+OPTIONAL_FIELDS = ("artifact_package",)
+ARTIFACT_PACKAGE_FIELDS = ("durability", "package_sha256")
+ARTIFACT_DURABILITY_VALUES = ("PROVEN", "NOT_PROVEN")
 BUILD_DEFINITION_FIELDS = ("profile", "dockerfile", "dockerfile_sha256", "executor_version",
                            "builder_image_tag", "builder_image_id")
 TEST_RESULT_FIELDS = ("action_id", "task_id", "evidence_id", "source_pr_number",
@@ -234,6 +248,7 @@ class Admission:
         self.not_evaluated = []
         self.identities = {}
         self.candidate = None
+        self.evidence = None
 
     def check(self, rule, state, reason=None):
         entry = {"rule": rule, "state": state}
@@ -367,12 +382,12 @@ def check_build(adm, block, go_repo):
                          observed={subjects[p]: build.get(subjects[p]) for p in problems})
     # The build definition must be the one that is actually staged for the executor.
     # Anything else is a claim about a builder nobody installed.
-    if (build["profile"], build["executor_version"]) != (BUILDER_PROFILE, BUILDER_EXECUTOR_VERSION):
+    if build["profile"] != BUILDER_PROFILE or build["executor_version"] not in BUILDER_EXECUTOR_VERSIONS:
         return adm.fails("build", "candidate_build_profile",
                          observed={"profile": build["profile"],
                                    "executor_version": build["executor_version"]},
                          expected={"profile": BUILDER_PROFILE,
-                                   "executor_version": BUILDER_EXECUTOR_VERSION})
+                                   "executor_version": list(BUILDER_EXECUTOR_VERSIONS)})
     if build["dockerfile"] != BUILDER_DOCKERFILE:
         return adm.fails("build", "candidate_build_dockerfile",
                          observed={"dockerfile": build["dockerfile"]},
@@ -456,6 +471,7 @@ def check_evidence(adm, block, evidence_path):
                          observed={"path": str(evidence_path)})
     if not isinstance(evidence, dict):
         return adm.fails("test_evidence", "candidate_test_result_evidence_unreadable")
+    adm.evidence = evidence
     declared = block.get("test_result_identity") or {}
     if evidence.get("action_id") != TEST_PR_ACTION:
         return adm.fails("test_evidence", "candidate_test_result_evidence_action",
@@ -477,6 +493,94 @@ def check_evidence(adm, block, evidence_path):
                          observed={"evidence": evidence.get("built_image_id"),
                                    "candidate": block.get("artifact_digest")})
     return adm.passes("test_evidence", observed={"evidence_sha256": digest(evidence)})
+
+
+def check_artifact_durability(adm, block):
+    """Whether the artifact this candidate was built as still exists anywhere.
+
+    An image ID proves a build happened.  It does not prove the built bytes are
+    still anywhere, and the ephemeral-artifact defect was exactly that gap: a
+    signed TEST_PR reported ``built_image_id`` and deleted the image in its own
+    ``finally`` block, so the Evidence was true and nothing was deliverable.  The
+    question is therefore asked separately, and answered in the report whether or
+    not the answer is favourable.
+    """
+    declared = block.get("artifact_package")
+    if declared is None:
+        adm.checks.append({"rule": "artifact_durability", "state": "NOT_PROVEN",
+                           "reason": "candidate_artifact_package_absent"})
+        return False
+    if not isinstance(declared, dict) or set(declared) != set(ARTIFACT_PACKAGE_FIELDS):
+        return adm.fails("artifact_durability", "candidate_artifact_package",
+                         observed={"fields": (sorted(declared)
+                                              if isinstance(declared, dict) else None)})
+    if declared.get("durability") not in ARTIFACT_DURABILITY_VALUES:
+        return adm.fails("artifact_durability", "candidate_artifact_package",
+                         observed={"durability": declared.get("durability")},
+                         expected={"durability": list(ARTIFACT_DURABILITY_VALUES)})
+    if declared["durability"] == "NOT_PROVEN":
+        adm.checks.append({"rule": "artifact_durability", "state": "NOT_PROVEN",
+                           "reason": "candidate_artifact_package_not_proven"})
+        return False
+    package = declared.get("package_sha256")
+    if not isinstance(package, str) or SHA64.fullmatch(package) is None:
+        return adm.fails("artifact_durability", "candidate_artifact_package_identity",
+                         observed={"package_sha256": package})
+    # A claimed package is only credible if the signed TEST_PR result is about the
+    # same package AND the same image.  Anything else is a candidate describing an
+    # artifact no proof covers.
+    sealed = (getattr(adm, "evidence", None) or {}).get("artifact_package") or {}
+    if (sealed.get("package_sha256") != package
+            or sealed.get("image_id") != block.get("artifact_digest")):
+        return adm.fails("artifact_durability", "candidate_artifact_package_mismatch",
+                         observed={"declared_package_sha256": package,
+                                   "evidence": sealed,
+                                   "candidate_artifact_digest": block.get("artifact_digest")})
+    return adm.passes("artifact_durability", package_sha256=package)
+
+
+def check_artifact_durability(adm, block):
+    """Whether the artifact this candidate was built as still exists anywhere.
+
+    An image ID proves a build happened.  It does not prove the built bytes are
+    still anywhere, and the ephemeral-artifact defect was exactly that gap: a
+    signed TEST_PR reported ``built_image_id`` and deleted the image in its own
+    ``finally`` block, so the Evidence was true and nothing was deliverable.  The
+    question is therefore asked separately, and answered in the report whether or
+    not the answer is favourable.
+    """
+    declared = block.get("artifact_package")
+    if declared is None:
+        adm.checks.append({"rule": "artifact_durability", "state": "NOT_PROVEN",
+                           "reason": "candidate_artifact_package_absent"})
+        return False
+    if not isinstance(declared, dict) or set(declared) != set(ARTIFACT_PACKAGE_FIELDS):
+        return adm.fails("artifact_durability", "candidate_artifact_package",
+                         observed={"fields": (sorted(declared)
+                                              if isinstance(declared, dict) else None)})
+    if declared.get("durability") not in ARTIFACT_DURABILITY_VALUES:
+        return adm.fails("artifact_durability", "candidate_artifact_package",
+                         observed={"durability": declared.get("durability")},
+                         expected={"durability": list(ARTIFACT_DURABILITY_VALUES)})
+    if declared["durability"] == "NOT_PROVEN":
+        adm.checks.append({"rule": "artifact_durability", "state": "NOT_PROVEN",
+                           "reason": "candidate_artifact_package_not_proven"})
+        return False
+    package = declared.get("package_sha256")
+    if not isinstance(package, str) or SHA64.fullmatch(package) is None:
+        return adm.fails("artifact_durability", "candidate_artifact_package_identity",
+                         observed={"package_sha256": package})
+    # A claimed package is only credible if the signed TEST_PR result is about the
+    # same package AND the same image.  Anything else is a candidate describing an
+    # artifact no proof covers.
+    sealed = (getattr(adm, "evidence", None) or {}).get("artifact_package") or {}
+    if (sealed.get("package_sha256") != package
+            or sealed.get("image_id") != block.get("artifact_digest")):
+        return adm.fails("artifact_durability", "candidate_artifact_package_mismatch",
+                         observed={"declared_package_sha256": package,
+                                   "evidence": sealed,
+                                   "candidate_artifact_digest": block.get("artifact_digest")})
+    return adm.passes("artifact_durability", package_sha256=package)
 
 
 def check_rollback(adm, block):
@@ -566,7 +670,8 @@ def admit(contract_path, candidate_path, evidence_path=None, plan_path=None,
                   else "release_candidate_not_an_object",
                   observed={"path": LINEAGE_POINTER})
     if isinstance(block, dict) and not adm.reasons:
-        if set(block) != set(RELEASE_CANDIDATE_FIELDS):
+        allowed = set(RELEASE_CANDIDATE_FIELDS) | set(OPTIONAL_FIELDS)
+        if not set(RELEASE_CANDIDATE_FIELDS) <= set(block) <= allowed:
             adm.fails("candidate", "release_candidate_fields",
                       observed={"fields": sorted(block)}, expected=list(RELEASE_CANDIDATE_FIELDS))
         else:
@@ -582,6 +687,8 @@ def admit(contract_path, candidate_path, evidence_path=None, plan_path=None,
             if not adm.reasons:
                 check_evidence(adm, block, evidence_path)
             if not adm.reasons:
+                check_artifact_durability(adm, block)
+            if not adm.reasons:
                 check_rollback(adm, block)
             if not adm.reasons:
                 check_plan(adm, block, plan_path)
@@ -592,6 +699,38 @@ def admit(contract_path, candidate_path, evidence_path=None, plan_path=None,
         verdict = UNKNOWN
     else:
         verdict = ACCEPT
+
+    durability = {"state": "NOT_PROVEN", "package_sha256": None, "reason": None}
+    for entry in adm.checks:
+        if entry.get("rule") != "artifact_durability":
+            continue
+        if entry.get("state") == "PASS":
+            durability = {"state": "PROVEN", "package_sha256": entry.get("package_sha256"),
+                          "reason": None}
+        elif entry.get("state") == "NOT_PROVEN":
+            durability = {"state": "NOT_PROVEN", "package_sha256": None,
+                          "reason": entry.get("reason")}
+        else:
+            durability = {"state": "NOT_ESTABLISHED", "package_sha256": None,
+                          "reason": entry.get("reason")}
+    deployable = verdict == ACCEPT and durability["state"] == "PROVEN"
+
+
+    durability = {"state": "NOT_PROVEN", "package_sha256": None, "reason": None}
+    for entry in adm.checks:
+        if entry.get("rule") != "artifact_durability":
+            continue
+        if entry.get("state") == "PASS":
+            durability = {"state": "PROVEN", "package_sha256": entry.get("package_sha256"),
+                          "reason": None}
+        elif entry.get("state") == "NOT_PROVEN":
+            durability = {"state": "NOT_PROVEN", "package_sha256": None,
+                          "reason": entry.get("reason")}
+        else:
+            durability = {"state": "NOT_ESTABLISHED", "package_sha256": None,
+                          "reason": entry.get("reason")}
+    deployable = verdict == ACCEPT and durability["state"] == "PROVEN"
+
 
     candidate = None
     if isinstance(block, dict):
@@ -607,6 +746,28 @@ def admit(contract_path, candidate_path, evidence_path=None, plan_path=None,
         "issue": "#103 / CC V1-08 candidate admission",
         "at": iso(at),
         "generated_at": iso(generated_at),
+        "artifact_durability": durability,
+        # Kept separate from the verdict on purpose.  Admission answers whether the
+        # version is what it says it is; whether its artifact can be delivered is a
+        # different question, and the ephemeral-artifact defect lived exactly in the
+        # gap between them.
+        "deployability": {
+            "artifact_durability": durability["state"],
+            "deployable_artifact_established": deployable,
+            "reason": None if deployable else (durability.get("reason") or ("admission:%s" % verdict)),
+            "is_a_deploy_approval": False,
+        },
+        "artifact_durability": durability,
+        # Kept separate from the verdict on purpose.  Admission answers whether the
+        # version is what it says it is; whether its artifact can be delivered is a
+        # different question, and the ephemeral-artifact defect lived exactly in the
+        # gap between them.
+        "deployability": {
+            "artifact_durability": durability["state"],
+            "deployable_artifact_established": deployable,
+            "reason": None if deployable else (durability.get("reason") or ("admission:%s" % verdict)),
+            "is_a_deploy_approval": False,
+        },
         "sources": {
             "contract": str(contract_path),
             "candidate": str(candidate_path) if candidate_path else None,

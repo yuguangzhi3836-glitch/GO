@@ -2,7 +2,7 @@
 import hashlib, json, os, pathlib, re, secrets, subprocess
 
 IMAGE=re.compile(r"^sha256:[0-9a-f]{64}$")
-DIGEST=re.compile(r"^[a-z0-9][a-z0-9._/-]*@sha256:[0-9a-f]{64}$")
+SHA256=re.compile(r"^[0-9a-f]{64}$")
 RELEASE=re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 COMPOSE='/home/go-stg/releases/r31-5-final-completion-20260906/GO_HYATT_DIRECT_BOOKING_R3_1_5_TEST_BOOTSTRAP_IDENTITY_FIX_20260906/deploy/docker-compose.r31-hk-staging.yml'
 ENV='/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env'
@@ -55,18 +55,20 @@ def parse_alembic_head(raw):
  if match is None or match.group(1)!=HEAD: raise Reject('E_CANARY_ALEMBIC_HEAD_MISMATCH')
  return match.group(1)
 
-def run_canary(release,candidate,digest,expected,runner=None,inputs=None):
+def run_canary(release,candidate,package,expected,runner=None,inputs=None,artifact=None):
  if not isinstance(release,str) or not RELEASE.fullmatch(release): raise Reject('E_RELEASE_ID')
  if not isinstance(candidate,str) or not IMAGE.fullmatch(candidate): raise Reject('E_CANDIDATE_IMAGE_MISSING')
- if not isinstance(digest,str) or not DIGEST.fullmatch(digest) or not digest.endswith(candidate[7:]): raise Reject('E_CANDIDATE_REPO_DIGEST_INVALID')
+ if not isinstance(package,str) or not SHA256.fullmatch(package): raise Reject('E_CANDIDATE_PACKAGE_INVALID')
  if not isinstance(expected,str) or not IMAGE.fullmatch(expected): raise Reject('E_EXPECTED_CURRENT_IMAGE_MISMATCH')
  runner=runner or ProductionRunner(); inputs=inputs or production_inputs(runner,expected)
  _baseline(inputs,expected)
+ # The candidate is the sealed package, resolved into Docker here.  There is no
+ # registry digest to compare: a manifest digest is not an image config ID, and a
+ # host-built image that was never pushed has no digest at all.
+ artifact.materialise(runner,package,candidate)
  inspected=runner.run(['/usr/bin/docker','image','inspect',candidate,'--format','{{.Id}}'],20)
  if inspected.returncode: raise Reject('E_CANDIDATE_IMAGE_MISSING')
  if inspected.stdout.strip()!=candidate: raise Reject('E_CANDIDATE_IMAGE_ID_MISMATCH')
- digests=runner.run(['/usr/bin/docker','image','inspect',candidate,'--format','{{join .RepoDigests "\\n"}}'],20)
- if digests.returncode or digest not in digests.stdout.splitlines(): raise Reject('E_CANDIDATE_REPO_DIGEST_MISMATCH')
  compile_out=_one(runner,_name(),candidate,'/usr/local/bin/python',['-m','compileall','-q','/app'],90)
  alembic_out=_one(runner,_name(),candidate,'/usr/local/bin/alembic',['heads'],45)
  parse_alembic_head(alembic_out)

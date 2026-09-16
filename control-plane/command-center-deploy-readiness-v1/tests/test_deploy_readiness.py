@@ -48,7 +48,10 @@ TREE = "b" * 40
 SOURCE_TREE = "d" * 64
 CURRENT_IMAGE = "sha256:" + "e" * 64
 CANDIDATE_IMAGE = "sha256:" + "f" * 64
-CANDIDATE_DIGEST = "go-hotel@" + CANDIDATE_IMAGE
+# The candidate's delivery identity: the content address of the sealed package
+# (contract go.sealed-artifact.v1). There is no registry digest, because a push has
+# not happened and a manifest digest is not an image config ID anyway.
+CANDIDATE_PACKAGE = "9" * 64
 CHANNEL_SHA = "1" * 64
 PREV_CHANNEL_SHA = "2" * 64
 PROOF_OBJECTS = ("canary_task", "canary_evidence", "preflight_task", "preflight_evidence")
@@ -100,6 +103,8 @@ def release_candidate(**over):
                                   "builder_image_tag": "go-hotel:depth48-runtime-synthetic",
                                   "builder_image_id": CURRENT_IMAGE},
              "artifact_digest": CANDIDATE_IMAGE, "required_services": list(R.SERVICES),
+             "artifact_package": {"durability": "PROVEN",
+                                  "package_sha256": CANDIDATE_PACKAGE},
              "test_result_identity": {"action_id": "HK_STAGING_TEST_PR",
                                       "task_id": "go-boss-test-pr-52-synthetic",
                                       "evidence_id": "synthetic-evidence",
@@ -170,7 +175,7 @@ def proof_pair(keys, action, executor_result, gate_names, parameters):
                 "completed_at": "2026-09-15T00:58:00Z",
                 "gate_results": {name: "PASS" for name in gate_names}}
     for field in ("release_id", "candidate_image_id", "expected_current_image_id",
-                  "candidate_repo_digest"):
+                  "candidate_package_sha256"):
         if field in parameters:
             evidence[field] = parameters[field]
     return task, sign_b64(keys["evidence"]["private"], evidence)
@@ -180,7 +185,7 @@ def plan_bundle(keys, **over):
     canary_task, canary_evidence = proof_pair(
         keys, "HK_STAGING_CANARY", "CANARY_OK", R.CANARY_GATES,
         {"release_id": "canary-release-1", "candidate_image_id": CANDIDATE_IMAGE,
-         "candidate_repo_digest": CANDIDATE_DIGEST,
+         "candidate_package_sha256": CANDIDATE_PACKAGE,
          "expected_current_image_id": CURRENT_IMAGE})
     preflight_task, preflight_evidence = proof_pair(
         keys, "HK_STAGING_VERIFY", "VERIFY_OK", R.VERIFY_GATES,
@@ -190,8 +195,8 @@ def plan_bundle(keys, **over):
             "action_id": R.DEPLOY_ACTION,
             "candidate": {"repository": R.CANDIDATE_REPOSITORY, "source_commit": COMMIT,
                           "application_git_tree": TREE, "source_tree_sha256": SOURCE_TREE,
-                          "package_sha256": "9" * 64, "image_id": CANDIDATE_IMAGE,
-                          "repo_digest": CANDIDATE_DIGEST},
+                          "package_sha256": CANDIDATE_PACKAGE,
+                          "image_id": CANDIDATE_IMAGE},
             "expected_current_image_id": CURRENT_IMAGE,
             "target_services": list(R.SERVICES),
             "protected_non_targets": list(R.PROTECTED_NON_TARGETS),
@@ -382,7 +387,7 @@ class CanaryTests(unittest.TestCase):
             task, evidence = proof_pair(
                 keys, "HK_STAGING_CANARY", "CANARY_OK", R.CANARY_GATES,
                 {"release_id": "canary-release-1", "candidate_image_id": CANDIDATE_IMAGE,
-                 "candidate_repo_digest": CANDIDATE_DIGEST,
+                 "candidate_package_sha256": CANDIDATE_PACKAGE,
                  "expected_current_image_id": CURRENT_IMAGE})
             gates = dict(evidence["gate_results"])
             gates["container_cleanup"] = "FAIL"
@@ -418,7 +423,7 @@ class CanaryTests(unittest.TestCase):
                 keys, "HK_STAGING_CANARY", "CANARY_OK", R.CANARY_GATES,
                 {"release_id": "canary-release-1",
                  "candidate_image_id": "sha256:" + "8" * 64,
-                 "candidate_repo_digest": "go-hotel@sha256:" + "8" * 64,
+                 "candidate_package_sha256": "8" * 64,
                  "expected_current_image_id": CURRENT_IMAGE})
             bundle["canary_task"] = task
             bundle["canary_evidence"] = evidence
@@ -574,8 +579,9 @@ class BridgeAcceptanceTests(unittest.TestCase):
         def release_gate(_keys, bundle):
             bundle["plan"]["gates"]["three_end_ux"] = "HOLD"
 
-        def digest_suffix(_keys, bundle):
-            bundle["plan"]["candidate"]["repo_digest"] = "go-hotel@sha256:" + "7" * 64
+        def package_not_the_sealed_one(_keys, bundle):
+            # A plan may not name a package the candidate has not sealed.
+            bundle["plan"]["candidate"]["package_sha256"] = "7" * 64
 
         def candidate_repository(_keys, bundle):
             bundle["plan"]["candidate"]["repository"] = "someone/else"
@@ -593,7 +599,7 @@ class BridgeAcceptanceTests(unittest.TestCase):
             bundle["approval"]["scope"] = "SOMETHING_ELSE"
 
         return {"topology": (topology, True), "migration": (migration, True),
-                "release_gate": (release_gate, True), "digest_suffix": (digest_suffix, True),
+                "release_gate": (release_gate, True), "package_binding": (package_not_the_sealed_one, True),
                 "candidate_repository": (candidate_repository, True),
                 "protected_non_targets": (protected_non_targets, True),
                 "unknown_plan_field": (unknown_plan_field, True),
@@ -821,7 +827,7 @@ class CandidateAdmissionTests(unittest.TestCase):
     def test_a_plan_that_approves_another_artifact_is_refused(self):
         def mutate(_keys, bundle):
             bundle["plan"]["candidate"]["image_id"] = "sha256:" + "8" * 64
-            bundle["plan"]["candidate"]["repo_digest"] = "go-hotel@sha256:" + "8" * 64
+            bundle["plan"]["candidate"]["package_sha256"] = "8" * 64
 
         document = Fixture(mutate=mutate).evaluate()
         entry = gate_of(document, "PACKAGE_BINDING")

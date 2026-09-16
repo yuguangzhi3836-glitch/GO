@@ -124,9 +124,14 @@
     "rollback_relation": {
       "relation": "REPLACES_CURRENT_KNOWN_GOOD",
       "previous_known_good_image_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"
+    },
+    "artifact_package": {
+      "durability": "NOT_PROVEN",
+      "package_sha256": null
     }
   },
   "release_candidate_note": "Added 2026-09-16 by CC V1-08 candidate admission (#103); reconciled the same day with a fresh TEST_PR. Every value here is derived from an artifact that already existed: the signed TEST_PR Evidence supplied artifact_digest and test_result_identity, the staged builder supplied build_definition, the live runtime supplied the rollback target, and the live deploy contract supplied required_services. Nothing here is an approval and nothing here authorises a deployment.",
+  "artifact_package_note": "Added 2026-09-16 by CC V1 / B4-B1. durability is NOT_PROVEN because it is the truth: test-pr-v2 built this image, reported built_image_id in signed Evidence, and removed the image in its finally block, so no copy of these bytes exists anywhere and nothing can deliver them. The signed TEST_PR result stays valid as historical proof of the build and is not rewritten. A future candidate reaches PROVEN only after a test-pr-v3 build seals the image into the fixed store and reports the package content address, and no plan may name a package this block does not prove.",
   "release_candidate_reconciliation": {
     "schema": "go.release-candidate.reconciliation.v1",
     "changed_at": "2026-09-16T04:05:37Z",

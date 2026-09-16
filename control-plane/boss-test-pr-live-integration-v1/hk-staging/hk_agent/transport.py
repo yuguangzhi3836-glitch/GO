@@ -2,7 +2,7 @@
 import argparse, base64, datetime as dt, hashlib, json, os, pathlib, re, shutil, sqlite3, subprocess, tempfile
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
-from . import deployment_actions, test_pr
+from . import artifact_store, deployment_actions, test_pr
 
 VERSION = "0.5.7-rebuilt"
 MAX_EXECUTOR_ATTEMPTS_PER_TASK = 1
@@ -26,6 +26,7 @@ STAGE_ROLLBACK_HANDOFF = "rollback_handoff"
 STAGE_EXECUTOR = "executor"
 STAGE_RESULT = "result"
 STAGE_EVIDENCE_BUILD = "evidence_build"
+STAGE_ARTIFACT_DURABILITY = "artifact_durability"
 STAGE_EVIDENCE_PUBLISH = "evidence_publish"
 
 # Stage -> closed failure kind.  An unmapped stage is AGENT_REJECT, never echoed.
@@ -38,6 +39,10 @@ FAILURE_KIND_BY_STAGE = {
     STAGE_RESULT: "RESULT_REJECT",
     "parser": "RESULT_REJECT",
     STAGE_EVIDENCE_BUILD: "EVIDENCE_BUILD_FAILED",
+    # "the build succeeded but its artifact is not durable" is its own outcome:
+    # it is neither an executor refusal nor a publication failure, and reading it
+    # as either would hide the ephemeral-artifact defect.
+    STAGE_ARTIFACT_DURABILITY: "ARTIFACT_DURABILITY_FAILED",
     STAGE_EVIDENCE_PUBLISH: "EVIDENCE_PUBLISH_FAILED",
 }
 FAILURE_KIND_FALLBACK = "AGENT_REJECT"
@@ -45,11 +50,11 @@ FAILURE_KIND_FALLBACK = "AGENT_REJECT"
 # Closed set.  A reason code outside it is reported as UNCLASSIFIED_REJECT rather
 # than echoed, so no free-form diagnostic text can reach the control bus.
 FAILURE_REASON_CODES = frozenset({
-    "ATTEMPT_BUDGET_EXHAUSTED", "CONFIG_REJECT", "EVIDENCE_DUPLICATE_REJECT",
-    "EVIDENCE_NOT_PUBLISHED", "EXECUTOR_INVOCATION_FAILED", "EXECUTOR_NONZERO_EXIT",
-    "EXECUTOR_OUTPUT_REJECTED", "EXECUTOR_RESULT_REJECT", "GITHUB_TRANSPORT_REJECT",
-    "ROLLBACK_HANDOFF_REJECT", "ROLLBACK_SOURCE_REJECT", "TASK_ID_REJECT",
-    "TASK_NOT_FOUND",
+    "ARTIFACT_DURABILITY_REJECT", "ATTEMPT_BUDGET_EXHAUSTED", "CONFIG_REJECT",
+    "EVIDENCE_DUPLICATE_REJECT", "EVIDENCE_NOT_PUBLISHED", "EXECUTOR_INVOCATION_FAILED",
+    "EXECUTOR_NONZERO_EXIT", "EXECUTOR_OUTPUT_REJECTED", "EXECUTOR_RESULT_REJECT",
+    "GITHUB_TRANSPORT_REJECT", "ROLLBACK_HANDOFF_REJECT", "ROLLBACK_SOURCE_REJECT",
+    "TASK_ID_REJECT", "TASK_NOT_FOUND",
 })
 FAILURE_REASON_FALLBACK = "UNCLASSIFIED_REJECT"
 
@@ -62,6 +67,7 @@ FAILURE_REASON_BY_STAGE = {
     "parser": "EXECUTOR_OUTPUT_REJECTED",
     STAGE_RESULT: "EXECUTOR_RESULT_REJECT",
     STAGE_EVIDENCE_BUILD: "EXECUTOR_RESULT_REJECT",
+    STAGE_ARTIFACT_DURABILITY: "ARTIFACT_DURABILITY_REJECT",
     STAGE_EVIDENCE_PUBLISH: "EVIDENCE_NOT_PUBLISHED",
     STAGE_ROLLBACK_HANDOFF: "ROLLBACK_HANDOFF_REJECT",
 }
@@ -306,10 +312,20 @@ def evidence(task,result):
     stamp=utcnow()
     record = {"schema_version":"1","task_id":task["task_id"],"nonce":task["nonce"],"action_id":task["action_id"],"environment":task["environment"],"status":"SUCCESS","started_at":stamp,"completed_at":stamp,"agent_version":VERSION,"gate_results":{"schema":"PASS","environment":"PASS","authority":"PASS","signature":"PASS","expiry":"PASS","replay":"PASS","allowlist":"PASS"},"executor_result":result}
     if task["action_id"] == test_pr.ACTION:
-        required={"schema_version","executor_version","action_id","status","result","source_pr_number","source_commit_sha","task_canonical_sha256","built_image_id","gate_results","application_health_proven","deployment_performed"}
+        required={"schema_version","executor_version","action_id","status","result","source_pr_number","source_commit_sha","task_canonical_sha256","built_image_id","artifact_durability","artifact_package","gate_results","application_health_proven","deployment_performed"}
         if not isinstance(result,dict) or set(result) != required or result["status"] != "SUCCESS" or result["result"] != "TEST_PR_OK" or result["action_id"] != test_pr.ACTION or result["application_health_proven"] is not False or result["deployment_performed"] is not False:
             raise Reject("EXECUTOR_RESULT_REJECT", stage=STAGE_EVIDENCE_BUILD)
-        record.update({"executor_version":result["executor_version"],"executor_result":result["result"],"source_pr_number":result["source_pr_number"],"source_commit_sha":result["source_commit_sha"],"task_canonical_sha256":result["task_canonical_sha256"],"built_image_id":result["built_image_id"],"gate_results":result["gate_results"],"application_health_proven":False,"deployment_performed":False})
+        # A build identity is not a deliverable.  The Evidence only carries a
+        # deployable artifact claim when the executor also reports a sealed package
+        # whose image identity is the one the build produced.
+        package=result["artifact_package"]
+        if (result["artifact_durability"] != "PROVEN" or not isinstance(package,dict)
+                or package.get("schema") != artifact_store.SCHEMA
+                or package.get("image_id") != result["built_image_id"]
+                or not isinstance(package.get("package_sha256"),str)
+                or re.fullmatch(r"[0-9a-f]{64}",package["package_sha256"]) is None):
+            raise Reject("ARTIFACT_DURABILITY_REJECT", stage=STAGE_ARTIFACT_DURABILITY)
+        record.update({"executor_version":result["executor_version"],"executor_result":result["result"],"source_pr_number":result["source_pr_number"],"source_commit_sha":result["source_commit_sha"],"task_canonical_sha256":result["task_canonical_sha256"],"built_image_id":result["built_image_id"],"artifact_durability":result["artifact_durability"],"artifact_package":package,"gate_results":result["gate_results"],"application_health_proven":False,"deployment_performed":False})
         return record
     if task["action_id"] != "CONTROL_PLANE_HEALTH":
         required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results"}

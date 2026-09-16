@@ -34,12 +34,21 @@ record_dir() {
 record /opt/go-hk-agent-rebuilt/hk_agent/transport.py transport.py
 record /etc/go-hk-agent/agent.json agent.json
 record /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py test_pr.py
+record /opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py artifact_store.py
 record /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2 Dockerfile.go-application-python-v2
 record "$docker_dropin" docker-access.conf
 record_dir "$runtime_root" runtime_root
 record_dir "$build_root" builds
 install -o root -g root -m 0644 "$root/hk-staging/hk_agent/transport.py" /opt/go-hk-agent-rebuilt/hk_agent/transport.py
 install -o root -g root -m 0644 "$root/hk-staging/hk_agent/test_pr.py" /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py
+install -o root -g root -m 0644 "$root/hk-staging/hk_agent/artifact_store.py" /opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py
+# The sealed-artifact store.  Created once, never re-created over existing
+# content, and deliberately OUTSIDE this install/rollback unit: what it holds is
+# immutable artifact evidence referenced by signed Evidence, not configuration.
+# A rollback that deleted it would destroy the only copy of a built candidate.
+store_root=/var/lib/go-hk-artifacts
+install -d -o root -g root -m 0700 "$store_root"
+install -d -o root -g root -m 0700 "$store_root/objects"
 install -d -o root -g root -m 0755 /usr/local/libexec/go-hk-test-pr
 install -o root -g root -m 0644 "$root/hk-staging/Dockerfile.go-application-python-v2" /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2
 agent_uid=$(id -u go-hk-agent)
@@ -72,12 +81,14 @@ chmod "$agent_mode" /etc/go-hk-agent/agent.json
 printf 'transport.py|%s\n' "$(sha256sum /opt/go-hk-agent-rebuilt/hk_agent/transport.py | awk '{print $1}')" > "$backup/installed.tsv"
 printf 'agent.json|%s\n' "$(sha256sum /etc/go-hk-agent/agent.json | awk '{print $1}')" >> "$backup/installed.tsv"
 printf 'test_pr.py|%s\n' "$(sha256sum /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py | awk '{print $1}')" >> "$backup/installed.tsv"
+printf 'artifact_store.py|%s\n' "$(sha256sum /opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py | awk '{print $1}')" >> "$backup/installed.tsv"
 printf 'Dockerfile.go-application-python-v2|%s\n' "$(sha256sum /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2 | awk '{print $1}')" >> "$backup/installed.tsv"
 printf 'docker-access.conf|%s\n' "$(sha256sum "$docker_dropin" | awk '{print $1}')" >> "$backup/installed.tsv"
 printf 'runtime_root|directory|%s|%s\n' "$(stat -c %u:%g "$runtime_root")" "$(stat -c %a "$runtime_root")" >> "$backup/installed.tsv"
 printf 'builds|directory|%s|%s\n' "$(stat -c %u:%g "$build_root")" "$(stat -c %a "$build_root")" >> "$backup/installed.tsv"
 test "$(awk '$2=="hk-staging/hk_agent/transport.py"{print $1}' "$root/SHA256SUMS")" = "$(awk -F'|' '$1=="transport.py"{print $2}' "$backup/installed.tsv")"
 test "$(awk '$2=="hk-staging/hk_agent/test_pr.py"{print $1}' "$root/SHA256SUMS")" = "$(awk -F'|' '$1=="test_pr.py"{print $2}' "$backup/installed.tsv")"
+test "$(awk '$2=="hk-staging/hk_agent/artifact_store.py"{print $1}' "$root/SHA256SUMS")" = "$(awk -F'|' '$1=="artifact_store.py"{print $2}' "$backup/installed.tsv")"
 test "$(awk '$2=="hk-staging/Dockerfile.go-application-python-v2"{print $1}' "$root/SHA256SUMS")" = "$(awk -F'|' '$1=="Dockerfile.go-application-python-v2"{print $2}' "$backup/installed.tsv")"
 test "$(stat -c %u:%g "$runtime_root")" = 0:0
 test "$(stat -c %a "$runtime_root")" = 711

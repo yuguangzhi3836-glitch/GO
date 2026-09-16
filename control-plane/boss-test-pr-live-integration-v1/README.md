@@ -55,19 +55,47 @@ Load-bearing rules:
 
 ### Superseded artifact hashes
 
-This revision changes two files that are hash-pinned by `SHA256SUMS` and, for
-`transport.py`, by `install/install-hk-agent.sh`:
+This revision adds `hk-staging/hk_agent/artifact_store.py`, makes `test_pr.py`
+seal the image it built, and re-contracts the candidate delivery identity
+(`candidate_repo_digest` → `candidate_package_sha256`). Files hash-pinned by
+`SHA256SUMS`, and for the agent tree by `install/install-hk-agent.sh`:
 
 ```
-hk-staging/hk_agent/transport.py        was 6f329b2eae7bc627229002e998cf17ee9d95b2e1fb6fc7cb22a508b52ad5fbe0
-                                        now 340da98f95acdb0c212aa116681da8d8344c6da306e44dfcf332c67ee1957de8
-tests/test_live_integration.py          was f59626419ba5d8da2b8430e1e1b3293d197cf19cc8d704a1fe842c982100e2fd
-                                        now d80ea8ce98afdf1cd9bc302d3d611b6e84d56ff07ca79f0f56b853e1730e07d1
+hk-staging/hk_agent/transport.py        was 340da98f95acdb0c212aa116681da8d8344c6da306e44dfcf332c67ee1957de8
+                                        now b35ace2289d9b8e64805d584a893f0e3c5efb7c6050fbbdbfaaf492dee3d700d
+hk-staging/hk_agent/test_pr.py          was 654403023d599b78ec2a61776ab133ec0dc46d069e61fd7b3717d400eaedc2ac
+                                        now 5247882993a86fada07df256f256b74ad6aa42f2e9fc7b3427192bd3e4cad778
+hk-staging/hk_agent/artifact_store.py   new d5b182b693d2f6be469a2f2dbb9ced7299db00074f1b3d1c64ee4cc9515e8c76
+tests/test_live_integration.py          was d80ea8ce98afdf1cd9bc302d3d611b6e84d56ff07ca79f0f56b853e1730e07d1
+                                        now 67af7de8f26e214ab1d05575e8564f0a504b647b6252f988f38f8f232683826c
+tests/test_artifact_store.py            new c684bd5298012823d3047e3ad524a8537df1072953b22790cd1bfaf4b0cb5c29
+tests/test_test_pr_durability.py        new c16a057421cc17f88e834e7ad586f6cb4da19412e1c04a9e0d33bf0291ae51cb
+install/install-hk-agent.sh             was 1a5779b3619ff004204abf22fefd7c98368accf3ef563a1248dacf6bf5419f33
+                                        now a70c797e5a8cc3436e06681b0368959cae05b5f7f51152b3bef1861605fae245
+install/uninstall.sh                    was 0754ea416521670ee3316169d785f4e9c0c31c767451f9d0f2036d40e4b59d7d
+                                        now 0d06812e8fc115a707bf12a10fb7bc4947f8aecb0b888665d86b7b2b9ef42268
 ```
 
-The previous revision recorded `c4413d17…` for `tests/test_live_integration.py`;
-the value actually committed was `f5962641…`. The `was` value above is the
-committed one.
+The previous revision recorded `c4413d17…` for `tests/test_live_integration.py`
+and `550eecc8…` for `test_pr.py`; the values actually committed were `f5962641…`
+and `65440302…`. Each `was` above is the committed value.
+
+## B4-B1 — the built image is sealed, and the artifact identity is re-contracted
+
+`test_pr.py` V2 built an image, reported `built_image_id` in signed Evidence, and
+then removed the image in its `finally` block. Every TEST_PR check passed and no
+copy of those bytes existed anywhere, so nothing could CANARY or DEPLOY the
+artifact the Evidence named. V3 seals the exact built image into a fixed,
+content-addressed local store **after** every gate has passed, records the package
+identity in the Evidence, and still removes the temporary tag.
+
+Sealing rather than pushing is deliberate: a registry digest only exists after a
+push, it is not equal to an image config ID in general, and the previous contract
+required a digest whose suffix equalled the image id — a condition no real
+candidate could satisfy. The delivery identity is now the sealed package's own
+SHA256 (`contract go.sealed-artifact.v1`), and `candidate_repo_digest` is gone from
+the plan, the Task parameters, the HK agent and both executors. See
+`docs/control-plane/hk-staging/B4B1_DURABLE_ARTIFACT_20260916.md`.
 
 ## TD-J — one clone workspace per publication (this revision)
 

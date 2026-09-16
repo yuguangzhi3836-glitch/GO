@@ -19,7 +19,6 @@ EXECUTOR_IDENT = re.compile(r'[A-Za-z0-9][A-Za-z0-9_-]{0,79}\Z')
 SHA = re.compile(r'[0-9a-f]{64}\Z')
 COMMIT = re.compile(r'[0-9a-f]{40}\Z')
 IMAGE = re.compile(r'sha256:[0-9a-f]{64}\Z')
-DIGEST = re.compile(r'[a-z0-9][a-z0-9._/-]*@sha256:[0-9a-f]{64}\Z')
 SERVICES = ['api','recovery-worker','outbox-worker','mobile-push-receipt-worker',
             'reconciliation-worker','mobile-push-worker','mobile-engagement-worker','judgment-worker']
 RELEASE_GATES = {'three_end_ux','six_vertical_closed_loop','sealed_node','final_release'}
@@ -121,7 +120,7 @@ def proof(task,evidence,action,authority_key,hk_key,at,max_age):
     match(task['nonce'],re.compile(r'[A-Za-z0-9_-]{1,128}\Z'),'task_nonce')
     parameters=task['parameters']
     expected={'release_id','candidate_image_id','expected_current_image_id'}
-    if action=='HK_STAGING_CANARY': expected.add('candidate_repo_digest')
+    if action=='HK_STAGING_CANARY': expected.add('candidate_package_sha256')
     exact(parameters,expected,'proof_parameters')
     for k in ['release_id','candidate_image_id','expected_current_image_id']:
         if evidence.get(k)!=parameters[k]: raise Reject('proof_image_or_release')
@@ -160,12 +159,15 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
     exact(plan['gates'],RELEASE_GATES,'release_gate_fields')
     if any(v!='PASS' for v in plan['gates'].values()): raise Reject('release_gates_not_pass')
     candidate=plan['candidate']
-    exact(candidate,{'repository','source_commit','application_git_tree','source_tree_sha256','package_sha256','image_id','repo_digest'},'candidate_fields')
+    exact(candidate,{'repository','source_commit','application_git_tree','source_tree_sha256','package_sha256','image_id'},'candidate_fields')
     if candidate['repository']!='yuguangzhi3836-glitch/GO': raise Reject('candidate_repository')
     for k in ['source_commit','application_git_tree']: match(candidate[k],COMMIT,k)
     for k in ['source_tree_sha256','package_sha256']: match(candidate[k],SHA,k)
-    match(candidate['image_id'],IMAGE,'candidate_image');match(candidate['repo_digest'],DIGEST,'candidate_digest')
-    if not candidate['repo_digest'].endswith(candidate['image_id'][7:]): raise Reject('executor_digest_contract')
+    match(candidate['image_id'],IMAGE,'candidate_image')
+    # No repo digest is required, and none may be invented: a registry manifest
+    # digest is not an image config ID, and a host-built candidate has no digest
+    # at all. image_id is the artifact identity; package_sha256 is the sealed
+    # package the executor resolves that same image from.
     match(plan['expected_current_image_id'],IMAGE,'current_image')
     exact(approval,APPROVAL_FIELDS,'approval_fields')
     if approval['schema_version']!='1' or approval['scope']!='HK_STAGING_DEPLOY_FIXED_EIGHT' or approval['plan_sha256']!=digest(plan):
@@ -183,7 +185,7 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
     checked=proof(bundle['preflight_task'],bundle['preflight_evidence'],'HK_STAGING_VERIFY',authority_key,hk_key,at,300)
     if approved < max(canary_checked,checked): raise Reject('approval_predates_evidence')
     cp=bundle['canary_task']['parameters'];vp=bundle['preflight_task']['parameters']
-    if (cp['candidate_image_id'],cp['candidate_repo_digest'],cp['expected_current_image_id'])!=(candidate['image_id'],candidate['repo_digest'],plan['expected_current_image_id']): raise Reject('canary_candidate_binding')
+    if (cp['candidate_image_id'],cp['candidate_package_sha256'],cp['expected_current_image_id'])!=(candidate['image_id'],candidate['package_sha256'],plan['expected_current_image_id']): raise Reject('canary_candidate_binding')
     if vp['candidate_image_id']!=plan['expected_current_image_id'] or vp['expected_current_image_id']!=plan['expected_current_image_id']:
         raise Reject('preflight_current_image_binding')
     # A task never outlives either the approval or its fresh preflight window.
@@ -195,7 +197,7 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
             'approval_identity':approval_identity,
             'approval_id':approval['approval_id'],'source_commit':candidate['source_commit'],
             'package_sha256':candidate['package_sha256'],'deadline':deadline,
-            'parameters':{'candidate_image_id':candidate['image_id'],'candidate_repo_digest':candidate['repo_digest'],
+            'parameters':{'candidate_image_id':candidate['image_id'],'candidate_package_sha256':candidate['package_sha256'],
              'expected_current_image_id':plan['expected_current_image_id'],
              'canary_evidence_id':bundle['canary_task']['parameters']['release_id'],'approval_id':approval['approval_id']}}
 

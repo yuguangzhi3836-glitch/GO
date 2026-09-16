@@ -164,6 +164,31 @@
         }
       }
     },
+    "artifact_package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "durability",
+        "package_sha256"
+      ],
+      "description": "Whether the artifact this candidate was built as still exists as a sealed, deliverable package. Optional, because a candidate written before the sealed-artifact store existed stays readable; its absence is reported as NOT_PROVEN, never assumed to be PROVEN. An image ID proves a build; it does not prove the built bytes still exist, and reading the first as the second is the ephemeral-artifact defect.",
+      "properties": {
+        "durability": {
+          "enum": [
+            "PROVEN",
+            "NOT_PROVEN"
+          ]
+        },
+        "package_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The content address of the sealed package (contract go.sealed-artifact.v1). It must be the address the signed TEST_PR result reported, and that result must be about the candidate artifact_digest."
+        }
+      }
+    },
     "rollback_relation": {
       "type": "object",
       "additionalProperties": false,
@@ -229,6 +254,11 @@
       "candidate_test_result_evidence_artifact",
       "candidate_test_result_evidence_action",
       "candidate_test_result_evidence_task",
+      "candidate_artifact_package",
+      "candidate_artifact_package_absent",
+      "candidate_artifact_package_not_proven",
+      "candidate_artifact_package_identity",
+      "candidate_artifact_package_mismatch",
       "candidate_rollback_relation",
       "candidate_rollback_relation_unknown",
       "candidate_rollback_target",

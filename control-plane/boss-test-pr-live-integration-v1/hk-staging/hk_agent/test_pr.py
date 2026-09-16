@@ -8,18 +8,23 @@ import stat
 import subprocess
 import tempfile
 
+from . import artifact_store
+
 ACTION = "HK_STAGING_TEST_PR"
 PROFILE = "go-application-python-v1"   # the Task-facing contract: unchanged by V2
+EXECUTOR_VERSION = "test-pr-v3"
 REPOSITORY = "git@github.com:yuguangzhi3836-glitch/GO.git"
 DEPLOY_KEY = "/etc/go-hk-agent/keys/github-go-source-reader"
 DOCKERFILE = "/usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2"
 BUILD_ROOT = "/var/lib/go-hk-test-pr/builds"
-# V2: repinned onto an image that exists on the host. The profile name above is
-# unchanged because the parameters this executor accepts, and what it proves, are
-# unchanged: only the environment the build happens in changed, and that is
-# recorded in executor_version.
+# V3 keeps V2's builder pin and adds one step: the exact image this build
+# produced is sealed into the fixed artifact store before the temporary tag is
+# removed.  V2 reported built_image_id and then deleted the image, so the
+# Evidence named an artifact that no longer existed anywhere and no later
+# CANARY or DEPLOY could use it.
 BUILDER_IMAGE = "go-hotel:depth48-runtime-6d0fd905"
 BUILDER_IMAGE_ID = "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"
+ARTIFACT_STORE = artifact_store.STORE_ROOT
 DEPENDENCY_PROFILE_SHA256 = "904ede5e7ee3408e5f80bc2957d5f4b4d32754be6797bf6a53cff545b2fc94aa"
 PYTHONPYCACHEPREFIX = "/tmp/pycache"
 SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -145,16 +150,30 @@ def execute(task, runner=_run):
                 "--tmpfs", "/tmp:rw,nosuid,nodev,size=64m", "--env", "PYTHONPYCACHEPREFIX=" + PYTHONPYCACHEPREFIX,
                 "--entrypoint", "/bin/sh", image, "-c",
                 "python -m compileall -q /workspace/src && alembic heads"], timeout=180)
+        # Only now, with every gate above already PASS, is the exact built image
+        # made durable.  Sealing is the last step on purpose: an image that failed
+        # a gate must never reach the store, and an image that passes is no longer
+        # allowed to disappear with this process.
+        package = artifact_store.seal(runner, image, image_id, root=ARTIFACT_STORE)
         return {
-            "schema_version": "1", "executor_version": "test-pr-v2", "action_id": ACTION,
+            "schema_version": "1", "executor_version": EXECUTOR_VERSION, "action_id": ACTION,
             "status": "SUCCESS", "result": "TEST_PR_OK",
             "source_pr_number": source["pr_number"], "source_commit_sha": commit,
             "task_canonical_sha256": hashlib.sha256(__import__("hk_agent.transport", fromlist=["canonical"]).canonical(task)).hexdigest(),
             "built_image_id": image_id,
-            "gate_results": {"source_commit": "PASS", "offline_build": "PASS", "isolated_runtime_checks": "PASS"},
+            # The build identity and the delivery identity are both stated: the
+            # first is what docker inspect reported, the second is the immutable
+            # package a later CANARY or DEPLOY resolves this same image from.
+            "artifact_durability": "PROVEN",
+            "artifact_package": package,
+            "gate_results": {"source_commit": "PASS", "offline_build": "PASS",
+                             "isolated_runtime_checks": "PASS", "artifact_sealed": "PASS"},
             "application_health_proven": False, "deployment_performed": False,
         }
     finally:
+        # The temporary build tag is still removed: the durable copy is the sealed
+        # package, and leaving a second, untracked copy in Docker would be a
+        # delivery path the store cannot vouch for.
         subprocess.run(["/usr/bin/docker", "image", "rm", "--force", image], stdout=subprocess.DEVNULL,
                        stderr=subprocess.DEVNULL, check=False, timeout=60)
         shutil.rmtree(workspace, ignore_errors=True)

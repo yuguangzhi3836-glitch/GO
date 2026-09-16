@@ -167,7 +167,7 @@ jobs:
               task, evidence = t.proof_pair(
                   keys, 'HK_STAGING_CANARY', 'CANARY_OK', R.CANARY_GATES,
                   {'release_id': 'canary-release-1', 'candidate_image_id': t.CANDIDATE_IMAGE,
-                   'candidate_repo_digest': t.CANDIDATE_DIGEST,
+                   'candidate_package_sha256': t.CANDIDATE_PACKAGE,
                    'expected_current_image_id': t.CURRENT_IMAGE})
               gates = dict(evidence['gate_results'])
               gates['container_cleanup'] = 'FAIL'

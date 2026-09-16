@@ -44,6 +44,7 @@ class Fixture:
         # that the Boss never has to generate or handle a key to authorise a deploy.
         self.approval_identity = gate.APPROVAL_IDENTITIES[0]
         self.candidate = 'sha256:' + 'a' * 64
+        self.package = 'f' * 64   # the sealed package content address
         self.current = 'sha256:' + 'b' * 64
         canary = self.proof('HK_STAGING_CANARY', 120)
         verify = self.proof('HK_STAGING_VERIFY', 30)
@@ -53,7 +54,7 @@ class Fixture:
             'schema_version': '1', 'plan_id': 'synthetic-plan-001', 'environment': gate.ENVIRONMENT,
             'action_id': gate.ACTION, 'candidate': {'repository': 'yuguangzhi3836-glitch/GO',
                 'source_commit': 'c'*40, 'application_git_tree': 'd'*40, 'source_tree_sha256': 'e'*64,
-                'package_sha256': 'f'*64, 'image_id': self.candidate, 'repo_digest': 'synthetic/go@' + self.candidate},
+                'package_sha256': self.package, 'image_id': self.candidate},
             'expected_current_image_id': self.current, 'target_services': gate.SERVICES.copy(),
             'protected_non_targets': ['redis', 'caddy'], 'migration': False, 'production': False,
             'automatic_rollback': False, 'gates': {k: 'PASS' for k in gate.RELEASE_GATES}}
@@ -67,7 +68,7 @@ class Fixture:
         params = {'release_id': 'synthetic-' + action.lower(),
                   'candidate_image_id': self.candidate if action.endswith('CANARY') else self.current,
                   'expected_current_image_id': self.current}
-        if action.endswith('CANARY'): params['candidate_repo_digest'] = 'synthetic/go@' + self.candidate
+        if action.endswith('CANARY'): params['candidate_package_sha256'] = self.package
         task = signed({'schema_version': '1', 'task_id': params['release_id'], 'nonce': 'synthetic-nonce-'+str(age),
             'issued_at': bridge.iso(completed - dt.timedelta(seconds=20)), 'expires_at': bridge.iso(completed + dt.timedelta(minutes=10)),
             'authority': 'GO-COMMAND-CENTER', 'environment': gate.ENVIRONMENT, 'action_id': action, 'parameters': params}, self.authority)
@@ -115,7 +116,7 @@ class RequestTests(unittest.TestCase):
     def test_deploy_shape(self):
         self.assertEqual(bridge.validate_request(gate.canonical(self.f.request()), self.f.at)['plan_id'], 'synthetic-plan-001')
     def test_no_caller_runtime_or_approval_override(self):
-        for field in ('image_id','candidate_image_id','candidate_repo_digest','source_commit','package_sha256','services',
+        for field in ('image_id','candidate_image_id','candidate_package_sha256','source_commit','package_sha256','services',
                       'compose_path','command','signature','approval_id','task_id','nonce','force_recreate','deployment_requests_enabled'):
             with self.subTest(field=field), self.assertRaises(gate.Reject):
                 bridge.validate_request(gate.canonical(self.f.request(**{field:'override'})), self.f.at)
@@ -161,7 +162,7 @@ class ProofTests(unittest.TestCase):
             args=dict(zip(fake.calls[0][2::2],fake.calls[0][3::2]))
             self.assertEqual(args['--task-canonical-sha256'],gate.digest({k:v for k,v in task.items() if k!='signature'}))
             self.assertEqual(args['--canary-evidence-id'],self.f.bundle['canary_task']['parameters']['release_id'])
-            self.assertEqual(set(task['parameters']),{'release_id','candidate_image_id','candidate_repo_digest','expected_current_image_id','canary_evidence_id','approval_id'})
+            self.assertEqual(set(task['parameters']),{'release_id','candidate_image_id','candidate_package_sha256','expected_current_image_id','canary_evidence_id','approval_id'})
             self.assertNotEqual(task['parameters']['candidate_image_id'],task['parameters']['expected_current_image_id'])
             self.assertLessEqual(gate.timestamp(task['expires_at']),self.f.at+dt.timedelta(seconds=270))
     def test_wrong_keys_and_unsigned_approval(self):
@@ -177,9 +178,11 @@ class ProofTests(unittest.TestCase):
             with self.subTest(key=key):
                 self.f=Fixture(); self.f.bundle['plan'][key]=value; self.f.seal()
                 with self.assertRaises(gate.Reject): self.f.validate()
-    def test_candidate_binding_and_digest_compatibility(self):
+    def test_candidate_binding_and_package_compatibility(self):
+        # A registry digest is no longer part of the candidate at all: it could not
+        # be satisfied by a host-built image, and the sealed package replaced it.
         for key,value in [('source_commit','main'),('package_sha256','old.zip'),('repository','other/repo'),
-                          ('image_id','sha256:'+'c'*64),('repo_digest','synthetic/go@sha256:'+'c'*64)]:
+                          ('image_id','sha256:'+'c'*64)]:
             with self.subTest(key=key):
                 self.f=Fixture(); self.f.bundle['plan']['candidate'][key]=value; self.f.seal()
                 with self.assertRaises(gate.Reject): self.f.validate()
@@ -241,7 +244,7 @@ class ProofTests(unittest.TestCase):
         self.f.bundle['approval']['approval_id']='bad.dot'; self.f.seal()
         with self.assertRaises(gate.Reject): self.f.validate()
     def test_signed_canary_must_match_candidate(self):
-        self.f.bundle['canary_task']['parameters']['candidate_repo_digest']='synthetic/other@'+self.f.candidate; self.f.seal()
+        self.f.bundle['canary_task']['parameters']['candidate_package_sha256']='0'*64; self.f.seal()
         with self.assertRaises(gate.Reject): self.f.validate()
 
 

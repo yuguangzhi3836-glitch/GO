@@ -37,17 +37,19 @@
         "schema_version": {"const": "1"},
         "kind": {
           "enum": ["HANDOFF_FAILED", "EXECUTION_FAILED", "RESULT_REJECT",
-                   "EVIDENCE_BUILD_FAILED", "EVIDENCE_PUBLISH_FAILED", "AGENT_REJECT"],
+                   "EVIDENCE_BUILD_FAILED", "ARTIFACT_DURABILITY_FAILED",
+                   "EVIDENCE_PUBLISH_FAILED", "AGENT_REJECT"],
           "description": "closed set; an unmapped stage is AGENT_REJECT, never the raw text"
         },
         "stage": {
           "enum": ["agent_reject", "rollback_handoff", "executor", "result", "evidence_build",
-                   "evidence_publish", "subprocess", "subprocess_nonzero", "subprocess_error",
-                   "parser"],
-          "description": "closed internal vocabulary describing where the attempt stopped"
+                   "artifact_durability", "evidence_publish", "subprocess", "subprocess_nonzero",
+                   "subprocess_error", "parser"],
+          "description": "closed internal vocabulary describing where the attempt stopped. `artifact_durability` is separate from `evidence_build` on purpose: a build that succeeded but produced no durable artifact is neither an executor refusal nor a publication failure, and reading it as either would hide the ephemeral-artifact defect (a SIGned TEST_PR whose built image the executor then deleted)."
         },
         "reason_code": {
-          "enum": ["ATTEMPT_BUDGET_EXHAUSTED", "CONFIG_REJECT", "EVIDENCE_DUPLICATE_REJECT",
+          "enum": ["ARTIFACT_DURABILITY_REJECT", "ATTEMPT_BUDGET_EXHAUSTED", "CONFIG_REJECT",
+                   "EVIDENCE_DUPLICATE_REJECT",
                    "EVIDENCE_NOT_PUBLISHED", "EXECUTOR_INVOCATION_FAILED", "EXECUTOR_NONZERO_EXIT",
                    "EXECUTOR_OUTPUT_REJECTED", "EXECUTOR_RESULT_REJECT", "GITHUB_TRANSPORT_REJECT",
                    "ROLLBACK_HANDOFF_REJECT", "ROLLBACK_SOURCE_REJECT", "TASK_ID_REJECT",

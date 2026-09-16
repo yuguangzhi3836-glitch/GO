@@ -774,6 +774,39 @@ class ValidationTests(unittest.TestCase):
         with self.assertRaises(sp.Malformed):
             sp.validate_task(value)
 
+    def test_a_task_under_the_superseded_delivery_identity_stays_readable(self):
+        """The 2026-09-16 re-contract renamed the candidate delivery identity.
+
+        History signed under the old name must stay readable and keep its Evidence.
+        Holding it would silently erase real proof; accepting an unknown shape would
+        be a wildcard.  The two named shapes are exact, and a third is still held.
+        """
+        legacy = task(action="HK_STAGING_CANARY")
+        legacy["parameters"] = {"release_id": "release-1",
+                                "candidate_image_id": "sha256:" + "a" * 64,
+                                "candidate_repo_digest": "go-hotel@sha256:" + "a" * 64,
+                                "expected_current_image_id": "sha256:" + "b" * 64}
+        self.assertEqual(sp.validate_task(legacy)["_parameter_contract"], "SUPERSEDED")
+        current = task(action="HK_STAGING_CANARY")
+        current["parameters"] = {"release_id": "release-1",
+                                 "candidate_image_id": "sha256:" + "a" * 64,
+                                 "candidate_package_sha256": "c" * 64,
+                                 "expected_current_image_id": "sha256:" + "b" * 64}
+        self.assertEqual(sp.validate_task(current)["_parameter_contract"], "CURRENT")
+        neither = task(action="HK_STAGING_CANARY")
+        neither["parameters"] = {"release_id": "release-1",
+                                 "candidate_image_id": "sha256:" + "a" * 64,
+                                 "candidate_repo_digest": "go-hotel@sha256:" + "a" * 64,
+                                 "candidate_package_sha256": "c" * 64,
+                                 "expected_current_image_id": "sha256:" + "b" * 64}
+        self.assertEqual(sp.validate_task(neither)["_parameter_contract"], "LEGACY_OR_UNKNOWN")
+
+    def test_the_superseded_shapes_are_names_the_deploy_entry_no_longer_emits(self):
+        for action, shapes in sp.SUPERSEDED_PARAMETERS.items():
+            self.assertIn(action, sp.ACTION_PARAMETERS)
+            for shape in shapes:
+                self.assertNotEqual(shape, sp.ACTION_PARAMETERS[action])
+
     def test_evidence_generations_normalise(self):
         current = sp.normalize_evidence(evidence(task()))
         self.assertEqual(current["_generation"], "v2")

@@ -41,7 +41,8 @@ class IntegrationTests(unittest.TestCase):
         names = (
             ("go-boss-request-bridge", "boss-request-bridge-v1.json")
             if role == "command-center"
-            else ("transport.py", "agent.json", "test_pr.py", "Dockerfile.go-application-python-v2", "docker-access.conf")
+            else ("transport.py", "agent.json", "test_pr.py", "artifact_store.py",
+                  "Dockerfile.go-application-python-v2", "docker-access.conf")
         )
         present = names if role == "command-center" else names[:2]
         records, installed, target_paths = [], [], {}
@@ -103,6 +104,7 @@ class IntegrationTests(unittest.TestCase):
                 "GO_HK_TRANSPORT_PATH": self.bash_path(target_paths["transport.py"]),
                 "GO_HK_AGENT_CONFIG_PATH": self.bash_path(target_paths["agent.json"]),
                 "GO_HK_TEST_PR_PATH": self.bash_path(target_paths["test_pr.py"]),
+                "GO_HK_ARTIFACT_STORE_MODULE": self.bash_path(target_paths["artifact_store.py"]),
                 "GO_HK_DOCKERFILE_PATH": self.bash_path(target_paths["Dockerfile.go-application-python-v2"]),
                 "GO_HK_DOCKER_DROPIN_PATH": self.bash_path(target_paths["docker-access.conf"]),
                 "GO_HK_RUNTIME_ROOT": self.bash_path(runtime_root),
@@ -177,11 +179,16 @@ class IntegrationTests(unittest.TestCase):
             original = test_pr.execute
             try:
                 test_pr.execute = lambda _: {
-                    "schema_version": "1", "executor_version": "test-pr-v2", "action_id": "HK_STAGING_TEST_PR",
+                    "schema_version": "1", "executor_version": "test-pr-v3", "action_id": "HK_STAGING_TEST_PR",
                     "status": "SUCCESS", "result": "TEST_PR_OK", "source_pr_number": "42",
                     "source_commit_sha": task["parameters"]["source"]["commit_sha"],
                     "task_canonical_sha256": hashlib.sha256(transport.canonical(signed)).hexdigest(),
-                    "built_image_id": "sha256:" + "a" * 64, "gate_results": {"source_commit": "PASS"},
+                    "built_image_id": "sha256:" + "a" * 64,
+                    "artifact_durability": "PROVEN",
+                    "artifact_package": {"schema": "go.sealed-artifact.v1",
+                                         "image_id": "sha256:" + "a" * 64,
+                                         "package_sha256": "b" * 64},
+                    "gate_results": {"source_commit": "PASS"},
                     "application_health_proven": False, "deployment_performed": False,
                 }
                 evidence = transport.evidence(signed, transport.dispatch_action(signed))
@@ -190,6 +197,7 @@ class IntegrationTests(unittest.TestCase):
             self.assertFalse(evidence["application_health_proven"])
             self.assertFalse(evidence["deployment_performed"])
             self.assertEqual(evidence["source_commit_sha"], task["parameters"]["source"]["commit_sha"])
+            self.assertEqual(evidence["artifact_package"]["package_sha256"], "b" * 64)
 
     def test_fixed_fetch_and_isolation_literals(self):
         source = (ROOT / "hk-staging" / "hk_agent" / "test_pr.py").read_text(encoding="utf-8")
@@ -239,7 +247,7 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn("from %s" % "go-hotel:depth48-runtime-6d0fd905", dockerfile)
         self.assertIn('BUILDER_IMAGE = "go-hotel:depth48-runtime-6d0fd905"', source)
         self.assertIn('BUILDER_IMAGE_ID = "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"', source)
-        self.assertIn('executor_version": "test-pr-v2"', source)
+        self.assertIn('EXECUTOR_VERSION = "test-pr-v3"', source)
         # Nothing executable may still name the environment that is gone, or the
         # rename left a second, dead pin behind.
         stale_scope = sorted((ROOT / "hk-staging").rglob("*")) + sorted((ROOT / "install").glob("*.sh"))
@@ -351,6 +359,7 @@ class IntegrationTests(unittest.TestCase):
             "record /opt/go-hk-agent-rebuilt/hk_agent/transport.py transport.py",
             "record /etc/go-hk-agent/agent.json agent.json",
             "record /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py test_pr.py",
+            "record /opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py artifact_store.py",
             "record /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2 Dockerfile.go-application-python-v2",
             "record \"$docker_dropin\" docker-access.conf",
             "record_dir \"$runtime_root\" runtime_root",
@@ -370,6 +379,14 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn('validate transport.py "$transport"', rollback)
         self.assertIn('validate agent.json "$agent_config"', rollback)
         self.assertIn('validate test_pr.py "$test_pr"', rollback)
+        self.assertIn('validate artifact_store.py "$artifact_store_module"', rollback)
+        self.assertIn('install -d -o root -g root -m 0700 "$store_root"', install)
+        self.assertIn('install -d -o root -g root -m 0700 "$store_root/objects"', install)
+        # The sealed-artifact store is deliberately outside the rollback unit: what
+        # it holds is immutable artifact evidence, and deleting it would destroy the
+        # only copy of a built candidate.
+        self.assertNotIn("artifact_store_module", install)
+        self.assertNotIn('remove_dir "$store_root"', rollback)
         self.assertIn('validate Dockerfile.go-application-python-v2 "$dockerfile"', rollback)
         self.assertIn('validate docker-access.conf "$docker_dropin"', rollback)
         self.assertIn('validate_dir runtime_root "$runtime_root"', rollback)
@@ -762,7 +779,8 @@ class FailureClosureTests(unittest.TestCase):
         self.assertEqual(set(block["stage"]["enum"]),
                          {transport.STAGE_AGENT, transport.STAGE_ROLLBACK_HANDOFF,
                           transport.STAGE_EXECUTOR, transport.STAGE_RESULT,
-                          transport.STAGE_EVIDENCE_BUILD, transport.STAGE_EVIDENCE_PUBLISH,
+                          transport.STAGE_EVIDENCE_BUILD, transport.STAGE_ARTIFACT_DURABILITY,
+                          transport.STAGE_EVIDENCE_PUBLISH,
                           "subprocess", "subprocess_nonzero", "subprocess_error", "parser"})
 
     def test_failure_stages_are_not_swallowed_as_agent_reject(self):

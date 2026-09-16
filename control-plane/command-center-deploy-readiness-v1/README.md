@@ -110,10 +110,12 @@ empty: a gate the live Bridge blocks on may not be advisory here.
 candidate without a usable commit            FAIL
 incomplete source identity                   FAIL
 plan approves a different source             FAIL
-repo_digest suffix != image_id               FAIL  (the existing Hong Kong contract
-                                                   requires equality; a real image that
-                                                   does not satisfy it is refused, never
-                                                   accommodated by inventing a digest)
+candidate artifact not sealed (durability != PROVEN)  FAIL
+                                                   (an image id proves a build, never
+                                                   that the built bytes still exist; the
+                                                   old digest-suffix rule is gone -- it
+                                                   was never satisfiable and no digest
+                                                   may be invented to satisfy it)
 plan file name != plan_id                    FAIL
 expired approval / approval for another candidate  FAIL
 no TEST_PR for the candidate commit          FAIL

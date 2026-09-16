@@ -501,7 +501,7 @@ class LiveConstantTests(unittest.TestCase):
         self.assertIn('"builder_profile":"%s"' % A.BUILDER_PROFILE, self.bridge)
 
     def test_the_executor_version_and_dockerfile_match_the_live_executor(self):
-        self.assertIn('"executor_version": "%s"' % A.BUILDER_EXECUTOR_VERSION, self.test_pr)
+        self.assertIn('EXECUTOR_VERSION = "%s"' % A.BUILDER_EXECUTOR_VERSION, self.test_pr)
         self.assertIn('DOCKERFILE = "/usr/local/libexec/go-hk-test-pr/%s"'
                       % A.BUILDER_DOCKERFILE, self.test_pr)
         self.assertEqual(A.BUILDER_DOCKERFILE_PATH,
@@ -536,7 +536,8 @@ class RealCandidateTests(unittest.TestCase):
 
     def test_the_canonical_candidate_block_is_exactly_the_contract_field_set(self):
         document = json.loads(CANONICAL.read_text(encoding="utf-8"))
-        self.assertEqual(set(document["release_candidate_v1"]), set(A.RELEASE_CANDIDATE_FIELDS))
+        self.assertEqual(set(document["release_candidate_v1"]),
+                         set(A.RELEASE_CANDIDATE_FIELDS) | set(A.OPTIONAL_FIELDS))
 
     def test_the_canonical_candidate_source_is_the_pr_head_the_bus_can_resolve(self):
         block = json.loads(CANONICAL.read_text(encoding="utf-8"))["release_candidate_v1"]
@@ -576,6 +577,94 @@ class RealCandidateTests(unittest.TestCase):
         result = A.admit(CONTRACT, scratch, REAL_EVIDENCE, None, GO, AT, AT)
         self.assertEqual(result["verdict"]["admission"], "REJECT", result["verdict"])
         self.assertIn("candidate_test_result_artifact_digest", result["verdict"]["rejected"])
+
+
+class ArtifactDurabilityTests(Base):
+    """B4-B1.  A build identity is not a deliverable, and admission must say so.
+
+    The defect these hold shut: test-pr-v2 built an image, reported
+    ``built_image_id`` in signed Evidence, and removed the image in its ``finally``
+    block.  Every check here passed, because every check was about the build.  Now
+    durability is asked separately, and its answer is reported whether or not it is
+    favourable.
+    """
+
+    PACKAGE = "e" * 64
+
+    def test_the_canonical_candidate_reports_that_its_artifact_is_not_proven(self):
+        """The honest current state, not a guess and not a silent PASS."""
+        document = json.loads(CANONICAL.read_text(encoding="utf-8"))
+        scratch = pathlib.Path(tempfile.mkdtemp(prefix="ccv1-admission-real-")) / "c.json"
+        scratch.write_text(json.dumps(document), encoding="utf-8")
+        result = A.admit(CONTRACT, scratch, REAL_EVIDENCE, None, GO, AT, AT)
+        self.assertEqual(result["artifact_durability"]["state"], "NOT_PROVEN")
+        self.assertIsNone(result["artifact_durability"]["package_sha256"])
+
+    def test_a_candidate_that_says_nothing_about_durability_is_not_deployable(self):
+        result = self.write(candidate())
+        self.assertEqual(result["verdict"]["admission"], "ACCEPT", result["verdict"])
+        self.assertEqual(result["artifact_durability"]["state"], "NOT_PROVEN")
+        self.assertFalse(result["deployability"]["deployable_artifact_established"])
+        self.assertFalse(result["deployability"]["is_a_deploy_approval"])
+
+    def test_a_signed_test_pr_with_no_sealed_package_is_never_called_deployable(self):
+        """The exact ephemeral-artifact case: the evidence is true, the image is gone."""
+        result = self.write(candidate(artifact_package={"durability": "NOT_PROVEN",
+                                                        "package_sha256": None}))
+        self.assertEqual(result["verdict"]["admission"], "ACCEPT", result["verdict"])
+        self.assertIs(result["deployability"]["deployable_artifact_established"], False)
+        self.assertEqual(result["deployability"]["reason"],
+                         "candidate_artifact_package_not_proven")
+
+    def test_a_candidate_cannot_claim_a_package_its_evidence_never_reported(self):
+        result = self.write(candidate(artifact_package={"durability": "PROVEN",
+                                                        "package_sha256": self.PACKAGE}))
+        self.rejected(result, "candidate_artifact_package_mismatch")
+
+    def test_a_proven_package_that_the_evidence_reports_is_deployable(self):
+        result = self.write(candidate(artifact_package={"durability": "PROVEN",
+                                                        "package_sha256": self.PACKAGE}),
+                            evidence_value=evidence(artifact_package={
+                                "schema": "go.sealed-artifact.v1", "image_id": ARTIFACT,
+                                "package_sha256": self.PACKAGE}))
+        self.assertEqual(result["verdict"]["admission"], "ACCEPT", result["verdict"])
+        self.assertEqual(result["artifact_durability"]["state"], "PROVEN")
+        self.assertEqual(result["artifact_durability"]["package_sha256"], self.PACKAGE)
+        self.assertTrue(result["deployability"]["deployable_artifact_established"])
+
+    def test_a_package_that_is_not_a_content_address_is_refused(self):
+        for value in ("go-hotel@sha256:" + "a" * 64, "not-a-digest", "A" * 64, ""):
+            result = self.write(candidate(artifact_package={"durability": "PROVEN",
+                                                            "package_sha256": value}))
+            self.rejected(result, "candidate_artifact_package_identity")
+
+    def test_an_unknown_durability_value_is_refused(self):
+        result = self.write(candidate(artifact_package={"durability": "MAYBE",
+                                                        "package_sha256": None}))
+        self.rejected(result, "candidate_artifact_package")
+
+    def test_a_partial_artifact_package_is_refused(self):
+        result = self.write(candidate(artifact_package={"durability": "PROVEN"}))
+        self.rejected(result, "candidate_artifact_package")
+
+    def test_a_package_proven_for_another_image_is_refused(self):
+        result = self.write(candidate(artifact_package={"durability": "PROVEN",
+                                                        "package_sha256": self.PACKAGE}),
+                            evidence_value=evidence(artifact_package={
+                                "schema": "go.sealed-artifact.v1",
+                                "image_id": OTHER_ARTIFACT,
+                                "package_sha256": self.PACKAGE}))
+        self.rejected(result, "candidate_artifact_package_mismatch")
+
+    def test_a_build_by_the_previous_builder_is_still_admissible(self):
+        """A v2-built candidate is not a worse candidate; it simply cannot be PROVEN."""
+        result = self.write(candidate(build_definition={"executor_version": "test-pr-v2"}))
+        self.assertEqual(result["verdict"]["admission"], "ACCEPT", result["verdict"])
+        self.assertFalse(result["deployability"]["deployable_artifact_established"])
+
+    def test_a_builder_that_was_never_staged_is_refused(self):
+        self.rejected(self.write(candidate(build_definition={"executor_version": "test-pr-v9"})),
+                      "candidate_build_profile")
 
 
 if __name__ == "__main__":
