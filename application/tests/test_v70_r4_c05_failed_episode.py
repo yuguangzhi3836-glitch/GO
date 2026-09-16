@@ -55,3 +55,22 @@ def test_failed_decision_without_episode_identity_is_rejected():
             oid, "FAILED", "isolated://unbound-failure", "ops"
         )
     assert svc.get(owner, oid) == before
+
+
+def test_unknown_episode_reference_cannot_be_reused_on_same_order():
+    svc, owner, oid = booked('RIDE')
+    reference = 'isolated://reused-episode'
+    svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', reference, 'ops')
+    svc.admin_external_state(oid, 'CONFIRMED', 'isolated://confirm', 'ops', reference)
+    before = svc.get(owner, oid)
+    with pytest.raises(ValueError, match='RIDE_UNKNOWN_EPISODE_REFERENCE_REUSED'):
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', reference, 'ops')
+    assert svc.get(owner, oid) == before
+
+
+def test_same_episode_reference_is_allowed_for_different_orders():
+    first, _, first_id = booked('RIDE')
+    second, _, second_id = booked('RIDE')
+    reference = 'isolated://supplier-correlation'
+    assert first.admin_external_state(first_id, 'UNKNOWN_EXTERNAL_STATE', reference, 'ops')['status'] == 'UNKNOWN_EXTERNAL_STATE'
+    assert second.admin_external_state(second_id, 'UNKNOWN_EXTERNAL_STATE', reference, 'ops')['status'] == 'UNKNOWN_EXTERNAL_STATE'
