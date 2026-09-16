@@ -79,7 +79,7 @@ class JourneyService:
  def _cursor_scope(self, account_id, normalized):
   return hashlib.sha256(f"{account_id}\0{normalized}".encode()).hexdigest()
  def _encode_cursor(self, account_id, normalized, row):
-  value={"v":1,"scope":self._cursor_scope(account_id,normalized),"starts_at":row.starts_at,"created_at":row.created_at.isoformat(),"journey_id":row.journey_id}
+  value={"v":1,"scope":self._cursor_scope(account_id,normalized),"starts_at":row.starts_at,"created_at":(row.created_at if row.created_at.tzinfo is not None else row.created_at.replace(tzinfo=timezone.utc)).isoformat(),"journey_id":row.journey_id}
   raw=json.dumps(value,sort_keys=True,separators=(",",":")).encode()
   sig=hmac.new(settings.jwt_signing_key.encode(),raw,hashlib.sha256).digest()
   return base64.urlsafe_b64encode(raw+sig).decode().rstrip("=")
@@ -93,7 +93,7 @@ class JourneyService:
    value=json.loads(raw)
    if value.get("v")!=1 or value.get("scope")!=self._cursor_scope(account_id,normalized): raise ValueError
    created_at=datetime.fromisoformat(value["created_at"])
-   if created_at.tzinfo is None: raise ValueError
+   if created_at.tzinfo is None: created_at=created_at.replace(tzinfo=timezone.utc)
    return (value.get("starts_at") or "\uffff",created_at,value["journey_id"])
   except (ValueError,TypeError,KeyError,json.JSONDecodeError):
    raise ValueError("JOURNEY_CURSOR_INVALID") from None
