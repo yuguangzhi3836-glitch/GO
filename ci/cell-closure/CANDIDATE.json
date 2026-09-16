@@ -1,27 +1,33 @@
 {
-  "schema": "go.v70.cell-closure.rebind.v2",
-  "product_candidate_commit": "cb1181bf40b0e24f55ef095d8f1ee8857bdd6517",
-  "gate_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "baseline_commit": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
-  "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
-  "source_files": 1365,
-  "source_tree_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
+  "schema": "go.v70.cell-closure.task-bound.v3",
+  "product_candidate_commit": "dbd5fbbccc50d39636f7becb117ac58ce2c89c23",
+  "gate_parent_commit": "c5643d6319db3b3e8eafa762fb6d2a98028b2101",
+  "baseline_commit": "dcb68a652429aa01e8428ce9f582e4bab6a6175e",
+  "application_git_tree": "615771589dd17930b417633fff75d920074e433a",
+  "source_files": 1366,
+  "source_tree_sha256": "920aaf3365f1638e0cb7a9ddd462b5cf67fe086ecf885f88acd414cb49baab34",
   "inherited_candidate": {
     "path": "ci/cell-closure/CANDIDATE_INHERITED_85FB.json",
     "git_blob": "b0801c355a1d32c7c888caa41c5bf81208b46da3",
     "policy": "preserve prior scoped Cell evidence; no redevelopment"
   },
   "approved_integration_delta": [
-    "application/src/go_hotel/db/models.py",
-    "application/alembic/versions/0134_flight_status_width.py",
-    "application/tests/test_depth25_migration_history.py",
-    "application/tests/test_parent_implementation_code_review_debt_closure.py"
+    "application/src/go_hotel/api/routes/mobility.py",
+    "application/src/go_hotel/mobility/ride/recovery_evidence.py",
+    "application/src/go_hotel/mobility/ride/service.py",
+    "application/src/go_hotel/mobility/service.py",
+    "application/tests/test_rc20_2_all_b_to_a.py",
+    "application/tests/test_v70_r3_c05_current_unknown_episode.py",
+    "application/tests/test_v70_round2_c05_recovery_fulfillment.py"
   ],
   "migration_head": "0134_flight_status_width",
-  "retention_rebind": "PASS_RUN_34825183779",
+  "retention_rebind": "TASK_BOUND_V70-R3-C05-01",
   "hong_kong": "NOT_ACCESSED",
   "production": "HOLD",
   "full_release": "HOLD",
   "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "historical_pass_transferred": false
+  "historical_pass_transferred": false,
+  "task_id": "V70-R3-C05-01",
+  "cell": "C05",
+  "hk_deploy": "HOLD"
 }
