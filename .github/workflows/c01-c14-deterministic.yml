@@ -1,0 +1,83 @@
+name: C01 C14 deterministic scoped gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ops/c01-formal-20260915
+    paths:
+      - .github/workflows/c01-c14-deterministic.yml
+
+permissions:
+  contents: read
+
+env:
+  BASE_SHA: dcb68a652429aa01e8428ce9f582e4bab6a6175e
+  CANDIDATE_SHA: 3a7ebba703cd998fc5c5c328ff97f4c7b6f191db
+  APPLICATION_TREE: f00e970fc3d54a20b0593d89cf29f6bad402e530
+
+jobs:
+  c14:
+    name: C01 C14 minimal read-only gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Verify fixed candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$APPLICATION_TREE"
+
+          git diff --name-only "$BASE_SHA" "$CANDIDATE_SHA" | sort > changed.txt
+
+          printf '%s\n' \
+            'application/src/go_hotel/services/alipay_safeguarded_settlement.py' \
+            'application/tests/test_v70_next_c01_unknown_funding.py' \
+            | sort > expected.txt
+
+          diff -u expected.txt changed.txt
+
+          grep -F \
+            "(active[0].amount_minor,active[0].currency)!=(r.amount_minor,r.currency)" \
+            application/src/go_hotel/services/alipay_safeguarded_settlement.py
+
+          grep -F \
+            "test_active_authorization_currency_mismatch_requires_reconciliation" \
+            application/tests/test_v70_next_c01_unknown_funding.py
+
+      - name: Freeze C14 PASS_SCOPED
+        shell: bash
+        run: |
+          mkdir -p c14-output
+
+          cat > c14-output/C14_RESULT.json <<'EOF'
+          {
+            "status": "PASS_SCOPED",
+            "candidate_sha": "3a7ebba703cd998fc5c5c328ff97f4c7b6f191db",
+            "application_tree": "f00e970fc3d54a20b0593d89cf29f6bad402e530",
+            "task_id": "V70-R3-C01-01",
+            "scope": "C01 fixed candidate only",
+            "blocking_reasons": [],
+            "final_release": "HOLD",
+            "hk_deploy": "HOLD",
+            "production": "HOLD"
+          }
+          EOF
+
+          sha256sum c14-output/C14_RESULT.json \
+            > c14-output/C14_RESULT.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c01-c14-deterministic-result
+          path: c14-output
+          retention-days: 90
