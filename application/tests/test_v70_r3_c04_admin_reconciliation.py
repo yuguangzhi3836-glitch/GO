@@ -57,12 +57,19 @@ def test_admin_rental_reconciliation_presents_findings_without_writes_or_repair(
         'refund_id': refund_id,
         'next_review_action': diagnosis['next_action'],
         'confirmed_movement_ids': sorted(diagnosis['confirmed_movement_ids']),
+        'evidence_observed_at': diagnosis['evidence_observed_at'],
         'read_only': True,
     }
     # Re-reading the same diagnosis yields the same handoff identity and does
     # not manufacture an acknowledgement or mutate business state.
     repeated = ops.rental_refund_reconciliation(order_id, refund_id, p=None)['data']
     assert repeated['presentation']['case'] == case
+    observed = case['evidence_observed_at']
+    assert observed['order_updated_at']
+    assert observed['refund_created_at']
+    assert [item['money_movement_id'] for item in observed['confirmed_movements']] == sorted(
+        diagnosis['confirmed_movement_ids']
+    )
     assert service.get(owner, order_id) == before
     assert presentation['read_only'] is True
     assert presentation['automatic_repair'] is False
