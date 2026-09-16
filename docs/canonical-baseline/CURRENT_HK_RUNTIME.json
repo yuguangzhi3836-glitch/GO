@@ -44,8 +44,9 @@
 
   "image": {
     "image_tag": "go-hotel:depth48-runtime-6d0fd905",
-    "image_config_id": "sha256:57beafa250f42eb1319ae561e0b79f432bb80d7171592392303a31446cd8ac6c",
+    "image_config_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132",
     "image_id_short": "1c9598d699c2",
+    "image_config_id_note": "Corrected 2026-09-16. This field carries the running image identity, i.e. what `docker inspect <container>.Image` reports for the eight business services, and it is what the Control State projector and the Deploy Readiness evaluator compare against the image a signed VERIFY proves. It previously carried sha256:57beafa2..., which is not an image on the host (`docker image inspect` -> No such image) and appears in no Task or Evidence record on the control bus. The short id below was already correct and never disagreed with the live image.",
     "base_image": "python:3.12-slim",
     "startup": "uvicorn go_hotel.main:app --host 0.0.0.0 --port 8000"
   },

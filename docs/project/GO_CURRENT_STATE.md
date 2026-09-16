@@ -44,7 +44,7 @@ Merged into canonical main since the previous context checkpoint (`286e294d`, 20
 | Environment | HK-STAGING, host `i-j6ccs8t04f1p4d8pe69z` |
 | Active business runtime generation | `DEPTH48`, cut over 2026-09-13 |
 | Machine-readable pointer | [`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](../canonical-baseline/CURRENT_HK_RUNTIME.json) |
-| Image | `go-hotel:depth48-runtime-6d0fd905` (`sha256:57beafa250f42eb1319ae561e0b79f432bb80d7171592392303a31446cd8ac6c`) |
+| Image | `go-hotel:depth48-runtime-6d0fd905` (`sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132`) |
 | Deployed runtime application tree | `3025b2b6b36ea9211da561a4631f304216de9d90` (1325 files) |
 | Live database revision | `0133_flight_change_plan` (PostgreSQL 18.4, 551 tables) |
 | Services | `api` + `outbox` / `recovery` / `reconciliation` / `judgment` / `mobile-engagement` / `mobile-push` / `mobile-push-receipt` workers |

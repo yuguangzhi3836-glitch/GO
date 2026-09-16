@@ -176,3 +176,50 @@ ROLLBACK cp -p the two .before files back, and restore nothing else: the profile
          contract, the contracts and the installed.json record of the state component
          are all untouched by this change.
 ```
+
+## 2026-09-16 — TD-J evidence workspace fix installed on HK-STAGING-01
+
+```text
+WHY      One `run_once` pass published every Task it claimed, and every publication
+         cloned the evidence repository into a fixed `work/<dirname>`. `git clone`
+         refuses a destination that already holds a work tree, so the second
+         publication of a pass was refused as GITHUB_TRANSPORT_REJECT at stage
+         evidence_publish — although its Task had executed and succeeded. On
+         2026-09-16T05:02:20Z a fresh, successful VERIFY lost its Evidence that way:
+         `go-boss-health-…` sorts before `go-boss-request-verify-…`, so the liveness
+         record of the same pass was published first.
+WHAT     `push_evidence` now publishes from a workspace derived from the record's own
+         identity (a hash of task_id and nonce, so no Task-supplied string becomes a
+         path component). One pass can publish any number of records. What is
+         published is unchanged: repository, branch, `evidence/<task_id>-<nonce>.json`,
+         payload, signature, signer, Task ordering, the ledger and the one-attempt rule.
+SOURCE   commit 3819b55a954290677e8a7e24f8352be369e7e7a2, file
+         control-plane/boss-test-pr-live-integration-v1/hk-staging/hk_agent/transport.py
+         extracted with `git cat-file blob` and sha256-verified three times (local,
+         uploaded, staged)
+FILES    /opt/go-hk-agent-rebuilt/hk_agent/transport.py
+         6f329b2eae7bc627229002e998cf17ee9d95b2e1fb6fc7cb22a508b52ad5fbe0  (30908 B)
+      -> 340da98f95acdb0c212aa116681da8d8344c6da306e44dfcf332c67ee1957de8  (32155 B)
+         root:root 0644
+METHOD   staged inside the target directory, sha256 verified, py_compile with
+         PYTHONPYCACHEPREFIX outside the agent tree, atomic rename, then
+         `__pycache__/transport.*.pyc` removed so no cached bytecode can shadow it.
+         No restart: the agent is a oneshot started per timer tick as a fresh process.
+BACKUP   /var/backups/HK-CHANGE-20260916T070702Z-tdj-evidence-workspace/
+         {transport.py.before, state.tsv, installed.tsv}
+         the backup's own sha256 was recomputed and equals the pre-hash
+PROOF    post-install sha256 equals the approved value; owner/mode root:root 0644;
+         import smoke unchanged (VERSION 0.5.7-rebuilt, 13 closed reason codes, the
+         same 5 failure kinds, the same 9 stage mappings, the same 6-action allowlist)
+         and `_publish_workspace` now present;
+         go-hk-agent.timer active/enabled, Result=success, NRestarts=0;
+         three further ticks completed with no failure and no import/runtime error.
+         The fix was then proved live: the next VERIFY (see the round record in
+         docs/control-plane/hk-staging/) published its signed SUCCESS Evidence on the
+         first attempt — commit abf715029bee0643da02f9d197ddb4f05930156b.
+ROLLBACK cp -p /var/backups/HK-CHANGE-20260916T070702Z-tdj-evidence-workspace/transport.py.before \
+            /opt/go-hk-agent-rebuilt/hk_agent/transport.py
+         sha256sum must read 6f329b2e…, then remove __pycache__/transport.*.pyc
+         and observe the next timer tick. One file; no Task, ledger or Evidence is
+         touched, and nothing on the Command Center host is involved.
+```

@@ -5,7 +5,7 @@
 >
 > 读取顺序建议：本文件 → `docs/project/CC_V1_SCOPE_20260916.md`（范围权威）→ 才动手。
 
-> **2026-09-16 修订说明（补 TD-J，未改写其余段落）**：本文件 01:26 CST 的读数之后，以下事实已被
+> **2026-09-16 修订说明（TD-J 安装 / B3 与 B3-R 清掉 / NEXT_ACTION 替换；§4 §6 §9 §11 已就地更新）**：本文件 01:26 CST 的读数之后，以下事实已被
 > 后续工作取代；读时以更晚的权威件为准，**不要按本文的旧描述行动**：
 >
 > * B2（没有 RELEASE_CANDIDATE_V1 准入 Gate）**已落地** ——
@@ -17,8 +17,16 @@
 > * VERIFY 授权基线已从退役的 R3.1.5 运行时迁到 DEPTH48（collector `0133_flight_change_plan`、
 >   deployctl `b9aea31e…`、CC baseline `76bab571…`）——
 >   `docs/control-plane/hk-staging/VERIFY_BASELINE_MIGRATION_INSTALLED_20260916.md`。
-> * TD-J：**仓库修复已进 PR #109，live 未安装**（见 §9）；B3 因此仍未清。
->   本轮报告 + 安装方案（未执行）：`docs/control-plane/hk-staging/TDJ_EVIDENCE_WORKSPACE_FIX_20260916.md`
+> * TD-J：**仓库修复已进 PR #109，且已于 2026-09-16T07:07:18Z 单文件安装到 HK-STAGING-01**
+>   （live `transport.py` = `340da98f…`，备份 `/var/backups/HK-CHANGE-20260916T070702Z-tdj-evidence-workspace/`）；
+>   随后一张 fresh bounded VERIFY（Request PR #28 / Task `go-boss-request-verify-20260916T073128Z-adaf1e8b9da4`）
+>   的签名 SUCCESS Evidence **真的发布成功**（commit `abf71502…`）——TD-J 的 live 证明。
+> * **B3 CLEARED**；同时暴露并修掉 B3-R（`CURRENT_HK_RUNTIME.json` 的 `image.image_config_id`
+>   曾指向一个主机上不存在的镜像 `57beafa2…`，已纠正为 live 镜像身份 `1c9598d6…`）。
+> * readiness 现为 `DEPLOY_READY=UNKNOWN`（无 mandatory FAIL，九门因缺 plan bundle 为 UNKNOWN）——
+>   **不是 YES，也不是旧的 NO**。
+>   本轮全部事实：`docs/control-plane/hk-staging/TDJ_B3R_AND_FRESH_VERIFY_20260916.md`
+>   （TD-J 的安装方案原文：`docs/control-plane/hk-staging/TDJ_EVIDENCE_WORKSPACE_FIX_20260916.md`）
 
 ---
 
@@ -92,10 +100,10 @@ CURRENT_ISSUE         #103
 
 #97  CLOSED  失败闭环
      impl: contracts/failure_evidence_v1.schema.json + transport.py 失败路径 + 投影 EXECUTION_FAILED
-     live: hk_agent/transport.py 6f329b2eae7bc627229002e998cf17ee9d95b2e1fb6fc7cb22a508b52ad5fbe0
-     repo: hk_agent/transport.py 340da98f95acdb0c212aa116681da8d8344c6da306e44dfcf332c67ee1957de8
-           （TD-J 修复，PR #109 / 3819b55a，**未安装**：live 仍是上面那版）
+     live: hk_agent/transport.py 340da98f95acdb0c212aa116681da8d8344c6da306e44dfcf332c67ee1957de8
+           （TD-J 修复，2026-09-16T07:07:18Z 单文件安装；上一版 6f329b2e… 已备份）
      proof: REAL — TEST_PR 受控失败 → 签名 FAILED Evidence → 投影 EXECUTION_FAILED / retry_permitted=false
+            + 2026-09-16 该程序在同一趟 pass 内成功发布 VERIFY 的 SUCCESS Evidence（此前会失败）
      gap: 无
 
 #98  CLOSED  HK Agent liveness
@@ -229,9 +237,8 @@ Evidence signer       /etc/go-hk-agent/keys/evidence-signing.pem
                       pub fingerprint SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw
 installed agent files hk_agent/test_pr.py   654403023d599b78ec2a61776ab133ec0dc46d069e61fd7b3717d400eaedc2ac
                           （= Builder V2：executor_version test-pr-v2）
-                      hk_agent/transport.py 6f329b2eae7bc627229002e998cf17ee9d95b2e1fb6fc7cb22a508b52ad5fbe0
-                          （= #97 失败闭环版本）
-                          ⚠ 仓里已有一个**未安装**的替代版本 340da98f…（TD-J 修复，见 §9）
+                      hk_agent/transport.py 340da98f95acdb0c212aa116681da8d8344c6da306e44dfcf332c67ee1957de8
+                          （= #97 失败闭环 + TD-J 单工作区发布修复：2026-09-16T07:07:18Z 安装）
 builder dockerfile    /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2
                       v1 文件仍在原处但已无引用
 business containers   8 × go-822-staging-{api,recovery-worker,outbox-worker,
@@ -321,14 +328,25 @@ B2  没有 RELEASE_CANDIDATE_V1 准入 Gate
     ⇒ 与 Scope Reset 的「CC defines what is deployable / 不合规范就 REJECT」直接冲突
     见 §10
 
-B3  没有新鲜的 VERIFY
-    readiness 的 VERIFY 门为 FAIL（最近一次真实 VERIFY 已超出 86400s 窗口）
-    根因已定位并复现 = TD-J（见下方技术债）：同一趟 run_once 的第二条 Evidence 没有 clone 目标
-    2026-09-16T05:02:20Z 那张 fresh VERIFY 的**执行器层面已通过**（deployctl 只返回 SUCCESS/VERIFY_OK），
-    失败在执行之后：kind=EVIDENCE_PUBLISH_FAILED / stage=evidence_publish /
-    reason_code=GITHUB_TRANSPORT_REJECT
-    ⇒ 没有签名 Evidence 就不算清掉，门仍 FAIL
-    仓库修复已进 PR #109（transport.py 340da98f…），但 **live 未安装、VERIFY 未重发**
+B3  **CLEARED**（2026-09-16）
+    先前：readiness 的 VERIFY 门 FAIL —— 最近一次真实 VERIFY 超出 86400s 窗口，
+    且 2026-09-16T05:02:20Z 那张 fresh VERIFY 的成功 Evidence 被 TD-J 撞掉（EVIDENCE_PUBLISH_FAILED /
+    stage=evidence_publish / GITHUB_TRANSPORT_REJECT）
+    现在：TD-J 修复已装到 live，随后一张 fresh VERIFY 的签名 SUCCESS Evidence 真的发布成功
+    （Task `go-boss-request-verify-20260916T073128Z-adaf1e8b9da4`，Evidence commit `abf71502…`，
+    status SUCCESS / executor VERIFY_OK / 签名与镜像绑定均验证通过）
+    robustness：同批暴露的 B3-R（指针声明 runtime ≠ 已证明 runtime）已修，见下
+
+B3-R **CLEARED**（2026-09-16，B3 的孪生阻塞，先前被 freshness 掩盖）
+    `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` 的 `image.image_config_id` 曾写
+    `sha256:57beafa2…`：该镜像在主机上不存在（`docker image inspect` → No such image），
+    在 go-control-evidence / go-control-tasks 里零命中，而同一个 block 的 `image_id_short`
+    与签名 VERIFY Evidence 都指向 live 镜像 `sha256:1c9598d6…`
+    ⇒ 已把该字段纠正为 `1c9598d6…`（并同步 `docs/project/GO_CURRENT_STATE.md`）；
+    **没有**降低 VERIFY gate、没有改比较口径、没有删 drift 检测
+    证据：离线投影 `runtime_verification_state=MATCH` / `image_relation=MATCH`；
+    readiness `VERIFY=PASS`；负向测试 `test_drift_when_declared_and_proven_images_disagree` 仍 PASS
+    历史投影 `PROJECTION_2026091{4,5}` 里当时记录的 DIFFER **保持原样**（当时确实不一致）
 
 B4  没有可用的部署计划 bundle（plan + approval + canary/preflight task+evidence）
     ⇒ PACKAGE_BINDING / DEPLOYMENT_PLAN / CURRENT_RUNTIME / CANARY / RELEASE_GATES /
@@ -354,8 +372,10 @@ TD-J  一趟 run_once 只能成功发布一条 Evidence（同轮 clone 目标冲
         `go-boss-health-…` 排在 `go-boss-request-verify-…` 之前 ⇒ 同一趟里第二条发布必然撞已存在目录
       · 后果：B3。VERIFY 执行器已 SUCCESS，却只有失败记录能发布（失败走 work/evidence-failure）
       · repo 修复：每次发布使用由记录身份派生的独立工作区 → transport.py 340da98f…（PR #109 / 3819b55a）
-      · repository fix = IMPLEMENTED / TESTED；live install = **NOT_INSTALLED**；fresh VERIFY = **NOT_RETRIED**
-      · 同类未修站点（记录在案，本轮不动）：prepare_rollback_handoff 仍 clone 到固定
+      · repository fix = IMPLEMENTED / TESTED / **INSTALLED（2026-09-16T07:07:18Z）**
+      · live 证明：TD-J 安装后的第一张 fresh VERIFY 在同一趟 pass 内成功发布 SUCCESS Evidence
+        （Task `go-boss-request-verify-20260916T073128Z-adaf1e8b9da4` / commit `abf71502…`）
+      · 同类未修站点（记录在案，仍未动）：prepare_rollback_handoff 仍 clone 到固定
         work/rollback-source-evidence；当轮 CC 通道未启用 ROLLBACK，故当前不可达
 ```
 
@@ -395,11 +415,17 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 
 ```text
 NEXT_ACTION=
-Implement/finalize RELEASE_CANDIDATE_V1 admission Gate,
-then select one real compliant product candidate and drive it through real TEST_PR.
+为已 admission 且 TEST_PR PASS 的同一个 canonical RELEASE_CANDIDATE_V1 构建 B4 deployment plan bundle，
+补齐 PACKAGE_BINDING / DEPLOYMENT_PLAN / HUMAN_APPROVAL / CURRENT_RUNTIME /
+LIVE_SWITCH / LIVE_SWITCH_PROVENANCE / CANARY / RELEASE_GATES / BRIDGE_ACCEPTANCE。
+不得执行真实 DEPLOY；先把 readiness 推到 DEPLOY_READY=YES 后停止，等待当次 Human Approval。
 ```
 
-（本会话不执行。次会话动手前先读 `docs/project/CC_V1_SCOPE_20260916.md`，并遵守 §8 的 DO_NOT_REOPEN。）
+（2026-09-16 更新：旧的 NEXT_ACTION「再发一张 fresh bounded VERIFY Request」**已失效** ——
+新鲜的签名 VERIFY_OK Evidence 已经存在且在窗口内，读取它的门已 PASS。
+当前 readiness = `DEPLOY_READY=UNKNOWN`，无 mandatory FAIL，九门因缺 plan bundle 为 UNKNOWN。）
+
+（次会话动手前先读 `docs/project/CC_V1_SCOPE_20260916.md`，并遵守 §8 的 DO_NOT_REOPEN。）
 
 ---
 
