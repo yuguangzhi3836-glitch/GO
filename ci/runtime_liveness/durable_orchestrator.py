@@ -335,6 +335,18 @@ class DurableOrchestrator:
                 "challenge": challenge, "generated_at": stamp(observed),
                 "expected_executable_cells": expected, "executors": executors}
 
+    def readiness(self) -> dict[str, Any]:
+        try:
+            with self._connect() as connection:
+                identity = connection.execute(
+                    "SELECT value FROM metadata WHERE key = 'orchestrator_id'"
+                ).fetchone()
+                connection.execute("SELECT COUNT(*) FROM tasks").fetchone()
+        except (OSError, sqlite3.Error) as error:
+            return {"status": "not_ready", "database": "unavailable", "error": str(error)}
+        return {"status": "ready", "database": "available",
+                "orchestrator_id": identity[0] if identity else None}
+
 
 class LeaseReaper(threading.Thread):
     """Continuously return expired active leases to the durable queue."""
@@ -422,6 +434,17 @@ def make_handler(store: DurableOrchestrator, token: str,
                 self._reply(200, result)
             except (OrchestratorError, TypeError, ValueError, json.JSONDecodeError) as error:
                 self._reply(409, {"error": str(error)})
+
+        def do_GET(self) -> None:
+            path = parse.urlparse(self.path).path
+            if path == "/healthz":
+                self._reply(200, {"status": "ok"})
+                return
+            if path == "/readyz":
+                result = store.readiness()
+                self._reply(200 if result["status"] == "ready" else 503, result)
+                return
+            self._reply(404, {"error": "not found"})
 
         def log_message(self, *args: Any) -> None:
             pass
