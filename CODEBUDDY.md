@@ -75,7 +75,7 @@ Examples:
 - read the correct project document;
 - fix a clearly broken local configuration;
 - generate a sensible commit message;
-- create a Draft PR after a completed bounded development task.
+- decide whether a completed stage should be pushed when the push boundary below is satisfied.
 
 Ask / stop only when the ambiguity materially affects:
 
@@ -152,7 +152,9 @@ For ordinary execution tasks, prioritize:
 
 ## 4. Default Git workflow for bounded development tasks
 
-Unless Eason explicitly says otherwise, a normal product-development subtask should end as a **Draft PR**, not as an uncommitted local patch.
+The default is **local-first development with staged remote publication**.
+
+GitHub remains the durable review trail for planned permanent changes, but GitHub Actions are **not** the default development/debugging loop. WorkBuddy should do normal iteration and testing locally, and should avoid unnecessary remote pushes that merely re-run CI on intermediate states.
 
 ### Before changing anything
 
@@ -173,36 +175,81 @@ Never assume `main` is the latest product source merely because it is the defaul
 
 For a new bounded product task:
 
-1. use a dedicated branch or Worktree;
+1. use a dedicated branch or Worktree when appropriate;
 2. do not develop directly on `main`;
 3. do not silently reuse an unrelated dirty branch;
 4. preserve unrelated local changes.
 
-Use clear branch names tied to the task.
+For an already-open long-lived integration PR or workstream, continue on its intended branch rather than creating a new PR for every tiny sub-step.
 
 ### During implementation
 
 - inspect relevant existing code first;
 - make the smallest coherent change that closes the task;
 - preserve already verified fixes from other branches/parents;
-- run targeted tests during iteration;
-- run the appropriate regression gate before finishing;
-- inspect `git diff` before commit.
+- run targeted tests locally during iteration;
+- run the appropriate local regression gate before a stage is considered complete;
+- inspect `git diff` before commit;
+- create local commits whenever useful for checkpointing or rollback.
 
-Do not rewrite unrelated code merely to make the diff look cleaner.
+A local commit does **not** imply an immediate push.
 
-### Task completion default
+Do not use GitHub Actions as a remote debugging machine when the same test can reasonably run on the WorkBuddy workstation.
 
-When the bounded task is complete and tests are acceptable:
+### Push / PR boundary
 
-1. `git add` the intended files;
-2. create a clear commit;
-3. push the task branch to `origin`;
-4. create a **Draft Pull Request**;
-5. stop before merge;
-6. report the PR to Eason.
+Do **not** automatically push after every small fix, local commit, test adjustment, documentation correction, or intermediate sub-step.
 
-Do **not** wait for Eason to separately remind you “记得推 GitHub / 开 PR” unless the task explicitly says local-only.
+Push to `origin` only when at least one of these is true:
+
+1. Eason explicitly asks for a push, PR, or remote checkpoint;
+2. a coherent Issue / milestone / bounded stage is complete and ready for independent review;
+3. remote GitHub-only validation is materially required and cannot be reproduced locally;
+4. the exact remote commit identity is required for Release Candidate, artifact, Evidence, deployment, rollback, or final acceptance binding;
+5. the current task is complete and there is no existing integration PR/workstream intended to accumulate additional local work.
+
+When a push boundary is reached:
+
+1. ensure intended local tests/regressions are acceptable;
+2. `git add` the intended files;
+3. create or reuse a clear commit history;
+4. push the intended branch once for the completed stage;
+5. create or update the appropriate Draft Pull Request;
+6. stop before merge;
+7. report the PR and any CI that actually ran to Eason.
+
+For long-lived integration work such as the Command Center V1 finalization PR, prefer:
+
+```text
+local change -> local test -> local commit
+local change -> local test -> local commit
+local change -> local regression -> stage complete
+                                      |
+                                      v
+                                  one push
+                                      |
+                                      v
+                           GitHub CI / review checkpoint
+```
+
+Do not push merely to make CI repeat tests that already passed locally when no review, remote-only proof, candidate binding, or stage boundary requires it.
+
+### GitHub Actions cost discipline
+
+GitHub Actions consume shared/paid runner minutes. Treat remote CI as an independent acceptance/checkpoint layer, not as the normal edit-test-fix loop.
+
+Prefer full or expensive remote CI at meaningful boundaries such as:
+
+- Issue / milestone closeout;
+- Release Candidate freeze;
+- merge readiness;
+- deployment / rollback candidate validation;
+- final E2E / delivery acceptance;
+- explicit Eason request.
+
+Documentation-only or trivial changes should not trigger remote CI intentionally unless a repository rule genuinely requires it.
+
+Do not weaken, bypass, or falsify an existing required gate merely to save runner minutes. If a required remote gate exists, report that cost/requirement rather than pretending local testing is equivalent.
 
 ### Never do automatically
 
@@ -330,11 +377,9 @@ required to read `D:\Code\Workbuddy\CCV1-*.md` to recover project state.
 ### During a long task
 
 Intermediate progress may use short Chinese notes. Do not turn one status or one
-result into its own fenced code block; a temporary block is justified only when
-Eason must copy a command. The final reply still follows the three-part format.
+result into its own fenced code block; a temporary block is justified only when Eason must copy a command. The final reply still follows the three-part format.
 
-If something failed, say exactly what failed and whether the failure is code, test
-infrastructure, environment, external dependency, or authority-related.
+If something failed, say exactly what failed and whether the failure is code, test infrastructure, environment, external dependency, or authority-related.
 
 ## 6. Product-lineage discipline
 
@@ -380,7 +425,7 @@ Avoid these behaviors:
 - treating old documentation as authoritative after newer repository evidence contradicts it;
 - hiding a failed test behind a generally successful summary;
 - calling a candidate “canonical” without evidence;
-- completing code but leaving it uncommitted/unpushed without explaining why;
+- automatically pushing every small local commit when no remote checkpoint is needed;
 - automatically merging a PR just because tests pass;
 - overexplaining simple steps;
 - refusing to make a reasonable reversible decision merely because multiple minor options exist.
@@ -395,4 +440,5 @@ Act like a capable technical teammate working under Eason's direction:
 - comfortable making routine decisions;
 - explicit when evidence is incomplete;
 - strict about Git lineage and deployment authority;
+- cost-aware about remote CI without weakening required acceptance gates;
 - focused on finishing a task into a reviewable, reproducible state.
