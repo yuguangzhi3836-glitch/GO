@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""Additional local receipt admission check; does not replace ledger validation.
+"""Admit source-bound execution receipts without claiming authentication.
 
-Checks the claimed agent ACK/start and bound execution output. These strings
-are evidence metadata, not cryptographic worker authentication or liveness.
-No transport, server request, state mutation or automatic RUNNING transition.
+The validator proves record binding and time-bounded heartbeat freshness only.
+It does not authenticate a worker identity or prove process liveness.
 """
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -16,14 +15,34 @@ import re
 
 SOURCE_ANCHOR = "fef9c748adb77d37ba5d4dc4fa4662eb668303a1"
 PARENT_CANDIDATE = "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b"
+DEFAULT_MAX_HEARTBEAT_AGE_SECONDS = 300
 
 
-def verify(receipt, evidence_root, *, expected_cell, expected_task, expected_agent):
+def _instant(value, name, errors):
+    try:
+        if not isinstance(value, str):
+            raise ValueError("missing")
+        stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if stamp.tzinfo is None:
+            raise ValueError("timezone required")
+        return stamp
+    except (TypeError, ValueError):
+        errors.append(f"{name} requires an actual timezone-qualified timestamp")
+        return None
+
+
+def verify(receipt, evidence_root, *, expected_cell, expected_task, expected_agent,
+           observed_at=None, max_heartbeat_age_seconds=DEFAULT_MAX_HEARTBEAT_AGE_SECONDS):
     errors = []
     result = {"gate": "HOLD", "errors": errors, "authenticated_worker_identity": False,
-              "live_worker_liveness_verified": False, "meaning": "Local ACK/start/output record admission only"}
+              "live_worker_liveness_verified": False, "heartbeat_fresh": False,
+              "stale_running": False,
+              "meaning": "Local source-bound ACK/start/heartbeat record admission only"}
     if not isinstance(receipt, dict):
         errors.append("receipt must be an object")
+        return result
+    if isinstance(max_heartbeat_age_seconds, bool) or not isinstance(max_heartbeat_age_seconds, int) or max_heartbeat_age_seconds <= 0:
+        errors.append("max_heartbeat_age_seconds must be a positive integer")
         return result
     identities = {"cell_id": expected_cell, "task_id": expected_task, "agent": expected_agent,
                   "source_anchor": SOURCE_ANCHOR, "parent_candidate_commit": PARENT_CANDIDATE}
@@ -32,20 +51,19 @@ def verify(receipt, evidence_root, *, expected_cell, expected_task, expected_age
             errors.append(f"{field} identity mismatch")
     if receipt.get("status") != "RUNNING":
         errors.append("receipt.status must explicitly be RUNNING; ASSIGNED is not an ACK/start")
-    times = {}
-    for name in ("acknowledged_at", "started_at", "observed_at"):
-        try:
-            value = receipt.get(name)
-            if not isinstance(value, str):
-                raise ValueError("missing")
-            stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
-            if stamp.tzinfo is None:
-                raise ValueError("timezone required")
-            times[name] = stamp
-        except ValueError:
-            errors.append(f"{name} requires an actual timezone-qualified timestamp")
-    if len(times) == 3 and not times["acknowledged_at"] <= times["started_at"] <= times["observed_at"]:
-        errors.append("acknowledged_at must precede started_at and observed_at")
+
+    times = {name: _instant(receipt.get(name), name, errors)
+             for name in ("acknowledged_at", "started_at", "heartbeat_at")}
+    observation = _instant(observed_at or datetime.now(timezone.utc).isoformat(), "observed_at", errors)
+    if all(times.values()) and observation:
+        if not times["acknowledged_at"] <= times["started_at"] <= times["heartbeat_at"] <= observation:
+            errors.append("timestamps must satisfy acknowledged_at <= started_at <= heartbeat_at <= observed_at")
+        elif observation - times["heartbeat_at"] > timedelta(seconds=max_heartbeat_age_seconds):
+            result["stale_running"] = True
+            errors.append("RUNNING heartbeat expired; receipt is stale and must not remain RUNNING")
+        else:
+            result["heartbeat_fresh"] = True
+
     evidence = receipt.get("execution_evidence")
     if not isinstance(evidence, list) or not evidence:
         errors.append("execution_evidence must contain bound process/tool output")
@@ -86,10 +104,14 @@ def main():
     parser.add_argument("--expected-cell", required=True)
     parser.add_argument("--expected-task", required=True)
     parser.add_argument("--expected-agent", required=True)
+    parser.add_argument("--observed-at")
+    parser.add_argument("--max-heartbeat-age-seconds", type=int, default=DEFAULT_MAX_HEARTBEAT_AGE_SECONDS)
     args = parser.parse_args()
     try:
         result = verify(json.loads(args.receipt.read_text()), args.evidence_root,
-                        expected_cell=args.expected_cell, expected_task=args.expected_task, expected_agent=args.expected_agent)
+                        expected_cell=args.expected_cell, expected_task=args.expected_task,
+                        expected_agent=args.expected_agent, observed_at=args.observed_at,
+                        max_heartbeat_age_seconds=args.max_heartbeat_age_seconds)
     except (OSError, ValueError, TypeError) as error:
         print(json.dumps({"gate": "HOLD", "errors": [str(error)]}))
         return 2
