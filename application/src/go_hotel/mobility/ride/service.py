@@ -132,8 +132,15 @@ class RideService:
             elif state == "FAILED":
                 if o.status != "UNKNOWN_EXTERNAL_STATE":
                     raise ValueError("MOBILITY_RECONCILIATION_NOT_REQUIRED")
+                # A terminal fleet decision must identify the current UNKNOWN
+                # episode just like CONFIRMED. Otherwise a delayed failure from
+                # an older episode could terminate a newer recovery attempt.
+                from go_hotel.mobility.ride.recovery_evidence import previous_phase
+                previous_phase(s, o, confirmation_episode_reference)
                 o.status = "FAILED"; kind = "RECONCILED_TO_FAILED"
-                payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference}
+                payload={"evidence_reference": evidence_reference, "actor": actor,
+                    "supplier_reference": o.supplier_reference,
+                    "confirmation_episode_reference": confirmation_episode_reference}
             else:
                 if o.status != "UNKNOWN_EXTERNAL_STATE":
                     raise ValueError("MOBILITY_RECONCILIATION_NOT_REQUIRED")
