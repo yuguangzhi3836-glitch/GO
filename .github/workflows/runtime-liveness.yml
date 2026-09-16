@@ -20,7 +20,26 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compile runtime liveness modules
-        run: python -m py_compile ci/runtime_liveness/validate_runtime_liveness.py ci/runtime_liveness/probe_external_orchestrator.py ci/runtime_liveness/durable_orchestrator.py
+        run: >-
+          python -m py_compile
+          ci/runtime_liveness/validate_runtime_liveness.py
+          ci/runtime_liveness/probe_external_orchestrator.py
+          ci/runtime_liveness/durable_orchestrator.py
+          ci/runtime_liveness/validate_orchestrator_config.py
+          ci/runtime_liveness/seed_ledger_tasks.py
+          ci/runtime_liveness/worker_launch_adapter.py
+          ci/runtime_liveness/process_acceptance.py
       - name: Run runtime liveness tests
         working-directory: ci/runtime_liveness
         run: python -m unittest -v test_runtime_liveness.py test_external_orchestrator_probe.py test_durable_orchestrator.py
+      - name: Run process-level durable orchestration acceptance
+        working-directory: ci/runtime_liveness
+        run: |
+          python process_acceptance.py --evidence-out process-evidence.json
+          sha256sum process-evidence.json
+      - name: Upload process evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-cell-orchestrator-process-evidence
+          path: ci/runtime_liveness/process-evidence.json
+          if-no-files-found: error
