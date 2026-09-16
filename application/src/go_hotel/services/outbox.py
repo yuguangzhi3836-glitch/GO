@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Protocol
 from uuid import uuid4
 import httpx
@@ -52,13 +52,16 @@ class OutboxWorker:
 
     @staticmethod
     def _database_now(session):
+        # SQLite CURRENT_TIMESTAMP is only second-precision. Newly staged rows
+        # carry microseconds, so using it directly can make fresh rows appear
+        # unavailable until the next wall-clock second. strftime('%f') keeps the
+        # database as the time authority while preserving sub-second ordering.
+        if session.get_bind().dialect.name == "sqlite":
+            value = session.scalar(select(func.strftime("%Y-%m-%d %H:%M:%f", "now")))
+            return datetime.fromisoformat(value) if value is not None else None
         value = session.scalar(select(func.current_timestamp()))
         if value is None:
             return value
-        # SQLite drops timezone information for DateTime(timezone=True); keep the
-        # comparison/storage representation native to the active database.
-        if session.get_bind().dialect.name == "sqlite":
-            return value.replace(tzinfo=None)
         return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
 
     def claim(self, limit: int | None = None) -> list[dict]:
@@ -68,7 +71,7 @@ class OutboxWorker:
             now = self._database_now(s)
             stale_before = now - timedelta(seconds=settings.outbox_lock_timeout_seconds)
             available_now = (
-                func.julianday(OutboxRow.available_at) <= func.julianday(func.current_timestamp())
+                func.julianday(OutboxRow.available_at) <= func.julianday(func.strftime("%Y-%m-%d %H:%M:%f", "now"))
                 if s.get_bind().dialect.name == "sqlite"
                 else OutboxRow.available_at <= func.current_timestamp()
             )
