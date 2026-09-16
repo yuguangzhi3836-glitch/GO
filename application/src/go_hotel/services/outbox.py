@@ -69,7 +69,7 @@ class OutboxWorker:
             stale_before = now - timedelta(seconds=settings.outbox_lock_timeout_seconds)
             stmt = (select(OutboxRow)
                 .where(
-                    OutboxRow.available_at <= now,
+                    OutboxRow.available_at <= func.current_timestamp(),
                     or_(
                         OutboxRow.status.in_(["PENDING", "RETRY"]),
                         (OutboxRow.status == "PROCESSING") & (OutboxRow.locked_at < stale_before),
