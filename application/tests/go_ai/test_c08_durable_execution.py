@@ -177,3 +177,61 @@ def test_unknown_provider_outcome_blocks_takeover_and_assessment_stays_read_only
         row = session.get(GoAIExecutionRow, "goai_c08_durable")
         assert row.owner_id == "go-ai-worker-a"
         assert row.fencing_token == 1
+
+
+@pytest.mark.parametrize(
+    ("checkpoint", "provider_outcome", "error"),
+    [
+        ({"plan_hash": "short", "completed_task_ids": [], "pending_task_ids": [], "replayable_result_refs": []},
+         "NOT_STARTED", "GO_AI_CHECKPOINT_PLAN_HASH_INVALID"),
+        ({"plan_hash": "d" * 64, "completed_task_ids": ["task_1", "task_1"], "pending_task_ids": [], "replayable_result_refs": []},
+         "NOT_STARTED", "GO_AI_CHECKPOINT_TASK_SET_INVALID"),
+        ({"plan_hash": "d" * 64, "completed_task_ids": ["task_1"], "pending_task_ids": ["task_1"], "replayable_result_refs": []},
+         "NOT_STARTED", "GO_AI_CHECKPOINT_TASK_SET_OVERLAP"),
+        ({"plan_hash": "d" * 64, "completed_task_ids": ["task_1"], "pending_task_ids": [], "replayable_result_refs": []},
+         "SUCCEEDED", "GO_AI_SUCCEEDED_RESULT_REFERENCE_REQUIRED"),
+    ],
+)
+def test_complete_checkpoint_rejects_unrecoverable_plan_shapes(
+    durable_service, checkpoint, provider_outcome, error
+):
+    service, factory, _ = durable_service
+    lease = service.claim_execution(
+        "goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=60,
+    )
+    with pytest.raises(ValueError, match=error):
+        service.save_execution_checkpoint(
+            "goai_c08_durable",
+            worker_id="go-ai-worker-a",
+            fencing_token=lease["fencing_token"],
+            checkpoint=checkpoint,
+            complete=True,
+            provider_outcome=provider_outcome,
+        )
+    with factory() as session:
+        row = session.get(GoAIExecutionRow, "goai_c08_durable")
+        assert row.checkpoint_complete is False
+        assert row.checkpoint_hash is None
+
+
+def test_succeeded_complete_checkpoint_requires_and_retains_result_reference(durable_service):
+    service, _, _ = durable_service
+    lease = service.claim_execution(
+        "goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=60,
+    )
+    saved = service.save_execution_checkpoint(
+        "goai_c08_durable",
+        worker_id="go-ai-worker-a",
+        fencing_token=lease["fencing_token"],
+        checkpoint={
+            "plan_hash": "e" * 64,
+            "completed_task_ids": ["task_1"],
+            "pending_task_ids": [],
+            "replayable_result_refs": ["result:task_1:sha256:" + "f" * 64],
+        },
+        complete=True,
+        provider_outcome="SUCCEEDED",
+    )
+    assert saved["checkpoint_complete"] is True
+    assert saved["provider_outcome"] == "SUCCEEDED"
+    assert saved["automatic_replay_started"] is False
