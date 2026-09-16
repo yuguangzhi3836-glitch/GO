@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v2",
-  "product_candidate_commit": "ecb76b22a6ce504e95004fbc819d673e88df07c8",
-  "application_git_tree": "95f945c4e80716febf0a30d33e8b4884f0c6d5b8",
+  "product_candidate_commit": "9950bde1def11b27ed137d7db02a3047befda4fa",
+  "application_git_tree": "9c83d92434301356228c1b79294fcd829d675ebf",
   "source_anchor_main": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
   "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
@@ -83,8 +83,8 @@
     },
     "src/go_hotel/services/alipay_safeguarded_settlement.py": {
       "mode": "100644",
-      "git_blob": "df03dc7a4f36626bbdee2599c6d223d32a1f489a",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+      "git_blob": "84f290f44bbea6564720c35f6e64aa2f92272910",
+      "reason": "minimal PR130 integration fix: validate changed hotel cash leg from current accepted fare-change funding root"
     },
     "tests/test_v70_next_c01_unknown_funding.py": {
       "mode": "100644",
@@ -170,6 +170,11 @@
       "mode": "100644",
       "git_blob": "d3f8c1b051aba1fee2c1453bffe5640963b2d61a",
       "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "tests/test_final_depth_terminal_hardening.py": {
+      "mode": "100644",
+      "git_blob": "4d17e5952ea1812e270f936cfba2e89cef15920d",
+      "reason": "TEST_ONLY: bind inherited ride recovery scenario to exact current UNKNOWN episode"
     }
   },
   "migration_head": "0136_merge_go_ai_journey",
