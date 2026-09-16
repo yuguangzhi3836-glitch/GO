@@ -63,7 +63,7 @@ jobs:
           set -euo pipefail
           {
             python -m alembic heads
-            test "$(python -m alembic heads | awk '{print $1}')" = "0137_hosted_money_unknown_episode"
+            test "$(python -m alembic heads | awk '{print $1}')" = "0137_hosted_unknown_episode"
             python -m alembic upgrade head
             python -m alembic current
             python -m alembic downgrade 0136_merge_go_ai_journey
@@ -87,7 +87,7 @@ jobs:
             application/src/go_hotel/services/hosted_money.py \
             application/src/go_hotel/api/routes/hosted_direct_booking.py \
             application/src/go_hotel/db/models.py \
-            application/alembic/versions/0137_hosted_money_unknown_episode.py \
+            application/alembic/versions/0137_hosted_unknown_episode.py \
             application/tests/test_v70_r4_c01_unknown_episode.py
           find "$EVIDENCE_DIR" -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum \
             | tee "$EVIDENCE_DIR/SHA256SUMS"

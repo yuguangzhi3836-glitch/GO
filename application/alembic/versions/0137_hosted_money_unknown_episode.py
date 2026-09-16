@@ -2,7 +2,7 @@
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0137_hosted_money_unknown_episode"
+revision = "0137_hosted_unknown_episode"
 down_revision = "0136_merge_go_ai_journey"
 branch_labels = None
 depends_on = None
