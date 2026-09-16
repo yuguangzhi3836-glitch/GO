@@ -1,0 +1,22 @@
+name: C04 read-only reconciliation case
+on:
+  push:
+    branches: [cell/c04-v70-r3-02-case-envelope]
+permissions:
+  contents: read
+jobs:
+  c04:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install frozen dependencies
+        run: python -m pip install --no-index --find-links ci/retention/wheelhouse -r ci/retention/requirements.lock
+      - name: Run focused zero-write tests
+        run: |
+          cd application
+          python -m pytest -p no:cacheprovider tests/test_v70_r3_c04_admin_reconciliation.py -vv
