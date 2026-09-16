@@ -11,6 +11,32 @@ Work sub-agents are bounded turns, not daemon processes. Continuous execution
 therefore requires an external durable orchestrator with a queue, renewable
 leases, heartbeats, and exit events.
 
+## Durable control plane
+
+`ci/runtime_liveness/durable_orchestrator.py` is the executable control-plane
+implementation rather than a ledger-only assignment marker. It stores tasks,
+attempts, worker bindings, and leases transactionally in SQLite WAL mode. Its
+authenticated HTTP API supports idempotent enqueue, atomic claim, heartbeat,
+failure admission, `DIAGNOSE -> FIX -> RETEST`, evidence-bound completion,
+external blocking, and challenge-bound snapshots.
+
+Expired leases are atomically returned to `QUEUED`; a stale worker cannot renew
+an attempt after another worker acquires it. Completion preserves
+`DONE_SCOPED` and automatically claims the next queued task for the same Cell,
+so accepted PASS work is not redeveloped merely to keep an executor busy.
+
+The source-only `go-cell-orchestrator.service.example` runs the control plane as
+a restartable least-privilege service. Activation still requires an authorized
+long-running host, TLS material, a bearer token from the host secret store, and
+an explicit import of only the Ledger's unfinished tasks. This PR does not
+install, enable, seed, or deploy the service.
+
+API paths under `/internal/v1/` are:
+
+- `tasks/enqueue`, `tasks/claim`, `tasks/heartbeat`;
+- `tasks/fail`, `tasks/recovery/advance`, `tasks/complete`;
+- `tasks/block-external` and `cell-runtime-snapshot`.
+
 ## Runtime contract
 
 1. A task enters a durable queue with Cell, task, source SHA, and attempt ID.
