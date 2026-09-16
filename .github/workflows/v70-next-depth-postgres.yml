@@ -29,6 +29,9 @@ jobs:
           - cell: C11
             database: go_c11_isolated
             script: ci/next_depth/c11_postgres.py
+          - cell: C10
+            database: go_c10_isolated
+            script: ../ci/c10-pg/plan.py
     services:
       postgres:
         image: postgres:18.4
@@ -45,9 +48,12 @@ jobs:
       GO_C07_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/${{ matrix.database }}
       GO_C09_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/${{ matrix.database }}
       GO_C11_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/${{ matrix.database }}
+      GO_C10_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/${{ matrix.database }}
       GO_C07_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
       GO_C09_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
       GO_C11_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+      GO_C10_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+      GO_C10_APPLICATION_TREE: 472682b1293ed86bd3913ccc07e1d5f4040b3490
     steps:
       - uses: actions/checkout@v4
         with:
