@@ -132,6 +132,9 @@ class TestPrDurabilityTests(unittest.TestCase):
         # the temporary store, so the ownership rule itself stays live.
         self.identity = (os.stat(self.store).st_uid, os.stat(self.store).st_gid)
         self._patch(artifact_store, "_IDENTITY_RESOLVER", lambda: self.identity)
+        # ... and the writer gate compares the running account with that anchor, so
+        # pin it too: this suite is about durability, not about who is running.
+        self._patch(artifact_store, "_process_identity", lambda: self.identity)
         if not POSIX:
             self._patch(artifact_store, "DIRECTORY_MODE",
                         stat.S_IMODE(os.stat(self.store).st_mode))

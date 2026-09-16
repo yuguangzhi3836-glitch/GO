@@ -168,6 +168,17 @@ class StoreFixture(unittest.TestCase):
         uid, gid = self.identity
         return (uid + 1 if uid != 0 else 1, gid + 1 if gid != 0 else 1)
 
+    def as_writer(self, identity=None):
+        """Pin the process identity so a test varies exactly one variable.
+
+        The writer gate compares the running account with the trusted one.  On a
+        platform with effective ids that comparison happens for real, so a test
+        *about who owns the store* must not silently also become a test about who
+        is running -- and a test about who is running must say so explicitly.
+        """
+        chosen = self.identity if identity is None else identity
+        self._relax(artifact_store, "_process_identity", lambda: chosen)
+
     def runner(self, **kwargs):
         runner = Runner(self.image_id, self.config)
         for key, value in kwargs.items():
@@ -416,13 +427,18 @@ class CrossUidWriterTests(StoreFixture):
     """
 
     def test_the_writer_accepts_a_store_owned_by_the_trusted_account(self):
+        self.as_writer()
         record = self.sealed()
         stored = self.object_path(record["package_sha256"])
         self.assertEqual(hashlib.sha256(stored.read_bytes()).hexdigest(),
                          record["package_sha256"])
 
     def test_the_writer_refuses_a_store_owned_by_another_account(self):
-        self.anchor(lambda: self.other_identity())
+        # Both the running account and the contract say "somebody else", and the
+        # store on disk is not theirs: the owner check is what has to refuse.
+        foreign = self.other_identity()
+        self.as_writer(foreign)
+        self.anchor(lambda: foreign)
         with self.assertRaisesRegex(artifact_store.Reject, "SEALED_ARTIFACT_STORE_UNTRUSTED"):
             self.sealed()
         self.assertEqual(list((self.store / "objects").iterdir()), [],
@@ -437,7 +453,9 @@ class CrossUidWriterTests(StoreFixture):
         """
         if self.identity != (0, 0):
             self.skipTest("this platform cannot present a root-owned store")
-        self.anchor(lambda: self.other_identity())
+        foreign = self.other_identity()
+        self.as_writer(foreign)
+        self.anchor(lambda: foreign)
         with self.assertRaisesRegex(artifact_store.Reject, "SEALED_ARTIFACT_STORE_UNTRUSTED"):
             self.sealed()
 
@@ -448,12 +466,13 @@ class CrossUidWriterTests(StoreFixture):
         self.assertEqual(list((self.store / "objects").iterdir()), [])
 
     def test_the_writer_runs_as_the_trusted_account(self):
-        self._relax(artifact_store, "_process_identity", lambda: self.identity)
+        self.as_writer()
         self.assertEqual(artifact_store.require_writer_identity(), self.identity)
         self.assertTrue(self.sealed()["package_sha256"])
 
     @unittest.skipUnless(POSIX, "mode bits are not expressible on this platform")
     def test_a_store_with_the_wrong_mode_is_never_written_to(self):
+        self.as_writer()
         os.chmod(self.store, 0o755)
         self.addCleanup(os.chmod, self.store, artifact_store.DIRECTORY_MODE)
         with self.assertRaisesRegex(artifact_store.Reject, "SEALED_ARTIFACT_STORE_UNTRUSTED"):
@@ -479,6 +498,7 @@ class CrossUidWriterTests(StoreFixture):
 
     def test_seal_reverifies_the_stored_object_before_reporting_it_sealed(self):
         """A stored object a reader would refuse is never reported as sealed."""
+        self.as_writer()
         record = self.sealed()
         stored = self.object_path(record["package_sha256"])
         if not POSIX:
@@ -489,6 +509,7 @@ class CrossUidWriterTests(StoreFixture):
             self.sealed()
 
     def test_resealing_never_replaces_the_stored_object(self):
+        self.as_writer()
         record = self.sealed()
         stored = self.object_path(record["package_sha256"])
         before = os.stat(stored).st_mtime_ns
