@@ -2,11 +2,11 @@ from __future__ import annotations
 import json
 import logging
 import time
-from datetime import timedelta
+from datetime import timedelta, timezone
 from typing import Protocol
 from uuid import uuid4
 import httpx
-from sqlalchemy import select, or_
+from sqlalchemy import func, select, or_
 from go_hotel.core.config import settings
 from go_hotel.db.models import OutboxRow, OutboxDeadLetterRow
 from go_hotel.db.session import SessionLocal
@@ -50,11 +50,17 @@ class OutboxWorker:
         self.transport = transport or build_transport()
         self.worker_id = worker_id or f"outbox-{uuid4().hex[:8]}"
 
+    @staticmethod
+    def _database_now(session):
+        value = session.scalar(select(func.current_timestamp()))
+        return value.replace(tzinfo=timezone.utc) if value is not None and value.tzinfo is None else value
+
     def claim(self, limit: int | None = None) -> list[dict]:
         limit = limit or settings.outbox_batch_size
-        now = now_utc(); stale_before = now - timedelta(seconds=settings.outbox_lock_timeout_seconds)
         token = uuid4().hex
         with SessionLocal.begin() as s:
+            now = self._database_now(s)
+            stale_before = now - timedelta(seconds=settings.outbox_lock_timeout_seconds)
             stmt = (select(OutboxRow)
                 .where(
                     OutboxRow.available_at <= now,
@@ -72,6 +78,22 @@ class OutboxWorker:
                 row.status = "PROCESSING"; row.locked_at = now; row.lock_token = token; row.worker_id = self.worker_id
                 result.append({"outbox_id": row.outbox_id, "topic": row.topic, "payload": row.payload, "attempt_count": row.attempt_count, "lock_token": token})
             return result
+
+    def heartbeat(self, item: dict) -> bool:
+        """Extend only the currently fenced claim using database authority time."""
+        with SessionLocal.begin() as s:
+            row = s.execute(
+                select(OutboxRow).where(
+                    OutboxRow.outbox_id == item["outbox_id"],
+                    OutboxRow.status == "PROCESSING",
+                    OutboxRow.lock_token == item["lock_token"],
+                    OutboxRow.worker_id == self.worker_id,
+                ).with_for_update()
+            ).scalar_one_or_none()
+            if row is None:
+                return False
+            row.locked_at = self._database_now(s)
+            return True
 
     def _success(self, item: dict) -> None:
         with SessionLocal.begin() as s:
@@ -96,6 +118,9 @@ class OutboxWorker:
         published = failed = 0
         for item in claimed:
             try:
+                if not self.heartbeat(item):
+                    failed += 1
+                    continue
                 self.transport.publish(item["topic"], item["payload"])
                 self._success(item); published += 1
             except Exception as exc:
