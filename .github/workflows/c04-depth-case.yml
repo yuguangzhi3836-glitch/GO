@@ -1,5 +1,7 @@
 name: C04 read-only reconciliation case
 on:
+  pull_request:
+    branches: [integration/v70-final-scoped-20260916]
   push:
     branches: [cell/c04-v70-r3-02-case-envelope]
 permissions:
