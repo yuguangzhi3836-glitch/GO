@@ -44,30 +44,48 @@ jobs:
         run: |
           mkdir -p evidence-out
           cd application
-          alembic upgrade head
-          python - <<'PY' | tee ../evidence-out/retention.log
+          alembic upgrade head > ../evidence-out/alembic-upgrade.log 2>&1
+          python - <<'PY'
           import json, os, subprocess
+          from pathlib import Path
           from sqlalchemy import create_engine, text
-          url=os.environ["DATABASE_URL"]
-          engine=create_engine(url)
+          out=Path("../evidence-out")
+          engine=create_engine(os.environ["DATABASE_URL"])
           payload={"decision":"TICKETED","supplier_reference":"SUP-IMMUTABLE"}
           with engine.begin() as c:
               c.execute(text("""INSERT INTO rail_change_resolution
                 (quote_id,order_id,account_id,actor_id,state,request_json,terms_json,request_hash,result_json,lease_token,lease_until_ms,attempt,created_ms,completed_ms)
                 VALUES (:q,:o,:a,:actor,'COMPLETED',CAST(:request AS jsonb),CAST(:terms AS jsonb),:hash,CAST(:result AS jsonb),NULL,0,1,1000,2000)"""),
                 dict(q="q-retain",o="o-retain",a="a-retain",actor="admin",request=json.dumps({"quote_id":"q-retain"}),terms=json.dumps({"amount":"12.00"}),hash="a"*64,result=json.dumps(payload)))
-              before=c.execute(text("SELECT row_to_json(r)::text FROM rail_change_resolution r WHERE quote_id='q-retain'")).scalar_one()
+              before=c.execute(text("SELECT row_to_json(r) FROM rail_change_resolution r WHERE quote_id='q-retain'")).scalar_one()
+          (out/"before.json").write_text(json.dumps(before,sort_keys=True,default=str)+"\n")
           proc=subprocess.run(["alembic","downgrade","0128_vertical_refund_recovery"],text=True,capture_output=True)
-          assert proc.returncode != 0, proc.stdout+proc.stderr
-          assert "RAIL_RESOLUTION_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE" in proc.stdout+proc.stderr
+          (out/"downgrade.stdout.log").write_text(proc.stdout)
+          (out/"downgrade.stderr.log").write_text(proc.stderr)
+          combined=proc.stdout+proc.stderr
+          guard="RAIL_RESOLUTION_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE"
+          assert proc.returncode != 0, combined
+          assert guard in combined, combined
           with engine.begin() as c:
-              after=c.execute(text("SELECT row_to_json(r)::text FROM rail_change_resolution r WHERE quote_id='q-retain'")).scalar_one()
+              after=c.execute(text("SELECT row_to_json(r) FROM rail_change_resolution r WHERE quote_id='q-retain'")).scalar_one()
               head=c.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-          assert json.loads(after)==json.loads(before)
+              count=c.execute(text("SELECT count(*) FROM rail_change_resolution WHERE quote_id='q-retain'")).scalar_one()
+          (out/"after.json").write_text(json.dumps(after,sort_keys=True,default=str)+"\n")
+          result={"postgres":"18.4","inserted_count":count,"downgrade_returncode":proc.returncode,
+                  "guard_observed":guard in combined,"row_equal":after==before,
+                  "alembic_head_after":head,"verdict":"PASS"}
+          assert count==1 and after==before
           assert head=="0136_merge_go_ai_journey", head
-          print("PG18.4 RETENTION PASS", head, before)
+          (out/"result.json").write_text(json.dumps(result,sort_keys=True,indent=2)+"\n")
+          print(json.dumps(result,sort_keys=True))
           PY
           cd ..
+          test -s evidence-out/result.json
+          test -s evidence-out/before.json
+          test -s evidence-out/after.json
+          test -s evidence-out/downgrade.stderr.log
+          grep -q '"verdict": "PASS"' evidence-out/result.json
+          grep -q 'RAIL_RESOLUTION_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE' evidence-out/downgrade.stderr.log
           git rev-parse HEAD > evidence-out/candidate.txt
           git rev-parse HEAD:application > evidence-out/application-tree.txt
           sha256sum evidence-out/* > evidence-out/SHA256SUMS
