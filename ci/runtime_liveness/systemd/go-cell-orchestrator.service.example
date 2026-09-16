@@ -1,0 +1,24 @@
+[Unit]
+Description=GO Cell durable task orchestrator
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=go-cell-orchestrator
+Group=go-cell-orchestrator
+EnvironmentFile=/etc/go-cell-orchestrator.env
+ExecStart=/usr/bin/python3 /opt/go-cell-orchestrator/current/ci/runtime_liveness/durable_orchestrator.py --database /var/lib/go-cell-orchestrator/orchestrator.sqlite3 --listen 127.0.0.1 --port 8443 --tls-cert /etc/go-cell-orchestrator/tls.crt --tls-key /etc/go-cell-orchestrator/tls.key
+Restart=always
+RestartSec=2
+StateDirectory=go-cell-orchestrator
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/go-cell-orchestrator
+
+[Install]
+WantedBy=multi-user.target
