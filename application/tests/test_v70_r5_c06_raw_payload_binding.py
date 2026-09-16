@@ -1,4 +1,4 @@
-"""V70-R5-C06-02: internal imports are bound to supplied immutable raw bytes."""
+"""V70-R5-C06-02: internal policy imports are bound to supplied immutable raw bytes."""
 from copy import deepcopy
 from hashlib import sha256
 
