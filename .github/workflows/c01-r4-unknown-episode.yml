@@ -1,5 +1,11 @@
 name: C01 durable UNKNOWN funding episode
 on:
+  pull_request:
+    branches:
+      - integration/v70-final-scoped-20260916
+    paths:
+      - application/**
+      - .github/workflows/c01-r4-unknown-episode.yml
   push:
     branches:
       - cell/c01-v70-r4-unknown-funding-episode-20260916
