@@ -1396,7 +1396,31 @@ def run_selftest():
         (go / "CURRENT_CANDIDATE.json").write_text(json.dumps(
             {"schema": "go.depth48.current-candidate.v1", "source_commit": commit,
              "application_git_tree": "b" * 40, "previous_application_git_tree": "c" * 40,
-             "source_tree_sha256": "d" * 64, "candidate_pr": 52, "candidate_branch": "main"}),
+             "source_tree_sha256": "d" * 64, "candidate_pr": 52, "candidate_branch": "main",
+             # A complete RELEASE_CANDIDATE_V1 block: without it the candidate gates
+             # fail, which would turn this check's UNKNOWN into a NO for a reason the
+             # check is not about.
+             RELEASE_CANDIDATE_BLOCK: {
+                 "schema": "go.release-candidate.v1", "candidate_id": "rc1-synthetic",
+                 "source_repository": CANDIDATE_REPOSITORY, "source_commit": commit,
+                 "application_tree": "b" * 40, "source_fingerprint": "d" * 64,
+                 "migration_head": "0133_flight_change_plan", "migration_required": False,
+                 "build_definition": {
+                     "profile": "go-application-python-v1",
+                     "dockerfile": "Dockerfile.go-application-python-v2",
+                     "dockerfile_sha256": "7" * 64, "executor_version": "test-pr-v2",
+                     "builder_image_tag": "go-hotel:depth48-runtime-synthetic",
+                     "builder_image_id": "sha256:" + "e" * 64},
+                 "artifact_digest": "sha256:" + "e" * 64,
+                 "required_services": list(SERVICES),
+                 "test_result_identity": {
+                     "action_id": "HK_STAGING_TEST_PR", "task_id": "synthetic-test-pr",
+                     "evidence_id": "synthetic-evidence", "source_pr_number": "52",
+                     "source_commit_sha": commit,
+                     "artifact_digest": "sha256:" + "e" * 64,
+                     "executor_result": "TEST_PR_OK"},
+                 "rollback_relation": {"relation": "REPLACES_CURRENT_KNOWN_GOOD",
+                                       "previous_known_good_image_id": "sha256:" + "e" * 64}}}),
             encoding="utf-8")
         (go / "CURRENT_HK_RUNTIME.json").write_text(json.dumps(
             {"image_config_id": "sha256:" + "e" * 64, "image_tag": "synthetic",

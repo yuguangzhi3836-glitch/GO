@@ -41,6 +41,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      # The admission itself is standard-library only. This is the pinned dependency
+      # the *readiness* suite below needs, because readiness is the consumer whose
+      # gates now read this contract.
+      - name: Install pinned test dependency
+        run: python -m pip install cryptography==46.0.0
       - name: Check the candidate admission manifest
         working-directory: control-plane/command-center-candidate-admission-v1
         run: sha256sum -c SHA256SUMS
