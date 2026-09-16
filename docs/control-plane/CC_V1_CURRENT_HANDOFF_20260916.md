@@ -5,6 +5,21 @@
 >
 > 读取顺序建议：本文件 → `docs/project/CC_V1_SCOPE_20260916.md`（范围权威）→ 才动手。
 
+> **2026-09-16 修订说明（补 TD-J，未改写其余段落）**：本文件 01:26 CST 的读数之后，以下事实已被
+> 后续工作取代；读时以更晚的权威件为准，**不要按本文的旧描述行动**：
+>
+> * B2（没有 RELEASE_CANDIDATE_V1 准入 Gate）**已落地** ——
+>   `control-plane/command-center-candidate-admission-v1/`，契约 `go.release-candidate.v1`，
+>   写进 `docs/canonical-baseline/CURRENT_CANDIDATE.json` 的 `release_candidate_v1` 块；
+>   readiness 的 `APPROVED_CANDIDATE` / `SOURCE_BINDING` / `PACKAGE_BINDING` 三个**既有**门改读该契约
+>   （未新增 gate）。
+> * §12 的「三个 workflow 为 failure」**已修复**（`76f3ae1` / `82920c7` 及后续提交），CI 现为全绿。
+> * VERIFY 授权基线已从退役的 R3.1.5 运行时迁到 DEPTH48（collector `0133_flight_change_plan`、
+>   deployctl `b9aea31e…`、CC baseline `76bab571…`）——
+>   `docs/control-plane/hk-staging/VERIFY_BASELINE_MIGRATION_INSTALLED_20260916.md`。
+> * TD-J：**仓库修复已进 PR #109，live 未安装**（见 §9）；B3 因此仍未清。
+>   本轮报告 + 安装方案（未执行）：`docs/control-plane/hk-staging/TDJ_EVIDENCE_WORKSPACE_FIX_20260916.md`
+
 ---
 
 ## 1. 项目目标
@@ -78,6 +93,8 @@ CURRENT_ISSUE         #103
 #97  CLOSED  失败闭环
      impl: contracts/failure_evidence_v1.schema.json + transport.py 失败路径 + 投影 EXECUTION_FAILED
      live: hk_agent/transport.py 6f329b2eae7bc627229002e998cf17ee9d95b2e1fb6fc7cb22a508b52ad5fbe0
+     repo: hk_agent/transport.py 340da98f95acdb0c212aa116681da8d8344c6da306e44dfcf332c67ee1957de8
+           （TD-J 修复，PR #109 / 3819b55a，**未安装**：live 仍是上面那版）
      proof: REAL — TEST_PR 受控失败 → 签名 FAILED Evidence → 投影 EXECUTION_FAILED / retry_permitted=false
      gap: 无
 
@@ -214,6 +231,7 @@ installed agent files hk_agent/test_pr.py   654403023d599b78ec2a61776ab133ec0dc4
                           （= Builder V2：executor_version test-pr-v2）
                       hk_agent/transport.py 6f329b2eae7bc627229002e998cf17ee9d95b2e1fb6fc7cb22a508b52ad5fbe0
                           （= #97 失败闭环版本）
+                          ⚠ 仓里已有一个**未安装**的替代版本 340da98f…（TD-J 修复，见 §9）
 builder dockerfile    /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2
                       v1 文件仍在原处但已无引用
 business containers   8 × go-822-staging-{api,recovery-worker,outbox-worker,
@@ -305,6 +323,12 @@ B2  没有 RELEASE_CANDIDATE_V1 准入 Gate
 
 B3  没有新鲜的 VERIFY
     readiness 的 VERIFY 门为 FAIL（最近一次真实 VERIFY 已超出 86400s 窗口）
+    根因已定位并复现 = TD-J（见下方技术债）：同一趟 run_once 的第二条 Evidence 没有 clone 目标
+    2026-09-16T05:02:20Z 那张 fresh VERIFY 的**执行器层面已通过**（deployctl 只返回 SUCCESS/VERIFY_OK），
+    失败在执行之后：kind=EVIDENCE_PUBLISH_FAILED / stage=evidence_publish /
+    reason_code=GITHUB_TRANSPORT_REJECT
+    ⇒ 没有签名 Evidence 就不算清掉，门仍 FAIL
+    仓库修复已进 PR #109（transport.py 340da98f…），但 **live 未安装、VERIFY 未重发**
 
 B4  没有可用的部署计划 bundle（plan + approval + canary/preflight task+evidence）
     ⇒ PACKAGE_BINDING / DEPLOYMENT_PLAN / CURRENT_RUNTIME / CANARY / RELEASE_GATES /
@@ -325,6 +349,14 @@ TD-04 本地 run_checks 输出目录限制、Windows 上 fcntl 导致部分套�
 TD-05 LIVE_SWITCH_PROVENANCE 的历史 enable 来源未追认
 TD-06 state publication runs/ retention 策略（最迟 #108 前成形）
 TD-07 探活 bucket 目前每个都在 agent ledger 留 attempts 行（正常，但无清理策略）
+TD-J  一趟 run_once 只能成功发布一条 Evidence（同轮 clone 目标冲突）
+      · 根因：push_evidence 把证据仓 clone 到固定 work/<dirname>，而 run_once 一趟遍历所有 Task；
+        `go-boss-health-…` 排在 `go-boss-request-verify-…` 之前 ⇒ 同一趟里第二条发布必然撞已存在目录
+      · 后果：B3。VERIFY 执行器已 SUCCESS，却只有失败记录能发布（失败走 work/evidence-failure）
+      · repo 修复：每次发布使用由记录身份派生的独立工作区 → transport.py 340da98f…（PR #109 / 3819b55a）
+      · repository fix = IMPLEMENTED / TESTED；live install = **NOT_INSTALLED**；fresh VERIFY = **NOT_RETRIED**
+      · 同类未修站点（记录在案，本轮不动）：prepare_rollback_handoff 仍 clone 到固定
+        work/rollback-source-evidence；当轮 CC 通道未启用 ROLLBACK，故当前不可达
 ```
 
 ## 10. RELEASE_CANDIDATE_V1 当前规范
