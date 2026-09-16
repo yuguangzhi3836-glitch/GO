@@ -74,3 +74,7 @@ def test_same_episode_reference_is_allowed_for_different_orders():
     reference = 'isolated://supplier-correlation'
     assert first.admin_external_state(first_id, 'UNKNOWN_EXTERNAL_STATE', reference, 'ops')['status'] == 'UNKNOWN_EXTERNAL_STATE'
     assert second.admin_external_state(second_id, 'UNKNOWN_EXTERNAL_STATE', reference, 'ops')['status'] == 'UNKNOWN_EXTERNAL_STATE'
+
+
+# Collect the successor concurrent-opening matrix in the admitted C05 shard.
+from tests.test_v70_r5_c05_concurrent_unknown import *  # noqa: F401,F403,E402
