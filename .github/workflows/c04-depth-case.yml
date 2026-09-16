@@ -1,9 +1,9 @@
-name: C04 read-only reconciliation case
+name: C04 read-only evidence-time provenance
 on:
   pull_request:
     branches: [integration/v70-final-scoped-20260916]
   push:
-    branches: [cell/c04-v70-r3-02-case-envelope]
+    branches: [cell/c04-v70-r3-03-evidence-time]
 permissions:
   contents: read
 jobs:
@@ -32,6 +32,6 @@ jobs:
           sha256sum evidence-out/raw.log evidence-out/junit.xml > evidence-out/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: c04-read-only-case-envelope
+          name: c04-read-only-evidence-time
           path: evidence-out
           retention-days: 90
