@@ -49,7 +49,8 @@ from hk_agent import artifact_store  # noqa: E402
 
 from archive_fixtures import (  # noqa: E402
     OCI_CONFIG_TYPE, OCI_INDEX_TYPE, OCI_LAYOUT, OCI_MANIFEST_TYPE, append_member, appended,
-    hybrid_save, mutated, oci_save, read_tar, refile, synthetic_save, write_tar)
+    hybrid_save, multiplatform_save, mutated, oci_save, read_tar, refile, synthetic_save,
+    write_tar)
 
 POSIX = os.name == "posix"
 
@@ -364,7 +365,8 @@ class SealedArtifactStoreTests(StoreFixture):
     def test_a_package_that_is_not_the_candidate_is_refused_at_load(self):
         record = self.sealed()
         other = "sha256:" + hashlib.sha256(b'{"architecture":"arm64"}').hexdigest()
-        with self.assertRaisesRegex(artifact_store.Reject, "SEALED_ARTIFACT_CONFIG_MISMATCH"):
+        with self.assertRaisesRegex(artifact_store.Reject,
+                                    "SEALED_ARTIFACT_IMAGE_IDENTITY_MISMATCH"):
             artifact_store.load(self.runner(), record["package_sha256"], other, self.root)
 
     def test_a_load_that_yields_another_image_is_refused(self):
@@ -497,12 +499,14 @@ class OciArchiveTests(StoreFixture):
                                      hybrid_save(path, payload, reference=ref))
                 self.assertEqual(record["image_id"], self.image_id)
 
-    def test_the_candidate_identity_is_the_config_bytes_and_nothing_else(self):
+    def test_the_archive_carries_three_separate_identities(self):
         """Three identities, never interchanged.
 
-        The image id is the SHA256 of the config bytes.  The package is addressed by
-        the SHA256 of the whole archive, and every node of the graph carries a digest
-        of its own.  Only the first decides which image the archive is.
+        The config blob has a digest of its own, the descriptor ``index.json`` names
+        has another, and the package is addressed by the SHA256 of the whole archive.
+        The candidate is named by the one Docker reports; this fixture reports the
+        config digest, so that is the role recorded -- and the other identity is
+        still written down rather than thrown away.
         """
         record = self.oci(attestation=True)
         stored = self.object_path(record["package_sha256"])
@@ -510,8 +514,67 @@ class OciArchiveTests(StoreFixture):
         nested = json.loads(read_tar(stored)["index.json"])["manifests"][0]["digest"]
         self.assertEqual(archive_sha, record["package_sha256"])
         self.assertEqual(record["image_id"], "sha256:" + self.config_digest)
+        self.assertEqual(record["image_identity_role"], "config")
+        self.assertEqual(record["root_descriptor_digest"], nested.split(":", 1)[1])
         self.assertNotEqual(nested, "sha256:" + self.config_digest)
         self.assertNotEqual(archive_sha, self.config_digest)
+
+    # --------------------------------------------------------- identities
+    def test_a_multi_platform_archive_seals_by_the_platform_it_exported(self):
+        """Docker catalogues every platform and ships one; the rest are absent.
+
+        Measured on the host: ``redis:7.4-alpine`` names sixteen descriptors and
+        carries two blobs.  An archive whose catalogue mentions a blob it did not
+        export is normal output, so the store must read it rather than refuse it --
+        and it must not treat any unexported entry as authority, because nothing
+        was hashed.
+        """
+        record = self.sealed(save_writer=multiplatform_save)
+        self.assertEqual(record["image_id"], self.image_id)
+        self.assertEqual(record["image_identity_role"], "config")
+        self.assertEqual(record["config_digests"], [self.config_digest])
+        self.assertTrue(self.object_path(record["package_sha256"]).is_file())
+
+    def test_the_identity_docker_reports_on_a_containerd_host_is_the_archive_root(self):
+        """The id is the descriptor ``index.json`` names, not the config digest.
+
+        On HK-STAGING (server 29.7.2, containerd image store) ``docker image
+        inspect`` reports an *index* digest while the archive's config digest is a
+        different value, so a store that compares the two can never seal anything.
+        Both roles are therefore proved, and the role that matched is recorded.
+        """
+        record, root_digest = self.sealed_by_root()
+        self.assertEqual(record["image_identity_role"], "root_descriptor")
+        self.assertEqual(record["root_descriptor_digest"], root_digest)
+        self.assertEqual(record["config_digests"], [self.config_digest])
+        self.assertNotEqual(root_digest, self.config_digest)
+
+    def test_both_identities_of_one_archive_are_recorded_separately(self):
+        """Three roles, never interchanged: root, config and the package's own SHA256."""
+        by_root, root_digest = self.sealed_by_root()
+        by_config = self.sealed(save_writer=oci_save)
+        self.assertEqual(by_root["root_descriptor_digest"], by_config["root_descriptor_digest"])
+        self.assertEqual(by_root["config_digests"], by_config["config_digests"])
+        self.assertNotEqual(by_root["image_identity_role"], by_config["image_identity_role"])
+        for record, identity in ((by_root, "sha256:" + root_digest),
+                                 (by_config, self.image_id)):
+            self.assertEqual(record["image_id"], identity)
+            self.assertNotEqual(record["package_sha256"], root_digest)
+            self.assertNotEqual(record["package_sha256"], self.config_digest)
+
+    def sealed_by_root(self):
+        """Seal the OCI fixture under the identity its own ``index.json`` names."""
+        root_digest = self.oci_root_digest()
+        image_id = "sha256:" + root_digest
+        record = artifact_store.seal(self.runner(image_id=image_id, save_writer=oci_save),
+                                     self.ref, image_id, self.root)
+        return record, root_digest
+
+    def oci_root_digest(self):
+        path = pathlib.Path(self.tmp.name) / "root-probe.tar"
+        oci_save(str(path), self.config)
+        return json.loads(read_tar(str(path))["index.json"])["manifests"][0]["digest"].split(
+            ":", 1)[1]
 
     # --------------------------------------------------------------- refused
     def test_bytes_that_are_not_the_claimed_image_are_refused(self):
@@ -519,9 +582,27 @@ class OciArchiveTests(StoreFixture):
         runner = self.runner(save_writer=oci_save)
         runner.save_bytes = b'{"architecture":"arm64"}'
         runner.inspect_answers[self.ref] = self.image_id
-        with self.assertRaisesRegex(artifact_store.Reject, "SEALED_ARTIFACT_CONFIG_MISMATCH"):
+        with self.assertRaisesRegex(artifact_store.Reject,
+                                    "SEALED_ARTIFACT_IMAGE_IDENTITY_MISMATCH"):
             artifact_store.seal(runner, self.ref, self.image_id, self.root)
         self.assertEqual(list((self.store / "objects").iterdir()), [])
+
+    def test_an_absent_root_descriptor_is_refused(self):
+        """The identity Docker reports must be a digest the archive can hash."""
+        def transform(entries):
+            root = json.loads(entries["index.json"])["manifests"][0]["digest"].split(":", 1)[1]
+            entries.pop("blobs/sha256/" + root)
+
+        self.refuses("SEALED_ARTIFACT_BLOB_MISSING", mutated(oci_save, transform))
+
+    def test_an_index_that_names_two_images_is_refused(self):
+        """Several roots would make "the identity Docker reports" a choice."""
+        def transform(entries):
+            root = json.loads(entries["index.json"])
+            root["manifests"].append(dict(root["manifests"][0]))
+            entries["index.json"] = json.dumps(root).encode()
+
+        self.refuses("SEALED_ARTIFACT_OCI_INVALID", mutated(oci_save, transform))
 
     def test_a_blob_that_does_not_hash_to_its_descriptor_is_refused(self):
         def transform(entries):
@@ -689,10 +770,33 @@ class OciReaderTests(StoreFixture):
         _, _, result = self.seal_and_read(hybrid_save)
         self.assertEqual(result["artifact_materialised"], "PASS")
 
+    def test_the_reader_materialises_a_multi_platform_package(self):
+        """The shape a *pulled* reference produces, read by the executor as well."""
+        record = self.sealed(save_writer=multiplatform_save)
+        runner = self.runner()
+        result = self.reader.materialise(runner, record["package_sha256"], self.image_id,
+                                         self.root)
+        self.assertEqual(result["artifact_materialised"], "PASS")
+        self.assertEqual([call[1] for call in runner.calls], ["load", "image"])
+
+    def test_the_reader_accepts_the_identity_docker_reports_on_this_host(self):
+        """The root-descriptor role is read on this side too, not only written."""
+        path = pathlib.Path(self.tmp.name) / "reader-root-probe.tar"
+        oci_save(str(path), self.config)
+        root = json.loads(read_tar(str(path))["index.json"])["manifests"][0]["digest"]
+        record = artifact_store.seal(
+            self.runner(image_id=root, save_writer=oci_save), self.ref, root, self.root)
+        self.assertEqual(record["image_identity_role"], "root_descriptor")
+        runner = self.runner(image_id=root)
+        result = self.reader.materialise(runner, record["package_sha256"], root, self.root)
+        self.assertEqual(result["artifact_materialised"], "PASS")
+        self.assertEqual(runner.calls[1][3], root)
+
     def test_the_reader_refuses_a_package_that_is_not_the_candidate(self):
         record = self.sealed(save_writer=oci_save)
         other = "sha256:" + hashlib.sha256(b'{"architecture":"arm64"}').hexdigest()
-        with self.assertRaisesRegex(self.reader.Reject, "E_ARTIFACT_CONFIG_MISMATCH"):
+        with self.assertRaisesRegex(self.reader.Reject,
+                                    "E_ARTIFACT_IMAGE_IDENTITY_MISMATCH"):
             self.reader.materialise(self.runner(), record["package_sha256"], other, self.root)
 
     def test_the_reader_refuses_a_tampered_package(self):
@@ -1000,7 +1104,7 @@ class CrossSideContractTests(unittest.TestCase):
         so a caller reading either file sees the same interface.
         """
         reader = load_reader()
-        for writer_name, reader_name in (("image_config_digest", "image_config_digest"),
+        for writer_name, reader_name in (("image_identity", "image_identity"),
                                          ("resolve", "resolve"),
                                          ("load", "materialise")):
             with self.subTest(entry_point=writer_name):
@@ -1024,9 +1128,9 @@ class CrossSideContractTests(unittest.TestCase):
 
     @staticmethod
     def outcome(module, path, image_id):
-        """``(True, digest)`` or ``(False, refusal)`` -- never one side's raw text."""
+        """``(True, identity)`` or ``(False, refusal)`` -- never one side's raw text."""
         try:
-            return True, module.image_config_digest(path, image_id)
+            return True, module.image_identity(path, image_id)
         except module.Reject as exc:
             return False, str(exc)[len(module._REFUSAL_PREFIX):]
 
@@ -1095,6 +1199,23 @@ class CrossSideContractTests(unittest.TestCase):
         write("layouts-disagree", mutated(hybrid_save, relabel_legacy_to_another_blob))
         write("legacy-index-malformed", mutated(synthetic_save, lambda entries: entries.__setitem__(
             "manifest.json", json.dumps([{"Config": "a" * 64}, {"Config": "b" * 64}]).encode())))
+        # The shapes a *pulled* reference produces, and the identity Docker reports on
+        # a containerd host -- the two things the store got wrong on the real host.
+        write("multi-platform", multiplatform_save)
+        write("multi-platform-nothing-absent",
+              lambda path, payload: multiplatform_save(path, payload, absent=0))
+        probe = work / "root-identity.tar"
+        multiplatform_save(str(probe), config)
+        cases.append(("root-identity", str(probe),
+                      json.loads(read_tar(str(probe))["index.json"])
+                      ["manifests"][0]["digest"]))
+        write("root-descriptor-absent", mutated(multiplatform_save, lambda entries: entries.pop(
+            "blobs/sha256/" + json.loads(entries["index.json"])["manifests"][0]["digest"]
+            .split(":", 1)[1])))
+        write("index-names-two-images", mutated(oci_save, lambda entries: entries.__setitem__(
+            "index.json", json.dumps({
+                "schemaVersion": 2, "mediaType": OCI_INDEX_TYPE,
+                "manifests": json.loads(entries["index.json"])["manifests"] * 2}).encode())))
         write("not-an-archive", lambda path, payload: pathlib.Path(path).write_bytes(b"nope"))
         return cases
 
@@ -1115,10 +1236,17 @@ class CrossSideContractTests(unittest.TestCase):
                                  "%s: the writer and the reader disagree" % name)
                 if writer_outcome[0]:
                     accepted += 1
-                    self.assertEqual(writer_outcome[1], hashlib.sha256(
+                    identity = writer_outcome[1]
+                    self.assertEqual(identity["image_id"], image_id,
+                                     "%s: the identity accepted is not the candidate" % name)
+                    self.assertIn(identity["image_identity_role"],
+                                  ("root_descriptor", "config"),
+                                  "%s: accepted in a role that does not exist" % name)
+                    self.assertIn(hashlib.sha256(
                         b'{"architecture":"amd64","os":"linux"}').hexdigest(),
-                        "%s: the digest is not the config bytes" % name)
-        self.assertGreaterEqual(accepted, 8, "the corpus stopped accepting real archives")
+                        identity["config_digests"],
+                        "%s: the archive stopped proving its own config" % name)
+        self.assertGreaterEqual(accepted, 11, "the corpus stopped accepting real archives")
 
 
 class LiveTopologyContractTests(unittest.TestCase):

@@ -1,4 +1,9 @@
-"""Archive fixtures: the two shapes ``docker save`` really produces.
+"""Archive fixtures: the shapes ``docker save`` really produces.
+
+Four shapes are modelled, all of them measured on a real host rather than imagined:
+a legacy docker-archive, an OCI image layout, the hybrid of both, and -- because a
+*pulled* reference is not a *built* one -- the multi-platform OCI layout whose index
+catalogues platforms whose blobs the archive does not carry.
 
 One source of truth on purpose.  The defect this whole change exists to close was
 a *fixture* problem: every fixture wrote a legacy docker-archive, so the parser
@@ -93,6 +98,68 @@ def oci_save(path, config_bytes, *, nesting=1, attestation=False, layers=(b"laye
         entries["blobs/sha256/" + digest] = payload
     write_tar(path, entries)
     return "sha256:" + config_digest
+
+
+def multiplatform_save(path, config_bytes, *, absent=14, attestation=True,
+                       layers=(b"layer-bytes",)):
+    """The archive Docker writes for a *pulled*, multi-platform reference.
+
+    Measured on HK-STAGING (Docker 29.7.2, containerd image store) for
+    ``redis:7.4-alpine``: ``index.json`` names one descriptor, that descriptor is an
+    index listing sixteen manifests -- an image manifest and an attestation manifest
+    for each of eight platforms -- and only the two belonging to the platform that
+    was actually pulled are in the archive.  The other fourteen blobs are **absent**.
+
+    An archive that carries a catalogue entry it did not export is normal output, not
+    a defect, so it is a fixture rather than something a test hand-builds: the defect
+    this shape exists to catch is a parser that refuses it.  Returns the digest
+    ``index.json`` names, which is the id Docker reports on such a host.
+    """
+    blobs = {}
+
+    def store(payload):
+        digest = hashlib.sha256(payload).hexdigest()
+        blobs[digest] = payload
+        return digest
+
+    def descriptor(media_type, payload_digest, payload):
+        return {"mediaType": media_type, "digest": "sha256:" + payload_digest,
+                "size": len(payload)}
+
+    config_digest = store(config_bytes)
+    manifest = {"schemaVersion": 2, "mediaType": OCI_MANIFEST_TYPE,
+                "config": descriptor(OCI_CONFIG_TYPE, config_digest, config_bytes),
+                "layers": [descriptor(OCI_LAYER_TYPE, store(payload), payload)
+                           for payload in layers]}
+    manifest_bytes = json.dumps(manifest).encode()
+    catalogue = [descriptor(OCI_MANIFEST_TYPE, store(manifest_bytes), manifest_bytes)]
+    if attestation:
+        attestation_config = b'{"architecture":"unknown","os":"unknown"}'
+        attestation_manifest = {"schemaVersion": 2, "mediaType": OCI_MANIFEST_TYPE,
+                                "artifactType": "application/vnd.in-toto+json",
+                                "config": descriptor(OCI_CONFIG_TYPE,
+                                                     store(attestation_config),
+                                                     attestation_config),
+                                "layers": []}
+        payload = json.dumps(attestation_manifest).encode()
+        catalogue.append(descriptor(OCI_MANIFEST_TYPE, store(payload), payload))
+    for position in range(absent):
+        # A platform this host never pulled: the catalogue names it, the archive does
+        # not carry it, and its digest is not a digest of anything in this file.
+        catalogue.append({
+            "mediaType": OCI_MANIFEST_TYPE,
+            "digest": "sha256:" + hashlib.sha256(b"absent-platform-%d" % position).hexdigest(),
+            "size": 2288})
+    catalog = {"schemaVersion": 2, "mediaType": OCI_INDEX_TYPE, "manifests": catalogue}
+    catalog_bytes = json.dumps(catalog).encode()
+    catalog_digest = store(catalog_bytes)
+    root = {"schemaVersion": 2, "mediaType": OCI_INDEX_TYPE,
+            "manifests": [descriptor(OCI_INDEX_TYPE, catalog_digest, catalog_bytes)]}
+    archive = {"oci-layout": OCI_LAYOUT, "index.json": json.dumps(root).encode()}
+    for digest, payload in blobs.items():
+        archive["blobs/sha256/" + digest] = payload
+    write_tar(path, archive)
+    return "sha256:" + catalog_digest
 
 
 def hybrid_save(path, config_bytes, *, reference=None):

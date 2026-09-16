@@ -213,9 +213,12 @@ line authoritative.
 Both formats are now read by one grammar, on both sides of the contract:
 
 * the OCI side is followed as a *descriptor graph* (index → nested index → image
-  manifest), bounded in depth and in descriptor count, each digest followed once,
-  and every blob required to be a regular member whose bytes hash to the digest
-  that described it and match the size it declared;
+  manifest), bounded in depth and in descriptor count, each digest followed once;
+  the descriptor `index.json` itself names must be present as a regular member and
+  hash to what named it, an index entry whose blob the archive did not export is
+  skipped rather than refused (Docker catalogues every platform and ships one), and
+  everything a manifest the walk actually follows names must be present and hash to
+  the descriptor that named it;
 * the legacy index is kept, and its reference may name either the flat member or
   `blobs/sha256/<digest>`; only those two canonical locations are ever read, and
   the digest comes from the reference's own last component, so no JSON value can
@@ -224,11 +227,13 @@ Both formats are now read by one grammar, on both sides of the contract:
   attestation manifest is bound into the graph but is not an image, and two
   layouts in one archive must name the same image or the archive is refused
   rather than resolved by preference;
-* whatever the layout, the decision is unchanged: the config blob's bytes must
-  hash to the candidate image id. A descriptor digest, an index digest and the
-  package's own SHA256 are three identities and are never interchanged;
+* whatever the layout, the decision is unchanged: the archive must prove an
+  identity equal to the candidate image id, and the role that identity played is
+  recorded rather than assumed (corrected in B4-B1.3 below). A descriptor digest,
+  an index digest, a config digest and the package's own SHA256 are four identities
+  and are never interchanged;
 * the executor's reader applies the identical grammar, and a cross-side test runs
-  both implementations over the same 26-archive corpus and fails if either side
+  both implementations over the same 31-archive corpus and fails if either side
   disagrees about any one of them.
 
 **B. The store's refusal killed the whole pass.** `run_once` catches a closed set
@@ -298,3 +303,86 @@ The live host still runs the B4-B1 revision of the agent modules and the executo
 (`5dddc742…`, `52478829…`, `b35ace22…`, `81f91c7c…`). This revision is
 repository-side only: nothing is installed by it, and a TEST_PR issued against the
 live host today would still fail at the durability step.
+
+## B4-B1.3 — which identity Docker actually reports
+
+The install round for B4-B1.2 stopped **before it wrote anything**, because the host
+was asked first. Every preflight hash matched the plan, the shadow tree exercised the
+candidate as both production identities, and both sides agreed on every constant —
+and then three **real** `docker save` archives were parsed, which is where B4-B1.2
+died:
+
+```
+go-hotel:depth48-runtime-6d0fd905   docker .Id = sha256:1c9598d6…   archive config = 57beafa2…
+redis:7.4-alpine (pulled)           docker .Id = sha256:ff02b58f…   archive config = 5509c009…
+a local `docker build` probe        docker .Id = sha256:3906d4c8…   archive config = fb0191cd…
+image_identity(tar, .Id)            -> Reject …CONFIG_MISMATCH, on both sides, in all three cases
+```
+
+**The identity the contract required and the identity Docker reports were never the
+same value.** On a host using the containerd image store — HK-STAGING runs server
+29.7.2 on `io.containerd.snapshotter.v1` — `docker image inspect --format '{{.Id}}'`
+is the digest of the descriptor `index.json` names, which is an *index* digest; the
+image's config digest is a different value. B4-B1's store required the config blob to
+hash to the reported id, so `seal()` could not have succeeded on this host for **any**
+image: installing B4-B1.2 would have changed nothing but the failure code.
+
+Two further things were wrong for the same reason:
+
+* **Real archives carry descriptors whose blobs they did not export.**
+  `docker save redis:7.4-alpine` names sixteen manifests and ships two — the platform
+  that was pulled, and its attestation. A parser that requires every described blob to
+  be present refuses every multi-platform archive.
+* **The CI smoke could not have caught either.** It asserted
+  `digest == image_id.split(':')[1]`, which passes on a GitHub runner because *that*
+  runner's Docker reports the config digest. The assertion was about a coincidence of
+  one runner's image store, not about the contract.
+
+What this revision changes:
+
+* `archive_identity(archive)` returns three separate fields — `root` (the digest of
+  the descriptor `index.json` names), `configs` (the image config digests the graph
+  proves) and `legacy` (the config digest `manifest.json` names). `image_identity(
+  archive, image_id)` proves the candidate in whichever role the archive can support,
+  after hashing the bytes behind it, and reports `image_identity_role` along with both
+  identities. Neither identity is ever compared with the other.
+* An index is read as a *catalogue*: an entry whose blob the archive did not export is
+  skipped. The root descriptor's own bytes are **not** optional, and a manifest the
+  walk follows must have its config and every layer present and hashed.
+* `seal()` records `image_identity_role`, `root_descriptor_digest` and
+  `config_digests` in the sealed package the Evidence carries, and the agent refuses to
+  publish a package claim that omits them or contradicts them — a claim naming only the
+  build id cannot be audited against the archive it came from.
+* The smoke now asserts **roles** instead of equality: that the reported id matches the
+  role it claims, that the archive's config digest is recognised in its own role, that
+  the two differ, and that an identity the archive cannot prove is refused. It also
+  prints the daemon version and the role it observed, so a future divergence is visible
+  rather than inferred.
+* `tests/archive_fixtures.py` gained the multi-platform shape
+  (`multiplatform_save`), and the cross-side corpus grew from 26 archives to 31.
+
+```
+control-plane/…/hk-staging/hk_agent/artifact_store.py
+              was 5dddc742b7ca668033547cb56073e6d65ba492d747d271622c9ca2b3df4335a4
+              now b6f51ba9ceeb5a554ae647f018eea7ddc99b82918486909e3a17752329c63784
+control-plane/…/hk-staging/hk_agent/transport.py
+              was b35ace2289d9b8e64805d584a893f0e3c5efb7c6050fbbdbfaaf492dee3d700d
+              now af8261568fb7158f3bd6f620f3a405118b1ae77d3d662b764e62c3fe260e5fcb
+hk-staging/source/executor/runtime/artifact_runtime.py
+              was 81f91c7cf8630ae57687676f3d6e9ec194b1c064488004a2593c1cd58cd76818
+              now 11ffc5143174ed21b8f9fc96a6e9155d392b52e1e7051fba59a942d486d53a5b
+              _ARTIFACT_SHA256 in go-hk-deployctl follows it; the other four pins do not move
+hk-staging/source/executor/go-hk-deployctl
+              was db9d1584e56781e9b73d3db50495ee4b7422c05deb6fdaa315b9a7033393b53e
+              now 7318f81b63a487ccabfe817be985c65169f8f86fb2dabeb5d3ccb6e3c85bc8d0
+```
+
+`test_pr.py` is deliberately unchanged: the identities it reports (`built_image_id`
+from `docker image inspect`) were already correct, and it is the store, not the
+builder, that had bound them to the wrong role.
+
+```
+INSTALLATION_PERFORMED=NO
+DEPLOYMENT_PERFORMED=NO
+HONG_KONG_TOUCHED=NO
+```

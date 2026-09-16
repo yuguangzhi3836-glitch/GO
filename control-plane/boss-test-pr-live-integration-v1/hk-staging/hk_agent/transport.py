@@ -317,11 +317,20 @@ def evidence(task,result):
             raise Reject("EXECUTOR_RESULT_REJECT", stage=STAGE_EVIDENCE_BUILD)
         # A build identity is not a deliverable.  The Evidence only carries a
         # deployable artifact claim when the executor also reports a sealed package
-        # whose image identity is the one the build produced.
+        # whose image identity is the one the build produced -- and, because Docker
+        # reports an image's id as either the descriptor its index.json names or the
+        # image's config digest depending on the host's image store, the package has
+        # to say which role matched and which config digests it proved.  A claim that
+        # names only the build id cannot be audited later, but a claim that names the
+        # role and the config can.
         package=result["artifact_package"]
         if (result["artifact_durability"] != "PROVEN" or not isinstance(package,dict)
                 or package.get("schema") != artifact_store.SCHEMA
                 or package.get("image_id") != result["built_image_id"]
+                or package.get("image_identity_role") not in ("root_descriptor","config")
+                or not isinstance(package.get("config_digests"),list) or not package["config_digests"]
+                or any(not isinstance(digest,str) or re.fullmatch(r"[0-9a-f]{64}",digest) is None
+                       for digest in package["config_digests"])
                 or not isinstance(package.get("package_sha256"),str)
                 or re.fullmatch(r"[0-9a-f]{64}",package["package_sha256"]) is None):
             raise Reject("ARTIFACT_DURABILITY_REJECT", stage=STAGE_ARTIFACT_DURABILITY)

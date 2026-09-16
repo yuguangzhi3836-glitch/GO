@@ -18,13 +18,21 @@ legitimate -- the one arrangement that can actually never happen.  The anchor is
 now the fixed account name, resolved from the account database on every check, and
 this module never consults its own identity at all.
 
-Why there is no repo digest here
---------------------------------
+Why there is no repo digest here, and which image identity there is
+-------------------------------------------------------------------
 A registry manifest digest exists only after a push, and it is not equal to an
-image's config ID in general.  Identifying a candidate by a digest whose suffix
-must equal its own image ID was therefore never satisfiable for a host-built
-image; the sealed package's own SHA256 is the delivery identity instead, and the
-image identity stays the config ID the build reported.
+image's config ID in general.  The sealed package's own SHA256 is the delivery
+identity instead.
+
+The image identity is subtler, and an earlier revision of this contract got it
+wrong: it required the archive's config blob to hash to the id that
+``docker image inspect`` reports.  On a host using the **containerd image store**
+-- Hong Kong runs server 29.7.2 on ``io.containerd.snapshotter.v1`` -- the id
+Docker reports is the digest of the descriptor ``index.json`` names, which is an
+*index* digest, and the config digest is a different value (measured on this host:
+``1c9598d6…`` reported, config ``57beafa2…``).  This module therefore accepts
+either identity, proves the bytes behind whichever matched, and reports which role
+it was; it never compares the two with each other.
 
 Two archive formats, one candidate identity
 -------------------------------------------
@@ -38,11 +46,14 @@ revision of this contract understood only the legacy shape, which is why the fir
 real TEST_PR sealed nothing.
 
 Both are read here, by the same grammar the writer applies, and neither is guessed
-at: the OCI side is followed as a bounded descriptor graph in which every blob must
-exist as a regular member and hash to the digest that described it, and if both
-layouts are present they must name the same image.  Whatever the layout, the
-decision is unchanged: the archive's config blob, taken as bytes, must hash to the
-candidate image id.
+at: the OCI side is followed as a bounded descriptor graph in which the descriptor
+``index.json`` names must be present as a regular member and hash to the digest
+that named it, an index entry whose blob the archive did not export is skipped,
+and everything a manifest we do follow names must be present and hash to what
+named it.  If both layouts are present they must name the same image.  Whatever
+the layout, the decision is unchanged: the archive must prove an identity equal to
+the candidate image id, in one of the two named roles, with the bytes behind it
+present and hashed.
 
 Everything the caller supplies is validated, and nothing the caller supplies is a
 path: the object path is derived from the content address alone.
@@ -111,9 +122,9 @@ ARCHIVE_REFUSALS = ("ARCHIVE_INVALID",          # unreadable, truncated, or no l
                     "DESCRIPTOR_INVALID",       # a descriptor that contradicts itself
                     "DESCRIPTOR_LIMIT",         # traversal budget exhausted
                     "MEDIA_TYPE_UNSUPPORTED",   # unknown type would have to be image authority
-                    "BLOB_MISSING",             # a described blob is not in the archive
+                    "BLOB_MISSING",             # a blob this contract must read is not in the archive
                     "BLOB_MISMATCH",            # a blob does not size or hash to its descriptor
-                    "CONFIG_MISMATCH")          # the archive's image is not the candidate
+                    "IMAGE_IDENTITY_MISMATCH")  # the archive proves no identity equal to the candidate
 _REFUSAL_PREFIX = "E_ARTIFACT_"
 
 
@@ -343,16 +354,53 @@ def _descriptor(value):
     return media_type, digest[7:], size
 
 
-def _oci_image_configs(tar, regular):
-    """Every image config digest an OCI image layout proves.
+def _image_config(tar, regular, manifest, configs):
+    """Bind one image manifest's own content into the graph and record its config.
 
-    ``index.json`` is followed as a graph rather than as ``manifests[0]``: an index
-    may point at another index before it reaches an image manifest, which is
-    exactly the shape Docker writes.  The traversal is bounded in depth and in
-    descriptor count, each digest is followed once, and every blob read must be a
-    regular member whose bytes hash to the digest that named it.  The result is the
-    set of image config digests -- the only value in the graph that can be the
-    candidate image.
+    A manifest this contract follows is claiming to be the image, so its config and
+    every layer it names are the image's own content: they must be in the archive
+    and must hash to the descriptor that named them.  An attestation manifest is
+    hashed like everything else, but its config is not an image, so it never becomes
+    candidate authority.
+    """
+    if manifest.get("schemaVersion") != 2:
+        _refuse("OCI_INVALID")
+    if (manifest.get("mediaType") is not None
+            and manifest["mediaType"] not in MANIFEST_MEDIA_TYPES):
+        _refuse("DESCRIPTOR_INVALID")
+    if manifest.get("artifactType"):
+        return
+    config_type, config_digest, config_size = _descriptor(manifest.get("config"))
+    if config_type not in CONFIG_MEDIA_TYPES:
+        _refuse("MEDIA_TYPE_UNSUPPORTED")
+    _blob(tar, regular, config_digest, config_size,
+          [BLOB_DIR + "/" + config_digest], document=True)
+    layers = manifest.get("layers")
+    if not isinstance(layers, list):
+        _refuse("OCI_INVALID")
+    for layer in layers:
+        layer_type, layer_digest, layer_size = _descriptor(layer)
+        _blob(tar, regular, layer_digest, layer_size, [BLOB_DIR + "/" + layer_digest])
+    configs.add(config_digest)
+
+
+def _oci_identity(tar, regular):
+    """``(root descriptor digest, config digests)`` an OCI image layout proves.
+
+    ``index.json`` is followed as a graph rather than as ``manifests[0]``: it names
+    one descriptor and that descriptor may be another index before the graph reaches
+    an image manifest, which is exactly the shape Docker writes.  The descriptor
+    ``index.json`` names is the identity Docker reports *as the image id* on a host
+    using the containerd image store, so it is returned separately -- and its bytes
+    are required to be in the archive, because an identity nobody can hash is not an
+    identity.
+
+    Below that descriptor an index is a *catalogue*, not a statement of content.
+    Docker writes the complete multi-platform list while shipping only the platform
+    it was asked for -- measured: sixteen descriptors, two blobs present -- so an
+    entry whose blob is absent is skipped rather than refused.  Skipping promotes
+    nothing: a descriptor only becomes authority once its bytes have been hashed in
+    place, and a graph that ends up proving no image at all is refused.
     """
     if LAYOUT_NAME not in regular:
         _refuse("OCI_INVALID")
@@ -362,66 +410,70 @@ def _oci_image_configs(tar, regular):
     root = _document(_read_member(tar, regular[INDEX_NAME]), "OCI_INVALID")
     if root.get("mediaType") not in INDEX_MEDIA_TYPES:
         _refuse("MEDIA_TYPE_UNSUPPORTED")
-    configs, pending, seen, count = set(), [(root, 0)], {}, 0
+    entries = root.get("manifests")
+    if root.get("schemaVersion") != 2 or not isinstance(entries, list) or not entries:
+        _refuse("OCI_INVALID")
+    # An archive names one image.  Several roots would make "the identity Docker
+    # reports" a choice, and this contract never chooses.
+    if len(entries) != 1:
+        _refuse("OCI_INVALID")
+    target_type, target, target_size = _descriptor(entries[0])
+    if target_type not in INDEX_MEDIA_TYPES and target_type not in MANIFEST_MEDIA_TYPES:
+        _refuse("MEDIA_TYPE_UNSUPPORTED")
+    target_document = _document(
+        _blob(tar, regular, target, target_size, [BLOB_DIR + "/" + target], document=True),
+        "OCI_INVALID")
+    configs, seen, count = set(), {target: target_type}, 0
+    # ``index.json`` is level 0, so the descriptor it names is level 1 and the bound
+    # is the depth of the index graph below the archive's own index.
+    pending = [(target_type, target_document, 1)]
     while pending:
-        node, depth = pending.pop()
+        media_type, document, depth = pending.pop()
         if depth > MAX_DESCRIPTOR_DEPTH:
             _refuse("DESCRIPTOR_LIMIT")
-        manifests = node.get("manifests")
-        if node.get("schemaVersion") != 2 or not isinstance(manifests, list) or not manifests:
+        if media_type in MANIFEST_MEDIA_TYPES:
+            _image_config(tar, regular, document, configs)
+            continue
+        if document.get("schemaVersion") != 2:
+            _refuse("OCI_INVALID")
+        if (document.get("mediaType") is not None
+                and document["mediaType"] not in INDEX_MEDIA_TYPES):
+            _refuse("DESCRIPTOR_INVALID")
+        manifests = document.get("manifests")
+        if not isinstance(manifests, list) or not manifests:
             _refuse("OCI_INVALID")
         for entry in manifests:
-            media_type, digest, size = _descriptor(entry)
+            child_type, child, child_size = _descriptor(entry)
             count += 1
             if count > MAX_DESCRIPTOR_COUNT:
                 _refuse("DESCRIPTOR_LIMIT")
-            if media_type not in INDEX_MEDIA_TYPES and media_type not in MANIFEST_MEDIA_TYPES:
+            if child_type not in INDEX_MEDIA_TYPES and child_type not in MANIFEST_MEDIA_TYPES:
                 _refuse("MEDIA_TYPE_UNSUPPORTED")
-            if digest in seen:
+            if child in seen:
                 # One blob may be reached by several paths, but it may not be
                 # described as two different things.
-                if seen[digest] != media_type:
+                if seen[child] != child_type:
                     _refuse("DESCRIPTOR_INVALID")
                 continue
-            seen[digest] = media_type
-            path = [BLOB_DIR + "/" + digest]
-            if media_type in INDEX_MEDIA_TYPES:
-                nested = _document(_blob(tar, regular, digest, size, path, document=True),
-                                   "OCI_INVALID")
-                if nested.get("mediaType") is not None and nested["mediaType"] not in INDEX_MEDIA_TYPES:
-                    _refuse("DESCRIPTOR_INVALID")
-                pending.append((nested, depth + 1))
+            seen[child] = child_type
+            if BLOB_DIR + "/" + child not in regular:
+                # A catalogue entry this archive did not export.
                 continue
-            manifest = _document(_blob(tar, regular, digest, size, path, document=True),
-                                 "OCI_INVALID")
-            if (manifest.get("mediaType") is not None
-                    and manifest["mediaType"] not in MANIFEST_MEDIA_TYPES):
-                _refuse("DESCRIPTOR_INVALID")
-            if manifest.get("schemaVersion") != 2:
-                _refuse("OCI_INVALID")
-            # An attestation manifest is bound into the same graph and is hashed
-            # like everything else, but its config is not an image, so it never
-            # becomes candidate authority.
-            if manifest.get("artifactType"):
+            child_document = _document(
+                _blob(tar, regular, child, child_size, [BLOB_DIR + "/" + child],
+                      document=True), "OCI_INVALID")
+            if child_type in INDEX_MEDIA_TYPES:
+                pending.append((child_type, child_document, depth + 1))
                 continue
-            config_type, config_digest, config_size = _descriptor(manifest.get("config"))
-            if config_type not in CONFIG_MEDIA_TYPES:
-                _refuse("MEDIA_TYPE_UNSUPPORTED")
-            _blob(tar, regular, config_digest, config_size,
-                  [BLOB_DIR + "/" + config_digest], document=True)
-            layers = manifest.get("layers")
-            if not isinstance(layers, list):
-                _refuse("OCI_INVALID")
-            for layer in layers:
-                layer_type, layer_digest, layer_size = _descriptor(layer)
-                _blob(tar, regular, layer_digest, layer_size,
-                      [BLOB_DIR + "/" + layer_digest])
-            configs.add(config_digest)
-    return configs
+            _image_config(tar, regular, child_document, configs)
+    if not configs:
+        # An index that ends up naming no image at all is not an image archive.
+        _refuse("OCI_INVALID")
+    return target, configs
 
 
-def _legacy_image_config(tar, regular):
-    """The image config a legacy ``docker save`` index names.
+def _legacy_config_digest(tar, regular):
+    """The image config digest a legacy ``docker save`` index names.
 
     ``manifest.json`` is a list with exactly one entry and its ``Config`` is the
     identity of the config blob.  Docker's hybrid archive -- an OCI layout with
@@ -452,65 +504,92 @@ def _legacy_image_config(tar, regular):
     return name
 
 
-def _archive_image_configs(archive):
-    """Every image config digest this archive proves, from every layout it carries."""
+def archive_identity(archive):
+    """Every identity this archive proves about the image it carries.
+
+    ``root``    the digest ``index.json`` itself names -- the identity Docker
+                reports as the image id on a host using the containerd image store
+                (measured on HK-STAGING, server 29.7.2) -- or ``None`` when the
+                archive carries no OCI layout;
+    ``configs`` every image config digest the archive proves;
+    ``legacy``  the config digest ``manifest.json`` names, or ``None``.
+
+    Three roles, three fields.  An index digest, a config digest and a layout
+    marker are different things and are never compared with one another: a rule
+    that requires the first to equal the second is a rule no host using the
+    containerd image store can ever satisfy.
+    """
     try:
         with tarfile.open(archive, "r:") as tar:
             regular = _member_index(tar)
-            configs, oci, legacy = set(), None, None
+            oci, legacy = None, None
+            root = None
             if INDEX_NAME in regular:
-                oci = _oci_image_configs(tar, regular)
-                if not oci:
-                    # An index that names no image at all is not an image archive.
-                    _refuse("OCI_INVALID")
-                configs |= oci
+                root, oci = _oci_identity(tar, regular)
             if CONFIG_NAME in regular:
-                legacy = _legacy_image_config(tar, regular)
+                legacy = _legacy_config_digest(tar, regular)
                 # Two layouts in one archive are acceptable only while they name
                 # the same image; an archive that contradicts itself is refused
                 # rather than resolved by preferring one of them.
                 if oci is not None and legacy not in oci:
                     _refuse("LAYOUT_AMBIGUOUS")
-                configs.add(legacy)
-            if not configs:
+            if oci is None and legacy is None:
                 _refuse("ARCHIVE_INVALID")
-            return configs
+            configs = set(oci or ())
+            if legacy is not None:
+                configs.add(legacy)
+            return {"root": root, "configs": configs, "legacy": legacy}
     except Reject:
         raise
     except (OSError, tarfile.TarError, ValueError, KeyError, UnicodeDecodeError) as exc:
         raise Reject(_REFUSAL_PREFIX + "ARCHIVE_INVALID") from exc
 
 
-def image_config_digest(archive, image_id):
-    """The archive's image config digest, proven against the candidate identity.
+def image_identity(archive, image_id):
+    """Prove ``image_id`` is the image this archive carries, and say in which role.
 
-    Returns the hex digest of the config blob that the archive's own graph names,
-    after proving the blob is a regular member whose bytes hash to the identity it
-    is filed under -- and that this identity is exactly the candidate image's.  An
-    archive that names no image, carries a descriptor type this contract does not
-    know, contradicts itself across two layouts, or is simply not this image, is
-    refused.  Descriptor digests, index digests and the package's own SHA256 are
-    separate identities and are never compared with the image id.
+    Docker reports an image's id as one of two different things depending on how the
+    host stores images: the digest of the descriptor ``index.json`` names (the
+    containerd image store -- measured on HK-STAGING, server 29.7.2, where the
+    reported id was an *index* digest and the image's config digest was a different
+    value), or the image config's own digest (Docker's legacy image store, and
+    GitHub's runners).  Both are identities this archive can prove, so both are
+    accepted -- each only after the bytes behind it have been hashed in place -- and
+    the role that matched is reported rather than assumed.  The two identities are
+    never compared with each other.
+
+    An archive that names no image, carries a descriptor type this contract does not
+    know, contradicts itself across two layouts, or proves no identity equal to the
+    candidate, is refused.
     """
     if not isinstance(image_id, str) or IMAGE_ID.fullmatch(image_id) is None:
         raise Reject("E_ARTIFACT_IMAGE_IDENTITY")
     expected = image_id.split(":", 1)[1]
-    if expected not in _archive_image_configs(archive):
-        _refuse("CONFIG_MISMATCH")
-    return expected
+    identity = archive_identity(archive)
+    if identity["root"] == expected:
+        role = "root_descriptor"
+    elif expected in identity["configs"]:
+        role = "config"
+    else:
+        _refuse("IMAGE_IDENTITY_MISMATCH")
+    return {"image_id": image_id,
+            "image_identity_role": role,
+            "root_descriptor_digest": identity["root"],
+            "config_digests": sorted(identity["configs"])}
 
 
 def materialise(runner, package_sha256, image_id, root=STORE_ROOT):
     """Make the sealed candidate image present in Docker, and prove it is that image.
 
     The image is only allowed to exist once the package's own bytes hash to the
-    address asked for, the archive's config blob hashes to the candidate image ID,
-    and Docker reports the loaded image as that same ID.
+    address asked for, the archive proves an identity equal to the candidate image
+    ID (in a named role, with the bytes behind it present and hashed), and Docker
+    reports the loaded image as that same ID.
     """
     if not isinstance(image_id, str) or IMAGE_ID.fullmatch(image_id) is None:
         raise Reject("E_ARTIFACT_IMAGE_IDENTITY")
     path = resolve(package_sha256, root)
-    image_config_digest(path, image_id)
+    image_identity(path, image_id)
     loaded = runner(["/usr/bin/docker", "load", "--input", path], 600)
     if getattr(loaded, "returncode", 0):
         raise Reject("E_ARTIFACT_LOAD_FAILED")

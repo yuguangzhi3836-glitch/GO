@@ -190,14 +190,15 @@ jobs:
           import importlib.machinery
           import importlib.util
           import pathlib
+          import subprocess
           import sys
           import tarfile
 
           # A real `docker save` archive, parsed by both halves of the contract.  The
           # first real TEST_PR failed because the parser only understood the legacy
-          # shape while the host writes an OCI layout; the deterministic OCI fixture
-          # in the suite is still the authority for that format, and this step records
-          # which format this runner happens to produce rather than assuming one.
+          # shape while the host writes an OCI layout; the deterministic fixtures in
+          # the suite remain the authority for every format, and this step records
+          # what this runner's Docker actually produces rather than assuming it.
           archive, image_id = sys.argv[1], sys.argv[2]
           root = pathlib.Path('.').resolve()
           sys.path.insert(0, str(root / 'control-plane' / 'boss-test-pr-live-integration-v1'
@@ -223,10 +224,37 @@ jobs:
               layout = 'UNKNOWN'
           assert layout != 'UNKNOWN', sorted(names)
 
-          digest = artifact_store.image_config_digest(archive, image_id)
-          assert digest == image_id.split(':', 1)[1], (digest, image_id)
-          assert reader.image_config_digest(archive, image_id) == digest, 'the two sides disagree'
+          # What a Docker daemon *reports* is a property of its image store, not of
+          # this contract: a GitHub runner reports the image's config digest, while
+          # HK-STAGING (server 29.7.2, containerd image store) reports the digest of
+          # the descriptor `index.json` names.  The assertions below are therefore
+          # about roles, never about those two identities being equal -- an equality
+          # assertion is exactly what made this step green for months while the host
+          # could not seal a single image.
+          identity = artifact_store.image_identity(archive, image_id)
+          assert identity['image_id'] == image_id, identity
+          assert reader.image_identity(archive, image_id) == identity, 'the two sides disagree'
+          assert identity['config_digests'], identity
+          config = 'sha256:' + identity['config_digests'][0]
+          assert artifact_store.image_identity(archive, config)['image_identity_role'] == 'config'
+          if identity['root_descriptor_digest']:
+              root_descriptor = 'sha256:' + identity['root_descriptor_digest']
+              assert root_descriptor != config, (root_descriptor, config)
+              assert artifact_store.image_identity(
+                  archive, root_descriptor)['image_identity_role'] == 'root_descriptor'
+          try:
+              artifact_store.image_identity(archive, 'sha256:' + 'f' * 64)
+          except artifact_store.Reject as refusal:
+              assert str(refusal).endswith('IMAGE_IDENTITY_MISMATCH'), refusal
+          else:
+              raise AssertionError('an identity the archive does not prove was accepted')
+          server = subprocess.run(['docker', 'version', '--format', '{{.Server.Version}}'],
+                                  capture_output=True, text=True).stdout.strip()
+          print('DOCKER_SERVER_VERSION=%s' % server)
           print('REAL_DOCKER_SAVE_FORMAT=%s' % layout)
+          print('DOCKER_INSPECT_ID_ROLE=%s' % identity['image_identity_role'])
+          print('ROOT_DESCRIPTOR_DIGEST=%s' % identity['root_descriptor_digest'])
+          print('CONFIG_DIGESTS=%s' % ','.join(identity['config_digests']))
           print('REAL_DOCKER_SAVE_SMOKE=PROVEN image_id=%s' % image_id)
           PY
           docker image rm --force go-ci-save-smoke:local >/dev/null

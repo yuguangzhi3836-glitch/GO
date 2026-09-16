@@ -238,6 +238,8 @@ class IntegrationTests(unittest.TestCase):
                     "artifact_durability": "PROVEN",
                     "artifact_package": {"schema": "go.sealed-artifact.v1",
                                          "image_id": "sha256:" + "a" * 64,
+                                         "image_identity_role": "root_descriptor",
+                                         "config_digests": ["c" * 64],
                                          "package_sha256": "b" * 64},
                     "gate_results": {"source_commit": "PASS"},
                     "application_health_proven": False, "deployment_performed": False,

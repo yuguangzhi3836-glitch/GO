@@ -43,7 +43,7 @@ sys.path.insert(0, str(ROOT / "hk-staging"))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from hk_agent import artifact_store, test_pr, transport  # noqa: E402
-from archive_fixtures import oci_save, synthetic_save  # noqa: E402
+from archive_fixtures import multiplatform_save, oci_save, synthetic_save  # noqa: E402
 
 POSIX = os.name == "posix"
 COMMIT = "c" * 40
@@ -69,10 +69,15 @@ def not_an_archive(path, config_bytes):
 class BuilderRunner:
     """A TEST_PR build with no Docker: only the argv the builder would use."""
 
-    def __init__(self, fail_gate=None, save_writer=None):
+    def __init__(self, fail_gate=None, save_writer=None, reported_id=None):
         self.workspace = None
         self.fail_gate = fail_gate
         self.save_writer = save_writer or synthetic_save
+        # What `docker image inspect <built tag>` reports.  On a host using the
+        # containerd image store this is the descriptor the archive's index.json
+        # names, which is not the config digest; the caller decides which host it is
+        # modelling rather than the fixture assuming one.
+        self.reported_id = reported_id or IMAGE_ID
         self.calls = []
 
     def __call__(self, argv, *, cwd=None, env=None, timeout=300):
@@ -96,7 +101,7 @@ class BuilderRunner:
             # The builder base is pinned by id; the freshly built tag reports the
             # build's own image id.
             return Completed(test_pr.BUILDER_IMAGE_ID
-                             if argv[3] == test_pr.BUILDER_IMAGE else IMAGE_ID)
+                             if argv[3] == test_pr.BUILDER_IMAGE else self.reported_id)
         if verb == "run":
             if self.fail_gate == "dependency_profile":
                 return Completed("not-a-digest")
@@ -338,6 +343,49 @@ class TestPrDurabilityTests(unittest.TestCase):
                                                        package_sha256=value))
             with self.assertRaisesRegex(transport.Reject, "ARTIFACT_DURABILITY_REJECT"):
                 self.evidence_for(wrong)
+
+    def test_evidence_refuses_a_package_that_does_not_say_which_identity_it_bound(self):
+        """The role and the proved config are what make the claim auditable.
+
+        Docker reports an image's id as either the descriptor its index.json names or
+        the config digest, so a package claim that records only "this is the id"
+        cannot be checked later against the archive it came from.
+        """
+        _, result = self.build()
+        for broken in ({"image_identity_role": "guess"},
+                       {"image_identity_role": None},
+                       {"config_digests": []},
+                       {"config_digests": "not-a-list"},
+                       {"config_digests": ["not-a-digest"]},
+                       {"config_digests": [None]}):
+            with self.subTest(broken=broken):
+                wrong = dict(result, artifact_package=dict(result["artifact_package"], **broken))
+                with self.assertRaisesRegex(transport.Reject, "ARTIFACT_DURABILITY_REJECT"):
+                    self.evidence_for(wrong)
+
+    def test_evidence_names_the_role_the_archive_actually_played(self):
+        """Both roles are sealable, and the Evidence says which one it was.
+
+        A legacy or single-platform OCI host reports the config digest; a host using
+        the containerd image store reports the descriptor its index.json names.  Both
+        must seal, and the published record must name the role rather than leave a
+        reader to infer it.
+        """
+        probe = pathlib.Path(self.tmp.name) / "role-probe.tar"
+        root_digest = multiplatform_save(str(probe), CONFIG)
+        cases = ((synthetic_save, IMAGE_ID, "config"),
+                 (oci_save, IMAGE_ID, "config"),
+                 (multiplatform_save, root_digest, "root_descriptor"))
+        for save_writer, reported, role in cases:
+            with self.subTest(role=role, writer=save_writer.__name__):
+                _, result = self.build(save_writer=save_writer, reported_id=reported)
+                self.assertEqual(result["result"], "TEST_PR_OK")
+                self.assertEqual(result["built_image_id"], reported)
+                self.assertEqual(result["artifact_package"]["image_identity_role"], role)
+                record = self.evidence_for(result)
+                self.assertEqual(record["artifact_package"]["image_identity_role"], role)
+                self.assertEqual(record["artifact_package"]["config_digests"],
+                                 [hashlib.sha256(CONFIG).hexdigest()])
 
     def test_evidence_carries_the_package_when_it_is_durable(self):
         _, result = self.build()
