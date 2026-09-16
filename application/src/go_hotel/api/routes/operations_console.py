@@ -119,8 +119,21 @@ RENTAL_RECONCILIATION_STATUS_LABELS = {
 
 
 def _present_rental_reconciliation(result):
+    # The case envelope is a deterministic read-only handoff identifier. It is
+    # deliberately derived from existing business identifiers and never creates
+    # a review row, writes an acknowledgement, or changes money/order state.
+    case_id = f"RENTAL_REFUND:{result['order_id']}:{result['refund_id']}"
     return {
         'title': '租车退款只读对账',
+        'case': {
+            'case_id': case_id,
+            'vertical': 'RENTAL',
+            'order_id': result['order_id'],
+            'refund_id': result['refund_id'],
+            'next_review_action': result['next_action'],
+            'confirmed_movement_ids': sorted(result['confirmed_movement_ids']),
+            'read_only': True,
+        },
         'status': {
             'code': result['status'],
             'label': RENTAL_RECONCILIATION_STATUS_LABELS[result['status']],
