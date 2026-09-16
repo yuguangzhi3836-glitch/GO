@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v2",
   "product_candidate_commit": "9b2d0e395a37e3a0c6d2502bc27643fb6e00cc06",
-  "application_git_tree": "383b906733438c7e695285a9bc585f18bc7dd114",
+  "application_git_tree": "5f4ca92c5d3ce2f1a22bc3e8d6aa6c6304569621",
   "source_anchor_main": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
   "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
@@ -45,6 +45,11 @@
       "mode": "100644",
       "git_blob": "f24a782525b24a31bad0a4fbb08ea35a5c9b0e70",
       "reason": "V70-R3-C08-01 GO AI-specific durable ownership/checkpoint boundary"
+    },
+    "tests/go_ai/c08_hard_exit_worker.py": {
+      "mode": "100644",
+      "git_blob": "4991a791846ceb44a797367d587eb90a55ea13eb",
+      "reason": "TEST_ONLY: provision GO AI durable execution table in hard-exit recovery fixture"
     }
   },
   "migration_head": "0135_go_ai_execution",
