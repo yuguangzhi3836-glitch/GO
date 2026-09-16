@@ -7130,6 +7130,22 @@ class GoAIRequestRow(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class GoAIExecutionRow(Base):
+    """GO AI-specific execution ownership; not shared with other worker domains."""
+    __tablename__ = "go_ai_execution"
+    go_ai_request_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    fencing_token: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    lease_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    state: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    checkpoint_json: Mapped[dict | None] = mapped_column(JSON)
+    checkpoint_hash: Mapped[str | None] = mapped_column(String(64))
+    checkpoint_complete: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    provider_outcome: Mapped[str] = mapped_column(String(32), nullable=False, default="NOT_STARTED")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class GoAIInvocationRow(Base):
     __tablename__ = "go_ai_invocation"
     go_ai_invocation_id: Mapped[str] = mapped_column(String(64), primary_key=True)
