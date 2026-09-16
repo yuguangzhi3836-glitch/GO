@@ -69,8 +69,10 @@ jobs:
                   if p.is_file() and "__pycache__" not in p.parts and p.suffix not in {".pyc",".pyo"}:
                       hashes[p.relative_to(app).as_posix()]=hashlib.sha256(p.read_bytes()).hexdigest()
           digest=hashlib.sha256("".join(f"{p}\\0{h}\\n" for p,h in sorted(hashes.items())).encode()).hexdigest()
-          Path("evidence-out/SOURCE_FINGERPRINT.json").write_text(json.dumps(hashes,sort_keys=True,indent=2)+"\\n")
-          Path("evidence-out/source-fingerprint-sha256.txt").write_text(digest+"\\n")
+          fingerprint_path=Path("evidence-out/SOURCE_FINGERPRINT.json")
+          fingerprint_path.write_text(json.dumps(hashes,sort_keys=True,indent=2)+chr(10))
+          json.loads(fingerprint_path.read_text())
+          Path("evidence-out/source-fingerprint-sha256.txt").write_text(digest+chr(10))
           PY
           sha256sum evidence-out/* > evidence-out/SHA256SUMS
       - uses: actions/upload-artifact@v4
