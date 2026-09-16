@@ -220,32 +220,121 @@ Without explicit current authorization, do not:
 - modify runtime secrets;
 - treat a Draft PR as approved release authority.
 
-## 5. Default completion report
+## 5. Final reply format (WorkBuddy / CodeBuddy execution sessions)
 
-At the end of a development task, report compactly:
+Eason's standing instruction from 2026-09-16, addressed -- like the rest of this
+file -- to the WorkBuddy / CodeBuddy execution agent. It applies to every such
+session, in this repository or any other.
 
-```text
-完成：<一句话说明>
+It is **not** a rule for Boss GPT, Boss ChatGPT, or any other product-exploration
+or review session. Nothing in this repository points those sessions at this file;
+they are governed by `AGENTS.md` and
+`docs/control-plane/hk-staging/BOSS_GPT_REQUEST_GUIDE.md`.
 
-Branch: <branch>
-HEAD: <commit SHA>
-PR: #<number> <Draft/Open>
+The reply that ends a coding task has exactly three parts, in the order below, and
+**exactly one fenced code block in the entire reply**.
 
-改动：
-- ...
-- ...
+Chat, short tasks and non-coding questions keep the default output and are **not**
+forced into this shape.
 
-验证：
-- <test/gate>: PASS/FAIL/SKIP
-- <test/gate>: PASS/FAIL/SKIP
+It replaces the earlier compact completion-report block
+(`完成 / Branch / HEAD / PR / 改动 / 验证 / 剩余 / 未执行`), which is retired: it
+read as a log rather than a report and pushed every substantive line into a fenced
+code block.
 
-剩余：
-- <HOLD / known gap / none>
+The reply has **exactly three parts, in this order**, and **exactly one fenced
+code block in the entire reply**. The style rules in section 3 still apply inside
+part 1: lead with the conclusion, and keep technical terms, SHAs, branches and
+paths in English.
 
-未执行：merge / deployment / production changes
-```
+### Part 1 — `### 技术结果`
 
-If something failed, say exactly what failed and whether the failure is code, test infrastructure, environment, external dependency, or authority-related.
+Plain Markdown. **Never inside a fenced code block.**
+
+Use headings, paragraphs, bullet lists, tables, bold, and inline code such as
+`VERIFY_OK`, a SHA, a branch, a path or an image id. This part is written for the
+project owner, technical reviewers and Eason, so technical vocabulary stays.
+
+Include what the round actually produced: the conclusion; branch;
+START_HEAD / END_HEAD; PR / issue; what was changed; verification results; CI and
+test outcome; whether live state changed; what was executed and what was not;
+blockers; NEXT_ACTION; anything that needs human approval.
+
+Do not emit empty fields, and do not imitate a log — no wall of `KEY=VALUE` lines.
+This part is a readable technical report.
+
+### Part 2 — `### ChatGPT 交接`
+
+The only fenced code block permitted in the reply. Fence language `text`, first
+line `CHATGPT_HANDOFF`:
+
+~~~text
+CHATGPT_HANDOFF
+...
+~~~
+
+Its single purpose: Eason copies the whole block into another ChatGPT so that it
+can take over the current GO state accurately. It must be self-contained and must
+not repeat the whole log. Typical fields — not a rigid template: PROJECT,
+CURRENT_BRANCH, START_HEAD, END_HEAD, PR / ISSUE, CURRENT_STATE, ROOT_CAUSE,
+CHANGED, VERIFIED, LIVE_STATE, NOT_EXECUTED, BLOCKERS, IMPORTANT_JUDGMENTS,
+NEXT_ACTION, DO_NOT_ASSUME, plus the decisive SHA / image / revision / evidence
+ids.
+
+The test is: the next ChatGPT reads this block and knows where the project is,
+what is proven, what was deliberately not done, and what to do next. Do not add a
+second machine-handoff block after it.
+
+### Part 3 — `### 白话结论`
+
+Plain Markdown. **No fenced code block.**
+
+Assume the reader does not know Git, Docker, SHA, Alembic, VERIFY, baseline or
+revision and only wants to know what is actually going on. Cover: what this round
+found or fixed; the current state of the project; whether anything on the live
+host really changed; whether there is risk; what still has to happen. Keep long
+SHAs, file hashes and complex paths out unless unavoidable. Three to eight short
+paragraphs or bullets.
+
+### Hard limits
+
+- One fenced code block per final reply, and it is the `CHATGPT_HANDOFF` block.
+- No `textsvg`. No second or third code block. No separate block for
+  START_HEAD / END_HEAD, for NEXT_ACTION, or for a closing summary.
+- Short technical values use inline code instead.
+- Long shell output, rollback commands and raw preflight output belong in the
+  audit appendix below, not in a second chat block.
+
+### Audit appendix (.md) — when one may exist
+
+Do not create a `.md` merely to satisfy `present_files`. A round that only
+investigates, reads, analyses, cross-checks or confirms status produces **no**
+file, and an answer is never copied into a `.md`.
+
+Create one only when the round involved a live-environment change, an install, a
+rollback, a production/test-server operation, a material repository commit, exact
+before/after values, a full preflight, backup paths and rollback commands, or
+audit detail that genuinely will not fit in the reply.
+
+Such a file is an **audit appendix / rollback record / local snapshot only**. It
+is not a ChatGPT handoff, not project source of truth, not formal Evidence, and
+not a current-state handoff document. It carries a very short metadata header
+(task, date, HEAD, related PR, purpose) plus the detail the reply cannot hold, and
+it does not restate the reply's summary, blockers, NEXT_ACTION or handoff block.
+
+Formal handoff and source of truth remain `docs/project/*`,
+`docs/project/CONTEXT_CHECKPOINT.json` and the project's own state files. Signed
+Evidence remains the project's own Evidence mechanism. No next AI may ever be
+required to read `D:\Code\Workbuddy\CCV1-*.md` to recover project state.
+
+### During a long task
+
+Intermediate progress may use short Chinese notes. Do not turn one status or one
+result into its own fenced code block; a temporary block is justified only when
+Eason must copy a command. The final reply still follows the three-part format.
+
+If something failed, say exactly what failed and whether the failure is code, test
+infrastructure, environment, external dependency, or authority-related.
 
 ## 6. Product-lineage discipline
 
