@@ -133,6 +133,27 @@ LEDGER_FAILURE_CLOSURE                PASS
 AGENT_TICK_CRASH_ON_ARTIFACT_REJECT   NO
 ```
 
+Linux gate: `Ran 143 tests in 6.424s / OK (skipped=3)`, and the manifest check passed
+for every file this revision changed. The new smoke step then ran a **real**
+`docker save` on the runner and parsed it with both halves:
+
+```
+REAL_DOCKER_SAVE_FORMAT=OCI+LEGACY
+REAL_DOCKER_SAVE_SMOKE=PROVEN image_id=sha256:7a1d86622ef9117902c6301fa55460b02b8dc821a4ed88f91e187506f7da9833
+```
+
+That is an independent confirmation of the diagnosis: a runner that has never seen
+Hong Kong produces the **hybrid** — an OCI layout *with* a legacy `manifest.json`
+beside it — which is precisely what the failing traceback line implied. The parser
+read it, and so did the reader, and they agreed.
+
+The first attempt at that step failed for an environment reason rather than a parse
+failure: an image built from `FROM scratch` with only a `LABEL` has no layers, and
+the daemon refuses to export it (`Error response from daemon: empty export - not
+implemented`). The step now builds one real layer (still no network) and reports
+`SKIPPED_SAVE_UNSUPPORTED` if a daemon still cannot export it, so the deterministic
+fixtures stay the authority instead of a meaningless red build.
+
 Test counts (this component): 96 → 143. `test_artifact_store` 53 → 92,
 `test_test_pr_durability` 12 → 16, `test_live_integration` 33 → 35. On this
 workstation the four bash rollback tests remain impossible, and the deploy-entry

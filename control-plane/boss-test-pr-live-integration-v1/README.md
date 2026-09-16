@@ -248,7 +248,10 @@ The fixture rule this established: the archive builders live in
 copy of them is how the blind spot was built in the first place. A CI step also
 parses a **real** `docker save` archive produced by the runner, records which
 format it turned out to be, and asserts both sides agree — while the deterministic
-OCI fixture remains the authority for a format the runner may not produce.
+OCI fixture remains the authority for a format the runner may not produce. On its
+first real run that step answered `REAL_DOCKER_SAVE_FORMAT=OCI+LEGACY`: an
+independent host, which has never seen Hong Kong, produces the hybrid shape that
+the failing traceback pointed at.
 
 ### B4-B1.2 superseded hashes
 
