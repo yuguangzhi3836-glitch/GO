@@ -17,7 +17,8 @@ jobs:
         with:
           python-version: '3.13.5'
       - name: Install frozen dependencies
-        run: python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
       - name: Run focused zero-write tests
         run: |
