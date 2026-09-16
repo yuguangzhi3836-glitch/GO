@@ -1,0 +1,78 @@
+name: C03 PostgreSQL nonempty migration retention
+on:
+  push:
+    branches: [cell/c03-v70-r3-04-pg-retention]
+  pull_request:
+    branches: [cell/c03-v70-r3-03-pg-resolution-matrix]
+permissions:
+  contents: read
+jobs:
+  c03-pg-retention:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go
+          POSTGRES_PASSWORD: go
+          POSTGRES_DB: go_hotel
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U go -d go_hotel"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql+psycopg://go:go@localhost:5432/go_hotel
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Bind exact source
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD:application)" = "9c83d92434301356228c1b79294fcd829d675ebf"
+      - name: Install frozen dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: PostgreSQL retention and downgrade guard
+        run: |
+          mkdir -p evidence-out
+          cd application
+          alembic upgrade head
+          python - <<'PY' | tee ../evidence-out/retention.log
+          import json, os, subprocess
+          from sqlalchemy import create_engine, text
+          url=os.environ["DATABASE_URL"]
+          engine=create_engine(url)
+          payload={"decision":"TICKETED","supplier_reference":"SUP-IMMUTABLE"}
+          with engine.begin() as c:
+              c.execute(text("""INSERT INTO rail_change_resolution
+                (quote_id,order_id,account_id,actor_id,state,request_json,terms_json,request_hash,result_json,lease_token,lease_until_ms,attempt,created_ms,completed_ms)
+                VALUES (:q,:o,:a,:actor,'COMPLETED',CAST(:request AS jsonb),CAST(:terms AS jsonb),:hash,CAST(:result AS jsonb),NULL,0,1,1000,2000)"""),
+                dict(q="q-retain",o="o-retain",a="a-retain",actor="admin",request=json.dumps({"quote_id":"q-retain"}),terms=json.dumps({"amount":"12.00"}),hash="a"*64,result=json.dumps(payload)))
+              before=c.execute(text("SELECT row_to_json(r)::text FROM rail_change_resolution r WHERE quote_id='q-retain'")).scalar_one()
+          proc=subprocess.run(["alembic","downgrade","0128_vertical_refund_recovery"],text=True,capture_output=True)
+          assert proc.returncode != 0, proc.stdout+proc.stderr
+          assert "RAIL_RESOLUTION_DATA_PRESENT_RESTORE_BACKUP_FOR_DOWNGRADE" in proc.stdout+proc.stderr
+          with engine.begin() as c:
+              after=c.execute(text("SELECT row_to_json(r)::text FROM rail_change_resolution r WHERE quote_id='q-retain'")).scalar_one()
+              head=c.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+          assert json.loads(after)==json.loads(before)
+          assert head=="0136_merge_go_ai_journey", head
+          print("PG18.4 RETENTION PASS", head, before)
+          PY
+          cd ..
+          git rev-parse HEAD > evidence-out/candidate.txt
+          git rev-parse HEAD:application > evidence-out/application-tree.txt
+          sha256sum evidence-out/* > evidence-out/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c03-pg-nonempty-retention
+          path: evidence-out
+          retention-days: 90
