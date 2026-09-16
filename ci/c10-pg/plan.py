@@ -85,9 +85,9 @@ def main():
       cx.commit()
     migration_commands=[]
     migration_commands.append(run_alembic(alembic_url,["stamp","0134_flight_status_width"]))
-    migration_commands.append(run_alembic(alembic_url,["upgrade","0135_journey_search_trigram"]))
+    migration_commands.append(run_alembic(alembic_url,["upgrade","head"]))
     migration_commands.append(run_alembic(alembic_url,["downgrade","0134_flight_status_width"]))
-    migration_commands.append(run_alembic(alembic_url,["upgrade","0135_journey_search_trigram"]))
+    migration_commands.append(run_alembic(alembic_url,["upgrade","head"]))
     with psycopg.connect(url) as cx:
       with cx.cursor() as cur:
         cur.execute("ANALYZE go_journey_runtime");after=explain(cur)
