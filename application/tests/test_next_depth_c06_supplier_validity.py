@@ -160,3 +160,7 @@ def test_valid_window_does_not_bypass_inflight_refund_exclusion(monkeypatch):
 
 # Collect the Issue #146 internal fixture matrix in the already-admitted C06 shard.
 from tests.test_c06_internal_policy_registry import *  # noqa: F401,F403,E402
+
+
+# Collect the successor raw-byte binding matrix in the admitted C06 shard.
+from tests.test_v70_r5_c06_raw_payload_binding import *  # noqa: F401,F403,E402
