@@ -136,6 +136,27 @@ def alipay_adjustment_approve(approval_id:str,b:Payload,p:Principal=Depends(admi
 def alipay_webhook(b:Payload,x_alipay_signature:str=Header(alias='X-Alipay-Signature')):return call(pay_svc.webhook,b.model_dump(exclude_none=True),x_alipay_signature)
 @router.post('/internal/v1/alipay/authorizations/{authorization_id}/reconcile')
 def alipay_reconcile(authorization_id:str,p:Principal=Depends(admin_principal)):return call(pay_svc.reconcile,authorization_id)
+
+
+class UnknownFundingEpisodeBody(BaseModel):
+ evidence_reference:str
+ evidence:dict={}
+
+class ResolveUnknownFundingEpisodeBody(BaseModel):
+ decision:str='CONFIRMED'
+ expected_open_evidence_digest:str
+ evidence_reference:str
+ evidence:dict={}
+
+@router.post('/internal/v1/alipay/authorizations/{authorization_id}/funding-movements/{movement_id}/unknown-episodes')
+def open_funding_unknown_episode(authorization_id:str,movement_id:str,b:UnknownFundingEpisodeBody,p:Principal=Depends(admin_principal)):
+ from go_hotel.services.hosted_money import open_unknown_episode
+ return call(open_unknown_episode,authorization_id,movement_id,b.evidence_reference,b.evidence,p.user_id)
+
+@router.post('/internal/v1/alipay/unknown-funding-episodes/{episode_id}/resolve')
+def resolve_funding_unknown_episode(episode_id:str,b:ResolveUnknownFundingEpisodeBody,p:Principal=Depends(admin_principal)):
+ from go_hotel.services.hosted_money import resolve_unknown_episode
+ return call(resolve_unknown_episode,episode_id,b.decision,b.expected_open_evidence_digest,b.evidence_reference,b.evidence,p.user_id)
 @router.post('/internal/v1/stays/reservations/{reservation_id}')
 def stay_create(reservation_id:str,p:Principal=Depends(admin_principal)):return call(stay_svc.create,reservation_id,p.user_id)
 @router.post('/internal/v1/stays/{stay_id}/identity-evidence')
