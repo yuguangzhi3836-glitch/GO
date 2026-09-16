@@ -19,9 +19,19 @@ def _money(value):
     return type(value) is int
 
 
+def _currency(plan):
+    currency = plan.get("order", {}).get("currency") if isinstance(plan.get("order"), dict) else None
+    if (not isinstance(currency, str) or len(currency) != 3
+            or not currency.isascii() or not currency.isalpha()
+            or currency != currency.upper()):
+        raise ValueError("COUPON_AUTHORITY_CURRENCY_INVALID")
+    return currency
+
+
 def _semantic(plan):
     if not isinstance(plan, dict) or not isinstance(plan.get("plan_hash"), str):
         raise ValueError("COUPON_AUTHORITY_PLAN_INVALID")
+    _currency(plan)
     changes = plan.get("changes")
     if not isinstance(changes, list) or not changes:
         raise ValueError("COUPON_AUTHORITY_PLAN_INVALID")
@@ -54,7 +64,8 @@ def _semantic(plan):
 
 def persist(plan, store, *, key_id, authority_key):
     """Persist one immutable authenticated plan; no overwrite is allowed."""
-    if not isinstance(store, dict) or not key_id or not isinstance(authority_key, bytes):
+    if (not isinstance(store, dict) or not isinstance(key_id, str) or not key_id.strip()
+            or not isinstance(authority_key, bytes)):
         raise ValueError("COUPON_AUTHORITY_CONFIG_INVALID")
     charge, credit = _semantic(plan)
     plan_id = plan["plan_hash"]
@@ -68,11 +79,33 @@ def persist(plan, store, *, key_id, authority_key):
     return deepcopy(record)
 
 
-def authorize(store, plan_id, consent, allocations, *, authority_key):
-    """Verify storage authority, exact consent and charge-only C11 allocation."""
+def _resolve_key(record, authority_keys, retired_key_ids):
+    if not isinstance(authority_keys, dict):
+        raise ValueError("COUPON_AUTHORITY_KEYRING_INVALID")
+    key_id = record.get("key_id")
+    retired = retired_key_ids if retired_key_ids is not None else frozenset()
+    if not isinstance(retired, (set, frozenset)) or any(not isinstance(x, str) for x in retired):
+        raise ValueError("COUPON_AUTHORITY_KEYRING_INVALID")
+    if key_id in retired:
+        raise ValueError("COUPON_AUTHORITY_KEY_RETIRED")
+    key = authority_keys.get(key_id)
+    if not isinstance(key, bytes):
+        raise ValueError("COUPON_AUTHORITY_KEY_UNKNOWN")
+    return key
+
+
+def authorize(store, plan_id, consent, allocations, *, authority_keys,
+              retired_key_ids=None):
+    """Verify keyed storage authority, exact consent and charge-only allocation.
+
+    The record's immutable key_id selects its verification key. Callers cannot
+    substitute an unscoped raw key; rotation keeps old records verifiable only
+    while their exact key_id remains explicitly trusted and non-retired.
+    """
     record = deepcopy(store.get(plan_id)) if isinstance(store, dict) else None
-    if not record or not isinstance(authority_key, bytes):
+    if not record:
         raise ValueError("COUPON_AUTHORITY_NOT_FOUND")
+    authority_key = _resolve_key(record, authority_keys, retired_key_ids)
     mac = record.pop("authority_mac", None)
     expected_mac = hmac.new(authority_key, _json(record), hashlib.sha256).hexdigest()
     if not isinstance(mac, str) or not hmac.compare_digest(mac, expected_mac):
@@ -80,9 +113,10 @@ def authorize(store, plan_id, consent, allocations, *, authority_key):
     expected = {"plan_id": plan_id, "authority_mac": mac,
                 "charge_minor": record["charge_minor"],
                 "credit_minor": record["credit_minor"],
-                "currency": record["plan"].get("order", {}).get("currency"),
+                "currency": _currency(record["plan"]),
                 "negative_fare_treatment": "CREDIT_NOT_NETTED", "confirmed": True}
-    if consent != expected or type(consent.get("confirmed")) is not bool:
+    if (not isinstance(consent, dict) or consent != expected
+            or type(consent.get("confirmed")) is not bool):
         raise ValueError("COUPON_AUTHORITY_CONSENT_INVALID")
     if (not isinstance(allocations, list)
             or any(not isinstance(x, dict) or set(x) != {"source_id", "amount_minor"}
