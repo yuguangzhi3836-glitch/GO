@@ -1,11 +1,11 @@
-name: C02 R5 contract authority evidence
+name: C02 R6 contract authority evidence
 on:
   pull_request:
     branches: [main]
     paths:
       - application/src/go_hotel/flight/coupon_authority.py
       - application/tests/test_v70_r3_c02_coupon_authority.py
-      - .github/workflows/c02-r5-contract.yml
+      - .github/workflows/c02-r6-contract.yml
 permissions:
   contents: read
 jobs:
@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 15
     env:
       PYTHONDONTWRITEBYTECODE: '1'
-      PRODUCT_CANDIDATE: f0debc1679669f0ba36d120b8972433732aa4634
+      PRODUCT_CANDIDATE: 7f7646bac32eb6dd10a7640dea6ff059d01ef834
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,26 +26,26 @@ jobs:
           python-version: '3.13.5'
       - name: Verify exact C02 product blobs
         run: |
-          test "$(git rev-parse "$PRODUCT_CANDIDATE:application/src/go_hotel/flight/coupon_authority.py")" = "6edd6943f5fd9a74979320933a5382998c2627c8"
-          test "$(git rev-parse "$PRODUCT_CANDIDATE:application/tests/test_v70_r3_c02_coupon_authority.py")" = "b14af3952705ed76572036e2ee404fe545c442de"
-          test "$(git rev-parse HEAD:application/src/go_hotel/flight/coupon_authority.py)" = "6edd6943f5fd9a74979320933a5382998c2627c8"
-          test "$(git rev-parse HEAD:application/tests/test_v70_r3_c02_coupon_authority.py)" = "b14af3952705ed76572036e2ee404fe545c442de"
+          test "$(git rev-parse "$PRODUCT_CANDIDATE:application/src/go_hotel/flight/coupon_authority.py")" = "4de5b956a5b3caf97dc068be78ea0e78d3736cb6"
+          test "$(git rev-parse "$PRODUCT_CANDIDATE:application/tests/test_v70_r3_c02_coupon_authority.py")" = "983ac48236c9f22a10c33b5974e02c90be3dfb33"
+          test "$(git rev-parse HEAD:application/src/go_hotel/flight/coupon_authority.py)" = "4de5b956a5b3caf97dc068be78ea0e78d3736cb6"
+          test "$(git rev-parse HEAD:application/tests/test_v70_r3_c02_coupon_authority.py)" = "983ac48236c9f22a10c33b5974e02c90be3dfb33"
       - name: Install inherited frozen dependencies
         run: |
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
-      - name: Run C02 retained and R5 contract suite
+      - name: Run C02 retained and R6 contract suite
         working-directory: application
         run: |
-          mkdir -p "$RUNNER_TEMP/c02-r5"
-          python -m pytest -p no:cacheprovider             tests/test_v70_next_c02_coupon_plan.py             tests/test_v70_round2_c02_partial_party.py             tests/test_v70_r3_c02_coupon_authority.py             --junitxml="$RUNNER_TEMP/c02-r5/junit.xml"             2>&1 | tee "$RUNNER_TEMP/c02-r5/test.raw.log"
+          mkdir -p "$RUNNER_TEMP/c02-r6"
+          python -m pytest -p no:cacheprovider             tests/test_v70_next_c02_coupon_plan.py             tests/test_v70_round2_c02_partial_party.py             tests/test_v70_r3_c02_coupon_authority.py             --junitxml="$RUNNER_TEMP/c02-r6/junit.xml"             2>&1 | tee "$RUNNER_TEMP/c02-r6/test.raw.log"
       - name: Bind evidence to source identity
         if: always()
         run: |
           python - <<'PY'
           import hashlib,json,os,pathlib,subprocess
           root=pathlib.Path('.')
-          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'c02-r5'
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'c02-r6'
           out.mkdir(exist_ok=True)
           paths=[
             'application/src/go_hotel/flight/coupon_authority.py',
@@ -55,7 +55,7 @@ jobs:
           scoped=hashlib.sha256(''.join(f'{p}\0{files[p]}\n' for p in sorted(files)).encode()).hexdigest()
           evidence={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.iterdir()) if p.is_file()}
           result={
-            'task_id':'V70-R5-C02-01',
+            'task_id':'V70-R6-C02-01',
             'product_candidate':os.environ['PRODUCT_CANDIDATE'],
             'gate_head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
             'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),
@@ -71,7 +71,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: c02-r5-contract-${{ github.event.pull_request.head.sha }}
-          path: ${{ runner.temp }}/c02-r5
+          name: c02-r6-contract-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/c02-r6
           if-no-files-found: error
           retention-days: 90
