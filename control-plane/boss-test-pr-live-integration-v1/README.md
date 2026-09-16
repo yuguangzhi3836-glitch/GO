@@ -382,7 +382,7 @@ hk-staging/source/executor/runtime/artifact_runtime.py
               _ARTIFACT_SHA256 in go-hk-deployctl follows it; the other four pins do not move
 hk-staging/source/executor/go-hk-deployctl
               was db9d1584e56781e9b73d3db50495ee4b7422c05deb6fdaa315b9a7033393b53e
-              now 2f0073e892e7fb37dff0009eb03fd611b996e8539f54c92730ddbec51e5d7c6a
+              now 0cc03cac02940b4c9ee2ce3851156940a9b74386affa8348533b2257a99cbdbd
 ```
 
 `test_pr.py` is deliberately unchanged: the identities it reports (`built_image_id`
