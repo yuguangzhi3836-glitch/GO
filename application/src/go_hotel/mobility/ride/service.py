@@ -124,6 +124,12 @@ class RideService:
             if not o:
                 raise ValueError("MOBILITY_ORDER_NOT_FOUND")
             if state == "UNKNOWN_EXTERNAL_STATE":
+                # The transaction acquires the order row before checking state
+                # (and BEGIN IMMEDIATE serializes SQLite test writers). A second
+                # concurrent opener therefore observes the committed UNKNOWN and
+                # loses without appending evidence or mutating the order.
+                if o.status == "UNKNOWN_EXTERNAL_STATE":
+                    raise ValueError("RIDE_UNKNOWN_EPISODE_ALREADY_OPEN")
                 if o.status not in {"CONFIRMED", "IN_PROGRESS"}:
                     raise ValueError("MOBILITY_ILLEGAL_STATE_TRANSITION")
                 from go_hotel.mobility.ride.recovery_evidence import reject_reused_unknown_episode
