@@ -37,6 +37,7 @@ jobs:
           set -euo pipefail
           APPLICATION_TREE="$(git rev-parse HEAD:application)"
           export APPLICATION_TREE
+          mkdir -p evidence-out
           python - <<'PY'
           import json
           import os
