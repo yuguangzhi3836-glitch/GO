@@ -2,6 +2,7 @@
 import pytest
 from sqlalchemy import select
 from go_hotel.db.models import (AlipayAuthorizationRow as Authorization,
+    HostedDirectReservationRow as Reservation,
     OmnichannelMoneyMovementRow as Movement, HostedStayCreditRow as Credit,
     HostedCreditAllocationRow as Allocation, HostedCreditValueEventRow as CreditEvent)
 from go_hotel.db.session import SessionLocal
@@ -49,6 +50,26 @@ def test_active_authorization_currency_mismatch_requires_reconciliation(client, 
         authorizations = list(session.scalars(select(Authorization).where(
             Authorization.hosted_reservation_id == reservation_id)))
         assert len(authorizations) == 1 and authorizations[0].currency == 'USD'
+
+
+@pytest.mark.parametrize('mismatch', ['amount', 'currency'])
+def test_final_capture_revalidates_authorization_terms(client, monkeypatch, mismatch):
+    order, aid, _ = ready(client, monkeypatch)
+    with SessionLocal.begin() as session:
+        reservation = session.get(Reservation, order['hosted_reservation_id'])
+        if mismatch == 'amount':
+            reservation.amount_minor += 1
+        else:
+            reservation.currency = 'USD'
+    before = summary(order)
+    with pytest.raises(ValueError, match='PAYMENT_RECONCILIATION_REQUIRED'):
+        payment.capture(aid, {'mode': 'CONTRACT_DRY_RUN'})
+    with SessionLocal() as session:
+        authorization = session.get(Authorization, aid)
+        assert authorization.state == 'FULFILLED_ELIGIBLE_FOR_CONTRACT_CAPTURE'
+        assert not [m for m in hosted_money.movements(session, authorization)
+                    if m.movement_type == 'CAPTURE']
+    assert summary(order) == before
 
 
 @pytest.mark.parametrize('source', ['cash_authorization', 'credit_capture'])
