@@ -91,13 +91,26 @@ def test_no_implicit_promotion_and_graph_scopes_are_independent():
     assert graph["identity"] == {}
     with SessionLocal() as s:
         assert not list(s.scalars(select(ProfileFactRow)))
-    consent(consent_type="TRAVELER_CONTEXT",scope=["TRAVELER_IDENTITY","TRAVEL_INTENTS"])
+    consent(consent_type="TRAVELER_CONTEXT",scope=["TRAVELER_IDENTITY","TRAVEL_INTENTS","TRAVEL_PREFERENCES"])
     graph=svc.traveler_graph("traveler",purpose=PURPOSE)
     assert graph["identity"]["nationality"] == "CHN"
     assert len(graph["recent_intents"]) == 1
     assert graph["durable_preferences"] == []
     saved=save(cid)
     assert svc.traveler_graph("traveler",purpose=PURPOSE)["durable_preferences"] == [saved]
+
+
+def test_graph_requires_preference_context_for_same_purpose_journey():
+    traveler(); saved=save(consent())
+    # The explicit-preference grant authorizes the dedicated projection only.
+    # It cannot silently broaden a traveler-context graph for this journey.
+    assert read()["preferences"] == [saved]
+    assert svc.traveler_graph("traveler",purpose=PURPOSE)["durable_preferences"] == []
+    consent(consent_type="TRAVELER_CONTEXT",scope=["TRAVEL_PREFERENCES"])
+    assert svc.traveler_graph("traveler",purpose=PURPOSE)["durable_preferences"] == [saved]
+    # A context grant for another journey cannot release this purpose's value.
+    consent(consent_type="TRAVELER_CONTEXT",purpose="FLIGHT_PLANNING",scope=["TRAVEL_PREFERENCES"])
+    assert svc.traveler_graph("traveler",purpose="FLIGHT_PLANNING")["durable_preferences"] == []
 
 
 def test_save_retry_revision_conflict_and_withdrawal_are_durable():
