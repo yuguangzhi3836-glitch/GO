@@ -39,7 +39,7 @@ ENV_FILE='/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env'
 ENV_SHA256='6682ff61f336fb8ff95a6585e9133c88c52a4eaa440a7aea6a6e06f771e607fc'
 API_SERVICE='api'
 ALEMBIC_WORKDIR='/app'; ALEMBIC_EXECUTABLE='/usr/local/bin/alembic'
-EXPECTED_REVISION='0114_ext_truth_incident_hard'
+EXPECTED_REVISION='0133_flight_change_plan'
 def collect_api(runner, expected):
  p=[DOCKER,'ps','-aq','--filter',f'label=com.docker.compose.project={PROJECT}','--filter',f'label=com.docker.compose.service={API_SERVICE}'];x=runner.run(p)
  if x.returncode or len(x.stdout.splitlines())!=1: raise ValueError('api selection')

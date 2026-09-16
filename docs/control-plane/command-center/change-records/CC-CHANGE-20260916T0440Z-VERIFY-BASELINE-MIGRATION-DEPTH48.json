@@ -1,0 +1,90 @@
+{
+  "schema_version": "1",
+  "record_id": "CC-CHANGE-20260916T0440Z-VERIFY-BASELINE-MIGRATION-DEPTH48",
+  "change_type": "CONTROLLED_BASELINE_MIGRATION",
+  "baseline_auto_update": false,
+  "authority": "user: continue GO Command Center V1 / PR #109 -- controlled VERIFY baseline migration R3.1.5 -> DEPTH48",
+  "created_at": "2026-09-16T04:40:00Z",
+  "environment": "HK-STAGING-01",
+  "summary": "The frozen VERIFY baseline still described the retired R3.1.5 runtime, so every VERIFY Task signed from it was rejected by the executor and no fresh VERIFY could exist (blocker B3). This record migrates the baseline to the runtime the host actually runs, verified read-only. It is an explicit one-off migration, not a mechanism that follows the runtime: BASELINE_AUTO_UPDATE stays false.",
+  "why_changed": "A fresh VERIFY Request was published on 2026-09-16 (bus PR #26, request boss-hk-verify-fresh-20260916T0412Z). The Bridge signed go-boss-request-verify-20260916T040910Z-b2c5a4c4e87d with both image fields pinned to the authority baseline's sha256:66c54087..., and the HK executor answered VERIFY_REJECTED (signed Evidence commit 5c91ef172a757e32402f444e55e0c60c2f5852b1, EXECUTION_FAILED / EXECUTOR_NONZERO_EXIT). Two independent pins were stale: the Command Center baseline image, and the collector's EXPECTED_REVISION. Correcting only the first would not have fixed VERIFY.",
+  "live_proof": {
+    "method": "read-only inspection of HK-STAGING on 2026-09-16; no mutation, no restart, no deploy",
+    "compose_project": "go-822-staging",
+    "compose_file": "/home/go-stg/releases/r31-5-final-completion-20260906/GO_HYATT_DIRECT_BOOKING_R3_1_5_TEST_BOOTSTRAP_IDENTITY_FIX_20260906/deploy/docker-compose.r31-hk-staging.yml",
+    "compose_sha256": "7ef4ab181c1250d8cec0e348b29c24bfbb8e5dce4fc2a57f6faaa59363c26895",
+    "env_file": "/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env",
+    "env_sha256": "6682ff61f336fb8ff95a6585e9133c88c52a4eaa440a7aea6a6e06f771e607fc",
+    "api_container": "go-822-staging-api-1",
+    "api_health": "healthy",
+    "business_services_checked": ["api", "recovery-worker", "outbox-worker", "mobile-push-receipt-worker", "reconciliation-worker", "mobile-push-worker", "mobile-engagement-worker", "judgment-worker"],
+    "all_8_services_same_image": true,
+    "image_identity_semantics": "docker inspect <container>[0].Image, the exact field the VERIFY executor compares; not a config digest, not a repo digest, not a manifest digest",
+    "verified_image_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132",
+    "image_tag": "go-hotel:depth48-runtime-6d0fd905",
+    "alembic_current": "0133_flight_change_plan",
+    "alembic_head": "0133_flight_change_plan",
+    "installed_executor_version": "0.4.3-rollback-runtime"
+  },
+  "old_verify_baseline": {
+    "image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+    "evidence_task_id": "go-boss02-post-rollback-verify-20260911T071429Z",
+    "evidence_commit": "2dbbdefaf7996e5f9222669929eee79eefabae56",
+    "evidence_path": "evidence/go-boss02-post-rollback-verify-20260911T071429Z-VXHLNF5J-y95xwF89A_tuEfg9tVulKt1.json",
+    "collector_expected_revision": "0114_ext_truth_incident_hard",
+    "note": "This is a real historical runtime baseline and is not rewritten by this record. 66c54087 described the runtime current on 2026-09-11; it is the previous runtime, which is why a Task pinned to it cannot verify the host today."
+  },
+  "new_verify_baseline": {
+    "image_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132",
+    "collector_expected_revision": "0133_flight_change_plan",
+    "collector_unchanged_pins": {
+      "COMPOSE_PROJECT": "go-822-staging",
+      "COMPOSE_FILE": "/home/go-stg/releases/r31-5-final-completion-20260906/GO_HYATT_DIRECT_BOOKING_R3_1_5_TEST_BOOTSTRAP_IDENTITY_FIX_20260906/deploy/docker-compose.r31-hk-staging.yml",
+      "COMPOSE_SHA256": "7ef4ab181c1250d8cec0e348b29c24bfbb8e5dce4fc2a57f6faaa59363c26895",
+      "ENV_FILE": "/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env",
+      "ENV_SHA256": "6682ff61f336fb8ff95a6585e9133c88c52a4eaa440a7aea6a6e06f771e607fc",
+      "why_unchanged": "The DEPTH48 cutover moved the image and the schema head, not the Compose project, the Compose file or the env file: the running containers still carry these exact labels, and both files hash to the pinned values. They are re-proved here rather than assumed."
+    }
+  },
+  "current_runtime_pointer": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+  "release_candidate": {
+    "candidate_id": "rc1-depth48-pr52-bd25d7ac",
+    "source_commit": "bd25d7acca1b5f54a7fb555008ed60b76ee45f21",
+    "artifact_digest": "sha256:fe0d2c3670444716cf0a84515a4321de1347b6be4570829d3767fe189a6e87e1",
+    "note": "The candidate's artifact is what TEST_PR built from this source; the VERIFY image pin is the image the host is actually running. They are different questions and the baseline answers the second one."
+  },
+  "additional_stale_binding": [
+    {
+      "path": "control-plane/depth40-compat-v2/executor/go-hk-deployctl-runtime/collector_runtime.py",
+      "expected_revision": "0114_ext_truth_incident_hard",
+      "status": "NOT_CHANGED",
+      "why": "A second, independent copy of the collector kept for the DEPTH40 compatibility executor. It is not installed on HK-STAGING (only /usr/local/libexec/go-hk-deployctl-runtime/ exists, plus a .pre-r8 backup) and it is not on the VERIFY path, so it is out of this migration's scope. It carries the same stale revision and would need its own migration before it could ever be installed again."
+    },
+    {
+      "path": "docs/control-plane/hk-staging/HK_STAGING_DEPLOY_BASELINE.md",
+      "line": "Installed Executor main SHA-256: 323c30a7...",
+      "status": "NOT_CHANGED",
+      "why": "A statement about what is installed on the host. It stays true until the install happens; it must be updated as part of the install, not before."
+    },
+    {
+      "path": "hk-staging/README.md",
+      "line": "Installed Executor main SHA-256: 323c30a7...",
+      "status": "NOT_CHANGED",
+      "why": "Same reason: an installed-state statement, updated with the install."
+    },
+    {
+      "path": "control-plane/boss-deploy-request-v1/PROVENANCE.json",
+      "field": "archived_hk_contracts.go-hk-deployctl",
+      "status": "NOT_CHANGED",
+      "why": "An archive record of the contract as it was observed, with installation_performed false. Historical, not an enforced pin."
+    }
+  ],
+  "not_done": [
+    "No file was written on HK-STAGING.",
+    "No service, timer or container was restarted.",
+    "No VERIFY Request was re-published.",
+    "No deployment, rollback or switch change.",
+    "PR #109 was not merged.",
+    "The Command Center baseline on the host was not touched."
+  ]
+}
