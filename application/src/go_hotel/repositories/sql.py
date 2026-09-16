@@ -562,7 +562,11 @@ class SqlRepository:
 
     def append_event(self, event: Event) -> None:
         with SessionLocal.begin() as s:
-            self._append_event_and_outbox(s, event)
+            self.append_event_in_session(s, event)
+
+    def append_event_in_session(self, s, event: Event) -> None:
+        """Stage an event/outbox pair in the caller's existing transaction."""
+        self._append_event_and_outbox(s, event)
 
     def _append_event_and_outbox(self, s, event: Event) -> None:
         s.add(EventRow(event_id=event.event_id, event_type=event.event_type, aggregate_type=event.aggregate_type, aggregate_id=event.aggregate_id, payload=event.payload, occurred_at=event.occurred_at))
