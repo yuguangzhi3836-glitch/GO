@@ -90,7 +90,8 @@ jobs:
             application/alembic/versions/0137_hosted_money_unknown_episode.py \
             application/tests/test_v70_r4_c01_unknown_episode.py
           find "$EVIDENCE_DIR" -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum \
-            > "$EVIDENCE_DIR/SHA256SUMS"\n          cat "$EVIDENCE_DIR/SHA256SUMS"
+            > "$EVIDENCE_DIR/SHA256SUMS"
+          cat "$EVIDENCE_DIR/SHA256SUMS"
       - name: Upload candidate-bound Evidence
         if: always()
         uses: actions/upload-artifact@v4
