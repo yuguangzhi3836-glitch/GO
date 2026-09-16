@@ -369,8 +369,8 @@ def test_supplier_resolution_money_commit_interruption_reuses_same_movement(monk
 
 
 @pytest.mark.parametrize('supplier,tickets',[
-    ('PNR\\nINJECT',['VALID-TICKET']),
-    ('VALIDPNR',['TICKET\\x00INJECT']),
+    ('PNR\nINJECT',['VALID-TICKET']),
+    ('VALIDPNR',['TICKET\x00INJECT']),
 ])
 def test_supplier_resolution_rejects_non_printable_tokens_before_money(monkeypatch,supplier,tickets):
     order,quote=create_change();oid=order['order_id'];qid=quote['quote_id']
