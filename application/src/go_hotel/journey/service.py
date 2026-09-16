@@ -81,14 +81,14 @@ class JourneyService:
  def _encode_cursor(self, account_id, normalized, row):
   value={"v":1,"scope":self._cursor_scope(account_id,normalized),"starts_at":row.starts_at,"created_at":row.created_at.isoformat(),"journey_id":row.journey_id}
   raw=json.dumps(value,sort_keys=True,separators=(",",":")).encode()
-  sig=hmac.new(settings.jwt_secret.encode(),raw,hashlib.sha256).digest()
+  sig=hmac.new(settings.jwt_signing_key.encode(),raw,hashlib.sha256).digest()
   return base64.urlsafe_b64encode(raw+sig).decode().rstrip("=")
  def _decode_cursor(self, token, account_id, normalized):
   try:
    packed=base64.urlsafe_b64decode(token+"="*(-len(token)%4))
    if len(packed)<=32: raise ValueError
    raw,sig=packed[:-32],packed[-32:]
-   expected=hmac.new(settings.jwt_secret.encode(),raw,hashlib.sha256).digest()
+   expected=hmac.new(settings.jwt_signing_key.encode(),raw,hashlib.sha256).digest()
    if not hmac.compare_digest(sig,expected): raise ValueError
    value=json.loads(raw)
    if value.get("v")!=1 or value.get("scope")!=self._cursor_scope(account_id,normalized): raise ValueError
