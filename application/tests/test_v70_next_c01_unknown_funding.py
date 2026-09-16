@@ -72,6 +72,22 @@ def test_final_capture_revalidates_authorization_terms(client, monkeypatch, mism
     assert summary(order) == before
 
 
+def test_mixed_funding_capture_accepts_cash_leg_plus_frozen_credit(client, monkeypatch):
+    order, aid, _ = ready(client, monkeypatch)
+    with SessionLocal() as session:
+        reservation = session.get(Reservation, order['hosted_reservation_id'])
+        authorization = session.get(Authorization, aid)
+        allocation = session.get(Allocation, order['hosted_reservation_id'])
+        assert authorization.currency == reservation.currency
+        assert authorization.amount_minor == 38000
+        assert allocation.applied_minor == 162000
+        assert authorization.amount_minor + allocation.applied_minor == reservation.amount_minor
+    payment.capture(aid, {'mode': 'CONTRACT_DRY_RUN'})
+    funds = summary(order)
+    assert funds['capture_minor'] == 38000 and funds['held_minor'] == 0
+    assert allocation_state(order)[0:2] == ('SETTLED', 162000)
+
+
 @pytest.mark.parametrize('source', ['cash_authorization', 'credit_capture'])
 def test_unknown_source_blocks_both_funding_legs_until_test_fixture_reconciles(client, monkeypatch, source):
     order, aid, credit = ready(client, monkeypatch)
