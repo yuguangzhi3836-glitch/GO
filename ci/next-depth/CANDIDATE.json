@@ -1,8 +1,8 @@
 {
   "schema": "go.v70.next-depth.candidate.rebind.v2",
   "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
-  "product_candidate_commit": "671a94014d68a995ad142bf3f7211e55942fbda6",
-  "application_git_tree": "0d506413e9026e41dbe826dd32af1827556a3565",
+  "product_candidate_commit": "903aff86af5dedbb9732c85225368ce361c2d5e8",
+  "application_git_tree": "2bd203fa5cd0396ef4caf160652cecb66ea59218",
   "preintegration_candidate_commit": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_git_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
   "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
@@ -186,6 +186,11 @@
       "mode": "100644",
       "git_blob": "e268bde29c4b74200922c852e96ab3336ddd6b84",
       "reason": "V70-R3-C09-02 clock-skew, fencing and PostgreSQL dual-worker tests"
+    },
+    "application/src/go_hotel/services/outbox.py": {
+      "mode": "100644",
+      "git_blob": "1d793dc051209c5984f77ab277119e867509448c",
+      "reason": "C09 database-authority timestamps normalized to active database representation"
     }
   },
   "source_tree_sha256_status": "BOUND",
@@ -208,6 +213,6 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "source_tree_sha256": "837a34a29cffacd146cfb85edaa02113c7a77f4178fdce65c44a29ccd0c23085",
+  "source_tree_sha256": "c09717d0a4f1b6cff1eeda7bd0eb3df1d7423594a651d472f4d7cff3f10ad65f",
   "historical_pass_transferred": false
 }
