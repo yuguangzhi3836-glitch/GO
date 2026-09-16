@@ -126,6 +126,8 @@ class RideService:
             if state == "UNKNOWN_EXTERNAL_STATE":
                 if o.status not in {"CONFIRMED", "IN_PROGRESS"}:
                     raise ValueError("MOBILITY_ILLEGAL_STATE_TRANSITION")
+                from go_hotel.mobility.ride.recovery_evidence import reject_reused_unknown_episode
+                reject_reused_unknown_episode(s, o, evidence_reference)
                 previous_status=o.status
                 o.status = state; kind = "EXTERNAL_STATE_UNKNOWN"
                 payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference, "previous_status": previous_status}
