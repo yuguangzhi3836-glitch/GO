@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v2",
   "product_candidate_commit": "cb1181bf40b0e24f55ef095d8f1ee8857bdd6517",
-  "application_git_tree": "472682b1293ed86bd3913ccc07e1d5f4040b3490",
+  "application_git_tree": "94b3dfe91db05788fe7ef3dad9905ed484f29bfa",
   "source_anchor_main": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
   "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
@@ -45,9 +45,14 @@
       "mode": "100644",
       "git_blob": "67632460638a8179a376dd2abc20269d53b25b70",
       "reason": "C10 bounded Journey pagination/search candidate"
+    },
+    "alembic/versions/0135_journey_search_trigram.py": {
+      "mode": "100644",
+      "git_blob": "5f3e8eeea451ae8a6bdacb4119cf064a2abf93d9",
+      "reason": "C10 independent PostgreSQL pg_trgm expression indexes preserving contains-search semantics"
     }
   },
-  "migration_head": "0134_flight_status_width",
+  "migration_head": "0135_journey_search_trigram",
   "verified_inherited_evidence": {
     "pr74_workflow_run": 34807203728,
     "c11_original_postgresql_cases": "10/10 PASS",
