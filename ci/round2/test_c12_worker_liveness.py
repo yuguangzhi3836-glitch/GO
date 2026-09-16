@@ -2,6 +2,8 @@ import hashlib
 import importlib.util
 from pathlib import Path
 import tempfile
+import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 import unittest
 
 SCRIPT = Path(__file__).with_name("verify_execution_receipt.py")
@@ -140,6 +142,56 @@ class SignedWorkerIdentityAssertionTests(unittest.TestCase):
         self.assertEqual(replay["gate"], "HOLD")
         self.assertTrue(replay["replay_detected"])
         self.assertFalse(replay["authenticated_worker_identity"])
+
+
+    def durable_check(self, assertion, store, observed="2026-09-16T09:02:00Z"):
+        return verifier.verify_identity_assertion(
+            assertion, trusted_keys={"c12-test-key": self.KEY},
+            expected_worker_id=self.EXPECTED["worker_id"],
+            expected_task_id=self.EXPECTED["task_id"],
+            expected_candidate_sha=self.EXPECTED["candidate_sha"],
+            observed_at=observed, nonce_store=store)
+
+    def test_durable_nonce_survives_store_restart(self):
+        path = self.root / "nonces.sqlite3"
+        assertion = self.assertion()
+        self.assertEqual(self.durable_check(assertion, verifier.DurableNonceStore(path))["gate"], "PASS_SCOPED")
+        replay = self.durable_check(assertion, verifier.DurableNonceStore(path))
+        self.assertEqual(replay["gate"], "HOLD")
+        self.assertTrue(replay["replay_detected"])
+
+    def test_concurrent_consumption_allows_exactly_one(self):
+        path = self.root / "concurrent.sqlite3"
+        assertion = self.assertion()
+        def attempt(_):
+            return self.durable_check(assertion, verifier.DurableNonceStore(path))["gate"]
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            gates = list(pool.map(attempt, range(16)))
+        self.assertEqual(gates.count("PASS_SCOPED"), 1)
+        self.assertEqual(gates.count("HOLD"), 15)
+
+    def test_expired_rows_are_cleaned_without_reopening_nonce(self):
+        path = self.root / "cleanup.sqlite3"
+        store = verifier.DurableNonceStore(path)
+        old = self.assertion(nonce="nonce-c12-old-000001",
+                             issued_at="2026-09-16T08:55:00Z",
+                             expires_at="2026-09-16T09:00:00Z")
+        self.assertEqual(self.durable_check(old, store, "2026-09-16T08:59:00Z")["gate"], "PASS_SCOPED")
+        current = self.assertion(nonce="nonce-c12-new-000001")
+        self.assertEqual(self.durable_check(current, store)["gate"], "PASS_SCOPED")
+        with sqlite3.connect(path) as db:
+            nonces = {row[0] for row in db.execute("SELECT nonce FROM identity_nonce")}
+        self.assertNotIn("nonce-c12-old-000001", nonces)
+        self.assertIn("nonce-c12-new-000001", nonces)
+
+    def test_storage_failure_fails_closed(self):
+        class BrokenStore:
+            def consume(self, *_):
+                raise sqlite3.OperationalError("disk unavailable")
+        result = self.durable_check(self.assertion(), BrokenStore())
+        self.assertEqual(result["gate"], "HOLD")
+        self.assertFalse(result["authenticated_worker_identity"])
+        self.assertIn("storage unavailable", " ".join(result["errors"]))
 
 
 if __name__ == "__main__":
