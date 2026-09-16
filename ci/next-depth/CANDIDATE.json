@@ -2,7 +2,7 @@
   "schema": "go.v70.next-depth.candidate.rebind.v2",
   "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
   "product_candidate_commit": "9b2d0e395a37e3a0c6d2502bc27643fb6e00cc06",
-  "application_git_tree": "82b14f7c6a0b0cc7d449762daab24cb93c7d0ab8",
+  "application_git_tree": "3c715d86aed46ab5b41b821c9701cc1091e73042",
   "preintegration_candidate_commit": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_git_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
   "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
@@ -60,6 +60,21 @@
       "mode": "100644",
       "git_blob": "36b59347ff5892b74f0b21a90c3d1f622f9bfd7c",
       "reason": "lineage-only merge of C08 and C10 heads"
+    },
+    "application/src/go_hotel/api/routes/journey.py": {
+      "mode": "100644",
+      "git_blob": "e2f1f4f3b714884b4d2c75223d570830fc1539ec",
+      "reason": "exact PR127 C10 product blob"
+    },
+    "application/src/go_hotel/journey/service.py": {
+      "mode": "100644",
+      "git_blob": "3d2642273bb14cd501e722ec07d676c90c7a9f4c",
+      "reason": "exact PR127 C10 product blob"
+    },
+    "application/tests/journey/test_c10_pagination_search.py": {
+      "mode": "100644",
+      "git_blob": "67632460638a8179a376dd2abc20269d53b25b70",
+      "reason": "exact PR127 C10 scoped regression"
     }
   },
   "source_tree_sha256_status": "BOUND",
