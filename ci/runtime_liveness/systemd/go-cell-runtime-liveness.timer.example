@@ -1,0 +1,12 @@
+[Unit]
+Description=Run GO Cell executor liveness probe continuously
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=30s
+AccuracySec=1s
+Persistent=true
+Unit=go-cell-runtime-liveness.service
+
+[Install]
+WantedBy=timers.target
