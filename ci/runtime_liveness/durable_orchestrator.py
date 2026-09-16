@@ -12,6 +12,7 @@ import re
 import secrets
 import sqlite3
 import ssl
+import threading
 from typing import Any, Callable
 from urllib import parse
 from uuid import uuid4
@@ -335,6 +336,35 @@ class DurableOrchestrator:
                 "expected_executable_cells": expected, "executors": executors}
 
 
+class LeaseReaper(threading.Thread):
+    """Continuously return expired active leases to the durable queue."""
+
+    def __init__(self, store: DurableOrchestrator, *, interval_seconds: float = 5,
+                 clock: Callable[[], datetime] = utc_now):
+        if interval_seconds <= 0:
+            raise OrchestratorError("reaper interval must be positive")
+        super().__init__(name="go-cell-lease-reaper", daemon=True)
+        self.store = store
+        self.interval_seconds = interval_seconds
+        self.clock = clock
+        self.stopped = threading.Event()
+        self.last_error: str | None = None
+
+    def run_once(self) -> int:
+        return self.store.reap_expired(now=self.clock())
+
+    def run(self) -> None:
+        while not self.stopped.wait(self.interval_seconds):
+            try:
+                self.run_once()
+                self.last_error = None
+            except (OSError, sqlite3.Error, OrchestratorError) as error:
+                self.last_error = str(error)
+
+    def stop(self) -> None:
+        self.stopped.set()
+
+
 def make_handler(store: DurableOrchestrator, token: str,
                  clock: Callable[[], datetime] = utc_now):
     class Handler(BaseHTTPRequestHandler):
@@ -408,6 +438,7 @@ def main() -> int:
     parser.add_argument("--tls-cert", type=Path)
     parser.add_argument("--tls-key", type=Path)
     parser.add_argument("--allow-http-loopback", action="store_true")
+    parser.add_argument("--reap-interval-seconds", type=float, default=5)
     args = parser.parse_args()
     token = os.environ.get(args.token_env)
     if not token or len(token) < 32:
@@ -415,12 +446,20 @@ def main() -> int:
     loopback = args.listen in {"127.0.0.1", "::1", "localhost"}
     if not (args.tls_cert and args.tls_key) and not (args.allow_http_loopback and loopback):
         raise SystemExit("TLS certificate/key required outside explicit loopback testing")
-    server = ThreadingHTTPServer((args.listen, args.port), make_handler(DurableOrchestrator(args.database), token))
+    store = DurableOrchestrator(args.database)
+    server = ThreadingHTTPServer((args.listen, args.port), make_handler(store, token))
     if args.tls_cert and args.tls_key:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(args.tls_cert, args.tls_key)
         server.socket = context.wrap_socket(server.socket, server_side=True)
-    server.serve_forever()
+    reaper = LeaseReaper(store, interval_seconds=args.reap_interval_seconds)
+    reaper.start()
+    try:
+        server.serve_forever()
+    finally:
+        reaper.stop()
+        reaper.join(timeout=max(1, args.reap_interval_seconds * 2))
+        server.server_close()
     return 0
 
 
