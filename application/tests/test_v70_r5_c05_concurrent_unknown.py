@@ -7,7 +7,7 @@ from tests.test_depth33_mobility_refund_consent import booked
 
 def test_concurrent_unknown_open_has_exactly_one_committed_winner():
     svc, owner, oid = booked("RIDE")
-    contenders = 8
+    contenders = 10
     barrier = Barrier(contenders)
 
     def open_episode(index):
