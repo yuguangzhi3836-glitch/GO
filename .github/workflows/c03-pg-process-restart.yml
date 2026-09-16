@@ -37,7 +37,8 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git rev-parse HEAD:application)" = "9c83d92434301356228c1b79294fcd829d675ebf"
       - name: Install frozen dependencies
-        run: python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
       - name: Run actual PostgreSQL process-exit recovery
         run: |
