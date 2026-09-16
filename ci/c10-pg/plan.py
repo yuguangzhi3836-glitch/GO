@@ -45,7 +45,8 @@ def run_alembic(url,args):
 def main():
     ap=argparse.ArgumentParser();ap.add_argument("--evidence-dir",required=True);a=ap.parse_args()
     out=pathlib.Path(a.evidence_dir);out.mkdir(parents=True,exist_ok=True)
-    url=os.environ["GO_C10_RUNTIME_DATABASE_URL"].replace("postgresql+psycopg://","postgresql://")
+    alembic_url=os.environ["GO_C10_RUNTIME_DATABASE_URL"]
+    url=alembic_url.replace("postgresql+psycopg://","postgresql://")
     source_commit=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()
     application_tree=subprocess.check_output(["git","rev-parse","HEAD:application"],text=True).strip()
     started=time.time(); permission={}
@@ -83,10 +84,10 @@ def main():
       with cx.cursor() as cur: cur.execute("DROP ROLE c10_no_extension")
       cx.commit()
     migration_commands=[]
-    migration_commands.append(run_alembic(url,["stamp","0134_flight_status_width"]))
-    migration_commands.append(run_alembic(url,["upgrade","0135_journey_search_trigram"]))
-    migration_commands.append(run_alembic(url,["downgrade","0134_flight_status_width"]))
-    migration_commands.append(run_alembic(url,["upgrade","0135_journey_search_trigram"]))
+    migration_commands.append(run_alembic(alembic_url,["stamp","0134_flight_status_width"]))
+    migration_commands.append(run_alembic(alembic_url,["upgrade","0135_journey_search_trigram"]))
+    migration_commands.append(run_alembic(alembic_url,["downgrade","0134_flight_status_width"]))
+    migration_commands.append(run_alembic(alembic_url,["upgrade","0135_journey_search_trigram"]))
     with psycopg.connect(url) as cx:
       with cx.cursor() as cur:
         cur.execute("ANALYZE go_journey_runtime");after=explain(cur)
