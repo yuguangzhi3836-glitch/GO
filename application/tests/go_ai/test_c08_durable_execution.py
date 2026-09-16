@@ -38,29 +38,34 @@ def durable_service(monkeypatch, tmp_path):
             created_at=now,
             updated_at=now,
         ))
-    yield service_module.GOAIService(GOAIProviderRegistry([])), factory, now
+    clock = {"now": now}
+    monkeypatch.setattr(service_module.GOAIService, "_database_now", classmethod(lambda cls, session: clock["now"]))
+    yield service_module.GOAIService(GOAIProviderRegistry([])), factory, clock
     engine.dispose()
 
 
 def test_live_go_ai_lease_rejects_competing_owner(durable_service):
-    service, _, now = durable_service
+    service, _, clock = durable_service
+    now = clock["now"]
     first = service.claim_execution(
-        "goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=60, observed_at=now,
+        "goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=60,
     )
     assert first["fencing_token"] == 1
     assert first["automatic_replay_started"] is False
+    clock["now"] = now + timedelta(seconds=30)
     with pytest.raises(ValueError, match="GO_AI_EXECUTION_LEASE_HELD"):
         service.claim_execution(
             "goai_c08_durable", worker_id="go-ai-worker-b", lease_seconds=60,
-            observed_at=now + timedelta(seconds=30),
         )
 
 
 def test_expiry_alone_never_authorizes_takeover(durable_service):
-    service, _, now = durable_service
+    service, _, clock = durable_service
+    now = clock["now"]
     service.claim_execution(
-        "goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=10, observed_at=now,
+        "goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=10,
     )
+    clock["now"] = now + timedelta(seconds=11)
     with pytest.raises(ValueError, match="GO_AI_PREVIOUS_OWNER_TERMINATION_NOT_PROVEN"):
         service.claim_execution(
             "goai_c08_durable", worker_id="go-ai-worker-b", lease_seconds=60,
@@ -69,9 +74,10 @@ def test_expiry_alone_never_authorizes_takeover(durable_service):
 
 
 def test_complete_checkpoint_and_verified_termination_issue_new_fence(durable_service):
-    service, _, now = durable_service
+    service, _, clock = durable_service
+    now = clock["now"]
     lease = service.claim_execution(
-        "goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=10, observed_at=now,
+        "goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=10,
     )
     checkpoint = {
         "plan_hash": "b" * 64,
@@ -79,6 +85,7 @@ def test_complete_checkpoint_and_verified_termination_issue_new_fence(durable_se
         "pending_task_ids": ["task_1"],
         "replayable_result_refs": [],
     }
+    clock["now"] = now + timedelta(seconds=1)
     saved = service.save_execution_checkpoint(
         "goai_c08_durable",
         worker_id="go-ai-worker-a",
@@ -86,15 +93,14 @@ def test_complete_checkpoint_and_verified_termination_issue_new_fence(durable_se
         checkpoint=checkpoint,
         complete=True,
         provider_outcome="NOT_STARTED",
-        observed_at=now + timedelta(seconds=1),
     )
     assert saved["checkpoint_complete"] is True
+    clock["now"] = now + timedelta(seconds=11)
     takeover = service.claim_execution(
         "goai_c08_durable",
         worker_id="go-ai-worker-b",
         lease_seconds=60,
         verified_previous_owner_terminated=True,
-        observed_at=now + timedelta(seconds=11),
     )
     assert takeover["fencing_token"] == 2
     assert takeover["automatic_replay_started"] is False
@@ -105,14 +111,37 @@ def test_complete_checkpoint_and_verified_termination_issue_new_fence(durable_se
             fencing_token=1,
             checkpoint=checkpoint,
             complete=True,
-            observed_at=now + timedelta(seconds=12),
         )
 
 
+
+def test_same_worker_renewal_requires_exact_fence(durable_service):
+    service, factory, clock = durable_service
+    lease = service.claim_execution("goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=60)
+    with pytest.raises(ValueError, match="GO_AI_EXECUTION_FENCE_MISMATCH"):
+        service.claim_execution("goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=60)
+    with pytest.raises(ValueError, match="GO_AI_EXECUTION_FENCE_MISMATCH"):
+        service.claim_execution("goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=60, fencing_token=999)
+    renewed = service.claim_execution(
+        "goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=60,
+        fencing_token=lease["fencing_token"],
+    )
+    assert renewed["fencing_token"] == lease["fencing_token"]
+    with factory() as session:
+        assert session.get(GoAIExecutionRow, "goai_c08_durable").owner_id == "go-ai-worker-a"
+
+
+def test_public_api_has_no_caller_clock_override():
+    import inspect
+    assert "observed_at" not in inspect.signature(service_module.GOAIService.claim_execution).parameters
+    assert "observed_at" not in inspect.signature(service_module.GOAIService.save_execution_checkpoint).parameters
+
+
 def test_unknown_provider_outcome_blocks_takeover_and_assessment_stays_read_only(durable_service):
-    service, factory, now = durable_service
+    service, factory, clock = durable_service
+    now = clock["now"]
     lease = service.claim_execution(
-        "goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=10, observed_at=now,
+        "goai_c08_durable", worker_id="go-ai-worker-a", lease_seconds=10,
     )
     checkpoint = {
         "plan_hash": "c" * 64,
@@ -120,6 +149,7 @@ def test_unknown_provider_outcome_blocks_takeover_and_assessment_stays_read_only
         "pending_task_ids": [],
         "replayable_result_refs": [],
     }
+    clock["now"] = now + timedelta(seconds=1)
     service.save_execution_checkpoint(
         "goai_c08_durable",
         worker_id="go-ai-worker-a",
@@ -127,8 +157,8 @@ def test_unknown_provider_outcome_blocks_takeover_and_assessment_stays_read_only
         checkpoint=checkpoint,
         complete=True,
         provider_outcome="UNKNOWN",
-        observed_at=now + timedelta(seconds=1),
     )
+    clock["now"] = now + timedelta(seconds=11)
     with pytest.raises(ValueError, match="GO_AI_PROVIDER_OUTCOME_UNRESOLVED"):
         service.claim_execution(
             "goai_c08_durable",
