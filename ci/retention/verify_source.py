@@ -44,7 +44,7 @@ def main():
         assert blob((ROOT/path).read_bytes()) == digest, 'COMPATIBILITY_CHANGED:' + path
     migration=(APP/'alembic/versions/0136_merge_go_ai_journey.py').read_text()
     assert 'revision = "0136_merge_go_ai_journey"' in migration
-    assert 'down_revision = "0134_flight_status_width"' in migration
+    assert 'down_revision = ("0135_go_ai_execution", "0135_journey_search_trigram")' in migration
     model=(APP/'src/go_hotel/db/models.py').read_text()
     assert 'status: Mapped[str] = mapped_column(String(64), nullable=False, index=True)' in model
     tree = hashlib.sha256(''.join(f'{p}\0{h}\n' for p,h in sorted(fingerprint.items())).encode()).hexdigest()
