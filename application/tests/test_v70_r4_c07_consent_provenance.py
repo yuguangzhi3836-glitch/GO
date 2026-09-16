@@ -55,6 +55,8 @@ def test_graph_audit_attributes_only_active_exact_purpose_context_grants():
     assert graph["durable_preferences"] == [saved]
     audit = last_graph_audit()
     assert audit.metadata_json["context_consent_ids"] == [active]
+    assert audit.metadata_json["preference_consent_ids"] == [explicit]
+    assert saved["value"] not in audit.metadata_json.values()
     assert explicit not in audit.metadata_json["context_consent_ids"]
     assert wrong_purpose not in audit.metadata_json["context_consent_ids"]
     assert revoked not in audit.metadata_json["context_consent_ids"]
@@ -67,3 +69,4 @@ def test_graph_with_no_context_grant_records_empty_provenance_and_releases_nothi
     assert graph["durable_preferences"] == []
     audit = last_graph_audit()
     assert audit.metadata_json["context_consent_ids"] == []
+    assert audit.metadata_json["preference_consent_ids"] == []
