@@ -56,6 +56,22 @@ jobs:
           test -z "$(git diff -- application/tests/conftest.py)"
           git rev-parse HEAD > evidence-out/candidate.txt
           git rev-parse HEAD:application > evidence-out/application-tree.txt
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          app=Path("application")
+          hashes={}
+          for folder in ["src","frontend","alembic","tests","tests_frontend"]:
+              root=app/folder
+              if not root.exists():
+                  continue
+              for p in root.rglob("*"):
+                  if p.is_file() and "__pycache__" not in p.parts and p.suffix not in {".pyc",".pyo"}:
+                      hashes[p.relative_to(app).as_posix()]=hashlib.sha256(p.read_bytes()).hexdigest()
+          digest=hashlib.sha256("".join(f"{p}\\0{h}\\n" for p,h in sorted(hashes.items())).encode()).hexdigest()
+          Path("evidence-out/SOURCE_FINGERPRINT.json").write_text(json.dumps(hashes,sort_keys=True,indent=2)+"\\n")
+          Path("evidence-out/source-fingerprint-sha256.txt").write_text(digest+"\\n")
+          PY
           sha256sum evidence-out/* > evidence-out/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
