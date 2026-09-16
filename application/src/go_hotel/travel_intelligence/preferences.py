@@ -217,7 +217,11 @@ class TravelPreferenceMixin:
                 rows = s.scalars(select(TravelBehaviorEventRow).where(TravelBehaviorEventRow.traveler_id == traveler_id)
                     .order_by(TravelBehaviorEventRow.occurred_at.desc()).limit(100)).all()
                 count = sum(1 for r in rows if (r.payload or {}).get("purpose") == purpose)
-            preferences = _read_preferences(s, tr, purpose)
+            # The traveler graph is a context projection. A separate explicit-
+            # preference grant authorizes the standalone preference projection,
+            # but must not silently broaden a journey context grant. The caller
+            # must opt this graph purpose into preference context explicitly.
+            preferences = _read_preferences(s, tr, purpose) if "TRAVEL_PREFERENCES" in scope else []
             _audit(s, tr, actor_id, actor_type, "TRAVELER_CONTEXT_READ", purpose, sorted(scope),
                 {"preference_count":len(preferences), "intent_count":len(intents), "behavior_count":count})
             return {"traveler_id":traveler_id, "purpose":purpose, "identity":identity,
