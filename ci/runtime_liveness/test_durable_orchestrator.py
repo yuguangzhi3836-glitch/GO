@@ -55,6 +55,16 @@ class DurableOrchestratorTests(unittest.TestCase):
         self.assertNotEqual(first["attempt_id"], second["attempt_id"])
         self.assertEqual(second["worker_id"], "worker-2")
 
+    def test_background_reaper_requeues_without_an_api_request(self):
+        self.enqueue()
+        first = self.store.claim("worker-1", lease_seconds=10, now=NOW)
+        reaper = orchestrator.LeaseReaper(
+            self.store, interval_seconds=1, clock=lambda: NOW + timedelta(seconds=11)
+        )
+        self.assertEqual(reaper.run_once(), 1)
+        second = self.store.claim("worker-2", now=NOW + timedelta(seconds=11))
+        self.assertNotEqual(first["attempt_id"], second["attempt_id"])
+
     def test_same_cell_cannot_have_two_concurrent_active_leases(self):
         self.enqueue("task-1", "C01")
         self.enqueue("task-2", "C01")
