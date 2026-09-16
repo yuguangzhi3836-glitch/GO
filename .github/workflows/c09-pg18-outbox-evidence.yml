@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - .github/workflows/c09-pg18-outbox-evidence.yml
+      - application/tests/test_outbox_resilience.py
+      - ci/retention/BASELINE.json
+      - ci/cell-closure/CANDIDATE.json
+      - ci/next-depth/CANDIDATE.json
 permissions:
   contents: read
 concurrency:
