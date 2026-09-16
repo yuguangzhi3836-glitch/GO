@@ -345,7 +345,7 @@ def open_unknown_episode(authorization_id, money_movement_id, evidence_reference
             if (current.authorization_id, current.open_evidence_digest) == (authorization_id, evidence_digest):
                 return _unknown_episode_public(current, replay=True)
             raise ValueError('UNKNOWN_EPISODE_EVIDENCE_CONFLICT')
-        if movement.state not in {'CONFIRMED', 'UNKNOWN_EXTERNAL_STATE'}:
+        if movement.state != 'CONFIRMED':
             raise ValueError('UNKNOWN_EPISODE_CONFIRMED_FUNDING_REQUIRED')
         prior = s.scalars(
             select(Episode).where(Episode.money_movement_id == money_movement_id)

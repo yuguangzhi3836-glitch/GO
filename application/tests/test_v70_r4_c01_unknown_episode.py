@@ -93,6 +93,37 @@ def test_episode_digest_fences_resolution_and_mixed_settlement(client, monkeypat
     assert allocation_state(order)[0:2] == ('SETTLED', 162000)
 
 
+
+def test_unknown_movement_without_open_episode_fails_closed_without_writes(client, monkeypatch):
+    _, authorization_id, credit = ready(client, monkeypatch)
+    movement_id = funding_movement(
+        authorization_id, credit['credit_id'], 'cash_authorization',
+    )
+    with SessionLocal.begin() as session:
+        authorization = session.get(Authorization, authorization_id)
+        movement = next(
+            movement for movement in hosted_money.active_movements(session, authorization)
+            if movement.money_movement_id == movement_id
+        )
+        movement.state = 'UNKNOWN_EXTERNAL_STATE'
+
+    with pytest.raises(ValueError, match='UNKNOWN_EPISODE_CONFIRMED_FUNDING_REQUIRED'):
+        hosted_money.open_unknown_episode(
+            authorization_id, movement_id, 'provider://timeout/orphan-unknown',
+            {'provider_request_id': 'orphan-unknown'}, 'ops-maker',
+        )
+
+    with SessionLocal() as session:
+        authorization = session.get(Authorization, authorization_id)
+        movement = next(
+            movement for movement in hosted_money.active_movements(session, authorization)
+            if movement.money_movement_id == movement_id
+        )
+        assert movement.state == 'UNKNOWN_EXTERNAL_STATE'
+        assert session.scalars(select(Episode)).all() == []
+        assert session.scalars(select(Audit)).all() == []
+
+
 def test_episode_and_movement_rollback_when_audit_write_fails(client, monkeypatch):
     _, authorization_id, credit = ready(client, monkeypatch)
     movement_id = funding_movement(
