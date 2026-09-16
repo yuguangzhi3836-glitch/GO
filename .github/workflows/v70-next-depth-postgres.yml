@@ -53,7 +53,6 @@ jobs:
       GO_C09_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
       GO_C11_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
       GO_C10_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
-      GO_C10_APPLICATION_TREE: 472682b1293ed86bd3913ccc07e1d5f4040b3490
     steps:
       - uses: actions/checkout@v4
         with:
