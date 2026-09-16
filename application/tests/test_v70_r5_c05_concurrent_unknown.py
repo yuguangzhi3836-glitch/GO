@@ -1,4 +1,4 @@
-"""V70-R5-C05-03: concurrent UNKNOWN episode opening is serialized."""
+"""V70-R5-C05-03: concurrent UNKNOWN episode opening is serialized atomically."""
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
