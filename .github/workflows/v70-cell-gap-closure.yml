@@ -42,9 +42,14 @@ jobs:
                   files[str(p.relative_to(root))]=hashlib.sha256(p.read_bytes()).hexdigest()
           raw=json.dumps(files,sort_keys=True,separators=(",",":")).encode()
           out=pathlib.Path(os.environ["RUNNER_TEMP"])/"cell-evidence/source"
-          (out/"SOURCE_FILES.json").write_text(json.dumps(files,indent=2,sort_keys=True)+"\\n")
-          (out/"SOURCE_FINGERPRINT_SHA256").write_text(hashlib.sha256(raw).hexdigest()+"\\n")
-          # Fail the Evidence gate here if either machine-readable binding is malformed.\n          assert json.loads((out/"SOURCE_FILES.json").read_text()) == files\n          assert (out/"SOURCE_FINGERPRINT_SHA256").read_text().strip() == hashlib.sha256(raw).hexdigest()\n          PY
+          fingerprint=hashlib.sha256(raw).hexdigest()
+          (out/"SOURCE_FILES.json").write_text(json.dumps(files,indent=2,sort_keys=True))
+          (out/"SOURCE_FINGERPRINT_SHA256").write_text(fingerprint)
+          assert json.loads((out/"SOURCE_FILES.json").read_text()) == files
+          assert (out/"SOURCE_FINGERPRINT_SHA256").read_text() == fingerprint
+          PY
+          jq empty "$RUNNER_TEMP/cell-evidence/source/SOURCE_FILES.json"
+          grep -Eq '^[0-9a-f]{64}$' "$RUNNER_TEMP/cell-evidence/source/SOURCE_FINGERPRINT_SHA256"
       - name: Install inherited frozen Python dependencies
         run: |
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
