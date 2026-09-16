@@ -305,22 +305,27 @@ paragraphs or bullets.
 - Long shell output, rollback commands and raw preflight output belong in the
   audit appendix below, not in a second chat block.
 
-### Audit appendix (.md) — when one may exist
+### Report files (.md or another format) — when, and where
 
-Do not create a `.md` merely to satisfy `present_files`. A round that only
-investigates, reads, analyses, cross-checks or confirms status produces **no**
-file, and an answer is never copied into a `.md`.
+A report file is available on request and is **not** gated on the round's type. If
+Eason asks for a report, or says another GPT needs one, produce a file -- `.md` or
+whatever format suits the job -- and present it at the **end of the reply**. Do not
+refuse a file just because the round involved no live change, and do not
+manufacture one merely to satisfy `present_files`. This is a preference, not a
+ceremony: do not be rigid about it.
 
-Create one only when the round involved a live-environment change, an install, a
-rollback, a production/test-server operation, a material repository commit, exact
-before/after values, a full preflight, backup paths and rollback commands, or
-audit detail that genuinely will not fit in the reply.
+The file is produced automatically when the round involved a live-environment
+change, an install, a rollback, a production/test-server operation, a material
+repository commit, exact before/after values, a full preflight, or backup paths and
+rollback commands.
 
-Such a file is an **audit appendix / rollback record / local snapshot only**. It
-is not a ChatGPT handoff, not project source of truth, not formal Evidence, and
-not a current-state handoff document. It carries a very short metadata header
-(task, date, HEAD, related PR, purpose) plus the detail the reply cannot hold, and
-it does not restate the reply's summary, blockers, NEXT_ACTION or handoff block.
+Its job is to carry the detail the reply cannot hold: full preflight, before and
+after values, backup paths, install and rollback commands, per-file change records,
+complete test and check output, hash verification, failure timelines, governance
+detail. It is an **audit appendix / rollback record / local snapshot**, or a
+handoff when that is what was asked for. It is not project source of truth and not
+formal Evidence, and it does not copy the reply wholesale -- the summary, blockers
+and NEXT_ACTION stay in the reply rather than being restated in the file.
 
 Formal handoff and source of truth remain `docs/project/*`,
 `docs/project/CONTEXT_CHECKPOINT.json` and the project's own state files. Signed
