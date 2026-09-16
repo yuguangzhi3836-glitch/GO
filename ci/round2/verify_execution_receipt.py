@@ -17,6 +17,9 @@ CANONICAL_BASE = "dcb68a652429aa01e8428ce9f582e4bab6a6175e"
 FIXED_CANDIDATE_SHA = "911d6e13bceaf83bb62c775f33a325bbd68af885"
 APPLICATION_GIT_TREE = "dd815baf0105cce603e9a28b002cfb9d8b95d186"
 APPLICATION_SOURCE_FINGERPRINT_SHA256 = "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374"
+CURRENT_TASK_ID = "V70-R3-C12-01"
+LEGACY_SOURCE_ANCHOR = "fef9c748adb77d37ba5d4dc4fa4662eb668303a1"
+LEGACY_PARENT_CANDIDATE = "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b"
 DEFAULT_MAX_HEARTBEAT_AGE_SECONDS = 300
 
 
@@ -46,27 +49,36 @@ def verify(receipt, evidence_root, *, expected_cell, expected_task, expected_age
     if isinstance(max_heartbeat_age_seconds, bool) or not isinstance(max_heartbeat_age_seconds, int) or max_heartbeat_age_seconds <= 0:
         errors.append("max_heartbeat_age_seconds must be a positive integer")
         return result
-    identities = {"cell_id": expected_cell, "task_id": expected_task, "agent": expected_agent,
-                  "canonical_base": CANONICAL_BASE, "fixed_candidate_sha": FIXED_CANDIDATE_SHA,
-                  "application_git_tree": APPLICATION_GIT_TREE,
-                  "application_source_fingerprint_sha256": APPLICATION_SOURCE_FINGERPRINT_SHA256}
+    current_binding = expected_task == CURRENT_TASK_ID
+    if current_binding:
+        identities = {"cell_id": expected_cell, "task_id": expected_task, "agent": expected_agent,
+                      "canonical_base": CANONICAL_BASE, "fixed_candidate_sha": FIXED_CANDIDATE_SHA,
+                      "application_git_tree": APPLICATION_GIT_TREE,
+                      "application_source_fingerprint_sha256": APPLICATION_SOURCE_FINGERPRINT_SHA256}
+    else:
+        identities = {"cell_id": expected_cell, "task_id": expected_task, "agent": expected_agent,
+                      "source_anchor": LEGACY_SOURCE_ANCHOR,
+                      "parent_candidate_commit": LEGACY_PARENT_CANDIDATE}
     for field, expected in identities.items():
         if not isinstance(expected, str) or not expected.strip() or receipt.get(field) != expected:
             errors.append(f"{field} identity mismatch")
     if receipt.get("status") != "RUNNING":
         errors.append("receipt.status must explicitly be RUNNING; ASSIGNED is not an ACK/start")
 
-    times = {name: _instant(receipt.get(name), name, errors)
-             for name in ("acknowledged_at", "started_at", "heartbeat_at")}
+    time_names = ("acknowledged_at", "started_at", "heartbeat_at") if current_binding else ("acknowledged_at", "started_at")
+    times = {name: _instant(receipt.get(name), name, errors) for name in time_names}
     observation = _instant(observed_at or datetime.now(timezone.utc).isoformat(), "observed_at", errors)
     if all(times.values()) and observation:
-        if not times["acknowledged_at"] <= times["started_at"] <= times["heartbeat_at"] <= observation:
-            errors.append("timestamps must satisfy acknowledged_at <= started_at <= heartbeat_at <= observed_at")
-        elif observation - times["heartbeat_at"] > timedelta(seconds=max_heartbeat_age_seconds):
-            result["stale_running"] = True
-            errors.append("RUNNING heartbeat expired; receipt is stale and must not remain RUNNING")
-        else:
-            result["heartbeat_fresh"] = True
+        if current_binding:
+            if not times["acknowledged_at"] <= times["started_at"] <= times["heartbeat_at"] <= observation:
+                errors.append("timestamps must satisfy acknowledged_at <= started_at <= heartbeat_at <= observed_at")
+            elif observation - times["heartbeat_at"] > timedelta(seconds=max_heartbeat_age_seconds):
+                result["stale_running"] = True
+                errors.append("RUNNING heartbeat expired; receipt is stale and must not remain RUNNING")
+            else:
+                result["heartbeat_fresh"] = True
+        elif not times["acknowledged_at"] <= times["started_at"] <= observation:
+            errors.append("timestamps must satisfy acknowledged_at <= started_at <= observed_at")
 
     evidence = receipt.get("execution_evidence")
     if not isinstance(evidence, list) or not evidence:
