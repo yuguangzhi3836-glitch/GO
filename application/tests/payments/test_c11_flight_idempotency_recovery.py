@@ -383,3 +383,53 @@ def test_supplier_resolution_rejects_non_printable_tokens_before_money(monkeypat
     with SessionLocal() as s:
         assert s.get(FlightChangeQuoteRow,qid).status == 'PENDING_SUPPLIER'
         assert s.get(FlightOrderRow,oid).status == 'UNKNOWN_EXTERNAL_STATE'
+
+
+CALLBACK_RISK_INVENTORY = {
+    'TICKETED': {'money': 'CAPTURE', 'requires': ('evidence_reference','actor','supplier_reference','ticket_numbers')},
+    'FAILED': {'money': 'RELEASE', 'forbids': ('supplier_reference','ticket_numbers')},
+    'UNKNOWN_EXTERNAL_STATE': {'money': 'NONE'},
+}
+
+
+@pytest.mark.parametrize('field,bad',[
+    ('evidence_reference','isolated://ok\nforged'),
+    ('evidence_reference','isolated://ok\x00forged'),
+    ('actor','admin\nforged'),
+    ('actor','admin\x00forged'),
+])
+def test_callback_inventory_rejects_unprintable_metadata_before_money(monkeypatch,field,bad):
+    order,quote=create_change();oid=order['order_id'];qid=quote['quote_id']
+    call_change(oid,qid)
+    called=[]
+    monkeypatch.setattr(change_bridge,'capture_adjustment',lambda *a,**k:called.append(('capture',a,k)))
+    values={'evidence_reference':'isolated://c11-inventory','actor':'c11-admin'}
+    values[field]=bad
+    with pytest.raises(ValueError):
+        flights.admin_external_state(oid,'TICKETED',values['evidence_reference'],values['actor'],
+                                     'C11PNR',['C11NEWTICKET'],qid)
+    assert called==[]
+    with SessionLocal() as sess:
+        assert sess.get(FlightChangeQuoteRow,qid).status=='PENDING_SUPPLIER'
+        assert sess.get(FlightOrderRow,oid).status=='UNKNOWN_EXTERNAL_STATE'
+
+
+def test_failed_callback_forbids_ticket_tokens_before_release(monkeypatch):
+    order,quote=create_change();oid=order['order_id'];qid=quote['quote_id']
+    call_change(oid,qid)
+    called=[]
+    monkeypatch.setattr(change_bridge,'release_adjustment',lambda *a,**k:called.append((a,k)))
+    with pytest.raises(ValueError,match='FLIGHT_FAILED_RESOLUTION_TICKET_INVALID'):
+        flights.admin_external_state(oid,'FAILED','isolated://c11-inventory','c11-admin',
+                                     'SHOULD-NOT-EXIST',['SHOULD-NOT-EXIST'],qid)
+    assert called==[]
+    with SessionLocal() as sess:
+        assert sess.get(FlightChangeQuoteRow,qid).status=='PENDING_SUPPLIER'
+        assert sess.get(FlightOrderRow,oid).status=='UNKNOWN_EXTERNAL_STATE'
+
+
+def test_callback_risk_inventory_is_complete_for_admitted_states():
+    assert set(CALLBACK_RISK_INVENTORY)=={'TICKETED','FAILED','UNKNOWN_EXTERNAL_STATE'}
+    assert CALLBACK_RISK_INVENTORY['TICKETED']['money']=='CAPTURE'
+    assert CALLBACK_RISK_INVENTORY['FAILED']['money']=='RELEASE'
+    assert CALLBACK_RISK_INVENTORY['UNKNOWN_EXTERNAL_STATE']['money']=='NONE'
