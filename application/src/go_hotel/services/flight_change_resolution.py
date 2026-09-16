@@ -35,9 +35,24 @@ def _terms(s, o, q):
             'changes': plan.plan_json['changes'], 'new_itinerary': plan.plan_json['new_itinerary']}
 
 
+def _printable_token(value, maximum, code):
+    if (not isinstance(value, str) or not 1 <= len(value) <= maximum
+            or value != value.strip() or not value.isprintable()):
+        raise ValueError(code)
+    return value
+
+
+def _invalid_ticket(value):
+    try:
+        _printable_token(value, 64, 'FLIGHT_REISSUED_TICKETS_INVALID')
+        return False
+    except ValueError:
+        return True
+
+
 def _tickets(values, count):
     if (not isinstance(values, list) or len(values) != count
-            or any(not isinstance(x,str) or not 1<=len(x)<=64 or x!=x.strip() for x in values)
+            or any(_invalid_ticket(x) for x in values)
             or len(set(values)) != len(values)):
         raise ValueError('FLIGHT_REISSUED_TICKETS_INVALID')
     return list(values)
@@ -108,8 +123,7 @@ def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ti
             if state not in {'TICKETED', 'FAILED'}:
                 raise ValueError('FLIGHT_RESOLUTION_CONFLICT')
             if state == 'TICKETED':
-                if not isinstance(supplier_reference,str) or not 1<=len(supplier_reference)<=16 or supplier_reference != supplier_reference.strip():
-                    raise ValueError('FLIGHT_RECONCILIATION_SUPPLIER_REFERENCE_REQUIRED')
+                _printable_token(supplier_reference, 16, 'FLIGHT_RECONCILIATION_SUPPLIER_REFERENCE_REQUIRED')
                 terms = _terms(s, o, q) if q.status == 'PENDING_SUPPLIER' else None
                 if terms:
                     request['ticket_numbers'] = _tickets(ticket_numbers or [], len(terms['changes'])*len(o.passengers or []))

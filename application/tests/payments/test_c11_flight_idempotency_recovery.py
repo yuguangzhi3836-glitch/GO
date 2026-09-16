@@ -366,3 +366,20 @@ def test_supplier_resolution_money_commit_interruption_reuses_same_movement(monk
         assert [m.money_movement_id for m in after]==[first_movement]
         assert s.get(FlightChangeQuoteRow,qid).status==('EXECUTED' if state=='TICKETED' else 'FAILED')
         assert s.get(FlightOrderRow,oid).status=='TICKETED'
+
+
+@pytest.mark.parametrize('supplier,tickets',[
+    ('PNR\\nINJECT',['VALID-TICKET']),
+    ('VALIDPNR',['TICKET\\x00INJECT']),
+])
+def test_supplier_resolution_rejects_non_printable_tokens_before_money(monkeypatch,supplier,tickets):
+    order,quote=create_change();oid=order['order_id'];qid=quote['quote_id']
+    call_change(oid,qid)
+    called=[]
+    monkeypatch.setattr(change_bridge,'capture_adjustment',lambda *a,**k: called.append((a,k)))
+    with pytest.raises(ValueError):
+        flights.admin_external_state(oid,'TICKETED','isolated://c11-parse','c11-admin',supplier,tickets,qid)
+    assert called == []
+    with SessionLocal() as s:
+        assert s.get(FlightChangeQuoteRow,qid).status == 'PENDING_SUPPLIER'
+        assert s.get(FlightOrderRow,oid).status == 'UNKNOWN_EXTERNAL_STATE'
