@@ -552,6 +552,40 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 
 ## 11. 下一会话唯一入口
 
+> **2026-09-17 / B4-B1.7（CCV1-43）—— 本节之下的入口已被这里取代，优先读这一段。**
+>
+> **① 协作规范变了**（Eason 2026-09-17 指令，**覆盖本分支 `CODEBUDDY.md` 第 155 / 200–205 行的旧规则**）：
+> 日常 edit-test-fix 全在**本地**做 —— 改码 / targeted test / regression / selftest / run_checks /
+> `git diff` / **local commit**；本地 commit ≠ 必须 push，可连续产生多个本地检查点。**不**因
+> 小 bug 修好 / 改一两个测试 / 改文档 / 改一个字段 / 多一个本地 commit / 中间子步骤完成而 push。
+> 只有这些才主动 push：Eason 明确要求 push / PR / checkpoint；一个完整 Issue / milestone / 明确阶段
+> 真正收口；必须 GitHub-only 环境才能验证；RC / artifact / Evidence / DEPLOY / ROLLBACK 需绑定精确
+> 远程 commit；merge readiness / final E2E / 最终验收；整体完成需形成正式 review 记录。不把 Actions
+> 当日常调试环境，但**正式 required gate 不因节省 Actions 费用而绕过**。PR #109 是长期总集成 ⇒
+> 小步骤本地连续 commit，**阶段收口集中 push 一次**。
+> **⛔ 不要修改 / commit / push 本分支的 `CODEBUDDY.md`** —— 该规范变更由 Draft PR #166 单独处理
+> （⚠ 实测 #166 目前 `draft=false`，是普通 open PR）。
+>
+> **② 当前真实断点 = 两处执行器基线仍钉 `0114`**（2026-09-17 现场实测，报告
+> `CCV1-43-CANARY-PREFLIGHT-BASELINE-2026-09-17.md`）：
+> `hk-staging/source/executor/runtime/canary_runtime.py:13` 的 `HEAD='0114_ext_truth_incident_hard'`
+> 与 `hk-staging/source/executor/go-hk-staging-preflight-probe:53` 的 `alembic_gate` 两个字面量，
+> 都仍是 0114，而 live 与候选都已是 `0133_flight_change_plan`。⇒ **一旦开 CANARY/DEPLOY 通道，
+> CANARY 必 `E_CANARY_ALEMBIC_HEAD_MISMATCH`、preflight 证据 `alembic_gate=false`。**
+> （同一份实测里 canary 的另外三类基线全部 PASS：compose `7ef4ab18…`、env `6682ff61…`、
+> 8 个业务容器镜像 `1c9598d6…` 各 count=1。两处文件在 live 上的摘要与仓库逐字节一致。）
+>
+> **③ NEXT_ACTION（第 0 步，纯本地、不需要 live 授权）**：把上述两处常量改成 `0133_flight_change_plan`，
+> 并**重钉** `go-hk-deployctl` 的 `_CANARY_SHA256`（改了 canary 文件就必须重钉，否则 `_load_canary()`
+> 会拒载）→ 跑测试 → 重生成清单并双向校验 → **local commit（不 push）**。
+> 之后才依次是：授权受控装机 3 个文件（`canary_runtime.py` / `go-hk-deployctl` /
+> `go-hk-staging-preflight-probe`，含重启 preflight systemd 服务）→ 授权开 CANARY/DEPLOY 通道 →
+> 本候选 CANARY + preflight → 四项 release gates 上游声明（`three_end_ux` / `six_vertical_closed_loop` /
+> `sealed_node` / `final_release`，属上游侧）→ GitHub Human Approval → CC 登记 plan →
+> `DEPLOY_READY=YES` → dry-run → 真实 DEPLOY。
+> ⚠ `collector_runtime.py`（`2b05e3a7…`）已经是 0133，**不要动**。
+
+
 ```text
 NEXT_ACTION=
 第 1 轮（需要新的当次 Human Approval）：在 HK-STAGING-01 上受控安装 **B4-B1.2 的 5 个文件**
@@ -621,6 +655,11 @@ HK 执行器无该能力）。这不阻断当前 image-only 候选的部署，�
 ---
 
 ## 12. CI 状态（**红色，必须最先处理**）
+
+> **2026-09-17 / B4-B1.7：** CI 目前**全绿** —— 上一个 head `1c36153` = 11 check-runs 全 success，
+> `bb1a7a4`（docs-only）= 10 check-runs 全 success。⚠ 但按 §11 顶部的新 push boundary，
+> **不要"为看 CI 会不会过"而 push**；CI 只在阶段收口或正式 required gate 需要时才跑。
+
 
 ```text
 在 eef48f8（Scope Reset 提交，改了部署闸的 validate_bundle / load_context 签名并删除 approval 签名）
