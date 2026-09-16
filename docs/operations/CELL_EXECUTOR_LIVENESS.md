@@ -39,6 +39,23 @@ API paths under `/internal/v1/` are:
 - `tasks/fail`, `tasks/recovery/advance`, `tasks/complete`;
 - `tasks/block-external` and `cell-runtime-snapshot`.
 
+`GET /healthz` proves that the process can answer requests. `GET /readyz`
+additionally opens and queries the durable database. Operators must require
+both before seeding or launching workers.
+
+`seed_ledger_tasks.py` imports a reviewed `go.cell-ledger-seed.v1` manifest.
+It rejects mixed canonical sources, preserves `PASS`/`DONE_SCOPED` without
+enqueueing them, and admits `BLOCKED_EXTERNAL` only with Evidence SHA256 and a
+release condition. `worker_launch_adapter.py` claims a task, exports its exact
+task/source/attempt/lease binding to a fixed operator-supplied command, renews
+the lease while that process runs, records failures in the recovery chain, and
+requires an Evidence file before completion.
+
+`install_orchestrator.sh` is the one-command systemd installation path for an
+authorized long-running host. It fails closed without root, systemd, config,
+TLS material, a protected token, and a writable durable state directory. It is
+not executed by CI and is not deployment authorization.
+
 ## Runtime contract
 
 1. A task enters a durable queue with Cell, task, source SHA, and attempt ID.
