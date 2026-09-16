@@ -1,8 +1,8 @@
 {
   "schema": "go.v70.next-depth.candidate.rebind.v2",
   "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
-  "product_candidate_commit": "02618ca2ccac68fbf9cdc712d6f040833de60e9d",
-  "application_git_tree": "cdf2b7177a7f09b595b93d607ca93586d8ea2653",
+  "product_candidate_commit": "be44b21166aa902eedc97942e8a1c887e7ab0a2a",
+  "application_git_tree": "7d7edbbe7abcc80484bc57233ebf38b0d2941dd7",
   "preintegration_candidate_commit": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_git_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
   "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
@@ -64,18 +64,18 @@
     },
     "application/src/go_hotel/api/routes/journey.py": {
       "mode": "100644",
-      "git_blob": "8e59dbcc4ed6a73e8e530069c0fab2f2710bf9e4",
-      "reason": "C10 R4 bound pathological deep-offset pagination at API boundary"
+      "git_blob": "977e1ddce3aeee40bbe6a4a7dfedcb3f0a87cc70",
+      "reason": "V70-R5-C10-03 opaque HMAC keyset cursor and regression"
     },
     "application/src/go_hotel/journey/service.py": {
       "mode": "100644",
-      "git_blob": "1abc5a1f982b99e2a05f00ab99df55fa8b957e9b",
-      "reason": "C10 R4 bound pathological deep-offset pagination at service boundary"
+      "git_blob": "d95d0b7dca4b6be8dc6cc5200f10a7862fd526b7",
+      "reason": "V70-R5-C10-03 opaque HMAC keyset cursor and regression"
     },
     "application/tests/journey/test_c10_pagination_search.py": {
       "mode": "100644",
-      "git_blob": "9fb6a9167c59a525f143d1fa51d97dd06fdd6dd7",
-      "reason": "C10 R4 direct service boundary regression"
+      "git_blob": "9f43fe25b5da648f470b5c15337131725f7489a1",
+      "reason": "V70-R5-C10-03 opaque HMAC keyset cursor and regression"
     },
     "application/tests/test_depth48_flight_migration.py": {
       "mode": "100644",
@@ -198,6 +198,8 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "source_tree_sha256": "9a582f0978a4fd2ab4a68db6c4017fdb65bbb0fa55e2f09f725f71e4db5c4ef9",
-  "historical_pass_transferred": false
+  "source_tree_sha256": "2b06e3640c7ddb65a9e1e6cfbd30fe0227225deab375ce0dddf759116b40cd2d",
+  "historical_pass_transferred": false,
+  "task_id": "V70-R5-C10-03",
+  "cell_id": "C10"
 }
