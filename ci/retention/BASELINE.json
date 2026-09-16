@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v2",
-  "product_candidate_commit": "ecb76b22a6ce504e95004fbc819d673e88df07c8",
-  "application_git_tree": "95f945c4e80716febf0a30d33e8b4884f0c6d5b8",
+  "product_candidate_commit": "da18e73925ae026b2c324cb0ff639f95e7de8035",
+  "application_git_tree": "490c456ef317d98a22139b6059c6d93d2f2263b5",
   "source_anchor_main": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
   "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
@@ -33,8 +33,8 @@
     },
     "src/go_hotel/go_ai/service.py": {
       "mode": "100644",
-      "git_blob": "93e3ba494b3ead01082708bd70e91ec81ac6b58e",
-      "reason": "V70-R3-C08-01 GO AI-specific durable ownership/checkpoint boundary"
+      "git_blob": "1d154a07d785cd13baf43b629239fbc2bc773ebd",
+      "reason": "V70-R3-C08-02 database-authority lease time and exact fenced renewal"
     },
     "alembic/versions/0135_go_ai_execution.py": {
       "mode": "100644",
@@ -43,8 +43,8 @@
     },
     "tests/go_ai/test_c08_durable_execution.py": {
       "mode": "100644",
-      "git_blob": "f24a782525b24a31bad0a4fbb08ea35a5c9b0e70",
-      "reason": "V70-R3-C08-01 GO AI-specific durable ownership/checkpoint boundary"
+      "git_blob": "a7c8074e36f1c7c3d5428a0eb1ae7720b2d9170c",
+      "reason": "V70-R3-C08-02 deterministic lease clock and renewal fencing tests"
     },
     "tests/go_ai/c08_hard_exit_worker.py": {
       "mode": "100644",
@@ -83,8 +83,8 @@
     },
     "src/go_hotel/services/alipay_safeguarded_settlement.py": {
       "mode": "100644",
-      "git_blob": "df03dc7a4f36626bbdee2599c6d223d32a1f489a",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+      "git_blob": "84f290f44bbea6564720c35f6e64aa2f92272910",
+      "reason": "minimal PR130 integration fix: validate changed hotel cash leg from current accepted fare-change funding root"
     },
     "tests/test_v70_next_c01_unknown_funding.py": {
       "mode": "100644",
@@ -170,6 +170,11 @@
       "mode": "100644",
       "git_blob": "d3f8c1b051aba1fee2c1453bffe5640963b2d61a",
       "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "tests/test_final_depth_terminal_hardening.py": {
+      "mode": "100644",
+      "git_blob": "4d17e5952ea1812e270f936cfba2e89cef15920d",
+      "reason": "TEST_ONLY: bind inherited ride recovery scenario to exact current UNKNOWN episode"
     }
   },
   "migration_head": "0136_merge_go_ai_journey",
@@ -192,6 +197,6 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "source_tree_sha256": "9597d187aad3b00044e8b5133d45d1472566c8149879b9d45553d82aba1ddd88",
+  "source_tree_sha256": "bf05dff2fb3e54ece18be42b20721ec29c788e85ee410febe9c684956ec54074",
   "historical_pass_transferred": false
 }
