@@ -9,6 +9,7 @@ import pathlib
 import os
 import shlex
 import shutil
+import sqlite3
 import subprocess
 import stat
 import sys
@@ -27,7 +28,57 @@ spec = importlib.util.spec_from_loader(loader.name, loader)
 bridge = importlib.util.module_from_spec(spec)
 loader.exec_module(bridge)
 sys.path.insert(0, str(ROOT / "hk-staging"))
-from hk_agent import deployment_actions, test_pr, transport
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from hk_agent import artifact_store, deployment_actions, test_pr, transport
+
+
+class RefusingBuildRunner:
+    """A TEST_PR build the artifact store must refuse.
+
+    Every gate the builder checks really passes -- the source fetches, the build
+    runs, the isolated checks run -- and then ``docker save`` produces something
+    that is not an archive, which is the shape of the first real failure: the
+    executor did its work and the durability step refused the result.
+    """
+
+    ARCHIVE = b"this is not an archive"
+
+    def __init__(self):
+        self.workspace = None
+        self.calls = []
+
+    @staticmethod
+    def completed(stdout=""):
+        return types.SimpleNamespace(stdout=stdout, stderr="", returncode=0)
+
+    def __call__(self, argv, *, cwd=None, env=None, timeout=300):
+        self.calls.append(list(argv))
+        if argv[0] == "/usr/bin/git":
+            if argv[1] == "init":
+                self.workspace = pathlib.Path(argv[-1])
+            elif "checkout" in argv:
+                context = self.workspace / "application"
+                context.mkdir(parents=True, exist_ok=True)
+                (context / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
+            elif "rev-parse" in argv:
+                return self.completed("c" * 40)
+            return self.completed()
+        if argv[0] != "/usr/bin/docker":
+            raise AssertionError(argv)
+        if argv[1] == "image":
+            # The base image is pinned; the freshly built tag reports a real id, so
+            # the store's identity gate is satisfied and only the archive is wrong.
+            return self.completed(test_pr.BUILDER_IMAGE_ID
+                                  if argv[3] == test_pr.BUILDER_IMAGE
+                                  else "sha256:" + "a" * 64)
+        if argv[1] == "run":
+            return self.completed(test_pr.DEPENDENCY_PROFILE_SHA256 if "--mount" in argv else "")
+        if argv[1] in ("build", "load"):
+            return self.completed()
+        if argv[1] == "save":
+            pathlib.Path(argv[argv.index("--output") + 1]).write_bytes(self.ARCHIVE)
+            return self.completed()
+        raise AssertionError(argv)
 
 
 class IntegrationTests(unittest.TestCase):
@@ -583,6 +634,145 @@ class FailureClosureTests(unittest.TestCase):
 
         def run(self, argv):
             return {"stdout": self.stdout, "stderr": "", "returncode": 1}
+
+    # -- the durability stage of a TEST_PR ------------------------------------
+    def durability_sandbox(self):
+        """A real store, and a build whose ``docker save`` output must be refused."""
+        root = pathlib.Path(tempfile.mkdtemp(prefix="cc-durability-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        store = root / "store"
+        store.mkdir(mode=0o700)
+        (store / "objects").mkdir(mode=0o700)
+        identity = (os.stat(store).st_uid, os.stat(store).st_gid)
+        originals = (test_pr.ARTIFACT_STORE, test_pr._build_root,
+                     artifact_store._IDENTITY_RESOLVER, artifact_store._process_identity,
+                     test_pr.subprocess)
+
+        def restore():
+            (test_pr.ARTIFACT_STORE, test_pr._build_root, artifact_store._IDENTITY_RESOLVER,
+             artifact_store._process_identity, test_pr.subprocess) = originals
+
+        self.addCleanup(restore)
+        test_pr.ARTIFACT_STORE = str(store)
+        test_pr._build_root = lambda: root
+        artifact_store._IDENTITY_RESOLVER = lambda: identity
+        artifact_store._process_identity = lambda: identity
+        # `execute` removes the temporary tag in its `finally`; that subprocess is
+        # the one call the fixture runner does not own.
+        test_pr.subprocess = types.SimpleNamespace(
+            run=lambda *a, **k: None, PIPE=None, DEVNULL=None,
+            CalledProcessError=subprocess.CalledProcessError,
+            SubprocessError=subprocess.SubprocessError)
+        if os.name != "posix":
+            # Keep the rule, relax only what the platform can express.
+            for module, name, value in (
+                    (artifact_store, "DIRECTORY_MODE", stat.S_IMODE(os.stat(store).st_mode)),
+                    (artifact_store, "FILE_MODE", 0o666),
+                    (artifact_store, "UNTRUSTED_BITS", 0)):
+                original = getattr(module, name)
+                setattr(module, name, value)
+                self.addCleanup(setattr, module, name, original)
+        return store
+
+    def test_a_durability_refusal_becomes_signed_failure_evidence(self):
+        """The whole chain: build, store refusal, reported and signed failure.
+
+        This is the regression for the first real TEST_PR.  The executor ran for
+        nearly two minutes, the store refused the archive it produced, and the
+        refusal escaped the builder: the agent's pass died with a traceback, no
+        failure record was published, and the ledger attempt stayed ``claimed`` with
+        a NULL diagnostic -- "the executor really ran and really failed, and the
+        control plane saw nothing at all".
+        """
+        task = self.signed_task(action="HK_STAGING_TEST_PR", parameters={
+            "builder_profile": test_pr.PROFILE,
+            "source": {"repository": test_pr.REPOSITORY, "pr_number": "52",
+                       "commit_sha": "c" * 40}})
+        store = self.durability_sandbox()
+        runner = RefusingBuildRunner()
+        original = test_pr.execute
+        # The builder is called without a runner by dispatch, so the fixture is bound
+        # as the default -- and an explicit runner would still win.
+        test_pr.execute = lambda task, runner=runner: original(task, runner=runner)
+        self.addCleanup(setattr, test_pr, "execute", original)
+        ledger = self.workspace / "durability-ledger.sqlite3"
+
+        result, _ = self.isolated_run(task, ledger=str(ledger))
+
+        # the build really ran: every gate up to the durability step was exercised
+        self.assertIn("save", [call[1] for call in runner.calls])
+        self.assertEqual(result["processed"], 0)
+        self.assertEqual(result["rejected"], 1)
+        publication = result["failure_evidence"][0]
+        self.assertTrue(publication["published"], publication)
+        self.assertEqual(publication["stage"], "artifact_durability")
+        self.assertEqual(publication["reason_code"], "ARTIFACT_DURABILITY_REJECT")
+        self.assertEqual(len(self.published), 1, "a failure must never publish a success record")
+
+        record = self.published[0]
+        self.assertEqual(record["status"], "FAILED")
+        self.assertEqual(record["action_id"], "HK_STAGING_TEST_PR")
+        self.assertEqual(record["task_id"], task["task_id"])
+        self.assertEqual(record["nonce"], task["nonce"])
+        failure = record["failure"]
+        self.assertEqual(failure["kind"], "ARTIFACT_DURABILITY_FAILED")
+        self.assertEqual(failure["stage"], "artifact_durability")
+        self.assertEqual(failure["reason_code"], "ARTIFACT_DURABILITY_REJECT")
+        self.assertTrue(failure["attempt_budget_exhausted"])
+        # every validation gate had passed: the failure happened after them
+        self.assertEqual(set(record["gate_results"].values()), {"PASS"})
+        for key in ("retry_permitted", "replay_authorized", "authorizes_any_action"):
+            self.assertFalse(record[key], key)
+        # the diagnostic names the real cause and carries nothing else
+        preview = failure["diagnostic"]["stderr"]["preview"]
+        self.assertEqual(preview, "SEALED_ARTIFACT_ARCHIVE_INVALID")
+        self.assertNotIn("/", preview)
+        self.assertNotIn(" ", preview)
+        # and the record is signed by the evidence identity
+        self.evidence_private.public_key().verify(base64.b64decode(record["signature"]),
+                                                  transport.canonical(record))
+
+        # the ledger attempt is closed, and it is not left claimed with no diagnostic
+        with sqlite3.connect(str(ledger)) as db:
+            status, diagnostic = db.execute(
+                "SELECT status, diagnostic FROM attempts WHERE task_id=?",
+                (task["task_id"],)).fetchone()
+            processed = db.execute("SELECT COUNT(*) FROM processed WHERE task_id=?",
+                                   (task["task_id"],)).fetchone()[0]
+        self.assertEqual(status, "failed")
+        self.assertEqual(processed, 1, "the failure must close the attempt")
+        self.assertIsNotNone(diagnostic)
+        audit = json.loads(diagnostic)
+        self.assertEqual(audit["failure_stage"], "artifact_durability")
+        self.assertEqual(audit["evidence_publication"]["published"], True)
+
+        # nothing was sealed, and no temporary residue was left in the store
+        self.assertEqual(list((store / "objects").iterdir()), [])
+
+    def test_the_next_poll_refuses_the_exhausted_task(self):
+        """The failed attempt is durable: the Task is never re-executed."""
+        task = self.signed_task(action="HK_STAGING_TEST_PR", parameters={
+            "builder_profile": test_pr.PROFILE,
+            "source": {"repository": test_pr.REPOSITORY, "pr_number": "52",
+                       "commit_sha": "c" * 40}})
+        self.durability_sandbox()
+        runner = RefusingBuildRunner()
+        original = test_pr.execute
+        # The builder is called without a runner by dispatch, so the fixture is bound
+        # as the default -- and an explicit runner would still win.
+        test_pr.execute = lambda task, runner=runner: original(task, runner=runner)
+        self.addCleanup(setattr, test_pr, "execute", original)
+        ledger = self.workspace / "exhausted-ledger.sqlite3"
+
+        self.isolated_run(task, ledger=str(ledger))
+        runner.calls.clear()
+        second, _ = self.isolated_run(task, ledger=str(ledger))
+
+        self.assertEqual(second["processed"], 0)
+        self.assertEqual(second["rejected"], 1)
+        self.assertEqual(runner.calls, [], "an exhausted Task must not reach the executor again")
+        self.assertFalse(second["failure_evidence"][0]["attempted"],
+                         "a Task refused before the claim publishes nothing")
 
     # -- the closure ----------------------------------------------------------
     def test_a_claimed_attempt_that_fails_publishes_signed_bound_evidence(self):

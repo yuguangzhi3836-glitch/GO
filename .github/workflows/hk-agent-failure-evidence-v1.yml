@@ -5,12 +5,18 @@ on:
     paths:
       - 'control-plane/boss-test-pr-live-integration-v1/**'
       - 'control-plane/command-center-state-v1/contracts/**'
+      # The suite reads the executor's read side out of hk-staging, so a change
+      # there must re-run the cross-side archive contract, not only the agent's.
+      - 'hk-staging/source/executor/runtime/**'
+      - 'hk-staging/systemd/**'
       - '.github/workflows/hk-agent-failure-evidence-v1.yml'
   pull_request:
     branches: [main]
     paths:
       - 'control-plane/boss-test-pr-live-integration-v1/**'
       - 'control-plane/command-center-state-v1/contracts/**'
+      - 'hk-staging/source/executor/runtime/**'
+      - 'hk-staging/systemd/**'
       - '.github/workflows/hk-agent-failure-evidence-v1.yml'
 permissions:
   contents: read
@@ -158,6 +164,63 @@ jobs:
           (work / 'binding.json').write_text(json.dumps(binding, indent=2) + '\n')
           print(json.dumps(binding, sort_keys=True))
           PY
+      - name: Parse a real docker save archive produced by this runner
+        run: |
+          set -euo pipefail
+          if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
+            echo "REAL_DOCKER_SAVE_SMOKE=SKIPPED_NO_DOCKER"
+            exit 0
+          fi
+          work="$(mktemp -d)"
+          printf 'FROM scratch\nLABEL go.ci.smoke=1\n' > "$work/Dockerfile"
+          docker build --file "$work/Dockerfile" --tag go-ci-save-smoke:local "$work" >/dev/null
+          docker save --output "$work/smoke.tar" go-ci-save-smoke:local
+          image_id="$(docker image inspect go-ci-save-smoke:local --format '{{.Id}}')"
+          python - "$work/smoke.tar" "$image_id" <<'PY'
+          import importlib.machinery
+          import importlib.util
+          import pathlib
+          import sys
+          import tarfile
+
+          # A real `docker save` archive, parsed by both halves of the contract.  The
+          # first real TEST_PR failed because the parser only understood the legacy
+          # shape while the host writes an OCI layout; the deterministic OCI fixture
+          # in the suite is still the authority for that format, and this step records
+          # which format this runner happens to produce rather than assuming one.
+          archive, image_id = sys.argv[1], sys.argv[2]
+          root = pathlib.Path('.').resolve()
+          sys.path.insert(0, str(root / 'control-plane' / 'boss-test-pr-live-integration-v1'
+                                / 'hk-staging'))
+          from hk_agent import artifact_store
+
+          reader_path = (root / 'hk-staging' / 'source' / 'executor' / 'runtime'
+                         / 'artifact_runtime.py')
+          loader = importlib.machinery.SourceFileLoader('ci_artifact_reader', str(reader_path))
+          spec = importlib.util.spec_from_loader(loader.name, loader)
+          reader = importlib.util.module_from_spec(spec)
+          loader.exec_module(reader)
+
+          with tarfile.open(archive, 'r:') as tar:
+              names = {member.name.lstrip('./') for member in tar.getmembers() if member.isfile()}
+          if 'index.json' in names and 'manifest.json' in names:
+              layout = 'OCI+LEGACY'
+          elif 'index.json' in names:
+              layout = 'OCI'
+          elif 'manifest.json' in names:
+              layout = 'LEGACY'
+          else:
+              layout = 'UNKNOWN'
+          assert layout != 'UNKNOWN', sorted(names)
+
+          digest = artifact_store.image_config_digest(archive, image_id)
+          assert digest == image_id.split(':', 1)[1], (digest, image_id)
+          assert reader.image_config_digest(archive, image_id) == digest, 'the two sides disagree'
+          print('REAL_DOCKER_SAVE_FORMAT=%s' % layout)
+          print('REAL_DOCKER_SAVE_SMOKE=PROVEN image_id=%s' % image_id)
+          PY
+          docker image rm --force go-ci-save-smoke:local >/dev/null
+          rm -rf "$work"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

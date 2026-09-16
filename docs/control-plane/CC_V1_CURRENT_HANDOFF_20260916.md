@@ -5,7 +5,7 @@
 >
 > 读取顺序建议：本文件 → `docs/project/CC_V1_SCOPE_20260916.md`（范围权威）→ 才动手。
 
-> **2026-09-16 修订说明（TD-J 安装 / B3 与 B3-R 清掉 / B4-B1 封存产物 / NEXT_ACTION 替换；§4 §6 §9 §11 已就地更新）**：本文件 01:26 CST 的读数之后，以下事实已被
+> **2026-09-16 修订说明（TD-J 安装 / B3 与 B3-R 清掉 / B4-B1 与 B4-B1.1 封存产物并已安装 / B4-B1.2 双归档格式与失败闭环 / NEXT_ACTION 替换；§4 §6 §9 §11 已就地更新）**：本文件 01:26 CST 的读数之后，以下事实已被
 > 后续工作取代；读时以更晚的权威件为准，**不要按本文的旧描述行动**：
 >
 > * **B4-B1（本轮，仓库侧）**：TEST_PR 构建产物此前是**临时**的（V2 在 finally 里删镜像），
@@ -412,6 +412,35 @@ B4  没有可用的部署计划 bundle（plan + approval + canary/preflight task
     · 本轮**无 live 变更**；`LIVE_INSTALL=NO`、`NEW_TEST_PR=NO`、`DURABLE_ARTIFACT_EXISTS=NO`、
       `PACKAGE_BINDING=BLOCKED`、`DEPLOY_READY=UNKNOWN` 均未变。
 
+    **2026-09-16 / B4-B1.2 修订（仓库侧；B4-B1 与 B4-B1.1 已装在 live，本轮未安装）**：
+    · 第一张真实 fresh TEST_PR（Task `go-boss-test-pr-52-3249a0c8589a`）**执行器跑通、封存失败**：
+      `SEALED_ARTIFACT_ARCHIVE_INVALID`。两个缺陷都在 B4-B1 自己的改动里，且本机与 CI 都测不出。
+    · **根因 A = 解析器只认识两种归档格式中的一种**。HK 是 Docker 29.7.2 + containerd image store
+      （`io.containerd.snapshotter.v1`）⇒ `docker save` 写的是 **OCI image layout**
+      （`oci-layout` / `index.json` / `blobs/sha256/*`，index 还可能指向嵌套 index）；
+      而解析器只会读 legacy docker-archive，且**全部夹具都是 legacy 手搓的** ⇒ 夹具与解析器自洽、
+      与真机不符。traceback 行号是精确的（live 文件与仓库字节相同）：line 248 落在
+      `Config` 的裸 hex 判定上 ⇒ 真机是**混合形态**（OCI layout + legacy index，且其引用不是裸名）。
+    · 现在两种格式由**同一套语法**在**两侧**解析：OCI 按**有界 descriptor graph**遍历
+      （深度 ≤ 4、数量 ≤ 256、每个 digest 只跟一次），每个 blob 必须在
+      `blobs/sha256/<digest>` 以 regular 成员存在、字节哈希等于描述它的 digest、size 一致；
+      media type 走显式 allowlist（未知类型**永不**成为候选权威，attestation 只入图不成像）；
+      legacy/hybrid 的引用只允许两种规范位置，digest 取自引用最后一节；两种布局必须指向同一镜像。
+    · **三个身份继续严格分离**：image_id（config 字节哈希）、package_sha256（归档内容地址）、
+      descriptor digest。只有第一个决定"这是哪个镜像"，并有测试断言三者不被互换。
+    · **根因 B = store 的拒绝不在失败路径里**。`run_once` 的 except 元组没有 `artifact_store.Reject`
+      ⇒ 异常冒到 main ⇒ 整趟 tick exit 1、**failure evidence 未发布**、attempt 停在
+      `status=claimed` 且 `diagnostic=NULL`（TD-J 教训的翻版：执行器真的跑了、真的失败了，
+      控制面什么都看不到）。现在 `test_pr` 在**自己的边界**把拒绝转成 stage=`artifact_durability`、
+      reason=`ARTIFACT_DURABILITY_REJECT` 的 TEST_PR 拒绝（store 自己的有界码走 diagnostic 通道，
+      **不新增第三套错误 schema**）；`run_once` 另外把 store 的异常类型加进 except 作为兜底。
+    · 夹具改为**单一来源** `tests/archive_fixtures.py`（三套件共用），CI 新增一步用 runner 真实
+      `docker save` 出来的归档跑两侧解析并记录实际格式；确定性 OCI 夹具仍是 OCI 格式的权威。
+    · 本轮**无 live 变更**：`LIVE_FIX_INSTALLED=NO`、`NEW_TEST_PR_EXECUTED=NO`、
+      `DURABLE_ARTIFACT_EXISTS=NO`、`PACKAGE_BINDING=BLOCKED`、`DEPLOY_READY=UNKNOWN`。
+    · 下一次安装只需 **5 个文件**（无新路径、无目录变更、不重启）；旧失败 Task 的
+      attempt 已耗尽，**不得重发**，重试必须用新 Request / 新 Task / 新 nonce。
+
 B5  deployment_requests_enabled=false（**正确的 fail-closed 姿态**，不是缺陷）
     真实 DEPLOY 必须等人类当次批准后才开；ROLLBACK 同理（#105 另需独立批准）
 ```
@@ -474,12 +503,21 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 
 ```text
 NEXT_ACTION=
-在 HK-STAGING-01 上受控安装 B4-B1（八个文件 + 创建 /var/lib/go-hk-artifacts，**owner 必须是
-go-hk-agent:go-hk-agent 0700，不是 root**；已存在而 owner/mode 不符 ⇒ 停下做 operator review），
-然后对同一 canonical RELEASE_CANDIDATE_V1 的源码发起**一张** fresh bounded TEST_PR，
-让 test-pr-v3 把该镜像封存成 package_sha256，并把该 package 写进 CURRENT_CANDIDATE.json。
-之后 readiness 的 PACKAGE_BINDING 才有机会变为 PASS。
-安装与第一次 TEST_PR 分两轮授权，便于区分 installation defect 与 build/durability defect。
+第 1 轮（需要新的当次 Human Approval）：在 HK-STAGING-01 上受控安装 **B4-B1.2 的 5 个文件**
+（B4-B1 与 B4-B1.1 已在位，store 已建为 go-hk-agent:go-hk-agent 0700，都不要重做）：
+  /opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py        5dddc742… -> f22bc4ed…
+  /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py               52478829… -> d1c454fc…
+  /opt/go-hk-agent-rebuilt/hk_agent/transport.py             b35ace22… -> 32ff16c1…
+  /usr/local/libexec/go-hk-deployctl-runtime/artifact_runtime.py
+                                                             81f91c7c… -> b32b2168…
+  /usr/local/libexec/go-hk-deployctl                        db9d1584… -> d589743d…
+  （deployctl 的 _ARTIFACT_SHA256 随之 81f91c7c… -> b32b2168…；其余四个 pin 不动。
+    无新路径、无目录变更、不重启，装完做 sha256 readback 并观察一趟 tick。）
+第 2 轮（再单独授权）：对同一 canonical RELEASE_CANDIDATE_V1 的源码发起**一张全新的**
+fresh bounded TEST_PR（新 Request / 新 Task / 新 nonce；`go-boss-test-pr-52-3249a0c8589a`
+的一次尝试已耗尽，**永不复用**），让 test-pr-v3 把镜像封存成 package_sha256，
+再把它写进 CURRENT_CANDIDATE.json。之后 PACKAGE_BINDING 才有机会变 PASS。
+两轮分开授权，便于区分 installation defect 与 build/durability defect。
 不得执行真实 DEPLOY；不得在没有新的当次授权前安装。
 RELEASE_GATES / CANARY（含 0114→0133 基线）/ AUTONOMY 是各自独立的 blocker，需分别处理。
 ```

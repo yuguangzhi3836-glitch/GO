@@ -62,7 +62,9 @@ config blob that is not the claimed image, and a loaded image that differs from
 the candidate are all rejected.
 """
 import hashlib
+import json
 import os
+import posixpath
 import re
 import secrets
 import stat
@@ -91,6 +93,51 @@ UNTRUSTED_BITS = 0o077
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 IMAGE_ID = re.compile(r"^sha256:[0-9a-f]{64}$")
 CONFIG_NAME = "manifest.json"
+
+# --- the two ``docker save`` formats --------------------------------------- #
+# An OCI image layout.  The blob path is *derived* from a content address and
+# never taken from JSON, so no descriptor can name a path of its own choosing.
+LAYOUT_NAME = "oci-layout"
+INDEX_NAME = "index.json"
+BLOB_DIR = "blobs/sha256"
+OCI_LAYOUT_VERSION = "1.0.0"
+# Media types this contract may follow, listed explicitly.  A type outside these
+# lists is refused rather than followed: an unknown descriptor must never become
+# the authority for which image the candidate is.
+INDEX_MEDIA_TYPES = ("application/vnd.oci.image.index.v1+json",
+                     "application/vnd.docker.distribution.manifest.list.v2+json")
+MANIFEST_MEDIA_TYPES = ("application/vnd.oci.image.manifest.v1+json",
+                        "application/vnd.docker.distribution.manifest.v2+json")
+CONFIG_MEDIA_TYPES = ("application/vnd.oci.image.config.v1+json",
+                      "application/vnd.docker.container.image.v1+json")
+# A bounded traversal: real archives nest at most one index inside another and
+# carry a handful of descriptors.  A hostile archive must not be able to make the
+# reader walk without limit, so both the depth and the descriptor count are
+# capped, and the same caps are declared by the reader.
+MAX_DESCRIPTOR_DEPTH = 4
+MAX_DESCRIPTOR_COUNT = 256
+MAX_ARCHIVE_MEMBERS = 65536
+# The largest document read whole out of an archive: an image manifest, a
+# descriptor index, a ``docker save`` index.  Layer and config *blobs* are hashed
+# in place and are only buffered when they have to be parsed as JSON.
+MAX_DOCUMENT_BYTES = 8 * 1024 * 1024
+
+# The archive-format refusals, shared verbatim with the reader: a writer that
+# accepts a graph must never be paired with a reader that refuses it.  Each side
+# prefixes them with its own namespace, and a test compares both vocabularies.
+ARCHIVE_REFUSALS = ("ARCHIVE_INVALID",          # unreadable, truncated, or no layout at all
+                    "MEMBER_UNSAFE",            # absolute, traversing, or a non-regular authority
+                    "MEMBER_DUPLICATE",         # one authoritative name, twice
+                    "BLOB_AMBIGUOUS",           # one identity, two canonical locations
+                    "LAYOUT_AMBIGUOUS",         # two layouts naming different images
+                    "OCI_INVALID",              # malformed layout marker, index or manifest
+                    "DESCRIPTOR_INVALID",       # a descriptor that contradicts itself
+                    "DESCRIPTOR_LIMIT",         # traversal budget exhausted
+                    "MEDIA_TYPE_UNSUPPORTED",   # unknown type would have to be image authority
+                    "BLOB_MISSING",             # a described blob is not in the archive
+                    "BLOB_MISMATCH",            # a blob does not size or hash to its descriptor
+                    "CONFIG_MISMATCH")          # the archive's image is not the candidate
+_REFUSAL_PREFIX = "SEALED_ARTIFACT_"
 # Tags an image may carry.  Recorded for audit only; never used as authority and
 # never passed to Docker by this module.
 TAG = re.compile(r"^[a-z0-9][a-z0-9._/-]{0,127}:[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -220,44 +267,291 @@ def package_path(package_sha256, root=None):
     return os.path.join(object_dir(store_root(root)), package_sha256 + SUFFIX)
 
 
-def _config_digest(archive):
-    """The digest of the config blob inside a ``docker save`` archive.
+def _refuse(code):
+    """One archive-format refusal, named from the vocabulary both sides declare."""
+    raise Reject(_REFUSAL_PREFIX + code)
 
-    ``image_id`` is the SHA256 of exactly these bytes, so this is the check that
-    says "the archive is that image" without trusting the archive's own index.
+
+def _authoritative(name):
+    """A member name that can decide what image an archive is."""
+    return name in (LAYOUT_NAME, INDEX_NAME, CONFIG_NAME) or name.startswith(BLOB_DIR + "/")
+
+
+def _member_index(tar):
+    """Every regular member by name, with anything unsafe refused.
+
+    A tar member name is data, so it is not trusted: nothing absolute, nothing
+    that traverses and nothing that is not already normalised is accepted.  An
+    *authoritative* name -- the layout markers and every blob path -- must be a
+    plain regular file and must appear exactly once; a symlink, a hard link, a
+    device or a FIFO under such a name is refused rather than followed.  Members
+    outside that namespace are ignored, because an archive may carry anything else
+    and none of it can change which image the archive is.
+    """
+    regular = {}
+    count = 0
+    for member in tar.getmembers():
+        count += 1
+        if count > MAX_ARCHIVE_MEMBERS:
+            _refuse("DESCRIPTOR_LIMIT")
+        name = member.name
+        if not isinstance(name, str) or not name or "\x00" in name or name.startswith("/"):
+            _refuse("MEMBER_UNSAFE")
+        normal = name[2:] if name.startswith("./") else name
+        if (not normal or normal == ".." or normal.startswith("../")
+                or posixpath.normpath(normal) != normal):
+            _refuse("MEMBER_UNSAFE")
+        if member.isdir():
+            continue
+        if not member.isfile():
+            if _authoritative(normal):
+                _refuse("MEMBER_UNSAFE")
+            continue
+        if normal in regular:
+            if _authoritative(normal):
+                _refuse("MEMBER_DUPLICATE")
+            continue
+        regular[normal] = member
+    return regular
+
+
+def _read_member(tar, member, limit=MAX_DOCUMENT_BYTES):
+    """One small member read whole.  Only a document we mean to parse is read."""
+    if member.size is None or member.size < 0 or member.size > limit:
+        _refuse("ARCHIVE_INVALID")
+    stream = tar.extractfile(member)
+    if stream is None:
+        _refuse("ARCHIVE_INVALID")
+    data = stream.read(limit + 1)
+    if len(data) != member.size:
+        _refuse("ARCHIVE_INVALID")
+    return data
+
+
+def _document(data, code):
+    """A JSON object, or a refusal.  A document is never half-read."""
+    try:
+        value = json.loads(data.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        _refuse(code)
+    if not isinstance(value, dict):
+        _refuse(code)
+    return value
+
+
+def _blob(tar, regular, digest, size, paths, document=False):
+    """The one verified member a content address names.
+
+    Exactly one of ``paths`` must hold it; an identity present at two locations is
+    refused rather than preferred.  The bytes are hashed in place -- a layer blob
+    is never buffered whole -- and must both match the declared size and hash to
+    the digest they are filed under.  ``document`` returns the bytes for the
+    caller to parse, which is only ever asked for by the small blobs that *are*
+    descriptors.
+    """
+    found = [path for path in paths if path in regular]
+    if not found:
+        _refuse("BLOB_MISSING")
+    if len(found) > 1:
+        _refuse("BLOB_AMBIGUOUS")
+    member = regular[found[0]]
+    if member.size is None or member.size < 0 or member.size > MAX_PACKAGE_BYTES:
+        _refuse("ARCHIVE_INVALID")
+    if size is not None and member.size != size:
+        _refuse("BLOB_MISMATCH")
+    if document and member.size > MAX_DOCUMENT_BYTES:
+        _refuse("ARCHIVE_INVALID")
+    stream = tar.extractfile(member)
+    if stream is None:
+        _refuse("ARCHIVE_INVALID")
+    hasher = hashlib.sha256()
+    total = 0
+    buffer = bytearray() if document else None
+    while True:
+        part = stream.read(1024 * 1024)
+        if not part:
+            break
+        total += len(part)
+        if total > MAX_PACKAGE_BYTES:
+            _refuse("ARCHIVE_INVALID")
+        hasher.update(part)
+        if buffer is not None:
+            buffer += part
+    if total != member.size:
+        _refuse("ARCHIVE_INVALID")
+    if hasher.hexdigest() != digest:
+        _refuse("BLOB_MISMATCH")
+    return bytes(buffer) if buffer is not None else None
+
+
+def _descriptor(value):
+    """A descriptor reduced to the three fields that can actually be checked."""
+    if not isinstance(value, dict):
+        _refuse("DESCRIPTOR_INVALID")
+    media_type, digest, size = value.get("mediaType"), value.get("digest"), value.get("size")
+    if (not isinstance(media_type, str) or not isinstance(digest, str)
+            or IMAGE_ID.match(digest) is None):
+        _refuse("DESCRIPTOR_INVALID")
+    if size is not None and (not isinstance(size, int) or isinstance(size, bool) or size < 0):
+        _refuse("DESCRIPTOR_INVALID")
+    return media_type, digest[7:], size
+
+
+def _oci_image_configs(tar, regular):
+    """Every image config digest an OCI image layout proves.
+
+    ``index.json`` is followed as a graph rather than as ``manifests[0]``: an index
+    may point at another index before it reaches an image manifest, which is
+    exactly the shape Docker writes.  The traversal is bounded in depth and in
+    descriptor count, each digest is followed once, and every blob read must be a
+    regular member whose bytes hash to the digest that named it.  The result is the
+    set of image config digests -- the only value in the graph that can be the
+    candidate image.
+    """
+    if LAYOUT_NAME not in regular:
+        _refuse("OCI_INVALID")
+    layout = _document(_read_member(tar, regular[LAYOUT_NAME]), "OCI_INVALID")
+    if layout.get("imageLayoutVersion") != OCI_LAYOUT_VERSION:
+        _refuse("OCI_INVALID")
+    root = _document(_read_member(tar, regular[INDEX_NAME]), "OCI_INVALID")
+    if root.get("mediaType") not in INDEX_MEDIA_TYPES:
+        _refuse("MEDIA_TYPE_UNSUPPORTED")
+    configs, pending, seen, count = set(), [(root, 0)], {}, 0
+    while pending:
+        node, depth = pending.pop()
+        if depth > MAX_DESCRIPTOR_DEPTH:
+            _refuse("DESCRIPTOR_LIMIT")
+        manifests = node.get("manifests")
+        if node.get("schemaVersion") != 2 or not isinstance(manifests, list) or not manifests:
+            _refuse("OCI_INVALID")
+        for entry in manifests:
+            media_type, digest, size = _descriptor(entry)
+            count += 1
+            if count > MAX_DESCRIPTOR_COUNT:
+                _refuse("DESCRIPTOR_LIMIT")
+            if media_type not in INDEX_MEDIA_TYPES and media_type not in MANIFEST_MEDIA_TYPES:
+                _refuse("MEDIA_TYPE_UNSUPPORTED")
+            if digest in seen:
+                # One blob may be reached by several paths, but it may not be
+                # described as two different things.
+                if seen[digest] != media_type:
+                    _refuse("DESCRIPTOR_INVALID")
+                continue
+            seen[digest] = media_type
+            path = [BLOB_DIR + "/" + digest]
+            if media_type in INDEX_MEDIA_TYPES:
+                nested = _document(_blob(tar, regular, digest, size, path, document=True),
+                                   "OCI_INVALID")
+                if nested.get("mediaType") is not None and nested["mediaType"] not in INDEX_MEDIA_TYPES:
+                    _refuse("DESCRIPTOR_INVALID")
+                pending.append((nested, depth + 1))
+                continue
+            manifest = _document(_blob(tar, regular, digest, size, path, document=True),
+                                 "OCI_INVALID")
+            if (manifest.get("mediaType") is not None
+                    and manifest["mediaType"] not in MANIFEST_MEDIA_TYPES):
+                _refuse("DESCRIPTOR_INVALID")
+            if manifest.get("schemaVersion") != 2:
+                _refuse("OCI_INVALID")
+            # An attestation manifest is bound into the same graph and is hashed
+            # like everything else, but its config is not an image, so it never
+            # becomes candidate authority.
+            if manifest.get("artifactType"):
+                continue
+            config_type, config_digest, config_size = _descriptor(manifest.get("config"))
+            if config_type not in CONFIG_MEDIA_TYPES:
+                _refuse("MEDIA_TYPE_UNSUPPORTED")
+            _blob(tar, regular, config_digest, config_size,
+                  [BLOB_DIR + "/" + config_digest], document=True)
+            layers = manifest.get("layers")
+            if not isinstance(layers, list):
+                _refuse("OCI_INVALID")
+            for layer in layers:
+                layer_type, layer_digest, layer_size = _descriptor(layer)
+                _blob(tar, regular, layer_digest, layer_size,
+                      [BLOB_DIR + "/" + layer_digest])
+            configs.add(config_digest)
+    return configs
+
+
+def _legacy_image_config(tar, regular):
+    """The image config a legacy ``docker save`` index names.
+
+    ``manifest.json`` is a list with exactly one entry and its ``Config`` is the
+    identity of the config blob.  Docker's hybrid archive -- an OCI layout with
+    that same list beside it -- files the blob under the OCI path, so the
+    reference may be either the flat name or ``blobs/sha256/<digest>``.  Only
+    those two locations are ever read and the digest is taken from the reference's
+    own last component, so nothing here can name a path of its choosing.
     """
     try:
+        index = json.loads(_read_member(tar, regular[CONFIG_NAME]).decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        _refuse("ARCHIVE_INVALID")
+    if not isinstance(index, list) or len(index) != 1 or not isinstance(index[0], dict):
+        _refuse("ARCHIVE_INVALID")
+    reference = index[0].get("Config")
+    if (not isinstance(reference, str) or not reference or "\x00" in reference
+            or reference.startswith("/")):
+        _refuse("MEMBER_UNSAFE")
+    parts = reference.split("/")
+    if any(part in ("", ".", "..") for part in parts):
+        _refuse("MEMBER_UNSAFE")
+    if len(parts) > 1 and "/".join(parts[:-1]) != BLOB_DIR:
+        _refuse("MEMBER_UNSAFE")
+    name = parts[-1][:-5] if parts[-1].endswith(".json") else parts[-1]
+    if SHA256.fullmatch(name) is None:
+        _refuse("ARCHIVE_INVALID")
+    _blob(tar, regular, name, None, [name, BLOB_DIR + "/" + name], document=True)
+    return name
+
+
+def _archive_image_configs(archive):
+    """Every image config digest this archive proves, from every layout it carries."""
+    try:
         with tarfile.open(archive, "r:") as tar:
-            members = tar.getmembers()
-            config = None
-            for member in members:
-                if member.name.lstrip("./") != CONFIG_NAME or not member.isfile():
-                    continue
-                if config is not None:
-                    raise Reject("SEALED_ARTIFACT_ARCHIVE_INVALID")
-                config = member
-            if config is None:
-                raise Reject("SEALED_ARTIFACT_ARCHIVE_INVALID")
-            # The config path inside a save archive is its own member name.
-            import json
-            index = json.loads(tar.extractfile(config).read().decode("utf-8"))
-            if not isinstance(index, list) or len(index) != 1 or not isinstance(index[0], dict):
-                raise Reject("SEALED_ARTIFACT_ARCHIVE_INVALID")
-            digest = index[0].get("Config")
-            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
-                raise Reject("SEALED_ARTIFACT_ARCHIVE_INVALID")
-            names = [m for m in members if m.isfile() and m.name.lstrip("./") == digest]
-            if len(names) != 1:
-                raise Reject("SEALED_ARTIFACT_ARCHIVE_INVALID")
-            hasher = hashlib.sha256()
-            stream = tar.extractfile(names[0])
-            for part in iter(lambda: stream.read(1024 * 1024), b""):
-                hasher.update(part)
-            return hasher.hexdigest()
+            regular = _member_index(tar)
+            configs, oci, legacy = set(), None, None
+            if INDEX_NAME in regular:
+                oci = _oci_image_configs(tar, regular)
+                if not oci:
+                    # An index that names no image at all is not an image archive.
+                    _refuse("OCI_INVALID")
+                configs |= oci
+            if CONFIG_NAME in regular:
+                legacy = _legacy_image_config(tar, regular)
+                # Two layouts in one archive are acceptable only while they name
+                # the same image; an archive that contradicts itself is refused
+                # rather than resolved by preferring one of them.
+                if oci is not None and legacy not in oci:
+                    _refuse("LAYOUT_AMBIGUOUS")
+                configs.add(legacy)
+            if not configs:
+                _refuse("ARCHIVE_INVALID")
+            return configs
     except Reject:
         raise
     except (OSError, tarfile.TarError, ValueError, KeyError, UnicodeDecodeError) as exc:
-        raise Reject("SEALED_ARTIFACT_ARCHIVE_INVALID") from exc
+        raise Reject(_REFUSAL_PREFIX + "ARCHIVE_INVALID") from exc
+
+
+def image_config_digest(archive, image_id):
+    """The archive's image config digest, proven against the candidate identity.
+
+    Returns the hex digest of the config blob that the archive's own graph names,
+    after proving the blob is a regular member whose bytes hash to the identity it
+    is filed under -- and that this identity is exactly the candidate image's.  An
+    archive that names no image, carries a descriptor type this contract does not
+    know, contradicts itself across two layouts, or is simply not this image, is
+    refused.  Descriptor digests, index digests and the package's own SHA256 are
+    separate identities and are never compared with the image id.
+    """
+    if not isinstance(image_id, str) or IMAGE_ID.fullmatch(image_id) is None:
+        raise Reject("SEALED_ARTIFACT_IMAGE_IDENTITY")
+    expected = image_id.split(":", 1)[1]
+    if expected not in _archive_image_configs(archive):
+        _refuse("CONFIG_MISMATCH")
+    return expected
 
 
 def verify_object(path, expected_sha256):
@@ -352,9 +646,10 @@ def seal(runner, image_ref, image_id, root=None, tags=None):
     try:
         runner(["/usr/bin/docker", "save", "--output", temporary, image_ref], timeout=900)
         os.chmod(temporary, FILE_MODE)
-        config_digest = _config_digest(temporary)
-        if config_digest != image_id.split(":", 1)[1]:
-            raise Reject("SEALED_ARTIFACT_CONFIG_MISMATCH")
+        # The archive is this image only if its own graph names a config blob whose
+        # bytes hash to the image id the build reported.  Whatever the archive's
+        # own index claims about itself is not authority; those bytes are.
+        image_config_digest(temporary, image_id)
         size = os.stat(temporary).st_size
         if size == 0 or size > MAX_PACKAGE_BYTES:
             raise Reject("SEALED_ARTIFACT_PACKAGE_OVERSIZED")
@@ -423,8 +718,7 @@ def load(runner, package_sha256, image_id, root=None):
     if not isinstance(image_id, str) or IMAGE_ID.fullmatch(image_id) is None:
         raise Reject("SEALED_ARTIFACT_IMAGE_IDENTITY")
     path = resolve(package_sha256, root)
-    if _config_digest(path) != image_id.split(":", 1)[1]:
-        raise Reject("SEALED_ARTIFACT_CONFIG_MISMATCH")
+    image_config_digest(path, image_id)
     loaded = runner(["/usr/bin/docker", "load", "--input", path], timeout=600)
     if getattr(loaded, "returncode", 0):
         raise Reject("SEALED_ARTIFACT_LOAD_FAILED")

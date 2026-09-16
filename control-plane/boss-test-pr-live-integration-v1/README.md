@@ -181,3 +181,117 @@ installation and is not re-pinned here: re-pinning it asserts a claim about the
 live host that this revision cannot verify. It must be re-pinned, against
 observed live state, by whichever separately approved change installs this
 revision.
+
+## B4-B1.2 — both `docker save` formats, and a refusal that is reported
+
+The first real TEST_PR failed. `docker build` succeeded and every isolated check
+ran — eleven seconds short of two minutes of real work — and then `seal` refused
+the archive it had just produced:
+
+```
+artifact_store.py:355  config_digest = _config_digest(temporary)
+artifact_store.py:248  raise Reject("SEALED_ARTIFACT_ARCHIVE_INVALID")
+```
+
+Two defects, both in the B4-B1 change above, and neither was visible from this
+workstation or from CI.
+
+**A. The parser knew one of the two formats.** HK-STAGING runs Docker 29.7.2 on
+the containerd image store, so `docker save` writes an OCI image layout:
+`oci-layout`, an `index.json` pointing at a *nested* index, that index pointing at
+the image manifest, and every blob filed under `blobs/sha256/<digest>`. The
+parser's only shape was the legacy docker-archive, whose `manifest.json` names a
+flat config member — and every fixture in this suite wrote that legacy shape, so
+the suite agreed with the parser and the host did not.
+
+That line number is exact, and it corrects an earlier reading of it:
+`manifest.json` *was* present, was a one-element list, and its `Config` was not a
+bare digest — the hybrid Docker writes when both markers are present. The live
+file on the host was byte-identical to the committed one, which is what makes the
+line authoritative.
+
+Both formats are now read by one grammar, on both sides of the contract:
+
+* the OCI side is followed as a *descriptor graph* (index → nested index → image
+  manifest), bounded in depth and in descriptor count, each digest followed once,
+  and every blob required to be a regular member whose bytes hash to the digest
+  that described it and match the size it declared;
+* the legacy index is kept, and its reference may name either the flat member or
+  `blobs/sha256/<digest>`; only those two canonical locations are ever read, and
+  the digest comes from the reference's own last component, so no JSON value can
+  name a path of its choosing;
+* a media type outside the declared allowlists is never candidate authority, an
+  attestation manifest is bound into the graph but is not an image, and two
+  layouts in one archive must name the same image or the archive is refused
+  rather than resolved by preference;
+* whatever the layout, the decision is unchanged: the config blob's bytes must
+  hash to the candidate image id. A descriptor digest, an index digest and the
+  package's own SHA256 are three identities and are never interchanged;
+* the executor's reader applies the identical grammar, and a cross-side test runs
+  both implementations over the same 26-archive corpus and fails if either side
+  disagrees about any one of them.
+
+**B. The store's refusal killed the whole pass.** `run_once` catches a closed set
+of exception types and the store's `Reject` was not among them, so it escaped
+`test_pr.execute`, killed the agent process, published **no** failure record, and
+left the ledger attempt `claimed` with a `NULL` diagnostic: the executor really
+ran, really failed, and the control plane saw nothing — the TD-J lesson again, in
+a new place. `test_pr` now converts the refusal at its own boundary into a
+TEST_PR rejection carrying stage `artifact_durability` and the closed reason code
+`ARTIFACT_DURABILITY_REJECT`, with the store's own bounded code carried in the
+diagnostic channel; `run_once` also lists the store's type as a belt to that
+braces, so no refusal from it can ever kill a pass again. The failure is now a
+business result: reported, signed, and the attempt closed.
+
+The fixture rule this established: the archive builders live in
+`tests/archive_fixtures.py` and every suite imports them, because a second private
+copy of them is how the blind spot was built in the first place. A CI step also
+parses a **real** `docker save` archive produced by the runner, records which
+format it turned out to be, and asserts both sides agree — while the deterministic
+OCI fixture remains the authority for a format the runner may not produce.
+
+### B4-B1.2 superseded hashes
+
+```
+hk-staging/hk_agent/artifact_store.py   was 5dddc742b7ca668033547cb56073e6d65ba492d747d271622c9ca2b3df4335a4
+                                        now f22bc4ed45be6ff2b01f63c72abc8fafd6380ff1c2f09ab08d136a921ff686be
+hk-staging/hk_agent/test_pr.py          was 5247882993a86fada07df256f256b74ad6aa42f2e9fc7b3427192bd3e4cad778
+                                        now d1c454fc4b4c3066cbd6e8195b686de4ec676c2b6f67d4cf33d332ad4cedf1f0
+hk-staging/hk_agent/transport.py        was b35ace2289d9b8e64805d584a893f0e3c5efb7c6050fbbdbfaaf492dee3d700d
+                                        now 32ff16c18b6230d50a4d2feba2c56fc19cdef36f702b1b56d735335c77625270
+tests/test_artifact_store.py            was 936c9c4928f1a31dc012ee9e51da9ae2f042d61b14e0bb6fe3a87e60b5ebff94
+                                        now 6bbd584a09c652427ed9cc4e69b9673b80faa7a08969578b2301a8856490906e
+tests/test_test_pr_durability.py        was 425ac614fef5208ea545579fba43d6e7ad86ddf9db28c20aebb0e19e69a3fb9f
+                                        now 816cd180660d308d89dc9756d538a1f1a1b3be48cf36b1ef5eb00a4fc38c645d
+tests/test_live_integration.py          was ff10e997abf8846ea9328e3f8074f6a3afcf2ea7faec9c44f7c7e1b354ac47bd
+                                        now c0db89469f500ac47fe8ca6d4353efef794584d265676d1b3fe4d5a24dfcd8b3
+tests/archive_fixtures.py               new 61768c9245548d804f73517c9d1ba6db76f1445a33b35b3bbbe7fa4959e1b335
+```
+
+The executor's reader and its pinned loader live outside this component and are
+pinned by `hk-staging/SOURCE_SHA256SUMS.txt` and by `go-hk-deployctl` itself:
+
+```
+hk-staging/source/executor/runtime/artifact_runtime.py
+              was 81f91c7cf8630ae57687676f3d6e9ec194b1c064488004a2593c1cd58cd76818
+              now b32b2168ea85ffe43c0547257df04a36d883ba93b3bb1717a626f329479518f0
+              _ARTIFACT_SHA256 in go-hk-deployctl was 81f91c7c… and is now b32b2168…
+              the other four runtime pins are unchanged: no other runtime moved
+hk-staging/source/executor/go-hk-deployctl
+              was db9d1584e56781e9b73d3db50495ee4b7422c05deb6fdaa315b9a7033393b53e
+              now d589743da6271a3da0c42a3a79f73ea2870bacc4172a92ee2f1a4335b260fed6
+.github/workflows/hk-agent-failure-evidence-v1.yml
+              was a8ed814dc26e4ab376b09b158260e79e4d88620724d5f24b6ececb0f7563e9f0
+              now 885b22abc3f357062125e7436a066ec11f3385f7b563dd06062dbeb6072252a8
+```
+
+```
+INSTALLATION_PERFORMED=NO
+DEPLOYMENT_PERFORMED=NO
+HONG_KONG_TOUCHED=NO
+```
+
+The live host still runs the B4-B1 revision of the agent modules and the executor
+(`5dddc742…`, `52478829…`, `b35ace22…`, `81f91c7c…`). This revision is
+repository-side only: nothing is installed by it, and a TEST_PR issued against the
+live host today would still fail at the durability step.

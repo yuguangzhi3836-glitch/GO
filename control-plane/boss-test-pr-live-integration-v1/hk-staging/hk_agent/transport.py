@@ -525,11 +525,18 @@ def run_once(config_path,ledger_path,task_id=None):
                 commit=push_evidence(data,cfg,work,stage=STAGE_EVIDENCE_PUBLISH)
                 ledger.commit(task["task_id"],task["nonce"],"completed",commit)
                 result["processed"]+=1; result["evidence_commits"].append(commit)
-            except (Reject, deployment_actions.Reject, test_pr.Reject) as exc:
+            except (Reject, artifact_store.Reject, deployment_actions.Reject, test_pr.Reject) as exc:
                 # CC V1-02.  A Task whose single execution attempt was claimed is
                 # reported on even when it fails, so "picked up and failed" stops
                 # being invisible.  Anything rejected before the claim publishes
                 # nothing: an unauthenticated Task must never cause a write.
+                #
+                # The store's own refusal type is listed as well, although the
+                # TEST_PR builder already converts it at its own boundary: a
+                # refusal that reached here uncaught killed the whole pass, so no
+                # failure record was published and the ledger attempt stayed
+                # claimed forever.  This is the belt to that braces, and it reports
+                # an unmapped stage as AGENT_REJECT rather than crashing.
                 publication={"attempted":False,"published":False,"reason":"task_not_claimed"}
                 if claimed:
                     stage=getattr(exc,"stage",None) or STAGE_AGENT

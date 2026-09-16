@@ -16,26 +16,34 @@ and that distinction is what these tests hold:
   Docker image — is the only delivery path
 * Evidence refuses a TEST_PR result that reports a build identity with no durable
   artifact, or a package whose image identity is not the image that was built
+* a store that refuses the archive is a *reported TEST_PR failure* carrying the
+  durability stage — not an unhandled exception that kills the agent's whole pass
+  and leaves the ledger attempt claimed forever
+
+The archive fixtures live in ``archive_fixtures.py`` and are shared with the store
+suite: the first real TEST_PR failed because one suite's fixtures were all legacy
+while the host writes an OCI layout, and a second private copy of the builders here
+would rebuild exactly that blind spot.
 
 No Docker daemon and no host store are used; the runner is a recording fixture and
 the store is a temporary directory.
 """
 import hashlib
-import io
 import json
 import os
 import pathlib
 import stat
 import sys
-import tarfile
 import tempfile
 import types
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "hk-staging"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from hk_agent import artifact_store, test_pr, transport  # noqa: E402
+from archive_fixtures import oci_save, synthetic_save  # noqa: E402
 
 POSIX = os.name == "posix"
 COMMIT = "c" * 40
@@ -53,23 +61,18 @@ class Completed:
         self.returncode = returncode
 
 
-def save_archive(path, config_bytes):
-    digest = hashlib.sha256(config_bytes).hexdigest()
-    index = json.dumps([{"Config": digest, "RepoTags": [], "Layers": []}]).encode()
-    with tarfile.open(path, "w") as tar:
-        for name, payload in ((digest, config_bytes), ("manifest.json", index)):
-            info = tarfile.TarInfo(name)
-            info.size = len(payload)
-            tar.addfile(info, io.BytesIO(payload))
-    return "sha256:" + digest
+def not_an_archive(path, config_bytes):
+    """A save that produced something the artifact store must refuse."""
+    pathlib.Path(path).write_bytes(b"this is not an archive")
 
 
 class BuilderRunner:
     """A TEST_PR build with no Docker: only the argv the builder would use."""
 
-    def __init__(self, fail_gate=None):
+    def __init__(self, fail_gate=None, save_writer=None):
         self.workspace = None
         self.fail_gate = fail_gate
+        self.save_writer = save_writer or synthetic_save
         self.calls = []
 
     def __call__(self, argv, *, cwd=None, env=None, timeout=300):
@@ -108,7 +111,7 @@ class BuilderRunner:
             return Completed("Loaded image")
         if verb == "save":
             destination = argv[argv.index("--output") + 1]
-            save_archive(destination, CONFIG)
+            self.save_writer(destination, CONFIG)
             return Completed("")
         raise AssertionError(argv)
 
@@ -216,6 +219,93 @@ class TestPrDurabilityTests(unittest.TestCase):
         self.assertEqual(runner.verbs()[-1], "image")
         self.assertEqual(hashlib.sha256(b'{"architecture":"amd64"}').hexdigest(),
                          result["built_image_id"].split(":", 1)[1])
+
+    # ------------------------------------------------------- the host's format
+    def test_an_oci_archive_is_sealed_end_to_end(self):
+        """The format HK-STAGING actually produces, through the real builder.
+
+        The first real TEST_PR sealed nothing because this path was never exercised
+        with the host's format; the legacy fixture agreed with the parser instead.
+        """
+        runner, result = self.build(save_writer=oci_save)
+        self.assertEqual(result["result"], "TEST_PR_OK")
+        self.assertEqual(result["artifact_durability"], "PROVEN")
+        self.assertEqual(result["artifact_package"]["image_id"], IMAGE_ID)
+        self.assertEqual(result["gate_results"]["artifact_sealed"], "PASS")
+        self.assertEqual(runner.verbs()[-1], "save")
+        stored = self.store / "objects" / (result["artifact_package"]["package_sha256"] + ".tar")
+        self.assertTrue(stored.is_file())
+
+    # ---------------------------------------------------- a reported failure
+    def test_a_refused_archive_is_a_reported_failure_not_a_crash(self):
+        """The store's refusal is converted at the builder's own boundary.
+
+        Left unconverted it escaped ``execute``, killed the agent's whole pass and
+        left the ledger attempt claimed with no diagnostic -- "the executor really
+        ran and really failed, and the control plane saw nothing".
+        """
+        runner = BuilderRunner(save_writer=not_an_archive)
+        with self.assertRaises(test_pr.Reject) as caught:
+            test_pr.execute(self.task(), runner=runner)
+        error = caught.exception
+        self.assertEqual(str(error), test_pr.DURABILITY_REASON)
+        self.assertEqual(error.stage, test_pr.DURABILITY_STAGE)
+        # the store's own bounded code travels in the diagnostic channel
+        self.assertEqual(error.stderr, "SEALED_ARTIFACT_ARCHIVE_INVALID")
+        # ... and the reason code is one of the agent's closed set
+        self.assertIn(str(error), transport.FAILURE_REASON_CODES)
+        self.assertEqual(transport.FAILURE_KIND_BY_STAGE[error.stage],
+                         "ARTIFACT_DURABILITY_FAILED")
+        self.assertEqual(runner.verbs()[-1], "save")
+        self.assertEqual(list((self.store / "objects").iterdir()), [])
+
+    def test_the_conversion_never_invents_a_second_error_schema(self):
+        """Every store refusal becomes the one durability reason code.
+
+        The store's vocabulary is its own; the published failure schema is the
+        agent's.  Converting here means the control bus never learns either the
+        store's class names or any free-form text.
+        """
+        for code in artifact_store.ARCHIVE_REFUSALS:
+            with self.subTest(code=code):
+                error = test_pr.durability_reject(artifact_store.Reject("SEALED_ARTIFACT_" + code))
+                self.assertEqual(str(error), "ARTIFACT_DURABILITY_REJECT")
+                self.assertEqual(error.stage, "artifact_durability")
+                self.assertEqual(error.stderr, "SEALED_ARTIFACT_" + code)
+                self.assertNotIn("/", error.stderr)
+                self.assertNotIn(" ", error.stderr)
+
+    def test_dispatch_preserves_the_durability_stage(self):
+        """What the agent sees is a stage and a closed reason code."""
+        error = test_pr.durability_reject(
+            artifact_store.Reject("SEALED_ARTIFACT_DESCRIPTOR_INVALID"))
+        staged = transport._staged(error, transport.STAGE_EXECUTOR)
+        self.assertEqual(staged.stage, transport.STAGE_ARTIFACT_DURABILITY)
+        self.assertEqual(transport.failure_kind(staged.stage), "ARTIFACT_DURABILITY_FAILED")
+        self.assertEqual(transport.failure_reason(str(staged), staged.stage),
+                         "ARTIFACT_DURABILITY_REJECT")
+        # every gate still reads PASS: the failure happened after them all
+        self.assertEqual(set(transport.failure_gate_results(staged.stage).values()), {"PASS"})
+
+    # ------------------------------------------------------- never destructive
+    def test_a_published_artifact_is_never_removed_by_a_later_failure(self):
+        """A sealed object is content-addressed evidence, not this run's scratch."""
+        _, first = self.build()
+        published = self.store / "objects" / (first["artifact_package"]["package_sha256"] + ".tar")
+        self.assertTrue(published.is_file())
+        self.build(fail_gate="isolated_checks")
+        self.build(save_writer=not_an_archive)
+        self.assertTrue(published.is_file(),
+                        "a sealed artifact is not a later run's to delete")
+
+    def test_a_failed_evidence_step_does_not_delete_the_sealed_package(self):
+        """Sealing succeeded, so the artifact is durable even if publication is not."""
+        _, result = self.build()
+        package = result["artifact_package"]["package_sha256"]
+        broken = {key: value for key, value in result.items() if key != "artifact_durability"}
+        with self.assertRaises(transport.Reject):
+            self.evidence_for(broken)
+        self.assertTrue((self.store / "objects" / (package + ".tar")).is_file())
 
     # --------------------------------------------------------------- evidence
     def evidence_for(self, result):

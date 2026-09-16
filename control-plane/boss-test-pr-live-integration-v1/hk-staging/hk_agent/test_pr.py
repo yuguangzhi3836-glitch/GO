@@ -30,9 +30,37 @@ PYTHONPYCACHEPREFIX = "/tmp/pycache"
 SHA = re.compile(r"^[0-9a-f]{40}$")
 PR = re.compile(r"^[1-9][0-9]{0,8}$")
 
+# Where a TEST_PR can stop, and what the control bus is told when it does.  The
+# durability stage is deliberately neither an executor stage nor a publication
+# stage: "the build succeeded and its artifact is not durable" is its own outcome,
+# and reporting it as either of the others is what hid the ephemeral-artifact
+# defect.  The reason code is one of transport's closed set, so nothing free-form
+# can reach the control bus.
+DURABILITY_STAGE = "artifact_durability"
+DURABILITY_REASON = "ARTIFACT_DURABILITY_REJECT"
+
 
 class Reject(Exception):
     pass
+
+
+def durability_reject(exc):
+    """Carry a store refusal across the module boundary as a TEST_PR outcome.
+
+    The store has its own closed vocabulary of refusals; the agent's failure path
+    has another.  Neither may see the other's internals, so the conversion happens
+    here, at the edge of the builder: the refusal becomes an ordinary TEST_PR
+    rejection carrying the durability stage, which is what makes the agent publish
+    a signed failure record and close the ledger attempt instead of dying with an
+    unhandled exception.  The store's own code is kept in the diagnostic channel
+    (``stderr``) so the published record names the real cause without inventing a
+    second error schema; it is a fixed token of this repository, never a path, a
+    key or a traceback.
+    """
+    error = Reject(DURABILITY_REASON)
+    error.stage = DURABILITY_STAGE
+    error.stderr = str(exc)
+    return error
 
 
 def validate_parameters(value):
@@ -153,8 +181,13 @@ def execute(task, runner=_run):
         # Only now, with every gate above already PASS, is the exact built image
         # made durable.  Sealing is the last step on purpose: an image that failed
         # a gate must never reach the store, and an image that passes is no longer
-        # allowed to disappear with this process.
-        package = artifact_store.seal(runner, image, image_id, root=ARTIFACT_STORE)
+        # allowed to disappear with this process.  A refusal from the store is a
+        # TEST_PR outcome and is converted here, so it reaches the agent's failure
+        # path as a reported failure rather than as an unhandled exception.
+        try:
+            package = artifact_store.seal(runner, image, image_id, root=ARTIFACT_STORE)
+        except artifact_store.Reject as exc:
+            raise durability_reject(exc) from exc
         return {
             "schema_version": "1", "executor_version": EXECUTOR_VERSION, "action_id": ACTION,
             "status": "SUCCESS", "result": "TEST_PR_OK",

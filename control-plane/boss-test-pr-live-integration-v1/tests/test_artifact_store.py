@@ -29,10 +29,12 @@ authority for the POSIX behaviour.
 import hashlib
 import importlib.machinery
 import importlib.util
-import io
+import inspect
 import json
 import os
 import pathlib
+import re
+import shutil
 import stat
 import sys
 import tarfile
@@ -41,8 +43,13 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "hk-staging"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from hk_agent import artifact_store  # noqa: E402
+
+from archive_fixtures import (  # noqa: E402
+    OCI_CONFIG_TYPE, OCI_INDEX_TYPE, OCI_LAYOUT, OCI_MANIFEST_TYPE, append_member, appended,
+    hybrid_save, mutated, oci_save, read_tar, refile, synthetic_save, write_tar)
 
 POSIX = os.name == "posix"
 
@@ -52,18 +59,6 @@ class Completed:
         self.stdout = stdout
         self.stderr = ""
         self.returncode = returncode
-
-
-def synthetic_save(path, config_bytes, repo_tags=("go-hk-test-pr:" + "a" * 40,)):
-    """Write a ``docker save``-shaped archive whose config blob hashes to its own name."""
-    digest = hashlib.sha256(config_bytes).hexdigest()
-    index = json.dumps([{"Config": digest, "RepoTags": list(repo_tags), "Layers": []}]).encode()
-    with tarfile.open(path, "w") as tar:
-        for name, payload in ((digest, config_bytes), ("manifest.json", index)):
-            info = tarfile.TarInfo(name)
-            info.size = len(payload)
-            tar.addfile(info, io.BytesIO(payload))
-    return "sha256:" + digest
 
 
 def can_symlink():
@@ -104,6 +99,10 @@ class Runner:
         self.load_answers = {}
         self.save_returncode = 0
         self.save_bytes = None
+        # What `docker save` produces.  The default is the legacy docker-archive;
+        # an OCI host produces the other format, and which one is written is a
+        # property of the host, not of the store.
+        self.save_writer = synthetic_save
 
     def __call__(self, argv, timeout=None):
         self.calls.append(list(argv))
@@ -113,7 +112,7 @@ class Runner:
         if argv[1] == "save":
             destination = argv[argv.index("--output") + 1]
             payload = self.save_bytes if self.save_bytes is not None else self.config_bytes
-            synthetic_save(destination, payload)
+            self.save_writer(destination, payload)
             return Completed("", self.save_returncode)
         if argv[1] == "load":
             for key, value in self.load_answers.items():
@@ -190,6 +189,25 @@ class StoreFixture(unittest.TestCase):
 
     def object_path(self, package_sha256):
         return self.store / "objects" / (package_sha256 + ".tar")
+
+    def setup_reader(self):
+        """Load the executor's read side with its own anchor, exactly as it ships."""
+        self.reader = load_reader()
+        self.anchor(lambda: self.identity, module=self.reader)
+        if not POSIX:
+            # The reader carries its own copy of the constants; relax only what
+            # this platform can express, never the rule itself.
+            self._relax(self.reader, "DIRECTORY_MODE",
+                        stat.S_IMODE(os.stat(self.store).st_mode))
+            self._relax(self.reader, "FILE_MODE", 0o666)
+            self._relax(self.reader, "UNTRUSTED_BITS", 0)
+        return self.reader
+
+    def refuses(self, code, save_writer, **kwargs):
+        """A refused archive leaves no object, no temporary and no package."""
+        with self.assertRaisesRegex(artifact_store.Reject, code):
+            self.sealed(save_writer=save_writer, **kwargs)
+        self.assertEqual(list((self.store / "objects").iterdir()), [])
 
 
 class SealedArtifactStoreTests(StoreFixture):
@@ -416,6 +434,290 @@ class SealedArtifactStoreTests(StoreFixture):
         self.assertIn("MAX_PACKAGE_BYTES = 4 * 1024 * 1024 * 1024", source)
 
 
+class OciArchiveTests(StoreFixture):
+    """The archive format the Hong Kong host actually produces.
+
+    The first real TEST_PR proved the parser wrong and the fixtures right: the host
+    writes an OCI image layout (Docker 29.7.2 on the containerd image store) and
+    every fixture in this suite wrote a legacy docker-archive.  The fixtures here
+    compute every digest and size from the bytes they actually write, so a parser
+    cannot agree with them by accident -- which is precisely how the legacy-only
+    parser survived a green suite and then refused the host.
+    """
+
+    def oci(self, **kwargs):
+        return self.sealed(save_writer=lambda path, payload: oci_save(path, payload, **kwargs))
+
+    # --------------------------------------------------------------- accepted
+    def test_an_oci_archive_seals_resolves_and_loads(self):
+        record = self.oci()
+        stored = self.object_path(record["package_sha256"])
+        self.assertTrue(stored.is_file())
+        self.assertEqual(record["image_id"], self.image_id)
+        self.assertEqual(artifact_store.resolve(record["package_sha256"], self.root), str(stored))
+        runner = self.runner()
+        loaded = artifact_store.load(runner, record["package_sha256"], self.image_id, self.root)
+        self.assertEqual(loaded["load"], "PASS")
+        self.assertEqual([call[1] for call in runner.calls], ["load", "image"])
+
+    def test_a_nested_oci_index_is_followed(self):
+        """``manifests[0]`` is not an index entry; the graph is followed instead."""
+        for nesting in (1, 2, 3):
+            with self.subTest(nesting=nesting):
+                self.assertEqual(self.oci(nesting=nesting)["image_id"], self.image_id)
+
+    def test_the_deepest_legal_nesting_is_still_followed(self):
+        record = self.oci(nesting=artifact_store.MAX_DESCRIPTOR_DEPTH)
+        self.assertEqual(record["image_id"], self.image_id)
+
+    def test_an_attestation_manifest_is_not_the_candidate(self):
+        """Docker writes attestations into the same index; they are not the image."""
+        self.assertEqual(self.oci(attestation=True)["image_id"], self.image_id)
+
+    def test_an_unrelated_member_is_ignored(self):
+        """An archive may carry anything else; none of it can change which image it is."""
+        record = self.sealed(save_writer=appended(oci_save, "notes.txt", b"anything"))
+        self.assertEqual(record["image_id"], self.image_id)
+
+    def test_a_legacy_archive_still_seals(self):
+        """The format the suite started with must not have been traded for the other."""
+        record = self.sealed()
+        self.assertEqual(record["image_id"], self.image_id)
+        self.assertTrue(self.object_path(record["package_sha256"]).is_file())
+
+    def test_the_hybrid_format_docker_writes_is_read(self):
+        """An OCI layout with a legacy index beside it, in both reference forms.
+
+        This is the shape the failing traceback pointed at: ``manifest.json`` was
+        present, was a one-element list, and its ``Config`` was not a bare digest.
+        """
+        for reference in (None, "blobs/sha256/" + self.config_digest, self.config_digest):
+            with self.subTest(reference=reference):
+                record = self.sealed(save_writer=lambda path, payload, ref=reference:
+                                     hybrid_save(path, payload, reference=ref))
+                self.assertEqual(record["image_id"], self.image_id)
+
+    def test_the_candidate_identity_is_the_config_bytes_and_nothing_else(self):
+        """Three identities, never interchanged.
+
+        The image id is the SHA256 of the config bytes.  The package is addressed by
+        the SHA256 of the whole archive, and every node of the graph carries a digest
+        of its own.  Only the first decides which image the archive is.
+        """
+        record = self.oci(attestation=True)
+        stored = self.object_path(record["package_sha256"])
+        archive_sha = hashlib.sha256(stored.read_bytes()).hexdigest()
+        nested = json.loads(read_tar(stored)["index.json"])["manifests"][0]["digest"]
+        self.assertEqual(archive_sha, record["package_sha256"])
+        self.assertEqual(record["image_id"], "sha256:" + self.config_digest)
+        self.assertNotEqual(nested, "sha256:" + self.config_digest)
+        self.assertNotEqual(archive_sha, self.config_digest)
+
+    # --------------------------------------------------------------- refused
+    def test_bytes_that_are_not_the_claimed_image_are_refused(self):
+        """Docker insisting the image is X does not make the archive be X."""
+        runner = self.runner(save_writer=oci_save)
+        runner.save_bytes = b'{"architecture":"arm64"}'
+        runner.inspect_answers[self.ref] = self.image_id
+        with self.assertRaisesRegex(artifact_store.Reject, "SEALED_ARTIFACT_CONFIG_MISMATCH"):
+            artifact_store.seal(runner, self.ref, self.image_id, self.root)
+        self.assertEqual(list((self.store / "objects").iterdir()), [])
+
+    def test_a_blob_that_does_not_hash_to_its_descriptor_is_refused(self):
+        def transform(entries):
+            entries["blobs/sha256/" + self.config_digest] = b'{"architecture":"arm64"}'
+
+        self.refuses("SEALED_ARTIFACT_BLOB_MISMATCH", mutated(oci_save, transform))
+
+    def test_a_descriptor_with_the_wrong_size_is_refused(self):
+        self.refuses("SEALED_ARTIFACT_BLOB_MISMATCH",
+                     mutated(oci_save, lambda entries: refile(
+                         entries, lambda manifest: manifest["config"].__setitem__(
+                             "size", manifest["config"]["size"] + 1))))
+
+    def test_a_descriptor_whose_blob_is_absent_is_refused(self):
+        self.refuses("SEALED_ARTIFACT_BLOB_MISSING",
+                     mutated(oci_save, lambda entries: entries.pop(
+                         "blobs/sha256/" + self.config_digest)))
+
+    def test_a_layer_blob_that_is_absent_is_refused(self):
+        """Every blob the graph describes must be there, layers included."""
+        layers = [b"layer-one", b"layer-two"]
+
+        def transform(entries):
+            for name in [name for name in entries
+                         if name.startswith("blobs/sha256/") and entries[name] in layers]:
+                entries.pop(name)
+
+        self.refuses("SEALED_ARTIFACT_BLOB_MISSING",
+                     mutated(lambda path, payload: oci_save(path, payload, layers=layers),
+                             transform))
+
+    def test_a_duplicate_layout_marker_is_refused(self):
+        """Two `index.json` members is one name too many to be authority."""
+        self.refuses("SEALED_ARTIFACT_MEMBER_DUPLICATE",
+                     appended(oci_save, "index.json", b"{}"))
+
+    def test_a_duplicate_blob_path_is_refused(self):
+        self.refuses("SEALED_ARTIFACT_MEMBER_DUPLICATE",
+                     appended(oci_save, "blobs/sha256/" + self.config_digest, b"second copy"))
+
+    def test_an_unsupported_media_type_is_never_candidate_authority(self):
+        self.refuses("SEALED_ARTIFACT_MEDIA_TYPE_UNSUPPORTED",
+                     mutated(oci_save, lambda entries: refile(
+                         entries, lambda manifest: manifest["config"].__setitem__(
+                             "mediaType", "application/vnd.example.image.v1+json"))))
+
+    def test_a_descriptor_graph_that_is_too_deep_is_refused(self):
+        self.refuses("SEALED_ARTIFACT_DESCRIPTOR_LIMIT",
+                     lambda path, payload: oci_save(
+                         path, payload, nesting=artifact_store.MAX_DESCRIPTOR_DEPTH + 1))
+
+    def test_a_descriptor_count_over_the_budget_is_refused(self):
+        self._relax(artifact_store, "MAX_DESCRIPTOR_COUNT", 1)
+        self.refuses("SEALED_ARTIFACT_DESCRIPTOR_LIMIT",
+                     lambda path, payload: oci_save(path, payload, attestation=True))
+
+    def test_one_identity_at_two_canonical_locations_is_refused(self):
+        """Ambiguity is refused, never resolved by preferring a location."""
+        self.refuses("SEALED_ARTIFACT_BLOB_AMBIGUOUS",
+                     mutated(hybrid_save, lambda entries: entries.__setitem__(
+                         self.config_digest, self.config)))
+
+    def test_two_layouts_that_name_different_images_are_refused(self):
+        def transform(entries):
+            manifest_digest = [name.split("/")[-1] for name in entries
+                               if name.startswith("blobs/sha256/")
+                               and b'"config"' in entries[name]][0]
+            entries["manifest.json"] = json.dumps(
+                [{"Config": "blobs/sha256/" + manifest_digest, "RepoTags": [], "Layers": []}]
+            ).encode()
+
+        self.refuses("SEALED_ARTIFACT_LAYOUT_AMBIGUOUS", mutated(hybrid_save, transform))
+
+    def test_a_member_that_traverses_is_refused(self):
+        self.refuses("SEALED_ARTIFACT_MEMBER_UNSAFE",
+                     appended(oci_save, "../outside", b"x"))
+
+    def test_an_absolute_member_is_refused(self):
+        self.refuses("SEALED_ARTIFACT_MEMBER_UNSAFE",
+                     appended(oci_save, "/etc/passwd", b"x"))
+
+    def test_a_symlinked_blob_is_refused(self):
+        self.refuses("SEALED_ARTIFACT_MEMBER_UNSAFE",
+                     appended(oci_save, "blobs/sha256/" + "f" * 64, kind=tarfile.SYMTYPE,
+                              linkname="../../outside"))
+
+    def test_a_hardlinked_blob_is_never_authority(self):
+        self.refuses("SEALED_ARTIFACT_MEMBER_UNSAFE",
+                     appended(oci_save, "blobs/sha256/" + "f" * 64, kind=tarfile.LNKTYPE,
+                              linkname="blobs/sha256/" + self.config_digest))
+
+    def test_an_oci_layout_without_its_marker_is_refused(self):
+        self.refuses("SEALED_ARTIFACT_OCI_INVALID",
+                     mutated(oci_save, lambda entries: entries.pop("oci-layout")))
+
+    def test_an_index_that_names_no_image_is_refused(self):
+        def transform(entries):
+            entries["index.json"] = json.dumps(
+                {"schemaVersion": 2, "mediaType": OCI_INDEX_TYPE, "manifests": []}).encode()
+
+        self.refuses("SEALED_ARTIFACT_OCI_INVALID", mutated(oci_save, transform))
+
+    def test_an_archive_that_is_not_an_archive_is_refused(self):
+        def not_an_archive(path, config_bytes):
+            pathlib.Path(path).write_bytes(b"this is not a tar archive")
+
+        self.refuses("SEALED_ARTIFACT_ARCHIVE_INVALID", not_an_archive)
+
+    def test_a_legacy_index_that_is_not_one_entry_is_refused(self):
+        for payload in (b"[]", b'{"Config":"x"}',
+                        json.dumps([{"Config": "a" * 64}, {"Config": "b" * 64}]).encode()):
+            with self.subTest(payload=payload[:20]):
+                self.refuses("SEALED_ARTIFACT_ARCHIVE_INVALID",
+                             mutated(synthetic_save,
+                                     lambda entries, body=payload: entries.__setitem__(
+                                         "manifest.json", body)))
+
+    def test_a_legacy_reference_that_names_a_path_of_its_own_choosing_is_refused(self):
+        """The digest comes from the reference's own last component, and only two
+        locations are ever read; anything else is a path the JSON tried to choose."""
+        cases = (("../../etc/passwd", "SEALED_ARTIFACT_MEMBER_UNSAFE"),
+                 ("/etc/passwd", "SEALED_ARTIFACT_MEMBER_UNSAFE"),
+                 ("elsewhere/" + self.config_digest, "SEALED_ARTIFACT_MEMBER_UNSAFE"),
+                 ("blobs/sha256/" + "f" * 64, "SEALED_ARTIFACT_BLOB_MISSING"),
+                 ("not-a-digest", "SEALED_ARTIFACT_ARCHIVE_INVALID"),
+                 ("blobs/sha256/" + "z" * 64, "SEALED_ARTIFACT_ARCHIVE_INVALID"))
+        for reference, code in cases:
+            with self.subTest(reference=reference):
+                self.refuses(code, mutated(
+                    synthetic_save,
+                    lambda entries, ref=reference: entries.__setitem__(
+                        "manifest.json", json.dumps([{"Config": ref}]).encode())))
+
+
+class OciReaderTests(StoreFixture):
+    """The executor's read side must accept the same packages the agent seals.
+
+    A writer that seals a layout the reader refuses is worse than either half being
+    wrong: the candidate would be sealed as durable and then be unusable at CANARY
+    or DEPLOY.  Both formats are therefore proved on both sides.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.reader = self.setup_reader()
+
+    def seal_and_read(self, save_writer, **kwargs):
+        record = self.sealed(save_writer=save_writer, **kwargs)
+        runner = self.runner()
+        result = self.reader.materialise(runner, record["package_sha256"], self.image_id,
+                                         self.root)
+        return record, runner, result
+
+    def test_the_reader_materialises_an_oci_package(self):
+        record, runner, result = self.seal_and_read(oci_save)
+        self.assertEqual(result["artifact_materialised"], "PASS")
+        self.assertEqual([call[1] for call in runner.calls], ["load", "image"])
+        self.assertEqual(runner.calls[1][3], self.image_id)
+
+    def test_the_reader_materialises_a_legacy_package(self):
+        _, runner, result = self.seal_and_read(synthetic_save)
+        self.assertEqual(result["artifact_package"], "PASS")
+
+    def test_the_reader_materialises_the_hybrid_format(self):
+        _, _, result = self.seal_and_read(hybrid_save)
+        self.assertEqual(result["artifact_materialised"], "PASS")
+
+    def test_the_reader_refuses_a_package_that_is_not_the_candidate(self):
+        record = self.sealed(save_writer=oci_save)
+        other = "sha256:" + hashlib.sha256(b'{"architecture":"arm64"}').hexdigest()
+        with self.assertRaisesRegex(self.reader.Reject, "E_ARTIFACT_CONFIG_MISMATCH"):
+            self.reader.materialise(self.runner(), record["package_sha256"], other, self.root)
+
+    def test_the_reader_refuses_a_tampered_package(self):
+        record = self.sealed(save_writer=oci_save)
+        self.object_path(record["package_sha256"]).write_bytes(b"tamper")
+        with self.assertRaisesRegex(self.reader.Reject, "E_ARTIFACT_PACKAGE_TAMPERED"):
+            self.reader.materialise(self.runner(), record["package_sha256"], self.image_id,
+                                    self.root)
+
+    def test_the_reader_refuses_a_load_that_yields_another_image(self):
+        record = self.sealed(save_writer=oci_save)
+        runner = self.runner(load_answers={self.image_id: "sha256:" + "7" * 64})
+        with self.assertRaisesRegex(self.reader.Reject, "E_ARTIFACT_LOADED_IMAGE_MISMATCH"):
+            self.reader.materialise(runner, record["package_sha256"], self.image_id, self.root)
+
+    def test_the_reader_refuses_an_oci_graph_the_writer_would_refuse(self):
+        """Same fixture corpus, same refusals: neither side is the weaker one."""
+        def transform(entries):
+            entries.pop("blobs/sha256/" + self.config_digest)
+
+        with self.assertRaisesRegex(artifact_store.Reject, "SEALED_ARTIFACT_BLOB_MISSING"):
+            self.sealed(save_writer=mutated(oci_save, transform))
+        self.assertEqual(list((self.store / "objects").iterdir()), [])
+
+
 class CrossUidWriterTests(StoreFixture):
     """The writer half of the cross-uid contract.
 
@@ -625,7 +927,14 @@ class CrossSideContractTests(unittest.TestCase):
              # if they ever disagree about whose ownership counts, one of them is
              # reading a store the other would refuse to write.
              "TRUSTED_WRITER_USER", "TRUSTED_WRITER_GROUP", "FILE_MODE",
-             "DIRECTORY_MODE", "UNTRUSTED_BITS")
+             "DIRECTORY_MODE", "UNTRUSTED_BITS",
+             # The archive grammar is the other half of the same interface: a
+             # writer that accepts a graph the reader refuses would seal a durable
+             # artifact that CANARY and DEPLOY could never use.
+             "LAYOUT_NAME", "INDEX_NAME", "BLOB_DIR", "OCI_LAYOUT_VERSION",
+             "INDEX_MEDIA_TYPES", "MANIFEST_MEDIA_TYPES", "CONFIG_MEDIA_TYPES",
+             "MAX_DESCRIPTOR_DEPTH", "MAX_DESCRIPTOR_COUNT", "MAX_ARCHIVE_MEMBERS",
+             "MAX_DOCUMENT_BYTES", "ARCHIVE_REFUSALS")
 
     def names(self, module):
         return {name: getattr(module, name) for name in self.NAMES}
@@ -680,6 +989,136 @@ class CrossSideContractTests(unittest.TestCase):
         self.assertNotIn("sys.argv", source)
         self.assertNotIn("input(", source)
         self.assertIn("DOCKER", source.upper().replace('"/usr/bin/docker"', "DOCKER"))
+
+    # -- the same entry points, and the same decisions ------------------------
+    def test_both_sides_offer_the_same_entry_point(self):
+        """The same three operations, named for the side that describes them.
+
+        The writer *loads* the image back (it is the one that removed the tag); the
+        executor *materialises* it (it never had the tag at all).  Everything else --
+        the archive grammar and the object checks -- is one entry point by one name,
+        so a caller reading either file sees the same interface.
+        """
+        reader = load_reader()
+        for writer_name, reader_name in (("image_config_digest", "image_config_digest"),
+                                         ("resolve", "resolve"),
+                                         ("load", "materialise")):
+            with self.subTest(entry_point=writer_name):
+                self.assertEqual(
+                    list(inspect.signature(getattr(artifact_store, writer_name)).parameters),
+                    list(inspect.signature(getattr(reader, reader_name)).parameters),
+                    "%s is not the same entry point on both sides" % writer_name)
+
+    def test_both_sides_declare_the_same_archive_refusal_vocabulary(self):
+        reader = load_reader()
+        self.assertEqual(artifact_store.ARCHIVE_REFUSALS, reader.ARCHIVE_REFUSALS)
+        self.assertEqual(len(set(artifact_store.ARCHIVE_REFUSALS)),
+                         len(artifact_store.ARCHIVE_REFUSALS))
+        for module, source in ((artifact_store, self.WRITER), (reader, self.READER)):
+            text = source.read_text(encoding="utf-8")
+            used = set(re.findall(r'_refuse\("([A-Z_]+)"\)', text))
+            self.assertTrue(used, source.name)
+            self.assertLessEqual(used, set(module.ARCHIVE_REFUSALS),
+                                 "%s refuses with a code outside the shared vocabulary" % source.name)
+            self.assertIn("_REFUSAL_PREFIX = ", text, source.name)
+
+    @staticmethod
+    def outcome(module, path, image_id):
+        """``(True, digest)`` or ``(False, refusal)`` -- never one side's raw text."""
+        try:
+            return True, module.image_config_digest(path, image_id)
+        except module.Reject as exc:
+            return False, str(exc)[len(module._REFUSAL_PREFIX):]
+
+    def corpus(self):
+        """Every accepted and refused shape, built from the bytes actually written."""
+        config = b'{"architecture":"amd64","os":"linux"}'
+        digest = hashlib.sha256(config).hexdigest()
+        image_id = "sha256:" + digest
+        other = "sha256:" + hashlib.sha256(b'{"architecture":"arm64"}').hexdigest()
+        work = pathlib.Path(tempfile.mkdtemp(prefix="cc-archive-"))
+        self.addCleanup(shutil.rmtree, work, True)
+        cases = []
+
+        def write(name, writer, identity=image_id):
+            path = work / (name + ".tar")
+            writer(str(path), config)
+            cases.append((name, str(path), identity))
+
+        def relabel_legacy_to_another_blob(entries):
+            other_blob = [name.split("/")[-1] for name in entries
+                          if name.startswith("blobs/sha256/") and b'"config"' in entries[name]][0]
+            entries["manifest.json"] = json.dumps(
+                [{"Config": "blobs/sha256/" + other_blob, "RepoTags": [], "Layers": []}]
+            ).encode()
+
+        write("legacy", synthetic_save)
+        write("oci", oci_save)
+        write("oci-nested", lambda path, payload: oci_save(path, payload, nesting=2))
+        write("oci-attested", lambda path, payload: oci_save(path, payload, attestation=True))
+        write("oci-deepest-legal",
+              lambda path, payload: oci_save(path, payload,
+                                             nesting=artifact_store.MAX_DESCRIPTOR_DEPTH))
+        write("hybrid-oci-path", hybrid_save)
+        write("hybrid-flat-path",
+              lambda path, payload: hybrid_save(path, payload, reference=digest))
+        write("unknown-extra-member",
+              appended(oci_save, "notes.txt", b"anything"))
+        write("not-the-candidate", oci_save, identity=other)
+        write("blob-absent", mutated(oci_save, lambda entries: entries.pop(
+            "blobs/sha256/" + digest)))
+        write("blob-mismatched", mutated(oci_save, lambda entries: entries.__setitem__(
+            "blobs/sha256/" + digest, b'{"architecture":"arm64"}')))
+        write("descriptor-size-wrong", mutated(oci_save, lambda entries: refile(
+            entries, lambda manifest: manifest["config"].__setitem__(
+                "size", manifest["config"]["size"] + 1))))
+        write("media-type-unsupported", mutated(oci_save, lambda entries: refile(
+            entries, lambda manifest: manifest["config"].__setitem__(
+                "mediaType", "application/vnd.example.image.v1+json"))))
+        write("layout-marker-absent", mutated(oci_save, lambda entries: entries.pop("oci-layout")))
+        write("index-names-no-image", mutated(oci_save, lambda entries: entries.__setitem__(
+            "index.json", json.dumps({"schemaVersion": 2, "mediaType": OCI_INDEX_TYPE,
+                                      "manifests": []}).encode())))
+        write("nested-too-deep", lambda path, payload: oci_save(
+            path, payload, nesting=artifact_store.MAX_DESCRIPTOR_DEPTH + 1))
+        write("duplicate-index", appended(oci_save, "index.json", b"{}"))
+        write("duplicate-blob", appended(oci_save, "blobs/sha256/" + digest, b"copy"))
+        write("member-traverses", appended(oci_save, "../outside", b"x"))
+        write("member-absolute", appended(oci_save, "/etc/passwd", b"x"))
+        write("blob-is-a-symlink", appended(oci_save, "blobs/sha256/" + "f" * 64,
+                                            kind=tarfile.SYMTYPE, linkname="../../outside"))
+        write("blob-is-a-hardlink", appended(oci_save, "blobs/sha256/" + "f" * 64,
+                                             kind=tarfile.LNKTYPE,
+                                             linkname="blobs/sha256/" + digest))
+        write("identity-twice", mutated(hybrid_save, lambda entries: entries.__setitem__(
+            digest, config)))
+        write("layouts-disagree", mutated(hybrid_save, relabel_legacy_to_another_blob))
+        write("legacy-index-malformed", mutated(synthetic_save, lambda entries: entries.__setitem__(
+            "manifest.json", json.dumps([{"Config": "a" * 64}, {"Config": "b" * 64}]).encode())))
+        write("not-an-archive", lambda path, payload: pathlib.Path(path).write_bytes(b"nope"))
+        return cases
+
+    def test_both_sides_decide_every_archive_the_same_way(self):
+        """One corpus, two independent implementations, one verdict each.
+
+        This is the test that would have caught a writer accepting a graph the reader
+        refuses -- the arrangement in which a candidate is sealed as durable and then
+        cannot be CANARYed or DEPLOYed.
+        """
+        reader = load_reader()
+        accepted = 0
+        for name, path, image_id in self.corpus():
+            with self.subTest(archive=name):
+                writer_outcome = self.outcome(artifact_store, path, image_id)
+                reader_outcome = self.outcome(reader, path, image_id)
+                self.assertEqual(writer_outcome, reader_outcome,
+                                 "%s: the writer and the reader disagree" % name)
+                if writer_outcome[0]:
+                    accepted += 1
+                    self.assertEqual(writer_outcome[1], hashlib.sha256(
+                        b'{"architecture":"amd64","os":"linux"}').hexdigest(),
+                        "%s: the digest is not the config bytes" % name)
+        self.assertGreaterEqual(accepted, 8, "the corpus stopped accepting real archives")
 
 
 class LiveTopologyContractTests(unittest.TestCase):
