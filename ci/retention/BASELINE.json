@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v2",
   "product_candidate_commit": "9b2d0e395a37e3a0c6d2502bc27643fb6e00cc06",
-  "application_git_tree": "5f4ca92c5d3ce2f1a22bc3e8d6aa6c6304569621",
+  "application_git_tree": "82b14f7c6a0b0cc7d449762daab24cb93c7d0ab8",
   "source_anchor_main": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
   "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
@@ -23,13 +23,13 @@
     },
     "tests/test_depth25_migration_history.py": {
       "mode": "100644",
-      "git_blob": "fa51562f48d4429f5ad22e406c0101a7e9de29f0",
-      "reason": "0134 SQLite partial history compatibility and current-head assertions; original data guards retained"
+      "git_blob": "e5117e28b6209cd345a4cc29c189657f94e95144",
+      "reason": "TEST_ONLY: fresh install reaches merged head"
     },
     "tests/test_parent_implementation_code_review_debt_closure.py": {
       "mode": "100644",
-      "git_blob": "55811f7ed09a6f351647299bd27cf038f64c839e",
-      "reason": "TEST_ONLY: current Alembic head 0135"
+      "git_blob": "b8a88b7397086e42e68353568dd2797768827694",
+      "reason": "TEST_ONLY: assert unique merged head"
     },
     "src/go_hotel/go_ai/service.py": {
       "mode": "100644",
@@ -50,9 +50,19 @@
       "mode": "100644",
       "git_blob": "4991a791846ceb44a797367d587eb90a55ea13eb",
       "reason": "TEST_ONLY: provision GO AI durable execution table in hard-exit recovery fixture"
+    },
+    "alembic/versions/0135_journey_search_trigram.py": {
+      "mode": "100644",
+      "git_blob": "3b27a85564fa0258f6f9fcf6222f605f86464dec",
+      "reason": "C10 exact passed migration blob; parallel head"
+    },
+    "alembic/versions/0136_merge_go_ai_journey.py": {
+      "mode": "100644",
+      "git_blob": "36b59347ff5892b74f0b21a90c3d1f622f9bfd7c",
+      "reason": "lineage-only merge of C08 and C10 heads"
     }
   },
-  "migration_head": "0135_go_ai_execution",
+  "migration_head": "0136_merge_go_ai_journey",
   "verified_inherited_evidence": {
     "pr74_workflow_run": 34807203728,
     "c11_original_postgresql_cases": "10/10 PASS",
