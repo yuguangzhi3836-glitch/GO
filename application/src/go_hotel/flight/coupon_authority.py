@@ -132,3 +132,53 @@ def authorize(store, plan_id, consent, allocations, *, authority_keys,
                                "allocations": deepcopy(allocations)},
             "credit_instruction": {"amount_minor": record["credit_minor"],
                                    "mode": "CREDIT_NOT_NETTED"}}
+
+
+def authorize_once(store, plan_id, consent, allocations, *, authority_keys,
+                   consent_subject, now, replay_store, retired_key_ids=None):
+    """Authorize exact consent with subject, expiry and one-time replay binding.
+
+    replay_store is caller-owned durable state. Production callers must make
+    its read/claim operation transactional; this isolated contract uses the
+    mapping's single-threaded claim semantics and performs the claim only after
+    every authority, consent and allocation check has passed.
+    """
+    if (not isinstance(consent_subject, str) or not consent_subject.strip()
+            or not isinstance(now, datetime) or now.tzinfo is None
+            or now.utcoffset() is None or not isinstance(replay_store, dict)):
+        raise ValueError("COUPON_AUTHORITY_CONSENT_CONTEXT_INVALID")
+    if not isinstance(consent, dict):
+        raise ValueError("COUPON_AUTHORITY_CONSENT_CONTEXT_INVALID")
+    context_keys = {"consent_subject", "consent_nonce", "consent_expires_at"}
+    base_keys = {"plan_id", "authority_mac", "charge_minor", "credit_minor",
+                 "currency", "negative_fare_treatment", "confirmed"}
+    if set(consent) != base_keys | context_keys:
+        raise ValueError("COUPON_AUTHORITY_CONSENT_CONTEXT_INVALID")
+    subject = consent.get("consent_subject")
+    nonce = consent.get("consent_nonce")
+    expires_at = consent.get("consent_expires_at")
+    if (subject != consent_subject or not isinstance(nonce, str) or not nonce.strip()
+            or not isinstance(expires_at, str)):
+        raise ValueError("COUPON_AUTHORITY_CONSENT_CONTEXT_INVALID")
+    try:
+        expiry = datetime.fromisoformat(expires_at)
+    except (TypeError, ValueError):
+        raise ValueError("COUPON_AUTHORITY_CONSENT_EXPIRY_INVALID") from None
+    if expiry.tzinfo is None or expiry.utcoffset() is None:
+        raise ValueError("COUPON_AUTHORITY_CONSENT_EXPIRY_INVALID")
+    if now >= expiry:
+        raise ValueError("COUPON_AUTHORITY_CONSENT_EXPIRED")
+    result = authorize(
+        store, plan_id, {key: consent[key] for key in base_keys}, allocations,
+        authority_keys=authority_keys, retired_key_ids=retired_key_ids)
+    if nonce in replay_store:
+        raise ValueError("COUPON_AUTHORITY_CONSENT_REPLAY")
+    replay_store[nonce] = {
+        "plan_id": plan_id,
+        "consent_subject": subject,
+        "authority_mac": consent["authority_mac"],
+        "consent_expires_at": expires_at,
+    }
+    result["consent_receipt"] = deepcopy(replay_store[nonce])
+    result["consent_receipt"]["consent_nonce"] = nonce
+    return result
