@@ -1,4 +1,4 @@
-name: C01 C14 deterministic scoped gate
+name: C02 candidate-bound evidence gate
 
 on:
   workflow_dispatch:
@@ -12,72 +12,105 @@ permissions:
   contents: read
 
 env:
+  TASK_ID: V70-R3-C02-01
   BASE_SHA: dcb68a652429aa01e8428ce9f582e4bab6a6175e
-  CANDIDATE_SHA: 3a7ebba703cd998fc5c5c328ff97f4c7b6f191db
-  APPLICATION_TREE: f00e970fc3d54a20b0593d89cf29f6bad402e530
+  CANDIDATE_SHA: bd895536c39518b98aa15cd50100a593e392365e
+  APPLICATION_TREE: 64591f3078dc1d4d760c7b06e1dd941eaddf65ba
+  EVIDENCE_DIR: c02-candidate-evidence
 
 jobs:
-  c14:
-    name: C01 C14 minimal read-only gate
+  candidate-bound-tests:
+    name: C02 exact candidate tests and immutable evidence
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
-
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.CANDIDATE_SHA }}
-          fetch-depth: 2
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify fixed candidate
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+
+      - name: Verify exact candidate and application tree
         shell: bash
         run: |
           set -euo pipefail
-
           test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
           test "$(git rev-parse HEAD:application)" = "$APPLICATION_TREE"
+          test "$(git merge-base "$BASE_SHA" "$CANDIDATE_SHA")" = "$BASE_SHA"
 
-          git diff --name-only "$BASE_SHA" "$CANDIDATE_SHA" | sort > changed.txt
-
-          printf '%s\n' \
-            'application/src/go_hotel/services/alipay_safeguarded_settlement.py' \
-            'application/tests/test_v70_next_c01_unknown_funding.py' \
-            | sort > expected.txt
-
-          diff -u expected.txt changed.txt
-
-          grep -F \
-            "(active[0].amount_minor,active[0].currency)!=(r.amount_minor,r.currency)" \
-            application/src/go_hotel/services/alipay_safeguarded_settlement.py
-
-          grep -F \
-            "test_active_authorization_currency_mismatch_requires_reconciliation" \
-            application/tests/test_v70_next_c01_unknown_funding.py
-
-      - name: Freeze C14 PASS_SCOPED
+      - name: Install inherited frozen Python dependencies
         shell: bash
         run: |
-          mkdir -p c14-output
+          set -euo pipefail
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
 
-          cat > c14-output/C14_RESULT.json <<'EOF'
+      - name: Run exact scoped tests and capture original evidence
+        id: scoped
+        shell: bash
+        run: |
+          set +e
+          mkdir -p "$EVIDENCE_DIR"
+          RAW="$EVIDENCE_DIR/TEST_RUN.raw.log"
+          STARTED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           {
-            "status": "PASS_SCOPED",
-            "candidate_sha": "3a7ebba703cd998fc5c5c328ff97f4c7b6f191db",
-            "application_tree": "f00e970fc3d54a20b0593d89cf29f6bad402e530",
-            "task_id": "V70-R3-C01-01",
-            "scope": "C01 fixed candidate only",
-            "blocking_reasons": [],
-            "final_release": "HOLD",
-            "hk_deploy": "HOLD",
-            "production": "HOLD"
-          }
-          EOF
+            echo "TASK_ID=$TASK_ID"
+            echo "STARTED_AT_UTC=$STARTED"
+            echo "RUNNER_OS=$RUNNER_OS"
+            echo "PYTHON_VERSION=$(python --version 2>&1)"
+            echo "COMMAND=git rev-parse HEAD"
+            git rev-parse HEAD
+            echo "COMMAND=git rev-parse HEAD:application"
+            git rev-parse HEAD:application
+            echo "COMMAND=cd application && python -m pytest -p no:cacheprovider tests/test_v70_r3_c02_coupon_authority.py -vv"
+          } >"$RAW" 2>&1
+          (
+            cd application
+            python -m pytest -p no:cacheprovider tests/test_v70_r3_c02_coupon_authority.py -vv
+          ) >>"$RAW" 2>&1
+          TEST_EXIT=$?
+          {
+            echo "EXIT_CODE=$TEST_EXIT"
+            echo "FINISHED_AT_UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } >>"$RAW"
+          sha256sum "$RAW" > "$EVIDENCE_DIR/TEST_RUN.raw.log.sha256"
+          printf '%s\n' "$TEST_EXIT" > "$EVIDENCE_DIR/TEST_EXIT_CODE.txt"
+          exit "$TEST_EXIT"
 
-          sha256sum c14-output/C14_RESULT.json \
-            > c14-output/C14_RESULT.sha256
+      - name: Bind evidence to checkout
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          ACTUAL_SHA="$(git rev-parse HEAD)"
+          ACTUAL_TREE="$(git rev-parse HEAD:application)"
+          {
+            echo "task_id=$TASK_ID"
+            echo "candidate_sha=$ACTUAL_SHA"
+            echo "application_tree=$ACTUAL_TREE"
+            echo "expected_candidate_sha=$CANDIDATE_SHA"
+            echo "expected_application_tree=$APPLICATION_TREE"
+            echo "workflow_run_id=${{ github.run_id }}"
+            echo "workflow_job=${{ github.job }}"
+            echo "workflow_attempt=${{ github.run_attempt }}"
+            echo "repository=${{ github.repository }}"
+            echo "final_release=HOLD"
+            echo "hk_deploy=HOLD"
+            echo "production=HOLD"
+          } > "$EVIDENCE_DIR/BINDING.txt"
+          test "$ACTUAL_SHA" = "$CANDIDATE_SHA"
+          test "$ACTUAL_TREE" = "$APPLICATION_TREE"
+          find "$EVIDENCE_DIR" -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > "$EVIDENCE_DIR/SHA256SUMS.txt"
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: c01-c14-deterministic-result
-          path: c14-output
+          name: c02-${{ env.TASK_ID }}-${{ env.CANDIDATE_SHA }}
+          path: ${{ env.EVIDENCE_DIR }}
+          if-no-files-found: error
           retention-days: 90
