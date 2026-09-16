@@ -87,10 +87,10 @@ jobs:
             application/src/go_hotel/services/hosted_money.py \
             application/src/go_hotel/api/routes/hosted_direct_booking.py \
             application/src/go_hotel/db/models.py \
-            application/alembic/versions/0137_hosted_unknown_episode.py \
+            application/alembic/versions/0137_hosted_money_unknown_episode.py \
             application/tests/test_v70_r4_c01_unknown_episode.py
-          find "$EVIDENCE_DIR" -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum \
-            | tee "$EVIDENCE_DIR/SHA256SUMS"
+          find "$EVIDENCE_DIR" -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum \
+            > "$EVIDENCE_DIR/SHA256SUMS"\n          cat "$EVIDENCE_DIR/SHA256SUMS"
       - name: Upload candidate-bound Evidence
         if: always()
         uses: actions/upload-artifact@v4
