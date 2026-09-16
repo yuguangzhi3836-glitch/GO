@@ -1,0 +1,53 @@
+name: C03 PostgreSQL process restart durability
+on:
+  push:
+    branches: [cell/c03-v70-r3-02-pg-process-restart]
+permissions:
+  contents: read
+jobs:
+  c03-pg-restart:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go
+          POSTGRES_PASSWORD: go
+          POSTGRES_DB: go_hotel
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U go -d go_hotel"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql+psycopg://go:go@localhost:5432/go_hotel
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Bind source
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD:application)" = "9c83d92434301356228c1b79294fcd829d675ebf"
+      - name: Install frozen dependencies
+        run: python -m pip install --no-index --find-links ci/retention/wheelhouse -r ci/retention/requirements.lock
+      - name: Run actual PostgreSQL process-exit recovery
+        run: |
+          mkdir -p evidence-out
+          cd application
+          set -o pipefail
+          python -m pytest -p no:cacheprovider tests/test_depth22_rail_resolution.py -k process_exit_after_money_recovers -vv --junitxml=../evidence-out/junit.xml 2>&1 | tee ../evidence-out/raw.log
+          cd ..
+          git rev-parse HEAD > evidence-out/candidate.txt
+          git rev-parse HEAD:application > evidence-out/application-tree.txt
+          sha256sum evidence-out/raw.log evidence-out/junit.xml > evidence-out/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c03-pg-process-restart
+          path: evidence-out
+          retention-days: 90
