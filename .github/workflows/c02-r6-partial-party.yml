@@ -1,0 +1,49 @@
+name: C02 R6 partial-party authority evidence
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/src/go_hotel/flight/coupon_authority.py
+      - application/tests/test_v70_r6_c02_partial_party_authority.py
+      - .github/workflows/c02-r6-partial-party.yml
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install inherited frozen dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Run retained C02 and R6 tests
+        working-directory: application
+        run: |
+          mkdir -p "$RUNNER_TEMP/c02-r6"
+          python -m pytest -p no:cacheprovider tests/test_v70_next_c02_coupon_plan.py tests/test_v70_round2_c02_partial_party.py tests/test_v70_r3_c02_coupon_authority.py tests/test_v70_r6_c02_partial_party_authority.py --junitxml="$RUNNER_TEMP/c02-r6/junit.xml" 2>&1 | tee "$RUNNER_TEMP/c02-r6/test.raw.log"
+      - name: Bind evidence
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,subprocess
+          out=pathlib.Path(__import__('os').environ['RUNNER_TEMP'])/'c02-r6'; out.mkdir(exist_ok=True)
+          paths=['application/src/go_hotel/flight/coupon_authority.py','application/tests/test_v70_r6_c02_partial_party_authority.py']
+          files={p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest() for p in paths}
+          result={'task_id':'V70-R6-C02-01','candidate':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'scoped_fingerprint_sha256':hashlib.sha256(''.join(f'{p}\\0{files[p]}\\n' for p in sorted(files)).encode()).hexdigest(),'source_sha256':files,'evidence_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in out.iterdir() if p.is_file()},'supplier_e2e':'NOT_CLAIMED','final_release':'HOLD','hk_deploy':'HOLD','production':'HOLD'}
+          (out/'RESULT.json').write_text(json.dumps(result,indent=2)+'\\n'); print(json.dumps(result))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c02-r6-partial-party-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/c02-r6
+          if-no-files-found: error
+          retention-days: 90
