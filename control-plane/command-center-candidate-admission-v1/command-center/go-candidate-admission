@@ -28,7 +28,9 @@ What it reads (read-only, and never anything else)
                          source identity, and the block must agree with them: a
                          candidate cannot carry two source identities.
     --test-pr-evidence   OPTIONAL signed TEST_PR Evidence. It is the only proof that
-                         the artifact came from that source, so without it the
+                         the artifact came from that source, that the builder the
+                         candidate names is the one that produced it, and that the
+                         artifact still exists as a sealed package, so without it the
                          artifact binding cannot be established and the verdict is
                          UNKNOWN rather than ACCEPT.
     --plan               OPTIONAL approved deploy plan bundle. When supplied, the
@@ -122,8 +124,11 @@ TEST_RESULT_FIELDS = ("action_id", "task_id", "evidence_id", "source_pr_number",
                       "source_commit_sha", "artifact_digest", "executor_result")
 ROLLBACK_FIELDS = ("relation", "previous_known_good_image_id")
 ROLLBACK_RELATIONS = ("REPLACES_CURRENT_KNOWN_GOOD", "NO_PREVIOUS_KNOWN_GOOD")
+# What the signed TEST_PR result must carry for this component to bind a candidate
+# to it: the action and task that produced it, its own outcome, the source and the
+# artifact it is about, and the builder that made that artifact.
 TEST_PR_EVIDENCE_FIELDS = ("action_id", "task_id", "status", "executor_result",
-                           "source_commit_sha", "built_image_id")
+                           "source_commit_sha", "built_image_id", "executor_version")
 
 AUTHORITY_BOUNDARY = {
     "is_execution_authority": False,
@@ -492,7 +497,23 @@ def check_evidence(adm, block, evidence_path):
         return adm.fails("test_evidence", "candidate_test_result_evidence_artifact",
                          observed={"evidence": evidence.get("built_image_id"),
                                    "candidate": block.get("artifact_digest")})
-    return adm.passes("test_evidence", observed={"evidence_sha256": digest(evidence)})
+    # The builder is part of the provenance claim, and the signed result is the only
+    # thing that can corroborate it.  An artifact id says which image exists; it does
+    # not say which executor made it.  Without this binding a candidate could declare
+    # the older builder over an artifact a newer one produced -- the false statement
+    # BUILDER_EXECUTOR_VERSIONS exists to forbid -- and still be admitted, because the
+    # declared version was only ever checked against the list of recognised builders
+    # and never against the signed result.  A candidate that declares a builder the
+    # result does not report is refused by name, in both directions.
+    declared_build = block.get("build_definition")
+    declared_builder = (declared_build.get("executor_version")
+                        if isinstance(declared_build, dict) else None)
+    if evidence.get("executor_version") != declared_builder:
+        return adm.fails("test_evidence", "candidate_test_result_evidence_builder_version",
+                         observed={"evidence": evidence.get("executor_version"),
+                                   "candidate": declared_builder})
+    return adm.passes("test_evidence", observed={"evidence_sha256": digest(evidence),
+                                                 "executor_version": declared_builder})
 
 
 def check_artifact_durability(adm, block):

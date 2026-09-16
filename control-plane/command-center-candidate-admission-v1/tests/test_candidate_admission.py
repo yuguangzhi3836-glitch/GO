@@ -336,6 +336,42 @@ class RejectionTests(Base):
                                  evidence_value=evidence(task_id="go-boss-test-pr-98-other")),
                       "candidate_test_result_evidence_task")
 
+    def test_a_builder_claim_the_signed_result_does_not_corroborate_is_refused(self):
+        """Declared provenance has to be the provenance the signed result reports.
+
+        `build_definition.executor_version` says how the artifact was made, and an
+        artifact id cannot corroborate that on its own: it names the image, not the
+        executor that produced it.  Before this binding a candidate was admitted as
+        long as it named *any* recognised builder -- so an artifact built by v3 could
+        be described as the work of v2, which is exactly the false statement the
+        builder list refuses to let a candidate make.
+        """
+        for declared, signed in (("test-pr-v2", "test-pr-v3"), ("test-pr-v3", "test-pr-v2")):
+            with self.subTest(declared=declared, signed=signed):
+                result = self.write(candidate(build_definition={"executor_version": declared}),
+                                    evidence_value=evidence(executor_version=signed))
+                self.rejected(result, "candidate_test_result_evidence_builder_version")
+
+    def test_a_signed_result_that_names_no_builder_corroborates_none(self):
+        """Silence is not corroboration: the version the evidence reports must match."""
+        value = evidence()
+        del value["executor_version"]
+        self.rejected(self.write(block=candidate(), evidence_value=value),
+                      "candidate_test_result_evidence_builder_version")
+
+    def test_a_malformed_evidence_identity_is_refused(self):
+        """`evidence_id` is a record identity, so a path or an absence is not one.
+
+        The shape a blob reference would take -- a path, or nothing at all -- is
+        refused by name rather than recorded, which is part of why the field cannot
+        quietly turn into the evidence file's own address.
+        """
+        for value in (".", "-leading-dash", "evidence/the-record.json", "", None):
+            with self.subTest(value=value):
+                self.rejected(self.write(block=candidate(
+                    test_result_identity={"evidence_id": value})),
+                    "candidate_test_result_evidence_id")
+
     def test_failed_evidence_is_rejected(self):
         self.rejected(self.write(block=candidate(),
                                  evidence_value=evidence(status="FAILED")),
@@ -450,6 +486,23 @@ class ContractTests(unittest.TestCase):
         for name in required:
             self.assertIn(name, self.document["required"], name)
 
+    def test_the_evidence_identity_is_a_record_identity_and_stays_one(self):
+        """`evidence_id` names the record, not its bytes, and is not narrowed.
+
+        The contract has always said "commit or record id", and that is left as it
+        is. What has to stay true is that both shapes remain expressible: the field
+        is not quietly redefined as the digest of the evidence file, and not narrowed
+        to a commit-shaped value either. A future reconciliation records the evidence
+        repository's commit here, as every earlier one did.
+        """
+        identity = (self.document["properties"]["test_result_identity"]["properties"]
+                    ["evidence_id"])
+        self.assertIn("commit or record id", identity["description"])
+        pattern = re.compile(identity["pattern"])
+        for value in ("go-boss-test-pr-52-0673b27f427c", COMMIT):
+            self.assertIsNotNone(pattern.fullmatch(value),
+                                 "the contract no longer accepts %r" % value)
+
     def test_an_unregistered_reason_is_refused_rather_than_emitted(self):
         with self.assertRaises(A.Refuse):
             self.contract.refuses("a_reason_invented_tomorrow")
@@ -465,7 +518,12 @@ class ContractTests(unittest.TestCase):
         document = root / "CURRENT_CANDIDATE.json"
         for block in ({}, candidate(artifact_digest=None),
                       candidate(required_services=["api"]),
-                      candidate(source_commit="main"), candidate()):
+                      candidate(source_commit="main"),
+                      # The builder binding is the newest reason in the vocabulary, so
+                      # the sweep has to exercise it or an unregistered token could
+                      # reach a report nobody can look up.
+                      candidate(build_definition={"executor_version": "test-pr-v2"}),
+                      candidate()):
             document.write_text(json.dumps({"source_commit": COMMIT,
                                             "application_git_tree": TREE,
                                             "source_tree_sha256": FINGERPRINT,
@@ -579,6 +637,53 @@ class RealCandidateTests(unittest.TestCase):
         self.assertIn("candidate_test_result_artifact_digest", result["verdict"]["rejected"])
 
 
+    def test_the_signed_evidence_corroborates_the_builder_the_candidate_declares(self):
+        """Provenance is bound on the real artifacts, not only on synthetic ones."""
+        block = json.loads(CANONICAL.read_text(encoding="utf-8"))["release_candidate_v1"]
+        signed = json.loads(REAL_EVIDENCE.read_text(encoding="utf-8"))
+        self.assertEqual(signed["executor_version"],
+                         block["build_definition"]["executor_version"])
+
+    def test_the_real_evidence_cannot_corroborate_the_builder_it_does_not_report(self):
+        """The other recognised builder is not readable out of this signed result.
+
+        Written against whichever version the real evidence reports, so it keeps
+        meaning the same thing when the next reconciliation moves the candidate to a
+        v3 build: the claim and the proof have to move together.
+        """
+        document = json.loads(CANONICAL.read_text(encoding="utf-8"))
+        signed = json.loads(REAL_EVIDENCE.read_text(encoding="utf-8"))
+        others = sorted(v for v in A.BUILDER_EXECUTOR_VERSIONS
+                        if v != signed["executor_version"])
+        self.assertTrue(others, "the recognised builder list names only one version")
+        document["release_candidate_v1"]["build_definition"]["executor_version"] = others[0]
+        scratch = pathlib.Path(tempfile.mkdtemp(prefix="ccv1-admission-real-")) / "c.json"
+        scratch.write_text(json.dumps(document), encoding="utf-8")
+        result = A.admit(CONTRACT, scratch, REAL_EVIDENCE, None, GO, AT, AT)
+        self.assertEqual(result["verdict"]["admission"], "REJECT", result["verdict"])
+        self.assertIn("candidate_test_result_evidence_builder_version",
+                      result["verdict"]["rejected"])
+
+    def test_the_recorded_evidence_identity_is_the_record_not_the_evidence_bytes(self):
+        """The identity `evidence_id` records is the evidence repository's commit.
+
+        The canonical block and the reconciliation record that supplied it name the
+        same commit.  A blob id computed over the evidence bytes -- which is what one
+        cancelled plan would have recorded -- is a different value, and recording it
+        would silently change what `evidence_id` has always meant.
+        """
+        document = json.loads(CANONICAL.read_text(encoding="utf-8"))
+        evidence_id = document["release_candidate_v1"]["test_result_identity"]["evidence_id"]
+        self.assertIn("release_candidate_reconciliation", document)
+        self.assertEqual(evidence_id,
+                         document["release_candidate_reconciliation"]["new_evidence_commit"])
+        self.assertRegex(evidence_id, r"^[0-9a-f]{40}$")
+        raw = REAL_EVIDENCE.read_bytes()
+        blob = hashlib.sha1(b"blob %d\x00" % len(raw) + raw).hexdigest()
+        self.assertNotEqual(evidence_id, blob,
+                            "evidence_id is not the evidence file's blob id")
+
+
 class ArtifactDurabilityTests(Base):
     """B4-B1.  A build identity is not a deliverable, and admission must say so.
 
@@ -657,8 +762,15 @@ class ArtifactDurabilityTests(Base):
         self.rejected(result, "candidate_artifact_package_mismatch")
 
     def test_a_build_by_the_previous_builder_is_still_admissible(self):
-        """A v2-built candidate is not a worse candidate; it simply cannot be PROVEN."""
-        result = self.write(candidate(build_definition={"executor_version": "test-pr-v2"}))
+        """A v2-built candidate is not a worse candidate; it simply cannot be PROVEN.
+
+        It must still say v2 truthfully. The builder is a provenance claim, so it is
+        admissible only while the signed result reports the same builder -- which is
+        why this pairs the declaration with a v2 evidence rather than relabelling the
+        v3 one.
+        """
+        result = self.write(candidate(build_definition={"executor_version": "test-pr-v2"}),
+                            evidence_value=evidence(executor_version="test-pr-v2"))
         self.assertEqual(result["verdict"]["admission"], "ACCEPT", result["verdict"])
         self.assertFalse(result["deployability"]["deployable_artifact_established"])
 

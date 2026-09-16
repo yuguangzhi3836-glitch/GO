@@ -63,6 +63,7 @@ candidate schema incomplete or carrying an extra field
 source not determinable: a branch, a ref, HEAD, latest, or an abbreviation
 source identity that disagrees with the lineage pointer it came from
 a build definition that is not the builder actually staged for the executor
+a builder version the signed TEST_PR result does not corroborate
 a Dockerfile whose digest is not the staged one
 artifact digest absent or not an image id
 a test result that belongs to another candidate, another commit or another artifact
@@ -79,6 +80,7 @@ mutable / ambiguous source             REJECT  candidate_source_commit_not_immut
 source fingerprint mismatch            REJECT  source_identity_disagrees_with_the_lineage_pointer
 artifact mismatch                      REJECT  candidate_test_result_artifact_digest
 test result for another candidate      REJECT  candidate_test_result_source_commit
+builder claim uncorroborated           REJECT  candidate_test_result_evidence_builder_version
 service boundary violation             REJECT  fixed_topology_required
 rollback relation unresolvable         REJECT  candidate_rollback_target_absent
 plan/candidate binding conflict        REJECT  plan_candidate_artifact_mismatch
@@ -111,10 +113,23 @@ with them**: a candidate that carries two source identities is not one candidate
 and admission refuses it rather than picking one.
 
 Every value in that block is derived from an artifact that already existed -- the
-signed TEST_PR Evidence `go-boss-test-pr-52-83b0e20f3980` supplied the artifact
+signed TEST_PR Evidence `go-boss-test-pr-52-0673b27f427c` supplied the artifact
 digest and the test identity, the staged builder supplied the build definition, the
 live runtime supplied the rollback target, and the live deploy contract supplied
 the service topology.
+
+`test_result_identity.evidence_id` names that Evidence's own record on the evidence
+repository -- the commit, or a record id where the record is not a commit. It is
+never the blob id, and never a digest of the evidence file: the field has meant a
+record identity since it was defined, so a reconciliation that recorded bytes
+instead would change the meaning without changing the name.
+
+Two of those values are not independent claims, and admission now says so. The
+`signed TEST_PR result` is the only thing that can corroborate the artifact **and**
+the builder that produced it, so the declared `executor_version` must be the version
+the result itself reports. An artifact id names an image, not the executor that made
+it; without the binding, an artifact built by a newer executor could be described as
+the work of an older one and still be admitted.
 
 ## Authority
 

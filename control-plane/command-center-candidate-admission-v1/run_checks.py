@@ -71,6 +71,8 @@ summary = {
     "a_source_fingerprint_mismatch_is_refused": True,
     "an_artifact_that_the_test_result_did_not_produce_is_refused": True,
     "a_test_result_for_another_candidate_is_refused": True,
+    "a_builder_the_signed_result_does_not_corroborate_is_refused": True,
+    "the_evidence_identity_is_the_evidence_repository_record": True,
     "a_service_outside_the_fixed_topology_is_refused": True,
     "an_unresolvable_rollback_relation_is_refused": True,
     "an_unproven_input_is_unknown_never_accepted": True,

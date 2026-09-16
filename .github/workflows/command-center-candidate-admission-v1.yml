@@ -152,6 +152,16 @@ jobs:
                   del value[name]
               return apply
 
+
+          def relabel_builder(value):
+              # Claim a recognised builder that this signed result does not report.
+              # Which one that is depends on the evidence, so the case keeps meaning
+              # the same thing after a reconciliation moves the candidate to v3.
+              others = [v for v in A.BUILDER_EXECUTOR_VERSIONS
+                        if v != signed['executor_version']]
+              value['build_definition']['executor_version'] = others[0]
+
+
           cases = {
               'a_missing_identity_is_refused':
                   (drop(None, 'rollback_relation'), 'release_candidate_fields'),
@@ -164,6 +174,8 @@ jobs:
               'another_artifact_is_refused':
                   (lambda v: v.update(artifact_digest='sha256:' + '0' * 64),
                    'candidate_test_result_artifact_digest'),
+              'a_builder_the_signed_result_does_not_corroborate_is_refused':
+                  (relabel_builder, 'candidate_test_result_evidence_builder_version'),
               'a_service_outside_the_topology_is_refused':
                   (lambda v: v.update(required_services=['api']), 'fixed_topology_required'),
               'a_broken_rollback_relation_is_refused':

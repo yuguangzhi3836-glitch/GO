@@ -85,7 +85,8 @@
         },
         "executor_version": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "description": "Which builder produced this artifact. This is a statement about how the image was made, so it must be the version the signed TEST_PR Evidence itself reports for that artifact; a version outside the recognised list, or one the signed result does not corroborate, is refused rather than repaired."
         },
         "builder_image_tag": {
           "type": "string",
@@ -254,6 +255,7 @@
       "candidate_test_result_evidence_artifact",
       "candidate_test_result_evidence_action",
       "candidate_test_result_evidence_task",
+      "candidate_test_result_evidence_builder_version",
       "candidate_artifact_package",
       "candidate_artifact_package_absent",
       "candidate_artifact_package_not_proven",
