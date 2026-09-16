@@ -20,7 +20,7 @@ def test_fresh_database_can_apply_entire_chain_without_stamp(tmp_path, monkeypat
     db, cfg = config(tmp_path, monkeypatch)
     command.upgrade(cfg, 'head')
     with sqlite3.connect(db) as s:
-        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0134_flight_status_width'
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0135_journey_search_trigram'
         columns = {r[1] for r in s.execute('PRAGMA table_info(connector_runtime_reconciliation)')}
         assert {'claimed_by', 'lease_expires_at', 'resolution_payload_json', 'superseded_reason'} <= columns
         assert s.execute("SELECT name FROM sqlite_master WHERE name='vertical_payment_deadline'").fetchone()
