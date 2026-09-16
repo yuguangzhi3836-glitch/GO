@@ -26,7 +26,8 @@ def main():
     tracked = git('ls-files','-z','application').split('\0')
     actual = {p[len('application/'):] for p in tracked if p}
     assert actual == expected, {'missing': sorted(expected-actual), 'unexpected': sorted(actual-expected)}
-    assert git('rev-parse','HEAD:application') == current['application_git_tree'], 'WRONG_APPLICATION_TREE'
+    actual_tree = git('rev-parse','HEAD:application')
+    assert actual_tree == current['application_git_tree'], f'WRONG_APPLICATION_TREE:{actual_tree}'
     fingerprint = {}
     for path in sorted(expected):
         f = APP/path
