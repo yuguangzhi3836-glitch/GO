@@ -1,0 +1,197 @@
+name: C09 PostgreSQL 18.4 outbox contention evidence
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/c09-pg18-outbox-evidence.yml
+permissions:
+  contents: read
+concurrency:
+  group: c09-pg18-outbox-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  c09-pg18-outbox:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_c09_outbox
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_c09_outbox"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c09_outbox
+      VERTICAL_RESERVATION_EXPIRY_WORKER_ENABLED: 'false'
+      HOSTED_RESERVATION_EXPIRY_WORKER_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify fixed source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:application)" = "091d663d4397a3abafa9f7ec8a7fd6e78bec9439"
+          test "$(git rev-parse HEAD^{tree})" != ""
+          mkdir -p "$RUNNER_TEMP/c09-pg18-evidence"
+          printf '%s\n' "$(git rev-parse HEAD)" > "$RUNNER_TEMP/c09-pg18-evidence/head.txt"
+          printf '%s\n' "$(git rev-parse HEAD:application)" > "$RUNNER_TEMP/c09-pg18-evidence/application-tree.txt"
+      - name: Install inherited frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Upgrade disposable PostgreSQL and record environment
+        working-directory: application
+        shell: bash
+        env:
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          alembic upgrade head
+          python - <<'PY'
+          import json, os, pathlib
+          from sqlalchemy import create_engine, text
+          out = pathlib.Path(os.environ["RUNNER_TEMP"]) / "c09-pg18-evidence"
+          engine = create_engine(os.environ["DATABASE_URL"])
+          with engine.connect() as connection:
+              data = {
+                  "dialect": connection.dialect.name,
+                  "server_version": connection.scalar(text("show server_version")),
+                  "alembic_head": connection.scalar(text("select version_num from alembic_version")),
+                  "database": connection.scalar(text("select current_database()")),
+                  "hong_kong": "NOT_ACCESSED",
+                  "production": "HOLD",
+                  "final_release": "HOLD",
+              }
+          engine.dispose()
+          assert data["dialect"] == "postgresql"
+          assert str(data["server_version"]).split()[0] == "18.4"
+          pathlib.Path(out / "environment.json").write_text(json.dumps(data, indent=2) + "\n")
+          print(json.dumps(data))
+          PY
+      - name: Provide PostgreSQL-only pytest fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/c09-pg-plugin"
+          cat > "$RUNNER_TEMP/c09-pg-plugin/c09_pg_plugin.py" <<'PY'
+          import pytest
+          from sqlalchemy import inspect
+          
+          @pytest.fixture(autouse=True)
+          def reset_pg():
+              from go_hotel.db.session import engine
+              from go_hotel.connectors.mock_hotel import connector
+              from go_hotel.payments.mock import payment_provider
+              from go_hotel.core.faults import faults
+              engine.dispose(close=True)
+              with engine.begin() as connection:
+                  names = [name for name in inspect(connection).get_table_names() if name != "alembic_version"]
+                  if names:
+                      quoted = ", ".join('"' + name.replace('"', '""') + '"' for name in names)
+                      connection.exec_driver_sql("TRUNCATE TABLE " + quoted + " RESTART IDENTITY CASCADE")
+              connector.reset()
+              payment_provider.reset()
+              faults.clear()
+              try:
+                  yield
+              finally:
+                  faults.clear()
+                  connector.reset()
+                  payment_provider.reset()
+                  engine.dispose(close=True)
+          
+          @pytest.fixture
+          def client():
+              from fastapi.testclient import TestClient
+              from go_hotel.main import app
+              with TestClient(app) as test_client:
+                  yield test_client
+          PY
+      - name: Run exact C09 PostgreSQL outbox evidence
+        working-directory: application
+        shell: bash
+        env:
+          PYTHONPATH: src:${{ runner.temp }}/c09-pg-plugin
+        run: |
+          set -euo pipefail
+          EVIDENCE="$RUNNER_TEMP/c09-pg18-evidence"
+          set +e
+          python -m pytest --noconftest -p c09_pg_plugin -q -vv -rs             --junitxml="$EVIDENCE/outbox-pg18.xml"             tests/test_outbox_resilience.py::test_postgresql_two_workers_claim_one_row_once             tests/test_outbox_resilience.py::test_database_time_ignores_application_clock_skew             tests/test_outbox_resilience.py::test_outbox_heartbeat_is_token_and_worker_fenced             2>&1 | tee "$EVIDENCE/outbox-pg18.raw.log"
+          status=${PIPESTATUS[0]}
+          set -e
+          python - <<'PY'
+          import json, os, pathlib, xml.etree.ElementTree as ET
+          out = pathlib.Path(os.environ["RUNNER_TEMP"]) / "c09-pg18-evidence"
+          root = ET.parse(out / "outbox-pg18.xml").getroot()
+          suites = [root] if root.tag == "testsuite" else list(root.findall("testsuite"))
+          summary = {
+              "tests": sum(int(x.attrib.get("tests", 0)) for x in suites),
+              "failures": sum(int(x.attrib.get("failures", 0)) for x in suites),
+              "errors": sum(int(x.attrib.get("errors", 0)) for x in suites),
+              "skipped": sum(int(x.attrib.get("skipped", 0)) for x in suites),
+              "required_nodeids": [
+                  "tests/test_outbox_resilience.py::test_postgresql_two_workers_claim_one_row_once",
+                  "tests/test_outbox_resilience.py::test_database_time_ignores_application_clock_skew",
+                  "tests/test_outbox_resilience.py::test_outbox_heartbeat_is_token_and_worker_fenced",
+              ],
+          }
+          (out / "result.json").write_text(json.dumps(summary, indent=2) + "\n")
+          assert summary == {
+              **summary,
+              "tests": 3,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0,
+          }, summary
+          print(json.dumps(summary))
+          PY
+          test "$status" -eq 0
+      - name: Bind and hash original evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVIDENCE="$RUNNER_TEMP/c09-pg18-evidence"
+          python - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          out = pathlib.Path(os.environ["RUNNER_TEMP"]) / "c09-pg18-evidence"
+          report = {
+              "task_id": "V70-R3-C09-02-PG18-OUTBOX",
+              "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+              "application_git_tree": subprocess.check_output(["git", "rev-parse", "HEAD:application"], text=True).strip(),
+              "environment": "disposable GitHub Actions PostgreSQL 18.4 service",
+              "scope": "three exact C09 outbox database-time/fencing/contention tests",
+              "C14": "PENDING",
+              "C13": "PENDING",
+              "hong_kong": "NOT_ACCESSED",
+              "production": "HOLD",
+              "final_release": "HOLD",
+          }
+          (out / "EVIDENCE_BINDING.json").write_text(json.dumps(report, indent=2) + "\n")
+          files = {}
+          for path in sorted(out.iterdir()):
+              if path.is_file() and path.name != "SHA256SUMS.json":
+                  files[path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
+          (out / "SHA256SUMS.json").write_text(json.dumps(files, indent=2) + "\n")
+          print(json.dumps({"binding": report, "sha256": files}))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c09-pg18-outbox-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/c09-pg18-evidence
+          if-no-files-found: error
+          retention-days: 90
