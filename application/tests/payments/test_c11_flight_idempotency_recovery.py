@@ -329,3 +329,40 @@ def test_unknown_durable_response_code_is_never_replayed(monkeypatch,target):
     with pytest.raises(HTTPException) as exc:call_checkout(oid)
     assert exc.value.status_code==409
     assert exc.value.detail['code']=='IDEMPOTENCY_RECONCILIATION_REQUIRED'
+
+
+@pytest.mark.parametrize('state',['TICKETED','FAILED'])
+def test_supplier_resolution_money_commit_interruption_reuses_same_movement(monkeypatch,state):
+    """A retry after capture/release committed must not duplicate the money side effect."""
+    order,quote=create_change();oid=order['order_id'];qid=quote['quote_id']
+    call_change(oid,qid)
+    action='capture_adjustment' if state=='TICKETED' else 'release_adjustment'
+    original=getattr(change_bridge,action)
+    committed=[]
+    def lost(*args,**kwargs):
+        result=original(*args,**kwargs)
+        committed.append(result)
+        raise RuntimeError('C11_RESOLUTION_AFTER_MONEY_COMMIT')
+    monkeypatch.setattr(change_bridge,action,lost)
+    kwargs={'supplier_reference':'C11NEWPNR','ticket_numbers':['C11NEWTICKET']} if state=='TICKETED' else {}
+    invoke=lambda:flights.admin_external_state(
+        oid,state,'isolated://c11-resolution','c11-admin',
+        kwargs.get('supplier_reference'),kwargs.get('ticket_numbers'),qid)
+    with pytest.raises(RuntimeError,match='C11_RESOLUTION_AFTER_MONEY_COMMIT'):
+        invoke()
+    assert len(committed)==1
+    movement_key='capture_id' if state=='TICKETED' else 'release_id'
+    first_movement=committed[0][movement_key]
+    with SessionLocal() as s:
+        before=list(s.scalars(select(Movement).where(
+            Movement.business_id==qid,Movement.movement_type==('CAPTURE' if state=='TICKETED' else 'RELEASE'))))
+        assert [m.money_movement_id for m in before]==[first_movement]
+    monkeypatch.setattr(change_bridge,action,original)
+    result=invoke()
+    assert invoke()==result
+    with SessionLocal() as s:
+        after=list(s.scalars(select(Movement).where(
+            Movement.business_id==qid,Movement.movement_type==('CAPTURE' if state=='TICKETED' else 'RELEASE'))))
+        assert [m.money_movement_id for m in after]==[first_movement]
+        assert s.get(FlightChangeQuoteRow,qid).status==('EXECUTED' if state=='TICKETED' else 'FAILED')
+        assert s.get(FlightOrderRow,oid).status=='TICKETED'
