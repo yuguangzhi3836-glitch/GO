@@ -34,8 +34,12 @@ loader.exec_module(A)
 
 CONTRACT = ROOT / A.CONTRACT_FILE
 CANONICAL = GO / A.LINEAGE_POINTER
+# The signed evidence of the fresh TEST_PR run against this exact candidate. The
+# earlier run for the same source stays in the same directory as history.
 REAL_EVIDENCE = (ROOT / "tests" / "fixtures" / "real" / "evidence"
-                 / "go-boss-test-pr-52-83b0e20f3980-7Wznjcy0Dvdnuf5D8Epv2PgUqDXJIozu.json")
+                 / "go-boss-test-pr-52-0673b27f427c-KfIhnufHkCAIeXeEufW2E9dBSxRVUsw-.json")
+HISTORICAL_EVIDENCE = (ROOT / "tests" / "fixtures" / "real" / "evidence"
+                       / "go-boss-test-pr-52-83b0e20f3980-7Wznjcy0Dvdnuf5D8Epv2PgUqDXJIozu.json")
 DEPLOY_COMPONENT = GO / "control-plane" / "boss-deploy-request-v1"
 BRIDGE = DEPLOY_COMPONENT / "go-boss-request-bridge"
 # The deploy gate is where the candidate and service topology rules actually live;
@@ -550,6 +554,19 @@ class RealCandidateTests(unittest.TestCase):
                          block["test_result_identity"]["source_pr_number"])
         self.assertEqual(signed["executor_result"], "TEST_PR_OK")
         self.assertEqual(signed["deployment_performed"], False)
+
+    def test_the_reconciliation_moved_the_artifact_not_the_source(self):
+        """The fresh TEST_PR is a second build of the same candidate, not another one."""
+        old = json.loads(HISTORICAL_EVIDENCE.read_text(encoding="utf-8"))
+        new = json.loads(REAL_EVIDENCE.read_text(encoding="utf-8"))
+        self.assertEqual(old["source_commit_sha"], new["source_commit_sha"])
+        self.assertEqual(old["source_pr_number"], new["source_pr_number"])
+        self.assertEqual(old["executor_version"], new["executor_version"])
+        self.assertEqual(old["gate_results"], new["gate_results"])
+        self.assertNotEqual(old["built_image_id"], new["built_image_id"])
+        block = json.loads(CANONICAL.read_text(encoding="utf-8"))["release_candidate_v1"]
+        self.assertEqual(block["artifact_digest"], new["built_image_id"])
+        self.assertEqual(block["test_result_identity"]["task_id"], new["task_id"])
 
     def test_a_real_candidate_whose_evidence_names_another_artifact_is_refused(self):
         document = json.loads(CANONICAL.read_text(encoding="utf-8"))
