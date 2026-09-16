@@ -67,9 +67,14 @@ class OutboxWorker:
         with SessionLocal.begin() as s:
             now = self._database_now(s)
             stale_before = now - timedelta(seconds=settings.outbox_lock_timeout_seconds)
+            available_now = (
+                func.julianday(OutboxRow.available_at) <= func.julianday(func.current_timestamp())
+                if s.get_bind().dialect.name == "sqlite"
+                else OutboxRow.available_at <= func.current_timestamp()
+            )
             stmt = (select(OutboxRow)
                 .where(
-                    OutboxRow.available_at <= func.current_timestamp(),
+                    available_now,
                     or_(
                         OutboxRow.status.in_(["PENDING", "RETRY"]),
                         (OutboxRow.status == "PROCESSING") & (OutboxRow.locked_at < stale_before),
