@@ -98,7 +98,10 @@ class Service:
   with transaction() as s:
    a,r,stay=locked_authorization(s,authorization_id)
    if a.state=='CONTRACT_CAPTURED_NOT_ALIPAY_NOT_SETTLED' or a.state=='CONTRACT_RELEASED_NOT_ALIPAY' and a.settlement_eligible:return out(a)
-   if (a.amount_minor,a.currency)!=(r.amount_minor,r.currency):raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+   from go_hotel.services.hosted_credit_value import allocation
+   credited=allocation(s,r.hosted_reservation_id)
+   credited_minor=credited.applied_minor if credited else 0
+   if a.currency!=r.currency or a.amount_minor+credited_minor!=r.amount_minor:raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
    if a.state!='FULFILLED_ELIGIBLE_FOR_CONTRACT_CAPTURE' or not a.settlement_eligible or a.external_invoked:raise ValueError('FULFILLMENT_SETTLEMENT_GATE_REQUIRED')
    from go_hotel.services import hosted_money
    amount=hosted_money.settle(s,r,stay,a) if hosted_money.root(s,a) else a.amount_minor
