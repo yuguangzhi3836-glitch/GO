@@ -69,5 +69,78 @@ class WorkerLivenessTests(unittest.TestCase):
         self.assertFalse(result["authenticated_worker_identity"])
 
 
+class SignedWorkerIdentityAssertionTests(unittest.TestCase):
+    KEY = b"c12-isolated-test-trust-key-32-bytes-minimum"
+    EXPECTED = {
+        "worker_id": "worker-c12-01",
+        "task_id": "V70-R4-C12-03",
+        "candidate_sha": "9b3f3b023e7e67fad39b105b72811f2952c62689",
+    }
+
+    def assertion(self, **changes):
+        value = {
+            "algorithm": verifier.IDENTITY_ASSERTION_ALGORITHM,
+            "key_id": "c12-test-key",
+            **self.EXPECTED,
+            "nonce": "nonce-c12-00000001",
+            "issued_at": "2026-09-16T09:00:00Z",
+            "expires_at": "2026-09-16T09:05:00Z",
+        }
+        value.update(changes)
+        value["signature"] = verifier.sign_identity_assertion(value, self.KEY)
+        return value
+
+    def check(self, assertion, seen=None, observed="2026-09-16T09:02:00Z"):
+        return verifier.verify_identity_assertion(
+            assertion,
+            trusted_keys={"c12-test-key": self.KEY},
+            expected_worker_id=self.EXPECTED["worker_id"],
+            expected_task_id=self.EXPECTED["task_id"],
+            expected_candidate_sha=self.EXPECTED["candidate_sha"],
+            observed_at=observed,
+            seen_nonces=seen,
+        )
+
+    def test_valid_signature_authenticates_assertion_but_not_live_process(self):
+        result = self.check(self.assertion())
+        self.assertEqual(result["gate"], "PASS_SCOPED")
+        self.assertTrue(result["authenticated_worker_identity"])
+        self.assertTrue(result["assertion_signature_verified"])
+        self.assertFalse(result["live_worker_liveness_verified"])
+
+    def test_tampered_identity_or_candidate_fails_closed(self):
+        assertion = self.assertion()
+        assertion["worker_id"] = "other-worker"
+        result = self.check(assertion)
+        self.assertEqual(result["gate"], "HOLD")
+        self.assertFalse(result["authenticated_worker_identity"])
+        self.assertIn("signature mismatch", " ".join(result["errors"]))
+
+    def test_unknown_key_and_malformed_signature_are_rejected(self):
+        assertion = self.assertion(key_id="untrusted")
+        result = self.check(assertion)
+        self.assertEqual(result["gate"], "HOLD")
+        assertion = self.assertion()
+        assertion["signature"] = "not-a-signature"
+        self.assertEqual(self.check(assertion)["gate"], "HOLD")
+
+    def test_expired_future_and_overlong_assertions_are_rejected(self):
+        self.assertEqual(self.check(
+            self.assertion(expires_at="2026-09-16T09:01:00Z"))["gate"], "HOLD")
+        self.assertEqual(self.check(
+            self.assertion(issued_at="2026-09-16T09:03:00Z"))["gate"], "HOLD")
+        self.assertEqual(self.check(
+            self.assertion(expires_at="2026-09-16T09:10:00Z"))["gate"], "HOLD")
+
+    def test_nonce_replay_is_rejected_after_first_success(self):
+        seen = set()
+        assertion = self.assertion()
+        self.assertEqual(self.check(assertion, seen)["gate"], "PASS_SCOPED")
+        replay = self.check(assertion, seen)
+        self.assertEqual(replay["gate"], "HOLD")
+        self.assertTrue(replay["replay_detected"])
+        self.assertFalse(replay["authenticated_worker_identity"])
+
+
 if __name__ == "__main__":
     unittest.main()
