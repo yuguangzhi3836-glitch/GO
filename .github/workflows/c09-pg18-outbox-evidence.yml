@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD:application)" = "091d663d4397a3abafa9f7ec8a7fd6e78bec9439"
+          test "$(git rev-parse HEAD:application)" = "550c7425047ba897d35e73795dcf7735a84f6d52"
           test "$(git rev-parse HEAD^{tree})" != ""
           mkdir -p "$RUNNER_TEMP/c09-pg18-evidence"
           printf '%s\n' "$(git rev-parse HEAD)" > "$RUNNER_TEMP/c09-pg18-evidence/head.txt"
