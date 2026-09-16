@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from go_hotel.core.config import settings
 from go_hotel.db.models import GoAIExecutionRow, GoAIInvocationRow, GoAIRequestRow
@@ -508,16 +508,21 @@ class GOAIService:
             return value.replace(tzinfo=timezone.utc)
         return value
 
+    @classmethod
+    def _database_now(cls, session):
+        """Read lease authority time from the database, never from a caller clock."""
+        return cls._lease_time(session.scalar(select(func.current_timestamp())))
+
     def claim_execution(self, request_id: str, *, worker_id: str, lease_seconds: int = 60,
-                        verified_previous_owner_terminated: bool = False,
-                        observed_at=None) -> dict[str, Any]:
+                        fencing_token: int | None = None,
+                        verified_previous_owner_terminated: bool = False) -> dict[str, Any]:
         """Claim GO AI execution ownership without replaying provider work."""
         if not worker_id or not worker_id.strip():
             raise ValueError("GO_AI_WORKER_ID_REQUIRED")
         if isinstance(lease_seconds, bool) or not isinstance(lease_seconds, int) or lease_seconds <= 0:
             raise ValueError("GO_AI_LEASE_SECONDS_INVALID")
-        now = self._lease_time(observed_at or now_utc())
         with SessionLocal.begin() as session:
+            now = self._database_now(session)
             request = session.get(GoAIRequestRow, request_id)
             if request is None:
                 raise ValueError("GO_AI_REQUEST_NOT_FOUND")
@@ -544,6 +549,8 @@ class GOAIService:
                 )
                 session.add(row)
             elif row.owner_id == worker_id and self._lease_time(row.lease_expires_at) > now:
+                if fencing_token != row.fencing_token:
+                    raise ValueError("GO_AI_EXECUTION_FENCE_MISMATCH")
                 row.lease_expires_at = now + timedelta(seconds=lease_seconds)
                 row.updated_at = now
             else:
@@ -573,8 +580,7 @@ class GOAIService:
 
     def save_execution_checkpoint(self, request_id: str, *, worker_id: str, fencing_token: int,
                                   checkpoint: dict[str, Any], complete: bool,
-                                  provider_outcome: str = "NOT_STARTED",
-                                  observed_at=None) -> dict[str, Any]:
+                                  provider_outcome: str = "NOT_STARTED") -> dict[str, Any]:
         """Persist a fenced GO AI checkpoint; never execute or replay compute."""
         if not isinstance(checkpoint, dict):
             raise ValueError("GO_AI_CHECKPOINT_OBJECT_REQUIRED")
@@ -586,8 +592,8 @@ class GOAIService:
                          not isinstance(checkpoint.get("completed_task_ids"), list) or
                          not isinstance(checkpoint.get("pending_task_ids"), list)):
             raise ValueError("GO_AI_COMPLETE_CHECKPOINT_FIELDS_REQUIRED")
-        now = self._lease_time(observed_at or now_utc())
         with SessionLocal.begin() as session:
+            now = self._database_now(session)
             row = session.scalar(
                 select(GoAIExecutionRow)
                 .where(GoAIExecutionRow.go_ai_request_id == request_id)
