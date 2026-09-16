@@ -1,0 +1,43 @@
+{
+  "schema": "go.v70.r3.cell-result.v1",
+  "cell_id": "C12",
+  "task_id": "V70-R3-C12-01",
+  "executor_id": "codex-worker:/root/cell_c12",
+  "run_id": "c12-20260916T021655Z",
+  "canonical_base": "dcb68a652429aa01e8428ce9f582e4bab6a6175e",
+  "fixed_candidate_sha": "911d6e13bceaf83bb62c775f33a325bbd68af885",
+  "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "application_source_fingerprint_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
+  "application_change": "NONE",
+  "scope": "Source-bound receipt heartbeat freshness and stale-RUNNING rejection",
+  "outcome": "PASS_SCOPED",
+  "tests": {
+    "command": "python -m unittest -v ci.round2.test_c12_worker_liveness",
+    "passed": 4,
+    "failed": 0,
+    "raw_log": "evidence/v70-r3-c12-01/test.raw.log",
+    "raw_log_sha256": "6b3b8633923b0de1e011e6e2df34966c50ac754c63c5ee56b9a38b4c2a6037ae"
+  },
+  "changed_files_sha256": {
+    "ci/round2/verify_execution_receipt.py": "982878f01e56351b437c8e0966d54384e5979b80e1c836a9a220615606c965f9",
+    "ci/round2/test_c12_worker_liveness.py": "2e049c97d1ca5987484f63e575d94ea8c981e161fbf68cb5838756e0c614f07e"
+  },
+  "semantics": {
+    "fresh_heartbeat": "Record may pass scoped admission within the configured maximum age",
+    "expired_heartbeat": "RUNNING is marked stale and gate is HOLD",
+    "worker_authentication": false,
+    "live_process_liveness_verified": false,
+    "receipt_consistency_is_authentication": false
+  },
+  "inherited_pass": [
+    "Durable queue database-time leases, heartbeat fencing and expired-lease recovery remain inherited and were not reimplemented"
+  ],
+  "c14": "PENDING",
+  "c13": "PENDING_INDEPENDENT",
+  "release": {
+    "PR_115": "DO_NOT_MERGE",
+    "FINAL_RELEASE": "HOLD",
+    "HK_DEPLOY": "HOLD",
+    "PRODUCTION": "HOLD"
+  }
+}
