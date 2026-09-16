@@ -39,8 +39,10 @@ jobs:
           paths=['application/src/go_hotel/flight/coupon_authority.py','application/tests/test_v70_r6_c02_partial_party_authority.py']
           files={p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest() for p in paths}
           result={'task_id':'V70-R6-C02-01','candidate':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'scoped_fingerprint_sha256':hashlib.sha256(''.join(f'{p}\\0{files[p]}\\n' for p in sorted(files)).encode()).hexdigest(),'source_sha256':files,'evidence_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in out.iterdir() if p.is_file()},'supplier_e2e':'NOT_CLAIMED','final_release':'HOLD','hk_deploy':'HOLD','production':'HOLD'}
-          (out/'RESULT.json').write_text(json.dumps(result,indent=2)+'\\n'); print(json.dumps(result))
+          (out/'RESULT.json').write_text(json.dumps(result,indent=2)+'\n'); print(json.dumps(result))
           PY
+      - name: Strict Evidence JSON preflight
+        run: jq -e 'type == "object" and .task_id == "V70-R6-C02-01" and (.candidate | type == "string") and (.application_tree | type == "string")' "$RUNNER_TEMP/c02-r6/RESULT.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
