@@ -441,6 +441,38 @@ B4  没有可用的部署计划 bundle（plan + approval + canary/preflight task
     · 下一次安装只需 **5 个文件**（无新路径、无目录变更、不重启）；旧失败 Task 的
       attempt 已耗尽，**不得重发**，重试必须用新 Request / 新 Task / 新 nonce。
 
+    **2026-09-16 / B4-B1.5 对账（repository-side only，已完成并推送）**：
+    · canonical candidate 已**成套**切到真实的 fresh v3 产物：`artifact_digest`
+      `fe0d2c36…` → `6b92050e…`；`build_definition.executor_version` `test-pr-v2` → `test-pr-v3`
+      （其余 5 个 build 字段不动，事实未变）；`test_result_identity` → Task
+      `go-boss-test-pr-52-0342850d8822` / `evidence_id` `1865b17d…`（**commit**，不是 blob
+      `0500b1a0…`，后者只作审计信息）/ `artifact_digest` 同新；`artifact_package`
+      `NOT_PROVEN` → `PROVEN` + `e70238c7…`。**paired move**：产物、产生它的结果、
+      产生它的 builder、证明它可交付的 package，四者一起移。
+    · 历史**未被改写**：旧 reconciliation block 逐字保存在
+      `release_candidate_reconciliation_history[0]`（旧 request / task / evidence /
+      old-new artifact / reason / 时间全在），`release_candidate_reconciliation` 记本轮最新事件。
+      v2 Evidence 与其"为何不 durable"的解释一起留在历史里。
+    · `source_commit` / `application_tree` / `source_fingerprint` / `migration_head` /
+      `migration_required` / `required_services` / `rollback_relation` **未变**；
+      本轮**不重新发 TEST_PR**（source 没变，重跑只会得到第三个互不相干的新产物）。
+    · admission 实测 **ACCEPT**（所有 check PASS、`artifact_durability=PROVEN`、
+      `deployable_artifact_established=true`、`is_a_deploy_approval=false`）；
+      B4-B1.4 的 builder 绑定在真实产物上通过，反向 mutation（候选改回 `test-pr-v2`，
+      证据仍 v3）→ `candidate_test_result_evidence_builder_version` 拒绝；
+      image / Evidence / package 三者的成套 mutation（错 package、旧 image、旧 Evidence、
+      PROVEN+null）全部 fail closed —— 因此 ACCEPT 不是因为门太松。
+    · ⚠ **`PACKAGE_BINDING` 不会因本轮变 PASS**：该 gate 先要 plan（`plan_body()` 为空即 UNKNOWN）。
+      只读重跑实测 `PACKAGE_BINDING=UNKNOWN`；用 gate **自己的逻辑**做投影：同一个 plan 下
+      **旧候选 → FAIL `artifact_package_not_proven`，新候选 → PASS** ⇒ 候选侧已就绪，
+      剩下的输入是 approved plan（属于后续 Human Approval 流程，不在本轮）。
+      未改任何 readiness 规则、未人工改任何输出。
+    · readiness 其余 gate：`APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`，其余仍
+      UNKNOWN / FAIL —— 其 control-state 输入是 **09-15 的投影快照**（TEST_PR gate 读到的
+      仍是当时那张已 `TASK_EXPIRED` 的旧 Task），刷新投影需要 tasks/evidence 仓的本地检出，
+      属另一轮；本轮不做。
+    记录：`docs/control-plane/command-center/B4B15_PAIRED_RECONCILIATION_20260916.md`
+
 B5  deployment_requests_enabled=false（**正确的 fail-closed 姿态**，不是缺陷）
     真实 DEPLOY 必须等人类当次批准后才开；ROLLBACK 同理（#105 另需独立批准）
 ```
@@ -497,6 +529,15 @@ DEPLOY
 readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 `RELEASE_GATES` 四键（three_end_ux / six_vertical_closed_loop / sealed_node / final_release）
 与 `CANARY_GATES` / `VERIFY_GATES` 已存在于 deploy gate 常量中；
+
+**2026-09-16 / B4-B1.5 更新（当前事实）**：准入 Gate 已实现并已运行
+（`control-plane/command-center-candidate-admission-v1`，CC V1-08 / #103）；canonical candidate
+已对账到真实 v3 产物 ⇒ `artifact_digest` `sha256:6b92050e…`、
+`build_definition.executor_version` `test-pr-v3`、`test_result_identity.evidence_id`
+`1865b17d25e6baa6dd2bebc2bdee89cb9a621ad3`（commit）、`artifact_package`
+`PROVEN` / `e70238c7…`。admission = **ACCEPT**，全部 check PASS。
+`PACKAGE_BINDING = UNKNOWN`，原因缺的是 **approved plan**，不是候选侧缺口（见 §9 的 B4-B1.5 条目）。
+上面"该 contract 尚未实现为准入 Gate"与所列身份描述的是当天的历史状态。
 固定八服务拓扑与 `redis`/`caddy` 保护名单已在 gate 中硬编码。
 
 ## 11. 下一会话唯一入口

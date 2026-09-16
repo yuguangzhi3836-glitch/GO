@@ -113,10 +113,13 @@ with them**: a candidate that carries two source identities is not one candidate
 and admission refuses it rather than picking one.
 
 Every value in that block is derived from an artifact that already existed -- the
-signed TEST_PR Evidence `go-boss-test-pr-52-0673b27f427c` supplied the artifact
-digest and the test identity, the staged builder supplied the build definition, the
-live runtime supplied the rollback target, and the live deploy contract supplied
-the service topology.
+signed TEST_PR Evidence `go-boss-test-pr-52-0342850d8822` supplied the artifact
+digest, the test identity and the sealed package, the staged builder supplied the
+build definition, the live runtime supplied the rollback target, and the live deploy
+contract supplied the service topology. The two earlier results for the same source
+(`…-0673b27f427c` and `…-83b0e20f3980`) stay in the evidence repository and in
+`release_candidate_reconciliation_history`: they are what this candidate's lineage was
+built on, and rewriting them to match the present would falsify the past.
 
 `test_result_identity.evidence_id` names that Evidence's own record on the evidence
 repository -- the commit, or a record id where the record is not a commit. It is

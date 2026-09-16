@@ -30,9 +30,11 @@ What it reads (read-only, and never anything else)
     --test-pr-evidence   OPTIONAL signed TEST_PR Evidence. It is the only proof that
                          the artifact came from that source, that the builder the
                          candidate names is the one that produced it, and that the
-                         artifact still exists as a sealed package, so without it the
-                         artifact binding cannot be established and the verdict is
-                         UNKNOWN rather than ACCEPT.
+                         artifact still exists as a sealed package. Without it the
+                         artifact binding cannot be established: a candidate that
+                         makes no package claim is UNKNOWN rather than ACCEPT, and one
+                         that claims a proven package is refused by name instead,
+                         because no proof covers the claim.
     --plan               OPTIONAL approved deploy plan bundle. When supplied, the
                          candidate is cross-checked against what the plan approves.
     --go-repo            OPTIONAL GO checkout, used to confirm that the build

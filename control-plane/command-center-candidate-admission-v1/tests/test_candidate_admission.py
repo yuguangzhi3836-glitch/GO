@@ -35,11 +35,23 @@ loader.exec_module(A)
 CONTRACT = ROOT / A.CONTRACT_FILE
 CANONICAL = GO / A.LINEAGE_POINTER
 # The signed evidence of the fresh TEST_PR run against this exact candidate. The
-# earlier run for the same source stays in the same directory as history.
+# earlier runs for the same source stay in the same directory as history: PREVIOUS is
+# the run this reconciliation replaced, HISTORICAL the one before it.
 REAL_EVIDENCE = (ROOT / "tests" / "fixtures" / "real" / "evidence"
-                 / "go-boss-test-pr-52-0673b27f427c-KfIhnufHkCAIeXeEufW2E9dBSxRVUsw-.json")
+                 / "go-boss-test-pr-52-0342850d8822-BHxETPRzcd-8wM9TCrKdOQr-KZ_SZTqK.json")
+PREVIOUS_EVIDENCE = (ROOT / "tests" / "fixtures" / "real" / "evidence"
+                     / "go-boss-test-pr-52-0673b27f427c-KfIhnufHkCAIeXeEufW2E9dBSxRVUsw-.json")
 HISTORICAL_EVIDENCE = (ROOT / "tests" / "fixtures" / "real" / "evidence"
                        / "go-boss-test-pr-52-83b0e20f3980-7Wznjcy0Dvdnuf5D8Epv2PgUqDXJIozu.json")
+# The current canonical pairing, frozen (B4-B1.5). The evidence identity is the
+# record identity on the evidence repository -- the commit -- and the blob id is
+# carried beside it as audit information only, never as evidence_id.
+CURRENT_REAL_EVIDENCE_ID = "1865b17d25e6baa6dd2bebc2bdee89cb9a621ad3"
+CURRENT_REAL_EVIDENCE_BLOB = "0500b1a098cc9b5e113922facb16b409372ef75a"
+CURRENT_REAL_EVIDENCE_SHA256 = "b12537929f4a839a0715f98a9202481a20322b7cfb3c2377785eadd8f1f011ba"
+CURRENT_ARTIFACT = "sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7"
+CURRENT_PACKAGE = "e70238c7c12a67fe6ebd54958237790f82aad39f602bcea3e11699aaa651f382"
+SUPERSEDED_ARTIFACT = "sha256:fe0d2c3670444716cf0a84515a4321de1347b6be4570829d3767fe189a6e87e1"
 DEPLOY_COMPONENT = GO / "control-plane" / "boss-deploy-request-v1"
 BRIDGE = DEPLOY_COMPONENT / "go-boss-request-bridge"
 # The deploy gate is where the candidate and service topology rules actually live;
@@ -615,17 +627,30 @@ class RealCandidateTests(unittest.TestCase):
         self.assertEqual(signed["deployment_performed"], False)
 
     def test_the_reconciliation_moved_the_artifact_not_the_source(self):
-        """The fresh TEST_PR is a second build of the same candidate, not another one."""
-        old = json.loads(HISTORICAL_EVIDENCE.read_text(encoding="utf-8"))
+        """Same candidate, same source, and now a different builder generation.
+
+        The earlier reconciliation could say the executor version and the gate results
+        were identical, because it was a second build by the same builder. This one
+        cannot, and saying so would be false: the artifact this candidate now names
+        was built, tested and sealed by test-pr-v3, and the v3 result carries the
+        artifact_sealed gate the v2 result never had.
+        """
+        previous = json.loads(PREVIOUS_EVIDENCE.read_text(encoding="utf-8"))
         new = json.loads(REAL_EVIDENCE.read_text(encoding="utf-8"))
-        self.assertEqual(old["source_commit_sha"], new["source_commit_sha"])
-        self.assertEqual(old["source_pr_number"], new["source_pr_number"])
-        self.assertEqual(old["executor_version"], new["executor_version"])
-        self.assertEqual(old["gate_results"], new["gate_results"])
-        self.assertNotEqual(old["built_image_id"], new["built_image_id"])
+        self.assertEqual(previous["source_commit_sha"], new["source_commit_sha"])
+        self.assertEqual(previous["source_pr_number"], new["source_pr_number"])
+        self.assertNotEqual(previous["built_image_id"], new["built_image_id"])
+        self.assertEqual(previous["executor_version"], "test-pr-v2")
+        self.assertEqual(new["executor_version"], "test-pr-v3")
+        self.assertEqual(sorted(previous["gate_results"]), ["isolated_runtime_checks",
+                                                            "offline_build", "source_commit"])
+        self.assertEqual(sorted(new["gate_results"]), ["artifact_sealed", "isolated_runtime_checks",
+                                                       "offline_build", "source_commit"])
         block = json.loads(CANONICAL.read_text(encoding="utf-8"))["release_candidate_v1"]
         self.assertEqual(block["artifact_digest"], new["built_image_id"])
         self.assertEqual(block["test_result_identity"]["task_id"], new["task_id"])
+        self.assertEqual(block["build_definition"]["executor_version"], new["executor_version"])
+        self.assertEqual(block["artifact_package"]["durability"], "PROVEN")
 
     def test_a_real_candidate_whose_evidence_names_another_artifact_is_refused(self):
         document = json.loads(CANONICAL.read_text(encoding="utf-8"))
@@ -684,6 +709,175 @@ class RealCandidateTests(unittest.TestCase):
                             "evidence_id is not the evidence file's blob id")
 
 
+class PairedReconciliationTests(unittest.TestCase):
+    """B4-B1.5.  Image, Evidence and package are one set, or the candidate is refused.
+
+    The reconciliation is only worth anything if the four identities it wrote are the
+    four the signed result supports: the artifact the result built, the builder that
+    built it, the result itself, and the sealed package that makes the artifact
+    deliverable. Each test below moves one of them and requires admission to refuse,
+    so a later round cannot quietly move one without the others.
+    """
+
+    def setUp(self):
+        if not CANONICAL.is_file() or not REAL_EVIDENCE.is_file():
+            self.skipTest("the canonical candidate or its evidence is not in this checkout")
+        self.document = json.loads(CANONICAL.read_text(encoding="utf-8"))
+        self.signed = json.loads(REAL_EVIDENCE.read_text(encoding="utf-8"))
+
+    def admit(self, document, evidence=REAL_EVIDENCE):
+        scratch = pathlib.Path(tempfile.mkdtemp(prefix="ccv1-admission-pair-")) / "c.json"
+        scratch.write_text(json.dumps(document), encoding="utf-8")
+        return A.admit(CONTRACT, scratch, evidence, None, GO, AT, AT)
+
+    def mutated(self, **changes):
+        document = json.loads(json.dumps(self.document))
+        block = document["release_candidate_v1"]
+        for target, patch in changes.items():
+            if target == "package_sha256":
+                block["artifact_package"]["package_sha256"] = patch
+            elif target == "durability":
+                block["artifact_package"]["durability"] = patch
+            elif target == "executor_version":
+                block["build_definition"]["executor_version"] = patch
+            elif target == "artifact_digest":
+                block["artifact_digest"] = patch
+                block["test_result_identity"]["artifact_digest"] = patch
+            else:
+                raise AssertionError(target)
+        return document
+
+    def refused(self, result, reason):
+        self.assertEqual(result["verdict"]["admission"], "REJECT", result["verdict"])
+        self.assertIn(reason, result["verdict"]["rejected"])
+        self.assertFalse(result["verdict"]["accepted"])
+
+    # ------------------------------------------------------------- the four agree
+    def test_the_canonical_candidate_and_its_signed_result_are_one_set(self):
+        block = self.document["release_candidate_v1"]
+        identity = block["test_result_identity"]
+        self.assertEqual(self.signed["task_id"], identity["task_id"])
+        self.assertEqual(self.signed["executor_result"], identity["executor_result"])
+        self.assertEqual(self.signed["source_commit_sha"], block["source_commit"])
+        self.assertEqual(self.signed["built_image_id"], block["artifact_digest"])
+        self.assertEqual(self.signed["executor_version"],
+                         block["build_definition"]["executor_version"])
+        self.assertEqual(self.signed["artifact_durability"], "PROVEN")
+        self.assertEqual(self.signed["artifact_package"]["package_sha256"],
+                         block["artifact_package"]["package_sha256"])
+        self.assertEqual(self.signed["artifact_package"]["image_id"],
+                         block["artifact_digest"])
+        self.assertEqual(block["artifact_package"]["durability"], "PROVEN")
+
+    def test_the_reconciled_candidate_is_admitted_and_its_artifact_is_deliverable(self):
+        result = self.admit(self.document)
+        self.assertEqual(result["verdict"]["admission"], "ACCEPT", result["verdict"])
+        self.assertEqual(result["artifact_durability"]["state"], "PROVEN")
+        self.assertTrue(result["deployability"]["deployable_artifact_established"])
+        # still not an approval: nothing here may be read as permission to deploy
+        self.assertFalse(result["deployability"]["is_a_deploy_approval"])
+        self.assertFalse(result["authority_boundary"]["is_a_deploy_approval"])
+
+    # ------------------------------------------- builder provenance (B4-B1.4 gate)
+    def test_the_builder_the_candidate_declares_is_the_one_the_result_reports(self):
+        self.assertEqual(self.document["release_candidate_v1"]["build_definition"]
+                         ["executor_version"], "test-pr-v3")
+        self.assertEqual(self.signed["executor_version"], "test-pr-v3")
+
+    def test_a_candidate_relabelled_to_the_previous_builder_is_refused(self):
+        """The mutation that proves this round did not pass by the validator being lax.
+
+        Same candidate, same result, same artifact, same package: only the declared
+        builder generation moves back to the version that did not produce it.
+        """
+        self.refused(self.admit(self.mutated(executor_version="test-pr-v2")),
+                     "candidate_test_result_evidence_builder_version")
+
+    # ------------------------------------ image / evidence / package are one set
+    def test_a_package_the_signed_result_does_not_report_is_refused(self):
+        self.refused(self.admit(self.mutated(package_sha256="a" * 64)),
+                     "candidate_artifact_package_mismatch")
+
+    def test_a_package_proven_for_another_image_is_refused(self):
+        result = self.admit(self.mutated(artifact_digest=SUPERSEDED_ARTIFACT))
+        self.assertEqual(result["verdict"]["admission"], "REJECT", result["verdict"])
+        # whichever binding catches it first, the three are not one set any more
+        self.assertTrue({"candidate_test_result_evidence_artifact",
+                         "candidate_artifact_package_mismatch",
+                         "candidate_test_result_artifact_digest"}
+                        & set(result["verdict"]["rejected"]), result["verdict"])
+
+    def test_the_new_image_with_the_replaced_result_is_refused(self):
+        self.refused(self.admit(self.document, evidence=PREVIOUS_EVIDENCE),
+                     "candidate_test_result_evidence_task")
+
+    def test_a_proven_durability_with_no_package_address_is_refused(self):
+        self.refused(self.admit(self.mutated(package_sha256=None)),
+                     "candidate_artifact_package_identity")
+
+    def test_a_package_the_store_holds_but_the_result_never_reported_is_refused(self):
+        """The store holding a file is not the proof; the signed result is."""
+        document = self.mutated(durability="PROVEN",
+                                package_sha256="b" * 64)
+        self.refused(self.admit(document), "candidate_artifact_package_mismatch")
+
+    # ------------------------------------------------------- the evidence identity
+    def test_the_evidence_identity_is_the_commit_and_never_the_blob(self):
+        block = self.document["release_candidate_v1"]
+        self.assertEqual(block["test_result_identity"]["evidence_id"], CURRENT_REAL_EVIDENCE_ID)
+        raw = REAL_EVIDENCE.read_bytes()
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), CURRENT_REAL_EVIDENCE_SHA256)
+        self.assertNotEqual(block["test_result_identity"]["evidence_id"],
+                            CURRENT_REAL_EVIDENCE_BLOB)
+        reconciliation = self.document["release_candidate_reconciliation"]
+        self.assertEqual(reconciliation["new_evidence_commit"], CURRENT_REAL_EVIDENCE_ID)
+        # the blob is carried as audit information, beside the identity, not as it
+        self.assertEqual(reconciliation["new_evidence_blob_sha"], CURRENT_REAL_EVIDENCE_BLOB)
+        self.assertIn("audit information only", reconciliation["new_evidence_note"])
+
+    def test_the_reconciled_candidate_without_its_evidence_is_not_accepted(self):
+        """A PROVEN claim with no proof supplied is refused by name, not rounded up.
+
+        The evidence is what makes the package claim checkable. Supplying none leaves
+        the artifact binding unknown -- and because this candidate asserts a proven
+        package that no proof covers, admission refuses the claim rather than reporting
+        a verdict the claim does not support. Either way it is never ACCEPT.
+        """
+        result = self.admit(self.document, evidence=None)
+        self.assertEqual(result["verdict"]["admission"], "REJECT", result["verdict"])
+        self.assertFalse(result["verdict"]["accepted"])
+        self.assertIn("candidate_test_result_evidence_absent", result["verdict"]["unknown"])
+        self.assertIn("candidate_artifact_package_mismatch", result["verdict"]["rejected"])
+
+    def test_the_even_earlier_result_is_still_in_the_history(self):
+        """Three generations of the same candidate's builds are all still on record.
+
+        The fixtures are the evidence trail, not a cache: the result this round
+        replaced, and the one before it, both stay, and the replaced block's own
+        "previous" pointers name the earlier one.
+        """
+        earlier = json.loads(HISTORICAL_EVIDENCE.read_text(encoding="utf-8"))
+        self.assertEqual(earlier["task_id"], "go-boss-test-pr-52-83b0e20f3980")
+        superseded = [h for h in self.document["release_candidate_reconciliation_history"]
+                      if h.get("new_task_id") == "go-boss-test-pr-52-0673b27f427c"][0]
+        self.assertEqual(superseded["previous_task_id"], earlier["task_id"])
+        self.assertEqual(superseded["previous_artifact_digest"], earlier["built_image_id"])
+
+    def test_the_superseded_v2_result_is_preserved_as_history(self):
+        history = self.document.get("release_candidate_reconciliation_history")
+        self.assertIsInstance(history, list)
+        self.assertTrue(history, "the earlier reconciliation block was lost")
+        superseded = [h for h in history if h.get("new_task_id") == "go-boss-test-pr-52-0673b27f427c"]
+        self.assertEqual(len(superseded), 1, "the earlier reconciliation was rewritten, not kept")
+        self.assertEqual(superseded[0]["new_evidence_commit"],
+                         "24bad37acfb34200722a449c6a3672b14efec199")
+        self.assertEqual(superseded[0]["new_artifact_digest"], SUPERSEDED_ARTIFACT)
+        self.assertIn("why_not_case_b", superseded[0])
+        # the current block is the new event, and only the new one
+        self.assertEqual(self.document["release_candidate_reconciliation"]["new_evidence_commit"],
+                         CURRENT_REAL_EVIDENCE_ID)
+
+
 class ArtifactDurabilityTests(Base):
     """B4-B1.  A build identity is not a deliverable, and admission must say so.
 
@@ -696,14 +890,20 @@ class ArtifactDurabilityTests(Base):
 
     PACKAGE = "e" * 64
 
-    def test_the_canonical_candidate_reports_that_its_artifact_is_not_proven(self):
-        """The honest current state, not a guess and not a silent PASS."""
+    def test_the_canonical_candidate_reports_that_its_artifact_is_proven(self):
+        """The honest current state, which is no longer NOT_PROVEN.
+
+        Until B4-B1.5 this test pinned the opposite, truthfully: the canonical artifact
+        was v2-built and gone. The v3 build sealed it, so the assertion moves to the
+        fact instead of the assertion being dropped -- a candidate that says nothing
+        about durability is still never called deployable (the tests below).
+        """
         document = json.loads(CANONICAL.read_text(encoding="utf-8"))
         scratch = pathlib.Path(tempfile.mkdtemp(prefix="ccv1-admission-real-")) / "c.json"
         scratch.write_text(json.dumps(document), encoding="utf-8")
         result = A.admit(CONTRACT, scratch, REAL_EVIDENCE, None, GO, AT, AT)
-        self.assertEqual(result["artifact_durability"]["state"], "NOT_PROVEN")
-        self.assertIsNone(result["artifact_durability"]["package_sha256"])
+        self.assertEqual(result["artifact_durability"]["state"], "PROVEN")
+        self.assertEqual(result["artifact_durability"]["package_sha256"], CURRENT_PACKAGE)
 
     def test_a_candidate_that_says_nothing_about_durability_is_not_deployable(self):
         result = self.write(candidate())

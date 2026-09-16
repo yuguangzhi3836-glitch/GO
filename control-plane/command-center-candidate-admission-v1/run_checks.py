@@ -73,6 +73,8 @@ summary = {
     "a_test_result_for_another_candidate_is_refused": True,
     "a_builder_the_signed_result_does_not_corroborate_is_refused": True,
     "the_evidence_identity_is_the_evidence_repository_record": True,
+    "one_image_one_result_and_one_package_are_bound_as_a_set": True,
+    "the_replaced_reconciliation_is_preserved_as_history": True,
     "a_service_outside_the_fixed_topology_is_refused": True,
     "an_unresolvable_rollback_relation_is_refused": True,
     "an_unproven_input_is_unknown_never_accepted": True,

@@ -97,11 +97,11 @@
       "profile": "go-application-python-v1",
       "dockerfile": "Dockerfile.go-application-python-v2",
       "dockerfile_sha256": "caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b",
-      "executor_version": "test-pr-v2",
+      "executor_version": "test-pr-v3",
       "builder_image_tag": "go-hotel:depth48-runtime-6d0fd905",
       "builder_image_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"
     },
-    "artifact_digest": "sha256:fe0d2c3670444716cf0a84515a4321de1347b6be4570829d3767fe189a6e87e1",
+    "artifact_digest": "sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7",
     "required_services": [
       "api",
       "recovery-worker",
@@ -114,11 +114,11 @@
     ],
     "test_result_identity": {
       "action_id": "HK_STAGING_TEST_PR",
-      "task_id": "go-boss-test-pr-52-0673b27f427c",
-      "evidence_id": "24bad37acfb34200722a449c6a3672b14efec199",
+      "task_id": "go-boss-test-pr-52-0342850d8822",
+      "evidence_id": "1865b17d25e6baa6dd2bebc2bdee89cb9a621ad3",
       "source_pr_number": "52",
       "source_commit_sha": "bd25d7acca1b5f54a7fb555008ed60b76ee45f21",
-      "artifact_digest": "sha256:fe0d2c3670444716cf0a84515a4321de1347b6be4570829d3767fe189a6e87e1",
+      "artifact_digest": "sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7",
       "executor_result": "TEST_PR_OK"
     },
     "rollback_relation": {
@@ -126,43 +126,107 @@
       "previous_known_good_image_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"
     },
     "artifact_package": {
-      "durability": "NOT_PROVEN",
-      "package_sha256": null
+      "durability": "PROVEN",
+      "package_sha256": "e70238c7c12a67fe6ebd54958237790f82aad39f602bcea3e11699aaa651f382"
     }
   },
   "release_candidate_note": "Added 2026-09-16 by CC V1-08 candidate admission (#103); reconciled the same day with a fresh TEST_PR. Every value here is derived from an artifact that already existed: the signed TEST_PR Evidence supplied artifact_digest and test_result_identity, the staged builder supplied build_definition, the live runtime supplied the rollback target, and the live deploy contract supplied required_services. Nothing here is an approval and nothing here authorises a deployment.",
-  "artifact_package_note": "Added 2026-09-16 by CC V1 / B4-B1. durability is NOT_PROVEN because it is the truth: test-pr-v2 built this image, reported built_image_id in signed Evidence, and removed the image in its finally block, so no copy of these bytes exists anywhere and nothing can deliver them. The signed TEST_PR result stays valid as historical proof of the build and is not rewritten. A future candidate reaches PROVEN only after a test-pr-v3 build seals the image into the fixed store and reports the package content address, and no plan may name a package this block does not prove.",
+  "artifact_package_note": "Rewritten 2026-09-16 by B4-B1.5; it previously recorded NOT_PROVEN, which was the truth then. durability is PROVEN because it is the truth now: the fresh bounded TEST_PR go-boss-test-pr-52-0342850d8822 was built by test-pr-v3, which seals the image into the fixed store and reports the package content address in its own signed Evidence (package_sha256 e70238c7..., 115588608 bytes, image identity role root_descriptor). The authority chain is signed TEST_PR Evidence -> artifact image -> artifact package; a file merely existing in the host store is not the proof. The v2 result stays in the evidence repository as history, and remains the explanation of why the earlier artifact was never deliverable: it reported built_image_id and then removed the image in its finally block, so no copy of those bytes existed anywhere.",
   "release_candidate_reconciliation": {
     "schema": "go.release-candidate.reconciliation.v1",
-    "changed_at": "2026-09-16T04:05:37Z",
-    "reason": "A fresh bounded TEST_PR was run against this exact candidate through the formal channel (Request PR chenzhenxi1-sudo/go-control-tasks#25 for HK_STAGING_TEST_PR pr_number 52), because the frozen path requires a TEST_PR of the exact candidate rather than only the historical one.",
-    "request_id": "boss-hk-test-pr52-fresh-20260916T0401Z",
-    "new_task_id": "go-boss-test-pr-52-0673b27f427c",
-    "new_evidence_commit": "24bad37acfb34200722a449c6a3672b14efec199",
-    "previous_task_id": "go-boss-test-pr-52-83b0e20f3980",
-    "previous_artifact_digest": "sha256:bed9eddeb94b4fe93cd41fa4a071a3700ef0a93343432a4c77e1e11fb7aae984",
-    "new_artifact_digest": "sha256:fe0d2c3670444716cf0a84515a4321de1347b6be4570829d3767fe189a6e87e1",
-    "verdict": "CASE_A_SAME_SOURCE_SAME_CONTROLLED_BUILD_NEW_IMMUTABLE_ARTIFACT",
-    "why_not_case_b": {
-      "source_commit_sha": "identical (bd25d7acca1b5f54a7fb555008ed60b76ee45f21)",
-      "source_pr_number": "identical (52)",
-      "executor_version": "identical (test-pr-v2)",
-      "dockerfile": "identical (Dockerfile.go-application-python-v2, sha256 caad37b1...)",
-      "builder_image": "identical (go-hotel:depth48-runtime-6d0fd905, pinned by tag and id inside the executor)",
-      "gate_results": "identical (offline_build / isolated_runtime_checks / source_commit all PASS)",
-      "deployment_performed": "false in both",
-      "remaining_difference": "only built_image_id, which is Docker's own layer identity: a rebuild is not bit-reproducible, so the same source and the same controlled build legitimately yield a new immutable image."
+    "changed_at": "2026-09-16T14:45:43Z",
+    "reason": "A second fresh bounded TEST_PR was run against this exact candidate through the formal channel (Request PR chenzhenxi1-sudo/go-control-tasks#30 for HK_STAGING_TEST_PR pr_number 52). Two things needed it at once: the frozen path requires a TEST_PR of the exact candidate, and this candidate's builder generation changed -- test-pr-v3 seals the image it builds into the fixed store, where test-pr-v2 reported an image id and then removed the image, leaving nothing deliverable.",
+    "request_pr_number": 30,
+    "request_id": "boss-hk-test-pr52-b4b13-20260916T1442Z",
+    "request_commit": "d376a4b5127fe7e28637fbf1393c39412f48ab63",
+    "requested_at": "2026-09-16T14:42:26Z",
+    "new_task_id": "go-boss-test-pr-52-0342850d8822",
+    "new_task_commit": "d8ae2bb2b330b4734fa9c04955fc2dfce76c4700",
+    "new_task_nonce": "BHxETPRzcd-8wM9TCrKdOQr-KZ_SZTqK",
+    "new_evidence_commit": "1865b17d25e6baa6dd2bebc2bdee89cb9a621ad3",
+    "new_evidence_blob_sha": "0500b1a098cc9b5e113922facb16b409372ef75a",
+    "new_evidence_note": "new_evidence_blob_sha is audit information only. evidence_id is the evidence repository's record identity -- here the commit -- and has never been the blob id.",
+    "new_evidence_completed_at": "2026-09-16T14:45:43Z",
+    "previous_task_id": "go-boss-test-pr-52-0673b27f427c",
+    "previous_evidence_commit": "24bad37acfb34200722a449c6a3672b14efec199",
+    "previous_artifact_digest": "sha256:fe0d2c3670444716cf0a84515a4321de1347b6be4570829d3767fe189a6e87e1",
+    "new_artifact_digest": "sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7",
+    "new_package_sha256": "e70238c7c12a67fe6ebd54958237790f82aad39f602bcea3e11699aaa651f382",
+    "new_artifact_durability": "PROVEN",
+    "verdict": "CASE_A2_SAME_SOURCE_AND_BUILDER_BASELINE_NEW_EXECUTOR_GENERATION_AND_DURABLE_ARTIFACT",
+    "what_changed": {
+      "executor_version": "test-pr-v2 -> test-pr-v3: the artifact this candidate now names was built, tested and sealed by the durable-capable builder",
+      "artifact_digest": "a new immutable image, because a rebuild is not bit-reproducible",
+      "artifact_durability": "NOT_PROVEN -> PROVEN: the v3 build sealed the image into the fixed store, so the bytes exist and can be delivered",
+      "gate_results": "the v2 result carried 3 gates, the v3 result carries 4: B4-B1 added the artifact_sealed gate"
     },
-    "identity_rule_applied": "artifact_digest and test_result_identity move together to the artifact the new signed result produced. The previous test result stays in the evidence repository as history; a stale artifact paired with a new test result is never kept.",
+    "what_did_not_change": {
+      "source_commit": "bd25d7acca1b5f54a7fb555008ed60b76ee45f21",
+      "source_pr_number": "52",
+      "application_tree": "ad7d1de1190f86ad29d1c6cdafbcedd592e27206",
+      "source_fingerprint": "8e91fcf25e66478d5dac105c2608a195a98290640f2ecbfcec24fda27f212ac8",
+      "build_profile": "go-application-python-v1",
+      "dockerfile": "Dockerfile.go-application-python-v2",
+      "dockerfile_sha256": "caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b",
+      "builder_image": "go-hotel:depth48-runtime-6d0fd905, pinned by tag and id",
+      "deployment_performed": "false in both results"
+    },
+    "why_not_a_repeat_of_the_previous_case": "The previous reconciliation moved only the artifact, between two builds of the same executor generation, and could say the executor version and the gate results were identical. This one cannot: the executor generation itself changed, and the artifact's durability changed with it. Both are recorded as written above rather than copied forward.",
+    "identity_rule_applied": "artifact_digest, test_result_identity and artifact_package move together to the artifact the new signed result produced. The previous test result stays in the evidence repository as history; a stale artifact paired with a new test result is never kept.",
     "unchanged": [
       "source_commit",
       "application_tree",
       "source_fingerprint",
       "migration_head",
       "migration_required",
-      "build_definition",
       "required_services",
-      "rollback_relation"
+      "rollback_relation",
+      "build_definition.profile",
+      "build_definition.dockerfile",
+      "build_definition.dockerfile_sha256",
+      "build_definition.builder_image_tag",
+      "build_definition.builder_image_id"
+    ],
+    "changed": [
+      "build_definition.executor_version",
+      "artifact_digest",
+      "test_result_identity",
+      "artifact_package"
     ]
-  }
+  },
+  "release_candidate_reconciliation_history": [
+    {
+      "schema": "go.release-candidate.reconciliation.v1",
+      "changed_at": "2026-09-16T04:05:37Z",
+      "reason": "A fresh bounded TEST_PR was run against this exact candidate through the formal channel (Request PR chenzhenxi1-sudo/go-control-tasks#25 for HK_STAGING_TEST_PR pr_number 52), because the frozen path requires a TEST_PR of the exact candidate rather than only the historical one.",
+      "request_id": "boss-hk-test-pr52-fresh-20260916T0401Z",
+      "new_task_id": "go-boss-test-pr-52-0673b27f427c",
+      "new_evidence_commit": "24bad37acfb34200722a449c6a3672b14efec199",
+      "previous_task_id": "go-boss-test-pr-52-83b0e20f3980",
+      "previous_artifact_digest": "sha256:bed9eddeb94b4fe93cd41fa4a071a3700ef0a93343432a4c77e1e11fb7aae984",
+      "new_artifact_digest": "sha256:fe0d2c3670444716cf0a84515a4321de1347b6be4570829d3767fe189a6e87e1",
+      "verdict": "CASE_A_SAME_SOURCE_SAME_CONTROLLED_BUILD_NEW_IMMUTABLE_ARTIFACT",
+      "why_not_case_b": {
+        "source_commit_sha": "identical (bd25d7acca1b5f54a7fb555008ed60b76ee45f21)",
+        "source_pr_number": "identical (52)",
+        "executor_version": "identical (test-pr-v2)",
+        "dockerfile": "identical (Dockerfile.go-application-python-v2, sha256 caad37b1...)",
+        "builder_image": "identical (go-hotel:depth48-runtime-6d0fd905, pinned by tag and id inside the executor)",
+        "gate_results": "identical (offline_build / isolated_runtime_checks / source_commit all PASS)",
+        "deployment_performed": "false in both",
+        "remaining_difference": "only built_image_id, which is Docker's own layer identity: a rebuild is not bit-reproducible, so the same source and the same controlled build legitimately yield a new immutable image."
+      },
+      "identity_rule_applied": "artifact_digest and test_result_identity move together to the artifact the new signed result produced. The previous test result stays in the evidence repository as history; a stale artifact paired with a new test result is never kept.",
+      "unchanged": [
+        "source_commit",
+        "application_tree",
+        "source_fingerprint",
+        "migration_head",
+        "migration_required",
+        "build_definition",
+        "required_services",
+        "rollback_relation"
+      ]
+    }
+  ]
 }

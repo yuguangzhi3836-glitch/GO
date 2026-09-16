@@ -176,6 +176,9 @@ jobs:
                    'candidate_test_result_artifact_digest'),
               'a_builder_the_signed_result_does_not_corroborate_is_refused':
                   (relabel_builder, 'candidate_test_result_evidence_builder_version'),
+              'a_package_the_signed_result_does_not_report_is_refused':
+                  (lambda v: v['artifact_package'].update(package_sha256='a' * 64),
+                   'candidate_artifact_package_mismatch'),
               'a_service_outside_the_topology_is_refused':
                   (lambda v: v.update(required_services=['api']), 'fixed_topology_required'),
               'a_broken_rollback_relation_is_refused':
@@ -187,11 +190,16 @@ jobs:
               ok, verdict = refused(mutation, reason)
               check(name, ok, verdict)
 
-          # 5. an unproven input is UNKNOWN, never ACCEPT
+          # 5. an unproven input is never ACCEPT.  Since the candidate claims a proven
+          #    package (B4-B1.5), an evidence-less run refuses that claim by name --
+          #    no proof covers it -- and records the absent evidence as the unknown it
+          #    is, rather than reporting either as the other.
           result = A.admit(component / A.CONTRACT_FILE, canonical, None, None, repo)
-          check('an_absent_test_result_context_is_unknown_not_accepted',
-                result['verdict']['admission'] == 'UNKNOWN'
-                and 'candidate_test_result_evidence_absent' in result['verdict']['unknown'],
+          check('an_absent_test_result_context_is_never_accepted',
+                result['verdict']['admission'] != 'ACCEPT'
+                and not result['verdict']['accepted']
+                and 'candidate_test_result_evidence_absent' in result['verdict']['unknown']
+                and 'candidate_artifact_package_mismatch' in result['verdict']['rejected'],
                 result['verdict'])
 
           # 6. readiness refuses a candidate that is not a RELEASE_CANDIDATE_V1
