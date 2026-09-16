@@ -206,13 +206,13 @@ class SchedulerContractTests(unittest.TestCase):
             "source_anchor": validator.SOURCE_ANCHOR,
             "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
             "status": "RUNNING", "acknowledged_at": "2026-09-14T00:00:01Z",
-            "started_at": "2026-09-14T00:00:02Z", "observed_at": "2026-09-14T00:00:03Z",
+            "started_at": "2026-09-14T00:00:02Z", "heartbeat_at": "2026-09-14T00:00:03Z",
             "execution_evidence": [{"kind": "PROCESS_OUTPUT", "path": log_path.name,
                                     "sha256": hashlib.sha256(log_path.read_bytes()).hexdigest()}],
         }
 
     def receipt_check(self, receipt):
-        return self.receipt_verifier().verify(receipt, self.root, expected_cell="C12", expected_task="V70-R2-C12-02", expected_agent="/root/c12_scheduler")
+        return self.receipt_verifier().verify(receipt, self.root, expected_cell="C12", expected_task="V70-R2-C12-02", expected_agent="/root/c12_scheduler", observed_at="2026-09-14T00:00:04Z")
 
     def test_receipt_assigned_without_ack_cannot_be_admitted_as_running(self):
         receipt = self.receipt()
