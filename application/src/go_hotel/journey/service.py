@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from uuid import uuid4
-from sqlalchemy import select, tuple_
+from sqlalchemy import exists, func, or_, select, tuple_
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (
     GoJourneyRow,GoJourneyItemRow,OrderRow,FlightOrderRow,RailOrderRow,
@@ -71,6 +71,47 @@ class JourneyService:
     for item in items: items_by_journey[item.journey_id].append(item)
    statuses=self._batch_order_statuses(s,rows,items_by_journey)
    return [self._serialize(s,x,refresh=True,items=items_by_journey[x.journey_id],statuses=statuses) for x in rows]
+ def list_page(self,account_id,limit=20,offset=0,query=None):
+  """Return one bounded, deterministic Journey page.
+
+  Offset pagination is explicit for the first contract version. The stable
+  tie-breaker prevents duplicate ordering inside a fixed snapshot; callers
+  receive has_more/next_offset and never a full-result count query.
+  """
+  limit=max(1,min(int(limit),100));offset=max(0,int(offset))
+  with SessionLocal() as s:
+   active_member=exists(select(ConsumerTripMemberRow.trip_member_id).where(
+    ConsumerTripMemberRow.journey_id==GoJourneyRow.journey_id,
+    ConsumerTripMemberRow.user_id==account_id,
+    ConsumerTripMemberRow.status=='ACTIVE',
+   ))
+   statement=select(GoJourneyRow).where(or_(GoJourneyRow.account_id==account_id,active_member))
+   normalized=(query or '').strip().lower()
+   if normalized:
+    pattern=f"%{normalized}%"
+    statement=statement.where(or_(
+     func.lower(GoJourneyRow.title).like(pattern),
+     func.lower(func.coalesce(GoJourneyRow.destination_summary,'')).like(pattern),
+    ))
+   rows=s.execute(statement.order_by(
+    GoJourneyRow.starts_at.asc().nulls_last(),
+    GoJourneyRow.created_at.asc(),
+    GoJourneyRow.journey_id.asc(),
+   ).offset(offset).limit(limit+1)).scalars().all()
+   has_more=len(rows)>limit;rows=rows[:limit]
+   items_by_journey={x.journey_id:[] for x in rows}
+   journey_ids=list(items_by_journey)
+   if journey_ids:
+    items=s.execute(select(GoJourneyItemRow).where(GoJourneyItemRow.journey_id.in_(journey_ids)).order_by(
+     GoJourneyItemRow.journey_id,GoJourneyItemRow.sort_key,GoJourneyItemRow.created_at
+    )).scalars().all()
+    for item in items: items_by_journey[item.journey_id].append(item)
+   statuses=self._batch_order_statuses(s,rows,items_by_journey)
+   return {
+    "items":[self._serialize(s,x,refresh=True,items=items_by_journey[x.journey_id],statuses=statuses) for x in rows],
+    "page":{"limit":limit,"offset":offset,"has_more":has_more,"next_offset":offset+limit if has_more else None},
+    "query":normalized or None,
+   }
  def _batch_order_statuses(self,s,journeys,items_by_journey):
   keys_by_vertical={}
   for journey in journeys:
