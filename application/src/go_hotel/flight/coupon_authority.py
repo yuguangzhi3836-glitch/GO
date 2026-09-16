@@ -132,3 +132,68 @@ def authorize(store, plan_id, consent, allocations, *, authority_keys,
                                "allocations": deepcopy(allocations)},
             "credit_instruction": {"amount_minor": record["credit_minor"],
                                    "mode": "CREDIT_NOT_NETTED"}}
+
+
+def _partial_party_contract(record, selection):
+    """Return a canonical partial-party selection bound to the frozen plan."""
+    if not isinstance(selection, list) or not selection:
+        raise ValueError("COUPON_AUTHORITY_PARTIAL_SELECTION_INVALID")
+    available = {
+        (row.get("passenger_index"), row.get("leg_index"))
+        for row in record["plan"]["changes"]
+        if isinstance(row, dict)
+    }
+    canonical = []
+    seen = set()
+    for row in selection:
+        if (not isinstance(row, dict)
+                or set(row) != {"passenger_index", "leg_index"}
+                or type(row["passenger_index"]) is not int
+                or type(row["leg_index"]) is not int
+                or row["passenger_index"] < 0 or row["leg_index"] < 0):
+            raise ValueError("COUPON_AUTHORITY_PARTIAL_SELECTION_INVALID")
+        pair = (row["passenger_index"], row["leg_index"])
+        if pair in seen or pair not in available:
+            raise ValueError("COUPON_AUTHORITY_PARTIAL_SELECTION_INVALID")
+        seen.add(pair)
+        canonical.append({"passenger_index": pair[0], "leg_index": pair[1]})
+    canonical.sort(key=lambda item: (item["passenger_index"], item["leg_index"]))
+    return canonical
+
+
+def authorize_partial_party(store, plan_id, consent, allocations, selection, *,
+                            idempotency_key, execution_store, authority_keys,
+                            retired_key_ids=None):
+    """Authorize one exact traveler/coupon subset without provider side effects.
+
+    The idempotency record is written only after the underlying immutable plan,
+    exact consent, allocation and selection have all passed. Exact replay
+    returns the same contract; key reuse with different authority fails closed.
+    """
+    if (not isinstance(execution_store, dict)
+            or not isinstance(idempotency_key, str)
+            or not idempotency_key.strip()):
+        raise ValueError("COUPON_AUTHORITY_IDEMPOTENCY_INVALID")
+    record = deepcopy(store.get(plan_id)) if isinstance(store, dict) else None
+    if not record:
+        raise ValueError("COUPON_AUTHORITY_NOT_FOUND")
+    canonical = _partial_party_contract(record, selection)
+    selection_digest = hashlib.sha256(_json(canonical)).hexdigest()
+    authority = authorize(
+        store, plan_id, consent, allocations, authority_keys=authority_keys,
+        retired_key_ids=retired_key_ids)
+    contract = {
+        "plan_id": plan_id,
+        "authority_mac": authority["authority_mac"],
+        "selection": canonical,
+        "selection_digest": selection_digest,
+        "payment_intent": authority["payment_intent"],
+        "credit_instruction": authority["credit_instruction"],
+    }
+    existing = execution_store.get(idempotency_key)
+    if existing is not None:
+        if existing != contract:
+            raise ValueError("COUPON_AUTHORITY_IDEMPOTENCY_CONFLICT")
+        return deepcopy(existing)
+    execution_store[idempotency_key] = deepcopy(contract)
+    return deepcopy(contract)
