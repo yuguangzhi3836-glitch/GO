@@ -42,8 +42,8 @@ def main():
         fingerprint[path] = digest
     for path, digest in inherited['compatibility_git_blobs'].items():
         assert blob((ROOT/path).read_bytes()) == digest, 'COMPATIBILITY_CHANGED:' + path
-    migration=(APP/'alembic/versions/0135_go_ai_execution.py').read_text()
-    assert 'revision = "0135_go_ai_execution"' in migration
+    migration=(APP/'alembic/versions/0136_merge_go_ai_journey.py').read_text()
+    assert 'revision = "0136_merge_go_ai_journey"' in migration
     assert 'down_revision = "0134_flight_status_width"' in migration
     model=(APP/'src/go_hotel/db/models.py').read_text()
     assert 'status: Mapped[str] = mapped_column(String(64), nullable=False, index=True)' in model
@@ -55,7 +55,7 @@ def main():
     report={'product_candidate_commit':current['product_candidate_commit'],'gate_commit':git('rev-parse','HEAD'),
             'application_tree':current['application_git_tree'],'source_files':len(expected),'source_tree_sha256':tree,
             'inherited_baseline_blob':current['inherited_manifest']['git_blob'],'approved_overrides':sorted(overrides),
-            'migration_head':'0135_go_ai_execution','byte_retention':'PASS','deployment':'NOT_RUN',
+            'migration_head':'0136_merge_go_ai_journey','byte_retention':'PASS','deployment':'NOT_RUN',
             'final_release':'HOLD','production':'HOLD'}
     (out/'RETENTION_RESULT.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report))
