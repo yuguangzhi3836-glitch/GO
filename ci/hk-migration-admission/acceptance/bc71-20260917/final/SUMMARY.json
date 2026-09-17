@@ -1,0 +1,85 @@
+{
+  "application_health_proven": false,
+  "application_tree": "41221557ee5d3709775cd282b02d8c30fc7e0860",
+  "archive_authorization": {
+    "repository": "yuguangzhi3836-glitch/GO",
+    "scope": [
+      "deployment",
+      "VERIFY",
+      "site state",
+      "repair records"
+    ],
+    "user_instruction": "允许将本次部署、VERIFY、现场状态及修复记录归档至私库 yuguangzhi3836-glitch/GO。",
+    "visibility": "private"
+  },
+  "candidate_contract_sha256": "23d78ea846b21ace5318335eacb2a75826db5ff56cd925c8f8c58f6a83babed6",
+  "control_state_closeout": {
+    "content_digest": "sha256:720d899a6cdd0329fbd71f568e5f0a3d4b86a28388f5012f1554841e4c7ed60d",
+    "cycle": "OK",
+    "generated_at": "2026-09-17T16:09:51Z",
+    "live_image_id": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+    "pointer_verify": "OK",
+    "post_verify_lifecycle": "COMPLETE",
+    "post_verify_state": "PROVEN",
+    "projector_integrity": "OK",
+    "run_id": "20260917T160951Z_720d899a6cdd"
+  },
+  "control_state_updated": true,
+  "database_revision": "0137_hosted_unknown_episode",
+  "deploy_completed_at": "2026-09-17T15:38:25Z",
+  "deploy_task": "go-boss-deploy-ea03fc907ecb1dee90a7a7de",
+  "deployment_complete": true,
+  "final_release": "HOLD",
+  "fixed_eight_services": "PASS",
+  "host_observed_at": "2026-09-17T15:55:55.657858+00:00",
+  "image_id": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+  "non_targets_unchanged": "PASS",
+  "original_evidence_commits": [
+    "22bd0e0245966984aca514dec6e30c9dfbb85645",
+    "ad3489ab3b1c3e18c7912b5a05383e726593849b"
+  ],
+  "original_evidence_repository": "chenzhenxi1-sudo/go-control-evidence",
+  "post_verify_completed_at": "2026-09-17T15:41:28Z",
+  "post_verify_task": "go-boss-post-deploy-verify-f016809ff1cb",
+  "prior_archive_attempts": {
+    "reason": "Automatic review rejected original records and reduced metadata summary, requiring explicit trusted end-user authorization for this payload and destination.",
+    "status": "BLOCKED_AUTO_REVIEW",
+    "subsequent_user_authorization": "EXPLICIT_CURRENT_TURN"
+  },
+  "production": "HOLD",
+  "projector_installation_repair": {
+    "after_sha256": "724da9e64f107c32a031bcacf05a78b4a914ba1404ca29b42375865bca7d5e05",
+    "before_sha256": "b208b4a702720d156b3f3279f6cdc77e00f69e3590686a035e7b1d56c5f7124e",
+    "integrity_check_retained": true,
+    "observed_at": "2026-09-17T16:08:43.365178+00:00",
+    "source_modified": false,
+    "source_revision": "bc71a91bff31a092aae003e061622878b8ef4bf6",
+    "status": "PASS"
+  },
+  "real_supplier_connections": "HOLD",
+  "record_hashes": "PASS",
+  "remaining_defect": null,
+  "repair_plan": {
+    "behavior": "Check reviewed bytes and old metadata digest; back up; atomically record installed revision and hashes; preserve all other metadata; resume existing state timer.",
+    "expected_companion_sha256": "8b4213eea8ea29b838490d41b99070fc5726d8207812be10be872ab149f6ff3e",
+    "expected_old_record_sha256": "b208b4a702720d156b3f3279f6cdc77e00f69e3590686a035e7b1d56c5f7124e",
+    "expected_projector_sha256": "b7897d85ba14529952ff0e394270bca68bbd714f492f3c7ab324b5d436f1ae2f",
+    "installer_sha256": "602e289fecb1fe2fce603b68f6524cdce18f85c03e45d8fcacf29149fec4252c",
+    "reviewed_source_commit": "bc71a91bff31a092aae003e061622878b8ef4bf6",
+    "scope": "Installation metadata only; preserve integrity comparison"
+  },
+  "schema": "go.issue103.deployment-closeout.v1",
+  "scope": "HK-STAGING_DEPLOY_AND_INDEPENDENT_VERIFY",
+  "scope_note": "Deployment only; no full business journey or final release claim.",
+  "signatures": "PASS",
+  "single_attempt": "PASS",
+  "source_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+  "status": "PASS_SCOPED",
+  "verification_artifacts_sha256": {
+    "DEPLOY_EVIDENCE.json": "f268eaed842a3c584c3e02557dd05486b0329e3f4af84a37090f66cfad91b041",
+    "DEPLOY_TASK.json": "709932c0cf26c297fe02bbd9ea1faff32d34458515230b2ab0461257b3bce16a",
+    "POST_VERIFY_EVIDENCE.json": "749b01ac45a4327faeaa628131388bc574ed04e14608286cf0df5f71859b7f6e",
+    "POST_VERIFY_TASK.json": "b80e4074e7688307b021e1a8350265cfc48f36b18f125476e087f55c005258ad",
+    "verify_closeout.py": "ca0de08ddafc80d0da57604b01855b95b3591935d1cca6a02c8a8535ffa7c4b5"
+  }
+}

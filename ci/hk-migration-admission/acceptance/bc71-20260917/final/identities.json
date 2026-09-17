@@ -1,0 +1,119 @@
+{
+  "schema_version": "1",
+  "contract": "VERIFIER_IDENTITIES_V1",
+  "scope": "CONTROL_STATE_AND_STATUS_ONLY",
+  "authority": "NOT_EXECUTION_AUTHORITY",
+  "purpose": "Publish the two verifier identities the Control Plane relies on, so that a real Signed Task and a real Signed Evidence record can be raised from OBSERVED to PROVEN by an independent reader instead of being taken on trust.",
+  "publication": {
+    "repository": "yuguangzhi3836-glitch/GO",
+    "location": "control-plane/command-center-state-v1/identity/",
+    "keys_directory": "identity/keys/",
+    "contract_path": "identity/VERIFIER_IDENTITIES_V1.json",
+    "read_only_for_chatgpt": true,
+    "generated_not_hand_edited": true,
+    "public_key_material_published": true,
+    "private_key_published": false,
+    "publication_rule": "Only public key material is published. Private keys stay on their hosts, are never committed, never copied into a projection and never transmitted. A published public key is a verification aid, not an authority: it cannot sign, cannot publish a Task and cannot authorize an operation."
+  },
+  "identity_discipline": {
+    "task_and_evidence_must_be_distinct_identities": true,
+    "one_key_may_not_serve_two_roles": true,
+    "proven_requires_both_identities_bound": true,
+    "missing_key_never_yields_proven": true,
+    "mismatched_key_is_fail_closed": true,
+    "crossed_identity_is_rejected": true,
+    "unresolved_contract_is_fail_closed": true
+  },
+  "identities": [
+    {
+      "identity_id": "GO-CC-TASK-MANIFEST-SIGNER",
+      "role": "TASK",
+      "display_name": "GO Command Center task-manifest signer",
+      "algorithm": "Ed25519",
+      "signature_encoding": "hex",
+      "public_key_format": "openssh-ed25519",
+      "public_key_path": "identity/keys/cc-task-manifest-signing.pub",
+      "public_key_file_sha256": "7329ad0eff6c38973b0aa5c7481ae9e61d8383dd98f790940c8970eceaaad42c",
+      "public_key_ssh_sha256": "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns",
+      "public_key_raw_sha256": "b079fb544ed9efbed03f0641f9ecdbb4c738bf525ef440998d6b30fad86d30df",
+      "host_source_path": "/etc/go-command-center/keys/task-manifest-signing.pub",
+      "status": "ACTIVE",
+      "binding": "TWO_SIDED",
+      "retrieval": {
+        "retrieved_at": "2026-09-14T14:34:46Z",
+        "host": "i-j6c7k6k01biwlbnwutu5",
+        "host_hostname": "iZj6c7k6k01biwlbnwutu5Z",
+        "method": "read-only file read over the Alibaba Cloud Workbench tunnel; no write, no service change, no signing, no deployment",
+        "verified_by": "independent local recomputation of both fingerprint forms from the retrieved bytes"
+      },
+      "counterparts": [
+        {
+          "host_path": "/etc/go-command-center/deployment-plans-v1/authority.pub",
+          "relation": "IDENTICAL_KEY",
+          "evidence": "read-only retrieval 2026-09-14; byte-identical, same sha256 7329ad0eff6c3897"
+        },
+        {
+          "host_path": "/etc/go-hk-agent/keys/task-verify.pub",
+          "relation": "IDENTICAL_KEY",
+          "evidence": "hk-staging/audit/20260911/KEY_FINGERPRINTS.txt records SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns"
+        }
+      ],
+      "archived_fingerprint_evidence": [
+        "command-center/audit/20260911/KEY_FINGERPRINTS.txt",
+        "hk-staging/audit/20260911/KEY_FINGERPRINTS.txt"
+      ],
+      "why_the_binding_is_two_sided": "The Hong Kong agent verifies incoming Tasks with its own copy at /etc/go-hk-agent/keys/task-verify.pub. The archived fingerprint of that file equals the fingerprint published here, so the signer and the verifier provably hold the same identity."
+    },
+    {
+      "identity_id": "HK-AGENT-EVIDENCE-SIGNER",
+      "role": "EVIDENCE",
+      "display_name": "Hong Kong agent evidence signer",
+      "algorithm": "Ed25519",
+      "signature_encoding": "base64",
+      "public_key_format": "openssh-ed25519",
+      "public_key_path": "identity/keys/hk-evidence-signing.pub",
+      "public_key_file_sha256": "3800e9a87b2fe47c2ccdb18209ac35bec0cfe5cc7a1c1ad3927573fe848d7ae3",
+      "public_key_ssh_sha256": "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw",
+      "public_key_raw_sha256": "53febb3f28fa835f2f2d88cf34a5aefca124aa95a43335e5688157c89f4200c7",
+      "host_source_path": "/etc/go-hk-agent/keys/evidence-signing.pub",
+      "status": "ACTIVE",
+      "binding": "TWO_SIDED",
+      "retrieval": {
+        "retrieved_at": "2026-09-14T14:34:46Z",
+        "host": "i-j6c7k6k01biwlbnwutu5",
+        "host_hostname": "iZj6c7k6k01biwlbnwutu5Z",
+        "method": "read-only file read of the Command Center verifier copy over the Alibaba Cloud Workbench tunnel; no write, no service change, no signing, no deployment",
+        "verified_by": "independent local recomputation of both fingerprint forms from the retrieved bytes",
+        "note": "The Hong Kong host was not reachable from this workstation at retrieval time (two attempts, connection timeout). The signer-side copy at /etc/go-hk-agent/keys/evidence-signing.pub was therefore not re-read live; it is covered by the committed 2026-09-11 audit fingerprint, with which this key agrees."
+      },
+      "counterparts": [
+        {
+          "host_path": "/etc/go-hk-agent/keys/evidence-signing.pub",
+          "relation": "IDENTICAL_KEY",
+          "evidence": "hk-staging/audit/20260911/KEY_FINGERPRINTS.txt records SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw"
+        }
+      ],
+      "archived_fingerprint_evidence": [
+        "hk-staging/audit/20260911/KEY_FINGERPRINTS.txt"
+      ],
+      "why_the_binding_is_two_sided": "The key published here is the exact key the Hong Kong host's own audit recorded for the evidence signer, so a published verifier and the signing host provably share one identity. The live signer-side read is NOT_PERFORMED and is reported as such rather than assumed."
+    }
+  ],
+  "separation_evidence": {
+    "task_public_key_ssh_sha256": "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns",
+    "evidence_public_key_ssh_sha256": "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw",
+    "distinct": true,
+    "statement": "The two identities are different keys. A Task cannot validate against the evidence key and Evidence cannot validate against the task key. If a reader is handed one key for both roles the projection records an identity collision and refuses every PROVEN claim."
+  },
+  "rotation": {
+    "current_rotation": "NONE",
+    "rule": "A rotation publishes a new identity entry with a new identity_id and a new fingerprint, and supersedes the old one. An identity is never silently replaced in place, and a superseded fingerprint is never deleted while Evidence carrying it still exists."
+  },
+  "what_this_contract_does_not_do": [
+    "It does not sign anything.",
+    "It does not create, publish or approve a Task.",
+    "It does not call the Narrow Executor or reach Hong Kong.",
+    "It does not evaluate deploy or rollback readiness.",
+    "It is not Execution Authority."
+  ]
+}
