@@ -1,10 +1,21 @@
 #!/bin/sh
 set -eu
 root=${1:?staged candidate root required}
+mode=${2:-initial}
 (
   cd "$root"
   sha256sum -c SHA256SUMS
 )
+case "$mode" in
+  upgrade)
+    observed_before=${3:?source-bound observed-before JSON required}
+    candidate_sha=${4:?exact candidate SHA required}
+    exec python3 "$root/install/upgrade_hk_agent.py" \
+      --root "$root" --observed-before "$observed_before" --candidate-sha "$candidate_sha"
+    ;;
+  initial) ;;
+  *) echo "unsupported install mode: $mode" >&2; exit 64 ;;
+esac
 "$root/install/preflight.sh" hk-staging
 test "$(id -u)" = 0
 backup=/var/lib/go-hk-agent/test-pr-install-backup

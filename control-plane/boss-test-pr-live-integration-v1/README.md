@@ -404,3 +404,35 @@ the exact tar as `failures/<sha256(task_id NUL nonce)>.tar`, mode 0600 beneath t
 trusted-writer 0700 store. The existing failure Evidence diagnostic carries only that
 identifier, the archive SHA256 and its byte count. The retained bytes grant no retry,
 replay, load, migration or deployment authority.
+
+## Controlled maintenance upgrade
+
+`install/install-hk-agent.sh` keeps the original one-time `initial` contract and
+adds an explicit `upgrade` mode. Upgrade is a shared-control-plane maintenance
+operation only; it cannot create a TEST_PR or invoke VERIFY, CANARY, DEPLOY,
+ROLLBACK, a business container, or a database.
+
+The operator must first produce one `go.hk-agent-upgrade-before.v1` JSON document
+bound to the exact candidate commit. It contains only SHA-256, owner, group,
+mode and present/absent state for the fixed installer scope, plus the observed
+timer/service state. The installer rejects a missing key, an extra key, a
+candidate mismatch, any live drift, an active service, an inactive/disabled
+timer, an unsafe symlink, or a component-manifest mismatch before writing.
+
+The source-bound invocation is:
+
+    install/install-hk-agent.sh <staged-exact-component> upgrade \
+      <observed-before.json> <exact-40-hex-candidate-sha>
+
+Upgrade stops only the polling timer, waits for the oneshot service to be
+inactive, creates a unique root-only
+`/var/backups/HK-CHANGE-<UTC>-pr188-<random>/` directory, verifies every backup,
+and replaces each fixed target through an fsynced same-directory temporary file
+and atomic rename. A failure restores changed files in reverse order and
+restores the timer. Success requires exact candidate hashes/modes, unchanged
+agent configuration and systemd units, trusted-writer 0700 artifact directories,
+and a durable receipt bound to both the candidate and the observed-before JSON.
+
+This mode does not consume or replay a Task. Site installation still requires a
+separate approval after independent C14 and C13 acceptance of the exact upgrade
+candidate.
