@@ -190,6 +190,42 @@ class TestPrDurabilityTests(unittest.TestCase):
         self.assertIsNone(result)
         self.assertNotIn("save", runner.verbs())
 
+    def test_missing_standard_dependency_prevents_build_and_seal(self):
+        base = BuilderRunner()
+        def runner(argv, **kwargs):
+            if test_pr.STANDARD_DEPENDENCIES_PROGRAM in argv:
+                base.calls.append(list(argv))
+                error = test_pr.Reject("TEST_PR_SUBPROCESS_REJECT")
+                error.stderr = "DEPENDENCY_MISSING:httptools"
+                error.returncode = 1
+                raise error
+            result = base(argv, **kwargs)
+            if "--mount" in argv:
+                return Completed(test_pr.STANDARD_DEPENDENCY_PROFILE_SHA256)
+            return result
+        with self.assertRaisesRegex(test_pr.Reject, "TEST_PR_DEPENDENCY_ENVIRONMENT_REJECT"):
+            test_pr.execute(self.task(), runner=runner)
+        self.assertNotIn("build", base.verbs())
+        self.assertNotIn("save", base.verbs())
+
+    def test_verified_standard_profile_builds_and_seals_in_order(self):
+        base = BuilderRunner()
+        def runner(argv, **kwargs):
+            if test_pr.STANDARD_DEPENDENCIES_PROGRAM in argv:
+                base.calls.append(list(argv))
+                return Completed("UVICORN_STANDARD_DEPS_OK")
+            result = base(argv, **kwargs)
+            if "--mount" in argv:
+                return Completed(test_pr.STANDARD_DEPENDENCY_PROFILE_SHA256)
+            return result
+        result = test_pr.execute(self.task(), runner=runner)
+        self.assertEqual(result["artifact_durability"], "PROVEN")
+        probe = next(i for i, call in enumerate(base.calls)
+                     if test_pr.STANDARD_DEPENDENCIES_PROGRAM in call)
+        build = next(i for i, call in enumerate(base.calls) if call[1] == "build")
+        self.assertLess(probe, build)
+        self.assertEqual(base.verbs()[-1], "save")
+
     # ------------------------------------------------------------------ seal
     def test_a_passing_build_seals_last_and_reports_the_package(self):
         runner, result = self.build()

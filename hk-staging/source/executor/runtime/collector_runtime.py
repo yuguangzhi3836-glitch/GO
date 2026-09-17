@@ -12,7 +12,8 @@ class ProductionRunner:
   env=os.environ.copy()
   if tuple(argv[:2])==(DOCKER,'compose'):
    env['GO_RUNTIME_ENV_FILE']=ENV_FILE
-  p=subprocess.run(argv,shell=False,capture_output=True,text=True,check=False,env=env)
+  try: p=subprocess.run(argv,shell=False,capture_output=True,text=True,check=False,env=env,timeout=360 if tuple(argv[:2])==(DOCKER,'compose') else 120)
+  except subprocess.TimeoutExpired: return ProcessResult(tuple(argv),124,'','bounded executor timeout')
   return ProcessResult(tuple(argv),p.returncode,p.stdout,p.stderr)
  def __call__(self,argv,timeout=None):
   # The sealed-artifact store calls its runner as a callable and names a timeout of its
@@ -89,14 +90,14 @@ def collect_api_alembic(runner, expected_image, expected_revision=EXPECTED_REVIS
  api=collect_api(runner,expected_image)
  return _collect_alembic_for_api(runner,api,expected_revision)
 
-def _collect_alembic_for_api(runner, api, expected_revision=EXPECTED_REVISION):
+def _collect_alembic_for_api(runner, api, expected_revision=EXPECTED_REVISION, workdir=ALEMBIC_WORKDIR):
  api_id=api.get('Id')
  if not isinstance(api_id,str) or not api_id:raise ValueError('api id')
- current=[DOCKER,'exec','-w',ALEMBIC_WORKDIR,api_id,ALEMBIC_EXECUTABLE,'current','-v']
+ current=[DOCKER,'exec','-w',workdir,api_id,ALEMBIC_EXECUTABLE,'current','-v']
  current_result=runner.run(current)
  if current_result.returncode:raise ValueError('current exit')
  current_revision=_parse_current_revision(current_result.stdout)
- heads=[DOCKER,'exec','-w',ALEMBIC_WORKDIR,api_id,ALEMBIC_EXECUTABLE,'heads']
+ heads=[DOCKER,'exec','-w',workdir,api_id,ALEMBIC_EXECUTABLE,'heads']
  heads_result=runner.run(heads)
  if heads_result.returncode:raise ValueError('heads exit')
  head_revision=_parse_head_revision(heads_result.stdout)
@@ -112,13 +113,16 @@ class _VerifyInputs:
 
 _PRODUCTION_VERIFY_INPUTS=_VerifyInputs(COMPOSE_FILE,COMPOSE_SHA256,ENV_FILE,ENV_SHA256)
 
-def _collect_verify(runner, candidate_image_id, expected_current_image_id, inputs, sleeper=time.sleep):
+def _collect_verify(runner, candidate_image_id, expected_current_image_id, inputs, sleeper=time.sleep, contract=None):
  if candidate_image_id!=expected_current_image_id:raise ValueError('candidate image')
  if sha256_file(inputs.compose_path)!=inputs.compose_sha256:raise ValueError('compose baseline')
  if sha256_file(inputs.env_path)!=inputs.env_sha256:raise ValueError('env baseline')
  api=collect_api(runner,expected_current_image_id)
  worker_result=workers(runner,expected_current_image_id,sleeper)
- alembic_result=_collect_alembic_for_api(runner,api)
+ if contract:
+  if candidate_image_id!=contract['candidate']['image_id']:raise ValueError('contract image')
+  alembic_result=_collect_alembic_for_api(runner,api,contract['target_revision'],'/workspace')
+ else: alembic_result=_collect_alembic_for_api(runner,api)
  return {
   'target_service_count':1+len(WORKERS),
   'all_target_services_same_image':True,

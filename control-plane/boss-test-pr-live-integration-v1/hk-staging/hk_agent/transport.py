@@ -55,6 +55,11 @@ FAILURE_REASON_CODES = frozenset({
     "EXECUTOR_NONZERO_EXIT", "EXECUTOR_OUTPUT_REJECTED", "EXECUTOR_RESULT_REJECT",
     "GITHUB_TRANSPORT_REJECT", "ROLLBACK_HANDOFF_REJECT", "ROLLBACK_SOURCE_REJECT",
     "TASK_ID_REJECT", "TASK_NOT_FOUND",
+    "TEST_PR_PARAMETERS_REJECT", "TEST_PR_SOURCE_REJECT",
+    "TEST_PR_BUILD_ROOT_REJECT", "TEST_PR_FETCH_MISMATCH",
+    "TEST_PR_SOURCE_LAYOUT_REJECT", "TEST_PR_BUILDER_IMAGE_REJECT",
+    "TEST_PR_DEPENDENCY_PROFILE_REJECT", "TEST_PR_DEPENDENCY_ENVIRONMENT_REJECT",
+    "TEST_PR_IMAGE_ID_REJECT", "TEST_PR_SUBPROCESS_REJECT",
 })
 FAILURE_REASON_FALLBACK = "UNCLASSIFIED_REJECT"
 
@@ -236,7 +241,11 @@ def failure_evidence(task, exc, stage=None):
         "status":FAILURE_STATUS,
         "started_at":stamp,"completed_at":stamp,
         "agent_version":VERSION,
-        "executor_version":"unreported" if stage in EXECUTION_STAGES else "not_dispatched",
+        "executor_version": (
+            test_pr.EXECUTOR_VERSION
+            if task["action_id"] == test_pr.ACTION
+            and getattr(exc, "executor_version", None) == test_pr.EXECUTOR_VERSION
+            else "unreported" if stage in EXECUTION_STAGES else "not_dispatched"),
         "executor_result":FAILURE_EXECUTOR_RESULT,
         "gate_results":failure_gate_results(stage),
         "failure":{
@@ -340,7 +349,12 @@ def evidence(task,result):
         required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results"}
         if task["action_id"]=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256"}
         if task["action_id"]=="HK_STAGING_ROLLBACK": required |= {"source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256"}
+        contract_sha=task['parameters'].get('candidate_contract_sha256')
+        if contract_sha is not None: required.add('candidate_contract_sha256')
         if not isinstance(result,dict) or set(result) != required: raise Reject("EXECUTOR_RESULT_REJECT", stage=STAGE_EVIDENCE_BUILD)
+        if contract_sha is not None:
+            if result.get('candidate_contract_sha256')!=contract_sha: raise Reject('EXECUTOR_RESULT_REJECT',stage=STAGE_EVIDENCE_BUILD)
+            record['candidate_contract_sha256']=contract_sha
         record.update({"executor_version":result["executor_version"],"release_id":result["release_id"],"candidate_image_id":result["candidate_image_id"],"expected_current_image_id":result["expected_current_image_id"],"executor_result":result["result"],"gate_results":result["gate_results"]})
         if task["action_id"]=="HK_STAGING_DEPLOY":
             record.update({"deploy_record_schema_version":result["deploy_record_schema_version"],"deploy_record_id":result["deploy_record_id"],"deploy_record_sha256":result["deploy_record_sha256"]})
@@ -434,7 +448,7 @@ def _staged(exc, default_stage):
     """
     stage = getattr(exc, "stage", None) or default_stage
     replacement = Reject(str(exc), stage=stage)
-    for attribute in ("stdout", "stderr", "returncode"):
+    for attribute in ("stdout", "stderr", "returncode", "executor_version"):
         setattr(replacement, attribute, getattr(exc, attribute, None))
     return replacement
 

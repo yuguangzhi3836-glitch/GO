@@ -58,6 +58,7 @@ import datetime as dt
 import hashlib
 import os
 import pathlib
+import hk_candidate_contract as candidate_contract
 
 import go_deploy_request as deploy_gate
 from go_deploy_request import Reject
@@ -178,7 +179,7 @@ def latest_pair(records,action,read_evidence,at,max_age,binding,reason):
     return task,evidence
 
 def derive_bundle(plan_id,request_sha256,approval_identity,approved_at,expires_at,
-                  candidate,expected_current_image_id,test_pr,canary,preflight):
+                  candidate,expected_current_image_id,test_pr,canary,preflight,contract_sha=None):
     """The eight-object bundle, assembled from the joined facts. Pure function."""
     plan={'schema_version':'1','plan_id':plan_id,'environment':deploy_gate.ENVIRONMENT,
           'action_id':deploy_gate.ACTION,'candidate':dict(candidate),
@@ -190,7 +191,8 @@ def derive_bundle(plan_id,request_sha256,approval_identity,approved_at,expires_a
           # executor work this revision does not do, so the derivation refuses it up
           # front rather than deriving a plan the gate would then reject as a
           # forbidden operation.
-          'migration':False,'production':False,'automatic_rollback':False,
+          'migration':contract_sha is not None,'production':False,'automatic_rollback':False,
+          **({'candidate_contract_sha256':contract_sha} if contract_sha else {}),
           'test_pr_task_sha256':deploy_gate.digest(test_pr[0]),
           'test_pr_evidence_sha256':deploy_gate.digest(test_pr[1]),
           'canary_task_sha256':deploy_gate.digest(canary[0]),
@@ -211,7 +213,12 @@ def derive(*,at,approval_identity,approved_at,request_sha256,admission,verify_ba
            ledger_records,read_evidence,approval_life=deploy_gate.APPROVAL_MAX_LIFE):
     """Derive the plan name and the bundle. Writes nothing."""
     block=admission_block(admission)
-    if block.get('migration_required') is True: raise Reject('migration_required_not_supported')
+    contract_sha=block.get('candidate_contract_sha256')
+    if block.get('migration_required') is True and contract_sha is None: raise Reject('migration_required_not_supported')
+    if contract_sha is not None:
+        try: contract=candidate_contract.load(contract_sha,candidate_contract.CC_STORE)
+        except candidate_contract.Reject as exc: raise Reject(str(exc)) from exc
+        if block.get('migration_required') is not True or block.get('migration_head')!=contract['target_revision']: raise Reject('migration_contract_binding')
     candidate=candidate_from_admission(block)
     expected=expected_current_from(block,verify_baseline)
     test_pr_task,_record=pair_by_task_id(ledger_records,deploy_gate.TEST_PR_ACTION,
@@ -221,7 +228,8 @@ def derive(*,at,approval_identity,approved_at,request_sha256,admission,verify_ba
                        deploy_gate.CANARY_EVIDENCE_MAX_AGE,
                        {'candidate_image_id':candidate['image_id'],
                         'candidate_package_sha256':candidate['package_sha256'],
-                        'expected_current_image_id':expected},'canary_evidence_unusable')
+                        'expected_current_image_id':expected,
+                        **({'candidate_contract_sha256':contract_sha} if contract_sha else {})},'canary_evidence_unusable')
     preflight=latest_pair(ledger_records,deploy_gate.VERIFY_ACTION,read_evidence,at,
                           deploy_gate.VERIFY_EVIDENCE_MAX_AGE,
                           {'candidate_image_id':expected,'expected_current_image_id':expected},
@@ -237,7 +245,7 @@ def derive(*,at,approval_identity,approved_at,request_sha256,admission,verify_ba
         raise Reject('deployment_plan_already_consumed')
     expires_at=approved_at+approval_life
     bundle=derive_bundle(plan_id,request_sha256,approval_identity,approved_at,expires_at,
-                         candidate,expected,test_pr,canary,preflight)
+                         candidate,expected,test_pr,canary,preflight,contract_sha)
     return plan_id,bundle
 
 def rollback_source(records,read_evidence):
