@@ -137,8 +137,8 @@ CURRENT_CONTROL_STATE.control_state.informational.contract = false
   release_gates                read from the canonical pointer
   final_release_gate / hk_deploy_gate / production
 CURRENT_CONTROL_STATE.control_state.deploy_capability
-  {"capability": "CAPABILITY_PRESENT_BUT_DISABLED",
-   "request_enabled": false,
+  {"capability": "SUPPORTED_PROVEN",
+   "request_enabled": true,
    "readiness_evaluation": "NOT_IN_SCOPE"}
 ```
 
@@ -214,7 +214,7 @@ summarises the gate and `verification.fail_closed_reasons` names each failure.
 `MATCH` and `DRIFT` require a VERIFY Evidence inside the verification window.
 Older proof reports `NOT_RECENTLY_VERIFIED` even when the images agree.
 
-### 3. DEPLOY is not exposed to chat, and its readiness is not evaluated
+### 3. DEPLOY is exposed to chat; its readiness is not evaluated
 
 A Request can be created by a human or by the platform's own producer, and the
 two are not the same class of caller. Conflating them would either mis-report a
@@ -225,11 +225,11 @@ execution right, so the source class is carried explicitly.
 {"human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
                           "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK"],
  "platform_request_actions": ["CONTROL_PLANE_HEALTH"],
- "enabled_human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY",
-                                  "HK_STAGING_ROLLBACK"],
+ "enabled_human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
+                                  "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK"],
  "enabled_platform_request_actions": ["CONTROL_PLANE_HEALTH"],
- "enabled_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY",
-                             "HK_STAGING_ROLLBACK", "CONTROL_PLANE_HEALTH"],
+ "enabled_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
+                             "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK", "CONTROL_PLANE_HEALTH"],
  "request_action_source_class": {
    "HK_STAGING_VERIFY": "HUMAN_REQUEST", "HK_STAGING_TEST_PR": "HUMAN_REQUEST",
    "HK_STAGING_DEPLOY": "HUMAN_REQUEST", "HK_STAGING_CANARY": "HUMAN_REQUEST",
@@ -242,11 +242,11 @@ execution right, so the source class is carried explicitly.
  "capability_classification": {
    "HK_STAGING_VERIFY": "SUPPORTED_PROVEN",
    "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
-   "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
+   "HK_STAGING_DEPLOY": "SUPPORTED_PROVEN",
    "HK_STAGING_CANARY": "CAPABILITY_PRESENT_REQUESTABLE",
    "HK_STAGING_ROLLBACK": "CAPABILITY_PRESENT_REQUESTABLE",
    "CONTROL_PLANE_HEALTH": "SUPPORTED_PROVEN_PLATFORM_ONLY"},
- "deploy_request_enabled": false,
+ "deploy_request_enabled": true,
  "readiness_evaluation": "NOT_IN_SCOPE"}
 ```
 
@@ -254,9 +254,14 @@ execution right, so the source class is carried explicitly.
 are separate concepts throughout the schema. A `platform_request_actions` entry
 is created by the platform's own bounded producer, not by a human: it carries
 fixed empty parameters, it is read-only, and `human_deploy_authority` is false.
-The live Command Center channel switch is a live-host fact and is reported as
-`UNKNOWN`, never asserted. No deployment plan is created, no switch is modified,
-no DEPLOY Task is signed.
+DEPLOY is in the enabled human set because there is no deploy switch to open:
+the authenticated Request is itself the authorisation, and the plan it runs is
+derived by Command Center. The state of the live Command Center channel is still a
+live-host fact and is reported as `UNKNOWN`, never asserted -- a host with
+deployments suspended refuses the DEPLOY Request with
+`deployment_authorization_mode_unsupported`, and the Request waits on that
+candidate's CANARY and on a preflight VERIFY. No deployment plan is created here,
+no switch is modified, no DEPLOY Task is signed.
 
 The contract computes no `can_deploy`, no deployment eligibility, no rollback
 target selection and no release-gate verdict. Release-gate and rollback-candidate
@@ -527,11 +532,11 @@ Read from repository evidence, not from old notes.
 
 | Element | Where it really is |
 |---|---|
-| Request → Task Bridge | `control-plane/boss-test-pr-live-integration-v1/command-center/go-boss-request-bridge` (`1.2.0`), 22/22 self-tests |
-| DEPLOY request entry | `control-plane/boss-deploy-request-v1/go-boss-request-bridge` (`1.4.0-candidate`), 22/22 self-tests — **capability only, not enabled** |
-| Task repository | `chenzhenxi1-sudo/go-control-tasks` → `tasks/<task_id>.json`, 46 historical Tasks |
-| Evidence repository | `chenzhenxi1-sudo/go-control-evidence` → `evidence/<task_id>-<nonce>.json`, 24 historical records |
-| Request transport | a PR adding exactly one `requests/<request_id>.json`; the immutable PR head is ingested and the PR is never merged; 13 historical Requests |
+| Request → Task Bridge | `control-plane/boss-deploy-request-v1/go-boss-request-bridge` (`1.10.0-post-action-verify`, sha256 `74336fd1…`), 22/22 self-tests — the six channel actions, DEPLOY included, and the same bytes the Command Center host runs |
+| Archived Bridge snapshot | `control-plane/boss-test-pr-live-integration-v1/command-center/go-boss-request-bridge` (`1.2.0`, VERIFY-only) — historical. Never read it as the current capability inventory |
+| Task repository | `chenzhenxi1-sudo/go-control-tasks` → `tasks/<task_id>.json`, 170 Tasks (counted 2026-09-17) |
+| Evidence repository | `chenzhenxi1-sudo/go-control-evidence` → `evidence/<task_id>-<nonce>.json`, 145 records (counted 2026-09-17) |
+| Request transport | a PR adding exactly one `requests/<request_id>.json`; the immutable PR head is ingested and the PR is never merged. A Request lives on a PR head, not on the base branch, so it is not counted from there; the projection's `requests` count is the running total |
 | Hong Kong Agent | `hk-staging/source/agent/hk_agent/transport.py` (`0.5.7-rebuilt`) |
 | Narrow Executor | `/usr/local/libexec/go-hk-deployctl` via `deployment_actions.py`, fixed argv, no shell |
 

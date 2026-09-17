@@ -81,7 +81,8 @@
             "platform_action_properties": {"type": "object"},
             "known_capabilities": {"type": "array", "items": {"type": "string"}},
             "capability_classification": {"type": "object"},
-            "deploy_request_enabled": {"const": false},
+            "deploy_request_enabled": {"const": true,
+              "description": "The DEPLOY Request is enabled and there is no switch to open: the authenticated Request is itself the authorisation. This is the contract-level answer, not the live-host state -- whether the host currently accepts one is a live-host fact, and a host with deployments suspended refuses the Request with deployment_authorization_mode_unsupported."},
             "readiness_evaluation": {"const": "NOT_IN_SCOPE"}
           }
         },
@@ -182,7 +183,7 @@
     "answers.hk_agent_online is derived only from fresh signed CONTROL_PLANE_HEALTH Evidence. answers.hk_agent_recent_activity reports the last signed activity at any age and is explicitly NOT liveness.",
     "answers.repository_declared_runtime and answers.live_verified_runtime are separate objects. A repository pointer can never make the live runtime PROVEN.",
     "answers.stuck_tasks.answer reads active_stuck_tasks only; recently and historically expired tasks are reported separately and never change the current-health answer.",
-    "answers.request_channel distinguishes known_capability from currently_enabled_request_action. HK_STAGING_DEPLOY is CAPABILITY_PRESENT_BUT_DISABLED and is not requestable. The connector may create Request files only for enabled actions.",
+    "answers.request_channel distinguishes known_capability from currently_enabled_request_action. HK_STAGING_DEPLOY is both proven and enabled: there is no deploy switch, so the connector may create a DEPLOY Request exactly as it may create a VERIFY, TEST_PR, CANARY or ROLLBACK one. It must not conclude from this that the host will accept it -- that is live_request_switch, a live-host fact, and the host answers with its own refusal token.",
     "answers.request_fate reports why a Request did not become a Task, from facts the Bridge exported read-only. A Request file existing is not an acceptance: BECAME_A_TASK appears only when a signed Task on the control bus carries that Request's digest and verifies. A refusal carries the Bridge's own reason code, unmodified, and a duplicate or replay carries counted_as_success=false.",
     "answers.repository_main_sha is UNKNOWN unless it was supplied out of band; the runtime's build-source SHA is never substituted for it.",
     "Deploy readiness and rollback readiness are NOT computed here. No can_deploy, deployment eligibility, rollback target selection or release-gate verdict exists in answers.",

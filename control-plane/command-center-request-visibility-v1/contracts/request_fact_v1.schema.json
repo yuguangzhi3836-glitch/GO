@@ -51,8 +51,11 @@
         "HK_STAGING_VERIFY",
         "HK_STAGING_TEST_PR",
         "HK_STAGING_DEPLOY",
-        "HK_STAGING_CANARY"
-      ]
+        "HK_STAGING_CANARY",
+        "HK_STAGING_ROLLBACK",
+        "CONTROL_PLANE_HEALTH"
+      ],
+      "description": "Exactly the exporter's ACTION_IDS, which ActionRegistryTests pins to the Bridge's own channel config (control-plane/boss-deploy-request-v1/config.json -> allowed_actions). This enum was the one member of that contract left behind when ROLLBACK joined the channel, so a valid ROLLBACK fact failed the schema its own component publishes while the exporter and the tests already carried it."
     },
     "environment": {
       "const": "HK-STAGING-01"
