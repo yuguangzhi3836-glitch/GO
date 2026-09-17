@@ -318,20 +318,20 @@ def approval_id_for(request_sha256):
 
 def validate_migration(value,candidate):
     if value is False: return False
-    exact(value,MIGRATION_FIELDS,'candidate_fields')
-    if value['schema']!='go.forward-migration-admission.v1': raise Reject('candidate_fields')
+    exact(value,MIGRATION_FIELDS,'candidate_admission_incomplete')
+    if value['schema']!='go.forward-migration-admission.v1': raise Reject('candidate_admission_incomplete')
     if (value['source_commit'],value['application_git_tree'],
         value['source_fingerprint_sha256'])!=(candidate['source_commit'],
         candidate['application_git_tree'],candidate['source_tree_sha256']):
-        raise Reject('candidate_fields')
-    for name in ('source_commit','application_git_tree'): match(value[name],COMMIT,'candidate_fields')
+        raise Reject('candidate_admission_incomplete')
+    for name in ('source_commit','application_git_tree'): match(value[name],COMMIT,'candidate_admission_incomplete')
     for name in ('source_fingerprint_sha256','lineage_sha256','rehearsal_evidence_sha256'):
-        match(value[name],SHA,'candidate_fields')
-    for name in ('prestate_revision','target_revision'): match(value[name],REVISION,'candidate_fields')
+        match(value[name],SHA,'candidate_admission_incomplete')
+    for name in ('prestate_revision','target_revision'): match(value[name],REVISION,'candidate_admission_incomplete')
     if value['prestate_revision']==value['target_revision']: raise Reject('forbidden_operation')
     if value['forward_only'] is not True or value['arbitrary_sql'] is not False:
         raise Reject('forbidden_operation')
-    if value['rehearsal_postgres_version']!='18.4': raise Reject('candidate_fields')
+    if value['rehearsal_postgres_version']!='18.4': raise Reject('candidate_admission_incomplete')
     return value
 
 def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=None,request_sha256=None):

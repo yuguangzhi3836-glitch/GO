@@ -120,6 +120,19 @@ def release_candidate(**over):
     return value
 
 
+def migration_admission(**over):
+    value = {"schema": "go.forward-migration-admission.v1",
+             "source_commit": COMMIT, "application_git_tree": TREE,
+             "source_fingerprint_sha256": SOURCE_TREE,
+             "prestate_revision": "0133_flight_change_plan",
+             "target_revision": "0137_hosted_unknown_episode",
+             "lineage_sha256": "4" * 64, "forward_only": True, "arbitrary_sql": False,
+             "rehearsal_evidence_sha256": "5" * 64,
+             "rehearsal_postgres_version": "18.4"}
+    value.update(over)
+    return value
+
+
 def candidate_pointer(**over):
     block_over = over.pop("release_candidate", {})
     value = {"schema": "go.depth48.current-candidate.v1", "source_commit": COMMIT,
@@ -728,6 +741,29 @@ class BridgeAcceptanceTests(unittest.TestCase):
         document = Fixture().evaluate()
         self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "PASS")
 
+    def test_a_source_bound_forward_migration_passes_the_bridge_gate(self):
+        def mutate(_keys, bundle):
+            bundle["plan"]["migration"] = migration_admission()
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "PASS")
+
+    def test_migration_source_or_policy_drift_is_refused(self):
+        cases = (
+            ({"source_commit": "6" * 40}, "candidate_admission_incomplete"),
+            ({"arbitrary_sql": True}, "forbidden_operation"),
+            ({"forward_only": False}, "forbidden_operation"),
+            ({"rehearsal_postgres_version": "18.3"}, "candidate_admission_incomplete"),
+        )
+        for changes, reason in cases:
+            with self.subTest(changes=changes):
+                def mutate(_keys, bundle):
+                    bundle["plan"]["migration"] = migration_admission(**changes)
+
+                entry = gate_of(Fixture(mutate=mutate).evaluate(), "BRIDGE_ACCEPTANCE")
+                self.assertEqual(entry["state"], "FAIL")
+                self.assertIn(reason, entry["reason"])
+
     def test_the_bridge_gate_names_the_rule_that_would_refuse(self):
         def mutate(_keys, bundle):
             bundle["plan"]["automatic_rollback"] = True
@@ -784,6 +820,9 @@ class LiveBridgeContractTests(unittest.TestCase):
                 self.assertNotIn("'%s'" % name, self.source)
         self.assertIsNone(re.search(r"^RELEASE_GATES = \{", self.source, re.M))
         self.assertFalse(hasattr(R, "REQUIRED_PLAN_GATES"))
+
+    def test_the_migration_fields_match_the_live_contract(self):
+        self.assertEqual(self.brace_set("MIGRATION_FIELDS"), set(R.MIGRATION_FIELDS))
 
     def test_the_test_pr_constants_match_the_live_contract(self):
         self.assertEqual(self.brace_set("TEST_PR_GATES"), set(R.TEST_PR_GATES))

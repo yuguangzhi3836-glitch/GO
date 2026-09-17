@@ -155,6 +155,10 @@ PLAN_FIELDS = ("schema_version", "plan_id", "environment", "action_id", "candida
                "preflight_evidence_sha256")
 CANDIDATE_FIELDS = ("repository", "source_commit", "application_git_tree",
                     "source_tree_sha256", "package_sha256", "image_id")
+MIGRATION_FIELDS = ("schema", "source_commit", "application_git_tree",
+                    "source_fingerprint_sha256", "prestate_revision", "target_revision",
+                    "lineage_sha256", "forward_only", "arbitrary_sql",
+                    "rehearsal_evidence_sha256", "rehearsal_postgres_version")
 APPROVAL_FIELDS = ("schema_version", "approval_id", "approved_by", "approved_at",
                    "expires_at", "scope", "plan_sha256", "request_sha256")
 PROOF_OBJECTS = ("test_pr_task", "test_pr_evidence", "canary_task", "canary_evidence",
@@ -177,7 +181,7 @@ SERVICES = ("api", "recovery-worker", "outbox-worker", "mobile-push-receipt-work
             "reconciliation-worker", "mobile-push-worker", "mobile-engagement-worker",
             "judgment-worker")
 PROTECTED_NON_TARGETS = ("redis", "caddy")
-FORBIDDEN_OPERATIONS = ("migration", "production", "automatic_rollback")
+FORBIDDEN_OPERATIONS = ("production", "automatic_rollback")
 CANARY_GATES = ("compose_baseline", "env_baseline", "expected_current_image",
                 "candidate_image", "python_compile", "alembic_head",
                 "container_isolation", "container_cleanup")
@@ -650,6 +654,36 @@ def bridge_proof_problems(task, evidence, action, task_key, evidence_key, at, ma
     return problems, completed
 
 
+def bridge_migration_problems(value, candidate):
+    """Port of validate_migration(): accept data, never an executable instruction."""
+    if value is False:
+        return []
+    if not isinstance(value, dict) or set(value) != set(MIGRATION_FIELDS):
+        return ["candidate_admission_incomplete"]
+    if value["schema"] != "go.forward-migration-admission.v1":
+        return ["candidate_admission_incomplete"]
+    if (value["source_commit"], value["application_git_tree"],
+            value["source_fingerprint_sha256"]) != (
+            candidate["source_commit"], candidate["application_git_tree"],
+            candidate["source_tree_sha256"]):
+        return ["candidate_admission_incomplete"]
+    for name, pattern in (
+            ("source_commit", SHA40), ("application_git_tree", SHA40),
+            ("source_fingerprint_sha256", SHA64), ("lineage_sha256", SHA64),
+            ("rehearsal_evidence_sha256", SHA64),
+            ("prestate_revision", re.compile(r"^[A-Za-z0-9][A-Za-z0-9_]{2,79}$")),
+            ("target_revision", re.compile(r"^[A-Za-z0-9][A-Za-z0-9_]{2,79}$"))):
+        if not isinstance(value[name], str) or pattern.fullmatch(value[name]) is None:
+            return ["candidate_admission_incomplete"]
+    if (value["prestate_revision"] == value["target_revision"]
+            or value["forward_only"] is not True
+            or value["arbitrary_sql"] is not False):
+        return ["forbidden_operation"]
+    if value["rehearsal_postgres_version"] != "18.4":
+        return ["candidate_admission_incomplete"]
+    return []
+
+
 def bridge_bundle_problems(bundle, identities, at):
     """Port of go_deploy_request.validate_bundle(). Returns (problems, detail)."""
     problems, detail = [], {}
@@ -696,6 +730,7 @@ def bridge_bundle_problems(bundle, identities, at):
         if not isinstance(candidate["image_id"], str) or not IMAGE_ID.fullmatch(candidate["image_id"]):
             problems.append("candidate_image")
         detail["candidate"] = candidate
+        problems += bridge_migration_problems(plan.get("migration"), candidate)
     if not isinstance(plan.get("expected_current_image_id"), str) or \
             not IMAGE_ID.fullmatch(str(plan.get("expected_current_image_id"))):
         problems.append("current_image")
