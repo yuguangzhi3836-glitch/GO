@@ -122,6 +122,8 @@ test "$(stat -c %a "$build_root")" = 700
 test "$(stat -c %u:%g "$store_root")" = "$artifact_uid:$artifact_gid"
 test "$(stat -c %a "$store_root")" = 700
 test "$(stat -c %u:%g "$store_root/objects")" = "$artifact_uid:$artifact_gid"
-test "$(stat -c %a "$store_root/objects")" = 700\ntest "$(stat -c %u:%g "$store_root/failures")" = "$artifact_uid:$artifact_gid"\ntest "$(stat -c %a "$store_root/failures")" = 700
+test "$(stat -c %a "$store_root/objects")" = 700
+test "$(stat -c %u:%g "$store_root/failures")" = "$artifact_uid:$artifact_gid"
+test "$(stat -c %a "$store_root/failures")" = 700
 "$root/install/preflight.sh" hk-staging postinstall
 echo "INSTALL_STAGED_ONLY: restart is a separately approved operation"
