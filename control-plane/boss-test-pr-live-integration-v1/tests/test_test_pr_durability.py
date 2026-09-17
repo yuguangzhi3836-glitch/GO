@@ -131,7 +131,8 @@ class TestPrDurabilityTests(unittest.TestCase):
         self.root = pathlib.Path(self.tmp.name)
         self.store = self.root / "store"
         self.store.mkdir(mode=0o700)
-        (self.store / "objects").mkdir(mode=0o700)\n        (self.store / "failures").mkdir(mode=0o700)
+        (self.store / "objects").mkdir(mode=0o700)
+        (self.store / "failures").mkdir(mode=0o700)
         self._patch(test_pr, "_build_root", lambda: self.root)
         self._patch(test_pr, "ARTIFACT_STORE", str(self.store))
         self._patch(test_pr, "BUILDER_IMAGE", "go-hotel:depth48-runtime-6d0fd905")
