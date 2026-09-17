@@ -1,0 +1,63 @@
+name: Issue 168 shared PG matrix binding gate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ci/retention/BASELINE.json
+      - ci/shared_pg_matrix/**
+      - .github/workflows/issue-168-shared-pg-matrix.yml
+
+permissions:
+  contents: read
+
+jobs:
+  focused-shared-gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Validate distinct immutable Cell bindings
+        run: |
+          python -m unittest discover -s ci/shared_pg_matrix -p 'test_*.py' -v
+          python ci/shared_pg_matrix/validate_bindings.py
+      - name: Verify C07 exact retention baseline
+        run: |
+          test "$(git rev-parse HEAD:application)" = "0cd2c7b636066be6cb15e33d7b772b697a25d9c5"
+          python ci/retention/verify_source.py evidence-out
+      - name: Bind focused evidence
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib, subprocess
+          out = pathlib.Path("evidence-out")
+          files = {}
+          for path in sorted(out.rglob("*")):
+              if path.is_file():
+                  files[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
+          report = {
+              "schema": "go.issue168.shared-pg-matrix-gate.v1",
+              "candidate_sha": subprocess.check_output(["git","rev-parse","HEAD"], text=True).strip(),
+              "application_tree": subprocess.check_output(["git","rev-parse","HEAD:application"], text=True).strip(),
+              "changed_scope": ["ci/retention/BASELINE.json", "ci/shared_pg_matrix", ".github/workflows/issue-168-shared-pg-matrix.yml"],
+              "tests": "focused shared binding + C07 retention only",
+              "inherited_without_rerun": ["C09", "C10", "C11"],
+              "resume_only": ["C07"],
+              "files": files,
+              "final_release": "HOLD",
+              "hk_deploy": "HOLD",
+              "production": "HOLD"
+          }
+          target = out / "ISSUE168_GATE.json"
+          target.write_text(json.dumps(report, sort_keys=True, separators=(",",":")) + "\n", encoding="utf-8")
+          (out / "ISSUE168_GATE.sha256").write_text(hashlib.sha256(target.read_bytes()).hexdigest() + "  ISSUE168_GATE.json\n", encoding="utf-8")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: issue-168-shared-pg-matrix-${{ github.sha }}
+          path: evidence-out
+          if-no-files-found: error
+          retention-days: 90
