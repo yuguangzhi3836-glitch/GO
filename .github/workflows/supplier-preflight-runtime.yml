@@ -83,6 +83,8 @@ jobs:
           cd "$RUNNER_TEMP/supplier-preflight"
           find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
           sha256sum -c SHA256SUMS
+          cat EVIDENCE.json
+          cat SHA256SUMS
       - uses: actions/upload-artifact@v4
         if: always()
         with:
