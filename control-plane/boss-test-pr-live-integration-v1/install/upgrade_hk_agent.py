@@ -140,6 +140,51 @@ def service_is_enabled(command, unit):
     return systemctl(command, "is-enabled", "--quiet", unit, check=False).returncode == 0
 
 
+def restore_timer(command, receipt, phase, attempts=3):
+    """Start the timer and prove both active and enabled state.
+
+    A successful ``systemctl start`` is not proof that the timer is usable.  The
+    caller must keep its restoration-pending state until this function returns.
+    Every failed observation is retained in the durable receipt, including an
+    unexpected readback return code or an exception while invoking systemctl.
+    """
+    history = receipt.setdefault("timer_restore_attempts", [])
+    last_error = "TIMER_RESTORE_NOT_ATTEMPTED"
+    for attempt in range(1, attempts + 1):
+        record = {"phase": phase, "attempt": attempt}
+        history.append(record)
+        try:
+            started = systemctl(command, "start", "go-hk-agent.timer", check=False)
+            record["start_rc"] = started.returncode
+            if started.returncode:
+                raise RuntimeError(f"TIMER_START_RC:{started.returncode}")
+
+            active = systemctl(command, "is-active", "--quiet",
+                               "go-hk-agent.timer", check=False)
+            enabled = systemctl(command, "is-enabled", "--quiet",
+                                "go-hk-agent.timer", check=False)
+            record["active_rc"] = active.returncode
+            record["enabled_rc"] = enabled.returncode
+            if active.returncode == 0 and enabled.returncode == 0:
+                record["result"] = "PASS"
+                if "timer_restore_error" in receipt:
+                    receipt["timer_restore_recovered"] = True
+                return
+            if active.returncode not in (0, 3):
+                raise RuntimeError(f"TIMER_ACTIVE_READBACK_RC:{active.returncode}")
+            if enabled.returncode not in (0, 1):
+                raise RuntimeError(f"TIMER_ENABLED_READBACK_RC:{enabled.returncode}")
+            if active.returncode != 0:
+                raise RuntimeError("TIMER_INACTIVE_AFTER_START")
+            raise RuntimeError("TIMER_DISABLED_AFTER_START")
+        except Exception as exc:
+            last_error = type(exc).__name__ + ":" + str(exc)
+            record["result"] = "FAILED"
+            record["error"] = last_error
+            receipt["timer_restore_error"] = last_error
+    raise RuntimeError("TIMER_RESTORE_UNRECOVERED:" + last_error)
+
+
 def copy_for_backup(source, target):
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, target)
@@ -253,9 +298,12 @@ def main(argv=None):
     artifact_gid = (os.getgid() if prefix else int(subprocess.check_output(
         ["id", "-g", "go-hk-agent"], text=True).strip()))
     timer_stopped = False
+    restoration_pending = False
     try:
         systemctl(systemctl_command, "stop", "go-hk-agent.timer")
         timer_stopped = True
+        restoration_pending = True
+        receipt["timer_restoration_pending"] = True
         for _ in range(30):
             if not service_is_active(systemctl_command, "go-hk-agent.service"):
                 break
@@ -285,11 +333,10 @@ def main(argv=None):
                 path.chmod(0o700)
         frozen_preflight(root, prefix, protected_before, artifact_uid, artifact_gid,
                          systemctl_command)
-        systemctl(systemctl_command, "start", "go-hk-agent.timer")
+        restore_timer(systemctl_command, receipt, "commit")
         timer_stopped = False
-        if (not service_is_active(systemctl_command, "go-hk-agent.timer")
-                or not service_is_enabled(systemctl_command, "go-hk-agent.timer")):
-            raise RuntimeError("TIMER_RESTORE")
+        restoration_pending = False
+        receipt["timer_restoration_pending"] = False
         receipt["result"] = "PASS"
         receipt["installed"] = {name: snapshot(rooted(spec[1], prefix))
                                 for name, spec in FILES.items()}
@@ -301,11 +348,15 @@ def main(argv=None):
         receipt["result"] = "FAILED"
         receipt["error"] = type(exc).__name__ + ":" + str(exc)
         receipt["rollback_errors"] = restore(changed, backup, prefix, before)
-        if timer_stopped:
+        if restoration_pending:
             try:
-                systemctl(systemctl_command, "start", "go-hk-agent.timer")
+                restore_timer(systemctl_command, receipt, "rollback")
+                timer_stopped = False
+                restoration_pending = False
             except Exception as timer_exc:
-                receipt["timer_restore_error"] = str(timer_exc)
+                receipt["timer_restore_error"] = (type(timer_exc).__name__ + ":"
+                                                  + str(timer_exc))
+        receipt["timer_restoration_pending"] = restoration_pending
         (backup / "receipt.json").write_text(json.dumps(receipt, sort_keys=True,
                                                         separators=(",", ":")) + "\n")
         raise

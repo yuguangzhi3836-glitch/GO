@@ -429,7 +429,13 @@ inactive, creates a unique root-only
 `/var/backups/HK-CHANGE-<UTC>-pr188-<random>/` directory, verifies every backup,
 and replaces each fixed target through an fsynced same-directory temporary file
 and atomic rename. A failure restores changed files in reverse order and
-restores the timer. Success requires exact candidate hashes/modes, unchanged
+restores the timer. Timer restoration remains pending until both `is-active`
+and `is-enabled` readbacks succeed; a zero exit from `systemctl start` alone is
+not accepted. Inactive, disabled, or errored readbacks enter bounded recovery,
+and every attempt plus any unrecoverable state is written to the receipt. File
+rollback also performs verified timer recovery and leaves
+`timer_restoration_pending=true` when it cannot prove restoration. Success
+requires exact candidate hashes/modes, unchanged
 agent configuration and systemd units, trusted-writer 0700 artifact directories,
 and a durable receipt bound to both the candidate and the observed-before JSON.
 

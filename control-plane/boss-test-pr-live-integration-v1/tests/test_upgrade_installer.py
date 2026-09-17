@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import subprocess
 import tempfile
 import unittest
 from unittest import mock
@@ -77,7 +78,7 @@ class UpgradeSandbox:
             f"state='{self.state}'\n"
             "action=$1; unit=${3:-${2:-}}\n"
             "case \"$action:$unit\" in\n"
-            "  is-active:go-hk-agent.timer) test \"$(cat \"$state\")\" = active;;\n"
+            "  is-active:go-hk-agent.timer) test \"$(cat \"$state\")\" = active && exit 0 || exit 3;;\n"
             "  is-active:go-hk-agent.service) exit 3;;\n"
             "  is-enabled:go-hk-agent.timer) exit 0;;\n"
             "  stop:go-hk-agent.timer) printf stopped > \"$state\";;\n"
@@ -189,6 +190,80 @@ class UpgradeInstallerTests(unittest.TestCase):
                 upgrade.main(box.argv())
         self.assertEqual(box.state.read_text(), "active")
         self.assertFalse((box.live / "var" / "backups").exists())
+
+    @staticmethod
+    def _systemctl_result(returncode):
+        return subprocess.CompletedProcess(["systemctl"], returncode, "", "")
+
+    def test_timer_inactive_after_start_recovers_and_records_receipt(self):
+        receipt = {"timer_restoration_pending": True}
+        results = [self._systemctl_result(code) for code in (0, 3, 0, 0, 0, 0)]
+        with mock.patch.object(upgrade, "systemctl", side_effect=results):
+            upgrade.restore_timer("systemctl", receipt, "commit")
+        self.assertTrue(receipt["timer_restore_recovered"])
+        self.assertIn("TIMER_INACTIVE_AFTER_START", receipt["timer_restore_error"])
+        self.assertEqual([item["result"] for item in receipt["timer_restore_attempts"]],
+                         ["FAILED", "PASS"])
+
+    def test_timer_disabled_after_start_remains_pending(self):
+        receipt = {"timer_restoration_pending": True}
+        results = [self._systemctl_result(code) for code in (0, 0, 1) * 3]
+        with mock.patch.object(upgrade, "systemctl", side_effect=results):
+            with self.assertRaisesRegex(RuntimeError, "TIMER_RESTORE_UNRECOVERED"):
+                upgrade.restore_timer("systemctl", receipt, "commit")
+        self.assertTrue(receipt["timer_restoration_pending"])
+        self.assertIn("TIMER_DISABLED_AFTER_START", receipt["timer_restore_error"])
+
+    def test_timer_readback_error_remains_pending(self):
+        receipt = {"timer_restoration_pending": True}
+        results = [self._systemctl_result(code) for code in (0, 7, 0) * 3]
+        with mock.patch.object(upgrade, "systemctl", side_effect=results):
+            with self.assertRaisesRegex(RuntimeError, "TIMER_RESTORE_UNRECOVERED"):
+                upgrade.restore_timer("systemctl", receipt, "rollback")
+        self.assertTrue(receipt["timer_restoration_pending"])
+        self.assertIn("TIMER_ACTIVE_READBACK_RC:7", receipt["timer_restore_error"])
+
+    def test_irrecoverable_timer_state_is_durable_and_fail_closed(self):
+        box = UpgradeSandbox(self)
+        script = box.systemctl.read_text().replace(
+            '  start:go-hk-agent.timer) printf active > "$state";;',
+            '  start:go-hk-agent.timer) exit 0;;')
+        box.systemctl.write_text(script)
+        box.systemctl.chmod(0o755)
+        with mock.patch.dict(os.environ, box.environment(), clear=False):
+            with self.assertRaisesRegex(RuntimeError, "TIMER_RESTORE_UNRECOVERED"):
+                upgrade.main(box.argv())
+        backup = next((box.live / "var" / "backups").iterdir())
+        receipt = json.loads((backup / "receipt.json").read_text())
+        self.assertEqual(receipt["result"], "FAILED")
+        self.assertTrue(receipt["timer_restoration_pending"])
+        self.assertIn("TIMER_INACTIVE_AFTER_START", receipt["timer_restore_error"])
+        self.assertEqual([item["phase"] for item in receipt["timer_restore_attempts"]],
+                         ["commit"] * 3 + ["rollback"] * 3)
+        self.assertTrue(all(item["result"] == "FAILED"
+                            for item in receipt["timer_restore_attempts"]))
+
+    def test_timer_recovery_success_is_durable_in_receipt(self):
+        box = UpgradeSandbox(self)
+        attempts = box.base / "timer-starts"
+        attempts.write_text("0")
+        script = box.systemctl.read_text().replace(
+            '  start:go-hk-agent.timer) printf active > "$state";;',
+            '  start:go-hk-agent.timer) '
+            f'n=$(cat "{attempts}"); n=$((n + 1)); printf "%s" "$n" > "{attempts}"; '
+            'test "$n" -lt 2 || printf active > "$state";;')
+        box.systemctl.write_text(script)
+        box.systemctl.chmod(0o755)
+        with mock.patch.dict(os.environ, box.environment(), clear=False):
+            upgrade.main(box.argv())
+        backup = next((box.live / "var" / "backups").iterdir())
+        receipt = json.loads((backup / "receipt.json").read_text())
+        self.assertEqual(receipt["result"], "PASS")
+        self.assertFalse(receipt["timer_restoration_pending"])
+        self.assertTrue(receipt["timer_restore_recovered"])
+        self.assertIn("TIMER_INACTIVE_AFTER_START", receipt["timer_restore_error"])
+        self.assertEqual([item["result"] for item in receipt["timer_restore_attempts"]],
+                         ["FAILED", "PASS"])
 
 
 if __name__ == "__main__":
