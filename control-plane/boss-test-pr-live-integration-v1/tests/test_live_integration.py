@@ -977,6 +977,45 @@ class FailureClosureTests(unittest.TestCase):
                           transport.STAGE_EVIDENCE_PUBLISH,
                           "subprocess", "subprocess_nonzero", "subprocess_error", "parser"})
 
+    def test_test_pr_profile_failure_is_signed_specific_and_single_attempt(self):
+        task = self.signed_task(action="HK_STAGING_TEST_PR", parameters={
+            "builder_profile": test_pr.PROFILE,
+            "source": {"repository": test_pr.REPOSITORY, "pr_number": "183",
+                       "commit_sha": "e" * 40}})
+        calls = []
+        def refuse(_task):
+            calls.append(_task["task_id"])
+            test_pr._verify_dependency_profile("f" * 64, lambda *a, **kw: None)
+        with mock.patch.object(test_pr, "execute", refuse):
+            self.isolated_run(task)
+            self.isolated_run(task)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(self.published), 1)
+        record = self.published[0]
+        transport.verify_evidence(record, self.evidence_verify_key)
+        self.assertEqual(record["status"], "FAILED")
+        self.assertEqual(record["failure"]["reason_code"], "TEST_PR_DEPENDENCY_PROFILE_REJECT")
+        self.assertEqual(record["executor_version"], test_pr.EXECUTOR_VERSION)
+        self.assertEqual(record["nonce"], task["nonce"])
+        self.assertIn("observed_profile_sha256=", record["failure"]["diagnostic"]["stderr"]["preview"])
+        for name in ("retry_permitted", "replay_authorized", "authorizes_any_action"):
+            self.assertIs(record[name], False)
+
+    def test_all_known_test_pr_refusals_keep_their_closed_reason(self):
+        codes = set(__import__("re").findall(
+            r'Reject\("(TEST_PR_[A-Z_]+)"\)',
+            (ROOT / "hk-staging/hk_agent/test_pr.py").read_text()))
+        self.assertGreater(len(codes), 5)
+        for code in codes:
+            with self.subTest(code=code):
+                staged = transport._staged(test_pr.Reject(code), transport.STAGE_EXECUTOR)
+                record = transport.failure_evidence(
+                    self.signed_task(action="HK_STAGING_TEST_PR"), staged, staged.stage)
+                self.assertEqual(record["failure"]["reason_code"], code)
+                self.assertEqual(record["executor_version"], test_pr.EXECUTOR_VERSION)
+        self.assertEqual(transport.failure_reason("TEST_PR_UNRECOGNIZED_SECRET_TEXT"),
+                         "UNCLASSIFIED_REJECT")
+
     def test_failure_stages_are_not_swallowed_as_agent_reject(self):
         reject = transport.Reject("EXECUTOR_RESULT_REJECT", stage=transport.STAGE_EVIDENCE_BUILD)
         self.assertEqual(getattr(reject, "stage"), transport.STAGE_EVIDENCE_BUILD)

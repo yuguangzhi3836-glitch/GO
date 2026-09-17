@@ -29,10 +29,18 @@ jobs:
     timeout-minutes: 10
     env:
       PYTHONDONTWRITEBYTECODE: '1'
+      CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+      - name: Bind the exact candidate
+        run: |
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          mkdir -p "$RUNNER_TEMP/hk-agent-failure"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -46,7 +54,9 @@ jobs:
         run: sha256sum -c SHA256SUMS
       - name: Run the HK agent lineage suite on Linux
         working-directory: control-plane/boss-test-pr-live-integration-v1
-        run: python -m unittest discover -s tests -v
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -v 2>&1 | tee "$RUNNER_TEMP/hk-agent-failure/tests.log"
       - name: Prove that a synthetic failure becomes verifiable Evidence the projection reads
         run: |
           python - <<'PY'
@@ -58,7 +68,7 @@ jobs:
           lineage = pathlib.Path('control-plane/boss-test-pr-live-integration-v1')
           state = pathlib.Path('control-plane/command-center-state-v1')
           sys.path.insert(0, str(lineage / 'hk-staging'))
-          from hk_agent import transport
+          from hk_agent import transport, test_pr
           sys.path.insert(0, str(state))
           import state_projection as sp
 
@@ -78,16 +88,23 @@ jobs:
           task = {'schema_version': '1', 'task_id': 'cc-v1-02-ci', 'nonce': 'nonce-cc-v1-02-ci',
                   'issued_at': iso(now), 'expires_at': iso(now + dt.timedelta(minutes=15)),
                   'authority': 'GO-COMMAND-CENTER', 'environment': 'HK-STAGING-01',
-                  'action_id': 'HK_STAGING_VERIFY',
-                  'parameters': {'release_id': 'release-cc-v1-02',
-                                 'candidate_image_id': 'sha256:' + 'a' * 64,
-                                 'expected_current_image_id': 'sha256:' + 'a' * 64}}
+                  'action_id': 'HK_STAGING_TEST_PR',
+                  'parameters': {'builder_profile': test_pr.PROFILE,
+                                 'source': {'repository': test_pr.REPOSITORY,
+                                            'pr_number': '183',
+                                            'commit_sha': os.environ['CANDIDATE_SHA']}}}
           task['signature'] = task_key.sign(transport.canonical(task)).hex()
 
           # 1. the agent builds and signs a failure record for a claimed attempt
-          refusal = transport.Reject('executor rejected', stage='parser')
-          record = transport.sign(transport.failure_evidence(task, refusal, stage='parser'),
+          try:
+              test_pr._verify_dependency_profile('f' * 64, None)
+          except test_pr.Reject as error:
+              refusal = transport._staged(error, transport.STAGE_EXECUTOR)
+          else:
+              raise AssertionError('unknown dependency profile was accepted')
+          record = transport.sign(transport.failure_evidence(task, refusal, stage=refusal.stage),
                                   str(work / 'evidence.pem'))
+          (work / 'evidence.pem').unlink()  # disposable CI identity, not an uploaded credential
 
           # 2. it must satisfy the published contract, and authorize nothing
           schema = json.loads((state / 'contracts' / 'failure_evidence_v1.schema.json')
@@ -146,13 +163,15 @@ jobs:
           assert entry['evidence']['signature_verified'] is True, 'failure record did not verify'
           assert entry['lifecycle'] == 'EXECUTION_FAILED', entry['lifecycle']
           assert entry['assertion']['state'] == 'FAILED', entry['assertion']['state']
-          assert entry['failure']['reason_code'] == 'EXECUTOR_OUTPUT_REJECTED', entry['failure']
+          assert entry['failure']['reason_code'] == 'TEST_PR_DEPENDENCY_PROFILE_REJECT', entry['failure']
+          assert record['executor_version'] == test_pr.EXECUTOR_VERSION
           assert entry['failure']['retry_permitted'] is False
           detail = entry['failure']
           assert detail['artifact_claimed_retry_permitted'] is False, detail
 
           binding = {'event': os.environ['GITHUB_EVENT_NAME'],
                      'workflow_commit': os.environ['GITHUB_SHA'],
+                     'candidate_sha': os.environ['CANDIDATE_SHA'],
                      'run_id': os.environ['GITHUB_RUN_ID'],
                      'synthetic_failure_signed_evidence': 'PROVEN',
                      'failure_record_satisfies_contract': True,
@@ -163,6 +182,43 @@ jobs:
                      'hong_kong_accessed': False, 'production_accessed': False}
           (work / 'binding.json').write_text(json.dumps(binding, indent=2) + '\n')
           print(json.dumps(binding, sort_keys=True))
+          PY
+      - name: Seal exact-candidate scoped Evidence
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          work = pathlib.Path(os.environ['RUNNER_TEMP']) / 'hk-agent-failure'
+          sha = os.environ['CANDIDATE_SHA']
+          assert git('rev-parse', 'HEAD') == sha
+          base = os.environ['BASE_SHA']
+          changed = git('diff', '--name-only', base, sha).splitlines()
+          paths = git('ls-files', 'control-plane/boss-test-pr-live-integration-v1',
+                      'control-plane/command-center-state-v1/contracts/failure_evidence_v1.schema.json',
+                      '.github/workflows/hk-agent-failure-evidence-v1.yml').splitlines()
+          hashes = {p: hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest() for p in sorted(paths)}
+          digest = lambda value: hashlib.sha256(value).hexdigest()
+          evidence = json.loads((work / 'binding.json').read_text())
+          evidence.update({'schema': 'shared-hk-test-pr-compatibility-ci-v1',
+                           'scope': 'HK_AGENT_LINEAGE', 'base_sha': base,
+                           'candidate_tree': git('rev-parse', sha + '^{tree}'),
+                           'application_tree': git('rev-parse', sha + ':application'),
+                           'changed_files': changed, 'source_sha256': hashes,
+                           'source_fingerprint_sha256': digest(json.dumps(hashes, sort_keys=True,
+                               separators=(',', ':')).encode()),
+                           'tests': {'hk_agent_lineage': 'PASS',
+                                     'signed_test_pr_failure_projection': 'PASS',
+                                     'log_sha256': digest((work / 'tests.log').read_bytes())},
+                           'real_frozen_builder_dependencies': 'NOT_OBSERVED',
+                           'hk_test_pr_acceptance': 'NOT_EVALUATED'})
+          (work / 'EVIDENCE.json').write_text(json.dumps(evidence, sort_keys=True, indent=2) + '\n')
+          # The checksum file must never include itself.
+          entries = [p for p in sorted(work.rglob('*')) if p.is_file() and p.name != 'SHA256SUMS']
+          (work / 'SHA256SUMS').write_text(''.join(
+              digest(p.read_bytes()) + '  ' + p.relative_to(work).as_posix() + '\n' for p in entries))
+          print('EVIDENCE_SHA256=' + digest((work / 'EVIDENCE.json').read_bytes()))
+          print('CANDIDATE_SHA=' + sha)
           PY
       - name: Parse a real docker save archive produced by this runner
         run: |
@@ -262,7 +318,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: hk-agent-failure-${{ github.sha }}
+          name: hk-agent-failure-${{ env.CANDIDATE_SHA }}
           path: ${{ runner.temp }}/hk-agent-failure/
           if-no-files-found: error
           retention-days: 30
