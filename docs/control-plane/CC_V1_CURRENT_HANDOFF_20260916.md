@@ -669,6 +669,32 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 > 仍然有效的旧表述：上面 150 / 197 / 301 / 486 / 675 / 677 行关于 `deployment_requests_enabled=false` 的记述属于**当时状态**；
 > 自本修订起该字段不存在，读到时按本块口径理解。
 
+> **2026-09-17 / CCV1-63 —— 优先读这一段：派生状态与读侧文档的 DEPLOY 口径已更正。**
+>
+> **① 问题本身**：`command-center-state-v1` 里描述「可请求动作集合」的那几个值是**仓侧常量**
+> （`state_projection.py` 的 `ENABLED_HUMAN_REQUEST_ACTIONS` / `CAPABILITY_CLASSIFICATION` /
+> `deploy_request_enabled`，以及两份契约 schema 里的 `{"const": false}`）。部署授权模型改变之后
+> 它们与现场相反，于是 `CONTROL_STATUS_V1` 会告诉连接器「DEPLOY 未启用、不要提交」——
+> 而那正好是 V1 的唯一成功标准。**现场重算投影救不了它们**：值不是从现场读来的。
+> **② 已更正**（分支 `cc/bridge-remote-default-branch-v1`，本机校验 199 + 50 + 67 + 65 + 137 全绿）：
+> `ENABLED_HUMAN_REQUEST_ACTIONS` 加入 `HK_STAGING_DEPLOY`；`CAPABILITY_CLASSIFICATION` 由
+> `CAPABILITY_PRESENT_BUT_DISABLED` 改为 `SUPPORTED_PROVEN`；`deploy_request_enabled` 由 `false`
+> 改为 `true`（`control_state_v1` / `control_status_v1` 两份 schema 的 `const` 同步，并补说明）；
+> `request_v1.schema.json` 删掉「DEPLOY 必填 `plan_id`」那条（现场恰恰**拒** `plan_id`）、
+> `plan_id` 移入 `x-go-forbidden-fields`、`currently_enabled_request_action` 补上 DEPLOY；
+> `CHATGPT_CONTRACT_V1.md` 与组件 README 的通道表、架构表、计数同步；
+> `request_fact_v1.schema.json` 的 `action_id` 枚举补上 `HK_STAGING_ROLLBACK` 与
+> `CONTROL_PLANE_HEALTH`（此前合法的 ROLLBACK fact 过不了自己组件发布的 schema）；
+> `boss-deploy-request-v1` 的 `rollback_requestable` 由 `NO` 改为 `YES`。
+> **③ 未改动、只加注**：`boss-deploy-request-v1/PROVENANCE.json`（1.5.0 血统记录）追加
+> `superseded_note`，其原有值一字未动——改写血统记录等于毁掉血统记录。
+> 本文件下方 B4-B1.8 块中「`HK_STAGING_ROLLBACK` 仍不可请求」与
+> 「`deployment_requests_enabled` 仍为 false」同属**当时状态**。
+> **④ 口径**：判「现在能请求什么」以**现场通道配置**为准
+> （`/etc/go-command-center/boss-request-bridge-v1.json` 的 `allowed_actions` 与
+> `deployment_authorization`），不以任何派生文档为准；本轮的客观尺子是仓库自己的
+> `boss-deploy-request-v1/config.json`，它本来就写着六项 action。
+
 > **2026-09-17 / B4-B1.9（CCV1-52）—— 优先读这一段，它取代上面 ①④ 的计划口径。**
 >
 > **① 四项产品发布声明已从部署合同里移除**：`three_end_ux` / `six_vertical_closed_loop` /

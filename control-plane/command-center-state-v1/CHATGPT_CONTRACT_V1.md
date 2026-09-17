@@ -120,28 +120,44 @@ from the canonical pointer, Production). They are facts, not a verdict.
 ```
 HUMAN_REQUEST_ACTIONS       HK_STAGING_VERIFY     SUPPORTED_PROVEN                enabled
                             HK_STAGING_TEST_PR    SUPPORTED_PROVEN                enabled
-                            HK_STAGING_DEPLOY     CAPABILITY_PRESENT_BUT_DISABLED not enabled
+                            HK_STAGING_DEPLOY     SUPPORTED_PROVEN                    enabled
                             HK_STAGING_CANARY     CAPABILITY_PRESENT_REQUESTABLE  enabled
                             HK_STAGING_ROLLBACK   CAPABILITY_PRESENT_REQUESTABLE  enabled
 PLATFORM_REQUEST_ACTIONS    CONTROL_PLANE_HEALTH  SUPPORTED_PROVEN_PLATFORM_ONLY  enabled
 ```
 
 The connector may write a Request file only for an action listed in
-`enabled_human_request_actions`. It supplies `action_id`, `environment`, a fresh
-`request_id`, `requested_at`, and one target selector: `pr_number` for
-`HK_STAGING_TEST_PR`. A `HK_STAGING_ROLLBACK` Request carries nothing else: the
+`enabled_human_request_actions`, and DEPLOY is one of them. There is no deploy
+switch and nothing to open: a DEPLOY Request is itself the Human Approval — its
+author as reported by GitHub, its platform `created_at`, and the digest of its
+canonical content — so a request that asks to deploy this candidate is the whole
+of the authorisation. Command Center derives the plan and the one-time
+authorisation from facts it already holds.
+
+Every enabled action has the same shape. It supplies `action_id`, `environment`, a
+fresh `request_id` and `requested_at`, and at most one target selector: `pr_number`
+for `HK_STAGING_TEST_PR`. A `HK_STAGING_ROLLBACK` Request carries nothing else: the
 deployment it undoes is the newest one the Bridge published, and the images to restore
 come from that deployment's own record on the host, so the connector cannot name a
 deployment, a service, an image or a target even though it can ask for the undo. It may never write a `CONTROL_PLANE_HEALTH` Request: that
 action is the platform's read-only probe, created by the platform's own producer
 on a timer, and writing one by hand would forge an automation identity.
 
+Being enabled is not a promise that the host will accept it. Whether the host
+currently accepts a DEPLOY Request is a live-host fact reported as
+`live_request_switch`, and the host answers for itself: a host with deployments
+suspended refuses the Request with `deployment_authorization_mode_unsupported`.
+Report that token and stop; do not retry, and do not treat it as a defect in the
+Request. A DEPLOY Request must also be opened after that candidate's CANARY and
+after a preflight VERIFY, because those are the windows the host itself re-reads.
+
 The connector must never supply an image id, repo digest, service list, compose
 path, env file, shell command, executor path, signature, nonce, `task_id`,
 `release_id`, `approval_id`, `canary_evidence_id`, `source_deploy_task_id` or
-`plan_id`. A `plan_id` is expressible in the schema but its action is **not
-enabled**: do not submit it, and do not plan a deployment on the basis of this
-contract.
+`plan_id`. `plan_id` is not a Request field at all any more: plans are derived by
+Command Center, so the Bridge refuses a Request that still carries one rather than
+reading around the field. Do not submit it, and do not try to prepare a plan or
+declare a release gate — neither is expressible.
 
 ## Creating a Request on GitHub
 

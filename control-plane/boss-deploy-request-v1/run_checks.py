@@ -56,7 +56,11 @@ summary={'schema_version':'1','status':'PASS' if result.wasSuccessful() and not 
     'canary_gated_by_the_deployment_authorization':'NO',
     'canary_can_become_verify_test_pr_deploy_or_rollback':'NO',
     'canary_participates_in_deploy_arm_or_plan_budget':'NO',
-    'rollback_requestable':'NO',
+    # A ROLLBACK Request is a channel action: the Bridge's own CHANNEL_ACTIONS carries
+    # it, the executor verifies the source deployment's record before it acts, and a
+    # real rollback has run on HK-STAGING-01.  It is gated by no switch, and it names
+    # no deployment, image, service or target of its own.
+    'rollback_requestable':'YES',
     # There is no deploy switch.  The shipped configuration declares only how deployments
     # are authorised, and that declaration grants nothing: the authorisation is the
     # authenticated DEPLOY Request, established per request.  Both facts are reported.

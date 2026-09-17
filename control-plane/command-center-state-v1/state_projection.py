@@ -136,19 +136,23 @@ KNOWN_CAPABILITIES = (
 HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
                          "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK")
 PLATFORM_REQUEST_ACTIONS = ("CONTROL_PLANE_HEALTH",)
-# What the channel can create *right now*, per class. DEPLOY is human-expressible
-# but its switch is off, so it is absent from the enabled set. CANARY is present:
-# it is read-only, it mutates no business runtime, and it is the evidence a
-# deployment plan must cite before that plan -- and therefore the switch -- can
-# exist. ROLLBACK became present with the channel revision that added it: it
-# mutates the same eight services a deployment does and takes the same authority,
-# so it is not read-only -- but its target is not chosen by anyone. The source is
-# the newest deployment the Bridge itself published, and the executor re-hashes
-# that deployment's own record and re-reads the eight containers before it acts.
-# The platform producer drives a read-only probe on a timer, so HEALTH is present
-# too.
-ENABLED_HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY",
-                                 "HK_STAGING_ROLLBACK")
+# What the channel can create *right now*, per class. There is no deploy switch,
+# so DEPLOY is present here exactly as the Bridge's own channel contract lists it:
+# `control-plane/boss-deploy-request-v1/config.json` carries all six actions with
+# `deployment_authorization: "request"`, and the authenticated DEPLOY Request is
+# itself the authorisation. Absence from this set is a claim that the action is
+# refused by the contract, so a stale constant here reads to a connector as
+# "you may not deploy" -- which is the one answer this projection must never
+# invent. CANARY is present because a canary is the evidence a deployment plan
+# must cite, so it has to be obtainable before a plan can exist at all; ROLLBACK
+# is present because it is the undo of a deployment and takes the same authority
+# it does. Neither chooses its own target: the canary's images come from the
+# root-owned canary authority, and the rollback target is the newest deployment
+# the Bridge itself published, which the executor re-hashes and re-reads before
+# it acts. The platform producer drives a read-only probe on a timer, so HEALTH
+# is present too -- as a platform action, never as a human right.
+ENABLED_HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
+                                 "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK")
 ENABLED_PLATFORM_REQUEST_ACTIONS = ("CONTROL_PLANE_HEALTH",)
 ENABLED_REQUEST_ACTIONS = (ENABLED_HUMAN_REQUEST_ACTIONS
                            + ENABLED_PLATFORM_REQUEST_ACTIONS)
@@ -171,7 +175,11 @@ PLATFORM_ACTION_PROPERTIES = {
 CAPABILITY_CLASSIFICATION = {
     "HK_STAGING_VERIFY": "SUPPORTED_PROVEN",
     "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
-    "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
+    # Proven and requestable: it ran end to end on HK-STAGING-01, and since the
+    # 2026-09-17 redesign there is no switch to open -- the authenticated Request
+    # is the authorisation. It is deliberately NOT classified as disabled: a
+    # classification is read as an answer about what may be requested.
+    "HK_STAGING_DEPLOY": "SUPPORTED_PROVEN",
     # Requestable without a switch: a canary mutates no business runtime, and it has
     # to exist before a deployment plan can be registered at all.
     "HK_STAGING_CANARY": "CAPABILITY_PRESENT_REQUESTABLE",
@@ -231,7 +239,12 @@ ACTION_RESULT = {
 REQUEST_EXTRA_FIELDS = {
     "HK_STAGING_VERIFY": set(),
     "HK_STAGING_TEST_PR": {"pr_number"},
-    "HK_STAGING_DEPLOY": {"plan_id"},
+    # A deploy carries the five common fields and nothing else, exactly like the
+    # canary and the rollback. A plan_id used to name a plan a human had written;
+    # the plan is derived by the Command Center now, so a caller-chosen name would
+    # only be a caller-chosen deployment. The exact-set comparison below refuses a
+    # Request that still carries one.
+    "HK_STAGING_DEPLOY": set(),
     # The canary carries exactly what VERIFY carries: the five common fields. The
     # candidate image, its sealed package and the expected current image come from
     # the Command Center's own root-owned canary authority, so there is no field
@@ -253,7 +266,6 @@ TASK_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 NONCE_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 IMAGE_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
-RELEASE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 INSTANCE_RE = re.compile(r"^(?:i[-Zz]?)?([0-9a-z]{16,20})[Zz]?$")
 
 # Anything that would make the derived document machine-specific.
@@ -794,8 +806,6 @@ def validate_request(request):
     parse_time(request["requested_at"])
     if action == "HK_STAGING_TEST_PR" and not re.fullmatch(r"^[1-9][0-9]{0,8}$", request["pr_number"]):
         raise Malformed("request_pr_number")
-    if action == "HK_STAGING_DEPLOY" and not RELEASE_RE.fullmatch(request["plan_id"]):
-        raise Malformed("request_plan_id")
     return request
 
 
@@ -2001,11 +2011,15 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
                                        for k, v in sorted(PLATFORM_ACTION_PROPERTIES.items())},
         "known_capabilities": list(KNOWN_CAPABILITIES),
         "capability_classification": dict(CAPABILITY_CLASSIFICATION),
-        "deploy_request_enabled": False,
+        "deploy_request_enabled": True,
         "deploy_request_enabled_source": (
-            "the authoritative Boss Request contract currently exposes VERIFY, TEST_PR and "
-            "CONTROL_PLANE_HEALTH, and DEPLOY under its plan and approval gates; the DEPLOY "
-            "request enablement remains fail-closed"),
+            "the channel contract exposes all six actions with deployment_authorization="
+            "'request', so the DEPLOY Request is enabled and there is no switch to open: the "
+            "authenticated Request is itself the authorisation. This is the contract-level "
+            "answer only. Whether the live host currently accepts one is a live-host fact and "
+            "is reported separately as live_request_switch, never asserted here; a host with "
+            "deployments suspended refuses the Request with "
+            "deployment_authorization_mode_unsupported"),
         "live_request_switch": unknown(
             "the live Command Center channel switch is a live-host fact. It is not on the control "
             "bus and this projection must not assert it"),
@@ -2048,9 +2062,9 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
     hold = pointers["hold"]
     deploy_capability = assertion(
         STATE_OBSERVED,
-        {"capability": "CAPABILITY_PRESENT_BUT_DISABLED", "request_enabled": False,
+        {"capability": "SUPPORTED_PROVEN", "request_enabled": True,
          "readiness_evaluation": "NOT_IN_SCOPE"},
-        "the DEPLOY capability exists in the repository and its request enablement is fail-closed. "
+        "the DEPLOY capability is proven and its Request is enabled, with no switch to open. "
         "This is a capability classification, not a readiness evaluation, and it must never be read "
         "as one")
 
