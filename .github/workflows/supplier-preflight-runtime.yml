@@ -35,6 +35,7 @@ jobs:
       - name: Focused supplier preflight tests
         working-directory: application
         run: |
+          mkdir -p "$RUNNER_TEMP/supplier-preflight"
           PYTHONPATH=src python -m pytest -p no:cacheprovider -q tests/test_supplier_preflight_runtime.py --junitxml="$RUNNER_TEMP/supplier-preflight/tests.xml"
           PYTHONPATH=src python scripts/r82_rc142_external_sandbox_executor_gate.py | tee "$RUNNER_TEMP/supplier-preflight/runtime-gate.txt"
       - name: Bind exact candidate and seal Evidence
