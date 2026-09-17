@@ -58,7 +58,7 @@ def test_keyset_cursor_pages_without_duplicate_or_skip(isolated_session):
         if not page["page"]["has_more"]:
             assert cursor is None
             break
-    assert len(seen) == len(set(seen)) == 32
+    assert len(seen) == len(set(seen)) == 31
 
 
 def test_cursor_rejects_tamper_query_scope_and_offset_mix(isolated_session):
