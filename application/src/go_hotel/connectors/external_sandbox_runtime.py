@@ -293,10 +293,10 @@ class ContractDrivenHotelSupplyExecutor:
                     transport_error=type(exc).__name__,
                     started=started,
                 )
-                if attempt == max_attempts:
-                    break
-                time.sleep(min(0.25 * (2 ** (attempt - 1)), 2.0))
-                continue
+                # The transport may have sent a mutating request before losing
+                # the response. Without provider-attested idempotency semantics,
+                # retrying could duplicate the side effect.
+                break
             if not isinstance(response_body, bytes):
                 raise TypeError("SUPPLIER_TRANSPORT_RAW_BYTES_REQUIRED")
             last_status, last_body = status, response_body
@@ -427,7 +427,9 @@ class ContractDrivenHotelSupplyExecutor:
         tolerance = int(cfg.get("replay_tolerance_seconds") or 0)
         if tolerance <= 0:
             raise ValueError("WEBHOOK_REPLAY_TOLERANCE_REQUIRED")
-        if abs((now - observed_at).total_seconds()) > tolerance:
+        # A half-open validity window aligns verifier acceptance with stores
+        # that delete a claim at expires_at.
+        if abs((now - observed_at).total_seconds()) >= tolerance:
             raise ValueError("SUPPLIER_WEBHOOK_TIMESTAMP_OUTSIDE_TOLERANCE")
         replay_key = _sha256_bytes(signed + b"." + signature.encode())
         # Keep the atomic claim for the full remaining validity window, including
