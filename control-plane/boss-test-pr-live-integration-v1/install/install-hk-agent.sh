@@ -62,7 +62,7 @@ getent group "$artifact_group" >/dev/null 2>&1 || { echo "trusted writer group m
 artifact_uid=$(id -u "$artifact_user")
 artifact_gid=$(id -g "$artifact_user")
 test "$artifact_uid" != 0 || { echo "trusted writer account resolves to root: $artifact_user" >&2; exit 1; }
-for store_path in "$store_root" "$store_root/objects"; do
+for store_path in "$store_root" "$store_root/objects" "$store_root/failures"; do
   test ! -L "$store_path" || { echo "refusing a symlinked store path: $store_path" >&2; exit 1; }
   if test -e "$store_path"; then
     test "$(stat -c %u:%g "$store_path")" = "$artifact_uid:$artifact_gid" \
@@ -122,6 +122,6 @@ test "$(stat -c %a "$build_root")" = 700
 test "$(stat -c %u:%g "$store_root")" = "$artifact_uid:$artifact_gid"
 test "$(stat -c %a "$store_root")" = 700
 test "$(stat -c %u:%g "$store_root/objects")" = "$artifact_uid:$artifact_gid"
-test "$(stat -c %a "$store_root/objects")" = 700
+test "$(stat -c %a "$store_root/objects")" = 700\ntest "$(stat -c %u:%g "$store_root/failures")" = "$artifact_uid:$artifact_gid"\ntest "$(stat -c %a "$store_root/failures")" = 700
 "$root/install/preflight.sh" hk-staging postinstall
 echo "INSTALL_STAGED_ONLY: restart is a separately approved operation"
