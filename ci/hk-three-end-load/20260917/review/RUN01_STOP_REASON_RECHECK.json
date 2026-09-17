@@ -1,0 +1,160 @@
+{
+  "kind": "C13_RUN01_STOP_REASON_RECHECK",
+  "run_id": "hk3-mu5rvu7t-eca795",
+  "thresholds_unchanged": true,
+  "window_statistics_discrepancies": [],
+  "hundred_vu_checks": [
+    {
+      "end_ms": 1789664791747,
+      "since_steady_start_ms": 1427,
+      "per_role": {
+        "consumer": {
+          "requests": 57,
+          "p95_ms": 824.5,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        },
+        "supplier": {
+          "requests": 12,
+          "p95_ms": 740.03,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        },
+        "admin": {
+          "requests": 13,
+          "p95_ms": 604.22,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        }
+      },
+      "triggered": false
+    },
+    {
+      "end_ms": 1789664792761,
+      "since_steady_start_ms": 2441,
+      "per_role": {
+        "consumer": {
+          "requests": 68,
+          "p95_ms": 819.33,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        },
+        "supplier": {
+          "requests": 13,
+          "p95_ms": 740.03,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        },
+        "admin": {
+          "requests": 14,
+          "p95_ms": 604.22,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        }
+      },
+      "triggered": false
+    },
+    {
+      "end_ms": 1789664793761,
+      "since_steady_start_ms": 3441,
+      "per_role": {
+        "consumer": {
+          "requests": 68,
+          "p95_ms": 819.33,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        },
+        "supplier": {
+          "requests": 13,
+          "p95_ms": 740.03,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        },
+        "admin": {
+          "requests": 14,
+          "p95_ms": 604.22,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        }
+      },
+      "triggered": false
+    },
+    {
+      "end_ms": 1789664794772,
+      "since_steady_start_ms": 4452,
+      "per_role": {
+        "consumer": {
+          "requests": 76,
+          "p95_ms": 843.88,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        },
+        "supplier": {
+          "requests": 17,
+          "p95_ms": 3429.62,
+          "errors": 0,
+          "consecutive_bad_checks": 1
+        },
+        "admin": {
+          "requests": 16,
+          "p95_ms": 3362.23,
+          "errors": 0,
+          "consecutive_bad_checks": 1
+        }
+      },
+      "triggered": false
+    },
+    {
+      "end_ms": 1789664795779,
+      "since_steady_start_ms": 5459,
+      "per_role": {
+        "consumer": {
+          "requests": 91,
+          "p95_ms": 824.5,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        },
+        "supplier": {
+          "requests": 20,
+          "p95_ms": 3355.93,
+          "errors": 0,
+          "consecutive_bad_checks": 2
+        },
+        "admin": {
+          "requests": 20,
+          "p95_ms": 604.22,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        }
+      },
+      "triggered": false
+    },
+    {
+      "end_ms": 1789664796780,
+      "since_steady_start_ms": 6460,
+      "per_role": {
+        "consumer": {
+          "requests": 108,
+          "p95_ms": 819.33,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        },
+        "supplier": {
+          "requests": 24,
+          "p95_ms": 3355.93,
+          "errors": 0,
+          "consecutive_bad_checks": 3
+        },
+        "admin": {
+          "requests": 25,
+          "p95_ms": 604.22,
+          "errors": 0,
+          "consecutive_bad_checks": 0
+        }
+      },
+      "triggered": true
+    }
+  ],
+  "trigger_matches_recorded_stop": true,
+  "interpretation": "Three overlapping rolling checks in a 6.46-second stage; not three completed independent15-second windows and not sustained capacity proof."
+}

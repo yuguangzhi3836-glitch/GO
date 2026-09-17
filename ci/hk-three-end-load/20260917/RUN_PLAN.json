@@ -1,0 +1,47 @@
+{
+  "schema": "go.three-surface-capacity-plan.v1",
+  "source_commit": "edd3500575d2f2b81298cc9273025e0a3b734897",
+  "previous_deployment_archive_pr": 189,
+  "environment": "HK-STAGING-01",
+  "allocation": {
+    "consumer": 700,
+    "supplier": 150,
+    "admin": 150
+  },
+  "roles": {
+    "supplier": "READ_ONLY",
+    "admin": "GO_READ_ONLY"
+  },
+  "stages": [
+    20,
+    100,
+    250,
+    500,
+    1000
+  ],
+  "steady_seconds": [
+    60,
+    60,
+    60,
+    60,
+    120
+  ],
+  "think_seconds": [
+    3,
+    7
+  ],
+  "scope": "Authenticated protocol reads and six vertical searches; existing empty synthetic consumer/supplier accounts; admin reads current operations. No payments/refunds/order creation.",
+  "test_accounts_created": 1000,
+  "account_prefix": "load1000-20260917T163735",
+  "account_creation": "normal HTTP register / identity users; credentials remain private on EASON",
+  "account_retention": "No supported account-disable/delete API was found. Revoke sessions via normal logout; retain synthetic identities.",
+  "registry_observation": "Only conn_mock_hotel registered; onboarding empty",
+  "harness_sha256": "3b6dd0532b71c08e1b9e0b0ab838c8d2607c9ae720a0037e1f273ca07a2dcde7",
+  "formal_run_id": "hk3-mu5rvu7t-eca795",
+  "initial_setup_repairs": [
+    "Windows CRLF transfer corrected to preserve reviewed script bytes",
+    "Owner-only credential file ACL corrected to exact authenticated Windows SID"
+  ],
+  "application_changes_at_start": false,
+  "production": "HOLD"
+}
