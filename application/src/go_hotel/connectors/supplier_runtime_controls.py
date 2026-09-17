@@ -226,6 +226,11 @@ class ContractResponseValidator:
     _TYPES = {"string": str, "boolean": bool, "integer": int, "object": dict, "array": list}
 
     def validate_contract(self, operation, operation_contract):
+        if not isinstance(operation, str) or operation.upper() not in {
+            "AVAILABILITY", "QUOTE", "BOOK", "QUERY", "CANCEL"
+        }:
+            raise ValueError("SUPPLIER_OPERATION_INVALID")
+        operation = operation.upper()
         rules = operation_contract.get("response_validation")
         if not isinstance(rules, dict) or not rules.get("required_fields") or not rules.get("success_equals"):
             raise ValueError("SUPPLIER_RESPONSE_RULES_REQUIRED")

@@ -389,3 +389,26 @@ def test_memory_only_database_is_rejected(url):
     engine = create_engine(url)
     with pytest.raises(ValueError, match="DURABLE_CONTROLS_DATABASE_REQUIRED"):
         SQLWebhookReplayStore(engine, scope="account")
+
+@pytest.mark.parametrize("operation", ["book", "Book", "bOoK", "cancel", "Cancel", "cAnCeL"])
+def test_operation_case_cannot_bypass_mutation_journal(database, operation):
+    engine, scope = database
+    transport = Transport()
+    runtime = build_runtime(engine, scope, transport)
+    args = dict(endpoint="https://sandbox.supplier.test",
+                credential_reference="vault://supplier/auth",
+                payload={"hotel": "H-1"}, idempotency_key="case-identity")
+    first = runtime._execute_operation(operation, **args)
+    second = runtime._execute_operation(operation.upper(), **args)
+    assert first.ok and second.ok
+    assert first.operation == operation.upper()
+    assert first == second
+    assert len(transport.calls) == 1
+
+
+@pytest.mark.parametrize("operation", ["book", "Book", "cancel", "Cancel"])
+def test_reference_rule_required_for_all_operation_spellings(operation):
+    op = contract()["operations"][operation.lower()]
+    del op["response_validation"]["reference_field"]
+    with pytest.raises(ValueError, match="SUPPLIER_REFERENCE_RULE_REQUIRED"):
+        ContractResponseValidator().validate_contract(operation, op)

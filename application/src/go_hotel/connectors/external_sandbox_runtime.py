@@ -236,6 +236,11 @@ class ContractDrivenHotelSupplyExecutor:
 
     def _execute_operation(self, operation: str, *, endpoint: str, credential_reference: str,
                            payload: dict[str, Any], idempotency_key: str) -> HotelSupplyOperationResult:
+        if not isinstance(operation, str) or operation.upper() not in {
+            "AVAILABILITY", "QUOTE", "BOOK", "QUERY", "CANCEL"
+        }:
+            raise ValueError("SUPPLIER_OPERATION_INVALID")
+        operation = operation.upper()
         op = self.contract["operations"].get(operation.lower())
         if not op:
             raise ValueError("OPERATION_CONTRACT_MISSING")
