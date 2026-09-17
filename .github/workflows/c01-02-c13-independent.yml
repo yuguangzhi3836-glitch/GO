@@ -1,0 +1,130 @@
+name: C01-02 C13 independent scoped gate
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ops/c01-formal-20260915
+    paths:
+      - .github/workflows/c01-02-c13-independent.yml
+permissions:
+  contents: read
+  actions: read
+env:
+  TASK_ID: V70-R3-C01-02
+  CANDIDATE_SHA: 3b0432f8196ac086ae205352c44887aade1035c0
+  APPLICATION_TREE: b0dba98dccfead7f2a7f80ccc611fc153f5915ea
+  SOURCE_TREE_SHA256: ecf362b530e9ba2a1168fb6941933980c2016c627d9933ae90fd8df51747afd8
+  C14_RUN: '35168383106'
+  C14_ARTIFACT_ID: '10475666965'
+  C14_ARTIFACT_DIGEST: sha256:05dd173f7101868f1e3c9e1c01df8c82a2280a968568530e740658873ddf474e
+jobs:
+  c13:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Independently verify exact candidate identity
+        run: |
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$APPLICATION_TREE"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          expected_tree='b0dba98dccfead7f2a7f80ccc611fc153f5915ea'
+          expected_source='ecf362b530e9ba2a1168fb6941933980c2016c627d9933ae90fd8df51747afd8'
+          for name in ['ci/retention/BASELINE.json','ci/next-depth/CANDIDATE.json','ci/cell-closure/CANDIDATE.json']:
+              data=json.loads(Path(name).read_text())
+              assert data['application_git_tree']==expected_tree, name
+              assert data['source_tree_sha256']==expected_source, name
+          PY
+      - name: Verify C14 terminal PASS and immutable artifact metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          token=os.environ['GH_TOKEN']
+          base='https://api.github.com/repos/yuguangzhi3836-glitch/GO'
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
+              with urllib.request.urlopen(req) as r:return json.load(r)
+          run=get('/actions/runs/35168383106')
+          assert run['status']=='completed' and run['conclusion']=='success'
+          artifact=get('/actions/artifacts/10475666965')
+          assert artifact['workflow_run']['id']==35168383106
+          assert artifact['digest']=='sha256:05dd173f7101868f1e3c9e1c01df8c82a2280a968568530e740658873ddf474e'
+          assert artifact['name']=='c01-02-c14-3b0432f8196ac086ae205352c44887aade1035c0'
+          assert not artifact['expired']
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-02-c14-${{ env.CANDIDATE_SHA }}
+          path: c14-input
+          github-token: ${{ github.token }}
+          repository: yuguangzhi3836-glitch/GO
+          run-id: ${{ env.C14_RUN }}
+      - name: Bind C14 PASS result to exact candidate
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('c14-input/C14_RESULT.json'))
+          e=json.load(open('c14-input/EVIDENCE_REPLAY.json'))
+          assert r['task_id']=='V70-R3-C01-02'
+          assert r['candidate_sha']=='3b0432f8196ac086ae205352c44887aade1035c0'
+          assert r['application_git_tree']=='b0dba98dccfead7f2a7f80ccc611fc153f5915ea'
+          assert r['source_tree_sha256']=='ecf362b530e9ba2a1168fb6941933980c2016c627d9933ae90fd8df51747afd8'
+          assert r['candidate_evidence_replay']=='PASS' and r['status']=='PASS_SCOPED'
+          assert r['final_release']=='HOLD' and r['hk_deploy']=='HOLD' and r['production']=='HOLD'
+          assert e['candidate']==r['candidate_sha'] and e['status']=='PASS'
+          assert e['artifact_id']==10475259664
+          assert e['artifact_digest']=='sha256:8ea53528df768eac31c9ad14d204eac032cd78987ab103a7137601dcd7b151a1'
+          assert len(e['runs'])==5 and all(x['conclusion']=='success' for x in e['runs'])
+          PY
+      - name: Install frozen dependencies for independent C01-02 replay
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Independent C01-02 targeted regression
+        working-directory: application
+        run: |
+          PYTHONPATH=src python -m pytest -p no:cacheprovider tests/test_v70_next_c01_unknown_funding.py --junitxml="$RUNNER_TEMP/c13-c01-02.xml"
+      - name: Freeze independent C13 PASS_SCOPED
+        run: |
+          mkdir -p c13-evidence
+          cp "$RUNNER_TEMP/c13-c01-02.xml" c13-evidence/
+          python - <<'PY'
+          import json, os, xml.etree.ElementTree as ET
+          root=ET.parse('c13-evidence/c13-c01-02.xml').getroot()
+          suites=root.findall('testsuite') if root.tag=='testsuites' else [root]
+          totals={k:sum(int(s.attrib.get(k,0)) for s in suites) for k in ['tests','failures','errors','skipped']}
+          assert totals=={'tests':7,'failures':0,'errors':0,'skipped':0}, totals
+          result={
+            'task_id':os.environ['TASK_ID'],
+            'candidate_sha':os.environ['CANDIDATE_SHA'],
+            'application_git_tree':os.environ['APPLICATION_TREE'],
+            'source_tree_sha256':os.environ['SOURCE_TREE_SHA256'],
+            'c14_run':int(os.environ['C14_RUN']),
+            'c14_artifact_id':int(os.environ['C14_ARTIFACT_ID']),
+            'c14_artifact_digest':os.environ['C14_ARTIFACT_DIGEST'],
+            'independent_targeted_tests':totals,
+            'status':'PASS_SCOPED',
+            'merge':'NOT_RUN',
+            'final_release':'HOLD',
+            'hk_deploy':'HOLD',
+            'production':'HOLD'
+          }
+          with open('c13-evidence/C13_RESULT.json','w') as f:json.dump(result,f,indent=2)
+          print(json.dumps(result))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c01-02-c13-${{ env.CANDIDATE_SHA }}
+          path: c13-evidence
+          if-no-files-found: error
+          retention-days: 90
