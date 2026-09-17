@@ -1,0 +1,149 @@
+{
+  "schema": "go.supplier-controls.acceptance.v1",
+  "task": "SUPPLIER_CONTROLS_DURABILITY",
+  "issue": 182,
+  "pull_request": 183,
+  "status": "DONE_SCOPED",
+  "scope": "persistent internal controls and truthful response acceptance",
+  "candidate_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+  "candidate_root_tree": "cf385c741fd9b3bdce1c4196dc40c085143bde76",
+  "application_tree": "41221557ee5d3709775cd282b02d8c30fc7e0860",
+  "source_fingerprint_sha256": "5b792a2d3e68a7498d5cc152dc849b319631325bb8d7d36b65d0dc2b3c115b00",
+  "source_files": 1389,
+  "changed_files": [
+    ".github/workflows/supplier-controls.yml",
+    "application/scripts/r82_rc142_external_sandbox_executor_gate.py",
+    "application/src/go_hotel/connectors/external_sandbox_runtime.py",
+    "application/src/go_hotel/connectors/supplier_runtime_controls.py",
+    "application/tests/test_supplier_preflight_runtime.py",
+    "application/tests/test_supplier_runtime_controls.py",
+    "ci/supplier-controls/CANDIDATE.json",
+    "ci/supplier-controls/README.md",
+    "ci/supplier-controls/seal_evidence.py"
+  ],
+  "predecessor": {
+    "pull_request": 181,
+    "candidate_sha": "cff423cf1a35b0e61081dc4f2f1cae54777c77da",
+    "application_tree": "9117bb94c2477865cd7839321647f6e57f960a8b",
+    "source_fingerprint_sha256": "fafe623561404446d9f3b8ce1c67007f266d510006015860dc2df393c4113005",
+    "unchanged_outside_allowed_files": "PASS",
+    "tests": "NOT_RERUN"
+  },
+  "ci": {
+    "run_id": 35198020580,
+    "job_id": 105125766362,
+    "url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35198020580",
+    "status": "SUCCESS",
+    "tests": {
+      "postgres": {
+        "cases": 39,
+        "failed_or_skipped": 0,
+        "status": "PASS",
+        "step_outcome": "success"
+      },
+      "sqlite": {
+        "cases": 52,
+        "failed_or_skipped": 0,
+        "status": "PASS",
+        "step_outcome": "success"
+      }
+    },
+    "runtime_gate": "PASS"
+  },
+  "evidence": {
+    "file": "EVIDENCE.json",
+    "sha256": "fbfe47302c023215cb68e14d498f179f8c90bcb85a106f37ae02819fc3249814",
+    "archive_method": "Reconstructed from original CI JSON log using the exact sealer serialization; independently hashed to match original CI EVIDENCE_SHA256. This is not a ZIP extraction.",
+    "artifact_id": 10486867729,
+    "artifact_name": "supplier-durable-controls-edd3500575d2f2b81298cc9273025e0a3b734897",
+    "artifact_zip_api_digest": "sha256:452cd17abcc4d7c6f3a9c7ea57d14d044a5c4016c8163bbfad721dfa068067ec",
+    "artifact_expires_at": "2026-12-16T08:07:40Z",
+    "artifact_zip_downloaded_and_independently_rehashed": false,
+    "source_fingerprint_independently_recomputed_by_reviewers": false
+  },
+  "review_sequence": [
+    {
+      "authorization": "read-only independent review; no writes, CI reruns, merge or deployment",
+      "basis": [
+        "independent exact-head source/diff review",
+        "raw focused CI logs",
+        "GitHub PR, workflow and artifact API readback"
+      ],
+      "candidate_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+      "findings": [
+        "Operation canonicalization precedes contract validation, mutation journal guard and identity calculation.",
+        "Ten mixed-case regression cases pass.",
+        "SQLite 52 and PostgreSQL 39 cases pass with zero failures or skips; runtime gate PASS.",
+        "PR #183 and PR #181 remain Draft, open and unmerged; predecessor HEAD unchanged."
+      ],
+      "gate": "C14",
+      "limitations": [
+        "No reviewer-downloaded ZIP or independent ZIP checksum recalculation: local executor unavailable.",
+        "Evidence JSON hash and source fingerprint read from original CI sealing log; ZIP digest read from GitHub artifact API."
+      ],
+      "reviewer": "/root/c14_pr177",
+      "scope": "Issue #182 only",
+      "verdict": "PASS_SCOPED",
+      "github_comment_url": "https://github.com/yuguangzhi3836-glitch/GO/pull/183#issuecomment-5711431218"
+    },
+    {
+      "authorization": "read-only review; no GitHub writes, CI reruns, merge or deployment",
+      "basis": [
+        "independent exact-head source and fix diff review",
+        "original focused CI logs",
+        "GitHub PR and artifact API"
+      ],
+      "candidate_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+      "findings": [
+        "Prior operation-case bypass P1 is resolved in runtime and validator before lookup, journal dispatch or key creation.",
+        "Six mixed-case deduplication cases and four required-reference cases pass.",
+        "No remaining concrete P0/P1 found within this scoped review.",
+        "SQLite 52 and PostgreSQL 39 cases pass with zero failures or skips; runtime gate and CI checksums PASS.",
+        "Exactly nine changed files against unchanged PR #181 head; both PRs Draft/open/unmerged."
+      ],
+      "gate": "C13",
+      "limitations": [
+        "No independent artifact ZIP download, ZIP hash recalculation or independent test rerun.",
+        "This is exact-source and isolated-CI scoped acceptance, not independent binary archive verification or supplier certification."
+      ],
+      "prerequisite": {
+        "candidate_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+        "comment_id": 5711431218,
+        "gate": "C14",
+        "verdict": "PASS_SCOPED"
+      },
+      "reviewer": "/root/c13_pr177",
+      "scope": "Issue #182 only",
+      "verdict": "PASS_SCOPED",
+      "github_comment_url": "https://github.com/yuguangzhi3836-glitch/GO/pull/183#issuecomment-5711448079"
+    }
+  ],
+  "review_kind": "Independent agent source/log/API assessments; not native GitHub approvals or human reviews.",
+  "acceptance_boundaries": [
+    "Issue #182 internal development scope only",
+    "No whole-product 100% declaration",
+    "No real supplier certification",
+    "No independent binary artifact validation",
+    "Controls tables provisioned only in isolated tests; live provisioning remains HOLD"
+  ],
+  "holds": {
+    "external_supplier": "HOLD",
+    "hk_staging": "HOLD",
+    "final_release": "HOLD",
+    "production": "HOLD",
+    "merge": "NOT_RUN",
+    "deployment": "NOT_RUN"
+  },
+  "candidate_preservation": {
+    "draft": true,
+    "open": true,
+    "merged": false,
+    "accepted_candidate_sha_must_not_move": true
+  },
+  "archive": {
+    "branch": "evidence/supplier-controls-edd35005-20260917",
+    "path": "ci/supplier-controls/acceptance/edd35005",
+    "changes": "metadata only; application tree unchanged from accepted candidate",
+    "archive_commit_is_new_candidate": false
+  }
+}
