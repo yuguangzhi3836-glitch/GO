@@ -37,7 +37,9 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/supplier-preflight"
           PYTHONPATH=src python -m pytest -p no:cacheprovider -q tests/test_supplier_preflight_runtime.py --junitxml="$RUNNER_TEMP/supplier-preflight/tests.xml"
+          touch "$RUNNER_TEMP/supplier-preflight/pytest.PASS"
           PYTHONPATH=src python scripts/r82_rc142_external_sandbox_executor_gate.py | tee "$RUNNER_TEMP/supplier-preflight/runtime-gate.txt"
+          touch "$RUNNER_TEMP/supplier-preflight/runtime-gate.PASS"
       - name: Bind exact candidate and seal Evidence
         if: always()
         run: |
@@ -67,8 +69,8 @@ jobs:
             'source_files':len(fingerprint),
             'source_fingerprint_sha256':digest,
             'changed_files':changed,
-            'tests':'PASS' if (out/'tests.xml').exists() else 'FAIL',
-            'runtime_gate':'PASS' if 'PASS' in (out/'runtime-gate.txt').read_text() else 'FAIL',
+            'tests':'PASS' if (out/'pytest.PASS').is_file() else 'FAIL',
+            'runtime_gate':'PASS' if (out/'runtime-gate.PASS').is_file() else 'FAIL',
             'real_supplier_identity':'HOLD_EXTERNAL',
             'real_supplier_credentials':'HOLD_EXTERNAL',
             'real_supplier_raw_responses':'HOLD_EXTERNAL',
