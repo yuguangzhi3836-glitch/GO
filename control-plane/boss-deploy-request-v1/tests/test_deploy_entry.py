@@ -136,7 +136,10 @@ class Fixture:
             'started_at': bridge.iso(completed), 'completed_at': bridge.iso(completed),
             'task_canonical_sha256': gate.digest({k: v for k, v in task.items() if k != 'signature'}),
             'source_commit_sha': self.source, 'source_pr_number': self.test_pr_number,
-            'artifact_digest': self.candidate, 'built_image_id': self.candidate,
+            # A real TEST_PR Evidence carries built_image_id only; the HK contract at
+            # hk_agent/transport.py:315 has no artifact_digest.  The fixture used to
+            # carry both names, which is why it passed while the live gate could not.
+            'built_image_id': self.candidate,
             'artifact_durability': 'PROVEN',
             'artifact_package': {'schema': 'go.sealed-artifact.v1', 'package_sha256': self.package,
                                  'image_id': self.candidate, 'store': 'go-hk-artifacts',
@@ -426,7 +429,7 @@ class ProofTests(unittest.TestCase):
     def test_the_signed_test_pr_is_what_replaces_sealed_node(self):
         """Every binding sealed_node stood for, refused one at a time when broken."""
         edits=[('source_commit_sha', 'f'*40),          # a TEST_PR of a different commit
-               ('artifact_digest', 'sha256:'+'c'*64),  # a different artifact
+               ('built_image_id', 'sha256:'+'c'*64),   # a different artifact
                ('source_pr_number', '53'),             # a different pull request
                ('executor_result', 'VERIFY_OK'),       # not a build at all
                ('status', 'REJECTED'),

@@ -282,12 +282,17 @@ def test_pr_proof(task,evidence,authority_key,hk_key):
     if evidence.get('source_commit_sha')!=source['commit_sha']: raise Reject('test_pr_commit_binding')
     if str(evidence.get('source_pr_number'))!=source['pr_number']: raise Reject('test_pr_pr_binding')
     if evidence.get('artifact_durability')!='PROVEN': raise Reject('test_pr_artifact_not_durable')
-    match(evidence.get('artifact_digest'),IMAGE,'test_pr_artifact')
+    # The Evidence's product field is `built_image_id`, not `artifact_digest`.  The HK
+    # agent's own contract names it: hk_agent/transport.py:315 lists built_image_id in
+    # the required TEST_PR field set and :337 writes exactly that name.  Reading
+    # `artifact_digest` therefore matched nothing on a real signed Evidence, and this
+    # gate refused every DEPLOY with test_pr_artifact.
+    match(evidence.get('built_image_id'),IMAGE,'test_pr_artifact')
     package=evidence.get('artifact_package')
     if not isinstance(package,dict): raise Reject('test_pr_package')
     match(package.get('package_sha256'),SHA,'test_pr_package_sha256')
     if package.get('schema')!='go.sealed-artifact.v1': raise Reject('test_pr_package_schema')
-    if package.get('image_id')!=evidence.get('artifact_digest'): raise Reject('test_pr_package_image')
+    if package.get('image_id')!=evidence.get('built_image_id'): raise Reject('test_pr_package_image')
     gates=evidence.get('gate_results')
     if not isinstance(gates,dict) or any(gates.get(k)!='PASS' for k in TEST_PR_GATES): raise Reject('test_pr_gate_failed')
     if any(v != 'PASS' and v is not False for v in gates.values()): raise Reject('test_pr_contains_failed_gate')
@@ -364,7 +369,7 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
     # same source and the same artifact, and the artifact has to be the sealed package
     # the executor will resolve. This is the bind that sealed_node used to stand for.
     if test_pr['source_commit_sha']!=candidate['source_commit']: raise Reject('test_pr_candidate_source_binding')
-    if test_pr['artifact_digest']!=candidate['image_id']: raise Reject('test_pr_candidate_artifact_binding')
+    if test_pr['built_image_id']!=candidate['image_id']: raise Reject('test_pr_candidate_artifact_binding')
     if test_pr['artifact_package']['package_sha256']!=candidate['package_sha256']: raise Reject('test_pr_candidate_package_binding')
     canary_checked=proof(bundle['canary_task'],bundle['canary_evidence'],CANARY_ACTION,authority_key,hk_key,at,CANARY_EVIDENCE_MAX_AGE)
     checked=proof(bundle['preflight_task'],bundle['preflight_evidence'],VERIFY_ACTION,authority_key,hk_key,at,VERIFY_EVIDENCE_MAX_AGE)
