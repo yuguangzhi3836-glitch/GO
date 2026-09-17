@@ -1,0 +1,407 @@
+test_the_canary_delivers_a_real_sealed_package_through_the_production_runner (test_artifact_store.CanaryDeliveryContractTests.test_the_canary_delivers_a_real_sealed_package_through_the_production_runner) ... ok
+test_both_sides_decide_every_archive_the_same_way (test_artifact_store.CrossSideContractTests.test_both_sides_decide_every_archive_the_same_way)
+One corpus, two independent implementations, one verdict each. ... ok
+test_both_sides_declare_the_same_archive_refusal_vocabulary (test_artifact_store.CrossSideContractTests.test_both_sides_declare_the_same_archive_refusal_vocabulary) ... ok
+test_both_sides_declare_the_same_contract (test_artifact_store.CrossSideContractTests.test_both_sides_declare_the_same_contract) ... ok
+test_both_sides_name_the_same_trusted_writer_account (test_artifact_store.CrossSideContractTests.test_both_sides_name_the_same_trusted_writer_account)
+The owner of the evidence, named identically on both sides. ... ok
+test_both_sides_offer_the_same_entry_point (test_artifact_store.CrossSideContractTests.test_both_sides_offer_the_same_entry_point)
+The same three operations, named for the side that describes them. ... ok
+test_only_the_writer_gates_its_own_identity (test_artifact_store.CrossSideContractTests.test_only_the_writer_gates_its_own_identity)
+A deliberate asymmetry: writing is gated, reading is not. ... ok
+test_the_executor_never_accepts_a_caller_supplied_path (test_artifact_store.CrossSideContractTests.test_the_executor_never_accepts_a_caller_supplied_path) ... ok
+test_the_fixed_store_path_and_mode_are_written_in_both_files (test_artifact_store.CrossSideContractTests.test_the_fixed_store_path_and_mode_are_written_in_both_files) ... ok
+test_a_root_owned_store_is_refused_when_the_writer_must_be_go_hk_agent (test_artifact_store.CrossUidReaderTests.test_a_root_owned_store_is_refused_when_the_writer_must_be_go_hk_agent) ... skipped 'this platform cannot present a root-owned store'
+test_an_object_really_owned_by_another_account_is_refused (test_artifact_store.CrossUidReaderTests.test_an_object_really_owned_by_another_account_is_refused)
+The strongest form of the rule, on a host that can express it. ... skipped 'constructing a foreign-owned object requires root'
+test_the_reader_accepts_an_object_the_trusted_writer_owns (test_artifact_store.CrossUidReaderTests.test_the_reader_accepts_an_object_the_trusted_writer_owns)
+Root reading a package it does not own is the normal case. ... ok
+test_the_reader_judges_the_writer_account_not_the_owner_of_the_file (test_artifact_store.CrossUidReaderTests.test_the_reader_judges_the_writer_account_not_the_owner_of_the_file) ... ok
+test_the_reader_never_consults_its_own_process_identity (test_artifact_store.CrossUidReaderTests.test_the_reader_never_consults_its_own_process_identity) ... ok
+test_the_reader_refuses_a_store_owned_by_another_account (test_artifact_store.CrossUidReaderTests.test_the_reader_refuses_a_store_owned_by_another_account) ... ok
+test_the_reader_refuses_an_object_whose_mode_is_not_the_sealed_one (test_artifact_store.CrossUidReaderTests.test_the_reader_refuses_an_object_whose_mode_is_not_the_sealed_one) ... ok
+test_the_reader_refuses_an_unresolvable_writer_account (test_artifact_store.CrossUidReaderTests.test_the_reader_refuses_an_unresolvable_writer_account) ... ok
+test_a_root_owned_store_is_refused_when_the_writer_must_be_go_hk_agent (test_artifact_store.CrossUidWriterTests.test_a_root_owned_store_is_refused_when_the_writer_must_be_go_hk_agent)
+root is the reader, never the writer. ... skipped 'this platform cannot present a root-owned store'
+test_a_store_with_the_wrong_mode_is_never_written_to (test_artifact_store.CrossUidWriterTests.test_a_store_with_the_wrong_mode_is_never_written_to) ... ok
+test_an_unresolvable_writer_account_is_never_guessed (test_artifact_store.CrossUidWriterTests.test_an_unresolvable_writer_account_is_never_guessed) ... ok
+test_resealing_never_replaces_the_stored_object (test_artifact_store.CrossUidWriterTests.test_resealing_never_replaces_the_stored_object) ... ok
+test_seal_reverifies_the_stored_object_before_reporting_it_sealed (test_artifact_store.CrossUidWriterTests.test_seal_reverifies_the_stored_object_before_reporting_it_sealed)
+A stored object a reader would refuse is never reported as sealed. ... ok
+test_the_anchor_is_a_shape_checked_pair_of_ids (test_artifact_store.CrossUidWriterTests.test_the_anchor_is_a_shape_checked_pair_of_ids) ... ok
+test_the_writer_accepts_a_store_owned_by_the_trusted_account (test_artifact_store.CrossUidWriterTests.test_the_writer_accepts_a_store_owned_by_the_trusted_account) ... ok
+test_the_writer_refuses_a_store_owned_by_another_account (test_artifact_store.CrossUidWriterTests.test_the_writer_refuses_a_store_owned_by_another_account) ... ok
+test_the_writer_refuses_to_run_as_another_account (test_artifact_store.CrossUidWriterTests.test_the_writer_refuses_to_run_as_another_account) ... ok
+test_the_writer_runs_as_the_trusted_account (test_artifact_store.CrossUidWriterTests.test_the_writer_runs_as_the_trusted_account) ... ok
+test_the_agent_unit_runs_as_the_trusted_writer_account (test_artifact_store.LiveTopologyContractTests.test_the_agent_unit_runs_as_the_trusted_writer_account) ... ok
+test_the_executor_still_runs_as_root_through_a_fixed_sudo_argv (test_artifact_store.LiveTopologyContractTests.test_the_executor_still_runs_as_root_through_a_fixed_sudo_argv)
+The reader is a different account, and that path is fixed, not chosen. ... ok
+test_the_install_creates_the_store_for_the_writer_not_for_root (test_artifact_store.LiveTopologyContractTests.test_the_install_creates_the_store_for_the_writer_not_for_root) ... ok
+test_the_preflight_asserts_the_store_owner_after_install (test_artifact_store.LiveTopologyContractTests.test_the_preflight_asserts_the_store_owner_after_install) ... ok
+test_a_blob_that_does_not_hash_to_its_descriptor_is_refused (test_artifact_store.OciArchiveTests.test_a_blob_that_does_not_hash_to_its_descriptor_is_refused) ... ok
+test_a_descriptor_count_over_the_budget_is_refused (test_artifact_store.OciArchiveTests.test_a_descriptor_count_over_the_budget_is_refused) ... ok
+test_a_descriptor_graph_that_is_too_deep_is_refused (test_artifact_store.OciArchiveTests.test_a_descriptor_graph_that_is_too_deep_is_refused) ... ok
+test_a_descriptor_whose_blob_is_absent_is_refused (test_artifact_store.OciArchiveTests.test_a_descriptor_whose_blob_is_absent_is_refused) ... ok
+test_a_descriptor_with_the_wrong_size_is_refused (test_artifact_store.OciArchiveTests.test_a_descriptor_with_the_wrong_size_is_refused) ... ok
+test_a_duplicate_blob_path_is_refused (test_artifact_store.OciArchiveTests.test_a_duplicate_blob_path_is_refused) ... ok
+test_a_duplicate_layout_marker_is_refused (test_artifact_store.OciArchiveTests.test_a_duplicate_layout_marker_is_refused)
+Two `index.json` members is one name too many to be authority. ... ok
+test_a_hardlinked_blob_is_never_authority (test_artifact_store.OciArchiveTests.test_a_hardlinked_blob_is_never_authority) ... ok
+test_a_layer_blob_that_is_absent_is_refused (test_artifact_store.OciArchiveTests.test_a_layer_blob_that_is_absent_is_refused)
+Every blob the graph describes must be there, layers included. ... ok
+test_a_legacy_archive_still_seals (test_artifact_store.OciArchiveTests.test_a_legacy_archive_still_seals)
+The format the suite started with must not have been traded for the other. ... ok
+test_a_legacy_index_that_is_not_one_entry_is_refused (test_artifact_store.OciArchiveTests.test_a_legacy_index_that_is_not_one_entry_is_refused) ... ok
+test_a_legacy_reference_that_names_a_path_of_its_own_choosing_is_refused (test_artifact_store.OciArchiveTests.test_a_legacy_reference_that_names_a_path_of_its_own_choosing_is_refused)
+The digest comes from the reference's own last component, and only two ... ok
+test_a_member_that_traverses_is_refused (test_artifact_store.OciArchiveTests.test_a_member_that_traverses_is_refused) ... ok
+test_a_multi_platform_archive_seals_by_the_platform_it_exported (test_artifact_store.OciArchiveTests.test_a_multi_platform_archive_seals_by_the_platform_it_exported)
+Docker catalogues every platform and ships one; the rest are absent. ... ok
+test_a_nested_oci_index_is_followed (test_artifact_store.OciArchiveTests.test_a_nested_oci_index_is_followed)
+``manifests[0]`` is not an index entry; the graph is followed instead. ... ok
+test_a_symlinked_blob_is_refused (test_artifact_store.OciArchiveTests.test_a_symlinked_blob_is_refused) ... ok
+test_an_absent_root_descriptor_is_refused (test_artifact_store.OciArchiveTests.test_an_absent_root_descriptor_is_refused)
+The identity Docker reports must be a digest the archive can hash. ... ok
+test_an_absolute_member_is_refused (test_artifact_store.OciArchiveTests.test_an_absolute_member_is_refused) ... ok
+test_an_archive_that_is_not_an_archive_is_refused (test_artifact_store.OciArchiveTests.test_an_archive_that_is_not_an_archive_is_refused) ... ok
+test_an_attestation_manifest_is_not_the_candidate (test_artifact_store.OciArchiveTests.test_an_attestation_manifest_is_not_the_candidate)
+Docker writes attestations into the same index; they are not the image. ... ok
+test_an_attestations_own_config_never_names_the_candidate (test_artifact_store.OciArchiveTests.test_an_attestations_own_config_never_names_the_candidate)
+The pulled form marks the attestation only in the descriptor. ... ok
+test_an_index_that_names_no_image_is_refused (test_artifact_store.OciArchiveTests.test_an_index_that_names_no_image_is_refused) ... ok
+test_an_index_that_names_two_images_is_refused (test_artifact_store.OciArchiveTests.test_an_index_that_names_two_images_is_refused)
+Several roots would make "the identity Docker reports" a choice. ... ok
+test_an_oci_archive_seals_resolves_and_loads (test_artifact_store.OciArchiveTests.test_an_oci_archive_seals_resolves_and_loads) ... ok
+test_an_oci_layout_without_its_marker_is_refused (test_artifact_store.OciArchiveTests.test_an_oci_layout_without_its_marker_is_refused) ... ok
+test_an_unrelated_member_is_ignored (test_artifact_store.OciArchiveTests.test_an_unrelated_member_is_ignored)
+An archive may carry anything else; none of it can change which image it is. ... ok
+test_an_unsupported_media_type_is_never_candidate_authority (test_artifact_store.OciArchiveTests.test_an_unsupported_media_type_is_never_candidate_authority) ... ok
+test_both_identities_of_one_archive_are_recorded_separately (test_artifact_store.OciArchiveTests.test_both_identities_of_one_archive_are_recorded_separately)
+Three roles, never interchanged: root, config and the package's own SHA256. ... ok
+test_bytes_that_are_not_the_claimed_image_are_refused (test_artifact_store.OciArchiveTests.test_bytes_that_are_not_the_claimed_image_are_refused)
+Docker insisting the image is X does not make the archive be X. ... ok
+test_one_identity_at_two_canonical_locations_is_refused (test_artifact_store.OciArchiveTests.test_one_identity_at_two_canonical_locations_is_refused)
+Ambiguity is refused, never resolved by preferring a location. ... ok
+test_the_archive_carries_three_separate_identities (test_artifact_store.OciArchiveTests.test_the_archive_carries_three_separate_identities)
+Three identities, never interchanged. ... ok
+test_the_deepest_legal_nesting_is_still_followed (test_artifact_store.OciArchiveTests.test_the_deepest_legal_nesting_is_still_followed) ... ok
+test_the_hybrid_format_docker_writes_is_read (test_artifact_store.OciArchiveTests.test_the_hybrid_format_docker_writes_is_read)
+An OCI layout with a legacy index beside it, in both reference forms. ... ok
+test_the_identity_docker_reports_on_a_containerd_host_is_the_archive_root (test_artifact_store.OciArchiveTests.test_the_identity_docker_reports_on_a_containerd_host_is_the_archive_root)
+The id is the descriptor ``index.json`` names, not the config digest. ... ok
+test_two_layouts_that_name_different_images_are_refused (test_artifact_store.OciArchiveTests.test_two_layouts_that_name_different_images_are_refused) ... ok
+test_the_reader_accepts_the_identity_docker_reports_on_this_host (test_artifact_store.OciReaderTests.test_the_reader_accepts_the_identity_docker_reports_on_this_host)
+The root-descriptor role is read on this side too, not only written. ... ok
+test_the_reader_materialises_a_legacy_package (test_artifact_store.OciReaderTests.test_the_reader_materialises_a_legacy_package) ... ok
+test_the_reader_materialises_a_multi_platform_package (test_artifact_store.OciReaderTests.test_the_reader_materialises_a_multi_platform_package)
+The shape a *pulled* reference produces, read by the executor as well. ... ok
+test_the_reader_materialises_an_oci_package (test_artifact_store.OciReaderTests.test_the_reader_materialises_an_oci_package) ... ok
+test_the_reader_materialises_the_hybrid_format (test_artifact_store.OciReaderTests.test_the_reader_materialises_the_hybrid_format) ... ok
+test_the_reader_refuses_a_load_that_yields_another_image (test_artifact_store.OciReaderTests.test_the_reader_refuses_a_load_that_yields_another_image) ... ok
+test_the_reader_refuses_a_package_that_is_not_the_candidate (test_artifact_store.OciReaderTests.test_the_reader_refuses_a_package_that_is_not_the_candidate) ... ok
+test_the_reader_refuses_a_tampered_package (test_artifact_store.OciReaderTests.test_the_reader_refuses_a_tampered_package) ... ok
+test_the_reader_refuses_an_oci_graph_the_writer_would_refuse (test_artifact_store.OciReaderTests.test_the_reader_refuses_an_oci_graph_the_writer_would_refuse)
+Same fixture corpus, same refusals: neither side is the weaker one. ... ok
+test_a_runner_offering_only_run_cannot_be_used_by_the_reader (test_artifact_store.ProductionRunnerContractTests.test_a_runner_offering_only_run_cannot_be_used_by_the_reader)
+The mirror image: the shape that failed live, pinned as a failure. ... ok
+test_both_production_runners_are_callable_in_the_readers_shape (test_artifact_store.ProductionRunnerContractTests.test_both_production_runners_are_callable_in_the_readers_shape) ... ok
+test_a_caller_cannot_choose_the_image_identity_shape (test_artifact_store.SealedArtifactStoreTests.test_a_caller_cannot_choose_the_image_identity_shape) ... ok
+test_a_caller_cannot_choose_the_image_reference_shape (test_artifact_store.SealedArtifactStoreTests.test_a_caller_cannot_choose_the_image_reference_shape) ... ok
+test_a_caller_cannot_name_a_path_or_a_file (test_artifact_store.SealedArtifactStoreTests.test_a_caller_cannot_name_a_path_or_a_file) ... ok
+test_a_different_object_under_the_same_name_is_a_collision (test_artifact_store.SealedArtifactStoreTests.test_a_different_object_under_the_same_name_is_a_collision) ... ok
+test_a_failed_load_is_refused (test_artifact_store.SealedArtifactStoreTests.test_a_failed_load_is_refused) ... ok
+test_a_failed_save_leaves_nothing_behind (test_artifact_store.SealedArtifactStoreTests.test_a_failed_save_leaves_nothing_behind) ... ok
+test_a_load_that_yields_another_image_is_refused (test_artifact_store.SealedArtifactStoreTests.test_a_load_that_yields_another_image_is_refused) ... ok
+test_a_missing_store_is_refused (test_artifact_store.SealedArtifactStoreTests.test_a_missing_store_is_refused) ... ok
+test_a_package_that_is_not_the_candidate_is_refused_at_load (test_artifact_store.SealedArtifactStoreTests.test_a_package_that_is_not_the_candidate_is_refused_at_load) ... ok
+test_a_sealed_package_is_named_by_its_own_content (test_artifact_store.SealedArtifactStoreTests.test_a_sealed_package_is_named_by_its_own_content) ... ok
+test_a_symlinked_object_is_never_followed (test_artifact_store.SealedArtifactStoreTests.test_a_symlinked_object_is_never_followed) ... ok
+test_a_symlinked_store_is_refused (test_artifact_store.SealedArtifactStoreTests.test_a_symlinked_store_is_refused) ... ok
+test_a_tampered_package_is_refused (test_artifact_store.SealedArtifactStoreTests.test_a_tampered_package_is_refused) ... ok
+test_a_tampered_package_never_reaches_docker (test_artifact_store.SealedArtifactStoreTests.test_a_tampered_package_never_reaches_docker) ... ok
+test_an_absent_package_is_refused (test_artifact_store.SealedArtifactStoreTests.test_an_absent_package_is_refused) ... ok
+test_an_archive_that_is_not_the_claimed_image_is_refused_at_seal (test_artifact_store.SealedArtifactStoreTests.test_an_archive_that_is_not_the_claimed_image_is_refused_at_seal) ... ok
+test_an_empty_package_is_refused (test_artifact_store.SealedArtifactStoreTests.test_an_empty_package_is_refused) ... ok
+test_an_oversized_package_is_refused (test_artifact_store.SealedArtifactStoreTests.test_an_oversized_package_is_refused) ... ok
+test_an_untrusted_object_mode_is_refused (test_artifact_store.SealedArtifactStoreTests.test_an_untrusted_object_mode_is_refused) ... ok
+test_an_untrusted_store_mode_is_refused (test_artifact_store.SealedArtifactStoreTests.test_an_untrusted_store_mode_is_refused) ... ok
+test_loading_restores_exactly_the_candidate (test_artifact_store.SealedArtifactStoreTests.test_loading_restores_exactly_the_candidate) ... ok
+test_no_partial_temporary_file_is_left_behind (test_artifact_store.SealedArtifactStoreTests.test_no_partial_temporary_file_is_left_behind) ... ok
+test_re_sealing_the_same_image_is_idempotent (test_artifact_store.SealedArtifactStoreTests.test_re_sealing_the_same_image_is_idempotent) ... ok
+test_tags_are_recorded_but_never_used (test_artifact_store.SealedArtifactStoreTests.test_tags_are_recorded_but_never_used) ... ok
+test_the_package_can_only_be_sealed_as_the_image_docker_reports (test_artifact_store.SealedArtifactStoreTests.test_the_package_can_only_be_sealed_as_the_image_docker_reports) ... ok
+test_the_store_contract_is_pinned_not_guessed (test_artifact_store.SealedArtifactStoreTests.test_the_store_contract_is_pinned_not_guessed) ... ok
+test_complete_active_dependency_closure_passes (test_dependency_compatibility.StandardDependencyTests.test_complete_active_dependency_closure_passes) ... ok
+test_direct_url_dependency_is_not_accepted (test_dependency_compatibility.StandardDependencyTests.test_direct_url_dependency_is_not_accepted) ... ok
+test_failed_probe_preserves_bounded_failure (test_dependency_compatibility.StandardDependencyTests.test_failed_probe_preserves_bounded_failure) ... ok
+test_incompatible_extra_version_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_incompatible_extra_version_is_rejected) ... ok
+test_incompatible_root_version_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_incompatible_root_version_is_rejected) ... ok
+test_legacy_profile_keeps_its_existing_path (test_dependency_compatibility.StandardDependencyTests.test_legacy_profile_keeps_its_existing_path) ... ok
+test_malformed_requirement_does_not_pass (test_dependency_compatibility.StandardDependencyTests.test_malformed_requirement_does_not_pass) ... ok
+test_metadata_cycle_terminates (test_dependency_compatibility.StandardDependencyTests.test_metadata_cycle_terminates) ... ok
+test_missing_direct_extra_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_missing_direct_extra_is_rejected) ... ok
+test_missing_root_metadata_is_not_vacuous_success (test_dependency_compatibility.StandardDependencyTests.test_missing_root_metadata_is_not_vacuous_success) ... ok
+test_missing_transitive_dependency_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_missing_transitive_dependency_is_rejected) ... ok
+test_oversized_metadata_graph_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_oversized_metadata_graph_is_rejected) ... ok
+test_repeated_dependency_constraints_are_all_checked (test_dependency_compatibility.StandardDependencyTests.test_repeated_dependency_constraints_are_all_checked) ... ok
+test_selected_nested_extras_are_checked (test_dependency_compatibility.StandardDependencyTests.test_selected_nested_extras_are_checked) ... ok
+test_standard_profile_requires_isolated_probe (test_dependency_compatibility.StandardDependencyTests.test_standard_profile_requires_isolated_probe) ... ok
+test_undeclared_standard_extra_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_undeclared_standard_extra_is_rejected) ... ok
+test_unknown_profile_never_reaches_probe (test_dependency_compatibility.StandardDependencyTests.test_unknown_profile_never_reaches_probe) ... ok
+test_unrequested_prerelease_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_unrequested_prerelease_is_rejected) ... ok
+test_unselected_extra_and_inactive_platform_do_not_require_packages (test_dependency_compatibility.StandardDependencyTests.test_unselected_extra_and_inactive_platform_do_not_require_packages) ... ok
+test_wrong_probe_terminal_output_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_wrong_probe_terminal_output_is_rejected) ... ok
+test_a_claimed_attempt_that_fails_publishes_signed_bound_evidence (test_live_integration.FailureClosureTests.test_a_claimed_attempt_that_fails_publishes_signed_bound_evidence) ... ok
+test_a_duplicate_record_is_refused_rather_than_overwritten (test_live_integration.FailureClosureTests.test_a_duplicate_record_is_refused_rather_than_overwritten) ... ok
+test_a_durability_refusal_becomes_signed_failure_evidence (test_live_integration.FailureClosureTests.test_a_durability_refusal_becomes_signed_failure_evidence)
+The whole chain: build, store refusal, reported and signed failure. ... ok
+test_a_failed_publication_is_neither_success_nor_a_retry (test_live_integration.FailureClosureTests.test_a_failed_publication_is_neither_success_nor_a_retry) ... ok
+test_a_published_failure_is_not_republished_on_the_next_poll (test_live_integration.FailureClosureTests.test_a_published_failure_is_not_republished_on_the_next_poll) ... ok
+test_a_task_rejected_before_the_claim_publishes_nothing (test_live_integration.FailureClosureTests.test_a_task_rejected_before_the_claim_publishes_nothing) ... ok
+test_all_known_test_pr_refusals_keep_their_closed_reason (test_live_integration.FailureClosureTests.test_all_known_test_pr_refusals_keep_their_closed_reason) ... ok
+test_an_expired_task_that_was_never_claimed_publishes_nothing (test_live_integration.FailureClosureTests.test_an_expired_task_that_was_never_claimed_publishes_nothing) ... ok
+test_failure_stages_are_not_swallowed_as_agent_reject (test_live_integration.FailureClosureTests.test_failure_stages_are_not_swallowed_as_agent_reject) ... ok
+test_gate_results_report_where_the_attempt_stopped (test_live_integration.FailureClosureTests.test_gate_results_report_where_the_attempt_stopped) ... ok
+test_kinds_are_closed_and_unmapped_stages_are_never_echoed (test_live_integration.FailureClosureTests.test_kinds_are_closed_and_unmapped_stages_are_never_echoed) ... ok
+test_reasons_are_closed_and_free_text_is_never_echoed (test_live_integration.FailureClosureTests.test_reasons_are_closed_and_free_text_is_never_echoed) ... ok
+test_test_pr_profile_failure_is_signed_specific_and_single_attempt (test_live_integration.FailureClosureTests.test_test_pr_profile_failure_is_signed_specific_and_single_attempt) ... ok
+test_the_contract_and_the_producer_agree_on_the_closed_sets (test_live_integration.FailureClosureTests.test_the_contract_and_the_producer_agree_on_the_closed_sets) ... ok
+test_the_next_poll_refuses_the_exhausted_task (test_live_integration.FailureClosureTests.test_the_next_poll_refuses_the_exhausted_task)
+The failed attempt is durable: the Task is never re-executed. ... ok
+test_the_published_record_satisfies_the_published_contract (test_live_integration.FailureClosureTests.test_the_published_record_satisfies_the_published_contract) ... ok
+test_the_success_path_is_unchanged (test_live_integration.FailureClosureTests.test_the_success_path_is_unchanged) ... ok
+test_build_root_validation_rejects_unsafe_state_and_accepts_provisioned_root (test_live_integration.IntegrationTests.test_build_root_validation_rejects_unsafe_state_and_accepts_provisioned_root) ... /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff1798547c0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9ef20>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f010>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f100>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f1f0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f2e0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f3d0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f4c0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f5b0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f6a0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f880>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f970>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f790>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9fa60>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9fb50>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9fc40>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9fd30>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9fe20>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9ff10>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4040>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4130>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4220>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4310>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4400>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff44f0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff45e0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff46d0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff47c0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff48b0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff49a0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4a90>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4b80>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4c70>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff179174d60>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4d60>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4e50>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4f40>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5030>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5120>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5300>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff53f0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5210>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff54e0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff55d0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff56c0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff58a0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5990>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff179175210>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff57b0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5a80>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5b70>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5c60>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5d50>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5e40>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5f30>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff6020>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff6110>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff6200>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff62f0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff63e0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_command_center_backup_and_rollback_guard_set_is_complete (test_live_integration.IntegrationTests.test_command_center_backup_and_rollback_guard_set_is_complete) ... ok
+test_command_center_two_phase_rollback_refuses_drift_or_corrupt_backup (test_live_integration.IntegrationTests.test_command_center_two_phase_rollback_refuses_drift_or_corrupt_backup) ... ok
+test_compileall_redirects_bytecode_from_read_only_source_and_rejects_invalid_python (test_live_integration.IntegrationTests.test_compileall_redirects_bytecode_from_read_only_source_and_rejects_invalid_python) ... ok
+test_fixed_fetch_and_isolation_literals (test_live_integration.IntegrationTests.test_fixed_fetch_and_isolation_literals) ... ok
+test_hk_backup_and_rollback_guard_set_is_complete (test_live_integration.IntegrationTests.test_hk_backup_and_rollback_guard_set_is_complete) ... ok
+test_hk_directory_rollback_refuses_drift_symlink_or_contents_before_files_change (test_live_integration.IntegrationTests.test_hk_directory_rollback_refuses_drift_symlink_or_contents_before_files_change) ... ok
+test_hk_two_phase_rollback_refuses_drift_or_corrupt_backup (test_live_integration.IntegrationTests.test_hk_two_phase_rollback_refuses_drift_or_corrupt_backup) ... ok
+test_host_agent_has_no_tomllib_import (test_live_integration.IntegrationTests.test_host_agent_has_no_tomllib_import) ... ok
+test_offline_builder_profile_is_pinned_and_non_networked (test_live_integration.IntegrationTests.test_offline_builder_profile_is_pinned_and_non_networked) ... ok
+test_persistent_replay_and_publish_shape_remain_integrated (test_live_integration.IntegrationTests.test_persistent_replay_and_publish_shape_remain_integrated) ... ok
+test_python_bytecode_cache_is_fixed_and_isolated (test_live_integration.IntegrationTests.test_python_bytecode_cache_is_fixed_and_isolated) ... ok
+test_real_ed25519_signature_and_hk_evidence_adapter (test_live_integration.IntegrationTests.test_real_ed25519_signature_and_hk_evidence_adapter) ... ok
+test_test_pr_rejects_every_caller_override (test_live_integration.IntegrationTests.test_test_pr_rejects_every_caller_override) ... ok
+test_two_phase_rollback_restores_complete_preinstall_state (test_live_integration.IntegrationTests.test_two_phase_rollback_restores_complete_preinstall_state) ... ok
+test_verify_contract_is_still_accepted (test_live_integration.IntegrationTests.test_verify_contract_is_still_accepted) ... ok
+test_a_pass_publishes_liveness_then_verify_without_colliding (test_live_integration.SamePassPublicationTests.test_a_pass_publishes_liveness_then_verify_without_colliding) ... ok
+test_a_task_identity_never_becomes_a_path_component (test_live_integration.SamePassPublicationTests.test_a_task_identity_never_becomes_a_path_component) ... ok
+test_more_than_two_records_publish_in_one_pass (test_live_integration.SamePassPublicationTests.test_more_than_two_records_publish_in_one_pass) ... ok
+test_the_record_itself_is_unchanged_by_the_workspace_fix (test_live_integration.SamePassPublicationTests.test_the_record_itself_is_unchanged_by_the_workspace_fix)
+Only where the clone happens changed; the published bytes did not. ... ok
+test_a_build_whose_isolated_checks_fail_is_never_sealed (test_test_pr_durability.TestPrDurabilityTests.test_a_build_whose_isolated_checks_fail_is_never_sealed) ... ok
+test_a_build_whose_profile_check_fails_is_never_sealed (test_test_pr_durability.TestPrDurabilityTests.test_a_build_whose_profile_check_fails_is_never_sealed) ... ok
+test_a_failed_evidence_step_does_not_delete_the_sealed_package (test_test_pr_durability.TestPrDurabilityTests.test_a_failed_evidence_step_does_not_delete_the_sealed_package)
+Sealing succeeded, so the artifact is durable even if publication is not. ... ok
+test_a_passing_build_seals_last_and_reports_the_package (test_test_pr_durability.TestPrDurabilityTests.test_a_passing_build_seals_last_and_reports_the_package) ... ok
+test_a_published_artifact_is_never_removed_by_a_later_failure (test_test_pr_durability.TestPrDurabilityTests.test_a_published_artifact_is_never_removed_by_a_later_failure)
+A sealed object is content-addressed evidence, not this run's scratch. ... ok
+test_a_refused_archive_is_a_reported_failure_not_a_crash (test_test_pr_durability.TestPrDurabilityTests.test_a_refused_archive_is_a_reported_failure_not_a_crash)
+The store's refusal is converted at the builder's own boundary. ... ok
+test_an_oci_archive_is_sealed_end_to_end (test_test_pr_durability.TestPrDurabilityTests.test_an_oci_archive_is_sealed_end_to_end)
+The format HK-STAGING actually produces, through the real builder. ... ok
+test_dispatch_preserves_the_durability_stage (test_test_pr_durability.TestPrDurabilityTests.test_dispatch_preserves_the_durability_stage)
+What the agent sees is a stage and a closed reason code. ... ok
+test_evidence_carries_the_package_when_it_is_durable (test_test_pr_durability.TestPrDurabilityTests.test_evidence_carries_the_package_when_it_is_durable) ... ok
+test_evidence_names_the_role_the_archive_actually_played (test_test_pr_durability.TestPrDurabilityTests.test_evidence_names_the_role_the_archive_actually_played)
+Both roles are sealable, and the Evidence says which one it was. ... ok
+test_evidence_refuses_a_build_identity_with_no_durable_artifact (test_test_pr_durability.TestPrDurabilityTests.test_evidence_refuses_a_build_identity_with_no_durable_artifact) ... ok
+test_evidence_refuses_a_package_that_does_not_say_which_identity_it_bound (test_test_pr_durability.TestPrDurabilityTests.test_evidence_refuses_a_package_that_does_not_say_which_identity_it_bound)
+The role and the proved config are what make the claim auditable. ... ok
+test_evidence_refuses_a_package_that_is_not_the_built_image (test_test_pr_durability.TestPrDurabilityTests.test_evidence_refuses_a_package_that_is_not_the_built_image) ... ok
+test_evidence_refuses_a_package_with_no_content_address (test_test_pr_durability.TestPrDurabilityTests.test_evidence_refuses_a_package_with_no_content_address) ... ok
+test_missing_standard_dependency_prevents_build_and_seal (test_test_pr_durability.TestPrDurabilityTests.test_missing_standard_dependency_prevents_build_and_seal) ... ok
+test_the_build_tag_is_still_removed_after_sealing (test_test_pr_durability.TestPrDurabilityTests.test_the_build_tag_is_still_removed_after_sealing) ... ok
+test_the_conversion_never_invents_a_second_error_schema (test_test_pr_durability.TestPrDurabilityTests.test_the_conversion_never_invents_a_second_error_schema)
+Every store refusal becomes the one durability reason code. ... ok
+test_the_durability_failure_is_its_own_stage (test_test_pr_durability.TestPrDurabilityTests.test_the_durability_failure_is_its_own_stage)
+A build with no durable artifact is not an executor refusal. ... ok
+test_the_sealed_package_resolves_back_to_the_built_image (test_test_pr_durability.TestPrDurabilityTests.test_the_sealed_package_resolves_back_to_the_built_image) ... ok
+test_verified_standard_profile_builds_and_seals_in_order (test_test_pr_durability.TestPrDurabilityTests.test_verified_standard_profile_builds_and_seals_in_order) ... ok
+
+----------------------------------------------------------------------
+Ran 180 tests in 6.082s
+
+OK (skipped=3)

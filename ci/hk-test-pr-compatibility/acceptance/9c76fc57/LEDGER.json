@@ -1,0 +1,86 @@
+{
+  "accepted_cells_rerun": false,
+  "candidate": {
+    "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+    "application_unchanged_from_base": true,
+    "base_sha": "dc34ee5cabed7c6e93507d178fdd3a62a426399e",
+    "draft": true,
+    "merged": false,
+    "pr": 185,
+    "sha": "9c76fc579383fa2270af90bc67b67a17454d37bd",
+    "tree": "571ee647f4bb82ddbaed1704a41c441aee06d456"
+  },
+  "changed_files": [
+    ".github/workflows/hk-agent-failure-evidence-v1.yml",
+    "control-plane/boss-test-pr-live-integration-v1/README.md",
+    "control-plane/boss-test-pr-live-integration-v1/SHA256SUMS",
+    "control-plane/boss-test-pr-live-integration-v1/hk-staging/hk_agent/test_pr.py",
+    "control-plane/boss-test-pr-live-integration-v1/hk-staging/hk_agent/transport.py",
+    "control-plane/boss-test-pr-live-integration-v1/tests/test_dependency_compatibility.py",
+    "control-plane/boss-test-pr-live-integration-v1/tests/test_live_integration.py",
+    "control-plane/boss-test-pr-live-integration-v1/tests/test_test_pr_durability.py",
+    "control-plane/command-center-state-v1/SHA256SUMS",
+    "control-plane/command-center-state-v1/contracts/failure_evidence_v1.schema.json"
+  ],
+  "deployment_performed": false,
+  "evidence_path": "ci-artifact/EVIDENCE.json",
+  "evidence_sha256": "cb5d95e24259db0352a561572ef723f4f04a953dcce8955c4f9416a62bbb7998",
+  "external_supplier_connection_opened": false,
+  "forbidden_replay_task": "go-boss-test-pr-183-b830d1b36e7e",
+  "gates": [
+    {
+      "gate": "C14",
+      "record": "C14.json",
+      "result": "PASS_SCOPED",
+      "reviewer": "/root/c14_pr185"
+    },
+    {
+      "gate": "C13",
+      "record": "C13.json",
+      "result": "PASS_SCOPED",
+      "reviewer": "/root/c13_pr185",
+      "started_after_c14_pass": true
+    }
+  ],
+  "holds": [
+    "C06 external supplier Evidence",
+    "HK rollout pending live prerequisites and formal admission",
+    "Final Release",
+    "Production"
+  ],
+  "inherited_product": {
+    "draft": true,
+    "hk_test_pr_state": "FAILED_BLOCKED_SHARED_INFRA",
+    "merged": false,
+    "modified": false,
+    "pr": 183,
+    "sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+    "state": "DONE_SCOPED_SOURCE"
+  },
+  "installation_performed": false,
+  "issue": 184,
+  "issue_state": "OPEN",
+  "merge_performed": false,
+  "next_action": "Read-only operator diagnostic readback as itemized in HANDOFF.json; no exhausted-task replay.",
+  "remaining_blockers": [
+    "Installed live hashes and first real HK Task exception missing",
+    "Real frozen builder standard dependency closure unobserved",
+    "Controlled shared installation and fresh formal TEST_PR admission required",
+    "Migration 0133 to 0137 remains separate, not waived"
+  ],
+  "schema": "gate-ledger-reconciliation-v1",
+  "scope": "SHARED_HK_TEST_PR_COMPATIBILITY_SOURCE",
+  "site_state": "SHARED_INFRA_BLOCKED",
+  "source_fingerprint_sha256": "12018d19b0edb4437ab2d65761d92922c3ac7e54320248a705cfd87054b607f5",
+  "state": "DONE_SCOPED",
+  "test_results": {
+    "ci_failed": 0,
+    "ci_passed": 177,
+    "ci_skipped": 3,
+    "ci_total": 180,
+    "local_focused": 77,
+    "local_focused_passed": 77,
+    "real_ci_docker_archive": "PROVEN / OCI+LEGACY",
+    "shared_workflows_passed": 5
+  }
+}

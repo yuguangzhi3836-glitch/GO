@@ -1,0 +1,35 @@
+{
+  "schema": "independent-review-v1",
+  "reviewer": "/root/c14_pr185",
+  "role": "C14",
+  "result": "PASS_SCOPED",
+  "candidate_pr": 185,
+  "candidate_sha": "9c76fc579383fa2270af90bc67b67a17454d37bd",
+  "candidate_tree": "571ee647f4bb82ddbaed1704a41c441aee06d456",
+  "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "scope": "Shared repository source repair only; not host installation or PR183 HK TEST_PR acceptance",
+  "independent_checks": [
+    "GitHub exact head, base, Draft, 10-file shared-only diff",
+    "All 10 changed and 29 Evidence-covered files match immutable candidate Git blobs",
+    "Legacy profile preserved; exact standard profile requires offline active extras/transitive version probe; failure prevents build and seal",
+    "Builder pin, immutable source binding, signatures, isolation, single attempt and replay refusal unchanged",
+    "Both source manifests pass: 26/79 entries, neither includes itself",
+    "CI exact-head log: 180 tests, 177 passed, 3 existing root/cross-UID conditional skips",
+    "Real Docker archive smoke PROVEN OCI+LEGACY; four additional shared workflows SUCCESS",
+    "Raw ZIP API digest, EVIDENCE bytes, source fingerprint, tests log and complete checksum manifest independently verified",
+    "Synthetic Task/Evidence signatures, identity binding, refusal code and all no-authority fields independently verified"
+  ],
+  "run_id": 35205465817,
+  "job_id": 105150035885,
+  "artifact_id": 10489726775,
+  "artifact_zip_sha256": "c6800e6e3e9911fc8741dae4a6290750fb55797b4851d50085f9bcb77789f8c1",
+  "evidence_sha256": "cb5d95e24259db0352a561572ef723f4f04a953dcce8955c4f9416a62bbb7998",
+  "source_fingerprint_sha256": "12018d19b0edb4437ab2d65761d92922c3ac7e54320248a705cfd87054b607f5",
+  "blocking_findings": [],
+  "disposition": "May enter independent C13",
+  "remaining_blocks": [
+    "Real frozen HK image dependencies NOT_OBSERVED",
+    "HK acceptance NOT_EVALUATED; Issue184 SHARED_INFRA_BLOCKED",
+    "No host installation, replay, merge, deployment or alteration of PR183/HOLDs authorized"
+  ]
+}

@@ -1,0 +1,1424 @@
+﻿2026-09-17T09:30:19.2141507Z Current runner version: '2.337.0'
+2026-09-17T09:30:19.2182946Z ##[group]Runner Image Provisioner
+2026-09-17T09:30:19.2184521Z Hosted Compute Agent
+2026-09-17T09:30:19.2185552Z Version: 20260828.587
+2026-09-17T09:30:19.2186909Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-17T09:30:19.2188384Z Build Date: 2026-08-28T16:44:25Z
+2026-09-17T09:30:19.2189581Z Worker ID: {b9aaa16a-9961-4d28-b7c2-583440699a89}
+2026-09-17T09:30:19.2190995Z Azure Region: eastus
+2026-09-17T09:30:19.2192070Z ##[endgroup]
+2026-09-17T09:30:19.2194341Z ##[group]Operating System
+2026-09-17T09:30:19.2196717Z Ubuntu
+2026-09-17T09:30:19.2197644Z 24.04.5
+2026-09-17T09:30:19.2198760Z LTS
+2026-09-17T09:30:19.2199670Z ##[endgroup]
+2026-09-17T09:30:19.2200577Z ##[group]Runner Image
+2026-09-17T09:30:19.2201785Z Image: ubuntu-24.04
+2026-09-17T09:30:19.2202837Z Version: 20260907.300.1
+2026-09-17T09:30:19.2205240Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-17T09:30:19.2208422Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-17T09:30:19.2210210Z ##[endgroup]
+2026-09-17T09:30:19.2212294Z ##[group]GITHUB_TOKEN Permissions
+2026-09-17T09:30:19.2215408Z Contents: read
+2026-09-17T09:30:19.2216363Z Metadata: read
+2026-09-17T09:30:19.2217845Z ##[endgroup]
+2026-09-17T09:30:19.2220912Z Secret source: Actions
+2026-09-17T09:30:19.2222717Z Cache mode: write
+2026-09-17T09:30:19.2223856Z Prepare workflow directory
+2026-09-17T09:30:19.3027847Z Prepare all required actions
+2026-09-17T09:30:19.3105466Z Getting action download info
+2026-09-17T09:30:19.5099706Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-17T09:30:19.5999004Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-17T09:30:19.7093167Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-17T09:30:19.9296860Z Complete job name: isolated-failure-closure
+2026-09-17T09:30:20.0078028Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T09:30:20.0087753Z ##[group]Run actions/checkout@v4
+2026-09-17T09:30:20.0088549Z with:
+2026-09-17T09:30:20.0089010Z   persist-credentials: false
+2026-09-17T09:30:20.0089588Z   ref: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:20.0090174Z   fetch-depth: 0
+2026-09-17T09:30:20.0090650Z   repository: yuguangzhi3836-glitch/GO
+2026-09-17T09:30:20.0094374Z   token: ***
+2026-09-17T09:30:20.0094816Z   ssh-strict: true
+2026-09-17T09:30:20.0095256Z   ssh-user: git
+2026-09-17T09:30:20.0095688Z   clean: true
+2026-09-17T09:30:20.0096143Z   sparse-checkout-cone-mode: true
+2026-09-17T09:30:20.0096877Z   fetch-tags: false
+2026-09-17T09:30:20.0097423Z   show-progress: true
+2026-09-17T09:30:20.0097889Z   lfs: false
+2026-09-17T09:30:20.0098313Z   submodules: false
+2026-09-17T09:30:20.0098786Z   set-safe-directory: true
+2026-09-17T09:30:20.0099315Z   allow-unsafe-pr-checkout: false
+2026-09-17T09:30:20.0100103Z env:
+2026-09-17T09:30:20.0100557Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-17T09:30:20.0101174Z   CANDIDATE_SHA: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:20.0101893Z   BASE_SHA: dc34ee5cabed7c6e93507d178fdd3a62a426399e
+2026-09-17T09:30:20.0102501Z ##[endgroup]
+2026-09-17T09:30:20.1415574Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-17T09:30:20.1419625Z ##[group]Getting Git version info
+2026-09-17T09:30:20.1423591Z Working directory is '/home/runner/work/GO/GO'
+2026-09-17T09:30:20.1425365Z [command]/usr/bin/git version
+2026-09-17T09:30:20.1426215Z git version 2.55.0
+2026-09-17T09:30:20.1471165Z ##[endgroup]
+2026-09-17T09:30:20.1541710Z Temporarily overriding HOME='/home/runner/work/_temp/68948aae-b466-4c01-b05e-2fad49172be3' before making global git config changes
+2026-09-17T09:30:20.1550448Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T09:30:20.1565414Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-17T09:30:20.1595311Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-17T09:30:20.2000048Z ##[group]Initializing the repository
+2026-09-17T09:30:20.2002934Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-17T09:30:20.2007668Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-17T09:30:20.2009526Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-17T09:30:20.2011172Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-17T09:30:20.2012399Z hint: call:
+2026-09-17T09:30:20.2013050Z hint:
+2026-09-17T09:30:20.2013912Z hint: 	git config --global init.defaultBranch <name>
+2026-09-17T09:30:20.2015143Z hint:
+2026-09-17T09:30:20.2016122Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-17T09:30:20.2017996Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-17T09:30:20.2019300Z hint:
+2026-09-17T09:30:20.2020041Z hint: 	git branch -m <name>
+2026-09-17T09:30:20.2020870Z hint:
+2026-09-17T09:30:20.2021901Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-17T09:30:20.2023446Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-17T09:30:20.2026285Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-17T09:30:20.2045325Z ##[endgroup]
+2026-09-17T09:30:20.2050640Z ##[group]Disabling automatic garbage collection
+2026-09-17T09:30:20.2051805Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-17T09:30:20.2054259Z ##[endgroup]
+2026-09-17T09:30:20.2055396Z ##[group]Setting up auth
+2026-09-17T09:30:20.2056821Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T09:30:20.2060864Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T09:30:20.3689252Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T09:30:20.3715663Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T09:30:20.3723104Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T09:30:20.3728999Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T09:30:20.3735002Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-17T09:30:20.3742578Z ##[endgroup]
+2026-09-17T09:30:20.3743952Z ##[group]Fetching the repository
+2026-09-17T09:30:20.3746036Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+2026-09-17T09:30:44.6527283Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-17T09:30:44.6542333Z  * [new branch]      acceptance/c13-pr76-37d9a420-20260914 -> origin/acceptance/c13-pr76-37d9a420-20260914
+2026-09-17T09:30:44.6544156Z  * [new branch]      acceptance/cp11-depth24-runtime -> origin/acceptance/cp11-depth24-runtime
+2026-09-17T09:30:44.6545886Z  * [new branch]      acceptance/cp11-depth25-evidence-export -> origin/acceptance/cp11-depth25-evidence-export
+2026-09-17T09:30:44.6548152Z  * [new branch]      acceptance/cp11-depth25-runtime -> origin/acceptance/cp11-depth25-runtime
+2026-09-17T09:30:44.6549900Z  * [new branch]      acceptance/cp11-depth26-runtime -> origin/acceptance/cp11-depth26-runtime
+2026-09-17T09:30:44.6552129Z  * [new branch]      acceptance/cp11-depth28-v14-ci -> origin/acceptance/cp11-depth28-v14-ci
+2026-09-17T09:30:44.6553792Z  * [new branch]      acceptance/cp11-depth29-isolated -> origin/acceptance/cp11-depth29-isolated
+2026-09-17T09:30:44.6555464Z  * [new branch]      acceptance/cp11-depth30-isolated -> origin/acceptance/cp11-depth30-isolated
+2026-09-17T09:30:44.6557458Z  * [new branch]      acceptance/cp11-depth31-isolated -> origin/acceptance/cp11-depth31-isolated
+2026-09-17T09:30:44.6559212Z  * [new branch]      acceptance/cp11-depth32-isolated -> origin/acceptance/cp11-depth32-isolated
+2026-09-17T09:30:44.6561104Z  * [new branch]      acceptance/cp11-depth32r2-isolated -> origin/acceptance/cp11-depth32r2-isolated
+2026-09-17T09:30:44.6562722Z  * [new branch]      acceptance/cp11-depth33-isolated -> origin/acceptance/cp11-depth33-isolated
+2026-09-17T09:30:44.6564140Z  * [new branch]      acceptance/cp11-depth34-isolated -> origin/acceptance/cp11-depth34-isolated
+2026-09-17T09:30:44.6565900Z  * [new branch]      acceptance/cp11-depth34r2-isolated -> origin/acceptance/cp11-depth34r2-isolated
+2026-09-17T09:30:44.6577362Z  * [new branch]      acceptance/cp11-depth35-isolated -> origin/acceptance/cp11-depth35-isolated
+2026-09-17T09:30:44.6579092Z  * [new branch]      acceptance/cp11-depth35r2-isolated -> origin/acceptance/cp11-depth35r2-isolated
+2026-09-17T09:30:44.6580818Z  * [new branch]      acceptance/cp11-depth36-auth-test-r2 -> origin/acceptance/cp11-depth36-auth-test-r2
+2026-09-17T09:30:44.6582451Z  * [new branch]      acceptance/cp11-depth36-isolated -> origin/acceptance/cp11-depth36-isolated
+2026-09-17T09:30:44.6584150Z  * [new branch]      acceptance/cp11-depth36r2-isolated -> origin/acceptance/cp11-depth36r2-isolated
+2026-09-17T09:30:44.6585713Z  * [new branch]      acceptance/cp11-depth36r3-isolated -> origin/acceptance/cp11-depth36r3-isolated
+2026-09-17T09:30:44.6587797Z  * [new branch]      acceptance/cp11-depth37-build-r2 -> origin/acceptance/cp11-depth37-build-r2
+2026-09-17T09:30:44.6589899Z  * [new branch]      acceptance/cp11-depth37-device-smoke -> origin/acceptance/cp11-depth37-device-smoke
+2026-09-17T09:30:44.6591580Z  * [new branch]      acceptance/cp11-depth37-postgres -> origin/acceptance/cp11-depth37-postgres
+2026-09-17T09:30:44.6593153Z  * [new branch]      acceptance/cp11-depth37-provider-inputs -> origin/acceptance/cp11-depth37-provider-inputs
+2026-09-17T09:30:44.6595113Z  * [new branch]      acceptance/cp11-depth37-readiness -> origin/acceptance/cp11-depth37-readiness
+2026-09-17T09:30:44.6597477Z  * [new branch]      acceptance/cp11-depth37r2-native-build -> origin/acceptance/cp11-depth37r2-native-build
+2026-09-17T09:30:44.6599117Z  * [new branch]      acceptance/depth37-agent-gateway -> origin/acceptance/depth37-agent-gateway
+2026-09-17T09:30:44.6600549Z  * [new branch]      acceptance/depth37-agent-gateway-r2 -> origin/acceptance/depth37-agent-gateway-r2
+2026-09-17T09:30:44.6602535Z  * [new branch]      acceptance/depth38-agent-lifecycle -> origin/acceptance/depth38-agent-lifecycle
+2026-09-17T09:30:44.6604433Z  * [new branch]      acceptance/depth40-isolated-runtime-review -> origin/acceptance/depth40-isolated-runtime-review
+2026-09-17T09:30:44.6606253Z  * [new branch]      acceptance/depth40-pg18-upgrade-recovery -> origin/acceptance/depth40-pg18-upgrade-recovery
+2026-09-17T09:30:44.6608103Z  * [new branch]      acceptance/depth40-staging-build-review -> origin/acceptance/depth40-staging-build-review
+2026-09-17T09:30:44.6609572Z  * [new branch]      acceptance/depth40-zero-restore -> origin/acceptance/depth40-zero-restore
+2026-09-17T09:30:44.6611639Z  * [new branch]      acceptance/depth41-cross-end-journeys-20260912 -> origin/acceptance/depth41-cross-end-journeys-20260912
+2026-09-17T09:30:44.6614167Z  * [new branch]      acceptance/depth48-1000-users-20260913 -> origin/acceptance/depth48-1000-users-20260913
+2026-09-17T09:30:44.6616532Z  * [new branch]      acceptance/depth48-hk-load1000-20260913-1115 -> origin/acceptance/depth48-hk-load1000-20260913-1115
+2026-09-17T09:30:44.6619102Z  * [new branch]      acceptance/runner-canary-f9a8eb-20260914 -> origin/acceptance/runner-canary-f9a8eb-20260914
+2026-09-17T09:30:44.6620847Z  * [new branch]      archive-command-center-20260911 -> origin/archive-command-center-20260911
+2026-09-17T09:30:44.6622318Z  * [new branch]      archive-hk-staging-20260911 -> origin/archive-hk-staging-20260911
+2026-09-17T09:30:44.6624194Z  * [new branch]      archive-tools/depth40-parent-34644569516 -> origin/archive-tools/depth40-parent-34644569516
+2026-09-17T09:30:44.6626227Z  * [new branch]      archive/depth40-p03-compat-v2-parent-34644569516 -> origin/archive/depth40-p03-compat-v2-parent-34644569516
+2026-09-17T09:30:44.6631307Z  * [new branch]      archive/depth48-source-parent-555c624d-20260913 -> origin/archive/depth48-source-parent-555c624d-20260913
+2026-09-17T09:30:44.6633283Z  * [new branch]      build/canonical-node-seal-20260914 -> origin/build/canonical-node-seal-20260914
+2026-09-17T09:30:44.6637323Z  * [new branch]      build/canonical-runtime-package-20260914 -> origin/build/canonical-runtime-package-20260914
+2026-09-17T09:30:44.6639639Z  * [new branch]      build/depth48-source-composite-parent-20260913 -> origin/build/depth48-source-composite-parent-20260913
+2026-09-17T09:30:44.6645200Z  * [new branch]      candidate/r3-c01-02-final-settlement-integrity-20260916 -> origin/candidate/r3-c01-02-final-settlement-integrity-20260916
+2026-09-17T09:30:44.6647343Z  * [new branch]      candidate/r3-c01-03-authorization-replay-20260917 -> origin/candidate/r3-c01-03-authorization-replay-20260917
+2026-09-17T09:30:44.6648930Z  * [new branch]      candidate/r3-c01-34967469151-cont-34970697160 -> origin/candidate/r3-c01-34967469151-cont-34970697160
+2026-09-17T09:30:44.6650301Z  * [new branch]      canonical/depth48-hk-runtime-20260913 -> origin/canonical/depth48-hk-runtime-20260913
+2026-09-17T09:30:44.6651735Z  * [new branch]      canonical/depth48-runtime-pointer-postmerge -> origin/canonical/depth48-runtime-pointer-postmerge
+2026-09-17T09:30:44.6653558Z  * [new branch]      capacity/depth48-1000vu-20260913T131404277Z -> origin/capacity/depth48-1000vu-20260913T131404277Z
+2026-09-17T09:30:44.6655000Z  * [new branch]      cc/bridge-remote-default-branch-v1 -> origin/cc/bridge-remote-default-branch-v1
+2026-09-17T09:30:44.6656139Z  * [new branch]      cc/github-native-delivery-v1 -> origin/cc/github-native-delivery-v1
+2026-09-17T09:30:44.6657450Z  * [new branch]      cc/v1-finalization-20260914 -> origin/cc/v1-finalization-20260914
+2026-09-17T09:30:44.6658787Z  * [new branch]      cell/c01-v70-r4-unknown-funding-episode-20260916 -> origin/cell/c01-v70-r4-unknown-funding-episode-20260916
+2026-09-17T09:30:44.6660124Z  * [new branch]      cell/c02-r4-retention-20260916 -> origin/cell/c02-r4-retention-20260916
+2026-09-17T09:30:44.6661321Z  * [new branch]      cell/c02-r4-retention-rebased-20260916 -> origin/cell/c02-r4-retention-rebased-20260916
+2026-09-17T09:30:44.6662625Z  * [new branch]      cell/c02-r5-keyring-currency-20260916 -> origin/cell/c02-r5-keyring-currency-20260916
+2026-09-17T09:30:44.6664085Z  * [new branch]      cell/c02-r6-partial-party-authority-20260916 -> origin/cell/c02-r6-partial-party-authority-20260916
+2026-09-17T09:30:44.6665337Z  * [new branch]      cell/c02-v70-r3-c02-01  -> origin/cell/c02-v70-r3-c02-01
+2026-09-17T09:30:44.6666596Z  * [new branch]      cell/c02-v70-r6-consent-replay -> origin/cell/c02-v70-r6-consent-replay
+2026-09-17T09:30:44.6667979Z  * [new branch]      cell/c03-v70-r3-02-pg-process-restart -> origin/cell/c03-v70-r3-02-pg-process-restart
+2026-09-17T09:30:44.6669391Z  * [new branch]      cell/c03-v70-r3-03-pg-resolution-matrix -> origin/cell/c03-v70-r3-03-pg-resolution-matrix
+2026-09-17T09:30:44.6670652Z  * [new branch]      cell/c03-v70-r3-04-pg-retention -> origin/cell/c03-v70-r3-04-pg-retention
+2026-09-17T09:30:44.6671777Z  * [new branch]      cell/c04-v70-r3-02-case-envelope -> origin/cell/c04-v70-r3-02-case-envelope
+2026-09-17T09:30:44.6672931Z  * [new branch]      cell/c04-v70-r3-03-evidence-time -> origin/cell/c04-v70-r3-03-evidence-time
+2026-09-17T09:30:44.6674449Z  * [new branch]      cell/c04-v70-r3-04-pg-get-zero-write -> origin/cell/c04-v70-r3-04-pg-get-zero-write
+2026-09-17T09:30:44.6675792Z  * [new branch]      cell/c04-v70-r3-05-http-get-zero-write -> origin/cell/c04-v70-r3-05-http-get-zero-write
+2026-09-17T09:30:44.6677315Z  * [new branch]      cell/c04-v70-r3-c04-01  -> origin/cell/c04-v70-r3-c04-01
+2026-09-17T09:30:44.6678527Z  * [new branch]      cell/c05-r4-failed-episode-20260916 -> origin/cell/c05-r4-failed-episode-20260916
+2026-09-17T09:30:44.6679945Z  * [new branch]      cell/c05-r5-episode-reference-reuse-20260916 -> origin/cell/c05-r5-episode-reference-reuse-20260916
+2026-09-17T09:30:44.6681203Z  * [new branch]      cell/c05-v70-r3-c05-01  -> origin/cell/c05-v70-r3-c05-01
+2026-09-17T09:30:44.6682641Z  * [new branch]      cell/c06-internal-policy-depth-20260916 -> origin/cell/c06-internal-policy-depth-20260916
+2026-09-17T09:30:44.6684188Z  * [new branch]      cell/c07-r4-consent-provenance-20260916 -> origin/cell/c07-r4-consent-provenance-20260916
+2026-09-17T09:30:44.6685728Z  * [new branch]      cell/c07-r5-dual-consent-provenance-20260916 -> origin/cell/c07-r5-dual-consent-provenance-20260916
+2026-09-17T09:30:44.6687678Z  * [new branch]      cell/c07-r6-consent-snapshot-20260916 -> origin/cell/c07-r6-consent-snapshot-20260916
+2026-09-17T09:30:44.6688919Z  * [new branch]      cell/c07-v70-r3-c07-01  -> origin/cell/c07-v70-r3-c07-01
+2026-09-17T09:30:44.6690080Z  * [new branch]      cell/c08-r3-02-db-time-fence -> origin/cell/c08-r3-02-db-time-fence
+2026-09-17T09:30:44.6691356Z  * [new branch]      cell/c08-r4-checkpoint-integrity-20260916 -> origin/cell/c08-r4-checkpoint-integrity-20260916
+2026-09-17T09:30:44.6692893Z  * [new branch]      cell/c08-v70-r3-01-durable-execution -> origin/cell/c08-v70-r3-01-durable-execution
+2026-09-17T09:30:44.6694223Z  * [new branch]      cell/c09-r3-02-outbox-heartbeat -> origin/cell/c09-r3-02-outbox-heartbeat
+2026-09-17T09:30:44.6696053Z  * [new branch]      cell/c09-v70-r3-01-atomic-events -> origin/cell/c09-v70-r3-01-atomic-events
+2026-09-17T09:30:44.6697632Z  * [new branch]      cell/c10-pg-plan-fix    -> origin/cell/c10-pg-plan-fix
+2026-09-17T09:30:44.6698619Z  * [new branch]      cell/c10-r5-keyset-cursor -> origin/cell/c10-r5-keyset-cursor
+2026-09-17T09:30:44.6699749Z  * [new branch]      cell/c10-v70-r3-pagination-20260916 -> origin/cell/c10-v70-r3-pagination-20260916
+2026-09-17T09:30:44.6701197Z  * [new branch]      cell/c10-v70-r4-deep-offset-bound-20260916 -> origin/cell/c10-v70-r4-deep-offset-bound-20260916
+2026-09-17T09:30:44.6702774Z  * [new branch]      cell/c11-v70-r3-01-resolution-interruption -> origin/cell/c11-v70-r3-01-resolution-interruption
+2026-09-17T09:30:44.6704249Z  * [new branch]      cell/c11-v70-r4-supplier-parse-20260916 -> origin/cell/c11-v70-r4-supplier-parse-20260916
+2026-09-17T09:30:44.6705637Z  * [new branch]      cell/c12-v70-r4-signed-identity-20260916 -> origin/cell/c12-v70-r4-signed-identity-20260916
+2026-09-17T09:30:44.6707414Z  * [new branch]      cell/c12-v70-r4-stale-transition-20260916 -> origin/cell/c12-v70-r4-stale-transition-20260916
+2026-09-17T09:30:44.6708738Z  * [new branch]      cell/c12-worker-liveness-v70-r3 -> origin/cell/c12-worker-liveness-v70-r3
+2026-09-17T09:30:44.6709970Z  * [new branch]      checkpoints/cp11-refund-ride-3f72a45 -> origin/checkpoints/cp11-refund-ride-3f72a45
+2026-09-17T09:30:44.6711887Z  * [new branch]      chore/post-merge-canonical-rebind-8ffcde66-20260914 -> origin/chore/post-merge-canonical-rebind-8ffcde66-20260914
+2026-09-17T09:30:44.6713322Z  * [new branch]      chore/reply-format-20260916 -> origin/chore/reply-format-20260916
+2026-09-17T09:30:44.6714379Z  * [new branch]      chore/report-file-policy-20260916 -> origin/chore/report-file-policy-20260916
+2026-09-17T09:30:44.6715645Z  * [new branch]      chore/workbuddy-local-first-20260916 -> origin/chore/workbuddy-local-first-20260916
+2026-09-17T09:30:44.6717233Z  * [new branch]      ci/shared-evidence-writer-20260916 -> origin/ci/shared-evidence-writer-20260916
+2026-09-17T09:30:44.6718787Z  * [new branch]      ci/shared-evidence-writer-hygiene-174 -> origin/ci/shared-evidence-writer-hygiene-174
+2026-09-17T09:30:44.6720126Z  * [new branch]      ci/shared-pg-matrix-binding-issue-168 -> origin/ci/shared-pg-matrix-binding-issue-168
+2026-09-17T09:30:44.6721524Z  * [new branch]      closeout/pr51-deploy-capability-20260913 -> origin/closeout/pr51-deploy-capability-20260913
+2026-09-17T09:30:44.6723143Z  * [new branch]      codex/docs-boss02-final-proven-operations-20260911 -> origin/codex/docs-boss02-final-proven-operations-20260911
+2026-09-17T09:30:44.6725215Z  * [new branch]      consolidation/canonical-go-application-baseline-20260912 -> origin/consolidation/canonical-go-application-baseline-20260912
+2026-09-17T09:30:44.6727537Z  * [new branch]      control-plane/boss-test-pr-live-integration-v1-20260912 -> origin/control-plane/boss-test-pr-live-integration-v1-20260912
+2026-09-17T09:30:44.6729237Z  * [new branch]      control-plane/boss-test-pr-v1-20260912 -> origin/control-plane/boss-test-pr-v1-20260912
+2026-09-17T09:30:44.6730500Z  * [new branch]      deliverables/cp11-depth19-5cb6034 -> origin/deliverables/cp11-depth19-5cb6034
+2026-09-17T09:30:44.6731771Z  * [new branch]      deliverables/cp11-depth20-fadcdca -> origin/deliverables/cp11-depth20-fadcdca
+2026-09-17T09:30:44.6733146Z  * [new branch]      deliverables/cp11-depth21-refund-recovery -> origin/deliverables/cp11-depth21-refund-recovery
+2026-09-17T09:30:44.6734626Z  * [new branch]      deliverables/cp11-depth23-shared-capacity -> origin/deliverables/cp11-depth23-shared-capacity
+2026-09-17T09:30:44.6736094Z  * [new branch]      deliverables/cp11-depth24-unpaid-expiry -> origin/deliverables/cp11-depth24-unpaid-expiry
+2026-09-17T09:30:44.6737975Z  * [new branch]      deliverables/cp11-depth25-postgres-runtime -> origin/deliverables/cp11-depth25-postgres-runtime
+2026-09-17T09:30:44.6739685Z  * [new branch]      deliverables/cp11-depth26-control-brand -> origin/deliverables/cp11-depth26-control-brand
+2026-09-17T09:30:44.6741434Z  * [new branch]      deliverables/cp11-depth27-brand-aligned-v3 -> origin/deliverables/cp11-depth27-brand-aligned-v3
+2026-09-17T09:30:44.6743048Z  * [new branch]      deliverables/cp11-depth27-brand-height -> origin/deliverables/cp11-depth27-brand-height
+2026-09-17T09:30:44.6744736Z  * [new branch]      deliverables/cp11-depth27-brand-light-v7-c28ae4ff -> origin/deliverables/cp11-depth27-brand-light-v7-c28ae4ff
+2026-09-17T09:30:44.6746924Z  * [new branch]      deliverables/cp11-depth27-brand-master-v12 -> origin/deliverables/cp11-depth27-brand-master-v12
+2026-09-17T09:30:44.6748619Z  * [new branch]      deliverables/cp11-depth27-brand-master-v13-38407a0e -> origin/deliverables/cp11-depth27-brand-master-v13-38407a0e
+2026-09-17T09:30:44.6750524Z  * [new branch]      deliverables/cp11-depth27-brand-master-v14-619f8035 -> origin/deliverables/cp11-depth27-brand-master-v14-619f8035
+2026-09-17T09:30:44.6752353Z  * [new branch]      deliverables/cp11-depth27-brand-master-v6-59136e88 -> origin/deliverables/cp11-depth27-brand-master-v6-59136e88
+2026-09-17T09:30:44.6753952Z  * [new branch]      deliverables/cp11-depth27-brand-master-v8 -> origin/deliverables/cp11-depth27-brand-master-v8
+2026-09-17T09:30:44.6755408Z  * [new branch]      deliverables/cp11-depth27-brand-plus-top-v5 -> origin/deliverables/cp11-depth27-brand-plus-top-v5
+2026-09-17T09:30:44.6757231Z  * [new branch]      deliverables/cp11-depth27-brand-refined-v4 -> origin/deliverables/cp11-depth27-brand-refined-v4
+2026-09-17T09:30:44.6758733Z  * [new branch]      deliverables/cp11-depth27-brand-text-safe -> origin/deliverables/cp11-depth27-brand-text-safe
+2026-09-17T09:30:44.6760487Z  * [new branch]      deliverables/cp11-depth27-session-brand -> origin/deliverables/cp11-depth27-session-brand
+2026-09-17T09:30:44.6761884Z  * [new branch]      deliverables/cp11-depth28-v14-integration -> origin/deliverables/cp11-depth28-v14-integration
+2026-09-17T09:30:44.6763280Z  * [new branch]      deliverables/cp11-depth29-trip-reentry -> origin/deliverables/cp11-depth29-trip-reentry
+2026-09-17T09:30:44.6764889Z  * [new branch]      deliverables/cp11-depth30-native-payment -> origin/deliverables/cp11-depth30-native-payment
+2026-09-17T09:30:44.6766286Z  * [new branch]      deliverables/cp11-depth31-consent-direct -> origin/deliverables/cp11-depth31-consent-direct
+2026-09-17T09:30:44.6768009Z  * [new branch]      deliverables/cp11-depth32-change-terms -> origin/deliverables/cp11-depth32-change-terms
+2026-09-17T09:30:44.6769396Z  * [new branch]      deliverables/cp11-depth32r2-change-terms -> origin/deliverables/cp11-depth32r2-change-terms
+2026-09-17T09:30:44.6770914Z  * [new branch]      deliverables/cp11-depth33-mobility-refund -> origin/deliverables/cp11-depth33-mobility-refund
+2026-09-17T09:30:44.6772444Z  * [new branch]      deliverables/cp11-depth34-hotel-quote -> origin/deliverables/cp11-depth34-hotel-quote
+2026-09-17T09:30:44.6773821Z  * [new branch]      deliverables/cp11-depth34r2-hotel-quote -> origin/deliverables/cp11-depth34r2-hotel-quote
+2026-09-17T09:30:44.6775384Z  * [new branch]      deliverables/cp11-depth35-session-transitions -> origin/deliverables/cp11-depth35-session-transitions
+2026-09-17T09:30:44.6777552Z  * [new branch]      deliverables/cp11-depth35r2-session-transitions -> origin/deliverables/cp11-depth35r2-session-transitions
+2026-09-17T09:30:44.6779127Z  * [new branch]      deliverables/cp11-depth36-auth-test-r2 -> origin/deliverables/cp11-depth36-auth-test-r2
+2026-09-17T09:30:44.6780588Z  * [new branch]      deliverables/cp11-depth36-isolated-runtime -> origin/deliverables/cp11-depth36-isolated-runtime
+2026-09-17T09:30:44.6782074Z  * [new branch]      deliverables/cp11-depth36r2-support-restore -> origin/deliverables/cp11-depth36r2-support-restore
+2026-09-17T09:30:44.6783644Z  * [new branch]      deliverables/cp11-depth36r3-mobile-contract -> origin/deliverables/cp11-depth36r3-mobile-contract
+2026-09-17T09:30:44.6785236Z  * [new branch]      deliverables/cp11-depth37-node-native-provider -> origin/deliverables/cp11-depth37-node-native-provider
+2026-09-17T09:30:44.6787408Z  * [new branch]      deliverables/cp11-depth37r2-native-linking -> origin/deliverables/cp11-depth37r2-native-linking
+2026-09-17T09:30:44.6788895Z  * [new branch]      deliverables/cp11-refund-ride-8384a51 -> origin/deliverables/cp11-refund-ride-8384a51
+2026-09-17T09:30:44.6790482Z  * [new branch]      deliverables/depth40-isolated-runtime-34560743096 -> origin/deliverables/depth40-isolated-runtime-34560743096
+2026-09-17T09:30:44.6792231Z  * [new branch]      deliverables/depth40-isolated-runtime-34564932860 -> origin/deliverables/depth40-isolated-runtime-34564932860
+2026-09-17T09:30:44.6793916Z  * [new branch]      deliverables/depth40-staging-build-34564932969 -> origin/deliverables/depth40-staging-build-34564932969
+2026-09-17T09:30:44.6795527Z  * [new branch]      deliverables/depth40-staging-build-34565633360 -> origin/deliverables/depth40-staging-build-34565633360
+2026-09-17T09:30:44.6797480Z  * [new branch]      deliverables/depth40-staging-build-34565938702 -> origin/deliverables/depth40-staging-build-34565938702
+2026-09-17T09:30:44.6798939Z  * [new branch]      depth10-chain-autonomy-masterpiece -> origin/depth10-chain-autonomy-masterpiece
+2026-09-17T09:30:44.6800161Z  * [new branch]      depth40-p03-parent-candidate -> origin/depth40-p03-parent-candidate
+2026-09-17T09:30:44.6801326Z  * [new branch]      docs/8845-key-inventory-20260915 -> origin/docs/8845-key-inventory-20260915
+2026-09-17T09:30:44.6802783Z  * [new branch]      docs/control-plane-connection-inventory-20260912 -> origin/docs/control-plane-connection-inventory-20260912
+2026-09-17T09:30:44.6804281Z  * [new branch]      docs/depth48-merge-receipt-20260913 -> origin/docs/depth48-merge-receipt-20260913
+2026-09-17T09:30:44.6805618Z  * [new branch]      docs/hk-agent-polling-runtime-20260910 -> origin/docs/hk-agent-polling-runtime-20260910
+2026-09-17T09:30:44.6823139Z  * [new branch]      docs/hk-staging-deploy-runbook-20260909 -> origin/docs/hk-staging-deploy-runbook-20260909
+2026-09-17T09:30:44.6825354Z  * [new branch]      docs/ssh-direct-access-20260915 -> origin/docs/ssh-direct-access-20260915
+2026-09-17T09:30:44.6827369Z  * [new branch]      evidence/canonical-release-preparation-20260914 -> origin/evidence/canonical-release-preparation-20260914
+2026-09-17T09:30:44.6831888Z  * [new branch]      evidence/cp11-depth25-runtime-34306784341 -> origin/evidence/cp11-depth25-runtime-34306784341
+2026-09-17T09:30:44.6834840Z  * [new branch]      evidence/cp11-depth28-ci-34343745354 -> origin/evidence/cp11-depth28-ci-34343745354
+2026-09-17T09:30:44.6837016Z  * [new branch]      evidence/cp11-depth29-browser-preflight-20260909 -> origin/evidence/cp11-depth29-browser-preflight-20260909
+2026-09-17T09:30:44.6838775Z  * [new branch]      evidence/cp11-depth29-ci-34352506603 -> origin/evidence/cp11-depth29-ci-34352506603
+2026-09-17T09:30:44.6840555Z  * [new branch]      evidence/cp11-depth30-ci-34372130831 -> origin/evidence/cp11-depth30-ci-34372130831
+2026-09-17T09:30:44.6842073Z  * [new branch]      evidence/cp11-depth31-ci-34422477135 -> origin/evidence/cp11-depth31-ci-34422477135
+2026-09-17T09:30:44.6844148Z  * [new branch]      evidence/cp11-depth32-ci-34427905965 -> origin/evidence/cp11-depth32-ci-34427905965
+2026-09-17T09:30:44.6845820Z  * [new branch]      evidence/cp11-depth33-ci-34432816747 -> origin/evidence/cp11-depth33-ci-34432816747
+2026-09-17T09:30:44.6847696Z  * [new branch]      evidence/cp11-depth34-ci-34434039448 -> origin/evidence/cp11-depth34-ci-34434039448
+2026-09-17T09:30:44.6849466Z  * [new branch]      evidence/cp11-depth35-ci-34440381225 -> origin/evidence/cp11-depth35-ci-34440381225
+2026-09-17T09:30:44.6851681Z  * [new branch]      evidence/cp11-depth35r2-browser-readiness-20260910 -> origin/evidence/cp11-depth35r2-browser-readiness-20260910
+2026-09-17T09:30:44.6853499Z  * [new branch]      evidence/cp11-depth36-predeployment-20260910 -> origin/evidence/cp11-depth36-predeployment-20260910
+2026-09-17T09:30:44.6854905Z  * [new branch]      evidence/cp11-depth36r3-ci-34453179558 -> origin/evidence/cp11-depth36r3-ci-34453179558
+2026-09-17T09:30:44.6856803Z  * [new branch]      evidence/cp11-depth36r3-predeployment-20260910 -> origin/evidence/cp11-depth36r3-predeployment-20260910
+2026-09-17T09:30:44.6858440Z  * [new branch]      evidence/cp11-depth37-predeployment-20260910 -> origin/evidence/cp11-depth37-predeployment-20260910
+2026-09-17T09:30:44.6859867Z  * [new branch]      evidence/depth40-compat-v2-34642554667 -> origin/evidence/depth40-compat-v2-34642554667
+2026-09-17T09:30:44.6861444Z  * [new branch]      evidence/depth40-staging-build-34565938702-independent -> origin/evidence/depth40-staging-build-34565938702-independent
+2026-09-17T09:30:44.6862906Z  * [new branch]      evidence/hk-test-pr183-20260917 -> origin/evidence/hk-test-pr183-20260917
+2026-09-17T09:30:44.6864152Z  * [new branch]      evidence/pr172-unified-2d5fff47-20260917 -> origin/evidence/pr172-unified-2d5fff47-20260917
+2026-09-17T09:30:44.6865649Z  * [new branch]      evidence/pr66-canonical-reconciliation-20260913 -> origin/evidence/pr66-canonical-reconciliation-20260913
+2026-09-17T09:30:44.6867916Z  * [new branch]      evidence/supplier-controls-edd35005-20260917 -> origin/evidence/supplier-controls-edd35005-20260917
+2026-09-17T09:30:44.6869789Z  * [new branch]      evidence/verify-20260911T095356Z-review-20260912 -> origin/evidence/verify-20260911T095356Z-review-20260912
+2026-09-17T09:30:44.6871810Z  * [new branch]      feature/boss-deploy-request-v1-20260912 -> origin/feature/boss-deploy-request-v1-20260912
+2026-09-17T09:30:44.6873389Z  * [new branch]      fix/0134-sqlite-history-20260914 -> origin/fix/0134-sqlite-history-20260914
+2026-09-17T09:30:44.6875342Z  * [new branch]      fix/aoluguya-golden-canonical-recovery-20260915 -> origin/fix/aoluguya-golden-canonical-recovery-20260915
+2026-09-17T09:30:44.6877416Z  * [new branch]      fix/c01-03-authorization-replay-20260917 -> origin/fix/c01-03-authorization-replay-20260917
+2026-09-17T09:30:44.6879062Z  * [new branch]      fix/c11-flight-status-width-20260914 -> origin/fix/c11-flight-status-width-20260914
+2026-09-17T09:30:44.6881232Z  * [new branch]      fix/canonical-parent-retention-20260912 -> origin/fix/canonical-parent-retention-20260912
+2026-09-17T09:30:44.6882882Z  * [new branch]      fix/credit-acceptance-clock-local -> origin/fix/credit-acceptance-clock-local
+2026-09-17T09:30:44.6884803Z  * [new branch]      fix/depth40-deployment-compat-v2-20260912 -> origin/fix/depth40-deployment-compat-v2-20260912
+2026-09-17T09:30:44.6886804Z  * [new branch]      fix/depth46-ledger-independence-review -> origin/fix/depth46-ledger-independence-review
+2026-09-17T09:30:44.6888788Z  * [new branch]      fix/depth47-credit-and-module-boundaries-20260913 -> origin/fix/depth47-credit-and-module-boundaries-20260913
+2026-09-17T09:30:44.6890794Z  * [new branch]      fix/depth48-admin-pagination-20260913 -> origin/fix/depth48-admin-pagination-20260913
+2026-09-17T09:30:44.6892394Z  * [new branch]      fix/hk-test-pr183-shared-compat-20260917 -> origin/fix/hk-test-pr183-shared-compat-20260917
+2026-09-17T09:30:44.6894499Z  * [new branch]      fix/shared-regional-queue-lease-test-hygiene-20260917 -> origin/fix/shared-regional-queue-lease-test-hygiene-20260917
+2026-09-17T09:30:44.6896299Z  * [new branch]      fix/v70-cell-gap-closure-20260913 -> origin/fix/v70-cell-gap-closure-20260913
+2026-09-17T09:30:44.6898132Z  * [new branch]      fix/v70-round2-fef9c748-20260914 -> origin/fix/v70-round2-fef9c748-20260914
+2026-09-17T09:30:44.6899383Z  * [new branch]      gate/pr73-integrated-4d236353-20260914 -> origin/gate/pr73-integrated-4d236353-20260914
+2026-09-17T09:30:44.6900812Z  * [new branch]      governance/cc-github-native-routing-20260914 -> origin/governance/cc-github-native-routing-20260914
+2026-09-17T09:30:44.6902816Z  * [new branch]      governance/command-center-development-authority-20260909 -> origin/governance/command-center-development-authority-20260909
+2026-09-17T09:30:44.6904684Z  * [new branch]      governance/versioned-deployment-topology-v1-20260912 -> origin/governance/versioned-deployment-topology-v1-20260912
+2026-09-17T09:30:44.6906703Z  * [new branch]      integration/c02-c12-gate-ledger-20260917 -> origin/integration/c02-c12-gate-ledger-20260917
+2026-09-17T09:30:44.6908290Z  * [new branch]      integration/v70-current-cells-unified-20260917 -> origin/integration/v70-current-cells-unified-20260917
+2026-09-17T09:30:44.6910021Z  * [new branch]      integration/v70-final-scoped-20260916 -> origin/integration/v70-final-scoped-20260916
+2026-09-17T09:30:44.6911062Z  * [new branch]      main                    -> origin/main
+2026-09-17T09:30:44.6912126Z  * [new branch]      ops/14-cell-ledger-main-8ffcde66-20260914 -> origin/ops/14-cell-ledger-main-8ffcde66-20260914
+2026-09-17T09:30:44.6913837Z  * [new branch]      ops/14-cell-ledger-main-8ffcde66-20260914-round2 -> origin/ops/14-cell-ledger-main-8ffcde66-20260914-round2
+2026-09-17T09:30:44.6915158Z  * [new branch]      ops/c01-formal-20260915 -> origin/ops/c01-formal-20260915
+2026-09-17T09:30:44.6916185Z  * [new branch]      ops/c01-runner-repair-20260915 -> origin/ops/c01-runner-repair-20260915
+2026-09-17T09:30:44.6917959Z  * [new branch]      ops/codex-coding-runner-pilot-20260914 -> origin/ops/codex-coding-runner-pilot-20260914
+2026-09-17T09:30:44.6919329Z  * [new branch]      ops/openai-api-smoke-20260915 -> origin/ops/openai-api-smoke-20260915
+2026-09-17T09:30:44.6920684Z  * [new branch]      ops/r3-actual-work-product-runner-20260914 -> origin/ops/r3-actual-work-product-runner-20260914
+2026-09-17T09:30:44.6922872Z  * [new branch]      ops/r3-real-worker-ack-8ffcde66-20260914 -> origin/ops/r3-real-worker-ack-8ffcde66-20260914
+2026-09-17T09:30:44.6924758Z  * [new branch]      ops/runtime-liveness-root-fix-20260916 -> origin/ops/runtime-liveness-root-fix-20260916
+2026-09-17T09:30:44.6926169Z  * [new branch]      ops/v70-r4-c01-01-reconciliation -> origin/ops/v70-r4-c01-01-reconciliation
+2026-09-17T09:30:44.6928307Z  * [new branch]      p0-agent-native-lifecycle-closure-v0-3 -> origin/p0-agent-native-lifecycle-closure-v0-3
+2026-09-17T09:30:44.6929738Z  * [new branch]      p0-agent-transaction-gateway-v1 -> origin/p0-agent-transaction-gateway-v1
+2026-09-17T09:30:44.6931278Z  * [new branch]      p0-agent-transaction-lifecycle-v0-2 -> origin/p0-agent-transaction-lifecycle-v0-2
+2026-09-17T09:30:44.6932834Z  * [new branch]      package/depth40-p03-compat-v2-parent-20260912 -> origin/package/depth40-p03-compat-v2-parent-20260912
+2026-09-17T09:30:44.6934383Z  * [new branch]      package/depth48-admin-pagination-20260913 -> origin/package/depth48-admin-pagination-20260913
+2026-09-17T09:30:44.6935795Z  * [new branch]      payment-center/reality-discovery-01 -> origin/payment-center/reality-discovery-01
+2026-09-17T09:30:44.6937395Z  * [new branch]      preparation/cp11-depth31-source -> origin/preparation/cp11-depth31-source
+2026-09-17T09:30:44.6938634Z  * [new branch]      project-context/current-state-v1 -> origin/project-context/current-state-v1
+2026-09-17T09:30:44.6939943Z  * [new branch]      review/depth46-depth47-expert-findings -> origin/review/depth46-depth47-expert-findings
+2026-09-17T09:30:44.6941328Z  * [new branch]      supplier-durable-controls-20260917 -> origin/supplier-durable-controls-20260917
+2026-09-17T09:30:44.6942760Z  * [new branch]      supplier-preflight-runtime-p0p1-20260917 -> origin/supplier-preflight-runtime-p0p1-20260917
+2026-09-17T09:30:44.6944348Z  * [new branch]      test/existing-image-47bb66c4-three-end-20260914 -> origin/test/existing-image-47bb66c4-three-end-20260914
+2026-09-17T09:30:44.6945476Z  * [new branch]      tmp-noop                -> origin/tmp-noop
+2026-09-17T09:30:44.6946218Z  * [new branch]      tmp-noop-2              -> origin/tmp-noop-2
+2026-09-17T09:30:44.6947319Z  * [new branch]      tmp/c08-c10-lineage-pg18 -> origin/tmp/c08-c10-lineage-pg18
+2026-09-17T09:30:44.6948826Z  * [new branch]      work/c05-r5-concurrent-unknown-20260916 -> origin/work/c05-r5-concurrent-unknown-20260916
+2026-09-17T09:30:44.6950242Z  * [new branch]      work/c06-r5-raw-payload-binding-20260916 -> origin/work/c06-r5-raw-payload-binding-20260916
+2026-09-17T09:30:44.6953061Z [command]/usr/bin/git rev-parse --verify --quiet 9c76fc579383fa2270af90bc67b67a17454d37bd^{object}
+2026-09-17T09:30:44.6953983Z 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:44.6955396Z ##[endgroup]
+2026-09-17T09:30:44.6956119Z ##[group]Determining the checkout info
+2026-09-17T09:30:44.6957192Z ##[endgroup]
+2026-09-17T09:30:44.6957653Z [command]/usr/bin/git sparse-checkout disable
+2026-09-17T09:30:44.6960945Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-17T09:30:44.6962583Z ##[group]Checking out the ref
+2026-09-17T09:30:44.6963366Z [command]/usr/bin/git checkout --progress --force 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:46.3475780Z Updating files:  31% (1853/5945)
+2026-09-17T09:30:46.3503770Z Updating files:  32% (1903/5945)
+2026-09-17T09:30:46.3545455Z Updating files:  33% (1962/5945)
+2026-09-17T09:30:46.3577922Z Updating files:  34% (2022/5945)
+2026-09-17T09:30:46.3678483Z Updating files:  35% (2081/5945)
+2026-09-17T09:30:46.3742676Z Updating files:  36% (2141/5945)
+2026-09-17T09:30:46.3790688Z Updating files:  37% (2200/5945)
+2026-09-17T09:30:46.3819901Z Updating files:  38% (2260/5945)
+2026-09-17T09:30:46.3850524Z Updating files:  39% (2319/5945)
+2026-09-17T09:30:46.3884288Z Updating files:  40% (2378/5945)
+2026-09-17T09:30:46.3921241Z Updating files:  41% (2438/5945)
+2026-09-17T09:30:46.3954419Z Updating files:  42% (2497/5945)
+2026-09-17T09:30:46.3987088Z Updating files:  43% (2557/5945)
+2026-09-17T09:30:46.4055413Z Updating files:  44% (2616/5945)
+2026-09-17T09:30:46.4106680Z Updating files:  45% (2676/5945)
+2026-09-17T09:30:46.4177740Z Updating files:  46% (2735/5945)
+2026-09-17T09:30:46.4236342Z Updating files:  47% (2795/5945)
+2026-09-17T09:30:46.4287340Z Updating files:  48% (2854/5945)
+2026-09-17T09:30:46.4320775Z Updating files:  49% (2914/5945)
+2026-09-17T09:30:46.4387780Z Updating files:  50% (2973/5945)
+2026-09-17T09:30:46.4420497Z Updating files:  51% (3032/5945)
+2026-09-17T09:30:46.4455152Z Updating files:  52% (3092/5945)
+2026-09-17T09:30:46.4491517Z Updating files:  53% (3151/5945)
+2026-09-17T09:30:46.5389633Z Updating files:  54% (3211/5945)
+2026-09-17T09:30:46.5438170Z Updating files:  55% (3270/5945)
+2026-09-17T09:30:46.5508002Z Updating files:  56% (3330/5945)
+2026-09-17T09:30:46.5783254Z Updating files:  57% (3389/5945)
+2026-09-17T09:30:46.6098768Z Updating files:  58% (3449/5945)
+2026-09-17T09:30:46.6481832Z Updating files:  59% (3508/5945)
+2026-09-17T09:30:46.6537142Z Updating files:  60% (3567/5945)
+2026-09-17T09:30:46.6595647Z Updating files:  61% (3627/5945)
+2026-09-17T09:30:46.6642595Z Updating files:  62% (3686/5945)
+2026-09-17T09:30:46.6697171Z Updating files:  63% (3746/5945)
+2026-09-17T09:30:46.6787481Z Updating files:  64% (3805/5945)
+2026-09-17T09:30:46.6847414Z Updating files:  65% (3865/5945)
+2026-09-17T09:30:46.6872599Z Updating files:  66% (3924/5945)
+2026-09-17T09:30:46.6944025Z Updating files:  67% (3984/5945)
+2026-09-17T09:30:46.6968364Z Updating files:  68% (4043/5945)
+2026-09-17T09:30:46.7005330Z Updating files:  68% (4048/5945)
+2026-09-17T09:30:46.7051250Z Updating files:  69% (4103/5945)
+2026-09-17T09:30:46.7087272Z Updating files:  70% (4162/5945)
+2026-09-17T09:30:46.7155133Z Updating files:  71% (4221/5945)
+2026-09-17T09:30:46.7407640Z Updating files:  72% (4281/5945)
+2026-09-17T09:30:46.7727542Z Updating files:  73% (4340/5945)
+2026-09-17T09:30:46.8247351Z Updating files:  74% (4400/5945)
+2026-09-17T09:30:46.8427392Z Updating files:  75% (4459/5945)
+2026-09-17T09:30:46.8507089Z Updating files:  76% (4519/5945)
+2026-09-17T09:30:46.8607119Z Updating files:  77% (4578/5945)
+2026-09-17T09:30:46.8627063Z Updating files:  78% (4638/5945)
+2026-09-17T09:30:46.8687135Z Updating files:  79% (4697/5945)
+2026-09-17T09:30:46.8747165Z Updating files:  80% (4756/5945)
+2026-09-17T09:30:46.8774544Z Updating files:  81% (4816/5945)
+2026-09-17T09:30:46.8787049Z Updating files:  82% (4875/5945)
+2026-09-17T09:30:46.8867305Z Updating files:  83% (4935/5945)
+2026-09-17T09:30:46.8888889Z Updating files:  84% (4994/5945)
+2026-09-17T09:30:46.8949033Z Updating files:  85% (5054/5945)
+2026-09-17T09:30:46.8982247Z Updating files:  86% (5113/5945)
+2026-09-17T09:30:46.9027100Z Updating files:  87% (5173/5945)
+2026-09-17T09:30:46.9072640Z Updating files:  88% (5232/5945)
+2026-09-17T09:30:46.9137689Z Updating files:  89% (5292/5945)
+2026-09-17T09:30:46.9165890Z Updating files:  90% (5351/5945)
+2026-09-17T09:30:46.9221717Z Updating files:  91% (5410/5945)
+2026-09-17T09:30:46.9298660Z Updating files:  92% (5470/5945)
+2026-09-17T09:30:46.9328287Z Updating files:  93% (5529/5945)
+2026-09-17T09:30:46.9377990Z Updating files:  94% (5589/5945)
+2026-09-17T09:30:46.9418036Z Updating files:  95% (5648/5945)
+2026-09-17T09:30:46.9478287Z Updating files:  96% (5708/5945)
+2026-09-17T09:30:46.9512225Z Updating files:  97% (5767/5945)
+2026-09-17T09:30:46.9566903Z Updating files:  98% (5827/5945)
+2026-09-17T09:30:46.9637149Z Updating files:  99% (5886/5945)
+2026-09-17T09:30:46.9656975Z Updating files: 100% (5945/5945)
+2026-09-17T09:30:46.9676943Z Updating files: 100% (5945/5945), done.
+2026-09-17T09:30:47.2080038Z Note: switching to '9c76fc579383fa2270af90bc67b67a17454d37bd'.
+2026-09-17T09:30:47.2081965Z 
+2026-09-17T09:30:47.2082577Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-17T09:30:47.2083644Z changes and commit them, and you can discard any commits you make in this
+2026-09-17T09:30:47.2084628Z state without impacting any branches by switching back to a branch.
+2026-09-17T09:30:47.2085273Z 
+2026-09-17T09:30:47.2085740Z If you want to create a new branch to retain commits you create, you may
+2026-09-17T09:30:47.2086917Z do so (now or later) by using -c with the switch command. Example:
+2026-09-17T09:30:47.2087530Z 
+2026-09-17T09:30:47.2087863Z   git switch -c <new-branch-name>
+2026-09-17T09:30:47.2088311Z 
+2026-09-17T09:30:47.2088630Z Or undo this operation with:
+2026-09-17T09:30:47.2089067Z 
+2026-09-17T09:30:47.2089369Z   git switch -
+2026-09-17T09:30:47.2089734Z 
+2026-09-17T09:30:47.2090266Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-17T09:30:47.2091292Z 
+2026-09-17T09:30:47.2092017Z HEAD is now at 9c76fc5 fix(control): verify frozen TEST_PR extras and preserve specific failures (#184)
+2026-09-17T09:30:47.2239913Z ##[endgroup]
+2026-09-17T09:30:47.2301707Z [command]/usr/bin/git log -1 --format=%H
+2026-09-17T09:30:47.2337446Z 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:47.2348895Z ##[group]Removing auth
+2026-09-17T09:30:47.2367404Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T09:30:47.2406165Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T09:30:47.2684701Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T09:30:47.2723666Z http.https://github.com/.extraheader
+2026-09-17T09:30:47.2733340Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-17T09:30:47.5263764Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T09:30:47.5537515Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T09:30:47.5599636Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T09:30:47.5846237Z ##[endgroup]
+2026-09-17T09:30:47.6062704Z ##[group]Run test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+2026-09-17T09:30:47.6063213Z [36;1mtest "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"[0m
+2026-09-17T09:30:47.6063620Z [36;1mmkdir -p "$RUNNER_TEMP/hk-agent-failure"[0m
+2026-09-17T09:30:47.6105542Z shell: /usr/bin/bash -e {0}
+2026-09-17T09:30:47.6105815Z env:
+2026-09-17T09:30:47.6106055Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-17T09:30:47.6106719Z   CANDIDATE_SHA: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:47.6107220Z   BASE_SHA: dc34ee5cabed7c6e93507d178fdd3a62a426399e
+2026-09-17T09:30:47.6107545Z ##[endgroup]
+2026-09-17T09:30:47.6324827Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T09:30:47.6326708Z ##[group]Run actions/setup-python@v5
+2026-09-17T09:30:47.6326991Z with:
+2026-09-17T09:30:47.6327204Z   python-version: 3.13
+2026-09-17T09:30:47.6327441Z   check-latest: false
+2026-09-17T09:30:47.6329776Z   token: ***
+2026-09-17T09:30:47.6329996Z   update-environment: true
+2026-09-17T09:30:47.6330247Z   allow-prereleases: false
+2026-09-17T09:30:47.6330482Z   freethreaded: false
+2026-09-17T09:30:47.6330721Z env:
+2026-09-17T09:30:47.6330940Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-17T09:30:47.6331249Z   CANDIDATE_SHA: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:47.6331616Z   BASE_SHA: dc34ee5cabed7c6e93507d178fdd3a62a426399e
+2026-09-17T09:30:47.6331964Z ##[endgroup]
+2026-09-17T09:30:47.7779078Z ##[group]Installed versions
+2026-09-17T09:30:48.3236634Z (node:2118) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-17T09:30:48.3237960Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-17T09:30:48.3243514Z Successfully set up CPython (3.13.15)
+2026-09-17T09:30:48.3244341Z ##[endgroup]
+2026-09-17T09:30:48.3466896Z ##[group]Run python -m pip install cryptography==46.0.0
+2026-09-17T09:30:48.3467809Z [36;1mpython -m pip install cryptography==46.0.0[0m
+2026-09-17T09:30:48.3539976Z shell: /usr/bin/bash -e {0}
+2026-09-17T09:30:48.3540383Z env:
+2026-09-17T09:30:48.3540734Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-17T09:30:48.3541459Z   CANDIDATE_SHA: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:48.3542065Z   BASE_SHA: dc34ee5cabed7c6e93507d178fdd3a62a426399e
+2026-09-17T09:30:48.3542680Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:48.3543420Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-17T09:30:48.3544142Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:48.3544782Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:48.3545428Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:48.3546130Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-17T09:30:48.3546863Z ##[endgroup]
+2026-09-17T09:30:50.2257166Z Collecting cryptography==46.0.0
+2026-09-17T09:30:50.2774675Z   Downloading cryptography-46.0.0-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (5.7 kB)
+2026-09-17T09:30:50.3855642Z Collecting cffi>=1.14 (from cryptography==46.0.0)
+2026-09-17T09:30:50.3897103Z   Downloading cffi-2.1.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.5 kB)
+2026-09-17T09:30:50.4048576Z Collecting pycparser (from cffi>=1.14->cryptography==46.0.0)
+2026-09-17T09:30:50.4086358Z   Downloading pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+2026-09-17T09:30:50.4167217Z Downloading cryptography-46.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.6 MB)
+2026-09-17T09:30:50.4689437Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.6/4.6 MB 134.7 MB/s  0:00:00
+2026-09-17T09:30:50.4731712Z Downloading cffi-2.1.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+2026-09-17T09:30:50.4799253Z Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+2026-09-17T09:30:50.6254806Z Installing collected packages: pycparser, cffi, cryptography
+2026-09-17T09:30:50.9196246Z 
+2026-09-17T09:30:50.9210787Z Successfully installed cffi-2.1.1 cryptography-46.0.0 pycparser-3.0
+2026-09-17T09:30:50.9905704Z ##[group]Run sha256sum -c SHA256SUMS
+2026-09-17T09:30:50.9906077Z [36;1msha256sum -c SHA256SUMS[0m
+2026-09-17T09:30:50.9943121Z shell: /usr/bin/bash -e {0}
+2026-09-17T09:30:50.9943379Z env:
+2026-09-17T09:30:50.9943593Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-17T09:30:50.9943921Z   CANDIDATE_SHA: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:50.9944298Z   BASE_SHA: dc34ee5cabed7c6e93507d178fdd3a62a426399e
+2026-09-17T09:30:50.9944680Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:50.9945126Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-17T09:30:50.9945553Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:50.9945962Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:50.9946611Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:50.9947171Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-17T09:30:50.9947602Z ##[endgroup]
+2026-09-17T09:30:51.0037298Z .gitattributes: OK
+2026-09-17T09:30:51.0037714Z .gitignore: OK
+2026-09-17T09:30:51.0038104Z README.md: OK
+2026-09-17T09:30:51.0038561Z command-center/boss-request-bridge-v1.3.json: OK
+2026-09-17T09:30:51.0039189Z command-center/go-boss-request-bridge: OK
+2026-09-17T09:30:51.0039907Z hk-staging/Dockerfile.go-application-python-v2: OK
+2026-09-17T09:30:51.0040558Z hk-staging/agent.test-pr.fragment.json: OK
+2026-09-17T09:30:51.0041073Z hk-staging/hk_agent/__init__.py: OK
+2026-09-17T09:30:51.0041563Z hk-staging/hk_agent/artifact_store.py: OK
+2026-09-17T09:30:51.0042060Z hk-staging/hk_agent/core.py: OK
+2026-09-17T09:30:51.0042545Z hk-staging/hk_agent/deployment_actions.py: OK
+2026-09-17T09:30:51.0043069Z hk-staging/hk_agent/test_pr.py: OK
+2026-09-17T09:30:51.0043536Z hk-staging/hk_agent/transport.py: OK
+2026-09-17T09:30:51.0044001Z install/INSTALL.md: OK
+2026-09-17T09:30:51.0044426Z install/install-command-center.sh: OK
+2026-09-17T09:30:51.0044929Z install/install-hk-agent.sh: OK
+2026-09-17T09:30:51.0045372Z install/preflight.sh: OK
+2026-09-17T09:30:51.0045801Z install/publish_request_pr.py: OK
+2026-09-17T09:30:51.0046826Z install/uninstall.sh: OK
+2026-09-17T09:30:51.0047284Z install/validate_against_contract.py: OK
+2026-09-17T09:30:51.0047790Z tests/archive_fixtures.py: OK
+2026-09-17T09:30:51.0048265Z tests/check_canonical_archive_manifest.sh: OK
+2026-09-17T09:30:51.0048782Z tests/test_artifact_store.py: OK
+2026-09-17T09:30:51.0049257Z tests/test_dependency_compatibility.py: OK
+2026-09-17T09:30:51.0049776Z tests/test_live_integration.py: OK
+2026-09-17T09:30:51.0050242Z tests/test_test_pr_durability.py: OK
+2026-09-17T09:30:51.0082093Z ##[group]Run sha256sum -c SHA256SUMS
+2026-09-17T09:30:51.0082499Z [36;1msha256sum -c SHA256SUMS[0m
+2026-09-17T09:30:51.0118241Z shell: /usr/bin/bash -e {0}
+2026-09-17T09:30:51.0118494Z env:
+2026-09-17T09:30:51.0118711Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-17T09:30:51.0119033Z   CANDIDATE_SHA: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:51.0119419Z   BASE_SHA: dc34ee5cabed7c6e93507d178fdd3a62a426399e
+2026-09-17T09:30:51.0119825Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:51.0120257Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-17T09:30:51.0120693Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:51.0121077Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:51.0121463Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:51.0121866Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-17T09:30:51.0122246Z ##[endgroup]
+2026-09-17T09:30:51.0207189Z .gitattributes: OK
+2026-09-17T09:30:51.0207984Z .gitignore: OK
+2026-09-17T09:30:51.0208667Z CHATGPT_CONTRACT_V1.md: OK
+2026-09-17T09:30:51.0209333Z LIFECYCLE_V1.md: OK
+2026-09-17T09:30:51.0209930Z README.md: OK
+2026-09-17T09:30:51.0210593Z contracts/agent_liveness_v1.schema.json: OK
+2026-09-17T09:30:51.0211382Z contracts/control_state_v1.schema.json: OK
+2026-09-17T09:30:51.0212157Z contracts/control_status_v1.schema.json: OK
+2026-09-17T09:30:51.0212922Z contracts/evidence_v1.schema.json: OK
+2026-09-17T09:30:51.0213622Z contracts/failure_evidence_v1.schema.json: OK
+2026-09-17T09:30:51.0214396Z contracts/request_v1.schema.json: OK
+2026-09-17T09:30:51.0215072Z contracts/task_v1.schema.json: OK
+2026-09-17T09:30:51.0215820Z evidence/PROJECTION_20260914/CONTROL_STATUS_V1.json: OK
+2026-09-17T09:30:51.0217047Z evidence/PROJECTION_20260914/CURRENT_CONTROL_STATE.json: OK
+2026-09-17T09:30:51.0217946Z evidence/PROJECTION_20260914/LATEST_EVIDENCE.json: OK
+2026-09-17T09:30:51.0218734Z evidence/PROJECTION_20260914/README.md: OK
+2026-09-17T09:30:51.0219539Z evidence/PROJECTION_20260914/REQUESTS_MANIFEST.json: OK
+2026-09-17T09:30:51.0220841Z evidence/PROJECTION_20260914/TASK_INDEX.json: OK
+2026-09-17T09:30:51.0221977Z evidence/PROJECTION_20260915/CONTROL_STATUS_V1.json: OK
+2026-09-17T09:30:51.0222839Z evidence/PROJECTION_20260915/CURRENT_CONTROL_STATE.json: OK
+2026-09-17T09:30:51.0223542Z evidence/PROJECTION_20260915/LATEST_EVIDENCE.json: OK
+2026-09-17T09:30:51.0224132Z evidence/PROJECTION_20260915/README.md: OK
+2026-09-17T09:30:51.0224714Z evidence/PROJECTION_20260915/REQUESTS_MANIFEST.json: OK
+2026-09-17T09:30:51.0225321Z evidence/PROJECTION_20260915/TASK_INDEX.json: OK
+2026-09-17T09:30:51.0225846Z identity/README.md: OK
+2026-09-17T09:30:51.0226264Z identity/VERIFIER_IDENTITIES_V1.json: OK
+2026-09-17T09:30:51.0227124Z identity/keys/cc-task-manifest-signing.pub: OK
+2026-09-17T09:30:51.0227692Z identity/keys/hk-evidence-signing.pub: OK
+2026-09-17T09:30:51.0228179Z run_checks.py: OK
+2026-09-17T09:30:51.0228566Z state_projection.py: OK
+2026-09-17T09:30:51.0229382Z tests/fixtures/real/evidence/go-boss-request-verify-20260911T115328Z-rzuNCNxR2lsGnBxN8zvijeYa53IkhvQS.json: OK
+2026-09-17T09:30:51.0230309Z tests/fixtures/real/evidence/go-boss-request-verify-20260911T121629Z-0f0c80019687-EcdF_NyeJ7-LZs3u4I7hdKje1_d-_J4m.json: OK
+2026-09-17T09:30:51.0231243Z tests/fixtures/real/evidence/go-boss-request-verify-20260911T122119Z-05981133f091-tH7VTGfbYkavSCO1LR1e71bWSMTKcmZ-.json: OK
+2026-09-17T09:30:51.0232401Z tests/fixtures/real/evidence/go-boss-request-verify-20260911T123528Z-e6e5f12203aa-r7MmitAhNTtSfZL649SPn-xA0qAXhQUF.json: OK
+2026-09-17T09:30:51.0233350Z tests/fixtures/real/evidence/go-boss-request-verify-20260912T085222Z-f694a5bdf34e-XKgMNAgMMyu6zOWO-5aHsOaxmCovCMHw.json: OK
+2026-09-17T09:30:51.0234315Z tests/fixtures/real/evidence/go-boss-request-verify-20260912T102129Z-ac46386a4422-rZm0msMPY6C1uIEIF20KjJogIkevUdiP.json: OK
+2026-09-17T09:30:51.0235411Z tests/fixtures/real/evidence/go-boss-request-verify-20260912T135236Z-6a060f78b64d-2a1yw3uWLYqNo7wGbgHlC6yP_2Qa_NP5.json: OK
+2026-09-17T09:30:51.0236342Z tests/fixtures/real/evidence/go-boss-request-verify-20260912T152929Z-822deb499829-k5iiTStVxZNd4VHV5LsO8xdjwJcK1rU2.json: OK
+2026-09-17T09:30:51.0238142Z tests/fixtures/real/evidence/go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json: OK
+2026-09-17T09:30:51.0239039Z tests/fixtures/real/evidence/go-boss-test-pr-42-5c8d760d36cb-xgQcFzIXtxj2IKjcJesfqtr0aY84k4vj.json: OK
+2026-09-17T09:30:51.0239843Z tests/fixtures/real/evidence/go-boss-test-pr-42-81653232027c-FazaUqG2NOoKknSG-DjoOyrbxtmpcIp-.json: OK
+2026-09-17T09:30:51.0240620Z tests/fixtures/real/evidence/go-boss-test-pr-47-c00da968ea3c-kFYOCekZQgQet9rxzRaWgR3FT_n7hUmv.json: OK
+2026-09-17T09:30:51.0241420Z tests/fixtures/real/evidence/go-boss02-canary-20260909T062821211376Z-XHyGB7JdNQsf08CiWGAsTfpzqnCHr6pa.json: OK
+2026-09-17T09:30:51.0242278Z tests/fixtures/real/evidence/go-boss02-deploy-r4-20260909T131418835006Z-Sx6gwR6DQiHtzRuaTWmZiyuddXTQ4qKD.json: OK
+2026-09-17T09:30:51.0243112Z tests/fixtures/real/evidence/go-boss02-deploy-v2-20260910T030827Z-4nQi4uZF6woZfiKaJBS6d4mZKVY98JqM.json: OK
+2026-09-17T09:30:51.0243932Z tests/fixtures/real/evidence/go-boss02-deploy-v2-r7-20260910T075319Z-KHD87ZYqku5GFrl2vlCINIf8x15PCmDu.json: OK
+2026-09-17T09:30:51.0244769Z tests/fixtures/real/evidence/go-boss02-final-canary-20260911T025100Z-EZOUvmb0gVqEQ8R-YJqfAedXjXr21QHC.json: OK
+2026-09-17T09:30:51.0245579Z tests/fixtures/real/evidence/go-boss02-final-deploy-20260911T025420Z-ZeLZ20u_3G163YURk-E55WXArlvCrupa.json: OK
+2026-09-17T09:30:51.0246657Z tests/fixtures/real/evidence/go-boss02-final-rollback-20260911T071232Z-pAZAHxYDeEAynG5BVXH6bHDVkyeCyM02.json: OK
+2026-09-17T09:30:51.0247668Z tests/fixtures/real/evidence/go-boss02-post-deploy-verify-20260909T132251199297Z-MloBPB7LJcamQBgcUXbse1EnAw9oNrRd.json: OK
+2026-09-17T09:30:51.0248625Z tests/fixtures/real/evidence/go-boss02-post-rollback-verify-20260911T071429Z-VXHLNF5J-y95xwF89A_tuEfg9tVulKt1.json: OK
+2026-09-17T09:30:51.0249477Z tests/fixtures/real/evidence/go-boss02-verify-20260908T135246507176Z-ARHPN3_WrLIvVkLifIh1K9UB0Tvz45tM.json: OK
+2026-09-17T09:30:51.0250304Z tests/fixtures/real/evidence/go-m3-045-e2e-health-20260906T074711296352Z-gGntKzU12vNIv5P5Lmerjp7DHew_Kz0-.json: OK
+2026-09-17T09:30:51.0251152Z tests/fixtures/real/evidence/go-m3-auto-health-20260906T115227992322Z-jzoWVgooSJWTldTOGkT57zLvcCOiQAGS.json: OK
+2026-09-17T09:30:51.0251844Z tests/fixtures/real/tasks/go-boss-request-verify-20260911T115328Z.json: OK
+2026-09-17T09:30:51.0252427Z tests/fixtures/real/tasks/go-boss-request-verify-20260911T121629Z-0f0c80019687.json: OK
+2026-09-17T09:30:51.0253046Z tests/fixtures/real/tasks/go-boss-request-verify-20260911T122119Z-05981133f091.json: OK
+2026-09-17T09:30:51.0253657Z tests/fixtures/real/tasks/go-boss-request-verify-20260911T123528Z-e6e5f12203aa.json: OK
+2026-09-17T09:30:51.0254270Z tests/fixtures/real/tasks/go-boss-request-verify-20260912T085222Z-f694a5bdf34e.json: OK
+2026-09-17T09:30:51.0254892Z tests/fixtures/real/tasks/go-boss-request-verify-20260912T102129Z-ac46386a4422.json: OK
+2026-09-17T09:30:51.0255498Z tests/fixtures/real/tasks/go-boss-request-verify-20260912T135236Z-6a060f78b64d.json: OK
+2026-09-17T09:30:51.0256108Z tests/fixtures/real/tasks/go-boss-request-verify-20260912T152929Z-822deb499829.json: OK
+2026-09-17T09:30:51.0257035Z tests/fixtures/real/tasks/go-boss-request-verify-20260913T034140Z-b22f51784808.json: OK
+2026-09-17T09:30:51.0257853Z tests/fixtures/real/tasks/go-boss-test-pr-42-5c8d760d36cb.json: OK
+2026-09-17T09:30:51.0258324Z tests/fixtures/real/tasks/go-boss-test-pr-42-81653232027c.json: OK
+2026-09-17T09:30:51.0258783Z tests/fixtures/real/tasks/go-boss-test-pr-47-c00da968ea3c.json: OK
+2026-09-17T09:30:51.0259270Z tests/fixtures/real/tasks/go-boss02-canary-20260909T062821211376Z.json: OK
+2026-09-17T09:30:51.0259806Z tests/fixtures/real/tasks/go-boss02-deploy-r4-20260909T131418835006Z.json: OK
+2026-09-17T09:30:51.0260455Z tests/fixtures/real/tasks/go-boss02-deploy-v2-20260910T030827Z.json: OK
+2026-09-17T09:30:51.0260968Z tests/fixtures/real/tasks/go-boss02-deploy-v2-r7-20260910T075319Z.json: OK
+2026-09-17T09:30:51.0261481Z tests/fixtures/real/tasks/go-boss02-final-canary-20260911T025100Z.json: OK
+2026-09-17T09:30:51.0261992Z tests/fixtures/real/tasks/go-boss02-final-deploy-20260911T025420Z.json: OK
+2026-09-17T09:30:51.0262516Z tests/fixtures/real/tasks/go-boss02-final-rollback-20260911T071232Z.json: OK
+2026-09-17T09:30:51.0263092Z tests/fixtures/real/tasks/go-boss02-post-deploy-verify-20260909T132251199297Z.json: OK
+2026-09-17T09:30:51.0263702Z tests/fixtures/real/tasks/go-boss02-post-rollback-verify-20260911T071429Z.json: OK
+2026-09-17T09:30:51.0264245Z tests/fixtures/real/tasks/go-boss02-verify-20260908T135246507176Z.json: OK
+2026-09-17T09:30:51.0264767Z tests/fixtures/real/tasks/go-m3-045-e2e-health-20260906T074711296352Z.json: OK
+2026-09-17T09:30:51.0265291Z tests/fixtures/real/tasks/go-m3-auto-health-20260906T115227992322Z.json: OK
+2026-09-17T09:30:51.0265722Z tests/test_state_projection.py: OK
+2026-09-17T09:30:51.0294152Z ##[group]Run set -euo pipefail
+2026-09-17T09:30:51.0294477Z [36;1mset -euo pipefail[0m
+2026-09-17T09:30:51.0294936Z [36;1mpython -m unittest discover -s tests -v 2>&1 | tee "$RUNNER_TEMP/hk-agent-failure/tests.log"[0m
+2026-09-17T09:30:51.0330783Z shell: /usr/bin/bash -e {0}
+2026-09-17T09:30:51.0331034Z env:
+2026-09-17T09:30:51.0331247Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-17T09:30:51.0331566Z   CANDIDATE_SHA: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:51.0331957Z   BASE_SHA: dc34ee5cabed7c6e93507d178fdd3a62a426399e
+2026-09-17T09:30:51.0332344Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:51.0332801Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-17T09:30:51.0333240Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:51.0333634Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:51.0334033Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:51.0334459Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-17T09:30:51.0334793Z ##[endgroup]
+2026-09-17T09:30:51.7354894Z test_the_canary_delivers_a_real_sealed_package_through_the_production_runner (test_artifact_store.CanaryDeliveryContractTests.test_the_canary_delivers_a_real_sealed_package_through_the_production_runner) ... ok
+2026-09-17T09:30:51.7357908Z test_both_sides_decide_every_archive_the_same_way (test_artifact_store.CrossSideContractTests.test_both_sides_decide_every_archive_the_same_way)
+2026-09-17T09:30:51.7870338Z One corpus, two independent implementations, one verdict each. ... ok
+2026-09-17T09:30:51.7922241Z test_both_sides_declare_the_same_archive_refusal_vocabulary (test_artifact_store.CrossSideContractTests.test_both_sides_declare_the_same_archive_refusal_vocabulary) ... ok
+2026-09-17T09:30:51.7963511Z test_both_sides_declare_the_same_contract (test_artifact_store.CrossSideContractTests.test_both_sides_declare_the_same_contract) ... ok
+2026-09-17T09:30:51.7965945Z test_both_sides_name_the_same_trusted_writer_account (test_artifact_store.CrossSideContractTests.test_both_sides_name_the_same_trusted_writer_account)
+2026-09-17T09:30:51.7968236Z The owner of the evidence, named identically on both sides. ... ok
+2026-09-17T09:30:51.7969786Z test_both_sides_offer_the_same_entry_point (test_artifact_store.CrossSideContractTests.test_both_sides_offer_the_same_entry_point)
+2026-09-17T09:30:51.8012176Z The same three operations, named for the side that describes them. ... ok
+2026-09-17T09:30:51.8014671Z test_only_the_writer_gates_its_own_identity (test_artifact_store.CrossSideContractTests.test_only_the_writer_gates_its_own_identity)
+2026-09-17T09:30:51.8016751Z A deliberate asymmetry: writing is gated, reading is not. ... ok
+2026-09-17T09:30:51.8020134Z test_the_executor_never_accepts_a_caller_supplied_path (test_artifact_store.CrossSideContractTests.test_the_executor_never_accepts_a_caller_supplied_path) ... ok
+2026-09-17T09:30:51.8022702Z test_the_fixed_store_path_and_mode_are_written_in_both_files (test_artifact_store.CrossSideContractTests.test_the_fixed_store_path_and_mode_are_written_in_both_files) ... ok
+2026-09-17T09:30:51.8066902Z test_a_root_owned_store_is_refused_when_the_writer_must_be_go_hk_agent (test_artifact_store.CrossUidReaderTests.test_a_root_owned_store_is_refused_when_the_writer_must_be_go_hk_agent) ... skipped 'this platform cannot present a root-owned store'
+2026-09-17T09:30:51.8070061Z test_an_object_really_owned_by_another_account_is_refused (test_artifact_store.CrossUidReaderTests.test_an_object_really_owned_by_another_account_is_refused)
+2026-09-17T09:30:51.8072194Z The strongest form of the rule, on a host that can express it. ... skipped 'constructing a foreign-owned object requires root'
+2026-09-17T09:30:51.8074295Z test_the_reader_accepts_an_object_the_trusted_writer_owns (test_artifact_store.CrossUidReaderTests.test_the_reader_accepts_an_object_the_trusted_writer_owns)
+2026-09-17T09:30:51.8135525Z Root reading a package it does not own is the normal case. ... ok
+2026-09-17T09:30:51.8180517Z test_the_reader_judges_the_writer_account_not_the_owner_of_the_file (test_artifact_store.CrossUidReaderTests.test_the_reader_judges_the_writer_account_not_the_owner_of_the_file) ... ok
+2026-09-17T09:30:51.8240301Z test_the_reader_never_consults_its_own_process_identity (test_artifact_store.CrossUidReaderTests.test_the_reader_never_consults_its_own_process_identity) ... ok
+2026-09-17T09:30:51.8298093Z test_the_reader_refuses_a_store_owned_by_another_account (test_artifact_store.CrossUidReaderTests.test_the_reader_refuses_a_store_owned_by_another_account) ... ok
+2026-09-17T09:30:51.8355895Z test_the_reader_refuses_an_object_whose_mode_is_not_the_sealed_one (test_artifact_store.CrossUidReaderTests.test_the_reader_refuses_an_object_whose_mode_is_not_the_sealed_one) ... ok
+2026-09-17T09:30:51.8414158Z test_the_reader_refuses_an_unresolvable_writer_account (test_artifact_store.CrossUidReaderTests.test_the_reader_refuses_an_unresolvable_writer_account) ... ok
+2026-09-17T09:30:51.8417372Z test_a_root_owned_store_is_refused_when_the_writer_must_be_go_hk_agent (test_artifact_store.CrossUidWriterTests.test_a_root_owned_store_is_refused_when_the_writer_must_be_go_hk_agent)
+2026-09-17T09:30:51.8419745Z root is the reader, never the writer. ... skipped 'this platform cannot present a root-owned store'
+2026-09-17T09:30:51.8426252Z test_a_store_with_the_wrong_mode_is_never_written_to (test_artifact_store.CrossUidWriterTests.test_a_store_with_the_wrong_mode_is_never_written_to) ... ok
+2026-09-17T09:30:51.8433256Z test_an_unresolvable_writer_account_is_never_guessed (test_artifact_store.CrossUidWriterTests.test_an_unresolvable_writer_account_is_never_guessed) ... ok
+2026-09-17T09:30:51.8468941Z test_resealing_never_replaces_the_stored_object (test_artifact_store.CrossUidWriterTests.test_resealing_never_replaces_the_stored_object) ... ok
+2026-09-17T09:30:51.8472067Z test_seal_reverifies_the_stored_object_before_reporting_it_sealed (test_artifact_store.CrossUidWriterTests.test_seal_reverifies_the_stored_object_before_reporting_it_sealed)
+2026-09-17T09:30:51.8494333Z A stored object a reader would refuse is never reported as sealed. ... ok
+2026-09-17T09:30:51.8502007Z test_the_anchor_is_a_shape_checked_pair_of_ids (test_artifact_store.CrossUidWriterTests.test_the_anchor_is_a_shape_checked_pair_of_ids) ... ok
+2026-09-17T09:30:51.8523210Z test_the_writer_accepts_a_store_owned_by_the_trusted_account (test_artifact_store.CrossUidWriterTests.test_the_writer_accepts_a_store_owned_by_the_trusted_account) ... ok
+2026-09-17T09:30:51.8529421Z test_the_writer_refuses_a_store_owned_by_another_account (test_artifact_store.CrossUidWriterTests.test_the_writer_refuses_a_store_owned_by_another_account) ... ok
+2026-09-17T09:30:51.8535894Z test_the_writer_refuses_to_run_as_another_account (test_artifact_store.CrossUidWriterTests.test_the_writer_refuses_to_run_as_another_account) ... ok
+2026-09-17T09:30:51.8555041Z test_the_writer_runs_as_the_trusted_account (test_artifact_store.CrossUidWriterTests.test_the_writer_runs_as_the_trusted_account) ... ok
+2026-09-17T09:30:51.8558020Z test_the_agent_unit_runs_as_the_trusted_writer_account (test_artifact_store.LiveTopologyContractTests.test_the_agent_unit_runs_as_the_trusted_writer_account) ... ok
+2026-09-17T09:30:51.8560764Z test_the_executor_still_runs_as_root_through_a_fixed_sudo_argv (test_artifact_store.LiveTopologyContractTests.test_the_executor_still_runs_as_root_through_a_fixed_sudo_argv)
+2026-09-17T09:30:51.8562862Z The reader is a different account, and that path is fixed, not chosen. ... ok
+2026-09-17T09:30:51.8564792Z test_the_install_creates_the_store_for_the_writer_not_for_root (test_artifact_store.LiveTopologyContractTests.test_the_install_creates_the_store_for_the_writer_not_for_root) ... ok
+2026-09-17T09:30:51.8567613Z test_the_preflight_asserts_the_store_owner_after_install (test_artifact_store.LiveTopologyContractTests.test_the_preflight_asserts_the_store_owner_after_install) ... ok
+2026-09-17T09:30:51.8588233Z test_a_blob_that_does_not_hash_to_its_descriptor_is_refused (test_artifact_store.OciArchiveTests.test_a_blob_that_does_not_hash_to_its_descriptor_is_refused) ... ok
+2026-09-17T09:30:51.8606633Z test_a_descriptor_count_over_the_budget_is_refused (test_artifact_store.OciArchiveTests.test_a_descriptor_count_over_the_budget_is_refused) ... ok
+2026-09-17T09:30:51.8625639Z test_a_descriptor_graph_that_is_too_deep_is_refused (test_artifact_store.OciArchiveTests.test_a_descriptor_graph_that_is_too_deep_is_refused) ... ok
+2026-09-17T09:30:51.8647914Z test_a_descriptor_whose_blob_is_absent_is_refused (test_artifact_store.OciArchiveTests.test_a_descriptor_whose_blob_is_absent_is_refused) ... ok
+2026-09-17T09:30:51.8671051Z test_a_descriptor_with_the_wrong_size_is_refused (test_artifact_store.OciArchiveTests.test_a_descriptor_with_the_wrong_size_is_refused) ... ok
+2026-09-17T09:30:51.8688158Z test_a_duplicate_blob_path_is_refused (test_artifact_store.OciArchiveTests.test_a_duplicate_blob_path_is_refused) ... ok
+2026-09-17T09:30:51.8690321Z test_a_duplicate_layout_marker_is_refused (test_artifact_store.OciArchiveTests.test_a_duplicate_layout_marker_is_refused)
+2026-09-17T09:30:51.8705589Z Two `index.json` members is one name too many to be authority. ... ok
+2026-09-17T09:30:51.8722955Z test_a_hardlinked_blob_is_never_authority (test_artifact_store.OciArchiveTests.test_a_hardlinked_blob_is_never_authority) ... ok
+2026-09-17T09:30:51.8725202Z test_a_layer_blob_that_is_absent_is_refused (test_artifact_store.OciArchiveTests.test_a_layer_blob_that_is_absent_is_refused)
+2026-09-17T09:30:51.8746972Z Every blob the graph describes must be there, layers included. ... ok
+2026-09-17T09:30:51.8749072Z test_a_legacy_archive_still_seals (test_artifact_store.OciArchiveTests.test_a_legacy_archive_still_seals)
+2026-09-17T09:30:51.8797545Z The format the suite started with must not have been traded for the other. ... ok
+2026-09-17T09:30:51.8839203Z test_a_legacy_index_that_is_not_one_entry_is_refused (test_artifact_store.OciArchiveTests.test_a_legacy_index_that_is_not_one_entry_is_refused) ... ok
+2026-09-17T09:30:51.8842167Z test_a_legacy_reference_that_names_a_path_of_its_own_choosing_is_refused (test_artifact_store.OciArchiveTests.test_a_legacy_reference_that_names_a_path_of_its_own_choosing_is_refused)
+2026-09-17T09:30:51.8900802Z The digest comes from the reference's own last component, and only two ... ok
+2026-09-17T09:30:51.8917638Z test_a_member_that_traverses_is_refused (test_artifact_store.OciArchiveTests.test_a_member_that_traverses_is_refused) ... ok
+2026-09-17T09:30:51.8920427Z test_a_multi_platform_archive_seals_by_the_platform_it_exported (test_artifact_store.OciArchiveTests.test_a_multi_platform_archive_seals_by_the_platform_it_exported)
+2026-09-17T09:30:51.8946769Z Docker catalogues every platform and ships one; the rest are absent. ... ok
+2026-09-17T09:30:51.8948937Z test_a_nested_oci_index_is_followed (test_artifact_store.OciArchiveTests.test_a_nested_oci_index_is_followed)
+2026-09-17T09:30:51.9011011Z ``manifests[0]`` is not an index entry; the graph is followed instead. ... ok
+2026-09-17T09:30:51.9027722Z test_a_symlinked_blob_is_refused (test_artifact_store.OciArchiveTests.test_a_symlinked_blob_is_refused) ... ok
+2026-09-17T09:30:51.9029825Z test_an_absent_root_descriptor_is_refused (test_artifact_store.OciArchiveTests.test_an_absent_root_descriptor_is_refused)
+2026-09-17T09:30:51.9050004Z The identity Docker reports must be a digest the archive can hash. ... ok
+2026-09-17T09:30:51.9066565Z test_an_absolute_member_is_refused (test_artifact_store.OciArchiveTests.test_an_absolute_member_is_refused) ... ok
+2026-09-17T09:30:51.9075914Z test_an_archive_that_is_not_an_archive_is_refused (test_artifact_store.OciArchiveTests.test_an_archive_that_is_not_an_archive_is_refused) ... ok
+2026-09-17T09:30:51.9084857Z test_an_attestation_manifest_is_not_the_candidate (test_artifact_store.OciArchiveTests.test_an_attestation_manifest_is_not_the_candidate)
+2026-09-17T09:30:51.9126006Z Docker writes attestations into the same index; they are not the image. ... ok
+2026-09-17T09:30:51.9128691Z test_an_attestations_own_config_never_names_the_candidate (test_artifact_store.OciArchiveTests.test_an_attestations_own_config_never_names_the_candidate)
+2026-09-17T09:30:51.9166178Z The pulled form marks the attestation only in the descriptor. ... ok
+2026-09-17T09:30:51.9188855Z test_an_index_that_names_no_image_is_refused (test_artifact_store.OciArchiveTests.test_an_index_that_names_no_image_is_refused) ... ok
+2026-09-17T09:30:51.9191171Z test_an_index_that_names_two_images_is_refused (test_artifact_store.OciArchiveTests.test_an_index_that_names_two_images_is_refused)
+2026-09-17T09:30:51.9211686Z Several roots would make "the identity Docker reports" a choice. ... ok
+2026-09-17T09:30:51.9247864Z test_an_oci_archive_seals_resolves_and_loads (test_artifact_store.OciArchiveTests.test_an_oci_archive_seals_resolves_and_loads) ... ok
+2026-09-17T09:30:51.9277344Z test_an_oci_layout_without_its_marker_is_refused (test_artifact_store.OciArchiveTests.test_an_oci_layout_without_its_marker_is_refused) ... ok
+2026-09-17T09:30:51.9279582Z test_an_unrelated_member_is_ignored (test_artifact_store.OciArchiveTests.test_an_unrelated_member_is_ignored)
+2026-09-17T09:30:51.9307053Z An archive may carry anything else; none of it can change which image it is. ... ok
+2026-09-17T09:30:51.9348607Z test_an_unsupported_media_type_is_never_candidate_authority (test_artifact_store.OciArchiveTests.test_an_unsupported_media_type_is_never_candidate_authority) ... ok
+2026-09-17T09:30:51.9355699Z test_both_identities_of_one_archive_are_recorded_separately (test_artifact_store.OciArchiveTests.test_both_identities_of_one_archive_are_recorded_separately)
+2026-09-17T09:30:51.9415539Z Three roles, never interchanged: root, config and the package's own SHA256. ... ok
+2026-09-17T09:30:51.9418086Z test_bytes_that_are_not_the_claimed_image_are_refused (test_artifact_store.OciArchiveTests.test_bytes_that_are_not_the_claimed_image_are_refused)
+2026-09-17T09:30:51.9437243Z Docker insisting the image is X does not make the archive be X. ... ok
+2026-09-17T09:30:51.9458205Z test_one_identity_at_two_canonical_locations_is_refused (test_artifact_store.OciArchiveTests.test_one_identity_at_two_canonical_locations_is_refused)
+2026-09-17T09:30:51.9474713Z Ambiguity is refused, never resolved by preferring a location. ... ok
+2026-09-17T09:30:51.9482674Z test_the_archive_carries_three_separate_identities (test_artifact_store.OciArchiveTests.test_the_archive_carries_three_separate_identities)
+2026-09-17T09:30:51.9527123Z Three identities, never interchanged. ... ok
+2026-09-17T09:30:51.9557722Z test_the_deepest_legal_nesting_is_still_followed (test_artifact_store.OciArchiveTests.test_the_deepest_legal_nesting_is_still_followed) ... ok
+2026-09-17T09:30:51.9577675Z test_the_hybrid_format_docker_writes_is_read (test_artifact_store.OciArchiveTests.test_the_hybrid_format_docker_writes_is_read)
+2026-09-17T09:30:51.9647425Z An OCI layout with a legacy index beside it, in both reference forms. ... ok
+2026-09-17T09:30:51.9668199Z test_the_identity_docker_reports_on_a_containerd_host_is_the_archive_root (test_artifact_store.OciArchiveTests.test_the_identity_docker_reports_on_a_containerd_host_is_the_archive_root)
+2026-09-17T09:30:51.9687296Z The id is the descriptor ``index.json`` names, not the config digest. ... ok
+2026-09-17T09:30:51.9714531Z test_two_layouts_that_name_different_images_are_refused (test_artifact_store.OciArchiveTests.test_two_layouts_that_name_different_images_are_refused) ... ok
+2026-09-17T09:30:51.9737781Z test_the_reader_accepts_the_identity_docker_reports_on_this_host (test_artifact_store.OciReaderTests.test_the_reader_accepts_the_identity_docker_reports_on_this_host)
+2026-09-17T09:30:51.9847688Z The root-descriptor role is read on this side too, not only written. ... ok
+2026-09-17T09:30:51.9947899Z test_the_reader_materialises_a_legacy_package (test_artifact_store.OciReaderTests.test_the_reader_materialises_a_legacy_package) ... ok
+2026-09-17T09:30:51.9958134Z test_the_reader_materialises_a_multi_platform_package (test_artifact_store.OciReaderTests.test_the_reader_materialises_a_multi_platform_package)
+2026-09-17T09:30:52.0070024Z The shape a *pulled* reference produces, read by the executor as well. ... ok
+2026-09-17T09:30:52.0187032Z test_the_reader_materialises_an_oci_package (test_artifact_store.OciReaderTests.test_the_reader_materialises_an_oci_package) ... ok
+2026-09-17T09:30:52.0307456Z test_the_reader_materialises_the_hybrid_format (test_artifact_store.OciReaderTests.test_the_reader_materialises_the_hybrid_format) ... ok
+2026-09-17T09:30:52.0420206Z test_the_reader_refuses_a_load_that_yields_another_image (test_artifact_store.OciReaderTests.test_the_reader_refuses_a_load_that_yields_another_image) ... ok
+2026-09-17T09:30:52.0543791Z test_the_reader_refuses_a_package_that_is_not_the_candidate (test_artifact_store.OciReaderTests.test_the_reader_refuses_a_package_that_is_not_the_candidate) ... ok
+2026-09-17T09:30:52.0687870Z test_the_reader_refuses_a_tampered_package (test_artifact_store.OciReaderTests.test_the_reader_refuses_a_tampered_package) ... ok
+2026-09-17T09:30:52.0690394Z test_the_reader_refuses_an_oci_graph_the_writer_would_refuse (test_artifact_store.OciReaderTests.test_the_reader_refuses_an_oci_graph_the_writer_would_refuse)
+2026-09-17T09:30:52.0797665Z Same fixture corpus, same refusals: neither side is the weaker one. ... ok
+2026-09-17T09:30:52.0818055Z test_a_runner_offering_only_run_cannot_be_used_by_the_reader (test_artifact_store.ProductionRunnerContractTests.test_a_runner_offering_only_run_cannot_be_used_by_the_reader)
+2026-09-17T09:30:52.0827246Z The mirror image: the shape that failed live, pinned as a failure. ... ok
+2026-09-17T09:30:52.0872725Z test_both_production_runners_are_callable_in_the_readers_shape (test_artifact_store.ProductionRunnerContractTests.test_both_production_runners_are_callable_in_the_readers_shape) ... ok
+2026-09-17T09:30:52.0908197Z test_a_caller_cannot_choose_the_image_identity_shape (test_artifact_store.SealedArtifactStoreTests.test_a_caller_cannot_choose_the_image_identity_shape) ... ok
+2026-09-17T09:30:52.0926281Z test_a_caller_cannot_choose_the_image_reference_shape (test_artifact_store.SealedArtifactStoreTests.test_a_caller_cannot_choose_the_image_reference_shape) ... ok
+2026-09-17T09:30:52.0928920Z test_a_caller_cannot_name_a_path_or_a_file (test_artifact_store.SealedArtifactStoreTests.test_a_caller_cannot_name_a_path_or_a_file) ... ok
+2026-09-17T09:30:52.0962468Z test_a_different_object_under_the_same_name_is_a_collision (test_artifact_store.SealedArtifactStoreTests.test_a_different_object_under_the_same_name_is_a_collision) ... ok
+2026-09-17T09:30:52.0987904Z test_a_failed_load_is_refused (test_artifact_store.SealedArtifactStoreTests.test_a_failed_load_is_refused) ... ok
+2026-09-17T09:30:52.0997960Z test_a_failed_save_leaves_nothing_behind (test_artifact_store.SealedArtifactStoreTests.test_a_failed_save_leaves_nothing_behind) ... ok
+2026-09-17T09:30:52.1022846Z test_a_load_that_yields_another_image_is_refused (test_artifact_store.SealedArtifactStoreTests.test_a_load_that_yields_another_image_is_refused) ... ok
+2026-09-17T09:30:52.1037730Z test_a_missing_store_is_refused (test_artifact_store.SealedArtifactStoreTests.test_a_missing_store_is_refused) ... ok
+2026-09-17T09:30:52.1068414Z test_a_package_that_is_not_the_candidate_is_refused_at_load (test_artifact_store.SealedArtifactStoreTests.test_a_package_that_is_not_the_candidate_is_refused_at_load) ... ok
+2026-09-17T09:30:52.1097883Z test_a_sealed_package_is_named_by_its_own_content (test_artifact_store.SealedArtifactStoreTests.test_a_sealed_package_is_named_by_its_own_content) ... ok
+2026-09-17T09:30:52.1117906Z test_a_symlinked_object_is_never_followed (test_artifact_store.SealedArtifactStoreTests.test_a_symlinked_object_is_never_followed) ... ok
+2026-09-17T09:30:52.1127776Z test_a_symlinked_store_is_refused (test_artifact_store.SealedArtifactStoreTests.test_a_symlinked_store_is_refused) ... ok
+2026-09-17T09:30:52.1164257Z test_a_tampered_package_is_refused (test_artifact_store.SealedArtifactStoreTests.test_a_tampered_package_is_refused) ... ok
+2026-09-17T09:30:52.1177822Z test_a_tampered_package_never_reaches_docker (test_artifact_store.SealedArtifactStoreTests.test_a_tampered_package_never_reaches_docker) ... ok
+2026-09-17T09:30:52.1194608Z test_an_absent_package_is_refused (test_artifact_store.SealedArtifactStoreTests.test_an_absent_package_is_refused) ... ok
+2026-09-17T09:30:52.1195960Z test_an_archive_that_is_not_the_claimed_image_is_refused_at_seal (test_artifact_store.SealedArtifactStoreTests.test_an_archive_that_is_not_the_claimed_image_is_refused_at_seal) ... ok
+2026-09-17T09:30:52.1214748Z test_an_empty_package_is_refused (test_artifact_store.SealedArtifactStoreTests.test_an_empty_package_is_refused) ... ok
+2026-09-17T09:30:52.1231312Z test_an_oversized_package_is_refused (test_artifact_store.SealedArtifactStoreTests.test_an_oversized_package_is_refused) ... ok
+2026-09-17T09:30:52.1252957Z test_an_untrusted_object_mode_is_refused (test_artifact_store.SealedArtifactStoreTests.test_an_untrusted_object_mode_is_refused) ... ok
+2026-09-17T09:30:52.1254212Z test_an_untrusted_store_mode_is_refused (test_artifact_store.SealedArtifactStoreTests.test_an_untrusted_store_mode_is_refused) ... ok
+2026-09-17T09:30:52.1263728Z test_loading_restores_exactly_the_candidate (test_artifact_store.SealedArtifactStoreTests.test_loading_restores_exactly_the_candidate) ... ok
+2026-09-17T09:30:52.1290639Z test_no_partial_temporary_file_is_left_behind (test_artifact_store.SealedArtifactStoreTests.test_no_partial_temporary_file_is_left_behind) ... ok
+2026-09-17T09:30:52.1317776Z test_re_sealing_the_same_image_is_idempotent (test_artifact_store.SealedArtifactStoreTests.test_re_sealing_the_same_image_is_idempotent) ... ok
+2026-09-17T09:30:52.1347613Z test_tags_are_recorded_but_never_used (test_artifact_store.SealedArtifactStoreTests.test_tags_are_recorded_but_never_used) ... ok
+2026-09-17T09:30:52.1349556Z test_the_package_can_only_be_sealed_as_the_image_docker_reports (test_artifact_store.SealedArtifactStoreTests.test_the_package_can_only_be_sealed_as_the_image_docker_reports) ... ok
+2026-09-17T09:30:52.1367582Z test_the_store_contract_is_pinned_not_guessed (test_artifact_store.SealedArtifactStoreTests.test_the_store_contract_is_pinned_not_guessed) ... ok
+2026-09-17T09:30:52.1568319Z test_complete_active_dependency_closure_passes (test_dependency_compatibility.StandardDependencyTests.test_complete_active_dependency_closure_passes) ... ok
+2026-09-17T09:30:52.1578192Z test_direct_url_dependency_is_not_accepted (test_dependency_compatibility.StandardDependencyTests.test_direct_url_dependency_is_not_accepted) ... ok
+2026-09-17T09:30:52.1590377Z test_failed_probe_preserves_bounded_failure (test_dependency_compatibility.StandardDependencyTests.test_failed_probe_preserves_bounded_failure) ... ok
+2026-09-17T09:30:52.1609606Z test_incompatible_extra_version_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_incompatible_extra_version_is_rejected) ... ok
+2026-09-17T09:30:52.1624010Z test_incompatible_root_version_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_incompatible_root_version_is_rejected) ... ok
+2026-09-17T09:30:52.1636074Z test_legacy_profile_keeps_its_existing_path (test_dependency_compatibility.StandardDependencyTests.test_legacy_profile_keeps_its_existing_path) ... ok
+2026-09-17T09:30:52.1651907Z test_malformed_requirement_does_not_pass (test_dependency_compatibility.StandardDependencyTests.test_malformed_requirement_does_not_pass) ... ok
+2026-09-17T09:30:52.1668972Z test_metadata_cycle_terminates (test_dependency_compatibility.StandardDependencyTests.test_metadata_cycle_terminates) ... ok
+2026-09-17T09:30:52.1685549Z test_missing_direct_extra_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_missing_direct_extra_is_rejected) ... ok
+2026-09-17T09:30:52.1698068Z test_missing_root_metadata_is_not_vacuous_success (test_dependency_compatibility.StandardDependencyTests.test_missing_root_metadata_is_not_vacuous_success) ... ok
+2026-09-17T09:30:52.1714936Z test_missing_transitive_dependency_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_missing_transitive_dependency_is_rejected) ... ok
+2026-09-17T09:30:52.1796097Z test_oversized_metadata_graph_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_oversized_metadata_graph_is_rejected) ... ok
+2026-09-17T09:30:52.1812937Z test_repeated_dependency_constraints_are_all_checked (test_dependency_compatibility.StandardDependencyTests.test_repeated_dependency_constraints_are_all_checked) ... ok
+2026-09-17T09:30:52.1830404Z test_selected_nested_extras_are_checked (test_dependency_compatibility.StandardDependencyTests.test_selected_nested_extras_are_checked) ... ok
+2026-09-17T09:30:52.1841293Z test_standard_profile_requires_isolated_probe (test_dependency_compatibility.StandardDependencyTests.test_standard_profile_requires_isolated_probe) ... ok
+2026-09-17T09:30:52.1853299Z test_undeclared_standard_extra_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_undeclared_standard_extra_is_rejected) ... ok
+2026-09-17T09:30:52.1864637Z test_unknown_profile_never_reaches_probe (test_dependency_compatibility.StandardDependencyTests.test_unknown_profile_never_reaches_probe) ... ok
+2026-09-17T09:30:52.1876177Z test_unrequested_prerelease_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_unrequested_prerelease_is_rejected) ... ok
+2026-09-17T09:30:52.1893030Z test_unselected_extra_and_inactive_platform_do_not_require_packages (test_dependency_compatibility.StandardDependencyTests.test_unselected_extra_and_inactive_platform_do_not_require_packages) ... ok
+2026-09-17T09:30:52.1903604Z test_wrong_probe_terminal_output_is_rejected (test_dependency_compatibility.StandardDependencyTests.test_wrong_probe_terminal_output_is_rejected) ... ok
+2026-09-17T09:30:52.2052116Z test_a_claimed_attempt_that_fails_publishes_signed_bound_evidence (test_live_integration.FailureClosureTests.test_a_claimed_attempt_that_fails_publishes_signed_bound_evidence) ... ok
+2026-09-17T09:30:52.2070219Z test_a_duplicate_record_is_refused_rather_than_overwritten (test_live_integration.FailureClosureTests.test_a_duplicate_record_is_refused_rather_than_overwritten) ... ok
+2026-09-17T09:30:52.2073243Z test_a_durability_refusal_becomes_signed_failure_evidence (test_live_integration.FailureClosureTests.test_a_durability_refusal_becomes_signed_failure_evidence)
+2026-09-17T09:30:52.2210621Z The whole chain: build, store refusal, reported and signed failure. ... ok
+2026-09-17T09:30:52.2330001Z test_a_failed_publication_is_neither_success_nor_a_retry (test_live_integration.FailureClosureTests.test_a_failed_publication_is_neither_success_nor_a_retry) ... ok
+2026-09-17T09:30:52.2445633Z test_a_published_failure_is_not_republished_on_the_next_poll (test_live_integration.FailureClosureTests.test_a_published_failure_is_not_republished_on_the_next_poll) ... ok
+2026-09-17T09:30:52.2497949Z test_a_task_rejected_before_the_claim_publishes_nothing (test_live_integration.FailureClosureTests.test_a_task_rejected_before_the_claim_publishes_nothing) ... ok
+2026-09-17T09:30:52.2518909Z test_all_known_test_pr_refusals_keep_their_closed_reason (test_live_integration.FailureClosureTests.test_all_known_test_pr_refusals_keep_their_closed_reason) ... ok
+2026-09-17T09:30:52.2578196Z test_an_expired_task_that_was_never_claimed_publishes_nothing (test_live_integration.FailureClosureTests.test_an_expired_task_that_was_never_claimed_publishes_nothing) ... ok
+2026-09-17T09:30:52.2582905Z test_failure_stages_are_not_swallowed_as_agent_reject (test_live_integration.FailureClosureTests.test_failure_stages_are_not_swallowed_as_agent_reject) ... ok
+2026-09-17T09:30:52.2591085Z test_gate_results_report_where_the_attempt_stopped (test_live_integration.FailureClosureTests.test_gate_results_report_where_the_attempt_stopped) ... ok
+2026-09-17T09:30:52.2598933Z test_kinds_are_closed_and_unmapped_stages_are_never_echoed (test_live_integration.FailureClosureTests.test_kinds_are_closed_and_unmapped_stages_are_never_echoed) ... ok
+2026-09-17T09:30:52.2606896Z test_reasons_are_closed_and_free_text_is_never_echoed (test_live_integration.FailureClosureTests.test_reasons_are_closed_and_free_text_is_never_echoed) ... ok
+2026-09-17T09:30:52.2728413Z test_test_pr_profile_failure_is_signed_specific_and_single_attempt (test_live_integration.FailureClosureTests.test_test_pr_profile_failure_is_signed_specific_and_single_attempt) ... ok
+2026-09-17T09:30:52.2731130Z test_the_contract_and_the_producer_agree_on_the_closed_sets (test_live_integration.FailureClosureTests.test_the_contract_and_the_producer_agree_on_the_closed_sets) ... ok
+2026-09-17T09:30:52.2733553Z test_the_next_poll_refuses_the_exhausted_task (test_live_integration.FailureClosureTests.test_the_next_poll_refuses_the_exhausted_task)
+2026-09-17T09:30:52.2851100Z The failed attempt is durable: the Task is never re-executed. ... ok
+2026-09-17T09:30:52.2951083Z test_the_published_record_satisfies_the_published_contract (test_live_integration.FailureClosureTests.test_the_published_record_satisfies_the_published_contract) ... ok
+2026-09-17T09:30:52.3032719Z test_the_success_path_is_unchanged (test_live_integration.FailureClosureTests.test_the_success_path_is_unchanged) ... ok
+2026-09-17T09:30:52.3270959Z test_build_root_validation_rejects_unsafe_state_and_accepts_provisioned_root (test_live_integration.IntegrationTests.test_build_root_validation_rejects_unsafe_state_and_accepts_provisioned_root) ... /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff1798547c0>
+2026-09-17T09:30:52.3274837Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3276307Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3278321Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9ef20>
+2026-09-17T09:30:52.3279734Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3280587Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3282147Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f010>
+2026-09-17T09:30:52.3283516Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3284350Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3285892Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f100>
+2026-09-17T09:30:52.3287930Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3288774Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3290366Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f1f0>
+2026-09-17T09:30:52.3291768Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3292647Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3294284Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f2e0>
+2026-09-17T09:30:52.3295816Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3297009Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3298861Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f3d0>
+2026-09-17T09:30:52.3300423Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3301361Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3303064Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f4c0>
+2026-09-17T09:30:52.3304567Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3305739Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3307733Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f5b0>
+2026-09-17T09:30:52.3309257Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3310170Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3311877Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f6a0>
+2026-09-17T09:30:52.3313409Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3314345Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3316781Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f880>
+2026-09-17T09:30:52.3318428Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3319691Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3321466Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f970>
+2026-09-17T09:30:52.3323007Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3324005Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3325688Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9f790>
+2026-09-17T09:30:52.3327458Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3328372Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3331434Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9fa60>
+2026-09-17T09:30:52.3332874Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3333865Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3335527Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9fb50>
+2026-09-17T09:30:52.3337362Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3338514Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3340088Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9fc40>
+2026-09-17T09:30:52.3341528Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3342431Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3344110Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9fd30>
+2026-09-17T09:30:52.3345553Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3346660Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3348305Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9fe20>
+2026-09-17T09:30:52.3349683Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3350902Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3352308Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177f9ff10>
+2026-09-17T09:30:52.3353505Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3354130Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3355148Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4040>
+2026-09-17T09:30:52.3355872Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3356274Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3357889Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4130>
+2026-09-17T09:30:52.3359119Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3359832Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3361271Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4220>
+2026-09-17T09:30:52.3362500Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3363202Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3364813Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4310>
+2026-09-17T09:30:52.3366020Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3367213Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3368394Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4400>
+2026-09-17T09:30:52.3369099Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3369479Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3371011Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff44f0>
+2026-09-17T09:30:52.3372240Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3373018Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3374469Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff45e0>
+2026-09-17T09:30:52.3375706Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3376674Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3378399Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff46d0>
+2026-09-17T09:30:52.3379632Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3380298Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3381671Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff47c0>
+2026-09-17T09:30:52.3382396Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3382787Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3383606Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff48b0>
+2026-09-17T09:30:52.3384312Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3385166Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3387002Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff49a0>
+2026-09-17T09:30:52.3388144Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3388858Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3390280Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4a90>
+2026-09-17T09:30:52.3391578Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3392259Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3393672Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4b80>
+2026-09-17T09:30:52.3394923Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3395873Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3398003Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4c70>
+2026-09-17T09:30:52.3399275Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3399949Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3401314Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff179174d60>
+2026-09-17T09:30:52.3402435Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3403088Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3404610Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4d60>
+2026-09-17T09:30:52.3405876Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3410237Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3411743Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4e50>
+2026-09-17T09:30:52.3413014Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3413715Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3415237Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff4f40>
+2026-09-17T09:30:52.3416956Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3417662Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3419119Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5030>
+2026-09-17T09:30:52.3420649Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3421322Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3422830Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5120>
+2026-09-17T09:30:52.3424092Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3424772Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3426232Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5300>
+2026-09-17T09:30:52.3427801Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3428508Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3429532Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff53f0>
+2026-09-17T09:30:52.3430804Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3431488Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3432843Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5210>
+2026-09-17T09:30:52.3434055Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3434945Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3436054Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff54e0>
+2026-09-17T09:30:52.3437074Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3437527Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3438796Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff55d0>
+2026-09-17T09:30:52.3440003Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3440691Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3441709Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff56c0>
+2026-09-17T09:30:52.3442410Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3442786Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3443855Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff58a0>
+2026-09-17T09:30:52.3445054Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3445711Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3447471Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5990>
+2026-09-17T09:30:52.3448784Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3449487Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3450999Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff179175210>
+2026-09-17T09:30:52.3452245Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3452928Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3454362Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff57b0>
+2026-09-17T09:30:52.3455584Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3456716Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3458177Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5a80>
+2026-09-17T09:30:52.3459406Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3460079Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3461517Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5b70>
+2026-09-17T09:30:52.3462739Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3463402Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3464851Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5c60>
+2026-09-17T09:30:52.3466087Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3467031Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3468480Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5d50>
+2026-09-17T09:30:52.3469704Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3470371Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3472021Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5e40>
+2026-09-17T09:30:52.3473255Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3473924Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3475362Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff5f30>
+2026-09-17T09:30:52.3476787Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3477474Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3478921Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff6020>
+2026-09-17T09:30:52.3480145Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3480810Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3482244Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff6110>
+2026-09-17T09:30:52.3483467Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3484127Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3485551Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff6200>
+2026-09-17T09:30:52.3487037Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3487733Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3489165Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff62f0>
+2026-09-17T09:30:52.3490392Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3491077Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3492500Z /opt/hostedtoolcache/Python/3.13.15/x64/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7ff177ff63e0>
+2026-09-17T09:30:52.3493702Z   def __init__(self, name, parent):
+2026-09-17T09:30:52.3494364Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T09:30:52.3495035Z ok
+2026-09-17T09:30:52.3496601Z test_command_center_backup_and_rollback_guard_set_is_complete (test_live_integration.IntegrationTests.test_command_center_backup_and_rollback_guard_set_is_complete) ... ok
+2026-09-17T09:30:52.9696097Z test_command_center_two_phase_rollback_refuses_drift_or_corrupt_backup (test_live_integration.IntegrationTests.test_command_center_two_phase_rollback_refuses_drift_or_corrupt_backup) ... ok
+2026-09-17T09:30:53.8277165Z test_compileall_redirects_bytecode_from_read_only_source_and_rejects_invalid_python (test_live_integration.IntegrationTests.test_compileall_redirects_bytecode_from_read_only_source_and_rejects_invalid_python) ... ok
+2026-09-17T09:30:53.8280034Z test_fixed_fetch_and_isolation_literals (test_live_integration.IntegrationTests.test_fixed_fetch_and_isolation_literals) ... ok
+2026-09-17T09:30:53.8282231Z test_hk_backup_and_rollback_guard_set_is_complete (test_live_integration.IntegrationTests.test_hk_backup_and_rollback_guard_set_is_complete) ... ok
+2026-09-17T09:30:55.6785898Z test_hk_directory_rollback_refuses_drift_symlink_or_contents_before_files_change (test_live_integration.IntegrationTests.test_hk_directory_rollback_refuses_drift_symlink_or_contents_before_files_change) ... ok
+2026-09-17T09:30:56.7195447Z test_hk_two_phase_rollback_refuses_drift_or_corrupt_backup (test_live_integration.IntegrationTests.test_hk_two_phase_rollback_refuses_drift_or_corrupt_backup) ... ok
+2026-09-17T09:30:56.7242612Z test_host_agent_has_no_tomllib_import (test_live_integration.IntegrationTests.test_host_agent_has_no_tomllib_import) ... ok
+2026-09-17T09:30:56.7255111Z test_offline_builder_profile_is_pinned_and_non_networked (test_live_integration.IntegrationTests.test_offline_builder_profile_is_pinned_and_non_networked) ... ok
+2026-09-17T09:30:56.7280866Z test_persistent_replay_and_publish_shape_remain_integrated (test_live_integration.IntegrationTests.test_persistent_replay_and_publish_shape_remain_integrated) ... ok
+2026-09-17T09:30:56.7283527Z test_python_bytecode_cache_is_fixed_and_isolated (test_live_integration.IntegrationTests.test_python_bytecode_cache_is_fixed_and_isolated) ... ok
+2026-09-17T09:30:56.7334717Z test_real_ed25519_signature_and_hk_evidence_adapter (test_live_integration.IntegrationTests.test_real_ed25519_signature_and_hk_evidence_adapter) ... ok
+2026-09-17T09:30:56.7338468Z test_test_pr_rejects_every_caller_override (test_live_integration.IntegrationTests.test_test_pr_rejects_every_caller_override) ... ok
+2026-09-17T09:30:57.7092973Z test_two_phase_rollback_restores_complete_preinstall_state (test_live_integration.IntegrationTests.test_two_phase_rollback_restores_complete_preinstall_state) ... ok
+2026-09-17T09:30:57.7098669Z test_verify_contract_is_still_accepted (test_live_integration.IntegrationTests.test_verify_contract_is_still_accepted) ... ok
+2026-09-17T09:30:57.7288807Z test_a_pass_publishes_liveness_then_verify_without_colliding (test_live_integration.SamePassPublicationTests.test_a_pass_publishes_liveness_then_verify_without_colliding) ... ok
+2026-09-17T09:30:57.7292084Z test_a_task_identity_never_becomes_a_path_component (test_live_integration.SamePassPublicationTests.test_a_task_identity_never_becomes_a_path_component) ... ok
+2026-09-17T09:30:57.7479037Z test_more_than_two_records_publish_in_one_pass (test_live_integration.SamePassPublicationTests.test_more_than_two_records_publish_in_one_pass) ... ok
+2026-09-17T09:30:57.7481899Z test_the_record_itself_is_unchanged_by_the_workspace_fix (test_live_integration.SamePassPublicationTests.test_the_record_itself_is_unchanged_by_the_workspace_fix)
+2026-09-17T09:30:57.7560668Z Only where the clone happens changed; the published bytes did not. ... ok
+2026-09-17T09:30:57.7573626Z test_a_build_whose_isolated_checks_fail_is_never_sealed (test_test_pr_durability.TestPrDurabilityTests.test_a_build_whose_isolated_checks_fail_is_never_sealed) ... ok
+2026-09-17T09:30:57.7585585Z test_a_build_whose_profile_check_fails_is_never_sealed (test_test_pr_durability.TestPrDurabilityTests.test_a_build_whose_profile_check_fails_is_never_sealed) ... ok
+2026-09-17T09:30:57.7589101Z test_a_failed_evidence_step_does_not_delete_the_sealed_package (test_test_pr_durability.TestPrDurabilityTests.test_a_failed_evidence_step_does_not_delete_the_sealed_package)
+2026-09-17T09:30:57.7617623Z Sealing succeeded, so the artifact is durable even if publication is not. ... ok
+2026-09-17T09:30:57.7655845Z test_a_passing_build_seals_last_and_reports_the_package (test_test_pr_durability.TestPrDurabilityTests.test_a_passing_build_seals_last_and_reports_the_package) ... ok
+2026-09-17T09:30:57.7657872Z test_a_published_artifact_is_never_removed_by_a_later_failure (test_test_pr_durability.TestPrDurabilityTests.test_a_published_artifact_is_never_removed_by_a_later_failure)
+2026-09-17T09:30:57.7679546Z A sealed object is content-addressed evidence, not this run's scratch. ... ok
+2026-09-17T09:30:57.7681352Z test_a_refused_archive_is_a_reported_failure_not_a_crash (test_test_pr_durability.TestPrDurabilityTests.test_a_refused_archive_is_a_reported_failure_not_a_crash)
+2026-09-17T09:30:57.7693381Z The store's refusal is converted at the builder's own boundary. ... ok
+2026-09-17T09:30:57.7695364Z test_an_oci_archive_is_sealed_end_to_end (test_test_pr_durability.TestPrDurabilityTests.test_an_oci_archive_is_sealed_end_to_end)
+2026-09-17T09:30:57.7728776Z The format HK-STAGING actually produces, through the real builder. ... ok
+2026-09-17T09:30:57.7730754Z test_dispatch_preserves_the_durability_stage (test_test_pr_durability.TestPrDurabilityTests.test_dispatch_preserves_the_durability_stage)
+2026-09-17T09:30:57.7735657Z What the agent sees is a stage and a closed reason code. ... ok
+2026-09-17T09:30:57.7762067Z test_evidence_carries_the_package_when_it_is_durable (test_test_pr_durability.TestPrDurabilityTests.test_evidence_carries_the_package_when_it_is_durable) ... ok
+2026-09-17T09:30:57.7764763Z test_evidence_names_the_role_the_archive_actually_played (test_test_pr_durability.TestPrDurabilityTests.test_evidence_names_the_role_the_archive_actually_played)
+2026-09-17T09:30:57.7844686Z Both roles are sealable, and the Evidence says which one it was. ... ok
+2026-09-17T09:30:57.7872906Z test_evidence_refuses_a_build_identity_with_no_durable_artifact (test_test_pr_durability.TestPrDurabilityTests.test_evidence_refuses_a_build_identity_with_no_durable_artifact) ... ok
+2026-09-17T09:30:57.7876031Z test_evidence_refuses_a_package_that_does_not_say_which_identity_it_bound (test_test_pr_durability.TestPrDurabilityTests.test_evidence_refuses_a_package_that_does_not_say_which_identity_it_bound)
+2026-09-17T09:30:57.7901199Z The role and the proved config are what make the claim auditable. ... ok
+2026-09-17T09:30:57.7926761Z test_evidence_refuses_a_package_that_is_not_the_built_image (test_test_pr_durability.TestPrDurabilityTests.test_evidence_refuses_a_package_that_is_not_the_built_image) ... ok
+2026-09-17T09:30:57.7953184Z test_evidence_refuses_a_package_with_no_content_address (test_test_pr_durability.TestPrDurabilityTests.test_evidence_refuses_a_package_with_no_content_address) ... ok
+2026-09-17T09:30:57.7965315Z test_missing_standard_dependency_prevents_build_and_seal (test_test_pr_durability.TestPrDurabilityTests.test_missing_standard_dependency_prevents_build_and_seal) ... ok
+2026-09-17T09:30:57.7993166Z test_the_build_tag_is_still_removed_after_sealing (test_test_pr_durability.TestPrDurabilityTests.test_the_build_tag_is_still_removed_after_sealing) ... ok
+2026-09-17T09:30:57.7995824Z test_the_conversion_never_invents_a_second_error_schema (test_test_pr_durability.TestPrDurabilityTests.test_the_conversion_never_invents_a_second_error_schema)
+2026-09-17T09:30:57.8001331Z Every store refusal becomes the one durability reason code. ... ok
+2026-09-17T09:30:57.8002692Z test_the_durability_failure_is_its_own_stage (test_test_pr_durability.TestPrDurabilityTests.test_the_durability_failure_is_its_own_stage)
+2026-09-17T09:30:57.8017926Z A build with no durable artifact is not an executor refusal. ... ok
+2026-09-17T09:30:57.8040190Z test_the_sealed_package_resolves_back_to_the_built_image (test_test_pr_durability.TestPrDurabilityTests.test_the_sealed_package_resolves_back_to_the_built_image) ... ok
+2026-09-17T09:30:57.8065366Z test_verified_standard_profile_builds_and_seals_in_order (test_test_pr_durability.TestPrDurabilityTests.test_verified_standard_profile_builds_and_seals_in_order) ... ok
+2026-09-17T09:30:57.8067209Z 
+2026-09-17T09:30:57.8067723Z ----------------------------------------------------------------------
+2026-09-17T09:30:57.8068480Z Ran 180 tests in 6.082s
+2026-09-17T09:30:57.8068881Z 
+2026-09-17T09:30:57.8069188Z OK (skipped=3)
+2026-09-17T09:30:57.8387583Z ##[group]Run python - <<'PY'
+2026-09-17T09:30:57.8388049Z [36;1mpython - <<'PY'[0m
+2026-09-17T09:30:57.8388378Z [36;1mimport base64, datetime as dt, json, os, pathlib, sys[0m
+2026-09-17T09:30:57.8388754Z [36;1mimport argparse[0m
+2026-09-17T09:30:57.8389091Z [36;1mfrom cryptography.hazmat.primitives import serialization[0m
+2026-09-17T09:30:57.8389644Z [36;1mfrom cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey[0m
+2026-09-17T09:30:57.8390114Z [36;1m[0m
+2026-09-17T09:30:57.8390464Z [36;1mlineage = pathlib.Path('control-plane/boss-test-pr-live-integration-v1')[0m
+2026-09-17T09:30:57.8390996Z [36;1mstate = pathlib.Path('control-plane/command-center-state-v1')[0m
+2026-09-17T09:30:57.8391430Z [36;1msys.path.insert(0, str(lineage / 'hk-staging'))[0m
+2026-09-17T09:30:57.8391795Z [36;1mfrom hk_agent import transport, test_pr[0m
+2026-09-17T09:30:57.8392119Z [36;1msys.path.insert(0, str(state))[0m
+2026-09-17T09:30:57.8392482Z [36;1mimport state_projection as sp[0m
+2026-09-17T09:30:57.8392744Z [36;1m[0m
+2026-09-17T09:30:57.8393056Z [36;1mwork = pathlib.Path(os.environ['RUNNER_TEMP']) / 'hk-agent-failure'[0m
+2026-09-17T09:30:57.8393487Z [36;1mwork.mkdir(parents=True, exist_ok=True)[0m
+2026-09-17T09:30:57.8393980Z [36;1mtask_key, evidence_key = Ed25519PrivateKey.generate(), Ed25519PrivateKey.generate()[0m
+2026-09-17T09:30:57.8394546Z [36;1m(work / 'task.pub').write_bytes(task_key.public_key().public_bytes([0m
+2026-09-17T09:30:57.8395089Z [36;1m    serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH))[0m
+2026-09-17T09:30:57.8395610Z [36;1m(work / 'evidence.pem').write_bytes(evidence_key.private_bytes([0m
+2026-09-17T09:30:57.8396099Z [36;1m    serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,[0m
+2026-09-17T09:30:57.8396883Z [36;1m    serialization.NoEncryption()))[0m
+2026-09-17T09:30:57.8397320Z [36;1m(work / 'evidence.pub').write_bytes(evidence_key.public_key().public_bytes([0m
+2026-09-17T09:30:57.8397889Z [36;1m    serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH))[0m
+2026-09-17T09:30:57.8398294Z [36;1m[0m
+2026-09-17T09:30:57.8398589Z [36;1mnow = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)[0m
+2026-09-17T09:30:57.8399028Z [36;1miso = lambda m: m.isoformat().replace('+00:00', 'Z')[0m
+2026-09-17T09:30:57.8399518Z [36;1mtask = {'schema_version': '1', 'task_id': 'cc-v1-02-ci', 'nonce': 'nonce-cc-v1-02-ci',[0m
+2026-09-17T09:30:57.8400068Z [36;1m        'issued_at': iso(now), 'expires_at': iso(now + dt.timedelta(minutes=15)),[0m
+2026-09-17T09:30:57.8400577Z [36;1m        'authority': 'GO-COMMAND-CENTER', 'environment': 'HK-STAGING-01',[0m
+2026-09-17T09:30:57.8400982Z [36;1m        'action_id': 'HK_STAGING_TEST_PR',[0m
+2026-09-17T09:30:57.8401335Z [36;1m        'parameters': {'builder_profile': test_pr.PROFILE,[0m
+2026-09-17T09:30:57.8401742Z [36;1m                       'source': {'repository': test_pr.REPOSITORY,[0m
+2026-09-17T09:30:57.8402109Z [36;1m                                  'pr_number': '183',[0m
+2026-09-17T09:30:57.8402475Z [36;1m                                  'commit_sha': os.environ['CANDIDATE_SHA']}}}[0m
+2026-09-17T09:30:57.8402937Z [36;1mtask['signature'] = task_key.sign(transport.canonical(task)).hex()[0m
+2026-09-17T09:30:57.8403305Z [36;1m[0m
+2026-09-17T09:30:57.8403623Z [36;1m# 1. the agent builds and signs a failure record for a claimed attempt[0m
+2026-09-17T09:30:57.8404000Z [36;1mtry:[0m
+2026-09-17T09:30:57.8404459Z [36;1m    test_pr._verify_dependency_profile('f' * 64, None)[0m
+2026-09-17T09:30:57.8404811Z [36;1mexcept test_pr.Reject as error:[0m
+2026-09-17T09:30:57.8405189Z [36;1m    refusal = transport._staged(error, transport.STAGE_EXECUTOR)[0m
+2026-09-17T09:30:57.8405546Z [36;1melse:[0m
+2026-09-17T09:30:57.8405859Z [36;1m    raise AssertionError('unknown dependency profile was accepted')[0m
+2026-09-17T09:30:57.8406690Z [36;1mrecord = transport.sign(transport.failure_evidence(task, refusal, stage=refusal.stage),[0m
+2026-09-17T09:30:57.8407393Z [36;1m                        str(work / 'evidence.pem'))[0m
+2026-09-17T09:30:57.8407883Z [36;1m(work / 'evidence.pem').unlink()  # disposable CI identity, not an uploaded credential[0m
+2026-09-17T09:30:57.8408310Z [36;1m[0m
+2026-09-17T09:30:57.8408600Z [36;1m# 2. it must satisfy the published contract, and authorize nothing[0m
+2026-09-17T09:30:57.8409112Z [36;1mschema = json.loads((state / 'contracts' / 'failure_evidence_v1.schema.json')[0m
+2026-09-17T09:30:57.8409569Z [36;1m                    .read_text(encoding='utf-8'))[0m
+2026-09-17T09:30:57.8409951Z [36;1mmissing = [k for k in schema['required'] if k not in record][0m
+2026-09-17T09:30:57.8410322Z [36;1massert not missing, missing[0m
+2026-09-17T09:30:57.8410655Z [36;1massert record['status'] == 'FAILED', record['status'][0m
+2026-09-17T09:30:57.8411040Z [36;1massert record['failure']['reason_code'] in \[0m
+2026-09-17T09:30:57.8411479Z [36;1m       schema['properties']['failure']['properties']['reason_code']['enum'][0m
+2026-09-17T09:30:57.8412008Z [36;1mfor key in ('retry_permitted', 'replay_authorized', 'authorizes_any_action'):[0m
+2026-09-17T09:30:57.8412445Z [36;1m    assert record[key] is False, key[0m
+2026-09-17T09:30:57.8412914Z [36;1massert (record['task_id'], record['nonce'], record['action_id'], record['environment']) == \[0m
+2026-09-17T09:30:57.8413487Z [36;1m       (task['task_id'], task['nonce'], task['action_id'], task['environment'])[0m
+2026-09-17T09:30:57.8413870Z [36;1m[0m
+2026-09-17T09:30:57.8414154Z [36;1m# 3. the signature must verify against the evidence identity[0m
+2026-09-17T09:30:57.8414642Z [36;1mevidence_key.public_key().verify(base64.b64decode(record['signature']),[0m
+2026-09-17T09:30:57.8415095Z [36;1m                                 transport.canonical(record))[0m
+2026-09-17T09:30:57.8415405Z [36;1m[0m
+2026-09-17T09:30:57.8415701Z [36;1m# 4. the Command Center projection must read it as a proven failure[0m
+2026-09-17T09:30:57.8416087Z [36;1mbus = work / 'bus'[0m
+2026-09-17T09:30:57.8416642Z [36;1m(bus / 'tasks').mkdir(parents=True, exist_ok=True)[0m
+2026-09-17T09:30:57.8417080Z [36;1m(bus / 'evidence').mkdir(parents=True, exist_ok=True)[0m
+2026-09-17T09:30:57.8417474Z [36;1m(bus / 'tasks' / 't.json').write_text(json.dumps(task))[0m
+2026-09-17T09:30:57.8417879Z [36;1m(bus / 'evidence' / 'e.json').write_text(json.dumps(record))[0m
+2026-09-17T09:30:57.8418324Z [36;1mpin = lambda p: sp.Verifier(str(p), 'pin', 'hex').ssh_fingerprint[0m
+2026-09-17T09:30:57.8418749Z [36;1mcontract = work / 'VERIFIER_IDENTITIES_V1.json'[0m
+2026-09-17T09:30:57.8419136Z [36;1mcontract.write_text(json.dumps({'schema_version': '1',[0m
+2026-09-17T09:30:57.8419539Z [36;1m                                'contract': sp.IDENTITY_CONTRACT_NAME,[0m
+2026-09-17T09:30:57.8419893Z [36;1m                                'identities': [[0m
+2026-09-17T09:30:57.8420302Z [36;1m    {'identity_id': 'CI-TASK', 'role': sp.ROLE_TASK, 'signature_encoding': 'hex',[0m
+2026-09-17T09:30:57.8420770Z [36;1m     'public_key_ssh_sha256': pin(work / 'task.pub')},[0m
+2026-09-17T09:30:57.8421167Z [36;1m    {'identity_id': 'CI-EVIDENCE', 'role': sp.ROLE_EVIDENCE,[0m
+2026-09-17T09:30:57.8421530Z [36;1m     'signature_encoding': 'base64',[0m
+2026-09-17T09:30:57.8421897Z [36;1m     'public_key_ssh_sha256': pin(work / 'evidence.pub')}]}))[0m
+2026-09-17T09:30:57.8422248Z [36;1mloaded = sp.Loaded()[0m
+2026-09-17T09:30:57.8422509Z [36;1msp.load_tasks(str(bus), loaded)[0m
+2026-09-17T09:30:57.8422959Z [36;1msp.load_evidence(str(bus), loaded)[0m
+2026-09-17T09:30:57.8423293Z [36;1midentity = sp.IdentityContract(str(contract))[0m
+2026-09-17T09:30:57.8423723Z [36;1mtv = sp.Verifier(str(work / 'task.pub'), sp.TASK_VERIFIER_IDENTITY, 'hex',[0m
+2026-09-17T09:30:57.8424178Z [36;1m                 expected=identity.expected(sp.ROLE_TASK))[0m
+2026-09-17T09:30:57.8424654Z [36;1mev = sp.Verifier(str(work / 'evidence.pub'), sp.EVIDENCE_VERIFIER_IDENTITY, 'base64',[0m
+2026-09-17T09:30:57.8425269Z [36;1m                 expected=identity.expected(sp.ROLE_EVIDENCE))[0m
+2026-09-17T09:30:57.8425644Z [36;1mseparated = sp.separated(tv, ev, loaded)[0m
+2026-09-17T09:30:57.8426040Z [36;1mtask_bound, evidence_bound = sp.bind_identities(tv, ev, loaded)[0m
+2026-09-17T09:30:57.8426732Z [36;1margs = argparse.Namespace(tasks_ref='main', tasks_head=None,[0m
+2026-09-17T09:30:57.8427184Z [36;1m                          evidence_ref='permission-test', evidence_head=None,[0m
+2026-09-17T09:30:57.8427587Z [36;1m                          go_ref='main', go_head=None)[0m
+2026-09-17T09:30:57.8427950Z [36;1mstate_doc = sp.build_state(loaded, tv, ev, now, {[0m
+2026-09-17T09:30:57.8428402Z [36;1m    'stale_seconds': 86400, 'liveness_window': 1800, 'verification_window': 86400,[0m
+2026-09-17T09:30:57.8428893Z [36;1m    'stuck_after': 900, 'recent_window': 604800, 'go_repo': None,[0m
+2026-09-17T09:30:57.8429352Z [36;1m    'repository_main_sha': None, 'identities_separated': separated,[0m
+2026-09-17T09:30:57.8429750Z [36;1m    'identity_contract': identity,[0m
+2026-09-17T09:30:57.8430142Z [36;1m    'proven_allowed': bool(separated and task_bound and evidence_bound),[0m
+2026-09-17T09:30:57.8430572Z [36;1m    'fail_closed_reasons': [], 'args': args})[0m
+2026-09-17T09:30:57.8430886Z [36;1mentry = state_doc['tasks'][0][0m
+2026-09-17T09:30:57.8431325Z [36;1massert entry['evidence']['signature_verified'] is True, 'failure record did not verify'[0m
+2026-09-17T09:30:57.8431880Z [36;1massert entry['lifecycle'] == 'EXECUTION_FAILED', entry['lifecycle'][0m
+2026-09-17T09:30:57.8432379Z [36;1massert entry['assertion']['state'] == 'FAILED', entry['assertion']['state'][0m
+2026-09-17T09:30:57.8432965Z [36;1massert entry['failure']['reason_code'] == 'TEST_PR_DEPENDENCY_PROFILE_REJECT', entry['failure'][0m
+2026-09-17T09:30:57.8433519Z [36;1massert record['executor_version'] == test_pr.EXECUTOR_VERSION[0m
+2026-09-17T09:30:57.8433948Z [36;1massert entry['failure']['retry_permitted'] is False[0m
+2026-09-17T09:30:57.8434287Z [36;1mdetail = entry['failure'][0m
+2026-09-17T09:30:57.8434652Z [36;1massert detail['artifact_claimed_retry_permitted'] is False, detail[0m
+2026-09-17T09:30:57.8435021Z [36;1m[0m
+2026-09-17T09:30:57.8435281Z [36;1mbinding = {'event': os.environ['GITHUB_EVENT_NAME'],[0m
+2026-09-17T09:30:57.8435664Z [36;1m           'workflow_commit': os.environ['GITHUB_SHA'],[0m
+2026-09-17T09:30:57.8436053Z [36;1m           'candidate_sha': os.environ['CANDIDATE_SHA'],[0m
+2026-09-17T09:30:57.8436676Z [36;1m           'run_id': os.environ['GITHUB_RUN_ID'],[0m
+2026-09-17T09:30:57.8437054Z [36;1m           'synthetic_failure_signed_evidence': 'PROVEN',[0m
+2026-09-17T09:30:57.8437426Z [36;1m           'failure_record_satisfies_contract': True,[0m
+2026-09-17T09:30:57.8437784Z [36;1m           'failure_reaches_execution_failed': True,[0m
+2026-09-17T09:30:57.8438128Z [36;1m           'failure_authorizes_nothing': True,[0m
+2026-09-17T09:30:57.8438544Z [36;1m           'pre_claim_rejection_publishes_nothing': 'ASSERTED_BY_TEST_SUITE',[0m
+2026-09-17T09:30:57.8439051Z [36;1m           'installation_performed': False, 'deployment_performed': False,[0m
+2026-09-17T09:30:57.8439532Z [36;1m           'hong_kong_accessed': False, 'production_accessed': False}[0m
+2026-09-17T09:30:57.8440006Z [36;1m(work / 'binding.json').write_text(json.dumps(binding, indent=2) + '\n')[0m
+2026-09-17T09:30:57.8440435Z [36;1mprint(json.dumps(binding, sort_keys=True))[0m
+2026-09-17T09:30:57.8440726Z [36;1mPY[0m
+2026-09-17T09:30:57.8477376Z shell: /usr/bin/bash -e {0}
+2026-09-17T09:30:57.8477641Z env:
+2026-09-17T09:30:57.8477861Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-17T09:30:57.8478192Z   CANDIDATE_SHA: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:57.8478581Z   BASE_SHA: dc34ee5cabed7c6e93507d178fdd3a62a426399e
+2026-09-17T09:30:57.8478972Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:57.8479467Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-17T09:30:57.8480035Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:57.8480428Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:57.8480823Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:57.8481224Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-17T09:30:57.8481553Z ##[endgroup]
+2026-09-17T09:30:57.9775972Z {"candidate_sha": "9c76fc579383fa2270af90bc67b67a17454d37bd", "deployment_performed": false, "event": "pull_request", "failure_authorizes_nothing": true, "failure_reaches_execution_failed": true, "failure_record_satisfies_contract": true, "hong_kong_accessed": false, "installation_performed": false, "pre_claim_rejection_publishes_nothing": "ASSERTED_BY_TEST_SUITE", "production_accessed": false, "run_id": "35205465817", "synthetic_failure_signed_evidence": "PROVEN", "workflow_commit": "616884384be04b69376b7fc8505d8b42c49b25fe"}
+2026-09-17T09:30:57.9941633Z ##[group]Run python - <<'PY'
+2026-09-17T09:30:57.9941980Z [36;1mpython - <<'PY'[0m
+2026-09-17T09:30:57.9942272Z [36;1mimport hashlib, json, os, pathlib, subprocess[0m
+2026-09-17T09:30:57.9942597Z [36;1mdef git(*args):[0m
+2026-09-17T09:30:57.9942947Z [36;1m    return subprocess.check_output(['git', *args], text=True).strip()[0m
+2026-09-17T09:30:57.9943469Z [36;1mwork = pathlib.Path(os.environ['RUNNER_TEMP']) / 'hk-agent-failure'[0m
+2026-09-17T09:30:57.9943876Z [36;1msha = os.environ['CANDIDATE_SHA'][0m
+2026-09-17T09:30:57.9944194Z [36;1massert git('rev-parse', 'HEAD') == sha[0m
+2026-09-17T09:30:57.9944517Z [36;1mbase = os.environ['BASE_SHA'][0m
+2026-09-17T09:30:57.9944872Z [36;1mchanged = git('diff', '--name-only', base, sha).splitlines()[0m
+2026-09-17T09:30:57.9945374Z [36;1mpaths = git('ls-files', 'control-plane/boss-test-pr-live-integration-v1',[0m
+2026-09-17T09:30:57.9946041Z [36;1m            'control-plane/command-center-state-v1/contracts/failure_evidence_v1.schema.json',[0m
+2026-09-17T09:30:57.9947087Z [36;1m            '.github/workflows/hk-agent-failure-evidence-v1.yml').splitlines()[0m
+2026-09-17T09:30:57.9947723Z [36;1mhashes = {p: hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest() for p in sorted(paths)}[0m
+2026-09-17T09:30:57.9948275Z [36;1mdigest = lambda value: hashlib.sha256(value).hexdigest()[0m
+2026-09-17T09:30:57.9948706Z [36;1mevidence = json.loads((work / 'binding.json').read_text())[0m
+2026-09-17T09:30:57.9949202Z [36;1mevidence.update({'schema': 'shared-hk-test-pr-compatibility-ci-v1',[0m
+2026-09-17T09:30:57.9949673Z [36;1m                 'scope': 'HK_AGENT_LINEAGE', 'base_sha': base,[0m
+2026-09-17T09:30:57.9950090Z [36;1m                 'candidate_tree': git('rev-parse', sha + '^{tree}'),[0m
+2026-09-17T09:30:57.9950557Z [36;1m                 'application_tree': git('rev-parse', sha + ':application'),[0m
+2026-09-17T09:30:57.9951016Z [36;1m                 'changed_files': changed, 'source_sha256': hashes,[0m
+2026-09-17T09:30:57.9951521Z [36;1m                 'source_fingerprint_sha256': digest(json.dumps(hashes, sort_keys=True,[0m
+2026-09-17T09:30:57.9951980Z [36;1m                     separators=(',', ':')).encode()),[0m
+2026-09-17T09:30:57.9952336Z [36;1m                 'tests': {'hk_agent_lineage': 'PASS',[0m
+2026-09-17T09:30:57.9952720Z [36;1m                           'signed_test_pr_failure_projection': 'PASS',[0m
+2026-09-17T09:30:57.9953161Z [36;1m                           'log_sha256': digest((work / 'tests.log').read_bytes())},[0m
+2026-09-17T09:30:57.9953614Z [36;1m                 'real_frozen_builder_dependencies': 'NOT_OBSERVED',[0m
+2026-09-17T09:30:57.9954190Z [36;1m                 'hk_test_pr_acceptance': 'NOT_EVALUATED'})[0m
+2026-09-17T09:30:57.9954690Z [36;1m(work / 'EVIDENCE.json').write_text(json.dumps(evidence, sort_keys=True, indent=2) + '\n')[0m
+2026-09-17T09:30:57.9955190Z [36;1m# The checksum file must never include itself.[0m
+2026-09-17T09:30:57.9955670Z [36;1mentries = [p for p in sorted(work.rglob('*')) if p.is_file() and p.name != 'SHA256SUMS'][0m
+2026-09-17T09:30:57.9956138Z [36;1m(work / 'SHA256SUMS').write_text(''.join([0m
+2026-09-17T09:30:57.9957051Z [36;1m    digest(p.read_bytes()) + '  ' + p.relative_to(work).as_posix() + '\n' for p in entries))[0m
+2026-09-17T09:30:57.9957647Z [36;1mprint('EVIDENCE_SHA256=' + digest((work / 'EVIDENCE.json').read_bytes()))[0m
+2026-09-17T09:30:57.9958068Z [36;1mprint('CANDIDATE_SHA=' + sha)[0m
+2026-09-17T09:30:57.9958333Z [36;1mPY[0m
+2026-09-17T09:30:57.9994238Z shell: /usr/bin/bash -e {0}
+2026-09-17T09:30:57.9994505Z env:
+2026-09-17T09:30:57.9994723Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-17T09:30:57.9995039Z   CANDIDATE_SHA: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:57.9995414Z   BASE_SHA: dc34ee5cabed7c6e93507d178fdd3a62a426399e
+2026-09-17T09:30:57.9995788Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:57.9996678Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-17T09:30:57.9997181Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:57.9997581Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:57.9997973Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:57.9998376Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-17T09:30:57.9998708Z ##[endgroup]
+2026-09-17T09:30:58.0495578Z EVIDENCE_SHA256=cb5d95e24259db0352a561572ef723f4f04a953dcce8955c4f9416a62bbb7998
+2026-09-17T09:30:58.0497081Z CANDIDATE_SHA=9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:58.0600805Z ##[group]Run set -euo pipefail
+2026-09-17T09:30:58.0601206Z [36;1mset -euo pipefail[0m
+2026-09-17T09:30:58.0601595Z [36;1mif ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then[0m
+2026-09-17T09:30:58.0602072Z [36;1m  echo "REAL_DOCKER_SAVE_SMOKE=SKIPPED_NO_DOCKER"[0m
+2026-09-17T09:30:58.0602394Z [36;1m  exit 0[0m
+2026-09-17T09:30:58.0602597Z [36;1mfi[0m
+2026-09-17T09:30:58.0602805Z [36;1mwork="$(mktemp -d)"[0m
+2026-09-17T09:30:58.0603091Z [36;1mprintf 'payload\n' > "$work/payload.txt"[0m
+2026-09-17T09:30:58.0603529Z [36;1m# One layer, no network.  A scratch image with no layers at all cannot be[0m
+2026-09-17T09:30:58.0604054Z [36;1m# exported on every daemon ("empty export - not implemented"): that is an[0m
+2026-09-17T09:30:58.0604588Z [36;1m# environment limitation, so it is reported as a skip below rather than[0m
+2026-09-17T09:30:58.0605052Z [36;1m# turning into a red build that means nothing.[0m
+2026-09-17T09:30:58.0605642Z [36;1mprintf 'FROM scratch\nCOPY payload.txt /payload.txt\nLABEL go.ci.smoke=1\n' > "$work/Dockerfile"[0m
+2026-09-17T09:30:58.0606335Z [36;1mdocker build --file "$work/Dockerfile" --tag go-ci-save-smoke:local "$work" >/dev/null[0m
+2026-09-17T09:30:58.0607364Z [36;1mif ! docker save --output "$work/smoke.tar" go-ci-save-smoke:local >/dev/null 2>&1; then[0m
+2026-09-17T09:30:58.0607899Z [36;1m  echo "REAL_DOCKER_SAVE_SMOKE=SKIPPED_SAVE_UNSUPPORTED"[0m
+2026-09-17T09:30:58.0608385Z [36;1m  echo "  this daemon cannot export the image; the deterministic OCI and legacy"[0m
+2026-09-17T09:30:58.0608912Z [36;1m  echo "  fixtures in the suite remain the authority for both formats"[0m
+2026-09-17T09:30:58.0609292Z [36;1m  exit 0[0m
+2026-09-17T09:30:58.0609495Z [36;1mfi[0m
+2026-09-17T09:30:58.0609845Z [36;1mimage_id="$(docker image inspect go-ci-save-smoke:local --format '{{.Id}}')"[0m
+2026-09-17T09:30:58.0610314Z [36;1mpython - "$work/smoke.tar" "$image_id" <<'PY'[0m
+2026-09-17T09:30:58.0610646Z [36;1mimport importlib.machinery[0m
+2026-09-17T09:30:58.0611118Z [36;1mimport importlib.util[0m
+2026-09-17T09:30:58.0611376Z [36;1mimport pathlib[0m
+2026-09-17T09:30:58.0611616Z [36;1mimport subprocess[0m
+2026-09-17T09:30:58.0611861Z [36;1mimport sys[0m
+2026-09-17T09:30:58.0612076Z [36;1mimport tarfile[0m
+2026-09-17T09:30:58.0612294Z [36;1m[0m
+2026-09-17T09:30:58.0612618Z [36;1m# A real `docker save` archive, parsed by both halves of the contract.  The[0m
+2026-09-17T09:30:58.0613147Z [36;1m# first real TEST_PR failed because the parser only understood the legacy[0m
+2026-09-17T09:30:58.0613667Z [36;1m# shape while the host writes an OCI layout; the deterministic fixtures in[0m
+2026-09-17T09:30:58.0614182Z [36;1m# the suite remain the authority for every format, and this step records[0m
+2026-09-17T09:30:58.0614692Z [36;1m# what this runner's Docker actually produces rather than assuming it.[0m
+2026-09-17T09:30:58.0615134Z [36;1marchive, image_id = sys.argv[1], sys.argv[2][0m
+2026-09-17T09:30:58.0615476Z [36;1mroot = pathlib.Path('.').resolve()[0m
+2026-09-17T09:30:58.0615947Z [36;1msys.path.insert(0, str(root / 'control-plane' / 'boss-test-pr-live-integration-v1'[0m
+2026-09-17T09:30:58.0616646Z [36;1m                      / 'hk-staging'))[0m
+2026-09-17T09:30:58.0616975Z [36;1mfrom hk_agent import artifact_store[0m
+2026-09-17T09:30:58.0617255Z [36;1m[0m
+2026-09-17T09:30:58.0617556Z [36;1mreader_path = (root / 'hk-staging' / 'source' / 'executor' / 'runtime'[0m
+2026-09-17T09:30:58.0617963Z [36;1m               / 'artifact_runtime.py')[0m
+2026-09-17T09:30:58.0618446Z [36;1mloader = importlib.machinery.SourceFileLoader('ci_artifact_reader', str(reader_path))[0m
+2026-09-17T09:30:58.0619016Z [36;1mspec = importlib.util.spec_from_loader(loader.name, loader)[0m
+2026-09-17T09:30:58.0619446Z [36;1mreader = importlib.util.module_from_spec(spec)[0m
+2026-09-17T09:30:58.0619786Z [36;1mloader.exec_module(reader)[0m
+2026-09-17T09:30:58.0620045Z [36;1m[0m
+2026-09-17T09:30:58.0620464Z [36;1mwith tarfile.open(archive, 'r:') as tar:[0m
+2026-09-17T09:30:58.0620945Z [36;1m    names = {member.name.lstrip('./') for member in tar.getmembers() if member.isfile()}[0m
+2026-09-17T09:30:58.0621457Z [36;1mif 'index.json' in names and 'manifest.json' in names:[0m
+2026-09-17T09:30:58.0621809Z [36;1m    layout = 'OCI+LEGACY'[0m
+2026-09-17T09:30:58.0622090Z [36;1melif 'index.json' in names:[0m
+2026-09-17T09:30:58.0622361Z [36;1m    layout = 'OCI'[0m
+2026-09-17T09:30:58.0622623Z [36;1melif 'manifest.json' in names:[0m
+2026-09-17T09:30:58.0622901Z [36;1m    layout = 'LEGACY'[0m
+2026-09-17T09:30:58.0623141Z [36;1melse:[0m
+2026-09-17T09:30:58.0623349Z [36;1m    layout = 'UNKNOWN'[0m
+2026-09-17T09:30:58.0623644Z [36;1massert layout != 'UNKNOWN', sorted(names)[0m
+2026-09-17T09:30:58.0623938Z [36;1m[0m
+2026-09-17T09:30:58.0624255Z [36;1m# What a Docker daemon *reports* is a property of its image store, not of[0m
+2026-09-17T09:30:58.0624791Z [36;1m# this contract: a GitHub runner reports the image's config digest, while[0m
+2026-09-17T09:30:58.0625332Z [36;1m# HK-STAGING (server 29.7.2, containerd image store) reports the digest of[0m
+2026-09-17T09:30:58.0625856Z [36;1m# the descriptor `index.json` names.  The assertions below are therefore[0m
+2026-09-17T09:30:58.0626703Z [36;1m# about roles, never about those two identities being equal -- an equality[0m
+2026-09-17T09:30:58.0627272Z [36;1m# assertion is exactly what made this step green for months while the host[0m
+2026-09-17T09:30:58.0627687Z [36;1m# could not seal a single image.[0m
+2026-09-17T09:30:58.0628061Z [36;1midentity = artifact_store.image_identity(archive, image_id)[0m
+2026-09-17T09:30:58.0628487Z [36;1massert identity['image_id'] == image_id, identity[0m
+2026-09-17T09:30:58.0628987Z [36;1massert reader.image_identity(archive, image_id) == identity, 'the two sides disagree'[0m
+2026-09-17T09:30:58.0629492Z [36;1massert identity['config_digests'], identity[0m
+2026-09-17T09:30:58.0629865Z [36;1mconfig = 'sha256:' + identity['config_digests'][0][0m
+2026-09-17T09:30:58.0630520Z [36;1massert artifact_store.image_identity(archive, config)['image_identity_role'] == 'config'[0m
+2026-09-17T09:30:58.0631016Z [36;1mif identity['root_descriptor_digest']:[0m
+2026-09-17T09:30:58.0631429Z [36;1m    root_descriptor = 'sha256:' + identity['root_descriptor_digest'][0m
+2026-09-17T09:30:58.0631898Z [36;1m    assert root_descriptor != config, (root_descriptor, config)[0m
+2026-09-17T09:30:58.0632295Z [36;1m    assert artifact_store.image_identity([0m
+2026-09-17T09:30:58.0632727Z [36;1m        archive, root_descriptor)['image_identity_role'] == 'root_descriptor'[0m
+2026-09-17T09:30:58.0633125Z [36;1mtry:[0m
+2026-09-17T09:30:58.0633420Z [36;1m    artifact_store.image_identity(archive, 'sha256:' + 'f' * 64)[0m
+2026-09-17T09:30:58.0633824Z [36;1mexcept artifact_store.Reject as refusal:[0m
+2026-09-17T09:30:58.0634243Z [36;1m    assert str(refusal).endswith('IMAGE_IDENTITY_MISMATCH'), refusal[0m
+2026-09-17T09:30:58.0634621Z [36;1melse:[0m
+2026-09-17T09:30:58.0634979Z [36;1m    raise AssertionError('an identity the archive does not prove was accepted')[0m
+2026-09-17T09:30:58.0635554Z [36;1mserver = subprocess.run(['docker', 'version', '--format', '{{.Server.Version}}'],[0m
+2026-09-17T09:30:58.0636063Z [36;1m                        capture_output=True, text=True).stdout.strip()[0m
+2026-09-17T09:30:58.0636692Z [36;1mprint('DOCKER_SERVER_VERSION=%s' % server)[0m
+2026-09-17T09:30:58.0637047Z [36;1mprint('REAL_DOCKER_SAVE_FORMAT=%s' % layout)[0m
+2026-09-17T09:30:58.0637467Z [36;1mprint('DOCKER_INSPECT_ID_ROLE=%s' % identity['image_identity_role'])[0m
+2026-09-17T09:30:58.0637984Z [36;1mprint('ROOT_DESCRIPTOR_DIGEST=%s' % identity['root_descriptor_digest'])[0m
+2026-09-17T09:30:58.0638489Z [36;1mprint('CONFIG_DIGESTS=%s' % ','.join(identity['config_digests']))[0m
+2026-09-17T09:30:58.0638963Z [36;1mprint('REAL_DOCKER_SAVE_SMOKE=PROVEN image_id=%s' % image_id)[0m
+2026-09-17T09:30:58.0639335Z [36;1mPY[0m
+2026-09-17T09:30:58.0639771Z [36;1mdocker image rm --force go-ci-save-smoke:local >/dev/null[0m
+2026-09-17T09:30:58.0640147Z [36;1mrm -rf "$work"[0m
+2026-09-17T09:30:58.0676305Z shell: /usr/bin/bash -e {0}
+2026-09-17T09:30:58.0676907Z env:
+2026-09-17T09:30:58.0677134Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-17T09:30:58.0677462Z   CANDIDATE_SHA: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:58.0677844Z   BASE_SHA: dc34ee5cabed7c6e93507d178fdd3a62a426399e
+2026-09-17T09:30:58.0678223Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:58.0678664Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-17T09:30:58.0679100Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:58.0679490Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:58.0679887Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:58.0680289Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-17T09:30:58.0680634Z ##[endgroup]
+2026-09-17T09:30:58.5971318Z #0 building with "default" instance using docker driver
+2026-09-17T09:30:58.5973514Z 
+2026-09-17T09:30:58.5978385Z #1 [internal] load build definition from Dockerfile
+2026-09-17T09:30:58.5979103Z #1 transferring dockerfile: 100B done
+2026-09-17T09:30:58.5979590Z #1 DONE 0.0s
+2026-09-17T09:30:58.5979799Z 
+2026-09-17T09:30:58.5980019Z #2 [internal] load .dockerignore
+2026-09-17T09:30:58.5982319Z #2 transferring context: 2B done
+2026-09-17T09:30:58.5982875Z #2 DONE 0.0s
+2026-09-17T09:30:58.5983097Z 
+2026-09-17T09:30:58.5983251Z #3 [internal] load build context
+2026-09-17T09:30:58.5983854Z #3 transferring context: 46B done
+2026-09-17T09:30:58.5984313Z #3 DONE 0.0s
+2026-09-17T09:30:58.5984532Z 
+2026-09-17T09:30:58.5984777Z #4 [1/1] COPY payload.txt /payload.txt
+2026-09-17T09:30:58.5985198Z #4 DONE 0.0s
+2026-09-17T09:30:58.5985415Z 
+2026-09-17T09:30:58.5985597Z #5 exporting to image
+2026-09-17T09:30:58.5985870Z #5 exporting layers done
+2026-09-17T09:30:58.5986328Z #5 writing image sha256:75dbef07e7738b90005cfa699a19e1087b96e2d8ab255554328559ff7cfedabf done
+2026-09-17T09:30:58.5987491Z #5 naming to docker.io/library/go-ci-save-smoke:local done
+2026-09-17T09:30:58.5987928Z #5 DONE 0.0s
+2026-09-17T09:30:58.7152422Z DOCKER_SERVER_VERSION=28.0.4
+2026-09-17T09:30:58.7153173Z REAL_DOCKER_SAVE_FORMAT=OCI+LEGACY
+2026-09-17T09:30:58.7153838Z DOCKER_INSPECT_ID_ROLE=config
+2026-09-17T09:30:58.7154748Z ROOT_DESCRIPTOR_DIGEST=fd9e84abff6494d6029f0e817e42303305817752c9757f38dc0f26fb0d1e9549
+2026-09-17T09:30:58.7155914Z CONFIG_DIGESTS=75dbef07e7738b90005cfa699a19e1087b96e2d8ab255554328559ff7cfedabf
+2026-09-17T09:30:58.7157439Z REAL_DOCKER_SAVE_SMOKE=PROVEN image_id=sha256:75dbef07e7738b90005cfa699a19e1087b96e2d8ab255554328559ff7cfedabf
+2026-09-17T09:30:58.7553381Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T09:30:58.7554740Z ##[group]Run actions/upload-artifact@v4
+2026-09-17T09:30:58.7555028Z with:
+2026-09-17T09:30:58.7555323Z   name: hk-agent-failure-9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:58.7555728Z   path: /home/runner/work/_temp/hk-agent-failure/
+2026-09-17T09:30:58.7556046Z   if-no-files-found: error
+2026-09-17T09:30:58.7556284Z   retention-days: 30
+2026-09-17T09:30:58.7556980Z   compression-level: 6
+2026-09-17T09:30:58.7557244Z   overwrite: false
+2026-09-17T09:30:58.7557477Z   include-hidden-files: false
+2026-09-17T09:30:58.7557722Z env:
+2026-09-17T09:30:58.7557947Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-17T09:30:58.7558302Z   CANDIDATE_SHA: 9c76fc579383fa2270af90bc67b67a17454d37bd
+2026-09-17T09:30:58.7558680Z   BASE_SHA: dc34ee5cabed7c6e93507d178fdd3a62a426399e
+2026-09-17T09:30:58.7559056Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:58.7559497Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-17T09:30:58.7560017Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:58.7560420Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:58.7560811Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-17T09:30:58.7561204Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-17T09:30:58.7561530Z ##[endgroup]
+2026-09-17T09:30:58.9319186Z (node:6095) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-17T09:30:58.9320724Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-17T09:30:58.9687253Z With the provided path, there will be 9 files uploaded
+2026-09-17T09:30:58.9717167Z Artifact name is valid!
+2026-09-17T09:30:58.9727206Z Root directory input is valid!
+2026-09-17T09:30:59.1726136Z Beginning upload of artifact content to blob storage
+2026-09-17T09:30:59.2408661Z (node:6095) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-17T09:30:59.2947235Z Uploaded bytes 11865
+2026-09-17T09:30:59.3146101Z Finished uploading artifact content to blob storage!
+2026-09-17T09:30:59.3148044Z SHA256 digest of uploaded artifact zip is c6800e6e3e9911fc8741dae4a6290750fb55797b4851d50085f9bcb77789f8c1
+2026-09-17T09:30:59.3149620Z Finalizing artifact upload
+2026-09-17T09:30:59.5158324Z Artifact hk-agent-failure-9c76fc579383fa2270af90bc67b67a17454d37bd.zip successfully finalized. Artifact ID 10489726775
+2026-09-17T09:30:59.5160189Z Artifact hk-agent-failure-9c76fc579383fa2270af90bc67b67a17454d37bd has been successfully uploaded! Final size is 11865 bytes. Artifact ID is 10489726775
+2026-09-17T09:30:59.5161875Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35205465817/artifacts/10489726775
+2026-09-17T09:30:59.5400176Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T09:30:59.5401466Z Post job cleanup.
+2026-09-17T09:30:59.6705004Z (node:6107) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-17T09:30:59.6707013Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-17T09:30:59.6945406Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T09:30:59.6947773Z Post job cleanup.
+2026-09-17T09:30:59.8387304Z [command]/usr/bin/git version
+2026-09-17T09:30:59.8537794Z git version 2.55.0
+2026-09-17T09:30:59.8683976Z Temporarily overriding HOME='/home/runner/work/_temp/7b11acbf-fa28-4df2-9d20-2396632c00b8' before making global git config changes
+2026-09-17T09:30:59.8717316Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T09:30:59.8737457Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-17T09:30:59.8837539Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T09:30:59.8938104Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T09:30:59.9427218Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T09:30:59.9518343Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T09:30:59.9887384Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T09:30:59.9927647Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T09:31:00.0495087Z Cleaning up orphan processes
+2026-09-17T09:31:00.0779682Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

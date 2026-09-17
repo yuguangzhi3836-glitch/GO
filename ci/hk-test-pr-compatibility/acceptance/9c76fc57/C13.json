@@ -1,0 +1,73 @@
+{
+  "schema": "independent-review-v1",
+  "reviewer": "/root/c13_pr185",
+  "role": "C13",
+  "result": "PASS_SCOPED",
+  "candidate_pr": 185,
+  "candidate_sha": "9c76fc579383fa2270af90bc67b67a17454d37bd",
+  "candidate_tree": "571ee647f4bb82ddbaed1704a41c441aee06d456",
+  "base_sha": "dc34ee5cabed7c6e93507d178fdd3a62a426399e",
+  "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "scope": "Shared repository source repair only; not live HK TEST_PR acceptance, installation or deployment",
+  "pr_state": {
+    "draft": true,
+    "state": "open",
+    "merged": false
+  },
+  "predecessor_c14": {
+    "reviewer": "/root/c14_pr185",
+    "result": "PASS_SCOPED",
+    "record": "c14-review.json",
+    "binding_independently_verified": true
+  },
+  "independent_checks": [
+    "Read current PR185 and immutable commit from GitHub; exact candidate head/tree/base match, ten changed files restricted to shared control-plane/workflow.",
+    "Read base and candidate Git trees; application tree unchanged. Read PR183: edd3500575d2f2b81298cc9273025e0a3b734897 remains Draft/open/unmerged.",
+    "Compared all ten local changed files to GitHub PR file blob SHAs and all 29 Evidence-covered source bytes to immutable candidate tree Git blobs.",
+    "Recomputed original artifact ZIP SHA256 and matched GitHub artifact API digest; all nine ZIP files match extracted bytes.",
+    "Recomputed EVIDENCE.json digest, tests.log digest, source fingerprint and complete artifact checksum manifest; all match. Source manifests 26 and 79 entries pass and neither lists itself.",
+    "Verified synthetic Task hex signature and Evidence base64 signature against distinct OpenSSH Ed25519 keys; recomputed both identity contract fingerprints; Task/Evidence task_id, nonce, action_id, environment and candidate binding match. No private signing key uploaded.",
+    "Reviewed dependency verification: only two exact known profiles; legacy path retained, standard extra requires bounded offline platform-aware installed closure, version/extras/URL checks; unknown/missing/incompatible cases refuse before build/seal. Image pin, immutable source, network isolation and installer preflight unchanged.",
+    "Reviewed transport/schema: known TEST_PR refusals remain closed reasons; executor_version is carried only by matching TEST_PR reject; diagnostic redaction, signature, one-attempt exhaustion and false retry/replay/action authority remain.",
+    "Independently ran 24 targeted dependency/transport/build-and-seal cases: 24 PASS, zero skips. No accepted Cell rerun.",
+    "Read original CI job log: 180 tests, 177 PASS and three pre-existing root/cross-UID conditional skips; real Docker OCI+LEGACY archive smoke PROVEN. GitHub API independently confirms five isolated workflow runs SUCCESS.",
+    "C14 conclusion checked against independent source, GitHub, artifact, signature and scope observations; no contradiction found."
+  ],
+  "ci": {
+    "run_id": 35205465817,
+    "job_id": 105150035885,
+    "artifact_id": 10489726775,
+    "total_tests": 180,
+    "passed_tests": 177,
+    "preexisting_conditional_skips": 3,
+    "real_docker_archive_smoke": "PROVEN",
+    "isolated_workflow_runs": [
+      35205465855,
+      35205466048,
+      35205465822,
+      35205465777,
+      35205465817
+    ],
+    "all_runs_conclusion": "success"
+  },
+  "local_targeted_tests": {
+    "run": 24,
+    "passed": 24,
+    "skipped": 0
+  },
+  "artifact_zip_sha256": "c6800e6e3e9911fc8741dae4a6290750fb55797b4851d50085f9bcb77789f8c1",
+  "evidence_sha256": "cb5d95e24259db0352a561572ef723f4f04a953dcce8955c4f9416a62bbb7998",
+  "source_fingerprint_sha256": "12018d19b0edb4437ab2d65761d92922c3ac7e54320248a705cfd87054b607f5",
+  "blocking_findings": [],
+  "disposition": "Shared source milestone may be recorded DONE_SCOPED after independent C14 -> C13; Issue184 stays OPEN / SHARED_INFRA_BLOCKED.",
+  "remaining_blocks": [
+    "Installed live executor hashes and original HK first error are unobserved; repository mismatch is not proof of the actual live first error.",
+    "Real frozen HK builder dependency availability NOT_OBSERVED; CI's Docker archive smoke does not establish it.",
+    "PR183 HK TEST_PR acceptance NOT_EVALUATED by this repair; failed Request44/task attempt remains exhausted and must not be replayed.",
+    "Controlled host installation and fresh formal admission remain pending; no merge, installation, CANARY, VERIFY, DEPLOY or release authorization.",
+    "Migration 0133 to 0137 remains separately blocked; C06 supplier external Evidence, Final Release and Production remain HOLD.",
+    "Three original root/cross-UID conditions were skipped in CI; no claim of host cross-UID verification."
+  ],
+  "remote_mutations_performed": false,
+  "candidate_files_modified": false
+}

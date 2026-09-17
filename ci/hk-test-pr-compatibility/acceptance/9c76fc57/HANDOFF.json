@@ -1,0 +1,76 @@
+{
+  "schema": "shared-hk-compatibility-handoff-v1",
+  "issue": 184,
+  "source_pr": 185,
+  "candidate_sha": "9c76fc579383fa2270af90bc67b67a17454d37bd",
+  "product_pr": 183,
+  "product_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+  "status": "SHARED_INFRA_BLOCKED",
+  "next_action": "Obtain task-scoped original executor failure and installed component hashes through the existing approved operator diagnostic path.",
+  "read_only_diagnostics_required": [
+    {
+      "item": "Original executor journal/exception",
+      "task_id": "go-boss-test-pr-183-b830d1b36e7e",
+      "nonce": "q_GbwEzcXShL-6lvDI6BnZ3i3jj5oXhz",
+      "observed_failure_time": "2026-09-17T08:57:06Z",
+      "constraint": "Include the first real exception and bounded redacted stderr; do not infer actual runtime from identical failure timestamps."
+    },
+    {
+      "item": "Installed source version and hashes",
+      "components": [
+        {
+          "candidate_sha256": "dda3a4410b43d35d6bbc95c3492728eb5851cd51bcebb1122d74865fe59275f6",
+          "installed_live_sha256": null,
+          "live_readback_status": "REQUIRED_NOT_OBSERVED",
+          "path": "control-plane/boss-test-pr-live-integration-v1/hk-staging/hk_agent/test_pr.py",
+          "repository_base_sha256": "d1c454fc4b4c3066cbd6e8195b686de4ec676c2b6f67d4cf33d332ad4cedf1f0"
+        },
+        {
+          "candidate_sha256": "c48bf32f8cddfdc2d577df04f61a87b35d14f4cdf0cc2c8e45a7b517117e724a",
+          "installed_live_sha256": null,
+          "live_readback_status": "REQUIRED_NOT_OBSERVED",
+          "path": "control-plane/boss-test-pr-live-integration-v1/hk-staging/hk_agent/transport.py",
+          "repository_base_sha256": "af8261568fb7158f3bd6f620f3a405118b1ae77d3d662b764e62c3fe260e5fcb"
+        },
+        {
+          "candidate_sha256": "16391837d031e7b24d8066b5bb2fb8ad281a8bddfe6093654d14ad7d58737980",
+          "installed_live_sha256": null,
+          "live_readback_status": "REQUIRED_NOT_OBSERVED",
+          "path": "control-plane/command-center-state-v1/contracts/failure_evidence_v1.schema.json",
+          "repository_base_sha256": "b703c7793d2c86ef26250d4d7c36b6c44aadf40726529fff346e0fd5cf9a809c"
+        }
+      ],
+      "constraint": "Repository base hashes are not live readback; preserve installer preflight until actual installed hashes are known."
+    },
+    {
+      "item": "Frozen builder identity and active standard dependency closure",
+      "expected_image": "go-hotel:depth48-runtime-6d0fd905",
+      "expected_image_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132",
+      "actual_image_id": null,
+      "status": "NOT_OBSERVED",
+      "constraint": "Use the trusted candidate's offline probe under the existing controlled maintenance procedure; do not install packages in an unreviewed image or relax the pin."
+    }
+  ],
+  "after_diagnostics": [
+    "Review any live/repository mismatch before a controlled installation; this document itself is not an installation authorization.",
+    "Verify candidate staging manifest and actual readback after the controlled change; require complete frozen-image dependency closure.",
+    "Use a fresh normal TEST_PR Request/Task bound by Command Center to unchanged PR183 exact SHA, only after prerequisites and admission pass.",
+    "Advance to CANARY → VERIFY → DEPLOY only on fresh formal-plan-derived admission; this source-only result authorizes none of those actions."
+  ],
+  "do_not": [
+    "Replay exhausted Request PR44 / original Task",
+    "Modify PR183 product code",
+    "Rerun already accepted Cells",
+    "Invent a Boss Request action or manually sign Task/plan",
+    "Overwrite observed-hash preflight pins without readback",
+    "Fold migration 0133→0137 into this fix",
+    "Merge either Draft or open external supplier connections"
+  ],
+  "separate_holds": [
+    "C06 real external supplier Evidence",
+    "HK acceptance/rollout pending shared prerequisites and formal gates",
+    "Final Release",
+    "Production"
+  ],
+  "prior_live_archive": "https://github.com/yuguangzhi3836-glitch/GO/tree/1fa77b782953401447a2cd70d27aeb4c922cd959/ci/supplier-controls/acceptance/edd35005/hk-test-pr183"
+}
