@@ -61,3 +61,65 @@ jobs:
           path: evidence-out
           if-no-files-found: error
           retention-days: 90
+
+  c07-postgres-retest:
+    needs: focused-shared-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_c07_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_c07_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_C07_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c07_isolated
+      GO_C07_SOURCE_COMMIT: 4a825f342698bd78dc5fae392a43897b201f4961
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.5"
+      - name: Reverify focused source binding
+        run: |
+          test "$(git rev-parse HEAD:application)" = "0cd2c7b636066be6cb15e33d7b772b697a25d9c5"
+          python ci/retention/verify_source.py "$RUNNER_TEMP/c07-pg/source"
+          python ci/shared_pg_matrix/validate_bindings.py
+      - name: Install inherited frozen dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Run only C07 PostgreSQL recovery scope
+        working-directory: application
+        env:
+          PYTHONPATH: src
+        run: |
+          mkdir -p "$RUNNER_TEMP/c07-pg/C07"
+          python -B ci/next_depth/c07_postgres.py --evidence-dir "$RUNNER_TEMP/c07-pg/C07" 2>&1 | tee "$RUNNER_TEMP/c07-pg/driver.log"
+      - name: Bind C07 evidence
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ["RUNNER_TEMP"])/"c07-pg";out.mkdir(exist_ok=True)
+          files={str(p.relative_to(out)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.rglob("*")) if p.is_file()}
+          report={"schema":"go.issue168.c07-pg-retest.v1","source_commit":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"product_candidate":"4a825f342698bd78dc5fae392a43897b201f4961","application_tree":subprocess.check_output(["git","rev-parse","HEAD:application"],text=True).strip(),"source_tree_sha256":"dce1f232eba5b2897d261a6345d325d11393c329fc0e2b7897af6b6e134ecaa9","files":files,"environment":"disposable PostgreSQL 18.4","scope":"C07 only","inherited_without_rerun":["C09","C10","C11"],"C14":"PENDING","C13":"PENDING","hk_deploy":"HOLD","production":"HOLD"}
+          target=out/"C07_EVIDENCE_BINDING.json"
+          target.write_text(json.dumps(report,sort_keys=True,separators=(",",":"))+"\n")
+          (out/"C07_EVIDENCE_BINDING.sha256").write_text(hashlib.sha256(target.read_bytes()).hexdigest()+"  C07_EVIDENCE_BINDING.json\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue-168-c07-pg-${{ github.sha }}
+          path: ${{ runner.temp }}/c07-pg
+          if-no-files-found: error
+          retention-days: 90
