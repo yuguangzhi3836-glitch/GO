@@ -1,0 +1,174 @@
+name: C04-C09 Evidence-only regeneration
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ci/shared_evidence/**
+      - .github/workflows/c04-c09-evidence-regeneration.yml
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: c04-c09-evidence-regeneration-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  writer-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify no product changes
+        run: git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- application
+      - name: Run shared writer unit tests
+        working-directory: ci/shared_evidence
+        run: python -m unittest discover -v -p 'test_*.py'
+
+  repackage:
+    needs: writer-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cell: C04
+            original_name: c02-c12-isolated-C04-582b5fc4e53ef63c75c7d671978a9cce6ea26c93
+            original_artifact_id: '10476660190'
+            original_job_id: '105039177857'
+            original_zip_sha256: 9faaa5ce12fd36921317bb2e54fe2a1e8b909f0a3aa4e93d17a97a6f433d1cd0
+            expected_tests: '3'
+            expected_skips: '0'
+          - cell: C09
+            original_name: c02-c12-isolated-C09-582b5fc4e53ef63c75c7d671978a9cce6ea26c93
+            original_artifact_id: '10476248840'
+            original_job_id: '105039177903'
+            original_zip_sha256: 2c35d8a9ab16b50b98be6b40900b08ebd0746b890fa55d093558053692a49b9a
+            expected_tests: '5'
+            expected_skips: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Download accepted original Evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.original_name }}
+          path: ${{ runner.temp }}/${{ matrix.cell }}-evidence
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: '35169923342'
+      - name: Verify inherited payload and regenerate manifest only
+        env:
+          CELL: ${{ matrix.cell }}
+          ORIGINAL_ARTIFACT_ID: ${{ matrix.original_artifact_id }}
+          ORIGINAL_JOB_ID: ${{ matrix.original_job_id }}
+          ORIGINAL_ZIP_SHA256: ${{ matrix.original_zip_sha256 }}
+          EXPECTED_TESTS: ${{ matrix.expected_tests }}
+          EXPECTED_SKIPS: ${{ matrix.expected_skips }}
+          REGENERATION_HEAD: ${{ github.event.pull_request.head.sha }}
+          EVIDENCE_ROOT: ${{ runner.temp }}/${{ matrix.cell }}-evidence
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:application)" = "dd815baf0105cce603e9a28b002cfb9d8b95d186"
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path, PurePosixPath
+          import xml.etree.ElementTree as ET
+
+          root = Path(os.environ["EVIDENCE_ROOT"])
+          expected = {
+              "candidate_sha.txt": "582b5fc4e53ef63c75c7d671978a9cce6ea26c93",
+              "application_tree.txt": "e77e0b36f523fb2437db83a5c4c8f1f40f181498",
+              "application_fingerprint_sha256.txt": "b6d0b5889624fde2ed08ea80ee99bf032d6e1d499b4400e20fd1a3971abe849a",
+              "cell.txt": os.environ["CELL"],
+          }
+          for name, value in expected.items():
+              if (root / name).read_text(encoding="utf-8").strip() != value:
+                  raise SystemExit(f"source binding mismatch: {name}")
+
+          junit = ET.parse(root / "junit.xml").getroot()
+          cases = list(junit.iter("testcase"))
+          skips = sum(1 for case in cases if case.find("skipped") is not None)
+          failures = sum(1 for case in cases if case.find("failure") is not None)
+          errors = sum(1 for case in cases if case.find("error") is not None)
+          if (len(cases), skips, failures, errors) != (
+              int(os.environ["EXPECTED_TESTS"]), int(os.environ["EXPECTED_SKIPS"]), 0, 0
+          ):
+              raise SystemExit("inherited JUnit result mismatch")
+
+          manifest = root / "SHA256SUMS"
+          manifest_bytes = manifest.read_bytes()
+          declared = {}
+          for line in manifest_bytes.decode("utf-8").splitlines():
+              digest, original_path = line.split("  ", 1)
+              name = PurePosixPath(original_path).name
+              if name in declared:
+                  raise SystemExit(f"duplicate original manifest entry: {name}")
+              declared[name] = digest
+          self_digest = declared.pop("SHA256SUMS")
+          actual_manifest_digest = hashlib.sha256(manifest_bytes).hexdigest()
+          if self_digest == actual_manifest_digest:
+              raise SystemExit("expected historical self-reference defect was absent")
+          for name, digest in declared.items():
+              actual = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              if actual != digest:
+                  raise SystemExit(f"inherited payload mismatch: {name}")
+
+          manifest.rename(root / "ORIGINAL_SHA256SUMS")
+          provenance = {
+              "application_fingerprint_sha256": expected["application_fingerprint_sha256.txt"],
+              "application_tree": expected["application_tree.txt"],
+              "cell": os.environ["CELL"],
+              "manifest_actual_sha256": actual_manifest_digest,
+              "manifest_declared_self_sha256": self_digest,
+              "original_artifact_id": int(os.environ["ORIGINAL_ARTIFACT_ID"]),
+              "original_job_id": int(os.environ["ORIGINAL_JOB_ID"]),
+              "original_run_id": 35169923342,
+              "original_zip_sha256": os.environ["ORIGINAL_ZIP_SHA256"],
+              "product_tests_rerun": False,
+              "regeneration_head": os.environ["REGENERATION_HEAD"],
+              "schema": "go.evidence.manifest-regeneration.v1",
+              "source_candidate": expected["candidate_sha.txt"],
+              "writer_fixed_candidate": "a461cdaef0ebfa31516b66c68bb8c5349292596a",
+              "writer_pr": 175,
+          }
+          (root / "EVIDENCE_REGENERATION.json").write_text(
+              json.dumps(provenance, sort_keys=True, separators=(",", ":")) + chr(10),
+              encoding="utf-8",
+          )
+          PY
+          python ci/shared_evidence/write_sha256s.py "$EVIDENCE_ROOT" "$EVIDENCE_ROOT/SHA256SUMS"
+          ! grep -F '  SHA256SUMS' "$EVIDENCE_ROOT/SHA256SUMS"
+          (cd "$EVIDENCE_ROOT" && sha256sum -c SHA256SUMS)
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["EVIDENCE_ROOT"])
+          for path in root.glob("*.json"):
+              json.loads(path.read_text(encoding="utf-8"))
+          PY
+      - name: Upload corrected Evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: c02-c12-isolated-${{ matrix.cell }}-582b5fc4-manifest-fixed-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/${{ matrix.cell }}-evidence
+          if-no-files-found: error
+          retention-days: 90
