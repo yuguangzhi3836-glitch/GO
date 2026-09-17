@@ -57,7 +57,10 @@ class Service:
    if not r:raise ValueError('RESERVATION_NOT_FOUND')
    old=s.scalar(select(AlipayAuthorizationRow).where(AlipayAuthorizationRow.idempotency_key==key))
    if old:
-    if (old.hosted_reservation_id,old.amount_minor,old.currency)!=(reservation_id,r.amount_minor,r.currency):raise ValueError('AUTHORIZATION_IDEMPOTENCY_CONFLICT')
+    if old.hosted_reservation_id!=reservation_id:raise ValueError('AUTHORIZATION_IDEMPOTENCY_CONFLICT')
+    # The idempotency key binds the immutable original authorization request.
+    # A lawful fare change may replace the reservation's current funding terms;
+    # replaying the original key must still return its original response.
     return out(old)
    if r.reservation_state not in {'PENDING_HOTEL_CONFIRMATION','HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING'}:raise ValueError('RESERVATION_NOT_AUTHORIZABLE')
    active=s.scalars(select(AlipayAuthorizationRow).where(AlipayAuthorizationRow.hosted_reservation_id==reservation_id,AlipayAuthorizationRow.state!='CONTRACT_RELEASED_NOT_ALIPAY')).all()
