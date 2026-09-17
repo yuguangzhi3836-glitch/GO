@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Candidate Bridge 1.7: VERIFY / TEST_PR / derived DEPLOY plans / CANARY, plus a
-read-only CONTROL_PLANE_HEALTH probe.
+"""Candidate Bridge 1.9: VERIFY / TEST_PR / derived DEPLOY plans / CANARY / ROLLBACK,
+plus a read-only CONTROL_PLANE_HEALTH probe.
 
 The DEPLOY plan is derived, not registered.  Until this revision the plan bundle was
 written by an operator, which made "a human maintains the deployment plan" a necessary
@@ -21,6 +21,15 @@ canary executes.  CANARY is deliberately *not* gated by the deployment authorisa
 the canary is the evidence a deployment plan must cite before that plan can exist, so the
 authorisation for a deployment cannot be a precondition for producing it.  Installing this
 revision authorises no deployment at all.
+
+A ROLLBACK Request is likewise the five common fields, and what it undoes is not named by
+the caller either: the Bridge takes the newest deployment it published whose signed
+Evidence reports DEPLOY_OK -- its own record of its own act -- and authorises exactly that
+pair.  The host decides whether the rollback is still meaningful, by re-hashing the
+deployment's record and re-reading the eight containers immediately before it acts, so a
+caller cannot choose a target and a stale authorisation cannot cause one.  ROLLBACK is
+gated by the same `deployment_authorization` declaration as DEPLOY, so the emergency stop
+that silences deployments silences rollbacks with them, and the read-only probes stay up.
 
 The health action is kept apart from the rest: it is deliberately not a member of the
 same family.
@@ -81,8 +90,11 @@ HEALTH_PARAMETERS = {}
 # The channel action contract, in full. The config has always been checked against an
 # exact list rather than a membership test; health is a member of that contract, not a
 # free-form toggle, so removing it takes a new Bridge revision rather than an edit to a
-# root-owned config file.
-CHANNEL_ACTIONS = [POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, CANARY_ACTION, HEALTH_ACTION]
+# root-owned config file. ROLLBACK sits next to DEPLOY because it is the same kind of
+# act: it mutates the eight business services, it is authorised by an authenticated
+# Request, and it is silenced by the same declaration.
+CHANNEL_ACTIONS = [POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION,
+                   deploy_gate.ROLLBACK_ACTION, CANARY_ACTION, HEALTH_ACTION]
 # How a deployment is authorised. There is no standing switch to turn on: the authority is
 # the authenticated DEPLOY Request the authorised identity opened, and the Command Center
 # derives a one-time authorisation from it per request. This field declares that mode and
@@ -130,7 +142,7 @@ def validate_request(raw, at=None):
     if set(request) != fields: raise Reject("schema_fields")
     if request["schema_version"] != POLICY["schema_version"]: raise Reject("schema_version")
     if not isinstance(request["request_id"], str) or not REQUEST_ID_RE.fullmatch(request["request_id"]): raise Reject("request_id")
-    if request["action_id"] not in {POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, CANARY_ACTION, HEALTH_ACTION}: raise Reject("action")
+    if request["action_id"] not in {POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, deploy_gate.ROLLBACK_ACTION, CANARY_ACTION, HEALTH_ACTION}: raise Reject("action")
     if request["environment"] != POLICY["environment"]: raise Reject("environment")
     when = parse_time(request["requested_at"])
     at = at or now()
@@ -319,6 +331,7 @@ def derive_formal_task(request, at=None, resolver=resolve_pr):
     if action == POLICY["action_id"]: return derive(request, load_baseline(), at)
     if action == CANARY_ACTION: return derive_canary(request, load_canary_baseline(), at)
     if action == deploy_gate.ACTION: raise Reject("deployment_context_required")
+    if action == deploy_gate.ROLLBACK_ACTION: raise Reject("rollback_context_required")
     raise Reject("action_not_enabled_in_channel")
 
 def derive_deployment(request,context,at=None):
@@ -327,6 +340,25 @@ def derive_deployment(request,context,at=None):
       'issued_at':iso(at),'expires_at':iso(context['deadline']),'authority':'GO-COMMAND-CENTER',
       'environment':POLICY['environment'],'action_id':deploy_gate.ACTION,
       'parameters':{'release_id':'boss-deploy-'+suffix,**context['parameters']}}
+
+def derive_rollback_task(request,context,at=None):
+    """The ROLLBACK Task, from the derived context alone.
+
+    It carries three parameters and no more, because the HK agent's own validator refuses
+    any other name and any missing one: the release id this run and its Evidence are
+    addressed by, the deployment to undo, and the authorisation id the Command Center
+    derived.  There is no image, no service, no path, no command and no rollback target
+    here, and there cannot be -- the executor reads those out of the source deployment's
+    record, which it re-hashes itself.
+
+    The Task id is the release id under the `go-` prefix every Bus task id carries, so one
+    name addresses the run, the Task file and the Evidence file that reports it.
+    """
+    at = at or now(); release_id = context['parameters']['release_id']
+    return {'schema_version':'1','task_id':'go-'+release_id,'nonce':secrets.token_urlsafe(24),
+      'issued_at':iso(at),'expires_at':iso(context['deadline']),'authority':'GO-COMMAND-CENTER',
+      'environment':POLICY['environment'],'action_id':deploy_gate.ROLLBACK_ACTION,
+      'parameters':dict(context['parameters'])}
 
 def check_deploy_pr(number,head):
     """Read PR metadata using a server-only, read-only request-repository token."""
@@ -386,6 +418,19 @@ class Ledger:
         finally: os.close(fd)
 
 def git(env, *argv, cwd=None): return subprocess.run(["/usr/bin/git", *argv], cwd=cwd, env=env, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+def ledger_records(ledger_root):
+    """The durable ledger as it stands on disk right now, not a claim-time snapshot.
+
+    The publish-time recheck needs to see what the ledger actually holds: another
+    deployment published between the claim and the publication is exactly the thing that
+    changes which deployment a rollback would undo, and the snapshot this process loaded
+    when it took the claim cannot show it.  `Ledger.save` writes a temporary file and
+    renames it over the target, so a reader never observes a partial ledger and needs no
+    lock to read one.
+    """
+    try: return json.loads((pathlib.Path(ledger_root)/"ledger.json").read_text())["requests"]
+    except (OSError,ValueError,TypeError,KeyError) as exc: raise Reject("ledger_unavailable") from exc
 def ssh_env():
     env=os.environ.copy(); env["GIT_SSH_COMMAND"]="ssh -i /etc/go-command-center/keys/github-tasks-writer -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes"; return env
 def discover_heads():
@@ -537,6 +582,27 @@ def derive_and_register_deployment(request,pr,approval_identity,records):
     plan_derivation.register(deploy_gate.STORE,plan_id,bundle)
     return deploy_gate.load_context(plan_id,now(),approval_identity,request_sha256)
 
+def derive_and_register_rollback(request,pr,approval_identity,records):
+    """Derive the rollback this Request authorises, from the deployments this Bridge signed.
+
+    There is nothing to register on disk.  `derive_and_register_deployment` writes a plan
+    because a plan is a separate object the executor is handed; a rollback's whole content
+    is the source pair, which the ledger already holds as a signed Task and the evidence
+    repository already holds as a signed Evidence.  Nothing is written here, so nothing
+    can be left behind half-written, and the unit needs no new writable path.
+
+    The one thing that cannot be re-derived later is the release id, and it is not
+    authority -- it is the name the Task and its Evidence are addressed by.  It is derived
+    once here, recorded in the ledger, and re-checked against the ledger before
+    publication rather than being derived a second time.
+    """
+    at=now(); approved_at=parse_time(pr["created_at"])
+    request_sha256=deploy_gate.request_digest(request)
+    release_id='boss-rollback-'+secrets.token_hex(12)
+    authority,hk=deploy_gate.load_keys()
+    return plan_derivation.derive_rollback(release_id,request_sha256,approval_identity,
+                                           approved_at,records,read_evidence,authority,hk,at)
+
 def channel_v4(value):
     """The persistent channel contract, as a pure function.
 
@@ -597,16 +663,29 @@ def persistent_process(number, head, ledger_root, key_path, channel_path):
         if request['action_id'] not in allowed: raise Reject('action_not_enabled_in_channel')
         if any(x.get("request_id")==request["request_id"] for x in data["requests"].values()): raise Reject("duplicate_request_id")
         extra={}
-        if request['action_id']==deploy_gate.ACTION:
+        if request['action_id'] in (deploy_gate.ACTION,deploy_gate.ROLLBACK_ACTION):
             # The authorisation is this Request. There is no switch to consult: the
-            # configuration only declares the mode.
+            # configuration only declares the mode. The one declaration covers an
+            # executed deployment and its undo alike, so the emergency stop silences
+            # both and still leaves the read-only probes alone.
             if channel.get('deployment_authorization')!=AUTHORIZATION_MODE: raise Reject('deployment_authorization_mode_unsupported')
             if proposal['path']!='requests/'+request['request_id']+'.json': raise Reject('request_filename_binding')
             pr,approval_identity=check_deploy_pr(number,head)
+        if request['action_id']==deploy_gate.ACTION:
             context=derive_and_register_deployment(request,pr,approval_identity,data['requests'])
             deploy_gate.ensure_unused(context,data['requests'])
             unsigned=derive_deployment(request,context)
             extra={k:v for k,v in context.items() if k not in {'deadline','parameters'}}
+        elif request['action_id']==deploy_gate.ROLLBACK_ACTION:
+            # Neither an operator nor a caller names the deployment to undo: it is the
+            # newest one this Bridge published, read out of the ledger it wrote itself.
+            context=derive_and_register_rollback(request,pr,approval_identity,data['requests'])
+            deploy_gate.ensure_rollback_unused(data['requests'],context['source_deploy_task_id'])
+            unsigned=derive_rollback_task(request,context)
+            # `parameters` is kept, unlike the deployment's record: here the derived
+            # block *is* the content, so the publish-time recheck compares it directly
+            # instead of loading a plan file back.
+            extra={k:v for k,v in context.items() if k not in {'deadline','action_id','completed_at'}}
         else: unsigned=derive_formal_task(request)
         task=sign(unsigned,key_path)
         data["requests"][key]={"status":"prepared","request_id":request["request_id"],"task":task,"task_sha256":hashlib.sha256(canonical(task)).hexdigest(),**extra}
@@ -619,16 +698,33 @@ def persistent_process(number, head, ledger_root, key_path, channel_path):
         try: next(tx)
         except StopIteration: pass
     task=data["requests"][key]["task"]
-    if task['action_id']==deploy_gate.ACTION:
-        # Recheck the request, the authorisation mode and the exact approval bundle
-        # after the durable claim, immediately before publication. Never re-sign on
-        # failure. The mode is re-read from disk rather than taken from the claim, so
-        # suspending deployments stops one that is already in flight.
+    if task['action_id'] in (deploy_gate.ACTION,deploy_gate.ROLLBACK_ACTION):
+        # Recheck the Request, the authorisation mode and the exact authorisation after
+        # the durable claim, immediately before publication. Never re-sign on failure.
+        # The mode is re-read from disk rather than taken from the claim, so suspending
+        # deployments stops one that is already in flight.
         record=data['requests'][key]
         if load_channel(channel_path).get('deployment_authorization')!=AUTHORIZATION_MODE: raise Reject('deployment_authorization_mode_unsupported')
-        check_deploy_pr(number,head)
+        pr_now,identity_now=check_deploy_pr(number,head)
+        if identity_now!=record.get('approval_identity'): raise Reject('approval_identity_mismatch')
+    if task['action_id']==deploy_gate.ACTION:
         current=deploy_gate.load_context(record['plan_id'],now(),record.get('approval_identity'),record.get('request_sha256'))
         if current['bundle_sha256']!=record['bundle_sha256']: raise Reject('approved_plan_changed')
+    if task['action_id']==deploy_gate.ROLLBACK_ACTION:
+        # Re-derived from the ledger as it stands now, not read back from a file this
+        # process wrote: a deployment that arrived between the claim and the publication
+        # changes which deployment is the newest, and a rollback of the older one would
+        # no longer be the act the identity authorised.
+        authority,hk=deploy_gate.load_keys()
+        current=plan_derivation.derive_rollback(record['release_id'],record['request_sha256'],
+            record['approval_identity'],parse_time(pr_now['created_at']),ledger_records(ledger_root),
+            read_evidence,authority,hk,now())
+        if (current['source_deploy_task_sha256']!=record['source_deploy_task_sha256']
+            or current['source_deploy_evidence_sha256']!=record['source_deploy_evidence_sha256']
+            or current['approval_id']!=record['approval_id']
+            or current['parameters']!=record['parameters']):
+            raise Reject('rollback_source_changed')
+    if task['action_id'] in (deploy_gate.ACTION,deploy_gate.ROLLBACK_ACTION):
         if parse_time(task['expires_at'])<=now()+dt.timedelta(seconds=30): raise Reject('deployment_task_near_expiry')
     try: commit=publish_task(task)
     except Exception:
@@ -652,7 +748,7 @@ def main():
         try: result.append({"pr":number,"head":head,**persistent_process(number,head,args.ledger_root,args.key,args.channel_config)})
         except Reject as exc: result.append({"pr":number,"head":head,"status":"rejected","reason":str(exc)})
     channel = load_channel(args.channel_config)
-    print(json.dumps({"bridge_version":"1.8.1-remote-default-branch", "channel_mode":channel["mode"],
+    print(json.dumps({"bridge_version":"1.9.0-rollback-channel", "channel_mode":channel["mode"],
                       "publish_enabled":channel["publish_enabled"], "results":result},sort_keys=True)); return 0
 
 def run_tests():
@@ -666,11 +762,12 @@ def run_tests():
       def test_unknown_fields(self):
         with self.assertRaises(Reject): validate_request(self.request(extra=True))
       def test_action_and_env(self):
-        # DEPLOY is an action of this channel, so its Request is schema-valid; what
-        # refuses it is the deploy switch and the plan, not the request shape.
+        # DEPLOY and ROLLBACK are both actions of this channel, so their Requests are
+        # schema-valid; what refuses them is the authorisation and what it has to bind,
+        # not the request shape.
         self.assertEqual(validate_request(self.request(action_id="HK_STAGING_DEPLOY"))["action_id"],"HK_STAGING_DEPLOY")
-        for value in (self.request(action_id="HK_STAGING_ROLLBACK"),self.request(environment="PRODUCTION")):
-          with self.assertRaises(Reject): validate_request(value)
+        self.assertEqual(validate_request(self.request(action_id=deploy_gate.ROLLBACK_ACTION))["action_id"],deploy_gate.ROLLBACK_ACTION)
+        with self.assertRaises(Reject): validate_request(self.request(environment="PRODUCTION"))
       def test_a_deploy_request_carries_no_plan_and_no_deployment_fact(self):
         # The plan is derived from what the Bridge already holds, so a Request has nothing
         # to name and nothing to steer -- not even the plan's name.
@@ -787,9 +884,9 @@ def run_tests():
       def test_health_wrong_environment_is_rejected(self):
         with self.assertRaises(Reject): validate_request(self.health(environment="PRODUCTION"))
       def test_health_unknown_action_is_rejected(self):
-        # HK_STAGING_CANARY left this list when it became a channel action; ROLLBACK is
-        # still refused here, and the canary's own refusals are asserted separately.
-        for bogus in ("HK_STAGING_ROLLBACK","CONTROL_PLANE_HEALTH_","control_plane_health"):
+        # HK_STAGING_CANARY and HK_STAGING_ROLLBACK both left this list when each
+        # became a channel action, and each has its own refusals asserted separately.
+        for bogus in ("HK_STAGING_DEPLOY_","HK_STAGING_UNKNOWN","CONTROL_PLANE_HEALTH_","control_plane_health"):
           with self.assertRaises(Reject): validate_request(self.health(action_id=bogus))
       def test_health_task_is_read_only_with_fixed_empty_parameters(self):
         task=derive_formal_task(validate_request(self.health()))
@@ -805,9 +902,14 @@ def run_tests():
         for parameter in ("candidate_image_id","expected_current_image_id","release_id","source","builder_profile","deployment_id"):
           self.assertNotIn(parameter,task["parameters"])
       def test_unnamed_action_cannot_become_a_verify_task(self):
-        for bogus in ("HK_STAGING_ROLLBACK","CONTROL_PLANE_HEALTH_","OTHER"):
+        for bogus in ("HK_STAGING_ROLLBACK_","HK_STAGING_UNKNOWN","CONTROL_PLANE_HEALTH_","OTHER"):
           with self.assertRaises(Reject) as caught: derive_formal_task({"action_id":bogus,"request_id":"liveness-x-1"})
           self.assertEqual(str(caught.exception),"action_not_enabled_in_channel")
+      def test_rollback_cannot_be_derived_without_its_derived_context(self):
+        # ROLLBACK is a channel action, so it is refused here by name -- never by
+        # falling through into VERIFY -- and its refusal says why.
+        with self.assertRaises(Reject) as caught: derive_formal_task({"action_id":deploy_gate.ROLLBACK_ACTION,"request_id":"rollback-x-1"})
+        self.assertEqual(str(caught.exception),"rollback_context_required")
       def test_health_cannot_participate_in_the_deploy_arm(self):
         with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
           arm=pathlib.Path(root,"arm.json")
@@ -819,18 +921,23 @@ def run_tests():
             self.assertEqual(str(caught.exception),"legacy_mode_verify_only")
             self.assertEqual(load_arm(str(arm))["state"],"ARMED")
           finally: globals()["read_pr"]=original
-      def test_channel_contract_expresses_exactly_five_actions(self):
+      def test_channel_contract_expresses_exactly_six_actions(self):
         value=channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
-        self.assertEqual(value["allowed_actions"],["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH"])
+        self.assertEqual(value["allowed_actions"],["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_ROLLBACK","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH"])
         self.assertEqual(value["deployment_authorization"],"request")
+      def test_channel_without_the_rollback_action_is_refused(self):
+        # The list is compared for exact equality, so the previous revision's five-action
+        # configuration is refused as a whole rather than silently missing the action.
+        with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH"],"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
       def test_channel_without_the_health_action_is_refused(self):
         with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY"],"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
       def test_channel_without_the_canary_action_is_refused(self):
         with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","CONTROL_PLANE_HEALTH"],"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
       def test_channel_rejects_an_unknown_or_reordered_action(self):
         for actions in (["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH","HK_STAGING_ROLLBACK"],
-                        ["CONTROL_PLANE_HEALTH","HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY"],
-                        ["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_ROLLBACK","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH"],
+                        ["CONTROL_PLANE_HEALTH","HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_ROLLBACK","HK_STAGING_CANARY"],
+                        ["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY","HK_STAGING_ROLLBACK","CONTROL_PLANE_HEALTH"],
+                        ["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH"],
                         "CONTROL_PLANE_HEALTH"):
           with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":actions,"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
       def test_existing_actions_are_unchanged_by_the_health_extension(self):
@@ -997,6 +1104,63 @@ def run_tests():
           for field in ("plan_id","approval_identity","bundle_sha256","plan","approval"):
             self.assertNotIn(field,record)
           self.assertEqual(record["status"],"published")
+      def rollback(self, **x):
+        value={"schema_version":"1","request_id":"rollback-hk-staging-987654","action_id":deploy_gate.ROLLBACK_ACTION,"environment":"HK-STAGING-01","requested_at":iso(now())}; value.update(x); return canonical(value)
+      def rollback_context(self):
+        return {"deadline":now()+dt.timedelta(minutes=5),
+                "parameters":{"release_id":"boss-rollback-"+"a"*24,
+                              "source_deploy_task_id":"go-boss-deploy-"+"b"*24,
+                              "approval_id":"approval-rollback-"+"c"*16}}
+      def test_rollback_request_is_accepted_and_carries_nothing_else(self):
+        request=validate_request(self.rollback()); self.assertEqual(request["action_id"],deploy_gate.ROLLBACK_ACTION)
+        self.assertEqual(set(request),ALLOWED)
+      def test_rollback_request_with_any_parameter_is_rejected(self):
+        # A caller may name neither the deployment to undo nor anything the undo touches:
+        # the source is derived from the ledger and the eight images come from the source
+        # deployment's own record on the host.
+        for extra in ("source_deploy_task_id","release_id","approval_id","image","image_id","candidate_image_id","service","services","path","env","command","plan_id","pr_number","parameters","compose_file","rollback_image","target","production","force_recreate"):
+          with self.assertRaises(Reject): validate_request(self.rollback(**{extra:"x"}))
+      def test_rollback_wrong_environment_and_unknown_action_are_rejected(self):
+        with self.assertRaises(Reject): validate_request(self.rollback(environment="PRODUCTION"))
+        with self.assertRaises(Reject): validate_request(self.rollback(action_id="rollback"))
+      def test_rollback_task_carries_exactly_the_three_parameters_the_agent_validates(self):
+        task=derive_rollback_task({"action_id":deploy_gate.ROLLBACK_ACTION,"request_id":"rollback-x"},self.rollback_context())
+        self.assertEqual(task["action_id"],deploy_gate.ROLLBACK_ACTION)
+        self.assertEqual(set(task["parameters"]),set(deploy_gate.ROLLBACK_PARAMETERS))
+        self.assertEqual(set(task),{"schema_version","task_id","nonce","issued_at","expires_at","authority","environment","action_id","parameters"})
+        self.assertEqual(task["authority"],"GO-COMMAND-CENTER")
+        self.assertEqual(task["environment"],"HK-STAGING-01")
+        self.assertEqual(task["task_id"],"go-"+task["parameters"]["release_id"])
+        for forbidden in ("candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","rollback_image","services","compose_file","env_file","target","executor_path","command"):
+          self.assertNotIn(forbidden,task["parameters"])
+      def test_rollback_cannot_fall_through_into_the_other_actions(self):
+        task=derive_rollback_task({"action_id":deploy_gate.ROLLBACK_ACTION,"request_id":"rollback-x"},self.rollback_context())
+        for other in (POLICY["action_id"],TEST_ACTION,deploy_gate.ACTION,CANARY_ACTION,HEALTH_ACTION):
+          self.assertNotEqual(task["action_id"],other)
+        for parameter in ("candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","builder_profile","source","plan_id","pr_number"):
+          self.assertNotIn(parameter,task["parameters"])
+      def test_rollback_task_cannot_name_its_own_source(self):
+        # The source is the derivation's, not the Request's: whatever the caller writes,
+        # the Task's source is the one the ledger produced.
+        context=self.rollback_context()
+        task=derive_rollback_task({"action_id":deploy_gate.ROLLBACK_ACTION,"request_id":"rollback-x",
+                                   "source_deploy_task_id":"go-boss-deploy-"+"f"*24},context)
+        self.assertEqual(task["parameters"]["source_deploy_task_id"],context["parameters"]["source_deploy_task_id"])
+        self.assertNotEqual(task["parameters"]["source_deploy_task_id"],"go-boss-deploy-"+"f"*24)
+      def test_a_source_is_spent_by_any_published_rollback_that_cites_it(self):
+        source="go-boss-deploy-"+"b"*24
+        published={"1:"+"a"*40:{"status":"published","task":{"action_id":deploy_gate.ROLLBACK_ACTION,"parameters":{"source_deploy_task_id":source}}}}
+        with self.assertRaises(Reject) as caught: deploy_gate.ensure_rollback_unused(published,source)
+        self.assertEqual(str(caught.exception),"rollback_source_already_rolled_back")
+      def test_an_unpublished_rollback_has_not_spent_its_source(self):
+        # The ledger only knows what the Bridge published. A claim that never reached the
+        # Bus cannot have reached the host, so it leaves the source usable.
+        source="go-boss-deploy-"+"b"*24
+        deploy_gate.ensure_rollback_unused({},source)
+        for status in ("claiming","prepared","publishing"):
+          deploy_gate.ensure_rollback_unused({"2:"+"c"*40:{"status":status,"task":{"action_id":deploy_gate.ROLLBACK_ACTION,"parameters":{"source_deploy_task_id":source}}}},source)
+        deploy_gate.ensure_rollback_unused({"3:"+"d"*40:{"status":"published","task":{"action_id":deploy_gate.ACTION,"parameters":{"source_deploy_task_id":source}}}},source)
+        deploy_gate.ensure_rollback_unused({"4:"+"e"*40:{"status":"published","task":{"action_id":deploy_gate.ROLLBACK_ACTION,"parameters":{"source_deploy_task_id":"go-boss-deploy-"+"9"*24}}}},source)
     suite=unittest.defaultTestLoader.loadTestsFromTestCase(Tests); result=unittest.TextTestRunner(verbosity=2).run(suite)
     globals()["LAST_TEST_COUNT"]=result.testsRun; return 0 if result.wasSuccessful() else 1
 if __name__ == "__main__": sys.exit(main())

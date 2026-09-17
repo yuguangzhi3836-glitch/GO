@@ -2,6 +2,7 @@
 import base64
 import copy
 import datetime as dt
+import hashlib
 import importlib.machinery
 import importlib.util
 import json
@@ -94,7 +95,62 @@ class Fixture:
             # be describing a plan no derivation produces.
             'expires_at': bridge.iso(self.at - dt.timedelta(seconds=10) + gate.APPROVAL_MAX_LIFE),
             'scope': 'HK_STAGING_DEPLOY_FIXED_EIGHT'}
+        # The rollback source: the deployment this same Bridge would have published a
+        # moment ago. It is built here rather than written by hand because a rollback is
+        # only ever a function of it.
+        self.deploys = {}
+        self.deploy_source()
         self.seal()
+
+    def deploy_source(self, task_id='go-boss-deploy-synthetic-source', age=90,
+                      nonce='synthetic-deploy-nonce', gates=None):
+        """A signed DEPLOY Task and its signed Evidence -- the pair a rollback undoes.
+
+        The Evidence is produced by the Hong Kong agent's own `evidence()` builder rather
+        than assembled here, so the fixture carries the field names and the field *set* the
+        producer writes; a gate that read a name the agent never writes would fail here
+        instead of only against a live deployment.
+        """
+        completed = self.at - dt.timedelta(seconds=age)
+        parameters = {'release_id': task_id.replace('go-', '', 1),
+                      'candidate_image_id': self.candidate,
+                      'candidate_package_sha256': self.package,
+                      'expected_current_image_id': self.current,
+                      'canary_evidence_id': self.bundle['canary_task']['parameters']['release_id'],
+                      'approval_id': 'approval-' + 'a' * 16}
+        record_id = hashlib.sha256(task_id.encode()).hexdigest()
+        task = signed({'schema_version': '1', 'task_id': task_id, 'nonce': nonce,
+            'issued_at': bridge.iso(completed - dt.timedelta(seconds=20)),
+            'expires_at': bridge.iso(completed + dt.timedelta(minutes=10)),
+            'authority': 'GO-COMMAND-CENTER', 'environment': gate.ENVIRONMENT,
+            'action_id': gate.ACTION, 'parameters': parameters}, self.authority)
+        result = {'schema_version': '1', 'executor_version': '0.4.3-rollback-runtime',
+            'action_id': gate.ACTION, 'status': 'SUCCESS', 'release_id': parameters['release_id'],
+            'candidate_image_id': self.candidate, 'expected_current_image_id': self.current,
+            'result': 'DEPLOY_OK',
+            # The real deploy runtime writes `record_path` beside its gates -- it is the
+            # path of the immutable record it just wrote, not a verdict. It is carried
+            # here so a gate that demanded "every value in gate_results is PASS" would
+            # fail on the fixture, which is where that mistake is cheapest to find.
+            'gate_results': {**(gates if gates is not None else {k: 'PASS' for k in gate.DEPLOY_GATES}),
+                             'record_path': '/var/lib/go-hk-deployctl/deploy-records/' + record_id + '.json'},
+            'deploy_record_schema_version': '2', 'deploy_record_id': record_id,
+            'deploy_record_sha256': 'f' * 64}
+        with patch.object(transport, 'utcnow', return_value=bridge.iso(completed)):
+            evidence = transport.evidence(task, result)
+        evidence = signed(evidence, self.hk, 'base64')
+        self.deploys[task_id] = (task, evidence)
+        if task_id == 'go-boss-deploy-synthetic-source':
+            self.deploy_task, self.deploy_evidence = task, evidence
+        return task, evidence
+
+    def resign(self, value, key, encoding='base64'):
+        """Re-sign a value after an edit, so the refusal under test is the gate's own.
+
+        A tampered object that is left unsigned would be refused by the verifier first,
+        and the test would prove nothing about the rule it names.
+        """
+        return signed({k: v for k, v in value.items() if k != 'signature'}, key, encoding)
 
     def proof(self, action, age):
         completed = self.at - dt.timedelta(seconds=age)
@@ -169,6 +225,8 @@ class Fixture:
 
     def read_evidence(self, task):
         """The Evidence the evidence repository holds for one published Task."""
+        pair = self.deploys.get(task.get('task_id'))
+        if pair is not None: return pair[1]
         for name in ('test_pr_evidence', 'canary_evidence', 'preflight_evidence'):
             evidence = self.bundle[name]
             if evidence.get('task_id') == task.get('task_id'):
@@ -184,10 +242,14 @@ class Fixture:
         """
         root = pathlib.Path(root); root.mkdir(mode=0o700, parents=True, exist_ok=True)
         records = {}
-        for label, name in (('test-pr', 'test_pr_task'), ('canary', 'canary_task'),
-                            ('preflight', 'preflight_task')):
+        for label, task in (('test-pr', self.bundle['test_pr_task']),
+                            ('canary', self.bundle['canary_task']),
+                            ('preflight', self.bundle['preflight_task']),
+                            # The deployment this Bridge published earlier, which is the
+                            # one thing a rollback may undo.
+                            ('deploy-source', self.deploy_task)):
             records['synthetic:' + label] = {'status': 'published', 'request_id': 'synthetic-' + label,
-                                             'task': self.bundle[name]}
+                                             'task': task}
         path = root / 'ledger.json'
         if path.exists():
             records = {**json.loads(path.read_text())['requests'], **records}
@@ -475,6 +537,312 @@ class ProofTests(unittest.TestCase):
         """
         self.f = Fixture(test_pr_age=int(dt.timedelta(days=30).total_seconds()))
         self.assertEqual(self.f.validate()['source_commit'], self.f.source)
+
+
+class RollbackProofTests(unittest.TestCase):
+    """What may undo a deployment, and what may not.
+
+    A rollback is the only other action that mutates the eight business services, so its
+    gate is held to the deployment's standard: the authority is the exact authenticated
+    Request, what it authorises is named by content, and nothing a caller writes can widen
+    either.  The source is the newest deployment the Bridge itself published -- never a
+    caller's choice -- and it is proved from the two signed objects that deployment left
+    behind, not from a declaration about them.
+    """
+
+    def setUp(self):
+        self.f = Fixture()
+        self.source_task, self.source_evidence = self.f.deploy_task, self.f.deploy_evidence
+        self.release_id = 'boss-rollback-synthetic'
+
+    def records(self, *extra, deploy=None):
+        records = {'synthetic:deploy-source': {'status': 'published',
+                                               'request_id': 'synthetic-deploy-source',
+                                               'task': self.source_task if deploy is None else deploy}}
+        for label, task in extra:
+            records['synthetic:' + label] = {'status': 'published', 'request_id': 'synthetic-' + label,
+                                             'task': task}
+        return records
+
+    def authorization(self, source_task=None, source_evidence=None, **overrides):
+        value = derivation.derive_rollback_authorization(
+            self.f.request_sha256, self.f.approval_identity,
+            self.f.at - dt.timedelta(seconds=10),
+            self.f.at - dt.timedelta(seconds=10) + gate.APPROVAL_MAX_LIFE,
+            source_task or self.source_task, source_evidence or self.source_evidence)
+        value.update(overrides)
+        return value
+
+    def derive(self, records=None, at=None, **kw):
+        return derivation.derive_rollback(self.release_id, self.f.request_sha256,
+            self.f.approval_identity, self.f.at - dt.timedelta(seconds=10),
+            self.records() if records is None else records, self.f.read_evidence,
+            self.f.authority.public_key(), self.f.hk.public_key(), self.f.at if at is None else at, **kw)
+
+    def validate(self, authorization, task=None, evidence=None, release_id=None,
+                 approval_identity='default', request_sha256=None, at=None):
+        task = self.source_task if task is None else task
+        if evidence is None: evidence = self.f.deploys[task['task_id']][1]
+        return gate.validate_rollback(self.release_id if release_id is None else release_id,
+            authorization, task, evidence, self.f.authority.public_key(), self.f.hk.public_key(),
+            self.f.at if at is None else at,
+            self.f.approval_identity if approval_identity == 'default' else approval_identity,
+            self.f.request_sha256 if request_sha256 is None else request_sha256)
+
+    # -- the source is the Bridge's own newest deployment, by content -------- #
+    def test_the_newest_published_deployment_is_the_source(self):
+        context = self.derive()
+        self.assertEqual(context['action_id'], gate.ROLLBACK_ACTION)
+        self.assertEqual(context['source_deploy_task_id'], self.source_task['task_id'])
+        self.assertEqual(context['source_candidate_image_id'], self.f.candidate)
+        self.assertEqual(context['expected_current_image_id'], self.f.current)
+        self.assertEqual(set(context['parameters']), set(gate.ROLLBACK_PARAMETERS))
+        self.assertEqual(context['source_deploy_task_sha256'], gate.digest(self.source_task))
+        self.assertEqual(context['source_deploy_evidence_sha256'], gate.digest(self.source_evidence))
+
+    def test_the_deadline_never_outlives_the_authorisation(self):
+        context = self.derive()
+        self.assertLessEqual(context['deadline'],
+                             self.f.at - dt.timedelta(seconds=10) + gate.APPROVAL_MAX_LIFE)
+        self.assertLessEqual(context['deadline'], self.f.at + gate.ROLLBACK_TASK_WINDOW)
+
+    def test_record_path_is_an_annotation_and_a_real_deployment_still_validates(self):
+        """The mistake this guards: applying "every gate value is PASS" to a DEPLOY Evidence.
+
+        The deploy runtime puts `record_path` -- a filesystem path -- beside the six gates,
+        so the generic rule the canary and TEST_PR proofs use would refuse every real
+        deployment.  The six named gates are asserted one by one instead.
+        """
+        self.assertIn('record_path', self.source_evidence['gate_results'])
+        self.assertEqual(set(gate.DEPLOY_GATES) - set(self.source_evidence['gate_results']), set())
+        self.derive()
+
+    def test_no_published_deployment_means_nothing_to_roll_back(self):
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_missing'):
+            self.derive(records={})
+
+    def test_a_ledger_holding_only_probes_has_nothing_to_roll_back(self):
+        records = {'synthetic:canary': {'status': 'published', 'task': self.f.bundle['canary_task']},
+                   'synthetic:preflight': {'status': 'published', 'task': self.f.bundle['preflight_task']},
+                   'synthetic:test-pr': {'status': 'published', 'task': self.f.bundle['test_pr_task']}}
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_missing'):
+            self.derive(records=records)
+
+    def test_an_unpublished_deployment_is_not_yet_a_source(self):
+        records = {'synthetic:deploy-source': {'status': 'publishing', 'task': self.source_task}}
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_missing'):
+            self.derive(records=records)
+
+    def test_the_newest_deployment_wins_and_there_is_no_fallback_to_an_older_one(self):
+        """A newer deployment whose Evidence is missing stops the derivation.
+
+        Falling back to the older one would describe a host state the newer deployment has
+        already replaced, which is not the act anyone asked for -- and the Hong Kong
+        executor refuses it from the other side for the same reason.
+        """
+        newer, _evidence = self.f.deploy_source(task_id='go-boss-deploy-synthetic-newer', age=30)
+        self.f.deploys.pop('go-boss-deploy-synthetic-newer')
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_evidence_unreadable'):
+            self.derive(records=self.records(('newer', newer)))
+
+    def test_a_deployment_whose_evidence_was_refused_is_not_a_source(self):
+        self.f.deploys[self.source_task['task_id']] = (self.source_task, self.f.resign(
+            {**self.source_evidence, 'status': 'REJECTED'}, self.f.hk))
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_not_success'):
+            self.derive()
+
+    def test_a_deployment_that_did_not_report_deploy_ok_is_not_a_source(self):
+        self.f.deploys[self.source_task['task_id']] = (self.source_task, self.f.resign(
+            {**self.source_evidence, 'executor_result': 'DEPLOY_REJECTED'}, self.f.hk))
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_result'):
+            self.derive()
+
+    def test_a_deployment_with_a_failed_gate_is_not_a_source(self):
+        self.f.deploy_source(task_id='go-boss-deploy-synthetic-source',
+                             gates={**{k: 'PASS' for k in gate.DEPLOY_GATES}, 'current_state': 'FAIL'})
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_gate_failed'):
+            self.derive()
+
+    def test_a_record_that_is_not_schema_two_is_refused(self):
+        self.f.deploys[self.source_task['task_id']] = (self.source_task, self.f.resign(
+            {**self.source_evidence, 'deploy_record_schema_version': '1'}, self.f.hk))
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_record_binding'):
+            self.derive()
+
+    def test_a_record_identity_that_is_not_a_digest_is_refused(self):
+        for field in ('deploy_record_id', 'deploy_record_sha256'):
+            with self.subTest(field=field):
+                self.f.deploy_source()
+                self.f.deploys[self.source_task['task_id']] = (self.source_task, self.f.resign(
+                    {**self.source_evidence, field: 'not-a-digest'}, self.f.hk))
+                with self.assertRaisesRegex(gate.Reject, 'rollback_source_record_binding'):
+                    self.derive()
+
+    def test_a_source_task_that_is_not_a_deployment_is_refused(self):
+        other = self.f.bundle['canary_task']
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_scope'):
+            self.validate(self.authorization(), task=other,
+                          evidence=self.f.bundle['canary_evidence'])
+
+    def test_a_source_carrying_a_parameter_the_deployment_never_sends_is_refused(self):
+        parameters = {**self.source_task['parameters'], 'rollback_image': self.f.current}
+        task = self.f.resign({**self.source_task, 'parameters': parameters}, self.f.authority, 'hex')
+        self.f.deploys[task['task_id']] = (task, self.source_evidence)
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_parameters'):
+            self.derive(records=self.records(deploy=task))
+
+    def test_an_unsigned_or_foreign_source_task_is_refused(self):
+        task = {k: v for k, v in self.source_task.items() if k != 'signature'}
+        with self.assertRaisesRegex(gate.Reject, 'missing_signature'):
+            self.validate(self.authorization(), task=task)
+        other = Ed25519PrivateKey.generate()
+        foreign = self.f.resign(task, other, 'hex')
+        with self.assertRaisesRegex(gate.Reject, 'invalid_signature'):
+            self.validate(self.authorization(), task=foreign)
+
+    # -- the authorisation is the Request, bound to the pair ----------------- #
+    def test_the_authorisation_is_bound_to_the_pair_it_undoes(self):
+        for field in ('source_deploy_task_sha256', 'source_deploy_evidence_sha256'):
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(gate.Reject, 'rollback_authorization_binding'):
+                    self.validate(self.authorization(**{field: 'a' * 64}))
+
+    def test_the_approval_id_is_derived_not_chosen(self):
+        with self.assertRaisesRegex(gate.Reject, 'rollback_approval_id_not_derived'):
+            self.validate(self.authorization(approval_id='approval-' + 'b' * 16))
+
+    def test_a_rollback_approval_and_a_deploy_approval_are_not_interchangeable(self):
+        self.assertNotEqual(gate.rollback_approval_id_for(self.f.request_sha256),
+                            gate.approval_id_for(self.f.request_sha256))
+        with self.assertRaisesRegex(gate.Reject, 'rollback_approval_id_not_derived'):
+            self.validate(self.authorization(
+                approval_id=gate.approval_id_for(self.f.request_sha256)))
+
+    def test_the_authorisation_cannot_be_borrowed_for_another_request(self):
+        with self.assertRaisesRegex(gate.Reject, 'approval_request_mismatch'):
+            self.validate(self.authorization(), request_sha256='c' * 64)
+
+    def test_the_authorisation_field_set_is_exact(self):
+        value = self.authorization(); value['extra'] = 'x'
+        with self.assertRaisesRegex(gate.Reject, 'rollback_authorization_fields'):
+            self.validate(value)
+        for field in gate.ROLLBACK_AUTHORIZATION_FIELDS:
+            with self.subTest(field=field):
+                value = self.authorization(); value.pop(field)
+                with self.assertRaisesRegex(gate.Reject, 'rollback_authorization_fields'):
+                    self.validate(value)
+
+    def test_the_authorisation_scope_is_the_rollback_scope(self):
+        with self.assertRaisesRegex(gate.Reject, 'rollback_scope'):
+            self.validate(self.authorization(scope='HK_STAGING_DEPLOY_FIXED_EIGHT'))
+
+    def test_a_release_id_that_is_not_an_identifier_is_refused(self):
+        for value in ('../escape', 'x;id', '', 'a' * 81):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(gate.Reject, 'rollback_release_id'):
+                    self.validate(self.authorization(), release_id=value)
+
+    def test_the_authorisation_must_be_authorised_by_an_authenticated_identity(self):
+        with self.assertRaisesRegex(gate.Reject, 'approval_identity_missing'):
+            self.validate(self.authorization(), approval_identity=None)
+        for value in ('someone-else', '', 'Yuguangzhi3836-Glitch'):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(gate.Reject, 'approval_identity_not_authorised'):
+                    self.validate(self.authorization(), approval_identity=value)
+
+    def test_the_authorisation_cannot_borrow_another_authorised_name(self):
+        other = gate.APPROVAL_IDENTITIES[1]
+        with self.assertRaisesRegex(gate.Reject, 'approval_identity_mismatch'):
+            self.validate(self.authorization(approved_by=other))
+
+    def test_the_authorisation_expires(self):
+        approved = self.f.at - dt.timedelta(seconds=10)
+        for expires in (approved - dt.timedelta(seconds=1), approved + dt.timedelta(hours=1),
+                        self.f.at + dt.timedelta(seconds=30)):
+            with self.subTest(expires=expires):
+                with self.assertRaisesRegex(gate.Reject, 'approval_expired_or_invalid'):
+                    self.validate(self.authorization(expires_at=bridge.iso(expires)))
+
+    def test_the_authorisation_must_postdate_the_source_evidence(self):
+        """A rollback cannot be authorised before the deployment it undoes has finished."""
+        completed = dt.datetime.fromisoformat(
+            self.source_evidence['completed_at'].replace('Z', '+00:00'))
+        approved = completed - dt.timedelta(seconds=1)
+        # The life is shortened with the approval, so the refusal under test is the
+        # ordering rule and not the lifetime rule.
+        with self.assertRaisesRegex(gate.Reject, 'approval_predates_evidence'):
+            self.validate(self.authorization(approved_at=bridge.iso(approved),
+                expires_at=bridge.iso(approved + gate.APPROVAL_MAX_LIFE)))
+
+    # -- one-time, and only one rollback per deployment ---------------------- #
+    def test_a_source_is_spent_by_any_published_rollback_that_cites_it(self):
+        source = self.source_task['task_id']
+        published = {'1:' + 'a' * 40: {'status': 'published',
+            'task': {'action_id': gate.ROLLBACK_ACTION,
+                     'parameters': {'source_deploy_task_id': source}}}}
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_already_rolled_back'):
+            gate.ensure_rollback_unused(published, source)
+
+    def test_an_unpublished_rollback_has_not_spent_its_source(self):
+        source = self.source_task['task_id']
+        gate.ensure_rollback_unused({}, source)
+        for status in ('claiming', 'prepared', 'publishing'):
+            gate.ensure_rollback_unused({'2:' + 'b' * 40: {'status': status,
+                'task': {'action_id': gate.ROLLBACK_ACTION,
+                         'parameters': {'source_deploy_task_id': source}}}}, source)
+        gate.ensure_rollback_unused({'3:' + 'c' * 40: {'status': 'published',
+            'task': {'action_id': gate.ACTION, 'parameters': {'source_deploy_task_id': source}}}}, source)
+        gate.ensure_rollback_unused({'4:' + 'd' * 40: {'status': 'published',
+            'task': {'action_id': gate.ROLLBACK_ACTION,
+                     'parameters': {'source_deploy_task_id': 'go-boss-deploy-other'}}}}, source)
+
+    # -- the cross-component contract, pinned against the consumer ---------- #
+    def test_the_derived_parameters_are_exactly_what_the_hk_agent_accepts(self):
+        """Our parameter contract is a claim about the agent; this checks it against it.
+
+        `ROLLBACK_PARAMETERS` is three names because the Hong Kong agent's own validator
+        refuses any other name and any missing one.  Rather than restating that here, the
+        derived block is handed to the agent's validator and to its argv builder: a fourth
+        parameter added on either side fails this test.
+        """
+        context = self.derive()
+        parameters = context['parameters']
+        self.assertEqual(deployment_actions.validate(gate.ROLLBACK_ACTION, parameters), parameters)
+        command = deployment_actions.argv(gate.ROLLBACK_ACTION, parameters,
+            {'task_id': 't', 'nonce': 'n', 'authority': 'GO-COMMAND-CENTER',
+             'canonical_sha256': 'a' * 64})
+        self.assertEqual(command[:6], [deployment_actions.EXECUTOR_PATH, 'rollback',
+                                       '--release-id', parameters['release_id'],
+                                       '--source-deploy-task-id', parameters['source_deploy_task_id']])
+        self.assertIn('--approval-id', command)
+        for extra in ('candidate_image_id', 'rollback_image', 'services', 'compose_file',
+                      'env_file', 'target', 'command', 'executor_path'):
+            with self.subTest(extra=extra):
+                with self.assertRaises(deployment_actions.Reject):
+                    deployment_actions.validate(gate.ROLLBACK_ACTION, {**parameters, extra: 'x'})
+
+    def test_the_agent_accepts_the_rollback_evidence_shape_this_gate_expects(self):
+        """The executor result the Bridge will read back, built by the agent's own builder.
+
+        The rollback Evidence carries five record fields the deployment's does not.  They
+        are asserted here through `transport.evidence`, so the names come from the producer
+        rather than from this test's idea of them.
+        """
+        task = {'task_id': 'go-boss-rollback-synthetic', 'nonce': 'n',
+                'action_id': gate.ROLLBACK_ACTION, 'environment': gate.ENVIRONMENT}
+        result = {'schema_version': '1', 'executor_version': '0.4.3-rollback-runtime',
+                  'action_id': gate.ROLLBACK_ACTION, 'status': 'SUCCESS',
+                  'release_id': 'boss-rollback-synthetic', 'candidate_image_id': '',
+                  'expected_current_image_id': '', 'result': 'ROLLBACK_OK', 'gate_results': {},
+                  'source_deploy_task_id': self.source_task['task_id'],
+                  'source_deploy_record_id': 'a' * 64, 'source_deploy_record_sha256': 'b' * 64,
+                  'rollback_record_id': 'c' * 64, 'rollback_record_sha256': 'd' * 64}
+        evidence = transport.evidence(task, result)
+        self.assertEqual(evidence['executor_result'], 'ROLLBACK_OK')
+        self.assertEqual(evidence['source_deploy_task_id'], self.source_task['task_id'])
+        for field in ('source_deploy_record_id', 'source_deploy_record_sha256',
+                      'rollback_record_id', 'rollback_record_sha256'):
+            self.assertRegex(evidence[field], r'^[0-9a-f]{64}$')
 
 
 class StorageTests(unittest.TestCase):
@@ -820,6 +1188,117 @@ class QueueTests(unittest.TestCase):
             'allowed_action_id':'HK_STAGING_VERIFY','allowed_environment':gate.ENVIRONMENT}))
         with self.assertRaisesRegex(gate.Reject,'action_not_enabled'): self.run_request()
         self.publisher.assert_not_called()
+
+
+    # ------------------------------------------------------------------ #
+    # ROLLBACK through the channel
+    # ------------------------------------------------------------------ #
+    def rollback_request(self, n):
+        return {'schema_version': '1', 'request_id': 'synthetic-rollback-' + str(n),
+                'action_id': gate.ROLLBACK_ACTION, 'environment': gate.ENVIRONMENT,
+                'requested_at': bridge.iso(self.f.at)}
+    def run_rollback(self, n='9'):
+        def reader(number, head):
+            request = self.rollback_request(n)
+            return {'path': 'requests/' + request['request_id'] + '.json',
+                    'raw': gate.canonical(request)}
+        with patch.object(bridge, 'read_pr', side_effect=reader):
+            return bridge.persistent_process(n, 'f' * 40, self.root / 'ledger', self.key, self.channel)
+    def rollback_record(self, n='9'):
+        records = json.loads((self.root / 'ledger/ledger.json').read_text())['requests']
+        return [r for r in records.values() if r.get('request_id') == 'synthetic-rollback-' + str(n)][0]
+    def test_a_rollback_of_the_published_deployment_is_derived_signed_and_published(self):
+        out = self.run_rollback()
+        self.assertEqual(out['status'], 'published')
+        task = json.loads((self.remote / (out['task_id'] + '.json')).read_text())
+        self.assertEqual(task['action_id'], gate.ROLLBACK_ACTION)
+        self.assertEqual(set(task['parameters']), set(gate.ROLLBACK_PARAMETERS))
+        self.assertEqual(task['parameters']['source_deploy_task_id'], self.f.deploy_task['task_id'])
+        self.assertEqual(task['task_id'], 'go-' + task['parameters']['release_id'])
+        digest_value = gate.request_digest(self.rollback_request('9'))
+        self.assertEqual(task['parameters']['approval_id'], gate.rollback_approval_id_for(digest_value))
+        # The Task is the Command Center's own signature, and the agent's validator accepts
+        # the published block exactly as written.
+        unsigned = {k: v for k, v in task.items() if k != 'signature'}
+        self.f.authority.public_key().verify(bytes.fromhex(task['signature']), gate.canonical(unsigned))
+        self.assertEqual(deployment_actions.validate(gate.ROLLBACK_ACTION, task['parameters']),
+                         task['parameters'])
+    def test_a_rollback_registers_no_plan_and_records_no_plan_fields(self):
+        before = set(self.store.glob('*.json'))
+        out = self.run_rollback()
+        self.assertEqual(set(self.store.glob('*.json')), before)
+        record = self.rollback_record()
+        for field in ('plan_id', 'plan_sha256', 'bundle_sha256'):
+            self.assertNotIn(field, record)
+        self.assertEqual(record['source_deploy_task_id'], self.f.deploy_task['task_id'])
+        self.assertEqual(record['release_id'], 'boss-rollback-' + out['task_id'].split('boss-rollback-')[1])
+    def test_a_second_rollback_of_the_same_deployment_is_refused(self):
+        self.assertEqual(self.run_rollback('9')['status'], 'published')
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_already_rolled_back'):
+            self.run_rollback('10')
+        self.assertEqual(len(list(self.remote.glob('*.json'))), 1)
+    def test_a_rollback_is_silenced_by_the_same_emergency_stop_as_a_deployment(self):
+        self.config(deployment_authorization='suspended')
+        with patch.object(bridge, 'sign') as signer:
+            with self.assertRaisesRegex(gate.Reject, 'deployment_authorization_mode_unsupported'):
+                self.run_rollback()
+            signer.assert_not_called(); self.publisher.assert_not_called()
+    def test_a_newer_deployment_landing_before_publication_stops_the_rollback(self):
+        """The source is re-derived from the durable ledger, not taken from the claim.
+
+        A deployment that reaches the ledger between the claim and the publication changes
+        which deployment is the newest, and a rollback of the older one would no longer be
+        the act the identity authorised -- so nothing is published.
+        """
+        newer, _evidence = self.f.deploy_source(task_id='go-boss-deploy-synthetic-newer', age=30)
+        calls = {'n': 0}
+        def hook(number, head):
+            calls['n'] += 1
+            if calls['n'] == 2:
+                path = self.root / 'ledger/ledger.json'
+                data = json.loads(path.read_text())
+                data['requests']['synthetic:newer-deploy'] = {'status': 'published',
+                    'request_id': 'synthetic-newer-deploy', 'task': newer}
+                path.write_bytes(gate.canonical(data))
+            return ({'created_at': bridge.iso(self.f.at - dt.timedelta(seconds=10))},
+                    gate.APPROVAL_IDENTITIES[0])
+        self.stack.enter_context(patch.object(bridge, 'check_deploy_pr', side_effect=hook))
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_changed'):
+            self.run_rollback()
+        self.assertEqual(list(self.remote.glob('*.json')), [])
+    def test_a_source_evidence_that_changed_before_publication_stops_the_rollback(self):
+        """The Evidence is re-read from the repository, so a replaced one is caught."""
+        task_id = self.f.deploy_task['task_id']
+        calls = {'n': 0}
+        def hook(number, head):
+            calls['n'] += 1
+            if calls['n'] == 2:
+                changed = {k: v for k, v in self.f.deploy_evidence.items() if k != 'signature'}
+                changed['started_at'] = bridge.iso(self.f.at - dt.timedelta(seconds=91))
+                self.f.deploys[task_id] = (self.f.deploy_task, signed(changed, self.f.hk, 'base64'))
+            return ({'created_at': bridge.iso(self.f.at - dt.timedelta(seconds=10))},
+                    gate.APPROVAL_IDENTITIES[0])
+        self.stack.enter_context(patch.object(bridge, 'check_deploy_pr', side_effect=hook))
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_changed'):
+            self.run_rollback()
+        self.assertEqual(list(self.remote.glob('*.json')), [])
+    def test_a_rollback_cannot_deploy_and_a_deployment_cannot_undo(self):
+        """The two actions stay separate: neither Request can produce the other's Task.
+
+        The rollback runs first because a deployment published afterwards would become the
+        newest deployment -- and therefore the only thing a further rollback could undo.
+        """
+        rollback = self.run_rollback('9')
+        body = json.loads((self.remote / (rollback['task_id'] + '.json')).read_text())
+        self.assertEqual(body['action_id'], gate.ROLLBACK_ACTION)
+        deploy = self.run_request()
+        self.assertEqual(deploy['status'], 'published')
+        task = json.loads((self.remote / (deploy['task_id'] + '.json')).read_text())
+        self.assertEqual(task['action_id'], gate.ACTION)
+        self.assertNotEqual(task['task_id'], body['task_id'])
+        self.assertEqual(set(task['parameters']) - set(body['parameters']),
+                         {'candidate_image_id', 'candidate_package_sha256',
+                          'expected_current_image_id', 'canary_evidence_id'})
 
 
 class DerivationTests(unittest.TestCase):
