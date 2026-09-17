@@ -139,7 +139,8 @@ class StoreFixture(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.store = pathlib.Path(self.tmp.name) / "store"
         self.store.mkdir(mode=0o700)
-        (self.store / "objects").mkdir(mode=0o700)\n        (self.store / "failures").mkdir(mode=0o700)
+        (self.store / "objects").mkdir(mode=0o700)
+        (self.store / "failures").mkdir(mode=0o700)
         self.config = b'{"architecture":"amd64","os":"linux"}'
         self.config_digest = hashlib.sha256(self.config).hexdigest()
         self.image_id = "sha256:" + self.config_digest
