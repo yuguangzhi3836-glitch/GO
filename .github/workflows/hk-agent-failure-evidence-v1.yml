@@ -29,10 +29,20 @@ jobs:
     timeout-minutes: 10
     env:
       PYTHONDONTWRITEBYTECODE: '1'
+      CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Bind checkout to the exact candidate head
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$CANDIDATE_SHA"
+          printf 'CANDIDATE_SHA=%s\nCHECKED_OUT_HEAD=%s\n' "$CANDIDATE_SHA" "$actual"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -151,8 +161,13 @@ jobs:
           detail = entry['failure']
           assert detail['artifact_claimed_retry_permitted'] is False, detail
 
+          candidate = os.environ['CANDIDATE_SHA']
+          assert len(candidate) == 40 and all(ch in '0123456789abcdef' for ch in candidate)
           binding = {'event': os.environ['GITHUB_EVENT_NAME'],
-                     'workflow_commit': os.environ['GITHUB_SHA'],
+                     'candidate_sha': candidate,
+                     'workflow_commit': candidate,
+                     'checked_out_head': candidate,
+                     'github_event_sha': os.environ['GITHUB_SHA'],
                      'run_id': os.environ['GITHUB_RUN_ID'],
                      'synthetic_failure_signed_evidence': 'PROVEN',
                      'failure_record_satisfies_contract': True,
@@ -259,10 +274,56 @@ jobs:
           PY
           docker image rm --force go-ci-save-smoke:local >/dev/null
           rm -rf "$work"
+      - name: Remove signing secret and seal exact-head Evidence manifest
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/hk-agent-failure"
+          test -d "$work"
+          rm -f -- "$work/evidence.pem"
+          if find "$work" -type f -name '*.pem' -print -quit | grep -q .; then
+            echo 'PRIVATE_KEY_FILE_REMAINS' >&2
+            exit 1
+          fi
+          if grep -RIl --binary-files=without-match -E -- '-----BEGIN ([A-Z0-9]+ )?PRIVATE KEY-----' "$work" > "$RUNNER_TEMP/private-key-hits"; then
+            cat "$RUNNER_TEMP/private-key-hits" >&2
+            echo 'PRIVATE_KEY_MATERIAL_REMAINS' >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import hashlib, json, os, pathlib
+          work = pathlib.Path(os.environ['RUNNER_TEMP']) / 'hk-agent-failure'
+          candidate = os.environ['CANDIDATE_SHA']
+          binding = json.loads((work / 'binding.json').read_text(encoding='utf-8'))
+          assert binding['candidate_sha'] == candidate
+          assert binding['workflow_commit'] == candidate
+          assert binding['checked_out_head'] == candidate
+          files = {}
+          for item in sorted(work.rglob('*')):
+              if item.is_file() and item.name != 'manifest.json':
+                  relative = item.relative_to(work).as_posix()
+                  files[relative] = {'sha256': hashlib.sha256(item.read_bytes()).hexdigest(),
+                                     'bytes': item.stat().st_size}
+          assert 'evidence.pem' not in files
+          manifest = {'schema_version': '1', 'candidate_sha': candidate,
+                      'workflow_commit': candidate,
+                      'run_id': os.environ['GITHUB_RUN_ID'], 'files': files,
+                      'private_key_material': 'ABSENT'}
+          (work / 'manifest.json').write_text(
+              json.dumps(manifest, sort_keys=True, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(manifest, sort_keys=True))
+          PY
+          if grep -RIl --binary-files=without-match -E -- '-----BEGIN ([A-Z0-9]+ )?PRIVATE KEY-----' "$work" > "$RUNNER_TEMP/private-key-hits-final"; then
+            cat "$RUNNER_TEMP/private-key-hits-final" >&2
+            echo 'PRIVATE_KEY_MATERIAL_REMAINS_AFTER_MANIFEST' >&2
+            exit 1
+          fi
+          echo 'PRIVATE_KEY_HYGIENE=PASS'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: hk-agent-failure-${{ github.sha }}
+          name: hk-agent-failure-${{ env.CANDIDATE_SHA }}
           path: ${{ runner.temp }}/hk-agent-failure/
           if-no-files-found: error
           retention-days: 30
