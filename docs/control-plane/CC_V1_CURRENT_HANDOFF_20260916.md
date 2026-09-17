@@ -552,6 +552,27 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 
 ## 11. 下一会话唯一入口
 
+> **2026-09-17 / B4-B1.11（CCV1-57）—— 再优先读这一段：回滚已通道化。**
+>
+> **① ROLLBACK 已接入 Boss Request 通道**：Bridge 修订 `1.9.0-rollback-channel`，v4 action 合同由五项变六项
+> （`HK_STAGING_VERIFY` / `HK_STAGING_TEST_PR` / `HK_STAGING_DEPLOY` / `HK_STAGING_ROLLBACK` / `HK_STAGING_CANARY` /
+> `CONTROL_PLANE_HEALTH`）。比较方式仍是**整份列表精确相等** ⇒ **换 Bridge 必须成套换 config**：
+> 五项旧配置不会被「少一个动作」地接受，而是整份 `invalid_channel_configuration` 拒绝。
+> **② 回滚 Request 与 CANARY 同形**：只有五个公共字段，**不携带任何目标** —— 没有 `release_id`、没有源 Task id、
+> 没有 `approval_id`、没有镜像、没有服务名。要撤的那次部署由**指挥中心从自己的账本派生**：取「最新一次由本 Bridge
+> 发布、且签名证据为 SUCCESS ＋ `DEPLOY_OK` ＋ record v2 ＋ 六门全 PASS」的 `HK_STAGING_DEPLOY`；源证据不可读
+> 或不存在即**拒绝**，绝不回退到更早的成功项。一次性授权＝Request 本身（作者＝平台报告的 PR 作者、`approved_at`
+> ＝PR `created_at`、`approval_id = 'approval-rollback-' + request_sha256[:16]` 派生），且必须**晚于**源部署证据的
+> 完成时间；Task deadline = min(Request 过期, 授权＋300s)。
+> **③ 同一源只能被消费一次**：只有**已发布**的 ROLLBACK Task 才算消费（claiming / preparing / publishing 不算）；
+> 发布前会用**持久账本重读**再派生一次并比对，窗口内源发生漂移（出现更新的成功部署）一律拒绝。
+> **④ HK 侧零字节改动**：回滚链早已完整在位（`go-hk-deployctl` `f0804521…` 的 rollback 动词、
+> `_ROLLBACK_SHA256=a49e12ea…`、live agent `transport.py` 的 `prepare_rollback_handoff`、
+> `deployment_actions.ACTIONS` 里的 `HK_STAGING_ROLLBACK`，参数契约 `{release_id, source_deploy_task_id, approval_id}`），
+> 本轮只做 CC 侧。执行器**先验源、再现查八个容器的漂移**，然后**先落 rollback record 再强制重建**八个业务服务。
+> **⑤ 本轮未 commit / 未 push / 未安装 / 未触 live。** 闸口顺序：先成套换装 CC 四件套（Bridge ＋ config ＋
+> `go_deploy_request.py` ＋ `plan_derivation.py`），再发一张真实 ROLLBACK Request。
+
 > **2026-09-17 / B4-B1.10（CCV1-53）—— 再优先读这一段，它取代所有「部署开关」口径。**
 >
 > **① 部署开关已退役**。`deployment_requests_enabled` 不再存在：它要求「先有一份常备授权，才允许那份授权它的请求出现」，

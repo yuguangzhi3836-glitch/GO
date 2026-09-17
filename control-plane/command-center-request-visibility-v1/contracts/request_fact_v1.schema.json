@@ -389,7 +389,8 @@
       "release_gates_not_pass",
       "request_filename_binding",
       "request_not_currently_armed",
-      "request_pr_author_not_authorised"
+      "request_pr_author_not_authorised",
+      "rollback_context_required"
     ],
     "UNRESOLVABLE": [
       "approval_binding",
@@ -419,6 +420,7 @@
       "invalid_signature",
       "invalid_time",
       "invalid_trust_key",
+      "ledger_unavailable",
       "missing_signature",
       "naive_time",
       "plan_fields",
@@ -453,6 +455,19 @@
       "request_pr_identity",
       "request_pr_not_open_exact_head",
       "request_reader_credential_invalid",
+      "rollback_authorization_binding",
+      "rollback_authorization_fields",
+      "rollback_release_id",
+      "rollback_scope",
+      "rollback_source_evidence_unreadable",
+      "rollback_source_gate_failed",
+      "rollback_source_missing",
+      "rollback_source_not_success",
+      "rollback_source_parameters",
+      "rollback_source_record_binding",
+      "rollback_source_result",
+      "rollback_source_scope",
+      "rollback_source_unbound_time",
       "task_authority",
       "task_fields",
       "test_pr_artifact_not_durable",
@@ -502,6 +517,9 @@
       "pr_head_changed",
       "preflight_near_expiry",
       "registered_plan_differs_from_derivation",
+      "rollback_approval_id_not_derived",
+      "rollback_source_already_rolled_back",
+      "rollback_source_changed",
       "task_id_already_exists"
     ],
     "AMBIGUOUS": [
