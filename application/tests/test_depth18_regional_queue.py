@@ -160,6 +160,9 @@ def test_stale_parent_cannot_enqueue_children(queue):
     queue.enqueue(TOPIC,'one',payload())
     old=queue.claim(TOPIC)
     time.sleep(.15)
+    # Keep the replacement claim valid independently of runner scheduling.
+    # The initial 100 ms lease still proves that the first owner is stale.
+    queue.lease_ms=5_000
     new=queue.claim(TOPIC)
     with processing(queue,old), pytest.raises(RegionalLeaseLost):
         queue.enqueue(TOPIC,'child',payload('CITY'))
