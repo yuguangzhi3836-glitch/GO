@@ -261,6 +261,8 @@ class ContractDrivenHotelSupplyExecutor:
         )
         limits = self.contract["limits"]
         max_attempts = int(limits.get("max_attempts") or 1)
+        retryable_errors = set(limits.get("retryable_go_errors") or [])
+        retry_safe = operation in {"AVAILABILITY", "QUOTE", "QUERY"}
         timeout = max(
             float(limits.get("connect_timeout_ms") or 1000),
             float(limits.get("read_timeout_ms") or 1000),
@@ -347,7 +349,13 @@ class ContractDrivenHotelSupplyExecutor:
                         "evidence_reference": last_audit.evidence_reference,
                     },
                 )
-            if status not in self._RETRY_STATUSES or attempt == max_attempts:
+            normalized_error = self._normalize_error(status, parsed)
+            if (
+                not retry_safe
+                or status not in self._RETRY_STATUSES
+                or normalized_error not in retryable_errors
+                or attempt == max_attempts
+            ):
                 break
             time.sleep(min(0.25 * (2 ** (attempt - 1)), 2.0))
         assert last_audit is not None
