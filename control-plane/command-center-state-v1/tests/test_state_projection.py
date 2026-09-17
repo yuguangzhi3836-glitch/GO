@@ -1270,12 +1270,29 @@ class RequestChannelTests(unittest.TestCase):
             sp.validate_request(self.request("CONTROL_PLANE_HEALTH", environment="PRODUCTION"))
 
     def test_an_unknown_action_is_still_refused(self):
-        # HK_STAGING_CANARY left this list when it became a requestable action;
-        # ROLLBACK and every unknown token are still refused outright.
-        for bogus in ("CONTROL_PLANE_HEALTH_V2", "HK_STAGING_ROLLBACK", "HK_STAGING_CANARY_V2",
+        # HK_STAGING_CANARY and HK_STAGING_ROLLBACK each left this list when it became
+        # a requestable action; every unknown token is still refused outright.
+        for bogus in ("CONTROL_PLANE_HEALTH_V2", "HK_STAGING_ROLLBACK_V2", "HK_STAGING_CANARY_V2",
                       "canary", "HK_STAGING_CANARY "):
             with self.assertRaises(sp.Malformed, msg=bogus):
                 sp.validate_request(self.request(bogus))
+
+    def test_a_rollback_request_carries_the_five_common_fields_and_no_target(self):
+        # The Request names no deployment, no image and no service: the Command
+        # Center derives all three from its own side. The contract must therefore
+        # refuse every field a caller could use to aim a rollback of its own
+        # choosing, even though it can ask for the undo.
+        payload = self.request("HK_STAGING_ROLLBACK")
+        self.assertEqual(sorted(sp.validate_request(payload)), sorted(sp.REQUEST_REQUIRED))
+        self.assertEqual(sp.REQUEST_EXTRA_FIELDS["HK_STAGING_ROLLBACK"], set())
+        for extra in ("release_id", "source_deploy_task_id", "approval_id", "canary_evidence_id",
+                      "image", "image_id", "service", "services", "compose_file", "target",
+                      "path", "force_recreate", "plan_id", "pr_number", "rollback_image",
+                      "expected_current_image_id", "candidate_image_id"):
+            payload = self.request("HK_STAGING_ROLLBACK")
+            payload[extra] = "x"
+            with self.assertRaises(sp.Malformed, msg=extra):
+                sp.validate_request(payload)
 
     def test_health_can_never_be_read_as_one_of_the_execution_actions(self):
         """A platform probe is not a degraded VERIFY / TEST_PR / DEPLOY."""
@@ -1288,7 +1305,7 @@ class RequestChannelTests(unittest.TestCase):
     def test_the_human_and_platform_classes_are_separate(self):
         self.assertEqual(list(sp.HUMAN_REQUEST_ACTIONS),
                          ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
-                          "HK_STAGING_CANARY"])
+                          "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK"])
         self.assertEqual(list(sp.PLATFORM_REQUEST_ACTIONS), ["CONTROL_PLANE_HEALTH"])
         self.assertEqual(set(sp.HUMAN_REQUEST_ACTIONS) & set(sp.PLATFORM_REQUEST_ACTIONS), set())
 
@@ -1297,7 +1314,7 @@ class RequestChannelTests(unittest.TestCase):
         self.assertIn("CONTROL_PLANE_HEALTH", sp.ENABLED_PLATFORM_REQUEST_ACTIONS)
         self.assertEqual(list(sp.ENABLED_REQUEST_ACTIONS),
                          ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY",
-                          "CONTROL_PLANE_HEALTH"])
+                          "HK_STAGING_ROLLBACK", "CONTROL_PLANE_HEALTH"])
         # Expressing DEPLOY as a human Request is a different claim from the
         # channel being able to create one; the switch is still off.
         self.assertNotIn("HK_STAGING_DEPLOY", sp.ENABLED_REQUEST_ACTIONS)
@@ -1349,19 +1366,26 @@ class RequestChannelTests(unittest.TestCase):
         self.assertFalse(channel["deploy_request_enabled"])
         self.assertEqual(channel["live_request_switch"]["state"], sp.STATE_UNKNOWN)
 
-    def test_canary_is_requestable_without_a_switch_while_rollback_is_not(self):
+    def test_canary_and_rollback_are_requestable_without_a_separate_switch(self):
         # CANARY left "not requestable" when it became a channel action.  It stays
         # outside the deploy switch on purpose: a canary is what a deployment plan
         # must cite, so it has to be obtainable before a plan can exist at all.
+        # ROLLBACK left it in the revision that connected the proven rollback chain:
+        # it is the undo of a deployment, so it is gated by the same declaration that
+        # gates one rather than by a switch of its own.
         _, _, status = build(*layout())
         channel = status["answers"]["request_channel"]
         classification = channel["capability_classification"]
         self.assertEqual(classification["HK_STAGING_CANARY"], "CAPABILITY_PRESENT_REQUESTABLE")
-        self.assertEqual(classification["HK_STAGING_ROLLBACK"], "NOT_REQUESTABLE")
+        self.assertEqual(classification["HK_STAGING_ROLLBACK"], "CAPABILITY_PRESENT_REQUESTABLE")
         self.assertIn("HK_STAGING_CANARY", channel["enabled_human_request_actions"])
+        self.assertIn("HK_STAGING_ROLLBACK", channel["enabled_human_request_actions"])
         self.assertIn("HK_STAGING_CANARY", channel["known_capabilities"])
-        self.assertNotIn("HK_STAGING_ROLLBACK", channel["human_request_actions"])
+        self.assertIn("HK_STAGING_ROLLBACK", channel["human_request_actions"])
         self.assertEqual(channel["request_action_source_class"]["HK_STAGING_CANARY"], "HUMAN_REQUEST")
+        self.assertEqual(channel["request_action_source_class"]["HK_STAGING_ROLLBACK"], "HUMAN_REQUEST")
+        # A rollback is not read-only and must never be classified as a probe.
+        self.assertNotIn("HK_STAGING_ROLLBACK", channel["platform_action_properties"])
         # The canary carries the candidate binding, and nothing else.
         self.assertEqual(sp.ACTION_PARAMETERS["HK_STAGING_CANARY"],
                          {"release_id", "candidate_image_id", "candidate_package_sha256",

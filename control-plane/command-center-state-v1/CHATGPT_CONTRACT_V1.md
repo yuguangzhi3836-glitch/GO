@@ -122,14 +122,17 @@ HUMAN_REQUEST_ACTIONS       HK_STAGING_VERIFY     SUPPORTED_PROVEN              
                             HK_STAGING_TEST_PR    SUPPORTED_PROVEN                enabled
                             HK_STAGING_DEPLOY     CAPABILITY_PRESENT_BUT_DISABLED not enabled
                             HK_STAGING_CANARY     CAPABILITY_PRESENT_REQUESTABLE  enabled
-                            HK_STAGING_ROLLBACK   NOT_REQUESTABLE                 not requestable
+                            HK_STAGING_ROLLBACK   CAPABILITY_PRESENT_REQUESTABLE  enabled
 PLATFORM_REQUEST_ACTIONS    CONTROL_PLANE_HEALTH  SUPPORTED_PROVEN_PLATFORM_ONLY  enabled
 ```
 
 The connector may write a Request file only for an action listed in
 `enabled_human_request_actions`. It supplies `action_id`, `environment`, a fresh
 `request_id`, `requested_at`, and one target selector: `pr_number` for
-`HK_STAGING_TEST_PR`. It may never write a `CONTROL_PLANE_HEALTH` Request: that
+`HK_STAGING_TEST_PR`. A `HK_STAGING_ROLLBACK` Request carries nothing else: the
+deployment it undoes is the newest one the Bridge published, and the images to restore
+come from that deployment's own record on the host, so the connector cannot name a
+deployment, a service, an image or a target even though it can ask for the undo. It may never write a `CONTROL_PLANE_HEALTH` Request: that
 action is the platform's read-only probe, created by the platform's own producer
 on a timer, and writing one by hand would forge an automation identity.
 

@@ -203,18 +203,19 @@ jobs:
           assert status['answers']['repository_declared_runtime']['state'] == 'UNKNOWN'
           channel = status['answers']['request_channel']
           assert list(channel['enabled_human_request_actions']) == \
-                 ['HK_STAGING_VERIFY', 'HK_STAGING_TEST_PR', 'HK_STAGING_CANARY'], \
-                 'deploy leaked into enabled actions'
+                 ['HK_STAGING_VERIFY', 'HK_STAGING_TEST_PR', 'HK_STAGING_CANARY',
+                  'HK_STAGING_ROLLBACK'], \
+                 'the enabled human action set lost or gained an action'
           assert list(channel['human_request_actions']) == \
                  ['HK_STAGING_VERIFY', 'HK_STAGING_TEST_PR', 'HK_STAGING_DEPLOY',
-                  'HK_STAGING_CANARY'], \
+                  'HK_STAGING_CANARY', 'HK_STAGING_ROLLBACK'], \
                  'the human action set lost or gained an action'
           assert list(channel['platform_request_actions']) == ['CONTROL_PLANE_HEALTH']
           assert 'CONTROL_PLANE_HEALTH' not in channel['human_request_actions'], \
                  'a platform probe was promoted into a human action'
           assert list(channel['enabled_request_actions']) == \
                  ['HK_STAGING_VERIFY', 'HK_STAGING_TEST_PR', 'HK_STAGING_CANARY',
-                  'CONTROL_PLANE_HEALTH']
+                  'HK_STAGING_ROLLBACK', 'CONTROL_PLANE_HEALTH']
           assert channel['request_action_source_class']['CONTROL_PLANE_HEALTH'] == \
                  'PLATFORM_AUTOMATION'
           health = channel['platform_action_properties']['CONTROL_PLANE_HEALTH']
@@ -224,7 +225,8 @@ jobs:
                  'SUPPORTED_PROVEN_PLATFORM_ONLY'
           assert channel['capability_classification']['HK_STAGING_CANARY'] == \
                  'CAPABILITY_PRESENT_REQUESTABLE', 'the canary classification moved'
-          assert channel['capability_classification']['HK_STAGING_ROLLBACK'] == 'NOT_REQUESTABLE'
+          assert channel['capability_classification']['HK_STAGING_ROLLBACK'] == \
+                 'CAPABILITY_PRESENT_REQUESTABLE', 'the rollback classification moved'
           assert channel['deploy_request_enabled'] is False
           assert channel['readiness_evaluation'] == 'NOT_IN_SCOPE'
           # The liveness window must carry transport margin over the probe cadence.

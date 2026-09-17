@@ -133,15 +133,22 @@ KNOWN_CAPABILITIES = (
 # them would either mis-report a real liveness Request as forbidden or promote a
 # read-only probe into a human execution right, so the source class is carried
 # explicitly rather than inferred from the action name.
-HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY", "HK_STAGING_CANARY")
+HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
+                         "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK")
 PLATFORM_REQUEST_ACTIONS = ("CONTROL_PLANE_HEALTH",)
 # What the channel can create *right now*, per class. DEPLOY is human-expressible
 # but its switch is off, so it is absent from the enabled set. CANARY is present:
 # it is read-only, it mutates no business runtime, and it is the evidence a
 # deployment plan must cite before that plan -- and therefore the switch -- can
-# exist. The platform producer drives a read-only probe on a timer, so HEALTH is
-# present too.
-ENABLED_HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY")
+# exist. ROLLBACK became present with the channel revision that added it: it
+# mutates the same eight services a deployment does and takes the same authority,
+# so it is not read-only -- but its target is not chosen by anyone. The source is
+# the newest deployment the Bridge itself published, and the executor re-hashes
+# that deployment's own record and re-reads the eight containers before it acts.
+# The platform producer drives a read-only probe on a timer, so HEALTH is present
+# too.
+ENABLED_HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY",
+                                 "HK_STAGING_ROLLBACK")
 ENABLED_PLATFORM_REQUEST_ACTIONS = ("CONTROL_PLANE_HEALTH",)
 ENABLED_REQUEST_ACTIONS = (ENABLED_HUMAN_REQUEST_ACTIONS
                            + ENABLED_PLATFORM_REQUEST_ACTIONS)
@@ -150,6 +157,7 @@ REQUEST_ACTION_SOURCE_CLASS = {
     "HK_STAGING_TEST_PR": "HUMAN_REQUEST",
     "HK_STAGING_DEPLOY": "HUMAN_REQUEST",
     "HK_STAGING_CANARY": "HUMAN_REQUEST",
+    "HK_STAGING_ROLLBACK": "HUMAN_REQUEST",
     "CONTROL_PLANE_HEALTH": "PLATFORM_AUTOMATION",
 }
 # What a platform action is allowed to be. These are constants copied from the
@@ -167,7 +175,10 @@ CAPABILITY_CLASSIFICATION = {
     # Requestable without a switch: a canary mutates no business runtime, and it has
     # to exist before a deployment plan can be registered at all.
     "HK_STAGING_CANARY": "CAPABILITY_PRESENT_REQUESTABLE",
-    "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE",
+    # Requestable from the channel revision that added the action. The classification
+    # says what can be expressed, not whether a particular rollback is meaningful: that
+    # is decided on the host, against the deployment record, at execution time.
+    "HK_STAGING_ROLLBACK": "CAPABILITY_PRESENT_REQUESTABLE",
     # Proven, but only for the platform class: it says nothing about whether a
     # human may request it, and it confers no execution right on anyone.
     "CONTROL_PLANE_HEALTH": "SUPPORTED_PROVEN_PLATFORM_ONLY",
@@ -226,6 +237,10 @@ REQUEST_EXTRA_FIELDS = {
     # the Command Center's own root-owned canary authority, so there is no field
     # here a request could use to steer one.
     "HK_STAGING_CANARY": set(),
+    # A rollback carries the five common fields too, and no more. The deployment to undo
+    # is the newest one the Bridge published -- its own record of its own act -- so there
+    # is no field here a request could use to choose a target, an image or a service.
+    "HK_STAGING_ROLLBACK": set(),
     # The platform probe carries nothing beyond the five common fields. Until
     # this entry existed the projector refused a real CONTROL_PLANE_HEALTH
     # Request as request_action_unknown and reported it REQUEST_UNREADABLE,

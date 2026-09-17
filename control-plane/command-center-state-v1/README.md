@@ -223,15 +223,17 @@ execution right, so the source class is carried explicitly.
 
 ```json
 {"human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
-                          "HK_STAGING_CANARY"],
+                          "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK"],
  "platform_request_actions": ["CONTROL_PLANE_HEALTH"],
- "enabled_human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY"],
+ "enabled_human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY",
+                                  "HK_STAGING_ROLLBACK"],
  "enabled_platform_request_actions": ["CONTROL_PLANE_HEALTH"],
  "enabled_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY",
-                             "CONTROL_PLANE_HEALTH"],
+                             "HK_STAGING_ROLLBACK", "CONTROL_PLANE_HEALTH"],
  "request_action_source_class": {
    "HK_STAGING_VERIFY": "HUMAN_REQUEST", "HK_STAGING_TEST_PR": "HUMAN_REQUEST",
    "HK_STAGING_DEPLOY": "HUMAN_REQUEST", "HK_STAGING_CANARY": "HUMAN_REQUEST",
+   "HK_STAGING_ROLLBACK": "HUMAN_REQUEST",
    "CONTROL_PLANE_HEALTH": "PLATFORM_AUTOMATION"},
  "platform_action_properties": {
    "CONTROL_PLANE_HEALTH": {"source_class": "PLATFORM_AUTOMATION",
@@ -242,7 +244,7 @@ execution right, so the source class is carried explicitly.
    "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
    "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
    "HK_STAGING_CANARY": "CAPABILITY_PRESENT_REQUESTABLE",
-   "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE",
+   "HK_STAGING_ROLLBACK": "CAPABILITY_PRESENT_REQUESTABLE",
    "CONTROL_PLANE_HEALTH": "SUPPORTED_PROVEN_PLATFORM_ONLY"},
  "deploy_request_enabled": false,
  "readiness_evaluation": "NOT_IN_SCOPE"}
