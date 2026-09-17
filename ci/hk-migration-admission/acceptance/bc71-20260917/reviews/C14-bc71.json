@@ -1,0 +1,102 @@
+{
+  "schema": "go.independent-c14-review.v1",
+  "reviewer": "/root/c14_issue103_migration",
+  "review_date": "2026-09-17",
+  "status": "PASS_SCOPED",
+  "scope": "SHARED_FORWARD_MIGRATION_SOURCE_AND_ISOLATED_CI_ONLY",
+  "repository": "yuguangzhi3836-glitch/GO",
+  "pull_request": 187,
+  "candidate_sha": "bc71a91bff31a092aae003e061622878b8ef4bf6",
+  "candidate_tree": "cf34c9c0eebfccf66dd0b313e1eba825c12744c2",
+  "parent_sha": "f6e6eaab924951072de9bb9dbf48857b3dc7d8ed",
+  "product_binding": {
+    "pull_request": 183,
+    "source_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+    "application_tree": "41221557ee5d3709775cd282b02d8c30fc7e0860",
+    "application_fingerprint_sha256": "5b792a2d3e68a7498d5cc152dc849b319631325bb8d7d36b65d0dc2b3c115b00",
+    "sealed_image_id": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+    "sealed_package_sha256": "93f6812337e491d9144d6fb44a52764e9fa82313d2bb08a6373a613e4cdf30bf",
+    "baseline_revision": "0133_flight_change_plan",
+    "target_revision": "0137_hosted_unknown_episode",
+    "migration_lineage_sha256": "c53435b23cec77566690e3bffa3b4c3e00b36e9385c89462a39eec00bb434a2b",
+    "product_source_changed_by_shared_repair": false
+  },
+  "reviewed_components": [
+    "CC candidate contract, active admission, plan derivation and signed proof validation",
+    "HK PR185-compatible adapter and Evidence producer",
+    "Pinned executor wrapper, CANARY, collector, DEPLOY and ROLLBACK",
+    "Fixed migration program, lineage verification and durable uncertainty fence",
+    "Persistent execution start, bounded execution proof and state projection",
+    "Scoped workflow, evidence writer and available source manifests"
+  ],
+  "closed_findings": [
+    {
+      "id": "C14-P1-EXECUTION-WINDOW",
+      "original_candidate": "f31b4349e4914f1a990bc7f4aa2c0f9c1cf1dfef",
+      "problem": "Migration DEPLOY allowed 900 seconds but Evidence stamped start at completion and projection rejected all completions after the shorter Task admission deadline.",
+      "resolution": "Agent persists claim/start before dispatch and rechecks admission expiry. Three byte-identical execution_window validators bind Task and contract, require timely start, enforce a fixed 900-second budget, and cross-check UTC duration against monotonic elapsed milliseconds. CC and projection require this proof for migration DEPLOY; historical late Evidence is not retroactively accepted.",
+      "status": "CLOSED"
+    },
+    {
+      "id": "C14-P2-INSTALL-HANDOFF",
+      "problem": "Legacy handoff text described an installation set that omitted the new HK and projector dependencies.",
+      "resolution": "INSTALL_HANDOFF.md now explicitly marks the old procedure as superseded and names the additional required components.",
+      "status": "CLOSED"
+    },
+    {
+      "id": "SHARED-CI-AUDIT-FIXTURE",
+      "failed_candidate": "f6e6eaab924951072de9bb9dbf48857b3dc7d8ed",
+      "problem": "Sparse checkout omitted command-center/audit/20260911/KEY_FINGERPRINTS.txt, causing one of 200 state projection tests to fail and skipping the migration rehearsal.",
+      "resolution": "bc71 changes only the shared workflow checkout to include the existing public audit fixture. Migration and execution-window code are byte-identical to reviewed f6.",
+      "status": "CLOSED_BY_EXACT_CANDIDATE_CI"
+    }
+  ],
+  "open_p0_p1_source_findings": [],
+  "independent_checks": {
+    "migration_derive_to_validate_bundle_with_real_ephemeral_signatures": "PASS",
+    "execution_window_focused_regressions": "6/6 PASS",
+    "execution_window_three_copies_sha256": "8b4213eea8ea29b838490d41b99070fc5726d8207812be10be872ab149f6ff3e",
+    "runtime_and_program_hash_pins": "8/8 MATCH",
+    "available_local_manifest_entries": "CC 12, Agent 14, projector 9 and HK 24 entries MATCH; new execution_window modules are covered",
+    "bc71_delta_from_f6": "Exactly one workflow sparse-checkout line; no runtime change",
+    "evidence_reconstruction": "Both local JSON records equal the original job's JSON under its writer format, and their SHA256 values equal the digests printed by that job",
+    "runtime_source_observation": "Reviewed parent-collected read-only fixed Compose and builder metadata: no service volumes or working_dir override, no /app command or entrypoint, fixed Python worker modules and uvicorn module command",
+    "service_execution_prerequisite": "Parent reports live systemctl show: TimeoutStartUSec and RuntimeMaxUSec infinity; ProtectSystem full; no ReadWritePaths or ReadOnlyPaths; KillMode control-group; /var/lib/go-hk-deployctl root:root 0755. These settings do not impose an earlier timeout or make /var/lib read-only. New migration directory must still be installed root:root 0700."
+  },
+  "ci": {
+    "run_id": 35229547939,
+    "job_id": 105229743126,
+    "url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35229547939",
+    "conclusion": "SUCCESS",
+    "cc_checks": "202 PASS (137 checks plus 65 legacy self-tests)",
+    "state_projection_checks": "200 PASS",
+    "migration_boundary_checks": "20 PASS",
+    "actual_program_postgres_rehearsal": "PASS: exact PR183 source, 0133 to 0137, retained fixture data, two valid indexes, repeat-prestate and substituted-lineage refusal",
+    "gate_evidence_sha256": "270a4257f395002f7df1fc67877eb862915250b6285db6481dda6e1551ae2e7b",
+    "executor_evidence_sha256": "b6ce2506d871e18ee948dca7658efe1723d2969374f1088dec2bd95798e18d2e",
+    "raw_job_log_sha256": "cdfeb9ecc2c5384845ae14e8572937fbdc668fa6ad41c7c24addc17b5334f6f0",
+    "artifact_id": 10500372698,
+    "artifact_zip_sha256_reported_by_job": "d4b7ef5c16e5201462f665651d6fd7cc24854f889093f93a20cb6b7edc57898c",
+    "artifact_zip_independently_downloaded": false,
+    "artifact_zip_full_manifest_verification_claimed": false
+  },
+  "boundaries": {
+    "independent_c13_still_required": true,
+    "installation_or_live_deployment_proven": false,
+    "live_database_migration_proven": false,
+    "reviewer_changed_source_or_operated_servers": false,
+    "accepted_cell_suites_rerun": false,
+    "merge_authorized_by_this_review": false,
+    "real_supplier_connections": "HOLD",
+    "final_release": "HOLD",
+    "production": "HOLD",
+    "remaining_live_prerequisites": [
+      "Independent C13 on this exact shared repair candidate",
+      "Fresh controlled installation prehash, backup, idle-service and module-integrity checks",
+      "Create and verify the new migration directory root:root 0700 while preserving the observed effective service restrictions",
+      "Verified candidate contract installation on CC and HK with exact existing TEST_PR and rehearsal bindings",
+      "Formal fresh CANARY, current-image VERIFY, authenticated DEPLOY Request and signed Task",
+      "Actual migration/cutover Evidence and independent post-deployment VERIFY before any deployment-complete claim"
+    ]
+  }
+}

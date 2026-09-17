@@ -1,0 +1,23 @@
+{
+  "observation_scope": "READ_ONLY_HOST_COMPOSE_AND_FROZEN_BUILDER_CONFIG",
+  "compose_sha256": "7ef4ab181c1250d8cec0e348b29c24bfbb8e5dce4fc2a57f6faaa59363c26895",
+  "api_command": null,
+  "api_entrypoint": null,
+  "service_volumes_present": false,
+  "service_working_dir_present": false,
+  "worker_commands": "python -m go_hotel.workers.<fixed service module>",
+  "builder_image": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132",
+  "builder_cmd": [
+    "uvicorn",
+    "go_hotel.main:app",
+    "--host",
+    "0.0.0.0",
+    "--port",
+    "8000"
+  ],
+  "builder_entrypoint": null,
+  "builder_working_dir": "/app",
+  "builder_user": null,
+  "candidate_dockerfile": "WORKDIR /workspace; ENV PYTHONPATH=/workspace/src",
+  "deployment_performed": false
+}

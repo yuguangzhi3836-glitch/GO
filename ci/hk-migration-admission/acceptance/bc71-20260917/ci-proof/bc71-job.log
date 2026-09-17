@@ -1,0 +1,1352 @@
+﻿2026-09-17T13:49:51.5712304Z Current runner version: '2.337.0'
+2026-09-17T13:49:51.5747810Z ##[group]Runner Image Provisioner
+2026-09-17T13:49:51.5749117Z Hosted Compute Agent
+2026-09-17T13:49:51.5750691Z Version: 20260828.587
+2026-09-17T13:49:51.5751914Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-17T13:49:51.5753177Z Build Date: 2026-08-28T16:44:25Z
+2026-09-17T13:49:51.5754570Z Worker ID: {3617fa14-5da7-4c0a-b1c4-bbb08372ad23}
+2026-09-17T13:49:51.5755827Z Azure Region: westus3
+2026-09-17T13:49:51.5756959Z ##[endgroup]
+2026-09-17T13:49:51.5759689Z ##[group]Operating System
+2026-09-17T13:49:51.5760783Z Ubuntu
+2026-09-17T13:49:51.5761823Z 24.04.5
+2026-09-17T13:49:51.5762685Z LTS
+2026-09-17T13:49:51.5763608Z ##[endgroup]
+2026-09-17T13:49:51.5764735Z ##[group]Runner Image
+2026-09-17T13:49:51.5765709Z Image: ubuntu-24.04
+2026-09-17T13:49:51.5766771Z Version: 20260907.300.1
+2026-09-17T13:49:51.5768867Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-17T13:49:51.5772172Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-17T13:49:51.5773961Z ##[endgroup]
+2026-09-17T13:49:51.5776013Z ##[group]GITHUB_TOKEN Permissions
+2026-09-17T13:49:51.5778705Z Contents: read
+2026-09-17T13:49:51.5780066Z Metadata: read
+2026-09-17T13:49:51.5781010Z ##[endgroup]
+2026-09-17T13:49:51.5784342Z Secret source: Actions
+2026-09-17T13:49:51.5786098Z Cache mode: write
+2026-09-17T13:49:51.5787262Z Prepare workflow directory
+2026-09-17T13:49:51.6635747Z Prepare all required actions
+2026-09-17T13:49:51.6720790Z Getting action download info
+2026-09-17T13:49:52.0969865Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-17T13:49:52.2091354Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-17T13:49:52.3082143Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-17T13:49:52.5475364Z Complete job name: contract-and-postgres
+2026-09-17T13:49:52.5998571Z ##[group]Checking docker version
+2026-09-17T13:49:52.6012361Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-09-17T13:49:52.6961871Z '1.48'
+2026-09-17T13:49:52.6972305Z Docker daemon API version: '1.48'
+2026-09-17T13:49:52.6973273Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-09-17T13:49:52.7162362Z '1.48'
+2026-09-17T13:49:52.7176039Z Docker client API version: '1.48'
+2026-09-17T13:49:52.7182944Z ##[endgroup]
+2026-09-17T13:49:52.7186621Z ##[group]Clean up resources from previous jobs
+2026-09-17T13:49:52.7193746Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=a62038"
+2026-09-17T13:49:52.7361026Z ##[command]/usr/bin/docker network prune --force --filter "label=a62038"
+2026-09-17T13:49:52.7512769Z ##[endgroup]
+2026-09-17T13:49:52.7513328Z ##[group]Create local container network
+2026-09-17T13:49:52.7523704Z ##[command]/usr/bin/docker network create --label a62038 github_network_c2946181b9c1424e84fc0fb59746df29
+2026-09-17T13:49:52.8271304Z 74abfd61c2d06b7ba766bb3fbb6e8994832dca87873263d0cc8b4eaac14ff2d9
+2026-09-17T13:49:52.8290016Z ##[endgroup]
+2026-09-17T13:49:52.8317852Z ##[group]Starting postgres service container
+2026-09-17T13:49:52.8338882Z ##[command]/usr/bin/docker pull postgres:18.4
+2026-09-17T13:49:53.6204913Z 18.4: Pulling from library/postgres
+2026-09-17T13:49:53.9050837Z 26c307b5e35a: Pulling fs layer
+2026-09-17T13:49:53.9071859Z 5db2b7edf527: Pulling fs layer
+2026-09-17T13:49:53.9073383Z 130549402290: Pulling fs layer
+2026-09-17T13:49:53.9074808Z 8241f4a14319: Pulling fs layer
+2026-09-17T13:49:53.9076304Z a4dcdc0137d7: Pulling fs layer
+2026-09-17T13:49:53.9077730Z d1052e262c2e: Pulling fs layer
+2026-09-17T13:49:53.9079404Z 39762d0b4bb2: Pulling fs layer
+2026-09-17T13:49:53.9080775Z 38639b9be6a6: Pulling fs layer
+2026-09-17T13:49:53.9082213Z 4e6c52c74256: Pulling fs layer
+2026-09-17T13:49:53.9083645Z f51baa0c6c0d: Pulling fs layer
+2026-09-17T13:49:53.9085501Z 88bb22edda9b: Pulling fs layer
+2026-09-17T13:49:53.9087043Z f7d54729e84b: Pulling fs layer
+2026-09-17T13:49:53.9088593Z f90dd111f2e5: Pulling fs layer
+2026-09-17T13:49:53.9090217Z 38639b9be6a6: Waiting
+2026-09-17T13:49:53.9091659Z 4e6c52c74256: Waiting
+2026-09-17T13:49:53.9093031Z f51baa0c6c0d: Waiting
+2026-09-17T13:49:53.9094446Z 88bb22edda9b: Waiting
+2026-09-17T13:49:53.9095808Z f7d54729e84b: Waiting
+2026-09-17T13:49:53.9097222Z f90dd111f2e5: Waiting
+2026-09-17T13:49:53.9098628Z d1052e262c2e: Waiting
+2026-09-17T13:49:53.9100351Z 8241f4a14319: Waiting
+2026-09-17T13:49:53.9101921Z a4dcdc0137d7: Waiting
+2026-09-17T13:49:53.9103396Z 39762d0b4bb2: Waiting
+2026-09-17T13:49:54.0226963Z 5db2b7edf527: Verifying Checksum
+2026-09-17T13:49:54.0229000Z 5db2b7edf527: Download complete
+2026-09-17T13:49:54.0601075Z 130549402290: Verifying Checksum
+2026-09-17T13:49:54.0602424Z 130549402290: Download complete
+2026-09-17T13:49:54.1780560Z 26c307b5e35a: Verifying Checksum
+2026-09-17T13:49:54.1782222Z 26c307b5e35a: Download complete
+2026-09-17T13:49:54.2291878Z 8241f4a14319: Verifying Checksum
+2026-09-17T13:49:54.2293578Z 8241f4a14319: Download complete
+2026-09-17T13:49:54.2757641Z a4dcdc0137d7: Verifying Checksum
+2026-09-17T13:49:54.2761702Z a4dcdc0137d7: Download complete
+2026-09-17T13:49:54.3812283Z d1052e262c2e: Download complete
+2026-09-17T13:49:54.4032595Z 39762d0b4bb2: Verifying Checksum
+2026-09-17T13:49:54.4033807Z 39762d0b4bb2: Download complete
+2026-09-17T13:49:54.4572328Z 38639b9be6a6: Verifying Checksum
+2026-09-17T13:49:54.4573472Z 38639b9be6a6: Download complete
+2026-09-17T13:49:54.5825479Z f51baa0c6c0d: Verifying Checksum
+2026-09-17T13:49:54.5826429Z f51baa0c6c0d: Download complete
+2026-09-17T13:49:54.6492734Z 88bb22edda9b: Verifying Checksum
+2026-09-17T13:49:54.6493716Z 88bb22edda9b: Download complete
+2026-09-17T13:49:54.8382804Z f7d54729e84b: Verifying Checksum
+2026-09-17T13:49:54.8385104Z f7d54729e84b: Download complete
+2026-09-17T13:49:54.8461727Z f90dd111f2e5: Verifying Checksum
+2026-09-17T13:49:54.8462928Z f90dd111f2e5: Download complete
+2026-09-17T13:49:55.1948154Z 4e6c52c74256: Verifying Checksum
+2026-09-17T13:49:55.1949355Z 4e6c52c74256: Download complete
+2026-09-17T13:49:55.7859439Z 26c307b5e35a: Pull complete
+2026-09-17T13:49:58.7248547Z 5db2b7edf527: Pull complete
+2026-09-17T13:49:58.9470119Z 130549402290: Pull complete
+2026-09-17T13:49:59.0028546Z 8241f4a14319: Pull complete
+2026-09-17T13:49:59.4133181Z a4dcdc0137d7: Pull complete
+2026-09-17T13:49:59.5104624Z d1052e262c2e: Pull complete
+2026-09-17T13:49:59.5296950Z 39762d0b4bb2: Pull complete
+2026-09-17T13:49:59.5429464Z 38639b9be6a6: Pull complete
+2026-09-17T13:50:04.0230374Z 4e6c52c74256: Pull complete
+2026-09-17T13:50:04.0448102Z f51baa0c6c0d: Pull complete
+2026-09-17T13:50:04.0631100Z 88bb22edda9b: Pull complete
+2026-09-17T13:50:04.0781968Z f7d54729e84b: Pull complete
+2026-09-17T13:50:04.0885690Z f90dd111f2e5: Pull complete
+2026-09-17T13:50:04.0933813Z Digest: sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+2026-09-17T13:50:04.0950947Z Status: Downloaded newer image for postgres:18.4
+2026-09-17T13:50:04.0960178Z docker.io/library/postgres:18.4
+2026-09-17T13:50:04.1024189Z ##[command]/usr/bin/docker create --name 9f042e81cf8c45b4832c9ceb8c838408_postgres184_153d03 --label a62038 --network github_network_c2946181b9c1424e84fc0fb59746df29 --network-alias postgres -p 5432:5432 --health-cmd "pg_isready -U go_ci -d go_issue103_executor" --health-interval 5s --health-timeout 5s --health-retries 20 -e "POSTGRES_DB=go_issue103_executor" -e "POSTGRES_USER=go_ci" -e "POSTGRES_PASSWORD=isolated_ci_only" -e GITHUB_ACTIONS=true -e CI=true postgres:18.4
+2026-09-17T13:50:04.1321252Z 5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6
+2026-09-17T13:50:04.1345374Z ##[command]/usr/bin/docker start 5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6
+2026-09-17T13:50:04.3925004Z 5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6
+2026-09-17T13:50:04.3950975Z ##[command]/usr/bin/docker ps --all --filter id=5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-09-17T13:50:04.4260675Z 5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6 Up Less than a second (health: starting)
+2026-09-17T13:50:04.4297166Z ##[command]/usr/bin/docker port 5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6
+2026-09-17T13:50:04.4534647Z 5432/tcp -> 0.0.0.0:5432
+2026-09-17T13:50:04.4535242Z 5432/tcp -> [::]:5432
+2026-09-17T13:50:04.4588040Z ##[endgroup]
+2026-09-17T13:50:04.4601002Z ##[group]Waiting for all services to be ready
+2026-09-17T13:50:04.4625066Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6
+2026-09-17T13:50:04.4827305Z starting
+2026-09-17T13:50:04.4856521Z postgres service is starting, waiting 2 seconds before checking again.
+2026-09-17T13:50:06.4853249Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6
+2026-09-17T13:50:06.5036170Z starting
+2026-09-17T13:50:06.5055412Z postgres service is starting, waiting 4 seconds before checking again.
+2026-09-17T13:50:10.6801398Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6
+2026-09-17T13:50:10.6955414Z healthy
+2026-09-17T13:50:10.6975336Z postgres service is healthy.
+2026-09-17T13:50:10.6976334Z ##[endgroup]
+2026-09-17T13:50:10.7270892Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T13:50:10.7278885Z ##[group]Run actions/checkout@v4
+2026-09-17T13:50:10.7279595Z with:
+2026-09-17T13:50:10.7279850Z   ref: bc71a91bff31a092aae003e061622878b8ef4bf6
+2026-09-17T13:50:10.7280158Z   path: tooling
+2026-09-17T13:50:10.7280378Z   persist-credentials: false
+2026-09-17T13:50:10.7280851Z   sparse-checkout: control-plane
+command-center/audit/20260911
+hk-staging
+ci/hk-migration-admission
+
+2026-09-17T13:50:10.7281370Z   repository: yuguangzhi3836-glitch/GO
+2026-09-17T13:50:10.7283849Z   token: ***
+2026-09-17T13:50:10.7284055Z   ssh-strict: true
+2026-09-17T13:50:10.7284257Z   ssh-user: git
+2026-09-17T13:50:10.7284452Z   clean: true
+2026-09-17T13:50:10.7284703Z   sparse-checkout-cone-mode: true
+2026-09-17T13:50:10.7284959Z   fetch-depth: 1
+2026-09-17T13:50:10.7285151Z   fetch-tags: false
+2026-09-17T13:50:10.7285354Z   show-progress: true
+2026-09-17T13:50:10.7285555Z   lfs: false
+2026-09-17T13:50:10.7285739Z   submodules: false
+2026-09-17T13:50:10.7285942Z   set-safe-directory: true
+2026-09-17T13:50:10.7286179Z   allow-unsafe-pr-checkout: false
+2026-09-17T13:50:10.7286626Z ##[endgroup]
+2026-09-17T13:50:10.8470941Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-17T13:50:10.8473738Z ##[group]Getting Git version info
+2026-09-17T13:50:10.8474379Z Working directory is '/home/runner/work/GO/GO/tooling'
+2026-09-17T13:50:10.8506549Z [command]/usr/bin/git version
+2026-09-17T13:50:10.8670424Z git version 2.55.0
+2026-09-17T13:50:10.8708304Z ##[endgroup]
+2026-09-17T13:50:10.8722323Z Temporarily overriding HOME='/home/runner/work/_temp/17ae7961-1d7b-4f2c-a86a-af04996d8536' before making global git config changes
+2026-09-17T13:50:10.8740411Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T13:50:10.8741706Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/tooling
+2026-09-17T13:50:10.8829933Z ##[group]Initializing the repository
+2026-09-17T13:50:10.8830836Z [command]/usr/bin/git init /home/runner/work/GO/GO/tooling
+2026-09-17T13:50:10.8979326Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-17T13:50:10.8995759Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-17T13:50:10.9005402Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-17T13:50:10.9006351Z hint: call:
+2026-09-17T13:50:10.9009678Z hint:
+2026-09-17T13:50:10.9010466Z hint: 	git config --global init.defaultBranch <name>
+2026-09-17T13:50:10.9011153Z hint:
+2026-09-17T13:50:10.9011796Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-17T13:50:10.9012813Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-17T13:50:10.9013611Z hint:
+2026-09-17T13:50:10.9014098Z hint: 	git branch -m <name>
+2026-09-17T13:50:10.9014674Z hint:
+2026-09-17T13:50:10.9015492Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-17T13:50:10.9016640Z Initialized empty Git repository in /home/runner/work/GO/GO/tooling/.git/
+2026-09-17T13:50:10.9018902Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-17T13:50:10.9176114Z ##[endgroup]
+2026-09-17T13:50:10.9187239Z ##[group]Disabling automatic garbage collection
+2026-09-17T13:50:10.9200458Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-17T13:50:10.9202363Z ##[endgroup]
+2026-09-17T13:50:10.9203117Z ##[group]Setting up auth
+2026-09-17T13:50:10.9204500Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T13:50:10.9261149Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T13:50:10.9871075Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T13:50:10.9877767Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T13:50:11.0132745Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T13:50:11.0174975Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T13:50:11.0433669Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-17T13:50:11.0476751Z ##[endgroup]
+2026-09-17T13:50:11.0477615Z ##[group]Fetching the repository
+2026-09-17T13:50:11.0488391Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --filter=blob:none --depth=1 origin bc71a91bff31a092aae003e061622878b8ef4bf6
+2026-09-17T13:50:11.6478255Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-17T13:50:11.6479709Z  * branch            bc71a91bff31a092aae003e061622878b8ef4bf6 -> FETCH_HEAD
+2026-09-17T13:50:11.6482723Z ##[endgroup]
+2026-09-17T13:50:11.6483674Z ##[group]Determining the checkout info
+2026-09-17T13:50:11.6486421Z ##[endgroup]
+2026-09-17T13:50:11.6487335Z ##[group]Setting up sparse checkout
+2026-09-17T13:50:11.6494935Z [command]/usr/bin/git sparse-checkout set control-plane command-center/audit/20260911 hk-staging ci/hk-migration-admission
+2026-09-17T13:50:11.6560371Z ##[endgroup]
+2026-09-17T13:50:11.6561261Z ##[group]Checking out the ref
+2026-09-17T13:50:11.6562215Z [command]/usr/bin/git checkout --progress --force bc71a91bff31a092aae003e061622878b8ef4bf6
+2026-09-17T13:50:13.4600756Z Updating files:   0% (1/856)
+2026-09-17T13:50:13.4602894Z Updating files:   1% (9/856)
+2026-09-17T13:50:13.4620832Z Updating files:   2% (18/856)
+2026-09-17T13:50:13.4624838Z Updating files:   3% (26/856)
+2026-09-17T13:50:13.4638513Z Updating files:   4% (35/856)
+2026-09-17T13:50:13.4649609Z Updating files:   5% (43/856)
+2026-09-17T13:50:13.4656860Z Updating files:   6% (52/856)
+2026-09-17T13:50:13.4670719Z Updating files:   7% (60/856)
+2026-09-17T13:50:13.4680516Z Updating files:   8% (69/856)
+2026-09-17T13:50:13.4690395Z Updating files:   9% (78/856)
+2026-09-17T13:50:13.4702994Z Updating files:  10% (86/856)
+2026-09-17T13:50:13.4714270Z Updating files:  11% (95/856)
+2026-09-17T13:50:13.4723830Z Updating files:  12% (103/856)
+2026-09-17T13:50:13.4733067Z Updating files:  13% (112/856)
+2026-09-17T13:50:13.4743618Z Updating files:  14% (120/856)
+2026-09-17T13:50:13.4757572Z Updating files:  15% (129/856)
+2026-09-17T13:50:13.4768403Z Updating files:  16% (137/856)
+2026-09-17T13:50:13.4778812Z Updating files:  17% (146/856)
+2026-09-17T13:50:13.4783406Z Updating files:  18% (155/856)
+2026-09-17T13:50:13.4790092Z Updating files:  19% (163/856)
+2026-09-17T13:50:13.4794352Z Updating files:  20% (172/856)
+2026-09-17T13:50:13.4800550Z Updating files:  21% (180/856)
+2026-09-17T13:50:13.4810587Z Updating files:  22% (189/856)
+2026-09-17T13:50:13.4818307Z Updating files:  23% (197/856)
+2026-09-17T13:50:13.4826718Z Updating files:  24% (206/856)
+2026-09-17T13:50:13.4835430Z Updating files:  25% (214/856)
+2026-09-17T13:50:13.4859906Z Updating files:  26% (223/856)
+2026-09-17T13:50:13.4868220Z Updating files:  27% (232/856)
+2026-09-17T13:50:13.4873076Z Updating files:  28% (240/856)
+2026-09-17T13:50:13.4880195Z Updating files:  29% (249/856)
+2026-09-17T13:50:13.4887800Z Updating files:  30% (257/856)
+2026-09-17T13:50:13.4896507Z Updating files:  31% (266/856)
+2026-09-17T13:50:13.4904837Z Updating files:  32% (274/856)
+2026-09-17T13:50:13.4910897Z Updating files:  33% (283/856)
+2026-09-17T13:50:13.4916109Z Updating files:  34% (292/856)
+2026-09-17T13:50:13.4922797Z Updating files:  35% (300/856)
+2026-09-17T13:50:13.4928911Z Updating files:  36% (309/856)
+2026-09-17T13:50:13.4935988Z Updating files:  37% (317/856)
+2026-09-17T13:50:13.4942220Z Updating files:  38% (326/856)
+2026-09-17T13:50:13.4949312Z Updating files:  39% (334/856)
+2026-09-17T13:50:13.4956400Z Updating files:  40% (343/856)
+2026-09-17T13:50:13.4962982Z Updating files:  41% (351/856)
+2026-09-17T13:50:13.4969402Z Updating files:  42% (360/856)
+2026-09-17T13:50:13.4974055Z Updating files:  43% (369/856)
+2026-09-17T13:50:13.4980790Z Updating files:  44% (377/856)
+2026-09-17T13:50:13.4986967Z Updating files:  45% (386/856)
+2026-09-17T13:50:13.5009827Z Updating files:  46% (394/856)
+2026-09-17T13:50:13.5015500Z Updating files:  47% (403/856)
+2026-09-17T13:50:13.5033585Z Updating files:  48% (411/856)
+2026-09-17T13:50:13.5034378Z Updating files:  49% (420/856)
+2026-09-17T13:50:13.5034986Z Updating files:  50% (428/856)
+2026-09-17T13:50:13.5043682Z Updating files:  51% (437/856)
+2026-09-17T13:50:13.5053535Z Updating files:  52% (446/856)
+2026-09-17T13:50:13.5072825Z Updating files:  53% (454/856)
+2026-09-17T13:50:13.5091768Z Updating files:  54% (463/856)
+2026-09-17T13:50:13.5108103Z Updating files:  55% (471/856)
+2026-09-17T13:50:13.5121569Z Updating files:  56% (480/856)
+2026-09-17T13:50:13.5123478Z Updating files:  57% (488/856)
+2026-09-17T13:50:13.5130889Z Updating files:  58% (497/856)
+2026-09-17T13:50:13.5137182Z Updating files:  59% (506/856)
+2026-09-17T13:50:13.5143660Z Updating files:  60% (514/856)
+2026-09-17T13:50:13.5149784Z Updating files:  61% (523/856)
+2026-09-17T13:50:13.5155946Z Updating files:  62% (531/856)
+2026-09-17T13:50:13.5161670Z Updating files:  63% (540/856)
+2026-09-17T13:50:13.5168064Z Updating files:  64% (548/856)
+2026-09-17T13:50:13.5174303Z Updating files:  65% (557/856)
+2026-09-17T13:50:13.5180608Z Updating files:  66% (565/856)
+2026-09-17T13:50:13.5187165Z Updating files:  67% (574/856)
+2026-09-17T13:50:13.5193461Z Updating files:  68% (583/856)
+2026-09-17T13:50:13.5200791Z Updating files:  69% (591/856)
+2026-09-17T13:50:13.5207724Z Updating files:  70% (600/856)
+2026-09-17T13:50:13.5213981Z Updating files:  71% (608/856)
+2026-09-17T13:50:13.5219926Z Updating files:  72% (617/856)
+2026-09-17T13:50:13.5226243Z Updating files:  73% (625/856)
+2026-09-17T13:50:13.5233212Z Updating files:  74% (634/856)
+2026-09-17T13:50:13.5255085Z Updating files:  75% (642/856)
+2026-09-17T13:50:13.5270378Z Updating files:  76% (651/856)
+2026-09-17T13:50:13.5271322Z Updating files:  77% (660/856)
+2026-09-17T13:50:13.5278815Z Updating files:  78% (668/856)
+2026-09-17T13:50:13.5288114Z Updating files:  79% (677/856)
+2026-09-17T13:50:13.5299725Z Updating files:  80% (685/856)
+2026-09-17T13:50:13.5308237Z Updating files:  81% (694/856)
+2026-09-17T13:50:13.5318015Z Updating files:  82% (702/856)
+2026-09-17T13:50:13.5326032Z Updating files:  83% (711/856)
+2026-09-17T13:50:13.5333196Z Updating files:  84% (720/856)
+2026-09-17T13:50:13.5340076Z Updating files:  85% (728/856)
+2026-09-17T13:50:13.5347120Z Updating files:  86% (737/856)
+2026-09-17T13:50:13.5355058Z Updating files:  87% (745/856)
+2026-09-17T13:50:13.5367592Z Updating files:  88% (754/856)
+2026-09-17T13:50:13.5374259Z Updating files:  89% (762/856)
+2026-09-17T13:50:13.5381910Z Updating files:  90% (771/856)
+2026-09-17T13:50:13.5392812Z Updating files:  91% (779/856)
+2026-09-17T13:50:13.5403214Z Updating files:  92% (788/856)
+2026-09-17T13:50:13.5412228Z Updating files:  93% (797/856)
+2026-09-17T13:50:13.5424778Z Updating files:  94% (805/856)
+2026-09-17T13:50:13.5431625Z Updating files:  95% (814/856)
+2026-09-17T13:50:13.5439513Z Updating files:  96% (822/856)
+2026-09-17T13:50:13.5444498Z Updating files:  97% (831/856)
+2026-09-17T13:50:13.5450993Z Updating files:  98% (839/856)
+2026-09-17T13:50:13.5456868Z Updating files:  99% (848/856)
+2026-09-17T13:50:13.5457539Z Updating files: 100% (856/856)
+2026-09-17T13:50:13.5458262Z Updating files: 100% (856/856), done.
+2026-09-17T13:50:13.5529889Z Note: switching to 'bc71a91bff31a092aae003e061622878b8ef4bf6'.
+2026-09-17T13:50:13.5530398Z 
+2026-09-17T13:50:13.5531224Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-17T13:50:13.5532379Z changes and commit them, and you can discard any commits you make in this
+2026-09-17T13:50:13.5533490Z state without impacting any branches by switching back to a branch.
+2026-09-17T13:50:13.5534485Z 
+2026-09-17T13:50:13.5541232Z If you want to create a new branch to retain commits you create, you may
+2026-09-17T13:50:13.5550242Z do so (now or later) by using -c with the switch command. Example:
+2026-09-17T13:50:13.5550923Z 
+2026-09-17T13:50:13.5551327Z   git switch -c <new-branch-name>
+2026-09-17T13:50:13.5551835Z 
+2026-09-17T13:50:13.5552158Z Or undo this operation with:
+2026-09-17T13:50:13.5552651Z 
+2026-09-17T13:50:13.5552977Z   git switch -
+2026-09-17T13:50:13.5553379Z 
+2026-09-17T13:50:13.5553950Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-17T13:50:13.5554765Z 
+2026-09-17T13:50:13.5555458Z HEAD is now at bc71a91 fix(ci): include archived identity fingerprints in shared migration gate
+2026-09-17T13:50:13.5558240Z ##[endgroup]
+2026-09-17T13:50:13.5617160Z [command]/usr/bin/git log -1 --format=%H
+2026-09-17T13:50:13.5649011Z bc71a91bff31a092aae003e061622878b8ef4bf6
+2026-09-17T13:50:13.5677727Z ##[group]Removing auth
+2026-09-17T13:50:13.5678590Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T13:50:13.5707852Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T13:50:13.5970968Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T13:50:13.6005410Z http.https://github.com/.extraheader
+2026-09-17T13:50:13.6016743Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-17T13:50:13.6060340Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T13:50:13.6321250Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T13:50:13.6400392Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T13:50:13.6674771Z ##[endgroup]
+2026-09-17T13:50:13.6940400Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T13:50:13.6942045Z ##[group]Run actions/checkout@v4
+2026-09-17T13:50:13.6942288Z with:
+2026-09-17T13:50:13.6942507Z   ref: edd3500575d2f2b81298cc9273025e0a3b734897
+2026-09-17T13:50:13.6942802Z   path: candidate
+2026-09-17T13:50:13.6943021Z   persist-credentials: false
+2026-09-17T13:50:13.6943284Z   sparse-checkout: application
+ci
+
+2026-09-17T13:50:13.6943557Z   repository: yuguangzhi3836-glitch/GO
+2026-09-17T13:50:13.6945970Z   token: ***
+2026-09-17T13:50:13.6946180Z   ssh-strict: true
+2026-09-17T13:50:13.6946387Z   ssh-user: git
+2026-09-17T13:50:13.6946578Z   clean: true
+2026-09-17T13:50:13.6946789Z   sparse-checkout-cone-mode: true
+2026-09-17T13:50:13.6947097Z   fetch-depth: 1
+2026-09-17T13:50:13.6947298Z   fetch-tags: false
+2026-09-17T13:50:13.6947509Z   show-progress: true
+2026-09-17T13:50:13.6947717Z   lfs: false
+2026-09-17T13:50:13.6947906Z   submodules: false
+2026-09-17T13:50:13.6948117Z   set-safe-directory: true
+2026-09-17T13:50:13.6948362Z   allow-unsafe-pr-checkout: false
+2026-09-17T13:50:13.6948626Z ##[endgroup]
+2026-09-17T13:50:13.7940313Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-17T13:50:13.7941496Z ##[group]Getting Git version info
+2026-09-17T13:50:13.7942278Z Working directory is '/home/runner/work/GO/GO/candidate'
+2026-09-17T13:50:13.7992925Z [command]/usr/bin/git version
+2026-09-17T13:50:13.8071697Z git version 2.55.0
+2026-09-17T13:50:13.8123305Z ##[endgroup]
+2026-09-17T13:50:13.8125722Z Temporarily overriding HOME='/home/runner/work/_temp/5dddea93-4d61-4d1c-b554-9b24978e0b35' before making global git config changes
+2026-09-17T13:50:13.8127176Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T13:50:13.8141313Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/candidate
+2026-09-17T13:50:13.8208063Z ##[group]Initializing the repository
+2026-09-17T13:50:13.8208934Z [command]/usr/bin/git init /home/runner/work/GO/GO/candidate
+2026-09-17T13:50:13.8295139Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-17T13:50:13.8317024Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-17T13:50:13.8329581Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-17T13:50:13.8330555Z hint: call:
+2026-09-17T13:50:13.8331002Z hint:
+2026-09-17T13:50:13.8331534Z hint: 	git config --global init.defaultBranch <name>
+2026-09-17T13:50:13.8332245Z hint:
+2026-09-17T13:50:13.8332918Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-17T13:50:13.8333970Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-17T13:50:13.8334876Z hint:
+2026-09-17T13:50:13.8335395Z hint: 	git branch -m <name>
+2026-09-17T13:50:13.8335984Z hint:
+2026-09-17T13:50:13.8336758Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-17T13:50:13.8342443Z Initialized empty Git repository in /home/runner/work/GO/GO/candidate/.git/
+2026-09-17T13:50:13.8344653Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-17T13:50:13.8400257Z ##[endgroup]
+2026-09-17T13:50:13.8401149Z ##[group]Disabling automatic garbage collection
+2026-09-17T13:50:13.8401934Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-17T13:50:13.8487353Z ##[endgroup]
+2026-09-17T13:50:13.8510148Z ##[group]Setting up auth
+2026-09-17T13:50:13.8515178Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T13:50:13.8541760Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T13:50:13.8970351Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T13:50:13.9053612Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T13:50:13.9340226Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T13:50:13.9381639Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T13:50:13.9751269Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-17T13:50:13.9816918Z ##[endgroup]
+2026-09-17T13:50:13.9842210Z ##[group]Fetching the repository
+2026-09-17T13:50:13.9850576Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --filter=blob:none --depth=1 origin edd3500575d2f2b81298cc9273025e0a3b734897
+2026-09-17T13:50:14.9144955Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-17T13:50:14.9158520Z  * branch            edd3500575d2f2b81298cc9273025e0a3b734897 -> FETCH_HEAD
+2026-09-17T13:50:14.9187641Z ##[endgroup]
+2026-09-17T13:50:14.9188532Z ##[group]Determining the checkout info
+2026-09-17T13:50:14.9190073Z ##[endgroup]
+2026-09-17T13:50:14.9190918Z ##[group]Setting up sparse checkout
+2026-09-17T13:50:14.9191680Z [command]/usr/bin/git sparse-checkout set application ci
+2026-09-17T13:50:14.9211533Z ##[endgroup]
+2026-09-17T13:50:14.9212224Z ##[group]Checking out the ref
+2026-09-17T13:50:14.9222923Z [command]/usr/bin/git checkout --progress --force edd3500575d2f2b81298cc9273025e0a3b734897
+2026-09-17T13:50:17.4926678Z Updating files:   0% (1/1462)
+2026-09-17T13:50:17.4936027Z Updating files:   1% (15/1462)
+2026-09-17T13:50:17.4944463Z Updating files:   2% (30/1462)
+2026-09-17T13:50:17.4954575Z Updating files:   3% (44/1462)
+2026-09-17T13:50:17.4965189Z Updating files:   4% (59/1462)
+2026-09-17T13:50:17.4975705Z Updating files:   5% (74/1462)
+2026-09-17T13:50:17.4985058Z Updating files:   6% (88/1462)
+2026-09-17T13:50:17.4993293Z Updating files:   7% (103/1462)
+2026-09-17T13:50:17.5002642Z Updating files:   8% (117/1462)
+2026-09-17T13:50:17.5012232Z Updating files:   9% (132/1462)
+2026-09-17T13:50:17.5021511Z Updating files:  10% (147/1462)
+2026-09-17T13:50:17.5048635Z Updating files:  11% (161/1462)
+2026-09-17T13:50:17.5059547Z Updating files:  12% (176/1462)
+2026-09-17T13:50:17.5150592Z Updating files:  13% (191/1462)
+2026-09-17T13:50:17.5160033Z Updating files:  14% (205/1462)
+2026-09-17T13:50:17.5175869Z Updating files:  15% (220/1462)
+2026-09-17T13:50:17.5187649Z Updating files:  16% (234/1462)
+2026-09-17T13:50:17.5213539Z Updating files:  17% (249/1462)
+2026-09-17T13:50:17.5236362Z Updating files:  18% (264/1462)
+2026-09-17T13:50:17.5254336Z Updating files:  19% (278/1462)
+2026-09-17T13:50:17.5265903Z Updating files:  20% (293/1462)
+2026-09-17T13:50:17.5300701Z Updating files:  21% (308/1462)
+2026-09-17T13:50:17.5311322Z Updating files:  22% (322/1462)
+2026-09-17T13:50:17.5319977Z Updating files:  23% (337/1462)
+2026-09-17T13:50:17.5328099Z Updating files:  24% (351/1462)
+2026-09-17T13:50:17.5337150Z Updating files:  25% (366/1462)
+2026-09-17T13:50:17.5345091Z Updating files:  26% (381/1462)
+2026-09-17T13:50:17.5353066Z Updating files:  27% (395/1462)
+2026-09-17T13:50:17.5361697Z Updating files:  28% (410/1462)
+2026-09-17T13:50:17.5379358Z Updating files:  29% (424/1462)
+2026-09-17T13:50:17.5387650Z Updating files:  30% (439/1462)
+2026-09-17T13:50:17.5396448Z Updating files:  31% (454/1462)
+2026-09-17T13:50:17.5405867Z Updating files:  32% (468/1462)
+2026-09-17T13:50:17.5414993Z Updating files:  33% (483/1462)
+2026-09-17T13:50:17.5424211Z Updating files:  34% (498/1462)
+2026-09-17T13:50:17.5433833Z Updating files:  35% (512/1462)
+2026-09-17T13:50:17.5444422Z Updating files:  36% (527/1462)
+2026-09-17T13:50:17.5469987Z Updating files:  37% (541/1462)
+2026-09-17T13:50:17.5479945Z Updating files:  38% (556/1462)
+2026-09-17T13:50:17.5485202Z Updating files:  39% (571/1462)
+2026-09-17T13:50:17.5495228Z Updating files:  40% (585/1462)
+2026-09-17T13:50:17.5506940Z Updating files:  41% (600/1462)
+2026-09-17T13:50:17.5515859Z Updating files:  42% (615/1462)
+2026-09-17T13:50:17.5525948Z Updating files:  43% (629/1462)
+2026-09-17T13:50:17.5535154Z Updating files:  44% (644/1462)
+2026-09-17T13:50:17.5545228Z Updating files:  45% (658/1462)
+2026-09-17T13:50:17.5554121Z Updating files:  46% (673/1462)
+2026-09-17T13:50:17.5563368Z Updating files:  47% (688/1462)
+2026-09-17T13:50:17.5572460Z Updating files:  48% (702/1462)
+2026-09-17T13:50:17.5582308Z Updating files:  49% (717/1462)
+2026-09-17T13:50:17.5600077Z Updating files:  50% (731/1462)
+2026-09-17T13:50:17.5603390Z Updating files:  51% (746/1462)
+2026-09-17T13:50:17.5614154Z Updating files:  52% (761/1462)
+2026-09-17T13:50:17.5625971Z Updating files:  53% (775/1462)
+2026-09-17T13:50:17.5647208Z Updating files:  54% (790/1462)
+2026-09-17T13:50:17.5657463Z Updating files:  55% (805/1462)
+2026-09-17T13:50:17.5672163Z Updating files:  56% (819/1462)
+2026-09-17T13:50:17.5685465Z Updating files:  57% (834/1462)
+2026-09-17T13:50:17.5699894Z Updating files:  58% (848/1462)
+2026-09-17T13:50:17.5712319Z Updating files:  59% (863/1462)
+2026-09-17T13:50:17.5723013Z Updating files:  60% (878/1462)
+2026-09-17T13:50:17.5733253Z Updating files:  61% (892/1462)
+2026-09-17T13:50:17.5743723Z Updating files:  62% (907/1462)
+2026-09-17T13:50:17.5755866Z Updating files:  63% (922/1462)
+2026-09-17T13:50:17.5768853Z Updating files:  64% (936/1462)
+2026-09-17T13:50:17.5781645Z Updating files:  65% (951/1462)
+2026-09-17T13:50:17.5797374Z Updating files:  66% (965/1462)
+2026-09-17T13:50:17.5812128Z Updating files:  67% (980/1462)
+2026-09-17T13:50:17.5826377Z Updating files:  68% (995/1462)
+2026-09-17T13:50:17.5838759Z Updating files:  69% (1009/1462)
+2026-09-17T13:50:17.5849891Z Updating files:  70% (1024/1462)
+2026-09-17T13:50:17.5857396Z Updating files:  71% (1039/1462)
+2026-09-17T13:50:17.5869297Z Updating files:  72% (1053/1462)
+2026-09-17T13:50:17.5880123Z Updating files:  73% (1068/1462)
+2026-09-17T13:50:17.5891519Z Updating files:  74% (1082/1462)
+2026-09-17T13:50:17.5902323Z Updating files:  75% (1097/1462)
+2026-09-17T13:50:17.5913515Z Updating files:  76% (1112/1462)
+2026-09-17T13:50:17.5924468Z Updating files:  77% (1126/1462)
+2026-09-17T13:50:17.5938843Z Updating files:  78% (1141/1462)
+2026-09-17T13:50:17.5950653Z Updating files:  79% (1155/1462)
+2026-09-17T13:50:17.5962595Z Updating files:  80% (1170/1462)
+2026-09-17T13:50:17.5972175Z Updating files:  81% (1185/1462)
+2026-09-17T13:50:17.5982933Z Updating files:  82% (1199/1462)
+2026-09-17T13:50:17.5993365Z Updating files:  83% (1214/1462)
+2026-09-17T13:50:17.6003380Z Updating files:  84% (1229/1462)
+2026-09-17T13:50:17.6014012Z Updating files:  85% (1243/1462)
+2026-09-17T13:50:17.6024053Z Updating files:  86% (1258/1462)
+2026-09-17T13:50:17.6036425Z Updating files:  87% (1272/1462)
+2026-09-17T13:50:17.6048022Z Updating files:  88% (1287/1462)
+2026-09-17T13:50:17.6058261Z Updating files:  89% (1302/1462)
+2026-09-17T13:50:17.6068877Z Updating files:  90% (1316/1462)
+2026-09-17T13:50:17.6078210Z Updating files:  91% (1331/1462)
+2026-09-17T13:50:17.6088481Z Updating files:  92% (1346/1462)
+2026-09-17T13:50:17.6101655Z Updating files:  93% (1360/1462)
+2026-09-17T13:50:17.6111204Z Updating files:  94% (1375/1462)
+2026-09-17T13:50:17.6329741Z Updating files:  95% (1389/1462)
+2026-09-17T13:50:17.6881269Z Updating files:  96% (1404/1462)
+2026-09-17T13:50:17.6988395Z Updating files:  97% (1419/1462)
+2026-09-17T13:50:17.7006045Z Updating files:  98% (1433/1462)
+2026-09-17T13:50:17.7017561Z Updating files:  99% (1448/1462)
+2026-09-17T13:50:17.7019743Z Updating files: 100% (1462/1462)
+2026-09-17T13:50:17.7020496Z Updating files: 100% (1462/1462), done.
+2026-09-17T13:50:17.7084638Z Note: switching to 'edd3500575d2f2b81298cc9273025e0a3b734897'.
+2026-09-17T13:50:17.7086364Z 
+2026-09-17T13:50:17.7087236Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-17T13:50:17.7088255Z changes and commit them, and you can discard any commits you make in this
+2026-09-17T13:50:17.7089462Z state without impacting any branches by switching back to a branch.
+2026-09-17T13:50:17.7090131Z 
+2026-09-17T13:50:17.7090608Z If you want to create a new branch to retain commits you create, you may
+2026-09-17T13:50:17.7091539Z do so (now or later) by using -c with the switch command. Example:
+2026-09-17T13:50:17.7092141Z 
+2026-09-17T13:50:17.7092485Z   git switch -c <new-branch-name>
+2026-09-17T13:50:17.7092941Z 
+2026-09-17T13:50:17.7093275Z Or undo this operation with:
+2026-09-17T13:50:17.7093714Z 
+2026-09-17T13:50:17.7094018Z   git switch -
+2026-09-17T13:50:17.7094387Z 
+2026-09-17T13:50:17.7094902Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-17T13:50:17.7095603Z 
+2026-09-17T13:50:17.7096283Z HEAD is now at edd3500 Canonicalize supplier operation names before mutation and response validation
+2026-09-17T13:50:17.7116845Z ##[endgroup]
+2026-09-17T13:50:17.7168582Z [command]/usr/bin/git log -1 --format=%H
+2026-09-17T13:50:17.7199133Z edd3500575d2f2b81298cc9273025e0a3b734897
+2026-09-17T13:50:17.7212181Z ##[group]Removing auth
+2026-09-17T13:50:17.7217844Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T13:50:17.7255383Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T13:50:17.7514282Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T13:50:17.7548085Z http.https://github.com/.extraheader
+2026-09-17T13:50:17.7558109Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-17T13:50:17.7598104Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T13:50:17.7864396Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T13:50:17.7907683Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T13:50:17.8185795Z ##[endgroup]
+2026-09-17T13:50:17.8363313Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T13:50:17.8364599Z ##[group]Run actions/setup-python@v5
+2026-09-17T13:50:17.8364869Z with:
+2026-09-17T13:50:17.8365069Z   python-version: 3.13.5
+2026-09-17T13:50:17.8365320Z   check-latest: false
+2026-09-17T13:50:17.8367711Z   token: ***
+2026-09-17T13:50:17.8367926Z   update-environment: true
+2026-09-17T13:50:17.8368173Z   allow-prereleases: false
+2026-09-17T13:50:17.8368409Z   freethreaded: false
+2026-09-17T13:50:17.8368632Z ##[endgroup]
+2026-09-17T13:50:17.9830954Z ##[group]Installed versions
+2026-09-17T13:50:17.9854193Z Version 3.13.5 was not found in the local cache
+2026-09-17T13:50:17.9982861Z (node:2732) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-17T13:50:17.9991368Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-17T13:50:19.1347256Z Version 3.13.5 is available for downloading
+2026-09-17T13:50:19.1349361Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-24.04-x64.tar.gz"
+2026-09-17T13:50:20.1769949Z Extract downloaded archive
+2026-09-17T13:50:20.1920046Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/cddcf575-6cf6-4f6e-92f1-52d3cb1f4e50 -f /home/runner/work/_temp/d4d94621-5558-4a66-a226-216e481c57d6
+2026-09-17T13:50:22.6247079Z Execute installation script
+2026-09-17T13:50:22.6356531Z Check if Python hostedtoolcache folder exist...
+2026-09-17T13:50:22.6365505Z Create Python 3.13.5 folder
+2026-09-17T13:50:22.6380027Z Copy Python binaries to hostedtoolcache folder
+2026-09-17T13:50:23.1486409Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-17T13:50:23.1531471Z Upgrading pip...
+2026-09-17T13:50:25.8796194Z Looking in links: /tmp/tmpv9zsggaq
+2026-09-17T13:50:25.8803413Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-17T13:50:26.9483792Z Collecting pip
+2026-09-17T13:50:26.9862456Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-17T13:50:26.9945254Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-17T13:50:27.0410942Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 62.7 MB/s eta 0:00:00
+2026-09-17T13:50:27.0411455Z 
+2026-09-17T13:50:27.0581245Z Installing collected packages: pip
+2026-09-17T13:50:27.0582340Z Attempting uninstall: pip
+2026-09-17T13:50:27.0613880Z Found existing installation: pip 25.1.1
+2026-09-17T13:50:27.0963443Z Uninstalling pip-25.1.1:
+2026-09-17T13:50:27.1018783Z Successfully uninstalled pip-25.1.1
+2026-09-17T13:50:27.9914334Z Successfully installed pip-26.2.1
+2026-09-17T13:50:28.0460285Z Create complete file
+2026-09-17T13:50:28.0505136Z Successfully set up CPython (3.13.5)
+2026-09-17T13:50:28.0506279Z ##[endgroup]
+2026-09-17T13:50:28.0705841Z ##[group]Run set -euo pipefail
+2026-09-17T13:50:28.0706237Z [36;1mset -euo pipefail[0m
+2026-09-17T13:50:28.0706804Z [36;1mpython candidate/ci/retention/dependencies.py --repository candidate --output "$RUNNER_TEMP/frozen-issue103"[0m
+2026-09-17T13:50:28.0707760Z [36;1mpython -m pip install --no-index --find-links "$RUNNER_TEMP/frozen-issue103/wheelhouse" -r candidate/ci/retention/requirements.lock[0m
+2026-09-17T13:50:28.0751213Z shell: /usr/bin/bash -e {0}
+2026-09-17T13:50:28.0751485Z env:
+2026-09-17T13:50:28.0751754Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:28.0752205Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-17T13:50:28.0752655Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:28.0753051Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:28.0753424Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:28.0753863Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-17T13:50:28.0754186Z ##[endgroup]
+2026-09-17T13:50:28.2716397Z {"archive_sha256": "b13a76ab9351f81da70e8e2c8873c20141abe953cd3f96aeb181ef86a34b58dd", "verified_wheels": 37, "source": "pinned GO repository ci/dependency_parts only", "application_source_restored": false}
+2026-09-17T13:50:28.6700246Z Looking in links: /home/runner/work/_temp/frozen-issue103/wheelhouse
+2026-09-17T13:50:28.6803022Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/alembic-1.16.5-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 1))
+2026-09-17T13:50:28.6852845Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/annotated_doc-0.0.4-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 2))
+2026-09-17T13:50:28.6880640Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/annotated_types-0.7.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 3))
+2026-09-17T13:50:28.6910175Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/anyio-4.13.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 4))
+2026-09-17T13:50:28.6946076Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/certifi-2026.5.20-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 5))
+2026-09-17T13:50:28.6972376Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/cffi-2.0.0-cp313-cp313-manylinux_2_17_x86_64.whl (from -r candidate/ci/retention/requirements.lock (line 6))
+2026-09-17T13:50:28.7000638Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/click-8.5.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 7))
+2026-09-17T13:50:28.7024911Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/cryptography-46.0.4-cp311-abi3-manylinux_2_34_x86_64.whl (from -r candidate/ci/retention/requirements.lock (line 8))
+2026-09-17T13:50:28.7121969Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/fastapi-0.128.2-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 9))
+2026-09-17T13:50:28.7190657Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/greenlet-3.5.1-cp313-cp313-manylinux_2_24_x86_64.whl (from -r candidate/ci/retention/requirements.lock (line 10))
+2026-09-17T13:50:28.7250806Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/h11-0.16.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 11))
+2026-09-17T13:50:28.7267014Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/httpcore-1.0.9-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 12))
+2026-09-17T13:50:28.7330339Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/httpx-0.28.1-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 13))
+2026-09-17T13:50:28.7375769Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/idna-3.17-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 14))
+2026-09-17T13:50:28.7418855Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/iniconfig-2.3.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 15))
+2026-09-17T13:50:28.7444114Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/mako-1.3.10-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 16))
+2026-09-17T13:50:28.7474166Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/markupsafe-3.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from -r candidate/ci/retention/requirements.lock (line 17))
+2026-09-17T13:50:28.7498323Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/packaging-25.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 18))
+2026-09-17T13:50:28.7526935Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.whl (from -r candidate/ci/retention/requirements.lock (line 19))
+2026-09-17T13:50:28.7644358Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/pluggy-1.6.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 20))
+2026-09-17T13:50:28.7674733Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/psycopg_binary-3.2.10-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from -r candidate/ci/retention/requirements.lock (line 21))
+2026-09-17T13:50:28.7742513Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/psycopg-3.2.10-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 22))
+2026-09-17T13:50:28.7800133Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/pycparser-3.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 23))
+2026-09-17T13:50:28.7827399Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/pydantic_settings-2.14.1-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 24))
+2026-09-17T13:50:28.7859460Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/pydantic-2.13.4-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 25))
+2026-09-17T13:50:28.7940775Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/pydantic_core-2.46.4-cp313-cp313-manylinux_2_17_x86_64.whl (from -r candidate/ci/retention/requirements.lock (line 26))
+2026-09-17T13:50:28.7993408Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/Pygments-2.20.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 27))
+2026-09-17T13:50:28.8080709Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/PyJWT-2.13.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 28))
+2026-09-17T13:50:28.8110123Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/pytest_asyncio-1.3.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 29))
+2026-09-17T13:50:28.8141881Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/pytest-9.0.2-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 30))
+2026-09-17T13:50:28.8196899Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/python_dotenv-1.2.2-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 31))
+2026-09-17T13:50:28.8234913Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/redis-5.2.1-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 32))
+2026-09-17T13:50:28.8271829Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/SQLAlchemy-2.0.50-cp313-cp313-manylinux_2_17_x86_64.whl (from -r candidate/ci/retention/requirements.lock (line 33))
+2026-09-17T13:50:28.8420001Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/starlette-0.50.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 34))
+2026-09-17T13:50:28.8455383Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/typing_inspection-0.4.2-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 35))
+2026-09-17T13:50:28.8480312Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/typing_extensions-4.16.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 36))
+2026-09-17T13:50:28.8505732Z Processing /home/runner/work/_temp/frozen-issue103/wheelhouse/uvicorn-0.35.0-py3-none-any.whl (from -r candidate/ci/retention/requirements.lock (line 37))
+2026-09-17T13:50:28.9800288Z Installing collected packages: typing_extensions, redis, python-dotenv, PyJWT, Pygments, pycparser, psycopg-binary, psycopg, pluggy, Pillow, packaging, MarkupSafe, iniconfig, idna, h11, greenlet, click, certifi, annotated-types, annotated-doc, uvicorn, typing-inspection, SQLAlchemy, pytest, pydantic_core, Mako, httpcore, cffi, anyio, starlette, pytest-asyncio, pydantic, httpx, cryptography, alembic, pydantic-settings, fastapi
+2026-09-17T13:50:34.0564712Z 
+2026-09-17T13:50:34.0609932Z Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 Pillow-12.3.0 PyJWT-2.13.0 Pygments-2.20.0 SQLAlchemy-2.0.50 alembic-1.16.5 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 certifi-2026.5.20 cffi-2.0.0 click-8.5.0 cryptography-46.0.4 fastapi-0.128.2 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.17 iniconfig-2.3.0 packaging-25.0 pluggy-1.6.0 psycopg-3.2.10 psycopg-binary-3.2.10 pycparser-3.0 pydantic-2.13.4 pydantic-settings-2.14.1 pydantic_core-2.46.4 pytest-9.0.2 pytest-asyncio-1.3.0 python-dotenv-1.2.2 redis-5.2.1 starlette-0.50.0 typing-inspection-0.4.2 typing_extensions-4.16.0 uvicorn-0.35.0
+2026-09-17T13:50:34.1258582Z ##[group]Run python tooling/control-plane/boss-deploy-request-v1/run_checks.py "$RUNNER_TEMP/cc-checks"
+2026-09-17T13:50:34.1259721Z [36;1mpython tooling/control-plane/boss-deploy-request-v1/run_checks.py "$RUNNER_TEMP/cc-checks"[0m
+2026-09-17T13:50:34.1298323Z shell: /usr/bin/bash -e {0}
+2026-09-17T13:50:34.1298576Z env:
+2026-09-17T13:50:34.1298841Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:34.1299577Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-17T13:50:34.1300017Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:34.1300390Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:34.1300760Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:34.1301129Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-17T13:50:34.1301447Z ##[endgroup]
+2026-09-17T13:50:35.4647411Z test_a_candidate_that_disagrees_with_the_live_host_is_refused (test_deploy_entry.DerivationTests.test_a_candidate_that_disagrees_with_the_live_host_is_refused)
+2026-09-17T13:50:35.4649697Z The admission record and the root-owned baseline must name the same live image. ... ok
+2026-09-17T13:50:35.4651650Z test_a_candidate_that_needs_a_migration_is_refused_not_ignored (test_deploy_entry.DerivationTests.test_a_candidate_that_needs_a_migration_is_refused_not_ignored)
+2026-09-17T13:50:35.4653355Z #103 scopes controlled forward migration; this contract does not carry it yet, ... ok
+2026-09-17T13:50:35.4654697Z test_a_full_derivation_is_a_valid_plan (test_deploy_entry.DerivationTests.test_a_full_derivation_is_a_valid_plan) ... ok
+2026-09-17T13:50:35.4656349Z test_a_preflight_that_did_not_verify_is_refused (test_deploy_entry.DerivationTests.test_a_preflight_that_did_not_verify_is_refused) ... ok
+2026-09-17T13:50:35.4658109Z test_a_stale_canary_or_preflight_is_refused (test_deploy_entry.DerivationTests.test_a_stale_canary_or_preflight_is_refused) ... ok
+2026-09-17T13:50:35.4660073Z test_a_test_pr_the_ledger_does_not_hold_is_refused (test_deploy_entry.DerivationTests.test_a_test_pr_the_ledger_does_not_hold_is_refused) ... ok
+2026-09-17T13:50:35.4661896Z test_an_unadmitted_candidate_is_refused (test_deploy_entry.DerivationTests.test_an_unadmitted_candidate_is_refused) ... ok
+2026-09-17T13:50:35.4663619Z test_no_canary_for_this_candidate_is_a_refusal (test_deploy_entry.DerivationTests.test_no_canary_for_this_candidate_is_a_refusal) ... ok
+2026-09-17T13:50:35.4665410Z test_register_never_overwrites_a_different_plan (test_deploy_entry.DerivationTests.test_register_never_overwrites_a_different_plan) ... ok
+2026-09-17T13:50:35.4667152Z test_register_refuses_a_symlinked_plan_path (test_deploy_entry.DerivationTests.test_register_refuses_a_symlinked_plan_path) ... ok
+2026-09-17T13:50:35.4668971Z test_the_bridge_derives_and_registers_the_plan_by_itself (test_deploy_entry.DerivationTests.test_the_bridge_derives_and_registers_the_plan_by_itself)
+2026-09-17T13:50:35.4670561Z End to end through the Bridge's own derivation path. ... ok
+2026-09-17T13:50:35.4671843Z test_the_newest_canary_decides_even_when_it_failed (test_deploy_entry.DerivationTests.test_the_newest_canary_decides_even_when_it_failed)
+2026-09-17T13:50:35.4673276Z A refused canary is a finding about the candidate, not an inconvenience. ... ok
+2026-09-17T13:50:35.4674820Z test_the_plan_name_is_a_function_of_the_candidate_and_the_canary (test_deploy_entry.DerivationTests.test_the_plan_name_is_a_function_of_the_candidate_and_the_canary) ... ok
+2026-09-17T13:50:35.4676836Z test_advanced_main_does_not_inject_unrelated_task_deletions (test_deploy_entry.GitDiffTests.test_advanced_main_does_not_inject_unrelated_task_deletions) ... ok
+2026-09-17T13:50:35.4678623Z test_missing_metadata_credentials_fails_closed (test_deploy_entry.MetadataTests.test_missing_metadata_credentials_fails_closed) ... ok
+2026-09-17T13:50:35.4680892Z test_pr_metadata_open_base_same_repo_exact_head (test_deploy_entry.MetadataTests.test_pr_metadata_open_base_same_repo_exact_head) ... ok
+2026-09-17T13:50:35.4682775Z test_a_channel_that_does_not_enable_verify_publishes_nothing (test_deploy_entry.PostActionVerifyTests.test_a_channel_that_does_not_enable_verify_publishes_nothing) ... ok
+2026-09-17T13:50:35.4684768Z test_a_foreign_task_under_the_derived_name_stops_for_a_human (test_deploy_entry.PostActionVerifyTests.test_a_foreign_task_under_the_derived_name_stops_for_a_human) ... ok
+2026-09-17T13:50:35.4686624Z test_a_lost_store_write_is_reconciled_from_the_bus (test_deploy_entry.PostActionVerifyTests.test_a_lost_store_write_is_reconciled_from_the_bus)
+2026-09-17T13:50:35.4688027Z A publish that succeeded and a store write that did not must not re-publish. ... ok
+2026-09-17T13:50:35.4689740Z test_a_newer_action_is_verified_instead_of_the_one_it_replaced (test_deploy_entry.PostActionVerifyTests.test_a_newer_action_is_verified_instead_of_the_one_it_replaced)
+2026-09-17T13:50:35.4691241Z Only the current state is verifiable; the older one has no state left. ... ok
+2026-09-17T13:50:35.4693061Z test_a_preparing_marker_whose_task_never_landed_is_republished (test_deploy_entry.PostActionVerifyTests.test_a_preparing_marker_whose_task_never_landed_is_republished) ... ok
+2026-09-17T13:50:35.4694961Z test_a_rollback_source_is_still_spent_exactly_once (test_deploy_entry.PostActionVerifyTests.test_a_rollback_source_is_still_spent_exactly_once)
+2026-09-17T13:50:35.4696346Z The reconciliation must not look like a second rollback of the same source. ... ok
+2026-09-17T13:50:35.4697794Z test_a_rollback_that_did_not_succeed_is_not_verified (test_deploy_entry.PostActionVerifyTests.test_a_rollback_that_did_not_succeed_is_not_verified) ... ok
+2026-09-17T13:50:35.4699973Z test_a_rollback_whose_gates_did_not_all_pass_is_not_verified (test_deploy_entry.PostActionVerifyTests.test_a_rollback_whose_gates_did_not_all_pass_is_not_verified) ... ok
+2026-09-17T13:50:35.4702005Z test_a_rollback_whose_source_deployment_is_gone_is_refused (test_deploy_entry.PostActionVerifyTests.test_a_rollback_whose_source_deployment_is_gone_is_refused) ... ok
+2026-09-17T13:50:35.4703996Z test_a_rollback_whose_source_record_does_not_match_is_refused (test_deploy_entry.PostActionVerifyTests.test_a_rollback_whose_source_record_does_not_match_is_refused)
+2026-09-17T13:50:35.4705477Z The restored image is only believable if it is the source pair's own. ... ok
+2026-09-17T13:50:35.4707056Z test_a_successful_deployment_is_followed_by_an_automatic_verify (test_deploy_entry.PostActionVerifyTests.test_a_successful_deployment_is_followed_by_an_automatic_verify) ... ok
+2026-09-17T13:50:35.4709413Z test_a_successful_rollback_is_followed_by_an_independent_verify (test_deploy_entry.PostActionVerifyTests.test_a_successful_rollback_is_followed_by_an_independent_verify)
+2026-09-17T13:50:35.4710969Z The gap PR #179 recorded, closed: no human sends this VERIFY. ... ok
+2026-09-17T13:50:35.4712472Z test_a_task_whose_signature_does_not_verify_is_not_verified (test_deploy_entry.PostActionVerifyTests.test_a_task_whose_signature_does_not_verify_is_not_verified) ... ok
+2026-09-17T13:50:35.4714560Z test_an_action_that_finished_too_long_ago_is_not_verified (test_deploy_entry.PostActionVerifyTests.test_an_action_that_finished_too_long_ago_is_not_verified)
+2026-09-17T13:50:35.4716030Z A VERIFY of a state three hours gone would be about the past, not the host. ... ok
+2026-09-17T13:50:35.4717693Z test_an_action_whose_evidence_has_not_arrived_is_the_next_ticks_work (test_deploy_entry.PostActionVerifyTests.test_an_action_whose_evidence_has_not_arrived_is_the_next_ticks_work) ... ok
+2026-09-17T13:50:35.4720316Z test_evidence_whose_signature_does_not_verify_cannot_trigger_a_verify (test_deploy_entry.PostActionVerifyTests.test_evidence_whose_signature_does_not_verify_cannot_trigger_a_verify)
+2026-09-17T13:50:35.4721999Z The trigger is a signature, so a forged or edited Evidence buys nothing. ... ok
+2026-09-17T13:50:35.4723782Z test_nothing_is_published_when_the_ledger_holds_no_action (test_deploy_entry.PostActionVerifyTests.test_nothing_is_published_when_the_ledger_holds_no_action) ... ok
+2026-09-17T13:50:35.4725873Z test_the_hong_kong_agent_accepts_the_derived_parameters (test_deploy_entry.PostActionVerifyTests.test_the_hong_kong_agent_accepts_the_derived_parameters)
+2026-09-17T13:50:35.4727448Z Pinned from the other side: the agent's own validator is run on the Task. ... ok
+2026-09-17T13:50:35.4728747Z test_the_ledger_is_not_written_to (test_deploy_entry.PostActionVerifyTests.test_the_ledger_is_not_written_to)
+2026-09-17T13:50:35.4730047Z The store is kept apart on purpose. ... ok
+2026-09-17T13:50:35.4731461Z test_the_preflight_pool_still_selects_the_operators_verify (test_deploy_entry.PostActionVerifyTests.test_the_preflight_pool_still_selects_the_operators_verify) ... ok
+2026-09-17T13:50:35.4733586Z test_the_reconciliation_publishes_at_most_one_task_per_tick (test_deploy_entry.PostActionVerifyTests.test_the_reconciliation_publishes_at_most_one_task_per_tick)
+2026-09-17T13:50:35.4735131Z A backlog of older actions does not become a burst of probes. ... ok
+2026-09-17T13:50:35.4737072Z test_the_rollback_gate_names_are_pinned_to_the_executor_that_writes_them (test_deploy_entry.PostActionVerifyTests.test_the_rollback_gate_names_are_pinned_to_the_executor_that_writes_them)
+2026-09-17T13:50:35.4738685Z The contract is pinned from the other side's source, not restated from memory. ... ok
+2026-09-17T13:50:35.4740310Z test_the_same_action_is_never_verified_twice (test_deploy_entry.PostActionVerifyTests.test_the_same_action_is_never_verified_twice) ... ok
+2026-09-17T13:50:35.4742505Z test_the_two_actions_produce_different_verify_names_and_the_same_contract (test_deploy_entry.PostActionVerifyTests.test_the_two_actions_produce_different_verify_names_and_the_same_contract) ... ok
+2026-09-17T13:50:35.4744652Z test_a_plan_name_that_was_not_derived_is_refused (test_deploy_entry.ProofTests.test_a_plan_name_that_was_not_derived_is_refused)
+2026-09-17T13:50:35.4746012Z A plan is named by the facts, so a name that does not follow is refused. ... ok
+2026-09-17T13:50:35.4747518Z test_a_test_pr_gate_that_did_not_pass_is_refused (test_deploy_entry.ProofTests.test_a_test_pr_gate_that_did_not_pass_is_refused) ... ok
+2026-09-17T13:50:35.4749518Z test_a_test_pr_package_that_is_not_the_candidates_is_refused (test_deploy_entry.ProofTests.test_a_test_pr_package_that_is_not_the_candidates_is_refused) ... ok
+2026-09-17T13:50:35.4751473Z test_an_old_test_pr_of_the_same_candidate_is_still_valid (test_deploy_entry.ProofTests.test_an_old_test_pr_of_the_same_candidate_is_still_valid)
+2026-09-17T13:50:35.4752976Z Content-bound proof, stated positively: the artifact never expires. ... ok
+2026-09-17T13:50:35.4754532Z test_an_unauthorised_github_identity_is_refused (test_deploy_entry.ProofTests.test_an_unauthorised_github_identity_is_refused) ... ok
+2026-09-17T13:50:35.4756337Z test_approval_expiry_and_postdated_evidence (test_deploy_entry.ProofTests.test_approval_expiry_and_postdated_evidence) ... ok
+2026-09-17T13:50:35.4758025Z test_approval_hash_and_snapshot_hash (test_deploy_entry.ProofTests.test_approval_hash_and_snapshot_hash) ... ok
+2026-09-17T13:50:35.4759859Z test_candidate_binding_and_package_compatibility (test_deploy_entry.ProofTests.test_candidate_binding_and_package_compatibility) ... ok
+2026-09-17T13:50:35.4761597Z test_evidence_for_another_task_is_refused (test_deploy_entry.ProofTests.test_evidence_for_another_task_is_refused)
+2026-09-17T13:50:35.4762918Z The Evidence names the exact Task bytes it executed; a digest of some other ... ok
+2026-09-17T13:50:35.4764615Z test_executor_identifier_compatibility (test_deploy_entry.ProofTests.test_executor_identifier_compatibility) ... ok
+2026-09-17T13:50:35.4766748Z test_executor_identifier_compatibility_is_kept_but_the_name_is_derived (test_deploy_entry.ProofTests.test_executor_identifier_compatibility_is_kept_but_the_name_is_derived)
+2026-09-17T13:50:35.4768670Z The id a Task carries must be a derived one; a chosen id is refused. ... ok
+2026-09-17T13:50:35.4770570Z test_no_authenticated_identity_is_refused (test_deploy_entry.ProofTests.test_no_authenticated_identity_is_refused) ... ok
+2026-09-17T13:50:35.4772265Z test_numeric_false_is_not_a_signed_gate (test_deploy_entry.ProofTests.test_numeric_false_is_not_a_signed_gate) ... ok
+2026-09-17T13:50:35.4773712Z test_rejected_signed_plan_fields (test_deploy_entry.ProofTests.test_rejected_signed_plan_fields) ... ok
+2026-09-17T13:50:35.4775142Z test_signed_canary_must_match_candidate (test_deploy_entry.ProofTests.test_signed_canary_must_match_candidate) ... ok
+2026-09-17T13:50:35.4776644Z test_stale_or_failed_signed_evidence (test_deploy_entry.ProofTests.test_stale_or_failed_signed_evidence) ... ok
+2026-09-17T13:50:35.4778284Z test_the_approval_cannot_borrow_another_authorised_name (test_deploy_entry.ProofTests.test_the_approval_cannot_borrow_another_authorised_name)
+2026-09-17T13:50:35.4779922Z The name the approval carries must be the identity that authenticated. ... ok
+2026-09-17T13:50:35.4781256Z test_the_approval_carries_no_signature_field (test_deploy_entry.ProofTests.test_the_approval_carries_no_signature_field) ... ok
+2026-09-17T13:50:35.4783350Z test_the_approval_is_authorised_by_an_authenticated_identity (test_deploy_entry.ProofTests.test_the_approval_is_authorised_by_an_authenticated_identity)
+2026-09-17T13:50:35.4784918Z The V1 authority, asserted directly: the login GitHub reports is what counts. ... ok
+2026-09-17T13:50:35.4786343Z test_the_approval_is_bound_to_the_request_it_is (test_deploy_entry.ProofTests.test_the_approval_is_bound_to_the_request_it_is)
+2026-09-17T13:50:35.4787663Z The approval is one exact Request, not a class of them. ... ok
+2026-09-17T13:50:35.4789101Z test_the_authorised_identities_are_named_in_one_place (test_deploy_entry.ProofTests.test_the_authorised_identities_are_named_in_one_place) ... ok
+2026-09-17T13:50:35.4791124Z test_the_signed_test_pr_is_what_replaces_sealed_node (test_deploy_entry.ProofTests.test_the_signed_test_pr_is_what_replaces_sealed_node)
+2026-09-17T13:50:35.4792581Z Every binding sealed_node stood for, refused one at a time when broken. ... ok
+2026-09-17T13:50:35.4793862Z test_valid_plan_and_hk_wire_contract (test_deploy_entry.ProofTests.test_valid_plan_and_hk_wire_contract) ... ok
+2026-09-17T13:50:35.4795356Z test_wrong_keys_and_unsigned_approval (test_deploy_entry.ProofTests.test_wrong_keys_and_unsigned_approval) ... ok
+2026-09-17T13:50:35.4796984Z test_a_consumed_plan_and_approval_are_never_reused (test_deploy_entry.QueueTests.test_a_consumed_plan_and_approval_are_never_reused)
+2026-09-17T13:50:35.4798380Z Two Requests against the same facts give the same plan, and it is spent once. ... ok
+2026-09-17T13:50:35.4800233Z test_a_newer_deployment_landing_before_publication_stops_the_rollback (test_deploy_entry.QueueTests.test_a_newer_deployment_landing_before_publication_stops_the_rollback)
+2026-09-17T13:50:35.4801859Z The source is re-derived from the durable ledger, not taken from the claim. ... ok
+2026-09-17T13:50:35.4803357Z test_a_rollback_cannot_deploy_and_a_deployment_cannot_undo (test_deploy_entry.QueueTests.test_a_rollback_cannot_deploy_and_a_deployment_cannot_undo)
+2026-09-17T13:50:35.4804905Z The two actions stay separate: neither Request can produce the other's Task. ... ok
+2026-09-17T13:50:35.4806593Z test_a_rollback_is_silenced_by_the_same_emergency_stop_as_a_deployment (test_deploy_entry.QueueTests.test_a_rollback_is_silenced_by_the_same_emergency_stop_as_a_deployment) ... ok
+2026-09-17T13:50:35.4808627Z test_a_rollback_of_the_published_deployment_is_derived_signed_and_published (test_deploy_entry.QueueTests.test_a_rollback_of_the_published_deployment_is_derived_signed_and_published) ... ok
+2026-09-17T13:50:35.4811092Z test_a_rollback_registers_no_plan_and_records_no_plan_fields (test_deploy_entry.QueueTests.test_a_rollback_registers_no_plan_and_records_no_plan_fields) ... ok
+2026-09-17T13:50:35.4813055Z test_a_second_rollback_of_the_same_deployment_is_refused (test_deploy_entry.QueueTests.test_a_second_rollback_of_the_same_deployment_is_refused) ... ok
+2026-09-17T13:50:35.4815416Z test_a_source_evidence_that_changed_before_publication_stops_the_rollback (test_deploy_entry.QueueTests.test_a_source_evidence_that_changed_before_publication_stops_the_rollback)
+2026-09-17T13:50:35.4817169Z The Evidence is re-read from the repository, so a replaced one is caught. ... ok
+2026-09-17T13:50:35.4818537Z test_ambiguous_publish_no_second_attempt (test_deploy_entry.QueueTests.test_ambiguous_publish_no_second_attempt) ... ok
+2026-09-17T13:50:35.4820474Z test_an_unwritable_plan_store_is_a_refusal_not_a_crash (test_deploy_entry.QueueTests.test_an_unwritable_plan_store_is_a_refusal_not_a_crash)
+2026-09-17T13:50:35.4822047Z The store's writability is the host's job; a failure here must not kill the tick. ... ok
+2026-09-17T13:50:35.4823648Z test_deploy_refused_while_the_authorization_mode_is_not_request (test_deploy_entry.QueueTests.test_deploy_refused_while_the_authorization_mode_is_not_request)
+2026-09-17T13:50:35.4825198Z The emergency stop: any mode but `request` silences deployments. ... ok
+2026-09-17T13:50:35.4826768Z test_midflight_authorization_mode_suspension (test_deploy_entry.QueueTests.test_midflight_authorization_mode_suspension)
+2026-09-17T13:50:35.4828122Z A deployment already claimed is stopped when the mode stops accepting. ... ok
+2026-09-17T13:50:35.4829827Z test_midflight_head_change_consumes_claim_without_publish (test_deploy_entry.QueueTests.test_midflight_head_change_consumes_claim_without_publish) ... ok
+2026-09-17T13:50:35.4831469Z test_midflight_plan_replacement (test_deploy_entry.QueueTests.test_midflight_plan_replacement)
+2026-09-17T13:50:35.4832646Z A plan that changes under a live claim is refused, not silently deployed. ... ok
+2026-09-17T13:50:35.4834168Z test_prepared_published_bytes_reconciled_after_restart (test_deploy_entry.QueueTests.test_prepared_published_bytes_reconciled_after_restart) ... ok
+2026-09-17T13:50:35.4835915Z test_publish_replay_and_duplicate_plan (test_deploy_entry.QueueTests.test_publish_replay_and_duplicate_plan) ... ok
+2026-09-17T13:50:35.4837547Z test_published_before_lost_ack_is_reconciled (test_deploy_entry.QueueTests.test_published_before_lost_ack_is_reconciled) ... ok
+2026-09-17T13:50:35.4839057Z test_request_filename_binding (test_deploy_entry.QueueTests.test_request_filename_binding) ... ok
+2026-09-17T13:50:35.4840899Z test_test_pr_preserved_with_exact_resolved_source (test_deploy_entry.QueueTests.test_test_pr_preserved_with_exact_resolved_source) ... ok
+2026-09-17T13:50:35.4842755Z test_the_authorization_is_the_request_and_is_recorded_as_such (test_deploy_entry.QueueTests.test_the_authorization_is_the_request_and_is_recorded_as_such)
+2026-09-17T13:50:35.4844310Z The one-time authorisation the Command Center establishes, and where it lives. ... ok
+2026-09-17T13:50:35.4845921Z test_the_declared_mode_does_not_authorise_a_deployment_by_itself (test_deploy_entry.QueueTests.test_the_declared_mode_does_not_authorise_a_deployment_by_itself)
+2026-09-17T13:50:35.4847412Z The property that replaces the switch. ... ok
+2026-09-17T13:50:35.4848606Z test_two_processes_one_plan_one_publication (test_deploy_entry.QueueTests.test_two_processes_one_plan_one_publication) ... ok
+2026-09-17T13:50:35.4850341Z test_v2_cannot_enable_new_actions (test_deploy_entry.QueueTests.test_v2_cannot_enable_new_actions) ... ok
+2026-09-17T13:50:35.4851963Z test_a_branch_name_that_is_really_an_option_is_refused (test_deploy_entry.RemoteReadTests.test_a_branch_name_that_is_really_an_option_is_refused)
+2026-09-17T13:50:35.4853338Z The name reaches git as an argument, so it is validated first. ... ok
+2026-09-17T13:50:35.4854782Z test_a_file_that_cannot_be_shown_is_a_refusal_not_a_crash (test_deploy_entry.RemoteReadTests.test_a_file_that_cannot_be_shown_is_a_refusal_not_a_crash)
+2026-09-17T13:50:35.4856264Z An escaping error here would end the tick and stop every other action too. ... ok
+2026-09-17T13:50:35.4857822Z test_a_remote_that_declares_no_default_branch_is_refused (test_deploy_entry.RemoteReadTests.test_a_remote_that_declares_no_default_branch_is_refused)
+2026-09-17T13:50:35.4859536Z Fail closed, and before the fetch: an unnamed branch is not a reason to guess. ... ok
+2026-09-17T13:50:35.4861165Z test_the_branch_is_the_one_the_remote_declares (test_deploy_entry.RemoteReadTests.test_the_branch_is_the_one_the_remote_declares)
+2026-09-17T13:50:35.4862513Z One reader, two remotes, and the name comes from the remote each time. ... ok
+2026-09-17T13:50:35.4863743Z test_the_fetch_is_filtered_and_shallow (test_deploy_entry.RemoteReadTests.test_the_fetch_is_filtered_and_shallow)
+2026-09-17T13:50:35.4865198Z What makes a repository of that size readable inside a poll tick. ... ok
+2026-09-17T13:50:35.4866775Z test_the_remote_is_asked_which_branch_it_publishes (test_deploy_entry.RemoteReadTests.test_the_remote_is_asked_which_branch_it_publishes) ... ok
+2026-09-17T13:50:35.4868634Z test_a_deploy_request_naming_a_plan_is_refused (test_deploy_entry.RequestTests.test_a_deploy_request_naming_a_plan_is_refused)
+2026-09-17T13:50:35.4870240Z The shape this gate no longer accepts must fail rather than be read around it. ... ok
+2026-09-17T13:50:35.4872354Z test_deploy_cannot_enter_legacy_derivation (test_deploy_entry.RequestTests.test_deploy_cannot_enter_legacy_derivation) ... ok
+2026-09-17T13:50:35.4880304Z test_deploy_shape (test_deploy_entry.RequestTests.test_deploy_shape)
+2026-09-17T13:50:35.4881368Z A DEPLOY Request is the five common fields; it steers no deployment fact. ... ok
+2026-09-17T13:50:35.4882722Z test_duplicate_keys_and_nonfinite_json (test_deploy_entry.RequestTests.test_duplicate_keys_and_nonfinite_json) ... ok
+2026-09-17T13:50:35.4884081Z test_invalid_scope (test_deploy_entry.RequestTests.test_invalid_scope) ... ok
+2026-09-17T13:50:35.4885658Z test_legacy_modes_cannot_downgrade_deploy_to_verify (test_deploy_entry.RequestTests.test_legacy_modes_cannot_downgrade_deploy_to_verify) ... ok
+2026-09-17T13:50:35.4887493Z test_no_caller_runtime_or_approval_override (test_deploy_entry.RequestTests.test_no_caller_runtime_or_approval_override) ... ok
+2026-09-17T13:50:35.4889511Z test_a_deployment_that_did_not_report_deploy_ok_is_not_a_source (test_deploy_entry.RollbackProofTests.test_a_deployment_that_did_not_report_deploy_ok_is_not_a_source) ... ok
+2026-09-17T13:50:35.4891511Z test_a_deployment_whose_evidence_was_refused_is_not_a_source (test_deploy_entry.RollbackProofTests.test_a_deployment_whose_evidence_was_refused_is_not_a_source) ... ok
+2026-09-17T13:50:35.4893554Z test_a_deployment_with_a_failed_gate_is_not_a_source (test_deploy_entry.RollbackProofTests.test_a_deployment_with_a_failed_gate_is_not_a_source) ... ok
+2026-09-17T13:50:35.4895623Z test_a_ledger_holding_only_probes_has_nothing_to_roll_back (test_deploy_entry.RollbackProofTests.test_a_ledger_holding_only_probes_has_nothing_to_roll_back) ... ok
+2026-09-17T13:50:35.4897694Z test_a_record_identity_that_is_not_a_digest_is_refused (test_deploy_entry.RollbackProofTests.test_a_record_identity_that_is_not_a_digest_is_refused) ... ok
+2026-09-17T13:50:35.4899904Z test_a_record_that_is_not_schema_two_is_refused (test_deploy_entry.RollbackProofTests.test_a_record_that_is_not_schema_two_is_refused) ... ok
+2026-09-17T13:50:35.4901793Z test_a_release_id_that_is_not_an_identifier_is_refused (test_deploy_entry.RollbackProofTests.test_a_release_id_that_is_not_an_identifier_is_refused) ... ok
+2026-09-17T13:50:35.4903907Z test_a_rollback_approval_and_a_deploy_approval_are_not_interchangeable (test_deploy_entry.RollbackProofTests.test_a_rollback_approval_and_a_deploy_approval_are_not_interchangeable) ... ok
+2026-09-17T13:50:35.4906365Z test_a_source_carrying_a_parameter_the_deployment_never_sends_is_refused (test_deploy_entry.RollbackProofTests.test_a_source_carrying_a_parameter_the_deployment_never_sends_is_refused) ... ok
+2026-09-17T13:50:35.4908625Z test_a_source_is_spent_by_any_published_rollback_that_cites_it (test_deploy_entry.RollbackProofTests.test_a_source_is_spent_by_any_published_rollback_that_cites_it) ... ok
+2026-09-17T13:50:35.4910853Z test_a_source_task_that_is_not_a_deployment_is_refused (test_deploy_entry.RollbackProofTests.test_a_source_task_that_is_not_a_deployment_is_refused) ... ok
+2026-09-17T13:50:35.4913091Z test_a_source_that_outlived_its_task_window_is_still_a_source (test_deploy_entry.RollbackProofTests.test_a_source_that_outlived_its_task_window_is_still_a_source)
+2026-09-17T13:50:35.4914622Z The second invented rule, caught the same way: `completed <= expires`. ... ok
+2026-09-17T13:50:35.4916161Z test_a_source_whose_own_timeline_is_incoherent_is_refused (test_deploy_entry.RollbackProofTests.test_a_source_whose_own_timeline_is_incoherent_is_refused)
+2026-09-17T13:50:35.4917738Z What the bound that remains is for: the executor cannot start before it was told. ... ok
+2026-09-17T13:50:35.4919441Z test_an_unpublished_deployment_is_not_yet_a_source (test_deploy_entry.RollbackProofTests.test_an_unpublished_deployment_is_not_yet_a_source) ... ok
+2026-09-17T13:50:35.4921419Z test_an_unpublished_rollback_has_not_spent_its_source (test_deploy_entry.RollbackProofTests.test_an_unpublished_rollback_has_not_spent_its_source) ... ok
+2026-09-17T13:50:35.4923365Z test_an_unsigned_or_foreign_source_task_is_refused (test_deploy_entry.RollbackProofTests.test_an_unsigned_or_foreign_source_task_is_refused) ... ok
+2026-09-17T13:50:35.4925565Z test_no_published_deployment_means_nothing_to_roll_back (test_deploy_entry.RollbackProofTests.test_no_published_deployment_means_nothing_to_roll_back) ... ok
+2026-09-17T13:50:35.4927753Z test_record_path_is_an_annotation_and_a_real_deployment_still_validates (test_deploy_entry.RollbackProofTests.test_record_path_is_an_annotation_and_a_real_deployment_still_validates)
+2026-09-17T13:50:35.4929871Z The mistake this guards: applying "every gate value is PASS" to a DEPLOY Evidence. ... ok
+2026-09-17T13:50:35.4931870Z test_the_agent_accepts_the_rollback_evidence_shape_this_gate_expects (test_deploy_entry.RollbackProofTests.test_the_agent_accepts_the_rollback_evidence_shape_this_gate_expects)
+2026-09-17T13:50:35.4933641Z The executor result the Bridge will read back, built by the agent's own builder. ... ok
+2026-09-17T13:50:35.4935120Z test_the_approval_id_is_derived_not_chosen (test_deploy_entry.RollbackProofTests.test_the_approval_id_is_derived_not_chosen) ... ok
+2026-09-17T13:50:35.4937073Z test_the_authorisation_cannot_be_borrowed_for_another_request (test_deploy_entry.RollbackProofTests.test_the_authorisation_cannot_be_borrowed_for_another_request) ... ok
+2026-09-17T13:50:35.4939341Z test_the_authorisation_cannot_borrow_another_authorised_name (test_deploy_entry.RollbackProofTests.test_the_authorisation_cannot_borrow_another_authorised_name) ... ok
+2026-09-17T13:50:35.4941156Z test_the_authorisation_expires (test_deploy_entry.RollbackProofTests.test_the_authorisation_expires) ... ok
+2026-09-17T13:50:35.4942910Z test_the_authorisation_field_set_is_exact (test_deploy_entry.RollbackProofTests.test_the_authorisation_field_set_is_exact) ... ok
+2026-09-17T13:50:35.4961528Z test_the_authorisation_is_bound_to_the_pair_it_undoes (test_deploy_entry.RollbackProofTests.test_the_authorisation_is_bound_to_the_pair_it_undoes) ... ok
+2026-09-17T13:50:35.4963584Z test_the_authorisation_must_be_authorised_by_an_authenticated_identity (test_deploy_entry.RollbackProofTests.test_the_authorisation_must_be_authorised_by_an_authenticated_identity) ... ok
+2026-09-17T13:50:35.4965676Z test_the_authorisation_must_postdate_the_source_evidence (test_deploy_entry.RollbackProofTests.test_the_authorisation_must_postdate_the_source_evidence)
+2026-09-17T13:50:35.4967090Z A rollback cannot be authorised before the deployment it undoes has finished. ... ok
+2026-09-17T13:50:35.4968475Z test_the_authorisation_scope_is_the_rollback_scope (test_deploy_entry.RollbackProofTests.test_the_authorisation_scope_is_the_rollback_scope) ... ok
+2026-09-17T13:50:35.4970570Z test_the_deadline_never_outlives_the_authorisation (test_deploy_entry.RollbackProofTests.test_the_deadline_never_outlives_the_authorisation) ... ok
+2026-09-17T13:50:35.4972354Z test_the_derived_parameters_are_exactly_what_the_hk_agent_accepts (test_deploy_entry.RollbackProofTests.test_the_derived_parameters_are_exactly_what_the_hk_agent_accepts)
+2026-09-17T13:50:35.4974054Z Our parameter contract is a claim about the agent; this checks it against it. ... ok
+2026-09-17T13:50:35.4975674Z test_the_newest_deployment_wins_and_there_is_no_fallback_to_an_older_one (test_deploy_entry.RollbackProofTests.test_the_newest_deployment_wins_and_there_is_no_fallback_to_an_older_one)
+2026-09-17T13:50:35.4977136Z A newer deployment whose Evidence is missing stops the derivation. ... ok
+2026-09-17T13:50:35.4978403Z test_the_newest_published_deployment_is_the_source (test_deploy_entry.RollbackProofTests.test_the_newest_published_deployment_is_the_source) ... ok
+2026-09-17T13:50:35.4980583Z test_a_channel_that_does_not_declare_the_mode_is_refused (test_deploy_entry.StorageTests.test_a_channel_that_does_not_declare_the_mode_is_refused) ... ok
+2026-09-17T13:50:35.4982046Z test_a_malformed_channel_is_refused (test_deploy_entry.StorageTests.test_a_malformed_channel_is_refused) ... ok
+2026-09-17T13:50:35.4983252Z test_secure_plan_load_and_absence (test_deploy_entry.StorageTests.test_secure_plan_load_and_absence) ... ok
+2026-09-17T13:50:35.4984842Z test_symlink_writable_oversized_and_bad_owner (test_deploy_entry.StorageTests.test_symlink_writable_oversized_and_bad_owner) ... ok
+2026-09-17T13:50:35.4986561Z test_the_shipped_configuration_declares_the_mode_and_grants_nothing (test_deploy_entry.StorageTests.test_the_shipped_configuration_declares_the_mode_and_grants_nothing)
+2026-09-17T13:50:35.4987865Z There is no switch to ship on, and none to ship off either. ... ok
+2026-09-17T13:50:35.4988326Z 
+2026-09-17T13:50:35.4988583Z ----------------------------------------------------------------------
+2026-09-17T13:50:35.4989653Z Ran 137 tests in 0.923s
+2026-09-17T13:50:35.4989911Z 
+2026-09-17T13:50:35.4990039Z OK
+2026-09-17T13:50:35.4991158Z test_a_deploy_request_carries_no_plan_and_no_deployment_fact (deploy_bridge.run_tests.<locals>.Tests.test_a_deploy_request_carries_no_plan_and_no_deployment_fact) ... ok
+2026-09-17T13:50:35.4992981Z test_a_deploy_request_that_names_a_plan_is_refused (deploy_bridge.run_tests.<locals>.Tests.test_a_deploy_request_that_names_a_plan_is_refused) ... ok
+2026-09-17T13:50:35.4994893Z test_a_post_action_verify_cannot_name_its_own_image_source_or_service (deploy_bridge.run_tests.<locals>.Tests.test_a_post_action_verify_cannot_name_its_own_image_source_or_service) ... ok
+2026-09-17T13:50:35.4996870Z test_a_post_action_verify_carries_only_the_verify_contract (deploy_bridge.run_tests.<locals>.Tests.test_a_post_action_verify_carries_only_the_verify_contract) ... ok
+2026-09-17T13:50:35.4999011Z test_a_post_action_verify_is_structurally_identical_for_both_actions (deploy_bridge.run_tests.<locals>.Tests.test_a_post_action_verify_is_structurally_identical_for_both_actions) ... ok
+2026-09-17T13:50:35.5001405Z test_a_post_action_verify_refuses_an_action_that_mutates_nothing (deploy_bridge.run_tests.<locals>.Tests.test_a_post_action_verify_refuses_an_action_that_mutates_nothing) ... ok
+2026-09-17T13:50:35.5003392Z test_a_post_action_verify_refuses_an_image_that_is_not_a_digest (deploy_bridge.run_tests.<locals>.Tests.test_a_post_action_verify_refuses_an_image_that_is_not_a_digest) ... ok
+2026-09-17T13:50:35.5005470Z test_a_source_is_spent_by_any_published_rollback_that_cites_it (deploy_bridge.run_tests.<locals>.Tests.test_a_source_is_spent_by_any_published_rollback_that_cites_it) ... ok
+2026-09-17T13:50:35.5006990Z test_action_and_env (deploy_bridge.run_tests.<locals>.Tests.test_action_and_env) ... ok
+2026-09-17T13:50:35.5008186Z test_ambiguous_push_recovery_fails_closed (deploy_bridge.run_tests.<locals>.Tests.test_ambiguous_push_recovery_fails_closed) ... ok
+2026-09-17T13:50:35.5013153Z test_an_unpublished_rollback_has_not_spent_its_source (deploy_bridge.run_tests.<locals>.Tests.test_an_unpublished_rollback_has_not_spent_its_source) ... ok
+2026-09-17T13:50:35.5015073Z test_authoritative_baseline_validation_fails_closed (deploy_bridge.run_tests.<locals>.Tests.test_authoritative_baseline_validation_fails_closed) ... ok
+2026-09-17T13:50:35.5016342Z test_bad_json (deploy_bridge.run_tests.<locals>.Tests.test_bad_json) ... ok
+2026-09-17T13:50:35.5017679Z test_canary_authority_is_fail_closed (deploy_bridge.run_tests.<locals>.Tests.test_canary_authority_is_fail_closed) ... ok
+2026-09-17T13:50:35.5019917Z test_canary_authority_that_is_missing_or_unreadable_is_a_rejection_not_a_traceback (deploy_bridge.run_tests.<locals>.Tests.test_canary_authority_that_is_missing_or_unreadable_is_a_rejection_not_a_traceback) ... ok
+2026-09-17T13:50:35.5022222Z test_canary_cannot_fall_through_into_the_other_actions (deploy_bridge.run_tests.<locals>.Tests.test_canary_cannot_fall_through_into_the_other_actions) ... ok
+2026-09-17T13:50:35.5023276Z test_canary_does_not_arm_or_consume_a_deployment_plan (deploy_bridge.run_tests.<locals>.Tests.test_canary_does_not_arm_or_consume_a_deployment_plan) ... ok
+2026-09-17T13:50:35.5024339Z test_canary_is_reachable_while_deployments_are_suspended (deploy_bridge.run_tests.<locals>.Tests.test_canary_is_reachable_while_deployments_are_suspended) ... ok
+2026-09-17T13:50:35.5025539Z test_canary_parameters_are_not_caller_controllable (deploy_bridge.run_tests.<locals>.Tests.test_canary_parameters_are_not_caller_controllable) ... ok
+2026-09-17T13:50:35.5026554Z test_canary_request_is_accepted_and_carries_nothing_else (deploy_bridge.run_tests.<locals>.Tests.test_canary_request_is_accepted_and_carries_nothing_else) ... ok
+2026-09-17T13:50:35.5027662Z test_canary_request_is_refused_when_the_action_is_not_in_the_channel (deploy_bridge.run_tests.<locals>.Tests.test_canary_request_is_refused_when_the_action_is_not_in_the_channel) ... ok
+2026-09-17T13:50:35.5028740Z test_canary_request_with_any_parameter_is_rejected (deploy_bridge.run_tests.<locals>.Tests.test_canary_request_with_any_parameter_is_rejected) ... ok
+2026-09-17T13:50:35.5034677Z test_canary_task_carries_exactly_four_parameters_taken_from_the_authority (deploy_bridge.run_tests.<locals>.Tests.test_canary_task_carries_exactly_four_parameters_taken_from_the_authority) ... ok
+2026-09-17T13:50:35.5035971Z test_canary_wrong_environment_and_unknown_action_are_rejected (deploy_bridge.run_tests.<locals>.Tests.test_canary_wrong_environment_and_unknown_action_are_rejected) ... ok
+2026-09-17T13:50:35.5036996Z test_channel_config_has_no_one_shot_fields (deploy_bridge.run_tests.<locals>.Tests.test_channel_config_has_no_one_shot_fields) ... ok
+2026-09-17T13:50:35.5037950Z test_channel_contract_expresses_exactly_six_actions (deploy_bridge.run_tests.<locals>.Tests.test_channel_contract_expresses_exactly_six_actions) ... ok
+2026-09-17T13:50:35.5038949Z test_channel_rejects_an_unknown_or_reordered_action (deploy_bridge.run_tests.<locals>.Tests.test_channel_rejects_an_unknown_or_reordered_action) ... ok
+2026-09-17T13:50:35.5040213Z test_channel_rejects_one_shot_shape (deploy_bridge.run_tests.<locals>.Tests.test_channel_rejects_one_shot_shape) ... ok
+2026-09-17T13:50:35.5041100Z test_channel_without_the_canary_action_is_refused (deploy_bridge.run_tests.<locals>.Tests.test_channel_without_the_canary_action_is_refused) ... ok
+2026-09-17T13:50:35.5042059Z test_channel_without_the_health_action_is_refused (deploy_bridge.run_tests.<locals>.Tests.test_channel_without_the_health_action_is_refused) ... ok
+2026-09-17T13:50:35.5043028Z test_channel_without_the_rollback_action_is_refused (deploy_bridge.run_tests.<locals>.Tests.test_channel_without_the_rollback_action_is_refused) ... ok
+2026-09-17T13:50:35.5043859Z test_confirmed_push_disarms (deploy_bridge.run_tests.<locals>.Tests.test_confirmed_push_disarms) ... ok
+2026-09-17T13:50:35.5044560Z test_crash_claim_is_fail_closed (deploy_bridge.run_tests.<locals>.Tests.test_crash_claim_is_fail_closed) ... ok
+2026-09-17T13:50:35.5045190Z test_derivation (deploy_bridge.run_tests.<locals>.Tests.test_derivation) ... ok
+2026-09-17T13:50:35.5045701Z test_diff_rules (deploy_bridge.run_tests.<locals>.Tests.test_diff_rules) ... ok
+2026-09-17T13:50:35.5046499Z test_existing_actions_are_unchanged_by_the_health_extension (deploy_bridge.run_tests.<locals>.Tests.test_existing_actions_are_unchanged_by_the_health_extension) ... ok
+2026-09-17T13:50:35.5047589Z test_extra_and_pr1_ignore (deploy_bridge.run_tests.<locals>.Tests.test_extra_and_pr1_ignore) ... ok
+2026-09-17T13:50:35.5048245Z test_head_change_rejects (deploy_bridge.run_tests.<locals>.Tests.test_head_change_rejects) ... ok
+2026-09-17T13:50:35.5049075Z test_health_cannot_fall_through_into_the_other_actions (deploy_bridge.run_tests.<locals>.Tests.test_health_cannot_fall_through_into_the_other_actions) ... ok
+2026-09-17T13:50:35.5050905Z test_health_cannot_participate_in_the_deploy_arm (deploy_bridge.run_tests.<locals>.Tests.test_health_cannot_participate_in_the_deploy_arm) ... ok
+2026-09-17T13:50:35.5051912Z test_health_request_is_accepted_and_carries_nothing_else (deploy_bridge.run_tests.<locals>.Tests.test_health_request_is_accepted_and_carries_nothing_else) ... ok
+2026-09-17T13:50:35.5052921Z test_health_request_with_any_parameter_is_rejected (deploy_bridge.run_tests.<locals>.Tests.test_health_request_with_any_parameter_is_rejected) ... ok
+2026-09-17T13:50:35.5053950Z test_health_task_is_read_only_with_fixed_empty_parameters (deploy_bridge.run_tests.<locals>.Tests.test_health_task_is_read_only_with_fixed_empty_parameters) ... ok
+2026-09-17T13:50:35.5055060Z test_health_unknown_action_is_rejected (deploy_bridge.run_tests.<locals>.Tests.test_health_unknown_action_is_rejected) ... ok
+2026-09-17T13:50:35.5055900Z test_health_wrong_environment_is_rejected (deploy_bridge.run_tests.<locals>.Tests.test_health_wrong_environment_is_rejected) ... ok
+2026-09-17T13:50:35.5056869Z test_one_action_yields_exactly_one_post_action_verify_name (deploy_bridge.run_tests.<locals>.Tests.test_one_action_yields_exactly_one_post_action_verify_name) ... ok
+2026-09-17T13:50:35.5057657Z test_path_rule (deploy_bridge.run_tests.<locals>.Tests.test_path_rule) ... ok
+2026-09-17T13:50:35.5058385Z test_persistent_ambiguous_publish_fails_closed (deploy_bridge.run_tests.<locals>.Tests.test_persistent_ambiguous_publish_fails_closed) ... ok
+2026-09-17T13:50:35.5059763Z test_persistent_health_request_publishes_a_read_only_task (deploy_bridge.run_tests.<locals>.Tests.test_persistent_health_request_publishes_a_read_only_task) ... ok
+2026-09-17T13:50:35.5060806Z test_persistent_three_unique_requests_and_replays (deploy_bridge.run_tests.<locals>.Tests.test_persistent_three_unique_requests_and_replays) ... ok
+2026-09-17T13:50:35.5061615Z test_replay_and_duplicate (deploy_bridge.run_tests.<locals>.Tests.test_replay_and_duplicate) ... ok
+2026-09-17T13:50:35.5062348Z test_request_path_rejects_extra_files (deploy_bridge.run_tests.<locals>.Tests.test_request_path_rejects_extra_files) ... ok
+2026-09-17T13:50:35.5063289Z test_rollback_cannot_be_derived_without_its_derived_context (deploy_bridge.run_tests.<locals>.Tests.test_rollback_cannot_be_derived_without_its_derived_context) ... ok
+2026-09-17T13:50:35.5064356Z test_rollback_cannot_fall_through_into_the_other_actions (deploy_bridge.run_tests.<locals>.Tests.test_rollback_cannot_fall_through_into_the_other_actions) ... ok
+2026-09-17T13:50:35.5065419Z test_rollback_request_is_accepted_and_carries_nothing_else (deploy_bridge.run_tests.<locals>.Tests.test_rollback_request_is_accepted_and_carries_nothing_else) ... ok
+2026-09-17T13:50:35.5066463Z test_rollback_request_with_any_parameter_is_rejected (deploy_bridge.run_tests.<locals>.Tests.test_rollback_request_with_any_parameter_is_rejected) ... ok
+2026-09-17T13:50:35.5067422Z test_rollback_task_cannot_name_its_own_source (deploy_bridge.run_tests.<locals>.Tests.test_rollback_task_cannot_name_its_own_source) ... ok
+2026-09-17T13:50:35.5068540Z test_rollback_task_carries_exactly_the_three_parameters_the_agent_validates (deploy_bridge.run_tests.<locals>.Tests.test_rollback_task_carries_exactly_the_three_parameters_the_agent_validates) ... ok
+2026-09-17T13:50:35.5070593Z test_rollback_wrong_environment_and_unknown_action_are_rejected (deploy_bridge.run_tests.<locals>.Tests.test_rollback_wrong_environment_and_unknown_action_are_rejected) ... ok
+2026-09-17T13:50:35.5071501Z test_signature_roundtrip (deploy_bridge.run_tests.<locals>.Tests.test_signature_roundtrip) ... ok
+2026-09-17T13:50:35.5072275Z test_stale_and_size (deploy_bridge.run_tests.<locals>.Tests.test_stale_and_size) ... ok
+2026-09-17T13:50:35.5072980Z test_task_inputs_not_caller_controlled (deploy_bridge.run_tests.<locals>.Tests.test_task_inputs_not_caller_controlled) ... ok
+2026-09-17T13:50:35.5073672Z test_unknown_fields (deploy_bridge.run_tests.<locals>.Tests.test_unknown_fields) ... ok
+2026-09-17T13:50:35.5074423Z test_unnamed_action_cannot_become_a_verify_task (deploy_bridge.run_tests.<locals>.Tests.test_unnamed_action_cannot_become_a_verify_task) ... ok
+2026-09-17T13:50:35.5075113Z test_valid (deploy_bridge.run_tests.<locals>.Tests.test_valid) ... ok
+2026-09-17T13:50:35.5075387Z 
+2026-09-17T13:50:35.5075550Z ----------------------------------------------------------------------
+2026-09-17T13:50:35.5075889Z Ran 65 tests in 0.053s
+2026-09-17T13:50:35.5076030Z 
+2026-09-17T13:50:35.5076107Z OK
+2026-09-17T13:50:35.5081739Z {"canary_authority_config": "/etc/go-command-center/boss-request-canary-baseline-v1.json", "canary_can_become_verify_test_pr_deploy_or_rollback": "NO", "canary_gated_by_the_deployment_authorization": "NO", "canary_parameters_source": "ROOT_OWNED_CANARY_AUTHORITY_FILE", "canary_participates_in_deploy_arm_or_plan_budget": "NO", "canary_request_fields": ["action_id", "environment", "request_id", "requested_at", "schema_version"], "canary_task_parameters": ["release_id", "candidate_image_id", "candidate_package_sha256", "expected_current_image_id"], "channel_action_contract": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY", "HK_STAGING_ROLLBACK", "HK_STAGING_CANARY", "CONTROL_PLANE_HEALTH"], "crypto_keys": "EPHEMERAL_SYNTHETIC_ONLY", "deployment_authorization_established_from": "AUTHENTICATED_HK_STAGING_DEPLOY_REQUEST", "deployment_authorization_granted_by_the_configuration": "NO", "deployment_authorization_mode": "request", "different_image_formal_hk_e2e": "NOT_PROVEN", "health_can_become_verify_test_pr_deploy_or_rollback": "NO", "health_changes_verify_test_pr_deploy_permissions": "NO", "health_participates_in_deploy_arm_or_plan_budget": "NO", "health_request_fields": ["action_id", "environment", "request_id", "requested_at", "schema_version"], "health_task_parameters": {}, "hk_executor": "ARCHIVED_ADAPTER_WITH_FAKE_EXECUTOR", "hong_kong": "NOT_ACCESSED", "legacy_self_test_exit": 0, "legacy_tests": 65, "live_tasks_published": 0, "network_access": "FORBIDDEN", "new_errors": 0, "new_failures": 0, "new_skips": 0, "new_tests": 137, "production": "NOT_ACCESSED", "rollback_requestable": "YES", "schema_version": "1", "status": "PASS"}
+2026-09-17T13:50:35.5130029Z ##[group]Run python tooling/control-plane/command-center-state-v1/run_checks.py "$RUNNER_TEMP/state-checks"
+2026-09-17T13:50:35.5131466Z [36;1mpython tooling/control-plane/command-center-state-v1/run_checks.py "$RUNNER_TEMP/state-checks"[0m
+2026-09-17T13:50:35.5185683Z shell: /usr/bin/bash -e {0}
+2026-09-17T13:50:35.5186134Z env:
+2026-09-17T13:50:35.5186592Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:35.5187392Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-17T13:50:35.5187886Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:35.5188291Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:35.5188670Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:35.5189052Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-17T13:50:35.5189865Z ##[endgroup]
+2026-09-17T13:50:36.1296539Z test_active_task_query_is_zero_when_nothing_is_pending (test_state_projection.ContractTests.test_active_task_query_is_zero_when_nothing_is_pending) ... ok
+2026-09-17T13:50:36.1298520Z test_answers_cover_every_required_question (test_state_projection.ContractTests.test_answers_cover_every_required_question) ... ok
+2026-09-17T13:50:36.1300844Z test_authority_is_always_derived_and_non_authoritative (test_state_projection.ContractTests.test_authority_is_always_derived_and_non_authoritative) ... ok
+2026-09-17T13:50:36.1302753Z test_deploy_capability_is_classification_only (test_state_projection.ContractTests.test_deploy_capability_is_classification_only) ... ok
+2026-09-17T13:50:36.1304506Z test_deploy_readiness_is_not_in_the_contract (test_state_projection.ContractTests.test_deploy_readiness_is_not_in_the_contract) ... ok
+2026-09-17T13:50:36.1306232Z test_empty_control_bus_yields_unknown_not_success (test_state_projection.ContractTests.test_empty_control_bus_yields_unknown_not_success) ... ok
+2026-09-17T13:50:36.1307995Z test_manifest_files_are_not_treated_as_requests (test_state_projection.ContractTests.test_manifest_files_are_not_treated_as_requests) ... ok
+2026-09-17T13:50:36.1309957Z test_no_deploy_readiness_value_is_computed_anywhere (test_state_projection.ContractTests.test_no_deploy_readiness_value_is_computed_anywhere) ... ok
+2026-09-17T13:50:36.1311869Z test_rollback_target_selection_is_not_a_contract_capability (test_state_projection.ContractTests.test_rollback_target_selection_is_not_a_contract_capability) ... ok
+2026-09-17T13:50:36.1314191Z test_status_contract_carries_no_execution_parameter_keys (test_state_projection.ContractTests.test_status_contract_carries_no_execution_parameter_keys) ... ok
+2026-09-17T13:50:36.1315847Z test_status_contract_is_bounded (test_state_projection.ContractTests.test_status_contract_is_bounded) ... ok
+2026-09-17T13:50:36.1317283Z test_test_pr_is_queryable_by_pr_number (test_state_projection.ContractTests.test_test_pr_is_queryable_by_pr_number) ... ok
+2026-09-17T13:50:36.1318985Z test_the_required_answer_set_does_not_leak_beyond_scope (test_state_projection.ContractTests.test_the_required_answer_set_does_not_leak_beyond_scope) ... ok
+2026-09-17T13:50:36.1320908Z test_untested_pr_is_absent_from_the_index (test_state_projection.ContractTests.test_untested_pr_is_absent_from_the_index) ... ok
+2026-09-17T13:50:36.1322465Z test_verify_status_query (test_state_projection.ContractTests.test_verify_status_query) ... ok
+2026-09-17T13:50:36.1324366Z test_canary_is_mandatory_on_both_sides_and_release_gates_is_gone (test_state_projection.DeployReadinessContractTests.test_canary_is_mandatory_on_both_sides_and_release_gates_is_gone) ... ok
+2026-09-17T13:50:36.1326687Z test_every_gate_the_projector_knows_is_mandatory (test_state_projection.DeployReadinessContractTests.test_every_gate_the_projector_knows_is_mandatory) ... ok
+2026-09-17T13:50:36.1328780Z test_the_evaluator_has_no_advisory_gate_left (test_state_projection.DeployReadinessContractTests.test_the_evaluator_has_no_advisory_gate_left) ... ok
+2026-09-17T13:50:36.1331662Z test_the_projector_carries_exactly_the_evaluators_mandatory_gates (test_state_projection.DeployReadinessContractTests.test_the_projector_carries_exactly_the_evaluators_mandatory_gates) ... ok
+2026-09-17T13:50:36.1334264Z test_the_projector_has_no_advisory_gate_that_the_evaluator_dropped (test_state_projection.DeployReadinessContractTests.test_the_projector_has_no_advisory_gate_that_the_evaluator_dropped) ... ok
+2026-09-17T13:50:36.1336780Z test_a_gate_removed_from_the_document_is_refused_not_partially_quoted (test_state_projection.DeployReadinessIntegrationTests.test_a_gate_removed_from_the_document_is_refused_not_partially_quoted)
+2026-09-17T13:50:36.1338377Z This is what makes the drift guard bite rather than merely compare. ... ok
+2026-09-17T13:50:36.1340103Z test_a_real_no_verdict_is_carried_verbatim (test_state_projection.DeployReadinessIntegrationTests.test_a_real_no_verdict_is_carried_verbatim) ... ok
+2026-09-17T13:50:36.1342273Z test_a_real_unknown_verdict_is_unknown_and_never_yes (test_state_projection.DeployReadinessIntegrationTests.test_a_real_unknown_verdict_is_unknown_and_never_yes) ... ok
+2026-09-17T13:50:36.1344829Z test_a_real_yes_verdict_is_carried_verbatim_and_is_not_an_approval (test_state_projection.DeployReadinessIntegrationTests.test_a_real_yes_verdict_is_carried_verbatim_and_is_not_an_approval) ... ok
+2026-09-17T13:50:36.1347560Z test_every_gate_of_the_real_document_is_mandatory_here_too (test_state_projection.DeployReadinessIntegrationTests.test_every_gate_of_the_real_document_is_mandatory_here_too) ... ok
+2026-09-17T13:50:36.1350510Z test_the_full_projection_reports_the_real_gates_and_the_real_verdict (test_state_projection.DeployReadinessIntegrationTests.test_the_full_projection_reports_the_real_gates_and_the_real_verdict) ... ok
+2026-09-17T13:50:36.1353071Z test_the_real_document_is_read_without_a_single_anomaly (test_state_projection.DeployReadinessIntegrationTests.test_the_real_document_is_read_without_a_single_anomaly) ... ok
+2026-09-17T13:50:36.1355548Z test_the_real_gate_set_survives_the_contract_unchanged (test_state_projection.DeployReadinessIntegrationTests.test_the_real_gate_set_survives_the_contract_unchanged) ... ok
+2026-09-17T13:50:36.1357813Z test_a_document_of_another_contract_is_refused (test_state_projection.DeployReadinessTests.test_a_document_of_another_contract_is_refused) ... ok
+2026-09-17T13:50:36.1360020Z test_a_gate_outside_the_closed_set_is_refused (test_state_projection.DeployReadinessTests.test_a_gate_outside_the_closed_set_is_refused) ... ok
+2026-09-17T13:50:36.1362098Z test_a_no_verdict_is_carried_verbatim (test_state_projection.DeployReadinessTests.test_a_no_verdict_is_carried_verbatim) ... ok
+2026-09-17T13:50:36.1363837Z test_a_verdict_never_moves_a_task_side_answer (test_state_projection.DeployReadinessTests.test_a_verdict_never_moves_a_task_side_answer) ... ok
+2026-09-17T13:50:36.1365586Z test_a_verdict_outside_the_closed_set_is_refused (test_state_projection.DeployReadinessTests.test_a_verdict_outside_the_closed_set_is_refused) ... ok
+2026-09-17T13:50:36.1367558Z test_a_verdict_that_claims_authority_is_refused (test_state_projection.DeployReadinessTests.test_a_verdict_that_claims_authority_is_refused) ... ok
+2026-09-17T13:50:36.1369778Z test_a_yes_verdict_is_carried_and_is_not_an_approval (test_state_projection.DeployReadinessTests.test_a_yes_verdict_is_carried_and_is_not_an_approval) ... ok
+2026-09-17T13:50:36.1371673Z test_an_incomplete_gate_set_is_refused (test_state_projection.DeployReadinessTests.test_an_incomplete_gate_set_is_refused) ... ok
+2026-09-17T13:50:36.1373545Z test_an_unknown_verdict_is_unknown_and_never_yes (test_state_projection.DeployReadinessTests.test_an_unknown_verdict_is_unknown_and_never_yes) ... ok
+2026-09-17T13:50:36.1375438Z test_rollback_readiness_stays_out_of_scope (test_state_projection.DeployReadinessTests.test_rollback_readiness_stays_out_of_scope) ... ok
+2026-09-17T13:50:36.1377492Z test_the_projection_contract_declares_the_verdict_rules (test_state_projection.DeployReadinessTests.test_the_projection_contract_declares_the_verdict_rules) ... ok
+2026-09-17T13:50:36.1380074Z test_the_status_contract_still_carries_no_readiness_key (test_state_projection.DeployReadinessTests.test_the_status_contract_still_carries_no_readiness_key) ... ok
+2026-09-17T13:50:36.1382370Z test_without_a_verdict_the_projection_states_nothing (test_state_projection.DeployReadinessTests.test_without_a_verdict_the_projection_states_nothing) ... ok
+2026-09-17T13:50:36.1384463Z test_generated_at_is_shared_by_both_contracts (test_state_projection.DeterminismTests.test_generated_at_is_shared_by_both_contracts) ... ok
+2026-09-17T13:50:36.1386304Z test_output_carries_no_wall_clock (test_state_projection.DeterminismTests.test_output_carries_no_wall_clock) ... ok
+2026-09-17T13:50:36.1387944Z test_same_instant_same_bytes (test_state_projection.DeterminismTests.test_same_instant_same_bytes) ... ok
+2026-09-17T13:50:36.1390017Z test_a_claimed_success_outside_the_window_still_times_out (test_state_projection.FailureEvidenceTests.test_a_claimed_success_outside_the_window_still_times_out) ... ok
+2026-09-17T13:50:36.1392340Z test_a_duplicate_byte_identical_record_is_not_a_conflict (test_state_projection.FailureEvidenceTests.test_a_duplicate_byte_identical_record_is_not_a_conflict) ... ok
+2026-09-17T13:50:36.1394561Z test_a_failure_outside_the_validity_window_is_still_execution_failed (test_state_projection.FailureEvidenceTests.test_a_failure_outside_the_validity_window_is_still_execution_failed) ... ok
+2026-09-17T13:50:36.1397014Z test_a_failure_record_claiming_an_authorization_is_given_no_effect (test_state_projection.FailureEvidenceTests.test_a_failure_record_claiming_an_authorization_is_given_no_effect) ... ok
+2026-09-17T13:50:36.1399718Z test_a_failure_record_signed_by_the_wrong_identity_is_invalid (test_state_projection.FailureEvidenceTests.test_a_failure_record_signed_by_the_wrong_identity_is_invalid) ... ok
+2026-09-17T13:50:36.1401974Z test_a_malformed_failure_record_is_reported_not_interpreted (test_state_projection.FailureEvidenceTests.test_a_malformed_failure_record_is_reported_not_interpreted) ... ok
+2026-09-17T13:50:36.1404004Z test_a_signed_failure_record_reaches_execution_failed (test_state_projection.FailureEvidenceTests.test_a_signed_failure_record_reaches_execution_failed) ... ok
+2026-09-17T13:50:36.1406202Z test_an_unbound_failure_record_is_reported_not_interpreted (test_state_projection.FailureEvidenceTests.test_an_unbound_failure_record_is_reported_not_interpreted) ... ok
+2026-09-17T13:50:36.1408192Z test_the_failure_contract_is_closed (test_state_projection.FailureEvidenceTests.test_the_failure_contract_is_closed) ... ok
+2026-09-17T13:50:36.1410518Z test_the_last_failure_names_the_task_and_why_it_failed (test_state_projection.FailureEvidenceTests.test_the_last_failure_names_the_task_and_why_it_failed) ... ok
+2026-09-17T13:50:36.1412534Z test_the_success_path_carries_no_failure_block (test_state_projection.FailureEvidenceTests.test_the_success_path_carries_no_failure_block) ... ok
+2026-09-17T13:50:36.1414648Z test_two_distinct_records_for_one_task_identity_fail_closed (test_state_projection.FailureEvidenceTests.test_two_distinct_records_for_one_task_identity_fail_closed) ... ok
+2026-09-17T13:50:36.1416583Z test_duplicate_task_id_is_reported (test_state_projection.LifecycleTests.test_duplicate_task_id_is_reported) ... ok
+2026-09-17T13:50:36.1418153Z test_evidence_after_expiry_is_timeout (test_state_projection.LifecycleTests.test_evidence_after_expiry_is_timeout) ... ok
+2026-09-17T13:50:36.1420283Z test_executor_result_mismatch_is_failed_with_the_evidence_key (test_state_projection.LifecycleTests.test_executor_result_mismatch_is_failed_with_the_evidence_key) ... ok
+2026-09-17T13:50:36.1422399Z test_executor_result_mismatch_is_flagged_without_a_key (test_state_projection.LifecycleTests.test_executor_result_mismatch_is_flagged_without_a_key) ... ok
+2026-09-17T13:50:36.1424527Z test_expired_task_without_evidence_is_distinct_from_success (test_state_projection.LifecycleTests.test_expired_task_without_evidence_is_distinct_from_success) ... ok
+2026-09-17T13:50:36.1426841Z test_legacy_parameter_contract_is_held_not_dropped (test_state_projection.LifecycleTests.test_legacy_parameter_contract_is_held_not_dropped) ... ok
+2026-09-17T13:50:36.1428607Z test_lifecycle_vocabulary_is_closed (test_state_projection.LifecycleTests.test_lifecycle_vocabulary_is_closed) ... ok
+2026-09-17T13:50:36.1430673Z test_malformed_task_is_reported_not_silently_ignored (test_state_projection.LifecycleTests.test_malformed_task_is_reported_not_silently_ignored) ... ok
+2026-09-17T13:50:36.1432669Z test_non_success_status_is_execution_failed (test_state_projection.LifecycleTests.test_non_success_status_is_execution_failed) ... ok
+2026-09-17T13:50:36.1434416Z test_nonce_reuse_is_replay_rejected (test_state_projection.LifecycleTests.test_nonce_reuse_is_replay_rejected) ... ok
+2026-09-17T13:50:36.1436561Z test_published_task_without_evidence_is_observed_not_failed (test_state_projection.LifecycleTests.test_published_task_without_evidence_is_observed_not_failed) ... ok
+2026-09-17T13:50:36.1438832Z test_unverified_evidence_reaches_published_not_complete (test_state_projection.LifecycleTests.test_unverified_evidence_reaches_published_not_complete) ... ok
+2026-09-17T13:50:36.1440977Z test_verified_evidence_reaches_complete (test_state_projection.LifecycleTests.test_verified_evidence_reaches_complete) ... ok
+2026-09-17T13:50:36.1442836Z test_fresh_unverified_probe_is_observed_never_proven (test_state_projection.LivenessTests.test_fresh_unverified_probe_is_observed_never_proven) ... ok
+2026-09-17T13:50:36.1444603Z test_fresh_verified_probe_is_proven (test_state_projection.LivenessTests.test_fresh_verified_probe_is_proven) ... ok
+2026-09-17T13:50:36.1446259Z test_no_health_evidence_is_unknown (test_state_projection.LivenessTests.test_no_health_evidence_is_unknown) ... ok
+2026-09-17T13:50:36.1448059Z test_stale_probe_is_unknown_and_reports_last_seen (test_state_projection.LivenessTests.test_stale_probe_is_unknown_and_reports_last_seen) ... ok
+2026-09-17T13:50:36.1450204Z test_stale_probe_still_reports_last_activity (test_state_projection.LivenessTests.test_stale_probe_still_reports_last_activity) ... ok
+2026-09-17T13:50:36.1452098Z test_successful_verify_never_implies_agent_online (test_state_projection.LivenessTests.test_successful_verify_never_implies_agent_online) ... ok
+2026-09-17T13:50:36.1453864Z test_2399_seconds_is_still_proven (test_state_projection.LivenessWindowTests.test_2399_seconds_is_still_proven) ... ok
+2026-09-17T13:50:36.1455427Z test_2401_seconds_is_not_online (test_state_projection.LivenessWindowTests.test_2401_seconds_is_not_online) ... ok
+2026-09-17T13:50:36.1457360Z test_a_transport_success_alone_is_never_online (test_state_projection.LivenessWindowTests.test_a_transport_success_alone_is_never_online)
+2026-09-17T13:50:36.1458682Z SSH success, an HTTP 200 and a past Task success are all absent here. ... ok
+2026-09-17T13:50:36.1460641Z test_only_signed_liveness_evidence_can_answer_the_online_question (test_state_projection.LivenessWindowTests.test_only_signed_liveness_evidence_can_answer_the_online_question)
+2026-09-17T13:50:36.1462290Z An unverified probe is OBSERVED, never PROVEN, and never ONLINE. ... ok
+2026-09-17T13:50:36.1463846Z test_the_window_is_reported_so_a_reader_can_see_the_margin (test_state_projection.LivenessWindowTests.test_the_window_is_reported_so_a_reader_can_see_the_margin) ... ok
+2026-09-17T13:50:36.1465998Z test_the_window_is_the_interval_plus_the_transport_grace (test_state_projection.LivenessWindowTests.test_the_window_is_the_interval_plus_the_transport_grace) ... ok
+2026-09-17T13:50:36.1468185Z test_missing_directory_anomaly_names_the_repository_not_the_disk (test_state_projection.PortabilityTests.test_missing_directory_anomaly_names_the_repository_not_the_disk) ... ok
+2026-09-17T13:50:36.1470425Z test_no_machine_specific_path_appears_anywhere (test_state_projection.PortabilityTests.test_no_machine_specific_path_appears_anywhere) ... ok
+2026-09-17T13:50:36.1472298Z test_rebuild_command_contains_no_local_path (test_state_projection.PortabilityTests.test_rebuild_command_contains_no_local_path) ... ok
+2026-09-17T13:50:36.1474458Z test_sources_use_stable_identity_not_local_paths (test_state_projection.PortabilityTests.test_sources_use_stable_identity_not_local_paths) ... ok
+2026-09-17T13:50:36.1476365Z test_canonical_is_key_order_independent (test_state_projection.PrimitivesTests.test_canonical_is_key_order_independent) ... ok
+2026-09-17T13:50:36.1477879Z test_digest_is_stable (test_state_projection.PrimitivesTests.test_digest_is_stable) ... ok
+2026-09-17T13:50:36.1479828Z test_instance_normalisation_collapses_three_spellings (test_state_projection.PrimitivesTests.test_instance_normalisation_collapses_three_spellings) ... ok
+2026-09-17T13:50:36.1482594Z test_instance_normalisation_rejects_other_strings (test_state_projection.PrimitivesTests.test_instance_normalisation_rejects_other_strings) ... ok
+2026-09-17T13:50:36.1484218Z test_naive_timestamp_rejected (test_state_projection.PrimitivesTests.test_naive_timestamp_rejected) ... ok
+2026-09-17T13:50:36.1485617Z test_scope_is_declared (test_state_projection.PrimitivesTests.test_scope_is_declared) ... ok
+2026-09-17T13:50:36.1487036Z test_unknown_discards_value (test_state_projection.PrimitivesTests.test_unknown_discards_value) ... ok
+2026-09-17T13:50:36.1489424Z test_a_contract_publishing_one_key_for_both_roles_is_rejected (test_state_projection.PublishedVerifierIdentityTests.test_a_contract_publishing_one_key_for_both_roles_is_rejected) ... ok
+2026-09-17T13:50:36.1492271Z test_a_crossed_published_identity_is_fail_closed (test_state_projection.PublishedVerifierIdentityTests.test_a_crossed_published_identity_is_fail_closed) ... ok
+2026-09-17T13:50:36.1494413Z test_a_missing_key_is_never_proven (test_state_projection.PublishedVerifierIdentityTests.test_a_missing_key_is_never_proven) ... ok
+2026-09-17T13:50:36.1496502Z test_a_wrong_key_is_fail_closed_and_reaches_no_proven (test_state_projection.PublishedVerifierIdentityTests.test_a_wrong_key_is_fail_closed_and_reaches_no_proven) ... ok
+2026-09-17T13:50:36.1498776Z test_an_unreadable_key_is_fail_closed (test_state_projection.PublishedVerifierIdentityTests.test_an_unreadable_key_is_fail_closed) ... ok
+2026-09-17T13:50:36.1501431Z test_an_unresolvable_contract_never_yields_proven (test_state_projection.PublishedVerifierIdentityTests.test_an_unresolvable_contract_never_yields_proven) ... ok
+2026-09-17T13:50:36.1503815Z test_no_private_key_material_is_published (test_state_projection.PublishedVerifierIdentityTests.test_no_private_key_material_is_published) ... ok
+2026-09-17T13:50:36.1506696Z test_real_control_bus_history_is_capped_at_observed_without_the_keys (test_state_projection.PublishedVerifierIdentityTests.test_real_control_bus_history_is_capped_at_observed_without_the_keys) ... ok
+2026-09-17T13:50:36.1509655Z test_real_control_bus_history_reaches_proven_with_the_published_keys (test_state_projection.PublishedVerifierIdentityTests.test_real_control_bus_history_reaches_proven_with_the_published_keys) ... ok
+2026-09-17T13:50:36.1512063Z test_the_contract_is_reported_without_a_workstation_path (test_state_projection.PublishedVerifierIdentityTests.test_the_contract_is_reported_without_a_workstation_path) ... ok
+2026-09-17T13:50:36.1514187Z test_the_derived_state_declares_the_identity_gate (test_state_projection.PublishedVerifierIdentityTests.test_the_derived_state_declares_the_identity_gate) ... ok
+2026-09-17T13:50:36.1515866Z test_the_published_contract_pins_two_distinct_identities (test_state_projection.PublishedVerifierIdentityTests.test_the_published_contract_pins_two_distinct_identities) ... ok
+2026-09-17T13:50:36.1517183Z test_the_published_fingerprints_match_the_archived_audit_files (test_state_projection.PublishedVerifierIdentityTests.test_the_published_fingerprints_match_the_archived_audit_files) ... ok
+2026-09-17T13:50:36.1518440Z test_the_published_key_file_hashes_match_the_contract (test_state_projection.PublishedVerifierIdentityTests.test_the_published_key_file_hashes_match_the_contract) ... ok
+2026-09-17T13:50:36.1520756Z test_the_published_key_files_match_their_published_fingerprints (test_state_projection.PublishedVerifierIdentityTests.test_the_published_key_files_match_their_published_fingerprints) ... ok
+2026-09-17T13:50:36.1522064Z test_the_published_key_for_both_roles_is_a_collision (test_state_projection.PublishedVerifierIdentityTests.test_the_published_key_for_both_roles_is_a_collision) ... ok
+2026-09-17T13:50:36.1523265Z test_a_canary_request_is_reported_as_requestable_and_is_not_deploy (test_state_projection.RequestChannelTests.test_a_canary_request_is_reported_as_requestable_and_is_not_deploy) ... ok
+2026-09-17T13:50:36.1524403Z test_a_health_request_cannot_carry_any_parameter (test_state_projection.RequestChannelTests.test_a_health_request_cannot_carry_any_parameter) ... ok
+2026-09-17T13:50:36.1525474Z test_a_health_request_in_the_wrong_environment_is_refused (test_state_projection.RequestChannelTests.test_a_health_request_in_the_wrong_environment_is_refused) ... ok
+2026-09-17T13:50:36.1526580Z test_a_real_health_request_is_not_reported_as_forbidden (test_state_projection.RequestChannelTests.test_a_real_health_request_is_not_reported_as_forbidden) ... ok
+2026-09-17T13:50:36.1527752Z test_a_rollback_request_carries_the_five_common_fields_and_no_target (test_state_projection.RequestChannelTests.test_a_rollback_request_carries_the_five_common_fields_and_no_target) ... ok
+2026-09-17T13:50:36.1528822Z test_an_unknown_action_is_still_refused (test_state_projection.RequestChannelTests.test_an_unknown_action_is_still_refused) ... ok
+2026-09-17T13:50:36.1531795Z test_canary_and_rollback_are_requestable_without_a_separate_switch (test_state_projection.RequestChannelTests.test_canary_and_rollback_are_requestable_without_a_separate_switch) ... ok
+2026-09-17T13:50:36.1532991Z test_deploy_is_a_known_capability_that_is_enabled (test_state_projection.RequestChannelTests.test_deploy_is_a_known_capability_that_is_enabled) ... ok
+2026-09-17T13:50:36.1533999Z test_deploy_request_is_flagged_requestable (test_state_projection.RequestChannelTests.test_deploy_request_is_flagged_requestable) ... ok
+2026-09-17T13:50:36.1535023Z test_every_human_request_action_is_classified_as_human (test_state_projection.RequestChannelTests.test_every_human_request_action_is_classified_as_human) ... ok
+2026-09-17T13:50:36.1536120Z test_health_can_never_be_read_as_one_of_the_execution_actions (test_state_projection.RequestChannelTests.test_health_can_never_be_read_as_one_of_the_execution_actions)
+2026-09-17T13:50:36.1536909Z A platform probe is not a degraded VERIFY / TEST_PR / DEPLOY. ... ok
+2026-09-17T13:50:36.1537997Z test_health_is_enabled_for_the_platform_class_and_never_for_the_human_one (test_state_projection.RequestChannelTests.test_health_is_enabled_for_the_platform_class_and_never_for_the_human_one) ... ok
+2026-09-17T13:50:36.1539411Z test_health_is_not_promoted_into_a_human_execution_right (test_state_projection.RequestChannelTests.test_health_is_not_promoted_into_a_human_execution_right) ... ok
+2026-09-17T13:50:36.1540457Z test_requests_never_hold_execution_authority (test_state_projection.RequestChannelTests.test_requests_never_hold_execution_authority) ... ok
+2026-09-17T13:50:36.1541503Z test_the_enabled_set_is_pinned_to_the_bridge_channel_contract (test_state_projection.RequestChannelTests.test_the_enabled_set_is_pinned_to_the_bridge_channel_contract)
+2026-09-17T13:50:36.1542280Z Measured on 2026-09-17, the failure this pins was live. ... ok
+2026-09-17T13:50:36.1542998Z test_the_human_and_platform_classes_are_separate (test_state_projection.RequestChannelTests.test_the_human_and_platform_classes_are_separate) ... ok
+2026-09-17T13:50:36.1544134Z test_the_platform_properties_are_constants_not_read_from_a_request (test_state_projection.RequestChannelTests.test_the_platform_properties_are_constants_not_read_from_a_request) ... ok
+2026-09-17T13:50:36.1545497Z test_verify_request_is_requestable (test_state_projection.RequestChannelTests.test_verify_request_is_requestable) ... ok
+2026-09-17T13:50:36.1546758Z test_a_real_export_and_a_historical_fact_for_one_outcome_fold_to_one (test_state_projection.RequestFactExporterIntegrationTests.test_a_real_export_and_a_historical_fact_for_one_outcome_fold_to_one)
+2026-09-17T13:50:36.1547683Z What the live bus looks like across the change: both shapes at once. ... ok
+2026-09-17T13:50:36.1548526Z test_the_real_export_is_read_without_a_single_anomaly (test_state_projection.RequestFactExporterIntegrationTests.test_the_real_export_is_read_without_a_single_anomaly) ... ok
+2026-09-17T13:50:36.1549925Z test_the_real_semantic_fact_carries_the_earliest_observation (test_state_projection.RequestFactExporterIntegrationTests.test_the_real_semantic_fact_carries_the_earliest_observation) ... ok
+2026-09-17T13:50:36.1551168Z test_a_current_fact_reports_its_rule_and_its_instant (test_state_projection.RequestFactSemanticDedupTests.test_a_current_fact_reports_its_rule_and_its_instant) ... ok
+2026-09-17T13:50:36.1552355Z test_a_different_reason_is_a_different_fact_not_a_duplicate (test_state_projection.RequestFactSemanticDedupTests.test_a_different_reason_is_a_different_fact_not_a_duplicate) ... ok
+2026-09-17T13:50:36.1553439Z test_a_legacy_fact_is_still_read (test_state_projection.RequestFactSemanticDedupTests.test_a_legacy_fact_is_still_read) ... ok
+2026-09-17T13:50:36.1554440Z test_dedup_never_hides_a_claim_that_could_not_be_proven (test_state_projection.RequestFactSemanticDedupTests.test_dedup_never_hides_a_claim_that_could_not_be_proven)
+2026-09-17T13:50:36.1555265Z Folding observations must not turn an unproven claim into an acceptance. ... ok
+2026-09-17T13:50:36.1556150Z test_the_earliest_observation_of_an_identity_is_the_one_kept (test_state_projection.RequestFactSemanticDedupTests.test_the_earliest_observation_of_an_identity_is_the_one_kept) ... ok
+2026-09-17T13:50:36.1557302Z test_the_same_outcome_in_both_shapes_is_one_fact (test_state_projection.RequestFactSemanticDedupTests.test_the_same_outcome_in_both_shapes_is_one_fact)
+2026-09-17T13:50:36.1558033Z One outcome, five observations of it, one business fact. ... ok
+2026-09-17T13:50:36.1558802Z test_a_broken_index_is_refused_and_the_facts_still_count (test_state_projection.RequestVisibilityTests.test_a_broken_index_is_refused_and_the_facts_still_count) ... ok
+2026-09-17T13:50:36.1559967Z test_a_corroborated_acceptance_is_reported (test_state_projection.RequestVisibilityTests.test_a_corroborated_acceptance_is_reported) ... ok
+2026-09-17T13:50:36.1561076Z test_a_created_fact_is_read_and_is_neither_an_acceptance_nor_a_refusal (test_state_projection.RequestVisibilityTests.test_a_created_fact_is_read_and_is_neither_an_acceptance_nor_a_refusal)
+2026-09-17T13:50:36.1562102Z The Bridge saying "not settled" is a fact, and the weakest one there is. ... ok
+2026-09-17T13:50:36.1562898Z test_a_duplicate_does_not_hide_an_earlier_acceptance (test_state_projection.RequestVisibilityTests.test_a_duplicate_does_not_hide_an_earlier_acceptance) ... ok
+2026-09-17T13:50:36.1564006Z test_a_duplicate_is_its_own_lifecycle_and_never_a_success (test_state_projection.RequestVisibilityTests.test_a_duplicate_is_its_own_lifecycle_and_never_a_success) ... ok
+2026-09-17T13:50:36.1565028Z test_a_fact_claiming_authority_is_refused (test_state_projection.RequestVisibilityTests.test_a_fact_claiming_authority_is_refused)
+2026-09-17T13:50:36.1565674Z A fact that says it authorizes something is not a fact. ... ok
+2026-09-17T13:50:36.1566418Z test_a_fact_without_its_request_is_unknown_not_guessed (test_state_projection.RequestVisibilityTests.test_a_fact_without_its_request_is_unknown_not_guessed) ... ok
+2026-09-17T13:50:36.1567611Z test_a_forged_semantic_identity_is_detected_even_with_a_recomputed_id (test_state_projection.RequestVisibilityTests.test_a_forged_semantic_identity_is_detected_even_with_a_recomputed_id)
+2026-09-17T13:50:36.1568482Z The declared identity must be the identity of the body it declares. ... ok
+2026-09-17T13:50:36.1569591Z test_a_ledger_derived_reason_keeps_its_origin (test_state_projection.RequestVisibilityTests.test_a_ledger_derived_reason_keeps_its_origin) ... ok
+2026-09-17T13:50:36.1570526Z test_a_malformed_fact_is_refused (test_state_projection.RequestVisibilityTests.test_a_malformed_fact_is_refused) ... ok
+2026-09-17T13:50:36.1571515Z test_a_mistyped_task_digest_is_refused (test_state_projection.RequestVisibilityTests.test_a_mistyped_task_digest_is_refused) ... ok
+2026-09-17T13:50:36.1572485Z test_a_non_validated_fact_may_not_claim_a_binding (test_state_projection.RequestVisibilityTests.test_a_non_validated_fact_may_not_claim_a_binding) ... ok
+2026-09-17T13:50:36.1573510Z test_a_refusal_keeps_the_bridge_reason_verbatim (test_state_projection.RequestVisibilityTests.test_a_refusal_keeps_the_bridge_reason_verbatim) ... ok
+2026-09-17T13:50:36.1574560Z test_a_replay_is_its_own_lifecycle_and_never_a_success (test_state_projection.RequestVisibilityTests.test_a_replay_is_its_own_lifecycle_and_never_a_success) ... ok
+2026-09-17T13:50:36.1575566Z test_a_request_file_alone_is_only_created (test_state_projection.RequestVisibilityTests.test_a_request_file_alone_is_only_created) ... ok
+2026-09-17T13:50:36.1576699Z test_a_settled_fact_outranks_a_created_one_and_the_earlier_one_stays_visible (test_state_projection.RequestVisibilityTests.test_a_settled_fact_outranks_a_created_one_and_the_earlier_one_stays_visible)
+2026-09-17T13:50:36.1577625Z The transition is not a deduplication, and the strongest answer wins. ... ok
+2026-09-17T13:50:36.1578446Z test_a_submission_without_a_request_identity_is_reported (test_state_projection.RequestVisibilityTests.test_a_submission_without_a_request_identity_is_reported) ... ok
+2026-09-17T13:50:36.1580183Z test_a_tampered_fact_is_detected (test_state_projection.RequestVisibilityTests.test_a_tampered_fact_is_detected) ... ok
+2026-09-17T13:50:36.1581071Z test_a_task_from_another_request_is_refused (test_state_projection.RequestVisibilityTests.test_a_task_from_another_request_is_refused)
+2026-09-17T13:50:36.1581772Z The digest link is the whole point: a Task must carry its own Request. ... ok
+2026-09-17T13:50:36.1582600Z test_an_acceptance_outranks_a_refusal_for_the_same_request (test_state_projection.RequestVisibilityTests.test_an_acceptance_outranks_a_refusal_for_the_same_request) ... ok
+2026-09-17T13:50:36.1583736Z test_an_acceptance_whose_task_is_absent_is_not_verified (test_state_projection.RequestVisibilityTests.test_an_acceptance_whose_task_is_absent_is_not_verified) ... ok
+2026-09-17T13:50:36.1584906Z test_an_acceptance_without_the_published_identity_is_not_verified (test_state_projection.RequestVisibilityTests.test_an_acceptance_without_the_published_identity_is_not_verified)
+2026-09-17T13:50:36.1585755Z No key means no identity claim, so the acceptance cannot be believed. ... ok
+2026-09-17T13:50:36.1586642Z test_an_unclassified_reason_is_still_reported (test_state_projection.RequestVisibilityTests.test_an_unclassified_reason_is_still_reported) ... ok
+2026-09-17T13:50:36.1587556Z test_facts_never_change_a_task_answer (test_state_projection.RequestVisibilityTests.test_facts_never_change_a_task_answer)
+2026-09-17T13:50:36.1588220Z Adding facts must not move any task-side leaf: they describe Requests. ... ok
+2026-09-17T13:50:36.1588988Z test_request_facts_are_never_execution_authority (test_state_projection.RequestVisibilityTests.test_request_facts_are_never_execution_authority) ... ok
+2026-09-17T13:50:36.1590200Z test_the_closed_lifecycle_set_is_exactly_the_issue_set (test_state_projection.RequestVisibilityTests.test_the_closed_lifecycle_set_is_exactly_the_issue_set) ... ok
+2026-09-17T13:50:36.1591303Z test_the_state_contract_declares_the_request_fact_rules (test_state_projection.RequestVisibilityTests.test_the_state_contract_declares_the_request_fact_rules) ... ok
+2026-09-17T13:50:36.1592366Z test_the_status_contract_carries_the_fate_answer (test_state_projection.RequestVisibilityTests.test_the_status_contract_carries_the_fate_answer) ... ok
+2026-09-17T13:50:36.1593387Z test_the_two_time_fields_are_outside_the_id_by_design (test_state_projection.RequestVisibilityTests.test_the_two_time_fields_are_outside_the_id_by_design)
+2026-09-17T13:50:36.1594068Z The boundary, stated rather than implied. ... ok
+2026-09-17T13:50:36.1594786Z test_declared_runtime_is_never_proven (test_state_projection.RuntimeSeparationTests.test_declared_runtime_is_never_proven) ... ok
+2026-09-17T13:50:36.1595789Z test_drift_when_declared_and_proven_images_disagree (test_state_projection.RuntimeSeparationTests.test_drift_when_declared_and_proven_images_disagree) ... ok
+2026-09-17T13:50:36.1596843Z test_match_when_declared_and_proven_images_agree (test_state_projection.RuntimeSeparationTests.test_match_when_declared_and_proven_images_agree) ... ok
+2026-09-17T13:50:36.1597859Z test_not_recently_verified_when_the_proof_is_old (test_state_projection.RuntimeSeparationTests.test_not_recently_verified_when_the_proof_is_old) ... ok
+2026-09-17T13:50:36.1598882Z test_release_gate_facts_stay_informational_only (test_state_projection.RuntimeSeparationTests.test_release_gate_facts_stay_informational_only) ... ok
+2026-09-17T13:50:36.1600093Z test_repository_main_is_never_substituted_by_a_runtime_sha (test_state_projection.RuntimeSeparationTests.test_repository_main_is_never_substituted_by_a_runtime_sha) ... ok
+2026-09-17T13:50:36.1601190Z test_repository_main_is_reported_when_supplied (test_state_projection.RuntimeSeparationTests.test_repository_main_is_reported_when_supplied) ... ok
+2026-09-17T13:50:36.1602179Z test_unknown_when_no_verify_evidence_exists (test_state_projection.RuntimeSeparationTests.test_unknown_when_no_verify_evidence_exists) ... ok
+2026-09-17T13:50:36.1603160Z test_expired_history_never_counts_as_stuck (test_state_projection.StuckTaskClassificationTests.test_expired_history_never_counts_as_stuck) ... ok
+2026-09-17T13:50:36.1604204Z test_fresh_published_task_is_active_but_not_stuck (test_state_projection.StuckTaskClassificationTests.test_fresh_published_task_is_active_but_not_stuck) ... ok
+2026-09-17T13:50:36.1605360Z test_last_failure_distinguishes_expiry_from_proven_failure (test_state_projection.StuckTaskClassificationTests.test_last_failure_distinguishes_expiry_from_proven_failure) ... ok
+2026-09-17T13:50:36.1606531Z test_last_failure_with_evidence_is_a_failed_record (test_state_projection.StuckTaskClassificationTests.test_last_failure_with_evidence_is_a_failed_record) ... ok
+2026-09-17T13:50:36.1607590Z test_overdue_published_task_is_active_stuck (test_state_projection.StuckTaskClassificationTests.test_overdue_published_task_is_active_stuck) ... ok
+2026-09-17T13:50:36.1608673Z test_a_task_under_the_superseded_delivery_identity_stays_readable (test_state_projection.ValidationTests.test_a_task_under_the_superseded_delivery_identity_stays_readable)
+2026-09-17T13:50:36.1609825Z The 2026-09-16 re-contract renamed the candidate delivery identity. ... ok
+2026-09-17T13:50:36.1610742Z test_deploy_request_takes_only_the_five_common_fields (test_state_projection.ValidationTests.test_deploy_request_takes_only_the_five_common_fields) ... ok
+2026-09-17T13:50:36.1611658Z test_evidence_generations_normalise (test_state_projection.ValidationTests.test_evidence_generations_normalise) ... ok
+2026-09-17T13:50:36.1625196Z test_evidence_without_any_terminal_timestamp_rejected (test_state_projection.ValidationTests.test_evidence_without_any_terminal_timestamp_rejected) ... ok
+2026-09-17T13:50:36.1626716Z test_parameter_drift_is_preserved_not_dropped (test_state_projection.ValidationTests.test_parameter_drift_is_preserved_not_dropped) ... ok
+2026-09-17T13:50:36.1627631Z test_request_extras_are_action_scoped (test_state_projection.ValidationTests.test_request_extras_are_action_scoped) ... ok
+2026-09-17T13:50:36.1628499Z test_test_pr_source_must_be_the_fixed_shape (test_state_projection.ValidationTests.test_test_pr_source_must_be_the_fixed_shape) ... ok
+2026-09-17T13:50:36.1630289Z test_the_superseded_shapes_are_names_the_deploy_entry_no_longer_emits (test_state_projection.ValidationTests.test_the_superseded_shapes_are_names_the_deploy_entry_no_longer_emits) ... ok
+2026-09-17T13:50:36.1632110Z test_unknown_action_rejected (test_state_projection.ValidationTests.test_unknown_action_rejected) ... ok
+2026-09-17T13:50:36.1633424Z test_unknown_field_rejected (test_state_projection.ValidationTests.test_unknown_field_rejected) ... ok
+2026-09-17T13:50:36.1634911Z test_valid_task_passes (test_state_projection.ValidationTests.test_valid_task_passes) ... ok
+2026-09-17T13:50:36.1636409Z test_wrong_authority_and_environment_rejected (test_state_projection.ValidationTests.test_wrong_authority_and_environment_rejected) ... ok
+2026-09-17T13:50:36.1638223Z test_a_shared_key_for_both_roles_is_a_collision (test_state_projection.VerifierIdentityTests.test_a_shared_key_for_both_roles_is_a_collision) ... ok
+2026-09-17T13:50:36.1640331Z test_broken_key_file_reports_not_performed (test_state_projection.VerifierIdentityTests.test_broken_key_file_reports_not_performed) ... ok
+2026-09-17T13:50:36.1642137Z test_evidence_signed_with_the_task_key_fails (test_state_projection.VerifierIdentityTests.test_evidence_signed_with_the_task_key_fails) ... ok
+2026-09-17T13:50:36.1643876Z test_missing_keys_never_yield_proven (test_state_projection.VerifierIdentityTests.test_missing_keys_never_yield_proven) ... ok
+2026-09-17T13:50:36.1645831Z test_only_the_evidence_key_supplied_leaves_tasks_unverified (test_state_projection.VerifierIdentityTests.test_only_the_evidence_key_supplied_leaves_tasks_unverified) ... ok
+2026-09-17T13:50:36.1648128Z test_only_the_task_key_supplied_never_yields_proven_evidence (test_state_projection.VerifierIdentityTests.test_only_the_task_key_supplied_never_yields_proven_evidence) ... ok
+2026-09-17T13:50:36.1649460Z test_tampered_evidence_is_invalid (test_state_projection.VerifierIdentityTests.test_tampered_evidence_is_invalid) ... ok
+2026-09-17T13:50:36.1650469Z test_task_signed_with_the_evidence_key_fails (test_state_projection.VerifierIdentityTests.test_task_signed_with_the_evidence_key_fails) ... ok
+2026-09-17T13:50:36.1651435Z test_two_keys_have_different_fingerprints (test_state_projection.VerifierIdentityTests.test_two_keys_have_different_fingerprints) ... ok
+2026-09-17T13:50:36.1652412Z test_valid_task_key_and_valid_evidence_key_pass (test_state_projection.VerifierIdentityTests.test_valid_task_key_and_valid_evidence_key_pass) ... ok
+2026-09-17T13:50:36.1653454Z test_verifier_describe_exposes_identity_and_encoding (test_state_projection.VerifierIdentityTests.test_verifier_describe_exposes_identity_and_encoding) ... ok
+2026-09-17T13:50:36.1654052Z 
+2026-09-17T13:50:36.1654208Z ----------------------------------------------------------------------
+2026-09-17T13:50:36.1654555Z Ran 200 tests in 0.481s
+2026-09-17T13:50:36.1654702Z 
+2026-09-17T13:50:36.1654785Z OK
+2026-09-17T13:50:36.1657039Z {"application_changed": "NO", "contract": "CONTROL_STATUS_V1", "crypto_keys": "EPHEMERAL_SYNTHETIC_ONLY", "errors": 0, "failures": 0, "hong_kong": "NOT_ACCESSED", "live_control_plane_state": "NOT_ACCESSED", "network_access": "FORBIDDEN", "production": "NOT_ACCESSED", "published_evidence_identity_fingerprint": "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw", "published_identities_are_distinct": true, "published_private_keys": "NONE", "published_task_identity_fingerprint": "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns", "schema_version": "1", "skips": 0, "status": "PASS", "subprocess_access": "FORBIDDEN", "tests": 200, "verifier_identity_contract": "LOADED"}
+2026-09-17T13:50:36.1705143Z ##[group]Run python -m unittest discover -s tooling/control-plane/hk-forward-migration-v1/tests -v
+2026-09-17T13:50:36.1706428Z [36;1mpython -m unittest discover -s tooling/control-plane/hk-forward-migration-v1/tests -v[0m
+2026-09-17T13:50:36.1761220Z shell: /usr/bin/bash -e {0}
+2026-09-17T13:50:36.1761669Z env:
+2026-09-17T13:50:36.1762128Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:36.1762930Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-17T13:50:36.1763705Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:36.1764406Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:36.1765096Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:36.1765795Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-17T13:50:36.1766365Z ##[endgroup]
+2026-09-17T13:50:36.3601092Z test_claim_before_expiry_does_not_allow_start_after_expiry (test_execution_window.ExecutionWindowTests.test_claim_before_expiry_does_not_allow_start_after_expiry) ... ok
+2026-09-17T13:50:36.3735006Z test_late_start_over_budget_clock_disagreement_and_substitution_refused (test_execution_window.ExecutionWindowTests.test_late_start_over_budget_clock_disagreement_and_substitution_refused) ... /home/runner/work/GO/GO/tooling/control-plane/command-center-state-v1/state_projection.py:2191: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fce7a8c6a70>
+2026-09-17T13:50:36.3738229Z   {"task_id": t["task_id"], "action_id": t["action_id"], "lifecycle": t["lifecycle"],
+2026-09-17T13:50:36.3739842Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T13:50:36.3741901Z /home/runner/work/GO/GO/tooling/control-plane/command-center-state-v1/state_projection.py:2191: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fce7a7f49a0>
+2026-09-17T13:50:36.3743804Z   {"task_id": t["task_id"], "action_id": t["action_id"], "lifecycle": t["lifecycle"],
+2026-09-17T13:50:36.3745080Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T13:50:36.3747118Z /home/runner/work/GO/GO/tooling/control-plane/command-center-state-v1/state_projection.py:2191: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fce7a7f4a90>
+2026-09-17T13:50:36.3749466Z   {"task_id": t["task_id"], "action_id": t["action_id"], "lifecycle": t["lifecycle"],
+2026-09-17T13:50:36.3750796Z ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2026-09-17T13:50:36.3859025Z ok
+2026-09-17T13:50:36.3890295Z test_legacy_late_evidence_is_not_retroactively_accepted (test_execution_window.ExecutionWindowTests.test_legacy_late_evidence_is_not_retroactively_accepted) ... ok
+2026-09-17T13:50:36.3923540Z test_missing_proof_never_uses_new_semantics (test_execution_window.ExecutionWindowTests.test_missing_proof_never_uses_new_semantics) ... ok
+2026-09-17T13:50:36.4004434Z test_real_ledger_persists_start_before_dispatch_and_refuses_duplicate (test_execution_window.ExecutionWindowTests.test_real_ledger_persists_start_before_dispatch_and_refuses_duplicate) ... ok
+2026-09-17T13:50:36.4038661Z test_timely_start_and_eight_minute_completion_is_proven (test_execution_window.ExecutionWindowTests.test_timely_start_and_eight_minute_completion_is_proven) ... ok
+2026-09-17T13:50:36.4043760Z test_adapter_closed_contract_and_exact_output_binding (test_migration_contract.ContractTests.test_adapter_closed_contract_and_exact_output_binding) ... ok
+2026-09-17T13:50:36.4053941Z test_caller_command_sql_revision_workdir_are_closed (test_migration_contract.ContractTests.test_caller_command_sql_revision_workdir_are_closed) ... ok
+2026-09-17T13:50:36.4056172Z test_duplicate_json_and_nonfinite_are_rejected (test_migration_contract.ContractTests.test_duplicate_json_and_nonfinite_are_rejected) ... ok
+2026-09-17T13:50:36.4065962Z test_every_candidate_identity_substitution_is_rejected (test_migration_contract.ContractTests.test_every_candidate_identity_substitution_is_rejected) ... ok
+2026-09-17T13:50:36.4075735Z test_migration_head_source_and_package_cannot_be_mixed (test_migration_contract.ContractTests.test_migration_head_source_and_package_cannot_be_mixed) ... ok
+2026-09-17T13:50:36.4078871Z test_original_ci_evidence_and_full_identity_are_accepted (test_migration_contract.ContractTests.test_original_ci_evidence_and_full_identity_are_accepted) ... ok
+2026-09-17T13:50:36.4090557Z test_rehearsal_pass_cannot_replace_missing_or_failed_gates (test_migration_contract.ContractTests.test_rehearsal_pass_cannot_replace_missing_or_failed_gates) ... ok
+2026-09-17T13:50:36.4100177Z test_verify_profile_requires_exact_image (test_migration_contract.ContractTests.test_verify_profile_requires_exact_image) ... ok
+2026-09-17T13:50:36.4110964Z test_failed_or_unknown_attempt_cannot_be_retried_under_new_task (test_migration_contract.DurableFenceTests.test_failed_or_unknown_attempt_cannot_be_retried_under_new_task) ... ok
+2026-09-17T13:50:36.4126221Z test_only_completed_cutover_releases_fence_and_retains_intent (test_migration_contract.DurableFenceTests.test_only_completed_cutover_releases_fence_and_retains_intent) ... ok
+2026-09-17T13:50:36.4133423Z test_pending_symlink_is_not_followed_or_overwritten (test_migration_contract.DurableFenceTests.test_pending_symlink_is_not_followed_or_overwritten) ... ok
+2026-09-17T13:50:36.4135959Z test_canary_checks_candidate_workspace_without_network_or_mounts (test_migration_contract.SourceSelectionTests.test_canary_checks_candidate_workspace_without_network_or_mounts) ... ok
+2026-09-17T13:50:36.4138852Z test_migration_program_pins_same_root_and_has_no_down_command (test_migration_contract.SourceSelectionTests.test_migration_program_pins_same_root_and_has_no_down_command) ... ok
+2026-09-17T13:50:36.4141585Z test_post_verify_reads_candidate_head_from_workspace (test_migration_contract.SourceSelectionTests.test_post_verify_reads_candidate_head_from_workspace) ... ok
+2026-09-17T13:50:36.4142898Z 
+2026-09-17T13:50:36.4143348Z ----------------------------------------------------------------------
+2026-09-17T13:50:36.4144089Z Ran 20 tests in 0.074s
+2026-09-17T13:50:36.4144474Z 
+2026-09-17T13:50:36.4144760Z OK
+2026-09-17T13:50:36.4374428Z ##[group]Run python tooling/control-plane/hk-forward-migration-v1/ci_postgres.py candidate "$RUNNER_TEMP/frozen-issue103" "$RUNNER_TEMP/executor-proof"
+2026-09-17T13:50:36.4376501Z [36;1mpython tooling/control-plane/hk-forward-migration-v1/ci_postgres.py candidate "$RUNNER_TEMP/frozen-issue103" "$RUNNER_TEMP/executor-proof"[0m
+2026-09-17T13:50:36.4430146Z shell: /usr/bin/bash -e {0}
+2026-09-17T13:50:36.4430570Z env:
+2026-09-17T13:50:36.4431020Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:36.4431792Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-17T13:50:36.4432573Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:36.4433271Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:36.4433991Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:50:36.4434714Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-17T13:50:36.4435376Z ##[endgroup]
+2026-09-17T13:51:04.5846277Z {"application_tree": "41221557ee5d3709775cd282b02d8c30fc7e0860", "data_retention": "PASS", "deployment_ready": false, "forward_migration": {"lineage_sha256": "c53435b23cec77566690e3bffa3b4c3e00b36e9385c89462a39eec00bb434a2b", "poststate": "0137_hosted_unknown_episode", "prestate": "0133_flight_change_plan", "source": "PASS"}, "inherited_cell_tests_rerun": false, "isolated_image": "sha256:2b7ed1f59b9847f9facafd49bdf8ada893866ec7f35b393b3a894afce73cf56c", "live_database_touched": false, "migration_program_sha256": "526ace4129c76dfaa942afeb6dffa43d7b52227308005645fe4dad1ce1fac1de", "rehearsal_sha256": "ed2285ca5cde79b49403c4d5e73767370bf3c4bd8127ab986468bffa77ff900a", "repeat_prestate_refused": true, "scope": "DISPOSABLE_CI_EXECUTOR_PROGRAM_ONLY", "source_check": {"lineage_sha256": "c53435b23cec77566690e3bffa3b4c3e00b36e9385c89462a39eec00bb434a2b", "source": "PASS"}, "source_fingerprint": "5b792a2d3e68a7498d5cc152dc849b319631325bb8d7d36b65d0dc2b3c115b00", "source_sha": "edd3500575d2f2b81298cc9273025e0a3b734897", "status": "PASS_SCOPED", "valid_indexes": 2, "wrong_lineage_refused": true}
+2026-09-17T13:51:04.5860510Z EVIDENCE_SHA256=b6ce2506d871e18ee948dca7658efe1723d2969374f1088dec2bd95798e18d2e
+2026-09-17T13:51:04.6424947Z ##[group]Run python tooling/control-plane/hk-forward-migration-v1/seal_evidence.py "$RUNNER_TEMP"
+2026-09-17T13:51:04.6425688Z [36;1mpython tooling/control-plane/hk-forward-migration-v1/seal_evidence.py "$RUNNER_TEMP"[0m
+2026-09-17T13:51:04.6463020Z shell: /usr/bin/bash -e {0}
+2026-09-17T13:51:04.6463276Z env:
+2026-09-17T13:51:04.6463541Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:51:04.6464004Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-17T13:51:04.6464429Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:51:04.6464803Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:51:04.6465178Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:51:04.6465561Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-17T13:51:04.6465885Z ##[endgroup]
+2026-09-17T13:51:04.6917632Z {"cc-checks": "PASS", "executor-proof": "PASS_SCOPED", "inherited_cell_tests_rerun": false, "live_database_touched": false, "live_deployment_performed": false, "schema": "go.hk-shared-migration-gate.v1", "state-checks": "PASS", "status": "PASS_SCOPED", "tooling_sha": "bc71a91bff31a092aae003e061622878b8ef4bf6", "tooling_tree": "cf34c9c0eebfccf66dd0b313e1eba825c12744c2"}
+2026-09-17T13:51:04.6920781Z GATE_EVIDENCE_SHA256=270a4257f395002f7df1fc67877eb862915250b6285db6481dda6e1551ae2e7b
+2026-09-17T13:51:04.7046996Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T13:51:04.7048324Z ##[group]Run actions/upload-artifact@v4
+2026-09-17T13:51:04.7048599Z with:
+2026-09-17T13:51:04.7048905Z   name: hk-forward-migration-bc71a91bff31a092aae003e061622878b8ef4bf6
+2026-09-17T13:51:04.7049733Z   path: /home/runner/work/_temp/hk-forward-proof
+2026-09-17T13:51:04.7050078Z   if-no-files-found: error
+2026-09-17T13:51:04.7050314Z   compression-level: 6
+2026-09-17T13:51:04.7050531Z   overwrite: false
+2026-09-17T13:51:04.7050752Z   include-hidden-files: false
+2026-09-17T13:51:04.7050982Z env:
+2026-09-17T13:51:04.7051230Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:51:04.7051691Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-17T13:51:04.7052109Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:51:04.7052481Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:51:04.7052852Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-17T13:51:04.7053222Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-17T13:51:04.7053541Z ##[endgroup]
+2026-09-17T13:51:04.9095222Z (node:3577) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-17T13:51:04.9125919Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-17T13:51:04.9510168Z With the provided path, there will be 9 files uploaded
+2026-09-17T13:51:04.9521901Z Artifact name is valid!
+2026-09-17T13:51:04.9530084Z Root directory input is valid!
+2026-09-17T13:51:05.3484957Z Beginning upload of artifact content to blob storage
+2026-09-17T13:51:05.3921584Z (node:3577) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-17T13:51:05.6387606Z Uploaded bytes 20534
+2026-09-17T13:51:05.6989919Z Finished uploading artifact content to blob storage!
+2026-09-17T13:51:05.7005377Z SHA256 digest of uploaded artifact zip is d4b7ef5c16e5201462f665651d6fd7cc24854f889093f93a20cb6b7edc57898c
+2026-09-17T13:51:05.7006778Z Finalizing artifact upload
+2026-09-17T13:51:05.9765645Z Artifact hk-forward-migration-bc71a91bff31a092aae003e061622878b8ef4bf6.zip successfully finalized. Artifact ID 10500372698
+2026-09-17T13:51:05.9790748Z Artifact hk-forward-migration-bc71a91bff31a092aae003e061622878b8ef4bf6 has been successfully uploaded! Final size is 20534 bytes. Artifact ID is 10500372698
+2026-09-17T13:51:05.9808754Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35229547939/artifacts/10500372698
+2026-09-17T13:51:05.9985022Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T13:51:05.9986285Z Post job cleanup.
+2026-09-17T13:51:06.1310186Z (node:3614) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-17T13:51:06.1311574Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-17T13:51:06.1554389Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T13:51:06.1556562Z Post job cleanup.
+2026-09-17T13:51:06.3087228Z [command]/usr/bin/git version
+2026-09-17T13:51:06.3190284Z git version 2.55.0
+2026-09-17T13:51:06.3306243Z Temporarily overriding HOME='/home/runner/work/_temp/0ddb4100-b094-4a4b-9fe9-03ddf94bf3cf' before making global git config changes
+2026-09-17T13:51:06.3342053Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T13:51:06.3360259Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/candidate
+2026-09-17T13:51:06.3402430Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T13:51:06.3406653Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T13:51:06.4282933Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T13:51:06.4390997Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T13:51:06.5040524Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T13:51:06.5135381Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T13:51:06.5748693Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T13:51:06.5752008Z Post job cleanup.
+2026-09-17T13:51:06.6779976Z [command]/usr/bin/git version
+2026-09-17T13:51:06.6833510Z git version 2.55.0
+2026-09-17T13:51:06.6930424Z Temporarily overriding HOME='/home/runner/work/_temp/e96003e9-2b12-4ec4-8a41-9d1e36a53fd2' before making global git config changes
+2026-09-17T13:51:06.6944294Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T13:51:06.6967795Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/tooling
+2026-09-17T13:51:06.7014921Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T13:51:06.7046120Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T13:51:06.7409965Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T13:51:06.7458496Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T13:51:06.7929704Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T13:51:06.7990817Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T13:51:06.8479921Z Print service container logs: 9f042e81cf8c45b4832c9ceb8c838408_postgres184_153d03
+2026-09-17T13:51:06.8486008Z ##[command]/usr/bin/docker logs --details 5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6
+2026-09-17T13:51:06.8676183Z  initdb: warning: enabling "trust" authentication for local connections
+2026-09-17T13:51:06.8677128Z  The files belonging to this database system will be owned by user "postgres".
+2026-09-17T13:51:06.8721621Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+2026-09-17T13:51:06.8724189Z  This user must also own the server process.
+2026-09-17T13:51:06.8725531Z  2026-09-17 13:50:05.504 UTC [1] LOG:  starting PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-09-17T13:51:06.8726561Z  
+2026-09-17T13:51:06.8727329Z  2026-09-17 13:50:05.505 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-09-17T13:51:06.8728132Z  The database cluster will be initialized with locale "en_US.utf8".
+2026-09-17T13:51:06.8729310Z  2026-09-17 13:50:05.505 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-09-17T13:51:06.8730054Z  The default database encoding has accordingly been set to "UTF8".
+2026-09-17T13:51:06.8731128Z  2026-09-17 13:50:05.507 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-17T13:51:06.8731967Z  The default text search configuration will be set to "english".
+2026-09-17T13:51:06.8732961Z  2026-09-17 13:50:05.512 UTC [74] LOG:  database system was shut down at 2026-09-17 13:50:05 UTC
+2026-09-17T13:51:06.8733635Z  
+2026-09-17T13:51:06.8734390Z  2026-09-17 13:50:05.516 UTC [1] LOG:  database system is ready to accept connections
+2026-09-17T13:51:06.8735082Z  Data page checksums are enabled.
+2026-09-17T13:51:06.8735752Z  
+2026-09-17T13:51:06.8736432Z  fixing permissions on existing directory /var/lib/postgresql/18/docker ... ok
+2026-09-17T13:51:06.8737312Z  creating subdirectories ... ok
+2026-09-17T13:51:06.8737993Z  selecting dynamic shared memory implementation ... posix
+2026-09-17T13:51:06.8749894Z  selecting default "max_connections" ... 100
+2026-09-17T13:51:06.8750479Z  selecting default "shared_buffers" ... 128MB
+2026-09-17T13:51:06.8750788Z  selecting default time zone ... Etc/UTC
+2026-09-17T13:51:06.8751344Z  creating configuration files ... ok
+2026-09-17T13:51:06.8751639Z  running bootstrap script ... ok
+2026-09-17T13:51:06.8751946Z  performing post-bootstrap initialization ... ok
+2026-09-17T13:51:06.8752264Z  syncing data to disk ... ok
+2026-09-17T13:51:06.8752494Z  
+2026-09-17T13:51:06.8752671Z  
+2026-09-17T13:51:06.8752901Z  Success. You can now start the database server using:
+2026-09-17T13:51:06.8753206Z  
+2026-09-17T13:51:06.8753470Z      pg_ctl -D /var/lib/postgresql/18/docker -l logfile start
+2026-09-17T13:51:06.8753795Z  
+2026-09-17T13:51:06.8754681Z  waiting for server to start....2026-09-17 13:50:05.168 UTC [52] LOG:  starting PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-09-17T13:51:06.8755776Z  2026-09-17 13:50:05.168 UTC [52] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-17T13:51:06.8756360Z  2026-09-17 13:50:05.173 UTC [58] LOG:  database system was shut down at 2026-09-17 13:50:05 UTC
+2026-09-17T13:51:06.8757044Z  2026-09-17 13:50:05.175 UTC [52] LOG:  database system is ready to accept connections
+2026-09-17T13:51:06.8757437Z   done
+2026-09-17T13:51:06.8757625Z  server started
+2026-09-17T13:51:06.8757978Z  CREATE DATABASE
+2026-09-17T13:51:06.8758177Z  
+2026-09-17T13:51:06.8758355Z  
+2026-09-17T13:51:06.8758674Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+2026-09-17T13:51:06.8765272Z  
+2026-09-17T13:51:06.8765600Z  2026-09-17 13:50:05.377 UTC [52] LOG:  received fast shutdown request
+2026-09-17T13:51:06.8766428Z  waiting for server to shut down....2026-09-17 13:50:05.377 UTC [52] LOG:  aborting any active transactions
+2026-09-17T13:51:06.8767164Z  2026-09-17 13:50:05.379 UTC [52] LOG:  background worker "logical replication launcher" (PID 61) exited with exit code 1
+2026-09-17T13:51:06.8767721Z  2026-09-17 13:50:05.381 UTC [56] LOG:  shutting down
+2026-09-17T13:51:06.8768125Z  2026-09-17 13:50:05.382 UTC [56] LOG:  checkpoint starting: shutdown immediate
+2026-09-17T13:51:06.8769785Z  2026-09-17 13:50:05.399 UTC [56] LOG:  checkpoint complete: wrote 943 buffers (5.8%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.014 s, sync=0.003 s, total=0.018 s; sync files=303, longest=0.002 s, average=0.001 s; distance=4352 kB, estimate=4352 kB; lsn=0/1B9FBB0, redo lsn=0/1B9FBB0
+2026-09-17T13:51:06.8771259Z  2026-09-17 13:50:05.411 UTC [52] LOG:  database system is shut down
+2026-09-17T13:51:06.8771619Z   done
+2026-09-17T13:51:06.8771808Z  server stopped
+2026-09-17T13:51:06.8772015Z  
+2026-09-17T13:51:06.8772355Z  PostgreSQL init process complete; ready for start up.
+2026-09-17T13:51:06.8772727Z  
+2026-09-17T13:51:06.8781462Z Stop and remove container: 9f042e81cf8c45b4832c9ceb8c838408_postgres184_153d03
+2026-09-17T13:51:06.8786300Z ##[command]/usr/bin/docker rm --force 5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6
+2026-09-17T13:51:07.0057282Z 5ec68140a848f3778a8e807069445172e39903ecc47c1501549ed2b0320646d6
+2026-09-17T13:51:07.0108310Z Remove container network: github_network_c2946181b9c1424e84fc0fb59746df29
+2026-09-17T13:51:07.0125398Z ##[command]/usr/bin/docker network rm github_network_c2946181b9c1424e84fc0fb59746df29
+2026-09-17T13:51:07.0997461Z github_network_c2946181b9c1424e84fc0fb59746df29
+2026-09-17T13:51:07.1073345Z Cleaning up orphan processes
+2026-09-17T13:51:07.1491676Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

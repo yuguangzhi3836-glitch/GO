@@ -1,0 +1,67 @@
+{
+  "schema": "go.independent-c14-operation-review.v1",
+  "reviewer": "/root/c14_issue103_migration",
+  "review_date": "2026-09-17",
+  "status": "PASS_SCOPED",
+  "scope": "FIXED_SOURCE_INSTALLATION_AND_CANDIDATE_FACT_ADMISSION_ONLY",
+  "source_candidate_sha": "bc71a91bff31a092aae003e061622878b8ef4bf6",
+  "source_review": "C14-bc71.json",
+  "source_review_sha256": "b2e84ac6d95d1128b7f73ab9c9ef43db0a9f0418ced8fcc3e3ebd4b5a54ba76e",
+  "reviewed_operations": {
+    "source_installer_sha256": "8497b3369526190c0637b70cf1971f1785df84374c7aae35c8f861ee6a09d261",
+    "source_manifest_sha256": "f750fa9733225f828e17e70c16dbdffaf8719426d78e9418af77cbdf448f7ea0",
+    "admission_installer_sha256": "db49bf1d227920370b8c1a8787c40b79e5ffe2d314de37672b7c996da8d6cdf8",
+    "admission_package_sha256": "990c30dd431836e30291aa6fbe336d0186c5370711d4abd922f73dff26055ddb",
+    "candidate_contract_sha256": "23d78ea846b21ace5318335eacb2a75826db5ff56cd925c8f8c58f6a83babed6",
+    "active_candidate_file_sha256": "f275402009b6d08b53bceb42e7746f9a1c9611f809077a74d257a60f7c37256b",
+    "verify_baseline_file_sha256": "ea85949544401a6d19cabc349cf3a5145b170b58859263d7bcb227edba2bcdc1"
+  },
+  "checks": {
+    "source_mapping": "18/18 new source hashes match reviewed bc71 files and package bytes; every before record matches the supplied CC or HK preflight",
+    "fixed_scope": "Hash-pinned manifests/packages, fixed source targets and root-owned candidate-fact paths; no deployment plan, Task, live SQL or caller-controlled execution command",
+    "source_installation": "Requires idle services, pauses only timers, compares old hashes again, backs up old source and ledger, replaces atomically, performs imports/pin checks, compares protected files and HK container inventory, restores timers",
+    "permissions": "Preserves existing CC 0750/0640 modes; new migration state directory fixed root:root 0700; candidate facts fixed root:root 0600",
+    "candidate_bindings": "Contract validation and active-candidate cross-validation PASS; product source/tree/fingerprint, sealed image/package and original rehearsal agree",
+    "signature_verification": "Independently verified CURRENT_DEPLOY and CURRENT_VERIFY Task/Evidence pairs with the archived, hash-bound, distinct Ed25519 public keys; verified pair/image binding through the reviewed CC proof functions",
+    "historical_baseline": "Original VERIFY completed 2026-09-17T12:32:05Z, image sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7; supports correcting the stale authority baseline only, never current deployment freshness",
+    "builder_profile": "Task-facing go-application-python-v1 deliberately uses Dockerfile.go-application-python-v2 in the reviewed TEST_PR producer; this is an existing explicit alias, not a substituted product source",
+    "helper_integrity": "Admission installer verifies the fixed helper path, regular/root/non-writable metadata and reviewed hash before importing, then checks imported module path"
+  },
+  "closed_operation_finding": {
+    "id": "C14-INSTALL-FSYNC-RECOVERY",
+    "original_problem": "Both installers appended the changed target to their restore list after directory fsync; fsync failure following successful replacement could omit that changed target from rollback.",
+    "resolution": "Both installers now perform replace, append to restore list, then directory fsync.",
+    "verification": "Injected OSError at the first directory fsync after replacement, using each actual installer's main/except/finally flow with all paths redirected to private temporary directories and external commands replaced by fakes.",
+    "source_result": "PASS: original source restored, new source items and migration directory absent, timer state restored, receipt SOURCE_RESTORED",
+    "admission_result": "PASS: newly written contract removed, created directory cleanup performed, timer state restored, receipt ADMISSION_RESTORED",
+    "harness": "verify_install_recovery.py",
+    "harness_sha256": "e71fbd201608a8d316f52052cafaf625520400879ffb3b48b86388308d40a48a",
+    "status": "CLOSED"
+  },
+  "required_operation_order": [
+    "HK source installation and readback",
+    "CC source installation and readback",
+    "HK exact contract store installation and readback",
+    "CC contract and historical VERIFY baseline installation",
+    "CC active-candidate written last, validated, then timer restored"
+  ],
+  "open_p0_p1_operation_findings": [],
+  "boundaries": {
+    "installation_executed_by_reviewer": false,
+    "admission_executed_by_reviewer": false,
+    "server_access_or_real_systemd_docker_calls_by_reviewer": false,
+    "live_database_touched": false,
+    "task_published": false,
+    "deployment_proven": false,
+    "source_candidate_modified": false,
+    "independent_c13_operation_review_still_required": true,
+    "fresh_formal_canary_and_verify_required": true,
+    "verify_freshness_seconds": 300,
+    "formal_deploy_request_signed_task_and_evidence_required": true,
+    "independent_post_deployment_verify_required": true,
+    "real_supplier_connections": "HOLD",
+    "final_release": "HOLD",
+    "production": "HOLD",
+    "merge_authorized_by_review": false
+  }
+}
