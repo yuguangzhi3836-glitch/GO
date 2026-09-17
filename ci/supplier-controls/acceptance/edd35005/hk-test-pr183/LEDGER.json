@@ -1,0 +1,103 @@
+{
+  "schema": "go.hk-test-pr.triage.v1",
+  "status": "SHARED_INFRA_BLOCKED",
+  "issue": 184,
+  "source_candidate": {
+    "pr": 183,
+    "sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+    "application_tree": "41221557ee5d3709775cd282b02d8c30fc7e0860",
+    "source_fingerprint_sha256": "5b792a2d3e68a7498d5cc152dc849b319631325bb8d7d36b65d0dc2b3c115b00",
+    "development_gate": "Issue182 DONE_SCOPED unchanged",
+    "draft": true,
+    "merged": false
+  },
+  "request": {
+    "repository": "chenzhenxi1-sudo/go-control-tasks",
+    "pr": 44,
+    "request_id": "boss-hk-test-pr183-20260917T085134Z-132902",
+    "head_sha": "54620edcd74cb1580769f5fadacd22810e704c92",
+    "path": "requests/boss-hk-test-pr183-20260917T085134Z-132902.json",
+    "merged": false
+  },
+  "task": {
+    "task_id": "go-boss-test-pr-183-b830d1b36e7e",
+    "commit": "4104e486477cd6c16570b5ae7e446d273ad1be8b",
+    "path": "tasks/go-boss-test-pr-183-b830d1b36e7e.json",
+    "nonce": "q_GbwEzcXShL-6lvDI6BnZ3i3jj5oXhz",
+    "raw_sha256": "9f69720e7d21ce2a9e4bf74f416dc26e89286d47da0bff759c6c7a40e76c494d"
+  },
+  "evidence": {
+    "repository": "chenzhenxi1-sudo/go-control-evidence",
+    "commit": "4795d4aed9207db29c494f0870b043e509bb560f",
+    "path": "evidence/go-boss-test-pr-183-b830d1b36e7e-q_GbwEzcXShL-6lvDI6BnZ3i3jj5oXhz.json",
+    "git_blob": "dd2885e3a784b6a63d460f2e05a5f13d69c40b29",
+    "raw_sha256": "72d539ce5d1902f1a36f5eeaa999f9bfedd72f575d2a9c5a25dec9be2142c374",
+    "status": "FAILED",
+    "executor_result": "EXECUTION_FAILED",
+    "reason_code": "UNCLASSIFIED_REJECT",
+    "stage": "executor",
+    "stdout_bytes": 0,
+    "stderr_bytes": 0,
+    "return_code": null,
+    "executor_version": "unreported",
+    "attempt_budget_exhausted": true,
+    "retry_permitted": false,
+    "replay_authorized": false
+  },
+  "verification": {
+    "candidate_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+    "evidence": {
+      "file_sha256": "72d539ce5d1902f1a36f5eeaa999f9bfedd72f575d2a9c5a25dec9be2142c374",
+      "identity": "HK-AGENT-EVIDENCE-SIGNER",
+      "signature": "PASS",
+      "unsigned_canonical_sha256": "a87068da04b8d225abbbb8875d10bff8a6ccf32c09ef473187e5b22a8afcfc40"
+    },
+    "evidence_status": "FAILED",
+    "evidence_task_binding": "PASS",
+    "request_task_binding": "PASS",
+    "task": {
+      "file_sha256": "9f69720e7d21ce2a9e4bf74f416dc26e89286d47da0bff759c6c7a40e76c494d",
+      "identity": "GO-CC-TASK-MANIFEST-SIGNER",
+      "signature": "PASS",
+      "unsigned_canonical_sha256": "9ea480dc8dabc8e5ee0a6ded8e924d242146322cbbb8433316df8c7390c5fd40"
+    }
+  },
+  "confirmed_repository_findings": {
+    "baseline_matches_pinned_builder": true,
+    "baseline_profile_sha256": "904ede5e7ee3408e5f80bc2957d5f4b4d32754be6797bf6a53cff545b2fc94aa",
+    "candidate_matches_pinned_builder": false,
+    "candidate_profile_sha256": "c3140ecf1e38bf7f635ff6a80758677441a56866d0aa18727a2f6193adc707e1",
+    "dependency_added": [
+      "uvicorn[standard]>=0.30"
+    ],
+    "dependency_removed": [
+      "uvicorn>=0.30"
+    ],
+    "live_failure_root_cause": "NOT_PROVEN_BY_FAILURE_EVIDENCE"
+  },
+  "limits": [
+    "Repository compatibility mismatch is confirmed; exact live first error is NOT_PROVEN because failure Evidence omits it.",
+    "Failure timestamps are producer report timestamps and are not used to infer execution duration.",
+    "Current repository builder is pinned to an older dependency profile; installed executor identity is unreported by this failure.",
+    "No successful artifact or candidate-admission result exists for this attempt."
+  ],
+  "deployment_prerequisites": {
+    "candidate_source_migration_head": "0137_hosted_unknown_episode",
+    "recorded_hk_migration_head": "0133_flight_change_plan",
+    "fresh_live_migration_head": "NOT_READ",
+    "repository_admission_migration_required": false,
+    "canonical_candidate_at_inspection": "PR52 bd25d7acca1b5f54a7fb555008ed60b76ee45f21",
+    "canary": "NOT_REQUESTED",
+    "verify": "NOT_REQUESTED",
+    "deploy": "NOT_REQUESTED"
+  },
+  "scope": {
+    "product_code_changed": false,
+    "accepted_cells_rerun": false,
+    "business_runtime_cutover": false,
+    "external_provider_connection": false,
+    "production_touched": false,
+    "evidence_repository_written_by_assistant": false
+  },
+  "next_action": "Issue184: acquire original task-scoped agent diagnostic and installed builder identity; repair shared compatibility and bounded failure reporting through existing controlled process. No replay or blind retry."
+}
