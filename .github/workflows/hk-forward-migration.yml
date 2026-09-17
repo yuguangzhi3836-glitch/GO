@@ -35,6 +35,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             control-plane
+            command-center/audit/20260911
             hk-staging
             ci/hk-migration-admission
       - uses: actions/checkout@v4
