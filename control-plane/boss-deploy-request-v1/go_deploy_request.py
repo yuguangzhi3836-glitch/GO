@@ -36,6 +36,14 @@ an approval life of at most 15 minutes and by the Task deadline of at most 5, an
 consumed once: the plan store never overwrites a registered plan, and the ledger refuses
 a plan or authorisation it has already recorded.  A standing authorisation is not
 expressible at all, which is the point.
+
+A rollback is the same kind of act as a deployment, so it is gated here too and derived
+the same way.  The Command Center picks the deployment to undo out of its own ledger --
+the newest one it signed whose Evidence reports DEPLOY_OK -- binds that exact Task and
+its Evidence into an authorisation derived from the Request, and accepts no target, no
+service list and no image from anyone.  Whether the host is still in the state that
+deployment left is a question this side cannot answer and does not pretend to: the
+executor decides it at execution time, from files and containers it re-verifies itself.
 """
 import base64
 import datetime as dt
@@ -107,6 +115,35 @@ CANARY_GATES = ('compose_baseline','env_baseline','expected_current_image','cand
                 'python_compile','alembic_head','container_isolation','container_cleanup')
 VERIFY_GATES = ('alembic_current','alembic_head','api_health','candidate_image',
                 'compose_baseline','env_baseline','expected_current_image','worker_process_liveness')
+# A rollback undoes one already-executed deployment.  It is the same kind of act as a
+# deployment -- it mutates the same eight business services -- so it takes the same kind
+# of authority: an authenticated GitHub identity opening an exact Request.  What it may
+# *name* is narrower.  A deployment's Request names an environment and lets the Command
+# Center derive the candidate; a rollback's names an environment and lets the Command
+# Center derive which deployment to undo.  Neither names a target: the eight services
+# come from `SERVICES` above, and the images come from the source deployment's own
+# deploy record, which the executor re-verifies on the host, byte by byte, before it
+# touches anything.
+ROLLBACK_ACTION = 'HK_STAGING_ROLLBACK'
+ROLLBACK_SCOPE = 'HK_STAGING_ROLLBACK_FIXED_EIGHT'
+# The rollback Task's parameter block, exactly as the HK agent's own validator states
+# it: hk_agent/deployment_actions.py refuses any other name and any missing one.
+ROLLBACK_PARAMETERS = ('release_id','source_deploy_task_id','approval_id')
+# The authorisation's exact field set.  A deployment's approval binds the plan derived
+# for a candidate; a rollback's binds the pair of signed objects it undoes.
+ROLLBACK_AUTHORIZATION_FIELDS = ('schema_version','approval_id','approved_by','approved_at',
+                                 'expires_at','scope','source_deploy_task_sha256',
+                                 'source_deploy_evidence_sha256','request_sha256')
+# The gates a deployment's own Evidence must carry for that deployment to be a rollback
+# source.  `record_path` is deliberately not among them: the deploy runtime writes it
+# beside the gates as an annotation -- the path of the immutable record it just wrote --
+# and not as a gate.  That is also why the generic "every value in gate_results must be
+# PASS or False" rule the canary and TEST_PR proofs apply cannot be reused for a DEPLOY
+# Evidence: applying it would refuse every real deployment.
+DEPLOY_GATES = ('candidate_binding','current_state','durable_previous_state','fixed_scope',
+                'no_migration','post_deploy_verify')
+# A rollback Task never outlives either its authorisation or this window.
+ROLLBACK_TASK_WINDOW = dt.timedelta(seconds=300)
 # How long a probe of live state may be cited for. A candidate's identity is
 # content-bound and never expires, but "the host is what we think it is" is a
 # statement about the present, so the canary and the preflight do expire.
@@ -298,6 +335,60 @@ def test_pr_proof(task,evidence,authority_key,hk_key):
     if any(v != 'PASS' and v is not False for v in gates.values()): raise Reject('test_pr_contains_failed_gate')
     return evidence
 
+def rollback_source_proof(task,evidence,authority_key,hk_key):
+    """The signed DEPLOY a rollback would undo, and the record it produced.
+
+    A rollback has no candidate of its own.  Everything it will do is a function of this
+    one pair of objects: the Task the Command Center signed and the Evidence the Hong
+    Kong agent signed for it.  The record those two name is what the executor opens --
+    under a fixed path whose digest it re-hashes itself -- to learn which eight images to
+    restore, and the executor refuses if that record has moved or if the host no longer
+    looks like the state that deployment left.
+
+    Like `test_pr_proof`, and unlike the canary and the preflight, this carries no
+    freshness window.  A deployment's Task and its Evidence are immutable and their
+    binding is by content: the same pair describes the same deployment forever, and a
+    rollback of it is the same act whenever it is authorised.  Whether the *host* is
+    still in the state that deployment left is a different question, asked by the
+    executor at execution time against files and containers it can see -- which is
+    strictly stronger than a window this side could compute from a published timestamp,
+    and needs no step from a human.
+    """
+    verify_signed(task,authority_key,'hex'); verify_signed(evidence,hk_key,'base64')
+    exact(task,TASK_FIELDS,'task_fields')
+    if task['schema_version']!='1' or task['authority']!='GO-COMMAND-CENTER': raise Reject('task_authority')
+    if task['action_id']!=ACTION or task['environment']!=ENVIRONMENT: raise Reject('rollback_source_scope')
+    for k in ['task_id','nonce','action_id','environment']:
+        if evidence.get(k)!=task[k]: raise Reject('proof_binding')
+    match(task['task_id'],re.compile(r'[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z'),'task_id')
+    match(task['nonce'],re.compile(r'[A-Za-z0-9_-]{1,128}\Z'),'task_nonce')
+    parameters=task['parameters']
+    exact(parameters,{'release_id','candidate_image_id','candidate_package_sha256',
+                      'expected_current_image_id','canary_evidence_id','approval_id'},
+          'rollback_source_parameters')
+    for k in ['release_id','candidate_image_id','expected_current_image_id']:
+        if evidence.get(k)!=parameters[k]: raise Reject('proof_image_or_release')
+    match(parameters['release_id'],EXECUTOR_IDENT,'proof_release_id')
+    if evidence.get('schema_version')!='1' or evidence.get('status')!='SUCCESS':
+        raise Reject('rollback_source_not_success')
+    if evidence.get('executor_result')!='DEPLOY_OK': raise Reject('rollback_source_result')
+    issued,expires=timestamp(task['issued_at']),timestamp(task['expires_at'])
+    started,completed=timestamp(evidence.get('started_at')),timestamp(evidence.get('completed_at'))
+    if not issued<=started<=completed<=expires: raise Reject('rollback_source_unbound_time')
+    if evidence.get('deploy_record_schema_version')!='2': raise Reject('rollback_source_record_binding')
+    record_id,record_sha256=evidence.get('deploy_record_id'),evidence.get('deploy_record_sha256')
+    if not isinstance(record_id,str) or SHA.fullmatch(record_id) is None:
+        raise Reject('rollback_source_record_binding')
+    if not isinstance(record_sha256,str) or SHA.fullmatch(record_sha256) is None:
+        raise Reject('rollback_source_record_binding')
+    gates=evidence.get('gate_results')
+    if not isinstance(gates,dict) or any(gates.get(k)!='PASS' for k in DEPLOY_GATES):
+        raise Reject('rollback_source_gate_failed')
+    return {'record_id':record_id,'record_sha256':record_sha256,
+            'candidate_image_id':parameters['candidate_image_id'],
+            'expected_current_image_id':parameters['expected_current_image_id'],
+            'completed_at':completed}
+
 def plan_id_for(candidate,canary_task):
     """The one plan name this gate will accept, derived rather than chosen.
 
@@ -315,6 +406,16 @@ def plan_id_for(candidate,canary_task):
 def approval_id_for(request_sha256):
     match(request_sha256,SHA,'invalid_request_digest')
     return 'approval-'+request_sha256[:16]
+
+def rollback_approval_id_for(request_sha256):
+    """The one approval id a rollback authorisation may carry.
+
+    Derived from the Request's canonical digest, exactly as a deployment's is, and given
+    its own prefix so a rollback authorisation and a deployment authorisation of the same
+    Request can never be confused for one another.
+    """
+    match(request_sha256,SHA,'invalid_request_digest')
+    return 'approval-rollback-'+request_sha256[:16]
 
 def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=None,request_sha256=None):
     # Fail closed on the approval authority before anything else is read. The
@@ -396,6 +497,64 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
              'expected_current_image_id':plan['expected_current_image_id'],
              'canary_evidence_id':bundle['canary_task']['parameters']['release_id'],'approval_id':approval['approval_id']}}
 
+def validate_rollback(release_id,authorization,source_task,source_evidence,
+                      authority_key,hk_key,at,approval_identity=None,request_sha256=None):
+    """Whether this exact rollback Request may become a Task, and what that Task may carry.
+
+    The authority has the same shape as a deployment's -- an authenticated GitHub
+    identity opened an exact Request, and that Request *is* the one-time authorisation --
+    because the act has the same weight.  What differs is what is being authorised.  A
+    deployment's approval binds the plan derived for a candidate; a rollback's binds the
+    pair of signed objects it undoes, because those two objects are the whole of what a
+    rollback is.  Neither names a target, and `release_id` here is only the label this run
+    and its Evidence are addressed by: which eight images to restore is read by the
+    executor out of the source Evidence's deploy record, re-hashed on the host.
+    """
+    if approval_identity is None: raise Reject('approval_identity_missing')
+    if approval_identity not in APPROVAL_IDENTITIES: raise Reject('approval_identity_not_authorised')
+    if request_sha256 is None: raise Reject('approval_request_digest_missing')
+    match(request_sha256,SHA,'invalid_request_digest')
+    match(release_id,EXECUTOR_IDENT,'rollback_release_id')
+    exact(authorization,ROLLBACK_AUTHORIZATION_FIELDS,'rollback_authorization_fields')
+    if authorization['schema_version']!='1' or authorization['scope']!=ROLLBACK_SCOPE:
+        raise Reject('rollback_scope')
+    if authorization['request_sha256']!=request_sha256: raise Reject('approval_request_mismatch')
+    match(authorization['approval_id'],EXECUTOR_IDENT,'approval_id')
+    match(authorization['approved_by'],IDENT,'human_reviewer_id')
+    if authorization['approved_by']!=approval_identity: raise Reject('approval_identity_mismatch')
+    approved,expires=timestamp(authorization['approved_at']),timestamp(authorization['expires_at'])
+    if approved>at or expires<=at+dt.timedelta(seconds=60) or expires-approved>APPROVAL_MAX_LIFE:
+        raise Reject('approval_expired_or_invalid')
+    source=rollback_source_proof(source_task,source_evidence,authority_key,hk_key)
+    # Recomputed from the objects themselves rather than taken from the authorisation's
+    # own word: an authorisation naming a different deployment, or one whose Evidence was
+    # replaced, is refused here instead of being read as "some deployment".
+    if authorization['source_deploy_task_sha256']!=digest(source_task):
+        raise Reject('rollback_authorization_binding')
+    if authorization['source_deploy_evidence_sha256']!=digest(source_evidence):
+        raise Reject('rollback_authorization_binding')
+    if authorization['approval_id']!=rollback_approval_id_for(request_sha256):
+        raise Reject('rollback_approval_id_not_derived')
+    # A rollback can only be authorised once the deployment it undoes has finished: an
+    # authorisation older than the source Evidence would be an authorisation to undo
+    # something that had not happened yet.
+    if approved<source['completed_at']: raise Reject('approval_predates_evidence')
+    deadline=min(expires,at+ROLLBACK_TASK_WINDOW)
+    if deadline<=at+dt.timedelta(seconds=60): raise Reject('approval_expired_or_invalid')
+    return {'action_id':ROLLBACK_ACTION,'approval_identity':approval_identity,
+            'request_sha256':request_sha256,'approval_id':authorization['approval_id'],
+            'release_id':release_id,'source_deploy_task_id':source_task['task_id'],
+            'source_deploy_task_sha256':digest(source_task),
+            'source_deploy_evidence_sha256':digest(source_evidence),
+            'source_deploy_record_id':source['record_id'],
+            'source_deploy_record_sha256':source['record_sha256'],
+            'source_candidate_image_id':source['candidate_image_id'],
+            'expected_current_image_id':source['expected_current_image_id'],
+            'deadline':deadline,
+            'parameters':{'release_id':release_id,
+                          'source_deploy_task_id':source_task['task_id'],
+                          'approval_id':authorization['approval_id']}}
+
 def load_context(plan_id,at,approval_identity=None,request_sha256=None):
     match(plan_id,IDENT,'plan_id')
     try:
@@ -407,6 +566,24 @@ def load_context(plan_id,at,approval_identity=None,request_sha256=None):
 def ensure_unused(context,records):
     if any(r.get('plan_id')==context['plan_id'] or r.get('approval_id')==context['approval_id'] for r in records.values()):
         raise Reject('deployment_plan_or_approval_already_consumed')
+
+def ensure_rollback_unused(records,source_deploy_task_id):
+    """A deployment is spent by the first rollback Request that reaches it.
+
+    Refused on any *published* ROLLBACK Task that cites this source -- not only on a
+    successful one.  The executor writes its rollback record before it mutates anything,
+    so a source whose rollback Task was published but whose Evidence never arrived has
+    already been consumed on the host; treating "no Evidence" as "not consumed" would
+    offer a second rollback of the same deployment, which the host would refuse anyway.
+    A rollback is never automatically retried, by anything.
+    """
+    for record in (records or {}).values():
+        if not isinstance(record,dict) or record.get('status')!='published': continue
+        task=record.get('task')
+        if not isinstance(task,dict) or task.get('action_id')!=ROLLBACK_ACTION: continue
+        parameters=task.get('parameters')
+        if isinstance(parameters,dict) and parameters.get('source_deploy_task_id')==source_deploy_task_id:
+            raise Reject('rollback_source_already_rolled_back')
 
 if __name__=='__main__':
     import argparse

@@ -22,6 +22,8 @@ Everything it reads is produced by something else, already, without a human:
     the preflight VERIFY    likewise
     the approval            the DEPLOY Request: who GitHub says wrote it, when, and the
                             digest of its canonical content
+    the rollback source     the newest DEPLOY Task the Bridge itself published, and that
+                            Task's signed Evidence -- the only thing a rollback undoes
 
 The approval *is* the deployment's one-time authorisation.  There is no deploy switch to
 consult and nothing standing to reuse: the authorisation exists only because an
@@ -33,6 +35,12 @@ ledger refuses a plan or an authorisation it has already recorded.
 There is deliberately nothing here for a caller or an operator to fill in.  A DEPLOY
 Request therefore carries only the five common fields, exactly like a CANARY Request:
 it names an action and an environment, and it steers nothing.
+
+The same holds one level up, for undoing a deployment.  A ROLLBACK Request is the five
+common fields; the deployment it undoes is the newest one in the ledger, and the
+authority to undo it is the Request itself.  A caller cannot name a deployment, a
+service, an image or a target, because there is no field for one -- which is the same
+property the deployment side has, applied to the act that reverses it.
 
 Two rules this module follows on purpose
 ----------------------------------------
@@ -231,6 +239,54 @@ def derive(*,at,approval_identity,approved_at,request_sha256,admission,verify_ba
     bundle=derive_bundle(plan_id,request_sha256,approval_identity,approved_at,expires_at,
                          candidate,expected,test_pr,canary,preflight)
     return plan_id,bundle
+
+def rollback_source(records,read_evidence):
+    """The one deployment a rollback may undo: the newest one this Bridge published.
+
+    Newest, not "the last successful one".  If the most recent deployment's Evidence is
+    missing or refused, the derivation stops and the gate refuses -- it never quietly
+    falls back to an older deployment, because the older one describes a host state the
+    newer deployment has already replaced, and undoing it would not be the act anyone
+    asked for.  This is the same discipline the canary and the preflight follow, and the
+    same one the Hong Kong executor enforces from the other side, where a newer DEPLOY in
+    the task history refuses a rollback outright.
+    """
+    pairs=published_pairs(records,deploy_gate.ACTION)
+    if not pairs: raise Reject('rollback_source_missing')
+    task,_record=pairs[0]
+    try: evidence=read_evidence(task)
+    except Exception as exc: raise Reject('rollback_source_evidence_unreadable') from exc
+    if not isinstance(evidence,dict): raise Reject('rollback_source_evidence_unreadable')
+    return task,evidence
+
+def derive_rollback_authorization(request_sha256,approval_identity,approved_at,expires_at,
+                                  source_task,source_evidence):
+    """The rollback's one-time authorisation, bound to the pair it undoes. Pure function."""
+    return {'schema_version':'1','approval_id':deploy_gate.rollback_approval_id_for(request_sha256),
+            'approved_by':approval_identity,'approved_at':iso(approved_at),
+            'expires_at':iso(expires_at),'scope':deploy_gate.ROLLBACK_SCOPE,
+            'source_deploy_task_sha256':deploy_gate.digest(source_task),
+            'source_deploy_evidence_sha256':deploy_gate.digest(source_evidence),
+            'request_sha256':request_sha256}
+
+def derive_rollback(release_id,request_sha256,approval_identity,approved_at,ledger_records,
+                    read_evidence,authority_key,hk_key,at,
+                    approval_life=deploy_gate.APPROVAL_MAX_LIFE):
+    """The rollback context: the newest deployment, and the authorisation that undoes it.
+
+    Nothing is registered on disk.  A deployment writes a plan because the plan is the
+    object a human used to have to maintain and the object the executor is handed
+    separately; a rollback's whole content is the source pair, which the ledger already
+    holds as a signed Task and the evidence repository already holds as a signed Evidence.
+    So there is no new file, no new store and no new writable path for the unit to allow
+    -- and the publish-time recheck re-derives from the ledger rather than reading back
+    bytes this process wrote.
+    """
+    source_task,source_evidence=rollback_source(ledger_records,read_evidence)
+    authorization=derive_rollback_authorization(request_sha256,approval_identity,approved_at,
+                                                approved_at+approval_life,source_task,source_evidence)
+    return deploy_gate.validate_rollback(release_id,authorization,source_task,source_evidence,
+                                         authority_key,hk_key,at,approval_identity,request_sha256)
 
 def store_ready(store):
     """The plan store must be a real, root-owned, unwritable-by-others directory."""
