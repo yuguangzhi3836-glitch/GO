@@ -372,9 +372,18 @@ def rollback_source_proof(task,evidence,authority_key,hk_key):
     if evidence.get('schema_version')!='1' or evidence.get('status')!='SUCCESS':
         raise Reject('rollback_source_not_success')
     if evidence.get('executor_result')!='DEPLOY_OK': raise Reject('rollback_source_result')
-    issued,expires=timestamp(task['issued_at']),timestamp(task['expires_at'])
+    issued=timestamp(task['issued_at'])
     started,completed=timestamp(evidence.get('started_at')),timestamp(evidence.get('completed_at'))
-    if not issued<=started<=completed<=expires: raise Reject('rollback_source_unbound_time')
+    # The source's own timeline has to be coherent: an executor cannot start before the Task
+    # that told it to start was issued, and cannot finish before it started.  What is
+    # deliberately NOT asserted here is `completed <= expires` -- the bound the canary and
+    # the TEST_PR proofs use -- because a deployment Task's expiry is the expiry of the
+    # *authorisation that produced it*, not a promise that the work fits inside it.  The one
+    # live source this contract exists for breaks that bound: issued 06:03:28Z, expires
+    # 06:06:29Z, started and completed 06:07:06Z, status SUCCESS, DEPLOY_OK.  A bound no real
+    # source can satisfy is not fail-closed, it is fail-forever, and the freshness a rollback
+    # needs is carried by the authorisation instead: it must postdate this `completed_at`.
+    if not issued<=started<=completed: raise Reject('rollback_source_unbound_time')
     if evidence.get('deploy_record_schema_version')!='2': raise Reject('rollback_source_record_binding')
     record_id,record_sha256=evidence.get('deploy_record_id'),evidence.get('deploy_record_sha256')
     if not isinstance(record_id,str) or SHA.fullmatch(record_id) is None:

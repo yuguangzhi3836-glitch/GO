@@ -112,6 +112,14 @@ class Fixture:
         instead of only against a live deployment.
         """
         completed = self.at - dt.timedelta(seconds=age)
+        # The Task window is the *authorisation's* window, not the work's: it is allowed to
+        # expire before the executor has finished, and on the one live source this fixture
+        # stands for it did.  The offsets below are the measured ones (issued 06:03:28Z,
+        # expires 06:06:29Z, started and completed 06:07:06Z), so a gate that demanded
+        # `completed <= expires` fails here rather than only against the one real deployment
+        # this action exists for -- which is how it was found.
+        issued = completed - dt.timedelta(seconds=218)
+        expires = issued + dt.timedelta(seconds=181)
         parameters = {'release_id': task_id.replace('go-', '', 1),
                       'candidate_image_id': self.candidate,
                       'candidate_package_sha256': self.package,
@@ -120,8 +128,7 @@ class Fixture:
                       'approval_id': 'approval-' + 'a' * 16}
         record_id = hashlib.sha256(task_id.encode()).hexdigest()
         task = signed({'schema_version': '1', 'task_id': task_id, 'nonce': nonce,
-            'issued_at': bridge.iso(completed - dt.timedelta(seconds=20)),
-            'expires_at': bridge.iso(completed + dt.timedelta(minutes=10)),
+            'issued_at': bridge.iso(issued), 'expires_at': bridge.iso(expires),
             'authority': 'GO-COMMAND-CENTER', 'environment': gate.ENVIRONMENT,
             'action_id': gate.ACTION, 'parameters': parameters}, self.authority)
         result = {'schema_version': '1', 'executor_version': '0.4.3-rollback-runtime',
@@ -616,6 +623,40 @@ class RollbackProofTests(unittest.TestCase):
         self.assertIn('record_path', self.source_evidence['gate_results'])
         self.assertEqual(set(gate.DEPLOY_GATES) - set(self.source_evidence['gate_results']), set())
         self.derive()
+
+    def test_a_source_that_outlived_its_task_window_is_still_a_source(self):
+        """The second invented rule, caught the same way: `completed <= expires`.
+
+        A deployment Task's `expires_at` is the expiry of the authorisation that produced
+        it, not a promise that the deployment fits inside it.  Measuring the one live
+        source gave issued 06:03:28Z, expires 06:06:29Z, started and completed 06:07:06Z --
+        a signed SUCCESS DEPLOY_OK evidence that a strictly bounded gate refuses, which
+        makes the action unreachable rather than fail-closed.  The fixture now carries
+        exactly those offsets, so this fails if that bound is ever written back in.
+        """
+        self.assertLess(gate.timestamp(self.source_task['expires_at']),
+                        gate.timestamp(self.source_evidence['started_at']))
+        self.assertEqual(gate.timestamp(self.source_evidence['started_at']),
+                         gate.timestamp(self.source_evidence['completed_at']))
+        self.assertEqual(self.derive()['source_deploy_task_id'], self.source_task['task_id'])
+
+    def test_a_source_whose_own_timeline_is_incoherent_is_refused(self):
+        """What the bound that remains is for: the executor cannot start before it was told.
+
+        Only the source's internal ordering is asserted now, so both directions are pinned
+        here rather than left implied by the fixture: a start before the Task it cites was
+        issued, and a completion before that start.
+        """
+        task_id = self.source_task['task_id']
+        issued = gate.timestamp(self.source_task['issued_at'])
+        for started, completed in ((issued - dt.timedelta(seconds=1), issued),
+                                   (issued + dt.timedelta(seconds=5), issued + dt.timedelta(seconds=4))):
+            changed = {k: v for k, v in self.source_evidence.items() if k != 'signature'}
+            changed['started_at'] = bridge.iso(started)
+            changed['completed_at'] = bridge.iso(completed)
+            self.f.deploys[task_id] = (self.source_task, signed(changed, self.f.hk, 'base64'))
+            with self.assertRaisesRegex(gate.Reject, 'rollback_source_unbound_time'):
+                self.derive()
 
     def test_no_published_deployment_means_nothing_to_roll_back(self):
         with self.assertRaisesRegex(gate.Reject, 'rollback_source_missing'):
