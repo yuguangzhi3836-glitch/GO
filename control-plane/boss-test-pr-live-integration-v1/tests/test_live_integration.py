@@ -644,7 +644,7 @@ class FailureClosureTests(unittest.TestCase):
         self.addCleanup(shutil.rmtree, root, True)
         store = root / "store"
         store.mkdir(mode=0o700)
-        (store / "objects").mkdir(mode=0o700)
+        (store / "objects").mkdir(mode=0o700)\n        (store / "failures").mkdir(mode=0o700)
         identity = (os.stat(store).st_uid, os.stat(store).st_gid)
         originals = (test_pr.ARTIFACT_STORE, test_pr._build_root,
                      artifact_store._IDENTITY_RESOLVER, artifact_store._process_identity,
