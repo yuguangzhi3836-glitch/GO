@@ -101,7 +101,7 @@ def _atomic_record(record):
         except OSError: pass
         raise Reject('E_DEPLOY_RECORD_PERSIST') from exc
     return {'deploy_record_schema_version':'2','deploy_record_id':record['record_id'],'deploy_record_sha256':hashlib.sha256(payload).hexdigest(),'record_path':str(final)}
-def _record_v2(release,candidate,package,expected,data,runner,binding):
+def _record_v2(release,candidate,package,expected,data,runner,binding,contract=None,contract_sha=None):
     binding=_task_binding(binding)
     targets=[]
     for service,container in zip(SERVICES,data):
@@ -112,11 +112,14 @@ def _record_v2(release,candidate,package,expected,data,runner,binding):
     record_identity=hashlib.sha256(json.dumps({'task_id':binding['task_id'],'nonce':binding['nonce'],'release_id':release},sort_keys=True,separators=(',',':')).encode()).hexdigest()
     protected_inventory,protected_hash=_protected_non_target_snapshot(runner)
     record={'deploy_record_schema_version':'2','record_id':record_identity,'created_at':int(time.time()),'environment':'HK-STAGING-01','action_id':'HK_STAGING_DEPLOY','task_id':binding['task_id'],'nonce':binding['nonce'],'authority':binding['authority'],'task_canonical_sha256':binding['canonical_sha256'],'release_id':release,'candidate_image_id':candidate,'candidate_package_sha256':package,'expected_current_image_id':expected,'compose_path':COMPOSE,'compose_sha256':COMPOSE_SHA,'runtime_env_path':ENV,'env_sha256':ENV_SHA,'target_count':8,'targets':targets,'non_target_container_inventory_sha256':_non_target_snapshot(runner,[x['container_id'] for x in targets]),'protected_non_target_inventory':protected_inventory,'protected_non_target_inventory_sha256':protected_hash}
+    if contract:
+        record.update(candidate_contract_sha256=contract_sha,baseline_revision=contract['baseline_revision'],target_revision=contract['target_revision'],migration_required=contract.get('migration_required',True))
     return _atomic_record(record)
 def rollback_source_eligible(record,record_sha256,task,evidence):
     """Pure future-rollback source validator; it performs no Docker operation."""
     try:
         if not isinstance(record,dict) or record.get('deploy_record_schema_version')!='2' or not SHA256.fullmatch(record_sha256): return False
+        if record.get('migration_required') is True or 'candidate_contract_sha256' in record: return False
         if record.get('action_id')!='HK_STAGING_DEPLOY' or record.get('environment')!='HK-STAGING-01' or record.get('target_count')!=8 or len(record.get('targets',[]))!=8: return False
         if any(not IMAGE.fullmatch(x.get('image_id','')) for x in record['targets']): return False
         protected=record.get('protected_non_target_inventory')
@@ -137,14 +140,17 @@ def rollback_source_eligible(record,record_sha256,task,evidence):
         if record.get('release_id')!=release_id or evidence.get('release_id')!=release_id: return False
         return evidence.get('deploy_record_schema_version')=='2' and evidence.get('deploy_record_id')==record.get('record_id') and evidence.get('deploy_record_sha256')==record_sha256
     except (AttributeError,TypeError): return False
-def _override(candidate):
+def _override(candidate,contract=None):
     root='/run/go-hk-deployctl'
     pathlib.Path(root).mkdir(mode=0o700,parents=True,exist_ok=True)
     fd,path=tempfile.mkstemp(prefix='deploy-',suffix='.yaml',dir=root,text=True)
     os.fchmod(fd,0o600)
     with os.fdopen(fd,'w') as f:
         f.write('services:\n')
-        for service in SERVICES: f.write('  '+service+':\n    image: '+candidate+'\n')
+        for service in SERVICES:
+            f.write('  '+service+':\n    image: '+candidate+'\n')
+            if contract:
+                f.write('    working_dir: /workspace\n    environment:\n      PYTHONPATH: /workspace/src\n      MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: \"false\"\n      TRAVEL_INTELLIGENCE_ENABLED: \"false\"\n')
     return path
 def _api_healthy(runner,candidate):
     raw=_run(runner,[DOCKER,'ps','-q','--filter','label=com.docker.compose.project='+PROJECT,'--filter','label=com.docker.compose.service=api'],20)
@@ -165,15 +171,22 @@ def _wait_for_api_health(runner,candidate,sleeper=time.sleep):
             if attempt + 1 == API_READINESS_ATTEMPTS:
                 raise Reject('E_DEPLOY_API_READINESS_TIMEOUT')
             sleeper(API_READINESS_INTERVAL_SECONDS)
-def run_deploy(release,candidate,package,expected,binding,runner,collector,artifact,sleeper=time.sleep):
+def run_deploy(release,candidate,package,expected,binding,runner,collector,artifact,sleeper=time.sleep,contract=None,contract_sha=None,migration=None,same_revision=None):
     data=_precheck(runner,candidate,package,expected,artifact)
-    record=_record_v2(release,candidate,package,expected,data,runner,binding)
-    override=None
+    needs_migration = contract is not None and contract.get('migration_required',True) is True
+    if contract and not needs_migration:
+        same_revision.require_clear()
+        same_revision.check_images(runner,contract)
+        collector._collect_alembic_for_api(runner,data[0],contract['baseline_revision'],'/workspace')
+    record=_record_v2(release,candidate,package,expected,data,runner,binding,contract,contract_sha)
+    override=None; receipt=None
     try:
         try:
-            override=_override(candidate)
+            override=_override(candidate,contract)
         except OSError as exc:
             raise Reject('E_DEPLOY_TEMP_CREATION') from exc
+        if needs_migration:
+            receipt=migration.execute(contract,contract_sha,binding,record,runner,_RuntimeConstants(),override)
         # Same-image deployments are intentionally a fixed, scoped recreation.
         # The flag is executor-owned: no Task parameter can add, remove, or vary it.
         _run(runner,[DOCKER,'compose','--env-file',ENV,'-p',PROJECT,'-f',COMPOSE,'-f',override,'up','-d','--no-deps','--force-recreate',*SERVICES],300)
@@ -181,10 +194,20 @@ def run_deploy(release,candidate,package,expected,binding,runner,collector,artif
         if post_protected_hash!=json.loads(pathlib.Path(record['record_path']).read_text(encoding='utf-8'))['protected_non_target_inventory_sha256']:
             raise Reject('E_DEPLOY_PROTECTED_NON_TARGET_MUTATION')
         _wait_for_api_health(runner,candidate,sleeper)
-        check=collector._collect_verify(runner,candidate,candidate,collector._PRODUCTION_VERIFY_INPUTS,sleeper)
+        check=collector._collect_verify(runner,candidate,candidate,collector._PRODUCTION_VERIFY_INPUTS,sleeper,contract=contract) if contract else collector._collect_verify(runner,candidate,candidate,collector._PRODUCTION_VERIFY_INPUTS,sleeper)
         if check.get('target_service_count')!=8: raise Reject('E_DEPLOY_PARTIAL_CONVERGENCE')
-        return {'durable_previous_state':'PASS','candidate_binding':'PASS','current_state':'PASS','fixed_scope':'PASS','no_migration':'PASS','post_deploy_verify':'PASS',**record}
+        gates={'durable_previous_state':'PASS','candidate_binding':'PASS','current_state':'PASS','fixed_scope':'PASS','post_deploy_verify':'PASS',**record}
+        if needs_migration:
+            migration.complete(receipt)
+            gates.update(migration_source_bound='PASS',rds_prestate_match='PASS',alembic_forward_migration='PASS',rds_poststate_match='PASS',migration_evidence='PASS',migration_record_sha256=receipt['receipt_sha256'])
+        else:
+            gates['no_migration']='PASS'
+            if contract: gates.update(migration_source_bound='PASS',rds_prestate_match='PASS',rds_poststate_match='PASS')
+        return gates
     finally:
         if override:
             try: os.unlink(override)
             except OSError: raise Reject('E_DEPLOY_TEMP_CLEANUP')
+
+class _RuntimeConstants:
+    DOCKER=DOCKER; ENV=ENV; PROJECT=PROJECT; COMPOSE=COMPOSE

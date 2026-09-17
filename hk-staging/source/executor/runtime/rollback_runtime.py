@@ -5,7 +5,7 @@ the signed task/evidence and derives all rollback targets from an immutable
 DEPLOY_RECORD_V2.  Production uses only fixed filesystem paths and fixed
 Docker compose argv; tests inject a runner and paths.
 """
-import base64, hashlib, json, os, pathlib, re, tempfile
+import base64, hashlib, json, os, pathlib, re, tempfile, time
 from cryptography.hazmat.primitives import serialization
 
 PROJECT="go-822-staging"
@@ -16,9 +16,12 @@ EVIDENCE_KEY="/etc/go-hk-agent/keys/evidence-signing.pub"
 HANDOFF_DIR="/var/lib/go-hk-agent/rollback-source-handoff"
 DEPLOY_RECORD_DIR="/var/lib/go-hk-deployctl/deploy-records"
 ROLLBACK_RECORD_DIR="/var/lib/go-hk-deployctl/rollback-records"
+TEMP_DIR="/run/go-hk-deployctl"
 SERVICES=("api","recovery-worker","outbox-worker","mobile-push-receipt-worker","reconciliation-worker","mobile-push-worker","mobile-engagement-worker","judgment-worker")
 PROTECTED=("redis","caddy")
 HEX=re.compile(r"^[0-9a-f]{64}$")
+API_READINESS_ATTEMPTS=12
+API_READINESS_INTERVAL_SECONDS=5
 
 class Reject(ValueError): pass
 
@@ -57,6 +60,7 @@ def resolve_source(release,source_task_id,rollback_task_id, *, handoff_dir=HANDO
     record=_read_regular(record_path)
     if hashlib.sha256(record_path.read_bytes()).hexdigest()!=record_sha or record.get("deploy_record_schema_version")!="2" or record.get("record_id")!=record_id: raise Reject("record integrity")
     if record.get("task_id")!=task["task_id"] or record.get("nonce")!=task["nonce"] or record.get("authority")!=task["authority"] or record.get("task_canonical_sha256")!=hashlib.sha256(canonical(task)).hexdigest(): raise Reject("record task binding")
+    if record.get('migration_required') is True or 'candidate_contract_sha256' in task.get('parameters',{}): raise Reject('migration rollback compatibility unproven')
     targets=record.get("targets")
     protected=record.get("protected_non_target_inventory")
     if not isinstance(targets,list) or [x.get("service") for x in targets]!=list(SERVICES) or not isinstance(protected,list) or sorted(x.get("service") for x in protected)!=sorted(PROTECTED): raise Reject("record scope")
@@ -81,10 +85,37 @@ def resolve_source(release,source_task_id,rollback_task_id, *, handoff_dir=HANDO
     if not found: raise Reject("lineage")
     return task,evidence,record,targets
 
-def _run(runner,argv):
+def _run(runner,argv,code="docker read"):
     out=runner.run(argv)
-    if getattr(out,"returncode",None)!=0: raise Reject("docker read")
+    if getattr(out,"returncode",None)!=0: raise Reject(code)
     return getattr(out,"stdout","")
+
+def _override(targets):
+    """Pin the eight services to the immutable ids the source record carries.
+
+    The frozen R3.1.5 base file names its services by tag and this host holds the
+    images by id only, so the base file on its own makes Compose resolve a tag that
+    is not present and attempt a pull.  DEPLOY already merges such an override for
+    its candidate; a rollback needs the same shape for the ids it restores.
+    """
+    root=TEMP_DIR
+    pathlib.Path(root).mkdir(mode=0o700,parents=True,exist_ok=True)
+    fd,path=tempfile.mkstemp(prefix="rollback-",suffix=".yaml",dir=root,text=True)
+    os.fchmod(fd,0o600)
+    with os.fdopen(fd,"w") as f:
+        f.write("services:\n")
+        for target in targets: f.write("  "+target["service"]+":\n    image: "+target["image_id"]+"\n")
+    return path
+
+def _await_api_health(runner,collector,expected,sleeper,
+                      attempts=API_READINESS_ATTEMPTS,interval=API_READINESS_INTERVAL_SECONDS):
+    """The eight are not restored until the api the record names is answering."""
+    for attempt in range(attempts):
+        try:
+            collector.collect_api(runner,expected); return
+        except ValueError:
+            if attempt+1==attempts: raise Reject("rollback readiness")
+            sleeper(interval)
 
 def _inventory(runner,services):
     result=[]
@@ -114,7 +145,7 @@ def _atomic_record(record, directory=ROLLBACK_RECORD_DIR):
         raise Reject("record persist")
     return rid,sha
 
-def run_rollback(release,source_task_id,binding,runner,collector, *, handoff_dir=HANDOFF_DIR, deploy_dir=DEPLOY_RECORD_DIR, rollback_dir=ROLLBACK_RECORD_DIR, task_key=TASK_KEY, evidence_key=EVIDENCE_KEY):
+def run_rollback(release,source_task_id,binding,runner,collector, *, handoff_dir=HANDOFF_DIR, deploy_dir=DEPLOY_RECORD_DIR, rollback_dir=ROLLBACK_RECORD_DIR, task_key=TASK_KEY, evidence_key=EVIDENCE_KEY, sleeper=time.sleep):
     if not isinstance(binding,dict) or set(binding)!={"task_id","nonce","authority","canonical_sha256"}: raise Reject("binding")
     source_task,source_evidence,source_record,targets=resolve_source(release,source_task_id,binding["task_id"],handoff_dir=handoff_dir,deploy_dir=deploy_dir,task_key=task_key,evidence_key=evidence_key)
     # A durable pre-mutation record is consuming even if a later Agent parser
@@ -139,8 +170,19 @@ def run_rollback(release,source_task_id,binding,runner,collector, *, handoff_dir
     record={"schema_version":"1","task_id":binding["task_id"],"nonce":binding["nonce"],"authority":binding["authority"],"canonical_task_sha256":binding["canonical_sha256"],"release_id":release,"source_deploy_task_id":source_task_id,"source_deploy_record_id":source_record["record_id"],"source_deploy_record_sha256":source_sha,"current_targets":current,"target_images":[{"service":x["service"],"image_id":x["image_id"],"repo_digest":x.get("repo_digest")} for x in targets],"protected_non_target_inventory":protected}
     rid,rsha=_atomic_record(record,rollback_dir)
     # Fixed argv, exactly eight services; no pull/migration/non-target path exists.
-    argv=["/usr/bin/docker","compose","--env-file",ENV_FILE,"-p",PROJECT,"-f",COMPOSE,"up","-d","--no-deps","--force-recreate",*SERVICES]
-    _run(runner,argv)
+    # The base file addresses those services by tag and this host holds the images
+    # by id only, so the override below is what makes the argv resolvable at all.
+    override=None
+    try:
+        override=_override(targets)
+        _run(runner,["/usr/bin/docker","compose","--env-file",ENV_FILE,"-p",PROJECT,"-f",COMPOSE,"-f",override,"up","-d","--no-deps","--force-recreate",*SERVICES],"docker rollback")
+    finally:
+        if override is not None:
+            # Best effort: the file holds nothing but image ids, and a cleanup failure
+            # must never replace the real reason a rollback was refused.
+            try: os.unlink(override)
+            except OSError: pass
+    _await_api_health(runner,collector,targets[0]["image_id"],sleeper)
     after=_inventory(runner,SERVICES); after_protected=_inventory(runner,PROTECTED)
     if any(x["running"] is not True or x["status"]!="running" for x in after) or [x["container_id"] for x in after_protected] != [x["container_id"] for x in protected]: raise Reject("postcheck")
     return {"rollback_source":"PASS","lineage":"PASS","target_derivation":"PASS","fresh_drift":"PASS","rollback_record":"PASS","fixed_scope":"PASS","postcheck":"PASS","source_deploy_task_id":source_task_id,"source_deploy_record_id":source_record["record_id"],"source_deploy_record_sha256":source_sha,"rollback_record_id":rid,"rollback_record_sha256":rsha}

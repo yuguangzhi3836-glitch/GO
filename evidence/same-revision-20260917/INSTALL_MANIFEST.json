@@ -1,0 +1,341 @@
+{
+  "changes_authority": false,
+  "hosts": {
+    "go-cc": {
+      "files": [
+        {
+          "before": {
+            "gid": 0,
+            "mode": 488,
+            "regular": true,
+            "sha256": "47c00808cbbf7bc9991c710ff98d6fb8c889d50595f47e037334e5e9e07487f8",
+            "uid": 0
+          },
+          "sha256": "a6aade3e573e91c49b08a3cb1c8a7822fa1e9acab3c764807d43de8f744c600a",
+          "source": "control-plane/boss-deploy-request-v1/go-boss-request-bridge",
+          "target": "/usr/local/libexec/go-boss-request-bridge"
+        },
+        {
+          "before": {
+            "gid": 0,
+            "mode": 416,
+            "regular": true,
+            "sha256": "2df5ba7b598d0b4b8ae2a597b77d4854ded58e18d624ce247fe9ddfafc006096",
+            "uid": 0
+          },
+          "sha256": "0b0b771cba901b4b487858ec7c8a6fcea7fe36edcc537e3d4470bf60848dc8bb",
+          "source": "control-plane/boss-deploy-request-v1/go_deploy_request.py",
+          "target": "/usr/local/libexec/go_deploy_request.py"
+        },
+        {
+          "before": {
+            "gid": 0,
+            "mode": 416,
+            "regular": true,
+            "sha256": "0d30f5b76da072a249f9c1986d71fe09664d31bda06d4c944e684e2f1746e3ed",
+            "uid": 0
+          },
+          "sha256": "3b5897e734749df5be1ca6befa2da88d7c7b58bf02683838341b46b519e8f618",
+          "source": "control-plane/boss-deploy-request-v1/hk_candidate_contract.py",
+          "target": "/usr/local/libexec/hk_candidate_contract.py"
+        },
+        {
+          "before": {
+            "gid": 0,
+            "mode": 416,
+            "regular": true,
+            "sha256": "59fe9c04b34d1d2534aaab3e87d32c93562d6c462af4d83d3f1f304e91e628a4",
+            "uid": 0
+          },
+          "sha256": "ca1b690003221c619a9ac816ed533c6ba9291830dd867529eba3f0083b433e25",
+          "source": "control-plane/boss-deploy-request-v1/plan_derivation.py",
+          "target": "/usr/local/libexec/plan_derivation.py"
+        }
+      ],
+      "guard_ancestors": {
+        "/": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/etc": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/etc/go-command-center": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/etc/systemd": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/etc/systemd/system": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/opt": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/opt/go-command-center": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/opt/go-command-center/state-publication-v1": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        }
+      },
+      "guards": {
+        "/etc/go-command-center/active-candidate-v1.json": {
+          "gid": 0,
+          "mode": 384,
+          "regular": true,
+          "sha256": "f275402009b6d08b53bceb42e7746f9a1c9611f809077a74d257a60f7c37256b",
+          "uid": 0
+        },
+        "/etc/go-command-center/boss-request-bridge-v1.json": {
+          "gid": 0,
+          "mode": 384,
+          "regular": true,
+          "sha256": "cd7f8d3f90ac64269a8c651e7c65fa22128c5ce6f35fd43dd91d319646b522dc",
+          "uid": 0
+        },
+        "/etc/go-command-center/boss-request-canary-baseline-v1.json": {
+          "gid": 0,
+          "mode": 384,
+          "regular": true,
+          "sha256": "5dd715cf935c857101f709f3b5be03fc67ab3a73086bab6922dc9304a7fac92e",
+          "uid": 0
+        },
+        "/etc/go-command-center/boss-request-verify-baseline-v1.json": {
+          "gid": 0,
+          "mode": 384,
+          "regular": true,
+          "sha256": "ea85949544401a6d19cabc349cf3a5145b170b58859263d7bcb227edba2bcdc1",
+          "uid": 0
+        },
+        "/etc/systemd/system/go-boss-request-bridge.service": {
+          "gid": 0,
+          "mode": 420,
+          "regular": true,
+          "sha256": "9d01583a9f50226ba7f323640a29fa8ff5c1c4fb5089d56788d29edc10bd6f96",
+          "uid": 0
+        },
+        "/opt/go-command-center/state-publication-v1/installed.json": {
+          "gid": 0,
+          "mode": 420,
+          "regular": true,
+          "sha256": "724da9e64f107c32a031bcacf05a78b4a914ba1404ca29b42375865bca7d5e05",
+          "uid": 0
+        }
+      }
+    },
+    "hk-staging": {
+      "files": [
+        {
+          "before": {
+            "gid": 0,
+            "mode": 493,
+            "regular": true,
+            "sha256": "b7acdbc3973c22c47c441141fcc5b289f6d3fa6249fb6445897f2efcec2f1991",
+            "uid": 0
+          },
+          "sha256": "edc845d33442ef35583628547b6b1dd151315aebcfcc5758625d6fe4fd54309a",
+          "source": "hk-staging/source/executor/go-hk-deployctl",
+          "target": "/usr/local/libexec/go-hk-deployctl"
+        },
+        {
+          "before": {
+            "gid": 0,
+            "mode": 420,
+            "regular": true,
+            "sha256": "e3b1e1536616ce0a7f86b99fd4505f9e0e5db47baf49f4338f6eee4600d46a7d",
+            "uid": 0
+          },
+          "sha256": "c3c74678d640150380af572899c303c18f4c62c0333e4e766af0b963bd0dcefb",
+          "source": "hk-staging/source/executor/runtime/canary_runtime.py",
+          "target": "/usr/local/libexec/go-hk-deployctl-runtime/canary_runtime.py"
+        },
+        {
+          "before": {
+            "gid": 0,
+            "mode": 420,
+            "regular": true,
+            "sha256": "0984ce1afc2f6f36725e4f3dc300264e2e9a3870789f8adabba518cc3094493f",
+            "uid": 0
+          },
+          "sha256": "79e5b840c14601bf8d720e1300df2fb98838bfd9ec48af881c483588cb788f6b",
+          "source": "hk-staging/source/executor/runtime/deploy_runtime.py",
+          "target": "/usr/local/libexec/go-hk-deployctl-runtime/deploy_runtime.py"
+        },
+        {
+          "before": {
+            "gid": 0,
+            "mode": 420,
+            "regular": true,
+            "sha256": "0d30f5b76da072a249f9c1986d71fe09664d31bda06d4c944e684e2f1746e3ed",
+            "uid": 0
+          },
+          "sha256": "3b5897e734749df5be1ca6befa2da88d7c7b58bf02683838341b46b519e8f618",
+          "source": "hk-staging/source/executor/runtime/hk_candidate_contract.py",
+          "target": "/usr/local/libexec/go-hk-deployctl-runtime/hk_candidate_contract.py"
+        },
+        {
+          "before": {
+            "exists": false
+          },
+          "sha256": "4db9cba95c05cb5f5d0ad661aa2686f237206b9b5bdf18d8736983d35392c88c",
+          "source": "hk-staging/source/executor/runtime/same_revision_program.py",
+          "target": "/usr/local/libexec/go-hk-deployctl-runtime/same_revision_program.py"
+        },
+        {
+          "before": {
+            "exists": false
+          },
+          "sha256": "d984b5716add576079e25509d48abe9bc21f4338e8efdf928e54cfe473881efe",
+          "source": "hk-staging/source/executor/runtime/same_revision_runtime.py",
+          "target": "/usr/local/libexec/go-hk-deployctl-runtime/same_revision_runtime.py"
+        }
+      ],
+      "guard_ancestors": {
+        "/": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/etc": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/etc/go-hk-agent": {
+          "directory": true,
+          "gid": 998,
+          "mode": 488,
+          "uid": 998
+        },
+        "/etc/systemd": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/etc/systemd/system": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/opt": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/opt/go-hk-agent-rebuilt": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/opt/go-hk-agent-rebuilt/hk_agent": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/usr": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/usr/local": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/usr/local/libexec": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        },
+        "/usr/local/libexec/go-hk-deployctl-runtime": {
+          "directory": true,
+          "gid": 0,
+          "mode": 493,
+          "uid": 0
+        }
+      },
+      "guards": {
+        "/etc/go-hk-agent/agent.json": {
+          "gid": 998,
+          "mode": 416,
+          "regular": true,
+          "sha256": "557024408cc9af3bae902d9c3766046ed11252a35d68b747c2df580f51f43be1",
+          "uid": 0
+        },
+        "/etc/systemd/system/go-hk-agent.service": {
+          "gid": 0,
+          "mode": 420,
+          "regular": true,
+          "sha256": "ec5c4b444759e2a90e3b1e6b669d91e28b6f0ae3eaa70072e1037071b878b987",
+          "uid": 0
+        },
+        "/etc/systemd/system/go-hk-agent.timer": {
+          "gid": 0,
+          "mode": 420,
+          "regular": true,
+          "sha256": "4fdbb6880c3c1abdf2f94600b6ad610683425d0c222cd45845af910b61f435a3",
+          "uid": 0
+        },
+        "/opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py": {
+          "gid": 0,
+          "mode": 420,
+          "regular": true,
+          "sha256": "61731061062883013c7f9eed8196485a6bd22bd96b9770613225a3ef9c408c92",
+          "uid": 0
+        },
+        "/opt/go-hk-agent-rebuilt/hk_agent/test_pr.py": {
+          "gid": 0,
+          "mode": 420,
+          "regular": true,
+          "sha256": "dda3a4410b43d35d6bbc95c3492728eb5851cd51bcebb1122d74865fe59275f6",
+          "uid": 0
+        },
+        "/usr/local/libexec/go-hk-deployctl-runtime/artifact_runtime.py": {
+          "gid": 0,
+          "mode": 420,
+          "regular": true,
+          "sha256": "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b",
+          "uid": 0
+        }
+      }
+    }
+  },
+  "includes_diagnostic_install": false,
+  "preserves_permissions": true,
+  "schema": "go.same-revision.install-source.v1",
+  "source_base": "bc71a91bff31a092aae003e061622878b8ef4bf6"
+}

@@ -51,8 +51,11 @@
         "HK_STAGING_VERIFY",
         "HK_STAGING_TEST_PR",
         "HK_STAGING_DEPLOY",
-        "HK_STAGING_CANARY"
-      ]
+        "HK_STAGING_CANARY",
+        "HK_STAGING_ROLLBACK",
+        "CONTROL_PLANE_HEALTH"
+      ],
+      "description": "Exactly the exporter's ACTION_IDS, which ActionRegistryTests pins to the Bridge's own channel config (control-plane/boss-deploy-request-v1/config.json -> allowed_actions). This enum was the one member of that contract left behind when ROLLBACK joined the channel, so a valid ROLLBACK fact failed the schema its own component publishes while the exporter and the tests already carried it."
     },
     "environment": {
       "const": "HK-STAGING-01"
@@ -352,7 +355,7 @@
     "The exporter holds no private key, signs nothing, writes no Task, and has no code path to an executor."
   ],
   "x-go-reason-classes": {
-    "note": "The closed classes a refusing reason may map to, and the Bridge tokens that map to them. Every token the Bridge can emit is classified here, in BOTH call shapes: Reject(\"token\") directly, and the reason argument of exact(...) / match(...). A token that is missing is UNCLASSIFIED_REJECT and is preserved, never dropped.",
+    "note": "The closed classes a refusing reason may map to, and the Bridge tokens that map to them. Every token the Bridge can emit is classified here, in BOTH call shapes: Reject(\"token\") directly, and the reason argument of exact(...) / match(...). A token that is missing is UNCLASSIFIED_REJECT and is preserved, never dropped. The post-action VERIFY refusals are classified here for the same reason as the rest: the Bridge reports them in the tick output, which reaches the exporter as a submission observation, so they are refusals a Boss can be shown and must keep the Bridge's own word.",
     "INVALID_REQUEST": [
       "action",
       "duplicate_json_key",
@@ -386,10 +389,14 @@
       "persistent_publish_not_enabled",
       "plan_scope",
       "plan_store_unwritable",
+      "post_verify_action_not_enabled_in_channel",
+      "post_verify_action_not_mutating",
+      "post_verify_publish_disabled",
       "release_gates_not_pass",
       "request_filename_binding",
       "request_not_currently_armed",
-      "request_pr_author_not_authorised"
+      "request_pr_author_not_authorised",
+      "rollback_context_required"
     ],
     "UNRESOLVABLE": [
       "approval_binding",
@@ -419,12 +426,29 @@
       "invalid_signature",
       "invalid_time",
       "invalid_trust_key",
+      "ledger_unavailable",
       "missing_signature",
       "naive_time",
       "plan_fields",
       "plan_path_is_a_symlink",
       "plan_store_unavailable",
       "plan_store_untrusted",
+      "post_verify_image_invalid",
+      "post_verify_proof_binding",
+      "post_verify_record_binding",
+      "post_verify_release_binding",
+      "post_verify_rollback_gate_failed",
+      "post_verify_rollback_not_success",
+      "post_verify_rollback_parameters",
+      "post_verify_rollback_result",
+      "post_verify_rollback_scope",
+      "post_verify_rollback_unbound_time",
+      "post_verify_source_binding",
+      "post_verify_source_missing",
+      "post_verify_store_invalid",
+      "post_verify_store_unreadable",
+      "post_verify_task_authority",
+      "post_verify_task_fields",
       "pr_head_invalid",
       "pr_head_not_found",
       "pr_resolution_unavailable",
@@ -453,6 +477,19 @@
       "request_pr_identity",
       "request_pr_not_open_exact_head",
       "request_reader_credential_invalid",
+      "rollback_authorization_binding",
+      "rollback_authorization_fields",
+      "rollback_release_id",
+      "rollback_scope",
+      "rollback_source_evidence_unreadable",
+      "rollback_source_gate_failed",
+      "rollback_source_missing",
+      "rollback_source_not_success",
+      "rollback_source_parameters",
+      "rollback_source_record_binding",
+      "rollback_source_result",
+      "rollback_source_scope",
+      "rollback_source_unbound_time",
       "task_authority",
       "task_fields",
       "test_pr_artifact_not_durable",
@@ -502,10 +539,14 @@
       "pr_head_changed",
       "preflight_near_expiry",
       "registered_plan_differs_from_derivation",
+      "rollback_approval_id_not_derived",
+      "rollback_source_already_rolled_back",
+      "rollback_source_changed",
       "task_id_already_exists"
     ],
     "AMBIGUOUS": [
       "ambiguous_claim_requires_operator_review",
+      "ambiguous_post_verify_publish_requires_operator_review",
       "ambiguous_publish_requires_operator_review",
       "published_task_readback_mismatch"
     ],

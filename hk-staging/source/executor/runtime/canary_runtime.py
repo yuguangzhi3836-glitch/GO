@@ -44,12 +44,12 @@ def _baseline(inputs, expected):
  if inputs.get('expected')!=expected or tuple(inputs.get('target_images',()))!=(expected,)*8: raise Reject('E_EXPECTED_CURRENT_IMAGE_MISMATCH')
 
 def _name(): return 'go-hk-canary-'+secrets.token_hex(12)
-def _isolated_args(name,image,entry,tail):
- return ['/usr/bin/docker','run','--name',name,'--network','none','--read-only','--cap-drop','ALL','--security-opt','no-new-privileges','--pids-limit','64','--memory','256m','--cpus','0.50','--tmpfs','/tmp:rw,nosuid,nodev,size=64m','--workdir','/app','--env','HOME=/tmp','--env','PYTHONPYCACHEPREFIX=/tmp/pycache','--entrypoint',entry,image,*tail]
+def _isolated_args(name,image,entry,tail,workdir="/app"):
+ return ['/usr/bin/docker','run','--name',name,'--network','none','--read-only','--cap-drop','ALL','--security-opt','no-new-privileges','--pids-limit','64','--memory','256m','--cpus','0.50','--tmpfs','/tmp:rw,nosuid,nodev,size=64m','--workdir',workdir,'--env','HOME=/tmp','--env','PYTHONPYCACHEPREFIX=/tmp/pycache','--entrypoint',entry,image,*tail]
 
-def _one(runner, name, image, entry, tail, timeout):
+def _one(runner, name, image, entry, tail, timeout, workdir="/app"):
  try:
-  result=runner.run(_isolated_args(name,image,entry,tail),timeout)
+  result=runner.run(_isolated_args(name,image,entry,tail,workdir),timeout)
   if result.returncode: raise Reject('E_CANARY_COMPILE_FAILED' if entry.endswith('python') else 'E_CANARY_ALEMBIC_HEAD_MISMATCH')
   return result.stdout
  except subprocess.TimeoutExpired as exc: raise Reject('E_CANARY_TIMEOUT') from exc
@@ -57,14 +57,14 @@ def _one(runner, name, image, entry, tail, timeout):
   cleanup=runner.run(['/usr/bin/docker','rm','-f',name],20)
   if cleanup.returncode: raise Reject('E_CANARY_CLEANUP_FAILED')
 
-def parse_alembic_head(raw):
+def parse_alembic_head(raw,expected_head=HEAD):
  """Accept exactly one canonical Alembic ``heads`` line and one expected head."""
  if not isinstance(raw,str): raise Reject('E_CANARY_ALEMBIC_HEAD_MISMATCH')
  match=HEAD_LINE.fullmatch(raw)
- if match is None or match.group(1)!=HEAD: raise Reject('E_CANARY_ALEMBIC_HEAD_MISMATCH')
+ if match is None or match.group(1)!=expected_head: raise Reject('E_CANARY_ALEMBIC_HEAD_MISMATCH')
  return match.group(1)
 
-def run_canary(release,candidate,package,expected,runner=None,inputs=None,artifact=None):
+def run_canary(release,candidate,package,expected,runner=None,inputs=None,artifact=None,contract=None,migration=None,same_revision=None):
  if not isinstance(release,str) or not RELEASE.fullmatch(release): raise Reject('E_RELEASE_ID')
  if not isinstance(candidate,str) or not IMAGE.fullmatch(candidate): raise Reject('E_CANDIDATE_IMAGE_MISSING')
  if not isinstance(package,str) or not SHA256.fullmatch(package): raise Reject('E_CANDIDATE_PACKAGE_INVALID')
@@ -78,7 +78,14 @@ def run_canary(release,candidate,package,expected,runner=None,inputs=None,artifa
  inspected=runner.run(['/usr/bin/docker','image','inspect',candidate,'--format','{{.Id}}'],20)
  if inspected.returncode: raise Reject('E_CANDIDATE_IMAGE_MISSING')
  if inspected.stdout.strip()!=candidate: raise Reject('E_CANDIDATE_IMAGE_ID_MISMATCH')
- compile_out=_one(runner,_name(),candidate,'/usr/local/bin/python',['-m','compileall','-q','/app'],90)
- alembic_out=_one(runner,_name(),candidate,'/usr/local/bin/alembic',['heads'],45)
- parse_alembic_head(alembic_out)
+ workdir='/workspace' if contract else '/app'
+ head=contract['target_revision'] if contract else HEAD
+ if contract and contract.get('migration_required') is False:
+  same_revision.check_images(runner,contract)
+ elif contract:
+  raw=_one(runner,_name(),candidate,'/usr/local/bin/python',migration.source_tail(contract),90,workdir)
+  if json.loads(raw)!={'source':'PASS','lineage_sha256':contract['rehearsal']['migration_source_digest']}: raise Reject('E_CANARY_MIGRATION_SOURCE')
+ _one(runner,_name(),candidate,'/usr/local/bin/python',['-m','compileall','-q',workdir+'/src' if contract else workdir],90,workdir)
+ alembic_out=_one(runner,_name(),candidate,'/usr/local/bin/alembic',['heads'],45,workdir)
+ parse_alembic_head(alembic_out,head)
  return {'compose_baseline':'PASS','env_baseline':'PASS','expected_current_image':'PASS','candidate_image':'PASS','python_compile':'PASS','alembic_head':'PASS','container_isolation':'PASS','container_cleanup':'PASS','application_boot_proven':False,'application_health_proven':False,'database_connectivity_proven':False}

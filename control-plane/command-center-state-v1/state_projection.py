@@ -43,6 +43,7 @@ The output is a DERIVED, NON-AUTHORITATIVE view.  The Signed Task is the only
 Execution Authority and the Signed Evidence is the only proof.  This file is
 never hand-edited and is always rebuildable.
 """
+import execution_window
 import argparse
 import base64
 import datetime as dt
@@ -133,15 +134,26 @@ KNOWN_CAPABILITIES = (
 # them would either mis-report a real liveness Request as forbidden or promote a
 # read-only probe into a human execution right, so the source class is carried
 # explicitly rather than inferred from the action name.
-HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY", "HK_STAGING_CANARY")
+HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
+                         "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK")
 PLATFORM_REQUEST_ACTIONS = ("CONTROL_PLANE_HEALTH",)
-# What the channel can create *right now*, per class. DEPLOY is human-expressible
-# but its switch is off, so it is absent from the enabled set. CANARY is present:
-# it is read-only, it mutates no business runtime, and it is the evidence a
-# deployment plan must cite before that plan -- and therefore the switch -- can
-# exist. The platform producer drives a read-only probe on a timer, so HEALTH is
-# present too.
-ENABLED_HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY")
+# What the channel can create *right now*, per class. There is no deploy switch,
+# so DEPLOY is present here exactly as the Bridge's own channel contract lists it:
+# `control-plane/boss-deploy-request-v1/config.json` carries all six actions with
+# `deployment_authorization: "request"`, and the authenticated DEPLOY Request is
+# itself the authorisation. Absence from this set is a claim that the action is
+# refused by the contract, so a stale constant here reads to a connector as
+# "you may not deploy" -- which is the one answer this projection must never
+# invent. CANARY is present because a canary is the evidence a deployment plan
+# must cite, so it has to be obtainable before a plan can exist at all; ROLLBACK
+# is present because it is the undo of a deployment and takes the same authority
+# it does. Neither chooses its own target: the canary's images come from the
+# root-owned canary authority, and the rollback target is the newest deployment
+# the Bridge itself published, which the executor re-hashes and re-reads before
+# it acts. The platform producer drives a read-only probe on a timer, so HEALTH
+# is present too -- as a platform action, never as a human right.
+ENABLED_HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
+                                 "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK")
 ENABLED_PLATFORM_REQUEST_ACTIONS = ("CONTROL_PLANE_HEALTH",)
 ENABLED_REQUEST_ACTIONS = (ENABLED_HUMAN_REQUEST_ACTIONS
                            + ENABLED_PLATFORM_REQUEST_ACTIONS)
@@ -150,6 +162,7 @@ REQUEST_ACTION_SOURCE_CLASS = {
     "HK_STAGING_TEST_PR": "HUMAN_REQUEST",
     "HK_STAGING_DEPLOY": "HUMAN_REQUEST",
     "HK_STAGING_CANARY": "HUMAN_REQUEST",
+    "HK_STAGING_ROLLBACK": "HUMAN_REQUEST",
     "CONTROL_PLANE_HEALTH": "PLATFORM_AUTOMATION",
 }
 # What a platform action is allowed to be. These are constants copied from the
@@ -163,11 +176,18 @@ PLATFORM_ACTION_PROPERTIES = {
 CAPABILITY_CLASSIFICATION = {
     "HK_STAGING_VERIFY": "SUPPORTED_PROVEN",
     "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
-    "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
+    # Proven and requestable: it ran end to end on HK-STAGING-01, and since the
+    # 2026-09-17 redesign there is no switch to open -- the authenticated Request
+    # is the authorisation. It is deliberately NOT classified as disabled: a
+    # classification is read as an answer about what may be requested.
+    "HK_STAGING_DEPLOY": "SUPPORTED_PROVEN",
     # Requestable without a switch: a canary mutates no business runtime, and it has
     # to exist before a deployment plan can be registered at all.
     "HK_STAGING_CANARY": "CAPABILITY_PRESENT_REQUESTABLE",
-    "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE",
+    # Requestable from the channel revision that added the action. The classification
+    # says what can be expressed, not whether a particular rollback is meaningful: that
+    # is decided on the host, against the deployment record, at execution time.
+    "HK_STAGING_ROLLBACK": "CAPABILITY_PRESENT_REQUESTABLE",
     # Proven, but only for the platform class: it says nothing about whether a
     # human may request it, and it confers no execution right on anyone.
     "CONTROL_PLANE_HEALTH": "SUPPORTED_PROVEN_PLATFORM_ONLY",
@@ -220,12 +240,21 @@ ACTION_RESULT = {
 REQUEST_EXTRA_FIELDS = {
     "HK_STAGING_VERIFY": set(),
     "HK_STAGING_TEST_PR": {"pr_number"},
-    "HK_STAGING_DEPLOY": {"plan_id"},
+    # A deploy carries the five common fields and nothing else, exactly like the
+    # canary and the rollback. A plan_id used to name a plan a human had written;
+    # the plan is derived by the Command Center now, so a caller-chosen name would
+    # only be a caller-chosen deployment. The exact-set comparison below refuses a
+    # Request that still carries one.
+    "HK_STAGING_DEPLOY": set(),
     # The canary carries exactly what VERIFY carries: the five common fields. The
     # candidate image, its sealed package and the expected current image come from
     # the Command Center's own root-owned canary authority, so there is no field
     # here a request could use to steer one.
     "HK_STAGING_CANARY": set(),
+    # A rollback carries the five common fields too, and no more. The deployment to undo
+    # is the newest one the Bridge published -- its own record of its own act -- so there
+    # is no field here a request could use to choose a target, an image or a service.
+    "HK_STAGING_ROLLBACK": set(),
     # The platform probe carries nothing beyond the five common fields. Until
     # this entry existed the projector refused a real CONTROL_PLANE_HEALTH
     # Request as request_action_unknown and reported it REQUEST_UNREADABLE,
@@ -238,7 +267,6 @@ TASK_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 NONCE_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 IMAGE_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
-RELEASE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 INSTANCE_RE = re.compile(r"^(?:i[-Zz]?)?([0-9a-z]{16,20})[Zz]?$")
 
 # Anything that would make the derived document machine-specific.
@@ -693,6 +721,12 @@ def validate_task(task):
     # the projection with an explicit drift marker instead of being dropped, so
     # the state is never silently incomplete.
     current = set(task["parameters"]) == ACTION_PARAMETERS[action]
+    extended=(action in ('HK_STAGING_CANARY','HK_STAGING_DEPLOY','HK_STAGING_VERIFY')
+              and set(task['parameters'])==ACTION_PARAMETERS[action]|{'candidate_contract_sha256'})
+    if extended:
+        if not re.fullmatch(r'[0-9a-f]{64}',str(task['parameters']['candidate_contract_sha256'])):
+            raise Malformed('task_candidate_contract')
+        current=True
     superseded = set(task["parameters"]) in SUPERSEDED_PARAMETERS.get(action, ())
     task["_parameter_contract"] = ("CURRENT" if current
                                    else "SUPERSEDED" if superseded
@@ -779,8 +813,6 @@ def validate_request(request):
     parse_time(request["requested_at"])
     if action == "HK_STAGING_TEST_PR" and not re.fullmatch(r"^[1-9][0-9]{0,8}$", request["pr_number"]):
         raise Malformed("request_pr_number")
-    if action == "HK_STAGING_DEPLOY" and not RELEASE_RE.fullmatch(request["plan_id"]):
-        raise Malformed("request_plan_id")
     return request
 
 
@@ -1512,7 +1544,7 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
             }
         for key in ("built_image_id", "source_pr_number", "source_commit_sha",
                     "task_canonical_sha256", "deploy_record_id", "deploy_record_sha256",
-                    "rollback_record_id"):
+                    "rollback_record_id", "candidate_contract_sha256"):
             if isinstance(ev.get(key), str):
                 entry["evidence"][key] = ev[key]
         if isinstance(ev.get("agent_version"), str):
@@ -1521,6 +1553,10 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
             STATE_PROVEN if ev_signature else STATE_OBSERVED, ev["started_at"],
             "the Evidence carries started_at for this task/nonce", refs)
 
+        execution_error=None
+        if ev['status']=='SUCCESS' and execution_window.applies(task):
+            try: execution_window.validate(task,ev)
+            except execution_window.Invalid as exc: execution_error=str(exc)
         verified = ev_signature is True
         if ev_signature is False:
             entry.update({"lifecycle": "EVIDENCE_INVALID",
@@ -1552,7 +1588,10 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
                               "the signed Evidence reports a non-success status%s"
                               % (": " + described if described else ""), refs),
                           "failure": detail})
-        elif completed > expires:
+        elif execution_error is not None:
+            entry.update({'lifecycle':'EVIDENCE_INVALID',
+                          'assertion':assertion(STATE_FAILED,'EXECUTION_WINDOW_INVALID',execution_error,refs)})
+        elif completed > expires and not execution_window.applies(task):
             entry.update({"lifecycle": "EVIDENCE_TIMEOUT",
                           "assertion": assertion(STATE_FAILED, "EVIDENCE_AFTER_EXPIRY",
                                                  "Evidence completed_at is outside the task validity "
@@ -1986,11 +2025,15 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
                                        for k, v in sorted(PLATFORM_ACTION_PROPERTIES.items())},
         "known_capabilities": list(KNOWN_CAPABILITIES),
         "capability_classification": dict(CAPABILITY_CLASSIFICATION),
-        "deploy_request_enabled": False,
+        "deploy_request_enabled": True,
         "deploy_request_enabled_source": (
-            "the authoritative Boss Request contract currently exposes VERIFY, TEST_PR and "
-            "CONTROL_PLANE_HEALTH, and DEPLOY under its plan and approval gates; the DEPLOY "
-            "request enablement remains fail-closed"),
+            "the channel contract exposes all six actions with deployment_authorization="
+            "'request', so the DEPLOY Request is enabled and there is no switch to open: the "
+            "authenticated Request is itself the authorisation. This is the contract-level "
+            "answer only. Whether the live host currently accepts one is a live-host fact and "
+            "is reported separately as live_request_switch, never asserted here; a host with "
+            "deployments suspended refuses the Request with "
+            "deployment_authorization_mode_unsupported"),
         "live_request_switch": unknown(
             "the live Command Center channel switch is a live-host fact. It is not on the control "
             "bus and this projection must not assert it"),
@@ -2033,9 +2076,9 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
     hold = pointers["hold"]
     deploy_capability = assertion(
         STATE_OBSERVED,
-        {"capability": "CAPABILITY_PRESENT_BUT_DISABLED", "request_enabled": False,
+        {"capability": "SUPPORTED_PROVEN", "request_enabled": True,
          "readiness_evaluation": "NOT_IN_SCOPE"},
-        "the DEPLOY capability exists in the repository and its request enablement is fail-closed. "
+        "the DEPLOY capability is proven and its Request is enabled, with no switch to open. "
         "This is a capability classification, not a readiness evaluation, and it must never be read "
         "as one")
 

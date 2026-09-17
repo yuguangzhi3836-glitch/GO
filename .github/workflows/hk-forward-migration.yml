@@ -1,0 +1,73 @@
+name: HK forward migration shared gate
+on:
+  pull_request:
+    branches: [main, cc/bridge-remote-default-branch-v1]
+    paths:
+      - control-plane/hk-forward-migration-v1/**
+      - .github/workflows/hk-forward-migration.yml
+      - control-plane/boss-deploy-request-v1/**
+      - hk-staging/source/executor/**
+permissions:
+  contents: read
+concurrency:
+  group: hk-forward-migration-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+jobs:
+  contract-and-postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_issue103_executor
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_issue103_executor"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: tooling
+          persist-credentials: false
+          sparse-checkout: |
+            control-plane
+            command-center/audit/20260911
+            hk-staging
+            ci/hk-migration-admission
+      - uses: actions/checkout@v4
+        with:
+          ref: edd3500575d2f2b81298cc9273025e0a3b734897
+          path: candidate
+          persist-credentials: false
+          sparse-checkout: |
+            application
+            ci
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install inherited frozen dependencies
+        run: |
+          set -euo pipefail
+          python candidate/ci/retention/dependencies.py --repository candidate --output "$RUNNER_TEMP/frozen-issue103"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen-issue103/wheelhouse" -r candidate/ci/retention/requirements.lock
+      - name: Command Center compatibility checks
+        run: python tooling/control-plane/boss-deploy-request-v1/run_checks.py "$RUNNER_TEMP/cc-checks"
+      - name: State projection compatibility checks
+        run: python tooling/control-plane/command-center-state-v1/run_checks.py "$RUNNER_TEMP/state-checks"
+      - name: Migration contracts and uncertainty fence
+        run: python -m unittest discover -s tooling/control-plane/hk-forward-migration-v1/tests -v
+      - name: Real executor program in disposable PostgreSQL
+        run: python tooling/control-plane/hk-forward-migration-v1/ci_postgres.py candidate "$RUNNER_TEMP/frozen-issue103" "$RUNNER_TEMP/executor-proof"
+      - name: Seal scoped evidence
+        if: always()
+        run: python tooling/control-plane/hk-forward-migration-v1/seal_evidence.py "$RUNNER_TEMP"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hk-forward-migration-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/hk-forward-proof
+          if-no-files-found: error

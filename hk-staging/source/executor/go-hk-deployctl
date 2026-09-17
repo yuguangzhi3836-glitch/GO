@@ -9,15 +9,38 @@ import re
 import stat
 import sys
 
-VERSION = "0.4.3-rollback-runtime"
+VERSION = "0.5.1-same-revision"
+_CONTRACT_SHA256 = "3b5897e734749df5be1ca6befa2da88d7c7b58bf02683838341b46b519e8f618"
+_SAME_REVISION_SHA256 = "d984b5716add576079e25509d48abe9bc21f4338e8efdf928e54cfe473881efe"
+_MIGRATION_SHA256 = "be60700cc8dd10d402e2d0e7ddcab3269d93a5acf7ebfd6cd5ba6840ecc8fd0d"
 _IMAGE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _RELEASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
-_COLLECTOR_SHA256 = "dff91265a5e3e80704277664f1952129ff19c6c7174d78e9b3e66125b9618ccc"
-_CANARY_SHA256 = "f93d4365116a52942c457accb41be53625d3f3f1a7a6eafe92d53c457c86aed1"
-_DEPLOY_SHA256 = "60cc42dd0b8fd285bffcbed2fa857a43ef8a558a06a5bbaccc865b7519a88afd"
-_ROLLBACK_SHA256 = "a49e12eafab85331477241a4db791ad1c38133b9a7925eade627c1c27cf5e9f5"
+_COLLECTOR_SHA256 = "fb3d966d8736bcb49a76ff52db01a417bc745f7b5ad47addf9d576e8bf4fa1a6"
+_CANARY_SHA256 = "c3c74678d640150380af572899c303c18f4c62c0333e4e766af0b963bd0dcefb"
+_DEPLOY_SHA256 = "79e5b840c14601bf8d720e1300df2fb98838bfd9ec48af881c483588cb788f6b"
+_ROLLBACK_SHA256 = "274c39f7e430805fb2355bc302b8d559452c0d0b11b1a92461bb8e09a0aab1bd"
 _ARTIFACT_SHA256 = "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b"
 
+
+def _load_extra(name,pin):
+    path=os.path.join(os.path.dirname(os.path.abspath(__file__)),"go-hk-deployctl-runtime",name+".py")
+    if not stat.S_ISREG(os.lstat(path).st_mode): raise ValueError("runtime path")
+    with open(path,"rb") as handle:
+        if hashlib.sha256(handle.read()).hexdigest()!=pin: raise ValueError("runtime integrity")
+    spec=importlib.util.spec_from_file_location("_go_hk_"+name,path)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    return module
+
+def _contract(identity,candidate,expected,package=None,verify=False):
+    if identity is None: return None
+    module=_load_extra('hk_candidate_contract',_CONTRACT_SHA256)
+    value=module.load(identity,module.HK_STORE)
+    if verify: module.verify_profile(value,candidate)
+    else: module.bind(value,candidate,expected,package)
+    return value
+
+def _migration(): return _load_extra('migration_runtime',_MIGRATION_SHA256)
+def _same_revision(): return _load_extra('same_revision_runtime',_SAME_REVISION_SHA256)
 
 def _load_collector():
     """Load only the immutable sibling runtime after validating its bytes."""
@@ -113,25 +136,37 @@ def _load_rollback():
     module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module
 
-def _deploy(release,candidate,package,expected,approval,canary_evidence,binding,runner=None):
+def _deploy(release,candidate,package,expected,approval,canary_evidence,binding,runner=None,contract_sha=None):
     gates={}
     try:
         if not isinstance(approval,str) or not _RELEASE.fullmatch(approval): raise ValueError("approval")
         if not isinstance(canary_evidence,str) or not _RELEASE.fullmatch(canary_evidence): raise ValueError("canary evidence")
         runtime=_load_deploy(); collector=_load_collector(); artifact=_load_artifact()
-        gates=runtime.run_deploy(release,candidate,package,expected,binding,runner or collector.ProductionRunner(),collector,artifact)
+        contract=_contract(contract_sha,candidate,expected,package)
+        extra={'contract':contract,'contract_sha':contract_sha} if contract else {}
+        if contract:
+            extra.update({'same_revision':_same_revision()} if contract.get('migration_required') is False else {'migration':_migration()})
+        if not contract: _migration().require_clear()
+        gates=runtime.run_deploy(release,candidate,package,expected,binding,runner or collector.ProductionRunner(),collector,artifact,**extra)
         record={key:gates.pop(key) for key in ("deploy_record_schema_version","deploy_record_id","deploy_record_sha256")}
-        out=_document("SUCCESS",release,candidate,expected,gates,"DEPLOY_OK"); out["action_id"]="HK_STAGING_DEPLOY"; out.update(record); return out,0
+        out=_document("SUCCESS",release,candidate,expected,gates,"DEPLOY_OK"); out["action_id"]="HK_STAGING_DEPLOY"; out.update(record)
+        if contract_sha: out['candidate_contract_sha256']=contract_sha
+        return out,0
     except (OSError,ValueError,TypeError) as exc:
         out=_document("REJECTED",release,candidate,expected,gates,"DEPLOY_REJECTED"); out["action_id"]="HK_STAGING_DEPLOY"; out["error_code"]=str(exc)[:80]; return out,2
 
-def _canary(release_id,candidate_image_id,candidate_package_sha256,expected_current_image_id,runner=None,inputs=None):
+def _canary(release_id,candidate_image_id,candidate_package_sha256,expected_current_image_id,runner=None,inputs=None,contract_sha=None):
     gates={}
     try:
         runtime=_load_canary(); artifact=_load_artifact()
-        gates=runtime.run_canary(release_id,candidate_image_id,candidate_package_sha256,expected_current_image_id,runner,inputs,artifact)
+        contract=_contract(contract_sha,candidate_image_id,expected_current_image_id,candidate_package_sha256)
+        extra={'contract':contract} if contract else {}
+        if contract:
+            extra.update({'same_revision':_same_revision()} if contract.get('migration_required') is False else {'migration':_migration()})
+        gates=runtime.run_canary(release_id,candidate_image_id,candidate_package_sha256,expected_current_image_id,runner,inputs,artifact,**extra)
         output=_document("SUCCESS",release_id,candidate_image_id,expected_current_image_id,gates,"CANARY_OK")
         output["action_id"]="HK_STAGING_CANARY"
+        if contract_sha: output["candidate_contract_sha256"]=contract_sha
         return output,0
     except (OSError,ValueError,TypeError) as exc:
         output=_document("REJECTED",release_id,candidate_image_id,expected_current_image_id,gates,"CANARY_REJECTED")
@@ -141,6 +176,7 @@ def _canary(release_id,candidate_image_id,candidate_package_sha256,expected_curr
 def _rollback(release,source_task_id,binding,runner=None):
     gates={}
     try:
+        _migration().require_clear()
         runtime=_load_rollback(); collector=_load_collector()
         gates=runtime.run_rollback(release,source_task_id,binding,runner or collector.ProductionRunner(),collector)
         out=_document("SUCCESS",release,"","",gates,"ROLLBACK_OK"); out["action_id"]="HK_STAGING_ROLLBACK"
@@ -152,7 +188,7 @@ def _rollback(release,source_task_id,binding,runner=None):
 
 
 def _verify(release_id, candidate_image_id, expected_current_image_id,
-            runner=None, inputs=None, sleeper=None):
+            runner=None, inputs=None, sleeper=None, contract_sha=None):
     gates = {}
     try:
         if not isinstance(release_id, str) or not _RELEASE.fullmatch(release_id):
@@ -162,12 +198,14 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
         if not isinstance(expected_current_image_id, str) or not _IMAGE.fullmatch(expected_current_image_id):
             raise ValueError("expected image")
         collector = _load_collector()
+        contract = _contract(contract_sha,candidate_image_id,expected_current_image_id,verify=True)
         result = collector._collect_verify(
             runner or collector.ProductionRunner(),
             candidate_image_id,
             expected_current_image_id,
             inputs or collector._PRODUCTION_VERIFY_INPUTS,
             sleeper or __import__("time").sleep,
+            **({"contract":contract} if contract else {}),
         )
         gates = {
             "compose_baseline": "PASS",
@@ -182,8 +220,9 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
         }
         if result["target_service_count"] != 8 or result["application_health_proven_count"] != 0:
             raise ValueError("collector result")
-        return _document("SUCCESS", release_id, candidate_image_id,
-                         expected_current_image_id, gates, "VERIFY_OK"), 0
+        output=_document("SUCCESS", release_id, candidate_image_id,expected_current_image_id,gates,"VERIFY_OK")
+        if contract_sha: output["candidate_contract_sha256"]=contract_sha
+        return output,0
     except (OSError, ValueError, TypeError):
         return _document("REJECTED", release_id, candidate_image_id,
                          expected_current_image_id, gates, "VERIFY_REJECTED"), 2
@@ -191,6 +230,12 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
 
 def main(argv=None, runner=None, inputs=None, sleeper=None):
     values = list(sys.argv[1:] if argv is None else argv)
+    contract_sha=None
+    if len(values)>2 and values[-2]=='--candidate-contract-sha256':
+        contract_sha=values[-1]; values=values[:-2]
+        if not re.fullmatch(r'[0-9a-f]{64}',contract_sha) or values[:1]==['rollback']:
+            print(json.dumps(_document('REJECTED','','','',{},'CONTRACT_REJECTED'),separators=(',',':')))
+            return 2
     canary = values[:1] == ["canary"]
     deploy = values[:1] == ["deploy"]
     rollback=values[:1]==["rollback"]
@@ -200,10 +245,10 @@ def main(argv=None, runner=None, inputs=None, sleeper=None):
         output = _document("REJECTED", release, "", "", {}, "VERIFY_REJECTED")
         print(json.dumps(output, separators=(",", ":")))
         return 2
-    if values[0]=="canary": output, code = _canary(values[2], values[4], values[6], values[8], runner, inputs)
-    elif values[0]=="deploy": output, code = _deploy(values[2],values[4],values[6],values[8],values[12],values[10],{"task_id":values[14],"nonce":values[16],"authority":values[18],"canonical_sha256":values[20]},runner)
+    if values[0]=="canary": output, code = _canary(values[2], values[4], values[6], values[8], runner, inputs,contract_sha=contract_sha)
+    elif values[0]=="deploy": output, code = _deploy(values[2],values[4],values[6],values[8],values[12],values[10],{"task_id":values[14],"nonce":values[16],"authority":values[18],"canonical_sha256":values[20]},runner,contract_sha=contract_sha)
     elif values[0]=="rollback": output, code = _rollback(values[2],values[4],{"task_id":values[8],"nonce":values[10],"authority":values[12],"canonical_sha256":values[14]},runner)
-    else: output, code = _verify(values[2], values[4], values[6], runner, inputs, sleeper)
+    else: output, code = _verify(values[2], values[4], values[6], runner, inputs, sleeper,contract_sha=contract_sha)
     print(json.dumps(output, separators=(",", ":")))
     return code
 

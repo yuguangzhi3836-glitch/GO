@@ -55,8 +55,13 @@ Current confirmed Boss Request classification:
   from the Command Center's root-owned canary authority file. It mutates no business
   runtime, so it needs no plan and no switch, and a plan cannot be registered
   without a canary for the same candidate.
-- ROLLBACK — no current Boss Request schema should be invented merely because the
-  underlying Control Plane has that operation path.
+- `HK_STAGING_ROLLBACK` — **REQUESTABLE** since channel revision
+  `1.9.0-rollback-channel`. It undoes the newest deployment Command Center published,
+  and the Request names no deployment, no source Task, no image and no service: Command
+  Center derives all of them from its own ledger. Like a deployment it is gated by the
+  authenticated Request rather than by a switch of its own, and unlike a canary it is
+  not read-only -- the executor verifies the source deployment's record and re-reads
+  the eight business containers before it acts. One source can be rolled back once.
 
 See [BOSS_GPT_REQUEST_GUIDE.md](BOSS_GPT_REQUEST_GUIDE.md) for the exact current
 VERIFY and TEST_PR request schemas and boundaries.

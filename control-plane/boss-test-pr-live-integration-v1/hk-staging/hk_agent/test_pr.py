@@ -26,6 +26,10 @@ BUILDER_IMAGE = "go-hotel:depth48-runtime-6d0fd905"
 BUILDER_IMAGE_ID = "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"
 ARTIFACT_STORE = artifact_store.STORE_ROOT
 DEPENDENCY_PROFILE_SHA256 = "904ede5e7ee3408e5f80bc2957d5f4b4d32754be6797bf6a53cff545b2fc94aa"
+# Same frozen requirements, with only uvicorn -> uvicorn[standard].  This
+# identity is necessary but not sufficient: its extra dependency closure must
+# also be present in the pinned, networkless builder before any build is run.
+STANDARD_DEPENDENCY_PROFILE_SHA256 = "c3140ecf1e38bf7f635ff6a80758677441a56866d0aa18727a2f6193adc707e1"
 PYTHONPYCACHEPREFIX = "/tmp/pycache"
 SHA = re.compile(r"^[0-9a-f]{40}$")
 PR = re.compile(r"^[1-9][0-9]{0,8}$")
@@ -41,7 +45,9 @@ DURABILITY_REASON = "ARTIFACT_DURABILITY_REJECT"
 
 
 class Reject(Exception):
-    pass
+    def __init__(self, code):
+        super().__init__(code)
+        self.executor_version = EXECUTOR_VERSION
 
 
 def durability_reject(exc):
@@ -125,6 +131,98 @@ PROFILE_PROGRAM = (
 )
 
 
+# Trusted executor program, never source supplied by the candidate.  It reads
+# installed distribution metadata only; it installs nothing and imports no
+# application code.  Missing parsers, malformed metadata, unknown extras,
+# missing distributions and incompatible versions all fail closed.
+STANDARD_DEPENDENCIES_PROGRAM = r"""
+import importlib.metadata as metadata
+import re
+import sys
+try:
+    from packaging.requirements import Requirement
+    from packaging.utils import canonicalize_name
+except ImportError:
+    from pip._vendor.packaging.requirements import Requirement
+    from pip._vendor.packaging.utils import canonicalize_name
+
+def verify_standard(distribution=metadata.distribution):
+    pending = [Requirement("uvicorn[standard]>=0.30")]
+    visited = set()
+    count = 0
+    while pending:
+        requirement = pending.pop()
+        count += 1
+        if count > 256 or requirement.url:
+            raise ValueError("DEPENDENCY_GRAPH_REJECT")
+        name = canonicalize_name(requirement.name)
+        if not re.fullmatch(r"[a-z0-9][a-z0-9.-]{0,127}", name):
+            raise ValueError("DEPENDENCY_NAME_REJECT")
+        try:
+            installed = distribution(name)
+        except metadata.PackageNotFoundError:
+            raise ValueError("DEPENDENCY_MISSING:" + name) from None
+        if not requirement.specifier.contains(
+                installed.version, prereleases=bool(requirement.specifier.prereleases)):
+            raise ValueError("DEPENDENCY_VERSION_REJECT:" + name)
+        extras = frozenset(canonicalize_name(item) for item in requirement.extras)
+        provided = {canonicalize_name(item) for item in
+                    installed.metadata.get_all("Provides-Extra", [])}
+        if not extras <= provided:
+            raise ValueError("DEPENDENCY_EXTRA_REJECT:" + name)
+        identity = (name, extras)
+        if identity in visited:
+            continue
+        visited.add(identity)
+        requires = installed.requires
+        # Uvicorn's standard extra has an actual dependency contract.  Missing
+        # Requires-Dist must never make an incomplete image vacuously pass.
+        if name == "uvicorn" and not requires:
+            raise ValueError("DEPENDENCY_METADATA_REJECT:uvicorn")
+        for raw in requires or []:
+            child = Requirement(raw)
+            if child.marker is None or any(
+                    child.marker.evaluate({"extra": extra}) for extra in ("", *sorted(extras))):
+                pending.append(child)
+    return "UVICORN_STANDARD_DEPS_OK"
+
+if __name__ == "__main__":
+    try:
+        print(verify_standard())
+    except Exception as error:
+        message = str(error)
+        if not re.fullmatch(r"DEPENDENCY_[A-Z_]+(?::[a-z0-9][a-z0-9.-]{0,127})?", message):
+            message = "DEPENDENCY_METADATA_REJECT"
+        print(message, file=sys.stderr)
+        raise SystemExit(1)
+"""
+
+
+def _verify_dependency_profile(profile, runner):
+    if profile == DEPENDENCY_PROFILE_SHA256:
+        return
+    if profile != STANDARD_DEPENDENCY_PROFILE_SHA256:
+        error = Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT")
+        # Only a validated digest reaches this function; no candidate content
+        # or credentials are copied into the diagnostic channel.
+        error.stderr = "observed_profile_sha256=" + profile
+        raise error
+    try:
+        result = runner([
+            "/usr/bin/docker", "run", "--rm", "--network", "none",
+            "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
+            "--pids-limit", "32", "--memory", "128m", "--cpus", "0.25",
+            "--entrypoint", "python", BUILDER_IMAGE, "-I", "-c",
+            STANDARD_DEPENDENCIES_PROGRAM], timeout=60)
+    except Reject as exc:
+        error = Reject("TEST_PR_DEPENDENCY_ENVIRONMENT_REJECT")
+        for attribute in ("stdout", "stderr", "returncode"):
+            setattr(error, attribute, getattr(exc, attribute, None))
+        raise error from exc
+    if result.stdout.strip() != "UVICORN_STANDARD_DEPS_OK":
+        raise Reject("TEST_PR_DEPENDENCY_ENVIRONMENT_REJECT")
+
+
 def _dependency_profile(path, workspace, runner):
     try:
         resolved = path.resolve(strict=True)
@@ -167,8 +265,8 @@ def execute(task, runner=_run):
         if not (context / "pyproject.toml").is_file():
             raise Reject("TEST_PR_SOURCE_LAYOUT_REJECT")
         _builder_image(runner)
-        if _dependency_profile(context / "pyproject.toml", context, runner) != DEPENDENCY_PROFILE_SHA256:
-            raise Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT")
+        _verify_dependency_profile(
+            _dependency_profile(context / "pyproject.toml", context, runner), runner)
         runner(["/usr/bin/docker", "build", "--network", "none", "--pull=false", "--file", DOCKERFILE, "--tag", image, str(context)], timeout=900)
         image_id = runner(["/usr/bin/docker", "image", "inspect", image, "--format", "{{.Id}}"], timeout=30).stdout.strip()
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", image_id):

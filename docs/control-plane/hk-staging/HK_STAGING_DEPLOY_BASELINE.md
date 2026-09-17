@@ -15,7 +15,7 @@ must never be restored over live state.
 - Executor source commit: `79740475e3e6e6678b939525378e1a9ef1e2f28c`
 - Executor artifact SHA-256: `4e29e83058713faf12e3f734d1e6207b738765cf4964d2eed64cd8e5247b5533`
 - Executor manifest SHA-256: `8865af36ab6f13a2ac30b5c416d60a5f652640b49b240b26c2350ee36b3a0ae3`
-- Installed Executor main SHA-256: `f0804521437a4d43db79aafd96928a15978f1d79393b1376be17b7a3907f37c0`
+- Installed Executor main SHA-256: `b13b5002f7ba7585ee25404790515490b42d8112e30f4332f062e45f3340d609`
 - Installed Executor collector SHA-256: `dff91265a5e3e80704277664f1952129ff19c6c7174d78e9b3e66125b9618ccc`
 - Executor revision pin: `EXPECTED_REVISION=0133_flight_change_plan`, the DEPTH48 schema head
 

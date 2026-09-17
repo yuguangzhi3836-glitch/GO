@@ -87,12 +87,15 @@ BRIDGE_LEDGER_STATE    a terminal ledger state, e.g. dry_run_no_task_published
 
 The closed classes and the tokens that map to them live in
 `contracts/request_fact_v1.schema.json`, not in the exporter's code. The test
-suite extracts **every** refusing token the Bridge can emit from the three Bridge
-sources in this repository — 96 of them today — and fails if the contract cannot
-classify any one of them. Both call shapes are scanned: `Reject("token")` raised
-directly, and the `reason` argument of `exact(...)` / `match(...)`. Scanning only
-the first shape under-counts the vocabulary by 15 tokens, which is a blind spot
-this gate exists to catch — and did catch. A token nobody has seen yet is carried as
+suite extracts **every** refusing token the Bridge can emit from the four Bridge
+sources in this repository — 182 of them today, 23 of which exist only as a reason
+argument — and fails if the contract cannot classify any one of them. Both call
+shapes are scanned: `Reject("token")` raised directly, and the `reason` argument of
+`exact(...)` / `match(...)`. Scanning only the first shape leaves those 23
+unclassified, which is a blind spot this gate exists to catch — and did catch. Both
+counts are reported by the suite itself (`bridge_refusal_tokens_observed`,
+`bridge_refusal_tokens_via_the_reason_argument`), so they can be re-measured rather
+than believed. A token nobody has seen yet is carried as
 `UNCLASSIFIED_REJECT` with the token intact.
 
 ## An acceptance is never taken on faith
