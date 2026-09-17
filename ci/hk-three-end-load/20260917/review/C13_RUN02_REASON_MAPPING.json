@@ -1,0 +1,34 @@
+{
+  "schema": "go.c13.run02-reason-mapping.v1",
+  "at": "2026-09-17T17:33:43.911039+00:00",
+  "sources": {
+    "load1000/host_sampler.py": "81983a843a93c0733ad297707efc5050c24b8845a84e11b655cc0d507716e034",
+    "load1000/harness/load-three-ends-ramp.mjs": "5c423844aff6e0efeee9c349baab64750f74221298b32d1e35c3794a24032af7"
+  },
+  "source_review": {
+    "sampler_expression": "'HOST_PROBE_'+type(e).__name__",
+    "exception_class": "TimeoutExpired",
+    "sampler_reason": "HOST_PROBE_TimeoutExpired",
+    "runner_safe_code_pattern": "^[A-Z][A-Z0-9_]{1,95}$",
+    "accepted_by_runner": false,
+    "runner_stop_reason": "HOST_DEGRADED",
+    "interpretation": "The runner keeps fail-closed behavior; mixed-case diagnostic text is replaced by an allowed generic code. Raw telemetry remains necessary for the precise original reason."
+  },
+  "run02_summary_reported_by_root": {
+    "phase": "PREPARATION_BEFORE_ANY_LOAD",
+    "identity_verified": 27,
+    "sessions_established": 28,
+    "successful_logout": 28,
+    "failed_telemetry_at": "2026-09-17T17:26:16.822Z",
+    "sampler_seconds": 8.12,
+    "root_diagnosis": "6-second DB subprocess timeout; following sample healthy"
+  },
+  "evidence_limit": "This note independently verifies source-code reason mapping. Run02 original evidence has not yet been supplied locally for this review; numerical runtime facts above are explicitly attributed to root.",
+  "required_fix_properties": [
+    "Retain exact runtime image and database head checks",
+    "Retain read-only transactions and bounded database statements",
+    "Fail closed on subprocess error or stale/missing database readings",
+    "Emit static uppercase phase-specific error codes without stderr, DSNs or credentials",
+    "Keep raw run02 telemetry and abort result; never reclassify as performance PASS"
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "run_id": "hk3-mu5swxpx-82c509",
+  "mode": "RUN",
+  "started_at": "2026-09-17T17:26:17.013Z",
+  "target": "https://staging-api.goaidirect.com",
+  "identity": {
+    "source_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+    "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+    "db_head": "0137_hosted_unknown_episode",
+    "environment": "staging",
+    "external_live": false,
+    "simulation_only": true,
+    "at": "2026-09-17T17:25:26.404040+00:00"
+  },
+  "identity_file_sha256": "77e0846a83362912520026024b03e16107346503605ac0822f3dcdf96b234f8a",
+  "harness_sha256": "5c423844aff6e0efeee9c349baab64750f74221298b32d1e35c3794a24032af7",
+  "allocation": {
+    "consumer": 700,
+    "supplier": 150,
+    "admin": 150
+  },
+  "plan": [
+    {
+      "vus": 20,
+      "seconds": 60
+    },
+    {
+      "vus": 100,
+      "seconds": 60
+    },
+    {
+      "vus": 250,
+      "seconds": 60
+    },
+    {
+      "vus": 500,
+      "seconds": 60
+    },
+    {
+      "vus": 1000,
+      "seconds": 120
+    }
+  ],
+  "thresholds": {
+    "p95_ms": 2000,
+    "p99_ms": 5000,
+    "error_rate": 0.01,
+    "semantic_errors": 0,
+    "abort_window_ms": 15000,
+    "abort_p95_ms": 3000,
+    "abort_error_rate": 0.05,
+    "abort_consecutive_checks": 3,
+    "timeout_ms": 5000,
+    "max_requests": 50000,
+    "telemetry_age_ms": 15000
+  },
+  "think_time_seconds": [
+    3,
+    7
+  ],
+  "preparation": {
+    "login_concurrency": 4,
+    "per_worker_delay_ms": 100,
+    "authenticated_role_counts": {
+      "consumer": 19,
+      "supplier": 4,
+      "admin": 4
+    },
+    "started_at": "2026-09-17T17:26:17.269Z",
+    "finished_at": "2026-09-17T17:26:24.045Z"
+  },
+  "workload": "AUTHENTICATED_READS_AND_SIX_VERTICAL_SEARCHES",
+  "load_profile": "ARRIVAL_RAMP_THEN_FULL_POPULATION_STEADY_V2",
+  "browser_ux_tested": false,
+  "account_population": {},
+  "stages": [],
+  "endpoint_preflight": [],
+  "data_range": {},
+  "gates": {
+    "authenticated_three_end_1000_vus": "NOT_PASSED",
+    "payment_transactions": "NOT_TESTED",
+    "production": "HOLD"
+  },
+  "limitations": [
+    "No order creation, payment, refund, or browser rendering coverage.",
+    "New C accounts can have empty trips and new B tenants can have empty order lists.",
+    "Search endpoints may persist synthetic quotes; no transaction writes are requested.",
+    "Hotel source isolation is bound to the independent runtime evidence, since its response may omit external_live."
+  ],
+  "profile_change": "Requests begin as each VU arrives during ramp; full steady clock begins only after all planned VUs arrive. Run01 barrier-burst failure remains a separate retained result.",
+  "generator": {
+    "node": "v24.21.0",
+    "cpus": 16,
+    "platform": "win32",
+    "total_memory_bytes": 34190864384
+  },
+  "last_telemetry": {
+    "at": "2026-09-17T17:26:24.942369+00:00",
+    "healthy": true
+  },
+  "policy": {
+    "environment": "staging",
+    "admin_mfa_required": false
+  },
+  "cleanup": {
+    "logout_success": 28,
+    "logout_failed": 0,
+    "logout_unattempted": 0,
+    "remaining_sessions": "Failed/unattempted revocations are not claimed closed; ordinary server expiry still applies."
+  },
+  "finished_at": "2026-09-17T17:26:30.639Z",
+  "stop_reason": "HOST_DEGRADED",
+  "stopped_at": "2026-09-17T17:26:24.041Z",
+  "maximum_in_flight_requests": 4,
+  "maximum_stage_started": 0,
+  "maximum_stage_passed": 0,
+  "client_aborted_requests": 3,
+  "summary": {
+    "requests": 0,
+    "errors": 0,
+    "error_rate": null,
+    "semantic_errors": 0,
+    "p50_ms": null,
+    "p95_ms": null,
+    "p99_ms": null,
+    "statuses": {}
+  },
+  "ramp_summary": {
+    "requests": 0,
+    "errors": 0,
+    "error_rate": null,
+    "semantic_errors": 0,
+    "p50_ms": null,
+    "p95_ms": null,
+    "p99_ms": null,
+    "statuses": {}
+  },
+  "success": false
+}

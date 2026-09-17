@@ -1,0 +1,2032 @@
+{
+  "schema_version": 1,
+  "run_id": "hk3-mu5swxpx-82c509",
+  "status": "PREPARATION_ABORTED",
+  "trigger": {
+    "at": "2026-09-17T17:26:16.822174+00:00",
+    "containers": [
+      {
+        "health": null,
+        "id": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+        "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+        "oom_killed": false,
+        "restart_count": 0,
+        "running": true,
+        "service": "mobile-push-receipt-worker"
+      },
+      {
+        "health": null,
+        "id": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+        "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+        "oom_killed": false,
+        "restart_count": 0,
+        "running": true,
+        "service": "mobile-engagement-worker"
+      },
+      {
+        "health": "healthy",
+        "id": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+        "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+        "oom_killed": false,
+        "restart_count": 0,
+        "running": true,
+        "service": "api"
+      },
+      {
+        "health": null,
+        "id": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+        "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+        "oom_killed": false,
+        "restart_count": 0,
+        "running": true,
+        "service": "mobile-push-worker"
+      },
+      {
+        "health": null,
+        "id": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+        "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+        "oom_killed": false,
+        "restart_count": 0,
+        "running": true,
+        "service": "outbox-worker"
+      },
+      {
+        "health": null,
+        "id": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+        "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+        "oom_killed": false,
+        "restart_count": 0,
+        "running": true,
+        "service": "judgment-worker"
+      },
+      {
+        "health": null,
+        "id": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+        "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+        "oom_killed": false,
+        "restart_count": 0,
+        "running": true,
+        "service": "reconciliation-worker"
+      },
+      {
+        "health": null,
+        "id": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+        "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+        "oom_killed": false,
+        "restart_count": 0,
+        "running": true,
+        "service": "recovery-worker"
+      },
+      {
+        "health": "healthy",
+        "id": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+        "image": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+        "oom_killed": false,
+        "restart_count": 0,
+        "running": true,
+        "service": "redis"
+      },
+      {
+        "health": null,
+        "id": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+        "image": "sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17",
+        "oom_killed": false,
+        "restart_count": 0,
+        "running": true,
+        "service": "caddy"
+      }
+    ],
+    "healthy": false,
+    "host": {
+      "cpu_ticks": [
+        "5891532",
+        "7194",
+        "1388339",
+        "237531888",
+        "465846",
+        "0",
+        "171814",
+        "0",
+        "0",
+        "0"
+      ],
+      "loadavg": [
+        0.4521484375,
+        0.28759765625,
+        0.36767578125
+      ],
+      "memory_bytes": {
+        "MemAvailable": 1666412544,
+        "MemTotal": 3664924672,
+        "SwapFree": 0,
+        "SwapTotal": 0
+      }
+    },
+    "reason": "HOST_PROBE_TimeoutExpired",
+    "sample_seconds": 8.12,
+    "stats": [
+      {
+        "BlockIO": "0B / 0B",
+        "CPUPerc": "0.00%",
+        "Container": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+        "ID": "10feb8df5a78",
+        "MemPerc": "3.49%",
+        "MemUsage": "121.8MiB / 3.413GiB",
+        "Name": "go-822-staging-mobile-push-receipt-worker-1",
+        "NetIO": "541kB / 848kB",
+        "PIDs": "1"
+      },
+      {
+        "BlockIO": "0B / 0B",
+        "CPUPerc": "0.00%",
+        "Container": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+        "ID": "9e6aa40ee146",
+        "MemPerc": "3.58%",
+        "MemUsage": "125.1MiB / 3.413GiB",
+        "Name": "go-822-staging-mobile-engagement-worker-1",
+        "NetIO": "166MB / 38.9MB",
+        "PIDs": "1"
+      },
+      {
+        "BlockIO": "8.52MB / 32.8kB",
+        "CPUPerc": "41.35%",
+        "Container": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+        "ID": "582f727f174d",
+        "MemPerc": "6.98%",
+        "MemUsage": "244.1MiB / 3.413GiB",
+        "Name": "go-822-staging-api-1",
+        "NetIO": "154MB / 68MB",
+        "PIDs": "10"
+      },
+      {
+        "BlockIO": "987kB / 0B",
+        "CPUPerc": "0.13%",
+        "Container": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+        "ID": "d331b4d4e281",
+        "MemPerc": "3.53%",
+        "MemUsage": "123.4MiB / 3.413GiB",
+        "Name": "go-822-staging-mobile-push-worker-1",
+        "NetIO": "4.73MB / 3.8MB",
+        "PIDs": "1"
+      },
+      {
+        "BlockIO": "4.1kB / 0B",
+        "CPUPerc": "0.43%",
+        "Container": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+        "ID": "49f6757ac5b7",
+        "MemPerc": "3.50%",
+        "MemUsage": "122.4MiB / 3.413GiB",
+        "Name": "go-822-staging-outbox-worker-1",
+        "NetIO": "15.5MB / 10.4MB",
+        "PIDs": "1"
+      },
+      {
+        "BlockIO": "0B / 0B",
+        "CPUPerc": "0.00%",
+        "Container": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+        "ID": "3cc310b65655",
+        "MemPerc": "3.48%",
+        "MemUsage": "121.8MiB / 3.413GiB",
+        "Name": "go-822-staging-judgment-worker-1",
+        "NetIO": "879kB / 1.32MB",
+        "PIDs": "1"
+      },
+      {
+        "BlockIO": "0B / 0B",
+        "CPUPerc": "0.00%",
+        "Container": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+        "ID": "0c2304711d86",
+        "MemPerc": "3.45%",
+        "MemUsage": "120.5MiB / 3.413GiB",
+        "Name": "go-822-staging-reconciliation-worker-1",
+        "NetIO": "485kB / 913kB",
+        "PIDs": "1"
+      },
+      {
+        "BlockIO": "0B / 0B",
+        "CPUPerc": "0.15%",
+        "Container": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+        "ID": "2bc2a9eb91f5",
+        "MemPerc": "3.55%",
+        "MemUsage": "124.2MiB / 3.413GiB",
+        "Name": "go-822-staging-recovery-worker-1",
+        "NetIO": "5.93MB / 9.24MB",
+        "PIDs": "1"
+      },
+      {
+        "BlockIO": "423MB / 1.62MB",
+        "CPUPerc": "3.45%",
+        "Container": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+        "ID": "0a52d62367bd",
+        "MemPerc": "0.29%",
+        "MemUsage": "10.06MiB / 3.413GiB",
+        "Name": "go-822-staging-redis-1",
+        "NetIO": "384MB / 333MB",
+        "PIDs": "6"
+      },
+      {
+        "BlockIO": "1.83GB / 1.48MB",
+        "CPUPerc": "0.00%",
+        "Container": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+        "ID": "958524e18dca",
+        "MemPerc": "0.80%",
+        "MemUsage": "27.99MiB / 3.413GiB",
+        "Name": "go-822-staging-caddy-1",
+        "NetIO": "201MB / 167MB",
+        "PIDs": "11"
+      }
+    ]
+  },
+  "neighbors": [
+    {
+      "at": "2026-09-17T17:26:06.817042+00:00",
+      "containers": [
+        {
+          "health": null,
+          "id": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-receipt-worker"
+        },
+        {
+          "health": null,
+          "id": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-engagement-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "api"
+        },
+        {
+          "health": null,
+          "id": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-worker"
+        },
+        {
+          "health": null,
+          "id": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "outbox-worker"
+        },
+        {
+          "health": null,
+          "id": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "judgment-worker"
+        },
+        {
+          "health": null,
+          "id": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "reconciliation-worker"
+        },
+        {
+          "health": null,
+          "id": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "recovery-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "image": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "redis"
+        },
+        {
+          "health": null,
+          "id": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "image": "sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "caddy"
+        }
+      ],
+      "database": {
+        "connections": [
+          {
+            "n": 1,
+            "state": "active",
+            "wait_event_type": null
+          },
+          {
+            "n": 12,
+            "state": "idle",
+            "wait_event_type": "Client"
+          }
+        ],
+        "db_heads": [
+          "0137_hosted_unknown_episode"
+        ],
+        "outbox": [
+          {
+            "n": 36808,
+            "status": "PUBLISHED"
+          }
+        ]
+      },
+      "database_sample_at": "2026-09-17T17:26:06.776731+00:00",
+      "healthy": true,
+      "host": {
+        "cpu_ticks": [
+          "5891408",
+          "7194",
+          "1388317",
+          "237530051",
+          "465845",
+          "0",
+          "171812",
+          "0",
+          "0",
+          "0"
+        ],
+        "loadavg": [
+          0.53466796875,
+          0.2978515625,
+          0.37255859375
+        ],
+        "memory_bytes": {
+          "MemAvailable": 1681281024,
+          "MemTotal": 3664924672,
+          "SwapFree": 0,
+          "SwapTotal": 0
+        }
+      },
+      "reason": null,
+      "sample_seconds": 2.102,
+      "stats": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "ID": "10feb8df5a78",
+          "MemPerc": "3.49%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-receipt-worker-1",
+          "NetIO": "540kB / 847kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "ID": "9e6aa40ee146",
+          "MemPerc": "3.58%",
+          "MemUsage": "125.1MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-engagement-worker-1",
+          "NetIO": "165MB / 38.9MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "8.52MB / 32.8kB",
+          "CPUPerc": "0.09%",
+          "Container": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "ID": "582f727f174d",
+          "MemPerc": "6.98%",
+          "MemUsage": "244MiB / 3.413GiB",
+          "Name": "go-822-staging-api-1",
+          "NetIO": "154MB / 68MB",
+          "PIDs": "9"
+        },
+        {
+          "BlockIO": "987kB / 0B",
+          "CPUPerc": "0.13%",
+          "Container": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "ID": "d331b4d4e281",
+          "MemPerc": "3.53%",
+          "MemUsage": "123.4MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-worker-1",
+          "NetIO": "4.73MB / 3.79MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "4.1kB / 0B",
+          "CPUPerc": "0.37%",
+          "Container": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "ID": "49f6757ac5b7",
+          "MemPerc": "3.50%",
+          "MemUsage": "122.4MiB / 3.413GiB",
+          "Name": "go-822-staging-outbox-worker-1",
+          "NetIO": "15.5MB / 10.4MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "ID": "3cc310b65655",
+          "MemPerc": "3.48%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-judgment-worker-1",
+          "NetIO": "877kB / 1.32MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "ID": "0c2304711d86",
+          "MemPerc": "3.45%",
+          "MemUsage": "120.5MiB / 3.413GiB",
+          "Name": "go-822-staging-reconciliation-worker-1",
+          "NetIO": "485kB / 913kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.15%",
+          "Container": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "ID": "2bc2a9eb91f5",
+          "MemPerc": "3.55%",
+          "MemUsage": "124.2MiB / 3.413GiB",
+          "Name": "go-822-staging-recovery-worker-1",
+          "NetIO": "5.92MB / 9.23MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "423MB / 1.62MB",
+          "CPUPerc": "0.37%",
+          "Container": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "ID": "0a52d62367bd",
+          "MemPerc": "0.29%",
+          "MemUsage": "10.06MiB / 3.413GiB",
+          "Name": "go-822-staging-redis-1",
+          "NetIO": "384MB / 333MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "1.83GB / 1.48MB",
+          "CPUPerc": "0.00%",
+          "Container": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "ID": "958524e18dca",
+          "MemPerc": "0.80%",
+          "MemUsage": "27.99MiB / 3.413GiB",
+          "Name": "go-822-staging-caddy-1",
+          "NetIO": "201MB / 167MB",
+          "PIDs": "11"
+        }
+      ]
+    },
+    {
+      "at": "2026-09-17T17:26:11.819646+00:00",
+      "containers": [
+        {
+          "health": null,
+          "id": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-receipt-worker"
+        },
+        {
+          "health": null,
+          "id": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-engagement-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "api"
+        },
+        {
+          "health": null,
+          "id": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-worker"
+        },
+        {
+          "health": null,
+          "id": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "outbox-worker"
+        },
+        {
+          "health": null,
+          "id": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "judgment-worker"
+        },
+        {
+          "health": null,
+          "id": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "reconciliation-worker"
+        },
+        {
+          "health": null,
+          "id": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "recovery-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "image": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "redis"
+        },
+        {
+          "health": null,
+          "id": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "image": "sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "caddy"
+        }
+      ],
+      "database": {
+        "connections": [
+          {
+            "n": 1,
+            "state": "active",
+            "wait_event_type": null
+          },
+          {
+            "n": 12,
+            "state": "idle",
+            "wait_event_type": "Client"
+          }
+        ],
+        "db_heads": [
+          "0137_hosted_unknown_episode"
+        ],
+        "outbox": [
+          {
+            "n": 36808,
+            "status": "PUBLISHED"
+          }
+        ]
+      },
+      "database_sample_at": "2026-09-17T17:26:06.776731+00:00",
+      "healthy": true,
+      "host": {
+        "cpu_ticks": [
+          "5891456",
+          "7194",
+          "1388327",
+          "237530984",
+          "465845",
+          "0",
+          "171813",
+          "0",
+          "0",
+          "0"
+        ],
+        "loadavg": [
+          0.49169921875,
+          0.29248046875,
+          0.3701171875
+        ],
+        "memory_bytes": {
+          "MemAvailable": 1679941632,
+          "MemTotal": 3664924672,
+          "SwapFree": 0,
+          "SwapTotal": 0
+        }
+      },
+      "reason": null,
+      "sample_seconds": 2.105,
+      "stats": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "ID": "10feb8df5a78",
+          "MemPerc": "3.49%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-receipt-worker-1",
+          "NetIO": "540kB / 847kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "ID": "9e6aa40ee146",
+          "MemPerc": "3.58%",
+          "MemUsage": "125.1MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-engagement-worker-1",
+          "NetIO": "166MB / 38.9MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "8.52MB / 32.8kB",
+          "CPUPerc": "16.11%",
+          "Container": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "ID": "582f727f174d",
+          "MemPerc": "6.98%",
+          "MemUsage": "244MiB / 3.413GiB",
+          "Name": "go-822-staging-api-1",
+          "NetIO": "154MB / 68MB",
+          "PIDs": "9"
+        },
+        {
+          "BlockIO": "987kB / 0B",
+          "CPUPerc": "0.13%",
+          "Container": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "ID": "d331b4d4e281",
+          "MemPerc": "3.53%",
+          "MemUsage": "123.4MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-worker-1",
+          "NetIO": "4.73MB / 3.79MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "4.1kB / 0B",
+          "CPUPerc": "0.39%",
+          "Container": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "ID": "49f6757ac5b7",
+          "MemPerc": "3.50%",
+          "MemUsage": "122.4MiB / 3.413GiB",
+          "Name": "go-822-staging-outbox-worker-1",
+          "NetIO": "15.5MB / 10.4MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "ID": "3cc310b65655",
+          "MemPerc": "3.48%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-judgment-worker-1",
+          "NetIO": "878kB / 1.32MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "ID": "0c2304711d86",
+          "MemPerc": "3.45%",
+          "MemUsage": "120.5MiB / 3.413GiB",
+          "Name": "go-822-staging-reconciliation-worker-1",
+          "NetIO": "485kB / 913kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.21%",
+          "Container": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "ID": "2bc2a9eb91f5",
+          "MemPerc": "3.55%",
+          "MemUsage": "124.2MiB / 3.413GiB",
+          "Name": "go-822-staging-recovery-worker-1",
+          "NetIO": "5.92MB / 9.24MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "423MB / 1.62MB",
+          "CPUPerc": "0.40%",
+          "Container": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "ID": "0a52d62367bd",
+          "MemPerc": "0.29%",
+          "MemUsage": "10.06MiB / 3.413GiB",
+          "Name": "go-822-staging-redis-1",
+          "NetIO": "384MB / 333MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "1.83GB / 1.48MB",
+          "CPUPerc": "0.00%",
+          "Container": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "ID": "958524e18dca",
+          "MemPerc": "0.80%",
+          "MemUsage": "27.99MiB / 3.413GiB",
+          "Name": "go-822-staging-caddy-1",
+          "NetIO": "201MB / 167MB",
+          "PIDs": "11"
+        }
+      ]
+    },
+    {
+      "at": "2026-09-17T17:26:16.822174+00:00",
+      "containers": [
+        {
+          "health": null,
+          "id": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-receipt-worker"
+        },
+        {
+          "health": null,
+          "id": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-engagement-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "api"
+        },
+        {
+          "health": null,
+          "id": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-worker"
+        },
+        {
+          "health": null,
+          "id": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "outbox-worker"
+        },
+        {
+          "health": null,
+          "id": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "judgment-worker"
+        },
+        {
+          "health": null,
+          "id": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "reconciliation-worker"
+        },
+        {
+          "health": null,
+          "id": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "recovery-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "image": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "redis"
+        },
+        {
+          "health": null,
+          "id": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "image": "sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "caddy"
+        }
+      ],
+      "healthy": false,
+      "host": {
+        "cpu_ticks": [
+          "5891532",
+          "7194",
+          "1388339",
+          "237531888",
+          "465846",
+          "0",
+          "171814",
+          "0",
+          "0",
+          "0"
+        ],
+        "loadavg": [
+          0.4521484375,
+          0.28759765625,
+          0.36767578125
+        ],
+        "memory_bytes": {
+          "MemAvailable": 1666412544,
+          "MemTotal": 3664924672,
+          "SwapFree": 0,
+          "SwapTotal": 0
+        }
+      },
+      "reason": "HOST_PROBE_TimeoutExpired",
+      "sample_seconds": 8.12,
+      "stats": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "ID": "10feb8df5a78",
+          "MemPerc": "3.49%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-receipt-worker-1",
+          "NetIO": "541kB / 848kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "ID": "9e6aa40ee146",
+          "MemPerc": "3.58%",
+          "MemUsage": "125.1MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-engagement-worker-1",
+          "NetIO": "166MB / 38.9MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "8.52MB / 32.8kB",
+          "CPUPerc": "41.35%",
+          "Container": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "ID": "582f727f174d",
+          "MemPerc": "6.98%",
+          "MemUsage": "244.1MiB / 3.413GiB",
+          "Name": "go-822-staging-api-1",
+          "NetIO": "154MB / 68MB",
+          "PIDs": "10"
+        },
+        {
+          "BlockIO": "987kB / 0B",
+          "CPUPerc": "0.13%",
+          "Container": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "ID": "d331b4d4e281",
+          "MemPerc": "3.53%",
+          "MemUsage": "123.4MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-worker-1",
+          "NetIO": "4.73MB / 3.8MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "4.1kB / 0B",
+          "CPUPerc": "0.43%",
+          "Container": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "ID": "49f6757ac5b7",
+          "MemPerc": "3.50%",
+          "MemUsage": "122.4MiB / 3.413GiB",
+          "Name": "go-822-staging-outbox-worker-1",
+          "NetIO": "15.5MB / 10.4MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "ID": "3cc310b65655",
+          "MemPerc": "3.48%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-judgment-worker-1",
+          "NetIO": "879kB / 1.32MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "ID": "0c2304711d86",
+          "MemPerc": "3.45%",
+          "MemUsage": "120.5MiB / 3.413GiB",
+          "Name": "go-822-staging-reconciliation-worker-1",
+          "NetIO": "485kB / 913kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.15%",
+          "Container": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "ID": "2bc2a9eb91f5",
+          "MemPerc": "3.55%",
+          "MemUsage": "124.2MiB / 3.413GiB",
+          "Name": "go-822-staging-recovery-worker-1",
+          "NetIO": "5.93MB / 9.24MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "423MB / 1.62MB",
+          "CPUPerc": "3.45%",
+          "Container": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "ID": "0a52d62367bd",
+          "MemPerc": "0.29%",
+          "MemUsage": "10.06MiB / 3.413GiB",
+          "Name": "go-822-staging-redis-1",
+          "NetIO": "384MB / 333MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "1.83GB / 1.48MB",
+          "CPUPerc": "0.00%",
+          "Container": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "ID": "958524e18dca",
+          "MemPerc": "0.80%",
+          "MemUsage": "27.99MiB / 3.413GiB",
+          "Name": "go-822-staging-caddy-1",
+          "NetIO": "201MB / 167MB",
+          "PIDs": "11"
+        }
+      ]
+    },
+    {
+      "at": "2026-09-17T17:26:24.942369+00:00",
+      "containers": [
+        {
+          "health": null,
+          "id": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-receipt-worker"
+        },
+        {
+          "health": null,
+          "id": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-engagement-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "api"
+        },
+        {
+          "health": null,
+          "id": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-worker"
+        },
+        {
+          "health": null,
+          "id": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "outbox-worker"
+        },
+        {
+          "health": null,
+          "id": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "judgment-worker"
+        },
+        {
+          "health": null,
+          "id": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "reconciliation-worker"
+        },
+        {
+          "health": null,
+          "id": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "recovery-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "image": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "redis"
+        },
+        {
+          "health": null,
+          "id": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "image": "sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "caddy"
+        }
+      ],
+      "database": {
+        "connections": [
+          {
+            "n": 1,
+            "state": "active",
+            "wait_event_type": null
+          },
+          {
+            "n": 12,
+            "state": "idle",
+            "wait_event_type": "Client"
+          }
+        ],
+        "db_heads": [
+          "0137_hosted_unknown_episode"
+        ],
+        "outbox": [
+          {
+            "n": 36808,
+            "status": "PUBLISHED"
+          }
+        ]
+      },
+      "database_sample_at": "2026-09-17T17:26:06.776731+00:00",
+      "healthy": true,
+      "host": {
+        "cpu_ticks": [
+          "5892714",
+          "7194",
+          "1388396",
+          "237532277",
+          "465846",
+          "0",
+          "171821",
+          "0",
+          "0",
+          "0"
+        ],
+        "loadavg": [
+          0.83154296875,
+          0.376953125,
+          0.39599609375
+        ],
+        "memory_bytes": {
+          "MemAvailable": 1679626240,
+          "MemTotal": 3664924672,
+          "SwapFree": 0,
+          "SwapTotal": 0
+        }
+      },
+      "reason": null,
+      "sample_seconds": 2.205,
+      "stats": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "ID": "10feb8df5a78",
+          "MemPerc": "3.49%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-receipt-worker-1",
+          "NetIO": "542kB / 849kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "ID": "9e6aa40ee146",
+          "MemPerc": "3.58%",
+          "MemUsage": "125.1MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-engagement-worker-1",
+          "NetIO": "166MB / 39MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "8.52MB / 32.8kB",
+          "CPUPerc": "5.83%",
+          "Container": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "ID": "582f727f174d",
+          "MemPerc": "6.98%",
+          "MemUsage": "244.1MiB / 3.413GiB",
+          "Name": "go-822-staging-api-1",
+          "NetIO": "154MB / 68.4MB",
+          "PIDs": "10"
+        },
+        {
+          "BlockIO": "987kB / 0B",
+          "CPUPerc": "0.11%",
+          "Container": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "ID": "d331b4d4e281",
+          "MemPerc": "3.53%",
+          "MemUsage": "123.4MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-worker-1",
+          "NetIO": "4.74MB / 3.8MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "4.1kB / 0B",
+          "CPUPerc": "0.38%",
+          "Container": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "ID": "49f6757ac5b7",
+          "MemPerc": "3.50%",
+          "MemUsage": "122.4MiB / 3.413GiB",
+          "Name": "go-822-staging-outbox-worker-1",
+          "NetIO": "15.5MB / 10.4MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "ID": "3cc310b65655",
+          "MemPerc": "3.48%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-judgment-worker-1",
+          "NetIO": "879kB / 1.32MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "ID": "0c2304711d86",
+          "MemPerc": "3.45%",
+          "MemUsage": "120.5MiB / 3.413GiB",
+          "Name": "go-822-staging-reconciliation-worker-1",
+          "NetIO": "485kB / 913kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.18%",
+          "Container": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "ID": "2bc2a9eb91f5",
+          "MemPerc": "3.55%",
+          "MemUsage": "124.2MiB / 3.413GiB",
+          "Name": "go-822-staging-recovery-worker-1",
+          "NetIO": "5.94MB / 9.26MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "423MB / 1.62MB",
+          "CPUPerc": "0.39%",
+          "Container": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "ID": "0a52d62367bd",
+          "MemPerc": "0.29%",
+          "MemUsage": "10.05MiB / 3.413GiB",
+          "Name": "go-822-staging-redis-1",
+          "NetIO": "384MB / 333MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "1.83GB / 1.48MB",
+          "CPUPerc": "0.73%",
+          "Container": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "ID": "958524e18dca",
+          "MemPerc": "0.83%",
+          "MemUsage": "28.86MiB / 3.413GiB",
+          "Name": "go-822-staging-caddy-1",
+          "NetIO": "201MB / 167MB",
+          "PIDs": "11"
+        }
+      ]
+    },
+    {
+      "at": "2026-09-17T17:26:29.943327+00:00",
+      "containers": [
+        {
+          "health": null,
+          "id": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-receipt-worker"
+        },
+        {
+          "health": null,
+          "id": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-engagement-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "api"
+        },
+        {
+          "health": null,
+          "id": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-worker"
+        },
+        {
+          "health": null,
+          "id": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "outbox-worker"
+        },
+        {
+          "health": null,
+          "id": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "judgment-worker"
+        },
+        {
+          "health": null,
+          "id": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "reconciliation-worker"
+        },
+        {
+          "health": null,
+          "id": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "recovery-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "image": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "redis"
+        },
+        {
+          "health": null,
+          "id": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "image": "sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "caddy"
+        }
+      ],
+      "database": {
+        "connections": [
+          {
+            "n": 1,
+            "state": "active",
+            "wait_event_type": null
+          },
+          {
+            "n": 12,
+            "state": "idle",
+            "wait_event_type": "Client"
+          }
+        ],
+        "db_heads": [
+          "0137_hosted_unknown_episode"
+        ],
+        "outbox": [
+          {
+            "n": 36808,
+            "status": "PUBLISHED"
+          }
+        ]
+      },
+      "database_sample_at": "2026-09-17T17:26:06.776731+00:00",
+      "healthy": true,
+      "host": {
+        "cpu_ticks": [
+          "5892767",
+          "7194",
+          "1388406",
+          "237533191",
+          "465846",
+          "0",
+          "171822",
+          "0",
+          "0",
+          "0"
+        ],
+        "loadavg": [
+          0.7646484375,
+          0.37060546875,
+          0.3935546875
+        ],
+        "memory_bytes": {
+          "MemAvailable": 1678950400,
+          "MemTotal": 3664924672,
+          "SwapFree": 0,
+          "SwapTotal": 0
+        }
+      },
+      "reason": null,
+      "sample_seconds": 2.113,
+      "stats": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "ID": "10feb8df5a78",
+          "MemPerc": "3.49%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-receipt-worker-1",
+          "NetIO": "542kB / 849kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "ID": "9e6aa40ee146",
+          "MemPerc": "3.58%",
+          "MemUsage": "125.1MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-engagement-worker-1",
+          "NetIO": "166MB / 39MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "8.52MB / 32.8kB",
+          "CPUPerc": "3.47%",
+          "Container": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "ID": "582f727f174d",
+          "MemPerc": "6.98%",
+          "MemUsage": "244.1MiB / 3.413GiB",
+          "Name": "go-822-staging-api-1",
+          "NetIO": "154MB / 68.6MB",
+          "PIDs": "10"
+        },
+        {
+          "BlockIO": "987kB / 0B",
+          "CPUPerc": "0.12%",
+          "Container": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "ID": "d331b4d4e281",
+          "MemPerc": "3.53%",
+          "MemUsage": "123.4MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-worker-1",
+          "NetIO": "4.74MB / 3.8MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "4.1kB / 0B",
+          "CPUPerc": "0.38%",
+          "Container": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "ID": "49f6757ac5b7",
+          "MemPerc": "3.50%",
+          "MemUsage": "122.4MiB / 3.413GiB",
+          "Name": "go-822-staging-outbox-worker-1",
+          "NetIO": "15.6MB / 10.4MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "ID": "3cc310b65655",
+          "MemPerc": "3.48%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-judgment-worker-1",
+          "NetIO": "880kB / 1.32MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "ID": "0c2304711d86",
+          "MemPerc": "3.45%",
+          "MemUsage": "120.5MiB / 3.413GiB",
+          "Name": "go-822-staging-reconciliation-worker-1",
+          "NetIO": "485kB / 913kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.15%",
+          "Container": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "ID": "2bc2a9eb91f5",
+          "MemPerc": "3.55%",
+          "MemUsage": "124.2MiB / 3.413GiB",
+          "Name": "go-822-staging-recovery-worker-1",
+          "NetIO": "5.94MB / 9.26MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "423MB / 1.62MB",
+          "CPUPerc": "2.79%",
+          "Container": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "ID": "0a52d62367bd",
+          "MemPerc": "0.29%",
+          "MemUsage": "10.06MiB / 3.413GiB",
+          "Name": "go-822-staging-redis-1",
+          "NetIO": "384MB / 333MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "1.83GB / 1.48MB",
+          "CPUPerc": "0.30%",
+          "Container": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "ID": "958524e18dca",
+          "MemPerc": "0.83%",
+          "MemUsage": "28.87MiB / 3.413GiB",
+          "Name": "go-822-staging-caddy-1",
+          "NetIO": "201MB / 167MB",
+          "PIDs": "11"
+        }
+      ]
+    },
+    {
+      "at": "2026-09-17T17:26:34.944380+00:00",
+      "containers": [
+        {
+          "health": null,
+          "id": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-receipt-worker"
+        },
+        {
+          "health": null,
+          "id": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-engagement-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "api"
+        },
+        {
+          "health": null,
+          "id": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-worker"
+        },
+        {
+          "health": null,
+          "id": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "outbox-worker"
+        },
+        {
+          "health": null,
+          "id": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "judgment-worker"
+        },
+        {
+          "health": null,
+          "id": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "reconciliation-worker"
+        },
+        {
+          "health": null,
+          "id": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "recovery-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "image": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "redis"
+        },
+        {
+          "health": null,
+          "id": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "image": "sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "caddy"
+        }
+      ],
+      "database": {
+        "connections": [
+          {
+            "n": 1,
+            "state": "active",
+            "wait_event_type": null
+          },
+          {
+            "n": 12,
+            "state": "idle",
+            "wait_event_type": "Client"
+          }
+        ],
+        "db_heads": [
+          "0137_hosted_unknown_episode"
+        ],
+        "outbox": [
+          {
+            "n": 36809,
+            "status": "PUBLISHED"
+          }
+        ]
+      },
+      "database_sample_at": "2026-09-17T17:26:39.934147+00:00",
+      "healthy": true,
+      "host": {
+        "cpu_ticks": [
+          "5892812",
+          "7194",
+          "1388417",
+          "237534123",
+          "465846",
+          "0",
+          "171824",
+          "0",
+          "0",
+          "0"
+        ],
+        "loadavg": [
+          0.703125,
+          0.3642578125,
+          0.39111328125
+        ],
+        "memory_bytes": {
+          "MemAvailable": 1674788864,
+          "MemTotal": 3664924672,
+          "SwapFree": 0,
+          "SwapTotal": 0
+        }
+      },
+      "reason": null,
+      "sample_seconds": 4.99,
+      "stats": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "ID": "10feb8df5a78",
+          "MemPerc": "3.49%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-receipt-worker-1",
+          "NetIO": "542kB / 851kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "ID": "9e6aa40ee146",
+          "MemPerc": "3.58%",
+          "MemUsage": "125.1MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-engagement-worker-1",
+          "NetIO": "166MB / 39.1MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "8.52MB / 32.8kB",
+          "CPUPerc": "0.10%",
+          "Container": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "ID": "582f727f174d",
+          "MemPerc": "6.98%",
+          "MemUsage": "244.1MiB / 3.413GiB",
+          "Name": "go-822-staging-api-1",
+          "NetIO": "154MB / 68.6MB",
+          "PIDs": "10"
+        },
+        {
+          "BlockIO": "987kB / 0B",
+          "CPUPerc": "0.13%",
+          "Container": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "ID": "d331b4d4e281",
+          "MemPerc": "3.53%",
+          "MemUsage": "123.4MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-worker-1",
+          "NetIO": "4.75MB / 3.81MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "4.1kB / 0B",
+          "CPUPerc": "0.39%",
+          "Container": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "ID": "49f6757ac5b7",
+          "MemPerc": "3.50%",
+          "MemUsage": "122.4MiB / 3.413GiB",
+          "Name": "go-822-staging-outbox-worker-1",
+          "NetIO": "15.6MB / 10.4MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "ID": "3cc310b65655",
+          "MemPerc": "3.48%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-judgment-worker-1",
+          "NetIO": "881kB / 1.32MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "ID": "0c2304711d86",
+          "MemPerc": "3.45%",
+          "MemUsage": "120.5MiB / 3.413GiB",
+          "Name": "go-822-staging-reconciliation-worker-1",
+          "NetIO": "488kB / 917kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.16%",
+          "Container": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "ID": "2bc2a9eb91f5",
+          "MemPerc": "3.55%",
+          "MemUsage": "124.2MiB / 3.413GiB",
+          "Name": "go-822-staging-recovery-worker-1",
+          "NetIO": "5.94MB / 9.27MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "423MB / 1.62MB",
+          "CPUPerc": "0.37%",
+          "Container": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "ID": "0a52d62367bd",
+          "MemPerc": "0.29%",
+          "MemUsage": "10.06MiB / 3.413GiB",
+          "Name": "go-822-staging-redis-1",
+          "NetIO": "384MB / 333MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "1.83GB / 1.48MB",
+          "CPUPerc": "0.01%",
+          "Container": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "ID": "958524e18dca",
+          "MemPerc": "0.83%",
+          "MemUsage": "28.86MiB / 3.413GiB",
+          "Name": "go-822-staging-caddy-1",
+          "NetIO": "201MB / 167MB",
+          "PIDs": "11"
+        }
+      ]
+    },
+    {
+      "at": "2026-09-17T17:26:39.944461+00:00",
+      "containers": [
+        {
+          "health": null,
+          "id": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-receipt-worker"
+        },
+        {
+          "health": null,
+          "id": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-engagement-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "api"
+        },
+        {
+          "health": null,
+          "id": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "mobile-push-worker"
+        },
+        {
+          "health": null,
+          "id": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "outbox-worker"
+        },
+        {
+          "health": null,
+          "id": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "judgment-worker"
+        },
+        {
+          "health": null,
+          "id": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "reconciliation-worker"
+        },
+        {
+          "health": null,
+          "id": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "image": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "recovery-worker"
+        },
+        {
+          "health": "healthy",
+          "id": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "image": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "redis"
+        },
+        {
+          "health": null,
+          "id": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "image": "sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17",
+          "oom_killed": false,
+          "restart_count": 0,
+          "running": true,
+          "service": "caddy"
+        }
+      ],
+      "database": {
+        "connections": [
+          {
+            "n": 1,
+            "state": "active",
+            "wait_event_type": null
+          },
+          {
+            "n": 12,
+            "state": "idle",
+            "wait_event_type": "Client"
+          }
+        ],
+        "db_heads": [
+          "0137_hosted_unknown_episode"
+        ],
+        "outbox": [
+          {
+            "n": 36809,
+            "status": "PUBLISHED"
+          }
+        ]
+      },
+      "database_sample_at": "2026-09-17T17:26:39.934147+00:00",
+      "healthy": true,
+      "host": {
+        "cpu_ticks": [
+          "5893115",
+          "7194",
+          "1388437",
+          "237534787",
+          "465846",
+          "0",
+          "171824",
+          "0",
+          "0",
+          "0"
+        ],
+        "loadavg": [
+          0.646484375,
+          0.35791015625,
+          0.388671875
+        ],
+        "memory_bytes": {
+          "MemAvailable": 1682219008,
+          "MemTotal": 3664924672,
+          "SwapFree": 0,
+          "SwapTotal": 0
+        }
+      },
+      "reason": null,
+      "sample_seconds": 2.107,
+      "stats": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "10feb8df5a78ea83570ce3c49b235b9962164934bfe3119fd38c0846c17a2b96",
+          "ID": "10feb8df5a78",
+          "MemPerc": "3.49%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-receipt-worker-1",
+          "NetIO": "542kB / 851kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "9e6aa40ee1464f5540d320d583968dae135d6c6289b7cd976971ed12b82c9670",
+          "ID": "9e6aa40ee146",
+          "MemPerc": "3.58%",
+          "MemUsage": "125.1MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-engagement-worker-1",
+          "NetIO": "166MB / 39.1MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "8.52MB / 32.8kB",
+          "CPUPerc": "0.09%",
+          "Container": "582f727f174d7bf863d64f890de387f1bcdb1fa5fb44d36985e7d1a377551893",
+          "ID": "582f727f174d",
+          "MemPerc": "6.98%",
+          "MemUsage": "244.1MiB / 3.413GiB",
+          "Name": "go-822-staging-api-1",
+          "NetIO": "154MB / 68.7MB",
+          "PIDs": "10"
+        },
+        {
+          "BlockIO": "987kB / 0B",
+          "CPUPerc": "0.12%",
+          "Container": "d331b4d4e281a9e5f803f55c3521bab62ab0bc95cc0cbeaf963f5f467da93ef1",
+          "ID": "d331b4d4e281",
+          "MemPerc": "3.53%",
+          "MemUsage": "123.4MiB / 3.413GiB",
+          "Name": "go-822-staging-mobile-push-worker-1",
+          "NetIO": "4.75MB / 3.81MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "4.1kB / 0B",
+          "CPUPerc": "0.38%",
+          "Container": "49f6757ac5b719455f2a8b0d6a3698448becedae3faea26590fd53cc8a23ed0b",
+          "ID": "49f6757ac5b7",
+          "MemPerc": "3.50%",
+          "MemUsage": "122.4MiB / 3.413GiB",
+          "Name": "go-822-staging-outbox-worker-1",
+          "NetIO": "15.6MB / 10.4MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "3cc310b656551e89fed59286301853eb12fee08bb2bb06a8f9f4ade7eb2d25d0",
+          "ID": "3cc310b65655",
+          "MemPerc": "3.48%",
+          "MemUsage": "121.8MiB / 3.413GiB",
+          "Name": "go-822-staging-judgment-worker-1",
+          "NetIO": "881kB / 1.32MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.00%",
+          "Container": "0c2304711d865390aa5384a86a245a9dbc4dcf31c36664becc6f6e289fe2038b",
+          "ID": "0c2304711d86",
+          "MemPerc": "3.45%",
+          "MemUsage": "120.5MiB / 3.413GiB",
+          "Name": "go-822-staging-reconciliation-worker-1",
+          "NetIO": "488kB / 917kB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.17%",
+          "Container": "2bc2a9eb91f5b927f415dfa5df4f21d7449b8ca46bcf45dd54f377e1429db6a9",
+          "ID": "2bc2a9eb91f5",
+          "MemPerc": "3.55%",
+          "MemUsage": "124.2MiB / 3.413GiB",
+          "Name": "go-822-staging-recovery-worker-1",
+          "NetIO": "5.95MB / 9.27MB",
+          "PIDs": "1"
+        },
+        {
+          "BlockIO": "423MB / 1.62MB",
+          "CPUPerc": "0.36%",
+          "Container": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+          "ID": "0a52d62367bd",
+          "MemPerc": "0.29%",
+          "MemUsage": "10.06MiB / 3.413GiB",
+          "Name": "go-822-staging-redis-1",
+          "NetIO": "384MB / 333MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "1.83GB / 1.48MB",
+          "CPUPerc": "0.00%",
+          "Container": "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c",
+          "ID": "958524e18dca",
+          "MemPerc": "0.83%",
+          "MemUsage": "28.86MiB / 3.413GiB",
+          "Name": "go-822-staging-caddy-1",
+          "NetIO": "201MB / 167MB",
+          "PIDs": "11"
+        }
+      ]
+    }
+  ],
+  "inference": "Database observation subprocess timed out; not evidence of failed 1000-user capacity. Full cause under review."
+}
