@@ -1,0 +1,69 @@
+name: V70 current Cells unified candidate gate
+on:
+  pull_request:
+    branches: [main]
+    paths: [application/**, ci/integration/**, ci/retention/**, ci/cell-closure/**, ci/next-depth/**, ci/evidence_writer/**, .github/workflows/v70-unified-candidate.yml]
+permissions:
+  contents: read
+concurrency:
+  group: v70-unified-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  exact-unified-candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify exact product retention binding
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/unified/retention"
+          test "$(git rev-parse "$(jq -r .product_candidate_commit ci/retention/BASELINE.json):application")" = "$(jq -r .application_git_tree ci/retention/BASELINE.json)"
+          python ci/retention/verify_source.py "$RUNNER_TEMP/unified/retention"
+          test "$(jq -r .source_tree_sha256 "$RUNNER_TEMP/unified/retention/RETENTION_RESULT.json")" = "$(jq -r .source_tree_sha256 ci/retention/BASELINE.json)"
+      - name: Install inherited frozen Python dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Run current-generation task-bound integration tests
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/unified/tests"
+          files=(tests/test_v70_r4_c01_unknown_episode.py tests/test_v70_r3_c02_coupon_authority.py tests/test_v70_r6_c02_partial_party_authority.py tests/test_v70_r3_c04_admin_reconciliation.py tests/test_v70_r3_c04_http_get_zero_write.py tests/test_v70_r4_c05_episode_reference_reuse.py tests/test_v70_r4_c05_failed_episode.py tests/test_v70_r5_c05_concurrent_unknown.py tests/test_c06_internal_policy_registry.py tests/test_next_depth_c06_supplier_validity.py tests/test_v70_r5_c06_raw_payload_binding.py tests/test_v70_r4_c07_consent_provenance.py tests/go_ai/test_c08_durable_execution.py tests/test_outbox_resilience.py tests/journey/test_c10_pagination_search.py tests/payments/test_c11_flight_idempotency_recovery.py)
+          for file in "${files[@]}"; do
+            name=$(basename "$file" .py)
+            (cd application && GO_TEST_DB_PATH="$RUNNER_TEMP/$name.db" python -m pytest -p no:cacheprovider "$file" --junitxml="$RUNNER_TEMP/unified/tests/$name.xml")
+          done
+          python -m unittest ci.round2.test_c12_worker_liveness -v 2>&1 | tee "$RUNNER_TEMP/unified/tests/c12-worker-liveness.log"
+      - name: Create strict source-bound Evidence
+        if: always()
+        env:
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          APPLICATION_TREE="$(git rev-parse HEAD:application)"
+          PRODUCT_FINGERPRINT="$(tr -d '\n' < ci/integration/SOURCE_FINGERPRINT.sha256)"
+          export APPLICATION_TREE
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          Path("UNIFIED_RESULT.json").write_text(json.dumps({"application_tree":os.environ["APPLICATION_TREE"],"candidate_commit":os.environ["CANDIDATE_SHA"],"c06_external_supplier_provenance":"BLOCKED_EXTERNAL","final_release":"HOLD","hk_deploy":"HOLD","migration_head":"0137_hosted_unknown_episode","production":"HOLD","status":"PASS"},sort_keys=True,separators=(",",":"))+chr(10))
+          PY
+          python ci/evidence_writer/writer.py create --target "$RUNNER_TEMP/unified/evidence" --source-root . --source-path ci/integration/ACCEPTED_CELL_LEDGER.json --source-path ci/integration/SOURCE_FINGERPRINT.sha256 --source-path ci/retention/BASELINE.json --source-path ci/cell-closure/CANDIDATE.json --source-path ci/next-depth/CANDIDATE.json --source-path .github/workflows/v70-unified-candidate.yml --cell SHARED --task-id V70-CURRENT-CELLS-UNIFIED --candidate "$CANDIDATE_SHA" --application-tree "$APPLICATION_TREE" --product-source-fingerprint "$PRODUCT_FINGERPRINT" --json RESULT.json=UNIFIED_RESULT.json
+          python ci/evidence_writer/writer.py verify --bundle "$RUNNER_TEMP/unified/evidence" --candidate "$CANDIDATE_SHA" --application-tree "$APPLICATION_TREE" --cell SHARED --task-id V70-CURRENT-CELLS-UNIFIED
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v70-unified-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/unified
+          if-no-files-found: error
+          retention-days: 90
