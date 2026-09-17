@@ -394,3 +394,13 @@ INSTALLATION_PERFORMED=NO
 DEPLOYMENT_PERFORMED=NO
 HONG_KONG_TOUCHED=NO
 ```
+
+
+## Task-scoped OCI diagnostics
+
+A TEST_PR archive refused by the OCI parser remains a failure and never enters the
+loadable `objects` namespace. The writer publishes a fixed parser subcode and retains
+the exact tar as `failures/<sha256(task_id NUL nonce)>.tar`, mode 0600 beneath the
+trusted-writer 0700 store. The existing failure Evidence diagnostic carries only that
+identifier, the archive SHA256 and its byte count. The retained bytes grant no retry,
+replay, load, migration or deployment authority.
