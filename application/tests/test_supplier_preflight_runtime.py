@@ -138,6 +138,16 @@ def execute_one(runtime):
     )
 
 
+def execute_availability(runtime):
+    return runtime._execute_operation(
+        "AVAILABILITY",
+        endpoint="https://sandbox.supplier.test",
+        credential_reference="vault://supplier/auth",
+        payload={"hotel": "H-1"},
+        idempotency_key="availability-1",
+    )
+
+
 def test_exact_raw_request_and_response_are_sealed_before_success_is_accepted():
     evidence = Evidence()
     transport = Transport()
@@ -166,10 +176,25 @@ def test_each_retry_attempt_is_independently_sealed():
             (200, {}, b'{"supplier_reference":"S-43"}'),
         ]
     )
-    result = execute_one(executor(transport=transport, evidence=evidence))
+    result = execute_availability(executor(transport=transport, evidence=evidence))
     assert result.ok is True
     assert result.payload["attempts"] == 2
     assert [item["response_status"] for item in evidence.attempts] == [429, 200]
+
+
+def test_mutating_operation_does_not_retry_ambiguous_http_failure():
+    evidence = Evidence()
+    transport = Transport(
+        [
+            (429, {}, b'{"error":"slow_down"}'),
+            (200, {}, b'{"supplier_reference":"duplicate-risk"}'),
+        ]
+    )
+    result = execute_one(executor(transport=transport, evidence=evidence))
+    assert result.ok is False
+    assert result.payload["normalized_error"] == "RATE_LIMITED"
+    assert len(evidence.attempts) == 1
+    assert len(transport.calls) == 1
 
 
 def test_transport_exception_attempt_is_sealed_and_unknown_outcome_is_not_retried():
