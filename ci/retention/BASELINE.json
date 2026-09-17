@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.candidate-rebind.v3",
-  "product_candidate_commit": "9cd86c85d1aa141785eca2e44a1df9c7e9063a4c",
-  "application_git_tree": "b0dba98dccfead7f2a7f80ccc611fc153f5915ea",
+  "product_candidate_commit": "7e18ae4dec2d8226bcb4fcba0e27f133d5dfd0bc",
+  "application_git_tree": "9f781b7949b42d996ee0fc37d0c9962b219545ed",
   "source_anchor_main": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
   "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
@@ -33,13 +33,18 @@
     },
     "src/go_hotel/services/alipay_safeguarded_settlement.py": {
       "mode": "100644",
-      "git_blob": "848fab15ac59515c9521c4eaefd2d67c0e7ba72c",
-      "reason": "V70-R3-C01-02 final capture validates current funding generation amount/currency while preserving legal fare-change reauthorization"
+      "git_blob": "ec9cacc29b30418d124bff07cdf2110326405fb1",
+      "reason": "V70-R3-C01-03 preserve same-reservation immutable authorization replay after lawful fare change"
     },
     "tests/test_v70_next_c01_unknown_funding.py": {
       "mode": "100644",
       "git_blob": "f2c0bb64c456d53bee89c05d98fb613941a371ea",
       "reason": "V70-R3-C01-02 bounded regression for authorization/capture term drift"
+    },
+    "tests/test_v70_next_c01_authorization_replay.py": {
+      "mode": "100644",
+      "git_blob": "8445bed95c232f5904a8f55d0dbd4d0e35f8147b",
+      "reason": "V70-R3-C01-03 bounded idempotent authorization replay regression"
     }
   },
   "migration_head": "0134_flight_status_width",
@@ -64,6 +69,6 @@
   "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
   "source_tree_sha256": "ecf362b530e9ba2a1168fb6941933980c2016c627d9933ae90fd8df51747afd8",
   "historical_pass_transferred": false,
-  "rebind_stage": "BOUND_EXACT_CANDIDATE",
-  "source_tree_sha256_status": "BOUND_FROM_RETENTION_RUN_35167495813_SUBSTEP_PASS"
+  "rebind_stage": "PENDING_SOURCE_TREE_REBIND_AFTER_C01_03",
+  "source_tree_sha256_status": "PENDING_RECOMPUTE_FROM_RETENTION"
 }
