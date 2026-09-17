@@ -47,7 +47,7 @@ case "$role" in
         test "$(stat -c %a /var/lib/go-hk-artifacts)" = 700
         test -d /var/lib/go-hk-artifacts/objects && test ! -L /var/lib/go-hk-artifacts/objects
         test "$(stat -c %u:%g /var/lib/go-hk-artifacts/objects)" = "$(id -u go-hk-agent):$(id -g go-hk-agent)"
-        test "$(stat -c %a /var/lib/go-hk-artifacts/objects)" = 700
+        test "$(stat -c %a /var/lib/go-hk-artifacts/objects)" = 700\n        test -d /var/lib/go-hk-artifacts/failures && test ! -L /var/lib/go-hk-artifacts/failures\n        test "$(stat -c %u:%g /var/lib/go-hk-artifacts/failures)" = "$(id -u go-hk-agent):$(id -g go-hk-agent)"\n        test "$(stat -c %a /var/lib/go-hk-artifacts/failures)" = 700
         test -f /etc/systemd/system/go-hk-agent.service.d/30-test-pr-docker-access.conf
         test "$(stat -c %u:%g /etc/systemd/system/go-hk-agent.service.d/30-test-pr-docker-access.conf)" = 0:0
         test "$(stat -c %a /etc/systemd/system/go-hk-agent.service.d/30-test-pr-docker-access.conf)" = 644
