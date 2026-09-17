@@ -137,3 +137,36 @@ def test_changed_order_no_show_settles_current_hold_and_can_refund_it(client,mon
     assert summary(r)['capture_minor']==129600 and summary(r)['held_minor']==0
     _,e=approve(sid,129600);after.retry_refund(account,r['hosted_reservation_id'],e['refund_eligibility_id'])
     assert summary(r)['refund_minor']==129600
+
+
+def test_original_authorization_replay_survives_fare_change_without_new_money(client,monkeypatch):
+    r,account,h,a,p=booked(client,monkeypatch)
+    original_key=a['idempotency_key']
+    q=change_quote(r,account)
+    rate(r,q['check_in'],q['check_out'],100000)
+    q=change_quote(r,account)
+    changed=apply(r,account,q)
+    current={**r,**changed}
+    before=summary(current)
+    replay=payment.authorize(
+        r['hosted_reservation_id'],{'mode':'CONTRACT_DRY_RUN'},original_key)
+    assert replay['authorization_id']==a['authorization_id']
+    assert replay['amount_minor']==a['amount_minor']==162000
+    assert summary(current)==before
+    with SessionLocal() as s:
+        authorizations=list(s.scalars(select(Authorization).where(
+            Authorization.hosted_reservation_id==r['hosted_reservation_id'])))
+        assert len(authorizations)==1
+    with pytest.raises(ValueError,match='PAYMENT_RECONCILIATION_REQUIRED'):
+        payment.authorize(
+            r['hosted_reservation_id'],{'mode':'CONTRACT_DRY_RUN'},
+            'new-key-after-fare-change')
+    other=ops.reserve(
+        'aoluguya-harbin',
+        {**{k:r[k] for k in ['hosted_offer_id','check_in','check_out',
+                             'guest_name','guest_contact']},
+         'expected_fare_rule_hash':p['rule_hash']},
+        'c01-03-cross-reservation','GO_PAGE',account)
+    with pytest.raises(ValueError,match='AUTHORIZATION_IDEMPOTENCY_CONFLICT'):
+        payment.authorize(
+            other['hosted_reservation_id'],{'mode':'CONTRACT_DRY_RUN'},original_key)
