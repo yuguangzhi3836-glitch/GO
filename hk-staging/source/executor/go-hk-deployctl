@@ -9,14 +9,15 @@ import re
 import stat
 import sys
 
-VERSION = "0.5.0-forward-migration"
-_CONTRACT_SHA256 = "0d30f5b76da072a249f9c1986d71fe09664d31bda06d4c944e684e2f1746e3ed"
+VERSION = "0.5.1-same-revision"
+_CONTRACT_SHA256 = "3b5897e734749df5be1ca6befa2da88d7c7b58bf02683838341b46b519e8f618"
+_SAME_REVISION_SHA256 = "d984b5716add576079e25509d48abe9bc21f4338e8efdf928e54cfe473881efe"
 _MIGRATION_SHA256 = "be60700cc8dd10d402e2d0e7ddcab3269d93a5acf7ebfd6cd5ba6840ecc8fd0d"
 _IMAGE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _RELEASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 _COLLECTOR_SHA256 = "fb3d966d8736bcb49a76ff52db01a417bc745f7b5ad47addf9d576e8bf4fa1a6"
-_CANARY_SHA256 = "e3b1e1536616ce0a7f86b99fd4505f9e0e5db47baf49f4338f6eee4600d46a7d"
-_DEPLOY_SHA256 = "0984ce1afc2f6f36725e4f3dc300264e2e9a3870789f8adabba518cc3094493f"
+_CANARY_SHA256 = "c3c74678d640150380af572899c303c18f4c62c0333e4e766af0b963bd0dcefb"
+_DEPLOY_SHA256 = "79e5b840c14601bf8d720e1300df2fb98838bfd9ec48af881c483588cb788f6b"
 _ROLLBACK_SHA256 = "274c39f7e430805fb2355bc302b8d559452c0d0b11b1a92461bb8e09a0aab1bd"
 _ARTIFACT_SHA256 = "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b"
 
@@ -39,6 +40,7 @@ def _contract(identity,candidate,expected,package=None,verify=False):
     return value
 
 def _migration(): return _load_extra('migration_runtime',_MIGRATION_SHA256)
+def _same_revision(): return _load_extra('same_revision_runtime',_SAME_REVISION_SHA256)
 
 def _load_collector():
     """Load only the immutable sibling runtime after validating its bytes."""
@@ -141,7 +143,9 @@ def _deploy(release,candidate,package,expected,approval,canary_evidence,binding,
         if not isinstance(canary_evidence,str) or not _RELEASE.fullmatch(canary_evidence): raise ValueError("canary evidence")
         runtime=_load_deploy(); collector=_load_collector(); artifact=_load_artifact()
         contract=_contract(contract_sha,candidate,expected,package)
-        extra={'contract':contract,'contract_sha':contract_sha,'migration':_migration()} if contract else {}
+        extra={'contract':contract,'contract_sha':contract_sha} if contract else {}
+        if contract:
+            extra.update({'same_revision':_same_revision()} if contract.get('migration_required') is False else {'migration':_migration()})
         if not contract: _migration().require_clear()
         gates=runtime.run_deploy(release,candidate,package,expected,binding,runner or collector.ProductionRunner(),collector,artifact,**extra)
         record={key:gates.pop(key) for key in ("deploy_record_schema_version","deploy_record_id","deploy_record_sha256")}
@@ -156,7 +160,9 @@ def _canary(release_id,candidate_image_id,candidate_package_sha256,expected_curr
     try:
         runtime=_load_canary(); artifact=_load_artifact()
         contract=_contract(contract_sha,candidate_image_id,expected_current_image_id,candidate_package_sha256)
-        extra={'contract':contract,'migration':_migration()} if contract else {}
+        extra={'contract':contract} if contract else {}
+        if contract:
+            extra.update({'same_revision':_same_revision()} if contract.get('migration_required') is False else {'migration':_migration()})
         gates=runtime.run_canary(release_id,candidate_image_id,candidate_package_sha256,expected_current_image_id,runner,inputs,artifact,**extra)
         output=_document("SUCCESS",release_id,candidate_image_id,expected_current_image_id,gates,"CANARY_OK")
         output["action_id"]="HK_STAGING_CANARY"

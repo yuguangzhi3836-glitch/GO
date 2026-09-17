@@ -1,0 +1,56 @@
+{
+  "reviewer": "C13",
+  "time_utc": "2026-09-17T22:37:53.459217+00:00",
+  "core_verdict": "PASS_SCOPED",
+  "installer_verdict": "PASS_SCOPED",
+  "tests": {
+    "hk-forward-migration-v1": 36,
+    "boss-deploy-request-v1": 137,
+    "failed": 0,
+    "installer_real_temporary_files": 3
+  },
+  "core_findings": [
+    "All 12 manifest files match after restoring six unlisted diagnostic overlays.",
+    "All eight executor runtime hashes match pins.",
+    "v2 contract explicitly forbids migration; same revision and complete migration graph required on both images.",
+    "Fixed readonly source checker does not import application or execute SQL.",
+    "Live DB prestate check precedes cutover; full post-deploy VERIFY retained.",
+    "Signed TEST_PR, CANARY, plan and candidate identities retained; contract rollback still refused."
+  ],
+  "installer_blockers": [],
+  "requested_validation": [],
+  "limitations": [
+    "Docker/database mocked in local core tests; no live installation or deployment implied.",
+    "Installer tests mock systemctl; live preflight, install receipts and post-install state still required."
+  ],
+  "core_files_sha256": {
+    "control-plane/boss-deploy-request-v1/SHA256SUMS": "0f68f8aced73c590a6ffe1bf11c09db81ac22fbc95aec4cd214170512215863c",
+    "control-plane/boss-deploy-request-v1/go-boss-request-bridge": "a6aade3e573e91c49b08a3cb1c8a7822fa1e9acab3c764807d43de8f744c600a",
+    "control-plane/boss-deploy-request-v1/go_deploy_request.py": "0b0b771cba901b4b487858ec7c8a6fcea7fe36edcc537e3d4470bf60848dc8bb",
+    "control-plane/boss-deploy-request-v1/hk_candidate_contract.py": "3b5897e734749df5be1ca6befa2da88d7c7b58bf02683838341b46b519e8f618",
+    "control-plane/boss-deploy-request-v1/plan_derivation.py": "ca1b690003221c619a9ac816ed533c6ba9291830dd867529eba3f0083b433e25",
+    "control-plane/hk-forward-migration-v1/SAME_REVISION.md": "3288614fabcb86569160dc3c36394b5ec2658d9a89f150f6ada0143f5221df00",
+    "control-plane/hk-forward-migration-v1/tests/test_same_revision.py": "0d4de3ec6854bade8f8a2ae3cc9823732e5a7766891867d5f9b0565f37a67e46",
+    "hk-staging/SOURCE_SHA256SUMS.txt": "61ba93aef9cd540fb0a0b9eb88e697d19218f1812d509c8f701c2d03a2a93352",
+    "hk-staging/source/executor/go-hk-deployctl": "edc845d33442ef35583628547b6b1dd151315aebcfcc5758625d6fe4fd54309a",
+    "hk-staging/source/executor/runtime/canary_runtime.py": "c3c74678d640150380af572899c303c18f4c62c0333e4e766af0b963bd0dcefb",
+    "hk-staging/source/executor/runtime/deploy_runtime.py": "79e5b840c14601bf8d720e1300df2fb98838bfd9ec48af881c483588cb788f6b",
+    "hk-staging/source/executor/runtime/hk_candidate_contract.py": "3b5897e734749df5be1ca6befa2da88d7c7b58bf02683838341b46b519e8f618",
+    "hk-staging/source/executor/runtime/same_revision_program.py": "4db9cba95c05cb5f5d0ad661aa2686f237206b9b5bdf18d8736983d35392c88c",
+    "hk-staging/source/executor/runtime/same_revision_runtime.py": "d984b5716add576079e25509d48abe9bc21f4338e8efdf928e54cfe473881efe"
+  },
+  "installer_findings": [
+    "Only pinned 4 CC + 6 HK source targets; package bytes match reviewed candidate.",
+    "Fresh before-hash/metadata and protected guard checks before and after timer quiescence.",
+    "Complete before images and manifest fsynced before replace, including backup parent directory.",
+    "Partial install failure restores bytes/metadata; failed rollback preserves stopped timers and records reconciliation.",
+    "Cleanup errors isolated; no authority/admission/deploy/database writes."
+  ],
+  "installer_files_sha256": {
+    "install/test_install_source.py": "7feee28480d8088109c1d6a02b27f1246d2d7c1f79b753c0d649f2c5e72acdd3",
+    "install/SOURCE_PACKAGE.json": "4e42cb29bb16f5d07ef65ed4853b75d589101c4e1def02254f51b96ccfa2194c",
+    "install/install_source.py": "38a8533af785089405d6c5b556f65558a45bb7d4cc424b924032a2dd17175c4c",
+    "install/PREFLIGHT.json": "9c172e7509d187a99e7866c6278542f2fb2328be8d444b058741831e96c9b394",
+    "install/INSTALL_MANIFEST.json": "e8b8b2a9c327e1d5b5d067d7af610cce301db408e9e07bfdc873c59ad5d57a87"
+  }
+}

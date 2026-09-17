@@ -197,9 +197,15 @@ def validate_request(raw, at=None):
 def load_baseline(path=BASELINE_CONFIG):
     value=json.loads(pathlib.Path(path).read_text())
     required={"version","environment","image_id","evidence_task_id","evidence_commit","evidence_path"}
-    if set(value) != required or value["version"] != 1 or value["environment"] != POLICY["environment"]: raise Reject("invalid_authoritative_baseline")
+    if value.get("version") == 2: required.add("candidate_contract_sha256")
+    if set(value) != required or value["version"] not in (1,2) or value["environment"] != POLICY["environment"]: raise Reject("invalid_authoritative_baseline")
     if not re.fullmatch(r"sha256:[0-9a-f]{64}",value["image_id"]): raise Reject("invalid_authoritative_baseline")
     if not all(isinstance(value[x],str) and value[x] for x in ("evidence_task_id","evidence_commit","evidence_path")): raise Reject("invalid_authoritative_baseline")
+    if value['version'] == 2:
+        try:
+            contract=deploy_gate.candidate_contract.load(value['candidate_contract_sha256'],deploy_gate.candidate_contract.CC_STORE)
+            deploy_gate.candidate_contract.verify_profile(contract,value['image_id'])
+        except deploy_gate.candidate_contract.Reject as exc: raise Reject(str(exc)) from exc
     return value
 def load_canary_baseline(path=CANARY_BASELINE_CONFIG):
     if path==CANARY_BASELINE_CONFIG:
@@ -241,7 +247,8 @@ def derive(request, baseline, at=None):
     return {"schema_version":"1", "task_id":"go-boss-request-verify-" + unique_stamp,
       "nonce":secrets.token_urlsafe(24), "issued_at":iso(at), "expires_at":iso(at + dt.timedelta(minutes=15)),
       "authority":"GO-COMMAND-CENTER", "environment":POLICY["environment"], "action_id":POLICY["action_id"],
-      "parameters":{"release_id":"boss-request-verify-" + unique_stamp, "candidate_image_id":baseline["image_id"], "expected_current_image_id":baseline["image_id"]}}
+      "parameters":{"release_id":"boss-request-verify-" + unique_stamp, "candidate_image_id":baseline["image_id"], "expected_current_image_id":baseline["image_id"],
+                    **({"candidate_contract_sha256":baseline["candidate_contract_sha256"]} if "candidate_contract_sha256" in baseline else {})}}
 
 def derive_canary(request, baseline, at=None):
     """A candidate canary Task. It takes nothing at all from the Request.

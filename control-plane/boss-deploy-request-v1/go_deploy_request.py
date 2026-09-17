@@ -403,14 +403,22 @@ def rollback_source_proof(task,evidence,authority_key,hk_key):
     if not isinstance(record_sha256,str) or SHA.fullmatch(record_sha256) is None:
         raise Reject('rollback_source_record_binding')
     gates=evidence.get('gate_results')
-    required=tuple(k for k in DEPLOY_GATES if k!='no_migration')+('migration_source_bound','rds_prestate_match','alembic_forward_migration','rds_poststate_match','migration_evidence') if contract_sha else DEPLOY_GATES
-    if contract_sha and (not isinstance(gates,dict) or not SHA.fullmatch(str(gates.get('migration_record_sha256','')))): raise Reject('migration_receipt_missing')
+    needs_migration=bool(contract_sha)
+    if contract_sha and isinstance(gates,dict) and gates.get('no_migration')=='PASS':
+        try:
+            source_contract=candidate_contract.load(contract_sha,candidate_contract.CC_STORE)
+            candidate_contract.bind(source_contract,parameters['candidate_image_id'],parameters['expected_current_image_id'],parameters['candidate_package_sha256'])
+            needs_migration=candidate_contract.migration_required(source_contract)
+            if needs_migration: raise Reject('proof_contract_mode')
+        except candidate_contract.Reject as exc: raise Reject(str(exc)) from exc
+    required=tuple(k for k in DEPLOY_GATES if k!='no_migration')+('migration_source_bound','rds_prestate_match','alembic_forward_migration','rds_poststate_match','migration_evidence') if needs_migration else DEPLOY_GATES
+    if needs_migration and (not isinstance(gates,dict) or not SHA.fullmatch(str(gates.get('migration_record_sha256','')))): raise Reject('migration_receipt_missing')
     if not isinstance(gates,dict) or any(gates.get(k)!='PASS' for k in required):
         raise Reject('rollback_source_gate_failed')
     return {'record_id':record_id,'record_sha256':record_sha256,
             'candidate_image_id':parameters['candidate_image_id'],
             'expected_current_image_id':parameters['expected_current_image_id'],
-            'completed_at':completed,'migration_required':contract_sha is not None}
+            'completed_at':completed,'migration_required':needs_migration,'contract_bound':contract_sha is not None}
 
 def plan_id_for(candidate,canary_task):
     """The one plan name this gate will accept, derived rather than chosen.
@@ -463,7 +471,6 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
     match(plan_id,IDENT,'plan_id')
     if plan['target_services']!=SERVICES or plan['protected_non_targets']!=['redis','caddy']: raise Reject('fixed_topology_required')
     if any(plan[k] is not False for k in ['production','automatic_rollback']): raise Reject('forbidden_operation')
-    if plan['migration'] is not (contract_sha is not None): raise Reject('forbidden_operation')
     candidate=plan['candidate']
     exact(candidate,CANDIDATE_FIELDS,'candidate_fields')
     if candidate['repository']!=REPOSITORY: raise Reject('candidate_repository')
@@ -480,6 +487,7 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
         try: contract=candidate_contract.load(contract_sha,candidate_contract.CC_STORE)
         except candidate_contract.Reject as exc: raise Reject(str(exc)) from exc
         if contract['candidate']!=candidate or contract['expected_current_image_id']!=plan['expected_current_image_id']: raise Reject('migration_plan_binding')
+    if plan['migration'] is not (candidate_contract.migration_required(contract) if contract else False): raise Reject('forbidden_operation')
     exact(approval,APPROVAL_FIELDS,'approval_fields')
     if approval['schema_version']!='1' or approval['scope']!='HK_STAGING_DEPLOY_FIXED_EIGHT' or approval['plan_sha256']!=digest(plan):
         raise Reject('approval_binding')
@@ -506,7 +514,7 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
     checked=proof(bundle['preflight_task'],bundle['preflight_evidence'],VERIFY_ACTION,authority_key,hk_key,at,VERIFY_EVIDENCE_MAX_AGE)
     cp=bundle['canary_task']['parameters'];vp=bundle['preflight_task']['parameters']
     if cp.get('candidate_contract_sha256')!=contract_sha: raise Reject('canary_contract_binding')
-    if contract is not None and digest(bundle['test_pr_evidence'])!=contract['rehearsal']['binding']['test_pr_evidence_sha256']:
+    if contract is not None and digest(bundle['test_pr_evidence'])!=candidate_contract.test_pr_digest(contract):
         raise Reject('migration_test_pr_evidence_binding')
     if (cp['candidate_image_id'],cp['candidate_package_sha256'],cp['expected_current_image_id'])!=(candidate['image_id'],candidate['package_sha256'],plan['expected_current_image_id']): raise Reject('canary_candidate_binding')
     if vp['candidate_image_id']!=plan['expected_current_image_id'] or vp['expected_current_image_id']!=plan['expected_current_image_id']:
@@ -560,7 +568,7 @@ def validate_rollback(release_id,authorization,source_task,source_evidence,
     if approved>at or expires<=at+dt.timedelta(seconds=60) or expires-approved>APPROVAL_MAX_LIFE:
         raise Reject('approval_expired_or_invalid')
     source=rollback_source_proof(source_task,source_evidence,authority_key,hk_key)
-    if source.get('migration_required'): raise Reject('migration_rollback_compatibility_unproven')
+    if source.get('migration_required') or source.get('contract_bound'): raise Reject('migration_rollback_compatibility_unproven')
     # Recomputed from the objects themselves rather than taken from the authorisation's
     # own word: an authorisation naming a different deployment, or one whose Evidence was
     # replaced, is refused here instead of being read as "some deployment".

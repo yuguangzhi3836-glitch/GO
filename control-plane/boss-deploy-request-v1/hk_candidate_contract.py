@@ -11,6 +11,7 @@ import re
 import stat
 
 SCHEMA = 'go.hk-candidate-contract.v1'
+SAME_SCHEMA = 'go.hk-candidate-contract.v2'
 ENVIRONMENT = 'HK-STAGING-01'
 REPOSITORY = 'yuguangzhi3836-glitch/GO'
 PROFILE = 'go-application-python-v2'
@@ -25,6 +26,8 @@ CANDIDATE_FIELDS = {'repository','source_commit','application_git_tree',
                     'source_tree_sha256','package_sha256','image_id'}
 FIELDS = {'schema','environment','profile','candidate','expected_current_image_id',
           'baseline_revision','target_revision','rehearsal','rehearsal_sha256'}
+
+SAME_FIELDS = (FIELDS - {'rehearsal','rehearsal_sha256'}) | {'migration_required', 'migration_source_digest', 'baseline_migration_source_digest', 'test_pr_evidence_sha256'}
 
 class Reject(ValueError):
     pass
@@ -53,9 +56,10 @@ def match(value,pattern):
         raise Reject('candidate_contract_identity')
 
 def validate(value,identity=None):
-    if not isinstance(value,dict) or set(value)!=FIELDS:
+    same = isinstance(value,dict) and value.get('schema') == SAME_SCHEMA
+    if not isinstance(value,dict) or set(value)!=(SAME_FIELDS if same else FIELDS):
         raise Reject('candidate_contract_fields')
-    if value['schema']!=SCHEMA or value['environment']!=ENVIRONMENT or value['profile']!=PROFILE:
+    if value['schema'] not in (SCHEMA,SAME_SCHEMA) or value['environment']!=ENVIRONMENT or value['profile']!=PROFILE:
         raise Reject('candidate_contract_scope')
     if identity is not None:
         match(identity,SHA)
@@ -68,6 +72,12 @@ def validate(value,identity=None):
     for key in ('source_tree_sha256','package_sha256'): match(candidate[key],SHA)
     match(candidate['image_id'],IMAGE); match(value['expected_current_image_id'],IMAGE)
     for key in ('baseline_revision','target_revision'): match(value[key],REVISION)
+    if same:
+        if value['migration_required'] is not False: raise Reject('candidate_contract_no_migration_mode')
+        if value['baseline_revision'] != value['target_revision']: raise Reject('candidate_contract_same_revision_required')
+        for key in ('migration_source_digest','baseline_migration_source_digest','test_pr_evidence_sha256'): match(value[key],SHA)
+        if value['migration_source_digest'] != value['baseline_migration_source_digest']: raise Reject('candidate_contract_graph_mismatch')
+        return value
     if value['baseline_revision']==value['target_revision']:
         raise Reject('candidate_contract_forward_required')
     evidence=value['rehearsal']
@@ -102,6 +112,14 @@ def validate(value,identity=None):
     if not re.fullmatch(r'[1-9][0-9]*',str(evidence.get('ci_run_id',''))):
         raise Reject('migration_ci_identity')
     return value
+
+def migration_required(value):
+    validate(value)
+    return value['schema'] == SCHEMA
+
+def test_pr_digest(value):
+    validate(value)
+    return value['rehearsal']['binding']['test_pr_evidence_sha256'] if migration_required(value) else value['test_pr_evidence_sha256']
 
 def secure_read(path):
     path=Path(path)
@@ -156,7 +174,7 @@ def active():
     if any(block.get(k)!=c[v] for k,v in pairs.items()): raise Reject('active_candidate_binding')
     if block.get('artifact_package',{}).get('package_sha256')!=c['package_sha256']:
         raise Reject('active_candidate_package')
-    if (block.get('migration_required') is not True or block.get('migration_head')!=contract['target_revision']
+    if (block.get('migration_required') is not migration_required(contract) or block.get('migration_head')!=contract['target_revision']
         or block.get('rollback_relation',{}).get('previous_known_good_image_id')!=contract['expected_current_image_id']
         or block.get('candidate_contract_sha256')!=identity):
         raise Reject('active_candidate_migration')

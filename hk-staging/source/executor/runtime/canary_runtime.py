@@ -64,7 +64,7 @@ def parse_alembic_head(raw,expected_head=HEAD):
  if match is None or match.group(1)!=expected_head: raise Reject('E_CANARY_ALEMBIC_HEAD_MISMATCH')
  return match.group(1)
 
-def run_canary(release,candidate,package,expected,runner=None,inputs=None,artifact=None,contract=None,migration=None):
+def run_canary(release,candidate,package,expected,runner=None,inputs=None,artifact=None,contract=None,migration=None,same_revision=None):
  if not isinstance(release,str) or not RELEASE.fullmatch(release): raise Reject('E_RELEASE_ID')
  if not isinstance(candidate,str) or not IMAGE.fullmatch(candidate): raise Reject('E_CANDIDATE_IMAGE_MISSING')
  if not isinstance(package,str) or not SHA256.fullmatch(package): raise Reject('E_CANDIDATE_PACKAGE_INVALID')
@@ -80,7 +80,9 @@ def run_canary(release,candidate,package,expected,runner=None,inputs=None,artifa
  if inspected.stdout.strip()!=candidate: raise Reject('E_CANDIDATE_IMAGE_ID_MISMATCH')
  workdir='/workspace' if contract else '/app'
  head=contract['target_revision'] if contract else HEAD
- if contract:
+ if contract and contract.get('migration_required') is False:
+  same_revision.check_images(runner,contract)
+ elif contract:
   raw=_one(runner,_name(),candidate,'/usr/local/bin/python',migration.source_tail(contract),90,workdir)
   if json.loads(raw)!={'source':'PASS','lineage_sha256':contract['rehearsal']['migration_source_digest']}: raise Reject('E_CANARY_MIGRATION_SOURCE')
  _one(runner,_name(),candidate,'/usr/local/bin/python',['-m','compileall','-q',workdir+'/src' if contract else workdir],90,workdir)
