@@ -52,9 +52,10 @@ class RawEvidenceSink(Protocol):
         method: str,
         url: str,
         request_body: bytes,
-        response_status: int,
+        response_status: int | None,
         response_headers: dict[str, str],
         response_body: bytes,
+        transport_error: str | None,
     ) -> str: ...
 
 
@@ -67,7 +68,7 @@ class RuntimeAudit:
     operation: str
     request_hash: str
     response_hash: str
-    http_status: int
+    http_status: int | None
     attempt: int
     elapsed_ms: int
     evidence_reference: str
@@ -195,9 +196,10 @@ class ContractDrivenHotelSupplyExecutor:
         method: str,
         url: str,
         request_body: bytes,
-        response_status: int,
+        response_status: int | None,
         response_headers: dict[str, str],
         response_body: bytes,
+        transport_error: str | None,
         started: float,
     ) -> RuntimeAudit:
         reference = self.evidence_sink.seal_attempt(
@@ -209,6 +211,7 @@ class ContractDrivenHotelSupplyExecutor:
             response_status=response_status,
             response_headers=response_headers,
             response_body=response_body,
+            transport_error=transport_error,
         )
         if not isinstance(reference, str) or not reference.strip():
             raise ValueError("SUPPLIER_RAW_EVIDENCE_PERSISTENCE_REQUIRED")
@@ -263,18 +266,37 @@ class ContractDrivenHotelSupplyExecutor:
             float(limits.get("read_timeout_ms") or 1000),
         ) / 1000.0
         started = time.monotonic()
-        last_status = 0
+        last_status: int | None = None
         last_body = b""
         last_audit: RuntimeAudit | None = None
         for attempt in range(1, max_attempts + 1):
             self._rate_limit()
-            status, response_headers, response_body = self.transport.request(
-                method,
-                url,
-                headers=headers,
-                body=request_body,
-                timeout_seconds=timeout,
-            )
+            try:
+                status, response_headers, response_body = self.transport.request(
+                    method,
+                    url,
+                    headers=headers,
+                    body=request_body,
+                    timeout_seconds=timeout,
+                )
+            except Exception as exc:
+                last_status, last_body = None, b""
+                last_audit = self._seal_attempt(
+                    operation=operation,
+                    attempt=attempt,
+                    method=method,
+                    url=url,
+                    request_body=request_body,
+                    response_status=None,
+                    response_headers={},
+                    response_body=b"",
+                    transport_error=type(exc).__name__,
+                    started=started,
+                )
+                if attempt == max_attempts:
+                    break
+                time.sleep(min(0.25 * (2 ** (attempt - 1)), 2.0))
+                continue
             if not isinstance(response_body, bytes):
                 raise TypeError("SUPPLIER_TRANSPORT_RAW_BYTES_REQUIRED")
             last_status, last_body = status, response_body
@@ -287,6 +309,7 @@ class ContractDrivenHotelSupplyExecutor:
                 response_status=status,
                 response_headers=response_headers,
                 response_body=response_body,
+                transport_error=None,
                 started=started,
             )
             parsed: Any
@@ -407,7 +430,9 @@ class ContractDrivenHotelSupplyExecutor:
         if abs((now - observed_at).total_seconds()) > tolerance:
             raise ValueError("SUPPLIER_WEBHOOK_TIMESTAMP_OUTSIDE_TOLERANCE")
         replay_key = _sha256_bytes(signed + b"." + signature.encode())
-        if not self.replay_store.claim(replay_key, expires_at=now + timedelta(seconds=tolerance)):
+        # Keep the atomic claim for the full remaining validity window, including
+        # callbacks whose signed timestamp is slightly in the future.
+        if not self.replay_store.claim(replay_key, expires_at=observed_at + timedelta(seconds=tolerance)):
             raise ValueError("SUPPLIER_WEBHOOK_REPLAYED")
         return {
             "signature_verified": True,
@@ -416,4 +441,3 @@ class ContractDrivenHotelSupplyExecutor:
             "timestamp": timestamp,
             "replay_key": replay_key,
         }
-
