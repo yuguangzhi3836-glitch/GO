@@ -10,10 +10,87 @@ RECORD_DIR='/var/lib/go-hk-deployctl/deploy-records'
 SERVICES=('api','recovery-worker','outbox-worker','mobile-push-receipt-worker','reconciliation-worker','mobile-push-worker','mobile-engagement-worker','judgment-worker')
 IMAGE=re.compile(r'^sha256:[0-9a-f]{64}$'); DIGEST=re.compile(r'^[a-z0-9][a-z0-9._/-]*@sha256:[0-9a-f]{64}$')
 TASK_ID=re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'); NONCE=re.compile(r'^[A-Za-z0-9_-]{1,128}$'); SHA256=re.compile(r'^[0-9a-f]{64}$')
+REVISION=re.compile(r'^[A-Za-z0-9][A-Za-z0-9_]{2,79}$')
+MIGRATION_FIELDS={'schema','source_commit','application_git_tree','source_fingerprint_sha256',
+    'prestate_revision','target_revision','lineage_sha256','forward_only','arbitrary_sql',
+    'rehearsal_evidence_sha256','rehearsal_postgres_version'}
 API_READINESS_ATTEMPTS=12
 API_READINESS_INTERVAL_SECONDS=5
 
 class Reject(ValueError): pass
+
+# Fixed executor-owned program.  No SQL, command, path or Python fragment comes
+# from the Task.  The only varying values are validated revision identifiers and
+# one digest.  Alembic therefore executes only the candidate image's immutable
+# migration graph.
+MIGRATION_PROGRAM=r'''import ast,hashlib,json,os,pathlib,sys
+from alembic import command
+from alembic.config import Config
+from alembic.runtime.migration import MigrationContext
+from sqlalchemy import create_engine
+b,t,want=sys.argv[1:]
+root=pathlib.Path('/app/alembic/versions')
+graph={}
+for path in sorted(root.glob('*.py')):
+    if path.name=='__init__.py': continue
+    values={}
+    for node in ast.parse(path.read_text(),filename=str(path)).body:
+        if isinstance(node,ast.Assign): names=[n.id for n in node.targets if isinstance(n,ast.Name)]
+        elif isinstance(node,ast.AnnAssign) and isinstance(node.target,ast.Name): names=[node.target.id]
+        else: continue
+        for name in names:
+            if name in {'revision','down_revision','depends_on'}: values[name]=ast.literal_eval(node.value)
+    r=values.get('revision'); p=values.get('down_revision')
+    parents=() if p is None else ((p,) if isinstance(p,str) else tuple(p))
+    assert isinstance(r,str) and r not in graph and all(isinstance(x,str) for x in parents)
+    assert values.get('depends_on') is None
+    graph[r]={'parents':tuple(sorted(parents)),'sha256':hashlib.sha256(path.read_bytes()).hexdigest()}
+refs={x for v in graph.values() for x in v['parents']}
+assert sorted(set(graph)-refs)==[t]
+seen=set()
+def visit(r,active=()):
+    assert r in graph and r not in active
+    if r in seen:return
+    for p in graph[r]['parents']:visit(p,active+(r,))
+    seen.add(r)
+visit(t);assert seen==set(graph) and b in seen
+payload=[{'revision':r,'parents':list(graph[r]['parents']),'sha256':graph[r]['sha256']} for r in sorted(graph)]
+actual=hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(',',':')).encode()).hexdigest();assert actual==want
+url=os.environ['DATABASE_URL'];engine=create_engine(url)
+with engine.connect() as c:
+    assert c.dialect.name=='postgresql'
+    before=list(MigrationContext.configure(c).get_current_heads())
+assert before==[b]
+cfg=Config('/app/alembic.ini');command.upgrade(cfg,t)
+with engine.connect() as c: after=list(MigrationContext.configure(c).get_current_heads())
+assert after==[t]
+print(json.dumps({'prestate_revision':b,'target_revision':t,'poststate_revision':after[0],'lineage_sha256':actual,'forward_only':True,'arbitrary_sql':False},sort_keys=True,separators=(',',':')))
+'''
+
+def _migration_contract(value):
+    if value is False: return False
+    if not isinstance(value,dict) or set(value)!=MIGRATION_FIELDS: raise Reject('E_MIGRATION_SCHEMA')
+    if value.get('schema')!='go.forward-migration-admission.v1': raise Reject('E_MIGRATION_SCHEMA')
+    if not re.fullmatch(r'[0-9a-f]{40}',value.get('source_commit','')) or not re.fullmatch(r'[0-9a-f]{40}',value.get('application_git_tree','')): raise Reject('E_MIGRATION_SOURCE')
+    if any(not SHA256.fullmatch(value.get(k,'')) for k in ('source_fingerprint_sha256','lineage_sha256','rehearsal_evidence_sha256')): raise Reject('E_MIGRATION_DIGEST')
+    if any(not REVISION.fullmatch(value.get(k,'')) for k in ('prestate_revision','target_revision')): raise Reject('E_MIGRATION_REVISION')
+    if value['prestate_revision']==value['target_revision'] or value.get('forward_only') is not True or value.get('arbitrary_sql') is not False or value.get('rehearsal_postgres_version')!='18.4': raise Reject('E_MIGRATION_POLICY')
+    return value
+
+def _forward_migrate(runner,override,migration):
+    migration=_migration_contract(migration)
+    if migration is False: return {'no_migration':'PASS'}
+    raw=_run(runner,[DOCKER,'compose','--env-file',ENV,'-p',PROJECT,'-f',COMPOSE,'-f',override,
+        'run','--rm','--no-deps','--entrypoint','python','api','-c',MIGRATION_PROGRAM,
+        migration['prestate_revision'],migration['target_revision'],migration['lineage_sha256']],480)
+    try: result=json.loads(raw)
+    except Exception as exc: raise Reject('E_MIGRATION_RESULT') from exc
+    expected={'prestate_revision':migration['prestate_revision'],'target_revision':migration['target_revision'],
+        'poststate_revision':migration['target_revision'],'lineage_sha256':migration['lineage_sha256'],
+        'forward_only':True,'arbitrary_sql':False}
+    if result!=expected: raise Reject('E_MIGRATION_RESULT')
+    return {'migration_prestate':'PASS','migration_unique_lineage':'PASS',
+        'migration_rehearsal_binding':'PASS','migration_forward_only':'PASS','migration_poststate':'PASS'}
 def _sha(path): return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 def _run(runner,argv,timeout=120):
     # Reuse the frozen production collector runner interface: argv-only.
@@ -165,7 +242,7 @@ def _wait_for_api_health(runner,candidate,sleeper=time.sleep):
             if attempt + 1 == API_READINESS_ATTEMPTS:
                 raise Reject('E_DEPLOY_API_READINESS_TIMEOUT')
             sleeper(API_READINESS_INTERVAL_SECONDS)
-def run_deploy(release,candidate,package,expected,binding,runner,collector,artifact,sleeper=time.sleep):
+def run_deploy(release,candidate,package,expected,migration,binding,runner,collector,artifact,sleeper=time.sleep):
     data=_precheck(runner,candidate,package,expected,artifact)
     record=_record_v2(release,candidate,package,expected,data,runner,binding)
     override=None
@@ -174,6 +251,7 @@ def run_deploy(release,candidate,package,expected,binding,runner,collector,artif
             override=_override(candidate)
         except OSError as exc:
             raise Reject('E_DEPLOY_TEMP_CREATION') from exc
+        migration_gates=_forward_migrate(runner,override,migration)
         # Same-image deployments are intentionally a fixed, scoped recreation.
         # The flag is executor-owned: no Task parameter can add, remove, or vary it.
         _run(runner,[DOCKER,'compose','--env-file',ENV,'-p',PROJECT,'-f',COMPOSE,'-f',override,'up','-d','--no-deps','--force-recreate',*SERVICES],300)
@@ -183,7 +261,7 @@ def run_deploy(release,candidate,package,expected,binding,runner,collector,artif
         _wait_for_api_health(runner,candidate,sleeper)
         check=collector._collect_verify(runner,candidate,candidate,collector._PRODUCTION_VERIFY_INPUTS,sleeper)
         if check.get('target_service_count')!=8: raise Reject('E_DEPLOY_PARTIAL_CONVERGENCE')
-        return {'durable_previous_state':'PASS','candidate_binding':'PASS','current_state':'PASS','fixed_scope':'PASS','no_migration':'PASS','post_deploy_verify':'PASS',**record}
+        return {'durable_previous_state':'PASS','candidate_binding':'PASS','current_state':'PASS','fixed_scope':'PASS',**migration_gates,'post_deploy_verify':'PASS',**record}
     finally:
         if override:
             try: os.unlink(override)

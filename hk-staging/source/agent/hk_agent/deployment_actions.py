@@ -18,6 +18,11 @@ IDENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$")
 TASK_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 NONCE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
+REVISION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_]{2,79}$")
+MIGRATION_FIELDS = frozenset(("schema","source_commit","application_git_tree",
+    "source_fingerprint_sha256","prestate_revision","target_revision",
+    "lineage_sha256","forward_only","arbitrary_sql",
+    "rehearsal_evidence_sha256","rehearsal_postgres_version"))
 
 class Reject(ValueError):
     """Fail-closed executor rejection with bounded diagnostic context."""
@@ -79,14 +84,28 @@ def _exact(params, required):
     if not isinstance(params,dict) or set(params) != set(required): raise Reject("parameter schema rejected")
     return params
 
+def _migration(value):
+    if value is False: return False
+    if not isinstance(value,dict) or set(value)!=MIGRATION_FIELDS: raise Reject("migration schema rejected")
+    if value["schema"]!="go.forward-migration-admission.v1": raise Reject("migration schema rejected")
+    if not re.fullmatch(r"[0-9a-f]{40}",value["source_commit"] or ""): raise Reject("migration source rejected")
+    if not re.fullmatch(r"[0-9a-f]{40}",value["application_git_tree"] or ""): raise Reject("migration tree rejected")
+    for key in ("source_fingerprint_sha256","lineage_sha256","rehearsal_evidence_sha256"):
+        if not isinstance(value.get(key),str) or not SHA256.fullmatch(value[key]): raise Reject("migration digest rejected")
+    for key in ("prestate_revision","target_revision"):
+        if not isinstance(value.get(key),str) or not REVISION.fullmatch(value[key]): raise Reject("migration revision rejected")
+    if value["prestate_revision"]==value["target_revision"] or value["forward_only"] is not True or value["arbitrary_sql"] is not False or value["rehearsal_postgres_version"]!="18.4":
+        raise Reject("migration policy rejected")
+    return dict(value)
+
 def validate(action, params):
     if action not in ACTIONS: raise Reject("unknown action")
     if action == "HK_STAGING_CANARY":
         p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id"))
         return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id")}
     if action == "HK_STAGING_DEPLOY":
-        p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","approval_id"))
-        return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id"),"canary_evidence_id":_id(p["canary_evidence_id"],"canary_evidence_id"),"approval_id":_id(p["approval_id"],"approval_id")}
+        p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","approval_id","migration"))
+        return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id"),"canary_evidence_id":_id(p["canary_evidence_id"],"canary_evidence_id"),"approval_id":_id(p["approval_id"],"approval_id"),"migration":_migration(p["migration"])}
     if action == "HK_STAGING_VERIFY":
         p=_exact(params,("release_id","candidate_image_id","expected_current_image_id"))
         return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id")}
@@ -106,6 +125,7 @@ def argv(action, params, task_binding=None):
     out=[EXECUTOR_PATH,name,"--release-id",p["release_id"]]
     for key in ("candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","source_deploy_task_id","approval_id"):
         if key in p: out += ["--"+key.replace("_","-"),p[key]]
+    if action=="HK_STAGING_DEPLOY": out += ["--migration-json",json.dumps(p["migration"],sort_keys=True,separators=(",",":"))]
     if action in ("HK_STAGING_DEPLOY","HK_STAGING_ROLLBACK"):
         b=_binding(task_binding)
         out += ["--task-id",b["task_id"],"--task-nonce",b["nonce"],"--task-authority",b["authority"],"--task-canonical-sha256",b["canonical_sha256"]]
@@ -158,7 +178,7 @@ def dispatch(task, executor, task_binding=None):
 def _base(action):
     old="sha256:"+"3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88"; new="sha256:"+"a"*64
     p={"release_id":"r315","candidate_image_id":new,"candidate_package_sha256":"d"*64,"expected_current_image_id":old}
-    if action=="HK_STAGING_DEPLOY": p.update({"canary_evidence_id":"canary1","approval_id":"approval1"})
+    if action=="HK_STAGING_DEPLOY": p.update({"canary_evidence_id":"canary1","approval_id":"approval1","migration":False})
     if action=="HK_STAGING_VERIFY": p.pop("candidate_package_sha256")
     if action=="HK_STAGING_ROLLBACK": p={"release_id":"r315","source_deploy_task_id":"deploy1","approval_id":"approval1"}
     return {"action_id":action,"parameters":p}

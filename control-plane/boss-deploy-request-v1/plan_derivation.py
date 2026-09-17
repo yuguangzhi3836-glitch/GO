@@ -99,6 +99,45 @@ def candidate_from_admission(block):
             raise Reject('candidate_admission_incomplete')
     return candidate
 
+def migration_from_admission(block):
+    """Return the source-bound, rehearsal-bound forward migration contract.
+
+    The admission producer, not the DEPLOY caller, supplies every value.  A
+    migration-required candidate without the complete contract is therefore
+    refused before a plan can be registered.
+    """
+    required=block.get('migration_required')
+    admission=block.get('migration_admission')
+    if required is False:
+        if admission not in (None,False): raise Reject('candidate_admission_incomplete')
+        return False
+    if required is not True or not isinstance(admission,dict):
+        raise Reject('candidate_admission_incomplete')
+    fields=('schema','source_commit','application_git_tree','source_fingerprint_sha256',
+            'prestate_revision','target_revision','lineage_sha256','forward_only',
+            'arbitrary_sql','rehearsal_evidence_sha256','rehearsal_postgres_version')
+    if set(admission)!=set(fields): raise Reject('candidate_admission_incomplete')
+    if admission['schema']!='go.forward-migration-admission.v1': raise Reject('candidate_admission_incomplete')
+    if (admission['source_commit'],admission['application_git_tree'],
+        admission['source_fingerprint_sha256'])!=(block.get('source_commit'),
+        block.get('application_tree'),block.get('source_fingerprint')):
+        raise Reject('candidate_admission_incomplete')
+    if admission['target_revision']!=block.get('migration_head'):
+        raise Reject('candidate_admission_incomplete')
+    for name in ('source_commit','application_git_tree'):
+        deploy_gate.match(admission[name],deploy_gate.COMMIT,'candidate_admission_incomplete')
+    for name in ('source_fingerprint_sha256','lineage_sha256','rehearsal_evidence_sha256'):
+        deploy_gate.match(admission[name],deploy_gate.SHA,'candidate_admission_incomplete')
+    for name in ('prestate_revision','target_revision'):
+        deploy_gate.match(admission[name],deploy_gate.REVISION,'candidate_admission_incomplete')
+    if admission['prestate_revision']==admission['target_revision']:
+        raise Reject('forbidden_operation')
+    if admission['forward_only'] is not True or admission['arbitrary_sql'] is not False:
+        raise Reject('forbidden_operation')
+    if admission['rehearsal_postgres_version']!='18.4':
+        raise Reject('candidate_admission_incomplete')
+    return dict(admission)
+
 def expected_current_from(block,verify_baseline):
     """The image a deployment is allowed to replace, joined from two authorities.
 
@@ -170,19 +209,14 @@ def latest_pair(records,action,read_evidence,at,max_age,binding,reason):
     return task,evidence
 
 def derive_bundle(plan_id,request_sha256,approval_identity,approved_at,expires_at,
-                  candidate,expected_current_image_id,test_pr,canary,preflight):
+                  candidate,expected_current_image_id,test_pr,canary,preflight,migration=False):
     """The eight-object bundle, assembled from the joined facts. Pure function."""
     plan={'schema_version':'1','plan_id':plan_id,'environment':deploy_gate.ENVIRONMENT,
           'action_id':deploy_gate.ACTION,'candidate':dict(candidate),
           'expected_current_image_id':expected_current_image_id,
           'target_services':list(deploy_gate.SERVICES),
           'protected_non_targets':['redis','caddy'],
-          # A candidate that needs a schema migration is not deployable through this
-          # contract yet: the controlled forward migration Issue #103 scopes needs
-          # executor work this revision does not do, so the derivation refuses it up
-          # front rather than deriving a plan the gate would then reject as a
-          # forbidden operation.
-          'migration':False,'production':False,'automatic_rollback':False,
+          'migration':migration,'production':False,'automatic_rollback':False,
           'test_pr_task_sha256':deploy_gate.digest(test_pr[0]),
           'test_pr_evidence_sha256':deploy_gate.digest(test_pr[1]),
           'canary_task_sha256':deploy_gate.digest(canary[0]),
@@ -203,8 +237,8 @@ def derive(*,at,approval_identity,approved_at,request_sha256,admission,verify_ba
            ledger_records,read_evidence,approval_life=deploy_gate.APPROVAL_MAX_LIFE):
     """Derive the plan name and the bundle. Writes nothing."""
     block=admission_block(admission)
-    if block.get('migration_required') is True: raise Reject('migration_required_not_supported')
     candidate=candidate_from_admission(block)
+    migration=migration_from_admission(block)
     expected=expected_current_from(block,verify_baseline)
     test_pr_task,_record=pair_by_task_id(ledger_records,deploy_gate.TEST_PR_ACTION,
                                          test_pr_task_id(block),'test_pr_task_not_in_ledger')
@@ -229,7 +263,7 @@ def derive(*,at,approval_identity,approved_at,request_sha256,admission,verify_ba
         raise Reject('deployment_plan_already_consumed')
     expires_at=approved_at+approval_life
     bundle=derive_bundle(plan_id,request_sha256,approval_identity,approved_at,expires_at,
-                         candidate,expected,test_pr,canary,preflight)
+                         candidate,expected,test_pr,canary,preflight,migration)
     return plan_id,bundle
 
 def store_ready(store):

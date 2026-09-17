@@ -5,6 +5,11 @@ on:
     paths:
       - ci/hk-migration-admission/**
       - .github/workflows/hk-migration-admission.yml
+      - control-plane/boss-deploy-request-v1/**
+      - hk-staging/source/agent/**
+      - hk-staging/source/executor/go-hk-deployctl
+      - hk-staging/source/executor/runtime/deploy_runtime.py
+      - hk-staging/SOURCE_SHA256SUMS.txt
 permissions:
   contents: read
 concurrency:
@@ -35,7 +40,13 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           path: tooling
-          sparse-checkout: ci/hk-migration-admission
+          sparse-checkout: |
+            ci/hk-migration-admission
+            control-plane/boss-deploy-request-v1
+            hk-staging/source/agent
+            hk-staging/source/executor/go-hk-deployctl
+            hk-staging/source/executor/runtime/deploy_runtime.py
+            hk-staging/SOURCE_SHA256SUMS.txt
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
@@ -60,7 +71,14 @@ jobs:
           python candidate/ci/retention/dependencies.py --repository candidate --output "$RUNNER_TEMP/frozen-issue103"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen-issue103/wheelhouse" -r candidate/ci/retention/requirements.lock
       - name: Fail-closed migration lineage checks
-        run: python -m unittest discover -s tooling/ci/hk-migration-admission -p 'test_*.py' -v
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tooling/ci/hk-migration-admission -p 'test_*.py' -v
+          (cd tooling/control-plane/boss-deploy-request-v1 && python -m unittest -v tests/test_deploy_entry.py)
+          python tooling/hk-staging/source/agent/hk_agent/deployment_actions.py
+          python -m py_compile tooling/hk-staging/source/executor/go-hk-deployctl tooling/hk-staging/source/executor/runtime/deploy_runtime.py
+          (cd tooling/control-plane/boss-deploy-request-v1 && sha256sum -c SHA256SUMS)
+          (cd tooling && sha256sum -c hk-staging/SOURCE_SHA256SUMS.txt --ignore-missing)
       - name: Exact PR183 baseline-to-target PostgreSQL rehearsal
         env:
           DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_issue103_isolated

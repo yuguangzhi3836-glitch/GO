@@ -300,7 +300,8 @@ class ProofTests(unittest.TestCase):
             args=dict(zip(fake.calls[0][2::2],fake.calls[0][3::2]))
             self.assertEqual(args['--task-canonical-sha256'],gate.digest({k:v for k,v in task.items() if k!='signature'}))
             self.assertEqual(args['--canary-evidence-id'],self.f.bundle['canary_task']['parameters']['release_id'])
-            self.assertEqual(set(task['parameters']),{'release_id','candidate_image_id','candidate_package_sha256','expected_current_image_id','canary_evidence_id','approval_id'})
+            self.assertEqual(set(task['parameters']),{'release_id','candidate_image_id','candidate_package_sha256','expected_current_image_id','canary_evidence_id','approval_id','migration'})
+            self.assertIs(task['parameters']['migration'],False)
             self.assertNotEqual(task['parameters']['candidate_image_id'],task['parameters']['expected_current_image_id'])
             self.assertLessEqual(gate.timestamp(task['expires_at']),self.f.at+dt.timedelta(seconds=270))
     def test_wrong_keys_and_unsigned_approval(self):
@@ -956,15 +957,23 @@ class DerivationTests(unittest.TestCase):
         with self.assertRaises(gate.Reject) as caught: self.derive(verify_baseline=baseline)
         self.assertEqual(str(caught.exception),'candidate_and_live_current_disagree')
 
-    def test_a_candidate_that_needs_a_migration_is_refused_not_ignored(self):
-        """#103 scopes controlled forward migration; this contract does not carry it yet,
-        so a candidate that needs one is refused up front rather than deployed with a
-        schema it does not match."""
+    def test_a_candidate_that_needs_a_migration_requires_source_bound_admission(self):
+        """A boolean cannot authorise a migration; the full admission can."""
         pointer=self.f.admission_pointer()
         pointer['release_candidate_v1']['migration_required']=True
         with self.assertRaises(gate.Reject) as caught: self.derive(admission=pointer)
-        self.assertEqual(str(caught.exception),'migration_required_not_supported')
+        self.assertEqual(str(caught.exception),'candidate_admission_incomplete')
         self.assertFalse(self.f.bundle['plan']['migration'])
+        block=pointer['release_candidate_v1']
+        block['migration_head']='0137_hosted_unknown_episode'
+        block['migration_admission']={'schema':'go.forward-migration-admission.v1',
+            'source_commit':self.f.source,'application_git_tree':self.f.tree,
+            'source_fingerprint_sha256':self.f.fingerprint,
+            'prestate_revision':'0133_flight_change_plan','target_revision':'0137_hosted_unknown_episode',
+            'lineage_sha256':'1'*64,'forward_only':True,'arbitrary_sql':False,
+            'rehearsal_evidence_sha256':'2'*64,'rehearsal_postgres_version':'18.4'}
+        plan_id,bundle=self.derive(admission=pointer)
+        self.assertEqual(bundle['plan']['migration'],block['migration_admission'])
 
     def test_the_bridge_derives_and_registers_the_plan_by_itself(self):
         """End to end through the Bridge's own derivation path.

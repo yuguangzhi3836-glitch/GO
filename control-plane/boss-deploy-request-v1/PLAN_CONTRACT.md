@@ -73,13 +73,19 @@ Production、关闭/Draft/跨仓库 PR、变化的 PR HEAD 均拒绝。
 | expected_current_image_id | 由新鲜香港 VERIFY 回执绑定的当前镜像 |
 | target_services | 顺序固定为 api、recovery-worker、outbox-worker、mobile-push-receipt-worker、reconciliation-worker、mobile-push-worker、mobile-engagement-worker、judgment-worker |
 | protected_non_targets | 按顺序 `redis`, `caddy` |
-| migration / production / automatic_rollback | 均为布尔 false |
+| migration | 无迁移时为布尔 `false`；需要迁移时为精确 `go.forward-migration-admission.v1`，绑定 source commit、application tree/fingerprint、精确 prestate/target、完整 Alembic lineage SHA256、PG18.4 rehearsal Evidence SHA256，且 `forward_only=true`、`arbitrary_sql=false` |
+| production / automatic_rollback | 均为布尔 false |
 | test_pr_task_sha256 / test_pr_evidence_sha256 / canary_task_sha256 / canary_evidence_sha256 / preflight_task_sha256 / preflight_evidence_sha256 | 各自完整已签名对象的 canonical SHA256 |
 
 **候选的两个身份：** `candidate.image_id` 是构建产物身份（Docker config ID），`candidate.package_sha256` 是交付身份
 （封存包内容地址）。本入口**不要求也不接受 repo digest**：registry manifest digest 只在推送之后才存在，且一般不等于
 image config ID；由 TEST_PR 在本机构建、且从未推送的候选根本没有 digest。执行器按 `package_sha256` 从固定 store 解析并
 载入同一个镜像，载入后校验 `.Id == candidate.image_id`。
+
+迁移对象不是命令接口。Request 仍只有五个公共字段；所有迁移字段来自候选 admission。
+Agent/Executor 精确重验字段集合，不接收 SQL、shell、路径或任意 Alembic 参数。执行器只在候选镜像中验证单一
+Alembic head、rehearsal 绑定的完整 graph digest 和精确 `prestate_revision`，随后执行一次固定
+`upgrade(target_revision)` 并验证 poststate；不 stamp、不 downgrade、不自动回滚 schema。
 
 ### 四项产品发布声明为什么不在计划里
 

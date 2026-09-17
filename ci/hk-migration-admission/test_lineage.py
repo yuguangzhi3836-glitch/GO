@@ -1,10 +1,15 @@
 import unittest
-from lineage import Refused, forward_path
+from lineage import Refused, forward_path, lineage_digest
 
 def graph(**edges):
     return {name: {'parents': parents} for name, parents in edges.items()}
 
 class LineageTests(unittest.TestCase):
+    def test_digest_binds_revision_parents_and_bytes(self):
+        first={'base':{'parents':(),'sha256':'a'*64},'head':{'parents':('base',),'sha256':'b'*64}}
+        second={'base':{'parents':(),'sha256':'a'*64},'head':{'parents':('base',),'sha256':'c'*64}}
+        self.assertEqual(len(lineage_digest(first)),64)
+        self.assertNotEqual(lineage_digest(first),lineage_digest(second))
     def test_merge_retains_both_branches(self):
         g=graph(base=(), left=('base',), right=('base',), merge=('left','right'), head=('merge',))
         self.assertEqual(forward_path(g,'base','head'),['left','right','merge','head'])

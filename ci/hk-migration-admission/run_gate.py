@@ -8,7 +8,7 @@ import subprocess
 import sys
 import traceback
 
-from lineage import read_graph, forward_path
+from lineage import read_graph, forward_path, lineage_digest
 
 HERE = Path(__file__).resolve().parent
 def sha(data): return hashlib.sha256(data).hexdigest()
@@ -57,13 +57,15 @@ def run(candidate, baseline, out, result):
     for revision, entry in old.items():
         assert graph.get(revision) == entry, 'HISTORICAL_MIGRATION_BYTES_CHANGED:'+revision
     write(out,'LINEAGE.json',{'baseline':old,'candidate':graph,'forward_revisions':path,
+                              'lineage_sha256':lineage_digest(graph),
                               'historical_migration_retention':'PASS',
                               'migration_required':bool(path),
                               'atomic_transaction_claim':False,
                               'concurrent_index_migration':'0135_journey_search_trigram'})
     result.update(binding=binding, source_binding='PASS', migration_lineage='PASS',
                   historical_migration_retention='PASS', migration_required=bool(path),
-                  migration_source_digest=sha((out/'LINEAGE.json').read_bytes()))
+                  migration_source_digest=sha((out/'LINEAGE.json').read_bytes()),
+                  lineage_sha256=lineage_digest(graph))
     engine = create_engine(url)
     with engine.connect() as connection:
         assert connection.execute(text('SELECT current_database()')).scalar_one() == 'go_issue103_isolated'

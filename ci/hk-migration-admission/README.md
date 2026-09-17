@@ -38,13 +38,16 @@ PASS_SCOPED means this exact candidate's isolated migration rehearsal passed.
 It does not mean DEPLOY_READY. As observed during this reconciliation:
 
 - CC's host-owned CANARY binding still names the old `6b92050e...` candidate;
-- installed plan derivation refuses `migration_required=true` with
-  `migration_required_not_supported`;
-- the installed deployment contract requires `migration=false`, and its VERIFY
-  collector still expects revision0133;
-- candidate admission and downstream CANARY/VERIFY/DEPLOY therefore remain HOLD
-  until the reviewed migration-capable executor/contract and exact candidate
-  binding are ready. This PR neither changes those contracts nor waives them.
+- this candidate adds the reviewed migration-capable contract, but it is source
+  only and is not installed: the plan requires an exact source/tree/fingerprint,
+  exact prestate and target, the complete Alembic graph digest and this PG18.4
+  rehearsal's Evidence digest;
+- the agent and executor revalidate that closed schema, accept no SQL/command/path,
+  require one candidate Alembic head with the exact rehearsed graph digest, verify
+  `0133_flight_change_plan` before upgrade and `0137_hosted_unknown_episode` after;
+- candidate admission and downstream CANARY/VERIFY/DEPLOY remain HOLD until this
+  Draft passes independent review and a separately authorised installation binds
+  the admitted candidate. This PR grants no live authority.
 
 The plan must continue to be derived by Command Center. This work introduces no
 manual plan, approval record, caller-controlled revision/SQL/command or new

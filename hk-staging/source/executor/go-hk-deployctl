@@ -14,7 +14,7 @@ _IMAGE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _RELEASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 _COLLECTOR_SHA256 = "dff91265a5e3e80704277664f1952129ff19c6c7174d78e9b3e66125b9618ccc"
 _CANARY_SHA256 = "f93d4365116a52942c457accb41be53625d3f3f1a7a6eafe92d53c457c86aed1"
-_DEPLOY_SHA256 = "60cc42dd0b8fd285bffcbed2fa857a43ef8a558a06a5bbaccc865b7519a88afd"
+_DEPLOY_SHA256 = "af8f49f9c620c9757203d292a223fe26d9f03734bb4ba3847554506258dcc557"
 _ROLLBACK_SHA256 = "a49e12eafab85331477241a4db791ad1c38133b9a7925eade627c1c27cf5e9f5"
 _ARTIFACT_SHA256 = "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b"
 
@@ -113,13 +113,14 @@ def _load_rollback():
     module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module
 
-def _deploy(release,candidate,package,expected,approval,canary_evidence,binding,runner=None):
+def _deploy(release,candidate,package,expected,approval,canary_evidence,migration,binding,runner=None):
     gates={}
     try:
         if not isinstance(approval,str) or not _RELEASE.fullmatch(approval): raise ValueError("approval")
         if not isinstance(canary_evidence,str) or not _RELEASE.fullmatch(canary_evidence): raise ValueError("canary evidence")
+        if not isinstance(migration,(dict,bool)) or migration is True: raise ValueError("migration contract")
         runtime=_load_deploy(); collector=_load_collector(); artifact=_load_artifact()
-        gates=runtime.run_deploy(release,candidate,package,expected,binding,runner or collector.ProductionRunner(),collector,artifact)
+        gates=runtime.run_deploy(release,candidate,package,expected,migration,binding,runner or collector.ProductionRunner(),collector,artifact)
         record={key:gates.pop(key) for key in ("deploy_record_schema_version","deploy_record_id","deploy_record_sha256")}
         out=_document("SUCCESS",release,candidate,expected,gates,"DEPLOY_OK"); out["action_id"]="HK_STAGING_DEPLOY"; out.update(record); return out,0
     except (OSError,ValueError,TypeError) as exc:
@@ -194,14 +195,17 @@ def main(argv=None, runner=None, inputs=None, sleeper=None):
     canary = values[:1] == ["canary"]
     deploy = values[:1] == ["deploy"]
     rollback=values[:1]==["rollback"]
-    expected_flags = ["--release-id","--candidate-image-id","--candidate-package-sha256","--expected-current-image-id","--canary-evidence-id","--approval-id","--task-id","--task-nonce","--task-authority","--task-canonical-sha256"] if deploy else (["--release-id","--source-deploy-task-id","--approval-id","--task-id","--task-nonce","--task-authority","--task-canonical-sha256"] if rollback else (["--release-id","--candidate-image-id","--candidate-package-sha256","--expected-current-image-id"] if canary else ["--release-id","--candidate-image-id","--expected-current-image-id"]))
+    expected_flags = ["--release-id","--candidate-image-id","--candidate-package-sha256","--expected-current-image-id","--canary-evidence-id","--approval-id","--migration-json","--task-id","--task-nonce","--task-authority","--task-canonical-sha256"] if deploy else (["--release-id","--source-deploy-task-id","--approval-id","--task-id","--task-nonce","--task-authority","--task-canonical-sha256"] if rollback else (["--release-id","--candidate-image-id","--candidate-package-sha256","--expected-current-image-id"] if canary else ["--release-id","--candidate-image-id","--expected-current-image-id"]))
     if (values[0:1] not in (["verify"],["canary"],["deploy"],["rollback"]) or len(values) != 1+2*len(expected_flags) or values[1::2] != expected_flags):
         release = values[2] if len(values) > 2 and values[1] == "--release-id" else ""
         output = _document("REJECTED", release, "", "", {}, "VERIFY_REJECTED")
         print(json.dumps(output, separators=(",", ":")))
         return 2
     if values[0]=="canary": output, code = _canary(values[2], values[4], values[6], values[8], runner, inputs)
-    elif values[0]=="deploy": output, code = _deploy(values[2],values[4],values[6],values[8],values[12],values[10],{"task_id":values[14],"nonce":values[16],"authority":values[18],"canonical_sha256":values[20]},runner)
+    elif values[0]=="deploy":
+        try: migration=json.loads(values[14])
+        except (TypeError,ValueError): migration=None
+        output, code = _deploy(values[2],values[4],values[6],values[8],values[12],values[10],migration,{"task_id":values[16],"nonce":values[18],"authority":values[20],"canonical_sha256":values[22]},runner)
     elif values[0]=="rollback": output, code = _rollback(values[2],values[4],{"task_id":values[8],"nonce":values[10],"authority":values[12],"canonical_sha256":values[14]},runner)
     else: output, code = _verify(values[2], values[4], values[6], runner, inputs, sleeper)
     print(json.dumps(output, separators=(",", ":")))

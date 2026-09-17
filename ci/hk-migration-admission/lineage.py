@@ -1,6 +1,7 @@
 """Inspect immutable Alembic source without importing migration code."""
 import ast
 import hashlib
+import json
 from pathlib import Path
 
 class Refused(ValueError):
@@ -67,3 +68,9 @@ def forward_path(graph, baseline, target):
     if baseline not in after:
         raise Refused('BASELINE_NOT_ANCESTOR')
     return [r for r in after if r not in set(before)]
+
+def lineage_digest(graph):
+    payload=[{'revision':revision,'parents':list(sorted(entry['parents'])),
+              'sha256':entry['sha256']} for revision,entry in sorted(graph.items())]
+    raw=json.dumps(payload,sort_keys=True,separators=(',',':')).encode()
+    return hashlib.sha256(raw).hexdigest()

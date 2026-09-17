@@ -58,6 +58,7 @@ SHA = re.compile(r'[0-9a-f]{64}\Z')
 COMMIT = re.compile(r'[0-9a-f]{40}\Z')
 IMAGE = re.compile(r'sha256:[0-9a-f]{64}\Z')
 PR_NUMBER = re.compile(r'[1-9][0-9]{0,8}\Z')
+REVISION = re.compile(r'[A-Za-z0-9][A-Za-z0-9_]{2,79}\Z')
 SERVICES = ['api','recovery-worker','outbox-worker','mobile-push-receipt-worker',
             'reconciliation-worker','mobile-push-worker','mobile-engagement-worker','judgment-worker']
 # The candidate repository, in the slug form the plan carries. The TEST_PR Task names
@@ -90,7 +91,11 @@ PLAN_FIELDS = ('schema_version','plan_id','environment','action_id','candidate',
                'test_pr_evidence_sha256','canary_task_sha256','canary_evidence_sha256',
                'preflight_task_sha256','preflight_evidence_sha256')
 BUNDLE_FIELDS = ('plan','approval','test_pr_task','test_pr_evidence',
-                 'canary_task','canary_evidence','preflight_task','preflight_evidence')
+                  'canary_task','canary_evidence','preflight_task','preflight_evidence')
+MIGRATION_FIELDS = ('schema','source_commit','application_git_tree',
+                    'source_fingerprint_sha256','prestate_revision','target_revision',
+                    'lineage_sha256','forward_only','arbitrary_sql',
+                    'rehearsal_evidence_sha256','rehearsal_postgres_version')
 TASK_FIELDS = ('schema_version','task_id','nonce','issued_at','expires_at','authority',
                'environment','action_id','parameters','signature')
 # The sealed TEST_PR of the exact candidate. `artifact_sealed` is the gate B4-B1 added
@@ -311,6 +316,24 @@ def approval_id_for(request_sha256):
     match(request_sha256,SHA,'invalid_request_digest')
     return 'approval-'+request_sha256[:16]
 
+def validate_migration(value,candidate):
+    if value is False: return False
+    exact(value,MIGRATION_FIELDS,'candidate_fields')
+    if value['schema']!='go.forward-migration-admission.v1': raise Reject('candidate_fields')
+    if (value['source_commit'],value['application_git_tree'],
+        value['source_fingerprint_sha256'])!=(candidate['source_commit'],
+        candidate['application_git_tree'],candidate['source_tree_sha256']):
+        raise Reject('candidate_fields')
+    for name in ('source_commit','application_git_tree'): match(value[name],COMMIT,'candidate_fields')
+    for name in ('source_fingerprint_sha256','lineage_sha256','rehearsal_evidence_sha256'):
+        match(value[name],SHA,'candidate_fields')
+    for name in ('prestate_revision','target_revision'): match(value[name],REVISION,'candidate_fields')
+    if value['prestate_revision']==value['target_revision']: raise Reject('forbidden_operation')
+    if value['forward_only'] is not True or value['arbitrary_sql'] is not False:
+        raise Reject('forbidden_operation')
+    if value['rehearsal_postgres_version']!='18.4': raise Reject('candidate_fields')
+    return value
+
 def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=None,request_sha256=None):
     # Fail closed on the approval authority before anything else is read. The
     # authority is an authenticated GitHub identity: `approval_identity` is the
@@ -332,13 +355,14 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
         raise Reject('plan_scope')
     match(plan_id,IDENT,'plan_id')
     if plan['target_services']!=SERVICES or plan['protected_non_targets']!=['redis','caddy']: raise Reject('fixed_topology_required')
-    if any(plan[k] is not False for k in ['migration','production','automatic_rollback']): raise Reject('forbidden_operation')
+    if any(plan[k] is not False for k in ['production','automatic_rollback']): raise Reject('forbidden_operation')
     candidate=plan['candidate']
     exact(candidate,CANDIDATE_FIELDS,'candidate_fields')
     if candidate['repository']!=REPOSITORY: raise Reject('candidate_repository')
     for k in ['source_commit','application_git_tree']: match(candidate[k],COMMIT,k)
     for k in ['source_tree_sha256','package_sha256']: match(candidate[k],SHA,k)
     match(candidate['image_id'],IMAGE,'candidate_image')
+    migration=validate_migration(plan['migration'],candidate)
     # No repo digest is required, and none may be invented: a registry manifest
     # digest is not an image config ID, and a host-built candidate has no digest
     # at all. image_id is the artifact identity; package_sha256 is the sealed
@@ -387,9 +411,10 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
             'approval_identity':approval_identity,'request_sha256':request_sha256,
             'approval_id':approval['approval_id'],'source_commit':candidate['source_commit'],
             'package_sha256':candidate['package_sha256'],'deadline':deadline,
-            'parameters':{'candidate_image_id':candidate['image_id'],'candidate_package_sha256':candidate['package_sha256'],
-             'expected_current_image_id':plan['expected_current_image_id'],
-             'canary_evidence_id':bundle['canary_task']['parameters']['release_id'],'approval_id':approval['approval_id']}}
+             'parameters':{'candidate_image_id':candidate['image_id'],'candidate_package_sha256':candidate['package_sha256'],
+              'expected_current_image_id':plan['expected_current_image_id'],
+              'canary_evidence_id':bundle['canary_task']['parameters']['release_id'],
+              'approval_id':approval['approval_id'],'migration':migration}}
 
 def load_context(plan_id,at,approval_identity=None,request_sha256=None):
     match(plan_id,IDENT,'plan_id')
