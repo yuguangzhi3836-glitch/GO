@@ -570,8 +570,19 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 > `_ROLLBACK_SHA256=a49e12ea…`、live agent `transport.py` 的 `prepare_rollback_handoff`、
 > `deployment_actions.ACTIONS` 里的 `HK_STAGING_ROLLBACK`，参数契约 `{release_id, source_deploy_task_id, approval_id}`），
 > 本轮只做 CC 侧。执行器**先验源、再现查八个容器的漂移**，然后**先落 rollback record 再强制重建**八个业务服务。
-> **⑤ 本轮未 commit / 未 push / 未安装 / 未触 live。** 闸口顺序：先成套换装 CC 四件套（Bridge ＋ config ＋
-> `go_deploy_request.py` ＋ `plan_derivation.py`），再发一张真实 ROLLBACK Request。
+> **⑤ 闸口 A 已完成（2026-09-17T08:06:02Z）**：CC 四件套已成套换装 —— `/usr/local/libexec/go-boss-request-bridge` `d2ae9c88…`、
+> `/usr/local/libexec/go_deploy_request.py` `51aa135b…`、`/usr/local/libexec/plan_derivation.py` `342e9a6e…`、
+> `/etc/go-command-center/boss-request-bridge-v1.json` `cd7f8d3f…`（四项都等于本分支已提交字节 `4e7ce63`；权限沿用宿主更紧的
+> 0750/0640/0640/0600）。换装前备份 10 份文件到 `/var/lib/go-command-center/ccv157-rollback-channel-install-backup-20260917T080150Z`
+> 并逐条复算 OK，换装窗口 4.8 ms；`/etc/go-command-center/boss-request-bridge-v1.manifest.json` 已按新修订重写
+> （`bridge_version` `1.9.0-rollback-channel`，退役字段 `deployment_requests_enabled` 不再出现，改记 `deployment_authorization`）。
+> 宿主机 23 项行为验证全 PASS：六动作合同精确相等、两份 root 基线可读、ROLLBACK Request 仍是五个公共字段且**拒绝**任何目标字段、
+> 对 live 账本＋真实签名证据派生出源 `go-boss-deploy-6344dcdd3ccd103d5efdc1b6`、应急停止对 DEPLOY 与 ROLLBACK 都是 reject
+> （SIGN=0 / PUBLISH=0）而只读探活照常签发。轮询已恢复，首个新字节 tick（16:04:18→16:04:40 CST）打 `1.9.0-rollback-channel`，
+> `already_seen: 40 / rejected: 2`，与装前 20 个 tick 逐项相同（那两条 `stale_or_future_request` 属既有稳态）；日志无 Traceback/Error，
+> ledger sha 仍 `8a5cbd62…`，tasks 仓 `main` HEAD 仍 `a5feefa7…`，HK 业务指纹仍 `3742895e…`（HK 零字节改动）。
+> **闸口 B 尚未发**：下一步是发一张真实 ROLLBACK Request，把八个业务服务从 `sha256:6b92050e…` 恢复到 `sha256:1c9598d6…`，
+> 回滚后另发一张新鲜 VERIFY。
 
 > **2026-09-17 / B4-B1.10（CCV1-53）—— 再优先读这一段，它取代所有「部署开关」口径。**
 >
