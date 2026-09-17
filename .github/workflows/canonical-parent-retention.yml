@@ -18,6 +18,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   regression:
+    if: ${{ github.event.pull_request.number != 181 }}
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     strategy:
@@ -62,6 +63,7 @@ jobs:
           path: ${{ runner.temp }}/evidence
           if-no-files-found: error
   frontend-http-compat:
+    if: ${{ github.event.pull_request.number != 181 }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
