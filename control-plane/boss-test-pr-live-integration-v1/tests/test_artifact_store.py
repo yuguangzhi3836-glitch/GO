@@ -139,7 +139,7 @@ class StoreFixture(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.store = pathlib.Path(self.tmp.name) / "store"
         self.store.mkdir(mode=0o700)
-        (self.store / "objects").mkdir(mode=0o700)
+        (self.store / "objects").mkdir(mode=0o700)\n        (self.store / "failures").mkdir(mode=0o700)
         self.config = b'{"architecture":"amd64","os":"linux"}'
         self.config_digest = hashlib.sha256(self.config).hexdigest()
         self.image_id = "sha256:" + self.config_digest
@@ -624,7 +624,40 @@ class OciArchiveTests(StoreFixture):
             root["manifests"].append(dict(root["manifests"][0]))
             entries["index.json"] = json.dumps(root).encode()
 
-        self.refuses("SEALED_ARTIFACT_OCI_INVALID", mutated(oci_save, transform))
+        self.refuses("SEALED_ARTIFACT_OCI_INVALID_ROOT_COUNT", mutated(oci_save, transform))
+
+    def test_a_task_scoped_parser_failure_preserves_the_exact_archive(self):
+        diagnostic_id = "d" * 64
+
+        def transform(entries):
+            root = json.loads(entries["index.json"])
+            root["manifests"].append(dict(root["manifests"][0]))
+            entries["index.json"] = json.dumps(root).encode()
+
+        writer = mutated(oci_save, transform)
+        runner = self.runner(save_writer=writer)
+        with self.assertRaisesRegex(
+                artifact_store.Reject,
+                r"^SEALED_ARTIFACT_OCI_INVALID_ROOT_COUNT;diagnostic_id=" + diagnostic_id) as raised:
+            artifact_store.seal(runner, self.ref, self.image_id, self.root,
+                                diagnostic_id=diagnostic_id)
+        archive = self.store / "failures" / (diagnostic_id + ".tar")
+        self.assertTrue(archive.is_file())
+        self.assertEqual(archive.stat().st_mode & 0o777, 0o600)
+        self.assertGreater(archive.stat().st_size, 0)
+        message = str(raised.exception)
+        self.assertIn("archive_sha256=" + hashlib.sha256(archive.read_bytes()).hexdigest(),
+                      message)
+        self.assertIn("archive_bytes=" + str(archive.stat().st_size), message)
+        self.assertEqual(list((self.store / "objects").iterdir()), [])
+
+    def test_a_diagnostic_identity_is_a_fixed_digest_not_a_path(self):
+        for value in ("../escape", "d" * 63, "D" * 64, "failures/" + "d" * 64):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                    artifact_store.Reject,
+                    "SEALED_ARTIFACT_DIAGNOSTIC_IDENTITY"):
+                artifact_store.seal(self.runner(), self.ref, self.image_id, self.root,
+                                    diagnostic_id=value)
 
     def test_a_blob_that_does_not_hash_to_its_descriptor_is_refused(self):
         def transform(entries):
@@ -717,7 +750,7 @@ class OciArchiveTests(StoreFixture):
                               linkname="blobs/sha256/" + self.config_digest))
 
     def test_an_oci_layout_without_its_marker_is_refused(self):
-        self.refuses("SEALED_ARTIFACT_OCI_INVALID",
+        self.refuses("SEALED_ARTIFACT_OCI_INVALID_LAYOUT_MISSING",
                      mutated(oci_save, lambda entries: entries.pop("oci-layout")))
 
     def test_an_index_that_names_no_image_is_refused(self):
@@ -725,7 +758,7 @@ class OciArchiveTests(StoreFixture):
             entries["index.json"] = json.dumps(
                 {"schemaVersion": 2, "mediaType": OCI_INDEX_TYPE, "manifests": []}).encode()
 
-        self.refuses("SEALED_ARTIFACT_OCI_INVALID", mutated(oci_save, transform))
+        self.refuses("SEALED_ARTIFACT_OCI_INVALID_ROOT_SHAPE", mutated(oci_save, transform))
 
     def test_an_archive_that_is_not_an_archive_is_refused(self):
         def not_an_archive(path, config_bytes):
