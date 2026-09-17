@@ -317,7 +317,7 @@ def _refuse(code):
     raise Reject(_REFUSAL_PREFIX + code)
 
 
-def _oci_refuse(detail):
+def _oci_invalid(detail):
     """One bounded writer-side OCI parser location.
 
     The writer and reader expose the same closed detail suffixes.  The suffix
@@ -469,7 +469,7 @@ def _image_config(tar, regular, manifest, configs, named_by=None):
     or in the descriptor that names it, so both are checked.
     """
     if manifest.get("schemaVersion") != 2:
-        _oci_refuse("MANIFEST_SCHEMA")
+        _oci_invalid("MANIFEST_SCHEMA")
     if (manifest.get("mediaType") is not None
             and manifest["mediaType"] not in MANIFEST_MEDIA_TYPES):
         _refuse("DESCRIPTOR_INVALID")
@@ -482,7 +482,7 @@ def _image_config(tar, regular, manifest, configs, named_by=None):
           [BLOB_DIR + "/" + config_digest], document=True)
     layers = manifest.get("layers")
     if not isinstance(layers, list):
-        _oci_refuse("MANIFEST_LAYERS")
+        _oci_invalid("MANIFEST_LAYERS")
     for layer in layers:
         layer_type, layer_digest, layer_size = _descriptor(layer)
         _blob(tar, regular, layer_digest, layer_size, [BLOB_DIR + "/" + layer_digest])
@@ -508,22 +508,22 @@ def _oci_identity(tar, regular):
     place, and a graph that ends up proving no image at all is refused.
     """
     if LAYOUT_NAME not in regular:
-        _oci_refuse("LAYOUT_MISSING")
+        _oci_invalid("LAYOUT_MISSING")
     layout = _document(_read_member(tar, regular[LAYOUT_NAME]),
                        "OCI_INVALID_LAYOUT_DOCUMENT")
     if layout.get("imageLayoutVersion") != OCI_LAYOUT_VERSION:
-        _oci_refuse("LAYOUT_VERSION")
+        _oci_invalid("LAYOUT_VERSION")
     root = _document(_read_member(tar, regular[INDEX_NAME]),
                      "OCI_INVALID_ROOT_DOCUMENT")
     if root.get("mediaType") not in INDEX_MEDIA_TYPES:
         _refuse("MEDIA_TYPE_UNSUPPORTED")
     entries = root.get("manifests")
     if root.get("schemaVersion") != 2 or not isinstance(entries, list) or not entries:
-        _oci_refuse("ROOT_SHAPE")
+        _oci_invalid("ROOT_SHAPE")
     # An archive names one image.  Several roots would make "the identity Docker
     # reports" a choice, and this contract never chooses.
     if len(entries) != 1:
-        _oci_refuse("ROOT_COUNT")
+        _oci_invalid("ROOT_COUNT")
     target_type, target, target_size = _descriptor(entries[0])
     if target_type not in INDEX_MEDIA_TYPES and target_type not in MANIFEST_MEDIA_TYPES:
         _refuse("MEDIA_TYPE_UNSUPPORTED")
@@ -542,13 +542,13 @@ def _oci_identity(tar, regular):
             _image_config(tar, regular, document, configs, named_by)
             continue
         if document.get("schemaVersion") != 2:
-            _oci_refuse("INDEX_SCHEMA")
+            _oci_invalid("INDEX_SCHEMA")
         if (document.get("mediaType") is not None
                 and document["mediaType"] not in INDEX_MEDIA_TYPES):
             _refuse("DESCRIPTOR_INVALID")
         manifests = document.get("manifests")
         if not isinstance(manifests, list) or not manifests:
-            _oci_refuse("INDEX_MANIFESTS")
+            _oci_invalid("INDEX_MANIFESTS")
         for entry in manifests:
             child_type, child, child_size = _descriptor(entry)
             count += 1
@@ -576,7 +576,7 @@ def _oci_identity(tar, regular):
             _image_config(tar, regular, child_document, configs, entry.get("annotations"))
     if not configs:
         # An index that ends up naming no image at all is not an image archive.
-        _oci_refuse("IMAGE_ABSENT")
+        _oci_invalid("IMAGE_ABSENT")
     return target, configs
 
 
