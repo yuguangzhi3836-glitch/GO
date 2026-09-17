@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v3",
-  "product_candidate_commit": "f707244c0243fac420a01fc2d127eb550a7c8592",
-  "application_git_tree": "2dc77b7ba1ca811030e9a6657dc91ff26e50a3cf",
+  "product_candidate_commit": "5de60713d1031fe0ef2d1919f0810e90c648991f",
+  "application_git_tree": "153e699d38f25d9fdde15e16ed210599e8561e31",
   "source_anchor_main": "febb925eeb781223f17002b91479f2eac9b71acc",
   "preintegration_candidate": "9950bde1def11b27ed137d7db02a3047befda4fa",
   "preintegration_application_tree": "9c83d92434301356228c1b79294fcd829d675ebf",
@@ -73,8 +73,8 @@
     },
     "tests/journey/test_c10_pagination_search.py": {
       "mode": "100644",
-      "git_blob": "9f43fe25b5da648f470b5c15337131725f7489a1",
-      "reason": "exact independently C14/C13 accepted C10 product blob"
+      "git_blob": "2ca1cd1ce0953d8951f295aee82f319ed7929567",
+      "reason": "TEST_ONLY: exact accepted PR173 isolated cardinality correction"
     },
     "tests/test_depth48_flight_migration.py": {
       "mode": "100644",
@@ -83,8 +83,8 @@
     },
     "src/go_hotel/services/alipay_safeguarded_settlement.py": {
       "mode": "100644",
-      "git_blob": "df03dc7a4f36626bbdee2599c6d223d32a1f489a",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+      "git_blob": "0ceea1c49c1ea6eedcc431e92becd19e326c42c0",
+      "reason": "COMPOSED: inherit PR171 authorization replay only, preserving PR172/173 capture guards; requires unified gate"
     },
     "tests/test_v70_next_c01_unknown_funding.py": {
       "mode": "100644",
@@ -280,6 +280,21 @@
       "mode": "100644",
       "git_blob": "9474731379677f277b473328b4085550905fc1a3",
       "reason": "exact independently C14/C13 accepted C02 product blob"
+    },
+    "tests/test_depth18_regional_queue.py": {
+      "mode": "100644",
+      "git_blob": "a500133d755abfe018d9850c504ed0448d2a701d",
+      "reason": "TEST_ONLY: exact PR177 independently C14/C13 accepted stable replacement lease"
+    },
+    "tests/test_v70_next_c01_authorization_replay.py": {
+      "mode": "100644",
+      "git_blob": "8445bed95c232f5904a8f55d0dbd4d0e35f8147b",
+      "reason": "exact independently accepted PR171 authorization replay test"
+    },
+    "tests/test_final_depth_terminal_hardening.py": {
+      "mode": "100644",
+      "git_blob": "4d17e5952ea1812e270f936cfba2e89cef15920d",
+      "reason": "Register existing PR172/173 C05 episode-aware test bytes; unchanged application content, unified regression required"
     }
   },
   "migration_head": "0137_hosted_unknown_episode",
@@ -290,11 +305,9 @@
     "canonical_parent_retention_run": 34825183779
   },
   "gate_order": [
-    "RETENTION",
-    "C07_POSTGRES",
-    "C09_POSTGRES",
-    "C11_POSTGRES",
-    "REGRESSION",
+    "SOURCE_BINDING",
+    "ISOLATED_PG_INTEGRATION",
+    "PARENT_REGRESSION",
     "C14",
     "C13"
   ],
@@ -302,7 +315,7 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "febb925eeb781223f17002b91479f2eac9b71acc",
-  "source_tree_sha256": "d27c7dda986d3bca5a7ac1c40e602c3c38bd59a4f483853bb791e8c2dd1542ad",
+  "source_tree_sha256": "51a9061c764664323c0c23b66e4407f24e3e0212d3a79e5ede946d50442b6393",
   "historical_pass_transferred": false,
   "migration_file": "alembic/versions/0137_hosted_money_unknown_episode.py",
   "verified_current_generation_ledger": "ci/integration/ACCEPTED_CELL_LEDGER.json",
