@@ -14,9 +14,18 @@ HEAD='0133_flight_change_plan'
 HEAD_LINE=re.compile(r'^([0-9][0-9a-z_]*) \(head\)\n?$')
 
 class Reject(ValueError): pass
+DEFAULT_TIMEOUT_SECONDS=120
 class ProductionRunner:
- def run(self,argv,timeout):
+ def run(self,argv,timeout=DEFAULT_TIMEOUT_SECONDS):
   return subprocess.run(argv,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=timeout,check=False,shell=False)
+ def __call__(self,argv,timeout=DEFAULT_TIMEOUT_SECONDS):
+  # The sealed-artifact store addresses its runner as a callable -- the same shape the
+  # agent's writer already uses for `docker save` / `docker load` -- while this runtime
+  # calls `run` directly.  One object, both calling conventions.  A runner that offered
+  # only `run` reached artifact_runtime.materialise and raised "'ProductionRunner'
+  # object is not callable": that is how the first real CANARY Task, with all eight
+  # transport gates PASS, still failed at the delivery step.
+  return self.run(argv,timeout)
 
 def _sha(path): return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 def production_inputs(runner, expected):

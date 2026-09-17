@@ -14,6 +14,13 @@ class ProductionRunner:
    env['GO_RUNTIME_ENV_FILE']=ENV_FILE
   p=subprocess.run(argv,shell=False,capture_output=True,text=True,check=False,env=env)
   return ProcessResult(tuple(argv),p.returncode,p.stdout,p.stderr)
+ def __call__(self,argv,timeout=None):
+  # The sealed-artifact store calls its runner as a callable and names a timeout of its
+  # own; this runner's timeout policy is fixed and executor-owned (see run), so the
+  # argument is accepted and deliberately not forwarded.  Without this method the
+  # reader's materialise() -- reached by DEPLOY as well as CANARY -- raised
+  # "'ProductionRunner' object is not callable".
+  return self.run(argv)
 class FakeRunner:
  def __init__(self,fixtures): self.fixtures={tuple(k):v for k,v in fixtures.items()};self.calls=[]
  def run(self,argv):

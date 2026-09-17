@@ -1319,5 +1319,179 @@ class LiveTopologyContractTests(unittest.TestCase):
             self.assertIn('test "$(stat -c %%a %s)" = 700' % path, preflight)
 
 
+class ProductionRunnerContractTests(unittest.TestCase):
+    """Both production runners must be callable the way the reader calls them.
+
+    This guard exists because its absence cost a live Task.  The first CANARY Task
+    this generation ever minted passed all eight transport gates and still died: the
+    sealed package was perfect, but ``artifact_runtime.materialise`` invoked the
+    executor's own ``ProductionRunner`` as a callable and got
+    ``'ProductionRunner' object is not callable``.  The runners offered ``run``; the
+    reader -- and the agent's writer, which had already sealed a package for real
+    during TEST_PR -- ask for ``__call__``.  The callable shape is the contract; the
+    runners were the outliers.
+    """
+
+    RUNTIME = READER_PATH.parent
+
+    class Recorder:
+        """Stands in for the ``subprocess`` module a production runner calls."""
+
+        PIPE = -1  # subprocess.PIPE; this recorder ignores it.
+
+        def __init__(self):
+            self.calls = []
+
+        def run(self, argv, **kwargs):
+            self.calls.append((list(argv), dict(kwargs)))
+            return Completed("", 0)
+
+    def load_runtime(self, name):
+        loader = importlib.machinery.SourceFileLoader(
+            "runner_under_test_" + name, str(self.RUNTIME / (name + ".py")))
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        return module
+
+    def test_both_production_runners_are_callable_in_the_readers_shape(self):
+        for name in ("canary_runtime", "collector_runtime"):
+            with self.subTest(runner=name):
+                module = self.load_runtime(name)
+                recorder = self.Recorder()
+                module.subprocess = recorder
+                runner = module.ProductionRunner()
+                self.assertTrue(callable(runner),
+                                "%s ProductionRunner is not callable; materialise "
+                                "would raise 'not callable'" % name)
+                argv = ["/usr/bin/docker", "image", "inspect", "sha256:" + "a" * 64,
+                        "--format", "{{.Id}}"]
+                # materialise calls it positionally, with a timeout of its own.
+                self.assertEqual(getattr(runner(argv, 30), "returncode", None), 0)
+                self.assertEqual(recorder.calls[-1][0], argv)
+                # The writer's load calls it by keyword, with the longer budget.
+                runner(["/usr/bin/docker", "load", "--input", "/tmp/x.tar"], timeout=600)
+                self.assertEqual(recorder.calls[-1][0],
+                                 ["/usr/bin/docker", "load", "--input", "/tmp/x.tar"])
+                # The canary's runner owns a per-call timeout; the collector's is
+                # fixed and executor-owned, so it accepts the reader's and does not
+                # forward it.  Either way the call reaches Docker.
+                expected = 600 if name == "canary_runtime" else None
+                self.assertEqual(recorder.calls[-1][1].get("timeout"), expected)
+
+    def test_a_runner_offering_only_run_cannot_be_used_by_the_reader(self):
+        """The mirror image: the shape that failed live, pinned as a failure."""
+
+        class RunOnly:
+            def run(self, argv, timeout=None):
+                return Completed("", 0)
+
+        self.assertFalse(callable(RunOnly()))
+        with self.assertRaises(TypeError):
+            RunOnly()(["/usr/bin/docker", "load", "--input", "/tmp/x.tar"], 600)
+
+
+class CanaryDeliveryContractTests(StoreFixture):
+    """The canary's delivery step, end to end and offline.
+
+    The first live CANARY failed inside this step, so it is exercised here with the
+    real read side, a real sealed object and the real production runner; only the
+    ``subprocess`` module the runner calls is replaced.  No Docker daemon, no host.
+    """
+
+    RUNTIME = READER_PATH.parent
+
+    class DockerCalls:
+        """Answers exactly the argv the canary runtime issues, and records them."""
+
+        PIPE = -1  # subprocess.PIPE; this recorder ignores it.
+
+        def __init__(self, candidate, expected, head):
+            self.candidate = candidate
+            self.expected = expected
+            self.head = head
+            self.calls = []
+
+        def run(self, argv, **kwargs):
+            self.calls.append(list(argv))
+            if argv[1] == "image" and argv[2] == "inspect":
+                return Completed(self.candidate, 0)
+            if argv[1] == "load":
+                return Completed("Loaded image", 0)
+            if argv[1] == "ps":
+                return Completed("container-" + argv[-1].split("=")[-1] + "\n", 0)
+            if argv[1] == "inspect":
+                return Completed(json.dumps([{"Image": self.expected}]), 0)
+            if argv[1] == "run":
+                if argv[argv.index("--entrypoint") + 1] == "/usr/local/bin/alembic":
+                    return Completed(self.head + " (head)\n", 0)
+                return Completed("", 0)
+            if argv[1] == "rm":
+                return Completed("", 0)
+            raise AssertionError("unexpected docker argv: %r" % (argv,))
+
+    def load_canary(self):
+        loader = importlib.machinery.SourceFileLoader(
+            "canary_under_test", str(self.RUNTIME / "canary_runtime.py"))
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        return module
+
+    def test_the_canary_delivers_a_real_sealed_package_through_the_production_runner(self):
+        module = self.load_canary()
+        record = self.sealed()
+        candidate = self.image_id          # what the sealed archive proves
+        expected = "sha256:" + "b" * 64    # the image the business containers run
+
+        # The two baseline files are fixed to real host paths, so this test points
+        # them at its own copies; ``production_inputs`` then runs for real, through
+        # the production runner, over the eight services.
+        directory = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, directory, True)
+        compose, env = directory / "docker-compose.yml", directory / "runtime.env"
+        compose.write_bytes(b"services: {}\n")
+        env.write_bytes(b"RUNTIME=1\n")
+        module.COMPOSE, module.ENV = str(compose), str(env)
+        module.COMPOSE_SHA = hashlib.sha256(compose.read_bytes()).hexdigest()
+        module.ENV_SHA = hashlib.sha256(env.read_bytes()).hexdigest()
+
+        # ``run_canary`` calls ``artifact.materialise(runner, package, candidate)``
+        # with the production store root bound into that signature, so the only thing
+        # redirected here is where the store is.  The reader, its checks, its call
+        # into the runner and the runner itself are all the real ones.
+        reader = self.setup_reader()
+        real_materialise = reader.materialise
+        reader.materialise = lambda runner, package, image_id: real_materialise(
+            runner, package, image_id, self.root)
+        self.addCleanup(setattr, reader, "materialise", real_materialise)
+
+        docker = self.DockerCalls(candidate, expected, module.HEAD)
+        module.subprocess = docker
+
+        gates = module.run_canary("canary-release-under-test", candidate,
+                                  record["package_sha256"], expected,
+                                  module.ProductionRunner(), None, reader)
+
+        self.assertEqual(gates["candidate_image"], "PASS")
+        self.assertEqual(gates["alembic_head"], "PASS")
+        self.assertEqual(gates["container_isolation"], "PASS")
+        self.assertEqual(gates["container_cleanup"], "PASS")
+        self.assertFalse(gates["application_boot_proven"])
+        # The delivery step really ran, on the object the store holds.
+        object_path = str(pathlib.Path(self.root, "objects",
+                                       record["package_sha256"] + ".tar"))
+        loads = [call for call in docker.calls if call[1] == "load"]
+        self.assertEqual(len(loads), 1)
+        self.assertEqual(loads[0], ["/usr/bin/docker", "load", "--input", object_path])
+        # Two isolated runs, both against the candidate and both cut off from the net.
+        runs = [call for call in docker.calls if call[1] == "run"]
+        self.assertEqual(len(runs), 2)
+        for call in runs:
+            self.assertIn(candidate, call)
+            self.assertEqual(call[call.index("--network") + 1], "none")
+        self.assertEqual(len([call for call in docker.calls if call[1] == "rm"]), 2)
+
+
 if __name__ == "__main__":
     unittest.main()
