@@ -124,16 +124,31 @@ class RideService:
             if not o:
                 raise ValueError("MOBILITY_ORDER_NOT_FOUND")
             if state == "UNKNOWN_EXTERNAL_STATE":
+                # The transaction acquires the order row before checking state
+                # (and BEGIN IMMEDIATE serializes SQLite test writers). A second
+                # concurrent opener therefore observes the committed UNKNOWN and
+                # loses without appending evidence or mutating the order.
+                if o.status == "UNKNOWN_EXTERNAL_STATE":
+                    raise ValueError("RIDE_UNKNOWN_EPISODE_ALREADY_OPEN")
                 if o.status not in {"CONFIRMED", "IN_PROGRESS"}:
                     raise ValueError("MOBILITY_ILLEGAL_STATE_TRANSITION")
+                from go_hotel.mobility.ride.recovery_evidence import reject_reused_unknown_episode
+                reject_reused_unknown_episode(s, o, evidence_reference)
                 previous_status=o.status
                 o.status = state; kind = "EXTERNAL_STATE_UNKNOWN"
                 payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference, "previous_status": previous_status}
             elif state == "FAILED":
                 if o.status != "UNKNOWN_EXTERNAL_STATE":
                     raise ValueError("MOBILITY_RECONCILIATION_NOT_REQUIRED")
+                # A terminal fleet decision must identify the current UNKNOWN
+                # episode just like CONFIRMED. Otherwise a delayed failure from
+                # an older episode could terminate a newer recovery attempt.
+                from go_hotel.mobility.ride.recovery_evidence import previous_phase
+                previous_phase(s, o, confirmation_episode_reference)
                 o.status = "FAILED"; kind = "RECONCILED_TO_FAILED"
-                payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference}
+                payload={"evidence_reference": evidence_reference, "actor": actor,
+                    "supplier_reference": o.supplier_reference,
+                    "confirmation_episode_reference": confirmation_episode_reference}
             else:
                 if o.status != "UNKNOWN_EXTERNAL_STATE":
                     raise ValueError("MOBILITY_RECONCILIATION_NOT_REQUIRED")

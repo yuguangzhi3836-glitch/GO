@@ -89,8 +89,24 @@ def _facts(session, traveler):
         ProfileFactRow.status == "ACTIVE").order_by(ProfileFactRow.created_at, ProfileFactRow.fact_id)).all()
 
 
-def _read_preferences(session, traveler, purpose):
-    grants = _active_consents(session, traveler, purpose, CONSENT_TYPE)
+def _consent_snapshot_hash(grants):
+    records = [{
+        "consent_id": grant.consent_id,
+        "consent_type": grant.consent_type,
+        "purpose": grant.purpose,
+        "scope": sorted(grant.scope_json or []),
+        "granted_at": _aware(grant.granted_at).isoformat(),
+        "expires_at": _aware(grant.expires_at).isoformat(),
+    } for grant in grants.values()]
+    raw = json.dumps(sorted(records, key=lambda item: item["consent_id"]),
+        ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def _read_preferences(session, traveler, purpose, grants=None):
+    grants = grants if grants is not None else _active_consents(
+        session, traveler, purpose, CONSENT_TYPE
+    )
     result = []
     for row in _facts(session, traveler):
         grant = grants.get(row.source_reference)
@@ -221,9 +237,29 @@ class TravelPreferenceMixin:
             # preference grant authorizes the standalone preference projection,
             # but must not silently broaden a journey context grant. The caller
             # must opt this graph purpose into preference context explicitly.
-            preferences = _read_preferences(s, tr, purpose) if "TRAVEL_PREFERENCES" in scope else []
+            preference_grants = (
+                _active_consents(s, tr, purpose, CONSENT_TYPE)
+                if "TRAVEL_PREFERENCES" in scope else {}
+            )
+            preferences = _read_preferences(
+                s, tr, purpose, preference_grants
+            ) if preference_grants else []
+            released_preference_ids = {
+                item["consent_id"] for item in preferences
+            }
+            released_preference_grants = {
+                consent_id: preference_grants[consent_id]
+                for consent_id in released_preference_ids
+            }
             _audit(s, tr, actor_id, actor_type, "TRAVELER_CONTEXT_READ", purpose, sorted(scope),
-                {"preference_count":len(preferences), "intent_count":len(intents), "behavior_count":count})
+                {"preference_count":len(preferences), "intent_count":len(intents),
+                 "behavior_count":count,
+                 "context_consent_ids":sorted(grants),
+                 "context_consent_snapshot_sha256":_consent_snapshot_hash(grants),
+                 "preference_consent_ids":sorted(released_preference_ids),
+                 "preference_consent_snapshot_sha256":_consent_snapshot_hash(
+                     released_preference_grants
+                 )})
             return {"traveler_id":traveler_id, "purpose":purpose, "identity":identity,
                 "recent_intents":intents, "behavior_evidence_count":count, "durable_preferences":preferences,
                 "policy":"SESSION_SIGNAL_NEVER_AUTO_PROMOTES_TO_PERMANENT_PREFERENCE"}

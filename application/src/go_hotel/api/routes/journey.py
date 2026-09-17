@@ -14,7 +14,9 @@ def call(fn,*args):
 @router.post("/v1/trips/journeys")
 def create(b:Create,p:Principal=Depends(consumer_principal)): return call(journey_service.create,p.user_id,b.model_dump())
 @router.get("/v1/trips/journeys")
-def list_journeys(limit:int=Query(20,ge=1,le=100),offset:int=Query(0,ge=0),q:str|None=Query(None,max_length=100),p:Principal=Depends(consumer_principal)): return {"data":journey_service.list_page(p.user_id,limit,offset,q)}
+def list_journeys(limit:int=Query(20,ge=1,le=100),offset:int=Query(0,ge=0,le=10000),q:str|None=Query(None,max_length=100),cursor:str|None=Query(None,max_length=2048),p:Principal=Depends(consumer_principal)):
+ try:return {"data":journey_service.list_page(p.user_id,limit,offset,q,cursor)}
+ except ValueError as e: raise HTTPException(409,detail=str(e))
 @router.get("/v1/trips/journeys/{journey_id}")
 def get_journey(journey_id:str,p:Principal=Depends(consumer_principal)): return call(journey_service.get,p.user_id,journey_id)
 @router.post("/v1/trips/journeys/{journey_id}/items")

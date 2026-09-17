@@ -1,6 +1,11 @@
+import base64
+import hashlib
+import hmac
+import json
 from datetime import datetime, timezone
 from uuid import uuid4
 from sqlalchemy import exists, func, or_, select, tuple_
+from go_hotel.core.config import settings
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (
     GoJourneyRow,GoJourneyItemRow,OrderRow,FlightOrderRow,RailOrderRow,
@@ -71,14 +76,39 @@ class JourneyService:
     for item in items: items_by_journey[item.journey_id].append(item)
    statuses=self._batch_order_statuses(s,rows,items_by_journey)
    return [self._serialize(s,x,refresh=True,items=items_by_journey[x.journey_id],statuses=statuses) for x in rows]
- def list_page(self,account_id,limit=20,offset=0,query=None):
+ def _cursor_scope(self, account_id, normalized):
+  return hashlib.sha256(f"{account_id}\0{normalized}".encode()).hexdigest()
+ def _encode_cursor(self, account_id, normalized, row):
+  value={"v":1,"scope":self._cursor_scope(account_id,normalized),"starts_at":row.starts_at,"created_at":(row.created_at if row.created_at.tzinfo is not None else row.created_at.replace(tzinfo=timezone.utc)).isoformat(),"journey_id":row.journey_id}
+  raw=json.dumps(value,sort_keys=True,separators=(",",":")).encode()
+  sig=hmac.new(settings.jwt_signing_key.encode(),raw,hashlib.sha256).digest()
+  return base64.urlsafe_b64encode(raw+sig).decode().rstrip("=")
+ def _decode_cursor(self, token, account_id, normalized):
+  try:
+   packed=base64.urlsafe_b64decode(token+"="*(-len(token)%4))
+   if len(packed)<=32: raise ValueError
+   raw,sig=packed[:-32],packed[-32:]
+   expected=hmac.new(settings.jwt_signing_key.encode(),raw,hashlib.sha256).digest()
+   if not hmac.compare_digest(sig,expected): raise ValueError
+   value=json.loads(raw)
+   if value.get("v")!=1 or value.get("scope")!=self._cursor_scope(account_id,normalized): raise ValueError
+   created_at=datetime.fromisoformat(value["created_at"])
+   if created_at.tzinfo is None: created_at=created_at.replace(tzinfo=timezone.utc)
+   return (value.get("starts_at") or "\uffff",created_at,value["journey_id"])
+  except (ValueError,TypeError,KeyError,json.JSONDecodeError):
+   raise ValueError("JOURNEY_CURSOR_INVALID") from None
+ def list_page(self,account_id,limit=20,offset=0,query=None,cursor=None):
   """Return one bounded, deterministic Journey page.
 
   Offset pagination is explicit for the first contract version. The stable
   tie-breaker prevents duplicate ordering inside a fixed snapshot; callers
   receive has_more/next_offset and never a full-result count query.
   """
-  limit=max(1,min(int(limit),100));offset=max(0,int(offset))
+  limit=max(1,min(int(limit),100));offset=max(0,min(int(offset),10000))
+  normalized=(query or '').strip().lower()
+  if cursor and offset:
+   raise ValueError("JOURNEY_CURSOR_OFFSET_CONFLICT")
+  cursor_key=self._decode_cursor(cursor,account_id,normalized) if cursor else None
   with SessionLocal() as s:
    active_member=exists(select(ConsumerTripMemberRow.trip_member_id).where(
     ConsumerTripMemberRow.journey_id==GoJourneyRow.journey_id,
@@ -86,18 +116,17 @@ class JourneyService:
     ConsumerTripMemberRow.status=='ACTIVE',
    ))
    statement=select(GoJourneyRow).where(or_(GoJourneyRow.account_id==account_id,active_member))
-   normalized=(query or '').strip().lower()
    if normalized:
     pattern=f"%{normalized}%"
     statement=statement.where(or_(
      func.lower(GoJourneyRow.title).like(pattern),
      func.lower(func.coalesce(GoJourneyRow.destination_summary,'')).like(pattern),
     ))
-   rows=s.execute(statement.order_by(
-    GoJourneyRow.starts_at.asc().nulls_last(),
-    GoJourneyRow.created_at.asc(),
-    GoJourneyRow.journey_id.asc(),
-   ).offset(offset).limit(limit+1)).scalars().all()
+   sort_start=func.coalesce(GoJourneyRow.starts_at,'\uffff')
+   if cursor_key:
+    statement=statement.where(tuple_(sort_start,GoJourneyRow.created_at,GoJourneyRow.journey_id)>cursor_key)
+   ordered=statement.order_by(sort_start.asc(),GoJourneyRow.created_at.asc(),GoJourneyRow.journey_id.asc())
+   rows=s.execute(ordered.offset(0 if cursor_key else offset).limit(limit+1)).scalars().all()
    has_more=len(rows)>limit;rows=rows[:limit]
    items_by_journey={x.journey_id:[] for x in rows}
    journey_ids=list(items_by_journey)
@@ -109,7 +138,7 @@ class JourneyService:
    statuses=self._batch_order_statuses(s,rows,items_by_journey)
    return {
     "items":[self._serialize(s,x,refresh=True,items=items_by_journey[x.journey_id],statuses=statuses) for x in rows],
-    "page":{"limit":limit,"offset":offset,"has_more":has_more,"next_offset":offset+limit if has_more else None},
+    "page":{"limit":limit,"offset":None if cursor else offset,"has_more":has_more,"next_offset":None if cursor else (offset+limit if has_more else None),"next_cursor":self._encode_cursor(account_id,normalized,rows[-1]) if has_more and rows else None},
     "query":normalized or None,
    }
  def _batch_order_statuses(self,s,journeys,items_by_journey):

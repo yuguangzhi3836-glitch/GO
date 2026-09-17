@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from go_hotel.core.config import settings
 from go_hotel.db.models import GoAIExecutionRow, GoAIInvocationRow, GoAIRequestRow
@@ -508,16 +508,21 @@ class GOAIService:
             return value.replace(tzinfo=timezone.utc)
         return value
 
+    @classmethod
+    def _database_now(cls, session):
+        """Read lease authority time from the database, never from a caller clock."""
+        return cls._lease_time(session.scalar(select(func.current_timestamp())))
+
     def claim_execution(self, request_id: str, *, worker_id: str, lease_seconds: int = 60,
-                        verified_previous_owner_terminated: bool = False,
-                        observed_at=None) -> dict[str, Any]:
+                        fencing_token: int | None = None,
+                        verified_previous_owner_terminated: bool = False) -> dict[str, Any]:
         """Claim GO AI execution ownership without replaying provider work."""
         if not worker_id or not worker_id.strip():
             raise ValueError("GO_AI_WORKER_ID_REQUIRED")
         if isinstance(lease_seconds, bool) or not isinstance(lease_seconds, int) or lease_seconds <= 0:
             raise ValueError("GO_AI_LEASE_SECONDS_INVALID")
-        now = self._lease_time(observed_at or now_utc())
         with SessionLocal.begin() as session:
+            now = self._database_now(session)
             request = session.get(GoAIRequestRow, request_id)
             if request is None:
                 raise ValueError("GO_AI_REQUEST_NOT_FOUND")
@@ -544,6 +549,8 @@ class GOAIService:
                 )
                 session.add(row)
             elif row.owner_id == worker_id and self._lease_time(row.lease_expires_at) > now:
+                if fencing_token != row.fencing_token:
+                    raise ValueError("GO_AI_EXECUTION_FENCE_MISMATCH")
                 row.lease_expires_at = now + timedelta(seconds=lease_seconds)
                 row.updated_at = now
             else:
@@ -573,21 +580,40 @@ class GOAIService:
 
     def save_execution_checkpoint(self, request_id: str, *, worker_id: str, fencing_token: int,
                                   checkpoint: dict[str, Any], complete: bool,
-                                  provider_outcome: str = "NOT_STARTED",
-                                  observed_at=None) -> dict[str, Any]:
+                                  provider_outcome: str = "NOT_STARTED") -> dict[str, Any]:
         """Persist a fenced GO AI checkpoint; never execute or replay compute."""
         if not isinstance(checkpoint, dict):
             raise ValueError("GO_AI_CHECKPOINT_OBJECT_REQUIRED")
         allowed_outcomes = {"NOT_STARTED", "FAILED_CONFIRMED", "SUCCEEDED", "UNKNOWN"}
         if provider_outcome not in allowed_outcomes:
             raise ValueError("GO_AI_PROVIDER_OUTCOME_INVALID")
-        required = {"plan_hash", "completed_task_ids", "pending_task_ids"}
-        if complete and (not required.issubset(checkpoint) or
-                         not isinstance(checkpoint.get("completed_task_ids"), list) or
-                         not isinstance(checkpoint.get("pending_task_ids"), list)):
-            raise ValueError("GO_AI_COMPLETE_CHECKPOINT_FIELDS_REQUIRED")
-        now = self._lease_time(observed_at or now_utc())
+        required = {"plan_hash", "completed_task_ids", "pending_task_ids", "replayable_result_refs"}
+        if complete:
+            if not required.issubset(checkpoint):
+                raise ValueError("GO_AI_COMPLETE_CHECKPOINT_FIELDS_REQUIRED")
+            plan_hash = checkpoint.get("plan_hash")
+            if (not isinstance(plan_hash, str) or len(plan_hash) != 64 or
+                    any(char not in "0123456789abcdef" for char in plan_hash)):
+                raise ValueError("GO_AI_CHECKPOINT_PLAN_HASH_INVALID")
+            task_lists = {
+                name: checkpoint.get(name)
+                for name in ("completed_task_ids", "pending_task_ids")
+            }
+            if any(not isinstance(items, list) or
+                   any(not isinstance(item, str) or not item.strip() for item in items) or
+                   len(items) != len(set(items)) for items in task_lists.values()):
+                raise ValueError("GO_AI_CHECKPOINT_TASK_SET_INVALID")
+            if set(task_lists["completed_task_ids"]) & set(task_lists["pending_task_ids"]):
+                raise ValueError("GO_AI_CHECKPOINT_TASK_SET_OVERLAP")
+            refs = checkpoint.get("replayable_result_refs")
+            if (not isinstance(refs, list) or
+                    any(not isinstance(ref, str) or not ref.strip() for ref in refs) or
+                    len(refs) != len(set(refs))):
+                raise ValueError("GO_AI_CHECKPOINT_RESULT_REFS_INVALID")
+            if provider_outcome == "SUCCEEDED" and not refs:
+                raise ValueError("GO_AI_SUCCEEDED_RESULT_REFERENCE_REQUIRED")
         with SessionLocal.begin() as session:
+            now = self._database_now(session)
             row = session.scalar(
                 select(GoAIExecutionRow)
                 .where(GoAIExecutionRow.go_ai_request_id == request_id)
