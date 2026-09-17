@@ -1,0 +1,90 @@
+name: Supplier preflight runtime gate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/src/go_hotel/connectors/external_sandbox_runtime.py
+      - application/scripts/r82_rc142_external_sandbox_executor_gate.py
+      - application/tests/test_supplier_preflight_runtime.py
+      - .github/workflows/supplier-preflight-runtime.yml
+permissions:
+  contents: read
+concurrency:
+  group: supplier-preflight-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  focused:
+    if: ${{ github.event.pull_request.number == 181 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install inherited frozen Python dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Focused supplier preflight tests
+        working-directory: application
+        run: |
+          PYTHONPATH=src python -m pytest -p no:cacheprovider -q tests/test_supplier_preflight_runtime.py --junitxml="$RUNNER_TEMP/supplier-preflight/tests.xml"
+          PYTHONPATH=src python scripts/r82_rc142_external_sandbox_executor_gate.py | tee "$RUNNER_TEMP/supplier-preflight/runtime-gate.txt"
+      - name: Bind exact candidate and seal Evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/supplier-preflight/source"
+          python - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          root=pathlib.Path.cwd()
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'supplier-preflight'
+          files=subprocess.check_output(['git','ls-files','-z','application']).split(b'\0')
+          fingerprint={}
+          for raw in files:
+              if not raw:
+                  continue
+              path=raw.decode()
+              fingerprint[path[len('application/'):]]=hashlib.sha256((root/path).read_bytes()).hexdigest()
+          source=out/'source'/'SOURCE_FINGERPRINT.json'
+          source.write_text(json.dumps(fingerprint,sort_keys=True,indent=2)+'\n')
+          digest=hashlib.sha256(''.join(f'{p}\0{h}\n' for p,h in sorted(fingerprint.items())).encode()).hexdigest()
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          tree=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
+          changed=subprocess.check_output(['git','diff','--name-only','origin/main...HEAD'],text=True).splitlines()
+          manifest={
+            'schema':'go.supplier-preflight-runtime.evidence.v1',
+            'candidate_sha':sha,
+            'application_tree':tree,
+            'source_files':len(fingerprint),
+            'source_fingerprint_sha256':digest,
+            'changed_files':changed,
+            'tests':'PASS' if (out/'tests.xml').exists() else 'FAIL',
+            'runtime_gate':'PASS' if 'PASS' in (out/'runtime-gate.txt').read_text() else 'FAIL',
+            'real_supplier_identity':'HOLD_EXTERNAL',
+            'real_supplier_credentials':'HOLD_EXTERNAL',
+            'real_supplier_raw_responses':'HOLD_EXTERNAL',
+            'hong_kong_staging':'HOLD',
+            'final_release':'HOLD',
+            'production':'HOLD',
+            'deployment':'NOT_RUN'
+          }
+          (out/'EVIDENCE.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')
+          assert manifest['tests']=='PASS' and manifest['runtime_gate']=='PASS'
+          PY
+          cd "$RUNNER_TEMP/supplier-preflight"
+          find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: supplier-preflight-runtime-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/supplier-preflight
+          if-no-files-found: error
