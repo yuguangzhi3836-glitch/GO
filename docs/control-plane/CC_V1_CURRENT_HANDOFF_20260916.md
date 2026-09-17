@@ -299,7 +299,7 @@ agent ledger          /var/lib/go-command-center? 否 —— /var/lib/go-hk-agen
 [NOT_YET_PROVEN] fresh VERIFY（最近一次真实 VERIFY 已过期）
 [NOT_YET_PROVEN] CANARY（从未执行）
 [NOT_YET_PROVEN] DEPLOY（从未执行；deployment_requests_enabled=false）
-[NOT_YET_PROVEN] ROLLBACK（从未执行）
+[ATTEMPTED_REFUSED] ROLLBACK（2026-09-17 真实下发并被执行器拒绝；旧字节缺镜像钉，已修复并重装 —— 见 §11 CCV1-57b）
 ```
 
 ## 8. 已完成、**不要再重做**（DO_NOT_REOPEN / DO_NOT_REDESIGN）
@@ -552,6 +552,34 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 
 ## 11. 下一会话唯一入口
 
+> **2026-09-17 / CCV1-57b —— 再优先读这一段：回滚执行器缺镜像钉，已修复并重装。**
+>
+> **① 闸口 B 的真实失败**：真实 ROLLBACK Request PR #43（head `61e791e2…`）已发布，Bridge 派生并签名 Task
+> `go-boss-rollback-be119fa22df0a096b2dd5ed1`（源 `go-boss-deploy-6344dcdd3ccd103d5efdc1b6`，`expires_at` 08:17:43Z）；
+> HK agent 08:13:51Z 认领、08:14:07Z 完成并失败，失败证据 `3fde3d32…`。执行器 stdout：
+> `status=REJECTED`、`result=ROLLBACK_REJECTED`、`error_code="docker read"`、**`gate_results: {}`** —— 门为空说明失败发生在
+> **任何门被记录之前**，即 compose 变更那一步。HK 业务面零影响（10 容器、8 业务服务仍在 `6b92050e…`、重启数 0、api healthy）。
+> **② 根因**：`rollback_runtime.run_rollback` 只用 `-f <base>` 组 argv；base 写的是
+> `image: ${R31_IMAGE_TAG:-go-hotel:aoluguya-direct-r3-1-20260906}`，而 `R31_IMAGE_TAG` **在 env 文件里没有设置**（实测），
+> 宿主也**没有**该 tag（`No such image`）⇒ Compose 去 pull 一个不存在的仓库，`insufficient_scope: authorization failed`，`up` 退出非零。
+> DEPLOY 一直没事，是因为它**始终**合入一份按 id 钉死候选的 override。⇒ **该方向在旧字节下根本不可能成功**，与源/签名/授权无关。
+> **③ 修法（HK 字节；提交 `decd26e`，目前仅本地）**：`run_rollback` 合入 `_override(targets)`（把八个服务钉到源 record `targets` 的 id；
+> mode 0600；成功与失败两条路径都清理），变更步失败改报 `docker rollback`（读仍报 `docker read`）；并把**一直被传入却从未使用**的
+> `collector` 用起来，按 runbook 第 6 步的 **bounded readiness/postcheck** 要求，`ROLLBACK_OK` 前先等被恢复的 api 健康。
+> 契约未放松：`caller_controlled_rollback_image: false` 仍成立，目标仍只来自 `DEPLOY_RECORD_V2` 前态。
+> **④ 已装并实测**（2026-09-17T08:37:52Z）：`/usr/local/libexec/go-hk-deployctl` `b13b5002…`（755，12024 B）、
+> `.../go-hk-deployctl-runtime/rollback_runtime.py` `c7c1bf04…`（644，13968 B）；备份
+> `/var/backups/HK-CHANGE-20260917T083752Z-rollback-image-pin/`（逐条 re-hash OK）；原子换装 2.67 ms；五个 `_load_*` 全 PASS；
+> 新回归 `rollback_runtime_regression.py` **31/31**（本机 / CC Linux / HK root / HK `go-hk-agent` 四处全绿）；
+> 只读实证（`--dry-run`，零变更）：仅 base → `pull access denied … authorization failed`（rc=1），base＋**执行器自产** override →
+> 八个 `Started`（rc=0）；容器指纹与重启数前后一致。轮询已恢复，tick 无 Traceback、无 integrity 报错。
+> `hk-staging/SOURCE_SHA256SUMS.txt` 618→619 条（0 mismatch），两处文档的执行器摘要已同步。
+> **⑤ 该源已 `AMBIGUOUS_CONSUMED`**：rollback record `fe2f07a8…` 在 mutation 前落盘，且 CC 的 `ensure_rollback_unused`
+> 对**任何已发布**的 ROLLBACK Task 都拒绝（已用**已安装的**谓词对 live 账本实测：该源 `rollback_source_already_rolled_back`，
+> 未知源作对照 accepted）。契约 `automatic_retry_allowed=false` / `automatic_recovery_allowed=false`、runbook 明确要求
+> 标记 `AMBIGUOUS_CONSUMED` 且**禁止自动重试**。⇒ 要再演示真实回滚，必须先产生**新部署源**（即第三步；且因回滚 fresh-drift 门要求
+> 执行时当前镜像等于源 record 的 candidate，想要镜像真变化的演示需先渠道外 seed 回 `1c9598d6…`）。详见 `CCV1-58-ROLLBACK-EXECUTOR-IMAGE-PIN-2026-09-17.md`。
+
 > **2026-09-17 / B4-B1.11（CCV1-57）—— 再优先读这一段：回滚已通道化。**
 >
 > **① ROLLBACK 已接入 Boss Request 通道**：Bridge 修订 `1.9.0-rollback-channel`，v4 action 合同由五项变六项
@@ -569,7 +597,7 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 > **④ HK 侧零字节改动**：回滚链早已完整在位（`go-hk-deployctl` `f0804521…` 的 rollback 动词、
 > `_ROLLBACK_SHA256=a49e12ea…`、live agent `transport.py` 的 `prepare_rollback_handoff`、
 > `deployment_actions.ACTIONS` 里的 `HK_STAGING_ROLLBACK`，参数契约 `{release_id, source_deploy_task_id, approval_id}`），
-> 本轮只做 CC 侧。执行器**先验源、再现查八个容器的漂移**，然后**先落 rollback record 再强制重建**八个业务服务。
+> 本轮只做 CC 侧（**该状态已被 §11 顶部 CCV1-57b 取代**：`go-hk-deployctl` 现为 `b13b5002…`、`_ROLLBACK_SHA256=c7c1bf04…`，旧钉 `f0804521… / a49e12ea…` 不再是现值）。执行器**先验源、再现查八个容器的漂移**，然后**先落 rollback record 再强制重建**八个业务服务。
 > **⑤ 闸口 A 已完成（2026-09-17T08:06:02Z）**：CC 四件套已成套换装 —— `/usr/local/libexec/go-boss-request-bridge` `d2ae9c88…`、
 > `/usr/local/libexec/go_deploy_request.py` `51aa135b…`、`/usr/local/libexec/plan_derivation.py` `342e9a6e…`、
 > `/etc/go-command-center/boss-request-bridge-v1.json` `cd7f8d3f…`（四项都等于本分支已提交字节 `4e7ce63`；权限沿用宿主更紧的
@@ -581,8 +609,9 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 > （SIGN=0 / PUBLISH=0）而只读探活照常签发。轮询已恢复，首个新字节 tick（16:04:18→16:04:40 CST）打 `1.9.0-rollback-channel`，
 > `already_seen: 40 / rejected: 2`，与装前 20 个 tick 逐项相同（那两条 `stale_or_future_request` 属既有稳态）；日志无 Traceback/Error，
 > ledger sha 仍 `8a5cbd62…`，tasks 仓 `main` HEAD 仍 `a5feefa7…`，HK 业务指纹仍 `3742895e…`（HK 零字节改动）。
-> **闸口 B 尚未发**：下一步是发一张真实 ROLLBACK Request，把八个业务服务从 `sha256:6b92050e…` 恢复到 `sha256:1c9598d6…`，
-> 回滚后另发一张新鲜 VERIFY。
+> **闸口 B 已发并失败**：真实 ROLLBACK Request PR #43 → Task `go-boss-rollback-be119fa22df0a096b2dd5ed1` 被执行器以
+> `EXECUTOR_NONZERO_EXIT` / `error_code="docker read"` 拒绝；根因、修法、装机与只读实证见 §11 顶部新增段 CCV1-57b。
+> HK 业务面零影响；该源已 `AMBIGUOUS_CONSUMED`，重试需先有新部署源。
 
 > **2026-09-17 / B4-B1.10（CCV1-53）—— 再优先读这一段，它取代所有「部署开关」口径。**
 >
