@@ -172,7 +172,7 @@ def test_each_retry_attempt_is_independently_sealed():
     assert [item["response_status"] for item in evidence.attempts] == [429, 200]
 
 
-def test_transport_exception_attempt_is_sealed_and_retried_without_leaking_message():
+def test_transport_exception_attempt_is_sealed_and_unknown_outcome_is_not_retried():
     class FlakyTransport(Transport):
         def request(self, method, url, *, headers, body, timeout_seconds):
             if not self.calls:
@@ -182,8 +182,9 @@ def test_transport_exception_attempt_is_sealed_and_retried_without_leaking_messa
 
     evidence = Evidence()
     result = execute_one(executor(transport=FlakyTransport(), evidence=evidence))
-    assert result.ok is True
-    assert len(evidence.attempts) == 2
+    assert result.ok is False
+    assert result.payload["normalized_error"] == "PROVIDER_UNKNOWN_ERROR_FAIL_CLOSED"
+    assert len(evidence.attempts) == 1
     assert evidence.attempts[0]["response_status"] is None
     assert evidence.attempts[0]["transport_error"] == "TimeoutError"
     assert "secret-bearing" not in repr(evidence.attempts[0])
@@ -234,7 +235,7 @@ def test_webhook_signature_timestamp_and_atomic_replay_claim_are_all_required():
         )
 
 
-@pytest.mark.parametrize("offset", [-301, 301])
+@pytest.mark.parametrize("offset", [-300, 300])
 def test_webhook_rejects_stale_and_future_timestamps(offset):
     runtime = executor()
     body = b"{}"
