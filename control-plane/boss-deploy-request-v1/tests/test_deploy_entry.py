@@ -886,6 +886,449 @@ class RollbackProofTests(unittest.TestCase):
             self.assertRegex(evidence[field], r'^[0-9a-f]{64}$')
 
 
+class PostActionVerifyTests(unittest.TestCase):
+    """The VERIFY the Bridge publishes by itself once a DEPLOY or a ROLLBACK has run.
+
+    PR #179 recorded `POST_ROLLBACK_VERIFY` as the one remaining gap and marked it
+    PARTIAL: the only independent VERIFY that ever ran after a rollback was the next
+    deployment window's preflight, driven by a human.  These tests hold the automatic one
+    to the same standard as the rest of the channel -- the trigger is signed Evidence
+    rather than a Request, the image comes out of verified bytes, one action yields one
+    VERIFY, and nothing here can reach the deployment's preflight pool or the rollback
+    source guard.
+    """
+
+    def setUp(self):
+        self.stack = ExitStack()
+        self.addCleanup(self.stack.close)
+        self.f = Fixture()
+        self.root = pathlib.Path(tempfile.mkdtemp(prefix='go-post-verify-'))
+        self.addCleanup(lambda: __import__('shutil').rmtree(self.root, ignore_errors=True))
+        self.f.seed_ledger(self.root)
+        self.store, self.keypath, self.channel = self.f.install_synthetic(self.root)
+        self.stack.enter_context(patch.object(gate, 'STORE', self.store))
+        self.stack.enter_context(patch.object(gate, 'TRUSTED_UID',
+                                              os.getuid() if hasattr(os, 'getuid') else 0))
+
+    # -- fixtures ----------------------------------------------------------- #
+    def ledger(self, **tasks):
+        path = self.root / 'ledger.json'
+        data = json.loads(path.read_text())
+        for label, task in tasks.items():
+            data['requests']['synthetic:' + label] = {'status': 'published',
+                                                      'request_id': 'synthetic-' + label, 'task': task}
+        path.write_bytes(gate.canonical(data))
+        return data['requests']
+
+    def rollback_pair(self, task_id='go-boss-rollback-synthetic', age=60, source=None,
+                      result='ROLLBACK_OK', gates=None):
+        """A signed ROLLBACK Task and the signed Evidence the agent writes for it.
+
+        Built through the agent's own `evidence()` builder for the same reason the
+        deployment pair is: the field names and the field *set* the producer writes are
+        what the gate has to read, and a fixture that invented them would pass while the
+        live path failed.  The empty candidate pair, the record ids and the result string
+        are the ones the real rollback Evidence carries.
+        """
+        source_task = self.f.deploy_task if source is None else source
+        completed = self.f.at - dt.timedelta(seconds=age)
+        parameters = {'release_id': task_id.replace('go-', '', 1),
+                      'source_deploy_task_id': source_task['task_id'],
+                      'approval_id': 'approval-rollback-' + 'b' * 16}
+        record_id = hashlib.sha256(('rollback-' + task_id).encode()).hexdigest()
+        task = signed({'schema_version': '1', 'task_id': task_id, 'nonce': 'synthetic-rollback-nonce',
+                       'issued_at': bridge.iso(completed - dt.timedelta(seconds=30)),
+                       'expires_at': bridge.iso(completed + dt.timedelta(minutes=3)),
+                       'authority': 'GO-COMMAND-CENTER', 'environment': gate.ENVIRONMENT,
+                       'action_id': gate.ROLLBACK_ACTION, 'parameters': parameters}, self.f.authority)
+        source_evidence = self.f.read_evidence(source_task)
+        result_block = {
+            'schema_version': '1', 'executor_version': '0.4.3-rollback-runtime',
+            'action_id': gate.ROLLBACK_ACTION, 'status': 'SUCCESS',
+            'release_id': parameters['release_id'], 'candidate_image_id': '',
+            'expected_current_image_id': '', 'result': result,
+            'gate_results': gates if gates is not None else {
+                **{k: 'PASS' for k in bridge.ROLLBACK_RESULT_GATES},
+                'rollback_record_id': record_id, 'rollback_record_sha256': 'c' * 64,
+                'source_deploy_record_id': source_evidence['deploy_record_id'],
+                'source_deploy_record_sha256': source_evidence['deploy_record_sha256'],
+                'source_deploy_task_id': source_task['task_id']},
+            'source_deploy_task_id': source_task['task_id'],
+            'source_deploy_record_id': source_evidence['deploy_record_id'],
+            'source_deploy_record_sha256': source_evidence['deploy_record_sha256'],
+            'rollback_record_id': record_id, 'rollback_record_sha256': 'c' * 64}
+        with patch.object(transport, 'utcnow', return_value=bridge.iso(completed)):
+            evidence = transport.evidence(task, result_block)
+        evidence = signed(evidence, self.f.hk, 'base64')
+        self.f.deploys[task_id] = (task, evidence)
+        return task, evidence
+
+    def publishing(self, fail=None):
+        calls = []
+
+        def publish(task):
+            if fail is not None:
+                raise fail
+            calls.append(task)
+            return 'f' * 40
+        return publish, calls
+
+    def fetch_from(self, tasks):
+        """The Bus as the Bridge reads it: the signed Task, exactly as published.
+
+        `publish_task` writes the whole dict and `remote_task` hands back those bytes, so
+        the signature is part of the stored object.  A fixture that stripped it would only
+        ever prove that an unsigned object is refused, never that a published one is
+        adopted -- and adoption is the behaviour under test.
+        """
+        def fetch(task_id):
+            for task in tasks:
+                if task['task_id'] == task_id:
+                    return gate.canonical(task) + b'\n'
+            return None
+        return fetch
+
+    def loaded_channel(self):
+        """`self.channel` is the file; the unit under test wants what it holds."""
+        return json.loads(self.channel.read_text())
+
+    def reconcile(self, read=None, publish=None, fetch=None, channel=None, at=None):
+        return bridge.reconcile_post_action_verifies(
+            self.root, self.keypath, self.loaded_channel() if channel is None else channel,
+            read=self.f.read_evidence if read is None else read,
+            publish=publish if publish is not None else (lambda task: 'f' * 40),
+            fetch=fetch if fetch is not None else (lambda task_id: None),
+            at=self.f.at if at is None else at)
+
+    def store_file(self):
+        """Read through the unit's own loader, so a store never written reads as empty."""
+        return bridge.load_post_verifies(self.root)
+
+    # -- the happy paths ---------------------------------------------------- #
+    def test_a_successful_deployment_is_followed_by_an_automatic_verify(self):
+        publish, calls = self.publishing()
+        outcome = self.reconcile(publish=publish)
+        self.assertEqual(outcome['status'], 'published')
+        self.assertEqual(outcome['source_action'], gate.ACTION)
+        self.assertEqual(outcome['source_task_id'], self.f.deploy_task['task_id'])
+        self.assertEqual(len(calls), 1)
+        job = calls[0]
+        self.assertEqual(job['action_id'], 'HK_STAGING_VERIFY')
+        self.assertEqual(job['authority'], 'GO-COMMAND-CENTER')
+        # The image the deployment made current, and nothing else: VERIFY asserts the host
+        # is at it, which is what the executor enforces by requiring the two parameters to
+        # be equal and the running containers to match.
+        self.assertEqual(job['parameters']['candidate_image_id'], self.f.candidate)
+        self.assertEqual(job['parameters']['expected_current_image_id'], self.f.candidate)
+        self.assertEqual(set(job['parameters']),
+                         {'release_id', 'candidate_image_id', 'expected_current_image_id'})
+        self.assertTrue(job['parameters']['release_id'].startswith('post-deploy-verify-'))
+        self.assertEqual(job['task_id'], 'go-boss-' + job['parameters']['release_id'])
+        self.assertEqual(self.store_file()['verifies'][outcome['source_task_id']]['status'], 'published')
+
+    def test_a_successful_rollback_is_followed_by_an_independent_verify(self):
+        """The gap PR #179 recorded, closed: no human sends this VERIFY.
+
+        The image asserted is the one the rollback restored -- the source deployment's
+        `expected_current_image_id`, resolved from the source pair's own verified proof --
+        and not the candidate that deployment had installed.
+        """
+        task, _evidence = self.rollback_pair()
+        self.ledger(rollback=task)
+        publish, calls = self.publishing()
+        outcome = self.reconcile(publish=publish)
+        self.assertEqual(outcome['status'], 'published')
+        self.assertEqual(outcome['source_action'], gate.ROLLBACK_ACTION)
+        self.assertEqual(outcome['image_id'], self.f.current)
+        self.assertNotEqual(outcome['image_id'], self.f.candidate)
+        self.assertEqual(calls[0]['parameters']['candidate_image_id'], self.f.current)
+        self.assertTrue(calls[0]['parameters']['release_id'].startswith('post-rollback-verify-'))
+
+    def test_the_two_actions_produce_different_verify_names_and_the_same_contract(self):
+        deploy_outcome = self.reconcile(publish=lambda task: 'f' * 40)
+        rollback, _ = self.rollback_pair()
+        self.ledger(rollback=rollback)
+        publish, calls = self.publishing()
+        rollback_outcome = self.reconcile(publish=publish)
+        self.assertNotEqual(deploy_outcome['task_id'], rollback_outcome['task_id'])
+        self.assertIn('post-deploy-verify-', deploy_outcome['task_id'])
+        self.assertIn('post-rollback-verify-', rollback_outcome['task_id'])
+        self.assertEqual(set(calls[0]),
+                         {'schema_version', 'task_id', 'nonce', 'issued_at', 'expires_at',
+                          'authority', 'environment', 'action_id', 'parameters', 'signature'})
+
+    def test_the_hong_kong_agent_accepts_the_derived_parameters(self):
+        """Pinned from the other side: the agent's own validator is run on the Task.
+
+        The parameters the Bridge derives have to be exactly the set
+        `deployment_actions.validate` accepts, because that is what refuses a Task on the
+        host -- not the Bridge.  A field added here for auditability would make every
+        automatic VERIFY fail at pickup, and a field removed would not be noticed until a
+        live run.
+        """
+        publish, calls = self.publishing()
+        self.reconcile(publish=publish)
+        parameters = calls[0]['parameters']
+        validated = deployment_actions.validate('HK_STAGING_VERIFY', parameters)
+        self.assertEqual(sorted(validated),
+                         ['candidate_image_id', 'expected_current_image_id', 'release_id'])
+        for extra in ('source_deploy_task_id', 'approval_id', 'candidate_package_sha256',
+                      'services', 'compose_file', 'command'):
+            with self.assertRaises(deployment_actions.Reject):
+                deployment_actions.validate('HK_STAGING_VERIFY', {**parameters, extra: 'x'})
+
+    # -- idempotence and supersession --------------------------------------- #
+    def test_the_same_action_is_never_verified_twice(self):
+        publish, calls = self.publishing()
+        first = self.reconcile(publish=publish)
+        second = self.reconcile(publish=publish)
+        self.assertEqual(first['status'], 'published')
+        self.assertEqual(second['status'], 'present')
+        self.assertEqual(second['task_id'], first['task_id'])
+        self.assertEqual(len(calls), 1)
+
+    def test_a_newer_action_is_verified_instead_of_the_one_it_replaced(self):
+        """Only the current state is verifiable; the older one has no state left.
+
+        Publishing a VERIFY for the superseded deployment would ask the host about an
+        image it no longer runs, and the failure that came back would be this process's
+        own artefact rather than a fact about Hong Kong.
+        """
+        publish, calls = self.publishing()
+        self.reconcile(publish=publish)
+        second_task, _ = self.f.deploy_source(task_id='go-boss-deploy-synthetic-second',
+                                              age=30, nonce='synthetic-deploy-nonce-2')
+        self.ledger(**{'deploy-second': second_task})
+        outcome = self.reconcile(publish=publish)
+        self.assertEqual(outcome['status'], 'published')
+        self.assertEqual(outcome['source_task_id'], second_task['task_id'])
+        self.assertEqual(len(calls), 2)
+
+    def test_a_lost_store_write_is_reconciled_from_the_bus(self):
+        """A publish that succeeded and a store write that did not must not re-publish."""
+        unsigned = bridge.derive_post_action_verify(self.f.deploy_task, self.f.candidate, self.f.at)
+        signed_task = signed(unsigned, self.f.authority)
+        bridge.save_post_verifies(self.root, {'version': 1, 'verifies': {
+            self.f.deploy_task['task_id']: {'status': 'preparing', 'task_id': signed_task['task_id'],
+                                            'parameters': dict(signed_task['parameters']),
+                                            'image': self.f.candidate, 'source_action': gate.ACTION}}})
+        publish, calls = self.publishing()
+        outcome = self.reconcile(publish=publish, fetch=self.fetch_from([signed_task]))
+        self.assertEqual(outcome['status'], 'published_reconciled')
+        self.assertEqual(outcome['task_id'], signed_task['task_id'])
+        self.assertEqual(calls, [])
+        self.assertTrue(self.store_file()['verifies'][self.f.deploy_task['task_id']]['reconciled'])
+
+    def test_a_preparing_marker_whose_task_never_landed_is_republished(self):
+        unsigned = bridge.derive_post_action_verify(self.f.deploy_task, self.f.candidate, self.f.at)
+        bridge.save_post_verifies(self.root, {'version': 1, 'verifies': {
+            self.f.deploy_task['task_id']: {'status': 'preparing', 'task_id': unsigned['task_id'],
+                                            'parameters': dict(unsigned['parameters']),
+                                            'image': self.f.candidate, 'source_action': gate.ACTION}}})
+        publish, calls = self.publishing()
+        outcome = self.reconcile(publish=publish)
+        self.assertEqual(outcome['status'], 'published')
+        self.assertEqual(len(calls), 1)
+
+    def test_a_foreign_task_under_the_derived_name_stops_for_a_human(self):
+        foreign = {k: v for k, v in self.f.bundle['preflight_task'].items() if k != 'signature'}
+        foreign['task_id'] = bridge.derive_post_action_verify(
+            self.f.deploy_task, self.f.candidate, self.f.at)['task_id']
+        foreign = signed(foreign, self.f.authority)
+        publish, _calls = self.publishing(fail=gate.Reject('task_id_already_exists'))
+        with self.assertRaisesRegex(gate.Reject,
+                                    'ambiguous_post_verify_publish_requires_operator_review'):
+            self.reconcile(publish=publish, fetch=self.fetch_from([foreign]))
+
+    # -- what must not be verified ------------------------------------------ #
+    def test_an_action_whose_evidence_has_not_arrived_is_the_next_ticks_work(self):
+        def unreadable(task):
+            raise gate.Reject('readable_file_unavailable')
+        publish, calls = self.publishing()
+        outcome = self.reconcile(read=unreadable, publish=publish)
+        self.assertEqual(outcome['status'], 'skipped')
+        self.assertTrue(outcome['reason'].startswith('source_evidence_unavailable'), outcome['reason'])
+        self.assertEqual(calls, [])
+        self.assertEqual(self.store_file()['verifies'], {})
+
+    def test_a_rollback_that_did_not_succeed_is_not_verified(self):
+        task, _ = self.rollback_pair(result='ROLLBACK_REJECTED')
+        self.ledger(rollback=task)
+        publish, calls = self.publishing()
+        outcome = self.reconcile(publish=publish)
+        self.assertEqual(outcome['status'], 'skipped')
+        self.assertIn('post_verify_rollback_result', outcome['reason'])
+        self.assertEqual(calls, [])
+
+    def test_a_rollback_whose_gates_did_not_all_pass_is_not_verified(self):
+        gates = {k: 'PASS' for k in bridge.ROLLBACK_RESULT_GATES}
+        gates['postcheck'] = 'FAIL'
+        task, _ = self.rollback_pair(gates=gates)
+        self.ledger(rollback=task)
+        publish, calls = self.publishing()
+        outcome = self.reconcile(publish=publish)
+        self.assertEqual(outcome['status'], 'skipped')
+        self.assertIn('post_verify_rollback_gate_failed', outcome['reason'])
+        self.assertEqual(calls, [])
+
+    def test_an_action_that_finished_too_long_ago_is_not_verified(self):
+        """A VERIFY of a state three hours gone would be about the past, not the host.
+
+        The stale action has to be the *newest* action.  `newest_mutating` deliberately
+        ignores one that a later action replaced, so backdating the rollback alone would
+        leave it older than the deployment it undoes -- a history that cannot happen, and
+        one that tests supersession rather than the freshness window.  Both halves are
+        backdated and the ledger re-seeded, so the deployment the rollback names is still
+        the deployment it actually undoes.
+        """
+        self.f.deploy_source(age=3 * 3600 + 300)
+        self.f.seed_ledger(self.root)
+        task, _ = self.rollback_pair(age=3 * 3600)
+        self.ledger(rollback=task)
+        outcome = self.reconcile(publish=lambda task: 'f' * 40)
+        self.assertEqual(outcome['status'], 'skipped')
+        self.assertTrue(outcome['reason'].startswith('source_stale_seconds:'), outcome['reason'])
+
+    def test_evidence_whose_signature_does_not_verify_cannot_trigger_a_verify(self):
+        """The trigger is a signature, so a forged or edited Evidence buys nothing.
+
+        The edit here is the interesting one: a FAILED rollback relabelled as
+        ROLLBACK_OK.  Without the signature check the Bridge would publish a VERIFY
+        asserting a state the executor never reached.
+        """
+        task, evidence = self.rollback_pair(result='ROLLBACK_REJECTED')
+        forged = {k: v for k, v in evidence.items() if k != 'signature'}
+        forged['executor_result'] = 'ROLLBACK_OK'
+        self.f.deploys[task['task_id']] = (task, {**forged, 'signature': evidence['signature']})
+        self.ledger(rollback=task)
+        publish, calls = self.publishing()
+        outcome = self.reconcile(publish=publish)
+        self.assertEqual(outcome['status'], 'skipped')
+        self.assertIn('invalid_signature', outcome['reason'])
+        self.assertEqual(calls, [])
+
+    def test_a_task_whose_signature_does_not_verify_is_not_verified(self):
+        task, _ = self.rollback_pair()
+        without = {k: v for k, v in task.items() if k != 'signature'}
+        without['parameters'] = {**without['parameters'], 'approval_id': 'approval-rollback-' + 'z' * 16}
+        self.ledger(rollback={**without, 'signature': task['signature']})
+        outcome = self.reconcile(publish=lambda task: 'f' * 40)
+        self.assertEqual(outcome['status'], 'skipped')
+        self.assertIn('invalid_signature', outcome['reason'])
+
+    def test_a_rollback_whose_source_record_does_not_match_is_refused(self):
+        """The restored image is only believable if it is the source pair's own.
+
+        The rollback Evidence names the source deployment's record id and digest; the
+        Bridge re-derives them from the source Task and its Evidence and refuses when the
+        two disagree, so a rollback cannot point at a record that is not the one whose
+        proof supplied the image.
+        """
+        task, _ = self.rollback_pair()
+        self.ledger(rollback=task)
+        original = gate.rollback_source_proof
+        try:
+            gate.rollback_source_proof = lambda *a, **k: {**original(*a, **k), 'record_sha256': '9' * 64}
+            outcome = self.reconcile(publish=lambda task: 'f' * 40)
+        finally:
+            gate.rollback_source_proof = original
+        self.assertEqual(outcome['status'], 'skipped')
+        self.assertEqual(outcome['reason'], 'source_deploy_record_mismatch')
+
+    def test_a_rollback_whose_source_deployment_is_gone_is_refused(self):
+        task, _ = self.rollback_pair()
+        self.ledger(rollback=task)
+        records = json.loads((self.root / 'ledger.json').read_text())['requests']
+        del records['synthetic:deploy-source']
+        (self.root / 'ledger.json').write_bytes(gate.canonical({'version': 1, 'requests': records}))
+        outcome = self.reconcile(publish=lambda task: 'f' * 40)
+        self.assertEqual(outcome['status'], 'skipped')
+        self.assertIn('post_verify_source_deploy_missing', outcome['reason'])
+
+    def test_nothing_is_published_when_the_ledger_holds_no_action(self):
+        (self.root / 'ledger.json').write_bytes(gate.canonical({'version': 1, 'requests': {}}))
+        publish, calls = self.publishing()
+        outcome = self.reconcile(publish=publish)
+        self.assertEqual(outcome, {'status': 'idle', 'reason': 'no_published_action'})
+        self.assertEqual(calls, [])
+
+    def test_the_reconciliation_publishes_at_most_one_task_per_tick(self):
+        """A backlog of older actions does not become a burst of probes.
+
+        The Bus is where a Task is claimed, and every published Task is offered to the
+        agent on every tick; a reconciliation that walked the whole action history would
+        publish a VERIFY for deployments that are long superseded.
+        """
+        first, _ = self.f.deploy_source(task_id='go-boss-deploy-synthetic-old', age=600,
+                                        nonce='synthetic-deploy-nonce-old')
+        self.ledger(**{'deploy-old': first})
+        publish, calls = self.publishing()
+        self.reconcile(publish=publish)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0]['parameters']['candidate_image_id'], self.f.candidate)
+
+    # -- no new authority, no interference ---------------------------------- #
+    def test_a_channel_that_does_not_enable_verify_publishes_nothing(self):
+        channel = json.loads(self.channel.read_text())
+        channel['allowed_actions'] = [a for a in channel['allowed_actions'] if a != 'HK_STAGING_VERIFY']
+        with self.assertRaisesRegex(gate.Reject, 'post_verify_action_not_enabled_in_channel'):
+            self.reconcile(channel=channel)
+        channel['publish_enabled'] = False
+        with self.assertRaisesRegex(gate.Reject, 'post_verify_publish_disabled'):
+            self.reconcile(channel=channel)
+
+    def test_the_ledger_is_not_written_to(self):
+        """The store is kept apart on purpose.
+
+        The ledger's `requests` mapping is read by other units to decide which deployment
+        a rollback undoes and which VERIFY is a deployment's preflight.  A synthesised
+        Task in there would be offered to both: a post-action VERIFY would become a
+        candidate preflight for a later deployment, which would let a deployment proceed
+        on a probe this reconciliation produced rather than on the operator's baseline.
+        """
+        before = (self.root / 'ledger.json').read_bytes()
+        self.reconcile(publish=lambda task: 'f' * 40)
+        self.assertEqual((self.root / 'ledger.json').read_bytes(), before)
+        self.assertTrue(bridge.post_verify_path(self.root).exists())
+
+    def test_the_preflight_pool_still_selects_the_operators_verify(self):
+        self.reconcile(publish=lambda task: 'f' * 40)
+        records = json.loads((self.root / 'ledger.json').read_text())['requests']
+        preflight, _record = derivation.latest_pair(
+            records, gate.VERIFY_ACTION, self.f.read_evidence, self.f.at,
+            gate.VERIFY_EVIDENCE_MAX_AGE,
+            {'candidate_image_id': self.f.current, 'expected_current_image_id': self.f.current},
+            'preflight_evidence_unusable')
+        self.assertEqual(preflight['task_id'], self.f.bundle['preflight_task']['task_id'])
+
+    def test_a_rollback_source_is_still_spent_exactly_once(self):
+        """The reconciliation must not look like a second rollback of the same source."""
+        rollback, _ = self.rollback_pair()
+        self.ledger(rollback=rollback)
+        self.reconcile(publish=lambda task: 'f' * 40)
+        records = json.loads((self.root / 'ledger.json').read_text())['requests']
+        gate.ensure_rollback_unused(records, 'go-boss-deploy-' + '0' * 24)
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_already_rolled_back'):
+            gate.ensure_rollback_unused(records, rollback['parameters']['source_deploy_task_id'])
+
+    def test_the_rollback_gate_names_are_pinned_to_the_executor_that_writes_them(self):
+        """The contract is pinned from the other side's source, not restated from memory.
+
+        `rollback_runtime.py` returns its seven gate names in one literal.  If the executor
+        ever renames one, this fails here rather than in a live VERIFY that silently
+        refuses every rollback.
+        """
+        source = ROOT.parents[1] / 'hk-staging/source/executor/runtime/rollback_runtime.py'
+        if not source.exists():
+            self.skipTest('the executor source is not in this checkout')
+        line = next((l for l in source.read_text().splitlines() if '"rollback_source":"PASS"' in l), None)
+        self.assertIsNotNone(line, 'the executor no longer returns a gate block this test can read')
+        block = line.split('{', 1)[1]
+        named = {part.split(':')[0].strip().strip('"') for part in block.split(',')}
+        self.assertTrue(set(bridge.ROLLBACK_RESULT_GATES) <= named,
+                        'executor gates %s do not cover %s' % (sorted(named),
+                                                              sorted(bridge.ROLLBACK_RESULT_GATES)))
+
 class StorageTests(unittest.TestCase):
     def test_secure_plan_load_and_absence(self):
         f=Fixture()

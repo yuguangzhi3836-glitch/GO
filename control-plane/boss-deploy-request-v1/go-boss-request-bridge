@@ -66,6 +66,22 @@ Dispatch is explicit and fail-closed. An action that is not named in
 `derive_formal_task` is refused; it can never fall through into VERIFY, TEST_PR,
 DEPLOY or ROLLBACK, and before this revision an unnamed action silently became a
 VERIFY. Nothing that the other three actions do or are allowed to do is changed.
+
+A DEPLOY and a ROLLBACK are each followed by a VERIFY this Bridge publishes by itself.
+Both actions end with the host in a state that a signed Evidence describes, and the
+question that comes next -- is Hong Kong really in that state? -- used to need an
+operator to send a second VERIFY by hand.  That made "the deployment succeeded" and "the
+rollback succeeded" depend on somebody remembering to look, which is the gap PR #179
+recorded against this channel.  The Bridge now reads the Evidence of the action it
+published, checks both signatures, takes the image out of the verified bytes, signs a
+VERIFY Task bound to that action, and publishes it.
+
+That is additive and it grants nothing new.  VERIFY is read-only; the trigger is a signed
+pair this Bridge published rather than a Request; the image is never supplied by anyone;
+and the deployment authorisation still governs DEPLOY and ROLLBACK alone, so those two
+actions keep exactly the authority they had.  What the VERIFY is for is the Control State:
+`command-center-state-v1` reads the newest VERIFY Evidence as the image that was current,
+so an automatic one is what makes `live_proven_image` track the host without a human.
 """
 import argparse, datetime as dt, fcntl, hashlib, json, os, pathlib, re, secrets, subprocess, sys, tempfile
 from cryptography.hazmat.primitives import serialization
@@ -118,6 +134,34 @@ PR_NUMBER_RE = re.compile(r"^[1-9][0-9]{0,8}$")
 DEFAULT_BRANCH_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$")
 
 Reject = deploy_gate.Reject
+
+# --------------------------------------------------------------------------- #
+# The automatic post-action VERIFY
+# --------------------------------------------------------------------------- #
+# Pinned from the executor that produces them: `hk-staging/source/executor/runtime/
+# rollback_runtime.py` returns exactly these seven names on success.  A VERIFY derived
+# from a rollback whose own gates did not all pass would be derived from a state the
+# executor never claimed, so they are asserted rather than the looser "every value is
+# PASS" -- the rollback Evidence carries record ids and the source task id beside the
+# gates, and the loose rule would refuse every real rollback.
+ROLLBACK_RESULT_GATES = ("rollback_source", "lineage", "target_derivation", "fresh_drift",
+                         "rollback_record", "fixed_scope", "postcheck")
+POST_VERIFY_ACTIONS = (deploy_gate.ACTION, deploy_gate.ROLLBACK_ACTION)
+POST_VERIFY_RESULT = {deploy_gate.ACTION: "DEPLOY_OK",
+                      deploy_gate.ROLLBACK_ACTION: "ROLLBACK_OK"}
+POST_VERIFY_GATES = {deploy_gate.ACTION: deploy_gate.DEPLOY_GATES,
+                     deploy_gate.ROLLBACK_ACTION: ROLLBACK_RESULT_GATES}
+# Beside the ledger, not inside it.  The ledger's `requests` mapping is read by other
+# units to decide which deployment a rollback undoes and which VERIFY is a deployment's
+# preflight; a synthesised Task in there would be offered to both, and a post-action
+# VERIFY must never be mistaken for either.
+POST_VERIFY_STORE = "post-action-verifies.json"
+# The Evidence has to still describe the host.  An action that finished longer ago than
+# this has a successor, and publishing a VERIFY that asserts the older state would
+# manufacture a failure instead of reporting one.
+POST_VERIFY_MAX_AGE = dt.timedelta(seconds=1800)
+POST_VERIFY_TASK_LIFE = dt.timedelta(minutes=20)
+IMAGE_ID = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 def canonical(value): return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 def now(): return dt.datetime.now(dt.timezone.utc)
@@ -515,6 +559,258 @@ def publish_task(task):
         git(env,"-C",str(repo),"push","origin","HEAD:main")
         return git(env,"-C",str(repo),"rev-parse","HEAD").stdout.strip()
     finally: subprocess.run(["/usr/bin/rm","-rf",str(work)],check=True)
+def post_verify_path(ledger_root):
+    return pathlib.Path(ledger_root)/POST_VERIFY_STORE
+
+def load_post_verifies(ledger_root):
+    """The Bridge's own record of the post-action VERIFYs it published.
+
+    Durable for the same reason the ledger is: the act of publishing is what has to be
+    remembered, not the intention to publish.  Written with the ledger's own discipline
+    -- a mode-0600 temporary and a rename -- so a reader never sees it half-written.
+    """
+    path=post_verify_path(ledger_root)
+    if not path.exists(): return {"version":1,"verifies":{}}
+    try: value=deploy_gate.parse_json(path.read_bytes())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise Reject("post_verify_store_unreadable") from exc
+    if (not isinstance(value,dict) or set(value)!={"version","verifies"} or value["version"]!=1
+            or not isinstance(value["verifies"],dict)):
+        raise Reject("post_verify_store_invalid")
+    return value
+
+def save_post_verifies(ledger_root,value):
+    path=post_verify_path(ledger_root); temporary=path.with_name(path.name+".tmp")
+    fd=os.open(temporary,os.O_WRONLY|os.O_CREAT|os.O_TRUNC|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,"wb") as stream:
+        stream.write(canonical(value)); stream.flush(); os.fsync(stream.fileno())
+    os.replace(temporary,path)
+
+def newest_mutating(records):
+    """The newest published DEPLOY or ROLLBACK the ledger holds, or None.
+
+    Only the newest, and that is the point: a deployment a later action has replaced has
+    no state of its own left to verify.  Asking the host about the older state would
+    report a drift this process created, not one it found.
+    """
+    pairs=[]
+    for action in POST_VERIFY_ACTIONS: pairs.extend(plan_derivation.published_pairs(records,action))
+    pairs.sort(key=lambda pair:(str(pair[0].get("issued_at") or ""),str(pair[0].get("task_id") or "")),
+               reverse=True)
+    return pairs[0] if pairs else None
+
+def action_result_proof(action,task,evidence,authority_key,hk_key):
+    """What a finished action left behind, from bytes that both signatures cover.
+
+    The DEPLOY half delegates to `deploy_gate.rollback_source_proof`, which already
+    verifies a DEPLOY Task and its Evidence this way: the two objects are the same
+    whether the next step is a rollback or a VERIFY, so the check is the same check and
+    writing a second one could only make them disagree.  It has no freshness window,
+    which is why `post_verify_target` applies one of its own.
+
+    There was no equivalent for a ROLLBACK, because until now nothing consumed its
+    result.  It is written here to the same shape and with the same steps: both
+    signatures, the task/evidence binding, the parameter set the agent itself validates,
+    the executor's own result string, the record ids it must have produced, and its own
+    gates.  A rollback has no candidate image of its own -- it restores the state the
+    source deployment replaced -- so the image is resolved by the caller from the
+    source pair, and the record ids that identify that pair are returned here.
+    """
+    if action==deploy_gate.ACTION:
+        proof=deploy_gate.rollback_source_proof(task,evidence,authority_key,hk_key)
+        return {"image_id":proof["candidate_image_id"],"completed_at":proof["completed_at"],
+                "record_id":proof["record_id"],"record_sha256":proof["record_sha256"]}
+    if action!=deploy_gate.ROLLBACK_ACTION: raise Reject("post_verify_action_not_mutating")
+    deploy_gate.verify_signed(task,authority_key,"hex")
+    deploy_gate.verify_signed(evidence,hk_key,"base64")
+    deploy_gate.exact(task,deploy_gate.TASK_FIELDS,"post_verify_task_fields")
+    if task["schema_version"]!="1" or task["authority"]!="GO-COMMAND-CENTER":
+        raise Reject("post_verify_task_authority")
+    if task["action_id"]!=deploy_gate.ROLLBACK_ACTION or task["environment"]!=POLICY["environment"]:
+        raise Reject("post_verify_rollback_scope")
+    for name in ("task_id","nonce","action_id","environment"):
+        if evidence.get(name)!=task[name]: raise Reject("post_verify_proof_binding")
+    deploy_gate.exact(task["parameters"],deploy_gate.ROLLBACK_PARAMETERS,"post_verify_rollback_parameters")
+    if evidence.get("release_id")!=task["parameters"]["release_id"]:
+        raise Reject("post_verify_release_binding")
+    source_id=task["parameters"]["source_deploy_task_id"]
+    if evidence.get("source_deploy_task_id")!=source_id: raise Reject("post_verify_source_binding")
+    if evidence.get("schema_version")!="1" or evidence.get("status")!="SUCCESS":
+        raise Reject("post_verify_rollback_not_success")
+    if evidence.get("executor_result")!="ROLLBACK_OK": raise Reject("post_verify_rollback_result")
+    record_id,record_sha256=evidence.get("rollback_record_id"),evidence.get("rollback_record_sha256")
+    source_record=evidence.get("source_deploy_record_id")
+    source_record_sha256=evidence.get("source_deploy_record_sha256")
+    for name,value in (("rollback_record_id",record_id),("rollback_record_sha256",record_sha256),
+                       ("source_deploy_record_id",source_record),
+                       ("source_deploy_record_sha256",source_record_sha256)):
+        if not isinstance(value,str) or deploy_gate.SHA.fullmatch(value) is None:
+            raise Reject("post_verify_record_binding")
+    gates=evidence.get("gate_results")
+    if not isinstance(gates,dict) or any(gates.get(name)!="PASS" for name in ROLLBACK_RESULT_GATES):
+        raise Reject("post_verify_rollback_gate_failed")
+    issued=deploy_gate.timestamp(task["issued_at"])
+    started=deploy_gate.timestamp(evidence.get("started_at"))
+    completed=deploy_gate.timestamp(evidence.get("completed_at"))
+    # As with a deployment, `completed <= expires` is deliberately not asserted: the
+    # window is the authorisation's, not the work's.
+    if not issued<=started<=completed: raise Reject("post_verify_rollback_unbound_time")
+    return {"image_id":None,"completed_at":completed,"record_id":record_id,
+            "record_sha256":record_sha256,"source_deploy_task_id":source_id,
+            "source_deploy_record_id":source_record,
+            "source_deploy_record_sha256":source_record_sha256}
+
+def post_verify_target(records,read_evidence,authority_key,hk_key,at):
+    """The newest finished action and the image a VERIFY of it would assert.
+
+    Returns `(task, action, image, reason)`.  `image` is None when there is nothing to
+    verify and `reason` says why: a pending Evidence is the next tick's work, while a
+    superseded or stale action is a decision already taken.  Nothing here reads a
+    Request, a caller, or a file this process chose -- the image comes out of the two
+    signed objects and, for a rollback, out of the source deployment's own proof.
+    """
+    pair=newest_mutating(records)
+    if pair is None: return None,None,None,"no_published_action"
+    task,record=pair; action=task["action_id"]
+    try: evidence=read_evidence(task)
+    except Reject as exc: return task,action,None,"source_evidence_unavailable:%s" % exc
+    if not isinstance(evidence,dict): return task,action,None,"source_evidence_unreadable"
+    try: proof=action_result_proof(action,task,evidence,authority_key,hk_key)
+    except Reject as exc: return task,action,None,"source_proof_refused:%s" % exc
+    image=proof.get("image_id")
+    if image is None:
+        source_id=proof.get("source_deploy_task_id")
+        try:
+            source_task,_source_record=plan_derivation.pair_by_task_id(
+                records,deploy_gate.ACTION,source_id,"post_verify_source_deploy_missing")
+        except Reject as exc: return task,action,None,str(exc)
+        recorded_sha256=record.get("source_deploy_task_sha256")
+        if isinstance(recorded_sha256,str) and recorded_sha256!=deploy_gate.digest(source_task):
+            return task,action,None,"source_deploy_task_changed"
+        try: source_evidence=read_evidence(source_task)
+        except Reject as exc: return task,action,None,"source_deploy_evidence_unavailable:%s" % exc
+        try: source_proof=deploy_gate.rollback_source_proof(source_task,source_evidence,authority_key,hk_key)
+        except Reject as exc: return task,action,None,"source_deploy_proof_refused:%s" % exc
+        if (source_proof["record_id"]!=proof.get("source_deploy_record_id")
+                or source_proof["record_sha256"]!=proof.get("source_deploy_record_sha256")):
+            return task,action,None,"source_deploy_record_mismatch"
+        image=source_proof["expected_current_image_id"]
+    if not isinstance(image,str) or IMAGE_ID.fullmatch(image) is None:
+        return task,action,None,"image_unresolved"
+    age=at-proof["completed_at"]
+    if age>POST_VERIFY_MAX_AGE: return task,action,None,"source_stale_seconds:%d" % int(age.total_seconds())
+    return task,action,image,None
+
+def derive_post_action_verify(source_task,image,at=None):
+    """The VERIFY Task for one finished action.  Pure; the caller signs and publishes it.
+
+    Its parameters are the VERIFY contract's three names and nothing else, because the
+    Hong Kong agent refuses any other set: no source task id, no approval, no service,
+    no path, no command.  The binding is carried by the values -- `release_id` is derived
+    from the action's own Task id, and the image is the one the action's verified bytes
+    name -- so one action can only ever produce one VERIFY, and there is no field a
+    caller could have supplied.
+    """
+    at=at or now()
+    if not isinstance(image,str) or IMAGE_ID.fullmatch(image) is None: raise Reject("post_verify_image_invalid")
+    if not isinstance(source_task,dict) or not isinstance(source_task.get("task_id"),str):
+        raise Reject("post_verify_source_missing")
+    if source_task.get("action_id") not in POST_VERIFY_ACTIONS: raise Reject("post_verify_action_not_mutating")
+    suffix=hashlib.sha256(source_task["task_id"].encode()).hexdigest()[:12]
+    release_id="post-%s-verify-%s" % (source_task["action_id"].split("_")[-1].lower(),suffix)
+    return {"schema_version":"1","task_id":"go-boss-"+release_id,"nonce":secrets.token_urlsafe(24),
+            "issued_at":iso(at),"expires_at":iso(at+POST_VERIFY_TASK_LIFE),
+            "authority":"GO-COMMAND-CENTER","environment":POLICY["environment"],
+            "action_id":POLICY["action_id"],
+            "parameters":{"release_id":release_id,"candidate_image_id":image,
+                          "expected_current_image_id":image}}
+
+def adopt_published_verify(raw,authority_key,expected):
+    """An already-published VERIFY under this name, if it is this Command Center's.
+
+    A publish can succeed and the store write that records it can still be lost.  The
+    Bus is then the authority, exactly as it is for a deployment: the file is accepted
+    only if the task identity's own key produced it and it says what this reconciliation
+    would have said.  Anything else is a name collision and needs a human.
+    """
+    try: value=deploy_gate.parse_json(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError): return None
+    if not isinstance(value,dict) or not isinstance(expected,dict): return None
+    if value.get("task_id")!=expected.get("task_id"): return None
+    if value.get("parameters")!=expected.get("parameters"): return None
+    try: unsigned=deploy_gate.verify_signed(value,authority_key,"hex")
+    except Exception: return None
+    if unsigned.get("action_id")!=POLICY["action_id"] or unsigned.get("environment")!=POLICY["environment"]:
+        return None
+    if unsigned.get("authority")!="GO-COMMAND-CENTER": return None
+    if unsigned.get("schema_version")!="1" or not isinstance(unsigned.get("nonce"),str): return None
+    return {"task_id":unsigned["task_id"],"nonce":unsigned["nonce"],
+            "parameters":unsigned["parameters"],"task_sha256":hashlib.sha256(canonical(unsigned)).hexdigest()}
+
+def reconcile_post_action_verifies(ledger_root,key_path,channel,read=None,publish=None,fetch=None,at=None):
+    """Publish the one VERIFY the newest finished action still needs.  Idempotent.
+
+    Ordinary outcomes are reported rather than raised: an action whose Evidence has not
+    arrived is the next tick's work, and an action already verified must stay verified
+    rather than be published again.  A refusal is raised only for a state that needs a
+    human -- a Bus task under this name that this Command Center cannot account for.
+    """
+    read=read_evidence if read is None else read
+    publish=publish_task if publish is None else publish
+    fetch=remote_task if fetch is None else fetch
+    if not isinstance(channel,dict) or channel.get("publish_enabled") is not True:
+        raise Reject("post_verify_publish_disabled")
+    if POLICY["action_id"] not in (channel.get("allowed_actions") or []):
+        raise Reject("post_verify_action_not_enabled_in_channel")
+    at=at or now()
+    records=ledger_records(ledger_root); store=load_post_verifies(ledger_root)
+    pair=newest_mutating(records)
+    if pair is None: return {"status":"idle","reason":"no_published_action"}
+    source_task,_source_record=pair; source_task_id=source_task["task_id"]
+    recorded=store["verifies"].get(source_task_id)
+    if isinstance(recorded,dict) and recorded.get("status")=="published":
+        return {"status":"present","source_task_id":source_task_id,
+                "task_id":recorded.get("task_id"),"image_id":recorded.get("image")}
+    authority,hk=deploy_gate.load_keys()
+    if isinstance(recorded,dict) and recorded.get("status")=="preparing":
+        # A previous tick started this and did not finish recording it.
+        existing=fetch(str(recorded.get("task_id") or ""))
+        if existing is None:
+            store["verifies"].pop(source_task_id,None); save_post_verifies(ledger_root,store)
+        else:
+            adopted=adopt_published_verify(existing,authority,recorded)
+            if adopted is None: raise Reject("ambiguous_post_verify_publish_requires_operator_review")
+            store["verifies"][source_task_id]={**recorded,"status":"published","reconciled":True,
+                                               "nonce":adopted["nonce"],"task_sha256":adopted["task_sha256"]}
+            save_post_verifies(ledger_root,store)
+            return {"status":"published_reconciled","source_task_id":source_task_id,
+                    "task_id":adopted["task_id"],"image_id":recorded.get("image")}
+    task,action,image,reason=post_verify_target(records,read,authority,hk,at)
+    if image is None:
+        return {"status":"skipped","source_task_id":source_task_id,"source_action":action,"reason":reason}
+    unsigned=derive_post_action_verify(task,image,at)
+    record={"status":"preparing","task_id":unsigned["task_id"],"parameters":dict(unsigned["parameters"]),
+            "image":image,"source_action":action,"source_task_sha256":deploy_gate.digest(task),
+            "started_at":iso(at)}
+    store["verifies"][source_task_id]=record; save_post_verifies(ledger_root,store)
+    signed_task=sign(unsigned,key_path)
+    try: commit=publish(signed_task)
+    except Reject as exc:
+        existing=fetch(unsigned["task_id"])
+        if existing is None: raise
+        adopted=adopt_published_verify(existing,authority,
+                                       {"task_id":unsigned["task_id"],"parameters":unsigned["parameters"]})
+        if adopted is None: raise Reject("ambiguous_post_verify_publish_requires_operator_review") from exc
+        commit="reconciled"
+    store=load_post_verifies(ledger_root)
+    store["verifies"][source_task_id]={**record,"status":"published","task_commit":commit,
+                                       "published_at":iso(now()),
+                                       "task_sha256":hashlib.sha256(canonical(signed_task)).hexdigest()}
+    save_post_verifies(ledger_root,store)
+    return {"status":"published","source_task_id":source_task_id,"source_action":action,
+            "task_id":signed_task["task_id"],"task_commit":commit,"image_id":image,
+            "verifies":source_task_id}
+
 def armed_process(number, head, ledger_root, key_path, arm_path):
     arm=load_arm(arm_path); ledger=Ledger(ledger_root); key="%s:%s"%(number,head)
     tx=ledger.transaction(); data=next(tx)
@@ -748,8 +1044,16 @@ def main():
         try: result.append({"pr":number,"head":head,**persistent_process(number,head,args.ledger_root,args.key,args.channel_config)})
         except Reject as exc: result.append({"pr":number,"head":head,"status":"rejected","reason":str(exc)})
     channel = load_channel(args.channel_config)
-    print(json.dumps({"bridge_version":"1.9.0-rollback-channel", "channel_mode":channel["mode"],
-                      "publish_enabled":channel["publish_enabled"], "results":result},sort_keys=True)); return 0
+    # The post-action VERIFY runs after the Request loop, and a failure in it is reported
+    # rather than raised.  It is additive and read-only: a defect here must not be able to
+    # stop a DEPLOY or a ROLLBACK Request from being processed, which is what an exception
+    # escaping this point would do to every later tick.
+    try: post=reconcile_post_action_verifies(args.ledger_root,args.key,channel)
+    except Reject as exc: post={"status":"rejected","reason":str(exc)}
+    except Exception as exc: post={"status":"error","reason":type(exc).__name__}
+    print(json.dumps({"bridge_version":"1.10.0-post-action-verify", "channel_mode":channel["mode"],
+                      "publish_enabled":channel["publish_enabled"],
+                      "post_action_verify":post, "results":result},sort_keys=True)); return 0
 
 def run_tests():
     import unittest
@@ -1161,6 +1465,58 @@ def run_tests():
           deploy_gate.ensure_rollback_unused({"2:"+"c"*40:{"status":status,"task":{"action_id":deploy_gate.ROLLBACK_ACTION,"parameters":{"source_deploy_task_id":source}}}},source)
         deploy_gate.ensure_rollback_unused({"3:"+"d"*40:{"status":"published","task":{"action_id":deploy_gate.ACTION,"parameters":{"source_deploy_task_id":source}}}},source)
         deploy_gate.ensure_rollback_unused({"4:"+"e"*40:{"status":"published","task":{"action_id":deploy_gate.ROLLBACK_ACTION,"parameters":{"source_deploy_task_id":"go-boss-deploy-"+"9"*24}}}},source)
+      def post_source(self, action=deploy_gate.ROLLBACK_ACTION, task_id=None):
+        if task_id is None: task_id=("go-boss-deploy-" if action==deploy_gate.ACTION else "go-boss-rollback-")+"a"*24
+        return {"schema_version":"1","task_id":task_id,"nonce":"synthetic-nonce","issued_at":iso(now()),
+                "expires_at":iso(now()+dt.timedelta(minutes=5)),"authority":"GO-COMMAND-CENTER",
+                "environment":"HK-STAGING-01","action_id":action,"parameters":{}}
+      def test_a_post_action_verify_carries_only_the_verify_contract(self):
+        image="sha256:"+"a"*64
+        task=derive_post_action_verify(self.post_source(),image)
+        self.assertEqual(task["action_id"],POLICY["action_id"])
+        self.assertEqual(set(task["parameters"]),{"release_id","candidate_image_id","expected_current_image_id"})
+        self.assertEqual(task["parameters"]["candidate_image_id"],image)
+        self.assertEqual(task["parameters"]["expected_current_image_id"],image)
+        self.assertEqual(task["authority"],"GO-COMMAND-CENTER")
+        self.assertEqual(task["environment"],"HK-STAGING-01")
+      def test_a_post_action_verify_is_structurally_identical_for_both_actions(self):
+        # DEPLOY and ROLLBACK differ in which image they left current, not in what is
+        # published: one builder, one contract, no branch a caller could steer.
+        for action in POST_VERIFY_ACTIONS:
+          task=derive_post_action_verify(self.post_source(action),"sha256:"+"b"*64)
+          self.assertEqual(set(task["parameters"]),{"release_id","candidate_image_id","expected_current_image_id"})
+          self.assertEqual(set(task),{"schema_version","task_id","nonce","issued_at","expires_at",
+                                      "authority","environment","action_id","parameters"})
+      def test_a_post_action_verify_cannot_name_its_own_image_source_or_service(self):
+        for action in POST_VERIFY_ACTIONS:
+          task=derive_post_action_verify(self.post_source(action),"sha256:"+"c"*64)
+          for forbidden in ("source_deploy_task_id","approval_id","services","target","compose_file",
+                            "env_file","executor_path","command","rollback_image","canary_evidence_id",
+                            "plan_id","pr_number","candidate_package_sha256","release_candidate_v1"):
+            self.assertNotIn(forbidden,task["parameters"])
+      def test_one_action_yields_exactly_one_post_action_verify_name(self):
+        # The name has to be a function of the action, or a second tick would publish a
+        # second probe of the same state under a second name.
+        source=self.post_source()
+        first=derive_post_action_verify(source,"sha256:"+"d"*64,now())
+        second=derive_post_action_verify(source,"sha256:"+"d"*64,now()+dt.timedelta(seconds=41))
+        self.assertEqual(first["task_id"],second["task_id"])
+        self.assertNotEqual(first["nonce"],second["nonce"])
+        # The other direction: a different action leaves a different state behind, so it
+        # must not collide onto the first action's name -- the store is keyed on the
+        # source task, and one name per source is what keeps a tick from double-publishing.
+        other=derive_post_action_verify(self.post_source(deploy_gate.ACTION),"sha256:"+"d"*64)
+        self.assertNotEqual(first["task_id"],other["task_id"])
+      def test_a_post_action_verify_refuses_an_image_that_is_not_a_digest(self):
+        for bad in ("","6b92050e","sha256:zz","sha256:"+"a"*63,None,"sha256:"+"A"*64):
+          with self.assertRaises(Reject): derive_post_action_verify(self.post_source(),bad)
+      def test_a_post_action_verify_refuses_an_action_that_mutates_nothing(self):
+        # Exactly two actions leave a state behind.  A VERIFY, a TEST_PR, a canary, a
+        # liveness probe and an unknown name have no result to verify, so none of them
+        # may reach the builder -- and the two that do are named in one place.
+        self.assertEqual(set(POST_VERIFY_ACTIONS),{deploy_gate.ACTION,deploy_gate.ROLLBACK_ACTION})
+        for action in (POLICY["action_id"],TEST_ACTION,CANARY_ACTION,HEALTH_ACTION,"HK_STAGING_DEPLOY_V2"):
+          with self.assertRaises(Reject): derive_post_action_verify(self.post_source(action),"sha256:"+"a"*64)
     suite=unittest.defaultTestLoader.loadTestsFromTestCase(Tests); result=unittest.TextTestRunner(verbosity=2).run(suite)
     globals()["LAST_TEST_COUNT"]=result.testsRun; return 0 if result.wasSuccessful() else 1
 if __name__ == "__main__": sys.exit(main())
