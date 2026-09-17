@@ -99,11 +99,13 @@ class Evidence:
 class Replay:
     def __init__(self):
         self.keys = set()
+        self.expiries = {}
 
     def claim(self, replay_key: str, *, expires_at: datetime) -> bool:
         if replay_key in self.keys:
             return False
         self.keys.add(replay_key)
+        self.expiries[replay_key] = expires_at
         return True
 
 
@@ -170,6 +172,23 @@ def test_each_retry_attempt_is_independently_sealed():
     assert [item["response_status"] for item in evidence.attempts] == [429, 200]
 
 
+def test_transport_exception_attempt_is_sealed_and_retried_without_leaking_message():
+    class FlakyTransport(Transport):
+        def request(self, method, url, *, headers, body, timeout_seconds):
+            if not self.calls:
+                self.calls.append((method, url, headers, body, timeout_seconds))
+                raise TimeoutError("secret-bearing upstream diagnostic")
+            return super().request(method, url, headers=headers, body=body, timeout_seconds=timeout_seconds)
+
+    evidence = Evidence()
+    result = execute_one(executor(transport=FlakyTransport(), evidence=evidence))
+    assert result.ok is True
+    assert len(evidence.attempts) == 2
+    assert evidence.attempts[0]["response_status"] is None
+    assert evidence.attempts[0]["transport_error"] == "TimeoutError"
+    assert "secret-bearing" not in repr(evidence.attempts[0])
+
+
 def test_complex_auth_fails_closed_without_materializer():
     with pytest.raises(ValueError, match="SANDBOX_AUTH_MATERIALIZER_REQUIRED"):
         execute_one(executor(auth_method="HMAC"))
@@ -203,6 +222,8 @@ def test_webhook_signature_timestamp_and_atomic_replay_claim_are_all_required():
     )
     assert proof["signature_verified"] is True
     assert proof["replay_claimed"] is True
+    replay_key = proof["replay_key"]
+    assert replay.expiries[replay_key] == NOW + timedelta(seconds=300)
 
     with pytest.raises(ValueError, match="SUPPLIER_WEBHOOK_REPLAYED"):
         runtime.verify_webhook(
@@ -227,6 +248,21 @@ def test_webhook_rejects_stale_and_future_timestamps(offset):
         )
 
 
+def test_future_timestamp_replay_claim_lives_until_end_of_signed_validity_window():
+    replay = Replay()
+    runtime = executor(replay=replay)
+    body = b"{}"
+    observed = NOW + timedelta(seconds=299)
+    timestamp = str(int(observed.timestamp()))
+    proof = runtime.verify_webhook(
+        body=body,
+        signature=signed(timestamp, body),
+        timestamp=timestamp,
+        resolved_secret={"webhook_secret": "webhook-key"},
+    )
+    assert replay.expiries[proof["replay_key"]] == observed + timedelta(seconds=300)
+
+
 def test_signed_webhook_suite_result_does_not_claim_external_observation():
     runtime = executor()
     results = runtime.execute_suite(
@@ -240,4 +276,3 @@ def test_signed_webhook_suite_result_does_not_claim_external_observation():
     webhook = next(item for item in results if item.operation == "SIGNED_WEBHOOK")
     assert webhook.ok is True
     assert webhook.payload == {"externally_observed": False, "status": "CONTRACT_READY_NOT_OBSERVED"}
-
