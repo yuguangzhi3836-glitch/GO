@@ -10,12 +10,12 @@ def test_repeated_unknown_resolution_preserves_phase_and_cannot_restart_complete
     assert svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://episode-1', 'ops')['status'] == 'UNKNOWN_EXTERNAL_STATE'
     with pytest.raises(ValueError, match='ILLEGAL_STATE'):
         svc.fulfill(owner, oid, 'START', 'isolated://unknown-start')
-    assert svc.admin_external_state(oid, 'CONFIRMED', 'isolated://episode-1-confirm', 'ops')['status'] == 'CONFIRMED'
+    assert svc.admin_external_state(oid, 'CONFIRMED', 'isolated://episode-1-confirm', 'ops', 'isolated://episode-1')['status'] == 'CONFIRMED'
     assert svc.fulfill(owner, oid, 'START', 'isolated://start')['status'] == 'IN_PROGRESS'
     assert svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://episode-2', 'ops')['status'] == 'UNKNOWN_EXTERNAL_STATE'
     with pytest.raises(ValueError, match='ILLEGAL_STATE'):
         svc.fulfill(owner, oid, 'COMPLETE', 'isolated://unknown-complete')
-    resumed = svc.admin_external_state(oid, 'CONFIRMED', 'isolated://episode-2-confirm', 'ops')
+    resumed = svc.admin_external_state(oid, 'CONFIRMED', 'isolated://episode-2-confirm', 'ops', 'isolated://episode-2')
     assert resumed['status'] == 'IN_PROGRESS'
     assert resumed['supplier_reference'] == original['supplier_reference']
     with pytest.raises(ValueError, match='ILLEGAL_STATE'):

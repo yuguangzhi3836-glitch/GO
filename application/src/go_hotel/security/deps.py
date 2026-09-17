@@ -9,7 +9,10 @@ bearer=HTTPBearer(auto_error=False)
 def current_principal(request:Request, cred:HTTPAuthorizationCredentials|None=Depends(bearer))->Principal:
     token = cred.credentials if cred else cookie_access_token(request)
     if not token: raise HTTPException(401,detail='AUTHENTICATION_REQUIRED')
-    try: p=identity_service.authenticate(token)
+    try:
+        p=identity_service.authenticate(
+            token, touch_session=request.method not in {'GET', 'HEAD', 'OPTIONS'}
+        )
     except ValueError as e: raise HTTPException(401,detail=str(e))
     expected_actor = request.headers.get('X-GO-Actor')
     if expected_actor is not None and expected_actor not in {'CONSUMER', 'SUPPLIER_USER', 'GO_ADMIN'}:

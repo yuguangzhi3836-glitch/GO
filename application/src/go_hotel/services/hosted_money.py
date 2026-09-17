@@ -258,3 +258,179 @@ def execute_refund(eligibility_id):
             'amount_minor':eligibility.eligible_amount_minor,'currency':r.currency,
             'money_movement_id':movement['money_movement_id'],'original_capture_id':capture.money_movement_id,
             'data_mode':'SIMULATION','external_live':False}
+
+def _unknown_episode_public(row, replay=False):
+    return {
+        'episode_id': row.episode_id,
+        'authorization_id': row.authorization_id,
+        'hosted_reservation_id': row.hosted_reservation_id,
+        'money_movement_id': row.money_movement_id,
+        'funding_leg': row.funding_leg,
+        'episode_generation': row.episode_generation,
+        'status': row.status,
+        'open_evidence_reference': row.open_evidence_reference,
+        'open_evidence_digest': row.open_evidence_digest,
+        'resolution_decision': row.resolution_decision,
+        'resolution_evidence_reference': row.resolution_evidence_reference,
+        'resolution_evidence_digest': row.resolution_evidence_digest,
+        'opened_by': row.opened_by,
+        'resolved_by': row.resolved_by,
+        'created_at': row.created_at.isoformat(),
+        'resolved_at': row.resolved_at.isoformat() if row.resolved_at else None,
+        'replay': replay,
+    }
+
+
+def _unknown_funding_leg(s, authorization, movement):
+    from go_hotel.db.models import HostedCreditAllocationRow, HostedStayCreditRow
+    if movement.money_movement_id in {m.money_movement_id for m in active_movements(s, authorization)}:
+        if movement.movement_type != 'AUTHORIZATION':
+            raise ValueError('UNKNOWN_EPISODE_FUNDING_MOVEMENT_REQUIRED')
+        return 'CASH_AUTHORIZATION'
+    allocated = s.get(HostedCreditAllocationRow, authorization.hosted_reservation_id)
+    credit = s.get(HostedStayCreditRow, allocated.credit_id) if allocated else None
+    if credit and credit.source_capture_id == movement.money_movement_id and movement.movement_type == 'CAPTURE':
+        return 'STAY_CREDIT_SOURCE_CAPTURE'
+    raise ValueError('UNKNOWN_EPISODE_FUNDING_MOVEMENT_REQUIRED')
+
+
+def _append_unknown_audit(s, episode, event_type, actor_id, evidence_digest, payload):
+    from go_hotel.db.models import HostedMoneyUnknownEpisodeAuditRow as Audit
+    previous = s.scalar(
+        select(Audit).where(Audit.episode_id == episode.episode_id)
+        .order_by(Audit.sequence.desc()).with_for_update()
+    )
+    sequence = previous.sequence + 1 if previous else 1
+    previous_hash = previous.event_hash if previous else None
+    event_hash = digest([
+        episode.episode_id, sequence, event_type, actor_id, evidence_digest,
+        payload, previous_hash,
+    ])
+    row = Audit(
+        audit_id=ident('hmua'), episode_id=episode.episode_id, sequence=sequence,
+        event_type=event_type, actor_id=actor_id, evidence_digest=evidence_digest,
+        payload_json=payload, previous_hash=previous_hash, event_hash=event_hash,
+        created_at=now(),
+    )
+    s.add(row)
+    s.flush()
+    return row
+
+
+def open_unknown_episode(authorization_id, money_movement_id, evidence_reference, evidence_payload, actor_id):
+    """Atomically fence one exact cash/credit funding fact behind a durable episode."""
+    from go_hotel.db.models import HostedMoneyUnknownEpisodeRow as Episode
+    from go_hotel.db.session import SessionLocal
+    if not actor_id or not evidence_reference or not isinstance(evidence_payload, dict):
+        raise ValueError('UNKNOWN_EPISODE_EVIDENCE_REQUIRED')
+    with SessionLocal.begin() as s:
+        authorization = s.get(Authorization, authorization_id, with_for_update=True)
+        if not authorization:
+            raise ValueError('AUTHORIZATION_NOT_FOUND')
+        movement = s.get(Movement, money_movement_id, with_for_update=True)
+        if not movement:
+            raise ValueError('MONEY_MOVEMENT_NOT_FOUND')
+        funding_leg = _unknown_funding_leg(s, authorization, movement)
+        evidence_digest = digest([
+            authorization_id, authorization.hosted_reservation_id,
+            money_movement_id, funding_leg, evidence_reference, evidence_payload,
+        ])
+        current = s.scalar(
+            select(Episode).where(
+                Episode.money_movement_id == money_movement_id,
+                Episode.status == 'OPEN',
+            ).order_by(Episode.episode_generation.desc()).with_for_update()
+        )
+        if current:
+            if (current.authorization_id, current.open_evidence_digest) == (authorization_id, evidence_digest):
+                return _unknown_episode_public(current, replay=True)
+            raise ValueError('UNKNOWN_EPISODE_EVIDENCE_CONFLICT')
+        if movement.state != 'CONFIRMED':
+            raise ValueError('UNKNOWN_EPISODE_CONFIRMED_FUNDING_REQUIRED')
+        prior = s.scalars(
+            select(Episode).where(Episode.money_movement_id == money_movement_id)
+            .order_by(Episode.episode_generation.desc()).with_for_update()
+        ).first()
+        generation = prior.episode_generation + 1 if prior else 1
+        timestamp = now()
+        episode = Episode(
+            episode_id=ident('hmue'), authorization_id=authorization_id,
+            hosted_reservation_id=authorization.hosted_reservation_id,
+            money_movement_id=money_movement_id, funding_leg=funding_leg,
+            episode_generation=generation, status='OPEN',
+            open_evidence_reference=evidence_reference,
+            open_evidence_digest=evidence_digest, resolution_decision=None,
+            resolution_evidence_reference=None, resolution_evidence_digest=None,
+            opened_by=actor_id, resolved_by=None, created_at=timestamp,
+            resolved_at=None, updated_at=timestamp,
+        )
+        movement.state = 'UNKNOWN_EXTERNAL_STATE'
+        movement.updated_at = timestamp
+        s.add(episode)
+        s.flush()
+        _append_unknown_audit(
+            s, episode, 'UNKNOWN_OPENED', actor_id, evidence_digest,
+            {'funding_leg': funding_leg, 'movement_state_from': 'CONFIRMED',
+             'movement_state_to': 'UNKNOWN_EXTERNAL_STATE'},
+        )
+        return _unknown_episode_public(episode)
+
+
+def resolve_unknown_episode(episode_id, decision, expected_open_evidence_digest,
+                            evidence_reference, evidence_payload, actor_id):
+    """Resolve only the current episode; movement transition and audit commit together."""
+    from go_hotel.db.models import HostedMoneyUnknownEpisodeRow as Episode
+    from go_hotel.db.session import SessionLocal
+    if decision != 'CONFIRMED':
+        raise ValueError('UNKNOWN_EPISODE_RESOLUTION_DECISION_INVALID')
+    if not actor_id or not evidence_reference or not isinstance(evidence_payload, dict):
+        raise ValueError('UNKNOWN_EPISODE_RESOLUTION_EVIDENCE_REQUIRED')
+    resolution_digest = digest([
+        episode_id, decision, evidence_reference, evidence_payload,
+    ])
+    with SessionLocal.begin() as s:
+        episode = s.get(Episode, episode_id, with_for_update=True)
+        if not episode:
+            raise ValueError('UNKNOWN_EPISODE_NOT_FOUND')
+        if episode.open_evidence_digest != expected_open_evidence_digest:
+            raise ValueError('UNKNOWN_EPISODE_OPEN_DIGEST_MISMATCH')
+        if episode.status != 'OPEN':
+            if (episode.status, episode.resolution_decision, episode.resolution_evidence_digest) == (
+                    'RESOLVED_CONFIRMED', decision, resolution_digest):
+                return _unknown_episode_public(episode, replay=True)
+            raise ValueError('UNKNOWN_EPISODE_ALREADY_RESOLVED')
+        current = s.scalar(
+            select(Episode).where(
+                Episode.money_movement_id == episode.money_movement_id,
+                Episode.status == 'OPEN',
+            ).order_by(Episode.episode_generation.desc()).with_for_update()
+        )
+        if not current or current.episode_id != episode_id:
+            raise ValueError('UNKNOWN_EPISODE_STALE')
+        movement = s.get(Movement, episode.money_movement_id, with_for_update=True)
+        authorization = s.get(Authorization, episode.authorization_id, with_for_update=True)
+        if not movement or not authorization:
+            raise ValueError('UNKNOWN_EPISODE_FUNDING_FACT_MISSING')
+        if _unknown_funding_leg(s, authorization, movement) != episode.funding_leg:
+            raise ValueError('UNKNOWN_EPISODE_FUNDING_BINDING_MISMATCH')
+        if movement.state != 'UNKNOWN_EXTERNAL_STATE':
+            raise ValueError('UNKNOWN_EPISODE_MOVEMENT_STATE_MISMATCH')
+        timestamp = now()
+        movement.state = 'CONFIRMED'
+        movement.updated_at = timestamp
+        episode.status = 'RESOLVED_CONFIRMED'
+        episode.resolution_decision = decision
+        episode.resolution_evidence_reference = evidence_reference
+        episode.resolution_evidence_digest = resolution_digest
+        episode.resolved_by = actor_id
+        episode.resolved_at = timestamp
+        episode.updated_at = timestamp
+        _append_unknown_audit(
+            s, episode, 'UNKNOWN_RESOLVED_CONFIRMED', actor_id, resolution_digest,
+            {'funding_leg': episode.funding_leg,
+             'movement_state_from': 'UNKNOWN_EXTERNAL_STATE',
+             'movement_state_to': 'CONFIRMED',
+             'open_evidence_digest': episode.open_evidence_digest},
+        )
+        return _unknown_episode_public(episode)
+

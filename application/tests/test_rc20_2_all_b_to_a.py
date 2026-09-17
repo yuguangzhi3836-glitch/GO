@@ -42,7 +42,7 @@ def test_ride_state_machine_recovery_illegal_transition_and_evidence(client):
     assert unknown['status']=='UNKNOWN_EXTERNAL_STATE'
     blocked=client.post(f'/v1/mobility/orders/{oid}/modify',headers=h,json={'new_time':'2026-09-01T11:00:00'})
     assert blocked.status_code==422
-    rec=mobility_service.admin_external_state(oid,'CONFIRMED','provider-reconciled','expert-review')
+    rec=mobility_service.admin_external_state(oid,'CONFIRMED','provider-reconciled','expert-review','provider-timeout')
     assert rec['status']=='CONFIRMED'
     start=client.post(f'/v1/mobility/orders/{oid}/fulfillment',headers=h,json={'action':'START','evidence_reference':'driver-start'})
     assert start.status_code==200 and start.json()['data']['status']=='IN_PROGRESS'

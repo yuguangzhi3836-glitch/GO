@@ -75,7 +75,7 @@ report={'commit':git('rev-parse','HEAD'),'product_candidate_commit':current['pro
         'application_tree':actual_tree,'selected_source_files':len(tracked),'retained_baseline_files':len(expected),
         'registered_acceptance_repairs':len(repairs),'approved_integration_overrides':sorted(overlay),
         'selection_counts':counts,'pr47_application_changes':changed,'archived_tooling_files':len(record['archived_pr48_tooling']),
-        'alignment':'PASS','migration_head':'0134_flight_status_width','historical_pass_transferred':False,
+        'alignment':'PASS','migration_head':'0136_merge_go_ai_journey','historical_pass_transferred':False,
         'full_three_end_ux':'HOLD','six_vertical_closed_loop':'HOLD','sealed_node':'HOLD','final_release':'HOLD'}
 if len(sys.argv)>1:
     out=Path(sys.argv[1]);out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(report,indent=2)+'\n')

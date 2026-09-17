@@ -1,0 +1,98 @@
+name: Shared Evidence Writer Gate
+
+on:
+  push:
+    branches: [ci/shared-evidence-writer-20260916]
+    paths:
+      - ci/evidence_writer/**
+      - .github/workflows/shared-evidence-writer.yml
+  pull_request:
+    paths:
+      - ci/evidence_writer/**
+      - .github/workflows/shared-evidence-writer.yml
+
+permissions:
+  contents: read
+
+jobs:
+  strict-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+      - name: Run writer and historical regression tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s ci/evidence_writer -p 'test_*.py' -v 2>&1 | tee writer-tests.log
+      - name: Create and independently verify source-bound bundle
+        env:
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          APPLICATION_TREE="$(git rev-parse HEAD:application)"
+          export APPLICATION_TREE
+          mkdir -p evidence-out
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = {
+              "application_tree": os.environ["APPLICATION_TREE"],
+              "candidate_commit": os.environ["CANDIDATE_SHA"],
+              "gate": "shared-evidence-writer",
+              "status": "PASS",
+              "tests": "python -m unittest discover -s ci/evidence_writer -p test_*.py -v",
+          }
+          Path("RESULT.input.json").write_text(
+              json.dumps(result, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+              + chr(10),
+              encoding="utf-8",
+          )
+          PY
+          python ci/evidence_writer/writer.py create \
+            --target evidence-out/bundle \
+            --source-root . \
+            --source-path ci/evidence_writer/writer.py \
+            --source-path ci/evidence_writer/test_writer.py \
+            --source-path ci/evidence_writer/revalidation_cases.json \
+            --source-path ci/evidence_writer/README.md \
+            --source-path .github/workflows/shared-evidence-writer.yml \
+            --cell SHARED \
+            --task-id SHARED-EVIDENCE-WRITER-V1 \
+            --candidate "$CANDIDATE_SHA" \
+            --application-tree "$APPLICATION_TREE" \
+            --json RESULT.json=RESULT.input.json \
+            --file raw.log=writer-tests.log \
+            | tee evidence-out/CREATE_REPORT.json
+          python ci/evidence_writer/writer.py verify \
+            --bundle evidence-out/bundle \
+            --candidate "$CANDIDATE_SHA" \
+            --application-tree "$APPLICATION_TREE" \
+            --cell SHARED \
+            --task-id SHARED-EVIDENCE-WRITER-V1 \
+            | tee evidence-out/VERIFY_REPORT.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          for path in sorted(Path("evidence-out").rglob("*.json")):
+              json.loads(path.read_text(encoding="utf-8"))
+              if not path.read_bytes().endswith(bytes([10])):
+                  raise SystemExit(f"missing real final LF: {path}")
+              if path.read_bytes().endswith(b"\\\\n"):
+                  raise SystemExit(f"literal backslash-n suffix: {path}")
+          PY
+          (cd evidence-out/bundle && sha256sum -c SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shared-evidence-writer-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence-out/
+          if-no-files-found: error
+          retention-days: 90
