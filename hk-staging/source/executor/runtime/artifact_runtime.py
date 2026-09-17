@@ -128,6 +128,19 @@ ARCHIVE_REFUSALS = ("ARCHIVE_INVALID",          # unreadable, truncated, or no l
                     "BLOB_AMBIGUOUS",           # one identity, two canonical locations
                     "LAYOUT_AMBIGUOUS",         # two layouts naming different images
                     "OCI_INVALID",              # malformed layout marker, index or manifest
+                    "OCI_INVALID_MANIFEST_SCHEMA",
+                    "OCI_INVALID_MANIFEST_LAYERS",
+                    "OCI_INVALID_LAYOUT_MISSING",
+                    "OCI_INVALID_LAYOUT_DOCUMENT",
+                    "OCI_INVALID_LAYOUT_VERSION",
+                    "OCI_INVALID_ROOT_DOCUMENT",
+                    "OCI_INVALID_ROOT_SHAPE",
+                    "OCI_INVALID_ROOT_COUNT",
+                    "OCI_INVALID_TARGET_DOCUMENT",
+                    "OCI_INVALID_INDEX_SCHEMA",
+                    "OCI_INVALID_INDEX_MANIFESTS",
+                    "OCI_INVALID_CHILD_DOCUMENT",
+                    "OCI_INVALID_IMAGE_ABSENT",
                     "DESCRIPTOR_INVALID",       # a descriptor that contradicts itself
                     "DESCRIPTOR_LIMIT",         # traversal budget exhausted
                     "MEDIA_TYPE_UNSUPPORTED",   # unknown type would have to be image authority
@@ -236,6 +249,11 @@ def resolve(package_sha256, root=STORE_ROOT):
 def _refuse(code):
     """One archive-format refusal, named from the vocabulary both sides declare."""
     raise Reject(_REFUSAL_PREFIX + code)
+
+
+def _oci_refuse(detail):
+    """One bounded OCI parser location from the shared closed vocabulary."""
+    _refuse("OCI_INVALID_" + detail)
 
 
 def _authoritative(name):
@@ -380,7 +398,7 @@ def _image_config(tar, regular, manifest, configs, named_by=None):
     or in the descriptor that names it, so both are checked.
     """
     if manifest.get("schemaVersion") != 2:
-        _refuse("OCI_INVALID")
+        _oci_refuse("MANIFEST_SCHEMA")
     if (manifest.get("mediaType") is not None
             and manifest["mediaType"] not in MANIFEST_MEDIA_TYPES):
         _refuse("DESCRIPTOR_INVALID")
@@ -393,7 +411,7 @@ def _image_config(tar, regular, manifest, configs, named_by=None):
           [BLOB_DIR + "/" + config_digest], document=True)
     layers = manifest.get("layers")
     if not isinstance(layers, list):
-        _refuse("OCI_INVALID")
+        _oci_refuse("MANIFEST_LAYERS")
     for layer in layers:
         layer_type, layer_digest, layer_size = _descriptor(layer)
         _blob(tar, regular, layer_digest, layer_size, [BLOB_DIR + "/" + layer_digest])
@@ -419,26 +437,28 @@ def _oci_identity(tar, regular):
     place, and a graph that ends up proving no image at all is refused.
     """
     if LAYOUT_NAME not in regular:
-        _refuse("OCI_INVALID")
-    layout = _document(_read_member(tar, regular[LAYOUT_NAME]), "OCI_INVALID")
+        _oci_refuse("LAYOUT_MISSING")
+    layout = _document(_read_member(tar, regular[LAYOUT_NAME]),
+                       "OCI_INVALID_LAYOUT_DOCUMENT")
     if layout.get("imageLayoutVersion") != OCI_LAYOUT_VERSION:
-        _refuse("OCI_INVALID")
-    root = _document(_read_member(tar, regular[INDEX_NAME]), "OCI_INVALID")
+        _oci_refuse("LAYOUT_VERSION")
+    root = _document(_read_member(tar, regular[INDEX_NAME]),
+                     "OCI_INVALID_ROOT_DOCUMENT")
     if root.get("mediaType") not in INDEX_MEDIA_TYPES:
         _refuse("MEDIA_TYPE_UNSUPPORTED")
     entries = root.get("manifests")
     if root.get("schemaVersion") != 2 or not isinstance(entries, list) or not entries:
-        _refuse("OCI_INVALID")
+        _oci_refuse("ROOT_SHAPE")
     # An archive names one image.  Several roots would make "the identity Docker
     # reports" a choice, and this contract never chooses.
     if len(entries) != 1:
-        _refuse("OCI_INVALID")
+        _oci_refuse("ROOT_COUNT")
     target_type, target, target_size = _descriptor(entries[0])
     if target_type not in INDEX_MEDIA_TYPES and target_type not in MANIFEST_MEDIA_TYPES:
         _refuse("MEDIA_TYPE_UNSUPPORTED")
     target_document = _document(
         _blob(tar, regular, target, target_size, [BLOB_DIR + "/" + target], document=True),
-        "OCI_INVALID")
+        "OCI_INVALID_TARGET_DOCUMENT")
     configs, seen, count = set(), {target: target_type}, 0
     # ``index.json`` is level 0, so the descriptor it names is level 1 and the bound
     # is the depth of the index graph below the archive's own index.
@@ -451,13 +471,13 @@ def _oci_identity(tar, regular):
             _image_config(tar, regular, document, configs, named_by)
             continue
         if document.get("schemaVersion") != 2:
-            _refuse("OCI_INVALID")
+            _oci_refuse("INDEX_SCHEMA")
         if (document.get("mediaType") is not None
                 and document["mediaType"] not in INDEX_MEDIA_TYPES):
             _refuse("DESCRIPTOR_INVALID")
         manifests = document.get("manifests")
         if not isinstance(manifests, list) or not manifests:
-            _refuse("OCI_INVALID")
+            _oci_refuse("INDEX_MANIFESTS")
         for entry in manifests:
             child_type, child, child_size = _descriptor(entry)
             count += 1
@@ -477,7 +497,7 @@ def _oci_identity(tar, regular):
                 continue
             child_document = _document(
                 _blob(tar, regular, child, child_size, [BLOB_DIR + "/" + child],
-                      document=True), "OCI_INVALID")
+                      document=True), "OCI_INVALID_CHILD_DOCUMENT")
             if child_type in INDEX_MEDIA_TYPES:
                 pending.append((child_type, child_document, entry.get("annotations"),
                                 depth + 1))
@@ -485,7 +505,7 @@ def _oci_identity(tar, regular):
             _image_config(tar, regular, child_document, configs, entry.get("annotations"))
     if not configs:
         # An index that ends up naming no image at all is not an image archive.
-        _refuse("OCI_INVALID")
+        _oci_refuse("IMAGE_ABSENT")
     return target, configs
 
 
