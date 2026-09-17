@@ -1,0 +1,30 @@
+{
+  "base_commit": "edd3500575d2f2b81298cc9273025e0a3b734897",
+  "files": [
+    {
+      "path": "application/src/go_hotel/travel_intelligence/service.py",
+      "base_blob": "4d016cd831809e78fdd16ccc1fbfe5b666d2e849",
+      "base_sha256": "328d0a39da80805f8a821b1b1166ac1467078b8f91c7db5189e7a0ba222a1c7c",
+      "candidate_sha256": "c79c641998d50dd24de9ef046326d30c8d8c5320959e5d6a6d6543f02fa0514b"
+    },
+    {
+      "path": "application/src/go_hotel/services/hotel_infrastructure_p0.py",
+      "base_blob": "d9bb3380a999789e7aeea03f1ee209b2fc7abd42",
+      "base_sha256": "9dac943866ec1e688f6b0c66fd018d5f5e77625ff9da0cf079d1f0d642638701",
+      "candidate_sha256": "3f2dbc44f144fb886229e2dcf6d4758be61f4b520cfe6a7467d69999cae80852"
+    }
+  ],
+  "test_result": "6/6 PASS local real SQLite models",
+  "test_scope": "candidate two exact-base changed files + catalog_scope, remaining dependencies inherited from old local source; NOT exact whole-candidate or PostgreSQL result",
+  "postgres_result": "NOT RUN: script compiled; non-CI guard verified; pending isolated GitHub PG18.4 execution",
+  "scripts": [
+    {
+      "path": "application/scripts/test_catalog_graph_visibility.py",
+      "sha256": "17dd1270871ba83f05c9d2dd21fc815c633c45e9ed9c4c01b814ee79d3e66970"
+    },
+    {
+      "path": "application/scripts/test_catalog_scope_postgres.py",
+      "sha256": "dbe8cf6768dc1029f23a750affb6573a03378755663e2ead3713ce87905d9ce6"
+    }
+  ]
+}

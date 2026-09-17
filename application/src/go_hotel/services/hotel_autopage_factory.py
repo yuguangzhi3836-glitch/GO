@@ -2,6 +2,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import hashlib, json, re, unicodedata, uuid
 from sqlalchemy import select, func
+from go_hotel.services import catalog_scope
 from go_hotel.autonomy.durable import transaction
 from go_hotel.db.session import SessionLocal
 from go_hotel.services.media_harvester import media_harvester_service
@@ -250,6 +251,7 @@ class HotelAutoPageFactoryService:
         if not b.get('source_key') or not b.get('external_hotel_id') or not isinstance(b.get('payload'),dict):raise ValueError('INVALID_CONTENT_SOURCE_PAYLOAD')
         ph=sha(b['payload']); t=now()
         with transaction(SessionLocal) as s:
+            catalog_scope.scope_lock(s)
             self._ingest_locks(s,b)
             known=set(s.scalars(select(HotelContentSourceSnapshotRow.canonical_hotel_id).where(
                 HotelContentSourceSnapshotRow.source_key==b['source_key'],
@@ -259,9 +261,11 @@ class HotelAutoPageFactoryService:
                 raise ValueError('SOURCE_CANONICAL_IDENTITY_CONFLICT')
             existing=s.scalar(select(HotelContentSourceSnapshotRow).where(HotelContentSourceSnapshotRow.source_key==b['source_key'],HotelContentSourceSnapshotRow.external_hotel_id==b['external_hotel_id'],HotelContentSourceSnapshotRow.payload_hash==ph))
             if existing:
+                catalog_scope.require_hotel(s,existing.canonical_hotel_id)
                 p=s.get(HotelCanonicalProfileRow,existing.canonical_hotel_id) if existing.canonical_hotel_id else None
                 return {'idempotent':True,'snapshot':out(existing),'profile':out(p),'page':self.public_page_by_hotel(existing.canonical_hotel_id) if p else None,'catalog_quality':self.catalog_quality(p) if p else None}
             p=self._match_profile(s,b)
+            catalog_scope.require_hotel(s,p.hotel_id if p else None)
             if not p:
                 hid=b.get('canonical_hotel_id') or ident('hotel');name=b['payload'].get('name') or b['payload'].get('name_zh') or b['payload'].get('name_en') or b['external_hotel_id']
                 p=HotelCanonicalProfileRow(hotel_id=hid,slug=self._unique_slug(s,name,hid),canonical_json={},field_provenance_json={},source_snapshot_ids_json=[],completeness_bps=0,go_direct_state='NOT_REGISTERED',page_state='DRAFT',version=0,created_at=t,updated_at=t);s.add(p);s.flush()
@@ -271,13 +275,16 @@ class HotelAutoPageFactoryService:
 
     def compose(self,hotel_id,actor='SYSTEM'):
         with transaction(SessionLocal) as s:
+            catalog_scope.scope_lock(s)
             p=s.scalar(select(HotelCanonicalProfileRow).where(HotelCanonicalProfileRow.hotel_id==hotel_id).with_for_update())
+            catalog_scope.require_hotel(s,p.hotel_id if p else None)
             if not p:raise ValueError('HOTEL_PROFILE_NOT_FOUND')
             self._merge(s,p);v=self._publish_version(s,p,actor);s.flush();return {'profile':out(p),'page_version':out(v),'catalog_quality':self.catalog_quality(p)}
 
     def public_page(self,slug):
         with SessionLocal() as s:
             p=s.scalar(select(HotelCanonicalProfileRow).where(HotelCanonicalProfileRow.slug==slug))
+            catalog_scope.require_hotel(s,p.hotel_id if p else None)
             if not p:raise ValueError('HOTEL_PAGE_NOT_FOUND')
             if p.page_state!='PUBLISHED':raise ValueError('HOTEL_PAGE_NOT_PUBLISHED')
             v=s.scalar(select(HotelAutoPageVersionRow).where(HotelAutoPageVersionRow.hotel_id==p.hotel_id,HotelAutoPageVersionRow.publication_state=='PUBLISHED').order_by(HotelAutoPageVersionRow.version.desc()))
@@ -300,6 +307,7 @@ class HotelAutoPageFactoryService:
     def public_page_by_hotel(self,hotel_id):
         with SessionLocal() as s:
             p=s.get(HotelCanonicalProfileRow,hotel_id)
+            catalog_scope.require_hotel(s,p.hotel_id if p else None)
             if not p:return None
             v=s.scalar(select(HotelAutoPageVersionRow).where(HotelAutoPageVersionRow.hotel_id==hotel_id).order_by(HotelAutoPageVersionRow.version.desc()))
             if not v:return None
@@ -317,14 +325,17 @@ class HotelAutoPageFactoryService:
     def contact_graph(self,hotel_id):
         with SessionLocal() as s:
             p=s.get(HotelCanonicalProfileRow,hotel_id)
+            catalog_scope.require_hotel(s,p.hotel_id if p else None)
             if not p:raise ValueError('HOTEL_PROFILE_NOT_FOUND')
             cs=s.scalars(select(HotelContactPointRow).where(HotelContactPointRow.hotel_id==hotel_id)).all()
             return {'hotel_id':hotel_id,'go_direct_state':p.go_direct_state,'contacts':[out(x) for x in cs],
                     'outreach_readiness':{'email_candidates':sum(1 for x in cs if x.channel=='EMAIL' and not x.do_not_contact and x.marketing_eligibility=='ELIGIBLE_FOR_POLICY_CHECK'),'phone_candidates':sum(1 for x in cs if x.channel=='PHONE' and not x.do_not_contact),'automatic_send_allowed':False,'reason':'JURISDICTION_POLICY_GATE_REQUIRED'}}
 
     def register_for_go_direct(self,hotel_id,supplier_id,actor,b):
-        with SessionLocal() as s:
+        with transaction(SessionLocal) as s:
+            catalog_scope.scope_lock(s)
             p=s.get(HotelCanonicalProfileRow,hotel_id)
+            catalog_scope.require_hotel(s,p.hotel_id if p else None)
             if not p:raise ValueError('HOTEL_PROFILE_NOT_FOUND')
             if p.go_direct_state in {'GO_DIRECT_VERIFIED','GO_DIRECT_LIVE'}:raise ValueError('HOTEL_ALREADY_GO_DIRECT_VERIFIED')
             existing=s.scalar(select(HotelRegistrationDirectRow).where(HotelRegistrationDirectRow.hotel_id==hotel_id,HotelRegistrationDirectRow.supplier_id==supplier_id,HotelRegistrationDirectRow.state=='SUBMITTED'))
@@ -333,9 +344,11 @@ class HotelAutoPageFactoryService:
             s.add(r);p.go_direct_state='REGISTRATION_PENDING';p.updated_at=now();self._event(s,hotel_id,'HOTEL_REGISTRATION_SUBMITTED',{'registration_direct_id':r.hotel_registration_direct_id,'supplier_id':supplier_id},actor);self._publish_version(s,p,actor);s.commit();return out(r)
 
     def decide_registration_direct(self,registration_direct_id,actor,b):
-        with SessionLocal() as s:
+        with transaction(SessionLocal) as s:
+            catalog_scope.scope_lock(s)
             r=s.get(HotelRegistrationDirectRow,registration_direct_id)
             if not r or r.state!='SUBMITTED':raise ValueError('REGISTRATION_NOT_REVIEWABLE')
+            catalog_scope.require_hotel(s,r.hotel_id)
             if b.get('decision') not in {'APPROVE','REJECT'}:raise ValueError('INVALID_REGISTRATION_DECISION')
             p=s.get(HotelCanonicalProfileRow,r.hotel_id);r.reviewed_by=actor;r.reviewed_at=now()
             if b['decision']=='REJECT':
@@ -405,7 +418,9 @@ class HotelAutoPageFactoryService:
     def factory_overview(self,limit=200):
         limit=max(1,min(int(limit or 200),1000))
         with SessionLocal() as s:
-            profiles=s.scalars(select(HotelCanonicalProfileRow).order_by(HotelCanonicalProfileRow.updated_at.desc()).limit(limit)).all()
+            active=catalog_scope.state(s)
+            visible=HotelCanonicalProfileRow.hotel_id.in_(active['protected_ids']) if active else True
+            profiles=s.scalars(select(HotelCanonicalProfileRow).where(visible).order_by(HotelCanonicalProfileRow.updated_at.desc()).limit(limit)).all()
             items=[]
             counters={k:0 for k in ['WAIT_BUILD','COLLECTING','WAIT_MERGE','WAIT_MEDIA_REVIEW','WAIT_PUBLISH','PUBLISHED','WAIT_CLAIM','CLAIMED','GO_DIRECT','NEEDS_ENRICHMENT']}
             for p in profiles:
@@ -419,7 +434,8 @@ class HotelAutoPageFactoryService:
                     **f,
                 })
             # Discovery seeds which have not created a canonical hotel yet remain visible as WAIT_BUILD.
-            created=s.scalars(select(HotelAutoPageEventRow).where(HotelAutoPageEventRow.event_type=='DISCOVERY_JOB_CREATED').order_by(HotelAutoPageEventRow.created_at.desc()).limit(limit)).all()
+            created=s.scalars(select(HotelAutoPageEventRow).where(HotelAutoPageEventRow.event_type=='DISCOVERY_JOB_CREATED',catalog_scope.event_filter(s)).order_by(HotelAutoPageEventRow.created_at.desc()).limit(limit)).all()
+            created=catalog_scope.visible_events(s,created)
             known_jobs={x.get('latest_discovery_job_id') for x in items if x.get('latest_discovery_job_id')}
             seed_queue=[]
             for e in created:
@@ -428,9 +444,9 @@ class HotelAutoPageFactoryService:
                 seed=ev.get('seed') or {}
                 seed_queue.append({'job_id':jid,'name':seed.get('name') or '待采集酒店','address':seed.get('address'),'created_at':e.created_at.isoformat(),'primary_stage':'WAIT_BUILD'})
             counters['WAIT_BUILD']=len(seed_queue)
-            total_hotels=int(s.scalar(select(func.count()).select_from(HotelCanonicalProfileRow)) or 0)
-            published_pages=int(s.scalar(select(func.count()).select_from(HotelCanonicalProfileRow).where(HotelCanonicalProfileRow.page_state=='PUBLISHED')) or 0)
-            draft_pages=int(s.scalar(select(func.count()).select_from(HotelCanonicalProfileRow).where(HotelCanonicalProfileRow.page_state=='DRAFT')) or 0)
+            total_hotels=int(s.scalar(select(func.count()).select_from(HotelCanonicalProfileRow).where(visible)) or 0)
+            published_pages=int(s.scalar(select(func.count()).select_from(HotelCanonicalProfileRow).where(visible).where(HotelCanonicalProfileRow.page_state=='PUBLISHED')) or 0)
+            draft_pages=int(s.scalar(select(func.count()).select_from(HotelCanonicalProfileRow).where(visible).where(HotelCanonicalProfileRow.page_state=='DRAFT')) or 0)
             return {'counts':counters,'items':items,'seed_queue':seed_queue[:limit],
                     'total_hotels':total_hotels,'total_pages':published_pages+draft_pages,
                     'published_pages':published_pages,'draft_pages':draft_pages}
@@ -438,6 +454,7 @@ class HotelAutoPageFactoryService:
     def factory_detail(self,hotel_id):
         with SessionLocal() as s:
             p=s.get(HotelCanonicalProfileRow,hotel_id)
+            catalog_scope.require_hotel(s,p.hotel_id if p else None)
             if not p: raise ValueError('HOTEL_PROFILE_NOT_FOUND')
             f=self._factory_flags(s,p)
             snapshots=s.scalars(select(HotelContentSourceSnapshotRow).where(HotelContentSourceSnapshotRow.canonical_hotel_id==hotel_id).order_by(HotelContentSourceSnapshotRow.observed_at.desc())).all()
@@ -467,7 +484,9 @@ class HotelAutoPageFactoryService:
         action=str(action or '').upper()
         if action not in {'PUBLISH','UNPUBLISH'}: raise ValueError('INVALID_PUBLICATION_ACTION')
         with transaction(SessionLocal) as s:
+            catalog_scope.scope_lock(s)
             p=s.scalar(select(HotelCanonicalProfileRow).where(HotelCanonicalProfileRow.hotel_id==hotel_id).with_for_update())
+            catalog_scope.require_hotel(s,p.hotel_id if p else None)
             if not p: raise ValueError('HOTEL_PROFILE_NOT_FOUND')
             if action=='PUBLISH':
                 c=p.canonical_json or {}
@@ -479,9 +498,12 @@ class HotelAutoPageFactoryService:
             s.flush();v=self._publish_version(s,p,actor);s.flush();return {'profile':out(p),'page_version':out(v)}
 
     def suppress_contact(self,contact_id,actor,reason='OPT_OUT'):
-        with SessionLocal() as s:
+        with transaction(SessionLocal) as s:
+            catalog_scope.scope_lock(s)
             r=s.get(HotelContactPointRow,contact_id)
             if not r:raise ValueError('CONTACT_NOT_FOUND')
+            catalog_scope.require_hotel(s,r.hotel_id)
             r.do_not_contact=True;r.marketing_eligibility='SUPPRESSED';r.updated_at=now();self._event(s,r.hotel_id,'CONTACT_SUPPRESSED',{'contact_id':contact_id,'reason':reason},actor);s.commit();return out(r)
 
 hotel_autopage_factory_service=HotelAutoPageFactoryService()
+

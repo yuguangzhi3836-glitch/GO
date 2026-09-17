@@ -1,0 +1,88 @@
+{
+  "base_commit": "7dc3d5ec3027e4591d5c697d4defb36b3e71624c",
+  "scope": "HK staging only; reversible catalog visibility, preserve Aoluguya; event-loop patch inherited from PR191",
+  "postgres_gate": "NOT_RUN",
+  "deployment": "NOT_RUN",
+  "files": [
+    {
+      "path": "application/src/go_hotel/api/routes/hotel_autopage_factory.py",
+      "sha256": "6508368ddc2c6d6e005351f78cae4f9fabf820a81572d382651e572c521e7f94"
+    },
+    {
+      "path": "application/src/go_hotel/queue/durable_regional.py",
+      "sha256": "e3569a292788ffdaf02d80dd0d2e28ceecf65ab9b7b823f7c6c24c30d76f74cc"
+    },
+    {
+      "path": "application/src/go_hotel/services/catalog_scope.py",
+      "sha256": "bb3e6ae89103c779df16237ddb0753aa428fc9f6c4ea93a61f52330c9627037a"
+    },
+    {
+      "path": "application/src/go_hotel/services/hotel_autopage_factory.py",
+      "sha256": "387fe7b6d8e9b46c3b2338ccd652b4e2be43b7cd5295f279ebfece8011912b6d"
+    },
+    {
+      "path": "application/src/go_hotel/services/hotel_discovery_orchestrator.py",
+      "sha256": "858189dce36c9356e2cde82813bc315657ad9cf7db3d5b0977bd05803121d26a"
+    },
+    {
+      "path": "application/src/go_hotel/services/regional_hotel_build.py",
+      "sha256": "e7d9a093bc68d1817a1cd45c04a84173a0f567eb97f3f2dfede4a66d7dadd2b3"
+    },
+    {
+      "path": "application/scripts/test_catalog_scope.py",
+      "sha256": "56d3a182d737eaf5c6c88ace5609423d809135e47f4dd6774d370ae86799f4e9"
+    },
+    {
+      "path": "application/scripts/test_catalog_graph_visibility.py",
+      "sha256": "17dd1270871ba83f05c9d2dd21fc815c633c45e9ed9c4c01b814ee79d3e66970"
+    },
+    {
+      "path": "application/scripts/test_catalog_scope_postgres.py",
+      "sha256": "dbe8cf6768dc1029f23a750affb6573a03378755663e2ead3713ce87905d9ce6"
+    },
+    {
+      "path": "application/src/go_hotel/services/hotel_infrastructure_p0.py",
+      "sha256": "3f2dbc44f144fb886229e2dcf6d4758be61f4b520cfe6a7467d69999cae80852"
+    },
+    {
+      "path": "application/src/go_hotel/travel_intelligence/service.py",
+      "sha256": "c79c641998d50dd24de9ef046326d30c8d8c5320959e5d6a6d6543f02fa0514b"
+    },
+    {
+      "path": ".github/workflows/catalog-load-repair.yml",
+      "sha256": "08826e07a7b7b03e7346a4a537ae023ab2acaa8a66c0177512100f1a6831dc64"
+    },
+    {
+      "path": "evidence/catalog-load-20260917/catalog-reset/SOURCE_BINDING.json",
+      "sha256": "4f472856a06336c73db0dcf492a531be6b71e76e7972c015b5e96db40cada3d6"
+    },
+    {
+      "path": "evidence/catalog-load-20260917/catalog-reset/CHANGED_FILES.json",
+      "sha256": "46473aae5ae87b244d2f68495bdbceec722f19385b87b224163d5a8fffa2dd3e"
+    },
+    {
+      "path": "evidence/catalog-load-20260917/catalog-reset/C13_REVIEW.json",
+      "sha256": "761ebfa90648b2420ab021edbba0ef66853d9a870f523af47e6b0aab8619fbca"
+    },
+    {
+      "path": "evidence/catalog-load-20260917/catalog-reset/IMPLEMENTATION_REVIEW.md",
+      "sha256": "b2734bf6e20a917edaa0c5630ace1fd7f5ff690b4be866c1774951347eea1af0"
+    },
+    {
+      "path": "evidence/catalog-load-20260917/catalog-reset/local-tests.log",
+      "sha256": "85984036b82c554c104373ad1e851f743635e96e6a3c17e3c7db64ac59e27189"
+    },
+    {
+      "path": "evidence/catalog-load-20260917/c12-catalog-visibility/SOURCE_BINDING.json",
+      "sha256": "a1ec8236e60af6817c98f9953e502718ffbf0d407279cfdb7c3685fd8260b02f"
+    },
+    {
+      "path": "evidence/catalog-load-20260917/c12-catalog-visibility/tests.log",
+      "sha256": "abe534decf52080ad27bd58ba1c8930e48d81d9939858ffe46e32335d0539fbf"
+    },
+    {
+      "path": "evidence/catalog-load-20260917/c12-catalog-visibility/pg-local-refusal.log",
+      "sha256": "10203eba9496d4393496ff517494b152714f2a89532e16d37a1ccb9652744f81"
+    }
+  ]
+}

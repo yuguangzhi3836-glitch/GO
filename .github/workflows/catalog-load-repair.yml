@@ -1,0 +1,84 @@
+name: Catalog and hotel load repair gate
+on:
+  push:
+    branches: [fix/catalog-aoluguya-load-20260917]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_catalog_scope_ci
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_catalog_scope_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      APP_ENV: test
+      CATALOG_SCOPE_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_catalog_scope_ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install frozen dependencies
+        run: |
+          set -euo pipefail
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+          mkdir -p "$RUNNER_TEMP/catalog-load"
+      - name: Search event-loop regression
+        working-directory: application
+        run: |
+          set -euo pipefail
+          python scripts/test_hotel_search_event_loop.py 2>&1 | tee "$RUNNER_TEMP/catalog-load/search.log"
+      - name: Catalog scope and graph SQLite regressions
+        working-directory: application
+        env:
+          DATABASE_URL: 'sqlite+pysqlite:///:memory:'
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          python scripts/test_catalog_scope.py 2>&1 | tee "$RUNNER_TEMP/catalog-load/catalog.log"
+          python scripts/test_catalog_graph_visibility.py 2>&1 | tee "$RUNNER_TEMP/catalog-load/graph.log"
+      - name: PostgreSQL concurrent scope and queue
+        working-directory: application
+        env:
+          DATABASE_URL: 'sqlite+pysqlite:///:memory:'
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          python scripts/test_catalog_scope_postgres.py 2>&1 | tee "$RUNNER_TEMP/catalog-load/postgres.log"
+      - name: Existing routing merge and hotel regressions
+        working-directory: application
+        env:
+          DATABASE_URL: 'sqlite+pysqlite:///:memory:'
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          python -m pytest -p no:cacheprovider tests/test_sprint1i_routing.py tests/test_sprint1j_merge.py tests/test_hotel_autopage_factory.py tests/test_hotel_discovery_orchestrator.py --junitxml="$RUNNER_TEMP/catalog-load/retention.xml" 2>&1 | tee "$RUNNER_TEMP/catalog-load/retention.log"
+      - name: Record exact source and evidence hashes
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/catalog-load"
+          git rev-parse HEAD > "$RUNNER_TEMP/catalog-load/source-commit.txt"
+          git rev-parse HEAD:application > "$RUNNER_TEMP/catalog-load/application-tree.txt"
+          cd "$RUNNER_TEMP/catalog-load"
+          find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: catalog-load-${{ github.sha }}
+          path: ${{ runner.temp }}/catalog-load
+          if-no-files-found: error

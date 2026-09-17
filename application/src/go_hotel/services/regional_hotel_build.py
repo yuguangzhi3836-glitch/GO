@@ -1,4 +1,5 @@
 from __future__ import annotations
+from go_hotel.services import catalog_scope
 
 from datetime import datetime, timezone
 import json
@@ -328,11 +329,14 @@ def enqueue(payload: dict, *, initial_events=(), supersedes=None):
 def _run_events(run_id: str) -> list[HotelAutoPageEventRow]:
     with SessionLocal() as s:
         rows=s.scalars(select(HotelAutoPageEventRow).where(HotelAutoPageEventRow.event_type.like("REGIONAL_BUILD_%")).order_by(HotelAutoPageEventRow.created_at.asc())).all()
+        rows=catalog_scope.visible_events(s,rows)
         return [r for r in rows if (r.evidence_json or {}).get("run_id") == run_id]
 
 
 class RegionalHotelBuildService:
     def start(self, *, mode: str, actor: str, country: str = "CN", province: str | None = None, city: str | None = None, tier: int | None = None, target_name: str | None = None) -> dict:
+        with SessionLocal() as s:
+            catalog_scope.require_seed(s,{"name":target_name})
         mode=str(mode or "").upper()
         if mode not in {"NATIONAL","REGION","NATIONAL_TIERED"}:
             raise ValueError("REGIONAL_BUILD_MODE_INVALID")
@@ -417,7 +421,7 @@ class RegionalHotelBuildService:
                 mid=enqueue({
                     "run_id":run_id,"task":"HOTEL","mode":p.get("mode") or "REGION","country":country,
                     "province":province,"city":city,"actor":actor,"seed":seed,"candidate_key":candidate_key,"tier":tier,
-                    "retry_generation":p.get("retry_generation"),
+                    "retry_generation":p.get("retry_generation"),"target_name":p.get("target_name"),
                 })
                 queued += 1
             event("REGIONAL_BUILD_CITY_DISCOVERY_FINISHED", {
@@ -538,6 +542,8 @@ class RegionalHotelBuildService:
         return {"run_id":run_id,"from_tier":5,"to_tier":4,"idempotent":False}
 
     def process_message(self, payload: dict):
+        with SessionLocal() as s:
+            catalog_scope.require_run(s,payload)
         task=payload.get("task")
         if task == "ROOT": return self._process_root(payload)
         elif task == "PROVINCE": return self._process_province(payload)
@@ -588,6 +594,7 @@ class RegionalHotelBuildService:
     def status(self, run_id: str | None = None) -> dict:
         with SessionLocal() as s:
             rows=s.scalars(select(HotelAutoPageEventRow).where(HotelAutoPageEventRow.event_type.like("REGIONAL_BUILD_%")).order_by(HotelAutoPageEventRow.created_at.asc())).all()
+            rows=catalog_scope.visible_events(s,rows)
         if run_id:
             rows=[r for r in rows if (r.evidence_json or {}).get("run_id") == run_id]
         run_ids=[]
@@ -708,7 +715,8 @@ class RegionalHotelBuildService:
 
     def exceptions(self, limit: int = 200) -> dict:
         with SessionLocal() as s:
-            rows=s.scalars(select(HotelAutoPageEventRow).where(HotelAutoPageEventRow.event_type.in_(["REGIONAL_BUILD_FAILURE","REGIONAL_BUILD_CONFLICT"])).order_by(HotelAutoPageEventRow.created_at.desc()).limit(max(20,min(limit*5,2000)))).all()
+            rows=s.scalars(select(HotelAutoPageEventRow).where(HotelAutoPageEventRow.event_type.in_(["REGIONAL_BUILD_FAILURE","REGIONAL_BUILD_CONFLICT"]),catalog_scope.event_filter(s)).order_by(HotelAutoPageEventRow.created_at.desc()).limit(max(20,min(limit*5,2000)))).all()
+            rows=catalog_scope.visible_events(s,rows)
         grouped={}
         for r in rows:
             x=r.evidence_json or {}
@@ -735,3 +743,4 @@ class RegionalHotelBuildService:
 
 
 regional_hotel_build_service=RegionalHotelBuildService()
+

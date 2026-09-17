@@ -1,0 +1,49 @@
+{
+  "reviewer": "C13",
+  "time_utc": "2026-09-17T22:18:58.045846+00:00",
+  "verdict": "PASS_SCOPED_SQLITE",
+  "scope": "Reversible Aoluguya-only catalog visibility; not physical deletion, not deployment approval",
+  "independent_tests": {
+    "catalog_scope": {
+      "passed": 10,
+      "failed": 0
+    },
+    "catalog_graph": {
+      "passed": 6,
+      "failed": 0
+    }
+  },
+  "reproduced_and_fixed": [
+    "Archived media admin content previously returned FileResponse200; now protected before content access.",
+    "Retired retry previously appended retry event before rejecting; central event writer now locks and checks before insert.",
+    "Media mutation and registration/contact ID bypasses fenced; tests assert no changed historical rows.",
+    "Filter-after-LIMIT omission fixed: SQL scope filter before seed LIMIT and paged post-filter evidence limit; independent regressions PASS."
+  ],
+  "reviewed": [
+    "Both fixed Aoluguya IDs must exist; protected rows retained.",
+    "Activation fingerprint drift fails closed; queue RUNNING prevents activation.",
+    "Advisory lock shared by activation/queue claim+enqueue/ingest/mutations; actual PG contention not validated here.",
+    "Retired queue rows and immutable events retained; replay old job/run rejected.",
+    "Public pages, factory overview/detail, media, graph alias/facts filtered.",
+    "No order/account/funds deletion or mutation introduced."
+  ],
+  "limitations": [
+    "SQLite cannot prove PostgreSQL advisory-lock race behavior; separate PG gate required.",
+    "Scope is reversible visibility isolation, not history erasure; must communicate this distinction.",
+    "Graph changes preserve independent aliases/transaction projections; scope is catalog ownership, not all entities mentioning hotels.",
+    "Test runtime overlays exact edited files atop prior dependency tree; full exact candidate CI still required."
+  ],
+  "sha256": {
+    "catalog-reset/candidate/application/tests_catalog_scope.py": "56d3a182d737eaf5c6c88ace5609423d809135e47f4dd6774d370ae86799f4e9",
+    "catalog-reset/candidate/application/src/go_hotel/services/catalog_scope.py": "bb3e6ae89103c779df16237ddb0753aa428fc9f6c4ea93a61f52330c9627037a",
+    "catalog-reset/candidate/application/src/go_hotel/services/regional_hotel_build.py": "e7d9a093bc68d1817a1cd45c04a84173a0f567eb97f3f2dfede4a66d7dadd2b3",
+    "catalog-reset/candidate/application/src/go_hotel/services/hotel_discovery_orchestrator.py": "858189dce36c9356e2cde82813bc315657ad9cf7db3d5b0977bd05803121d26a",
+    "catalog-reset/candidate/application/src/go_hotel/services/hotel_autopage_factory.py": "387fe7b6d8e9b46c3b2338ccd652b4e2be43b7cd5295f279ebfece8011912b6d",
+    "catalog-reset/candidate/application/src/go_hotel/queue/durable_regional.py": "e3569a292788ffdaf02d80dd0d2e28ceecf65ab9b7b823f7c6c24c30d76f74cc",
+    "catalog-reset/candidate/application/src/go_hotel/workers/regional_hotel_build_worker.py": "e3d5e876623c806328caef23af599cc7d20105d9cf0d48c52d179f34d894ba4b",
+    "catalog-reset/candidate/application/src/go_hotel/api/routes/hotel_autopage_factory.py": "6508368ddc2c6d6e005351f78cae4f9fabf820a81572d382651e572c521e7f94",
+    "c12-catalog-visibility/candidate/application/scripts/test_catalog_graph_visibility.py": "17dd1270871ba83f05c9d2dd21fc815c633c45e9ed9c4c01b814ee79d3e66970",
+    "c12-catalog-visibility/candidate/application/src/go_hotel/services/hotel_infrastructure_p0.py": "3f2dbc44f144fb886229e2dcf6d4758be61f4b520cfe6a7467d69999cae80852",
+    "c12-catalog-visibility/candidate/application/src/go_hotel/travel_intelligence/service.py": "c79c641998d50dd24de9ef046326d30c8d8c5320959e5d6a6d6543f02fa0514b"
+  }
+}
