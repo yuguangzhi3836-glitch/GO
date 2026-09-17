@@ -1,0 +1,30 @@
+{
+  "base_commit": "edd3500575d2f2b81298cc9273025e0a3b734897",
+  "main_source_blobs_identical": true,
+  "files": [
+    {
+      "path": "application/scripts/test_hotel_search_event_loop.py",
+      "sha256": "e8e128057a55847c45453b05fd8c9bc70abecbaa04f272ee955b5f56df0c0df1"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/hotel.py",
+      "sha256": "2b253760d0e8640331fedfb752647295e420e02e0a6b9862bef3676c6f65b94f"
+    },
+    {
+      "path": "application/src/go_hotel/routing/router.py",
+      "sha256": "21993578b43d91f21c474aa360ea6a2a5115f4d1927a547438e21c2b57b78fc8"
+    },
+    {
+      "path": "application/src/go_hotel/services/booking.py",
+      "sha256": "c984bf6ea8b9f8d6141edd82aa7ab7f82cad012f37ae5ccf2eccc858c6256884"
+    }
+  ],
+  "local_regression": "5/5 PASS",
+  "old_source_regression": "FAIL: all 7 blocking dependencies execute on event-loop thread",
+  "scope": "search-only offload; serial offer write section preserved; no migration, topology, deployment or settings change",
+  "limits": [
+    "AST isolated source test, not whole-app import or PostgreSQL integration",
+    "500 and 1000 concurrency capacity remain unverified",
+    "Serial merge writer may become throughput bottleneck; requires staged measurement"
+  ]
+}

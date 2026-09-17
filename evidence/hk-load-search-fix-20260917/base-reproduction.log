@@ -1,0 +1,21 @@
+test_search_all_sync_work_off_loop_and_business_effects_retained (__main__.SearchConcurrency.test_search_all_sync_work_off_loop_and_business_effects_retained) ... Executing <Task pending name='Task-2' coro=<SearchConcurrency.test_search_all_sync_work_off_loop_and_business_effects_retained() running at /workspace/scratch/c50388540b65/c12-search-fix/candidate/application/scripts/test_hotel_search_event_loop.py:107> wait_for=<Task pending name='Task-3' coro=<SearchConcurrency.test_search_all_sync_work_off_loop_and_business_effects_retained.<locals>.heartbeat() running at /workspace/scratch/c50388540b65/c12-search-fix/candidate/application/scripts/test_hotel_search_event_loop.py:101> wait_for=<Future pending cb=[Task.task_wakeup()] created at /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py:448> cb=[Task.task_wakeup()] created at /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/tasks.py:420> cb=[_run_until_complete_cb() at /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py:181] created at /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:100> took 0.151 seconds
+FAIL
+
+======================================================================
+FAIL: test_search_all_sync_work_off_loop_and_business_effects_retained (__main__.SearchConcurrency.test_search_all_sync_work_off_loop_and_business_effects_retained)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/scratch/c50388540b65/c12-search-fix/candidate/application/scripts/test_hotel_search_event_loop.py", line 109, in test_search_all_sync_work_off_loop_and_business_effects_retained
+    self.assertNotIn(self.loop_thread, self.block_threads, 'sync DB collaborators block the ASGI event loop')
+AssertionError: 139640140818240 unexpectedly found in [139640140818240, 139640140818240, 139640140818240, 139640140818240, 139640140818240, 139640140818240, 139640140818240] : sync DB collaborators block the ASGI event loop
+
+----------------------------------------------------------------------
+Ran 1 test in 0.191s
+
+FAILED (failures=1)

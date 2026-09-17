@@ -1,5 +1,6 @@
 from dataclasses import asdict
 from fastapi import APIRouter
+from starlette.concurrency import run_in_threadpool
 from go_hotel.api.schemas import SearchRequest, PrebookRequest
 from go_hotel.services.booking import booking_service
 from go_hotel.judgment.service import judgment_service
@@ -10,6 +11,10 @@ router = APIRouter(prefix="/v1")
 @router.post("/search/hotels")
 async def search_hotels(body: SearchRequest):
     offers = await booking_service.search(body.destination.city_code, body.stay.check_in, body.stay.check_out, body.currency)
+    return await run_in_threadpool(_search_response, offers)
+
+def _search_response(offers):
+    # Judgment uses synchronous SQLAlchemy sessions; keep it off the event loop.
     hotels=[]
     for o in offers:
         judgment=judgment_service.public_summary_or_default(o.hotel_id)

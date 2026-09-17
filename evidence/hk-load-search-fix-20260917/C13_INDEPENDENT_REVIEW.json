@@ -1,0 +1,29 @@
+{
+  "reviewer": "C13 independent review",
+  "timestamp_utc": "2026-09-17T21:41:07.916890+00:00",
+  "verdict": "PASS_SCOPED",
+  "scope": "Three production-file offload patch and targeted no-DB regression only",
+  "base_commit": "edd3500575d2f2b81298cc9273025e0a3b734897",
+  "test_exit": 0,
+  "tests_passed": 5,
+  "findings": [
+    "Base SHA256 and git blob identity independently verified for all 3 files.",
+    "Search connectors remain async on event loop; blocking active/rank-save/merge-save/judgment segments offloaded.",
+    "Dependency inspection found per-call SessionLocal context managers; DTO/dict values cross thread boundaries, not live SQLAlchemy sessions.",
+    "Original CapacityLimiter(1) assignment is AST-executed; concurrent regression proves merge peak 1, router peak 2; failed offer write propagates and limiter is released.",
+    "Serial write limiter preserves process-local former event-loop serialization for drift/fare first-write paths.",
+    "Baseline off-loop regression fails as expected; empty/limiter baseline failures use newly introduced helper hooks and must not be reported as independent baseline business bugs."
+  ],
+  "limitations": [
+    "Not real database integration, full app import, cancellation/timeout integration, or HK capacity evidence.",
+    "Local review used available starlette 1.6.0 environment; canonical pinned-dependency import and CI required.",
+    "Process-local limiter does not solve pre-existing cross-process first-write race; do not raise ASGI worker count as part of this patch.",
+    "Serialized write throughput and DB pool pressure may remain capacity limits; unchanged thresholds and three-surface staged retest remain required."
+  ],
+  "candidate_sha256": {
+    "application/scripts/test_hotel_search_event_loop.py": "e8e128057a55847c45453b05fd8c9bc70abecbaa04f272ee955b5f56df0c0df1",
+    "application/src/go_hotel/routing/router.py": "21993578b43d91f21c474aa360ea6a2a5115f4d1927a547438e21c2b57b78fc8",
+    "application/src/go_hotel/services/booking.py": "c984bf6ea8b9f8d6141edd82aa7ab7f82cad012f37ae5ccf2eccc858c6256884",
+    "application/src/go_hotel/api/routes/hotel.py": "2b253760d0e8640331fedfb752647295e420e02e0a6b9862bef3676c6f65b94f"
+  }
+}
