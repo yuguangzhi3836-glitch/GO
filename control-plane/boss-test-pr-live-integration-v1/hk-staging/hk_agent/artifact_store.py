@@ -152,6 +152,19 @@ ARCHIVE_REFUSALS = ("ARCHIVE_INVALID",          # unreadable, truncated, or no l
                     "BLOB_AMBIGUOUS",           # one identity, two canonical locations
                     "LAYOUT_AMBIGUOUS",         # two layouts naming different images
                     "OCI_INVALID",              # malformed layout marker, index or manifest
+                    "OCI_INVALID_MANIFEST_SCHEMA",
+                    "OCI_INVALID_MANIFEST_LAYERS",
+                    "OCI_INVALID_LAYOUT_MISSING",
+                    "OCI_INVALID_LAYOUT_DOCUMENT",
+                    "OCI_INVALID_LAYOUT_VERSION",
+                    "OCI_INVALID_ROOT_DOCUMENT",
+                    "OCI_INVALID_ROOT_SHAPE",
+                    "OCI_INVALID_ROOT_COUNT",
+                    "OCI_INVALID_TARGET_DOCUMENT",
+                    "OCI_INVALID_INDEX_SCHEMA",
+                    "OCI_INVALID_INDEX_MANIFESTS",
+                    "OCI_INVALID_CHILD_DOCUMENT",
+                    "OCI_INVALID_IMAGE_ABSENT",
                     "DESCRIPTOR_INVALID",       # a descriptor that contradicts itself
                     "DESCRIPTOR_LIMIT",         # traversal budget exhausted
                     "MEDIA_TYPE_UNSUPPORTED",   # unknown type would have to be image authority
@@ -307,10 +320,9 @@ def _refuse(code):
 def _oci_refuse(detail):
     """One bounded writer-side OCI parser location.
 
-    The cross-side contract still exposes ``OCI_INVALID`` as the semantic
-    refusal.  This suffix says which closed branch produced it, so a failure
-    Evidence record no longer collapses every malformed OCI shape into the same
-    opaque token.
+    The writer and reader expose the same closed detail suffixes.  The suffix
+    identifies which parser branch refused the archive without publishing
+    free-form host data.
     """
     _refuse("OCI_INVALID_" + detail)
 
