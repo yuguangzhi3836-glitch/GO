@@ -1001,3 +1001,122 @@ class GitDiffTests(unittest.TestCase):
             with patch.object(bridge,'REPO',str(repo)),patch.object(bridge,'ssh_env',return_value=env),patch.object(bridge,'discover_heads',return_value={'2':head}):
                 self.assertEqual(bridge.read_pr('2',head)['path'],'requests/synthetic-request.json')
                 with self.assertRaisesRegex(gate.Reject,'head_changed'): bridge.read_pr('2','a'*40)
+
+
+class RemoteReadTests(unittest.TestCase):
+    """How the Bridge reads one file out of a read-only remote.
+
+    Two facts about the real remotes decided this code and neither is visible from the
+    Bridge's own arguments, so both are pinned here.  First, the remotes do not agree on
+    a branch name, and one of them carries no `main` at all -- its publication branch is
+    whatever `git clone` checks out for the agent that writes it, which that agent's
+    contract leaves untouched.  Second, one of them carries more than a gigabyte of
+    history, which a shallow fetch without a blob filter cannot traverse inside a poll
+    tick.  Everything below runs on the remote's reply and the fetch's argv, so it needs
+    no network and no repository.
+    """
+
+    def reply(self, branch="permission-test", symref=True):
+        lines = []
+        if symref: lines.append("ref: refs/heads/%s\tHEAD" % branch)
+        lines.append("%s\tHEAD" % ("c" * 40))
+        return "\n".join(lines) + "\n"
+
+    def read(self, reply, show_rc=0):
+        """Run the real reader against a synthetic remote. Returns (calls, outcome)."""
+        calls = []
+
+        class Done:
+            def __init__(self, stdout, returncode=0):
+                self.stdout = stdout
+                self.returncode = returncode
+
+        def fake_git(env, *argv, cwd=None):
+            calls.append(list(argv))
+            return Done(reply if argv and argv[0] == "ls-remote" else "")
+
+        def fake_run(argv, **kw):
+            calls.append(list(argv))
+            return Done(b'{"synthetic":true}' if not show_rc else b"", show_rc)
+
+        try:
+            with patch.object(bridge, "git", side_effect=fake_git), \
+                 patch.object(bridge.subprocess, "run", side_effect=fake_run):
+                return calls, bridge.read_repo_file("git@example.invalid:r.git", "/dev/null", "evidence/x.json")
+        except gate.Reject as exc:
+            return calls, str(exc)
+
+    def fetches(self, calls):
+        return [c for c in calls if "fetch" in c]
+
+    def test_the_branch_is_the_one_the_remote_declares(self):
+        """One reader, two remotes, and the name comes from the remote each time.
+
+        The GO repository and the evidence repository disagree about the branch, and the
+        reader is the same function for both.  A name compiled into the reader could only
+        ever suit one of them.
+        """
+        for branch in ("main", "permission-test"):
+            with self.subTest(branch=branch):
+                calls, outcome = self.read(self.reply(branch))
+                self.assertEqual(outcome, b'{"synthetic":true}')
+                fetch = self.fetches(calls)
+                self.assertEqual(len(fetch), 1)
+                self.assertEqual(fetch[0][-1], branch)
+                self.assertNotIn(branch, fetch[0][:-1],
+                                 "the branch must be the fetch target, never an earlier argument")
+                self.assertEqual(fetch[0][-2], "origin")
+
+    def test_the_fetch_is_filtered_and_shallow(self):
+        """What makes a repository of that size readable inside a poll tick.
+
+        Without `--filter=blob:none` the transfer is the whole of the shallow history; the
+        one blob this function wants is then fetched on demand by the `show`.
+        """
+        calls, _ = self.read(self.reply())
+        argv = self.fetches(calls)[0]
+        self.assertIn("--filter=blob:none", argv)
+        self.assertEqual(argv[argv.index("--depth") + 1], "1")
+        self.assertEqual(argv[argv.index("--filter=blob:none") + 1], "origin",
+                         "the filter must be a fetch option, not the ref")
+
+    def test_the_remote_is_asked_which_branch_it_publishes(self):
+        calls, _ = self.read(self.reply())
+        query = [c for c in calls if c and c[0] == "ls-remote"]
+        self.assertEqual(len(query), 1)
+        self.assertIn("--symref", query[0])
+        self.assertEqual(query[0][-1], "HEAD")
+
+    def test_a_remote_that_declares_no_default_branch_is_refused(self):
+        """Fail closed, and before the fetch: an unnamed branch is not a reason to guess.
+
+        A reply carrying only the object id -- what a remote that advertises no symbolic
+        HEAD returns -- leaves nothing to fetch, so the refusal happens with no fetch
+        attempted and the temporary workspace still cleaned up.
+        """
+        calls, outcome = self.read(self.reply(symref=False))
+        self.assertEqual(outcome, "readable_file_unavailable")
+        self.assertEqual(self.fetches(calls), [])
+        removals = [c for c in calls if "/usr/bin/rm" in c]
+        self.assertEqual(len(removals), 1)
+        self.assertEqual(removals[0][1], "-rf")
+
+    def test_a_branch_name_that_is_really_an_option_is_refused(self):
+        """The name reaches git as an argument, so it is validated first.
+
+        A branch called `--upload-pack=...` would otherwise be handed to `git fetch` as an
+        option rather than as a ref.  No remote publishes such a branch, which is exactly
+        why the refusal has to be structural rather than a matter of trust.
+        """
+        for hostile in ("--upload-pack=/tmp/x", "-c", "main --exec=sh", "", "a" * 200):
+            with self.subTest(branch=hostile):
+                calls, outcome = self.read(self.reply(hostile))
+                self.assertEqual(outcome, "readable_file_unavailable")
+                self.assertEqual(self.fetches(calls), [])
+
+    def test_a_file_that_cannot_be_shown_is_a_refusal_not_a_crash(self):
+        """An escaping error here would end the tick and stop every other action too."""
+        calls, outcome = self.read(self.reply(), show_rc=128)
+        self.assertEqual(outcome, "readable_file_unavailable")
+        removals = [c for c in calls if "/usr/bin/rm" in c]
+        self.assertEqual(len(removals), 1)

@@ -100,6 +100,10 @@ EVIDENCE_READER_KEY = "/etc/go-command-center/keys/github-evidence-reader"
 EVIDENCE_NAME_RE = re.compile(r"^evidence/[A-Za-z0-9][A-Za-z0-9._-]{0,127}-[A-Za-z0-9_-]{1,128}\.json$")
 COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 PR_NUMBER_RE = re.compile(r"^[1-9][0-9]{0,8}$")
+# A branch name that may be handed to git as an argument.  It is stated by the remote,
+# so it is validated before use: a name beginning with `-` would otherwise be read as
+# an option rather than as a ref.
+DEFAULT_BRANCH_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$")
 
 Reject = deploy_gate.Reject
 
@@ -225,12 +229,38 @@ def resolve_pr(number):
     if len(parts)!=2 or parts[1]!=ref or not COMMIT_SHA_RE.fullmatch(parts[0]): raise Reject("pr_head_invalid")
     return parts[0]
 
+def remote_default_branch(env, repo):
+    """The branch a reader gets by default -- asked of the remote, never assumed.
+
+    The Bridge reads two remotes that do not agree on a name, and one of them does not
+    carry `main` at all.  Hard-coding the branch here meant the evidence remote could
+    never be read: its publication branch is whatever `git clone` checks out for the
+    agent that writes it, and that agent's own contract leaves the branch untouched, so
+    the name is a property of the remote rather than a constant of this program.  It is
+    therefore resolved from the remote and validated before it is passed to git.
+    """
+    for line in git(env,"ls-remote","--symref",repo,"HEAD").stdout.splitlines():
+        parts=line.split("\t")
+        if len(parts)==2 and parts[1]=="HEAD" and parts[0].startswith("ref: refs/heads/"):
+            name=parts[0][len("ref: refs/heads/"):]
+            if DEFAULT_BRANCH_RE.fullmatch(name): return name
+    raise Reject("readable_file_unavailable")
+
 def read_repo_file(repo, key_path, path):
-    """One file out of a read-only remote, by shallow fetch. No working tree is kept."""
+    """One file out of a read-only remote, by shallow filtered fetch.
+
+    `--filter=blob:none` keeps the transfer to commits and trees, which is what makes
+    this work at all against the GO repository: it carries more than a gigabyte of
+    history, and a shallow fetch of it without the filter does not finish inside a poll
+    tick.  The single blob this function is actually after is then fetched on demand by
+    the `show` below.  No working tree is kept, and the branch is the remote's own
+    default rather than a name guessed here.
+    """
     work=pathlib.Path(tempfile.mkdtemp(prefix="go-cc-read-")); env=readonly_env(key_path)
     try:
+        branch=remote_default_branch(env,repo)
         git(env,"init","-q",str(work)); git(env,"-C",str(work),"remote","add","origin",repo)
-        git(env,"-C",str(work),"fetch","-q","--depth","1","origin","main")
+        git(env,"-C",str(work),"fetch","-q","--depth","1","--filter=blob:none","origin",branch)
         got=subprocess.run(["/usr/bin/git","-C",str(work),"show","FETCH_HEAD:"+path],
                            env=env,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
         if got.returncode!=0: raise Reject("readable_file_unavailable")
@@ -622,7 +652,7 @@ def main():
         try: result.append({"pr":number,"head":head,**persistent_process(number,head,args.ledger_root,args.key,args.channel_config)})
         except Reject as exc: result.append({"pr":number,"head":head,"status":"rejected","reason":str(exc)})
     channel = load_channel(args.channel_config)
-    print(json.dumps({"bridge_version":"1.8.0-request-authorized-deploy", "channel_mode":channel["mode"],
+    print(json.dumps({"bridge_version":"1.8.1-remote-default-branch", "channel_mode":channel["mode"],
                       "publish_enabled":channel["publish_enabled"], "results":result},sort_keys=True)); return 0
 
 def run_tests():
