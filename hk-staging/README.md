@@ -41,7 +41,7 @@ The two trees have 577 common paths, 576 byte-identical files, and exactly one d
 - Agent transport SHA-256: `4301a7e920fc25d98ea8403ac00ebbdb6a864bcb092d33caf343ad28603ff490`
 - Installed Agent entrypoint SHA-256: `73f7e407dcd97d5ed7bff2bcf171d717a281087ced0ecfc0a8d51c87b8861cf5`
 - Executor version: `0.4.3-rollback-runtime`
-- Installed Executor main SHA-256: `f0804521437a4d43db79aafd96928a15978f1d79393b1376be17b7a3907f37c0`
+- Installed Executor main SHA-256: `b13b5002f7ba7585ee25404790515490b42d8112e30f4332f062e45f3340d609`
 - Installed Executor collector SHA-256: `dff91265a5e3e80704277664f1952129ff19c6c7174d78e9b3e66125b9618ccc`
 
 The Executor main and collector digests above are the ones installed on
