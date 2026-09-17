@@ -48,3 +48,9 @@ container built from exact PR183 source with inherited frozen dependencies. It
 executes the actual fixed migration program, checks retained data and indexes,
 and rejects both a repeat from the wrong prestate and substituted lineage.
 It does not rerun the accepted Cell suites or contact the live database.
+
+C14 found the inherited Evidence timestamp defect. The migration generation now
+persists the real claim/start before dispatch, binds the signed Task digest, and
+reports independent completion plus monotonic duration. Both CC proof and state
+projection require a timely start and the same fixed 900-second budget. The Task
+admission deadline is unchanged; late historical Evidence gains no new meaning.

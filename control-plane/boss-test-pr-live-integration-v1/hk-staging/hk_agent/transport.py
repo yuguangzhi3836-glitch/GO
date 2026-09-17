@@ -2,9 +2,10 @@
 import argparse, base64, datetime as dt, hashlib, json, os, pathlib, re, shutil, sqlite3, subprocess, tempfile
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
-from . import artifact_store, deployment_actions, test_pr
+from . import artifact_store, deployment_actions, test_pr, execution_window
+import time
 
-VERSION = "0.5.7-rebuilt"
+VERSION = "0.5.8-migration-window"
 MAX_EXECUTOR_ATTEMPTS_PER_TASK = 1
 ALLOWLIST = {"CONTROL_PLANE_HEALTH", "HK_STAGING_CANARY", "HK_STAGING_DEPLOY", "HK_STAGING_VERIFY", "HK_STAGING_ROLLBACK", "HK_STAGING_TEST_PR"}
 
@@ -178,6 +179,24 @@ class Ledger:
             except sqlite3.IntegrityError:
                 return False
         return True
+    def begin_execution(self,task):
+        # Only the migration generation gets new semantics. Old Evidence is never
+        # retroactively accepted under this proof.
+        with sqlite3.connect(self.path) as db:
+            claimed=db.execute("SELECT claimed_at FROM attempts WHERE task_id=? AND nonce=?",(task['task_id'],task['nonce'])).fetchone()
+            if claimed is None: raise Reject('ATTEMPT_BUDGET_REJECT')
+            db.execute("CREATE TABLE IF NOT EXISTS execution_starts(task_id TEXT PRIMARY KEY,nonce TEXT UNIQUE NOT NULL,task_sha256 TEXT NOT NULL,claimed_at TEXT NOT NULL,started_at TEXT NOT NULL)")
+            started=utcnow();monotonic_start=time.monotonic_ns()
+            if not execution_window.stamp(task['issued_at'])<=execution_window.stamp(claimed[0])<=execution_window.stamp(started)<execution_window.stamp(task['expires_at']):
+                raise Reject('EXPIRY_REJECT')
+            try:
+                db.execute("INSERT INTO execution_starts VALUES(?,?,?,?,?)",(task['task_id'],task['nonce'],execution_window.task_digest(task),claimed[0],started))
+            except sqlite3.IntegrityError as exc: raise Reject('ATTEMPT_BUDGET_REJECT') from exc
+        if execution_window.stamp(utcnow())>=execution_window.stamp(task['expires_at']): raise Reject('EXPIRY_REJECT')
+        return {'schema':'go.hk-execution-window.v1','task_sha256':execution_window.task_digest(task),
+                'candidate_contract_sha256':task['parameters']['candidate_contract_sha256'],
+                'claimed_at':claimed[0],'started_at':started,'budget_seconds':execution_window.BUDGET_SECONDS},monotonic_start
+
     def fail_attempt(self, task_id, nonce, diagnostic):
         with sqlite3.connect(self.path) as db:
             db.execute("UPDATE attempts SET status=?, diagnostic=? WHERE task_id=? AND nonce=?", ("failed",json.dumps(diagnostic,sort_keys=True,separators=(",",":")),task_id,nonce))
@@ -317,9 +336,15 @@ def control_plane_health():
         if line.startswith("MemAvailable:"): avail=int(line.split()[1])*1024
     return {"agent_version":VERSION,"hostname":os.uname().nodename,"current_time":utcnow(),"disk_free_bytes":shutil.disk_usage("/").free,"memory_available_bytes":avail,"tasks_repo_connectivity":True,"evidence_repo_connectivity":True}
 
-def evidence(task,result):
+def evidence(task,result,execution=None):
     stamp=utcnow()
     record = {"schema_version":"1","task_id":task["task_id"],"nonce":task["nonce"],"action_id":task["action_id"],"environment":task["environment"],"status":"SUCCESS","started_at":stamp,"completed_at":stamp,"agent_version":VERSION,"gate_results":{"schema":"PASS","environment":"PASS","authority":"PASS","signature":"PASS","expiry":"PASS","replay":"PASS","allowlist":"PASS"},"executor_result":result}
+    if execution_window.applies(task):
+        if execution is None: raise Reject('EXECUTOR_RESULT_REJECT',stage=STAGE_EVIDENCE_BUILD)
+        record.update(started_at=execution['started_at'],completed_at=execution['completed_at'],
+                      candidate_contract_sha256=task['parameters']['candidate_contract_sha256'],execution_window=execution)
+        try: execution_window.validate(task,record)
+        except execution_window.Invalid as exc: raise Reject('EXECUTOR_RESULT_REJECT',stage=STAGE_EVIDENCE_BUILD) from exc
     if task["action_id"] == test_pr.ACTION:
         required={"schema_version","executor_version","action_id","status","result","source_pr_number","source_commit_sha","task_canonical_sha256","built_image_id","artifact_durability","artifact_package","gate_results","application_health_proven","deployment_performed"}
         if not isinstance(result,dict) or set(result) != required or result["status"] != "SUCCESS" or result["result"] != "TEST_PR_OK" or result["action_id"] != test_pr.ACTION or result["application_health_proven"] is not False or result["deployment_performed"] is not False:
@@ -544,7 +569,13 @@ def run_once(config_path,ledger_path,task_id=None):
                     raise Reject("ATTEMPT_BUDGET_EXHAUSTED")
                 claimed=True
                 if task["action_id"]=="HK_STAGING_ROLLBACK": prepare_rollback_handoff(task,cfg,tasks,work)
-                data=sign(evidence(task,dispatch_action(task)),cfg["evidence_signing_key"])
+                if execution_window.applies(task):
+                    window,monotonic_start=ledger.begin_execution(task)
+                    action_result=dispatch_action(task)
+                    window.update(completed_at=utcnow(),elapsed_milliseconds=(time.monotonic_ns()-monotonic_start)//1000000)
+                    unsigned=evidence(task,action_result,execution=window)
+                else: unsigned=evidence(task,dispatch_action(task))
+                data=sign(unsigned,cfg["evidence_signing_key"])
                 commit=push_evidence(data,cfg,work,stage=STAGE_EVIDENCE_PUBLISH)
                 ledger.commit(task["task_id"],task["nonce"],"completed",commit)
                 result["processed"]+=1; result["evidence_commits"].append(commit)

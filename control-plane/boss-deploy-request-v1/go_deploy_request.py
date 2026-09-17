@@ -54,6 +54,7 @@ import pathlib
 import re
 import stat
 import hk_candidate_contract as candidate_contract
+import execution_window
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
@@ -392,6 +393,9 @@ def rollback_source_proof(task,evidence,authority_key,hk_key):
     # source can satisfy is not fail-closed, it is fail-forever, and the freshness a rollback
     # needs is carried by the authorisation instead: it must postdate this `completed_at`.
     if not issued<=started<=completed: raise Reject('rollback_source_unbound_time')
+    if contract_sha:
+        try: execution_window.validate(task,evidence)
+        except execution_window.Invalid as exc: raise Reject(str(exc)) from exc
     if evidence.get('deploy_record_schema_version')!='2': raise Reject('rollback_source_record_binding')
     record_id,record_sha256=evidence.get('deploy_record_id'),evidence.get('deploy_record_sha256')
     if not isinstance(record_id,str) or SHA.fullmatch(record_id) is None:
