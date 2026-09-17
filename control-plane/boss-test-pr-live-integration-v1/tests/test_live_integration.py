@@ -460,7 +460,7 @@ class IntegrationTests(unittest.TestCase):
         end = source.index('"$root/install/preflight.sh" hk-staging postinstall', start)
         readback = source[start:end]
         self.assertNotIn("\\ntest ", readback)
-        self.assertEqual(readback.count('stat -c %u:%g "$store_root'), 2)
+        self.assertEqual(readback.count('stat -c %u:%g "$store_root'), 3)
         self.assertEqual(readback.count('stat -c %a "$store_root'), 3)
 
         with tempfile.TemporaryDirectory() as raw:
