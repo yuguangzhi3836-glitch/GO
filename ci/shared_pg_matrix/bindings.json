@@ -1,0 +1,49 @@
+{
+  "schema": "go.shared-pg-matrix-bindings.v1",
+  "issue": 168,
+  "failed_run": 35101221241,
+  "policy": {
+    "require_distinct_candidate_sha": true,
+    "require_exact_application_tree": true,
+    "require_exact_source_tree_fingerprint": true,
+    "allow_duplicate_candidate_sha": false,
+    "inherit_success_without_rerun": [
+      "C09",
+      "C10",
+      "C11"
+    ],
+    "resume_only": [
+      "C07"
+    ]
+  },
+  "cells": {
+    "C07": {
+      "candidate_sha": "4a825f342698bd78dc5fae392a43897b201f4961",
+      "application_tree": "0cd2c7b636066be6cb15e33d7b772b697a25d9c5",
+      "source_tree_fingerprint": null,
+      "status": "RETEST_REQUIRED",
+      "entrypoint": "ci/next_depth/c07_postgres.py"
+    },
+    "C09": {
+      "candidate_sha": "bb2a1bbad75bdc715d95a207ca609d8fbf739db4",
+      "application_tree": "550c7425047ba897d35e73795dcf7735a84f6d52",
+      "source_tree_fingerprint": "b9d352aad07f61accd5ed31ed097b52736c64f8e6aa3449b165e12f3efe46be0",
+      "status": "INHERIT_SUCCESS",
+      "entrypoint": "ci/next_depth/c09_postgres.py"
+    },
+    "C10": {
+      "candidate_sha": "453d0f0f552be37112833763e5cd737b615e83f4",
+      "application_tree": "1f3e2c127d96ada361a1b493d6ae54fb4cb36815",
+      "source_tree_fingerprint": "18ee9c3b454b652225be1de131ebccc834479f6d6fed4965f332b2a21fa957f3",
+      "status": "INHERIT_SUCCESS",
+      "entrypoint": "../ci/c10-pg/plan.py"
+    },
+    "C11": {
+      "candidate_sha": "04764e9770a62905771caa2e4b8b3f1cfcff06aa",
+      "application_tree": "bcbbafaf2255aeb50b2ac8ee1adf4f3c1d81fad7",
+      "source_tree_fingerprint": "9cef0970686877e635ee605582a56d0f388623a7500c7932c28ec9d53ff4c8cf",
+      "status": "INHERIT_SUCCESS",
+      "entrypoint": "ci/next_depth/c11_postgres.py"
+    }
+  }
+}
