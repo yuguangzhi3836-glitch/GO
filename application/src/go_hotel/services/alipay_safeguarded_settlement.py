@@ -3,7 +3,7 @@ from sqlalchemy import select,text
 from contextlib import contextmanager
 from go_hotel.core.config import settings
 from go_hotel.db.session import SessionLocal
-from go_hotel.db.models import HostedDirectHotelRow,HostedDirectReservationRow,HostedReservationStayRow,HostedDirectRoomOfferRow,AlipayMerchantBindingRow,AlipayCredentialBindingRow,AlipayAuthorizationRow,AlipaySafeguardedEventRow,AlipayAdjustmentApprovalRow,AlipayReconciliationRow
+from go_hotel.db.models import HostedDirectHotelRow,HostedDirectReservationRow,HostedReservationStayRow,HostedDirectRoomOfferRow,OmnichannelPaymentIntentRow,AlipayMerchantBindingRow,AlipayCredentialBindingRow,AlipayAuthorizationRow,AlipaySafeguardedEventRow,AlipayAdjustmentApprovalRow,AlipayReconciliationRow
 from go_hotel.services.hosted_direct_booking import ident,now,out
 def digest(v):return hashlib.sha256(json.dumps(v,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 @contextmanager
@@ -99,12 +99,16 @@ class Service:
    a,r,stay=locked_authorization(s,authorization_id)
    if a.state=='CONTRACT_CAPTURED_NOT_ALIPAY_NOT_SETTLED' or a.state=='CONTRACT_RELEASED_NOT_ALIPAY' and a.settlement_eligible:return out(a)
    from go_hotel.services.hosted_credit_value import allocation
+   from go_hotel.services import hosted_money
    credited=allocation(s,r.hosted_reservation_id)
    credited_minor=credited.applied_minor if credited else 0
-   if a.currency!=r.currency or a.amount_minor+credited_minor!=r.amount_minor:raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+   payment_root=hosted_money.root(s,a)
+   current_intent=s.get(OmnichannelPaymentIntentRow,payment_root.payment_intent_id) if payment_root else None
+   cash_amount=current_intent.amount_minor if current_intent else a.amount_minor
+   cash_currency=current_intent.currency if current_intent else a.currency
+   if cash_currency!=r.currency or cash_amount+credited_minor!=r.amount_minor:raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
    if a.state!='FULFILLED_ELIGIBLE_FOR_CONTRACT_CAPTURE' or not a.settlement_eligible or a.external_invoked:raise ValueError('FULFILLMENT_SETTLEMENT_GATE_REQUIRED')
-   from go_hotel.services import hosted_money
-   amount=hosted_money.settle(s,r,stay,a) if hosted_money.root(s,a) else a.amount_minor
+   amount=hosted_money.settle(s,r,stay,a) if payment_root else a.amount_minor
    a.state='CONTRACT_CAPTURED_NOT_ALIPAY_NOT_SETTLED' if amount else 'CONTRACT_RELEASED_NOT_ALIPAY';a.updated_at=now()
    if r.payment_state=='CONTRACT_AUTHORIZED_NOT_ALIPAY':r.payment_state='CONTRACT_CAPTURED_NOT_ALIPAY' if amount else 'NO_PAYMENT_NO_REFUND_REQUIRED';r.updated_at=now()
    if r.payment_state=='CONTRACT_CREDIT_AND_AUTHORIZED':r.payment_state='CONTRACT_CREDIT_PAID';r.updated_at=now()
