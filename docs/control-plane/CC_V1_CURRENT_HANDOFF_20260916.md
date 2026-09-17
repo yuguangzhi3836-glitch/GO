@@ -296,10 +296,11 @@ agent ledger          /var/lib/go-command-center? 否 —— /var/lib/go-hk-agen
 [SYNTHETIC] 组件级：failure_evidence / deploy dry-run / queue replay / mid-flight /
             transport 有界性（真实 git 30 项）/ readiness 契约漂移守卫
 
-[NOT_YET_PROVEN] fresh VERIFY（最近一次真实 VERIFY 已过期）
-[NOT_YET_PROVEN] CANARY（从未执行）
-[NOT_YET_PROVEN] DEPLOY（从未执行；deployment_requests_enabled=false）
-[ATTEMPTED_REFUSED] ROLLBACK（2026-09-17 真实下发并被执行器拒绝；旧字节缺镜像钉，已修复并重装 —— 见 §11 CCV1-57b）
+[REAL] CANARY（2026-09-17 通道内成功多次；最新一次 09:22:36Z `CANARY_OK`）
+[REAL] VERIFY（2026-09-17 通道内成功并作为 DEPLOY 预检；最新一次 09:24:58Z `VERIFY_OK`）
+[REAL] DEPLOY（2026-09-17 通道内成功三次；最新一次 09:29:10Z `DEPLOY_OK`，记录 `98073b05…`）
+[REAL] ROLLBACK（2026-09-17 **首次成功**：`6b92050e… → 1c9598d6…` 镜像真的变化，五项 gate 全 PASS —— 见 §11 CCV1-59；
+           此前 08:14:07Z 的一次失败已定位为旧字节缺镜像钉，修复见 §11 CCV1-57b）
 ```
 
 ## 8. 已完成、**不要再重做**（DO_NOT_REOPEN / DO_NOT_REDESIGN）
@@ -552,6 +553,40 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 
 ## 11. 下一会话唯一入口
 
+> **2026-09-17 / CCV1-59 —— 再优先读这一段：真实回滚已跑通，镜像真的变化。**
+>
+> **① 结果**：闸口 B 要的那次「镜像真的变化」的真实回滚，在修复后的执行器上成功。`6b92050e… → 1c9598d6…`，
+> 八个业务服务全部换过去，`ROLLBACK_OK`，`gate_results` 五项（`fixed_scope` / `fresh_drift` / `lineage` / `postcheck` /
+> `rollback_record`）全 PASS。Request 仍然只带五个公共字段，源由 CC 从自己账本派生，`caller_controlled_rollback_image: false` 仍成立。
+>
+> **② 三件套**：Request PR #48（head `150346d3…`）→ Task `go-boss-rollback-f189b33e16eff15db3b53e74`
+> （issued 09:18:06Z / expires 09:22:57Z，`approval_id=approval-rollback-6eab851a26447678`，`approval_identity=chenzhenxi1-sudo`）
+> → Evidence `ROLLBACK_OK`（completed 09:20:08Z，`rollback_record_id=8a08f446…159b2b`、`_sha256=80942d46…c43747`）。
+> HK agent 账本：`processed.status=completed`、`evidence_ref=4116c5b9…`（claimed 09:19:22Z → completed 09:20:15Z，共 53s；
+> 对照失败那次 16s 且 `gate_results:{}` —— 多出来的时间正是 8 个目标 inspect ＋ 生成 override ＋ `compose up` ＋ 等 api 健康）。
+>
+> **③ 源是现场新产生的**：CC 派生「最新一条已发布 DEPLOY」＝ `go-boss-deploy-11c806af6339f53e0f77428d`
+> （账本 `parameters.source_deploy_task_id` 与之逐字一致），其 record `e3b8dfa0…`（`_sha256=5801c297…6794`）写着
+> candidate `6b92050e…` / expected-current `1c9598d6…`；回滚记录里 `target_images` 8×`1c9598d6`、`current_targets` 8×`6b92050e`，
+> 这就是「镜像确实变了」的直接证据。
+>
+> **④ 完整重演四阶段**（UTC）：渠道外 seed 回 `1c9598d6` → 通道内 CANARY(#45 `442664d3`) / VERIFY(#46 `b536e8db`) /
+> DEPLOY(#47 `5c7ea7e0` → `11c806af`) → **ROLLBACK(#48)** → 通道内 CANARY(#49 `9a1f5fc4`) / VERIFY(#50 `51be1d4d`) /
+> DEPLOY(#51 `acadcb01` → `7d4da12a`)。阶段 2 耗时 12m06s、阶段 4 耗时 8m45s。
+>
+> **⑤ 独立验签**：本轮 6 个签名对象（3 个 Task × CC 任务钥 hex、3 个 Evidence × HK 证据钥 base64）用仓里公钥
+> 在本机重建规范形式后逐条验签，**6/6 OK**（`tmp/ccv159/verify_signatures.py`）。
+>
+> **⑥ 源消费守卫实测**（CC 上**已安装**的谓词 `go_deploy_request.py` sha256 `51aa135b…` 对 live 账本）：
+> `11c806af…`（刚被回滚）REFUSED `rollback_source_already_rolled_back`；`7d4da12a…`（最新、未回滚）ACCEPTED；
+> `6344dcdd…`（CCV1-56 源）REFUSED；未知源 ACCEPTED ⇒ 守卫按**源**判定，不是一刀切。
+>
+> **⑦ HK 结束状态**：8 个业务服务在候选 `6b92050e…`、10 个容器重启数全 0、api `HTTP 200`；
+> caddy `958524e1…` / redis `0a52d623…` 的容器 id 与 09-03T10:25:46Z 启动时间**未变**。
+> 执行器字节仍是 CCV1-57b 装机后的 `b13b5002…` / `c7c1bf04…` —— **本轮没有改动 HK 上任何程序字节**。
+> 部署记录 9 条 / 回滚记录 4 条。HK 上现存一个**未被消费的新回滚源**（`go-boss-deploy-7d4da12a…`），属复原动作的正常副产物。
+> 详见 `CCV1-59-ROLLBACK-RE-ENACTMENT-2026-09-17.md`。
+>
 > **2026-09-17 / CCV1-57b —— 再优先读这一段：回滚执行器缺镜像钉，已修复并重装。**
 >
 > **① 闸口 B 的真实失败**：真实 ROLLBACK Request PR #43（head `61e791e2…`）已发布，Bridge 派生并签名 Task
