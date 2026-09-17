@@ -1,0 +1,59 @@
+{
+  "schema": "go.independent-c13-operation-review.v1",
+  "reviewer": "/root/c13_issue103_migration",
+  "review_date": "2026-09-17",
+  "status": "PASS_SCOPED",
+  "scope": "FIXED_SOURCE_INSTALLATION_AND_CANDIDATE_FACT_ADMISSION_ONLY",
+  "source_candidate_sha": "bc71a91bff31a092aae003e061622878b8ef4bf6",
+  "source_candidate_tree": "cf34c9c0eebfccf66dd0b313e1eba825c12744c2",
+  "preceding_c14_review": "C14-install-admission-bc71.json",
+  "source_c13_review": "C13-bc71.json",
+  "reviewed_operations": {
+    "source_installer_sha256": "8497b3369526190c0637b70cf1971f1785df84374c7aae35c8f861ee6a09d261",
+    "source_manifest_sha256": "f750fa9733225f828e17e70c16dbdffaf8719426d78e9418af77cbdf448f7ea0",
+    "source_package_sha256": "be1906500e6d501244af105ed28a7c95275007dd51b9768d2a8bbd634098c7f7",
+    "admission_installer_sha256": "db49bf1d227920370b8c1a8787c40b79e5ffe2d314de37672b7c996da8d6cdf8",
+    "admission_package_sha256": "990c30dd431836e30291aa6fbe336d0186c5370711d4abd922f73dff26055ddb",
+    "candidate_contract_sha256": "23d78ea846b21ace5318335eacb2a75826db5ff56cd925c8f8c58f6a83babed6"
+  },
+  "open_p0_p1_operation_findings": [],
+  "checks": {
+    "source_mapping": "Independently recomputed manifest pin; 18/18 package source contents equal reviewed exact bc71 frozen files and SHA256 values; all before records equal supplied CC/HK preflight records.",
+    "scope": "Fixed pinned manifest and packages; installer only writes reviewed shared source or candidate facts, never a deployment plan or Task. No live SQL or direct executor deployment call. Smoke code imports only, using non-main run names.",
+    "ownership_and_baseline": "Every source target parent must be root-owned and non-writable by group/other; exact file hash/mode/uid/gid baseline rechecked after timer pause. Protected channel settings, PR185 TEST_PR, artifact runtime, systemd units and current runtime inventory guarded.",
+    "maintenance": "Requires idle service before and after stopping active timer; backups precede replacement; source and ledger backup; atomic replacement; immutable runtime/program import checks; guarded runtime inventory must remain identical; timers restored in finally.",
+    "restoration": "Reviewed actual exception/finally paths. Both installers append changed destination to rollback list immediately after os.replace and before directory fsync. C14 local fsync-after-replace fault injection report and actual isolated harness inspected; not executed on a server or re-run by C13.",
+    "migration_state": "New migration directory fixed root:root 0700 and absent-before check; uncertain-attempt semantics remain in reviewed runtime.",
+    "independent_public_keys": "Both package public keys byte-equal prior accepted TEST_PR archive keys; independently recomputed file and raw Ed25519 fingerprints against existing identity metadata.",
+    "signatures_and_proofs": "Independently verified CURRENT_VERIFY and TEST_PR Task/Evidence Ed25519 signatures. Ran reviewed go_deploy_request.proof at original completion and test_pr_proof; both PASS with candidate image, exact TEST_PR digest, source and package binding.",
+    "baseline_scope": "Historical signed VERIFY proves image 6b920 at 2026-09-17T12:32:05Z only. Supports correcting stale root baseline; cannot satisfy current deploy freshness. HK admission checks actual fixed eight images again; formal fresh VERIFY remains mandatory.",
+    "contract": "Pinned candidate contract passed reviewed validation and content digest. Active admission and contract identities/source/previous image agree; helper import byte-pinned and resolved from fixed root-owned path.",
+    "permissions": "Install manifest preserves observed CC 0750/0640 restrictions; candidate fact targets are root:root 0600. SOURCE_MANIFEST descriptive defaults are not authority; install_source uses pinned INSTALL_MANIFEST within SOURCE_PACKAGE."
+  },
+  "required_order": [
+    "HK shared source installation and exact readback",
+    "CC shared source installation and exact readback",
+    "HK pinned candidate contract installation",
+    "CC pinned contract and signed historical baseline reconciliation",
+    "CC active-candidate written last and validated; timers restored",
+    "Formal CANARY, fresh current-image VERIFY, authenticated formal DEPLOY Request, signed Task and Evidence",
+    "Independent post-deployment VERIFY before deployment-complete claim"
+  ],
+  "boundaries": {
+    "reviewer_modified_source": false,
+    "reviewer_called_installers": false,
+    "reviewer_accessed_hosts": false,
+    "installation_executed_or_proven": false,
+    "admission_executed_or_proven": false,
+    "live_database_touched": false,
+    "task_published": false,
+    "deployment_complete": false,
+    "accepted_cell_suites_rerun": false,
+    "merge_authorized_by_review": false,
+    "fresh_formal_canary_and_verify_required": true,
+    "verify_freshness_seconds": 300,
+    "real_supplier_connections": "HOLD",
+    "final_release": "HOLD",
+    "production": "HOLD"
+  }
+}
