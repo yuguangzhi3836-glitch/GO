@@ -72,7 +72,10 @@ def test_ride_unknown_can_converge_to_failed(client):
     o=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
     pay_and_confirm(client,h,'RIDE_ORDER',o['order_id'],'RIDE-'+o['order_id'][-6:])
     assert mobility_service.admin_external_state(o['order_id'],'UNKNOWN_EXTERNAL_STATE','unknown-proof','ops')['status']=='UNKNOWN_EXTERNAL_STATE'
-    assert mobility_service.admin_external_state(o['order_id'],'FAILED','supplier-failed-proof','ops')['status']=='FAILED'
+    from go_hotel.mobility.ride.recovery_evidence import current_unknown_episode
+    with SessionLocal() as s:
+        _,episode=current_unknown_episode(s,s.get(MobilityRideOrderRow,o['order_id']))
+    assert mobility_service.admin_external_state(o['order_id'],'FAILED','supplier-failed-proof','ops',episode)['status']=='FAILED'
 
 
 def test_attraction_redeem_evidence_keeps_consumed_credential(client):
