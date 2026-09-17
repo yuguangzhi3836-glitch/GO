@@ -1,0 +1,123 @@
+{
+  "matches": [
+    {
+      "entry": {
+        "action_id": "HK_STAGING_TEST_PR",
+        "assertion_state": "PROVEN",
+        "evidence_path": "evidence/go-boss-test-pr-183-3a7ec32c646d-sZz4iTNGE6hA9XZDrsgEQYqw1JF-bq-U.json",
+        "evidence_sha256": "ddb645db875fc5f8fc460317055a7476fea98803f2487e21890529f6ea79f5e5",
+        "evidence_signature_verified": true,
+        "evidence_state": "SUCCESS",
+        "expires_at": "2026-09-17T11:57:12.605392Z",
+        "issued_at": "2026-09-17T11:37:12.605392Z",
+        "lifecycle": "COMPLETE",
+        "source_path": "tasks/go-boss-test-pr-183-3a7ec32c646d.json",
+        "task_id": "go-boss-test-pr-183-3a7ec32c646d",
+        "task_sha256": "1388bc6aa53b15acaf0a6b141a11dfa74e264bfc32381136657ee100b870092a",
+        "task_signature_verified": true
+      },
+      "file": "TASK_INDEX.json"
+    },
+    {
+      "entry": {
+        "application_health_proven": false,
+        "built_image_id": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+        "commit_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+        "completed_at": "2026-09-17T11:40:56Z",
+        "deployment_performed": false,
+        "pr_number": "183",
+        "result": "TEST_PR_OK",
+        "task_id": "go-boss-test-pr-183-3a7ec32c646d"
+      },
+      "file": "CURRENT_CONTROL_STATE.json"
+    },
+    {
+      "entry": {
+        "proof_detail": "the signed Task exists, carries this request identity and verifies",
+        "proof_required": true,
+        "proof_state": "TASK_SIGNATURE_AND_DIGEST_PREFIX",
+        "task_commit": "d60a2df9860ee8f7c0ae950bd9fca2c45ffa2d6a",
+        "task_id": "go-boss-test-pr-183-3a7ec32c646d",
+        "task_sha256": "1cc9da774af4227049b1715f67158524a0a49c6d7d67bc8643d14621dfe3f3f9"
+      },
+      "file": "CURRENT_CONTROL_STATE.json"
+    },
+    {
+      "entry": {
+        "action_id": "HK_STAGING_TEST_PR",
+        "assertion": {
+          "evidence": [
+            "go-boss-test-pr-183-3a7ec32c646d-sZz4iTNGE6hA9XZDrsgEQYqw1JF-bq-U.json",
+            "go-boss-test-pr-183-3a7ec32c646d.json"
+          ],
+          "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+          "state": "PROVEN",
+          "value": "TEST_PR_OK"
+        },
+        "authority": "GO-COMMAND-CENTER",
+        "environment": "HK-STAGING-01",
+        "evidence": {
+          "agent_version": "0.5.7-rebuilt",
+          "built_image_id": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+          "completed_at": "2026-09-17T11:40:56Z",
+          "evidence_sha256": "ddb645db875fc5f8fc460317055a7476fea98803f2487e21890529f6ea79f5e5",
+          "executor_result": "TEST_PR_OK",
+          "generation": "v2",
+          "signature_verified": true,
+          "source": {
+            "path": "evidence/go-boss-test-pr-183-3a7ec32c646d-sZz4iTNGE6hA9XZDrsgEQYqw1JF-bq-U.json",
+            "repository": "chenzhenxi1-sudo/go-control-evidence"
+          },
+          "source_commit_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+          "source_pr_number": "183",
+          "status": "SUCCESS",
+          "task_canonical_sha256": "da8221a68f5ee0d4e65c5804abdf94f4311eae09a4f6ee200811f53119548f4a",
+          "verifier_identity": "Hong Kong agent evidence signer"
+        },
+        "execution_started": {
+          "evidence": [
+            "go-boss-test-pr-183-3a7ec32c646d-sZz4iTNGE6hA9XZDrsgEQYqw1JF-bq-U.json",
+            "go-boss-test-pr-183-3a7ec32c646d.json"
+          ],
+          "reason": "the Evidence carries started_at for this task/nonce",
+          "state": "PROVEN",
+          "value": "2026-09-17T11:40:56Z"
+        },
+        "expires_at": "2026-09-17T11:57:12.605392Z",
+        "issued_at": "2026-09-17T11:37:12.605392Z",
+        "lifecycle": "COMPLETE",
+        "nonce": "sZz4iTNGE6hA9XZDrsgEQYqw1JF-bq-U",
+        "parameter_contract": "CURRENT",
+        "parameters": {
+          "builder_profile": "go-application-python-v1",
+          "source": {
+            "commit_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+            "pr_number": "183",
+            "repository": "git@github.com:yuguangzhi3836-glitch/GO.git"
+          }
+        },
+        "source": {
+          "path": "tasks/go-boss-test-pr-183-3a7ec32c646d.json",
+          "repository": "chenzhenxi1-sudo/go-control-tasks"
+        },
+        "task_id": "go-boss-test-pr-183-3a7ec32c646d",
+        "task_sha256": "1388bc6aa53b15acaf0a6b141a11dfa74e264bfc32381136657ee100b870092a",
+        "task_signature_verified": true,
+        "task_verifier_identity": "GO Command Center task-manifest signer"
+      },
+      "file": "CURRENT_CONTROL_STATE.json"
+    },
+    {
+      "entry": {
+        "completed_at": "2026-09-17T11:40:56Z",
+        "lifecycle": "COMPLETE",
+        "path": "evidence/go-boss-test-pr-183-3a7ec32c646d-sZz4iTNGE6hA9XZDrsgEQYqw1JF-bq-U.json",
+        "sha256": "ddb645db875fc5f8fc460317055a7476fea98803f2487e21890529f6ea79f5e5",
+        "signature_verified": true,
+        "status": "SUCCESS",
+        "task_id": "go-boss-test-pr-183-3a7ec32c646d"
+      },
+      "file": "LATEST_EVIDENCE.json"
+    }
+  ]
+}

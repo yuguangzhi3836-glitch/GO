@@ -1,0 +1,330 @@
+{
+  "install": {
+    "after": {
+      "test_pr.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "dda3a4410b43d35d6bbc95c3492728eb5851cd51bcebb1122d74865fe59275f6",
+        "size": 15508,
+        "uid": 0
+      },
+      "transport.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "c48bf32f8cddfdc2d577df04f61a87b35d14f4cdf0cc2c8e45a7b517117e724a",
+        "size": 35252,
+        "uid": 0
+      }
+    },
+    "backup": "/var/backups/HK-CHANGE-20260917T113255Z-issue184",
+    "before": {
+      "test_pr.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "d1c454fc4b4c3066cbd6e8195b686de4ec676c2b6f67d4cf33d332ad4cedf1f0",
+        "size": 11045,
+        "uid": 0
+      },
+      "transport.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "af8261568fb7158f3bd6f620f3a405118b1ae77d3d662b764e62c3fe260e5fcb",
+        "size": 34713,
+        "uid": 0
+      }
+    },
+    "candidate_sha": "9c76fc579383fa2270af90bc67b67a17454d37bd",
+    "cc_changed": false,
+    "deployment_performed": false,
+    "finished_at": "2026-09-17T11:32:55.368826+00:00",
+    "import_smoke": {
+      "agent_version": "0.5.7-rebuilt",
+      "executor_version": "test-pr-v3",
+      "failure_reason_count": 24
+    },
+    "migration_performed": false,
+    "protected_after": {
+      "/etc/go-hk-agent/agent.json": {
+        "gid": 998,
+        "mode": 416,
+        "sha256": "557024408cc9af3bae902d9c3766046ed11252a35d68b747c2df580f51f43be1",
+        "size": 504,
+        "uid": 0
+      },
+      "/etc/systemd/system/go-hk-agent.service": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "ec5c4b444759e2a90e3b1e6b669d91e28b6f0ae3eaa70072e1037071b878b987",
+        "size": 442,
+        "uid": 0
+      },
+      "/etc/systemd/system/go-hk-agent.timer": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "4fdbb6880c3c1abdf2f94600b6ad610683425d0c222cd45845af910b61f435a3",
+        "size": 185,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/__init__.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "0171fac66c1c39e8f93bcdbafb5636537db4526f1931624efe8145bc952c54a7",
+        "size": 30,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/agent053_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "3b412ef05c6f9f98cac7992210eb7a14cecfac171218ca351dadb9b2c0129a1b",
+        "size": 4263,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "61731061062883013c7f9eed8196485a6bd22bd96b9770613225a3ef9c408c92",
+        "size": 39290,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/cli.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "97c267c5297dfe66faff823edb3cad80842748e070e17411126c3cb522ec153e",
+        "size": 995,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/core.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "44b04dd83ca5f192f031bb5541deb5c571241e0c076d086e79a8651909a39f7c",
+        "size": 4090,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/deployment_actions.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "14122ad7a0cbca1203d1d209adac19b7198711cf70cc7a9c9844b4653971f916",
+        "size": 14356,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/extensionless_loader_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "ef1700be1d6dd8d487970b26cccf1ab3d89db678b3b768da84cf88e9b4f06532",
+        "size": 2611,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/integration_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "ca8b7b5cd1aaf91373014e43710d585f6d27d402de55effaf1badb850f1c1b07",
+        "size": 2155,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/production_evidence_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "7b18dcaa1658169018763e6d126f0facce68a8550ff5bd0a3d78b53ae80cd5bd",
+        "size": 1038,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/production_executor_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "d5d57089af6db82e043992bba4a09dcece7f943cdafbbb14a6cc74ebf73c59d0",
+        "size": 4945,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/production_verifier_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "34b5c7841f061f85907a84e4e3771152b7deaaaea19bfbeacf1ba67d5cbca0e8",
+        "size": 3726,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/release_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "68569bd84015b66e564fdfd33a823d74fdd3958e4209dfc448ff790d848742b4",
+        "size": 5336,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/verify_pair_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "060c3920ef0d28292693078106160115f57ddc3fc187973c81f382b5dc5d44af",
+        "size": 3371,
+        "uid": 0
+      },
+      "/usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b",
+        "size": 701,
+        "uid": 0
+      }
+    },
+    "protected_before": {
+      "/etc/go-hk-agent/agent.json": {
+        "gid": 998,
+        "mode": 416,
+        "sha256": "557024408cc9af3bae902d9c3766046ed11252a35d68b747c2df580f51f43be1",
+        "size": 504,
+        "uid": 0
+      },
+      "/etc/systemd/system/go-hk-agent.service": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "ec5c4b444759e2a90e3b1e6b669d91e28b6f0ae3eaa70072e1037071b878b987",
+        "size": 442,
+        "uid": 0
+      },
+      "/etc/systemd/system/go-hk-agent.timer": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "4fdbb6880c3c1abdf2f94600b6ad610683425d0c222cd45845af910b61f435a3",
+        "size": 185,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/__init__.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "0171fac66c1c39e8f93bcdbafb5636537db4526f1931624efe8145bc952c54a7",
+        "size": 30,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/agent053_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "3b412ef05c6f9f98cac7992210eb7a14cecfac171218ca351dadb9b2c0129a1b",
+        "size": 4263,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "61731061062883013c7f9eed8196485a6bd22bd96b9770613225a3ef9c408c92",
+        "size": 39290,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/cli.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "97c267c5297dfe66faff823edb3cad80842748e070e17411126c3cb522ec153e",
+        "size": 995,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/core.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "44b04dd83ca5f192f031bb5541deb5c571241e0c076d086e79a8651909a39f7c",
+        "size": 4090,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/deployment_actions.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "14122ad7a0cbca1203d1d209adac19b7198711cf70cc7a9c9844b4653971f916",
+        "size": 14356,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/extensionless_loader_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "ef1700be1d6dd8d487970b26cccf1ab3d89db678b3b768da84cf88e9b4f06532",
+        "size": 2611,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/integration_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "ca8b7b5cd1aaf91373014e43710d585f6d27d402de55effaf1badb850f1c1b07",
+        "size": 2155,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/production_evidence_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "7b18dcaa1658169018763e6d126f0facce68a8550ff5bd0a3d78b53ae80cd5bd",
+        "size": 1038,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/production_executor_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "d5d57089af6db82e043992bba4a09dcece7f943cdafbbb14a6cc74ebf73c59d0",
+        "size": 4945,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/production_verifier_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "34b5c7841f061f85907a84e4e3771152b7deaaaea19bfbeacf1ba67d5cbca0e8",
+        "size": 3726,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/release_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "68569bd84015b66e564fdfd33a823d74fdd3958e4209dfc448ff790d848742b4",
+        "size": 5336,
+        "uid": 0
+      },
+      "/opt/go-hk-agent-rebuilt/hk_agent/verify_pair_regression.py": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "060c3920ef0d28292693078106160115f57ddc3fc187973c81f382b5dc5d44af",
+        "size": 3371,
+        "uid": 0
+      },
+      "/usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2": {
+        "gid": 0,
+        "mode": 420,
+        "sha256": "caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b",
+        "size": 701,
+        "uid": 0
+      }
+    },
+    "result": "INSTALLED",
+    "runtime_after": {
+      "containers": [
+        "0988740c365f89042d6e8309d8540572c2ffad5079fab0b24e2178e79d7c3205|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-push-worker-1",
+        "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038|redis:7.4-alpine|go-822-staging-redis-1",
+        "2f0f711a4e87c806a6a92176a029a1edbb061b9f08c294d880eed744126b0ac6|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-reconciliation-worker-1",
+        "3fe3c369b594f2ee2ecabfb56274905e9b52114beb5c87b6ea0794aeac5e082c|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-api-1",
+        "426dbbae612d40cd1840adf3068582f90038cfde2d41a8e70484d22410bdb351|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-outbox-worker-1",
+        "46f3bf54c9effb9e60fa5db95f6654f4240d9d110f9d986727fdfaccce5e492d|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-engagement-worker-1",
+        "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c|caddy:2.8-alpine|go-822-staging-caddy-1",
+        "b0c0b0e3784317882a9af4e9f51dbf1d255ec282b281e0eb862dfd1661953d31|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-judgment-worker-1",
+        "de7a84b031183649109ffdf18b542321b9d7abf55570d153e0619420b24c76af|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-recovery-worker-1",
+        "fb9af56705734583e35c9a1ba100568f9e631fd3ac31164da52ede1f09644ab1|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-push-receipt-worker-1"
+      ],
+      "sha256": "f66426e998ebbe40ce6a9aaa90c3fe4f1e07eaa3806372856e3bf871733105bb"
+    },
+    "runtime_before": {
+      "containers": [
+        "0988740c365f89042d6e8309d8540572c2ffad5079fab0b24e2178e79d7c3205|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-push-worker-1",
+        "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038|redis:7.4-alpine|go-822-staging-redis-1",
+        "2f0f711a4e87c806a6a92176a029a1edbb061b9f08c294d880eed744126b0ac6|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-reconciliation-worker-1",
+        "3fe3c369b594f2ee2ecabfb56274905e9b52114beb5c87b6ea0794aeac5e082c|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-api-1",
+        "426dbbae612d40cd1840adf3068582f90038cfde2d41a8e70484d22410bdb351|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-outbox-worker-1",
+        "46f3bf54c9effb9e60fa5db95f6654f4240d9d110f9d986727fdfaccce5e492d|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-engagement-worker-1",
+        "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c|caddy:2.8-alpine|go-822-staging-caddy-1",
+        "b0c0b0e3784317882a9af4e9f51dbf1d255ec282b281e0eb862dfd1661953d31|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-judgment-worker-1",
+        "de7a84b031183649109ffdf18b542321b9d7abf55570d153e0619420b24c76af|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-recovery-worker-1",
+        "fb9af56705734583e35c9a1ba100568f9e631fd3ac31164da52ede1f09644ab1|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-push-receipt-worker-1"
+      ],
+      "sha256": "f66426e998ebbe40ce6a9aaa90c3fe4f1e07eaa3806372856e3bf871733105bb"
+    },
+    "schema": "issue184-host-install-v1",
+    "started_at": "20260917T113255Z",
+    "task_or_ledger_mutated": false,
+    "timer_after": "active"
+  },
+  "host_before": "{\"path\": \"/opt/go-hk-agent-rebuilt/hk_agent/test_pr.py\", \"sha256\": \"d1c454fc4b4c3066cbd6e8195b686de4ec676c2b6f67d4cf33d332ad4cedf1f0\", \"size\": 11045, \"owner\": [0, 0], \"mode\": \"0o644\"}\n{\"path\": \"/opt/go-hk-agent-rebuilt/hk_agent/transport.py\", \"sha256\": \"af8261568fb7158f3bd6f620f3a405118b1ae77d3d662b764e62c3fe260e5fcb\", \"size\": 34713, \"owner\": [0, 0], \"mode\": \"0o644\"}\n{\"path\": \"/opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py\", \"sha256\": \"61731061062883013c7f9eed8196485a6bd22bd96b9770613225a3ef9c408c92\", \"size\": 39290, \"owner\": [0, 0], \"mode\": \"0o644\"}\n{\"path\": \"/opt/go-hk-agent-rebuilt/hk_agent/core.py\", \"sha256\": \"44b04dd83ca5f192f031bb5541deb5c571241e0c076d086e79a8651909a39f7c\", \"size\": 4090, \"owner\": [0, 0], \"mode\": \"0o644\"}\n{\"path\": \"/opt/go-hk-agent-rebuilt/hk_agent/deployment_actions.py\", \"sha256\": \"14122ad7a0cbca1203d1d209adac19b7198711cf70cc7a9c9844b4653971f916\", \"size\": 14356, \"owner\": [0, 0], \"mode\": \"0o644\"}\n{\"path\": \"/usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2\", \"sha256\": \"caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b\", \"size\": 701, \"owner\": [0, 0], \"mode\": \"0o644\"}\n{\"path\": \"/etc/systemd/system/go-hk-agent.service\", \"sha256\": \"ec5c4b444759e2a90e3b1e6b669d91e28b6f0ae3eaa70072e1037071b878b987\", \"size\": 442, \"owner\": [0, 0], \"mode\": \"0o644\"}\n{\"path\": \"/etc/systemd/system/go-hk-agent.timer\", \"sha256\": \"4fdbb6880c3c1abdf2f94600b6ad610683425d0c222cd45845af910b61f435a3\", \"size\": 185, \"owner\": [0, 0], \"mode\": \"0o644\"}\n{\"argv\": [\"systemctl\", \"show\", \"go-hk-agent.service\", \"--property=ActiveState,SubState,Result,ExecMainStatus,User,Group,FragmentPath\"], \"rc\": 0, \"stdout\": \"Result=success\\nExecMainStatus=0\\nUser=go-hk-agent\\nGroup=go-hk-agent\\nActiveState=inactive\\nSubState=dead\\nFragmentPath=/etc/systemd/system/go-hk-agent.service\\n\", \"stderr\": \"\"}\n{\"argv\": [\"systemctl\", \"show\", \"go-hk-agent.timer\", \"--property=ActiveState,SubState\"], \"rc\": 0, \"stdout\": \"ActiveState=active\\nSubState=waiting\\n\", \"stderr\": \"\"}\n{\"argv\": [\"docker\", \"image\", \"inspect\", \"go-hotel:depth48-runtime-6d0fd905\", \"--format\", \"{{.Id}}\"], \"rc\": 0, \"stdout\": \"sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132\\n\", \"stderr\": \"\"}\n",
+  "dependency_and_ledger_probe": "{\"kind\": \"ORIGINAL_TASK_LEDGER\", \"table\": \"attempts\", \"rows\": [{\"task_id\": \"go-boss-test-pr-183-b830d1b36e7e\", \"nonce\": \"q_GbwEzcXShL-6lvDI6BnZ3i3jj5oXhz\", \"attempt_number\": 1, \"status\": \"failed\", \"claimed_at\": \"2026-09-17T08:55:22Z\", \"diagnostic\": \"{\\\"action_id\\\":\\\"HK_STAGING_TEST_PR\\\",\\\"attempt_number\\\":1,\\\"evidence_publication\\\":{\\\"attempted\\\":true,\\\"commit\\\":\\\"4795d4aed9207db29c494f0870b043e509bb560f\\\",\\\"published\\\":true,\\\"reason_code\\\":\\\"UNCLASSIFIED_REJECT\\\",\\\"stage\\\":\\\"executor\\\"},\\\"failure_stage\\\":\\\"executor\\\",\\\"nonce\\\":\\\"q_GbwEzcXShL-6lvDI6BnZ3i3jj5oXhz\\\",\\\"return_code\\\":null,\\\"stderr\\\":{\\\"length\\\":0,\\\"preview\\\":\\\"\\\",\\\"sha256\\\":\\\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\\\"},\\\"stdout\\\":{\\\"length\\\":0,\\\"preview\\\":\\\"\\\",\\\"sha256\\\":\\\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\\\"},\\\"task_id\\\":\\\"go-boss-test-pr-183-b830d1b36e7e\\\"}\"}]}\n{\"kind\": \"ORIGINAL_TASK_LEDGER\", \"table\": \"processed\", \"rows\": [{\"task_id\": \"go-boss-test-pr-183-b830d1b36e7e\", \"nonce\": \"q_GbwEzcXShL-6lvDI6BnZ3i3jj5oXhz\", \"status\": \"failed\", \"processed_at\": \"2026-09-17T08:57:13Z\", \"evidence_ref\": \"4795d4aed9207db29c494f0870b043e509bb560f\"}]}\n{\"kind\": \"PINNED_BUILDER_DEPENDENCY_PROBE\", \"image\": \"sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132\", \"program_sha256\": \"7d425f8670929a25e8d29710a018362f469b8e5f1d40d0d7879aec0fbd0d53bf\", \"rc\": 0, \"stdout\": \"UVICORN_STANDARD_DEPS_OK\\n\", \"stderr\": \"\"}\n",
+  "cc_contract": "FILES ['installed.json', 'publication/go-state-publication', 'publication/contracts/state_publication_v1.schema.json', 'projection/state_projection.py', 'projection/identity/VERIFIER_IDENTITIES_V1.json', 'projection/identity/keys/cc-task-manifest-signing.pub', 'projection/identity/keys/hk-evidence-signing.pub']\nINSTALLED {\n  \"component\": \"go-command-center-state-publication-v1\",\n  \"execution_authority\": false,\n  \"install_source_branch\": \"cc/v1-finalization-20260914\",\n  \"install_source_commit\": \"e6aa9c34228aef2d8b7a931a93229cb7b31999cf\",\n  \"installed_at\": \"2026-09-15T11:50:00Z\",\n  \"installs\": [\n    \"CC-V1-04 publication target\",\n    \"CC-V1-05 PHASE 2 request-fact publication\"\n  ],\n  \"projector_revision\": \"4c3391a1edff30c3f57ef316c6210b24780d6682\",\n  \"projector_sha256\": \"15111da6f0224aafe1278cc0df09f5f922e3601da4ac670cdc8baab550162561\",\n  \"request_created_is_reported\": \"v1: a non-terminal Bridge ledger state (claiming/prepared/publishing) mints REQUEST_CREATED, which claims no Task and no reason and ranks below every settled fact; why_not_a_task gained NOT_SETTLED_BY_BRIDGE\",\n  \"semantic_fact_identity\": \"v2 (aggregate then mint; MIN(first_observed_at))\"\n}\n\nCONTRACT_REFERENCES [(97, '# The published verifier identity contract (CC V1-01). A verifier key is only'), (118, 'def default_identity_contract_path():'), (119, '    \"\"\"The published contract, resolved relative to this file, not the cwd.\"\"\"'), (120, '    return pathlib.Path(__file__).resolve().parent / IDENTITY_CONTRACT_RELPATH'), (152, '# channel and Task contracts, never derived from a Request: a Request that could'), (170, 'TASK_REQUIRED = {\"schema_version\", \"task_id\", \"environment\", \"action_id\", \"issued_at\",'), (172, 'EVIDENCE_COMMON = {\"schema_version\", \"task_id\", \"nonce\", \"action_id\", \"environment\",'), (174, 'REQUEST_REQUIRED = {\"schema_version\", \"request_id\", \"action_id\", \"environment\", \"requested_at\"}'), (256, 'REQUEST_FACT_REQUIRED = {\"schema_version\", \"fact_id\", \"kind\", \"request_id\", \"action_id\",'), (378, '    \"\"\"The published verifier identity contract (VERIFIER_IDENTITIES_V1).'), (380, '    The contract pins one Ed25519 fingerprint per role. A supplied key is trusted'), (384, '    A contract that is missing, unreadable, malformed or that publishes one key for'), (398, '                         == default_identity_contract_path().resolve())'), (403, '                              else \"<caller-supplied contract>\")'), (405, '            self.reason = \"no identity contract was supplied\"'), (410, '            self.reason = \"identity contract unreadable: %s\" % type(exc).__name__'), (412, '        if not isinstance(document, dict) or document.get(\"contract\") != IDENTITY_CONTRACT_NAME:'), (413, '            self.reason = \"not a %s contract\" % IDENTITY_CONTRACT_NAME'), (417, '            self.reason = \"identity contract carries no identities\"'), (423, '            self.reason = (\"identity contract must define exactly one TASK and one EVIDENCE \"'), (430, '            self.reason = \"identity contract does not pin a fingerprint for both roles\"'), (434, '            self.reason = \"identity contract publishes one key for both roles\"'), (437, '        self.name = document.get(\"contract\")'), (454, '        return {\"contract\": IDENTITY_CONTRACT_NAME,'), (456, '                \"is_the_published_contract\": self.published,'), (629, '# schema validation'), (636, '    \"\"\"Validate the immutable core strictly; report parameter-contract drift.\"\"\"'), (639, '    if task[\"schema_version\"] != \"1\":'), (640, '        raise Malformed(\"task_schema_version\")'), (656, '    # Historical Tasks may predate the current parameter contract. They stay in'), (660, '    task[\"_parameter_contract\"] = \"CURRENT\" if current else \"LEGACY_OR_UNKNOWN\"'), (684, '    if evidence[\"schema_version\"] != \"1\":'), (685, '        raise Malformed(\"evidence_schema_version\")'), (698, '    \"\"\"The closed failure block of a non-success record, plus the contract\\'s own'), (702, '    nothing, so the projection states ``retry_permitted`` false from the contract'), (733, '    if request[\"schema_version\"] != \"1\":'), (734, '        raise Malformed(\"request_schema_version\")'), (781, '    if payload[\"schema_version\"] != \"1\":'), (782, '        raise Malformed(\"request_fact_schema_version\")'), (1029, '        if not isinstance(document, dict) or document.get(\"contract\") != DEPLOY_READINESS_CONTRACT:'), (1030, '            raise Malformed(\"deploy_readiness_contract\")'), (1101, '    verifier that checked it must be the identity published in the contract. A'), (1125, '                                   \"identity contract, so the signature is not an identity claim\")'), (1214, '            \"schema_version\": \"1\",'), (1248, '            \"schema_version\": \"1\",'), (1385, '            \"parameter_contract\": task.get(\"_parameter_contract\", \"CURRENT\"),'), (1409, '        if entry[\"parameter_contract\"] != \"CURRENT\":'), (1411, '                           \"observed parameters %s are not the current %s contract\"'), (1415, '                              \"this Task predates the current Control Plane parameter contract; it \"'), (1507, '                               \"a failure record claims an authorization; the contract says a failure \"'), (1952, '            \"the authoritative Boss Request contract currently exposes VERIFY, TEST_PR and \"'), (1964, '                 \"scope for this contract\"),'), (1989, '    # Capability only. This contract does not evaluate deploy readiness: real'), (2026, '        \"schema_version\": SCHEMA_VERSION,'), (2027, '        \"contract\": CONTRACT_STATE,'), (2046, '            \"identity_contract\": options[\"identity_contract\"].describe(),'), (2055, '                     \"the verifier identity contract. A key that merely loads is not the right key\"),'), (2119, '            # Informational, non-contract. These are recorded facts read from the'), (2123, '                \"contract\": False,'), (2125, '                         \"out of scope for this contract\"),')]\nSOURCE_SHA256 15111da6f0224aafe1278cc0df09f5f922e3601da4ac670cdc8baab550162561\n",
+  "cc_failure_logic": "def normalize_evidence(evidence):\n    \"\"\"Normalise the two published Evidence generations onto one shape.\"\"\"\n    if not isinstance(evidence, dict):\n        raise Malformed(\"evidence_not_object\")\n    generation = \"v2\" if \"completed_at\" in evidence else (\"v1\" if \"finished_at\" in evidence else None)\n    if generation is None:\n        raise Malformed(\"evidence_timestamp\")\n    missing = EVIDENCE_COMMON - set(evidence)\n    if missing:\n        raise Malformed(\"evidence_fields\")\n    if evidence[\"schema_version\"] != \"1\":\n        raise Malformed(\"evidence_schema_version\")\n    if evidence[\"action_id\"] not in ACTION_PARAMETERS:\n        raise Malformed(\"evidence_action_unknown\")\n    parse_time(evidence[\"started_at\"])\n    terminal = evidence[\"completed_at\"] if generation == \"v2\" else evidence[\"finished_at\"]\n    parse_time(terminal)\n    out = dict(evidence)\n    out[\"_generation\"] = generation\n    out[\"_completed_at\"] = terminal\n    return out\n\n\ndef failure_detail(evidence):\n    \"\"\"The closed failure block of a non-success record, plus the contract's own\n    answer to \"does this authorize a retry\".\n\n    The artifact is never trusted on that point.  A failure record authorizes\n    nothing, so the projection states ``retry_permitted`` false from the contract\n    and reports separately what the artifact claimed; a claim to the contrary is\n    recorded and given no effect.\n    \"\"\"\n    block = evidence.get(\"failure\")\n    detail = {\"retry_permitted\": False,\n              \"replay_authorized\": False,\n              \"authorizes_any_action\": False,\n              \"artifact_claimed_retry_permitted\": bool(evidence.get(\"retry_permitted\")),\n              \"artifact_claimed_replay_authorized\": bool(evidence.get(\"replay_authorized\")),\n              \"artifact_claimed_authorizes_any_action\": bool(evidence.get(\"authorizes_any_action\"))}\n    if isinstance(block, dict):\n        for key in (\"kind\", \"stage\", \"reason_code\"):\n            if isinstance(block.get(key), str):\n                detail[key] = block[key]\n        if isinstance(block.get(\"attempt_number\"), int):\n            detail[\"attempt_number\"] = block[\"attempt_number\"]\n        for key in (\"attempt_budget_exhausted\", \"execution_attempted\"):\n            if isinstance(block.get(key), bool):\n                detail[key] = block[key]\n    return detail\n\n\ndef validate_request(request):\n    if not isinstance(request, dict):\n        raise Malformed(\"request_not_object\")\n    action = request.get(\"action_id\")\n    if action not in REQUEST_EXTRA_FIELDS:\n        raise Malformed(\"request_action_unknown\")\n    if set(request) != REQUEST_REQUIRED | REQUEST_EXTRA_FIELDS[action]:\n        raise Malformed(\"request_fields\")\n",
+  "historical_journal_sha256": "e66fdf7fced25574dfcbe657707cdeb53d64e7abf5ebee471980f1f9b6248c61",
+  "historical_first_exception": "not recorded in original signed Evidence, ledger or bounded journal"
+}

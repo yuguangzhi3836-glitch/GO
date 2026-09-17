@@ -1,0 +1,96 @@
+{
+  "artifact": {
+    "config_digests": [
+      "0a4f71b976d6e8086fbe0127306f268be8c8175a966020b48edc26910bc511b3"
+    ],
+    "image_id": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+    "image_identity_role": "root_descriptor",
+    "image_reference": "go-hk-test-pr:edd3500575d2f2b81298cc9273025e0a3b734897",
+    "image_tags": [],
+    "package_bytes": 115702784,
+    "package_sha256": "93f6812337e491d9144d6fb44a52764e9fa82313d2bb08a6373a613e4cdf30bf",
+    "root_descriptor_digest": "8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+    "schema": "go.sealed-artifact.v1",
+    "store": "go-hk-artifacts"
+  },
+  "boundaries": {
+    "PR_merged": false,
+    "business_deployment_requested_by_this_session": false,
+    "external_provider_connection": false,
+    "live_db_migration": false,
+    "passed_cells_rerun": false,
+    "product_code_changed": false
+  },
+  "control_state": {
+    "assertion": "PROVEN",
+    "evidence_signature_verified": true,
+    "lifecycle": "COMPLETE",
+    "task_signature_verified": true
+  },
+  "evidence": {
+    "blob": "6224da676ef60fd2f52e17dcb8150cd9c9181393",
+    "commit": "bce4d64cddef7eed8143e6f65156cc7b73e8a352",
+    "executor_result": "TEST_PR_OK",
+    "gates": {
+      "artifact_sealed": "PASS",
+      "isolated_runtime_checks": "PASS",
+      "offline_build": "PASS",
+      "source_commit": "PASS"
+    },
+    "repo": "chenzhenxi1-sudo/go-control-evidence",
+    "sha256": "ddb645db875fc5f8fc460317055a7476fea98803f2487e21890529f6ea79f5e5",
+    "status": "SUCCESS"
+  },
+  "holds": {
+    "Final_Release": "HOLD",
+    "PR183_HK_business_deployment": "HOLD pending exact candidate readiness and migration admission under Issue103",
+    "Production": "HOLD",
+    "migration": "recorded baseline0133 vs candidate0137; not waived or executed in this scope",
+    "real_supplier_certification": "HOLD"
+  },
+  "issue": 184,
+  "old_failure": {
+    "evidence_commit": "4795d4aed9207db29c494f0870b043e509bb560f",
+    "evidence_sha256": "72d539ce5d1902f1a36f5eeaa999f9bfedd72f575d2a9c5a25dec9be2142c374",
+    "first_exception": "UNAVAILABLE: original Evidence, ledger and journal omitted the exception; no reconstruction claimed",
+    "preserved": true,
+    "replayed": false
+  },
+  "product_candidate": {
+    "application_tree": "41221557ee5d3709775cd282b02d8c30fc7e0860",
+    "draft": true,
+    "fingerprint_sha256": "5b792a2d3e68a7498d5cc152dc849b319631325bb8d7d36b65d0dc2b3c115b00",
+    "merged": false,
+    "pr": 183,
+    "sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+    "tree": "cf385c741fd9b3bdce1c4196dc40c085143bde76"
+  },
+  "recorded_at": "2026-09-17T12:12:01.429025+00:00",
+  "request": {
+    "head": "fafd8ad09aab60145cac623dbb117693ab628ebc",
+    "id": "boss-hk-test-pr183-issue184-20260917T113358Z",
+    "pr": 52,
+    "repo": "chenzhenxi1-sudo/go-control-tasks"
+  },
+  "runtime_reconciliation": "Installation window runtime unchanged; later runtime differs following a separate signed rollback chain; no assertion that PR183 is live.",
+  "schema": "shared-hk-recovery-ledger-v1",
+  "scope": "Shared TEST_PR dependency compatibility, bounded failure reasons, controlled HK module installation, fresh PR183 isolated TEST_PR acceptance",
+  "shared_fix": {
+    "C13": "PASS_SCOPED",
+    "C14": "PASS_SCOPED",
+    "archive_commit": "1137db08a386e4675a578d00aba4d24053f27de0",
+    "draft": true,
+    "merged": false,
+    "pr": 185,
+    "review_scope": "exact source repair, before controlled install",
+    "sha": "9c76fc579383fa2270af90bc67b67a17454d37bd",
+    "tree": "571ee647f4bb82ddbaed1704a41c441aee06d456"
+  },
+  "status": "DONE_SCOPED",
+  "task": {
+    "blob": "0c4611e8fc686f0c64e9883eedb34b81681a53ac",
+    "commit": "d60a2df9860ee8f7c0ae950bd9fca2c45ffa2d6a",
+    "id": "go-boss-test-pr-183-3a7ec32c646d",
+    "nonce": "sZz4iTNGE6hA9XZDrsgEQYqw1JF-bq-U"
+  }
+}

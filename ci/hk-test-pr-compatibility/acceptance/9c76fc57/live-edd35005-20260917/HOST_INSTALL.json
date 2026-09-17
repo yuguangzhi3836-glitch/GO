@@ -1,0 +1,322 @@
+{
+  "after": {
+    "test_pr.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "dda3a4410b43d35d6bbc95c3492728eb5851cd51bcebb1122d74865fe59275f6",
+      "size": 15508,
+      "uid": 0
+    },
+    "transport.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "c48bf32f8cddfdc2d577df04f61a87b35d14f4cdf0cc2c8e45a7b517117e724a",
+      "size": 35252,
+      "uid": 0
+    }
+  },
+  "backup": "/var/backups/HK-CHANGE-20260917T113255Z-issue184",
+  "before": {
+    "test_pr.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "d1c454fc4b4c3066cbd6e8195b686de4ec676c2b6f67d4cf33d332ad4cedf1f0",
+      "size": 11045,
+      "uid": 0
+    },
+    "transport.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "af8261568fb7158f3bd6f620f3a405118b1ae77d3d662b764e62c3fe260e5fcb",
+      "size": 34713,
+      "uid": 0
+    }
+  },
+  "candidate_sha": "9c76fc579383fa2270af90bc67b67a17454d37bd",
+  "cc_changed": false,
+  "deployment_performed": false,
+  "finished_at": "2026-09-17T11:32:55.368826+00:00",
+  "import_smoke": {
+    "agent_version": "0.5.7-rebuilt",
+    "executor_version": "test-pr-v3",
+    "failure_reason_count": 24
+  },
+  "migration_performed": false,
+  "protected_after": {
+    "/etc/go-hk-agent/agent.json": {
+      "gid": 998,
+      "mode": 416,
+      "sha256": "557024408cc9af3bae902d9c3766046ed11252a35d68b747c2df580f51f43be1",
+      "size": 504,
+      "uid": 0
+    },
+    "/etc/systemd/system/go-hk-agent.service": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "ec5c4b444759e2a90e3b1e6b669d91e28b6f0ae3eaa70072e1037071b878b987",
+      "size": 442,
+      "uid": 0
+    },
+    "/etc/systemd/system/go-hk-agent.timer": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "4fdbb6880c3c1abdf2f94600b6ad610683425d0c222cd45845af910b61f435a3",
+      "size": 185,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/__init__.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "0171fac66c1c39e8f93bcdbafb5636537db4526f1931624efe8145bc952c54a7",
+      "size": 30,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/agent053_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "3b412ef05c6f9f98cac7992210eb7a14cecfac171218ca351dadb9b2c0129a1b",
+      "size": 4263,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "61731061062883013c7f9eed8196485a6bd22bd96b9770613225a3ef9c408c92",
+      "size": 39290,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/cli.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "97c267c5297dfe66faff823edb3cad80842748e070e17411126c3cb522ec153e",
+      "size": 995,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/core.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "44b04dd83ca5f192f031bb5541deb5c571241e0c076d086e79a8651909a39f7c",
+      "size": 4090,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/deployment_actions.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "14122ad7a0cbca1203d1d209adac19b7198711cf70cc7a9c9844b4653971f916",
+      "size": 14356,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/extensionless_loader_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "ef1700be1d6dd8d487970b26cccf1ab3d89db678b3b768da84cf88e9b4f06532",
+      "size": 2611,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/integration_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "ca8b7b5cd1aaf91373014e43710d585f6d27d402de55effaf1badb850f1c1b07",
+      "size": 2155,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/production_evidence_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "7b18dcaa1658169018763e6d126f0facce68a8550ff5bd0a3d78b53ae80cd5bd",
+      "size": 1038,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/production_executor_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "d5d57089af6db82e043992bba4a09dcece7f943cdafbbb14a6cc74ebf73c59d0",
+      "size": 4945,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/production_verifier_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "34b5c7841f061f85907a84e4e3771152b7deaaaea19bfbeacf1ba67d5cbca0e8",
+      "size": 3726,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/release_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "68569bd84015b66e564fdfd33a823d74fdd3958e4209dfc448ff790d848742b4",
+      "size": 5336,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/verify_pair_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "060c3920ef0d28292693078106160115f57ddc3fc187973c81f382b5dc5d44af",
+      "size": 3371,
+      "uid": 0
+    },
+    "/usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b",
+      "size": 701,
+      "uid": 0
+    }
+  },
+  "protected_before": {
+    "/etc/go-hk-agent/agent.json": {
+      "gid": 998,
+      "mode": 416,
+      "sha256": "557024408cc9af3bae902d9c3766046ed11252a35d68b747c2df580f51f43be1",
+      "size": 504,
+      "uid": 0
+    },
+    "/etc/systemd/system/go-hk-agent.service": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "ec5c4b444759e2a90e3b1e6b669d91e28b6f0ae3eaa70072e1037071b878b987",
+      "size": 442,
+      "uid": 0
+    },
+    "/etc/systemd/system/go-hk-agent.timer": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "4fdbb6880c3c1abdf2f94600b6ad610683425d0c222cd45845af910b61f435a3",
+      "size": 185,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/__init__.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "0171fac66c1c39e8f93bcdbafb5636537db4526f1931624efe8145bc952c54a7",
+      "size": 30,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/agent053_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "3b412ef05c6f9f98cac7992210eb7a14cecfac171218ca351dadb9b2c0129a1b",
+      "size": 4263,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/artifact_store.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "61731061062883013c7f9eed8196485a6bd22bd96b9770613225a3ef9c408c92",
+      "size": 39290,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/cli.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "97c267c5297dfe66faff823edb3cad80842748e070e17411126c3cb522ec153e",
+      "size": 995,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/core.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "44b04dd83ca5f192f031bb5541deb5c571241e0c076d086e79a8651909a39f7c",
+      "size": 4090,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/deployment_actions.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "14122ad7a0cbca1203d1d209adac19b7198711cf70cc7a9c9844b4653971f916",
+      "size": 14356,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/extensionless_loader_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "ef1700be1d6dd8d487970b26cccf1ab3d89db678b3b768da84cf88e9b4f06532",
+      "size": 2611,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/integration_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "ca8b7b5cd1aaf91373014e43710d585f6d27d402de55effaf1badb850f1c1b07",
+      "size": 2155,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/production_evidence_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "7b18dcaa1658169018763e6d126f0facce68a8550ff5bd0a3d78b53ae80cd5bd",
+      "size": 1038,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/production_executor_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "d5d57089af6db82e043992bba4a09dcece7f943cdafbbb14a6cc74ebf73c59d0",
+      "size": 4945,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/production_verifier_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "34b5c7841f061f85907a84e4e3771152b7deaaaea19bfbeacf1ba67d5cbca0e8",
+      "size": 3726,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/release_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "68569bd84015b66e564fdfd33a823d74fdd3958e4209dfc448ff790d848742b4",
+      "size": 5336,
+      "uid": 0
+    },
+    "/opt/go-hk-agent-rebuilt/hk_agent/verify_pair_regression.py": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "060c3920ef0d28292693078106160115f57ddc3fc187973c81f382b5dc5d44af",
+      "size": 3371,
+      "uid": 0
+    },
+    "/usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2": {
+      "gid": 0,
+      "mode": 420,
+      "sha256": "caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b",
+      "size": 701,
+      "uid": 0
+    }
+  },
+  "result": "INSTALLED",
+  "runtime_after": {
+    "containers": [
+      "0988740c365f89042d6e8309d8540572c2ffad5079fab0b24e2178e79d7c3205|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-push-worker-1",
+      "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038|redis:7.4-alpine|go-822-staging-redis-1",
+      "2f0f711a4e87c806a6a92176a029a1edbb061b9f08c294d880eed744126b0ac6|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-reconciliation-worker-1",
+      "3fe3c369b594f2ee2ecabfb56274905e9b52114beb5c87b6ea0794aeac5e082c|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-api-1",
+      "426dbbae612d40cd1840adf3068582f90038cfde2d41a8e70484d22410bdb351|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-outbox-worker-1",
+      "46f3bf54c9effb9e60fa5db95f6654f4240d9d110f9d986727fdfaccce5e492d|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-engagement-worker-1",
+      "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c|caddy:2.8-alpine|go-822-staging-caddy-1",
+      "b0c0b0e3784317882a9af4e9f51dbf1d255ec282b281e0eb862dfd1661953d31|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-judgment-worker-1",
+      "de7a84b031183649109ffdf18b542321b9d7abf55570d153e0619420b24c76af|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-recovery-worker-1",
+      "fb9af56705734583e35c9a1ba100568f9e631fd3ac31164da52ede1f09644ab1|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-push-receipt-worker-1"
+    ],
+    "sha256": "f66426e998ebbe40ce6a9aaa90c3fe4f1e07eaa3806372856e3bf871733105bb"
+  },
+  "runtime_before": {
+    "containers": [
+      "0988740c365f89042d6e8309d8540572c2ffad5079fab0b24e2178e79d7c3205|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-push-worker-1",
+      "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038|redis:7.4-alpine|go-822-staging-redis-1",
+      "2f0f711a4e87c806a6a92176a029a1edbb061b9f08c294d880eed744126b0ac6|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-reconciliation-worker-1",
+      "3fe3c369b594f2ee2ecabfb56274905e9b52114beb5c87b6ea0794aeac5e082c|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-api-1",
+      "426dbbae612d40cd1840adf3068582f90038cfde2d41a8e70484d22410bdb351|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-outbox-worker-1",
+      "46f3bf54c9effb9e60fa5db95f6654f4240d9d110f9d986727fdfaccce5e492d|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-engagement-worker-1",
+      "958524e18dca230de8dc9a97797194336a3a6f809aa043321b9130f6001f6a4c|caddy:2.8-alpine|go-822-staging-caddy-1",
+      "b0c0b0e3784317882a9af4e9f51dbf1d255ec282b281e0eb862dfd1661953d31|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-judgment-worker-1",
+      "de7a84b031183649109ffdf18b542321b9d7abf55570d153e0619420b24c76af|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-recovery-worker-1",
+      "fb9af56705734583e35c9a1ba100568f9e631fd3ac31164da52ede1f09644ab1|sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7|go-822-staging-mobile-push-receipt-worker-1"
+    ],
+    "sha256": "f66426e998ebbe40ce6a9aaa90c3fe4f1e07eaa3806372856e3bf871733105bb"
+  },
+  "schema": "issue184-host-install-v1",
+  "started_at": "20260917T113255Z",
+  "task_or_ledger_mutated": false,
+  "timer_after": "active"
+}
