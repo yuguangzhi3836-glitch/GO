@@ -39,7 +39,9 @@ COMMON = {"schema_version", "request_id", "action_id", "environment", "requested
 SHAPES = {
     "HK_STAGING_TEST_PR": COMMON | {"pr_number"},
     "HK_STAGING_VERIFY": COMMON,
-    "HK_STAGING_DEPLOY": COMMON | {"plan_id"},
+    # DEPLOY has carried only the five common fields since the plan became derived;
+    # a Request that still names a plan is refused by the Bridge, so it is refused here too.
+    "HK_STAGING_DEPLOY": COMMON,
     "HK_STAGING_CANARY": COMMON,
     "HK_STAGING_ROLLBACK": COMMON,
     "CONTROL_PLANE_HEALTH": COMMON,
