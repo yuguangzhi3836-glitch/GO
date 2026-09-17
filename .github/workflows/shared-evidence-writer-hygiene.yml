@@ -1,0 +1,51 @@
+name: Shared Evidence Writer Hygiene Gate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ci/shared_evidence/**
+      - .github/workflows/shared-evidence-writer-hygiene.yml
+permissions:
+  contents: read
+concurrency:
+  group: shared-evidence-writer-hygiene-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  focused:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify no product changes
+        run: |
+          set -euo pipefail
+          git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- application
+      - name: Run writer unit tests
+        working-directory: ci/shared_evidence
+        run: python -m unittest discover -v -p 'test_*.py'
+      - name: Run focused artifact smoke gate
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/shared-evidence"
+          mkdir -p "$evidence/nested"
+          printf 'alpha\n' > "$evidence/alpha.log"
+          printf '{"result":"PASS"}\n' > "$evidence/nested/result.json"
+          printf 'stale\n' > "$evidence/SHA256SUMS"
+          python ci/shared_evidence/write_sha256s.py "$evidence" "$evidence/SHA256SUMS"
+          ! grep -F 'SHA256SUMS' "$evidence/SHA256SUMS"
+          (cd "$evidence" && sha256sum -c SHA256SUMS)
+          cp "$evidence/SHA256SUMS" "$RUNNER_TEMP/first"
+          python ci/shared_evidence/write_sha256s.py "$evidence" "$evidence/SHA256SUMS"
+          cmp "$RUNNER_TEMP/first" "$evidence/SHA256SUMS"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shared-evidence-writer-hygiene-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/shared-evidence
+          if-no-files-found: error
+          retention-days: 90
