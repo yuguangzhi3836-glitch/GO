@@ -15,22 +15,53 @@ jobs:
   accepted-scope:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cell: C02
+            database: go_integration_c02
+            tests: tests/test_v70_r3_c02_coupon_authority.py tests/test_v70_r6_c02_partial_party_authority.py
+          - cell: C04
+            database: go_integration_c04
+            tests: tests/test_v70_r3_c04_admin_reconciliation.py tests/test_v70_r3_c04_http_get_zero_write.py
+          - cell: C05
+            database: go_integration_c05
+            tests: tests/test_v70_r4_c05_episode_reference_reuse.py tests/test_v70_r4_c05_failed_episode.py tests/test_v70_r5_c05_concurrent_unknown.py
+          - cell: C06
+            database: go_integration_c06
+            tests: tests/test_c06_internal_policy_registry.py tests/test_next_depth_c06_supplier_validity.py tests/test_v70_r5_c06_raw_payload_binding.py
+          - cell: C07
+            database: go_integration_c07
+            tests: tests/test_v70_r4_c07_consent_provenance.py
+          - cell: C08
+            database: go_integration_c08
+            tests: tests/go_ai/test_c08_durable_execution.py
+          - cell: C09
+            database: go_integration_c09
+            tests: tests/test_outbox_resilience.py
+          - cell: C10
+            database: go_integration_c10
+            tests: tests/journey/test_c10_pagination_search.py
+          - cell: C11
+            database: go_integration_c11
+            tests: tests/payments/test_c11_flight_idempotency_recovery.py
     services:
       postgres:
         image: postgres:18.4
         env:
-          POSTGRES_DB: go_integration_isolated
+          POSTGRES_DB: ${{ matrix.database }}
           POSTGRES_USER: go_ci
           POSTGRES_PASSWORD: isolated_ci_only
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U go_ci -d go_integration_isolated"
+          --health-cmd "pg_isready -U go_ci -d ${{ matrix.database }}"
           --health-interval 5s --health-timeout 5s --health-retries 20
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       PYTHONPATH: .:src
-      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_integration_isolated
-      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_integration_isolated
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/${{ matrix.database }}
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/${{ matrix.database }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,34 +86,18 @@ jobs:
         run: alembic upgrade head
       - name: Run accepted Cell integration scope
         working-directory: application
-        run: |
-          pytest \
-            tests/test_v70_r3_c02_coupon_authority.py \
-            tests/test_v70_r6_c02_partial_party_authority.py \
-            tests/test_v70_r3_c04_admin_reconciliation.py \
-            tests/test_v70_r3_c04_http_get_zero_write.py \
-            tests/test_v70_r4_c05_episode_reference_reuse.py \
-            tests/test_v70_r4_c05_failed_episode.py \
-            tests/test_v70_r5_c05_concurrent_unknown.py \
-            tests/test_c06_internal_policy_registry.py \
-            tests/test_next_depth_c06_supplier_validity.py \
-            tests/test_v70_r5_c06_raw_payload_binding.py \
-            tests/test_v70_r4_c07_consent_provenance.py \
-            tests/go_ai/test_c08_durable_execution.py \
-            tests/test_outbox_resilience.py \
-            tests/journey/test_c10_pagination_search.py \
-            tests/payments/test_c11_flight_idempotency_recovery.py \
-            --junitxml="$RUNNER_TEMP/integration-evidence/junit.xml"
+        run: pytest ${{ matrix.tests }} --junitxml="$RUNNER_TEMP/integration-evidence/junit.xml"
       - name: Bind test evidence
         if: always()
         run: |
           set -euo pipefail
           cp ci/integration/C02_C12_GATE_LEDGER.json "$RUNNER_TEMP/integration-evidence/"
+          printf '%s\n' "${{ matrix.cell }}" > "$RUNNER_TEMP/integration-evidence/cell.txt"
           find "$RUNNER_TEMP/integration-evidence" -type f -print0 | sort -z | xargs -0 sha256sum > "$RUNNER_TEMP/integration-evidence/SHA256SUMS"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: c02-c12-isolated-integration-${{ github.event.pull_request.head.sha }}
+          name: c02-c12-isolated-${{ matrix.cell }}-${{ github.event.pull_request.head.sha }}
           path: ${{ runner.temp }}/integration-evidence
           if-no-files-found: error
           retention-days: 90
