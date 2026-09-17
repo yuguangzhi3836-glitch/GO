@@ -65,8 +65,14 @@ def _image(value, name):
     if not isinstance(value,str) or not IMAGE.fullmatch(value): raise Reject(name+" rejected")
     return value
 
-def _digest(value, image):
-    if not isinstance(value,str) or not re.fullmatch(r"[a-z0-9][a-z0-9._/-]*@sha256:[0-9a-f]{64}",value) or not value.endswith(image[7:]): raise Reject("candidate_repo_digest rejected")
+def _package(value):
+    """The sealed package content address; a registry digest is not one.
+
+    A manifest digest only exists after a push and is not equal to an image config
+    ID, so identifying a candidate by a digest that must end in its own image id was
+    never satisfiable. The package SHA256 is the delivery identity instead.
+    """
+    if not isinstance(value,str) or not re.fullmatch(r"[0-9a-f]{64}",value): raise Reject("candidate_package_sha256 rejected")
     return value
 
 def _exact(params, required):
@@ -76,11 +82,11 @@ def _exact(params, required):
 def validate(action, params):
     if action not in ACTIONS: raise Reject("unknown action")
     if action == "HK_STAGING_CANARY":
-        p=_exact(params,("release_id","candidate_image_id","candidate_repo_digest","expected_current_image_id"))
-        return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_repo_digest":p["candidate_repo_digest"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id")}
+        p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id"))
+        return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id")}
     if action == "HK_STAGING_DEPLOY":
-        p=_exact(params,("release_id","candidate_image_id","candidate_repo_digest","expected_current_image_id","canary_evidence_id","approval_id"))
-        return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_repo_digest":p["candidate_repo_digest"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id"),"canary_evidence_id":_id(p["canary_evidence_id"],"canary_evidence_id"),"approval_id":_id(p["approval_id"],"approval_id")}
+        p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","approval_id"))
+        return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id"),"canary_evidence_id":_id(p["canary_evidence_id"],"canary_evidence_id"),"approval_id":_id(p["approval_id"],"approval_id")}
     if action == "HK_STAGING_VERIFY":
         p=_exact(params,("release_id","candidate_image_id","expected_current_image_id"))
         return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id")}
@@ -95,10 +101,10 @@ def _binding(value):
 def argv(action, params, task_binding=None):
     p=validate(action,params)
     if action in ("HK_STAGING_CANARY", "HK_STAGING_DEPLOY"):
-        _digest(p["candidate_repo_digest"],p["candidate_image_id"])
+        _package(p["candidate_package_sha256"])
     name={"HK_STAGING_CANARY":"canary","HK_STAGING_DEPLOY":"deploy","HK_STAGING_VERIFY":"verify","HK_STAGING_ROLLBACK":"rollback"}[action]
     out=[EXECUTOR_PATH,name,"--release-id",p["release_id"]]
-    for key in ("candidate_image_id","candidate_repo_digest","expected_current_image_id","canary_evidence_id","source_deploy_task_id","approval_id"):
+    for key in ("candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","source_deploy_task_id","approval_id"):
         if key in p: out += ["--"+key.replace("_","-"),p[key]]
     if action in ("HK_STAGING_DEPLOY","HK_STAGING_ROLLBACK"):
         b=_binding(task_binding)
@@ -151,9 +157,9 @@ def dispatch(task, executor, task_binding=None):
 
 def _base(action):
     old="sha256:"+"3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88"; new="sha256:"+"a"*64
-    p={"release_id":"r315","candidate_image_id":new,"candidate_repo_digest":"go-hotel@"+new,"expected_current_image_id":old}
+    p={"release_id":"r315","candidate_image_id":new,"candidate_package_sha256":"d"*64,"expected_current_image_id":old}
     if action=="HK_STAGING_DEPLOY": p.update({"canary_evidence_id":"canary1","approval_id":"approval1"})
-    if action=="HK_STAGING_VERIFY": p.pop("candidate_repo_digest")
+    if action=="HK_STAGING_VERIFY": p.pop("candidate_package_sha256")
     if action=="HK_STAGING_ROLLBACK": p={"release_id":"r315","source_deploy_task_id":"deploy1","approval_id":"approval1"}
     return {"action_id":action,"parameters":p}
 
@@ -170,7 +176,7 @@ def offline_tests():
     reject("UNKNOWN_PARAMETER_REJECTED",{"action_id":"HK_STAGING_CANARY","parameters":{**_base("HK_STAGING_CANARY")["parameters"],"unknown":"x"}})
     reject("MISSING_PARAMETER_REJECTED",{"action_id":"HK_STAGING_CANARY","parameters":{"release_id":"r315"}})
     reject("INVALID_IMAGE_ID_REJECTED",{"action_id":"HK_STAGING_CANARY","parameters":{**_base("HK_STAGING_CANARY")["parameters"],"candidate_image_id":"latest"}})
-    reject("INVALID_DIGEST_REJECTED",{"action_id":"HK_STAGING_CANARY","parameters":{**_base("HK_STAGING_CANARY")["parameters"],"candidate_repo_digest":"go@sha256:"+"b"*64}})
+    reject("INVALID_PACKAGE_REJECTED",{"action_id":"HK_STAGING_CANARY","parameters":{**_base("HK_STAGING_CANARY")["parameters"],"candidate_package_sha256":"not-a-content-address"}})
     for name,key,value in (("SHELL_METACHAR_REJECTED","release_id","x;id"),("PATH_TRAVERSAL_REJECTED","release_id","../x"),("EXECUTOR_PATH_OVERRIDE_REJECTED","executor_path","/bin/sh"),("SERVICE_OVERRIDE_REJECTED","services","api"),("COMPOSE_OVERRIDE_REJECTED","compose_file","/x"),("ENV_OVERRIDE_REJECTED","env_file","/x"),("PROJECT_OVERRIDE_REJECTED","project","x"),("ROLLBACK_IMAGE_OVERRIDE_REJECTED","rollback_image","sha256:"+"a"*64)):
         t=_base("HK_STAGING_ROLLBACK") if name=="ROLLBACK_IMAGE_OVERRIDE_REJECTED" else _base("HK_STAGING_CANARY"); t["parameters"][key]=value; reject(name,t)
     for name,action,key in (("DEPLOY_WITHOUT_APPROVAL_REJECTED","HK_STAGING_DEPLOY","approval_id"),("DEPLOY_WITHOUT_CANARY_EVIDENCE_REJECTED","HK_STAGING_DEPLOY","canary_evidence_id"),("ROLLBACK_WITHOUT_APPROVAL_REJECTED","HK_STAGING_ROLLBACK","approval_id"),("AI_SELF_APPROVAL_REJECTED","HK_STAGING_DEPLOY","approval_id")):

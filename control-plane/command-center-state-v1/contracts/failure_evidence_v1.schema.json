@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-state-v1/contracts/failure_evidence_v1.schema.json",
+  "title": "GO Command Center Signed Failure Evidence V1",
+  "description": "The machine-verifiable record of a Task whose execution attempt was claimed and then failed. Published by the Hong Kong Agent to chenzhenxi1-sudo/go-control-evidence under evidence/<task_id>-<nonce>.json, exactly where a success record would go, signed with the same evidence identity. Before CC V1-02 a failure touched only the agent-local SQLite ledger, so the control bus could not distinguish 'never picked up' from 'picked up and failed'.",
+  "type": "object",
+  "required": ["schema_version", "task_id", "nonce", "action_id", "environment", "status",
+               "started_at", "completed_at", "agent_version", "executor_version",
+               "executor_result", "gate_results", "failure",
+               "retry_permitted", "replay_authorized", "authorizes_any_action", "signature"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "task_id": {"type": "string", "description": "the original Task id; never dropped on failure"},
+    "nonce": {"type": "string", "description": "the original Task nonce; never dropped on failure"},
+    "action_id": {"type": "string", "description": "the original Task action; never dropped on failure"},
+    "environment": {"const": "HK-STAGING-01"},
+    "status": {"const": "FAILED"},
+    "started_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": "string", "format": "date-time"},
+    "agent_version": {"type": "string"},
+    "executor_version": {
+      "type": "string",
+      "description": "a real executor version when one reported it, otherwise the honest literal 'not_dispatched' or 'unreported'. Never a fabricated version."
+    },
+    "executor_result": {"const": "EXECUTION_FAILED"},
+    "gate_results": {
+      "type": "object",
+      "description": "PASS, FAIL or NOT_EVALUATED per validation gate, so the record shows where the attempt stopped",
+      "additionalProperties": {"enum": ["PASS", "FAIL", "NOT_EVALUATED"]}
+    },
+    "failure": {
+      "type": "object",
+      "required": ["schema_version", "kind", "stage", "reason_code", "attempt_number",
+                   "attempt_budget_exhausted", "execution_attempted", "return_code",
+                   "diagnostic"],
+      "properties": {
+        "schema_version": {"const": "1"},
+        "kind": {
+          "enum": ["HANDOFF_FAILED", "EXECUTION_FAILED", "RESULT_REJECT",
+                   "EVIDENCE_BUILD_FAILED", "ARTIFACT_DURABILITY_FAILED",
+                   "EVIDENCE_PUBLISH_FAILED", "AGENT_REJECT"],
+          "description": "closed set; an unmapped stage is AGENT_REJECT, never the raw text"
+        },
+        "stage": {
+          "enum": ["agent_reject", "rollback_handoff", "executor", "result", "evidence_build",
+                   "artifact_durability", "evidence_publish", "subprocess", "subprocess_nonzero",
+                   "subprocess_error", "parser"],
+          "description": "closed internal vocabulary describing where the attempt stopped. `artifact_durability` is separate from `evidence_build` on purpose: a build that succeeded but produced no durable artifact is neither an executor refusal nor a publication failure, and reading it as either would hide the ephemeral-artifact defect (a SIGned TEST_PR whose built image the executor then deleted)."
+        },
+        "reason_code": {
+          "enum": ["ARTIFACT_DURABILITY_REJECT", "ATTEMPT_BUDGET_EXHAUSTED", "CONFIG_REJECT",
+                   "EVIDENCE_DUPLICATE_REJECT",
+                   "EVIDENCE_NOT_PUBLISHED", "EXECUTOR_INVOCATION_FAILED", "EXECUTOR_NONZERO_EXIT",
+                   "EXECUTOR_OUTPUT_REJECTED", "EXECUTOR_RESULT_REJECT", "GITHUB_TRANSPORT_REJECT",
+                   "ROLLBACK_HANDOFF_REJECT", "ROLLBACK_SOURCE_REJECT", "TASK_ID_REJECT",
+                   "TASK_NOT_FOUND", "UNCLASSIFIED_REJECT"],
+          "description": "closed set. Free-form diagnostic text is never echoed; anything outside this set is reported as UNCLASSIFIED_REJECT."
+        },
+        "attempt_number": {"type": "integer", "minimum": 1},
+        "attempt_budget_exhausted": {"const": true},
+        "execution_attempted": {"type": "boolean"},
+        "return_code": {"type": ["integer", "null"]},
+        "diagnostic": {
+          "type": "object",
+          "required": ["stdout", "stderr"],
+          "description": "redacted, length-bounded process output. This is a diagnostic, not the Evidence: the Evidence is the signed envelope around it.",
+          "properties": {
+            "stdout": {"type": "object", "required": ["length", "sha256", "preview"]},
+            "stderr": {"type": "object", "required": ["length", "sha256", "preview"]}
+          }
+        }
+      }
+    },
+    "retry_permitted": {"const": false},
+    "replay_authorized": {"const": false},
+    "authorizes_any_action": {"const": false},
+    "signature": {
+      "type": "string",
+      "description": "Ed25519, base64. Verifies against /etc/go-hk-agent/keys/evidence-signing.pub, published in the repository as identity/keys/hk-evidence-signing.pub."
+    }
+  },
+  "x-go-semantics": [
+    "A failure record is published only for a Task whose single execution attempt was claimed. Claiming is what 'picked up' means.",
+    "A Task rejected before the claim publishes nothing at all. In particular a Task whose own signature never verified is never reported on: otherwise whoever can write a task file could cause a write into the control bus.",
+    "retry_permitted, replay_authorized and authorizes_any_action are always false. A failure record authorizes nothing. The one-attempt rule is enforced by the agent ledger, not by this document.",
+    "A failed publication of a failure record is not a success and does not release the attempt budget. It is reported as EVIDENCE_NOT_PUBLISHED.",
+    "One Task identity has at most one Evidence record. A second record for the same task_id and nonce is refused rather than merged or overwritten, and a reader that sees two distinct records for one signed Task must fail closed."
+  ]
+}

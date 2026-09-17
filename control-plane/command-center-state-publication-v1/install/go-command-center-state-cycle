@@ -1,0 +1,585 @@
+#!/usr/bin/env python3
+"""CC V1-05 PHASE 2 + CC V1-04 publication - operator timer wrapper.
+
+The chain this closes on this host, end to end:
+
+    Bridge journal -> Request Fact -> control bus -> State Projection
+    -> Publication Target -> CURRENT.json
+
+In order, each cycle:
+
+  1. exports the Request facts read-only from the Bridge ledger plus the poll
+     journal that go-request-fact-cycle.timer maintains, into this component's
+     own export root. It never writes to that timer's store.
+  2. publishes that export to the control bus, on branch `request-facts/live` of
+     go-control-tasks -- and only when its content actually changed. The exporter
+     stamps INDEX.json with the export instant, so "the file differs, commit it"
+     would commit forever; the gate is a digest over the facts plus the index with
+     that one instant field removed. That is the same content-not-time rule the
+     poll journal follows, and it is why a repeated observation cannot mint a new
+     fact or a new commit.
+  3. refreshes the control-bus checkouts and the GO checkout, and collects the
+     Request files the bus carries on its boss-request-* and request/* branches.
+     A fact alone does not put a Request on the bus: without its Request file a
+     Request has no control-bus source at all, and the projection says so
+     ("a Bridge fact names a Request that is not on the control bus") instead of
+     inventing a lifecycle for it.
+  4. runs the projector read-only with --requests-dir and --request-facts-dir
+     pointing at what is on the control bus, so the derived state is built from
+     the bus and not from a file on one host.
+  5. hands the projection to the publisher, which validates it, writes an
+     immutable snapshot into the target and only then advances CURRENT.json. It is
+     republished when the sources it derives from move, and at least hourly so that
+     a long quiet period cannot leave a pointer behind the reader's window.
+
+What it does not do: it holds no signing key, signs nothing, creates no Task,
+never opens, arms or reads the DEPLOY switch, never runs compose, never deploys,
+and never touches the runtime or Production. Its only write outside its own state
+directory is the request-facts branch, which carries observations and no
+authority.
+"""
+import datetime as dt
+import fcntl
+import hashlib
+import json
+import os
+import pathlib
+import shutil
+import subprocess
+import sys
+
+STATE_DIR = pathlib.Path("/var/lib/go-command-center/state-publication-v1")
+EXPORT_DIR = STATE_DIR / "export"
+# Local and non-authoritative, and outside EXPORT_DIR on purpose: only
+# EXPORT_DIR/facts is published, so nothing that moves per observation --
+# last_seen_at, observation_count -- can ever reach the control bus.
+OBSERVATIONS = STATE_DIR / "observations.json"
+BUS_DIR = STATE_DIR / "bus"
+TASKS_CLONE = BUS_DIR / "tasks"
+EVIDENCE_CLONE = BUS_DIR / "evidence"
+GO_CLONE = BUS_DIR / "go"
+FACTS_WORKTREE = BUS_DIR / "facts"
+REQUESTS_DIR = STATE_DIR / "requests"
+PROJECTION_DIR = STATE_DIR / "projection"
+TARGET = STATE_DIR / "target"
+STATE_FILE = STATE_DIR / "state.json"
+LOCK_FILE = STATE_DIR / ".lock"
+
+POLL_DIR = pathlib.Path("/var/lib/go-command-center/request-visibility-v1/poll")
+LEDGER = pathlib.Path("/var/lib/go-command-center/boss-request-bridge-v1/ledger.json")
+
+COMPONENT_DIR = pathlib.Path("/opt/go-command-center/state-publication-v1")
+EXPORTER = pathlib.Path(
+    "/opt/go-command-center/request-visibility-v1/command-center/go-request-fact-export")
+PROJECTOR = COMPONENT_DIR / "projection" / "state_projection.py"
+IDENTITIES_DIR = COMPONENT_DIR / "projection" / "identity"
+PUBLISHER = COMPONENT_DIR / "publication" / "go-state-publication"
+INSTALLED = COMPONENT_DIR / "installed.json"
+
+KEYS = pathlib.Path("/etc/go-command-center/keys")
+TASKS_KEY = KEYS / "github-tasks-writer"
+EVIDENCE_KEY = KEYS / "github-evidence-reader"
+GO_KEY = KEYS / "github-go-pr-resolver"
+
+GIT = "/usr/bin/git"
+TASKS_URL = "git@github.com:chenzhenxi1-sudo/go-control-tasks.git"
+EVIDENCE_URL = "git@github.com:chenzhenxi1-sudo/go-control-evidence.git"
+GO_URL = "git@github.com:yuguangzhi3836-glitch/GO.git"
+TASKS_REF = "main"
+EVIDENCE_REF = "permission-test"
+GO_REF = "main"
+FACTS_BRANCH = "request-facts/live"
+REPUBLISH_AFTER_SECONDS = 3600
+MAX_AGE_SECONDS = 86400
+COMMIT_NAME = "GO Command Center"
+COMMIT_MAIL = "go-command-center@localhost"
+
+FACTS_README = """# request-facts
+
+Request facts exported from the GO Command Center Boss Request Bridge, published
+here so that the derived Control State is built from what is on the control bus
+instead of from a file on a single host.
+
+    facts/<fact_id>.json   one Request lifecycle fact; the name is a digest of the
+                           canonical body, so the store is append-only and a
+                           hand-edited fact cannot silently replace a real one
+    INDEX.json             the exporter's index for the publish that wrote it
+
+Written by: go-command-center-state-cycle on the Command Center host.
+Branch:     request-facts/live
+
+A fact is an OBSERVATION and never authority: it cannot create, sign, replay or
+execute anything. This branch holds no key, no Task, no signature and no
+execution parameter, and the projection refuses any fact that claims otherwise.
+A commit is made only when the fact content changes.
+"""
+
+
+def iso(instant):
+    return instant.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def canonical_bytes(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=False).encode("utf-8")
+
+
+def read_json(path):
+    return json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+
+
+def sha256_file(path):
+    return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+
+
+def read_state():
+    try:
+        return read_json(STATE_FILE)
+    except (OSError, ValueError):
+        return {}
+
+
+def write_state(state):
+    tmp = STATE_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(tmp, STATE_FILE)
+
+
+def git_env(key):
+    env = dict(os.environ)
+    env["GIT_SSH_COMMAND"] = (
+        "ssh -i %s -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes" % key)
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
+
+
+def git(key, *args, **kwargs):
+    cwd = kwargs.pop("cwd", None)
+    timeout = kwargs.pop("timeout", 300)
+    return subprocess.run([GIT, *args], capture_output=True, text=True, check=False,
+                          env=git_env(key), cwd=str(cwd) if cwd else None, timeout=timeout)
+
+
+def collect_requests(out):
+    """Collect the Request files the control bus carries.
+
+    A Request exists on the bus because a human put a file there, not because the
+    Bridge mentioned it. The Request files live on the bus's boss-request-* and
+    request/* branches -- the ref namespace the state contract itself declares for
+    them -- and each is wrapped with the ref and head it was read from so the
+    projection can attribute the source it reasoned about.
+    """
+    if REQUESTS_DIR.exists():
+        shutil.rmtree(REQUESTS_DIR)
+    REQUESTS_DIR.mkdir(parents=True)
+    refspecs = ["+refs/heads/boss-request-*:refs/remotes/bus/boss-request-*",
+                "+refs/heads/request/*:refs/remotes/bus/request/*"]
+    fetched = git(TASKS_KEY, "fetch", "--quiet", "--depth", "1", "origin", *refspecs,
+                  cwd=TASKS_CLONE, timeout=600)
+    if fetched.returncode != 0:
+        out["requests_collect"] = "FETCH_REFUSED"
+        return False
+    refs = git(TASKS_KEY, "for-each-ref", "--format=%(refname)", "refs/remotes/bus/",
+               cwd=TASKS_CLONE)
+    collected = 0
+    lines = []
+    for ref in refs.stdout.split():
+        listing = git(TASKS_KEY, "ls-tree", "-r", "--name-only", ref, cwd=TASKS_CLONE)
+        for name in listing.stdout.split():
+            if not (name.startswith("requests/") and name.endswith(".json")):
+                continue
+            blob = git(TASKS_KEY, "show", "%s:%s" % (ref, name), cwd=TASKS_CLONE)
+            if blob.returncode != 0 or not blob.stdout.strip():
+                continue
+            try:
+                payload = json.loads(blob.stdout)
+            except ValueError:
+                continue
+            envelope = {"ref": ref.replace("refs/remotes/bus/", ""),
+                        "head_sha": head_of(TASKS_CLONE, ref), "request": payload}
+            (REQUESTS_DIR / pathlib.Path(name).name).write_text(
+                json.dumps(envelope, sort_keys=True, ensure_ascii=False) + "\n",
+                encoding="utf-8")
+            lines.append("%s:%s" % (pathlib.Path(name).name,
+                                    hashlib.sha256(canonical_bytes(envelope)).hexdigest()))
+            collected += 1
+    out["requests_collect"] = "OK"
+    out["requests_collected"] = collected
+    out["requests_content_digest"] = hashlib.sha256(
+        "\n".join(sorted(lines)).encode("utf-8")).hexdigest()[:16]
+    return True
+
+
+def head_of(path, ref="HEAD"):
+    proc = git(TASKS_KEY, "rev-parse", ref, cwd=path)
+    return proc.stdout.strip() if proc.returncode == 0 else None
+
+
+def export_digest(root):
+    """A digest of the export content, with the export instant removed.
+
+    The exporter stamps INDEX.json with the instant of the run, so an unchanged
+    observation still produces a byte-different index. Publishing on "the file
+    differs" would therefore commit on every cycle for no reason and grow the
+    branch without bound -- the same defect the poll journal already had. The
+    gate is the facts plus the index without that one time field.
+    """
+    facts = root / "facts"
+    lines = []
+    for path in sorted(facts.glob("*.json")):
+        lines.append("%s:%s" % (path.name, sha256_file(path)))
+    index = root / "INDEX.json"
+    if index.is_file():
+        payload = read_json(index)
+        payload.pop("generated_at", None)
+        lines.append("INDEX:%s" % hashlib.sha256(canonical_bytes(payload)).hexdigest())
+    return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest(), len(lines) - (
+        1 if index.is_file() else 0)
+
+
+def env_fingerprint(poll_paths):
+    parts = [sha256_file(p) for p in poll_paths]
+    if LEDGER.is_file():
+        parts.append(sha256_file(LEDGER))
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()
+
+
+# --------------------------------------------------------------------------- #
+# step 2 - publish the export to the control bus
+# --------------------------------------------------------------------------- #
+def ensure_facts_worktree(out):
+    if (FACTS_WORKTREE / ".git").is_dir():
+        return
+    FACTS_WORKTREE.mkdir(parents=True, exist_ok=True)
+    git(TASKS_KEY, "init", "-q", cwd=FACTS_WORKTREE)
+    git(TASKS_KEY, "remote", "add", "origin", TASKS_URL, cwd=FACTS_WORKTREE)
+    fetched = git(TASKS_KEY, "fetch", "--quiet", "origin", FACTS_BRANCH, cwd=FACTS_WORKTREE)
+    if fetched.returncode == 0:
+        git(TASKS_KEY, "checkout", "-q", "-B", FACTS_BRANCH, "FETCH_HEAD", cwd=FACTS_WORKTREE)
+        out["facts_branch"] = "ADOPTED"
+    else:
+        git(TASKS_KEY, "checkout", "-q", "--orphan", FACTS_BRANCH, cwd=FACTS_WORKTREE)
+        out["facts_branch"] = "CREATED"
+    (FACTS_WORKTREE / "README.md").write_text(FACTS_README, encoding="utf-8")
+
+
+def sync_payload():
+    facts_src = EXPORT_DIR / "facts"
+    facts_dst = FACTS_WORKTREE / "facts"
+    if facts_dst.exists():
+        shutil.rmtree(facts_dst)
+    shutil.copytree(facts_src, facts_dst)
+    shutil.copy2(EXPORT_DIR / "INDEX.json", FACTS_WORKTREE / "INDEX.json")
+
+
+def publish_facts(state, out):
+    ensure_facts_worktree(out)
+    digest, count = export_digest(EXPORT_DIR)
+    out["fact_files"] = count
+    out["facts_content_digest"] = digest[:16]
+    if digest == state.get("facts_content_digest") and not git(
+            TASKS_KEY, "status", "--porcelain", cwd=FACTS_WORKTREE).stdout.strip():
+        out["facts_publish"] = "UNCHANGED"
+        out["facts_commit"] = state.get("facts_commit")
+        return True
+    sync_payload()
+    git(TASKS_KEY, "add", "-A", cwd=FACTS_WORKTREE)
+    if not git(TASKS_KEY, "status", "--porcelain", cwd=FACTS_WORKTREE).stdout.strip():
+        out["facts_publish"] = "UNCHANGED"
+        return True
+    commit = git(TASKS_KEY, "-c", "user.name=" + COMMIT_NAME, "-c", "user.email=" + COMMIT_MAIL,
+                 "commit", "-q", "-m",
+                 "request-facts: publish %d facts (%s)" % (count, digest[:12]),
+                 cwd=FACTS_WORKTREE)
+    if commit.returncode != 0:
+        out["facts_publish"] = "COMMIT_REFUSED"
+        out["facts_detail"] = commit.stderr.strip().splitlines()[-1:]
+        return False
+    pushed = git(TASKS_KEY, "push", "--quiet", "origin", "HEAD:refs/heads/" + FACTS_BRANCH,
+                 cwd=FACTS_WORKTREE)
+    if pushed.returncode != 0:
+        out["facts_publish"] = "PUSH_REFUSED"
+        out["facts_detail"] = pushed.stderr.strip().splitlines()[-1:]
+        return False
+    state["facts_content_digest"] = digest
+    state["facts_commit"] = head_of(FACTS_WORKTREE)
+    out["facts_publish"] = "PUBLISHED"
+    out["facts_commit"] = state["facts_commit"]
+    return True
+
+
+def materialise_facts_branch(out):
+    """Read back the branch that was just pushed, so the projection consumes bus state."""
+    fetched = git(TASKS_KEY, "fetch", "--quiet", "origin", FACTS_BRANCH, cwd=FACTS_WORKTREE)
+    if fetched.returncode != 0:
+        out["facts_readback"] = "FETCH_REFUSED"
+        return False
+    reset = git(TASKS_KEY, "reset", "--hard", "--quiet", "FETCH_HEAD", cwd=FACTS_WORKTREE)
+    if reset.returncode != 0:
+        out["facts_readback"] = "RESET_REFUSED"
+        return False
+    out["facts_readback"] = "OK"
+    out["facts_branch_head"] = head_of(FACTS_WORKTREE)
+    return True
+
+
+# --------------------------------------------------------------------------- #
+# step 3 - refresh the checkouts
+# --------------------------------------------------------------------------- #
+def clone_if_absent(path, url, key, ref, out, label):
+    if (path / ".git").is_dir():
+        return True
+    path.parent.mkdir(parents=True, exist_ok=True)
+    proc = git(key, "clone", "--quiet", "--depth", "1", "--branch", ref, url, str(path),
+               timeout=900)
+    if proc.returncode != 0:
+        out[label] = "CLONE_REFUSED"
+        return False
+    return True
+
+
+def refresh(path, key, ref, out, label):
+    if not clone_if_absent(path, {"tasks": TASKS_URL, "evidence": EVIDENCE_URL,
+                                  "go": GO_URL}[label], key, ref, out, label):
+        return None
+    fetch = git(key, "fetch", "--quiet", "--depth", "1", "origin", ref, cwd=path, timeout=900)
+    if fetch.returncode != 0:
+        out[label] = "FETCH_REFUSED"
+        return None
+    reset = git(key, "reset", "--hard", "--quiet", "FETCH_HEAD", cwd=path)
+    if reset.returncode != 0:
+        out[label] = "RESET_REFUSED"
+        return None
+    out[label] = "OK"
+    return head_of(path)
+
+
+# --------------------------------------------------------------------------- #
+# main
+# --------------------------------------------------------------------------- #
+def pointer_report(out, now):
+    """Ask the publisher what a consumer would see. Every cycle reports this, so a
+    quiet cycle proves the pointer just as loudly as a publishing one."""
+    common = [sys.executable, str(PUBLISHER), "--target", str(TARGET), "--now", iso(now),
+              "--max-age-seconds", str(MAX_AGE_SECONDS)]
+    status = subprocess.run(common + ["status"], capture_output=True, text=True, check=False)
+    for line in status.stdout.splitlines():
+        if line.startswith(("PUBLICATION_STATUS=", "AGE_SECONDS=")):
+            key, _, value = line.partition("=")
+            out["pointer_" + key.lower()] = value
+    verify = subprocess.run(common + ["verify"], capture_output=True, text=True, check=False)
+    for line in verify.stdout.splitlines():
+        if line.startswith("RUN_ID="):
+            out["pointer_run_id"] = line.partition("=")[2]
+            out["pointer_path"] = "CURRENT.json -> runs/%s" % out["pointer_run_id"]
+    out["pointer_verify"] = "OK" if verify.returncode == 0 else "REFUSED"
+    return out["pointer_verify"] == "OK"
+
+
+def main():
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+    BUS_DIR.mkdir(parents=True, exist_ok=True)
+
+    lock = open(LOCK_FILE, "w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        print(json.dumps({"component": "go-command-center-state-cycle",
+                          "cycle": "SKIPPED", "reason": "another run holds the lock"},
+                         sort_keys=True))
+        return 0
+
+    now = dt.datetime.now(dt.timezone.utc)
+    state = read_state()
+    out = {"component": "go-command-center-state-cycle", "cycle_at": iso(now)}
+
+    # ---- installed revision and projector integrity ------------------------ #
+    try:
+        installed = read_json(INSTALLED)
+    except (OSError, ValueError):
+        installed = {}
+    out["installed_revision"] = installed.get("projector_revision")
+    if installed.get("projector_sha256") and PROJECTOR.is_file():
+        if sha256_file(PROJECTOR) != installed["projector_sha256"]:
+            out["cycle"] = "FAILED"
+            out["projector_integrity"] = "MISMATCH"
+            print(json.dumps(out, sort_keys=True))
+            return 1
+        out["projector_integrity"] = "OK"
+
+    for path in (EXPORTER, PROJECTOR, PUBLISHER):
+        if not path.is_file():
+            out["cycle"] = "FAILED"
+            out["missing"] = str(path)
+            print(json.dumps(out, sort_keys=True))
+            return 1
+
+    # ---- 1. export --------------------------------------------------------- #
+    poll_paths = sorted(POLL_DIR.glob("*.json"))
+    out["poll_documents"] = len(poll_paths)
+    if not LEDGER.is_file():
+        out["cycle"] = "DEGRADED"
+        out["exporter"] = "SKIPPED"
+        out["reason"] = "bridge_ledger_absent"
+        print(json.dumps(out, sort_keys=True))
+        return 0
+    command = [sys.executable, str(EXPORTER), "export",
+               "--ledger", str(LEDGER), "--out", str(EXPORT_DIR), "--now", iso(now),
+               "--observations", str(OBSERVATIONS)]
+    for path in poll_paths:
+        command += ["--poll-results", str(path)]
+    proc = subprocess.run(command, capture_output=True, text=True, check=False)
+    if proc.returncode != 0:
+        out["cycle"] = "FAILED"
+        out["exporter"] = "REFUSED"
+        out["detail"] = proc.stderr.strip().splitlines()[:3]
+        print(json.dumps(out, sort_keys=True))
+        return 1
+    out["exporter"] = "OK"
+    for line in proc.stdout.splitlines():
+        if line.startswith(("FACTS=", "SUBMISSIONS=", "AUTHORITY=")):
+            key, _, value = line.partition("=")
+            out["export_" + key.lower()] = value
+
+    # ---- 2. publish the facts to the control bus --------------------------- #
+    if not publish_facts(state, out):
+        write_state(state)
+        out["cycle"] = "FAILED"
+        print(json.dumps(out, sort_keys=True))
+        return 1
+    if not materialise_facts_branch(out):
+        write_state(state)
+        out["cycle"] = "FAILED"
+        print(json.dumps(out, sort_keys=True))
+        return 1
+    write_state(state)
+
+    # ---- 3. refresh the checkouts ------------------------------------------ #
+    heads = {}
+    for label, path, key, ref in (("tasks", TASKS_CLONE, TASKS_KEY, TASKS_REF),
+                                  ("evidence", EVIDENCE_CLONE, EVIDENCE_KEY, EVIDENCE_REF),
+                                  ("go", GO_CLONE, GO_KEY, GO_REF)):
+        heads[label] = refresh(path, key, ref, out, label)
+    if not all(heads.values()):
+        out["cycle"] = "FAILED"
+        out["reason"] = "control_bus_refresh_incomplete"
+        print(json.dumps(out, sort_keys=True))
+        return 1
+    out["tasks_head"] = heads["tasks"]
+    out["evidence_head"] = heads["evidence"]
+    out["go_head"] = heads["go"]
+    requests_ok = collect_requests(out)
+
+    # ---- 4. project -------------------------------------------------------- #
+    if PROJECTION_DIR.exists():
+        shutil.rmtree(PROJECTION_DIR)
+    PROJECTION_DIR.mkdir(parents=True)
+    command = [sys.executable, str(PROJECTOR),
+               "--tasks-repo", str(TASKS_CLONE),
+               "--evidence-repo", str(EVIDENCE_CLONE),
+               "--request-facts-dir", str(FACTS_WORKTREE),
+               "--go-repo", str(GO_CLONE),
+               "--task-verify-key", str(IDENTITIES_DIR / "keys" / "cc-task-manifest-signing.pub"),
+               "--evidence-verify-key", str(IDENTITIES_DIR / "keys" / "hk-evidence-signing.pub"),
+               "--verifier-identities", str(IDENTITIES_DIR / "VERIFIER_IDENTITIES_V1.json"),
+               "--tasks-head", heads["tasks"], "--evidence-head", heads["evidence"],
+               "--go-head", heads["go"], "--repository-main-sha", heads["go"],
+               "--now", iso(now), "--out", str(PROJECTION_DIR)]
+    if requests_ok:
+        command += ["--requests-dir", str(REQUESTS_DIR)]
+    proc = subprocess.run(command, capture_output=True, text=True, check=False)
+    if proc.returncode != 0:
+        out["cycle"] = "FAILED"
+        out["projector"] = "REFUSED"
+        out["detail"] = (proc.stdout + proc.stderr).strip().splitlines()[:4]
+        print(json.dumps(out, sort_keys=True))
+        return 1
+    out["projector"] = "OK"
+    documents = {}
+    for name in ("CURRENT_CONTROL_STATE.json", "CONTROL_STATUS_V1.json",
+                 "TASK_INDEX.json", "LATEST_EVIDENCE.json"):
+        path = PROJECTION_DIR / name
+        if not path.is_file():
+            out["cycle"] = "FAILED"
+            out["reason"] = "projection_document_missing:" + name
+            print(json.dumps(out, sort_keys=True))
+            return 1
+        documents[name] = read_json(path)
+    out["projection_documents"] = len(documents)
+    state_doc = documents["CURRENT_CONTROL_STATE.json"]
+    out["state_counts"] = state_doc.get("counts")
+    out["request_visibility_by_lifecycle"] = (
+        state_doc.get("request_visibility") or {}).get("by_lifecycle")
+    # The two documents answer two different questions and the answer surface is
+    # the status contract, not the state contract: CURRENT_CONTROL_STATE.json
+    # carries control_state.hk_agent_liveness (the assertion), while
+    # CONTROL_STATUS_V1.json carries answers.hk_agent_online (the answer a reader
+    # asks for). Reading the wrong one reports null and makes a live agent look
+    # unobserved.
+    online = ((documents["CONTROL_STATUS_V1.json"].get("answers") or {})
+              .get("hk_agent_online") or {})
+    out["hk_agent_online"] = online.get("state")
+    # When the answer is UNKNOWN the value is null and the age sits beside the
+    # assertion rather than inside the value, so read both rather than reporting a
+    # bare null next to a state that plainly has an age.
+    out["hk_agent_online_age_seconds"] = (
+        (online.get("value") or {}).get("age_seconds")
+        if isinstance(online.get("value"), dict) else online.get("age_seconds"))
+
+    # Publish when the sources it derives from move, and at least hourly so that a
+    # long quiet period cannot leave a pointer behind the reader's window. The gate
+    # is over the inputs, not over the output: the derived state carries ages and
+    # freshness computed from the instant of the run, so an output digest would
+    # differ on every cycle and publish an unbounded number of near-identical
+    # snapshots -- the same time-not-content mistake this wrapper refuses to make
+    # about the facts.
+    inputs_digest = hashlib.sha256(canonical_bytes({
+        "tasks_head": heads["tasks"], "evidence_head": heads["evidence"],
+        "go_head": heads["go"], "facts": state.get("facts_content_digest"),
+        "requests": out.get("requests_content_digest")})).hexdigest()
+    out["sources_content_digest"] = inputs_digest[:16]
+    age = now.timestamp() - float(state.get("published_at_epoch") or 0)
+    if inputs_digest == state.get("sources_content_digest") and age < REPUBLISH_AFTER_SECONDS:
+        out["publication"] = "UNCHANGED"
+        out["publication_age_seconds"] = int(age)
+        out["cycle"] = "OK" if (pointer_report(out, now) and requests_ok) else "DEGRADED"
+        print(json.dumps(out, sort_keys=True))
+        return 0
+
+    # ---- 5. publish -------------------------------------------------------- #
+    TARGET.mkdir(parents=True, exist_ok=True)
+    command = [sys.executable, str(PUBLISHER), "--target", str(TARGET), "--now", iso(now),
+               "--max-age-seconds", str(MAX_AGE_SECONDS), "publish",
+               "--projection", str(PROJECTION_DIR),
+               "--tasks-ref", TASKS_REF, "--tasks-head", heads["tasks"],
+               "--evidence-ref", EVIDENCE_REF, "--evidence-head", heads["evidence"],
+               "--go-ref", GO_REF, "--go-head", heads["go"],
+               "--projector-revision", installed.get("projector_revision") or heads["go"]]
+    proc = subprocess.run(command, capture_output=True, text=True, check=False)
+    if proc.returncode != 0:
+        out["cycle"] = "FAILED"
+        out["publisher"] = "REFUSED"
+        out["detail"] = (proc.stdout + proc.stderr).strip().splitlines()[:4]
+        print(json.dumps(out, sort_keys=True))
+        return 1
+    for line in proc.stdout.splitlines():
+        if "=" in line:
+            key, _, value = line.partition("=")
+            out["publish_" + key.lower()] = value
+    pointer_report(out, now)
+
+    state["sources_content_digest"] = inputs_digest
+    state["published_at_epoch"] = int(now.timestamp())
+    state["last_run_id"] = out.get("publish_run_id")
+    write_state(state)
+    out["cycle"] = "OK" if (out["pointer_verify"] == "OK" and requests_ok) else "DEGRADED"
+    print(json.dumps(out, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] != "cycle":
+        print("usage: go-command-center-state-cycle cycle")
+        raise SystemExit(2)
+    raise SystemExit(main())

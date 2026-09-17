@@ -1,0 +1,787 @@
+#!/usr/bin/env python3
+"""Rehearse a DEPLOY Request without publishing anything. (CC V1-07 / #102)
+
+The DEPLOY Request capability already exists and is fail-closed. This rehearses
+it: given one DEPLOY Request file and the read-only deploy readiness verdict
+(CC V1-06 / #101), it decides whether the Request would be accepted or refused,
+and for a legal Request it produces a **TASK_CANDIDATE** -- an unsigned,
+unpublishable, non-executable description of what would be asked for.
+
+    TASK_CANDIDATE   every blocking check PASSes; a candidate was produced
+    REJECTED         at least one blocking check FAILs
+    UNPROVEN         nothing refused, but something could not be established
+
+REJECTED outranks UNPROVEN: one definite refusal decides the outcome whatever
+else is unknown. UNPROVEN is never a pass.
+
+Three things this can never do
+------------------------------
+1. It cannot produce a Task. The candidate is explicitly `executable=false`,
+   `signed=false`, `publish_authorized=false`, `signature=null`, and
+   `candidate_is_a_task=false`. It holds no private key and has no code path to a
+   signer, a publisher or an executor.
+2. It cannot consume anything. A dry-run record is an observation and says so:
+   `consumes_nothing=true`. Only the live channel consumes a plan or an approval.
+3. It cannot take a parameter from its caller. Every value in the candidate comes
+   from the approved plan the readiness verdict read, and no image, service, path,
+   environment or command is accepted from a caller at all.
+
+It emits no new refusal vocabulary either: every request-side reason it can give
+is a token the Boss Request Bridge can itself raise, and the test suite checks
+every one of them against the Bridge's own sources.
+"""
+import argparse
+import datetime as dt
+import hashlib
+import json
+import pathlib
+import re
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+CONTRACT_FILE = "contracts/deploy_dry_run_v1.schema.json"
+OUTPUT_NAME = "DEPLOY_DRY_RUN.json"
+
+CONTRACT_NAME = "DEPLOY_DRY_RUN_V1"
+READINESS_CONTRACT = "DEPLOY_READINESS_V1"
+ENVIRONMENT = "HK-STAGING-01"
+DEPLOY_ACTION = "HK_STAGING_DEPLOY"
+
+MAX_REQUEST_BYTES = 4096                 # the Bridge's own request_oversized ceiling
+MAX_AGE_SECONDS = 900                    # the Bridge's own staleness window
+# The five common fields and nothing else. A DEPLOY Request used to carry a plan_id
+# naming a plan a human had written; the plan is derived now, so the field is gone and a
+# Request that still carries one is refused as a wrong field set.
+REQUEST_FIELDS = {"schema_version", "request_id", "action_id", "environment", "requested_at"}
+REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$")
+COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+RECORD_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}--[0-9a-f]{16}\.json$")
+
+# Which readiness gates are advisory is NOT decided here. It is read from the
+# readiness verdict's own `mandatory` flag, because a local copy of that decision
+# is exactly how this component would come to believe a gate is optional after
+# the readiness contract made it block. CC V1-06.1 made every gate mandatory, so
+# today no readiness-derived check is advisory; the flag is still derived rather
+# than assumed so the two contracts cannot drift apart.
+READINESS_BOUNDARY = {
+    "is_execution_authority": False, "can_create_task": False, "can_publish_task": False,
+    "can_grant_the_deployment_authorization": False, "holds_private_key": False,
+    "signs_anything": False,
+    "accepts_caller_supplied_parameters": False, "touches_production": False,
+    "may_read_live_command_center_state": True, "is_a_deploy_approval": False,
+}
+AUTHORITY_BOUNDARY = {
+    "is_execution_authority": False, "can_create_task": False, "can_sign": False,
+    "can_publish_task": False, "can_grant_the_deployment_authorization": False,
+    "holds_private_key": False, "accepts_caller_supplied_parameters": False,
+    "executes_a_deployment": False, "touches_production": False, "candidate_is_a_task": False,
+}
+
+
+class Refuse(Exception):
+    """No decision can be produced at all. Nothing is written."""
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def digest(value):
+    return hashlib.sha256(canonical(value)).hexdigest()
+
+
+def iso(value):
+    return value.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def parse_time(value, what="time"):
+    if not isinstance(value, str):
+        raise Refuse("%s_not_a_string" % what)
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise Refuse("%s_unparseable" % what) from exc
+    if parsed.tzinfo is None:
+        raise Refuse("%s_naive" % what)
+    return parsed
+
+
+def read_json(path, limit=MAX_REQUEST_BYTES):
+    path = pathlib.Path(path)
+    if path.is_symlink():
+        raise Refuse("symlink_refused")
+    raw = path.read_bytes()
+    if len(raw) > limit:
+        raise OSError("oversized")
+    return json.loads(raw.decode("utf-8")), raw
+
+
+class Checks:
+    """The closed check list, read from the contract rather than hard-coded."""
+
+    def __init__(self, path):
+        document = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+        table = document.get("x-go-request-checks")
+        if not isinstance(table, dict) or not isinstance(table.get("checks"), list):
+            raise SystemExit("CONTRACT_INCOMPLETE: %s" % path)
+        self.request_checks = table["checks"]
+        outcomes = document.get("x-go-outcomes")
+        if not isinstance(outcomes, dict):
+            raise SystemExit("CONTRACT_INCOMPLETE: outcomes")
+        self.outcomes = [name for name in outcomes if name in
+                         ("TASK_CANDIDATE", "REJECTED", "UNPROVEN")]
+        if sorted(self.outcomes) != ["REJECTED", "TASK_CANDIDATE", "UNPROVEN"]:
+            raise SystemExit("CONTRACT_INCOMPLETE: outcome set")
+
+    def token_for(self, check):
+        for entry in self.request_checks:
+            if entry["check"] == check:
+                return entry["token"]
+        raise Refuse("undeclared_check:%s" % check)
+
+
+def new_check(check, stage, state, reason, code=None, origin=None, advisory=False, observed=None):
+    entry = {"check": check, "stage": stage, "state": state, "reason": reason,
+             "reason_code": code, "reason_origin": origin, "advisory": advisory}
+    if observed is not None:
+        entry["observed"] = observed
+    return entry
+
+
+def passed(check, stage, reason, observed=None):
+    return new_check(check, stage, "PASS", reason, observed=observed)
+
+
+def refused(check, stage, token, reason, observed=None):
+    return new_check(check, stage, "FAIL", reason, token, "BRIDGE_REQUEST_VOCABULARY",
+                     observed=observed)
+
+
+def unknown(check, stage, reason, observed=None):
+    return new_check(check, stage, "UNKNOWN", reason, observed=observed)
+
+
+# --------------------------------------------------------------------------- #
+# stage 1 -- the Request file itself
+# --------------------------------------------------------------------------- #
+def evaluate_request(path, checks, at):
+    """Return (checks, request_view). Every failure is recorded, not short-circuited."""
+    entries, view = [], {"file_name": pathlib.Path(path).name, "request_id": None,
+                         "action_id": None, "environment": None,
+                         "requested_at": None, "sha256": None}
+    raw, body = None, None
+    try:
+        body, raw = read_json(path)
+        view["sha256"] = hashlib.sha256(raw).hexdigest()
+        entries.append(passed("request_readable", "REQUEST_SHAPE",
+                              "the Request file was read (%d bytes)" % len(raw)))
+        entries.append(passed("request_size", "REQUEST_SHAPE",
+                              "the Request is within the %d byte ceiling" % MAX_REQUEST_BYTES))
+    except OSError as exc:
+        token = "request_oversized" if "oversized" in str(exc) else "invalid_json"
+        entries.append(refused("request_readable", "REQUEST_SHAPE", token,
+                               "the Request file could not be read: %s" % exc))
+        return entries, view
+    except (ValueError, UnicodeError) as exc:
+        entries.append(refused("request_json", "REQUEST_SHAPE", "malformed_json",
+                               "the Request is not valid JSON: %s" % type(exc).__name__))
+        return entries, view
+
+    # A duplicate key silently wins in json.loads, so it is detected separately.
+    seen, duplicate = set(), False
+    def hook(pairs):
+        nonlocal duplicate
+        for key, _value in pairs:
+            if key in seen:
+                duplicate = True
+            seen.add(key)
+        return dict(pairs)
+    try:
+        json.loads(raw.decode("utf-8"), object_pairs_hook=hook)
+    except ValueError:
+        pass
+    if duplicate:
+        entries.append(refused("request_unique_keys", "REQUEST_SHAPE", "duplicate_json_key",
+                               "the Request repeats a JSON key, so one value would silently win"))
+    else:
+        entries.append(passed("request_unique_keys", "REQUEST_SHAPE",
+                              "every JSON key appears once"))
+
+    if not isinstance(body, dict):
+        entries.append(refused("request_fields", "REQUEST_SHAPE", "schema_fields",
+                               "the Request is not a JSON object"))
+        return entries, view
+
+    if set(body) == REQUEST_FIELDS:
+        entries.append(passed("request_fields", "REQUEST_SHAPE",
+                              "the Request carries exactly the deploy Request fields"))
+    else:
+        extra = sorted(set(body) - REQUEST_FIELDS)
+        missing = sorted(REQUEST_FIELDS - set(body))
+        entries.append(refused("request_fields", "REQUEST_SHAPE", "schema_fields",
+                               "the Request field set is wrong: extra %s, missing %s"
+                               % (extra or "none", missing or "none")))
+        # A wrong field set makes the remaining checks meaningless.
+        return entries, view
+
+    entries.append(passed("request_schema_version", "REQUEST_SHAPE", "schema_version is 1")
+                   if body.get("schema_version") == "1"
+                   else refused("request_schema_version", "REQUEST_SHAPE", "schema_version",
+                                "schema_version is not 1"))
+
+    request_id = body.get("request_id")
+    view["request_id"] = request_id if isinstance(request_id, str) else None
+    entries.append(passed("request_id_format", "REQUEST_SHAPE", "request_id is well formed")
+                   if isinstance(request_id, str) and REQUEST_ID_RE.fullmatch(request_id)
+                   else refused("request_id_format", "REQUEST_SHAPE", "request_id",
+                                "request_id is not 3-80 characters of [A-Za-z0-9._-]"))
+
+    action = body.get("action_id")
+    view["action_id"] = action if isinstance(action, str) else None
+    entries.append(passed("request_action", "REQUEST_SHAPE", "the Request asks for DEPLOY")
+                   if action == DEPLOY_ACTION
+                   else refused("request_action", "REQUEST_SHAPE", "action",
+                                "this rehearsal accepts the %s action only, not %r"
+                                % (DEPLOY_ACTION, action)))
+
+    environment = body.get("environment")
+    view["environment"] = environment if isinstance(environment, str) else None
+    entries.append(passed("request_environment", "REQUEST_SHAPE", "the environment is %s"
+                          % ENVIRONMENT)
+                   if environment == ENVIRONMENT
+                   else refused("request_environment", "REQUEST_SHAPE", "environment",
+                                "the environment is not %s" % ENVIRONMENT))
+
+    requested_at = body.get("requested_at")
+    view["requested_at"] = requested_at if isinstance(requested_at, str) else None
+    if not isinstance(requested_at, str):
+        entries.append(refused("request_requested_at_type", "REQUEST_SHAPE",
+                               "requested_at_not_string", "requested_at is not a string"))
+    else:
+        entries.append(passed("request_requested_at_type", "REQUEST_SHAPE",
+                              "requested_at is a string"))
+        try:
+            when = parse_time(requested_at, "requested_at")
+            entries.append(passed("request_requested_at_format", "REQUEST_SHAPE",
+                                  "requested_at is an ISO 8601 instant"))
+            skew = (at - when).total_seconds()
+            if skew > MAX_AGE_SECONDS or skew < -60:
+                entries.append(refused("request_freshness", "REQUEST_SHAPE",
+                                       "stale_or_future_request",
+                                       "the Request is %.0f s from the evaluation instant, outside "
+                                       "the [%d s ago, 60 s ahead] window"
+                                       % (skew, MAX_AGE_SECONDS),
+                                       observed={"age_seconds": int(skew)}))
+            else:
+                entries.append(passed("request_freshness", "REQUEST_SHAPE",
+                                      "the Request is inside its freshness window",
+                                      observed={"age_seconds": int(skew)}))
+        except Refuse as exc:
+            entries.append(refused("request_requested_at_format", "REQUEST_SHAPE",
+                                   "invalid_requested_at",
+                                   "requested_at cannot be parsed: %s" % exc))
+
+    expected = "requests/%s.json" % request_id if isinstance(request_id, str) else None
+    if pathlib.Path(path).parent.name == "requests":
+        ok = pathlib.Path(path).name == ("%s.json" % request_id)
+        entries.append(passed("request_filename_binding", "REQUEST_SHAPE",
+                              "the file name matches the request_id")
+                       if ok else
+                       refused("request_filename_binding", "REQUEST_SHAPE",
+                               "request_filename_binding",
+                               "the file name must be requests/<request_id>.json, not %s"
+                               % pathlib.Path(path).name, observed={"expected": expected}))
+    else:
+        # Outside a requests/ directory there is no store convention to bind to.
+        entries.append(unknown("request_filename_binding", "REQUEST_SHAPE",
+                               "the file was not supplied from a requests/ directory, so the "
+                               "store's file-name binding cannot be checked"))
+    return entries, view
+
+
+# --------------------------------------------------------------------------- #
+# stages 2 and 3 -- identity and consumption
+# --------------------------------------------------------------------------- #
+def evaluate_identity(view, store, checks):
+    if view["request_id"] is None:
+        return [unknown("request_not_already_dry_run", "REQUEST_IDENTITY",
+                        "the Request has no usable request_id to look up")]
+    if store is None:
+        return [unknown("request_not_already_dry_run", "REQUEST_IDENTITY",
+                        "no dry-run store was supplied, so a replay of this rehearsal cannot be "
+                        "detected")]
+    seen = sorted(p.name for p in pathlib.Path(store).glob("%s--*.json" % view["request_id"]))
+    if seen:
+        return [refused("request_not_already_dry_run", "REQUEST_IDENTITY", "duplicate_request_id",
+                        "this request_id has already been rehearsed against this store (%d record(s))"
+                        % len(seen), observed={"records": seen[:3]})]
+    return [passed("request_not_already_dry_run", "REQUEST_IDENTITY",
+                   "this request_id has not been rehearsed against this store before")]
+
+
+def evaluate_consumption(view, history, plan_id, checks):
+    """Whether the plan this Request would use has already been spent.
+
+    The plan is not named by the Request any more, so what is checked is the plan the
+    readiness verdict reports it inspected -- which is the plan the Command Center
+    derived. A verdict that does not say which plan it approved leaves this unknown.
+    """
+    if history is None:
+        return [unknown("plan_not_already_consumed", "PLAN_CONSUMPTION",
+                        "no consumed-history export was supplied, so whether the live channel has "
+                        "already consumed this plan cannot be established offline")]
+    if not plan_id:
+        return [unknown("plan_not_already_consumed", "PLAN_CONSUMPTION",
+                        "the readiness verdict does not report which plan it inspected, so there "
+                        "is no plan identity to check against the consumed history")]
+    plans = set(history.get("consumed_plan_ids") or [])
+    approvals = set(history.get("consumed_approval_ids") or [])
+    requests = set(history.get("consumed_request_ids") or [])
+    hits = []
+    if plan_id in plans:
+        hits.append("plan_id %s" % plan_id)
+    if view["request_id"] and view["request_id"] in requests:
+        hits.append("request_id %s" % view["request_id"])
+    if plan_id in approvals:
+        hits.append("approval for plan_id %s" % plan_id)
+    if hits:
+        return [refused("plan_not_already_consumed", "PLAN_CONSUMPTION",
+                        "deployment_plan_or_approval_already_consumed",
+                        "the live channel has already consumed %s" % ", ".join(hits),
+                        observed={"history_entries": len(plans) + len(approvals) + len(requests)})]
+    return [passed("plan_not_already_consumed", "PLAN_CONSUMPTION",
+                   "neither this plan nor this approval appears in the consumed history")]
+
+
+# --------------------------------------------------------------------------- #
+# stage 4 -- the readiness verdict
+# --------------------------------------------------------------------------- #
+def load_readiness(path):
+    document, _raw = read_json(path, limit=1024 * 1024)
+    if not isinstance(document, dict) or document.get("contract") != READINESS_CONTRACT:
+        raise Refuse("not_a_deploy_readiness_document")
+    verdict = document.get("verdict")
+    if not isinstance(verdict, dict) or verdict.get("deploy_ready") not in ("YES", "NO", "UNKNOWN"):
+        raise Refuse("deploy_readiness_verdict_missing")
+    boundary = document.get("authority_boundary")
+    if not isinstance(boundary, dict) or set(boundary) != set(READINESS_BOUNDARY):
+        raise Refuse("deploy_readiness_authority_fields")
+    for key, expected in READINESS_BOUNDARY.items():
+        if boundary[key] is not expected:
+            raise Refuse("deploy_readiness_claims_authority:%s" % key)
+    gates = document.get("gates")
+    if not isinstance(gates, list) or not gates:
+        raise Refuse("deploy_readiness_gates_missing")
+    return document
+
+
+def evaluate_readiness(document, at):
+    """One check per gate. A gate that is not PASS becomes a blocking check."""
+    entries, by_name = [], {}
+    for gate in document["gates"]:
+        if not isinstance(gate, dict) or not isinstance(gate.get("gate"), str):
+            raise Refuse("deploy_readiness_gate_malformed")
+        by_name[gate["gate"]] = gate
+    # RELEASE_GATES is deliberately absent: the four product-release declarations were
+    # removed from the deploy contract, so a readiness verdict that still reported one
+    # would be reporting on product acceptance rather than deployability.
+    for name in ("DEPLOYMENT_PLAN", "APPROVED_CANDIDATE", "PACKAGE_BINDING", "CURRENT_RUNTIME",
+                 "HUMAN_APPROVAL", "TEST_PR", "VERIFY", "SOURCE_BINDING",
+                 "LIVE_DEPLOY_MODE", "DEPLOYMENT_AUTHORIZATION", "CANARY",
+                 "BRIDGE_ACCEPTANCE"):
+        if name not in by_name:
+            raise Refuse("deploy_readiness_gate_missing:%s" % name)
+    for gate in document["gates"]:
+        name = gate["gate"]
+        state = gate.get("state")
+        if state not in ("PASS", "FAIL", "UNKNOWN"):
+            raise Refuse("deploy_readiness_gate_state:%s" % name)
+        # Taken from the readiness verdict itself: if that contract says a gate
+        # blocks, this component must not treat it as advice.
+        advisory = gate.get("mandatory") is False
+        reason = str(gate.get("reason") or "")
+        observed = gate.get("observed")
+        if state == "PASS":
+            entries.append(new_check("readiness:%s" % name, "READINESS", "PASS", reason,
+                                     advisory=advisory, observed=observed))
+        else:
+            entries.append(new_check("readiness:%s" % name, "READINESS", state, reason,
+                                     code=name, origin="DEPLOY_READINESS_GATE",
+                                     advisory=advisory, observed=observed))
+    return entries, by_name
+
+
+def candidate_for(view, by_name, checks):
+    """Build the non-executable candidate, taking every value from the approved plan."""
+    def observed(name, field):
+        gate = by_name.get(name) or {}
+        value = (gate.get("observed") or {})
+        return value.get(field) if isinstance(value, dict) else None
+
+    plan_id = observed("DEPLOYMENT_PLAN", "plan_id")
+    source_commit = observed("APPROVED_CANDIDATE", "source_commit")
+    image_id = observed("PACKAGE_BINDING", "image_id")
+    expected = observed("CURRENT_RUNTIME", "image_config_id")
+    missing = [label for label, value in (("plan_id", plan_id), ("source_commit", source_commit),
+                                         ("candidate_image_id", image_id))
+               if not value]
+    if missing:
+        # The verdict said YES but did not expose what it approved, so no candidate
+        # can be described. That is a refusal, not a silently empty candidate.
+        return None, [refused("candidate_identity", "READINESS", "candidate_fields",
+                              "the readiness verdict did not expose %s, so the candidate it "
+                              "approved cannot be described" % ", ".join(missing))]
+    return {
+        "kind": "TASK_CANDIDATE",
+        "task_id_proposal": "go-boss-deploy-" + digest(view)[:12],
+        "action_id": DEPLOY_ACTION,
+        "environment": ENVIRONMENT,
+        "plan_id": plan_id,
+        "source_commit": source_commit,
+        "candidate_image_id": image_id,
+        "expected_current_image_id": expected,
+        "parameters_source": "APPROVED_PLAN_BUNDLE",
+        "executable": False,
+        "signed": False,
+        "publish_authorized": False,
+        "signature": None,
+    }, []
+
+
+# --------------------------------------------------------------------------- #
+# the document
+# --------------------------------------------------------------------------- #
+def deployment_plan_id(document):
+    """The plan the readiness verdict says it inspected, as the verdict reports it."""
+    for gate in document.get("gates") or []:
+        if isinstance(gate, dict) and gate.get("gate") == "DEPLOYMENT_PLAN":
+            observed = gate.get("observed")
+            if isinstance(observed, dict) and isinstance(observed.get("plan_id"), str):
+                return observed["plan_id"]
+    return None
+
+
+def dry_run(request_path, readiness_path, store, history_path, at, generated_at, checks):
+    readiness = load_readiness(readiness_path)
+    plan_id = deployment_plan_id(readiness)
+    history = None
+    if history_path:
+        history, _raw = read_json(history_path, limit=1024 * 1024)
+        if not isinstance(history, dict):
+            raise Refuse("consumed_history_not_an_object")
+
+    entries, view = evaluate_request(request_path, checks, at)
+    entries += evaluate_identity(view, store, checks)
+    entries += evaluate_consumption(view, history, plan_id, checks)
+    readiness_checks, by_name = evaluate_readiness(readiness, at)
+    entries += readiness_checks
+
+    blocking = [entry for entry in entries if not entry["advisory"]]
+    failed = [entry for entry in blocking if entry["state"] == "FAIL"]
+    unproven = [entry for entry in blocking if entry["state"] == "UNKNOWN"]
+
+    candidate = None
+    if failed:
+        outcome = "REJECTED"
+        reason = "the rehearsal refused on: %s" % ", ".join(e["reason_code"] for e in failed)
+    elif unproven:
+        outcome = "UNPROVEN"
+        reason = ("nothing refused the Request, but the rehearsal could not establish: %s, so this "
+                  "is not a pass" % ", ".join(e["check"] for e in unproven))
+    else:
+        candidate, extra = candidate_for(view, by_name, checks)
+        entries += extra
+        if candidate is None:
+            # The verdict said YES but could not say what it approved. That is a
+            # refusal, and it must appear in the decision, not only in the checks.
+            failed = [entry for entry in extra if entry["state"] == "FAIL"]
+            outcome = "REJECTED"
+            reason = "the readiness verdict approved a candidate it could not describe"
+        else:
+            outcome = "TASK_CANDIDATE"
+            reason = ("the Request would be accepted: every blocking check passed and a "
+                      "non-executable candidate was produced. No Task was created, signed or "
+                      "published, and this is not an approval")
+
+    replay = any(entry["check"] == "request_not_already_dry_run" and entry["state"] == "FAIL"
+                 for entry in entries)
+    record_id = None
+    written = False
+    if store is not None and view["request_id"]:
+        # Keyed on the request identity alone, so re-rehearsing the same Request
+        # maps to the same record file and writes nothing: the first observation
+        # stands and the second is refused as a replay.
+        record_id = digest({"request_id": view["request_id"], "plan_id": plan_id,
+                            "request_sha256": view["sha256"]})[:16]
+        record = {"schema_version": "1", "record_id": record_id, "outcome": outcome,
+                  "request_id": view["request_id"], "plan_id": plan_id,
+                  "request_sha256": view["sha256"], "observed_at": iso(at),
+                  "refused": [e["reason_code"] for e in failed],
+                  "unproven": [e["check"] for e in unproven],
+                  "consumes_nothing": True,
+                  "note": ("a rehearsal record. It consumes no plan and no approval: only the live "
+                           "channel does that")}
+        folder = pathlib.Path(store)
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / ("%s--%s.json" % (view["request_id"], record_id))
+        if not path.exists():
+            path.write_bytes(canonical(record) + b"\n")
+            written = True
+
+    return {
+        "schema_version": "1",
+        "contract": CONTRACT_NAME,
+        "scope": "READ_ONLY_DEPLOY_DRY_RUN",
+        "authority": "DERIVED_NON_AUTHORITATIVE",
+        "generated_at": iso(generated_at),
+        "as_of": iso(at),
+        "decision": {"outcome": outcome, "reason": reason,
+                     "refused": [e["reason_code"] for e in failed],
+                     "unproven": [e["check"] for e in unproven],
+                     "task_published": False, "signed": False, "deploy_performed": False},
+        "request": view,
+        "checks": entries,
+        "candidate": candidate,
+        "record": {"store": "DRY_RUN_STORE" if store is not None else None,
+                   "written": written, "record_id": record_id, "replayed": replay,
+                   "consumes_nothing": True,
+                   "note": ("records are append-only observations. A replay is refused rather than "
+                            "silently re-rehearsed; nothing is ever consumed")},
+        "authority_boundary": dict(AUTHORITY_BOUNDARY),
+        "notes": [
+            "A TASK_CANDIDATE is not a Task. It is unsigned, carries no nonce, has no validity "
+            "window, cannot be published and cannot be executed.",
+            "DEPLOY_PERFORMED is false in every outcome, including a legal one.",
+            "Every value in a candidate comes from the approved plan the readiness verdict read. "
+            "This component accepts no image, service, path, environment or command from a caller.",
+            "A refusal reason here is a token the Boss Request Bridge can itself raise, or the "
+            "name of a readiness gate. No new refusal vocabulary is invented.",
+        ],
+    }
+
+
+def run_selftest():
+    """The repertoire's own rules, on synthetic inputs, with no live contact."""
+    import tempfile
+    failures = []
+
+    def check(name, condition, detail=""):
+        if condition:
+            print("PASS  %s" % name)
+        else:
+            failures.append(name)
+            print("FAIL  %s %s" % (name, detail))
+
+    here = ROOT
+    contract = json.loads((here / CONTRACT_FILE).read_text(encoding="utf-8"))
+    table = checks = Checks(here / CONTRACT_FILE)
+    check("contract_loads", sorted(checks.outcomes) == ["REJECTED", "TASK_CANDIDATE", "UNPROVEN"])
+    # The floor follows the table: the Request no longer carries a plan_id, so the
+    # request_plan_id_format check is gone with the field it validated.
+    check("request_check_table_is_in_the_contract",
+          len(checks.request_checks) >= 15, len(checks.request_checks))
+    check("every_request_check_names_a_token",
+          all(entry.get("token") for entry in checks.request_checks))
+    check("every_check_token_is_unique",
+          len({entry["token"] for entry in checks.request_checks}) == len(checks.request_checks))
+    check("officially_the_candidate_is_not_a_task",
+          AUTHORITY_BOUNDARY["candidate_is_a_task"] is False
+          and AUTHORITY_BOUNDARY["can_sign"] is False
+          and AUTHORITY_BOUNDARY["can_publish_task"] is False)
+    check("the_contract_forbids_publishing_a_task",
+          any("Publishing, creating or signing a real DEPLOY Task" in line
+              for line in contract["x-go-forbidden"]))
+
+    with tempfile.TemporaryDirectory() as work:
+        root = pathlib.Path(work)
+        requests = root / "requests"
+        requests.mkdir()
+        store = root / "store"
+        commit = "a" * 40
+        request = {"schema_version": "1", "request_id": "rehearsal-one",
+                   "action_id": DEPLOY_ACTION, "environment": ENVIRONMENT,
+                   "requested_at": "2026-09-15T00:59:30Z"}
+        request_path = requests / "rehearsal-one.json"
+        request_path.write_text(json.dumps(request), encoding="utf-8")
+
+        readiness = {
+            "schema_version": "1", "contract": READINESS_CONTRACT,
+            "scope": "READ_ONLY_DEPLOY_READINESS", "authority": "DERIVED_NON_AUTHORITATIVE",
+            "generated_at": "2026-09-15T01:00:00Z", "as_of": "2026-09-15T01:00:00Z",
+            "verdict": {"deploy_ready": "YES", "reason": "synthetic", "mandatory_gates": 9,
+                        "failed": [], "unknown": [], "advisory_failed": []},
+            "gates": [
+                {"gate": "APPROVED_CANDIDATE", "mandatory": True, "state": "PASS",
+                 "reason": "synthetic", "observed": {"source_commit": commit}},
+                {"gate": "PACKAGE_BINDING", "mandatory": True, "state": "PASS",
+                 "reason": "synthetic", "observed": {"image_id": "sha256:" + "f" * 64}},
+                {"gate": "DEPLOYMENT_PLAN", "mandatory": True, "state": "PASS",
+                 "reason": "synthetic", "observed": {"plan_id": "release-one"}},
+                {"gate": "CURRENT_RUNTIME", "mandatory": True, "state": "PASS",
+                 "reason": "synthetic", "observed": {"image_config_id": "sha256:" + "e" * 64}},
+                {"gate": "TEST_PR", "mandatory": True, "state": "PASS", "reason": "synthetic"},
+                {"gate": "VERIFY", "mandatory": True, "state": "PASS", "reason": "synthetic"},
+                {"gate": "HUMAN_APPROVAL", "mandatory": True, "state": "PASS", "reason": "synthetic"},
+                {"gate": "SOURCE_BINDING", "mandatory": True, "state": "PASS", "reason": "synthetic"},
+                {"gate": "LIVE_DEPLOY_MODE", "mandatory": True, "state": "PASS",
+                 "reason": "synthetic"},
+                {"gate": "DEPLOYMENT_AUTHORIZATION", "mandatory": True, "state": "PASS",
+                 "reason": "synthetic"},
+                {"gate": "BRIDGE_ACCEPTANCE", "mandatory": True, "state": "PASS",
+                 "reason": "synthetic"},
+                {"gate": "CANARY", "mandatory": False, "state": "PASS", "reason": "synthetic"},
+                # A gate name the readiness contract does not declare, kept so the
+                # advisory path stays covered by a synthetic extra rather than by a
+                # retired real gate.
+                {"gate": "SYNTHETIC_ADVISORY", "mandatory": False, "state": "PASS",
+                 "reason": "synthetic"}],
+            "authority_boundary": dict(READINESS_BOUNDARY)}
+        readiness_path = root / "DEPLOY_READINESS.json"
+        readiness_path.write_text(json.dumps(readiness), encoding="utf-8")
+        history = root / "history.json"
+        history.write_text(json.dumps({"consumed_plan_ids": [], "consumed_approval_ids": [],
+                                       "consumed_request_ids": []}), encoding="utf-8")
+        at = parse_time("2026-09-15T01:00:00Z")
+
+        legal = dry_run(request_path, readiness_path, store, history, at, at, checks)
+        check("a_legal_request_produces_a_candidate",
+              legal["decision"]["outcome"] == "TASK_CANDIDATE", legal["decision"])
+        check("the_candidate_is_not_a_task",
+              legal["candidate"]["executable"] is False and legal["candidate"]["signed"] is False
+              and legal["candidate"]["signature"] is None
+              and legal["candidate"]["publish_authorized"] is False, legal["candidate"])
+        check("nothing_is_published_or_performed",
+              legal["decision"]["task_published"] is False and legal["decision"]["signed"] is False
+              and legal["decision"]["deploy_performed"] is False)
+        check("the_record_is_an_observation",
+              legal["record"]["written"] is True and legal["record"]["consumes_nothing"] is True)
+
+        replay = dry_run(request_path, readiness_path, store, history, at, at, checks)
+        check("a_replay_is_refused",
+              replay["decision"]["outcome"] == "REJECTED"
+              and replay["decision"]["refused"] == ["duplicate_request_id"], replay["decision"])
+
+        stale = dict(request, requested_at="2026-09-15T00:00:00Z", request_id="rehearsal-two")
+        stale_path = requests / "rehearsal-two.json"
+        stale_path.write_text(json.dumps(stale), encoding="utf-8")
+        stale_out = dry_run(stale_path, readiness_path, root / "store2", history, at, at, checks)
+        check("a_stale_request_is_refused",
+              stale_out["decision"]["refused"] == ["stale_or_future_request"],
+              stale_out["decision"])
+
+        bad_action = dict(request, action_id="HK_STAGING_VERIFY", request_id="rehearsal-three")
+        bad_path = requests / "rehearsal-three.json"
+        bad_path.write_text(json.dumps(bad_action), encoding="utf-8")
+        bad_out = dry_run(bad_path, readiness_path, root / "store3", history, at, at, checks)
+        check("another_action_is_refused_and_multiple_faults_are_all_reported",
+              set(bad_out["decision"]["refused"]) == {"action"},
+              bad_out["decision"]["refused"])
+
+        consumed = root / "history-consumed.json"
+        consumed.write_text(json.dumps({"consumed_plan_ids": ["release-one"],
+                                        "consumed_approval_ids": [],
+                                        "consumed_request_ids": []}), encoding="utf-8")
+        consumed_out = dry_run(request_path, readiness_path, root / "store4", consumed, at, at,
+                               checks)
+        check("a_consumed_plan_is_refused",
+              consumed_out["decision"]["refused"] == ["deployment_plan_or_approval_already_consumed"],
+              consumed_out["decision"])
+
+        no_history = dry_run(request_path, readiness_path, root / "store5", None, at, at, checks)
+        check("without_a_history_the_consumption_check_is_unproven",
+              no_history["decision"]["outcome"] == "UNPROVEN"
+              and not no_history["candidate"], no_history["decision"])
+
+        failing = json.loads(json.dumps(readiness))
+        for gate in failing["gates"]:
+            if gate["gate"] == "HUMAN_APPROVAL":
+                gate["state"] = "FAIL"
+        fail_path = root / "readiness-fail.json"
+        fail_path.write_text(json.dumps(failing), encoding="utf-8")
+        fail_out = dry_run(request_path, fail_path, root / "store6", history, at, at, checks)
+        check("a_missing_human_approval_is_refused",
+              fail_out["decision"]["refused"] == ["HUMAN_APPROVAL"], fail_out["decision"])
+        check("a_refusal_produces_no_candidate", fail_out["candidate"] is None)
+
+        advisory_only = json.loads(json.dumps(readiness))
+        for gate in advisory_only["gates"]:
+            if gate["gate"] == "SYNTHETIC_ADVISORY":
+                gate["state"] = "FAIL"
+        advisory_path = root / "readiness-advisory.json"
+        advisory_path.write_text(json.dumps(advisory_only), encoding="utf-8")
+        advisory_out = dry_run(request_path, advisory_path, root / "store7", history, at, at, checks)
+        check("a_gate_the_readiness_verdict_calls_advisory_never_blocks",
+              advisory_out["decision"]["outcome"] == "TASK_CANDIDATE", advisory_out["decision"])
+
+        # The same gate, FAILing, but declared mandatory by the readiness verdict:
+        # the flag is derived, so this must block.
+        mandatory_only = json.loads(json.dumps(readiness))
+        for gate in mandatory_only["gates"]:
+            if gate["gate"] == "SYNTHETIC_ADVISORY":
+                gate["state"] = "FAIL"
+                gate["mandatory"] = True
+        mandatory_path = root / "readiness-mandatory.json"
+        mandatory_path.write_text(json.dumps(mandatory_only), encoding="utf-8")
+        mandatory_out = dry_run(request_path, mandatory_path, root / "store8", history, at, at, checks)
+        check("a_gate_the_readiness_verdict_calls_mandatory_blocks",
+              mandatory_out["decision"]["outcome"] == "REJECTED"
+              and "SYNTHETIC_ADVISORY" in mandatory_out["decision"]["refused"],
+              mandatory_out["decision"])
+
+        # And the readiness contract itself must declare every gate mandatory. Read
+        # from the contract file rather than from the synthetic fixture above, which
+        # deliberately keeps a non-mandatory gate so the advisory path stays covered.
+        readiness_contract = pathlib.Path(__file__).resolve().parents[3] / (
+            "control-plane/command-center-deploy-readiness-v1/contracts/"
+            "deploy_readiness_v1.schema.json")
+        declared = json.loads(readiness_contract.read_text(encoding="utf-8"))["x-go-gates"]
+        check("no_readiness_gate_is_declared_advisory",
+              all(value["mandatory"] is True
+                  for name, value in declared.items() if name != "note"),
+              [name for name, value in declared.items()
+               if name != "note" and value["mandatory"] is not True])
+
+    print("\nselftest: %s" % ("PASS" if not failures else "FAIL %s" % failures))
+    return 0 if not failures else 1
+
+
+def main(argv=None):
+    here = ROOT
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("command", choices=["dry-run", "selftest"])
+    parser.add_argument("--request", help="the DEPLOY Request file to rehearse")
+    parser.add_argument("--deploy-readiness", help="the read-only DEPLOY_READINESS.json")
+    parser.add_argument("--store", help="optional append-only dry-run record store")
+    parser.add_argument("--consumed-history",
+                        help="optional read-only export of what the live channel has consumed")
+    parser.add_argument("--out", help="directory to write DEPLOY_DRY_RUN.json into")
+    parser.add_argument("--now", help="the instant to rehearse at, so the output is reproducible")
+    parser.add_argument("--contract", default=str(here / CONTRACT_FILE))
+    args = parser.parse_args(argv)
+
+    if args.command == "selftest":
+        return run_selftest()
+    if not args.request or not args.deploy_readiness or not args.out:
+        parser.error("dry-run requires --request, --deploy-readiness and --out")
+    at = parse_time(args.now, "now") if args.now else dt.datetime.now(dt.timezone.utc)
+    try:
+        document = dry_run(args.request, args.deploy_readiness, args.store, args.consumed_history,
+                           at, dt.datetime.now(dt.timezone.utc), Checks(args.contract))
+    except Refuse as exc:
+        print("REFUSED=%s" % exc)
+        return 2
+    out = pathlib.Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / OUTPUT_NAME).write_bytes(canonical(document) + b"\n")
+    print("DECISION=%s" % document["decision"]["outcome"])
+    print("REFUSED=%s" % ",".join(document["decision"]["refused"]) or "NONE")
+    print("UNPROVEN=%s" % ",".join(document["decision"]["unproven"]) or "NONE")
+    print("CANDIDATE=%s" % ("YES" if document["candidate"] else "NO"))
+    print("TASK_PUBLISHED=NO")
+    print("SIGNED=NO")
+    print("DEPLOY_PERFORMED=NO")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

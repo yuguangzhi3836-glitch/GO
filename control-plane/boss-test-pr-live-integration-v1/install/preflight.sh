@@ -29,7 +29,7 @@ case "$role" in
         test "$(sha256sum /etc/go-hk-agent/agent.json | awk '{print $1}')" = "82ab805b921081ec0299ffa20576963476e12f57e711438f46ada2342a7c7b30"
         test "$(sha256sum /opt/go-hk-agent-rebuilt/hk_agent/deployment_actions.py | awk '{print $1}')" = "7400ef03caf9473db73eccca5206233c81707ae742547489f0ed93728e5b323e"
         test ! -e /opt/go-hk-agent-rebuilt/hk_agent/test_pr.py
-        test ! -e /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v1
+        test ! -e /usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2
         test ! -e /var/lib/go-hk-test-pr
         test ! -e /etc/systemd/system/go-hk-agent.service.d/30-test-pr-docker-access.conf
         ;;
@@ -40,6 +40,14 @@ case "$role" in
         test -d /var/lib/go-hk-test-pr/builds && test ! -L /var/lib/go-hk-test-pr/builds
         test "$(stat -c %u:%g /var/lib/go-hk-test-pr/builds)" = "$(id -u go-hk-agent):$(id -g go-hk-agent)"
         test "$(stat -c %a /var/lib/go-hk-test-pr/builds)" = 700
+        # The sealed-artifact store is written by the agent and read by the Hong
+        # Kong executor as root, so its owner is the writer, never the reader.
+        test -d /var/lib/go-hk-artifacts && test ! -L /var/lib/go-hk-artifacts
+        test "$(stat -c %u:%g /var/lib/go-hk-artifacts)" = "$(id -u go-hk-agent):$(id -g go-hk-agent)"
+        test "$(stat -c %a /var/lib/go-hk-artifacts)" = 700
+        test -d /var/lib/go-hk-artifacts/objects && test ! -L /var/lib/go-hk-artifacts/objects
+        test "$(stat -c %u:%g /var/lib/go-hk-artifacts/objects)" = "$(id -u go-hk-agent):$(id -g go-hk-agent)"
+        test "$(stat -c %a /var/lib/go-hk-artifacts/objects)" = 700
         test -f /etc/systemd/system/go-hk-agent.service.d/30-test-pr-docker-access.conf
         test "$(stat -c %u:%g /etc/systemd/system/go-hk-agent.service.d/30-test-pr-docker-access.conf)" = 0:0
         test "$(stat -c %a /etc/systemd/system/go-hk-agent.service.d/30-test-pr-docker-access.conf)" = 644

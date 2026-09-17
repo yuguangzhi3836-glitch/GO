@@ -45,6 +45,7 @@ suite = unittest.defaultTestLoader.loadTestsFromModule(test_state_projection)
 result = unittest.TextTestRunner(stream=log, verbosity=2).run(suite)
 
 projection = test_state_projection.sp
+identity = projection.IdentityContract(str(projection.default_identity_contract_path()))
 summary = {
     "schema_version": "1",
     "contract": projection.CONTRACT_STATUS,
@@ -59,6 +60,16 @@ summary = {
     "production": "NOT_ACCESSED",
     "live_control_plane_state": "NOT_ACCESSED",
     "crypto_keys": "EPHEMERAL_SYNTHETIC_ONLY",
+    "verifier_identity_contract": "LOADED" if identity.available else "UNRESOLVED",
+    "published_task_identity_fingerprint": (
+        (identity.expected(projection.ROLE_TASK) or {}).get("ssh_sha256")),
+    "published_evidence_identity_fingerprint": (
+        (identity.expected(projection.ROLE_EVIDENCE) or {}).get("ssh_sha256")),
+    "published_identities_are_distinct": bool(
+        identity.available
+        and identity.expected(projection.ROLE_TASK)["ssh_sha256"]
+        != identity.expected(projection.ROLE_EVIDENCE)["ssh_sha256"]),
+    "published_private_keys": "NONE",
     "application_changed": "NO",
     "files": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
               for p in sorted(ROOT.rglob("*"))

@@ -18,13 +18,13 @@
 | go_deploy_request.py | /usr/local/libexec/go_deploy_request.py | root:root 0644 |
 | config.json | /etc/go-command-center/boss-request-bridge-v1.json | root:root 0600 |
 
-模块须与 Bridge 同目录。安装时由操作人员暂停既有轮询、确认没有正在处理的任务，备份原始文件与 ledger 后原子替换。v4 模板部署开关保持 false；核对当前 VERIFY/TEST_PR 配置和依赖均已存在后再恢复既有 timer。不得删除重放记录，也不修改香港 Agent/执行器、Compose、数据库或服务拓扑。
+模块须与 Bridge 同目录。安装时由操作人员暂停既有轮询、确认没有正在处理的任务，备份原始文件与 ledger 后原子替换。v4 模板只声明 `deployment_authorization`（本修订只实现 `request`），它不授予任何部署权限；注意新的配置字段集与旧配置不兼容，**旧配置会被整体拒绝（fail-closed）**，所以本修订按 3 文件成套安装：Bridge、`go_deploy_request.py`、`plan_derivation.py` 与 `config.json`。核对当前 VERIFY/TEST_PR/CANARY 配置和依赖均已存在后再恢复既有 timer。不得删除重放记录，也不修改香港 Agent/执行器、Compose、数据库或服务拓扑。
 
 若需要撤回安装，暂停轮询并保留新旧 ledger 全量记录，恢复原先经过核实的 Bridge/配置，再由操作人员决定恢复轮询。此处仅是入口文件恢复，不是应用自动回滚。
 
 ## 启用与真实验收
 
-安装完成不等于可部署。取得具体版本的部署授权和全部发布门禁 PASS 后，先使用真实 CANARY 与近期 VERIFY 回执登记短期签名计划，执行只读 `--check-plan`，再由授权操作人员将 `deployment_requests_enabled` 置为 true，并在允许窗口提交唯一 Request PR。
+安装完成不等于可部署，也不再需要任何人"打开部署开关"——没有这个开关了。一次部署的授权就是那份由授权身份开的合法 DEPLOY Request：指挥中心在同一个 tick 内读平台事实、派生并登记计划、过既有校验器、签发 DEPLOY Task。因此正确的顺序是**先跑 CANARY（≤30 分钟）→ 再跑预检 VERIFY（≤5 分钟）→ 再由授权身份提交唯一 DEPLOY Request**，而不是提前登记计划或提前开任何开关。命令行为只读复核：`--check-plan <plan_id> --approval-identity <login> --request-sha256 <hex>`。
 
 验收分别记录：
 
@@ -33,4 +33,4 @@
 3. 香港对应 Task/nonce 的签名 SUCCESS/DEPLOY_OK 回执和 DEPLOY_RECORD_V2 的 ID/SHA256。
 4. 部署后另一份新鲜只读 VERIFY 的签名成功回执、固定八服务运行镜像和受保护非目标状态。
 
-源码 CI 只证明请求入口和归档适配器的隔离兼容。香港真实异镜像部署、完成后的 VERIFY、银行资金或业务最终状态并未在本轮验收。Task 已发布只代表请求被受理，不应向 Boss 显示“部署完成”。关闭开关只阻止尚未发布的新部署，不能撤销已经进入 Tasks 仓库的签名任务；已发布任务必须按原有运维程序处理。
+源码 CI 只证明请求入口和归档适配器的隔离兼容。香港真实异镜像部署、完成后的 VERIFY、银行资金或业务最终状态并未在本轮验收。Task 已发布只代表请求被受理，不应向 Boss 显示“部署完成”。把 `deployment_authorization` 置为 `request` 以外的值是应急停止：它只阻止尚未发布的新部署，不能撤销已经进入 Tasks 仓库的签名任务；已发布任务必须按原有运维程序处理。

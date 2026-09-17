@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-state-publication-v1/contracts/state_publication_v1.schema.json",
+  "title": "GO derived Control State publication target V1",
+  "description": "The stable target the derived Control State is published to, what it must record, and what it may never become. It carries no signature, no Task and no executor parameter: the derived state answers questions, it does not issue instructions.",
+  "type": "object",
+  "required": ["layout", "pointer", "manifest", "publication_rules", "authority_boundary"],
+  "properties": {
+    "layout": {
+      "type": "object",
+      "description": "The whole target. A reader needs the first entry and nothing else.",
+      "properties": {
+        "CURRENT.json": {"const": "pointer; the only entry point a reader follows"},
+        "runs/<generated_at>_<content_digest12>/": {"const": "immutable snapshot; never rewritten after publication"},
+        "runs/<...>/PUBLICATION_MANIFEST.json": {"const": "provenance for that snapshot"},
+        "INDEX.json": {"const": "append-only list of published snapshots"},
+        "LAST_FAILURE.json": {"const": "present only while the most recent attempt failed"}
+      }
+    },
+    "pointer": {
+      "type": "object",
+      "required": ["schema_version", "kind", "run_id", "path", "generated_at", "published_at",
+                   "content_digest", "previous_run_id", "execution_authority",
+                   "read_only_for_consumers"],
+      "properties": {
+        "kind": {"const": "GO-CONTROL-STATE-CURRENT-POINTER"},
+        "execution_authority": {"const": false},
+        "read_only_for_consumers": {"const": true},
+        "status_reported_by_reader": {
+          "description": "The state of the PUBLICATION, derived by the reader from the pointer's age and from LAST_FAILURE.json. Never a re-derivation of control state.",
+          "enum": ["CURRENT", "STALE", "FAILED", "UNKNOWN"],
+          "x-meaning": {
+            "CURRENT": "a validated snapshot is published and inside the reader's freshness window",
+            "STALE": "a validated snapshot exists but the pointer is older than the freshness window",
+            "FAILED": "the most recent publication attempt failed after the last success",
+            "UNKNOWN": "no publication has ever been made, or no failure record explains the absence"
+          }
+        }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "description": "Provenance. Every published snapshot can be traced back to the exact inputs that produced it.",
+      "required": ["schema_version", "kind", "generated_at", "published_at", "projector_revision",
+                   "source", "documents", "content_digest", "execution_authority",
+                   "read_only_for_consumers", "consumer_contract"],
+      "properties": {
+        "kind": {"const": "GO-CONTROL-STATE-PUBLICATION"},
+        "projector_revision": {
+          "type": "string",
+          "description": "Commit of the projector that produced the documents. Required: an unattributed publication is refused."
+        },
+        "source": {
+          "type": "object",
+          "description": "At least one source head must be pinned; a publication with no pinned input is refused.",
+          "required": ["tasks", "evidence", "go"]
+        },
+        "documents": {
+          "type": "array",
+          "description": "One sha256 entry per projection document, recomputed and compared on every read.",
+          "items": {"type": "object", "required": ["name", "sha256"]}
+        },
+        "execution_authority": {"const": false}
+      }
+    },
+    "publication_rules": {
+      "type": "object",
+      "properties": {
+        "deterministic_rebuild": {"const": "run id is <generated_at>_<content_digest12>, and content_digest covers the four projection documents only, so identical inputs must collide"},
+        "idempotent_republish": {"const": "re-publishing identical content leaves the snapshot untouched; only published_at advances"},
+        "run_id_collision": {"const": "the same run id with different content is a failure, never an overwrite"},
+        "two_phase_commit": {"const": "the snapshot is written and round-trip verified first; the pointer advances only afterwards, atomically"},
+        "failure_never_advances": {"const": "a failed attempt leaves CURRENT.json byte-identical and records LAST_FAILURE.json"},
+        "no_hand_editing": {"const": "every read recomputes the document digests and compares them with the manifest, so an edited snapshot is detected"},
+        "portability": {"const": "a projection or manifest containing a workstation, user or temp path is refused"}
+      }
+    },
+    "authority_boundary": {
+      "type": "object",
+      "properties": {
+        "is_execution_authority": {"const": false},
+        "can_trigger_executor": {"const": false},
+        "holds_private_key": {"const": false},
+        "accepts_hand_edited_state": {"const": false},
+        "touches_production": {"const": false},
+        "may_edit_a_projection_document": {"const": false},
+        "note": {"const": "Publication is a one-way copy of what the projector derived. It carries no signature, no Task, no nonce and no executor parameter; a test asserts those keys are refused in every file the publisher authors."}
+      }
+    },
+    "x-go-gap": "This contract defines the target and the publisher. It does not install a scheduled publication: CC V1 adds no systemd timer or workflow that publishes to the target branch. Until an operator wires it, CURRENT.json does not exist, the reader reports UNKNOWN, and the committed PROJECTION_20260914 snapshot remains a manual record rather than a published state."
+  }
+}

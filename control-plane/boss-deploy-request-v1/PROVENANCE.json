@@ -1,6 +1,7 @@
 {
   "schema_version": "1",
-  "candidate": "boss-deploy-request-v1 / bridge 1.4.0-candidate",
+  "candidate": "boss-deploy-request-v1 / bridge 1.5.0-control-plane-health",
+  "candidate_revision_note": "Adds a read-only CONTROL_PLANE_HEALTH Request -> signed Task path so fresh signed liveness Evidence can exist (CC V1-03 / #98). Untrusted Request, five common fields only, fixed empty parameters, signed with the existing task identity because the Task identity is not an approval. Dispatch is now explicit and fail-closed: before this revision an unnamed action fell through into derive(), i.e. it silently became a VERIFY. VERIFY / TEST_PR / DEPLOY permissions, the deploy switch, the approved-plan contract and the release budget are unchanged, and the channel action contract is compared as one exact four-member list.",
   "repository": "yuguangzhi3836-glitch/GO",
   "base_main_commit": "9645c6f522544d0751ee658e0ab9f131043e7df2",
   "bridge_sources": [

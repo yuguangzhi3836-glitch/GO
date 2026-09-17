@@ -1,0 +1,11 @@
+[Unit]
+Description=Decide whether a read-only liveness probe is due, and place one in the outbox
+
+[Timer]
+OnBootSec=120s
+OnUnitActiveSec=300s
+Persistent=false
+Unit=go-liveness-producer.service
+
+[Install]
+WantedBy=timers.target

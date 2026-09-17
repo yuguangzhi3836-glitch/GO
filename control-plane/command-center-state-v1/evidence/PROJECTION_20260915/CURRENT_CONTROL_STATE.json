@@ -1,0 +1,3731 @@
+{
+  "anomalies": [
+    {
+      "detail": "observed parameters ['candidate_image_id', 'expected_current_image_id', 'release_id'] are not the current HK_STAGING_CANARY contract",
+      "kind": "TASK_PARAMETER_CONTRACT_DRIFT",
+      "ref": "go-boss02-canary-20260909T014228979291Z"
+    }
+  ],
+  "authority": "DERIVED_NON_AUTHORITATIVE",
+  "authority_note": "Derived projection only. The Signed Task is the only Execution Authority and the Signed Evidence is the only proof. This document never authorizes an operation, and it adds no execution capability.",
+  "contract": "CURRENT_CONTROL_STATE",
+  "control_state": {
+    "active_stuck_tasks": [],
+    "active_tasks": [],
+    "deploy_capability": {
+      "evidence": [],
+      "reason": "the DEPLOY capability exists in the repository and its request enablement is fail-closed. This is a capability classification, not a readiness evaluation, and it must never be read as one",
+      "state": "OBSERVED",
+      "value": {
+        "capability": "CAPABILITY_PRESENT_BUT_DISABLED",
+        "readiness_evaluation": "NOT_IN_SCOPE",
+        "request_enabled": false
+      }
+    },
+    "deploy_readiness": {
+      "evidence": [],
+      "reason": "no deploy readiness verdict was supplied. The evaluator is a separate read-only component, so without its document this projection states nothing about readiness",
+      "state": "UNKNOWN",
+      "value": null
+    },
+    "deploy_readiness_gates": [],
+    "failed_or_invalid_tasks": [
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "lifecycle": "POLICY_HOLD",
+        "reason": "the task signature does not verify against the Command Center task verifier identity",
+        "source_path": "tasks/go-m3-042-e2e-health-20260905T151233846901Z.json",
+        "task_id": "go-m3-042-e2e-health-20260905T151233846901Z"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "lifecycle": "POLICY_HOLD",
+        "reason": "the task signature does not verify against the Command Center task verifier identity",
+        "source_path": "tasks/go-m3-042-e2e-health-20260905T152130238921Z.json",
+        "task_id": "go-m3-042-e2e-health-20260905T152130238921Z"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "lifecycle": "POLICY_HOLD",
+        "reason": "the task signature does not verify against the Command Center task verifier identity",
+        "source_path": "tasks/go-m3-042-e2e-health-20260906T011815978751Z.json",
+        "task_id": "go-m3-042-e2e-health-20260906T011815978751Z"
+      },
+      {
+        "action_id": "HK_STAGING_CANARY",
+        "lifecycle": "POLICY_HOLD",
+        "reason": "this Task predates the current Control Plane parameter contract; it is preserved for lineage but cannot be evaluated or counted as proof",
+        "source_path": "tasks/go-boss02-canary-20260909T014228979291Z.json",
+        "task_id": "go-boss02-canary-20260909T014228979291Z"
+      }
+    ],
+    "health": {
+      "age_seconds": 164911,
+      "as_of": "2026-09-13T03:43:27Z",
+      "evidence": [
+        "evidence/go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json"
+      ],
+      "reason": "the newest VERIFY Evidence reports VERIFY_OK. This is the last proven moment, not present-moment liveness",
+      "stale": true,
+      "state": "PROVEN",
+      "value": "HEALTHY_AS_OF_LAST_PROBE"
+    },
+    "historical_expired_tasks": [
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "expires_at": "2026-09-04T15:58:27.299100+00:00",
+        "issued_at": "2026-09-04T15:13:27.299084+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-m3-05-cp-health-20260904-001.json",
+        "task_id": "go-m3-05-cp-health-20260904-001"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "expires_at": "2026-09-05T01:11:11.557002+00:00",
+        "issued_at": "2026-09-05T00:51:11.556986+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-m3-06-auto-health-20260905-001.json",
+        "task_id": "go-m3-06-auto-health-20260905-001"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "expires_at": "2026-09-06T05:45:59.385419+00:00",
+        "issued_at": "2026-09-06T01:45:59.385419+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-m3-043-e2e-health-20260906T014559385419Z.json",
+        "task_id": "go-m3-043-e2e-health-20260906T014559385419Z"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "expires_at": "2026-09-06T10:48:14.284789+00:00",
+        "issued_at": "2026-09-06T06:48:14.284789+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-m3-044-e2e-health-20260906T064814284789Z.json",
+        "task_id": "go-m3-044-e2e-health-20260906T064814284789Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-07T04:54:59.419342+00:00",
+        "issued_at": "2026-09-07T00:54:59.419342+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss02-verify-20260907T005459419342Z.json",
+        "task_id": "go-boss02-verify-20260907T005459419342Z"
+      }
+    ],
+    "hk_agent_last_activity": {
+      "evidence": [
+        "evidence/go-m3-auto-health-20260906T115227992322Z-jzoWVgooSJWTldTOGkT57zLvcCOiQAGS.json"
+      ],
+      "reason": "the newest signed CONTROL_PLANE_HEALTH Evidence, at any age. Activity is not liveness",
+      "state": "PROVEN",
+      "value": {
+        "age_seconds": 739113,
+        "agent_version": "0.4.5-rebuilt",
+        "completed_at": "2026-09-06T12:13:25Z",
+        "hostname": "iZj6ccs8t04f1p4d8pe69zZ"
+      }
+    },
+    "hk_agent_liveness": {
+      "age_seconds": 739113,
+      "evidence": [
+        "evidence/go-m3-auto-health-20260906T115227992322Z-jzoWVgooSJWTldTOGkT57zLvcCOiQAGS.json"
+      ],
+      "last_seen": {
+        "agent_version": "0.4.5-rebuilt",
+        "completed_at": "2026-09-06T12:13:25Z",
+        "hostname": "iZj6ccs8t04f1p4d8pe69zZ"
+      },
+      "reason": "the newest signed liveness Evidence is 739113 s old, outside the 1800 s window: a past success is not proof of current liveness",
+      "state": "UNKNOWN",
+      "value": null
+    },
+    "hk_runtime_identity": {
+      "evidence": [
+        "evidence/go-m3-auto-health-20260906T115227992322Z-jzoWVgooSJWTldTOGkT57zLvcCOiQAGS.json"
+      ],
+      "reason": "the canonical runtime host and the host that signed liveness Evidence are the same instance",
+      "state": "OBSERVED",
+      "value": {
+        "host_matches_last_probe": true,
+        "last_probe_host": "iZj6ccs8t04f1p4d8pe69zZ",
+        "normalized": "i-j6ccs8t04f1p4d8pe69z",
+        "pointer_host": "i-j6ccs8t04f1p4d8pe69z"
+      }
+    },
+    "informational": {
+      "contract": false,
+      "final_release_gate": {
+        "evidence": [],
+        "reason": "release acceptance is a separate axis from the business runtime and the Control Plane",
+        "state": "HOLD",
+        "value": "HOLD"
+      },
+      "hk_deploy_gate": {
+        "evidence": [],
+        "reason": "deployment authorization is not derived from the existence of a DEPLOY capability, and this contract does not evaluate deployment readiness",
+        "state": "HOLD",
+        "value": "HOLD"
+      },
+      "note": "recorded facts only. Deploy readiness and rollback readiness are explicitly out of scope for this contract",
+      "production": {
+        "evidence": [],
+        "reason": "Production has not been touched and is out of scope for the Control Plane",
+        "state": "HOLD",
+        "value": "HOLD"
+      },
+      "release_gates": {
+        "final_release": "HOLD",
+        "hk_deploy": "HOLD",
+        "production": "HOLD",
+        "runtime_status": "ACTIVE"
+      },
+      "rollback_candidate_history": {
+        "evidence": [
+          "evidence/go-boss02-final-deploy-20260911T025420Z-ZeLZ20u_3G163YURk-E55WXArlvCrupa.json"
+        ],
+        "reason": "rollback eligibility is a candidate set derived from successful DEPLOY Evidence. It is not an approval and not a signed ROLLBACK task",
+        "state": "OBSERVED",
+        "value": {
+          "newest_completed_at": "2026-09-11T02:57:16Z",
+          "releases": [
+            "go-boss02-deploy-r4-20260909T131418835006Z",
+            "go-boss02-deploy-v2-20260910T030827Z",
+            "go-boss02-deploy-v2-r7-20260910T075319Z",
+            "go-boss02-final-deploy-20260911T025420Z"
+          ],
+          "source_deploy_task_id": "go-boss02-final-deploy-20260911T025420Z"
+        }
+      }
+    },
+    "last_evidence": {
+      "evidence": [
+        "evidence/go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json"
+      ],
+      "reason": "the newest signed Evidence on the control bus",
+      "state": "PROVEN",
+      "value": {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-13T03:43:27Z",
+        "task_id": "go-boss-request-verify-20260913T034140Z-b22f51784808"
+      }
+    },
+    "last_failure": {
+      "evidence": [
+        "tasks/go-boss-test-pr-52-c39d85ecbb02.json"
+      ],
+      "reason": "the most recent terminal non-success is an expiry, not a proven failure: the task reached its expiry with no Evidence, and that is now a meaningful statement \u2014 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed rather than an unpublished failure",
+      "state": "OBSERVED",
+      "value": {
+        "action_id": "HK_STAGING_TEST_PR",
+        "at": "2026-09-15T01:31:31.528261Z",
+        "kind": "EXPIRED_WITHOUT_EVIDENCE",
+        "lifecycle": "TASK_EXPIRED",
+        "task_id": "go-boss-test-pr-52-c39d85ecbb02",
+        "value": "TASK_EXPIRED"
+      }
+    },
+    "last_request": {
+      "evidence": [
+        "requests/boss-mobile-verify-e2e-20260911-01.json"
+      ],
+      "reason": "the newest Request file observed on a control-bus ref",
+      "state": "OBSERVED",
+      "value": "boss-mobile-verify-e2e-20260911-01"
+    },
+    "last_successful_deploy": {
+      "evidence": [
+        "evidence/go-boss02-final-deploy-20260911T025420Z-ZeLZ20u_3G163YURk-E55WXArlvCrupa.json"
+      ],
+      "reason": "the newest successful DEPLOY Evidence",
+      "state": "OBSERVED",
+      "value": "go-boss02-final-deploy-20260911T025420Z"
+    },
+    "last_task": {
+      "evidence": [
+        "tasks/go-boss-request-verify-20260915T011158Z-c9ccc0f13432.json"
+      ],
+      "reason": "the newest signed task of this class observed on the control bus",
+      "state": "PROVEN",
+      "value": {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-15T01:26:58.348122Z",
+        "issued_at": "2026-09-15T01:11:58.348122Z",
+        "lifecycle": "TASK_EXPIRED",
+        "task_id": "go-boss-request-verify-20260915T011158Z-c9ccc0f13432"
+      }
+    },
+    "live_verified_runtime": {
+      "evidence": [
+        "evidence/go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json"
+      ],
+      "reason": "the newest VERIFY Evidence names the image that was current at that moment. This is a point-in-time proof, not a continuous statement",
+      "state": "PROVEN",
+      "value": {
+        "age_seconds": 164911,
+        "image_config_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "verification_rank": "SIGNATURE_VERIFIED",
+        "verified_at": "2026-09-13T03:43:27Z"
+      }
+    },
+    "out_of_scope": {
+      "deploy_readiness_document": null,
+      "deploy_readiness_evaluation": "NOT_IN_SCOPE",
+      "note": "deploy readiness is evaluated read-only by control-plane/command-center-deploy-readiness-v1 from this state plus an optional operator-supplied bundle of live-host facts; it creates and publishes nothing and its YES authorises nothing. Rollback readiness would have to combine a signed source DEPLOY task, its Evidence and Human Approval, and is not evaluated here",
+      "rollback_readiness_evaluation": "NOT_IN_SCOPE"
+    },
+    "recent_expired_tasks": [
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-08T03:39:18.213108+00:00",
+        "issued_at": "2026-09-08T03:24:18.213108+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss02-verify-20260908T032418213108Z.json",
+        "task_id": "go-boss02-verify-20260908T032418213108Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-08T07:13:20.243124+00:00",
+        "issued_at": "2026-09-08T06:58:20.243124+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss02-verify-20260908T065820243124Z.json",
+        "task_id": "go-boss02-verify-20260908T065820243124Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-08T12:20:49.317617+00:00",
+        "issued_at": "2026-09-08T12:05:49.317617+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss02-verify-20260908T120549317617Z.json",
+        "task_id": "go-boss02-verify-20260908T120549317617Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-08T12:42:38.708739+00:00",
+        "issued_at": "2026-09-08T12:27:38.708739+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss02-verify-20260908T122738708739Z.json",
+        "task_id": "go-boss02-verify-20260908T122738708739Z"
+      },
+      {
+        "action_id": "HK_STAGING_CANARY",
+        "expires_at": "2026-09-09T02:01:03.780244+00:00",
+        "issued_at": "2026-09-09T01:46:03.780244+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss02-canary-20260909T014603780244Z.json",
+        "task_id": "go-boss02-canary-20260909T014603780244Z"
+      },
+      {
+        "action_id": "HK_STAGING_DEPLOY",
+        "expires_at": "2026-09-09T16:37:29.218780+00:00",
+        "issued_at": "2026-09-09T12:37:29.218780+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss02-deploy-20260909T123729218780Z.json",
+        "task_id": "go-boss02-deploy-20260909T123729218780Z"
+      },
+      {
+        "action_id": "HK_STAGING_DEPLOY",
+        "expires_at": "2026-09-09T16:56:48.094680+00:00",
+        "issued_at": "2026-09-09T12:56:48.094680+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss02-deploy-r3-20260909T125648094680Z.json",
+        "task_id": "go-boss02-deploy-r3-20260909T125648094680Z"
+      },
+      {
+        "action_id": "HK_STAGING_DEPLOY",
+        "expires_at": "2026-09-10T11:18:57.000000+00:00",
+        "issued_at": "2026-09-10T07:18:57.000000+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss02-deploy-v2-r6-20260910T071857Z.json",
+        "task_id": "go-boss02-deploy-v2-r6-20260910T071857Z"
+      },
+      {
+        "action_id": "HK_STAGING_ROLLBACK",
+        "expires_at": "2026-09-11T04:11:21.564370+00:00",
+        "issued_at": "2026-09-11T02:11:21.564370+00:00",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss02-rollback-r7-20260911T021121Z.json",
+        "task_id": "go-boss02-rollback-r7-20260911T021121Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-11T10:08:56.682627Z",
+        "issued_at": "2026-09-11T09:53:56.682627Z",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss-request-verify-20260911T095356Z.json",
+        "task_id": "go-boss-request-verify-20260911T095356Z"
+      },
+      {
+        "action_id": "HK_STAGING_TEST_PR",
+        "expires_at": "2026-09-12T09:31:04.561510Z",
+        "issued_at": "2026-09-12T09:11:04.561510Z",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss-test-pr-42-fbf89c097cea.json",
+        "task_id": "go-boss-test-pr-42-fbf89c097cea"
+      },
+      {
+        "action_id": "HK_STAGING_TEST_PR",
+        "expires_at": "2026-09-12T10:44:39.878757Z",
+        "issued_at": "2026-09-12T10:24:39.878757Z",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss-test-pr-42-897d50e981e3.json",
+        "task_id": "go-boss-test-pr-42-897d50e981e3"
+      },
+      {
+        "action_id": "HK_STAGING_TEST_PR",
+        "expires_at": "2026-09-12T14:15:51.260269Z",
+        "issued_at": "2026-09-12T13:55:51.260269Z",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss-test-pr-42-a9d5683be3e7.json",
+        "task_id": "go-boss-test-pr-42-a9d5683be3e7"
+      },
+      {
+        "action_id": "HK_STAGING_TEST_PR",
+        "expires_at": "2026-09-15T01:31:31.528261Z",
+        "issued_at": "2026-09-15T01:11:31.528261Z",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss-test-pr-52-c39d85ecbb02.json",
+        "task_id": "go-boss-test-pr-52-c39d85ecbb02"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-15T01:26:58.348122Z",
+        "issued_at": "2026-09-15T01:11:58.348122Z",
+        "lifecycle": "TASK_EXPIRED",
+        "source_path": "tasks/go-boss-request-verify-20260915T011158Z-c9ccc0f13432.json",
+        "task_id": "go-boss-request-verify-20260915T011158Z-c9ccc0f13432"
+      }
+    ],
+    "repository_main_sha": {
+      "evidence": [],
+      "reason": "the repository main revision supplied to this run",
+      "state": "OBSERVED",
+      "value": "8610a4dbfd58cbe595f3d161c049de37dd81d3cc"
+    },
+    "repository_runtime_pointer": {
+      "evidence": [
+        "docs/canonical-baseline/CURRENT_HK_RUNTIME.json"
+      ],
+      "reason": "the repository declares this runtime. A declaration is never the truth about what is running on Hong Kong, so this can never be PROVEN",
+      "state": "OBSERVED",
+      "value": {
+        "host": "i-j6ccs8t04f1p4d8pe69z",
+        "image_config_id": "sha256:57beafa250f42eb1319ae561e0b79f432bb80d7171592392303a31446cd8ac6c",
+        "image_tag": "go-hotel:depth48-runtime-6d0fd905",
+        "pointer_path": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+        "runtime_generation": "DEPTH48"
+      }
+    },
+    "runtime_built_from_main_sha": {
+      "evidence": [
+        "docs/canonical-baseline/CURRENT_HK_RUNTIME.json"
+      ],
+      "reason": "the repository records the product source commit that this runtime was built from",
+      "state": "OBSERVED",
+      "value": "6d0fd905d1b6004fd5cc5cf8d69d1bf26a0f700a"
+    },
+    "runtime_canonical_main_sha": {
+      "evidence": [
+        "docs/canonical-baseline/CURRENT_HK_RUNTIME.json"
+      ],
+      "reason": "the repository records the main commit at which the canonical runtime definition was frozen",
+      "state": "OBSERVED",
+      "value": "bba3b2589ec38404122fb9590fc8119410b96247"
+    },
+    "runtime_verification": {
+      "evidence": [
+        "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+        "evidence/go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json"
+      ],
+      "reason": "the newest VERIFY Evidence is 164911 s old, outside the 86400 s window, so the live runtime is not recently verified. The declared and proven images differ",
+      "state": "OBSERVED",
+      "value": {
+        "image_relation": "DIFFER",
+        "live_proven_image": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "live_verification_age_seconds": 164911,
+        "live_verification_rank": "SIGNATURE_VERIFIED",
+        "repository_declared_image": "sha256:57beafa250f42eb1319ae561e0b79f432bb80d7171592392303a31446cd8ac6c",
+        "verdict": "NOT_RECENTLY_VERIFIED"
+      }
+    },
+    "runtime_verification_state": "NOT_RECENTLY_VERIFIED",
+    "stale_tasks": [
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "completed_at": "2026-09-06T07:56:22Z",
+        "task_id": "go-m3-045-e2e-health-20260906T074711296352Z"
+      },
+      {
+        "action_id": "CONTROL_PLANE_HEALTH",
+        "completed_at": "2026-09-06T12:13:25Z",
+        "task_id": "go-m3-auto-health-20260906T115227992322Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-08T13:54:41Z",
+        "task_id": "go-boss02-verify-20260908T135246507176Z"
+      },
+      {
+        "action_id": "HK_STAGING_CANARY",
+        "completed_at": "2026-09-09T06:29:02Z",
+        "task_id": "go-boss02-canary-20260909T062821211376Z"
+      },
+      {
+        "action_id": "HK_STAGING_DEPLOY",
+        "completed_at": "2026-09-09T13:16:29Z",
+        "task_id": "go-boss02-deploy-r4-20260909T131418835006Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-09T13:24:27Z",
+        "task_id": "go-boss02-post-deploy-verify-20260909T132251199297Z"
+      },
+      {
+        "action_id": "HK_STAGING_DEPLOY",
+        "completed_at": "2026-09-10T03:11:14Z",
+        "task_id": "go-boss02-deploy-v2-20260910T030827Z"
+      },
+      {
+        "action_id": "HK_STAGING_DEPLOY",
+        "completed_at": "2026-09-10T07:55:31Z",
+        "task_id": "go-boss02-deploy-v2-r7-20260910T075319Z"
+      },
+      {
+        "action_id": "HK_STAGING_CANARY",
+        "completed_at": "2026-09-11T02:52:09Z",
+        "task_id": "go-boss02-final-canary-20260911T025100Z"
+      },
+      {
+        "action_id": "HK_STAGING_DEPLOY",
+        "completed_at": "2026-09-11T02:57:16Z",
+        "task_id": "go-boss02-final-deploy-20260911T025420Z"
+      },
+      {
+        "action_id": "HK_STAGING_ROLLBACK",
+        "completed_at": "2026-09-11T07:13:19Z",
+        "task_id": "go-boss02-final-rollback-20260911T071232Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-11T07:16:13Z",
+        "task_id": "go-boss02-post-rollback-verify-20260911T071429Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-11T11:54:56Z",
+        "task_id": "go-boss-request-verify-20260911T115328Z"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-11T12:18:27Z",
+        "task_id": "go-boss-request-verify-20260911T121629Z-0f0c80019687"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-11T12:23:27Z",
+        "task_id": "go-boss-request-verify-20260911T122119Z-05981133f091"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-11T12:37:26Z",
+        "task_id": "go-boss-request-verify-20260911T123528Z-e6e5f12203aa"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-12T08:54:56Z",
+        "task_id": "go-boss-request-verify-20260912T085222Z-f694a5bdf34e"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-12T10:23:26Z",
+        "task_id": "go-boss-request-verify-20260912T102129Z-ac46386a4422"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-12T13:54:21Z",
+        "task_id": "go-boss-request-verify-20260912T135236Z-6a060f78b64d"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-12T15:31:11Z",
+        "task_id": "go-boss-request-verify-20260912T152929Z-822deb499829"
+      },
+      {
+        "action_id": "HK_STAGING_TEST_PR",
+        "completed_at": "2026-09-12T15:45:24Z",
+        "task_id": "go-boss-test-pr-42-5c8d760d36cb"
+      },
+      {
+        "action_id": "HK_STAGING_TEST_PR",
+        "completed_at": "2026-09-12T16:02:38Z",
+        "task_id": "go-boss-test-pr-42-81653232027c"
+      },
+      {
+        "action_id": "HK_STAGING_TEST_PR",
+        "completed_at": "2026-09-12T17:08:32Z",
+        "task_id": "go-boss-test-pr-47-c00da968ea3c"
+      },
+      {
+        "action_id": "HK_STAGING_VERIFY",
+        "completed_at": "2026-09-13T03:43:27Z",
+        "task_id": "go-boss-request-verify-20260913T034140Z-b22f51784808"
+      }
+    ],
+    "stuck_answer": {
+      "evidence": [],
+      "reason": "no published task is overdue. 15 recently expired and 5 historical expired task(s) are indexed separately and do not affect current health",
+      "state": "OBSERVED",
+      "value": "NO"
+    },
+    "test_pr_status": {
+      "evidence": [
+        "evidence/go-boss-test-pr-47-c00da968ea3c-kFYOCekZQgQet9rxzRaWgR3FT_n7hUmv.json"
+      ],
+      "reason": "the newest successful TEST_PR Evidence. An isolated offline build is not a deployment",
+      "state": "PROVEN",
+      "value": {
+        "application_health_proven": false,
+        "built_image_id": "sha256:de90eb9e5df3534ca542f185fdcb658345261ac5b400add741b1126d2b03ac39",
+        "commit_sha": "3e8150fec9cc5ebcfc9694e7e73444c7592ddcb4",
+        "completed_at": "2026-09-12T17:08:32Z",
+        "deployment_performed": false,
+        "pr_number": "47",
+        "result": "TEST_PR_OK",
+        "task_id": "go-boss-test-pr-47-c00da968ea3c"
+      }
+    },
+    "verify_status": {
+      "evidence": [
+        "tasks/go-boss-request-verify-20260915T011158Z-c9ccc0f13432.json"
+      ],
+      "reason": "the newest signed task of this class observed on the control bus",
+      "state": "PROVEN",
+      "value": {
+        "action_id": "HK_STAGING_VERIFY",
+        "expires_at": "2026-09-15T01:26:58.348122Z",
+        "issued_at": "2026-09-15T01:11:58.348122Z",
+        "lifecycle": "TASK_EXPIRED",
+        "task_id": "go-boss-request-verify-20260915T011158Z-c9ccc0f13432"
+      }
+    }
+  },
+  "counts": {
+    "anomalies": 1,
+    "by_lifecycle": {
+      "COMPLETE": 24,
+      "POLICY_HOLD": 4,
+      "TASK_EXPIRED": 20
+    },
+    "evidence": 24,
+    "request_facts": 0,
+    "requests": 15,
+    "tasks": 48
+  },
+  "freshness": {
+    "live_verification_window_seconds": 86400,
+    "liveness_window_seconds": 1800,
+    "recent_expired_window_seconds": 604800,
+    "stale_after_seconds": 86400,
+    "stuck_after_seconds": 900
+  },
+  "generated_at": "2026-09-15T01:31:58Z",
+  "rebuild": {
+    "command": "python control-plane/command-center-state-v1/state_projection.py --tasks-repo <go-control-tasks> --evidence-repo <go-control-evidence> --requests-dir <collected-requests> --request-facts-dir <exported-facts> --go-repo <GO> --task-verify-key <cc-task.pub> --evidence-verify-key <hk-evidence.pub> --verifier-identities <identity/VERIFIER_IDENTITIES_V1.json> --tasks-head <sha> --evidence-head <sha> --go-head <sha> --repository-main-sha <sha> --now <ISO8601> --out <dir>",
+    "deterministic": true,
+    "pin_generated_at": "pass --now <ISO8601> to make the byte output reproducible"
+  },
+  "request_channel": {
+    "capability_classification": {
+      "CONTROL_PLANE_HEALTH": "PLATFORM_ADMIN_ONLY",
+      "HK_STAGING_CANARY": "NOT_REQUESTABLE",
+      "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
+      "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE",
+      "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
+      "HK_STAGING_VERIFY": "SUPPORTED_PROVEN"
+    },
+    "deploy_request_enabled": false,
+    "deploy_request_enabled_source": "the authoritative Boss Request contract currently exposes VERIFY and TEST_PR only; the DEPLOY request capability is present in the repository and installed per its closeout, but its request enablement remains fail-closed",
+    "enabled_request_actions": [
+      "HK_STAGING_VERIFY",
+      "HK_STAGING_TEST_PR"
+    ],
+    "known_capabilities": [
+      "CONTROL_PLANE_HEALTH",
+      "HK_STAGING_VERIFY",
+      "HK_STAGING_TEST_PR",
+      "HK_STAGING_DEPLOY",
+      "HK_STAGING_CANARY",
+      "HK_STAGING_ROLLBACK"
+    ],
+    "live_request_switch": {
+      "evidence": [],
+      "reason": "the live Command Center channel switch is a live-host fact. It is not on the control bus and this projection must not assert it",
+      "state": "UNKNOWN",
+      "value": null
+    },
+    "note": "ChatGPT may create Request files only for enabled_request_actions. HK_STAGING_DEPLOY is reported as a capability classification; computing deploy or rollback readiness is out of scope for this contract",
+    "readiness_evaluation": "NOT_IN_SCOPE"
+  },
+  "request_visibility": {
+    "acceptance_claims_without_a_signed_task": [],
+    "acceptance_requires_a_signed_task": true,
+    "bridge_fact_export_installed": false,
+    "by_lifecycle": {
+      "REQUEST_CREATED": 15
+    },
+    "duplicate_or_replay": [],
+    "duplicate_or_replay_counted_as_success": false,
+    "facts_are_execution_authority": false,
+    "facts_collected": 0,
+    "facts_source": {
+      "exporter": "control-plane/command-center-request-visibility-v1",
+      "refs": [
+        "refs/heads/request-facts/*"
+      ],
+      "repository": "chenzhenxi1-sudo/go-control-tasks"
+    },
+    "note": "the Bridge's durable ledger holds the accepted half; every refusal reason is printed by the Bridge and journalled by the operator, so this layer can only report refusal reasons once that journal is installed. Until then a Request with no settled fact stays REQUEST_CREATED, which is what the control bus shows",
+    "rejected_or_refused": [],
+    "rejection_reasons_are_published": true,
+    "submission_index_collected": false,
+    "submissions_observed": 0,
+    "submissions_without_a_request_identity": [],
+    "why_not_a_task": {
+      "answer_field": "requests[].why_not_a_task",
+      "closed_states": [
+        "BECAME_A_TASK",
+        "ACCEPTANCE_CLAIMED_BUT_UNPROVEN",
+        "REFUSED",
+        "DUPLICATE_REQUEST_ID",
+        "REPLAYED_SUBMISSION",
+        "NO_BRIDGE_FACT_OBSERVED",
+        "REQUEST_NOT_ON_THE_BUS"
+      ],
+      "note": "a Request that did not become a Task is answered from the closed state and, where one exists, the Bridge's own reason code, preserved verbatim"
+    }
+  },
+  "requests": [
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-test-pr42-282e764ef353486c",
+      "request_sha256": "2aa4045f853b562a89b264405223a98d7434cb256824fec0bb22a861609ef058",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-12T13:55:23Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "64e0f06b8f671c0cc65d207f04d7d4a86e727a25",
+        "path": "requests/boss-hk-test-pr42-282e764ef353486c.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-test-pr42-282e764ef353486c",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {
+        "pr_number": "42"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-test-pr42-379053731198402b",
+      "request_sha256": "40b2417d722f1574e35ffc7c4712f7f7f3286a6bf86d7a02e37a9a22a553d194",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-12T15:43:15Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "fd45d364ea93101151005386cd9c709a034a395e",
+        "path": "requests/boss-hk-test-pr42-379053731198402b.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-test-pr42-379053731198402b",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {
+        "pr_number": "42"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-test-pr42-4132c7fed3f1",
+      "request_sha256": "791ce8b6b24f50c1177727861ef1c47926037545bbc3c6fc1c3686167901c370",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-12T10:24:12.939Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "6c02617a0a77cc2942defada551edabbf3470cd6",
+        "path": "requests/boss-hk-test-pr42-4132c7fed3f1.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-test-pr42-4132c7fed3f1",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {
+        "pr_number": "42"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-test-pr42-7fccaf271379",
+      "request_sha256": "df3c4305bcd00251f5e62fd7dbfb6f67174ac92ef04e2b34202962631b3efbc0",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-12T09:10:09.504Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "84a7698f8ec95d951e50e19b5a2f4c6de99f9ad7",
+        "path": "requests/boss-hk-test-pr42-7fccaf271379.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-test-pr42-7fccaf271379",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {
+        "pr_number": "42"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-test-pr42-blind-1f329c67da8c",
+      "request_sha256": "4d5c04ce506d604de11dfb9c168c70095df8d25394c0ebf58fe813f5bf15f613",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-12T15:58:55Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "3c20877f3e144a245c523e3f5b26eeaead57db6a",
+        "path": "requests/boss-hk-test-pr42-blind-1f329c67da8c.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-test-pr42-blind-1f329c67da8c",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {
+        "pr_number": "42"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-test-pr47-b76c37606914",
+      "request_sha256": "2a6c3e26de3cfbe323e1a3440905310d75007ad292d32924810aabb8d34aa83a",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-12T17:05:58Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "fc1373122952ed5a3d13a56715e72d33ebfbc728",
+        "path": "requests/boss-hk-test-pr47-b76c37606914.json",
+        "ref": "refs/remotes/origin/request/boss-hk-test-pr47-b76c37606914",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {
+        "pr_number": "47"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-test-pr52-ccv108-20260915T011027Z",
+      "request_sha256": "07c70005468d2e12c8290ec13ac447ba699b4a0a088fdc179b1e5a9d7add7c18",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-15T01:10:27Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "fbac63c3147a1fba143f1a21d95eee270fc1635f",
+        "path": "requests/boss-hk-test-pr52-ccv108-20260915T011027Z.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-test-pr52-ccv108-20260915T011027Z",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {
+        "pr_number": "52"
+      },
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-verify-13afc1575088",
+      "request_sha256": "9982eec0e7785041651fb9888b5c61d44f50f49aaec8e15020b4ca3713a3753c",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-12T10:20:21.710Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "589d6e0240ed8c87d76a1177df3296600be668a4",
+        "path": "requests/boss-hk-verify-13afc1575088.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-verify-13afc1575088",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-verify-1638b840eaab4ffa",
+      "request_sha256": "9418627c9de5ef3f28338088124fb09b212ad23c2ff7f4bba94124c932c11af0",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-12T13:33:00.9109939Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "4fd9a4d454eca57826971bc627867ffbf8717d6c",
+        "path": "requests/boss-hk-verify-1638b840eaab4ffa.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-verify-1638b840eaab4ffa",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-verify-20260913T033938887-cb3430da",
+      "request_sha256": "9dcadd8cd4d4d5b9bb53ab4e1e08ba8cc4fa468237165bffba1094e6679421a7",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-13T03:39:38.887Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "976eeaa555d1e84377e7e6db6657ef6dbeda8251",
+        "path": "requests/boss-hk-verify-20260913T033938887-cb3430da.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-verify-20260913T033938887-cb3430da",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-verify-52c39f5d665e4669",
+      "request_sha256": "c5fb7883e84727fd3c622350705f5074ba3d1e4b0878d610552ef1a3026c01cc",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-12T08:51:20Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "823e91b2d700825e7aa20a960d2339415271af8d",
+        "path": "requests/boss-hk-verify-52c39f5d665e4669.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-verify-52c39f5d665e4669",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-verify-52e00ab59d0e41fd",
+      "request_sha256": "c0e9944e59b529e97719aa8edc8f8598a89f4b8e34da8bbf31dad69256d18dd0",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-12T15:29:05Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "a8e5927b6ae95ac3ac9277b3a7d5985e17c827dd",
+        "path": "requests/boss-hk-verify-52e00ab59d0e41fd.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-verify-52e00ab59d0e41fd",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-verify-68d7c283d0a248fe",
+      "request_sha256": "0a6a724658811980fa017b0df969eec003abe458c6d9a35591b71699f7dba959",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-12T13:52:00Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "d01579c7812480bac724a64528a2b0b5ae556200",
+        "path": "requests/boss-hk-verify-68d7c283d0a248fe.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-verify-68d7c283d0a248fe",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-hk-verify-ccv108-20260915T011027Z",
+      "request_sha256": "597b6393f51181055ed2d0259430fc263967023d5382a94287ea3499786a8281",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-15T01:10:31Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "549eca06472724e06993167d531495e72a1f5d61",
+        "path": "requests/boss-hk-verify-ccv108-20260915T011027Z.json",
+        "ref": "refs/remotes/origin/boss-request-boss-hk-verify-ccv108-20260915T011027Z",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "binding": {
+        "proof_detail": "no Bridge fact has been observed for this Request; its existence on the control bus is all that is established",
+        "proof_required": false,
+        "proof_state": "NOT_APPLICABLE",
+        "task_commit": null,
+        "task_id": null,
+        "task_sha256": null
+      },
+      "capability_classification": "SUPPORTED_PROVEN",
+      "duplicate_request_id": false,
+      "environment": "HK-STAGING-01",
+      "facts": [],
+      "holding_execution_authority": false,
+      "lifecycle": "REQUEST_CREATED",
+      "lifecycle_note": "reported from a Bridge fact only when the signed Task corroborates an acceptance; otherwise from the Request file alone",
+      "lifecycle_source": "CONTROL_BUS_ONLY",
+      "request_id": "boss-mobile-verify-e2e-20260911-01",
+      "request_sha256": "39b69408f812d91cd3cc574a8ef51523f462e4f19f367d455c890fcfab17dd2b",
+      "requestable_by_current_channel": true,
+      "requested_at": "2026-09-11T09:52:13Z",
+      "schema_version": "1",
+      "source": {
+        "head_sha": "04ace7469849eb616f41ff87d215062d35005d79",
+        "path": "requests/boss-mobile-verify-e2e-20260911-01.json",
+        "ref": "refs/remotes/origin/boss-request-boss-mobile-verify-e2e-20260911-01",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "target": {},
+      "why_not_a_task": {
+        "reason_class": null,
+        "reason_code": null,
+        "state": "NO_BRIDGE_FACT_OBSERVED"
+      }
+    }
+  ],
+  "schema_version": "1",
+  "scope": "CONTROL_STATE_AND_STATUS_ONLY",
+  "sources": {
+    "evidence": {
+      "head_sha": "350dc628075ebd4cea9a3a2d8040caf23f957f57",
+      "ref": "permission-test",
+      "repository": "chenzhenxi1-sudo/go-control-evidence"
+    },
+    "go": {
+      "canonical_candidate_pointer": "docs/canonical-baseline/CURRENT_CANDIDATE.json",
+      "canonical_runtime_pointer": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+      "head_sha": "bbd9d26966c146476bb976fe514f17c7b353f84c",
+      "ref": "main",
+      "repository": "yuguangzhi3836-glitch/GO"
+    },
+    "request_facts": {
+      "collected": 0,
+      "exporter": "control-plane/command-center-request-visibility-v1",
+      "refs": [
+        "refs/heads/request-facts/*"
+      ],
+      "repository": "chenzhenxi1-sudo/go-control-tasks"
+    },
+    "requests": {
+      "collected": 15,
+      "refs": [
+        "refs/heads/boss-request-*",
+        "refs/heads/request/*"
+      ],
+      "repository": "chenzhenxi1-sudo/go-control-tasks"
+    },
+    "tasks": {
+      "head_sha": "1d4c3595a466cd2d6692af3634c1eeda4feec677",
+      "ref": "main",
+      "repository": "chenzhenxi1-sudo/go-control-tasks"
+    }
+  },
+  "tasks": [
+    {
+      "action_id": "CONTROL_PLANE_HEALTH",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-04T15:58:27.299100+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-04T15:13:27.299084+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "m3-05-health-nonce-20260904-001",
+      "parameter_contract": "CURRENT",
+      "parameters": {},
+      "source": {
+        "path": "tasks/go-m3-05-cp-health-20260904-001.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-m3-05-cp-health-20260904-001",
+      "task_sha256": "11a653ae64dd2589bfcc4f860f29820f3a6908f35d5412d49cea2ada39a4291b",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "CONTROL_PLANE_HEALTH",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-05T01:11:11.557002+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-05T00:51:11.556986+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "m3-06-auto-nonce-20260905-001",
+      "parameter_contract": "CURRENT",
+      "parameters": {},
+      "source": {
+        "path": "tasks/go-m3-06-auto-health-20260905-001.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-m3-06-auto-health-20260905-001",
+      "task_sha256": "42a160c48112640bf8f248aafa489b661ea2c15a38f4b8f01f9a2fb72ee53ce0",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "CONTROL_PLANE_HEALTH",
+      "assertion": {
+        "evidence": [],
+        "reason": "the task signature does not verify against the Command Center task verifier identity",
+        "state": "FAILED",
+        "value": "TASK_SIGNATURE_INVALID"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-05T15:57:33.846901+00:00",
+      "issued_at": "2026-09-05T15:12:33.846901+00:00",
+      "lifecycle": "POLICY_HOLD",
+      "nonce": "m0Ukw2404Fs5Dh5C-1gVeINEkWJ3zkdV",
+      "parameter_contract": "CURRENT",
+      "parameters": {},
+      "source": {
+        "path": "tasks/go-m3-042-e2e-health-20260905T151233846901Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-m3-042-e2e-health-20260905T151233846901Z",
+      "task_sha256": "98bc111b3d05fb4746bd9acf44c40ceaf34482c5ed67c2d8e9c1f611179fea4e",
+      "task_signature_verified": false,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "CONTROL_PLANE_HEALTH",
+      "assertion": {
+        "evidence": [],
+        "reason": "the task signature does not verify against the Command Center task verifier identity",
+        "state": "FAILED",
+        "value": "TASK_SIGNATURE_INVALID"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-05T17:21:30.238921+00:00",
+      "issued_at": "2026-09-05T15:21:30.238921+00:00",
+      "lifecycle": "POLICY_HOLD",
+      "nonce": "Rbqek0-vaJbC05VRtaOmZKx0NnurejQp",
+      "parameter_contract": "CURRENT",
+      "parameters": {},
+      "source": {
+        "path": "tasks/go-m3-042-e2e-health-20260905T152130238921Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-m3-042-e2e-health-20260905T152130238921Z",
+      "task_sha256": "7618bd220591195e4ac4377de0c9623906200e441f36520bf0deae3e4d028268",
+      "task_signature_verified": false,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "CONTROL_PLANE_HEALTH",
+      "assertion": {
+        "evidence": [],
+        "reason": "the task signature does not verify against the Command Center task verifier identity",
+        "state": "FAILED",
+        "value": "TASK_SIGNATURE_INVALID"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-06T05:18:15.978751+00:00",
+      "issued_at": "2026-09-06T01:18:15.978751+00:00",
+      "lifecycle": "POLICY_HOLD",
+      "nonce": "Mtdjt8LJAZ_r-GbnQRToxSuRu1DHc6Ri",
+      "parameter_contract": "CURRENT",
+      "parameters": {},
+      "source": {
+        "path": "tasks/go-m3-042-e2e-health-20260906T011815978751Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-m3-042-e2e-health-20260906T011815978751Z",
+      "task_sha256": "a44ae1a445ea8d4db2b24f2245475647f47a419e8f1ce03d646027e9c009eeb2",
+      "task_signature_verified": false,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "CONTROL_PLANE_HEALTH",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-06T05:45:59.385419+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-06T01:45:59.385419+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "e9Qr3XnAKyX3cPqSxetg9nY1avkYvIli",
+      "parameter_contract": "CURRENT",
+      "parameters": {},
+      "source": {
+        "path": "tasks/go-m3-043-e2e-health-20260906T014559385419Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-m3-043-e2e-health-20260906T014559385419Z",
+      "task_sha256": "09f73cb9202eb1489105f049697ebbefc2ebd8ed424308ac8fb0f90982e93e52",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "CONTROL_PLANE_HEALTH",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-06T10:48:14.284789+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-06T06:48:14.284789+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "vX-ZidzWMe0GCLU4maEPNik8MF7YPCvm",
+      "parameter_contract": "CURRENT",
+      "parameters": {},
+      "source": {
+        "path": "tasks/go-m3-044-e2e-health-20260906T064814284789Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-m3-044-e2e-health-20260906T064814284789Z",
+      "task_sha256": "5c2dda1a5d524f3df299302ecd91a9eaea50e0211801c013fc41882f851e2efb",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "CONTROL_PLANE_HEALTH",
+      "assertion": {
+        "evidence": [
+          "go-m3-045-e2e-health-20260906T074711296352Z-gGntKzU12vNIv5P5Lmerjp7DHew_Kz0-.json",
+          "go-m3-045-e2e-health-20260906T074711296352Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "HEALTH_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.4.5-rebuilt",
+        "completed_at": "2026-09-06T07:56:22Z",
+        "evidence_sha256": "df898801111dc5969638810ed3d08bd73da01c2a7d0e0a71008dcb71e06db3f6",
+        "executor_result": null,
+        "generation": "v1",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-m3-045-e2e-health-20260906T074711296352Z-gGntKzU12vNIv5P5Lmerjp7DHew_Kz0-.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-m3-045-e2e-health-20260906T074711296352Z-gGntKzU12vNIv5P5Lmerjp7DHew_Kz0-.json",
+          "go-m3-045-e2e-health-20260906T074711296352Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-06T07:56:22Z"
+      },
+      "expires_at": "2026-09-06T11:47:11.296352+00:00",
+      "issued_at": "2026-09-06T07:47:11.296352+00:00",
+      "lifecycle": "COMPLETE",
+      "liveness_payload": {
+        "agent_version": "0.4.5-rebuilt",
+        "evidence_repo_connectivity": true,
+        "hostname": "iZj6ccs8t04f1p4d8pe69zZ",
+        "tasks_repo_connectivity": true
+      },
+      "nonce": "gGntKzU12vNIv5P5Lmerjp7DHew_Kz0-",
+      "parameter_contract": "CURRENT",
+      "parameters": {},
+      "source": {
+        "path": "tasks/go-m3-045-e2e-health-20260906T074711296352Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-m3-045-e2e-health-20260906T074711296352Z-gGntKzU12vNIv5P5Lmerjp7DHew_Kz0-.json",
+          "go-m3-045-e2e-health-20260906T074711296352Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-m3-045-e2e-health-20260906T074711296352Z",
+      "task_sha256": "12754c9abb9a49a6e3644e83874dd75df06f16ad43e9b1e1188727e1c6be4f27",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "CONTROL_PLANE_HEALTH",
+      "assertion": {
+        "evidence": [
+          "go-m3-auto-health-20260906T115227992322Z-jzoWVgooSJWTldTOGkT57zLvcCOiQAGS.json",
+          "go-m3-auto-health-20260906T115227992322Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "HEALTH_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.4.5-rebuilt",
+        "completed_at": "2026-09-06T12:13:25Z",
+        "evidence_sha256": "59869f2613035b8cdf9bee66d57ae3e934164717518fe53e1f52f28f6449a429",
+        "executor_result": null,
+        "generation": "v1",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-m3-auto-health-20260906T115227992322Z-jzoWVgooSJWTldTOGkT57zLvcCOiQAGS.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-m3-auto-health-20260906T115227992322Z-jzoWVgooSJWTldTOGkT57zLvcCOiQAGS.json",
+          "go-m3-auto-health-20260906T115227992322Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-06T12:13:25Z"
+      },
+      "expires_at": "2026-09-06T15:52:27.992322+00:00",
+      "issued_at": "2026-09-06T11:52:27.992322+00:00",
+      "lifecycle": "COMPLETE",
+      "liveness_payload": {
+        "agent_version": "0.4.5-rebuilt",
+        "evidence_repo_connectivity": true,
+        "hostname": "iZj6ccs8t04f1p4d8pe69zZ",
+        "tasks_repo_connectivity": true
+      },
+      "nonce": "jzoWVgooSJWTldTOGkT57zLvcCOiQAGS",
+      "parameter_contract": "CURRENT",
+      "parameters": {},
+      "source": {
+        "path": "tasks/go-m3-auto-health-20260906T115227992322Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-m3-auto-health-20260906T115227992322Z-jzoWVgooSJWTldTOGkT57zLvcCOiQAGS.json",
+          "go-m3-auto-health-20260906T115227992322Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-m3-auto-health-20260906T115227992322Z",
+      "task_sha256": "b6c91cdda47eddc1a0b04b3851f055f48e6aa029734a2ccb364bca67122d5f69",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-07T04:54:59.419342+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-07T00:54:59.419342+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "gMO59anY8klkAERGP8n__nvRBplPRlz3",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-baseline-20260906"
+      },
+      "source": {
+        "path": "tasks/go-boss02-verify-20260907T005459419342Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss02-verify-20260907T005459419342Z",
+      "task_sha256": "be027daa18b7fcbfd6ec4fc9ef1e77c1080fa3744a60335c7427593c8c491889",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-08T03:39:18.213108+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-08T03:24:18.213108+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "XVbgdCj9LEik41ibNzc-Vm90bfhjhbU6",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-baseline-20260906"
+      },
+      "source": {
+        "path": "tasks/go-boss02-verify-20260908T032418213108Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss02-verify-20260908T032418213108Z",
+      "task_sha256": "003a702deb695eaad4160b702fce355ca50d63cfe3579881218c085f3a64e503",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-08T07:13:20.243124+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-08T06:58:20.243124+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "9sYHRzah3CC_sgd3v3GuwHUa_dvTcQgx",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-baseline-20260906"
+      },
+      "source": {
+        "path": "tasks/go-boss02-verify-20260908T065820243124Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss02-verify-20260908T065820243124Z",
+      "task_sha256": "6bd46e4b58511ec60266f7a50e4547625ea09d292199e63e7a8d86aeede46ed7",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-08T12:20:49.317617+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-08T12:05:49.317617+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "v93Y0Uu3ouONB3TozTEsm9y_194NDag-",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-baseline-20260906"
+      },
+      "source": {
+        "path": "tasks/go-boss02-verify-20260908T120549317617Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss02-verify-20260908T120549317617Z",
+      "task_sha256": "2a4c427ebbd88f4e04a5e428306897024ac7d8169c3075afe66500adf52b292b",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-08T12:42:38.708739+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-08T12:27:38.708739+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "DBC2l4dNGofJ0yt4sXzVNwAcq1HJ3J16",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-baseline-20260906"
+      },
+      "source": {
+        "path": "tasks/go-boss02-verify-20260908T122738708739Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss02-verify-20260908T122738708739Z",
+      "task_sha256": "417089604ef75eb9269fec094ceb8598071bd2688fbbdce8936bb975b8f7e395",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss02-verify-20260908T135246507176Z-ARHPN3_WrLIvVkLifIh1K9UB0Tvz45tM.json",
+          "go-boss02-verify-20260908T135246507176Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.3-rebuilt",
+        "completed_at": "2026-09-08T13:54:41Z",
+        "evidence_sha256": "4dc3b9dc02eae80af632df2c6ccd1895663180d5772433557a2246d8202e383a",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss02-verify-20260908T135246507176Z-ARHPN3_WrLIvVkLifIh1K9UB0Tvz45tM.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss02-verify-20260908T135246507176Z-ARHPN3_WrLIvVkLifIh1K9UB0Tvz45tM.json",
+          "go-boss02-verify-20260908T135246507176Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-08T13:54:41Z"
+      },
+      "expires_at": "2026-09-08T17:52:46.507176+00:00",
+      "issued_at": "2026-09-08T13:52:46.507176+00:00",
+      "lifecycle": "COMPLETE",
+      "nonce": "ARHPN3_WrLIvVkLifIh1K9UB0Tvz45tM",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-baseline-20260906"
+      },
+      "source": {
+        "path": "tasks/go-boss02-verify-20260908T135246507176Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss02-verify-20260908T135246507176Z-ARHPN3_WrLIvVkLifIh1K9UB0Tvz45tM.json",
+          "go-boss02-verify-20260908T135246507176Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss02-verify-20260908T135246507176Z",
+      "task_sha256": "eaf2cdbd6eb4d72ad7cc2e84e3a19d4efc4249c6e415550320fd95dfff0f8345",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_CANARY",
+      "assertion": {
+        "evidence": [],
+        "reason": "this Task predates the current Control Plane parameter contract; it is preserved for lineage but cannot be evaluated or counted as proof",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-09T01:57:28.979291+00:00",
+      "issued_at": "2026-09-09T01:42:28.979291+00:00",
+      "lifecycle": "POLICY_HOLD",
+      "nonce": "AzOBTNF5x3eKLy6fYGAyjzqoCR1QoxjC",
+      "parameter_contract": "LEGACY_OR_UNKNOWN",
+      "parameters": {
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-baseline-20260906"
+      },
+      "source": {
+        "path": "tasks/go-boss02-canary-20260909T014228979291Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss02-canary-20260909T014228979291Z",
+      "task_sha256": "65b56370cd33849c21c5bf66405e9a2084010a692d61af6919a9b5a160565053",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_CANARY",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-09T02:01:03.780244+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-09T01:46:03.780244+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "0F09R4vZhQgCvs6Kh0aY2OiZS3svjZBG",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "candidate_repo_digest": "go-hotel@sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-baseline-20260906"
+      },
+      "source": {
+        "path": "tasks/go-boss02-canary-20260909T014603780244Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss02-canary-20260909T014603780244Z",
+      "task_sha256": "12da6df7482157e269fc69159081446d1b73bcd85ac18c786afe793a2ef38988",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_CANARY",
+      "assertion": {
+        "evidence": [
+          "go-boss02-canary-20260909T062821211376Z-XHyGB7JdNQsf08CiWGAsTfpzqnCHr6pa.json",
+          "go-boss02-canary-20260909T062821211376Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "CANARY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.4-rebuilt",
+        "completed_at": "2026-09-09T06:29:02Z",
+        "evidence_sha256": "02284b17a29638b874c5a2d0932d84dc4e680ceaf4afae28422c39ccd4ea51d7",
+        "executor_result": "CANARY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss02-canary-20260909T062821211376Z-XHyGB7JdNQsf08CiWGAsTfpzqnCHr6pa.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss02-canary-20260909T062821211376Z-XHyGB7JdNQsf08CiWGAsTfpzqnCHr6pa.json",
+          "go-boss02-canary-20260909T062821211376Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-09T06:29:02Z"
+      },
+      "expires_at": "2026-09-09T10:28:21.211376Z",
+      "issued_at": "2026-09-09T06:28:21.211376Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "XHyGB7JdNQsf08CiWGAsTfpzqnCHr6pa",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "candidate_repo_digest": "go-hotel@sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-baseline-20260906"
+      },
+      "source": {
+        "path": "tasks/go-boss02-canary-20260909T062821211376Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss02-canary-20260909T062821211376Z-XHyGB7JdNQsf08CiWGAsTfpzqnCHr6pa.json",
+          "go-boss02-canary-20260909T062821211376Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss02-canary-20260909T062821211376Z",
+      "task_sha256": "66f63d740b6c96bbf177c5071ab602067e8fd86cf9c70794a656acff976f39c9",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_DEPLOY",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-09T16:37:29.218780+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-09T12:37:29.218780+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "WN-vpO1VNMmOzJVi-gZ_Pz9odKqBPG6F",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "approval_id": "approval-boss02-force-recreate-20260909T072500Z",
+        "canary_evidence_id": "go-boss02-canary-20260909T062821211376Z",
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "candidate_repo_digest": "go-hotel@sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-baseline-20260906"
+      },
+      "source": {
+        "path": "tasks/go-boss02-deploy-20260909T123729218780Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss02-deploy-20260909T123729218780Z",
+      "task_sha256": "f95b93ce0eea64226a2223f592752b159108a4711214a1101f82838a32783153",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_DEPLOY",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-09T16:56:48.094680+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-09T12:56:48.094680+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "NoL3UYHdFG9SCZ_xfqgRIDCLKHQZp2Tm",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "approval_id": "approval-boss02-force-recreate-20260909T072500Z",
+        "canary_evidence_id": "go-boss02-canary-20260909T062821211376Z",
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "candidate_repo_digest": "go-hotel@sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-deploy-retry-20260909T125648094680Z"
+      },
+      "source": {
+        "path": "tasks/go-boss02-deploy-r3-20260909T125648094680Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss02-deploy-r3-20260909T125648094680Z",
+      "task_sha256": "dd785fa685ef61d6f180a89a27a7d7bf77d5a3c8ee61cfa3faadfd37240544bd",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_DEPLOY",
+      "assertion": {
+        "evidence": [
+          "go-boss02-deploy-r4-20260909T131418835006Z-Sx6gwR6DQiHtzRuaTWmZiyuddXTQ4qKD.json",
+          "go-boss02-deploy-r4-20260909T131418835006Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "DEPLOY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.4-rebuilt",
+        "completed_at": "2026-09-09T13:16:29Z",
+        "evidence_sha256": "394cd81649add71ceeb5740f0fafe8e6b67bacffeb3046bf09ac090cf44debdb",
+        "executor_result": "DEPLOY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss02-deploy-r4-20260909T131418835006Z-Sx6gwR6DQiHtzRuaTWmZiyuddXTQ4qKD.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss02-deploy-r4-20260909T131418835006Z-Sx6gwR6DQiHtzRuaTWmZiyuddXTQ4qKD.json",
+          "go-boss02-deploy-r4-20260909T131418835006Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-09T13:16:29Z"
+      },
+      "expires_at": "2026-09-09T17:14:18.835006+00:00",
+      "issued_at": "2026-09-09T13:14:18.835006+00:00",
+      "lifecycle": "COMPLETE",
+      "nonce": "Sx6gwR6DQiHtzRuaTWmZiyuddXTQ4qKD",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "approval_id": "approval-boss02-force-recreate-20260909T072500Z",
+        "canary_evidence_id": "go-boss02-canary-20260909T062821211376Z",
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "candidate_repo_digest": "go-hotel@sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-deploy-r4-20260909T131418835006Z"
+      },
+      "source": {
+        "path": "tasks/go-boss02-deploy-r4-20260909T131418835006Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss02-deploy-r4-20260909T131418835006Z-Sx6gwR6DQiHtzRuaTWmZiyuddXTQ4qKD.json",
+          "go-boss02-deploy-r4-20260909T131418835006Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss02-deploy-r4-20260909T131418835006Z",
+      "task_sha256": "f3610ad5a13814aecb8008e7e73c07c7c754e0e52e6be788a1a771fa2e04ab9c",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss02-post-deploy-verify-20260909T132251199297Z-MloBPB7LJcamQBgcUXbse1EnAw9oNrRd.json",
+          "go-boss02-post-deploy-verify-20260909T132251199297Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.4-rebuilt",
+        "completed_at": "2026-09-09T13:24:27Z",
+        "evidence_sha256": "418d117c32a0a5dd0d82095f4519e1d3af17ad0e16dfb839af808c482c523858",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss02-post-deploy-verify-20260909T132251199297Z-MloBPB7LJcamQBgcUXbse1EnAw9oNrRd.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss02-post-deploy-verify-20260909T132251199297Z-MloBPB7LJcamQBgcUXbse1EnAw9oNrRd.json",
+          "go-boss02-post-deploy-verify-20260909T132251199297Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-09T13:24:27Z"
+      },
+      "expires_at": "2026-09-09T17:22:51.199297+00:00",
+      "issued_at": "2026-09-09T13:22:51.199297+00:00",
+      "lifecycle": "COMPLETE",
+      "nonce": "MloBPB7LJcamQBgcUXbse1EnAw9oNrRd",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-post-deploy-verify-20260909T132251199297Z"
+      },
+      "source": {
+        "path": "tasks/go-boss02-post-deploy-verify-20260909T132251199297Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss02-post-deploy-verify-20260909T132251199297Z-MloBPB7LJcamQBgcUXbse1EnAw9oNrRd.json",
+          "go-boss02-post-deploy-verify-20260909T132251199297Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss02-post-deploy-verify-20260909T132251199297Z",
+      "task_sha256": "c8c1ff5fa1f70ab119db291c87539ebbe69ee3e3fa1e824ef19ef64553d0c26b",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_DEPLOY",
+      "assertion": {
+        "evidence": [
+          "go-boss02-deploy-v2-20260910T030827Z-4nQi4uZF6woZfiKaJBS6d4mZKVY98JqM.json",
+          "go-boss02-deploy-v2-20260910T030827Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "DEPLOY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.5-rebuilt",
+        "completed_at": "2026-09-10T03:11:14Z",
+        "deploy_record_id": "e9ee58f9d9a1ca6ac03aaacd7ae4f059f69f37e7987baefb65e58516453f3c1e",
+        "deploy_record_sha256": "3b5ca5522469ab5bb08709de730b9307cf25616d3b9c3a9632ed542958bd970b",
+        "evidence_sha256": "e3775a1911b7214155ec4f928f0c3ca9c83dceadcbea24407b257da5237c2214",
+        "executor_result": "DEPLOY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss02-deploy-v2-20260910T030827Z-4nQi4uZF6woZfiKaJBS6d4mZKVY98JqM.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss02-deploy-v2-20260910T030827Z-4nQi4uZF6woZfiKaJBS6d4mZKVY98JqM.json",
+          "go-boss02-deploy-v2-20260910T030827Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-10T03:11:14Z"
+      },
+      "expires_at": "2026-09-10T07:08:27.000000+00:00",
+      "issued_at": "2026-09-10T03:08:27.000000+00:00",
+      "lifecycle": "COMPLETE",
+      "nonce": "4nQi4uZF6woZfiKaJBS6d4mZKVY98JqM",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "approval_id": "approval-boss02-force-recreate-20260909T072500Z",
+        "canary_evidence_id": "go-boss02-canary-20260909T062821211376Z",
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "candidate_repo_digest": "go-hotel@sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-deploy-record-v2-20260910T030827Z"
+      },
+      "source": {
+        "path": "tasks/go-boss02-deploy-v2-20260910T030827Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss02-deploy-v2-20260910T030827Z-4nQi4uZF6woZfiKaJBS6d4mZKVY98JqM.json",
+          "go-boss02-deploy-v2-20260910T030827Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss02-deploy-v2-20260910T030827Z",
+      "task_sha256": "e77f9e2ef364dd8b38651c6ce741c550c00bbb97b2ded174233727fc5e90a636",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_DEPLOY",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-10T11:18:57.000000+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-10T07:18:57.000000+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "Q8pxbN82C7fabd7XpNBNssIbHzjloD4u",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "approval_id": "approval-boss02-force-recreate-20260909T072500Z",
+        "canary_evidence_id": "go-boss02-canary-20260909T062821211376Z",
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "candidate_repo_digest": "go-hotel@sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-deploy-record-v2-r6-20260910T071857Z"
+      },
+      "source": {
+        "path": "tasks/go-boss02-deploy-v2-r6-20260910T071857Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss02-deploy-v2-r6-20260910T071857Z",
+      "task_sha256": "f3959a9a6214fa2627da588d82e8b37ec3905e5e09d9a2b26a8ac835c963609d",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_DEPLOY",
+      "assertion": {
+        "evidence": [
+          "go-boss02-deploy-v2-r7-20260910T075319Z-KHD87ZYqku5GFrl2vlCINIf8x15PCmDu.json",
+          "go-boss02-deploy-v2-r7-20260910T075319Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "DEPLOY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.5-rebuilt",
+        "completed_at": "2026-09-10T07:55:31Z",
+        "deploy_record_id": "23fe01aa6c38bef19fe58e438b61bab9258654fd5b7d7665e406f81326af4231",
+        "deploy_record_sha256": "90a38383a8991e5178dbf4c7af8c8b4a897da8c3ffc8b60b7b3566d26391d3ed",
+        "evidence_sha256": "57072400828ee3666494c1e57bece9a8c07f67e2f23f09542e773148ab6f97f5",
+        "executor_result": "DEPLOY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss02-deploy-v2-r7-20260910T075319Z-KHD87ZYqku5GFrl2vlCINIf8x15PCmDu.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss02-deploy-v2-r7-20260910T075319Z-KHD87ZYqku5GFrl2vlCINIf8x15PCmDu.json",
+          "go-boss02-deploy-v2-r7-20260910T075319Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-10T07:55:31Z"
+      },
+      "expires_at": "2026-09-10T11:53:19.000000+00:00",
+      "issued_at": "2026-09-10T07:53:19.000000+00:00",
+      "lifecycle": "COMPLETE",
+      "nonce": "KHD87ZYqku5GFrl2vlCINIf8x15PCmDu",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "approval_id": "approval-boss02-force-recreate-20260909T072500Z",
+        "canary_evidence_id": "go-boss02-canary-20260909T062821211376Z",
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "candidate_repo_digest": "go-hotel@sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "r31-5-deploy-record-v2-r7-20260910T075319Z"
+      },
+      "source": {
+        "path": "tasks/go-boss02-deploy-v2-r7-20260910T075319Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss02-deploy-v2-r7-20260910T075319Z-KHD87ZYqku5GFrl2vlCINIf8x15PCmDu.json",
+          "go-boss02-deploy-v2-r7-20260910T075319Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss02-deploy-v2-r7-20260910T075319Z",
+      "task_sha256": "49fb315140c0c6783aa7b45a75aca593f3e89695259b16e92224c163b9c7bc4c",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_ROLLBACK",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-11T04:11:21.564370+00:00",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-11T02:11:21.564370+00:00",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "lS-tKCFQlJ4n789CHYhaGXihXCk7N74U",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "approval_id": "approval-boss02-rollback-r7-20260911T0208Z",
+        "release_id": "r31-5-rollback-r7-20260911T021121Z",
+        "source_deploy_task_id": "go-boss02-deploy-v2-r7-20260910T075319Z"
+      },
+      "source": {
+        "path": "tasks/go-boss02-rollback-r7-20260911T021121Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss02-rollback-r7-20260911T021121Z",
+      "task_sha256": "df2245e589bcabd392523d6b71eb074f9a6ea26609aafc1aa0ea5450184954bd",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_CANARY",
+      "assertion": {
+        "evidence": [
+          "go-boss02-final-canary-20260911T025100Z-EZOUvmb0gVqEQ8R-YJqfAedXjXr21QHC.json",
+          "go-boss02-final-canary-20260911T025100Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "CANARY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-11T02:52:09Z",
+        "evidence_sha256": "acad60f7e8d0457dc080d7b656ef654b17b1a513380f132ddfd261942e6621af",
+        "executor_result": "CANARY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss02-final-canary-20260911T025100Z-EZOUvmb0gVqEQ8R-YJqfAedXjXr21QHC.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss02-final-canary-20260911T025100Z-EZOUvmb0gVqEQ8R-YJqfAedXjXr21QHC.json",
+          "go-boss02-final-canary-20260911T025100Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-11T02:52:09Z"
+      },
+      "expires_at": "2026-09-11T04:51:00Z",
+      "issued_at": "2026-09-11T02:51:00Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "EZOUvmb0gVqEQ8R-YJqfAedXjXr21QHC",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "candidate_repo_digest": "go-hotel@sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "r31-5-final-canary-20260911T025100Z"
+      },
+      "source": {
+        "path": "tasks/go-boss02-final-canary-20260911T025100Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss02-final-canary-20260911T025100Z-EZOUvmb0gVqEQ8R-YJqfAedXjXr21QHC.json",
+          "go-boss02-final-canary-20260911T025100Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss02-final-canary-20260911T025100Z",
+      "task_sha256": "76f3e8d28310d2aff2b7f9c02a23d45a37bdf16e414a2d529621ffd434ea8b28",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_DEPLOY",
+      "assertion": {
+        "evidence": [
+          "go-boss02-final-deploy-20260911T025420Z-ZeLZ20u_3G163YURk-E55WXArlvCrupa.json",
+          "go-boss02-final-deploy-20260911T025420Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "DEPLOY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-11T02:57:16Z",
+        "deploy_record_id": "452c36840f065f5448ed3f077e7830aee40b145504cd3d413a0339aef9a12b7f",
+        "deploy_record_sha256": "b04cac062f7ec1243798499900473efa80a5b01467593f696db9d9d230af341a",
+        "evidence_sha256": "8c5c48a247169d603daffda2e48623d8491aef0c9b5acd2efcf6904842ed0297",
+        "executor_result": "DEPLOY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss02-final-deploy-20260911T025420Z-ZeLZ20u_3G163YURk-E55WXArlvCrupa.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss02-final-deploy-20260911T025420Z-ZeLZ20u_3G163YURk-E55WXArlvCrupa.json",
+          "go-boss02-final-deploy-20260911T025420Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-11T02:57:16Z"
+      },
+      "expires_at": "2026-09-11T04:54:20Z",
+      "issued_at": "2026-09-11T02:54:20Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "ZeLZ20u_3G163YURk-E55WXArlvCrupa",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "approval_id": "approval-boss02-final-e2e-20260911T025100Z",
+        "canary_evidence_id": "go-boss02-final-canary-20260911T025100Z",
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "candidate_repo_digest": "go-hotel@sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "r31-5-final-deploy-20260911T025420Z"
+      },
+      "source": {
+        "path": "tasks/go-boss02-final-deploy-20260911T025420Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss02-final-deploy-20260911T025420Z-ZeLZ20u_3G163YURk-E55WXArlvCrupa.json",
+          "go-boss02-final-deploy-20260911T025420Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss02-final-deploy-20260911T025420Z",
+      "task_sha256": "e82df68ead1a84980aab12ef975a1e8dc7fc80160a8fe25f5dc04b31ccc71c41",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_ROLLBACK",
+      "assertion": {
+        "evidence": [
+          "go-boss02-final-rollback-20260911T071232Z-pAZAHxYDeEAynG5BVXH6bHDVkyeCyM02.json",
+          "go-boss02-final-rollback-20260911T071232Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "ROLLBACK_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-11T07:13:19Z",
+        "evidence_sha256": "ae8e52cccc6787f67a0929f439ed0dd45eec2874ab8fefd6d74e61381f53fcd5",
+        "executor_result": "ROLLBACK_OK",
+        "generation": "v2",
+        "rollback_record_id": "f6f7b64f63723f430e7bab1224abf93842d77ab45fe4f6697ef1bdd8b843131c",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss02-final-rollback-20260911T071232Z-pAZAHxYDeEAynG5BVXH6bHDVkyeCyM02.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss02-final-rollback-20260911T071232Z-pAZAHxYDeEAynG5BVXH6bHDVkyeCyM02.json",
+          "go-boss02-final-rollback-20260911T071232Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-11T07:13:19Z"
+      },
+      "expires_at": "2026-09-11T09:12:32Z",
+      "issued_at": "2026-09-11T07:12:32Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "pAZAHxYDeEAynG5BVXH6bHDVkyeCyM02",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "approval_id": "approval-boss02-final-rollback-20260911T071124Z",
+        "release_id": "r31-5-final-rollback-20260911T071232Z",
+        "source_deploy_task_id": "go-boss02-final-deploy-20260911T025420Z"
+      },
+      "source": {
+        "path": "tasks/go-boss02-final-rollback-20260911T071232Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss02-final-rollback-20260911T071232Z-pAZAHxYDeEAynG5BVXH6bHDVkyeCyM02.json",
+          "go-boss02-final-rollback-20260911T071232Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss02-final-rollback-20260911T071232Z",
+      "task_sha256": "b081918c42c99a14f68d71477b80b2f14d9d739fa6c8c97ef98e0e8548ed4139",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss02-post-rollback-verify-20260911T071429Z-VXHLNF5J-y95xwF89A_tuEfg9tVulKt1.json",
+          "go-boss02-post-rollback-verify-20260911T071429Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-11T07:16:13Z",
+        "evidence_sha256": "5ddf1378cb40a89b449171b89c579092128b74bc0fe7cfa9c4b3bf56c0ccbe4c",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss02-post-rollback-verify-20260911T071429Z-VXHLNF5J-y95xwF89A_tuEfg9tVulKt1.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss02-post-rollback-verify-20260911T071429Z-VXHLNF5J-y95xwF89A_tuEfg9tVulKt1.json",
+          "go-boss02-post-rollback-verify-20260911T071429Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-11T07:16:13Z"
+      },
+      "expires_at": "2026-09-11T09:14:29Z",
+      "issued_at": "2026-09-11T07:14:29Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "VXHLNF5J-y95xwF89A_tuEfg9tVulKt1",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "r31-5-post-rollback-verify-20260911T071429Z"
+      },
+      "source": {
+        "path": "tasks/go-boss02-post-rollback-verify-20260911T071429Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss02-post-rollback-verify-20260911T071429Z-VXHLNF5J-y95xwF89A_tuEfg9tVulKt1.json",
+          "go-boss02-post-rollback-verify-20260911T071429Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss02-post-rollback-verify-20260911T071429Z",
+      "task_sha256": "e0e358b6e11924c17990ea63d796003fb9134ce6f0dfbe24e49d51bb34ecd111",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-11T10:08:56.682627Z",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-11T09:53:56.682627Z",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "INn1_0SfY1nQtMFXufYOyyIDxd_4BjlZ",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "expected_current_image_id": "sha256:3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88",
+        "release_id": "boss-request-verify-20260911T095356Z"
+      },
+      "source": {
+        "path": "tasks/go-boss-request-verify-20260911T095356Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss-request-verify-20260911T095356Z",
+      "task_sha256": "42ba9d5fda557decbb3a70bb9a6f995c3160ce751d74d8fe572023f03592d322",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss-request-verify-20260911T115328Z-rzuNCNxR2lsGnBxN8zvijeYa53IkhvQS.json",
+          "go-boss-request-verify-20260911T115328Z.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-11T11:54:56Z",
+        "evidence_sha256": "03d567f85e3af1edf42bc679334176e8f0a93de4189e223955662740d35954c6",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-request-verify-20260911T115328Z-rzuNCNxR2lsGnBxN8zvijeYa53IkhvQS.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-request-verify-20260911T115328Z-rzuNCNxR2lsGnBxN8zvijeYa53IkhvQS.json",
+          "go-boss-request-verify-20260911T115328Z.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-11T11:54:56Z"
+      },
+      "expires_at": "2026-09-11T12:08:28.832549Z",
+      "issued_at": "2026-09-11T11:53:28.832549Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "rzuNCNxR2lsGnBxN8zvijeYa53IkhvQS",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "boss-request-verify-20260911T115328Z"
+      },
+      "source": {
+        "path": "tasks/go-boss-request-verify-20260911T115328Z.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-request-verify-20260911T115328Z-rzuNCNxR2lsGnBxN8zvijeYa53IkhvQS.json",
+          "go-boss-request-verify-20260911T115328Z.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-request-verify-20260911T115328Z",
+      "task_sha256": "ec3e659f4a36a532d4e2f3e7f750fdb837b422c85035f90a4dfb35aa2b85240c",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss-request-verify-20260911T121629Z-0f0c80019687-EcdF_NyeJ7-LZs3u4I7hdKje1_d-_J4m.json",
+          "go-boss-request-verify-20260911T121629Z-0f0c80019687.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-11T12:18:27Z",
+        "evidence_sha256": "144d8a0ef62ce892e114fc912bfb84148030c279406b79d42c818d90313c815b",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-request-verify-20260911T121629Z-0f0c80019687-EcdF_NyeJ7-LZs3u4I7hdKje1_d-_J4m.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-request-verify-20260911T121629Z-0f0c80019687-EcdF_NyeJ7-LZs3u4I7hdKje1_d-_J4m.json",
+          "go-boss-request-verify-20260911T121629Z-0f0c80019687.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-11T12:18:27Z"
+      },
+      "expires_at": "2026-09-11T12:31:29.619782Z",
+      "issued_at": "2026-09-11T12:16:29.619782Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "EcdF_NyeJ7-LZs3u4I7hdKje1_d-_J4m",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "boss-request-verify-20260911T121629Z-0f0c80019687"
+      },
+      "source": {
+        "path": "tasks/go-boss-request-verify-20260911T121629Z-0f0c80019687.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-request-verify-20260911T121629Z-0f0c80019687-EcdF_NyeJ7-LZs3u4I7hdKje1_d-_J4m.json",
+          "go-boss-request-verify-20260911T121629Z-0f0c80019687.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-request-verify-20260911T121629Z-0f0c80019687",
+      "task_sha256": "1727faafbd5b4e62fac8f6a276b69f7d59aedc001256f31dabc05bf02484b400",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss-request-verify-20260911T122119Z-05981133f091-tH7VTGfbYkavSCO1LR1e71bWSMTKcmZ-.json",
+          "go-boss-request-verify-20260911T122119Z-05981133f091.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-11T12:23:27Z",
+        "evidence_sha256": "06e41feed8011246e713753baa8f8307cd77ae0e87f03f9200846bfa5ef30f43",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-request-verify-20260911T122119Z-05981133f091-tH7VTGfbYkavSCO1LR1e71bWSMTKcmZ-.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-request-verify-20260911T122119Z-05981133f091-tH7VTGfbYkavSCO1LR1e71bWSMTKcmZ-.json",
+          "go-boss-request-verify-20260911T122119Z-05981133f091.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-11T12:23:27Z"
+      },
+      "expires_at": "2026-09-11T12:36:19.145430Z",
+      "issued_at": "2026-09-11T12:21:19.145430Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "tH7VTGfbYkavSCO1LR1e71bWSMTKcmZ-",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "boss-request-verify-20260911T122119Z-05981133f091"
+      },
+      "source": {
+        "path": "tasks/go-boss-request-verify-20260911T122119Z-05981133f091.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-request-verify-20260911T122119Z-05981133f091-tH7VTGfbYkavSCO1LR1e71bWSMTKcmZ-.json",
+          "go-boss-request-verify-20260911T122119Z-05981133f091.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-request-verify-20260911T122119Z-05981133f091",
+      "task_sha256": "3454de364ec6a3080729f8aaec1c9b76bda2c40310e57596a1f441f7cd36cf7c",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss-request-verify-20260911T123528Z-e6e5f12203aa-r7MmitAhNTtSfZL649SPn-xA0qAXhQUF.json",
+          "go-boss-request-verify-20260911T123528Z-e6e5f12203aa.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-11T12:37:26Z",
+        "evidence_sha256": "284849315ae5ded30367d82b9dcee0e268ab9dd621a342d3832ee17d4c2b62a5",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-request-verify-20260911T123528Z-e6e5f12203aa-r7MmitAhNTtSfZL649SPn-xA0qAXhQUF.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-request-verify-20260911T123528Z-e6e5f12203aa-r7MmitAhNTtSfZL649SPn-xA0qAXhQUF.json",
+          "go-boss-request-verify-20260911T123528Z-e6e5f12203aa.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-11T12:37:26Z"
+      },
+      "expires_at": "2026-09-11T12:50:28.504549Z",
+      "issued_at": "2026-09-11T12:35:28.504549Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "r7MmitAhNTtSfZL649SPn-xA0qAXhQUF",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "boss-request-verify-20260911T123528Z-e6e5f12203aa"
+      },
+      "source": {
+        "path": "tasks/go-boss-request-verify-20260911T123528Z-e6e5f12203aa.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-request-verify-20260911T123528Z-e6e5f12203aa-r7MmitAhNTtSfZL649SPn-xA0qAXhQUF.json",
+          "go-boss-request-verify-20260911T123528Z-e6e5f12203aa.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-request-verify-20260911T123528Z-e6e5f12203aa",
+      "task_sha256": "c34aafb518e7c6d3452f395b3bf64c49232ba4f28afd799f8d7b02e6db903a46",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss-request-verify-20260912T085222Z-f694a5bdf34e-XKgMNAgMMyu6zOWO-5aHsOaxmCovCMHw.json",
+          "go-boss-request-verify-20260912T085222Z-f694a5bdf34e.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-12T08:54:56Z",
+        "evidence_sha256": "2c1b852e9c96c00071131c0576f6997489f77bc16b5a73cfa01fcd82eb8fb20a",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-request-verify-20260912T085222Z-f694a5bdf34e-XKgMNAgMMyu6zOWO-5aHsOaxmCovCMHw.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-request-verify-20260912T085222Z-f694a5bdf34e-XKgMNAgMMyu6zOWO-5aHsOaxmCovCMHw.json",
+          "go-boss-request-verify-20260912T085222Z-f694a5bdf34e.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-12T08:54:56Z"
+      },
+      "expires_at": "2026-09-12T09:07:22.487953Z",
+      "issued_at": "2026-09-12T08:52:22.487953Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "XKgMNAgMMyu6zOWO-5aHsOaxmCovCMHw",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "boss-request-verify-20260912T085222Z-f694a5bdf34e"
+      },
+      "source": {
+        "path": "tasks/go-boss-request-verify-20260912T085222Z-f694a5bdf34e.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-request-verify-20260912T085222Z-f694a5bdf34e-XKgMNAgMMyu6zOWO-5aHsOaxmCovCMHw.json",
+          "go-boss-request-verify-20260912T085222Z-f694a5bdf34e.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-request-verify-20260912T085222Z-f694a5bdf34e",
+      "task_sha256": "d95c1c953214abb111a4425a0f75ae1e7478e9d6ce1d5e7475cd2ec14452f1c4",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-12T09:31:04.561510Z",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-12T09:11:04.561510Z",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "PfkoTeFyBrr3agQN6ZGPK2Evf3XQ2iW-",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "builder_profile": "go-application-python-v1",
+        "source": {
+          "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+          "pr_number": "42",
+          "repository": "git@github.com:yuguangzhi3836-glitch/GO.git"
+        }
+      },
+      "source": {
+        "path": "tasks/go-boss-test-pr-42-fbf89c097cea.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss-test-pr-42-fbf89c097cea",
+      "task_sha256": "c9bab1d231213b56b2fed9e5ed9c544d4a562fcb5c9e52f555afae84678737ea",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss-request-verify-20260912T102129Z-ac46386a4422-rZm0msMPY6C1uIEIF20KjJogIkevUdiP.json",
+          "go-boss-request-verify-20260912T102129Z-ac46386a4422.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-12T10:23:26Z",
+        "evidence_sha256": "3a9f5487df3108cdd1eadf2cf07040f27be1664715b6d2524e101ce1bd437caf",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-request-verify-20260912T102129Z-ac46386a4422-rZm0msMPY6C1uIEIF20KjJogIkevUdiP.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-request-verify-20260912T102129Z-ac46386a4422-rZm0msMPY6C1uIEIF20KjJogIkevUdiP.json",
+          "go-boss-request-verify-20260912T102129Z-ac46386a4422.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-12T10:23:26Z"
+      },
+      "expires_at": "2026-09-12T10:36:29.241959Z",
+      "issued_at": "2026-09-12T10:21:29.241959Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "rZm0msMPY6C1uIEIF20KjJogIkevUdiP",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "boss-request-verify-20260912T102129Z-ac46386a4422"
+      },
+      "source": {
+        "path": "tasks/go-boss-request-verify-20260912T102129Z-ac46386a4422.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-request-verify-20260912T102129Z-ac46386a4422-rZm0msMPY6C1uIEIF20KjJogIkevUdiP.json",
+          "go-boss-request-verify-20260912T102129Z-ac46386a4422.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-request-verify-20260912T102129Z-ac46386a4422",
+      "task_sha256": "614b1376b640f15c0fabae27a79199af0fa9e6b801b3396b38b53362d7e18ebf",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-12T10:44:39.878757Z",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-12T10:24:39.878757Z",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "MIBzAewVHItdike6QxDAowDg6LR03aAI",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "builder_profile": "go-application-python-v1",
+        "source": {
+          "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+          "pr_number": "42",
+          "repository": "git@github.com:yuguangzhi3836-glitch/GO.git"
+        }
+      },
+      "source": {
+        "path": "tasks/go-boss-test-pr-42-897d50e981e3.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss-test-pr-42-897d50e981e3",
+      "task_sha256": "fdcd71913044b74f87b042e109b1e5150bcde89d5f37d7114a76fb2a5a4bcfa9",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss-request-verify-20260912T135236Z-6a060f78b64d-2a1yw3uWLYqNo7wGbgHlC6yP_2Qa_NP5.json",
+          "go-boss-request-verify-20260912T135236Z-6a060f78b64d.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-12T13:54:21Z",
+        "evidence_sha256": "2b69ab5842ead9624af43a6e01162b18c6602be8d780fdff63864b2bbca69f73",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-request-verify-20260912T135236Z-6a060f78b64d-2a1yw3uWLYqNo7wGbgHlC6yP_2Qa_NP5.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-request-verify-20260912T135236Z-6a060f78b64d-2a1yw3uWLYqNo7wGbgHlC6yP_2Qa_NP5.json",
+          "go-boss-request-verify-20260912T135236Z-6a060f78b64d.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-12T13:54:21Z"
+      },
+      "expires_at": "2026-09-12T14:07:36.829703Z",
+      "issued_at": "2026-09-12T13:52:36.829703Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "2a1yw3uWLYqNo7wGbgHlC6yP_2Qa_NP5",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "boss-request-verify-20260912T135236Z-6a060f78b64d"
+      },
+      "source": {
+        "path": "tasks/go-boss-request-verify-20260912T135236Z-6a060f78b64d.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-request-verify-20260912T135236Z-6a060f78b64d-2a1yw3uWLYqNo7wGbgHlC6yP_2Qa_NP5.json",
+          "go-boss-request-verify-20260912T135236Z-6a060f78b64d.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-request-verify-20260912T135236Z-6a060f78b64d",
+      "task_sha256": "dc0ce746cde1244782d103011d2d3492beb357ba251321d0c4736ad50483b303",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-12T14:15:51.260269Z",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-12T13:55:51.260269Z",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "0AZw4JKKjMAf7WbFZDK4vBNLvrS94ARM",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "builder_profile": "go-application-python-v1",
+        "source": {
+          "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+          "pr_number": "42",
+          "repository": "git@github.com:yuguangzhi3836-glitch/GO.git"
+        }
+      },
+      "source": {
+        "path": "tasks/go-boss-test-pr-42-a9d5683be3e7.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss-test-pr-42-a9d5683be3e7",
+      "task_sha256": "e2e1c9e4d26e763291ad5ebf74902ff7e9f98d36d2c7a3e6baf6c462bcb18165",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss-request-verify-20260912T152929Z-822deb499829-k5iiTStVxZNd4VHV5LsO8xdjwJcK1rU2.json",
+          "go-boss-request-verify-20260912T152929Z-822deb499829.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-12T15:31:11Z",
+        "evidence_sha256": "49fb0e2eb22c5d8089b612690b255fb7c4fb9a8771ac135f5d8325aab6ab3caf",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-request-verify-20260912T152929Z-822deb499829-k5iiTStVxZNd4VHV5LsO8xdjwJcK1rU2.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-request-verify-20260912T152929Z-822deb499829-k5iiTStVxZNd4VHV5LsO8xdjwJcK1rU2.json",
+          "go-boss-request-verify-20260912T152929Z-822deb499829.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-12T15:31:11Z"
+      },
+      "expires_at": "2026-09-12T15:44:29.943595Z",
+      "issued_at": "2026-09-12T15:29:29.943595Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "k5iiTStVxZNd4VHV5LsO8xdjwJcK1rU2",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "boss-request-verify-20260912T152929Z-822deb499829"
+      },
+      "source": {
+        "path": "tasks/go-boss-request-verify-20260912T152929Z-822deb499829.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-request-verify-20260912T152929Z-822deb499829-k5iiTStVxZNd4VHV5LsO8xdjwJcK1rU2.json",
+          "go-boss-request-verify-20260912T152929Z-822deb499829.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-request-verify-20260912T152929Z-822deb499829",
+      "task_sha256": "e67ddb73a067627180cf3f9faa91df657fc5e6986d256ee48d6731382237ed40",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "assertion": {
+        "evidence": [
+          "go-boss-test-pr-42-5c8d760d36cb-xgQcFzIXtxj2IKjcJesfqtr0aY84k4vj.json",
+          "go-boss-test-pr-42-5c8d760d36cb.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "TEST_PR_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "built_image_id": "sha256:625c05ee487c0de21a6db6db13991802802c219c96e407a2f78c391314c09983",
+        "completed_at": "2026-09-12T15:45:24Z",
+        "evidence_sha256": "85249fe26ea62e8c9c76a875eda92fbc185bacdf779b3c193fc426fa795e4822",
+        "executor_result": "TEST_PR_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-test-pr-42-5c8d760d36cb-xgQcFzIXtxj2IKjcJesfqtr0aY84k4vj.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "source_commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+        "source_pr_number": "42",
+        "status": "SUCCESS",
+        "task_canonical_sha256": "7f65641b54a6bd1da5e0fec6cc1fda16a741523b95866843b474679db7498dd8",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-test-pr-42-5c8d760d36cb-xgQcFzIXtxj2IKjcJesfqtr0aY84k4vj.json",
+          "go-boss-test-pr-42-5c8d760d36cb.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-12T15:45:24Z"
+      },
+      "expires_at": "2026-09-12T16:03:43.264751Z",
+      "issued_at": "2026-09-12T15:43:43.264751Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "xgQcFzIXtxj2IKjcJesfqtr0aY84k4vj",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "builder_profile": "go-application-python-v1",
+        "source": {
+          "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+          "pr_number": "42",
+          "repository": "git@github.com:yuguangzhi3836-glitch/GO.git"
+        }
+      },
+      "source": {
+        "path": "tasks/go-boss-test-pr-42-5c8d760d36cb.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-test-pr-42-5c8d760d36cb-xgQcFzIXtxj2IKjcJesfqtr0aY84k4vj.json",
+          "go-boss-test-pr-42-5c8d760d36cb.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-test-pr-42-5c8d760d36cb",
+      "task_sha256": "55e58f0a459508bc0526d2a525136c5982086654d03204c643da9802dbe0fa72",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "assertion": {
+        "evidence": [
+          "go-boss-test-pr-42-81653232027c-FazaUqG2NOoKknSG-DjoOyrbxtmpcIp-.json",
+          "go-boss-test-pr-42-81653232027c.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "TEST_PR_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "built_image_id": "sha256:c446b3d39861fb0a1055e906da82a6ef3cd0eec1b907a537f400d6bf3e6100a8",
+        "completed_at": "2026-09-12T16:02:38Z",
+        "evidence_sha256": "7a9c00b5d985e991ad9367642c760dca06785194258c298f0ac4f9eddb504d60",
+        "executor_result": "TEST_PR_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-test-pr-42-81653232027c-FazaUqG2NOoKknSG-DjoOyrbxtmpcIp-.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "source_commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+        "source_pr_number": "42",
+        "status": "SUCCESS",
+        "task_canonical_sha256": "0898b0f49137c0588969ba42ae4f1becb1fe543b0cb44b2efde7dc2dde56501c",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-test-pr-42-81653232027c-FazaUqG2NOoKknSG-DjoOyrbxtmpcIp-.json",
+          "go-boss-test-pr-42-81653232027c.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-12T16:02:38Z"
+      },
+      "expires_at": "2026-09-12T16:20:18.211861Z",
+      "issued_at": "2026-09-12T16:00:18.211861Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "FazaUqG2NOoKknSG-DjoOyrbxtmpcIp-",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "builder_profile": "go-application-python-v1",
+        "source": {
+          "commit_sha": "b5732c02dd95092a63def7eaa0d2cf332b1e2996",
+          "pr_number": "42",
+          "repository": "git@github.com:yuguangzhi3836-glitch/GO.git"
+        }
+      },
+      "source": {
+        "path": "tasks/go-boss-test-pr-42-81653232027c.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-test-pr-42-81653232027c-FazaUqG2NOoKknSG-DjoOyrbxtmpcIp-.json",
+          "go-boss-test-pr-42-81653232027c.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-test-pr-42-81653232027c",
+      "task_sha256": "d9565a2a2f916f3b359c117b38598dfc5157c81e1f5d6b23dbaca76f32f12886",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "assertion": {
+        "evidence": [
+          "go-boss-test-pr-47-c00da968ea3c-kFYOCekZQgQet9rxzRaWgR3FT_n7hUmv.json",
+          "go-boss-test-pr-47-c00da968ea3c.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "TEST_PR_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "built_image_id": "sha256:de90eb9e5df3534ca542f185fdcb658345261ac5b400add741b1126d2b03ac39",
+        "completed_at": "2026-09-12T17:08:32Z",
+        "evidence_sha256": "0aa1d34943f72f407a51e64131e21ef81036e7e33cfd73e323955d8520da9f01",
+        "executor_result": "TEST_PR_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-test-pr-47-c00da968ea3c-kFYOCekZQgQet9rxzRaWgR3FT_n7hUmv.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "source_commit_sha": "3e8150fec9cc5ebcfc9694e7e73444c7592ddcb4",
+        "source_pr_number": "47",
+        "status": "SUCCESS",
+        "task_canonical_sha256": "a15002ea3f3ec1ef18e433322de679afee7512ff9d3ffa48ef796bc5cebb73c9",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-test-pr-47-c00da968ea3c-kFYOCekZQgQet9rxzRaWgR3FT_n7hUmv.json",
+          "go-boss-test-pr-47-c00da968ea3c.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-12T17:08:32Z"
+      },
+      "expires_at": "2026-09-12T17:26:21.572557Z",
+      "issued_at": "2026-09-12T17:06:21.572557Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "kFYOCekZQgQet9rxzRaWgR3FT_n7hUmv",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "builder_profile": "go-application-python-v1",
+        "source": {
+          "commit_sha": "3e8150fec9cc5ebcfc9694e7e73444c7592ddcb4",
+          "pr_number": "47",
+          "repository": "git@github.com:yuguangzhi3836-glitch/GO.git"
+        }
+      },
+      "source": {
+        "path": "tasks/go-boss-test-pr-47-c00da968ea3c.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-test-pr-47-c00da968ea3c-kFYOCekZQgQet9rxzRaWgR3FT_n7hUmv.json",
+          "go-boss-test-pr-47-c00da968ea3c.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-test-pr-47-c00da968ea3c",
+      "task_sha256": "66ed047eccd1c0a48aaa8bbcd6d879764351d674344afbb213296c61e432961b",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [
+          "go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json",
+          "go-boss-request-verify-20260913T034140Z-b22f51784808.json"
+        ],
+        "reason": "Evidence verified against the Hong Kong evidence verifier identity, its Task verified against the Command Center task verifier identity, and it reports the frozen terminal result",
+        "state": "PROVEN",
+        "value": "VERIFY_OK"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "evidence": {
+        "agent_version": "0.5.7-rebuilt",
+        "completed_at": "2026-09-13T03:43:27Z",
+        "evidence_sha256": "9ba3d81b2f9975b2a1c4fca6b27f2ff842249a987adb1869dfc643ff2559e4be",
+        "executor_result": "VERIFY_OK",
+        "generation": "v2",
+        "signature_verified": true,
+        "source": {
+          "path": "evidence/go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json",
+          "repository": "chenzhenxi1-sudo/go-control-evidence"
+        },
+        "status": "SUCCESS",
+        "verifier_identity": "Hong Kong agent evidence signer"
+      },
+      "execution_started": {
+        "evidence": [
+          "go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json",
+          "go-boss-request-verify-20260913T034140Z-b22f51784808.json"
+        ],
+        "reason": "the Evidence carries started_at for this task/nonce",
+        "state": "PROVEN",
+        "value": "2026-09-13T03:43:27Z"
+      },
+      "expires_at": "2026-09-13T03:56:40.478302Z",
+      "issued_at": "2026-09-13T03:41:40.478302Z",
+      "lifecycle": "COMPLETE",
+      "nonce": "6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "boss-request-verify-20260913T034140Z-b22f51784808"
+      },
+      "source": {
+        "path": "tasks/go-boss-request-verify-20260913T034140Z-b22f51784808.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "staleness": {
+        "evidence": [
+          "go-boss-request-verify-20260913T034140Z-b22f51784808-6CoeHC2IfTqbRYk5rja_MR6rcMXmEqvU.json",
+          "go-boss-request-verify-20260913T034140Z-b22f51784808.json"
+        ],
+        "reason": "the newest Evidence for this task is older than the configured freshness window",
+        "state": "OBSERVED",
+        "value": "STALE"
+      },
+      "task_id": "go-boss-request-verify-20260913T034140Z-b22f51784808",
+      "task_sha256": "691aed6e9621e2de1d81ee54e293406ed5c815b18bb22c33125f473fa9d0253b",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_TEST_PR",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-15T01:31:31.528261Z",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-15T01:11:31.528261Z",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "XrXD4WnX6ngfWgkvf1BV6aFVTH4vqTua",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "builder_profile": "go-application-python-v1",
+        "source": {
+          "commit_sha": "bd25d7acca1b5f54a7fb555008ed60b76ee45f21",
+          "pr_number": "52",
+          "repository": "git@github.com:yuguangzhi3836-glitch/GO.git"
+        }
+      },
+      "source": {
+        "path": "tasks/go-boss-test-pr-52-c39d85ecbb02.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss-test-pr-52-c39d85ecbb02",
+      "task_sha256": "b52bd79ee21456961b5e4a1d73aa18eb59c0789caf395fb8349d2f1a47d0c40d",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    },
+    {
+      "action_id": "HK_STAGING_VERIFY",
+      "assertion": {
+        "evidence": [],
+        "reason": "expires_at passed with no signed Evidence for this task",
+        "state": "OBSERVED",
+        "value": "TASK_EXPIRED"
+      },
+      "authority": "GO-COMMAND-CENTER",
+      "environment": "HK-STAGING-01",
+      "expires_at": "2026-09-15T01:26:58.348122Z",
+      "hk_agent_picked_up": {
+        "evidence": [],
+        "reason": "no Evidence exists for this Task. Since CC V1-02 an authenticated Task whose claimed attempt fails publishes a signed failure record, so absence indicates the attempt was never claimed \u2014 but that cannot be asserted for Tasks that predate the capability, and the agent ledger is still not on the control bus",
+        "state": "UNKNOWN",
+        "value": null
+      },
+      "issued_at": "2026-09-15T01:11:58.348122Z",
+      "lifecycle": "TASK_EXPIRED",
+      "nonce": "_0_mCq1HW96rrWRo4GkEipbEWsgCjegL",
+      "parameter_contract": "CURRENT",
+      "parameters": {
+        "candidate_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "expected_current_image_id": "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324",
+        "release_id": "boss-request-verify-20260915T011158Z-c9ccc0f13432"
+      },
+      "source": {
+        "path": "tasks/go-boss-request-verify-20260915T011158Z-c9ccc0f13432.json",
+        "repository": "chenzhenxi1-sudo/go-control-tasks"
+      },
+      "task_id": "go-boss-request-verify-20260915T011158Z-c9ccc0f13432",
+      "task_sha256": "c363bc7f0ad64754ec786a8db6e45d9bfe5f07430f8c658b641ae85d513ca40d",
+      "task_signature_verified": true,
+      "task_verifier_identity": "GO Command Center task-manifest signer"
+    }
+  ],
+  "verification": {
+    "evidence": {
+      "encoding": "base64",
+      "expected_ssh_sha256_fingerprint": "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw",
+      "identity": "Hong Kong agent evidence signer",
+      "identity_binding": "BOUND",
+      "identity_binding_reason": null,
+      "identity_id": "HK-AGENT-EVIDENCE-SIGNER",
+      "key_fingerprint": "53febb3f28fa835f2f2d88cf34a5aefca124aa95a43335e5688157c89f4200c7",
+      "signature_verification": "PERFORMED",
+      "ssh_sha256_fingerprint": "SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw"
+    },
+    "fail_closed_reasons": [],
+    "identities_separated": true,
+    "identity_contract": {
+      "contract": "VERIFIER_IDENTITIES_V1",
+      "is_the_published_contract": true,
+      "path": "identity/VERIFIER_IDENTITIES_V1.json",
+      "publishes_private_keys": false,
+      "reason": null,
+      "state": "LOADED"
+    },
+    "note": "A Task must never validate against the evidence key and Evidence must never validate against the task key. PROVEN requires the artifact's own identity to verify, and it additionally requires that identity to be the one published in the verifier identity contract. A key that merely loads is not the right key",
+    "proven_allowed": true,
+    "proven_requires_both_identities_bound": true,
+    "proven_requires_both_keys": true,
+    "task": {
+      "encoding": "hex",
+      "expected_ssh_sha256_fingerprint": "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns",
+      "identity": "GO Command Center task-manifest signer",
+      "identity_binding": "BOUND",
+      "identity_binding_reason": null,
+      "identity_id": "GO-CC-TASK-MANIFEST-SIGNER",
+      "key_fingerprint": "b079fb544ed9efbed03f0641f9ecdbb4c738bf525ef440998d6b30fad86d30df",
+      "signature_verification": "PERFORMED",
+      "ssh_sha256_fingerprint": "SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns"
+    }
+  }
+}

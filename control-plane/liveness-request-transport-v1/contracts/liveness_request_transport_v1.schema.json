@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/liveness-request-transport-v1/contracts/liveness_request_transport_v1.schema.json",
+  "title": "GO Command Center Liveness Request Transport V1",
+  "description": "One relay report: what the transport did with the newest fresh liveness probe, on one branch, with the boundedness facts restated on every run. A report is a record of a git push, never an authorisation: this component holds no Task key, signs nothing, and has no way to create, merge or close a pull request.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["result", "bounds"],
+  "properties": {
+    "result": {
+      "enum": ["PUBLISHED", "ALREADY_PUBLISHED", "SKIPPED_STALE", "SKIPPED_NO_REQUEST", "REFUSED"],
+      "description": "PUBLISHED moved the transport. ALREADY_PUBLISHED means this bucket is already on the bus, which is what makes a five-minute timer idempotent against a thirty-minute probe interval. SKIPPED_STALE declined to publish a probe the Bridge would have refused. REFUSED is fail-closed: nothing was pushed."
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport_branch", "archive_branch", "transport_branches", "archive_branches",
+                   "submissions_per_cycle", "requests_per_submission", "pr_creation_capability",
+                   "merge_capability", "close_capability", "api_client",
+                   "archive_is_append_only", "max_publish_age_seconds", "bridge_max_age_seconds"],
+      "properties": {
+        "transport_branch": {"const": "boss-request-liveness-transport"},
+        "archive_branch": {"const": "request/liveness-archive"},
+        "transport_branches": {"const": 1, "description": "How many branches this transport will ever occupy. The pull request follows the branch, so the open-PR count cannot grow with the probe rate."},
+        "archive_branches": {"const": 1},
+        "submissions_per_cycle": {"const": 1},
+        "requests_per_submission": {"const": 1, "description": "The Bridge accepts a submission only when the diff against the merge base with main is exactly one added requests/*.json, so a cycle adds one file and removes none."},
+        "pr_creation_capability": {"const": "ABSENT"},
+        "merge_capability": {"const": "ABSENT"},
+        "close_capability": {"const": "ABSENT"},
+        "api_client": {"const": "ABSENT", "description": "No HTTP client in the tool at all, asserted against its own source by run_checks. The tool speaks git over SSH with the key the bus already trusts."},
+        "archive_is_append_only": {"const": true, "description": "A superseded probe is moved to request/liveness-archive before the transport drops it, and a path the archive already holds is never rewritten. Without the archive the projection would emit one REQUEST_FACT_WITHOUT_REQUEST anomaly per probe, because a Request fact is immutable while the file would be gone."},
+        "max_publish_age_seconds": {"type": "integer", "minimum": 60, "maximum": 899},
+        "bridge_max_age_seconds": {"const": 900}
+      }
+    },
+    "request_id": {"type": "string"},
+    "action_id": {"const": "CONTROL_PLANE_HEALTH"},
+    "environment": {"const": "HK-STAGING-01"},
+    "age_seconds": {"type": "number", "minimum": 0},
+    "outbox": {"type": "string"},
+    "reason": {"type": "string"},
+    "dry_run": {"type": "boolean"},
+    "transport_head": {"type": ["string", "null"]},
+    "transport_previous_head": {"type": ["string", "null"]},
+    "transport_parent_is_main": {"type": "boolean"},
+    "added_vs_main": {"type": "array", "items": {"type": "string"},
+      "description": "Every path this submission adds to main. Exactly one, by assertion: the relay refuses rather than pushes when it is not."},
+    "removed_vs_main": {"type": "array", "items": {"type": "string"},
+      "description": "Every path this submission removes from main. Always empty: a deletion would be a second diff entry and the Bridge would ignore the submission."},
+    "archived_now": {"type": "array", "items": {"type": "string"}},
+    "archive_files": {"type": "integer", "minimum": 0},
+    "archive_head": {"type": ["string", "null"]},
+    "transport_files": {"type": "integer", "minimum": 0},
+    "request_bytes": {"type": "integer", "minimum": 1}
+  },
+  "x-go-transport-rules": {
+    "one_branch_one_pr": "The transport is one long-lived branch. The operator opens its pull request once; every cycle force-updates the branch and the pull request follows. A new head is a new submission identity to the Bridge, so a reused branch is still a fresh submission.",
+    "why_not_accumulate": "Accumulating request files on the transport branch would make every submission show more than one change, and the Bridge ignores a submission whose diff is not exactly one added request file.",
+    "why_an_archive": "Facts are immutable and permanent and the projection attributes each one to the Request file it was read from, so a superseded file has to stay on the bus. request/* is the second namespace the state contract already declares for Requests; the projector collects it and the Bridge does not read it.",
+    "never_a_general_publisher": "The outbox Request must be exactly the five common fields, in HK-STAGING-01, with CONTROL_PLANE_HEALTH. This tool has no code path that publishes any other action, and holds no Task key."
+  },
+  "x-go-non-authority": [
+    "A relay report is a record of a git push. It authorises nothing and grants no execution.",
+    "The tool signs nothing, holds no private key and has no code path to the Bridge, the agent or an executor.",
+    "It cannot create, merge, close or revert a pull request: it holds no HTTP client and pushes branches only."
+  ]
+}

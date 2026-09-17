@@ -1,0 +1,295 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "go.release-candidate.v1",
+  "title": "RELEASE_CANDIDATE_V1",
+  "description": "What a version of the product must be before the Command Center may treat it as deployable. Command Center defines what is deployable: a candidate that cannot establish every identity below is refused at admission rather than completed, guessed or repaired here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "candidate_id",
+    "source_repository",
+    "source_commit",
+    "application_tree",
+    "source_fingerprint",
+    "migration_head",
+    "migration_required",
+    "build_definition",
+    "artifact_digest",
+    "required_services",
+    "test_result_identity",
+    "rollback_relation"
+  ],
+  "properties": {
+    "schema": {
+      "const": "go.release-candidate.v1"
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$",
+      "description": "Stable name for this candidate. It exists so CANARY, DEPLOY and ROLLBACK can all name the same thing; it is not an authority."
+    },
+    "source_repository": {
+      "const": "yuguangzhi3836-glitch/GO",
+      "description": "The only repository a candidate may come from. A branch name is never accepted in place of an immutable commit."
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "An immutable commit, and specifically a commit the controlled TEST_PR channel can resolve: a PR head, not an intermediate commit of a branch."
+    },
+    "application_tree": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "The git tree of application/ at source_commit."
+    },
+    "source_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "The application source fingerprint at source_commit, computed by the repository's own definition. This entry treats it as a fixed identity and never reinterprets it."
+    },
+    "migration_head": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$",
+      "description": "The Alembic head the candidate expects. Always stated, so the absence of a migration is a declaration rather than a missing field."
+    },
+    "migration_required": {
+      "type": "boolean",
+      "description": "Whether deploying this candidate runs a migration. The live deploy contract forbids migration, so this is false for every candidate V1 can support; it is stated explicitly so that a candidate needing one is refused here rather than discovered by the executor."
+    },
+    "build_definition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "dockerfile",
+        "dockerfile_sha256",
+        "executor_version",
+        "builder_image_tag",
+        "builder_image_id"
+      ],
+      "description": "How the artifact was built. The artifact is only trustworthy because this is the controlled builder's own definition and not something the caller chose.",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+        },
+        "dockerfile": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$",
+          "description": "The Dockerfile basename, never a path: the caller may not point the builder at an arbitrary file."
+        },
+        "dockerfile_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "executor_version": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$",
+          "description": "Which builder produced this artifact. This is a statement about how the image was made, so it must be the version the signed TEST_PR Evidence itself reports for that artifact; a version outside the recognised list, or one the signed result does not corroborate, is refused rather than repaired."
+        },
+        "builder_image_tag": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._/-]{0,127}:[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+        },
+        "builder_image_id": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "artifact_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "The immutable image the build produced. It must equal the artifact the signed TEST_PR result reported, or the source and the artifact are not the same claim."
+    },
+    "required_services": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "string",
+        "enum": [
+          "api",
+          "recovery-worker",
+          "outbox-worker",
+          "mobile-push-receipt-worker",
+          "reconciliation-worker",
+          "mobile-push-worker",
+          "mobile-engagement-worker",
+          "judgment-worker"
+        ]
+      },
+      "description": "The services this candidate needs. The enum is the live fixed eight-service topology: a candidate cannot introduce a service, and a subset is not deployable because the deploy contract requires exactly this set in this order."
+    },
+    "test_result_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_id",
+        "task_id",
+        "evidence_id",
+        "source_pr_number",
+        "source_commit_sha",
+        "artifact_digest",
+        "executor_result"
+      ],
+      "description": "Which signed TEST_PR proves this candidate was built and tested. It is what stops 'tested commit A, deploying artifact B'.",
+      "properties": {
+        "action_id": {
+          "const": "HK_STAGING_TEST_PR"
+        },
+        "task_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+        },
+        "evidence_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+          "description": "The evidence's own identity on the evidence repository (its commit or record id)."
+        },
+        "source_pr_number": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,8}$"
+        },
+        "source_commit_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "artifact_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "executor_result": {
+          "const": "TEST_PR_OK"
+        }
+      }
+    },
+    "artifact_package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "durability",
+        "package_sha256"
+      ],
+      "description": "Whether the artifact this candidate was built as still exists as a sealed, deliverable package. Optional, because a candidate written before the sealed-artifact store existed stays readable; its absence is reported as NOT_PROVEN, never assumed to be PROVEN. An image ID proves a build; it does not prove the built bytes still exist, and reading the first as the second is the ephemeral-artifact defect.",
+      "properties": {
+        "durability": {
+          "enum": [
+            "PROVEN",
+            "NOT_PROVEN"
+          ]
+        },
+        "package_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The content address of the sealed package (contract go.sealed-artifact.v1). It must be the address the signed TEST_PR result reported, and that result must be about the candidate artifact_digest."
+        }
+      }
+    },
+    "rollback_relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relation",
+        "previous_known_good_image_id"
+      ],
+      "description": "How this candidate relates to what is running now. V1 needs only enough to name the target a rollback would return to; full Rollback Eligibility is #104 and is deliberately not implemented here.",
+      "properties": {
+        "relation": {
+          "enum": [
+            "REPLACES_CURRENT_KNOWN_GOOD",
+            "NO_PREVIOUS_KNOWN_GOOD"
+          ]
+        },
+        "previous_known_good_image_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    }
+  },
+  "x-go-refusals": {
+    "note": "The closed set of reasons admission refuses a candidate. Tokens are reused from the live deploy contract wherever one already means the same thing, so this component adds vocabulary only where the existing words cannot express the refusal.",
+    "source": [
+      "release_candidate_absent",
+      "release_candidate_not_an_object",
+      "release_candidate_fields",
+      "release_candidate_schema",
+      "candidate_id",
+      "candidate_repository",
+      "candidate_source_commit",
+      "candidate_source_commit_not_immutable",
+      "candidate_application_tree",
+      "candidate_source_fingerprint",
+      "source_identity_disagrees_with_the_lineage_pointer",
+      "candidate_migration_head",
+      "candidate_migration_required",
+      "candidate_build_definition",
+      "candidate_build_profile",
+      "candidate_build_dockerfile",
+      "candidate_build_dockerfile_sha256",
+      "candidate_build_executor_version",
+      "candidate_build_builder_image_tag",
+      "candidate_build_builder_image_id",
+      "candidate_artifact_digest",
+      "fixed_topology_required",
+      "candidate_test_result_identity",
+      "candidate_test_pr_action",
+      "candidate_test_result_task_id",
+      "candidate_test_result_evidence_id",
+      "candidate_test_result_source_pr_number",
+      "candidate_test_result_source_commit",
+      "candidate_test_result_artifact_digest",
+      "candidate_test_result_not_a_success",
+      "candidate_test_result_evidence_absent",
+      "candidate_test_result_evidence_unreadable",
+      "candidate_test_result_evidence_not_success",
+      "candidate_test_result_evidence_source_commit",
+      "candidate_test_result_evidence_artifact",
+      "candidate_test_result_evidence_action",
+      "candidate_test_result_evidence_task",
+      "candidate_test_result_evidence_builder_version",
+      "candidate_artifact_package",
+      "candidate_artifact_package_absent",
+      "candidate_artifact_package_not_proven",
+      "candidate_artifact_package_identity",
+      "candidate_artifact_package_mismatch",
+      "candidate_rollback_relation",
+      "candidate_rollback_relation_unknown",
+      "candidate_rollback_target",
+      "candidate_rollback_target_absent",
+      "plan_candidate_absent",
+      "plan_candidate_artifact_mismatch",
+      "plan_candidate_source_mismatch",
+      "plan_candidate_migration_mismatch",
+      "plan_candidate_repository_mismatch"
+    ]
+  },
+  "x-go-verdicts": {
+    "note": "ACCEPT means the candidate establishes every identity and nothing conflicts. REJECT means a rule above refuses it. UNKNOWN means an input the decision needs was not supplied, which is never rounded up to ACCEPT.",
+    "values": [
+      "ACCEPT",
+      "REJECT",
+      "UNKNOWN"
+    ]
+  },
+  "x-go-authority": {
+    "note": "Admission is a read-only decision about an identity. It creates, signs and publishes nothing.",
+    "is_execution_authority": false,
+    "can_create_task": false,
+    "can_publish_task": false,
+    "can_open_the_request_switch": false,
+    "holds_private_key": false,
+    "signs_anything": false,
+    "accepts_caller_supplied_parameters": false,
+    "touches_production": false,
+    "is_a_deploy_approval": false
+  }
+}

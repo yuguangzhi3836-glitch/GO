@@ -15,7 +15,14 @@
     "status": {"enum": ["SUCCESS", "REJECTED", "FAILED"]},
     "started_at": {"type": "string", "format": "date-time"},
     "agent_version": {"type": "string"},
-    "signature": {"type": "string", "description": "Ed25519, base64. Verifies against /etc/go-hk-agent/keys/evidence-signing.pub."}
+    "failure": {
+      "type": "object",
+      "description": "present only when status is not SUCCESS; the closed failure semantics are described in contracts/failure_evidence_v1.schema.json"
+    },
+    "retry_permitted": {"const": false},
+    "replay_authorized": {"const": false},
+    "authorizes_any_action": {"const": false},
+    "signature": {"type": "string", "description": "Ed25519, base64. Verifies against /etc/go-hk-agent/keys/evidence-signing.pub, published as identity/keys/hk-evidence-signing.pub."}
   },
   "oneOf": [
     {
@@ -47,7 +54,9 @@
   },
   "x-go-notes": [
     "Two generations exist on the control bus. completed_at/executor_result/gate_results is current; finished_at/result is legacy. A projection must normalise both and must not silently drop either.",
-    "A rejected Task publishes NO Evidence. The attempt budget is consumed in the agent-local SQLite ledger, which is not on the control bus. Absence of Evidence therefore cannot distinguish 'never picked up' from 'picked up and failed'.",
+    "CC V1-02: a Task whose claimed execution attempt fails now publishes a signed FAILED record, bound to the original task_id, nonce, action_id and environment and written to the same evidence/<task_id>-<nonce>.json path. Its closed semantics are in contracts/failure_evidence_v1.schema.json.",
+    "A Task rejected BEFORE its attempt was claimed still publishes nothing, because a Task whose own signature never verified must never be able to cause a write. Absence of Evidence therefore means 'never picked up or never authenticated', which is a different statement from 'nothing happened'.",
+    "A failure record authorizes nothing: retry_permitted, replay_authorized and authorizes_any_action are always false, and the one-attempt rule is enforced by the agent ledger rather than by this document.",
     "TEST_PR Evidence must carry application_health_proven=false and deployment_performed=false. It proves an isolated offline build, not a deployment."
   ]
 }

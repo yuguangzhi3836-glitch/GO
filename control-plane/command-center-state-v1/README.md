@@ -40,12 +40,17 @@ Executor surface                   NOT WIDENED
 | `contracts/request_v1.schema.json` | what a human / ChatGPT may submit, and what is forbidden |
 | `contracts/task_v1.schema.json` | the Execution Authority envelope and the frozen parameter contracts |
 | `contracts/evidence_v1.schema.json` | both published Evidence generations, and the terminal-result table |
+| `contracts/failure_evidence_v1.schema.json` | the signed failure record: its binding, its closed vocabularies, and what it may never authorize |
 | `contracts/control_state_v1.schema.json` | the projection format and the rank rules |
 | `contracts/control_status_v1.schema.json` | the bounded ChatGPT read contract and the question map |
 | `contracts/agent_liveness_v1.schema.json` | how liveness is represented, and what it may never claim |
+| `identity/VERIFIER_IDENTITIES_V1.json` | the published verifier identities, their fingerprints and their host provenance |
+| `identity/keys/*.pub` | the two published public keys. No private key is ever published |
+| `identity/README.md` | how the keys were obtained, how to bind them, and the five outcomes |
 | `LIFECYCLE_V1.md` | the closed lifecycle vocabulary and what the control bus can see |
 | `CHATGPT_CONTRACT_V1.md` | how a connector reads status and writes a Request |
-| `tests/test_state_projection.py` | isolated tests, including signer-identity separation |
+| `tests/test_state_projection.py` | isolated tests, including signer-identity separation and identity binding |
+| `tests/fixtures/real/` | 24 real signed Task/Evidence pairs, used as a live regression fixture |
 | `run_checks.py` | isolated runner: no network, no subprocess, no runtime paths |
 | `evidence/PROJECTION_20260914/` | a real projection of the live control bus at pinned revisions |
 
@@ -142,24 +147,30 @@ No test asserts their presence in `answers`, and a test asserts they are absent.
 ## P0-3 — Request → Task → Evidence lifecycle
 
 The closed vocabulary and the observable/unobservable boundary are in
-`LIFECYCLE_V1.md`. Two rules are load-bearing and enforced by tests:
+`LIFECYCLE_V1.md`. Three rules are load-bearing and enforced by tests:
 
 * **`COMPLETE` requires both identities.** Evidence must verify against the Hong
   Kong evidence key *and* the Task must verify against the Command Center task
   key. Evidence that verifies alone stops at `EVIDENCE_VERIFIED` / `OBSERVED`.
+* **`REQUEST_VALIDATED` requires a signed Task.** A Request file on the bus is
+  human intent and nothing more. Acceptance is reported only when the named Task
+  is present, carries `sha256(request_id)[:12]`, matches its claimed digest, and
+  verifies under the bound published identity; otherwise the Request stays
+  `REQUEST_CREATED` with the failed claim visible. See section 10.
 * **Stuck is not the same as expired.** `answers.stuck_tasks.answer` reads
   `active_stuck_tasks` only. 21 expired historical Tasks do not make 21 things
   stuck.
 
 No new execution capability is introduced.
 
-## The six corrections this revision makes
+## The corrections and additions this revision makes
 
 ### 1. Task and Evidence use different verification identities
 
 ```sh
---task-verify-key      <cc-task.pub>        # hex signature, Command Center task-manifest signer
---evidence-verify-key  <hk-evidence.pub>    # base64 signature, Hong Kong agent evidence signer
+--task-verify-key     <cc-task.pub>        # hex signature, Command Center task-manifest signer
+--evidence-verify-key <hk-evidence.pub>    # base64 signature, Hong Kong agent evidence signer
+--verifier-identities <VERIFIER_IDENTITIES_V1.json>
 ```
 
 Two separate `Verifier` objects. A Task signed with the evidence key fails. An
@@ -168,6 +179,29 @@ public key the projection records a `VERIFIER_IDENTITY_COLLISION` anomaly and
 refuses every `PROVEN` claim. Missing key means `NOT_PERFORMED`, which can never
 become `PROVEN`. Tests use two independent ephemeral keys; no test uses one key
 for both roles.
+
+### 1b. A key that loads is not the right key (CC V1-01)
+
+Supplying a key is not the same as supplying *the* key. The projection therefore
+binds every verifier against the published identity contract:
+
+```text
+--verifier-identities defaults to identity/VERIFIER_IDENTITIES_V1.json
+```
+
+| Situation | `identity_binding` | Result |
+|---|---|---|
+| fingerprint matches the published pin | `BOUND` | `PROVEN` possible |
+| no key supplied | `MISSING_KEY` | fail-closed, never `PROVEN` |
+| key file does not load | `KEY_UNREADABLE` | fail-closed, never `PROVEN` |
+| key loads, fingerprint differs | `IDENTITY_MISMATCH` | fail-closed, never `PROVEN` |
+| no usable pin (contract missing/unreadable) | `IDENTITY_UNRESOLVED` | fail-closed, never `PROVEN` |
+| one key supplied for both roles | `IDENTITY_COLLISION` | fail-closed, never `PROVEN` |
+
+A verifier whose binding is not `BOUND` is disabled, so it cannot return `True`
+and therefore cannot produce `PROVEN`. Its binding is still reported, so **"wrong
+key" is never quietly downgraded to "no key"**. `verification.proven_allowed`
+summarises the gate and `verification.fail_closed_reasons` names each failure.
 
 ### 2. The repository runtime pointer is not the live runtime
 
@@ -182,22 +216,45 @@ Older proof reports `NOT_RECENTLY_VERIFIED` even when the images agree.
 
 ### 3. DEPLOY is not exposed to chat, and its readiness is not evaluated
 
+A Request can be created by a human or by the platform's own producer, and the
+two are not the same class of caller. Conflating them would either mis-report a
+real liveness Request as forbidden or promote a read-only probe into a human
+execution right, so the source class is carried explicitly.
+
 ```json
-{"enabled_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR"],
+{"human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
+                          "HK_STAGING_CANARY"],
+ "platform_request_actions": ["CONTROL_PLANE_HEALTH"],
+ "enabled_human_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY"],
+ "enabled_platform_request_actions": ["CONTROL_PLANE_HEALTH"],
+ "enabled_request_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY",
+                             "CONTROL_PLANE_HEALTH"],
+ "request_action_source_class": {
+   "HK_STAGING_VERIFY": "HUMAN_REQUEST", "HK_STAGING_TEST_PR": "HUMAN_REQUEST",
+   "HK_STAGING_DEPLOY": "HUMAN_REQUEST", "HK_STAGING_CANARY": "HUMAN_REQUEST",
+   "CONTROL_PLANE_HEALTH": "PLATFORM_AUTOMATION"},
+ "platform_action_properties": {
+   "CONTROL_PLANE_HEALTH": {"source_class": "PLATFORM_AUTOMATION",
+                            "parameters": {}, "read_only": true,
+                            "human_deploy_authority": false}},
  "capability_classification": {
    "HK_STAGING_VERIFY": "SUPPORTED_PROVEN",
    "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
    "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
-   "HK_STAGING_CANARY": "NOT_REQUESTABLE",
-   "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE"},
+   "HK_STAGING_CANARY": "CAPABILITY_PRESENT_REQUESTABLE",
+   "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE",
+   "CONTROL_PLANE_HEALTH": "SUPPORTED_PROVEN_PLATFORM_ONLY"},
  "deploy_request_enabled": false,
  "readiness_evaluation": "NOT_IN_SCOPE"}
 ```
 
-`known_capability` and `currently_enabled_request_action` are separate concepts
-throughout the schema. The live Command Center channel switch is a live-host fact
-and is reported as `UNKNOWN`, never asserted. No deployment plan is created, no
-switch is modified, no DEPLOY Task is signed.
+`known_capability`, `currently_enabled_request_action` and `who may express it`
+are separate concepts throughout the schema. A `platform_request_actions` entry
+is created by the platform's own bounded producer, not by a human: it carries
+fixed empty parameters, it is read-only, and `human_deploy_authority` is false.
+The live Command Center channel switch is a live-host fact and is reported as
+`UNKNOWN`, never asserted. No deployment plan is created, no switch is modified,
+no DEPLOY Task is signed.
 
 The contract computes no `can_deploy`, no deployment eligibility, no rollback
 target selection and no release-gate verdict. Release-gate and rollback-candidate
@@ -224,6 +281,243 @@ The projector never substitutes a runtime source SHA for the repository head.
 No `D:/...`, no temp path, no user directory. Anomalies name
 `chenzhenxi1-sudo/go-control-tasks/tasks`, not a disk path. There is a built-in
 `LOCAL_PATH_LEAK` guard and a test that scans the whole output.
+
+### 7. The verifier identities are published (CC V1-01)
+
+Until CC V1-01 the repository archived **fingerprints only**, so nothing off the
+control bus could be raised above `OBSERVED`. `identity/` now publishes both
+verifier public keys with an identity contract, and the projection binds to it.
+
+```text
+GO-CC-TASK-MANIFEST-SIGNER   TASK       hex     SHA256:bkwH368MFv+n+18Pca6MB1jV4jZtBbsn8yjC1bf/hns
+HK-AGENT-EVIDENCE-SIGNER     EVIDENCE   base64  SHA256:WZ2gG4WHnO5zmijyK8TSOHFpY+EBkk8TWbSbfbRjFNw
+```
+
+The binding is anchored on both sides: the fingerprint the Command Center signs
+Tasks with is the same fingerprint the Hong Kong agent verifies them with, and
+both agree with the 2026-09-11 audit archives already committed in this
+repository. The two fingerprints differ, which is the separation requirement.
+
+The keys were obtained by a single **read-only** operation on the Command Center
+host with explicit human authorisation, verified twice, and are byte-identical to
+the files on the host:
+
+```text
+retrieved   2026-09-14T14:34:46Z  over the Alibaba Cloud Workbench tunnel
+read        /etc/go-command-center/keys/task-manifest-signing.pub
+            /etc/go-command-center/deployment-plans-v1/authority.pub
+            /etc/go-command-center/deployment-plans-v1/hk-evidence.pub
+not read    any .pem, any *token*, any private key
+not done    no write, no service change, no signing, no deployment
+```
+
+**No private key is published, and a test asserts it.**
+
+### 8. Real history now reaches PROVEN
+
+`tests/fixtures/real/` carries 24 real signed Task/Evidence pairs taken from the
+control bus. Against the published keys they resolve, with no synthetic key
+material:
+
+```text
+task_signature_verified       True   for all 24
+evidence signature_verified   True   for all 24
+lifecycle                     COMPLETE for all 24
+assertion state               PROVEN  for all 24
+actions covered               VERIFY 12, DEPLOY 4, TEST_PR 3, CANARY 2, health 2, ROLLBACK 1
+```
+
+Without the keys the same fixture stays at `OBSERVED`, which is the honest
+before/after the publication buys.
+
+The same binding was applied to the live-bus snapshot, which moved from
+`EVIDENCE_PUBLISHED 24 | TASK_EXPIRED 21 | POLICY_HOLD 1` to
+`COMPLETE 24 | TASK_EXPIRED 18 | POLICY_HOLD 4`. See
+`evidence/PROJECTION_20260914/README.md` for what the three new failures are.
+
+A note on the committed snapshots, because a contract change can leave them
+behind. Each `evidence/PROJECTION_<date>/` directory is a record of what the
+projector produced at a pinned instant from pinned revisions. It is **not**
+re-projected when this component gains a field, and it is deliberately not edited
+to match. The `request_channel` block here gained six fields
+(`human_request_actions`, `platform_request_actions`,
+`enabled_human_request_actions`, `enabled_platform_request_actions`,
+`request_action_source_class`, `platform_action_properties`), so a reader
+validating `evidence/PROJECTION_20260914` or `PROJECTION_20260915` against the
+contract as it now stands will find those six absent. That is the record being
+older than the contract, not a claim that the record is wrong. Regenerating a
+snapshot is a separate, dated act against freshly pinned inputs.
+
+### 9. A failure is published, not swallowed (CC V1-02)
+
+The failure half of the lifecycle used to live only in the agent-local SQLite
+ledger, so the control bus could not tell "never picked up" from "picked up and
+failed". A Task whose **claimed** execution attempt fails now publishes a signed
+`FAILED` record to the same `evidence/<task_id>-<nonce>.json` path a success
+uses, signed by the same Hong Kong evidence identity and bound to the original
+`task_id`, `nonce`, `action_id` and `environment`.
+
+The consumer side needed two corrections for that to be read honestly:
+
+* **A signed non-success status is now evaluated before the validity window.** A
+  failure is recorded when the attempt stopped, which may legitimately be after
+  `expires_at`; only a claimed success can time out. Without this, every failure
+  record would have been mislabelled `EVIDENCE_TIMEOUT`.
+* **Two distinct records for one Task identity now fail closed.** They are
+  reported as `EVIDENCE_CONFLICT` and capped at `EVIDENCE_VERIFIED` / `OBSERVED`,
+  because one Task identity cannot have two outcomes; byte-identical duplicates
+  are not a conflict.
+
+A failure record authorizes nothing. The projection reports `retry_permitted`,
+`replay_authorized` and `authorizes_any_action` as **false from the contract** and
+separately reports what the artifact claimed, so a record claiming otherwise is
+recorded and given no effect. `answers.last_failure` now carries the failure
+`kind`, `stage` and `reason_code` alongside the Task that caused it.
+
+**Both fact shapes are read, and folded by semantic identity.** The bus carries
+every fact the earlier exporter wrote — one per observation of an outcome — next to
+the semantic one the current exporter mints for it. They are one business fact, so
+the projection keeps the earliest observation of each identity and reports how many
+it collapsed (`facts_collected`, `fact_observations_folded_into_a_semantic_fact`,
+`facts_by_identity_rule`) rather than counting the same outcome twice. Nothing is
+deleted; the bus still carries every observation as a record. A fact whose
+`semantic_id` is not the identity of the body it declares is refused even when its
+id was recomputed to match. The two time fields are outside the id by design: the
+instant must not define identity, so it is not made tamper-evident either, and the
+projection claims nothing about it beyond carrying it.
+
+### 10. What the Bridge did with a Request is now on the control bus (CC V1-05)
+
+Acceptance was a Bridge-ledger fact that never reached the control bus, and a
+refusal reason was printed to the Bridge's stdout and kept nowhere — the ledger
+holds the accepted half and the `ignored` reasons only. Every Request could
+therefore only be reported as `REQUEST_CREATED`, and *"why did my Request not
+become a Task?"* had no answer on the bus.
+
+`control-plane/command-center-request-visibility-v1` reads the ledger, the
+operator's journalled copy of the Bridge's own poll output, and the collected
+Request files — all read-only — and emits **one immutable fact per semantic
+identity**, at the earliest instant that semantics was observed:
+`REQUEST_CREATED`, `REQUEST_VALIDATED`, `REQUEST_REJECTED`, `REQUEST_DUPLICATE`,
+`REQUEST_REPLAY_REJECTED`. The projection consumes it through
+`--request-facts-dir` and publishes:
+
+```
+requests[].facts[].first_observed_at   the earliest instant that semantics was seen
+requests[].facts[].identity_rule       SEMANTIC, or LEGACY_TIMESTAMP for the earlier shape
+requests[].facts[].observations_on_bus how many fact documents this identity has here
+requests[].lifecycle                  the strongest fact that could be proven
+requests[].lifecycle_source           BRIDGE_FACT / CONTROL_BUS_ONLY
+requests[].why_not_a_task.state       a closed set, plus the Bridge's reason code
+requests[].binding.proof_state        TASK_SIGNATURE_AND_DIGEST_PREFIX or NOT_ESTABLISHED
+request_visibility.by_lifecycle       counts
+request_visibility.rejected_or_refused           reason, class and origin
+request_visibility.duplicate_or_replay           counted_as_success = false
+request_visibility.acceptance_claims_without_a_signed_task
+request_visibility.submissions_without_a_request_identity
+answers.request_fate                  the answer surface for a ChatGPT connector
+```
+
+Four properties are enforced by tests rather than asserted in prose:
+
+* **An acceptance is corroborated, never believed.** `REQUEST_VALIDATED` is
+  accepted only when the named Task is on the control bus, its `task_id` carries
+  `sha256(request_id)[:12]`, its claimed digest describes the Task as stored, its
+  signature verifies, and the verifier is bound to the published identity. A
+  failure leaves the Request at `REQUEST_CREATED`, surfaces the claim and the
+  reason it failed, and records `REQUEST_BINDING_UNPROVEN` — never
+  `REQUEST_VALIDATED`. Forging a positive fact would need the Task signing key.
+* **A refusal never loses its reason.** The Bridge's token is carried verbatim
+  with an `origin`; a token the contract cannot classify is
+  `UNCLASSIFIED_REJECT`, and the contract is checked against every refusing token
+  the Bridge sources can emit (96 today, zero unclassified).
+* **A duplicate or a replay is never a success.** Each is its own lifecycle and
+  each is reported with `counted_as_success = false`.
+* **Nothing here is authority.** Every fact carries the same eight `false` values
+  in its `authority` block, and the projection refuses any fact that claims
+  otherwise. `request_visibility.facts_are_execution_authority` is false.
+
+`TARGET_INSTALLED=NO`: nothing drives the export on a timer or publishes its
+output, so a real projection supplies zero facts and every Request honestly reads
+`REQUEST_CREATED`. The remaining gap is the missing wiring, not the missing
+mechanism.
+
+### 11. Readiness is evaluated read-only, and a YES is not an approval (CC V1-06)
+
+`control-plane/command-center-deploy-readiness-v1` answers *"can we deploy now,
+and why not"* as `DEPLOY_READY = YES / NO / UNKNOWN`, combining this projection's
+output with an optional operator-supplied bundle of live-host facts. #94 kept
+deploy readiness `NOT_IN_SCOPE` on purpose: it would have had to combine an
+approved candidate, TEST_PR, VERIFY, CANARY, Human Approval, a deployment plan,
+source/package/image binding, the current runtime and the live Command Center
+switch. Every one of those now has a defined source, and the ones that are
+live-host facts are `UNKNOWN` by construction rather than assumed.
+
+Pass `--deploy-readiness <DEPLOY_READINESS.json>` and the state document carries:
+
+```
+control_state.deploy_readiness          value YES / NO, or the state is UNKNOWN with a null value
+control_state.deploy_readiness_gates    one entry per gate, in the evaluator's order
+control_state.out_of_scope.deploy_readiness_evaluation   EVALUATED_READ_ONLY
+control_state.out_of_scope.deploy_readiness_document     the verdict's repository-relative path
+```
+
+Four properties are enforced by tests rather than asserted in prose:
+
+* **Unprovable is never yes.** A mandatory gate that could not be established
+  keeps the verdict at `UNKNOWN`; the projection carries that as an `UNKNOWN`
+  assertion with a null value, and the per-gate detail is still there, so nothing
+  is lost by the null.
+* **A verdict is quoted, never computed here.** This layer evaluates nothing
+  itself. Without a document it states nothing, and it never infers readiness
+  from the presence of an approved candidate.
+* **A verdict that claims authority is refused.** The evaluator's ten boundary
+  flags must be exactly the published ones; any disagreement records
+  `DEPLOY_READINESS_UNREADABLE` and leaves the state `UNKNOWN`.
+* **`answers` is untouched.** The frozen ChatGPT contract still carries no
+  `can_deploy`, no deployment eligibility, no `release_gates` and no
+  `rollback_targets`. Surfacing readiness there is #107's decision, not this one.
+
+The gate set is the evaluator's, not this component's opinion of it. The
+evaluator has **thirteen gates and no advisory gate left** — `CANARY` and
+`RELEASE_GATES` used to be advisory on both sides, which let a `YES` be reported
+while the live Bridge would deterministically refuse the same plan. This layer
+carries exactly those thirteen, each `mandatory: true`.
+
+That agreement is checked from the outside rather than by a fixture derived from
+this component's own constant. `DeployReadinessContractTests` reads the
+evaluator's source and fails when the two gate lists differ, and
+`DeployReadinessIntegrationTests` runs the **real evaluator** over its own
+authoritative inputs and feeds the resulting document to the **real projector**,
+requiring zero anomalies, the same thirteen gates in the same order, every one
+mandatory, and the verdict carried verbatim. Nothing in those tests is a
+hand-written `DEPLOY_READINESS.json`.
+
+It was not always so, and the difference is the point: with an eleven-gate list
+here the projector refused the real document with
+`DEPLOY_READINESS_UNREADABLE: deploy_readiness_gate`, so live readiness could
+never be quoted at all, while every test still passed because both sides were
+being compared against the same constant. The workflow that runs this component
+also triggers on changes to the evaluator's own paths
+(`control-plane/command-center-deploy-readiness-v1/**`), so a gate added on one
+side alone now fails CI instead of silently blanking the live verdict.
+
+Rollback readiness remains `NOT_IN_SCOPE`; CC V1-09 / #104 owns it and the
+evaluator says so instead of guessing.
+
+CC V1-07 / #102 adds a **rehearsal** of the DEPLOY Request path on top of that
+verdict (`control-plane/command-center-deploy-dry-run-v1`). It decides whether a
+Request would be accepted or refused and, for a legal one, produces only a
+TASK_CANDIDATE: unsigned, unpublishable, non-executable. Its result is **not**
+carried into this document -- it is its own auditable artifact plus an append-only
+record store, because a rehearsal is evidence about the path rather than a fact
+about control state. The boundary it keeps is the one that matters:
+`candidate_is_a_task=false` and `deploy_performed=false` in every outcome.
+
+As of the committed projection the verdict is **`NO`**: the candidate commit has
+never been TEST_PR'd on the control bus and the newest verified VERIFY is outside
+its freshness window, while the remaining gates are unprovable without the
+operator-supplied bundle of live-host facts.
 
 ## Verified current architecture
 
@@ -281,6 +575,23 @@ TASK_LIFECYCLE_PROJECTION=PASS
 TASK_SIGNATURE_IDENTITY_SEPARATION=PASS
 EVIDENCE_SIGNATURE_IDENTITY_SEPARATION=PASS
 
+TASK_VERIFIER_IDENTITY_PUBLISHED=PASS
+EVIDENCE_VERIFIER_IDENTITY_PUBLISHED=PASS
+VERIFIER_FINGERPRINT_BINDING=PASS
+WRONG_KEY_REJECTED=PASS
+CROSSED_IDENTITY_REJECTED=PASS
+SAME_KEY_COLLISION_REJECTED=PASS
+MISSING_KEY_NEVER_PROVEN=PASS
+REAL_CONTROL_BUS_HISTORY_REACHES_PROVEN=PASS
+PRIVATE_KEY_PUBLISHED=NO
+
+SIGNED_FAILURE_EVIDENCE=PASS
+FAILURE_BOUND_TO_TASK_IDENTITY=PASS
+FAILURE_AUTHORIZES_NOTHING=PASS
+FAILURE_OUTSIDE_VALIDITY_WINDOW_IS_EXECUTION_FAILED=PASS
+CONFLICTING_FAILURE_RECORDS_FAIL_CLOSED=PASS
+INSTALLED=NO
+
 REPOSITORY_RUNTIME_AND_LIVE_RUNTIME_SEPARATED=PASS
 ACTIVE_STUCK_TASK_CLASSIFICATION=PASS
 WORKSTATION_LOCAL_PATHS_REMOVED=PASS
@@ -304,9 +615,11 @@ python control-plane/command-center-state-v1/state_projection.py \
   --tasks-repo    <local checkout of go-control-tasks> \
   --evidence-repo <local checkout of go-control-evidence> \
   --requests-dir  <collected Request files, optional> \
+  --request-facts-dir <exported Bridge Request facts, optional> \
   --go-repo       <local checkout of GO, optional> \
   --task-verify-key     <pinned Command Center task public key, optional> \
   --evidence-verify-key <pinned Hong Kong evidence public key, optional> \
+  --verifier-identities <identity/VERIFIER_IDENTITIES_V1.json> \
   --tasks-head <sha> --evidence-head <sha> --go-head <sha> \
   --repository-main-sha <sha> \
   --now 2026-09-14T12:00:00Z \
@@ -316,7 +629,10 @@ python control-plane/command-center-state-v1/run_checks.py /tmp/go-cc-state-chec
 ```
 
 Pass `--now` to make the byte output reproducible. Without the two verifier keys
-the projection honestly caps at `OBSERVED` and never claims `PROVEN`.
+the projection honestly caps at `OBSERVED` and never claims `PROVEN`. With them,
+`PROVEN` additionally requires the keys to match the published identity contract;
+`--verifier-identities` defaults to that contract and the two published `.pub`
+files under `identity/keys/` are the intended inputs.
 
 ## Agent liveness
 
@@ -332,9 +648,40 @@ hk_agent_recent_activity   the newest signed probe at any age  → "when did we 
 hk_agent_online            PROVEN only from liveness Evidence inside the window → "is it online now"
 ```
 
-What is still missing is the **producer**: nothing drives `CONTROL_PLANE_HEALTH`
-on a timer, so the control bus carries no fresh liveness Evidence and
-`hk_agent_online` honestly reads `UNKNOWN` even when the agent is healthy.
+What is still missing is the **relay**, not the mechanism. The producer
+(`control-plane/agent-liveness-producer-v1`, a 300 s timer) now places a bounded
+read-only probe in its outbox, and the Boss Request Bridge signs
+`CONTROL_PLANE_HEALTH`, so one probe has already travelled the whole path and
+come back as signed Evidence with `answers.hk_agent_online` reading `PROVEN`.
+Moving the outbox to a Request on the control bus is still an operator step, so
+between probes the answer honestly returns to `UNKNOWN`.
+
+### The freshness window carries transport margin
+
+The probe interval and the freshness window are not the same number. A probe
+issued exactly on schedule still has to travel GitHub -> Bridge -> Hong Kong ->
+Evidence -> Projection before it can be read here, so a window equal to the
+interval would declare the agent stale for the whole time its own Evidence is in
+flight: a mis-report, not caution.
+
+```
+LIVENESS_PROBE_INTERVAL_SECONDS    1800   unchanged; the cadence is not raised
+LIVENESS_TRANSPORT_GRACE_SECONDS    600   delivery slack between the two
+LIVENESS_FRESHNESS_WINDOW_SECONDS  2400   interval + grace; both are reported
+LIVENESS_MAX_PROBES_PER_24H          48   unchanged; the budget is not raised
+```
+
+```
+age <= 2400 s   -> PROVEN   (and only from signature-verified liveness Evidence)
+age >  2400 s   -> UNKNOWN  but last_seen and age_seconds are still reported
+```
+
+The grace is delivery slack and nothing else. It is not a second way to infer
+liveness: SSH success, an HTTP 200 and a past Task success never substitute for a
+fresh signed probe, and the projector has no SSH client, no HTTP client and no
+socket, so it could not consult one even by mistake. `LivenessWindowTests` pins
+2399 s as `PROVEN`, 2401 s as not online, and pins that a fresh verified VERIFY
+and TEST_PR leave liveness exactly where it was.
 
 ## Relationship to the project context layer
 
@@ -377,28 +724,66 @@ publish a Task, approve a plan, or reach Hong Kong.
 
 ## REMAINING_CC_V1_BLOCKERS
 
-1. **No verifier public key is published.** `command-center/audit/20260911/KEY_FINGERPRINTS.txt`
-   archives fingerprints only, so any projection off the Control Plane caps at
-   `OBSERVED`. Importing `PROVEN` control state into ChatGPT needs the public
-   verifier keys distributed read-only alongside the state.
-2. **A failed execution publishes no Evidence.** `transport.py` records a
-   rejection in the agent-local SQLite ledger and never publishes signed Evidence,
-   so `EXECUTION_FAILED` and `TASK_NOT_PICKED_UP` are unobservable from GitHub.
-   The failure half of the lifecycle is only half closed.
-3. **No liveness producer.** `CONTROL_PLANE_HEALTH` exists but nothing schedules
-   it, so `hk_agent_online` is honest and useless.
-4. **No publication target for the derived state.** The projector writes files;
-   nothing yet pushes them where ChatGPT reads. Until Command Center publishes
-   the state on the control bus, the contract exists but no reader sees it.
-5. **Bridge ledger facts are not on the control bus.** Request rejection reasons,
-   duplicate-request detection, ambiguity holds and plan/approval consumption live
-   only in `/var/lib/go-command-center/boss-request-bridge-v1/ledger.json`.
-   `REQUEST_REJECTED` and Request-layer `REPLAY_REJECTED` stay invisible.
+**Closed by CC V1-01:** verifier public keys are now published, bound and
+fingerprint-pinned (`identity/`). The Control Plane no longer caps at `OBSERVED`.
+
+**Closed by CC V1-02:** a claimed execution attempt that fails now publishes a
+signed failure record, so "picked up and failed" is no longer invisible and
+absence of Evidence now indicates no claim.
+
+**Closed by CC V1-03:** a bounded liveness producer exists, so `CONTROL_PLANE_HEALTH`
+is now driven on a clock instead of never.
+
+**Closed by CC V1-04:** the derived state has a formal publication target
+(`CURRENT.json` + immutable snapshots), so a reader has one stable entry point.
+
+**Closed by CC V1-05:** the Bridge's Request facts are exported and projected, so
+`REQUEST_REJECTED`, `REQUEST_DUPLICATE` and Request-layer
+`REQUEST_REPLAY_REJECTED` are now expressible on the control bus with their
+reasons.
+
+1. **Three historical Tasks fail under the published Task signer.** With the
+   identity now bound, `go-m3-042-e2e-health-20260905T151233846901Z`,
+   `…20260905T152130238921Z` and `…20260906T011815978751Z` resolve as
+   `POLICY_HOLD` / `FAILED` instead of silently expiring. They are structurally
+   identical to Tasks that verify, and they verify under neither published
+   identity, so they appear to carry a **third, earlier Task-signing identity**
+   that was superseded before `2026-09-06T07:47:11Z` and whose public key is not
+   published anywhere. Attribution is open; this is a real finding, not a
+   defect introduced by CC V1-01.
+2. **The failure closure is not installed.** The HK agent source now publishes
+   failure records, but nothing is deployed by CC V1 and no installation is
+   claimed. `INSTALLED=NO`. Live failure visibility therefore still depends on a
+   later, separately approved install.
+3. **The liveness producer is not installed.** The mechanism exists (CC V1-03)
+   but no systemd unit or timer change has been made, so the control bus still
+   carries no fresh liveness Evidence. `INSTALLED=NO`.
+4. **The publication target is not wired.** The target and the publisher exist
+   (CC V1-04) but nothing pushes to it, so `CURRENT.json` does not exist and a
+   reader reports `UNKNOWN`. `TARGET_INSTALLED=NO`.
+5. **The request fact export is not wired.** The exporter exists and CI verifies
+   it (CC V1-05), but nothing drives it on a timer or publishes its output, so a
+   real projection supplies zero facts, every Request reads `REQUEST_CREATED`,
+   and refusal reasons stay unobservable from the control bus.
+   `TARGET_INSTALLED=NO`.
+6. **The deploy readiness evaluator is not scheduled.** The evaluator exists and
+   CI verifies it (CC V1-06), but nothing runs it on a timer and no live bundle
+   is published anywhere, so the readiness verdict is only as current as the
+   operator's last run. `INSTALLED=NO`.
+7. **Every remaining blocker above is a wiring gap, not a mechanism gap.** The
+   mechanisms for failure closure, liveness, publication, request visibility and
+   deploy readiness were each added by a CC V1 issue and are each uninstalled.
+   Installing any of them is a separately approved change and is not implied by
+   having built it.
 
 ## Not proven by this PR
 
-* Real HK-STAGING execution. All tests use ephemeral synthetic keys and fixtures.
+* Real HK-STAGING execution. The identity fixtures are real control-bus records,
+  but no live execution is performed or claimed here.
 * Deployment. `APPLICATION_HEALTH_PROVEN=false`, `DEPLOYMENT_PERFORMED=false`.
 * Any claim about the live Command Center switch, plan store, runtime processes or
   agent liveness. Those are Control Plane state, not control-bus state, and this
   projection explicitly reports them as `UNKNOWN`.
+* That the published identities are the *only* identities that have ever signed
+  in this ledger. They are not: three historical Tasks do not verify under either
+  of them, and that is reported rather than smoothed over.

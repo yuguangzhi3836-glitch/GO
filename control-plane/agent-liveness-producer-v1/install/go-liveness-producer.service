@@ -1,0 +1,16 @@
+[Unit]
+Description=GO Command Center HK agent liveness producer (read-only CONTROL_PLANE_HEALTH probes)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/opt/go-command-center/liveness-producer-v1/command-center/go-liveness-producer --state-dir /var/lib/go-command-center/liveness-producer-v1 tick
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/go-command-center/liveness-producer-v1

@@ -1,0 +1,489 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-deploy-dry-run-v1/contracts/deploy_dry_run_v1.schema.json",
+  "title": "GO Command Center Deploy Dry-Run V1",
+  "description": "A rehearsal of the DEPLOY Request path that publishes nothing. Given one DEPLOY Request file and the read-only deploy readiness verdict (CC V1-06), it decides whether the Request would be accepted or refused, and for a legal Request it produces only a TASK_CANDIDATE: an unsigned, unpublishable, non-executable description of what would be asked for. It never signs, never publishes a Task, never grants a deployment authorisation, never contacts Hong Kong, and never touches Production. DEPLOY_PERFORMED is false in every outcome.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "contract",
+    "scope",
+    "authority",
+    "generated_at",
+    "as_of",
+    "decision",
+    "request",
+    "checks",
+    "candidate",
+    "record",
+    "authority_boundary",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "contract": {
+      "const": "DEPLOY_DRY_RUN_V1"
+    },
+    "scope": {
+      "const": "READ_ONLY_DEPLOY_DRY_RUN"
+    },
+    "authority": {
+      "const": "DERIVED_NON_AUTHORITATIVE"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "as_of": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome",
+        "reason",
+        "refused",
+        "unproven",
+        "task_published",
+        "signed",
+        "deploy_performed"
+      ],
+      "properties": {
+        "outcome": {
+          "enum": [
+            "TASK_CANDIDATE",
+            "REJECTED",
+            "UNPROVEN"
+          ],
+          "description": "TASK_CANDIDATE means the Request would be accepted and a non-executable candidate was produced. REJECTED means something deterministically refuses it. UNPROVEN means nothing refused it but something could not be established, which is never a pass."
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "refused": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "the reason codes of every failing check, in stage order"
+        },
+        "unproven": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "the checks that could not be established"
+        },
+        "task_published": {
+          "const": false
+        },
+        "signed": {
+          "const": false
+        },
+        "deploy_performed": {
+          "const": false
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file_name",
+        "request_id",
+        "action_id",
+        "environment",
+        "requested_at",
+        "sha256"
+      ],
+      "properties": {
+        "file_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "request_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "action_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "environment": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requested_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "check",
+          "stage",
+          "state",
+          "reason",
+          "reason_code",
+          "reason_origin",
+          "advisory"
+        ],
+        "properties": {
+          "check": {
+            "type": "string"
+          },
+          "stage": {
+            "enum": [
+              "REQUEST_SHAPE",
+              "REQUEST_IDENTITY",
+              "PLAN_CONSUMPTION",
+              "READINESS"
+            ]
+          },
+          "state": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "UNKNOWN"
+            ],
+            "description": "UNKNOWN is the honest state for a fact nobody could establish, and it is never promoted to PASS."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "the refusing token or gate name, verbatim; null on PASS"
+          },
+          "reason_origin": {
+            "enum": [
+              null,
+              "BRIDGE_REQUEST_VOCABULARY",
+              "DEPLOY_READINESS_GATE"
+            ]
+          },
+          "advisory": {
+            "type": "boolean",
+            "description": "an advisory check is reported and can never change the decision"
+          },
+          "observed": {}
+        }
+      }
+    },
+    "candidate": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "task_id_proposal",
+        "action_id",
+        "environment",
+        "plan_id",
+        "source_commit",
+        "candidate_image_id",
+        "expected_current_image_id",
+        "parameters_source",
+        "executable",
+        "signed",
+        "publish_authorized",
+        "signature"
+      ],
+      "description": "Present only for a legal Request. A candidate is not a Task.",
+      "properties": {
+        "kind": {
+          "const": "TASK_CANDIDATE"
+        },
+        "task_id_proposal": {
+          "type": "string"
+        },
+        "action_id": {
+          "const": "HK_STAGING_DEPLOY"
+        },
+        "environment": {
+          "const": "HK-STAGING-01"
+        },
+        "plan_id": {
+          "type": "string"
+        },
+        "source_commit": {
+          "type": "string"
+        },
+        "candidate_image_id": {
+          "type": "string"
+        },
+        "expected_current_image_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parameters_source": {
+          "const": "APPROVED_PLAN_BUNDLE",
+          "description": "every value comes from the approved plan the readiness verdict read; never from a caller"
+        },
+        "executable": {
+          "const": false
+        },
+        "signed": {
+          "const": false
+        },
+        "publish_authorized": {
+          "const": false
+        },
+        "signature": {
+          "type": "null",
+          "description": "always null: this component holds no key and cannot sign"
+        }
+      }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "store",
+        "written",
+        "record_id",
+        "replayed",
+        "consumes_nothing"
+      ],
+      "properties": {
+        "store": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "a fixed marker, never a workstation path"
+        },
+        "written": {
+          "type": "boolean"
+        },
+        "record_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "replayed": {
+          "type": "boolean"
+        },
+        "consumes_nothing": {
+          "const": true,
+          "description": "a dry-run record is an observation. Only the live channel consumes a plan or an approval."
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "authority_boundary": {
+      "$ref": "#/$defs/boundary"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_execution_authority",
+        "can_create_task",
+        "can_sign",
+        "can_publish_task",
+        "can_grant_the_deployment_authorization",
+        "holds_private_key",
+        "accepts_caller_supplied_parameters",
+        "executes_a_deployment",
+        "touches_production",
+        "candidate_is_a_task"
+      ],
+      "properties": {
+        "is_execution_authority": {
+          "const": false
+        },
+        "can_create_task": {
+          "const": false
+        },
+        "can_sign": {
+          "const": false
+        },
+        "can_publish_task": {
+          "const": false
+        },
+        "can_grant_the_deployment_authorization": {
+          "const": false
+        },
+        "holds_private_key": {
+          "const": false
+        },
+        "accepts_caller_supplied_parameters": {
+          "const": false
+        },
+        "executes_a_deployment": {
+          "const": false
+        },
+        "touches_production": {
+          "const": false
+        },
+        "candidate_is_a_task": {
+          "const": false,
+          "description": "the single most important line in this document: a TASK_CANDIDATE is not a Task and can never become one without a separate, approved, human-authorised issuance"
+        }
+      }
+    }
+  },
+  "x-go-outcomes": {
+    "note": "The closed decision set. REJECTED outranks UNPROVEN: one definite refusal decides the outcome whatever else is unknown.",
+    "TASK_CANDIDATE": "every blocking check PASSes; a non-executable candidate is produced",
+    "REJECTED": "at least one blocking check FAILs",
+    "UNPROVEN": "nothing refused, but at least one blocking check could not be established"
+  },
+  "x-go-stages": {
+    "note": "The closed stages, evaluated in this order. A later stage is still evaluated and reported even when an earlier one already refused, so one run shows every problem.",
+    "REQUEST_SHAPE": "the Request file itself",
+    "REQUEST_IDENTITY": "whether this Request identity has already been seen by the dry-run store",
+    "PLAN_CONSUMPTION": "whether the live channel has already consumed this plan or approval",
+    "READINESS": "the deploy readiness gates from CC V1-06"
+  },
+  "x-go-reason-origins": {
+    "note": "Where a refusal reason comes from. No new refusal vocabulary is invented here.",
+    "BRIDGE_REQUEST_VOCABULARY": "a token the Boss Request Bridge can itself raise; every token this component can emit is checked against the Bridge's own vocabulary by the test suite",
+    "DEPLOY_READINESS_GATE": "the name of a deploy readiness gate that did not pass"
+  },
+  "x-go-forbidden": [
+    "Publishing, creating or signing a real DEPLOY Task in any form.",
+    "Touching a deployment authorisation, the channel configuration or the plan store.",
+    "Executing a deployment, contacting Hong Kong, or touching Production.",
+    "Accepting an image, repo digest, service list, path, environment file, shell command or any other execution parameter from the caller.",
+    "Treating a dry-run record as a consumption: only the live channel consumes a plan or an approval.",
+    "Reporting TASK_CANDIDATE while any blocking check is UNKNOWN."
+  ],
+  "x-go-acceptance": {
+    "legal dry run": "TASK_CANDIDATE with task_published=false, signed=false, deploy_performed=false",
+    "each illegal or missing gate": "a deterministic REJECTED carrying that check's reason code",
+    "replay or duplicate": "REJECTED with duplicate_request_id or deployment_plan_or_approval_already_consumed",
+    "always": "DEPLOY_PERFORMED=NO"
+  },
+  "x-go-request-checks": {
+    "note": "The closed request-shape and identity checks, in evaluation order. Each names the refusing token it emits, and every one of those tokens is a token the Boss Request Bridge can itself raise: no new refusal vocabulary is invented here, and the test suite checks each one against the Bridge's own sources.",
+    "checks": [
+      {
+        "check": "request_readable",
+        "stage": "REQUEST_SHAPE",
+        "token": "invalid_json"
+      },
+      {
+        "check": "request_size",
+        "stage": "REQUEST_SHAPE",
+        "token": "request_oversized"
+      },
+      {
+        "check": "request_json",
+        "stage": "REQUEST_SHAPE",
+        "token": "malformed_json"
+      },
+      {
+        "check": "request_unique_keys",
+        "stage": "REQUEST_SHAPE",
+        "token": "duplicate_json_key"
+      },
+      {
+        "check": "request_fields",
+        "stage": "REQUEST_SHAPE",
+        "token": "schema_fields"
+      },
+      {
+        "check": "request_schema_version",
+        "stage": "REQUEST_SHAPE",
+        "token": "schema_version"
+      },
+      {
+        "check": "request_id_format",
+        "stage": "REQUEST_SHAPE",
+        "token": "request_id"
+      },
+      {
+        "check": "request_action",
+        "stage": "REQUEST_SHAPE",
+        "token": "action"
+      },
+      {
+        "check": "request_environment",
+        "stage": "REQUEST_SHAPE",
+        "token": "environment"
+      },
+      {
+        "check": "request_requested_at_type",
+        "stage": "REQUEST_SHAPE",
+        "token": "requested_at_not_string"
+      },
+      {
+        "check": "request_requested_at_format",
+        "stage": "REQUEST_SHAPE",
+        "token": "invalid_requested_at"
+      },
+      {
+        "check": "request_freshness",
+        "stage": "REQUEST_SHAPE",
+        "token": "stale_or_future_request"
+      },
+      {
+        "check": "request_filename_binding",
+        "stage": "REQUEST_SHAPE",
+        "token": "request_filename_binding"
+      },
+      {
+        "check": "request_not_already_dry_run",
+        "stage": "REQUEST_IDENTITY",
+        "token": "duplicate_request_id"
+      },
+      {
+        "check": "plan_not_already_consumed",
+        "stage": "PLAN_CONSUMPTION",
+        "token": "deployment_plan_or_approval_already_consumed"
+      }
+    ]
+  }
+}

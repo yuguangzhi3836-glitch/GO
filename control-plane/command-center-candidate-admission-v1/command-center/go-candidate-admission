@@ -1,0 +1,848 @@
+#!/usr/bin/env python3
+"""Read-only RELEASE_CANDIDATE_V1 admission. (CC V1-08 / #103)
+
+What it answers
+---------------
+"May this version be treated as deployable at all?" -- from artifacts that already
+exist, without creating anything.
+
+    admission = ACCEPT    every identity below is established and nothing conflicts
+    admission = REJECT    a rule refuses this candidate
+    admission = UNKNOWN   an input the decision needs was not supplied
+
+Guessing is the failure mode this replaces
+------------------------------------------
+The Command Center used to have no definition of what a compliant candidate is, so
+a Boss PR that only half-described itself could reach the deploy chain and be
+discovered there. Admission is that definition, placed *before* TEST_PR / VERIFY /
+deploy readiness: a version that cannot establish its own source, build, artifact,
+test and rollback identities is refused here, by name, and the upstream fixes it.
+This component never completes a missing field, never substitutes a branch for a
+commit, and never widens a rule to fit a historical PR.
+
+What it reads (read-only, and never anything else)
+--------------------------------------------------
+    --candidate          the canonical candidate document, whose release_candidate_v1
+                         block is the RELEASE_CANDIDATE_V1 being admitted. The
+                         document's own source fields stay authoritative for the
+                         source identity, and the block must agree with them: a
+                         candidate cannot carry two source identities.
+    --test-pr-evidence   OPTIONAL signed TEST_PR Evidence. It is the only proof that
+                         the artifact came from that source, that the builder the
+                         candidate names is the one that produced it, and that the
+                         artifact still exists as a sealed package. Without it the
+                         artifact binding cannot be established: a candidate that
+                         makes no package claim is UNKNOWN rather than ACCEPT, and one
+                         that claims a proven package is refused by name instead,
+                         because no proof covers the claim.
+    --plan               OPTIONAL approved deploy plan bundle. When supplied, the
+                         candidate is cross-checked against what the plan approves.
+    --go-repo            OPTIONAL GO checkout, used to confirm that the build
+                         definition is the one actually staged for the executor
+                         (the Dockerfile digest), rather than a claim.
+
+What it can never do
+--------------------
+It holds no private key, signs nothing, creates or publishes no Task, opens no
+request switch, accepts no caller-supplied image/service/path/environment/command,
+contacts no host, and does not touch Production. Every one of those is a `false` in
+the `authority_boundary` block of its own output.
+"""
+import argparse
+import datetime as dt
+import hashlib
+import json
+import pathlib
+import re
+import sys
+
+COMPONENT = "command-center-candidate-admission-v1"
+CONTRACT_FILE = "contracts/release_candidate_v1.schema.json"
+SCHEMA = "go.release-candidate.v1"
+CONTRACT_NAME = "RELEASE_CANDIDATE_V1"
+OUTPUT_NAME = "RELEASE_CANDIDATE_ADMISSION.json"
+LINEAGE_POINTER = "docs/canonical-baseline/CURRENT_CANDIDATE.json"
+
+ACCEPT, REJECT, UNKNOWN = "ACCEPT", "REJECT", "UNKNOWN"
+
+# --- ported from the live control plane, and re-read by a test ----------------
+# These are the live gate's own constants. A test re-reads those files and fails if
+# any of them drift, so this copy cannot silently diverge from the real system.
+CANDIDATE_REPOSITORY = "yuguangzhi3836-glitch/GO"
+SERVICES = ("api", "recovery-worker", "outbox-worker", "mobile-push-receipt-worker",
+            "reconciliation-worker", "mobile-push-worker", "mobile-engagement-worker",
+            "judgment-worker")
+DEPLOY_ACTION = "HK_STAGING_DEPLOY"
+TEST_PR_ACTION = "HK_STAGING_TEST_PR"
+BUILDER_PROFILE = "go-application-python-v1"
+BUILDER_DOCKERFILE = "Dockerfile.go-application-python-v2"
+BUILDER_EXECUTOR_VERSION = "test-pr-v3"
+# Builders whose artifacts are still recognised.  A v3 build seals its image into
+# the fixed store; a v2 build reported an image id and then deleted the image, so a
+# v2-built candidate is still an admissible *candidate* but can never have
+# durability PROVEN.  Re-labelling an old candidate as v3 would be a false
+# statement about how it was produced.
+BUILDER_EXECUTOR_VERSIONS = ("test-pr-v3", "test-pr-v2")
+# The staged builder's own digest, from boss-test-pr-live-integration-v1. A test
+# recomputes it from that file; --go-repo re-verifies it at admission time.
+BUILDER_DOCKERFILE_SHA256 = \
+    "caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b"
+BUILDER_DOCKERFILE_PATH = ("control-plane/boss-test-pr-live-integration-v1/hk-staging/"
+                           + BUILDER_DOCKERFILE)
+BUILDER_IMAGE_TAG = "go-hotel:depth48-runtime-6d0fd905"
+BUILDER_IMAGE_ID = "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"
+# The live deploy contract forbids migration outright. A candidate that needs one
+# is refused here, by name, instead of being discovered by the executor.
+MIGRATION_REQUIRED = False
+
+SHA40 = re.compile(r"^[0-9a-f]{40}$")
+SHA64 = re.compile(r"^[0-9a-f]{64}$")
+IMAGE_ID = re.compile(r"^sha256:[0-9a-f]{64}$")
+IDENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$")
+EXECUTOR_IDENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+PR_NUMBER = re.compile(r"^[1-9][0-9]{0,8}$")
+MIGRATION_HEAD = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$")
+IMAGE_TAG = re.compile(r"^[a-z0-9][a-z0-9._/-]{0,127}:[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+# A ref is not an immutable source. These are the shapes a caller reaches for when
+# it has no commit, and each one is refused by name rather than resolved.
+MUTABLE_SOURCE = re.compile(r"(^refs/)|(^origin/)|(^HEAD$)|(^latest$)|(^main$)|(^master$)"
+                            r"|(/)|(^[0-9a-f]{7,39}$)")
+
+RELEASE_CANDIDATE_FIELDS = ("schema", "candidate_id", "source_repository", "source_commit",
+                            "application_tree", "source_fingerprint", "migration_head",
+                            "migration_required", "build_definition", "artifact_digest",
+                            "required_services", "test_result_identity", "rollback_relation")
+# OPTIONAL_FIELDS are declared by a candidate that has more to say about its
+# artifact.  `artifact_package` is where a candidate records whether the image it
+# was built as still exists as a sealed, deliverable package.  It is optional so
+# that a candidate written before the store existed stays readable, and its absence
+# is reported as NOT_PROVEN rather than guessed at.
+OPTIONAL_FIELDS = ("artifact_package",)
+ARTIFACT_PACKAGE_FIELDS = ("durability", "package_sha256")
+ARTIFACT_DURABILITY_VALUES = ("PROVEN", "NOT_PROVEN")
+BUILD_DEFINITION_FIELDS = ("profile", "dockerfile", "dockerfile_sha256", "executor_version",
+                           "builder_image_tag", "builder_image_id")
+TEST_RESULT_FIELDS = ("action_id", "task_id", "evidence_id", "source_pr_number",
+                      "source_commit_sha", "artifact_digest", "executor_result")
+ROLLBACK_FIELDS = ("relation", "previous_known_good_image_id")
+ROLLBACK_RELATIONS = ("REPLACES_CURRENT_KNOWN_GOOD", "NO_PREVIOUS_KNOWN_GOOD")
+# What the signed TEST_PR result must carry for this component to bind a candidate
+# to it: the action and task that produced it, its own outcome, the source and the
+# artifact it is about, and the builder that made that artifact.
+TEST_PR_EVIDENCE_FIELDS = ("action_id", "task_id", "status", "executor_result",
+                           "source_commit_sha", "built_image_id", "executor_version")
+
+AUTHORITY_BOUNDARY = {
+    "is_execution_authority": False,
+    "can_create_task": False,
+    "can_publish_task": False,
+    "can_open_the_request_switch": False,
+    "holds_private_key": False,
+    "signs_anything": False,
+    "accepts_caller_supplied_parameters": False,
+    "touches_production": False,
+    "may_read_the_candidate_and_its_evidence": True,
+    "is_a_deploy_approval": False,
+}
+
+
+class Refuse(Exception):
+    """Admission cannot produce a document at all. Nothing is written."""
+
+
+# --------------------------------------------------------------------------- #
+# primitives
+# --------------------------------------------------------------------------- #
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def digest(value):
+    return hashlib.sha256(canonical(value)).hexdigest()
+
+
+def iso(value):
+    return value.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def parse_time(value, what="time"):
+    if not isinstance(value, str):
+        raise Refuse("%s_not_a_string" % what)
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise Refuse("%s_unparseable" % what) from exc
+    if parsed.tzinfo is None:
+        raise Refuse("%s_naive" % what)
+    return parsed
+
+
+def read_json(path, limit=4 * 1024 * 1024):
+    path = pathlib.Path(path)
+    if path.is_symlink():
+        raise Refuse("symlink_refused")
+    raw = path.read_bytes()
+    if len(raw) > limit:
+        raise Refuse("oversized")
+    return json.loads(raw.decode("utf-8"))
+
+
+def exact_set(value, fields, reason):
+    if not isinstance(value, dict) or set(value) != set(fields):
+        raise Refuse(reason)
+
+
+def field_problem(value, pattern, reason):
+    """The value matches the rule, or the reason is returned instead of raising."""
+    if not isinstance(value, str) or pattern.fullmatch(value) is None:
+        return reason
+    return None
+
+
+# --------------------------------------------------------------------------- #
+# the published contract
+# --------------------------------------------------------------------------- #
+class Contract:
+    """The RELEASE_CANDIDATE_V1 contract, refused before anything else is read.
+
+    A contract that does not carry the identities, the refusal vocabulary and the
+    all-false authority boundary is not the contract this component implements, so
+    admission refuses rather than admitting against a rule set it cannot name.
+    """
+
+    def __init__(self, path):
+        self.path = str(path)
+        try:
+            document = read_json(path)
+        except Exception as exc:  # noqa: BLE001 - fail closed and say why
+            raise Refuse("contract_unreadable:%s" % type(exc).__name__) from exc
+        if not isinstance(document, dict) or document.get("$id") != SCHEMA:
+            raise Refuse("not_the_release_candidate_contract")
+        properties = document.get("properties")
+        if not isinstance(properties, dict) or set(document.get("required") or ()) != set(
+                RELEASE_CANDIDATE_FIELDS):
+            raise Refuse("contract_does_not_declare_the_candidate_identities")
+        refusals = (document.get("x-go-refusals") or {})
+        self.refusals = tuple(refusals.get("source") or ())
+        if not self.refusals:
+            raise Refuse("contract_declares_no_refusal_vocabulary")
+        verdicts = (document.get("x-go-verdicts") or {}).get("values")
+        if verdicts != [ACCEPT, REJECT, UNKNOWN]:
+            raise Refuse("contract_verdict_set_is_not_closed")
+        authority = document.get("x-go-authority") or {}
+        if not authority or any(v is not False for k, v in authority.items() if k != "note"):
+            raise Refuse("contract_grants_authority")
+
+    def refuses(self, reason):
+        """Every reason this component emits must be in the contract's own list."""
+        if reason not in self.refusals:
+            raise Refuse("reason_not_in_the_contract:%s" % reason)
+        return reason
+
+
+# --------------------------------------------------------------------------- #
+# admission
+# --------------------------------------------------------------------------- #
+class Admission:
+    """One candidate's admission decision, accumulated rule by rule."""
+
+    def __init__(self, contract, at):
+        self.contract = contract
+        self.at = at
+        self.checks = []
+        self.reasons = []
+        self.unknowns = []
+        self.not_evaluated = []
+        self.identities = {}
+        self.candidate = None
+        self.evidence = None
+
+    def check(self, rule, state, reason=None):
+        entry = {"rule": rule, "state": state}
+        if reason:
+            entry["reason"] = reason
+        self.checks.append(entry)
+        if state == "FAIL":
+            self.refuses(reason)
+        elif state == "UNKNOWN":
+            self.unknowns.append(reason)
+        return state == "PASS"
+
+    def refuses(self, reason):
+        token = self.contract.refuses(reason)
+        if token not in self.reasons:
+            self.reasons.append(token)
+
+    def fails(self, rule, reason, **extra):
+        entry = {"rule": rule, "state": "FAIL", "reason": reason}
+        entry.update(extra)
+        self.checks.append(entry)
+        self.refuses(reason)
+        return False
+
+    def unknown(self, rule, reason):
+        self.checks.append({"rule": rule, "state": "UNKNOWN", "reason": reason})
+        self.unknowns.append(reason)
+        return False
+
+    def passes(self, rule, **extra):
+        entry = {"rule": rule, "state": "PASS"}
+        entry.update(extra)
+        self.checks.append(entry)
+        return True
+
+
+def check_source(adm, block, document):
+    """The identity the candidate must not be able to lie about."""
+    if block.get("schema") != SCHEMA:
+        return adm.fails("source", "release_candidate_schema",
+                         observed={"schema": block.get("schema")})
+    ok = True
+    ok &= adm.check("candidate_id",
+                    "PASS" if isinstance(block.get("candidate_id"), str)
+                    and IDENT.fullmatch(block["candidate_id"]) else "FAIL",
+                    "candidate_id")
+    if block.get("source_repository") != CANDIDATE_REPOSITORY:
+        ok = adm.fails("source", "candidate_repository",
+                       observed={"source_repository": block.get("source_repository")})
+    else:
+        adm.passes("source_repository")
+    commit = block.get("source_commit")
+    if not isinstance(commit, str) or not commit:
+        ok = adm.fails("source", "candidate_source_commit", observed={"source_commit": commit})
+    elif MUTABLE_SOURCE.search(commit) is not None:
+        # A ref, a branch name, `latest`, HEAD, or an abbreviation: something that
+        # can move or that names a range rather than one immutable commit. It is
+        # refused by name so the upstream knows which mistake it made.
+        ok = adm.fails("source", "candidate_source_commit_not_immutable",
+                       observed={"source_commit": commit})
+    elif SHA40.fullmatch(commit) is None:
+        ok = adm.fails("source", "candidate_source_commit", observed={"source_commit": commit})
+    else:
+        adm.passes("source_commit", observed={"source_commit": commit})
+    for field, pattern, reason in (("application_tree", SHA40, "candidate_application_tree"),
+                                   ("source_fingerprint", SHA64, "candidate_source_fingerprint")):
+        problem = field_problem(block.get(field), pattern, reason)
+        if problem:
+            ok = adm.fails("source", problem, observed={field: block.get(field)})
+        else:
+            adm.passes(field, observed={field: block[field]})
+    # The document's own source fields stay authoritative: a candidate that carries a
+    # different source identity than the lineage pointer is not one candidate but two.
+    disagreement = [name for name, top in (("source_commit", "source_commit"),
+                                           ("application_tree", "application_git_tree"),
+                                           ("source_fingerprint", "source_tree_sha256"))
+                    if isinstance(document, dict) and top in document
+                    and document.get(top) != block.get(name)]
+    if disagreement:
+        ok = adm.fails("source", "source_identity_disagrees_with_the_lineage_pointer",
+                       observed={"fields": disagreement})
+    else:
+        adm.passes("source_identity_agrees_with_the_lineage_pointer")
+    return ok
+
+
+def check_migration(adm, block):
+    head = block.get("migration_head")
+    if not isinstance(head, str) or MIGRATION_HEAD.fullmatch(head) is None:
+        return adm.fails("migration", "candidate_migration_head", observed={"migration_head": head})
+    obliged = block.get("migration_required")
+    if not isinstance(obliged, bool):
+        return adm.fails("migration", "candidate_migration_required",
+                         observed={"migration_required": obliged})
+    if obliged is not MIGRATION_REQUIRED:
+        return adm.fails("migration", "candidate_migration_required",
+                         observed={"migration_required": obliged},
+                         expected={"migration_required": MIGRATION_REQUIRED})
+    return adm.passes("migration", observed={"migration_head": head, "migration_required": obliged})
+
+
+def check_build(adm, block, go_repo):
+    build = block.get("build_definition")
+    if not isinstance(build, dict) or set(build) != set(BUILD_DEFINITION_FIELDS):
+        return adm.fails("build", "candidate_build_definition",
+                         observed={"fields": sorted(build) if isinstance(build, dict) else None})
+    problems = []
+    subjects = {"candidate_build_profile": "profile",
+                "candidate_build_dockerfile": "dockerfile",
+                "candidate_build_dockerfile_sha256": "dockerfile_sha256",
+                "candidate_build_executor_version": "executor_version",
+                "candidate_build_builder_image_tag": "builder_image_tag",
+                "candidate_build_builder_image_id": "builder_image_id"}
+    for field, pattern, reason in ((subjects["candidate_build_profile"], EXECUTOR_IDENT,
+                                    "candidate_build_profile"),
+                                   (subjects["candidate_build_dockerfile"], EXECUTOR_IDENT,
+                                    "candidate_build_dockerfile"),
+                                   (subjects["candidate_build_dockerfile_sha256"], SHA64,
+                                    "candidate_build_dockerfile_sha256"),
+                                   (subjects["candidate_build_executor_version"], EXECUTOR_IDENT,
+                                    "candidate_build_executor_version"),
+                                   (subjects["candidate_build_builder_image_tag"], IMAGE_TAG,
+                                    "candidate_build_builder_image_tag"),
+                                   (subjects["candidate_build_builder_image_id"], IMAGE_ID,
+                                    "candidate_build_builder_image_id")):
+        problem = field_problem(build.get(field), pattern, reason)
+        if problem:
+            problems.append(problem)
+    if problems:
+        return adm.fails("build", problems[0],
+                         observed={subjects[p]: build.get(subjects[p]) for p in problems})
+    # The build definition must be the one that is actually staged for the executor.
+    # Anything else is a claim about a builder nobody installed.
+    if build["profile"] != BUILDER_PROFILE or build["executor_version"] not in BUILDER_EXECUTOR_VERSIONS:
+        return adm.fails("build", "candidate_build_profile",
+                         observed={"profile": build["profile"],
+                                   "executor_version": build["executor_version"]},
+                         expected={"profile": BUILDER_PROFILE,
+                                   "executor_version": list(BUILDER_EXECUTOR_VERSIONS)})
+    if build["dockerfile"] != BUILDER_DOCKERFILE:
+        return adm.fails("build", "candidate_build_dockerfile",
+                         observed={"dockerfile": build["dockerfile"]},
+                         expected={"dockerfile": BUILDER_DOCKERFILE})
+    if build["dockerfile_sha256"] != BUILDER_DOCKERFILE_SHA256:
+        return adm.fails("build", "candidate_build_dockerfile_sha256",
+                         observed={"dockerfile_sha256": build["dockerfile_sha256"]},
+                         expected={"dockerfile_sha256": BUILDER_DOCKERFILE_SHA256})
+    if go_repo is not None:
+        staged = pathlib.Path(go_repo) / BUILDER_DOCKERFILE_PATH
+        try:
+            observed = hashlib.sha256(staged.read_bytes()).hexdigest()
+        except OSError:
+            return adm.fails("build", "candidate_build_dockerfile_sha256",
+                             observed={"staged_dockerfile": "unreadable"})
+        if observed != build["dockerfile_sha256"]:
+            return adm.fails("build", "candidate_build_dockerfile_sha256",
+                             observed={"staged_dockerfile_sha256": observed,
+                                       "declared": build["dockerfile_sha256"]})
+    return adm.passes("build", observed={"profile": build["profile"],
+                                         "executor_version": build["executor_version"],
+                                         "dockerfile": build["dockerfile"]})
+
+
+def check_artifact(adm, block):
+    artifact = block.get("artifact_digest")
+    if not isinstance(artifact, str) or IMAGE_ID.fullmatch(artifact) is None:
+        return adm.fails("artifact", "candidate_artifact_digest",
+                         observed={"artifact_digest": artifact})
+    services = block.get("required_services")
+    if not isinstance(services, list) or list(services) != list(SERVICES):
+        return adm.fails("services", "fixed_topology_required",
+                         observed={"required_services": services},
+                         expected={"required_services": list(SERVICES)})
+    return adm.passes("artifact", observed={"artifact_digest": artifact,
+                                            "required_services": len(services)})
+
+
+def check_test_result(adm, block):
+    result = block.get("test_result_identity")
+    if not isinstance(result, dict) or set(result) != set(TEST_RESULT_FIELDS):
+        return adm.fails("test", "candidate_test_result_identity",
+                         observed={"fields": sorted(result) if isinstance(result, dict) else None})
+    if result.get("action_id") != TEST_PR_ACTION:
+        return adm.fails("test", "candidate_test_pr_action",
+                         observed={"action_id": result.get("action_id")})
+    for field, pattern, reason in (
+            ("task_id", EXECUTOR_IDENT, "candidate_test_result_task_id"),
+            ("evidence_id", EXECUTOR_IDENT, "candidate_test_result_evidence_id"),
+            ("source_pr_number", PR_NUMBER, "candidate_test_result_source_pr_number"),
+            ("source_commit_sha", SHA40, "candidate_test_result_source_commit"),
+            ("artifact_digest", IMAGE_ID, "candidate_test_result_artifact_digest")):
+        problem = field_problem(result.get(field), pattern, reason)
+        if problem:
+            return adm.fails("test", problem, observed={field: result.get(field)})
+    if result.get("executor_result") != "TEST_PR_OK":
+        return adm.fails("test", "candidate_test_result_not_a_success",
+                         observed={"executor_result": result.get("executor_result")})
+    # The three bindings that make "tested A, deploying B" impossible.
+    if result["source_commit_sha"] != block.get("source_commit"):
+        return adm.fails("test", "candidate_test_result_source_commit",
+                         observed={"test": result["source_commit_sha"],
+                                   "candidate": block.get("source_commit")})
+    if result["artifact_digest"] != block.get("artifact_digest"):
+        return adm.fails("test", "candidate_test_result_artifact_digest",
+                         observed={"test": result["artifact_digest"],
+                                   "candidate": block.get("artifact_digest")})
+    return adm.passes("test", observed={"task_id": result["task_id"],
+                                        "evidence_id": result["evidence_id"],
+                                        "source_pr_number": result["source_pr_number"]})
+
+
+def check_evidence(adm, block, evidence_path):
+    """The signed result itself, when the operator supplied it."""
+    if not evidence_path:
+        return adm.unknown("test_evidence", "candidate_test_result_evidence_absent")
+    try:
+        evidence = read_json(evidence_path)
+    except (Refuse, OSError, ValueError, UnicodeError):
+        return adm.fails("test_evidence", "candidate_test_result_evidence_unreadable",
+                         observed={"path": str(evidence_path)})
+    if not isinstance(evidence, dict):
+        return adm.fails("test_evidence", "candidate_test_result_evidence_unreadable")
+    adm.evidence = evidence
+    declared = block.get("test_result_identity") or {}
+    if evidence.get("action_id") != TEST_PR_ACTION:
+        return adm.fails("test_evidence", "candidate_test_result_evidence_action",
+                         observed={"action_id": evidence.get("action_id")})
+    if evidence.get("task_id") != declared.get("task_id"):
+        return adm.fails("test_evidence", "candidate_test_result_evidence_task",
+                         observed={"evidence": evidence.get("task_id"),
+                                   "candidate": declared.get("task_id")})
+    if evidence.get("status") != "SUCCESS" or evidence.get("executor_result") != "TEST_PR_OK":
+        return adm.fails("test_evidence", "candidate_test_result_evidence_not_success",
+                         observed={"status": evidence.get("status"),
+                                   "executor_result": evidence.get("executor_result")})
+    if evidence.get("source_commit_sha") != block.get("source_commit"):
+        return adm.fails("test_evidence", "candidate_test_result_evidence_source_commit",
+                         observed={"evidence": evidence.get("source_commit_sha"),
+                                   "candidate": block.get("source_commit")})
+    if evidence.get("built_image_id") != block.get("artifact_digest"):
+        return adm.fails("test_evidence", "candidate_test_result_evidence_artifact",
+                         observed={"evidence": evidence.get("built_image_id"),
+                                   "candidate": block.get("artifact_digest")})
+    # The builder is part of the provenance claim, and the signed result is the only
+    # thing that can corroborate it.  An artifact id says which image exists; it does
+    # not say which executor made it.  Without this binding a candidate could declare
+    # the older builder over an artifact a newer one produced -- the false statement
+    # BUILDER_EXECUTOR_VERSIONS exists to forbid -- and still be admitted, because the
+    # declared version was only ever checked against the list of recognised builders
+    # and never against the signed result.  A candidate that declares a builder the
+    # result does not report is refused by name, in both directions.
+    declared_build = block.get("build_definition")
+    declared_builder = (declared_build.get("executor_version")
+                        if isinstance(declared_build, dict) else None)
+    if evidence.get("executor_version") != declared_builder:
+        return adm.fails("test_evidence", "candidate_test_result_evidence_builder_version",
+                         observed={"evidence": evidence.get("executor_version"),
+                                   "candidate": declared_builder})
+    return adm.passes("test_evidence", observed={"evidence_sha256": digest(evidence),
+                                                 "executor_version": declared_builder})
+
+
+def check_artifact_durability(adm, block):
+    """Whether the artifact this candidate was built as still exists anywhere.
+
+    An image ID proves a build happened.  It does not prove the built bytes are
+    still anywhere, and the ephemeral-artifact defect was exactly that gap: a
+    signed TEST_PR reported ``built_image_id`` and deleted the image in its own
+    ``finally`` block, so the Evidence was true and nothing was deliverable.  The
+    question is therefore asked separately, and answered in the report whether or
+    not the answer is favourable.
+    """
+    declared = block.get("artifact_package")
+    if declared is None:
+        adm.checks.append({"rule": "artifact_durability", "state": "NOT_PROVEN",
+                           "reason": "candidate_artifact_package_absent"})
+        return False
+    if not isinstance(declared, dict) or set(declared) != set(ARTIFACT_PACKAGE_FIELDS):
+        return adm.fails("artifact_durability", "candidate_artifact_package",
+                         observed={"fields": (sorted(declared)
+                                              if isinstance(declared, dict) else None)})
+    if declared.get("durability") not in ARTIFACT_DURABILITY_VALUES:
+        return adm.fails("artifact_durability", "candidate_artifact_package",
+                         observed={"durability": declared.get("durability")},
+                         expected={"durability": list(ARTIFACT_DURABILITY_VALUES)})
+    if declared["durability"] == "NOT_PROVEN":
+        adm.checks.append({"rule": "artifact_durability", "state": "NOT_PROVEN",
+                           "reason": "candidate_artifact_package_not_proven"})
+        return False
+    package = declared.get("package_sha256")
+    if not isinstance(package, str) or SHA64.fullmatch(package) is None:
+        return adm.fails("artifact_durability", "candidate_artifact_package_identity",
+                         observed={"package_sha256": package})
+    # A claimed package is only credible if the signed TEST_PR result is about the
+    # same package AND the same image.  Anything else is a candidate describing an
+    # artifact no proof covers.
+    sealed = (getattr(adm, "evidence", None) or {}).get("artifact_package") or {}
+    if (sealed.get("package_sha256") != package
+            or sealed.get("image_id") != block.get("artifact_digest")):
+        return adm.fails("artifact_durability", "candidate_artifact_package_mismatch",
+                         observed={"declared_package_sha256": package,
+                                   "evidence": sealed,
+                                   "candidate_artifact_digest": block.get("artifact_digest")})
+    return adm.passes("artifact_durability", package_sha256=package)
+
+
+def check_rollback(adm, block):
+    relation = block.get("rollback_relation")
+    if not isinstance(relation, dict) or set(relation) != set(ROLLBACK_FIELDS):
+        return adm.fails("rollback", "candidate_rollback_relation",
+                         observed={"fields": (sorted(relation)
+                                              if isinstance(relation, dict) else None)})
+    if relation.get("relation") not in ROLLBACK_RELATIONS:
+        return adm.fails("rollback", "candidate_rollback_relation_unknown",
+                         observed={"relation": relation.get("relation")})
+    target = relation.get("previous_known_good_image_id")
+    if relation["relation"] == "REPLACES_CURRENT_KNOWN_GOOD":
+        if not isinstance(target, str) or IMAGE_ID.fullmatch(target) is None:
+            return adm.fails("rollback", "candidate_rollback_target_absent",
+                             observed={"previous_known_good_image_id": target})
+    elif target is not None:
+        return adm.fails("rollback", "candidate_rollback_target",
+                         observed={"previous_known_good_image_id": target})
+    return adm.passes("rollback", observed={"relation": relation["relation"],
+                                            "previous_known_good_image_id": target})
+
+
+def check_plan(adm, block, plan_path):
+    """What the plan approves must be this candidate, or the two disagree.
+
+    A plan is optional at admission: the candidate exists before the plan that will
+    approve it does. Its absence is recorded as not-evaluated rather than as an
+    unknown, because it is a later step and not an input admission needs.
+    """
+    if not plan_path:
+        adm.checks.append({"rule": "plan", "state": "NOT_EVALUATED",
+                           "reason": "plan_candidate_absent"})
+        adm.not_evaluated.append("plan_candidate_absent")
+        return False
+    try:
+        plan = read_json(plan_path)
+    except (Refuse, OSError, ValueError, UnicodeError):
+        return adm.fails("plan", "plan_candidate_absent", observed={"path": str(plan_path)})
+    body = plan.get("plan") if isinstance(plan, dict) and isinstance(plan.get("plan"), dict) else plan
+    approved = body.get("candidate") if isinstance(body, dict) else None
+    if not isinstance(approved, dict):
+        return adm.fails("plan", "plan_candidate_absent")
+    if approved.get("repository") != block.get("source_repository"):
+        return adm.fails("plan", "plan_candidate_repository_mismatch",
+                         observed={"plan": approved.get("repository"),
+                                   "candidate": block.get("source_repository")})
+    for field, name in (("source_commit", "source_commit"),
+                        ("application_git_tree", "application_tree"),
+                        ("source_tree_sha256", "source_fingerprint")):
+        if approved.get(field) != block.get(name):
+            return adm.fails("plan", "plan_candidate_source_mismatch",
+                             observed={"field": field, "plan": approved.get(field),
+                                       "candidate": block.get(name)})
+    if approved.get("image_id") != block.get("artifact_digest"):
+        return adm.fails("plan", "plan_candidate_artifact_mismatch",
+                         observed={"plan": approved.get("image_id"),
+                                   "candidate": block.get("artifact_digest")})
+    if body.get("migration") is not block.get("migration_required"):
+        return adm.fails("plan", "plan_candidate_migration_mismatch",
+                         observed={"plan": body.get("migration"),
+                                   "candidate": block.get("migration_required")})
+    return adm.passes("plan", observed={"plan_id": body.get("plan_id")})
+
+
+def admit(contract_path, candidate_path, evidence_path=None, plan_path=None,
+          go_repo=None, at=None, generated_at=None):
+    """The whole admission, as one document. Nothing is written here."""
+    at = at or dt.datetime.now(dt.timezone.utc)
+    generated_at = generated_at or at
+    contract = Contract(contract_path)
+    adm = Admission(contract, at)
+
+    document = None
+    if candidate_path:
+        try:
+            document = read_json(candidate_path)
+        except (Refuse, OSError, ValueError, UnicodeError) as exc:
+            adm.fails("candidate", "release_candidate_absent",
+                      observed={"path": str(candidate_path), "problem": type(exc).__name__})
+    else:
+        adm.fails("candidate", "release_candidate_absent", observed={"path": None})
+
+    block = document.get("release_candidate_v1") if isinstance(document, dict) else None
+    if not adm.reasons and not isinstance(block, dict):
+        adm.fails("candidate", "release_candidate_absent" if block is None
+                  else "release_candidate_not_an_object",
+                  observed={"path": LINEAGE_POINTER})
+    if isinstance(block, dict) and not adm.reasons:
+        allowed = set(RELEASE_CANDIDATE_FIELDS) | set(OPTIONAL_FIELDS)
+        if not set(RELEASE_CANDIDATE_FIELDS) <= set(block) <= allowed:
+            adm.fails("candidate", "release_candidate_fields",
+                      observed={"fields": sorted(block)}, expected=list(RELEASE_CANDIDATE_FIELDS))
+        else:
+            check_source(adm, block, document)
+            if not adm.reasons:
+                check_migration(adm, block)
+            if not adm.reasons:
+                check_build(adm, block, go_repo)
+            if not adm.reasons:
+                check_artifact(adm, block)
+            if not adm.reasons:
+                check_test_result(adm, block)
+            if not adm.reasons:
+                check_evidence(adm, block, evidence_path)
+            if not adm.reasons:
+                check_artifact_durability(adm, block)
+            if not adm.reasons:
+                check_rollback(adm, block)
+            if not adm.reasons:
+                check_plan(adm, block, plan_path)
+
+    if adm.reasons:
+        verdict = REJECT
+    elif adm.unknowns:
+        verdict = UNKNOWN
+    else:
+        verdict = ACCEPT
+
+    durability = {"state": "NOT_PROVEN", "package_sha256": None, "reason": None}
+    for entry in adm.checks:
+        if entry.get("rule") != "artifact_durability":
+            continue
+        if entry.get("state") == "PASS":
+            durability = {"state": "PROVEN", "package_sha256": entry.get("package_sha256"),
+                          "reason": None}
+        elif entry.get("state") == "NOT_PROVEN":
+            durability = {"state": "NOT_PROVEN", "package_sha256": None,
+                          "reason": entry.get("reason")}
+        else:
+            durability = {"state": "NOT_ESTABLISHED", "package_sha256": None,
+                          "reason": entry.get("reason")}
+    deployable = verdict == ACCEPT and durability["state"] == "PROVEN"
+
+
+    candidate = None
+    if isinstance(block, dict):
+        candidate = {name: block.get(name) for name in RELEASE_CANDIDATE_FIELDS}
+        if isinstance(block.get("source_commit"), str):
+            candidate["source_commit"] = block["source_commit"]
+    return {
+        "schema_version": "1",
+        "contract": CONTRACT_NAME,
+        "component": COMPONENT,
+        "scope": "READ_ONLY_CANDIDATE_ADMISSION",
+        "authority": "DERIVED_NON_AUTHORITATIVE",
+        "issue": "#103 / CC V1-08 candidate admission",
+        "at": iso(at),
+        "generated_at": iso(generated_at),
+        "artifact_durability": durability,
+        # Kept separate from the verdict on purpose.  Admission answers whether the
+        # version is what it says it is; whether its artifact can be delivered is a
+        # different question, and the ephemeral-artifact defect lived exactly in the
+        # gap between them.
+        "deployability": {
+            "artifact_durability": durability["state"],
+            "deployable_artifact_established": deployable,
+            "reason": None if deployable else (durability.get("reason") or ("admission:%s" % verdict)),
+            "is_a_deploy_approval": False,
+        },
+        "artifact_durability": durability,
+        # Kept separate from the verdict on purpose.  Admission answers whether the
+        # version is what it says it is; whether its artifact can be delivered is a
+        # different question, and the ephemeral-artifact defect lived exactly in the
+        # gap between them.
+        "deployability": {
+            "artifact_durability": durability["state"],
+            "deployable_artifact_established": deployable,
+            "reason": None if deployable else (durability.get("reason") or ("admission:%s" % verdict)),
+            "is_a_deploy_approval": False,
+        },
+        "sources": {
+            "contract": str(contract_path),
+            "candidate": str(candidate_path) if candidate_path else None,
+            "lineage_pointer": LINEAGE_POINTER,
+            "test_pr_evidence": str(evidence_path) if evidence_path else None,
+            "plan": str(plan_path) if plan_path else None,
+            "go_repo": str(go_repo) if go_repo else None,
+        },
+        "verdict": {
+            "admission": verdict,
+            "accepted": verdict == ACCEPT,
+            "rejected": list(adm.reasons),
+            "unknown": list(adm.unknowns),
+            "not_evaluated": list(adm.not_evaluated),
+            "rules_evaluated": len(adm.checks),
+        },
+        "refusal_reasons": list(adm.reasons),
+        "release_candidate": candidate,
+        "checks": adm.checks,
+        "authority_boundary": dict(AUTHORITY_BOUNDARY),
+        "not_established_by_this_component": [
+            "that the candidate's business acceptance gates PASS (the operator's signed "
+            "declaration on the deploy plan is the authority for that)",
+            "rollback eligibility beyond naming the previous known-good target (#104)",
+            "anything about Production, which is out of V1 scope",
+        ],
+    }
+
+
+# --------------------------------------------------------------------------- #
+# cli
+# --------------------------------------------------------------------------- #
+def selftest():
+    """Built-in checks on the contract and the pinned constants."""
+    checks, failures = [], []
+
+    def check(name, condition, detail=""):
+        checks.append(name)
+        if not condition:
+            failures.append(name)
+        print("%s  %s %s" % ("PASS" if condition else "FAIL", name, detail if not condition else ""))
+
+    contract = Contract(pathlib.Path(__file__).resolve().parent.parent / CONTRACT_FILE)
+    check("contract_loads_and_closes_its_verdict_set", True)
+    check("the_refusal_vocabulary_is_not_empty", len(contract.refusals) > 20,
+          "%d reasons" % len(contract.refusals))
+    check("a_reason_outside_the_contract_is_refused",
+          _raises(lambda: contract.refuses("a_reason_invented_tomorrow")))
+    granted = sorted(k for k, v in AUTHORITY_BOUNDARY.items()
+                     if v and k != "may_read_the_candidate_and_its_evidence")
+    check("no_authority_is_held", granted == [], granted)
+    check("every_check_reason_is_in_the_vocabulary",
+          not [c.get("reason") for c in _dry_run_checks()
+               if c.get("reason") and c["reason"] not in contract.refusals])
+    print("\nselftest: %s" % ("PASS" if not failures else "FAIL"))
+    return 1 if failures else 0
+
+
+def _raises(call):
+    try:
+        call()
+    except Refuse:
+        return True
+    return False
+
+
+def _dry_run_checks():
+    """Admission's own check entries for the synthetic refusals, for the vocabulary test."""
+    import tempfile
+    root = pathlib.Path(tempfile.mkdtemp(prefix="ccv1-admission-"))
+    contract = pathlib.Path(__file__).resolve().parent.parent / CONTRACT_FILE
+    document = root / "CURRENT_CANDIDATE.json"
+    document.write_text(json.dumps({"source_commit": "a" * 40,
+                                    "application_git_tree": "b" * 40,
+                                    "source_tree_sha256": "c" * 64,
+                                    "release_candidate_v1": {}}), encoding="utf-8")
+    return admit(contract, document)["checks"]
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="RELEASE_CANDIDATE_V1 admission (read-only)")
+    parser.add_argument("command", nargs="?", default="admit")
+    parser.add_argument("--candidate", default=None)
+    parser.add_argument("--test-pr-evidence", dest="evidence", default=None)
+    parser.add_argument("--plan", default=None)
+    parser.add_argument("--go-repo", dest="go_repo", default=None)
+    parser.add_argument("--at", default=None)
+    parser.add_argument("--out", default=None)
+    args = parser.parse_args(argv)
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    if args.command == "selftest":
+        return selftest()
+    at = parse_time(args.at, "at") if args.at else None
+    candidate = args.candidate
+    if candidate is None and args.go_repo:
+        candidate = str(pathlib.Path(args.go_repo) / LINEAGE_POINTER)
+    document = admit(root / CONTRACT_FILE, candidate, args.evidence, args.plan,
+                     args.go_repo, at)
+    rendered = json.dumps(document, indent=2, sort_keys=True) + "\n"
+    if args.out:
+        target = pathlib.Path(args.out)
+        target.mkdir(parents=True, exist_ok=True)
+        (target / OUTPUT_NAME).write_text(rendered, encoding="utf-8")
+    else:
+        sys.stdout.write(rendered)
+    return 0 if document["verdict"]["accepted"] else 1
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except Refuse as exc:
+        print("REFUSED=%s" % exc, file=sys.stderr)
+        sys.exit(2)

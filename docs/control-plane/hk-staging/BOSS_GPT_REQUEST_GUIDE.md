@@ -20,14 +20,27 @@ Confirmed Boss Request capability:
 - `HK_STAGING_TEST_PR` for `HK-STAGING-01` — **SUPPORTED / PROVEN**. PR #50
   recorded `LIVE_INSTALL=PASS`, `TEST_PR_E2E=PASS`, and
   `INDEPENDENT_BLIND_RETEST=PASS`.
-- `HK_STAGING_DEPLOY` — capability is **INSTALLED but NOT ENABLED**. PR #57
-  records `deployment_requests_enabled=false`; the closeout also recorded no
-  formal deployment-plan directory. Treat DEPLOY as fail-closed and unavailable
-  for a normal Boss Request unless a later authoritative change explicitly
-  enables it under the approved deployment contract.
-- CANARY / ROLLBACK — do not invent a Boss Request schema. The underlying
-  Control Plane may have action runbooks, but that does not by itself expose a
-  Boss Request action.
+- `HK_STAGING_DEPLOY` — capability is **INSTALLED**. Since 2026-09-17 the
+  **authenticated DEPLOY Request is the authorisation**: there is no switch to
+  open, no plan to prepare and no approval record to write. The Request is the
+  five common fields, and Command Center derives the plan and a one-time
+  authorisation from facts it already holds (the candidate admission record, its
+  own root-owned live baseline, the sealed TEST_PR of that candidate, and the
+  CANARY and preflight Tasks its own Bridge published and signed). See the DEPLOY
+  section below for the exact sequence. Do not offer to prepare a plan, a gate
+  declaration or an approval record: none of them is a Boss input, and none of
+  them is even expressible.
+- `HK_STAGING_CANARY` — **SUPPORTED / REQUESTABLE** since Command Center channel
+  revision `1.6.0-canary-channel`. A CANARY Request carries the five common fields
+  only: Command Center reads the candidate image, that candidate's sealed package
+  and the expected current image from its own root-owned canary authority file, so
+  a Request cannot name an image. Running it is read-only and isolated, it needs no
+  plan, and it is **not** gated by the deployment authorisation — the canary is the
+  evidence a deployment plan must cite, so it has to be obtainable before a plan
+  can exist. It runs even while deployments are suspended. A canary older than 30 minutes cannot be used by a plan,
+  so run it per candidate, close to the deployment.
+- ROLLBACK — do not invent a Boss Request schema. The underlying Control Plane may
+  have action runbooks, but that does not by itself expose a Boss Request action.
 
 Do not use the archived 2026-09-11 Bridge 1.2.0 / VERIFY-only snapshot under
 `command-center/` as the current capability inventory.
@@ -40,11 +53,25 @@ Treat requests such as these as `HK_STAGING_VERIFY`:
 - "Check the Hong Kong staging environment."
 - "Verify the current HK-STAGING state."
 
+Treat requests such as these as `HK_STAGING_CANARY`:
+
+- "Run a canary for the current candidate."
+- "Canary the candidate on Hong Kong."
+
 Treat requests such as these as `HK_STAGING_TEST_PR`:
 
 - "Test PR 123 on HK."
 - "Have Hong Kong test PR #123."
 - "Run the isolated HK PR test for 123."
+
+Treat requests such as these as the deployment sequence below:
+
+- "Deploy the current candidate to Hong Kong staging."
+- "Deploy this version to HK-STAGING."
+- "Put the current version on Hong Kong."
+
+Treating that intent means issuing **three** bounded Requests in order — CANARY,
+then VERIFY, then DEPLOY — not one. They are described in the DEPLOY section.
 
 TEST_PR means source-bound isolated validation. It does **not** mean deploy.
 Command Center resolves the mutable PR number to one immutable 40-character GO
@@ -52,10 +79,20 @@ commit SHA; HK fetches only that SHA and uses the fixed isolated builder/test
 profile. Evidence explicitly keeps `application_health_proven=false` and
 `deployment_performed=false`.
 
-If the boss asks to deploy while the deployment request switch remains disabled,
-report that the DEPLOY capability exists but is currently fail-closed. Do not
-create a guessed deployment Request, plan, formal Task, signature, or executor
-command. Do not invent CANARY or ROLLBACK Request formats either.
+If the boss asks to deploy, the Request is the authorisation: run the sequence in
+the DEPLOY section, prepare nothing by hand, and do not ask for a switch to be
+opened — there is none. If Command Center answers with
+`deployment_authorization_mode_unsupported`, deployments are suspended on that host:
+report it and stop. Re-enabling them is an operator's decision on the host, never a
+Boss input. Do not create a guessed deployment Request, formal Task, signature, or
+executor command, and do not invent CANARY or ROLLBACK Request formats.
+
+Never write a deployment plan, and never declare a release gate. A plan is
+derived by Command Center, and the four product-release declarations
+(`three_end_ux`, `six_vertical_closed_loop`, `sealed_node`, `final_release`) are
+**gone** from the deploy contract as of 2026-09-17: they are upstream product
+acceptance verdicts, and Command Center validates deployability rather than
+re-adjudicating product choices.
 
 ## Request flow
 
@@ -164,6 +201,48 @@ Recommended PR title:
 The channel is persistent, but every individual Request remains single-use.
 Command Center's durable ledger and replay protection prevent the same
 `request_id` or already-consumed PR head from issuing another formal Task.
+
+## DEPLOY Request JSON
+
+```json
+{
+  "schema_version": "1",
+  "request_id": "boss-deploy-request-EXAMPLE",
+  "action_id": "HK_STAGING_DEPLOY",
+  "environment": "HK-STAGING-01",
+  "requested_at": "2026-09-17T00:00:00Z"
+}
+```
+
+Five fields: that is the whole Request. There is **no `plan_id`**, and no image,
+package, service, path, environment file, command, approval, signature or
+executor option. A Request that still carries a `plan_id` is refused as a wrong
+field set rather than read around it.
+
+**This Request is itself the Human Approval.** Its author, as reported by GitHub,
+is the approver; the platform's `created_at` is the approval time; and the digest
+of its canonical content is what the approval is bound to, so the approved content
+cannot be changed afterwards. That is why the deployment sequence has to be run in
+this order:
+
+```text
+1. CANARY   for this candidate                (valid 30 minutes from completion)
+2. VERIFY   the live host, as the preflight   (valid  5 minutes from completion)
+3. DEPLOY   this Request                      (must be opened after 1 and 2)
+```
+
+Command Center refuses a DEPLOY Request whose approval is older than the canary
+or the preflight, and it refuses one older than 15 minutes. A canary older than 30
+minutes, or a preflight older than 5 minutes, is refused too. So the three
+Requests belong to one short window, not to a plan you prepare in advance: the
+canary and preflight are read-only, and only the third one deploys anything.
+
+Between step 2 and step 3 nothing needs to be written, prepared or approved by
+anyone. If a step is refused, report the machine-readable reason it came back
+with and stop; do not retry a step blindly, do not re-use a consumed plan (a retry
+needs a fresh canary), and do not construct a plan or an approval by hand.
+
+`ROLLBACK` still has no Boss Request schema. Do not invent one.
 
 ## Hard boundary
 

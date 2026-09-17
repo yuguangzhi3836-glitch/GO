@@ -1,0 +1,11 @@
+[Unit]
+Description=Capture the Boss Request Bridge poll output and export Request facts
+
+[Timer]
+OnBootSec=120s
+OnUnitActiveSec=300s
+Persistent=false
+Unit=go-request-fact-cycle.service
+
+[Install]
+WantedBy=timers.target

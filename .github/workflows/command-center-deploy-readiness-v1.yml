@@ -1,0 +1,247 @@
+name: Command Center deploy readiness (isolated)
+on:
+  push:
+    branches: [cc/github-native-delivery-v1, cc/v1-finalization-20260914]
+    paths:
+      - 'control-plane/command-center-deploy-readiness-v1/**'
+      - 'control-plane/command-center-state-v1/**'
+      - '.github/workflows/command-center-deploy-readiness-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'control-plane/command-center-deploy-readiness-v1/**'
+      - 'control-plane/command-center-state-v1/**'
+      - '.github/workflows/command-center-deploy-readiness-v1.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cc-deploy-readiness-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  isolated-deploy-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned test dependency
+        run: python -m pip install cryptography==46.0.0
+      - name: Check the deploy readiness manifest
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Run the evaluator suite on Linux
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: python -m unittest discover -s tests -v
+      - name: Run the evaluator built-in checks
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: python command-center/go-deploy-readiness selftest
+      - name: Run the isolated verification and write summary.json
+        working-directory: control-plane/command-center-deploy-readiness-v1
+        run: python run_checks.py "$RUNNER_TEMP/cc-deploy-readiness-checks"
+      - name: Confirm the state layer is still green
+        working-directory: control-plane/command-center-state-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Confirm the state layer suite still passes
+        working-directory: control-plane/command-center-state-v1
+        run: python -m unittest discover -s tests -q
+      - name: Confirm the state layer isolated checks still pass
+        run: python control-plane/command-center-state-v1/run_checks.py "$RUNNER_TEMP/cc-state-checks"
+      - name: Prove readiness is closed, and that YES can never coexist with a Bridge refusal
+        run: |
+          python - <<'PY'
+          import base64
+          import json
+          import os
+          import pathlib
+          import shutil
+          import subprocess
+          import sys
+
+          repo = pathlib.Path('.').resolve()
+          component = repo / 'control-plane' / 'command-center-deploy-readiness-v1'
+          evaluator = component / 'command-center' / 'go-deploy-readiness'
+          work = pathlib.Path(os.environ['RUNNER_TEMP']) / 'ccv106'
+          if work.exists():
+              shutil.rmtree(work)
+
+          # The fixtures are the ones the isolated suite already reviews; this step proves
+          # the composition instead -- the real CLI, the closed contract, and the invariant
+          # that a YES verdict can never coexist with a Bridge refusal.
+          sys.path.insert(0, str(component / 'tests'))
+          import test_deploy_readiness as t  # noqa: E402
+
+          R = t.R
+          contract = json.loads((component / R.CONTRACT_FILE).read_text(encoding='utf-8'))
+          failures = []
+
+
+          def check(name, condition, detail=''):
+              if condition:
+                  print('PASS  %s' % name, flush=True)
+              else:
+                  failures.append(name)
+                  print('FAIL  %s %s' % (name, detail), flush=True)
+
+
+          # 1. the contract is closed and every gate blocks
+          declared = {k: v for k, v in contract['x-go-gates'].items() if k != 'note'}
+          check('contract_gate_set_is_the_implemented_one',
+                set(declared) == set(R.MANDATORY_GATES)
+                and set(contract['properties']['gates']['items']['properties']['gate']['enum'])
+                == set(R.MANDATORY_GATES))
+          check('no_gate_is_advisory', [k for k, v in declared.items() if not v['mandatory']] == [])
+          check('the_verdict_set_is_closed',
+                contract['properties']['verdict']['properties']['deploy_ready']['enum']
+                == ['YES', 'NO', 'UNKNOWN'])
+
+          # 2. the real CLI, on a fully proven bundle
+          fixture = t.Fixture()
+          out = work / 'cli'
+          document = fixture.evaluate()
+          proc = subprocess.run([sys.executable, str(evaluator), 'evaluate',
+                                 '--control-state', str(fixture.state_path),
+                                 '--go-repo', str(fixture.go),
+                                 '--live-bundle', str(fixture.bundle_dir),
+                                 '--now', '2026-09-15T01:00:00Z',
+                                 '--out', str(out)],
+                                capture_output=True, text=True)
+          check('the_cli_runs_and_writes_a_document', proc.returncode == 0 and (out / 'DEPLOY_READINESS.json').is_file(),
+                proc.stderr[-400:])
+          emitted = json.loads((out / 'DEPLOY_READINESS.json').read_text(encoding='utf-8'))
+          check('a_fully_proven_bundle_is_yes', emitted['verdict']['deploy_ready'] == 'YES',
+                emitted['blocking_reasons'])
+          check('every_gate_is_reported_and_passes', len(emitted['gates']) == len(R.MANDATORY_GATES)
+                and all(g['state'] == 'PASS' for g in emitted['gates']),
+                [g['gate'] for g in emitted['gates'] if g['state'] != 'PASS'])
+          check('no_blocking_reasons_on_yes', emitted['blocking_reasons'] == [])
+          check('no_advisory_holds_exist', emitted['advisory_holds'] == [])
+          check('yes_still_authorises_nothing',
+                sum(1 for v in emitted['authority_boundary'].values() if v) == 1
+                and emitted['authority_boundary']['may_read_live_command_center_state'] is True
+                and emitted['authority_boundary']['is_a_deploy_approval'] is False)
+          check('the_approval_authority_is_an_authorised_github_identity',
+                emitted['identity']['approval_identities'] == list(R.APPROVAL_IDENTITIES)
+                and sorted(emitted['identity']['roles']) == sorted([R.ROLE_TASK, R.ROLE_EVIDENCE]))
+          check('the_document_leaks_no_local_path',
+                str(work) not in json.dumps(emitted) and '/home/' not in json.dumps(emitted))
+
+          # 3. the specific ways the first revision could over-report
+          def standing_authorization(_keys, bundle):
+              del bundle['approval']['request_sha256']
+
+          document = t.Fixture(mutate=standing_authorization).evaluate()
+          check('an_authorization_that_cites_no_request_is_never_yes',
+                document['verdict']['deploy_ready'] != 'YES'
+                and t.gate_of(document, 'DEPLOYMENT_AUTHORIZATION')['state'] == 'FAIL')
+
+          def chosen_authorization_id(_keys, bundle):
+              bundle['approval']['approval_id'] = 'approval-chosen-by-hand'
+
+          document = t.Fixture(mutate=chosen_authorization_id).evaluate()
+          check('an_authorization_id_that_was_not_derived_is_never_yes',
+                document['verdict']['deploy_ready'] != 'YES'
+                and t.gate_of(document, 'DEPLOYMENT_AUTHORIZATION')['state'] == 'FAIL')
+          def unauthorised_approver(_keys, bundle):
+              bundle['approval']['approved_by'] = 'someone-else-entirely'
+
+          document = t.Fixture(mutate=unauthorised_approver).evaluate()
+          check('an_approval_from_an_unauthorised_identity_is_refused',
+                t.gate_of(document, 'HUMAN_APPROVAL')['state'] == 'FAIL'
+                and document['verdict']['deploy_ready'] == 'NO')
+          document = t.Fixture(collide_task_with_evidence=True).evaluate()
+          check('one_key_in_two_roles_is_never_yes',
+                t.gate_of(document, 'BRIDGE_ACCEPTANCE')['state'] == 'FAIL'
+                and document['identity']['task_and_evidence_distinct'] is False
+                and document['verdict']['deploy_ready'] == 'NO')
+          document = t.Fixture(bundle=False).evaluate()
+          check('no_bundle_is_unknown_and_never_a_failure',
+                document['verdict']['deploy_ready'] == 'UNKNOWN' and document['verdict']['failed'] == [])
+
+
+          # The four product-release declarations are gone, so what must block now is the
+          # fact one of them stood for: the sealed TEST_PR of this exact candidate.
+          def break_sealed_test_pr(_keys, bundle):
+              bundle['test_pr_evidence']['artifact_durability'] = 'NOT_PROVEN'
+
+
+          document = t.Fixture(mutate=break_sealed_test_pr).evaluate()
+          check('a_broken_sealed_test_pr_blocks_instead_of_advising',
+                t.gate_of(document, 'BRIDGE_ACCEPTANCE')['state'] == 'FAIL'
+                and document['verdict']['deploy_ready'] == 'NO'
+                and document['advisory_holds'] == [])
+          # and the retired declarations themselves can no longer be expressed at all
+          def retire_the_gates_back(_keys, bundle):
+              bundle['plan']['gates'] = {name: 'PASS' for name in (
+                  'three_end_ux', 'six_vertical_closed_loop', 'sealed_node', 'final_release')}
+
+
+          document = t.Fixture(mutate=retire_the_gates_back).evaluate()
+          check('a_plan_carrying_the_retired_release_gates_is_refused',
+                t.gate_of(document, 'BRIDGE_ACCEPTANCE')['state'] == 'FAIL'
+                and document['verdict']['deploy_ready'] == 'NO')
+
+
+          def failed_canary(keys, bundle):
+              task, evidence = t.proof_pair(
+                  keys, 'HK_STAGING_CANARY', 'CANARY_OK', R.CANARY_GATES,
+                  {'release_id': 'canary-release-1', 'candidate_image_id': t.CANDIDATE_IMAGE,
+                   'candidate_package_sha256': t.CANDIDATE_PACKAGE,
+                   'expected_current_image_id': t.CURRENT_IMAGE})
+              gates = dict(evidence['gate_results'])
+              gates['container_cleanup'] = 'FAIL'
+              evidence['gate_results'] = gates
+              bundle['canary_task'] = task
+              bundle['canary_evidence'] = t.sign_b64(keys['evidence']['private'], evidence)
+
+
+          document = t.Fixture(mutate=failed_canary).evaluate()
+          check('an_unverified_canary_is_a_failure_not_a_declaration',
+                t.gate_of(document, 'CANARY')['state'] == 'FAIL'
+                and document['verdict']['deploy_ready'] == 'NO')
+
+          # 4. the invariant, swept over every mutation the suite knows about
+          sweep = t.BridgeAcceptanceTests().mutations()
+          inspected = 0
+          for name, (mutate, rebind) in sweep.items():
+              case = t.Fixture(mutate=mutate, rebind=rebind)
+              document = case.evaluate()
+              inspected += 1
+              verdict = document['verdict']['deploy_ready']
+              bridge = t.gate_of(document, 'BRIDGE_ACCEPTANCE')['state']
+              if verdict == 'YES' and bridge != 'PASS':
+                  check('invariant_%s' % name, False,
+                        'YES while the bridge gate was %s' % bridge)
+                  break
+              if verdict == 'YES':
+                  check('invariant_%s' % name, False, 'an unmutated case was reported as YES')
+                  break
+          else:
+              check('no_case_can_be_yes_while_the_bridge_gate_refuses', inspected >= 8,
+                    'inspected %d' % inspected)
+
+          # 5. the gate set is tamper-evident: dropping a gate from the contract fails
+          tampered = json.loads(json.dumps(contract))
+          del tampered['x-go-gates']['BRIDGE_ACCEPTANCE']
+          check('the_contract_cannot_drop_a_gate_silently',
+                set(tampered['x-go-gates']) - {'note'} != set(R.MANDATORY_GATES))
+          check('the_live_bridge_contract_is_the_fact_source',
+                (t.BOSS / 'go_deploy_request.py').is_file())
+
+          if failures:
+              print('E2E_FAILED: %s' % ', '.join(failures), flush=True)
+              sys.exit(1)
+          print('E2E PASS', flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cc-deploy-readiness-${{ github.sha }}
+          path: ${{ runner.temp }}/ccv106/
+          if-no-files-found: error
+          retention-days: 30

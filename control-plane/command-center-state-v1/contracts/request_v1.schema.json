@@ -14,8 +14,8 @@
       "description": "Fresh and unique per Request. Reuse is rejected."
     },
     "action_id": {
-      "enum": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY"],
-      "description": "The only actions a human may name. ROLLBACK and CANARY are not human-requestable actions."
+      "enum": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY", "HK_STAGING_CANARY"],
+      "description": "The only actions a human may name. ROLLBACK is not a human-requestable action. CANARY became one in the channel revision that added it and needs no plan and no switch, because it mutates no business runtime."
     },
     "environment": {"const": "HK-STAGING-01"},
     "requested_at": {"type": "string", "format": "date-time"}
@@ -46,12 +46,12 @@
       "HK_STAGING_CANARY",
       "HK_STAGING_ROLLBACK"
     ],
-    "currently_enabled_request_action": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR"],
+    "currently_enabled_request_action": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY"],
     "capability_classification": {
       "HK_STAGING_VERIFY": "SUPPORTED_PROVEN",
       "HK_STAGING_TEST_PR": "SUPPORTED_PROVEN",
       "HK_STAGING_DEPLOY": "CAPABILITY_PRESENT_BUT_DISABLED",
-      "HK_STAGING_CANARY": "NOT_REQUESTABLE",
+      "HK_STAGING_CANARY": "CAPABILITY_PRESENT_REQUESTABLE",
       "HK_STAGING_ROLLBACK": "NOT_REQUESTABLE"
     },
     "deploy_request_enabled": false,
@@ -61,6 +61,7 @@
     "pr_number is a target selector, not an execution parameter: Command Center resolves it once to an immutable commit SHA with its own read-only resolver key.",
     "plan_id refers to an operator-registered, human-approved deployment plan read from a fixed root-owned store. The Request cannot supply any value inside that plan. It is NOT an enabled action today.",
     "A Request PR must add exactly one requests/<request_id>.json file and nothing else.",
+    "A CANARY Request names no image, no package and no expected-current image: those come from the root-owned canary authority file that the operator writes. Two canary Requests against the same authority differ only in identity and timing.",
     "A Request never creates, signs, publishes or executes anything. Command Center is the only component that can turn a validated Request into a Signed Task."
   ]
 }

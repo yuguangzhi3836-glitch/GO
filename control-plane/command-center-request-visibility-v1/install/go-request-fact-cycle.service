@@ -1,0 +1,16 @@
+[Unit]
+Description=GO Command Center request-visibility fact cycle (PHASE 1: journalled capture + read-only export)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/usr/local/libexec/go-request-fact-cycle cycle
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/go-command-center/request-visibility-v1

@@ -1,0 +1,1047 @@
+#!/usr/bin/env python3
+"""Export the Command Center Bridge's Request facts, read-only. (CC V1-05 / #100)
+
+Why this exists
+---------------
+A Request is human intent dropped on the control bus as one
+``requests/<request_id>.json`` file. What the Bridge then did with it -- accepted
+it and signed a Task, refused it, saw it as a duplicate or as a replay -- lived
+only on the Command Center host: the durable ledger keeps the accepted half, and
+every refusal reason is printed to stdout and kept nowhere. The projection could
+therefore only ever report REQUEST_CREATED, and nobody could answer "why did my
+Request not become a Task?" from the control bus.
+
+This exporter is the missing half of the pipe. It reads the Bridge's own
+records, read-only, and writes one *Request fact* per Request identity:
+
+    REQUEST_CREATED          the Bridge's own ledger is non-terminal, i.e. it is
+                             claiming, prepared or publishing, so the Request is
+                             not settled -- neither accepted nor refused
+    REQUEST_VALIDATED        the Bridge recorded a published Task  (proof required)
+    REQUEST_REJECTED         the Bridge refused it, reason preserved
+    REQUEST_DUPLICATE        a distinct submission reused a consumed request_id
+    REQUEST_REPLAY_REJECTED  a consumed submission identity was presented again
+
+Three load-bearing rules
+------------------------
+1. *A fact is an observation, not a permission.* Nothing here holds a private
+   key, signs anything, writes a Task, or has any code path to an executor. Every
+   emitted file says so in its own ``authority`` block.
+2. *A reason is never dropped.* The Bridge's own token is copied through
+   verbatim, with an ``origin`` naming which Bridge record said it. A token the
+   contract does not classify is still emitted, as ``UNCLASSIFIED_REJECT``. A
+   submission whose Request identity cannot be established produces no fact at
+   all -- because a fact must bind a ``request_id`` -- but is recorded in the
+   export index instead of being silently discarded.
+3. *An acceptance is never taken on faith.* ``REQUEST_VALIDATED`` sets
+   ``proof_required`` true. The consumer must corroborate it against a signed
+   Task on the control bus; this exporter only forwards the claim.
+
+Read-only inputs, all of them outside this repository:
+    --ledger        the Bridge ledger (ledger.json), never written
+    --poll-results  the Bridge's own poll output, journalled by the operator
+    --requests-dir  Request files collected read-only from the control bus
+"""
+import argparse
+import datetime as dt
+import hashlib
+import json
+import pathlib
+import re
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+CONTRACT_FILE = "contracts/request_fact_v1.schema.json"
+FACTS_DIR = "facts"
+INDEX_NAME = "INDEX.json"
+REQUESTS_REPOSITORY = "chenzhenxi1-sudo/go-control-tasks"
+TASKS_REPOSITORY = "chenzhenxi1-sudo/go-control-tasks"
+
+REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$")
+SUBMISSION_KEY_RE = re.compile(r"^[1-9][0-9]{0,8}:[0-9a-f]{40}$")
+HEAD_RE = re.compile(r"^[0-9a-f]{40}$")
+PR_RE = re.compile(r"^[1-9][0-9]{0,8}$")
+# The actions a Request can carry, and therefore the only ones a fact can be about.
+# This is the Bridge's channel contract, not a list of its own: it is exactly
+# config.json's allowed_actions, which the Bridge checks its own configuration
+# against for exact equality, so a submission carrying anything else is one the
+# Bridge would have refused. Kept here only as the vocabulary of the fact shape;
+# ActionRegistryTests pins it against that file so the two cannot drift.
+ACTION_IDS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
+              "HK_STAGING_CANARY", "CONTROL_PLANE_HEALTH")
+
+LEDGER_VERSION = 1
+NON_TERMINAL_LEDGER_STATES = ("claiming", "prepared", "publishing")
+SETTLED_LEDGER_STATES = ("published", "dry_run_consumed", "ignored")
+
+# What a semantic fact is: the Request identity, the normalized outcome, the
+# normalized reason and the normalized binding result. Everything that says
+# *when we looked* is deliberately outside this set, so the same semantics
+# observed at three instants is one immutable fact and not three. The defect this
+# replaces was exactly that -- a fact per (semantics, observation instant) -- so
+# unchanged semantics sitting at a new instant minted a new immutable fact on
+# every poll and grew the store and the Git history with observations rather than
+# with outcomes.
+SEMANTIC_IDENTITY_KEYS = ("kind", "request_id", "action_id", "environment", "nonce",
+                          "source", "reason", "binding")
+# The one instant an immutable fact keeps: the MINIMUM of every instant this
+# semantics was ever observed at. Like time_source it is excluded from the id, so
+# two runs over the same observations produce identical bytes whatever order the
+# poll files, the filesystem or the journal presented them in.
+FIRST_OBSERVED_FIELD = "first_observed_at"
+FACT_ID_EXCLUDED = ("fact_id", FIRST_OBSERVED_FIELD, "time_source")
+OBSERVATION_LEDGER_NAME = "observations.json"
+OBSERVATION_LEDGER_CONTRACT = "REQUEST_FACT_OBSERVATIONS"
+
+AUTHORITY = {"is_execution_authority": False, "grants_execution": False,
+             "can_create_task": False, "can_sign": False, "holds_private_key": False,
+             "may_authorize_retry": False, "may_authorize_replay": False,
+             "may_edit_a_request": False}
+
+
+class Refuse(Exception):
+    """A local refusal. Nothing is emitted for the offending observation."""
+
+
+# --------------------------------------------------------------------------- #
+# primitives
+# --------------------------------------------------------------------------- #
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def digest(value):
+    return hashlib.sha256(canonical(value)).hexdigest()
+
+
+def iso(value):
+    return value.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def parse_time(value):
+    if not isinstance(value, str):
+        raise Refuse("time_not_string")
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise Refuse("time_unparseable") from exc
+    if parsed.tzinfo is None:
+        raise Refuse("time_naive")
+    return parsed
+
+
+def read_json(path):
+    return json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+
+
+# --------------------------------------------------------------------------- #
+# the closed vocabulary, read from the published contract
+# --------------------------------------------------------------------------- #
+class Vocabulary:
+    """The closed reason vocabulary lives in the contract, not in this file.
+
+    The exporter refuses to run if the contract is missing, unreadable or empty,
+    so a class can never be invented at runtime.
+    """
+
+    def __init__(self, path):
+        document = read_json(path)
+        classes = document.get("x-go-reason-classes")
+        kinds = document.get("x-go-kind-by-class")
+        derived = document.get("x-go-ledger-derived-reasons")
+        if not isinstance(classes, dict) or not isinstance(kinds, dict) or not isinstance(derived, dict):
+            raise SystemExit("CONTRACT_INCOMPLETE: %s" % path)
+        self.by_class = {name: tuple(tokens) for name, tokens in classes.items()
+                         if name != "note" and isinstance(tokens, list)}
+        if not self.by_class:
+            raise SystemExit("CONTRACT_INCOMPLETE: no reason classes in %s" % path)
+        self.ledger_reasons = {token: value for token, value in derived.items()
+                               if token != "note" and isinstance(value, dict)}
+        self.token_to_class = {}
+        for name, tokens in self.by_class.items():
+            for token in tokens:
+                self.token_to_class[token] = name
+        # A ledger-derived reason is as citable as a token, so it is classified by
+        # the contract too rather than by a second table living in this file.
+        for token, value in self.ledger_reasons.items():
+            name = value.get("class")
+            if name not in self.by_class:
+                raise SystemExit("CONTRACT_INCOMPLETE: ledger reason %s names class %s"
+                                 % (token, name))
+            self.token_to_class[token] = name
+        self.class_to_kind = {}
+        for kind, names in kinds.items():
+            if kind == "note" or not isinstance(names, list):
+                continue
+            for name in names:
+                self.class_to_kind[name] = kind
+        if "UNCLASSIFIED_REJECT" not in self.by_class:
+            raise SystemExit("CONTRACT_INCOMPLETE: UNCLASSIFIED_REJECT is not a class")
+
+    def classify(self, token):
+        """Every token gets a class. An unknown one is preserved, never dropped."""
+        return self.token_to_class.get(token, "UNCLASSIFIED_REJECT")
+
+    def kind_for_class(self, name):
+        try:
+            return self.class_to_kind[name]
+        except KeyError as exc:
+            raise Refuse("class_without_kind:%s" % name) from exc
+
+    def ledger_reason(self, token):
+        return self.ledger_reasons.get(token)
+
+
+# --------------------------------------------------------------------------- #
+# inputs
+# --------------------------------------------------------------------------- #
+class Observations:
+    """Every submission the Bridge spoke about, keyed by ``<pr>:<head>``.
+
+    The poll journal is kept as a *list* per submission rather than a single
+    last-one-wins value. Loading every observation before deciding anything is
+    what allows one semantic fact to be minted at the earliest instant that
+    semantics was ever seen; a last-one-wins view places unchanged semantics at a
+    new instant on every poll and mints a fresh immutable fact each time.
+    """
+
+    def __init__(self):
+        self.ledger = {}          # submission_key -> ledger record
+        self.poll = {}            # submission_key -> [poll result, ...]
+        self.journaled_at = {}    # submission_key -> [poll journal instant, ...]
+        self.anomalies = []
+
+    def anomaly(self, kind, detail, ref=None):
+        self.anomalies.append({"kind": kind, "detail": detail, "ref": ref})
+
+    def keys(self):
+        return sorted(set(self.ledger) | set(self.poll))
+
+    def poll_observations(self, key):
+        """Every poll observation of one submission, paired with its instant."""
+        results = self.poll.get(key) or []
+        instants = self.journaled_at.get(key) or []
+        return [(instants[index] if index < len(instants) else None, result)
+                for index, result in enumerate(results)]
+
+    def newest_journal_instant(self, key):
+        """The latest instant the Bridge was seen speaking about this submission."""
+        instants = [value for value in (self.journaled_at.get(key) or []) if value]
+        return max(instants) if instants else None
+
+
+def load_ledger(path, seen):
+    document = read_json(path)
+    if not isinstance(document, dict) or document.get("version") != LEDGER_VERSION:
+        raise Refuse("invalid_ledger")
+    records = document.get("requests")
+    if not isinstance(records, dict):
+        raise Refuse("invalid_ledger")
+    for key, record in records.items():
+        if not SUBMISSION_KEY_RE.fullmatch(key):
+            seen.anomaly("LEDGER_KEY_UNREADABLE", "submission key is not <pr>:<head>", str(key))
+            continue
+        if not isinstance(record, dict) or not isinstance(record.get("status"), str):
+            seen.anomaly("LEDGER_RECORD_UNREADABLE", "record has no status", key)
+            continue
+        existing = seen.ledger.get(key)
+        if existing is not None and existing != record:
+            # Two ledgers disagreeing about one submission is a real conflict.
+            seen.anomaly("LEDGER_CONFLICT", "two ledgers disagree about one submission", key)
+            continue
+        seen.ledger[key] = record
+
+
+def load_poll_results(path, seen):
+    """The Bridge's own poll output, journalled by the operator.
+
+    The Bridge prints one JSON object per poll and keeps nothing; the timestamp
+    that places those observations in time can therefore only come from the
+    journal wrapper. Without it the observations are undated and are refused --
+    an undated rejection cannot be ordered against anything else.
+    """
+    document = read_json(path)
+    if not isinstance(document, dict) or not isinstance(document.get("bridge_output"), dict):
+        raise Refuse("invalid_poll_journal")
+    bridge = document["bridge_output"]
+    results = bridge.get("results")
+    if not isinstance(results, list):
+        raise Refuse("invalid_poll_journal")
+    try:
+        journaled_at = iso(parse_time(document.get("journaled_at")))
+    except Refuse as exc:
+        # The journal is undated. Its observations are still read -- dropping
+        # them would lose refusal reasons, which is the one thing this component
+        # must never do -- but they cannot be placed in time, so no lifecycle
+        # fact can be built from them.
+        seen.anomaly("POLL_JOURNAL_UNDATED", "%s" % exc, pathlib.Path(path).name)
+        journaled_at = None
+    for result in results:
+        if not isinstance(result, dict):
+            seen.anomaly("POLL_RESULT_UNREADABLE", "result is not an object", pathlib.Path(path).name)
+            continue
+        number, head = result.get("pr"), result.get("head")
+        if not isinstance(number, str):
+            number = str(number) if isinstance(number, (int, str)) else ""
+        if not PR_RE.fullmatch(str(number)) or not isinstance(head, str) or not HEAD_RE.fullmatch(head):
+            seen.anomaly("POLL_RESULT_UNREADABLE", "result has no usable <pr,head>",
+                         pathlib.Path(path).name)
+            continue
+        key = "%s:%s" % (number, head)
+        # Append, never overwrite: an older poll document is still an observation
+        # of that state, and dropping it would move the earliest instant forward.
+        seen.poll.setdefault(key, []).append(result)
+        seen.journaled_at.setdefault(key, []).append(journaled_at)
+
+
+def load_requests(root):
+    """Request files collected from the control-bus refs, matched by head SHA.
+
+    The Bridge identifies a submission by the pull-request head it polled; the
+    collector records the head it read. Matching on that SHA is what binds a
+    Bridge observation to a Request identity without trusting either side.
+    """
+    by_head, by_identity = {}, {}
+    if not root:
+        return by_head, by_identity
+    folder = pathlib.Path(root)
+    if not folder.is_dir():
+        return by_head, by_identity
+    for path in sorted(folder.glob("*.json")):
+        if path.name.startswith("_"):
+            continue
+        try:
+            payload = read_json(path)
+        except (OSError, UnicodeError, ValueError):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        wrapped = payload.get("request")
+        ref, head = payload.get("ref"), payload.get("head_sha")
+        request = wrapped if isinstance(wrapped, dict) else payload
+        request_id = request.get("request_id")
+        if not isinstance(request_id, str) or not REQUEST_ID_RE.fullmatch(request_id):
+            continue
+        identity = {"request_id": request_id, "action_id": request.get("action_id"),
+                    "requested_at": request.get("requested_at"),
+                    "request_sha256": digest(request),
+                    "ref": ref, "head_sha": head,
+                    "path": "requests/" + path.name}
+        by_identity[request_id] = identity
+        if isinstance(head, str) and HEAD_RE.fullmatch(head):
+            by_head.setdefault(head, identity)
+    return by_head, by_identity
+
+
+# --------------------------------------------------------------------------- #
+# fact construction
+# --------------------------------------------------------------------------- #
+def split_key(key):
+    number, head = key.split(":", 1)
+    return number, head
+
+
+def resolve_identity(key, record, poll, by_head, by_identity):
+    """Bind one Bridge observation to a Request identity, or refuse.
+
+    Order matters: the bound Task is the strongest statement about which Request
+    was accepted, then the Bridge's own record, then the control bus.
+    """
+    task = record.get("task") if isinstance(record, dict) else None
+    task = task if isinstance(task, dict) else None
+    candidates = []
+    if isinstance(record, dict) and isinstance(record.get("request_id"), str):
+        candidates.append(record["request_id"])
+    if isinstance(poll, dict):
+        inner = poll.get("record")
+        if isinstance(inner, dict) and isinstance(inner.get("request_id"), str):
+            candidates.append(inner["request_id"])
+    _, head = split_key(key)
+    controlled = by_head.get(head)
+    if controlled:
+        candidates.append(controlled["request_id"])
+    request_id = None
+    for candidate in candidates:
+        if REQUEST_ID_RE.fullmatch(candidate):
+            request_id = candidate
+            break
+    if request_id is None:
+        raise Refuse("request_identity_unresolved")
+
+    action_id = None
+    if task and task.get("action_id") in ACTION_IDS:
+        action_id = task["action_id"]
+    if action_id is None:
+        identity = by_identity.get(request_id)
+        if identity and identity.get("action_id") in ACTION_IDS:
+            action_id = identity["action_id"]
+    if action_id is None:
+        raise Refuse("request_action_unresolved")
+
+    source = None
+    identity = by_identity.get(request_id)
+    if identity is not None:
+        source = {"repository": REQUESTS_REPOSITORY, "ref": identity.get("ref"),
+                  "head_sha": identity.get("head_sha"), "path": identity["path"],
+                  "request_sha256": identity.get("request_sha256")}
+    return request_id, action_id, source, identity, task
+
+
+def observed_at_for(record, poll, journaled_at, identity, task, require_journal_time=False):
+    """Every observation is placed in time by one of its own inputs.
+
+    A poll observation may only use the poll journal's instant: the journal is
+    the only record of *when the Bridge spoke*, and substituting the Request's
+    own ``requested_at`` would invert the meaning of a staleness refusal.
+    """
+    if journaled_at:
+        return journaled_at, "POLL_JOURNAL"
+    if require_journal_time:
+        raise Refuse("observation_undated")
+    if task and isinstance(task.get("issued_at"), str):
+        try:
+            return iso(parse_time(task["issued_at"])), "TASK_ISSUED_AT"
+        except Refuse:
+            pass
+    if identity and isinstance(identity.get("requested_at"), str):
+        try:
+            return iso(parse_time(identity["requested_at"])), "REQUEST_REQUESTED_AT"
+        except Refuse:
+            pass
+    raise Refuse("observation_undated")
+
+
+def semantic_id_for(fact):
+    """The semantic identity of a fact body.
+
+    Request identity plus normalized outcome, reason and binding result. A time
+    field never appears here: if one did, an unchanged observation would be a new
+    fact every time it was looked at again.
+    """
+    return digest({name: fact[name] for name in SEMANTIC_IDENTITY_KEYS})
+
+
+def fact_body(kind, request_id, action_id, first_observed_at, time_source, key, source, reason,
+              task=None, task_sha256=None, task_commit=None):
+    """One observation, normalized.
+
+    Not yet an immutable fact: it has no id, and its instant is the instant of
+    this one observation. `aggregate` groups bodies by semantic identity and mints
+    exactly one fact per identity, at the earliest instant in the group.
+    """
+    number, head = split_key(key)
+    binding = {"claimed": kind == "REQUEST_VALIDATED",
+               "task_id": None, "task_sha256": None, "task_commit": None,
+               "proof_required": kind == "REQUEST_VALIDATED",
+               "proof": "TASK_SIGNATURE_AND_DIGEST_PREFIX" if kind == "REQUEST_VALIDATED"
+                        else "NOT_APPLICABLE"}
+    nonce = None
+    if isinstance(task, dict):
+        if isinstance(task.get("task_id"), str):
+            binding["task_id"] = task["task_id"]
+        if isinstance(task.get("nonce"), str):
+            nonce = task["nonce"]
+    if isinstance(task_sha256, str):
+        binding["task_sha256"] = task_sha256
+    if isinstance(task_commit, str):
+        binding["task_commit"] = task_commit
+    if kind == "REQUEST_VALIDATED":
+        binding["note"] = ("an acceptance is a claim until the consumer corroborates it against "
+                          "the signed Task on the control bus; this exporter never corroborates "
+                          "anything itself")
+    return {"schema_version": "1", "kind": kind, "request_id": request_id,
+            "action_id": action_id, "environment": "HK-STAGING-01", "nonce": nonce,
+            FIRST_OBSERVED_FIELD: first_observed_at, "time_source": time_source,
+            "submission": {"pr_number": number, "head_sha": head, "submission_key": key},
+            "source": source, "reason": reason, "binding": binding,
+            "authority": dict(AUTHORITY)}
+
+
+def finalize_fact(body):
+    """Mint the immutable fact. The id covers the body except the two time fields.
+
+    Two consequences, both intended. The same semantics always yields the same id
+    and -- over the same observations -- the same bytes, so re-running mints
+    nothing and the store stops growing with observations. And a body that
+    differs while the id does not is a collision the writer refuses, rather than a
+    silent rewrite of a fact that is supposed to be immutable.
+    """
+    fact = dict(body)
+    fact["semantic_id"] = semantic_id_for(fact)
+    fact["fact_id"] = "request-fact-" + digest(
+        {k: v for k, v in fact.items() if k not in FACT_ID_EXCLUDED})[:32]
+    return fact
+
+
+def make_fact(kind, request_id, action_id, first_observed_at, time_source, key, source, reason,
+              task=None, task_sha256=None, task_commit=None):
+    """One observation turned straight into a fact, for callers that have one."""
+    return finalize_fact(fact_body(kind, request_id, action_id, first_observed_at, time_source,
+                                   key, source, reason, task=task, task_sha256=task_sha256,
+                                   task_commit=task_commit))
+
+
+def no_reason():
+    return {"applicable": False, "code": None, "class": None, "origin": None,
+            "preserved_verbatim": True}
+
+
+def reason_for(code, origin, vocabulary):
+    name = vocabulary.classify(code)
+    return {"applicable": True, "code": code, "class": name, "origin": origin,
+            "preserved_verbatim": True}
+
+
+def kind_for_reason(code, vocabulary):
+    return vocabulary.kind_for_class(vocabulary.classify(code))
+
+
+def fact_from_ledger(key, record, vocabulary, by_head, by_identity, journaled_at):
+    status = record["status"]
+    if status == "ignored":
+        raise Refuse("submission_level_only")
+    if status not in NON_TERMINAL_LEDGER_STATES and status not in SETTLED_LEDGER_STATES:
+        raise Refuse("ledger_status_unknown:%s" % status)
+    request_id, action_id, source, identity, task = resolve_identity(
+        key, record, None, by_head, by_identity)
+    if status in NON_TERMINAL_LEDGER_STATES:
+        # The Bridge is mid-flight. It has spoken, and what it said is that this
+        # Request is *not settled yet*. That is neither an acceptance nor a
+        # refusal, so it is reported as REQUEST_CREATED -- the weakest kind in the
+        # vocabulary -- rather than dropped.
+        #
+        # It is reported because "the Bridge is still working on it" is an answer
+        # to "why did my Request not become a Task", and dropping it left the
+        # reader with no fact at all, unable to tell an in-flight Request from one
+        # the Bridge never spoke about. It cannot be read as an acceptance:
+        # fact_body derives claimed and proof_required from the kind, so both are
+        # false here, no reason is claimed, and the projection ranks
+        # REQUEST_CREATED 0 -- below every settled fact.
+        # The Task is deliberately NOT carried into the binding. `binding` is where a
+        # fact would name a Task, and naming one beside claimed=false is how a
+        # careless reader takes an unsettled Request for a bound one. An unsettled
+        # Request asserts nothing about a Task: that the Bridge has prepared one is
+        # the ledger's own statement, not this fact's. The Task is still used above
+        # to date the observation, and dating binds nothing.
+        observed_at, time_source = observed_at_for(record, None, journaled_at, identity, task)
+        return fact_body("REQUEST_CREATED", request_id, action_id, observed_at, time_source,
+                         key, source, no_reason())
+    if status == "published":
+        observed_at, time_source = observed_at_for(record, None, journaled_at, identity, task)
+        return fact_body("REQUEST_VALIDATED", request_id, action_id, observed_at, time_source,
+                         key, source, no_reason(), task=task,
+                         task_sha256=record.get("task_sha256"),
+                         task_commit=record.get("task_commit"))
+    # dry_run_consumed: the Bridge derived a preview against a zero image id and
+    # published nothing, so the Request did not become a Task.
+    derived = vocabulary.ledger_reason("dry_run_no_task_published")
+    if derived is None:
+        raise Refuse("ledger_reason_unclassified")
+    code = "dry_run_no_task_published"
+    observed_at, time_source = observed_at_for(record, None, journaled_at, identity, task)
+    return fact_body(kind_for_reason(code, vocabulary), request_id, action_id, observed_at,
+                     time_source, key, source,
+                     reason_for(code, "BRIDGE_LEDGER_STATE", vocabulary))
+
+
+def fact_from_poll(key, poll, vocabulary, by_head, by_identity, journaled_at):
+    status = poll.get("status")
+    if status in ("published", "published_reconciled", "dry_run_consumed"):
+        # The ledger is the durable record of an accepted submission; a poll
+        # result repeating it adds nothing and must not be a second acceptance.
+        raise Refuse("submission_level_only")
+    if status == "ignored":
+        raise Refuse("submission_level_only")
+    if status == "already_seen":
+        request_id, action_id, source, identity, task = resolve_identity(
+            key, poll.get("record") or {}, poll, by_head, by_identity)
+        observed_at, time_source = observed_at_for({}, poll, journaled_at, identity, task,
+                                                   require_journal_time=True)
+        return fact_body("REQUEST_REPLAY_REJECTED", request_id, action_id, observed_at,
+                         time_source, key, source,
+                         reason_for("already_seen", "BRIDGE_POLL_STATUS", vocabulary))
+    if status != "rejected":
+        raise Refuse("poll_status_unknown:%s" % status)
+    token = poll.get("reason")
+    if not isinstance(token, str) or not token:
+        raise Refuse("rejection_reason_missing")
+    request_id, action_id, source, identity, task = resolve_identity(
+        key, poll.get("record") or {}, poll, by_head, by_identity)
+    observed_at, time_source = observed_at_for({}, poll, journaled_at, identity, task,
+                                               require_journal_time=True)
+    return fact_body(kind_for_reason(token, vocabulary), request_id, action_id, observed_at,
+                     time_source, key, source,
+                     reason_for(token, "BRIDGE_REJECT_TOKEN", vocabulary))
+
+
+def load_observation_ledger(path):
+    """The exporter's own local record of when each semantics was first seen.
+
+    This is NOT the control bus, and it is deliberately kept outside the export
+    root. It is a local, non-authoritative memory of earlier runs, and it exists
+    for one reason: the poll journal is pruned, and when the document a semantics
+    was first observed in falls off the end, the earliest known instant has to
+    come from somewhere or the immutable fact would have to move. Nothing here
+    becomes an answer on its own; only first_seen_at reaches a fact, and only as
+    the earliest instant, never as a status or a claim.
+    """
+    if not path:
+        return {}
+    try:
+        document = read_json(path)
+    except (OSError, UnicodeError, ValueError, Refuse):
+        return {}
+    entries = document.get("facts") if isinstance(document, dict) else None
+    return entries if isinstance(entries, dict) else {}
+
+
+def observation_order(body):
+    """The single order every choice in `aggregate` is made in.
+
+    Sorting on values rather than on arrival is what makes the output independent
+    of poll file order, filesystem order and how many times the exporter ran.
+    """
+    return (body[FIRST_OBSERVED_FIELD], body["time_source"],
+            body["submission"]["submission_key"])
+
+
+def aggregate(seen, vocabulary, by_head, by_identity, ledger):
+    """All observations first, then exactly one immutable fact per identity.
+
+    Returns (facts_by_fact_id, ledger_entries, submissions). Nothing is minted
+    while loading, so a poll document repeating a state already seen cannot become
+    a second fact for it.
+    """
+    groups, per_submission = {}, []
+    for key in seen.keys():
+        record = seen.ledger.get(key, {})
+        bodies, refusals = [], []
+        # The ledger is durable; the poll journal only fills what the ledger does
+        # not state, above all the refusal reasons. So the ledger is tried first,
+        # and the polls are read whenever it does not *settle* the submission -- a
+        # ledger record that is merely non-terminal must not hide the reason the
+        # Bridge gave in its own poll output.
+        #
+        # "Settled" cannot be read off whether the ledger produced a body: a
+        # non-terminal record now yields one (REQUEST_CREATED), and gating on that
+        # would have silently stopped reading the poll journal in exactly the case
+        # the rule above exists to protect. It is read off the record's own status.
+        settled = isinstance(record, dict) and record.get("status") in SETTLED_LEDGER_STATES \
+            and record.get("status") != "ignored"
+        if record:
+            try:
+                bodies.append(fact_from_ledger(key, record, vocabulary, by_head, by_identity,
+                                               seen.newest_journal_instant(key)))
+            except Refuse as exc:
+                refusals.append("LEDGER:%s" % exc)
+        if not settled:
+            for journaled, poll in seen.poll_observations(key):
+                try:
+                    bodies.append(fact_from_poll(key, poll, vocabulary, by_head, by_identity,
+                                                 journaled))
+                except Refuse as exc:
+                    refusals.append("POLL:%s" % exc)
+        per_submission.append({"key": key, "record": record, "bodies": bodies,
+                               "refusals": sorted(refusals)})
+        for body in bodies:
+            groups.setdefault(semantic_id_for(body), []).append(body)
+
+    facts, ledger_entries, by_submission = {}, {}, {}
+    for identity in sorted(groups):
+        bodies = sorted(groups[identity], key=observation_order)
+        keys = sorted({b["submission"]["submission_key"] for b in bodies})
+        sources = sorted({canonical(b["source"]) for b in bodies})
+        if len(keys) != 1 or len(sources) != 1:
+            # One semantic identity observed under two submissions, or against two
+            # different Request files, is a conflict. Merging it would invent a
+            # fact, so it is refused and reported instead of merged.
+            seen.anomaly("SEMANTIC_IDENTITY_CONFLICT",
+                         "one identity under %d submissions and %d Request files"
+                         % (len(keys), len(sources)), ",".join(keys))
+            continue
+        recorded = ledger.get(identity) or {}
+        earliest, source_of = bodies[0][FIRST_OBSERVED_FIELD], bodies[0]["time_source"]
+        recorded_first = recorded.get("first_seen_at")
+        if isinstance(recorded_first, str) and recorded_first < earliest:
+            # The poll document this was first seen in has been pruned. That
+            # recorded instant is still the earliest known one, and keeping it is
+            # what stops the fact from moving when the journal is trimmed.
+            earliest = recorded_first
+            source_of = recorded.get("first_seen_time_source") or source_of
+        fact = finalize_fact(dict(bodies[0], **{FIRST_OBSERVED_FIELD: earliest,
+                                                "time_source": source_of}))
+        if fact["semantic_id"] != identity:
+            raise Refuse("semantic_id_mismatch")
+        facts[fact["fact_id"]] = fact
+        by_submission.setdefault(keys[0], []).append((fact[FIRST_OBSERVED_FIELD], fact["fact_id"]))
+        instants = sorted({b[FIRST_OBSERVED_FIELD] for b in bodies}
+                          | set(recorded.get("observed_instants") or []))
+        ledger_entries[identity] = {"semantic_fact_id": fact["fact_id"],
+                                    "semantic_id": identity,
+                                    "first_seen_at": earliest,
+                                    "first_seen_time_source": source_of,
+                                    "last_seen_at": instants[-1],
+                                    "observation_count": len(instants),
+                                    "observed_instants": instants}
+
+    submissions = []
+    for entry in per_submission:
+        key, record, bodies = entry["key"], entry["record"], entry["bodies"]
+        number, head = split_key(key)
+        polls = seen.poll_observations(key)
+        newest = polls[-1][1] if polls else {}
+        status = record.get("status") or newest.get("status") or "unknown"
+        if not bodies:
+            detail = "; ".join(entry["refusals"]) or "no observation"
+            reason = (newest.get("reason") if isinstance(newest.get("reason"), str)
+                      else record.get("reason"))
+            seen.anomaly("SUBMISSION_WITHOUT_REQUEST_FACT", detail, key)
+            submissions.append({"submission_key": key, "pr_number": number, "head_sha": head,
+                                "bridge_status": status, "reason": reason,
+                                "reason_class": (vocabulary.classify(reason)
+                                                 if isinstance(reason, str) else None),
+                                "fact_emitted": False, "detail": detail})
+            continue
+        first = sorted(bodies, key=observation_order)[0]
+        minted = sorted(by_submission.get(key) or [])
+        submissions.append({"submission_key": key, "pr_number": first["submission"]["pr_number"],
+                            "head_sha": first["submission"]["head_sha"], "bridge_status": status,
+                            "reason": first["reason"]["code"], "reason_class": first["reason"]["class"],
+                            "fact_emitted": True, "fact_id": minted[0][1],
+                            "semantic_fact_ids": [fact_id for _, fact_id in minted],
+                            "kind": first["kind"], "request_id": first["request_id"]})
+    return facts, ledger_entries, submissions
+
+
+def export(ledger_paths, poll_paths, requests_dir, out_dir, contract_path, instant,
+           observations_path=None):
+    vocabulary = Vocabulary(contract_path)
+    seen = Observations()
+    for path in ledger_paths:
+        try:
+            load_ledger(path, seen)
+        except (OSError, UnicodeError, ValueError, Refuse) as exc:
+            seen.anomaly("LEDGER_UNREADABLE", "%s" % exc, pathlib.Path(path).name)
+    for path in poll_paths:
+        try:
+            load_poll_results(path, seen)
+        except (OSError, UnicodeError, ValueError, Refuse) as exc:
+            seen.anomaly("POLL_JOURNAL_UNREADABLE", "%s" % exc, pathlib.Path(path).name)
+    by_head, by_identity = load_requests(requests_dir)
+
+    # Every observation is loaded before anything is minted, so a poll document
+    # repeating a state already seen cannot become a second fact for it. The
+    # observation ledger is read first because it supplies the earliest known
+    # instant for semantics whose oldest poll document has since been pruned.
+    observation_ledger = load_observation_ledger(observations_path)
+    facts, ledger_entries, submissions = aggregate(seen, vocabulary, by_head, by_identity,
+                                                   observation_ledger)
+
+    out = pathlib.Path(out_dir)
+    facts_dir = out / FACTS_DIR
+    facts_dir.mkdir(parents=True, exist_ok=True)
+    for fact_id in sorted(facts):
+        blob = canonical(facts[fact_id]) + b"\n"
+        path = facts_dir / (fact_id + ".json")
+        if path.exists() and path.read_bytes() != blob:
+            # The same id with different bytes is a collision: the fact was meant
+            # to be immutable, so it is refused rather than quietly rewritten.
+            raise Refuse("fact_id_collision:%s" % fact_id)
+        path.write_bytes(blob)
+
+    by_lifecycle = {}
+    for fact in facts.values():
+        by_lifecycle[fact["kind"]] = by_lifecycle.get(fact["kind"], 0) + 1
+    index = {
+        "schema_version": "1",
+        "contract": "REQUEST_FACT_INDEX",
+        "generated_at": iso(instant),
+        "vocabulary": {"source": CONTRACT_FILE,
+                       "classes": sorted(name for name in vocabulary.by_class
+                                         if name != "UNCLASSIFIED_REJECT")
+                       + ["UNCLASSIFIED_REJECT"],
+                       "kinds": ["REQUEST_CREATED", "REQUEST_VALIDATED", "REQUEST_REJECTED",
+                                 "REQUEST_DUPLICATE", "REQUEST_REPLAY_REJECTED"]},
+        "facts": [{"fact_id": fact["fact_id"], "semantic_id": fact["semantic_id"],
+                   "kind": fact["kind"], "request_id": fact["request_id"],
+                   "action_id": fact["action_id"],
+                   "first_observed_at": fact[FIRST_OBSERVED_FIELD],
+                   "time_source": fact["time_source"],
+                   "observation_count": (ledger_entries.get(fact["semantic_id"]) or {}
+                                         ).get("observation_count"),
+                   "last_seen_at": (ledger_entries.get(fact["semantic_id"]) or {}
+                                    ).get("last_seen_at"),
+                   "submission_key": fact["submission"]["submission_key"],
+                   "reason_code": fact["reason"]["code"],
+                   "reason_class": fact["reason"]["class"],
+                   "reason_origin": fact["reason"]["origin"],
+                   "bound_task_id": fact["binding"]["task_id"],
+                   "proof_required": fact["binding"]["proof_required"]}
+                  for fact in sorted(facts.values(), key=lambda f: f["fact_id"])],
+        "submissions": sorted(submissions, key=lambda s: s["submission_key"]),
+        "counts": {"submissions": len(submissions), "facts": len(facts),
+                   "facts_emitted": sum(1 for s in submissions if s["fact_emitted"]),
+                   "submissions_without_fact": sum(1 for s in submissions if not s["fact_emitted"]),
+                   "by_kind": dict(sorted(by_lifecycle.items()))},
+        "reasons_preserved_verbatim": True,
+        "authority": dict(AUTHORITY),
+        "anomalies": sorted(seen.anomalies, key=lambda a: (a["kind"], a["detail"], a["ref"] or "")),
+        "notes": [
+            "A submission is listed whether or not it produced a fact, so nothing the Bridge "
+            "spoke about is silently dropped.",
+            "A fact exists only where a request_id exists, because a Request fact binds an "
+            "identity. The reason for an unidentifiable submission is preserved here instead.",
+            "One immutable fact per semantic identity: the Request identity, the normalized "
+            "outcome, the normalized reason and the normalized binding result. The instant a fact "
+            "carries is the earliest any observation of that semantics was placed at, and it does "
+            "not define the identity -- so observing the same outcome again mints nothing and the "
+            "store grows with outcomes rather than with observations.",
+            "Nothing in this export is installed or scheduled by this component.",
+        ],
+    }
+    (out / INDEX_NAME).write_bytes(canonical(index) + b"\n")
+
+    if observations_path:
+        # Local and non-authoritative, and deliberately written OUTSIDE the export
+        # root so it can never be published: last_seen_at and observation_count
+        # move, and neither may reach an immutable fact id. Entries for semantics
+        # not observed in this run are carried forward, because their recorded
+        # earliest instant is what keeps their fact from moving if the poll
+        # document they came from has been pruned.
+        merged = dict(observation_ledger)
+        merged.update(ledger_entries)
+        document = {
+            "schema_version": "1",
+            "contract": OBSERVATION_LEDGER_CONTRACT,
+            "generated_at": iso(instant),
+            "authority": dict(AUTHORITY),
+            "note": ("Local, non-authoritative, never published. Says when each semantic fact was "
+                     "first and last observed and at how many distinct instants, so an immutable "
+                     "fact keeps its earliest instant after the poll document it came from has "
+                     "been pruned. It is not an answer about any Request and nothing here can "
+                     "raise a status."),
+            "facts": dict(sorted(merged.items())),
+        }
+        ledger_path = pathlib.Path(observations_path)
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        ledger_path.write_bytes(canonical(document) + b"\n")
+    return index
+
+
+# --------------------------------------------------------------------------- #
+# self-test: the exporter's own rules, on synthetic Bridge records
+# --------------------------------------------------------------------------- #
+def run_selftest():
+    import tempfile
+
+    here = ROOT
+    contract = here / CONTRACT_FILE
+    vocabulary = Vocabulary(contract)
+    failures = []
+
+    def check(name, condition, detail=""):
+        if condition:
+            print("PASS  %s" % name)
+        else:
+            failures.append(name)
+            print("FAIL  %s %s" % (name, detail))
+
+    check("contract_loads_and_classifies", vocabulary.classify("duplicate_request_id") == "DUPLICATE")
+    check("unknown_token_is_preserved",
+          vocabulary.classify("a_token_invented_tomorrow") == "UNCLASSIFIED_REJECT")
+    check("duplicate_maps_to_its_own_kind",
+          vocabulary.kind_for_class("DUPLICATE") == "REQUEST_DUPLICATE")
+    check("replay_maps_to_its_own_kind",
+          vocabulary.kind_for_class("REPLAY") == "REQUEST_REPLAY_REJECTED")
+    check("reject_maps_to_rejected",
+          vocabulary.kind_for_class("UNCLASSIFIED_REJECT") == "REQUEST_REJECTED")
+
+    with tempfile.TemporaryDirectory() as work:
+        root = pathlib.Path(work)
+        head = "a" * 40
+        request_id = "synthetic-request-1"
+        request_body = {"schema_version": "1", "request_id": request_id,
+                        "action_id": "HK_STAGING_VERIFY", "environment": "HK-STAGING-01",
+                        "requested_at": "2026-09-14T11:00:00Z"}
+        (root / "requests").mkdir()
+        (root / "requests" / (request_id + ".json")).write_bytes(canonical(
+            {"ref": "refs/remotes/origin/boss-request-" + request_id, "head_sha": head,
+             "path": "requests/" + request_id + ".json", "request": request_body}) + b"\n")
+        task = {"schema_version": "1", "task_id": "go-boss-request-verify-20260914T110000Z-"
+                                               + hashlib.sha256(request_id.encode()).hexdigest()[:12],
+                "nonce": "synthetic-nonce", "issued_at": "2026-09-14T11:00:05Z",
+                "expires_at": "2026-09-14T11:15:05Z", "authority": "GO-COMMAND-CENTER",
+                "environment": "HK-STAGING-01", "action_id": "HK_STAGING_VERIFY",
+                "parameters": {"release_id": "synthetic", "candidate_image_id": "sha256:" + "0" * 64,
+                               "expected_current_image_id": "sha256:" + "0" * 64},
+                "signature": "00"}
+        (root / "ledger.json").write_bytes(canonical(
+            {"version": 1, "requests": {"%s:%s" % ("7", head): {
+                "status": "published", "request_id": request_id, "task": task,
+                "task_sha256": digest(task), "task_commit": "b" * 40}}}) + b"\n")
+        (root / "poll.json").write_bytes(canonical(
+            {"schema_version": "1", "journaled_at": "2026-09-14T12:00:00Z",
+             "bridge_output": {"bridge_version": "synthetic", "channel_mode": "PERSISTENT",
+                               "publish_enabled": True,
+                               "results": [{"pr": "7", "head": head, "status": "published",
+                                            "task_id": task["task_id"]}]}}) + b"\n")
+        index = export([str(root / "ledger.json")], [str(root / "poll.json")],
+                       str(root / "requests"), str(root / "out"), contract,
+                       dt.datetime(2026, 9, 14, 13, 0, tzinfo=dt.timezone.utc))
+        check("accepted_case_projects", index["counts"]["by_kind"] == {"REQUEST_VALIDATED": 1},
+              index["counts"])
+        first = index["facts"][0]["fact_id"]
+        again = export([str(root / "ledger.json")], [str(root / "poll.json")],
+                       str(root / "requests"), str(root / "out"), contract,
+                       dt.datetime(2026, 9, 14, 14, 0, tzinfo=dt.timezone.utc))
+        check("re-export_is_idempotent", again["facts"][0]["fact_id"] == first)
+        fact = read_json(root / "out" / "facts" / (first + ".json"))
+        check("validated_requires_proof", fact["binding"]["proof_required"] is True)
+        check("validated_carries_the_binding",
+              fact["binding"]["task_id"] == task["task_id"]
+              and fact["binding"]["task_sha256"] == digest(task), fact["binding"])
+        check("validated_preserves_the_request_source",
+              fact["source"]["path"] == "requests/" + request_id + ".json", fact["source"])
+        check("no_fact_holds_authority",
+              all(value is False for value in fact["authority"].values()), fact["authority"])
+
+        # A refusal must keep the Bridge's own word for it.
+        (root / "ledger.json").write_bytes(canonical({"version": 1, "requests": {}}) + b"\n")
+        (root / "poll.json").write_bytes(canonical(
+            {"schema_version": "1", "journaled_at": "2026-09-14T12:00:00Z",
+             "bridge_output": {"bridge_version": "synthetic", "channel_mode": "PERSISTENT",
+                               "publish_enabled": True,
+                               "results": [{"pr": "7", "head": head, "status": "rejected",
+                                            "reason": "pr_head_not_found"}]}}) + b"\n")
+        refused = export([str(root / "ledger.json")], [str(root / "poll.json")],
+                         str(root / "requests"), str(root / "out2"), contract,
+                         dt.datetime(2026, 9, 14, 13, 0, tzinfo=dt.timezone.utc))
+        rejected = read_json(root / "out2" / "facts" / (refused["facts"][0]["fact_id"] + ".json"))
+        check("refusal_keeps_the_bridge_token", rejected["reason"]["code"] == "pr_head_not_found",
+              rejected["reason"])
+        check("refusal_carries_a_class", rejected["reason"]["class"] == "UNRESOLVABLE",
+              rejected["reason"])
+        check("refusal_is_not_an_acceptance", rejected["kind"] == "REQUEST_REJECTED")
+        check("refusal_claims_no_binding", rejected["binding"]["claimed"] is False
+              and rejected["binding"]["task_id"] is None, rejected["binding"])
+
+        # A duplicate and a replay must never be readable as a success.
+        (root / "poll.json").write_bytes(canonical(
+            {"schema_version": "1", "journaled_at": "2026-09-14T12:00:00Z",
+             "bridge_output": {"bridge_version": "synthetic", "channel_mode": "PERSISTENT",
+                               "publish_enabled": True,
+                               "results": [{"pr": "7", "head": head, "status": "rejected",
+                                            "reason": "duplicate_request_id"}]}}) + b"\n")
+        duplicated = export([str(root / "ledger.json")], [str(root / "poll.json")],
+                            str(root / "requests"), str(root / "out3"), contract,
+                            dt.datetime(2026, 9, 14, 13, 0, tzinfo=dt.timezone.utc))
+        check("duplicate_gets_its_own_kind",
+              duplicated["counts"]["by_kind"] == {"REQUEST_DUPLICATE": 1}, duplicated["counts"])
+        (root / "poll.json").write_bytes(canonical(
+            {"schema_version": "1", "journaled_at": "2026-09-14T12:00:00Z",
+             "bridge_output": {"bridge_version": "synthetic", "channel_mode": "PERSISTENT",
+                               "publish_enabled": True,
+                               "results": [{"pr": "7", "head": head, "status": "already_seen",
+                                            "record": {"status": "published",
+                                                       "request_id": request_id}}]}}) + b"\n")
+        replayed = export([str(root / "ledger.json")], [str(root / "poll.json")],
+                          str(root / "requests"), str(root / "out4"), contract,
+                          dt.datetime(2026, 9, 14, 13, 0, tzinfo=dt.timezone.utc))
+        check("replay_gets_its_own_kind",
+              replayed["counts"]["by_kind"] == {"REQUEST_REPLAY_REJECTED": 1}, replayed["counts"])
+
+        # Fail closed: an undated journal, an unidentifiable submission and a
+        # non-terminal ledger state must each produce no lifecycle fact.
+        (root / "poll.json").write_bytes(canonical(
+            {"schema_version": "1", "bridge_output": {"bridge_version": "synthetic",
+                                                      "channel_mode": "PERSISTENT",
+                                                      "publish_enabled": True,
+                                                      "results": [{"pr": "9", "head": head,
+                                                                   "status": "rejected",
+                                                                   "reason": "malformed_json"}]}})
+            + b"\n")
+        undated = export([str(root / "ledger.json")], [str(root / "poll.json")],
+                         str(root / "requests"), str(root / "out5"), contract,
+                         dt.datetime(2026, 9, 14, 13, 0, tzinfo=dt.timezone.utc))
+        check("undated_journal_emits_no_fact", undated["counts"]["facts"] == 0, undated["counts"])
+        check("undated_journal_is_recorded_not_dropped",
+              undated["counts"]["submissions_without_fact"] == 1, undated["counts"])
+
+        (root / "ledger.json").write_bytes(canonical(
+            {"version": 1, "requests": {"%s:%s" % ("7", head): {"status": "publishing",
+                                                                "request_id": request_id,
+                                                                "task": task}}}) + b"\n")
+        (root / "poll.json").write_bytes(canonical(
+            {"schema_version": "1", "journaled_at": "2026-09-14T12:00:00Z",
+             "bridge_output": {"bridge_version": "synthetic", "channel_mode": "PERSISTENT",
+                               "publish_enabled": True,
+                               "results": [{"pr": "7", "head": head, "status": "already_seen",
+                                            "record": {"status": "publishing",
+                                                       "request_id": request_id}}]}}) + b"\n")
+        nonterminal = export([str(root / "ledger.json")], [str(root / "poll.json")],
+                             str(root / "requests"), str(root / "out6"), contract,
+                             dt.datetime(2026, 9, 14, 13, 0, tzinfo=dt.timezone.utc))
+        check("non_terminal_state_is_never_an_acceptance",
+              "REQUEST_VALIDATED" not in nonterminal["counts"]["by_kind"], nonterminal["counts"])
+        check("non_terminal_submission_is_reported_not_dropped",
+              nonterminal["counts"]["by_kind"] == {"REQUEST_CREATED": 1,
+                                                   "REQUEST_REPLAY_REJECTED": 1},
+              nonterminal["counts"])
+        created = [f for f in nonterminal["facts"] if f["kind"] == "REQUEST_CREATED"]
+        check("created_claims_nothing", len(created) == 1, created)
+        if created:
+            body = read_json(root / "out6" / "facts" / (created[0]["fact_id"] + ".json"))
+            check("created_claims_no_task", body["binding"]["claimed"] is False
+                  and body["binding"]["task_id"] is None
+                  and body["binding"]["proof_required"] is False, body["binding"])
+            check("created_claims_no_reason", body["reason"]["applicable"] is False,
+                  body["reason"])
+
+    print("\nselftest: %s" % ("PASS" if not failures else "FAIL %s" % failures))
+    return 0 if not failures else 1
+
+
+# --------------------------------------------------------------------------- #
+# CLI
+# --------------------------------------------------------------------------- #
+def main(argv=None):
+    here = ROOT
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("command", choices=["export", "selftest"])
+    parser.add_argument("--ledger", action="append", default=[],
+                        help="a Bridge ledger.json; repeatable, never written")
+    parser.add_argument("--poll-results", action="append", default=[],
+                        help="a journalled Bridge poll output; repeatable")
+    parser.add_argument("--requests-dir", help="Request files collected from the control bus")
+    parser.add_argument("--out", help="directory to write facts and the index into")
+    parser.add_argument("--contract", default=str(here / CONTRACT_FILE))
+    parser.add_argument("--now", help="export instant, so the index is reproducible")
+    parser.add_argument("--observations",
+                        help="where to keep the local, non-authoritative observation ledger. "
+                             "Defaults to a sibling of --out, which is outside the export root, "
+                             "so it can never be published by a copy of that root")
+    args = parser.parse_args(argv)
+
+    if args.command == "selftest":
+        return run_selftest()
+    if not args.out:
+        parser.error("export requires --out")
+    observations_path = args.observations or str(
+        pathlib.Path(args.out).resolve().parent / OBSERVATION_LEDGER_NAME)
+    instant = parse_time(args.now) if args.now else dt.datetime.now(dt.timezone.utc)
+    try:
+        index = export(args.ledger, args.poll_results, args.requests_dir, args.out,
+                       args.contract, instant, observations_path)
+    except Refuse as exc:
+        print("REFUSED=%s" % exc)
+        return 2
+    print("FACTS=%d" % index["counts"]["facts"])
+    print("SUBMISSIONS=%d" % index["counts"]["submissions"])
+    print("SUBMISSIONS_WITHOUT_FACT=%d" % index["counts"]["submissions_without_fact"])
+    print("INDEX=%s" % (pathlib.Path(args.out) / INDEX_NAME))
+    print("AUTHORITY=%s" % ("NONE" if not any(index["authority"].values()) else "UNEXPECTED"))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

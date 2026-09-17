@@ -50,7 +50,7 @@ def probe():
     current_rc, current = call(['/usr/bin/docker','exec','-w','/app',API,'alembic','current'])
     heads_rc, heads = call(['/usr/bin/docker','exec','-w','/app',API,'alembic','heads'])
     fs = os.statvfs('/')
-    return {'current_image_id':canonical_image_id, 'runtime_image_reference':runtime_image_reference, 'compose_sha256': digest(COMPOSE), 'env_sha256': digest(RUNTIME_ENV), 'lkg_present': lkg_present, 'lkg_image_size_bytes': int(size_out) if size_rc == 0 and size_out.isdigit() else None, 'disk_free_bytes': fs.f_bavail * fs.f_frsize, 'api_health': api_rc == 0 and api_status == '200', 'worker_health': workers, 'workers_healthy': all(workers.values()), 'alembic_current': current if current_rc == 0 else None, 'alembic_heads': heads if heads_rc == 0 else None, 'alembic_gate': current_rc == 0 and heads_rc == 0 and '0114_ext_truth_incident_hard' in current and '0114_ext_truth_incident_hard' in heads}
+    return {'current_image_id':canonical_image_id, 'runtime_image_reference':runtime_image_reference, 'compose_sha256': digest(COMPOSE), 'env_sha256': digest(RUNTIME_ENV), 'lkg_present': lkg_present, 'lkg_image_size_bytes': int(size_out) if size_rc == 0 and size_out.isdigit() else None, 'disk_free_bytes': fs.f_bavail * fs.f_frsize, 'api_health': api_rc == 0 and api_status == '200', 'worker_health': workers, 'workers_healthy': all(workers.values()), 'alembic_current': current if current_rc == 0 else None, 'alembic_heads': heads if heads_rc == 0 else None, 'alembic_gate': current_rc == 0 and heads_rc == 0 and '0133_flight_change_plan' in current and '0133_flight_change_plan' in heads}
 
 def main():
     Path('/run/go-hk-agent').mkdir(mode=0o750, parents=True, exist_ok=True)

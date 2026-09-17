@@ -1,0 +1,549 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-request-visibility-v1/contracts/request_fact_v1.schema.json",
+  "title": "GO Command Center Request Fact V1",
+  "description": "One Request lifecycle fact, exported read-only from the Command Center Bridge. A Request is human intent on the control bus; a Request fact is what the Bridge did with it. A fact is an OBSERVATION, never Execution Authority: it cannot create, sign, replay or execute anything. Only REQUEST_VALIDATED claims that a Request became a Task, and that claim is accepted by the projection only when it is independently corroborated by a signed Task on the control bus, so a forged fact cannot fabricate an acceptance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fact_id",
+    "kind",
+    "request_id",
+    "action_id",
+    "environment",
+    "nonce",
+    "semantic_id",
+    "first_observed_at",
+    "time_source",
+    "submission",
+    "source",
+    "reason",
+    "binding",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "fact_id": {
+      "type": "string",
+      "pattern": "^request-fact-[0-9a-f]{32}$",
+      "description": "sha256 over the fact's substantive content. Re-exporting the same Bridge outcome reproduces the same id, so the store is append-only and idempotent."
+    },
+    "kind": {
+      "enum": [
+        "REQUEST_CREATED",
+        "REQUEST_VALIDATED",
+        "REQUEST_REJECTED",
+        "REQUEST_DUPLICATE",
+        "REQUEST_REPLAY_REJECTED"
+      ],
+      "description": "The closed Request lifecycle vocabulary. Nothing outside this set may ever be reported as a Request lifecycle."
+    },
+    "request_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$",
+      "description": "The Request identity every fact must carry. A submission with no identifiable Request produces no Request fact; its reason is preserved at submission level instead."
+    },
+    "action_id": {
+      "enum": [
+        "HK_STAGING_VERIFY",
+        "HK_STAGING_TEST_PR",
+        "HK_STAGING_DEPLOY",
+        "HK_STAGING_CANARY"
+      ]
+    },
+    "environment": {
+      "const": "HK-STAGING-01"
+    },
+    "nonce": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The nonce of the Task the Request produced, when there is one. A Request file carries no nonce, so this is null until a signed Task binds one."
+    },
+    "semantic_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "The semantic identity of this fact: the Request identity, the normalized outcome, the normalized reason and the normalized binding result, over exactly SEMANTIC_IDENTITY_KEYS. It is what fact_id is built around, so the same semantics always mints the same id and a repeated observation of an unchanged outcome mints nothing. A time field is deliberately not part of it, and neither is the submission the observation happened to be keyed by."
+    },
+    "first_observed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The earliest instant at which any observation of this semantics was placed. It is the MINIMUM over every observation of this semantic identity, so it never moves forward when the same outcome is seen again, and it is excluded from fact_id -- a fact's identity must not depend on when it was looked at."
+    },
+    "time_source": {
+      "enum": [
+        "POLL_JOURNAL",
+        "TASK_ISSUED_AT",
+        "REQUEST_REQUESTED_AT"
+      ],
+      "description": "Where first_observed_at came from. Every fact must be placed in time by its inputs: an undated observation is refused rather than stamped with the export instant."
+    },
+    "submission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pr_number",
+        "head_sha",
+        "submission_key"
+      ],
+      "properties": {
+        "pr_number": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,8}$"
+        },
+        "head_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "submission_key": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,8}:[0-9a-f]{40}$"
+        }
+      }
+    },
+    "source": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "ref",
+        "head_sha",
+        "path",
+        "request_sha256"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "head_sha": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "request_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "digest of the canonical Request object the Bridge acted on; null when the Request file could not be collected"
+        }
+      }
+    },
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applicable",
+        "code",
+        "class",
+        "origin",
+        "preserved_verbatim"
+      ],
+      "properties": {
+        "applicable": {
+          "type": "boolean"
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The refusing component's own token, unmodified. It is never rewritten, shortened or replaced by a friendlier wording."
+        },
+        "class": {
+          "enum": [
+            null,
+            "INVALID_REQUEST",
+            "NOT_ALLOWED",
+            "UNRESOLVABLE",
+            "CONFLICT",
+            "AMBIGUOUS",
+            "DUPLICATE",
+            "REPLAY",
+            "UNCLASSIFIED_REJECT"
+          ]
+        },
+        "origin": {
+          "enum": [
+            null,
+            "BRIDGE_REJECT_TOKEN",
+            "BRIDGE_POLL_STATUS",
+            "BRIDGE_LEDGER_STATE"
+          ]
+        },
+        "preserved_verbatim": {
+          "type": "boolean"
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "applicable": {
+              "const": false
+            },
+            "code": {
+              "type": "null"
+            },
+            "class": {
+              "type": "null"
+            },
+            "origin": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "applicable"
+          ]
+        },
+        {
+          "properties": {
+            "applicable": {
+              "const": true
+            },
+            "code": {
+              "type": "string"
+            },
+            "class": {
+              "type": "string"
+            },
+            "origin": {
+              "type": "string"
+            },
+            "preserved_verbatim": {
+              "const": true
+            }
+          },
+          "required": [
+            "applicable",
+            "code",
+            "class",
+            "origin"
+          ]
+        }
+      ]
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimed",
+        "task_id",
+        "task_sha256",
+        "task_commit",
+        "proof_required",
+        "proof"
+      ],
+      "properties": {
+        "claimed": {
+          "type": "boolean",
+          "description": "the Bridge recorded that this Request produced a published Task"
+        },
+        "task_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "task_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "digest of the canonical signed Task, checkable against the Task on the control bus"
+        },
+        "task_commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "proof_required": {
+          "type": "boolean",
+          "description": "true exactly for REQUEST_VALIDATED: an acceptance may never be believed on the fact's word alone"
+        },
+        "proof": {
+          "enum": [
+            "TASK_SIGNATURE_AND_DIGEST_PREFIX",
+            "NOT_APPLICABLE"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_execution_authority",
+        "grants_execution",
+        "can_create_task",
+        "can_sign",
+        "holds_private_key",
+        "may_authorize_retry",
+        "may_authorize_replay",
+        "may_edit_a_request"
+      ],
+      "properties": {
+        "is_execution_authority": {
+          "const": false
+        },
+        "grants_execution": {
+          "const": false
+        },
+        "can_create_task": {
+          "const": false
+        },
+        "can_sign": {
+          "const": false
+        },
+        "holds_private_key": {
+          "const": false
+        },
+        "may_authorize_retry": {
+          "const": false
+        },
+        "may_authorize_replay": {
+          "const": false
+        },
+        "may_edit_a_request": {
+          "const": false
+        }
+      }
+    }
+  },
+  "x-go-fact-identity": {
+    "rule": "fact_id covers the whole body except fact_id, first_observed_at and time_source. semantic_id is covered, so it cannot be edited without breaking the id.",
+    "semantic_identity_is": ["kind", "request_id", "action_id", "environment", "nonce",
+                             "source", "reason", "binding"],
+    "semantic_identity_is_not": ["first_observed_at", "time_source", "submission"],
+    "why": "A fact per (semantics, observation instant) grew the store and the Git history with observations rather than with outcomes: an unchanged observation sitting at a new instant minted a new immutable fact on every poll.",
+    "aggregation": "All observations are loaded first, normalized, grouped by semantic identity, and then exactly one immutable fact is minted per identity at MIN(first_observed_at). The result does not depend on poll file order, filesystem order, journal order or how many times the exporter ran.",
+    "collision": "A body that differs while the id does not is refused (fact_id_collision), never overwritten: the fact was supposed to be immutable.",
+    "local_only": "first_seen_at, first_seen_time_source, last_seen_at, observation_count and observed_instants live in a local, non-authoritative observation ledger outside the export root. None of them is published and none of them can reach an immutable fact id."
+  },
+  "x-go-binding-proof": [
+    "REQUEST_VALIDATED is the only positive fact, and only for it is proof_required true.",
+    "The projection accepts the acceptance only when all three hold: the named Task exists on the control bus; its task_id carries sha256(request_id)[:12], the digest the Bridge derives it from; and its signature verifies against the published Command Center task identity.",
+    "The claimed task_sha256 must equal sha256 of the canonical Task read from the control bus, so a fact cannot name a Task it does not describe.",
+    "Any failure leaves the Request at REQUEST_CREATED, or UNKNOWN when the Request file itself was never collected, and records an anomaly. It never leaves REQUEST_VALIDATED."
+  ],
+  "x-go-non-authority": [
+    "A fact is an observation of the Bridge, not a permission. It authorizes no retry, no replay and no action.",
+    "A REQUEST_DUPLICATE or REQUEST_REPLAY_REJECTED fact is never a success and never counts as one.",
+    "The exporter holds no private key, signs nothing, writes no Task, and has no code path to an executor."
+  ],
+  "x-go-reason-classes": {
+    "note": "The closed classes a refusing reason may map to, and the Bridge tokens that map to them. Every token the Bridge can emit is classified here, in BOTH call shapes: Reject(\"token\") directly, and the reason argument of exact(...) / match(...). A token that is missing is UNCLASSIFIED_REJECT and is preserved, never dropped.",
+    "INVALID_REQUEST": [
+      "action",
+      "duplicate_json_key",
+      "environment",
+      "invalid_json",
+      "invalid_json_constant",
+      "invalid_requested_at",
+      "malformed_json",
+      "plan_id",
+      "pr_number",
+      "request_id",
+      "request_oversized",
+      "request_path",
+      "requested_at_not_string",
+      "schema_fields",
+      "schema_version",
+      "stale_or_future_request"
+    ],
+    "NOT_ALLOWED": [
+      "action_not_enabled_in_channel",
+      "approval_identity_not_authorised",
+      "deployment_authorization_mode_unsupported",
+      "deployment_context_required",
+      "fixed_topology_required",
+      "forbidden_operation",
+      "invalid_arm_configuration",
+      "invalid_channel_configuration",
+      "legacy_mode_verify_only",
+      "migration_required_not_supported",
+      "persistent_channel_configuration_required",
+      "persistent_publish_not_enabled",
+      "plan_scope",
+      "plan_store_unwritable",
+      "release_gates_not_pass",
+      "request_filename_binding",
+      "request_not_currently_armed",
+      "request_pr_author_not_authorised"
+    ],
+    "UNRESOLVABLE": [
+      "approval_binding",
+      "approval_expired_or_invalid",
+      "approval_fields",
+      "approval_id",
+      "approval_identity_missing",
+      "approval_predates_evidence",
+      "approval_request_digest_missing",
+      "bundle_fields",
+      "canary_candidate_binding",
+      "candidate_admission_incomplete",
+      "candidate_fields",
+      "candidate_known_good_missing",
+      "candidate_pointer_schema",
+      "candidate_repository",
+      "candidate_test_result_missing",
+      "candidate_test_result_not_a_test_pr",
+      "channel_fields",
+      "channel_unavailable",
+      "deployment_plan_unavailable_or_invalid",
+      "evidence_unaddressed",
+      "human_reviewer_id",
+      "invalid_authoritative_baseline",
+      "invalid_canary_authority",
+      "invalid_request_digest",
+      "invalid_signature",
+      "invalid_time",
+      "invalid_trust_key",
+      "missing_signature",
+      "naive_time",
+      "plan_fields",
+      "plan_path_is_a_symlink",
+      "plan_store_unavailable",
+      "plan_store_untrusted",
+      "pr_head_invalid",
+      "pr_head_not_found",
+      "pr_resolution_unavailable",
+      "preflight_current_image_binding",
+      "proof_binding",
+      "proof_contains_failed_gate",
+      "proof_gate_failed",
+      "proof_hash_binding",
+      "proof_image_or_release",
+      "proof_not_success",
+      "proof_parameters",
+      "proof_release_id",
+      "proof_result",
+      "proof_scope",
+      "proof_stale_or_unbound_time",
+      "readable_file_unavailable",
+      "release_candidate_missing",
+      "release_gate_fields",
+      "request_api_redirect",
+      "request_git_unavailable",
+      "request_merge_base_unavailable",
+      "request_metadata_oversized",
+      "request_metadata_unavailable",
+      "request_pr_created_at_invalid",
+      "request_pr_created_at_missing",
+      "request_pr_identity",
+      "request_pr_not_open_exact_head",
+      "request_reader_credential_invalid",
+      "task_authority",
+      "task_fields",
+      "test_pr_artifact_not_durable",
+      "test_pr_binding",
+      "test_pr_builder_profile",
+      "test_pr_candidate_artifact_binding",
+      "test_pr_candidate_package_binding",
+      "test_pr_candidate_source_binding",
+      "test_pr_commit",
+      "test_pr_commit_binding",
+      "test_pr_contains_failed_gate",
+      "test_pr_deployment_performed",
+      "test_pr_gate_failed",
+      "test_pr_not_success",
+      "test_pr_package",
+      "test_pr_package_image",
+      "test_pr_package_schema",
+      "test_pr_parameters",
+      "test_pr_pr_binding",
+      "test_pr_pr_number",
+      "test_pr_repository",
+      "test_pr_result",
+      "test_pr_scope",
+      "test_pr_source_fields",
+      "test_pr_stale_or_unbound_time",
+      "test_pr_task_digest_binding",
+      "trusted_directory_symlink",
+      "trusted_directory_unavailable",
+      "trusted_file_oversized",
+      "trusted_file_unavailable",
+      "untrusted_directory",
+      "untrusted_file"
+    ],
+    "CONFLICT": [
+      "approval_id_not_derived",
+      "approval_identity_mismatch",
+      "approval_request_mismatch",
+      "approved_plan_changed",
+      "candidate_and_live_current_disagree",
+      "candidate_digest",
+      "candidate_image",
+      "current_image",
+      "deployment_plan_already_consumed",
+      "deployment_plan_or_approval_already_consumed",
+      "deployment_task_near_expiry",
+      "plan_id_not_derived",
+      "pr_head_changed",
+      "preflight_near_expiry",
+      "registered_plan_differs_from_derivation",
+      "task_id_already_exists"
+    ],
+    "AMBIGUOUS": [
+      "ambiguous_claim_requires_operator_review",
+      "ambiguous_publish_requires_operator_review",
+      "published_task_readback_mismatch"
+    ],
+    "DUPLICATE": [
+      "duplicate_request_id"
+    ],
+    "REPLAY": [
+      "already_seen"
+    ],
+    "UNCLASSIFIED_REJECT": []
+  },
+  "x-go-kind-by-class": {
+    "note": "How a class becomes a fact kind. The two negative identity facts are separate kinds on purpose: a duplicate must never be readable as a success, and neither may a replay.",
+    "REQUEST_DUPLICATE": [
+      "DUPLICATE"
+    ],
+    "REQUEST_REPLAY_REJECTED": [
+      "REPLAY"
+    ],
+    "REQUEST_REJECTED": [
+      "INVALID_REQUEST",
+      "NOT_ALLOWED",
+      "UNRESOLVABLE",
+      "CONFLICT",
+      "AMBIGUOUS",
+      "UNCLASSIFIED_REJECT"
+    ]
+  },
+  "x-go-ledger-derived-reasons": {
+    "note": "Reasons the Bridge ledger states without a Reject token. They are as citable as a token and are marked origin=BRIDGE_LEDGER_STATE so provenance stays exact.",
+    "dry_run_no_task_published": {
+      "class": "NOT_ALLOWED",
+      "meaning": "the ledger reached dry_run_consumed: the Bridge derived a preview Task against a zero image id and published nothing, so the Request did not become a Task"
+    }
+  },
+  "x-go-submission-level": {
+    "note": "Levels of observation, so that nothing is silently lost.",
+    "REQUEST_FACT": "the observation carries a Request identity and is published as a fact document",
+    "SUBMISSION_OBSERVATION": "a submission was polled but no Request identity could be established (not a Request, malformed, unreadable or its head moved). No Request fact is emitted because a fact must bind a request_id; the poll status and its reason are recorded in the export index instead of being discarded"
+  }
+}

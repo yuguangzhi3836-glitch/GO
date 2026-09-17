@@ -1,0 +1,508 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-deploy-readiness-v1/contracts/deploy_readiness_v1.schema.json",
+  "title": "GO Command Center Deploy Readiness V1",
+  "description": "A read-only answer to whether a deploy can proceed now, and if not why not. It combines the derived control state with an operator-supplied read-only bundle of live-host facts and the published verifier identities, re-derives the live Boss Request Bridge bundle acceptance rules, and returns DEPLOY_READY = YES / NO / UNKNOWN with the concrete blocking reasons. Every gate is mandatory: CANARY blocks because the live Bridge blocks on it, and BRIDGE_ACCEPTANCE exists so that YES can only be reported when the live gate would accept the same request. The four product-release declarations the previous contract carried -- three_end_ux, six_vertical_closed_loop, sealed_node and final_release -- are gone: they belong to the upstream side, no machine process here can produce them, and the live executor never read them. The deployability fact sealed_node named is now established by the signed TEST_PR of the exact candidate, which the plan carries and the ported TEST_PR proof checks. There is no deploy switch: a deployment is authorised by the authenticated DEPLOY Request, so this evaluator reports whether the deployed configuration admits that mode and whether the plan's authorisation was derived from such a Request. It never creates or publishes a DEPLOY Task, never grants a deployment authorisation, accepts no caller-controlled parameter, and does not touch Production. A readiness verdict is an observation about the current evidence, never an authorisation to deploy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "contract",
+    "scope",
+    "authority",
+    "generated_at",
+    "as_of",
+    "verdict",
+    "inputs",
+    "identity",
+    "gates",
+    "blocking_reasons",
+    "advisory_holds",
+    "not_evaluated",
+    "authority_boundary",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "contract": {
+      "const": "DEPLOY_READINESS_V1"
+    },
+    "scope": {
+      "const": "READ_ONLY_DEPLOY_READINESS"
+    },
+    "authority": {
+      "const": "DERIVED_NON_AUTHORITATIVE"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "as_of": {
+      "type": "string",
+      "format": "date-time",
+      "description": "the instant the gates were evaluated at; supplied, never read from the clock implicitly"
+    },
+    "verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deploy_ready",
+        "reason",
+        "mandatory_gates",
+        "failed",
+        "unknown",
+        "advisory_failed"
+      ],
+      "properties": {
+        "deploy_ready": {
+          "enum": [
+            "YES",
+            "NO",
+            "UNKNOWN"
+          ],
+          "description": "YES only when every mandatory gate PASSes. NO when any mandatory gate FAILs. UNKNOWN otherwise, because an unprovable mandatory gate is never an inferred yes."
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mandatory_gates": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "failed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unknown": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "advisory_failed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "control_state",
+        "go_repository",
+        "candidate_pointer",
+        "runtime_pointer",
+        "live_bundle"
+      ],
+      "properties": {
+        "control_state": {
+          "$ref": "#/$defs/source"
+        },
+        "go_repository": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "candidate_pointer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runtime_pointer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "live_bundle": {
+          "$ref": "#/$defs/bundle"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "gate",
+          "mandatory",
+          "state",
+          "reason",
+          "evidence"
+        ],
+        "properties": {
+          "gate": {
+            "enum": [
+              "APPROVED_CANDIDATE",
+              "SOURCE_BINDING",
+              "PACKAGE_BINDING",
+              "DEPLOYMENT_PLAN",
+              "HUMAN_APPROVAL",
+              "TEST_PR",
+              "VERIFY",
+              "CURRENT_RUNTIME",
+              "LIVE_DEPLOY_MODE",
+              "DEPLOYMENT_AUTHORIZATION",
+              "CANARY",
+              "BRIDGE_ACCEPTANCE"
+            ]
+          },
+          "mandatory": {
+            "type": "boolean"
+          },
+          "state": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "UNKNOWN"
+            ],
+            "description": "UNKNOWN is the only honest state for a mandatory live fact nobody could establish. It is never promoted to PASS."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "observed": {},
+          "expected": {},
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "blocking_reasons": {
+      "type": "array",
+      "description": "One entry per mandatory gate that is not PASS, in gate order. Never empty when the verdict is not YES.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "gate",
+          "state",
+          "reason"
+        ],
+        "properties": {
+          "gate": {
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "FAIL",
+              "UNKNOWN"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "observed": {},
+          "expected": {}
+        }
+      }
+    },
+    "advisory_holds": {
+      "type": "array",
+      "description": "Advisory gates that did not PASS. They never change the verdict and are never hidden, so an operator can see that a declared gate is still, for example, HOLD.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "gate",
+          "state",
+          "reason"
+        ],
+        "properties": {
+          "gate": {
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "FAIL",
+              "UNKNOWN"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "observed": {}
+        }
+      }
+    },
+    "not_evaluated": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rollback_readiness"
+      ],
+      "properties": {
+        "rollback_readiness": {
+          "const": "NOT_IN_SCOPE",
+          "description": "CC V1-09 / #104 owns rollback eligibility. This evaluator answers deploy readiness only and says so instead of guessing."
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "authority_boundary": {
+      "$ref": "#/$defs/boundary"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_path",
+        "roles",
+        "approval_identities",
+        "task_and_evidence_distinct",
+        "collisions",
+        "problem",
+        "note"
+      ],
+      "properties": {
+        "contract": {
+          "const": "VERIFIER_IDENTITIES_V1"
+        },
+        "contract_path": {
+          "type": "string"
+        },
+        "roles": {
+          "type": "object",
+          "description": "One entry per published signing role the plan contract distinguishes. A role whose binding is not BOUND may not be used to claim anything."
+        },
+        "approval_identities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The GitHub logins this project authorises as the V1 Human Approval authority. The authority is an authenticated identity rather than a published key, so it is carried as an allowlist and an approval is judged on the identity it names."
+        },
+        "task_and_evidence_distinct": {
+          "type": "boolean"
+        },
+        "collisions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "problem": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "ref",
+        "head_sha"
+      ],
+      "properties": {
+        "repository": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "head_sha": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supplied",
+        "files"
+      ],
+      "properties": {
+        "supplied": {
+          "type": "boolean"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "plan_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_execution_authority",
+        "can_create_task",
+        "can_publish_task",
+        "can_grant_the_deployment_authorization",
+        "holds_private_key",
+        "signs_anything",
+        "accepts_caller_supplied_parameters",
+        "touches_production",
+        "may_read_live_command_center_state",
+        "is_a_deploy_approval"
+      ],
+      "properties": {
+        "is_execution_authority": {
+          "const": false
+        },
+        "can_create_task": {
+          "const": false
+        },
+        "can_publish_task": {
+          "const": false
+        },
+        "can_grant_the_deployment_authorization": {
+          "const": false
+        },
+        "holds_private_key": {
+          "const": false
+        },
+        "signs_anything": {
+          "const": false
+        },
+        "accepts_caller_supplied_parameters": {
+          "const": false
+        },
+        "touches_production": {
+          "const": false
+        },
+        "may_read_live_command_center_state": {
+          "const": true,
+          "description": "the only thing it may do with live facts: read the operator's read-only bundle, never contact the host itself"
+        },
+        "is_a_deploy_approval": {
+          "const": false,
+          "description": "YES is not an approval. Human Approval is a separate, named gate and the only thing that can carry one"
+        }
+      }
+    }
+  },
+  "x-go-gates": {
+    "note": "The closed gate set. Every gate is mandatory: a gate the live Bridge blocks on cannot be advisory here without letting this document disagree with the live gate. advisory_holds therefore exists as a stable field and is always empty.",
+    "APPROVED_CANDIDATE": {
+      "mandatory": true,
+      "meaning": "an approved candidate exists and is a complete RELEASE_CANDIDATE_V1: the contract owned by the candidate admission component, whose block must carry every required identity. A pointer that only names a commit is not deployable."
+    },
+    "SOURCE_BINDING": {
+      "mandatory": true,
+      "meaning": "the candidate own source identity is complete, well-formed, and agrees with the RELEASE_CANDIDATE_V1 block it carries about the commit, application tree and fingerprint"
+    },
+    "PACKAGE_BINDING": {
+      "mandatory": true,
+      "meaning": "the deployment plan candidate identity equals the candidate, the plan approves the artifact the RELEASE_CANDIDATE_V1 claims, and the image/repo-digest pairing is internally consistent"
+    },
+    "DEPLOYMENT_PLAN": {
+      "mandatory": true,
+      "meaning": "an approved plan exists for the release and its own fields pass the live Bridge plan rules"
+    },
+    "HUMAN_APPROVAL": {
+      "mandatory": true,
+      "meaning": "an unexpired approval binding the same plan digest, scope and environment, naming one of the GitHub identities this project authorises as the Human Approval authority"
+    },
+    "TEST_PR": {
+      "mandatory": true,
+      "meaning": "the candidate source commit has a signed TEST_PR result on the control bus"
+    },
+    "VERIFY": {
+      "mandatory": true,
+      "meaning": "the live runtime was verified by signed Evidence inside the freshness window, and the plan own preflight proof would be accepted by the live Bridge"
+    },
+    "CURRENT_RUNTIME": {
+      "mandatory": true,
+      "meaning": "the verified live runtime matches the image the plan expects to be current, so there is no drift"
+    },
+    "LIVE_DEPLOY_MODE": {
+      "mandatory": true,
+      "meaning": "the deployed Command Center configuration declares that deployments are authorised by Request, and would accept a DEPLOY request; a live-host fact"
+    },
+    "DEPLOYMENT_AUTHORIZATION": {
+      "mandatory": true,
+      "meaning": "the deployment rests on a one-time authorisation derived from an exact authenticated DEPLOY Request -- the plan cites that Request own digest and its approval id is the derived form of it -- rather than on a standing authorisation"
+    },
+    "CANARY": {
+      "mandatory": true,
+      "meaning": "the plan canary proof verifies under the published identities, binds to this candidate and completed inside the canary window"
+    },
+    "BRIDGE_ACCEPTANCE": {
+      "mandatory": true,
+      "meaning": "the live Boss Request Bridge own bundle rules, re-derived offline from the same inputs, would accept this request"
+    }
+  },
+  "x-go-verdict-rules": [
+    "A mandatory gate that FAILs makes the verdict NO, whatever else says otherwise.",
+    "A mandatory gate that cannot be established makes the verdict UNKNOWN. It is never rounded up to YES, and it never becomes an inferred approval.",
+    "YES requires every mandatory gate to PASS, and it still authorises nothing: it means the evidence currently supports deploying, not that anyone has agreed to.",
+    "YES may never be reported while the live Bridge would deterministically refuse the same request. BRIDGE_ACCEPTANCE is the gate that makes this impossible, not a convention.",
+    "There is no deploy switch and no standing authorisation. A plan whose approval cites no exact DEPLOY Request, or whose approval id is not the derived form of the digest it cites, keeps DEPLOYMENT_AUTHORIZATION out of PASS and the verdict out of YES.",
+    "advisory_holds exists for contract stability and is always empty: no gate is advisory."
+  ],
+  "x-go-forbidden": [
+    "Creating, signing or publishing a DEPLOY Task.",
+    "Opening, arming or toggling a deployment authorisation, or writing the channel configuration.",
+    "Any caller-supplied image, service, service list, path, compose file, environment file, shell command, executor path or signing parameter.",
+    "Contacting Command Center or Hong Kong directly: only the operator read-only bundle, the derived state and the published identities are read.",
+    "Touching Production in any form.",
+    "Reporting YES while a mandatory gate is UNKNOWN, or while a gate it could not read exists.",
+    "Reporting YES while the live Boss Request Bridge would refuse the same request.",
+    "Clamping CANARY or RELEASE_GATES to advisory, or otherwise letting this evaluator block less than the live gate does.",
+    "Treating a published signing key, or an approval that names an identity outside the authorised GitHub set, as a Human Approval authority."
+  ]
+}

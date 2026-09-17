@@ -21,7 +21,12 @@
         "evidence_repo_connectivity": {"type": "boolean"}
       }
     },
-    "freshness_window_seconds": {"type": "integer", "minimum": 60, "default": 1800},
+    "freshness_window_seconds": {"type": "integer", "minimum": 60, "default": 2400,
+      "description": "age <= this -> PROVEN; age > this -> UNKNOWN, never PROVEN. It is deliberately larger than the probe interval: a probe issued exactly on schedule still has to travel GitHub -> Bridge -> Hong Kong -> Evidence -> Projection, and a window equal to the interval would declare the agent stale for the whole time its own Evidence is in flight."},
+    "probe_interval_seconds": {"type": "integer", "minimum": 60, "default": 1800,
+      "description": "The producer's own cadence. The freshness window is this plus the transport grace, and neither the interval nor the daily probe budget is raised to buy freshness."},
+    "transport_grace_seconds": {"type": "integer", "minimum": 0, "default": 600,
+      "description": "Delivery slack only. It is not a second way to infer liveness: ONLINE still requires signature-verified Evidence inside the window, and SSH success, an HTTP 200 or a past Task success never substitute for it."},
     "rank_rules": {
       "type": "object",
       "required": ["PROVEN", "OBSERVED", "UNKNOWN"],
@@ -59,6 +64,6 @@
         "cost": {"const": "one signed Task + one signed Evidence per probe, on the existing repositories"}
       }
     },
-    "x-go-gap": "No scheduled producer exists yet. Until Command Center drives CONTROL_PLANE_HEALTH on a timer, answers.hk_agent_online will honestly read UNKNOWN even while the agent is healthy, because the control bus carries no fresh liveness Evidence."
+    "x-go-gap": "The producer and the Signer path both exist and are installed: agent-liveness-producer-v1 places a bounded read-only CONTROL_PLANE_HEALTH Request in its outbox on a timer, and the Boss Request Bridge can now sign that action, so a probe really does reach the agent and come back as signed Evidence (one-shot end-to-end proven 2026-09-15). What is still an operator step is the relay from the outbox to a Request on the control bus. While no fresh probe exists, answers.hk_agent_online honestly reads UNKNOWN even though the agent is healthy, because the control bus carries no fresh liveness Evidence."
   }
 }

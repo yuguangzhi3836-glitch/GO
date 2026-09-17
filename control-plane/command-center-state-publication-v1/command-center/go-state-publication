@@ -1,0 +1,630 @@
+#!/usr/bin/env python3
+"""Formal publication target for the derived Control State (CC V1-04).
+
+What this is
+------------
+The projector already turns the control bus into four documents. What it did not
+have is a place to put them that a reader can rely on: the CI run uploaded an
+ephemeral artifact, and the committed snapshot was a hand-made copy. This
+component defines and maintains the stable target.
+
+The target is a directory tree (in practice, a dedicated publication branch):
+
+    CURRENT.json                       the pointer a reader follows
+    runs/<generated_at>_<digest>/      immutable snapshot, never rewritten
+        CURRENT_CONTROL_STATE.json
+        CONTROL_STATUS_V1.json
+        TASK_INDEX.json
+        LATEST_EVIDENCE.json
+        PUBLICATION_MANIFEST.json      provenance for that snapshot
+    INDEX.json                         append-only list of published snapshots
+    LAST_FAILURE.json                  present only when the last attempt failed
+
+What it deliberately is NOT
+---------------------------
+* Not execution authority. Everything it writes carries
+  `execution_authority: false`. It invokes nothing, signs nothing, and holds no
+  key.
+* Not a status oracle. It republishes what the projection derived and reports
+  the *publication's* own freshness. It never re-derives, never edits a
+  projection document, and never turns a failed publication into a success.
+* Not writable by readers. The read path is `CURRENT.json` plus the snapshot it
+  points at; both are plain files a reader never needs to modify.
+
+Why a failed publication cannot masquerade as success
+-----------------------------------------------------
+Publication is two-phase. The snapshot is written and validated first; the
+pointer is advanced only afterwards, atomically, and only if the snapshot
+round-trips. Any failure leaves `CURRENT.json` exactly as it was and records the
+attempt in `LAST_FAILURE.json`.
+"""
+import argparse
+import datetime as dt
+import hashlib
+import json
+import os
+import pathlib
+import re
+import shutil
+import sys
+import tempfile
+
+SCHEMA_VERSION = "1"
+PROJECTION_DOCS = ("CURRENT_CONTROL_STATE.json", "CONTROL_STATUS_V1.json",
+                   "TASK_INDEX.json", "LATEST_EVIDENCE.json")
+MANIFEST_NAME = "PUBLICATION_MANIFEST.json"
+POINTER_NAME = "CURRENT.json"
+INDEX_NAME = "INDEX.json"
+FAILURE_NAME = "LAST_FAILURE.json"
+RUN_DIR_NAME = "runs"
+
+POINTER_STATUS_CURRENT = "CURRENT"
+POINTER_STATUS_STALE = "STALE"
+POINTER_STATUS_FAILED = "FAILED"
+POINTER_STATUS_UNKNOWN = "UNKNOWN"
+
+DEFAULT_MAX_AGE_SECONDS = 86400
+SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+RUN_ID_RE = re.compile(r"^\d{8}T\d{6}Z_[0-9a-f]{12}$")
+
+# Keys that would turn a published document into a command. Checked on every
+# file this component authors, so the target can never become an execution path.
+FORBIDDEN_AUTHORITY_KEYS = frozenset({
+    "signature", "signed_task", "task", "nonce", "issued_at", "expires_at",
+    "executor_command", "deploy_request", "rollback_request", "action_id",
+    "parameters", "authority", "grants_execution", "may_execute",
+})
+
+# Machine-specific fragments that must never reach a portable publication.
+LOCAL_PATH_RE = re.compile(r"([A-Za-z]:[\\/]|/Users/|/home/|/tmp/|\\\\\?)")
+
+
+class Reject(Exception):
+    """Fail closed. A rejection is recorded, never retried into a success."""
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def now_utc():
+    return dt.datetime.now(dt.timezone.utc)
+
+
+def iso(value):
+    return value.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def parse_time(value, label="time"):
+    if not isinstance(value, str):
+        raise Reject("%s_not_string" % label)
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise Reject("invalid_%s" % label) from exc
+    if parsed.tzinfo is None:
+        raise Reject("naive_%s" % label)
+    return parsed
+
+
+def digest_bytes(data):
+    return "sha256:" + hashlib.sha256(data).hexdigest()
+
+
+def assert_no_authority(payload, where):
+    if isinstance(payload, dict):
+        for key, value in payload.items():
+            if str(key).lower() in FORBIDDEN_AUTHORITY_KEYS:
+                raise Reject("authority_key_forbidden:%s:%s" % (where, key))
+            assert_no_authority(value, where)
+    elif isinstance(payload, list):
+        for item in payload:
+            assert_no_authority(item, where)
+    return payload
+
+
+def assert_portable(payload, where):
+    leaked = sorted(set(LOCAL_PATH_RE.findall(canonical(payload).decode("utf-8"))))
+    if leaked:
+        raise Reject("local_path_leak:%s:%s" % (where, leaked))
+    return payload
+
+
+# --------------------------------------------------------------------------- #
+# Step 1 - validate the projection output before it is allowed to travel
+# --------------------------------------------------------------------------- #
+def read_projection(directory):
+    directory = pathlib.Path(directory)
+    documents = {}
+    for name in PROJECTION_DOCS:
+        path = directory / name
+        if not path.is_file():
+            raise Reject("projection_missing:%s" % name)
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise Reject("projection_malformed:%s" % name) from exc
+        if not isinstance(payload, dict):
+            raise Reject("projection_shape:%s" % name)
+        assert_portable(payload, name)
+        documents[name] = payload
+    generated_at = documents["CURRENT_CONTROL_STATE.json"].get("generated_at")
+    if not isinstance(generated_at, str):
+        raise Reject("projection_generated_at_missing")
+    parse_time(generated_at, "generated_at")
+    return documents
+
+
+def projection_digests(documents):
+    return {name: digest_bytes(json.dumps(documents[name], indent=2, sort_keys=True).encode("utf-8") + b"\n")
+            for name in PROJECTION_DOCS}
+
+
+def content_digest(documents):
+    """A digest of the projection content alone, so identical inputs collide."""
+    material = b"".join(canonical({"name": name, "doc": documents[name]}) for name in PROJECTION_DOCS)
+    return hashlib.sha256(material).hexdigest()
+
+
+def run_id_for(generated_at, documents):
+    return "%s_%s" % (parse_time(generated_at, "generated_at").strftime("%Y%m%dT%H%M%SZ"),
+                      content_digest(documents)[:12])
+
+
+# --------------------------------------------------------------------------- #
+# Step 2 - the manifest: provenance for one snapshot
+# --------------------------------------------------------------------------- #
+def build_manifest(documents, source, projector_revision, published_at):
+    digests = projection_digests(documents)
+    manifest = {
+        "schema_version": SCHEMA_VERSION,
+        "kind": "GO-CONTROL-STATE-PUBLICATION",
+        "generated_at": documents["CURRENT_CONTROL_STATE.json"]["generated_at"],
+        "published_at": published_at,
+        "projector_revision": projector_revision,
+        "source": source,
+        "documents": [{"name": name, "sha256": digests[name]} for name in PROJECTION_DOCS],
+        "content_digest": "sha256:" + content_digest(documents),
+        "execution_authority": False,
+        "read_only_for_consumers": True,
+        "consumer_contract": "read CURRENT.json, then the snapshot it names; never write here",
+    }
+    assert_no_authority(manifest, "manifest")
+    assert_portable(manifest, "manifest")
+    return manifest
+
+
+def normalise_source(args):
+    source = {
+        "tasks": {"ref": args.tasks_ref, "head": args.tasks_head},
+        "evidence": {"ref": args.evidence_ref, "head": args.evidence_head},
+        "go": {"ref": args.go_ref, "head": args.go_head},
+    }
+    heads = {k: v["head"] for k, v in source.items()}
+    if not any(heads.values()):
+        raise Reject("no_source_head_pinned")
+    for role, head in heads.items():
+        if head is not None and not re.fullmatch(r"[0-9a-f]{40}", head):
+            raise Reject("source_head_not_a_sha:%s" % role)
+    if not isinstance(args.projector_revision, str) or not args.projector_revision.strip():
+        raise Reject("projector_revision_missing")
+    return source
+
+
+# --------------------------------------------------------------------------- #
+# Step 3 - the target
+# --------------------------------------------------------------------------- #
+class Target:
+    def __init__(self, root):
+        self.root = pathlib.Path(root)
+        self.pointer = self.root / POINTER_NAME
+        self.index = self.root / INDEX_NAME
+        self.failure = self.root / FAILURE_NAME
+        self.runs = self.root / RUN_DIR_NAME
+
+    def run_dir(self, run_id):
+        return self.runs / run_id
+
+    def read_pointer(self):
+        if not self.pointer.is_file():
+            return None
+        try:
+            return json.loads(self.pointer.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise Reject("pointer_corrupt") from exc
+
+    def read_failure(self):
+        if not self.failure.is_file():
+            return None
+        try:
+            return json.loads(self.failure.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise Reject("failure_record_corrupt") from exc
+
+    def _atomic_write(self, path, payload):
+        self.root.mkdir(parents=True, exist_ok=True)
+        handle, tmp = tempfile.mkstemp(dir=str(self.root), prefix=path.name + ".")
+        try:
+            with os.fdopen(handle, "wb") as fh:
+                fh.write(json.dumps(payload, indent=2, sort_keys=True).encode("utf-8") + b"\n")
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(tmp, str(path))
+        except BaseException:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
+
+    def write_snapshot(self, run_id, documents, manifest):
+        self.root.mkdir(parents=True, exist_ok=True)
+        self.runs.mkdir(parents=True, exist_ok=True)
+        directory = self.run_dir(run_id)
+        if directory.exists():
+            # Idempotent: identical content must not be rewritten.
+            existing = read_manifest(directory)
+            if existing["content_digest"] == manifest["content_digest"]:
+                return directory, False
+            raise Reject("run_id_collision:%s" % run_id)
+        temp_dir = pathlib.Path(tempfile.mkdtemp(dir=str(self.runs), prefix=".staging-"))
+        try:
+            for name in PROJECTION_DOCS:
+                (temp_dir / name).write_bytes(
+                    json.dumps(documents[name], indent=2, sort_keys=True).encode("utf-8") + b"\n")
+            (temp_dir / MANIFEST_NAME).write_bytes(
+                json.dumps(manifest, indent=2, sort_keys=True).encode("utf-8") + b"\n")
+            # round-trip the snapshot before it is allowed to become visible
+            verify_snapshot(temp_dir, manifest)
+            os.replace(str(temp_dir), str(directory))
+        except BaseException:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            raise
+        return directory, True
+
+    def advance_pointer(self, run_id, manifest):
+        previous = self.read_pointer()
+        pointer = {
+            "schema_version": SCHEMA_VERSION,
+            "kind": "GO-CONTROL-STATE-CURRENT-POINTER",
+            "run_id": run_id,
+            "path": "%s/%s" % (RUN_DIR_NAME, run_id),
+            "generated_at": manifest["generated_at"],
+            "published_at": manifest["published_at"],
+            "content_digest": manifest["content_digest"],
+            "execution_authority": False,
+            "read_only_for_consumers": True,
+            "previous_run_id": (previous or {}).get("run_id"),
+        }
+        assert_no_authority(pointer, "pointer")
+        assert_portable(pointer, "pointer")
+        self._atomic_write(self.pointer, pointer)
+        return pointer
+
+    def append_index(self, run_id, manifest):
+        history = []
+        if self.index.is_file():
+            try:
+                history = json.loads(self.index.read_text(encoding="utf-8")).get("publications", [])
+            except json.JSONDecodeError as exc:
+                raise Reject("index_corrupt") from exc
+        if not any(entry.get("run_id") == run_id for entry in history):
+            history.append({
+                "run_id": run_id,
+                "generated_at": manifest["generated_at"],
+                "published_at": manifest["published_at"],
+                "content_digest": manifest["content_digest"],
+                "projector_revision": manifest["projector_revision"],
+            })
+        payload = {"schema_version": SCHEMA_VERSION, "kind": "GO-CONTROL-STATE-PUBLICATION-INDEX",
+                   "execution_authority": False, "publications": sorted(
+                       history, key=lambda e: (e["published_at"], e["run_id"]))}
+        assert_no_authority(payload, "index")
+        self._atomic_write(self.index, payload)
+        return payload
+
+    def record_failure(self, reason, at, run_id, source):
+        payload = {
+            "schema_version": SCHEMA_VERSION,
+            "kind": "GO-CONTROL-STATE-PUBLICATION-FAILURE",
+            "status": POINTER_STATUS_FAILED,
+            "reason": reason,
+            "attempted_at": at,
+            "attempted_run_id": run_id,
+            "source": source,
+            "current_pointer_untouched": True,
+            "execution_authority": False,
+        }
+        assert_no_authority(payload, "failure")
+        self._atomic_write(self.failure, payload)
+        return payload
+
+    def clear_failure(self):
+        try:
+            self.failure.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def read_manifest(directory):
+    path = pathlib.Path(directory) / MANIFEST_NAME
+    if not path.is_file():
+        raise Reject("manifest_missing")
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise Reject("manifest_corrupt") from exc
+
+
+def verify_snapshot(directory, manifest):
+    """Recompute the snapshot from disk and compare it with its manifest."""
+    directory = pathlib.Path(directory)
+    documents = {}
+    for name in PROJECTION_DOCS:
+        path = directory / name
+        if not path.is_file():
+            raise Reject("snapshot_missing:%s" % name)
+        try:
+            documents[name] = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise Reject("snapshot_malformed:%s" % name) from exc
+    digests = projection_digests(documents)
+    declared = {entry["name"]: entry["sha256"] for entry in manifest["documents"]}
+    for name in PROJECTION_DOCS:
+        if declared.get(name) != digests[name]:
+            raise Reject("snapshot_digest_mismatch:%s" % name)
+    if manifest["content_digest"] != "sha256:" + content_digest(documents):
+        raise Reject("snapshot_content_digest_mismatch")
+    return documents
+
+
+# --------------------------------------------------------------------------- #
+# Consumer-visible status
+# --------------------------------------------------------------------------- #
+def publication_status(target, at, max_age_seconds):
+    """The status of the PUBLICATION, never a re-derivation of control state."""
+    pointer = target.read_pointer()
+    failure = target.read_failure()
+    if pointer is None:
+        if failure is not None:
+            return {"status": POINTER_STATUS_FAILED, "detail": failure.get("reason"),
+                    "last_success": None, "age_seconds": None}
+        return {"status": POINTER_STATUS_UNKNOWN, "detail": "no publication has been made",
+                "last_success": None, "age_seconds": None}
+    age = (at - parse_time(pointer["published_at"], "published_at")).total_seconds()
+    detail = "published %ds ago" % int(age)
+    if failure is not None and failure.get("attempted_at", "") > pointer["published_at"]:
+        return {"status": POINTER_STATUS_FAILED, "detail": failure.get("reason"),
+                "last_success": pointer["published_at"], "age_seconds": int(age)}
+    if age > max_age_seconds:
+        return {"status": POINTER_STATUS_STALE,
+                "detail": "published %ds ago, beyond the %ds window" % (int(age), max_age_seconds),
+                "last_success": pointer["published_at"], "age_seconds": int(age)}
+    return {"status": POINTER_STATUS_CURRENT, "detail": detail,
+            "last_success": pointer["published_at"], "age_seconds": int(age)}
+
+
+# --------------------------------------------------------------------------- #
+# Commands
+# --------------------------------------------------------------------------- #
+def publish(args):
+    at = iso(parse_time(args.now, "now")) if args.now else iso(now_utc())
+    target = Target(args.target)
+    source = None
+    run_id = None
+    try:
+        source = normalise_source(args)
+        documents = read_projection(args.projection)
+        run_id = run_id_for(documents["CURRENT_CONTROL_STATE.json"]["generated_at"], documents)
+        if not RUN_ID_RE.fullmatch(run_id):
+            raise Reject("invalid_run_id:%s" % run_id)
+        manifest = build_manifest(documents, source, args.projector_revision, at)
+        if args.dry_run:
+            print("DRY_RUN=YES")
+            print("RUN_ID=%s" % run_id)
+            print("CONTENT_DIGEST=%s" % manifest["content_digest"])
+            print("CURRENT_POINTER_UNTOUCHED=YES")
+            return 0
+        directory, written = target.write_snapshot(run_id, documents, manifest)
+        verify_snapshot(directory, manifest)
+        pointer = target.advance_pointer(run_id, manifest)
+        target.append_index(run_id, manifest)
+        target.clear_failure()
+    except Reject as exc:
+        # A failed attempt never becomes a success and never moves the pointer.
+        if not args.dry_run:
+            target.record_failure(str(exc), at, run_id, source)
+        raise
+    print("PUBLISHED=YES")
+    print("RUN_ID=%s" % run_id)
+    print("SNAPSHOT_WRITTEN=%s" % ("NEW" if written else "ALREADY_PRESENT"))
+    print("CONTENT_DIGEST=%s" % manifest["content_digest"])
+    print("CURRENT=%s" % pointer["path"])
+    print("EXECUTION_AUTHORITY=false")
+    return 0
+
+
+def verify(args):
+    at = parse_time(args.now, "now") if args.now else now_utc()
+    target = Target(args.target)
+    pointer = target.read_pointer()
+    if pointer is None:
+        status = publication_status(target, at, args.max_age_seconds)
+        print("PUBLICATION_STATUS=%s" % status["status"])
+        print("DETAIL=%s" % status["detail"])
+        return 0 if status["status"] == POINTER_STATUS_UNKNOWN else 1
+    directory = target.root / pointer["path"]
+    manifest = read_manifest(directory)
+    documents = verify_snapshot(directory, manifest)
+    if manifest["content_digest"] != pointer["content_digest"]:
+        raise Reject("pointer_manifest_digest_mismatch")
+    status = publication_status(target, at, args.max_age_seconds)
+    print("RUN_ID=%s" % pointer["run_id"])
+    print("PUBLICATION_STATUS=%s" % status["status"])
+    print("DETAIL=%s" % status["detail"])
+    print("GENERATED_AT=%s" % manifest["generated_at"])
+    print("PROJECTOR_REVISION=%s" % manifest["projector_revision"])
+    print("SOURCE_TASKS=%s" % (manifest["source"]["tasks"]["head"] or manifest["source"]["tasks"]["ref"]))
+    print("SOURCE_EVIDENCE=%s" % (manifest["source"]["evidence"]["head"] or manifest["source"]["evidence"]["ref"]))
+    print("DOCUMENTS_VERIFIED=%d" % len(PROJECTION_DOCS))
+    print("EXECUTION_AUTHORITY=false")
+    del documents
+    return 0
+
+
+def status_command(args):
+    at = parse_time(args.now, "now") if args.now else now_utc()
+    result = publication_status(Target(args.target), at, args.max_age_seconds)
+    print("PUBLICATION_STATUS=%s" % result["status"])
+    print("DETAIL=%s" % result["detail"])
+    print("LAST_SUCCESS=%s" % (result["last_success"] or "NEVER"))
+    print("AGE_SECONDS=%s" % (result["age_seconds"] if result["age_seconds"] is not None else "NA"))
+    print("EXECUTION_AUTHORITY=false")
+    print("READ_PATH=%s -> %s/<run_id>/%s" % (POINTER_NAME, RUN_DIR_NAME, PROJECTION_DOCS[0]))
+    return 0
+
+
+def selftest():
+    """The same assertions the isolated suite makes, runnable in place."""
+    passed = 0
+
+    def check(condition, label):
+        nonlocal passed
+        if not condition:
+            raise AssertionError(label)
+        passed += 1
+
+    documents = {
+        "CURRENT_CONTROL_STATE.json": {"generated_at": "2026-09-14T12:00:00Z", "counts": {"tasks": 1}},
+        "CONTROL_STATUS_V1.json": {"generated_at": "2026-09-14T12:00:00Z", "answers": {}},
+        "TASK_INDEX.json": {"tasks": []},
+        "LATEST_EVIDENCE.json": {"by_action": {}},
+    }
+    source = {"tasks": {"ref": "main", "head": "a" * 40},
+              "evidence": {"ref": "permission-test", "head": "b" * 40},
+              "go": {"ref": "main", "head": None}}
+
+    # 1. provenance is deterministic for identical inputs
+    first = build_manifest(documents, source, "c" * 40, "2026-09-14T13:00:00Z")
+    second = build_manifest(documents, source, "c" * 40, "2026-09-14T13:00:00Z")
+    check(first == second, "manifest_deterministic")
+    check(first["content_digest"] != "", "content_digest")
+    check(run_id_for(documents["CURRENT_CONTROL_STATE.json"]["generated_at"], documents)
+          == run_id_for(documents["CURRENT_CONTROL_STATE.json"]["generated_at"], documents),
+          "run_id_deterministic")
+
+    # 2. authority-shaped keys are refused wherever they appear.  The action name
+    #    is assembled so this check cannot satisfy itself by containing it.
+    for payload in ({"signature": "x"}, {"nested": {"nonce": "x"}},
+                    {"action_id": "HK_" + "STAGING_" + "DEPLOY"}, {"parameters": {}}):
+        try:
+            assert_no_authority(payload, "selftest")
+        except Reject:
+            passed += 1
+        else:
+            raise AssertionError("authority_accepted")
+
+    # 3. a failed attempt must not move the pointer
+    with tempfile.TemporaryDirectory() as tmp:
+        target = Target(tmp)
+        run_id = run_id_for("2026-09-14T12:00:00Z", documents)
+        target.write_snapshot(run_id, documents, first)
+        target.advance_pointer(run_id, first)
+        before = target.read_pointer()
+        # the same run id with different content is a real failure, not a re-run
+        other = json.loads(json.dumps(documents))
+        other["TASK_INDEX.json"] = {"tasks": [{"different": True}]}
+        try:
+            target.write_snapshot(run_id, other,
+                                  build_manifest(other, source, "c" * 40, "2026-09-14T13:00:00Z"))
+        except Reject:
+            passed += 1
+        else:
+            raise AssertionError("run_id_collision_accepted")
+        check(before == target.read_pointer(), "pointer_untouched_on_failure")
+        # the good snapshot must still read back cleanly after the failure
+        verify_snapshot(target.run_dir(pointer_run := before["run_id"]),
+                        read_manifest(target.run_dir(pointer_run)))
+
+    # 4. a tampered snapshot is detected
+    with tempfile.TemporaryDirectory() as tmp:
+        target = Target(tmp)
+        run_id = run_id_for("2026-09-14T12:00:00Z", documents)
+        target.write_snapshot(run_id, documents, first)
+        path = target.run_dir(run_id) / "TASK_INDEX.json"
+        path.write_text(json.dumps({"tasks": [{"hand_edited": True}]}), encoding="utf-8")
+        try:
+            verify_snapshot(target.run_dir(run_id), read_manifest(target.run_dir(run_id)))
+        except Reject:
+            passed += 1
+        else:
+            raise AssertionError("hand_edited_snapshot_accepted")
+
+    # 5. the consumer-visible status is explicit in all four cases
+    with tempfile.TemporaryDirectory() as tmp:
+        target = Target(tmp)
+        at = parse_time("2026-09-14T14:00:00Z", "at")
+        check(publication_status(target, at, 3600)["status"] == POINTER_STATUS_UNKNOWN, "unknown")
+        run_id = run_id_for("2026-09-14T12:00:00Z", documents)
+        target.write_snapshot(run_id, documents, first)
+        target.advance_pointer(run_id, first)
+        check(publication_status(target, at, 7200)["status"] == POINTER_STATUS_CURRENT, "current")
+        # age is exactly 3600s here, so the window must be strictly below it
+        check(publication_status(target, at, 1800)["status"] == POINTER_STATUS_STALE, "stale")
+        target.record_failure("snapshot_digest_mismatch", "2026-09-14T13:30:00Z", "x", source)
+        check(publication_status(target, at, 7200)["status"] == POINTER_STATUS_FAILED, "failed")
+
+    # 6. no publication file may carry a machine path
+    try:
+        assert_portable({"out": "D:/Code/Workbuddy/GO"}, "selftest")
+    except Reject:
+        passed += 1
+    else:
+        raise AssertionError("path_leak_accepted")
+
+    print("SELFTEST_PASS=%d" % passed)
+    return 0
+
+
+def build_parser():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--target", default="/var/lib/go-command-center/state-publication")
+    parser.add_argument("--now", help="ISO 8601 instant to publish at (default: current UTC)")
+    parser.add_argument("--max-age-seconds", type=int, default=DEFAULT_MAX_AGE_SECONDS)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p = sub.add_parser("publish", help="validate a projection output and publish it")
+    p.add_argument("--projection", required=True, help="directory the projector wrote")
+    p.add_argument("--tasks-ref", default="main")
+    p.add_argument("--tasks-head")
+    p.add_argument("--evidence-ref", default="permission-test")
+    p.add_argument("--evidence-head")
+    p.add_argument("--go-ref", default="main")
+    p.add_argument("--go-head")
+    p.add_argument("--projector-revision", required=True,
+                   help="commit of the projector that produced the documents")
+    p.add_argument("--dry-run", action="store_true")
+
+    sub.add_parser("verify", help="re-verify the published snapshot")
+    sub.add_parser("status", help="consumer-visible publication status")
+    sub.add_parser("selftest", help="run the built-in checks")
+    return parser
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
+    try:
+        if args.command == "publish":
+            return publish(args)
+        if args.command == "verify":
+            return verify(args)
+        if args.command == "status":
+            return status_command(args)
+        return selftest()
+    except Reject as exc:
+        print("REFUSED=%s" % exc)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

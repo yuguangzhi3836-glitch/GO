@@ -22,15 +22,16 @@ ledger, Compose files or server logs. It reads one bounded document.
 10 最近一次失败是什么               → answers.last_failure
 ```
 
-Plus one channel declaration:
+Plus one channel declaration and one fate lookup:
 
 ```
 which actions chat may request     → answers.request_channel
+why did my Request not become a Task → answers.request_fate.by_request_id[request_id].why_not_a_task
 ```
 
 Every other key in `answers` is a **supporting field**, never a required one:
 `last_evidence`, `live_verified_runtime`, `go_is_healthy`, `hk_agent_online`,
-`repository_main_sha`, `runtime_built_from_main_sha`.
+`repository_main_sha`, `runtime_built_from_main_sha`, `request_fate`.
 
 ## Answer shapes
 
@@ -102,9 +103,13 @@ from the canonical pointer, Production). They are facts, not a verdict.
 3. **Expired history is not stuck work.** `answers.stuck_tasks.answer` reads
    `active_stuck_tasks` only. `recent_expired_tasks` and
    `historical_expired_tasks` are indexed separately and never change the answer.
-4. **A capability present is not a request enabled.** `answers.request_channel`
-   separates `known_capabilities` from `enabled_request_actions`. Only enabled
-   actions may be submitted.
+4. **A capability present is not a request enabled, and a platform probe is not a
+   human right.** `answers.request_channel` separates `known_capabilities` from
+   `enabled_request_actions`, and separates `human_request_actions` from
+   `platform_request_actions`. You may write a Request file only for an action in
+   `enabled_human_request_actions`. `CONTROL_PLANE_HEALTH` is created by the
+   platform's own bounded producer: it carries fixed empty parameters, it is
+   read-only, and it confers no execution or deploy authority on anyone.
 5. **`repository_main_sha` is not the runtime build source.**
    `answers.repository_main_sha` is `UNKNOWN` unless it was established out of
    band; `answers.runtime_built_from_main_sha` is a different field with a
@@ -113,23 +118,27 @@ from the canonical pointer, Production). They are facts, not a verdict.
 ## The request channel
 
 ```
-HK_STAGING_VERIFY     SUPPORTED_PROVEN                enabled
-HK_STAGING_TEST_PR    SUPPORTED_PROVEN                enabled
-HK_STAGING_DEPLOY     CAPABILITY_PRESENT_BUT_DISABLED not requestable
-HK_STAGING_CANARY     NOT_REQUESTABLE                 not requestable
-HK_STAGING_ROLLBACK   NOT_REQUESTABLE                 not requestable
+HUMAN_REQUEST_ACTIONS       HK_STAGING_VERIFY     SUPPORTED_PROVEN                enabled
+                            HK_STAGING_TEST_PR    SUPPORTED_PROVEN                enabled
+                            HK_STAGING_DEPLOY     CAPABILITY_PRESENT_BUT_DISABLED not enabled
+                            HK_STAGING_CANARY     CAPABILITY_PRESENT_REQUESTABLE  enabled
+                            HK_STAGING_ROLLBACK   NOT_REQUESTABLE                 not requestable
+PLATFORM_REQUEST_ACTIONS    CONTROL_PLANE_HEALTH  SUPPORTED_PROVEN_PLATFORM_ONLY  enabled
 ```
 
 The connector may write a Request file only for an action listed in
-`enabled_request_actions`. It supplies `action_id`, `environment`, a fresh
+`enabled_human_request_actions`. It supplies `action_id`, `environment`, a fresh
 `request_id`, `requested_at`, and one target selector: `pr_number` for
-`HK_STAGING_TEST_PR`.
+`HK_STAGING_TEST_PR`. It may never write a `CONTROL_PLANE_HEALTH` Request: that
+action is the platform's read-only probe, created by the platform's own producer
+on a timer, and writing one by hand would forge an automation identity.
 
-It must never supply an image id, repo digest, service list, compose path, env
-file, shell command, executor path, signature, nonce, `task_id`, `release_id`,
-`approval_id`, `canary_evidence_id`, `source_deploy_task_id` or `plan_id`. A
-`plan_id` is expressible in the schema but its action is **not enabled**: do not
-submit it, and do not plan a deployment on the basis of this contract.
+The connector must never supply an image id, repo digest, service list, compose
+path, env file, shell command, executor path, signature, nonce, `task_id`,
+`release_id`, `approval_id`, `canary_evidence_id`, `source_deploy_task_id` or
+`plan_id`. A `plan_id` is expressible in the schema but its action is **not
+enabled**: do not submit it, and do not plan a deployment on the basis of this
+contract.
 
 ## Creating a Request on GitHub
 
@@ -138,3 +147,41 @@ submit it, and do not plan a deployment on the basis of this contract.
 3. Open a PR targeting `main`. Do not merge it — Command Center ingests the
    immutable PR head.
 4. Read the result from Signed Evidence, never from the PR.
+
+## Reading what happened to a Request
+
+A Request file existing means a human wrote it. It never means the Request was
+accepted, so never infer acceptance from a branch, a PR or a file:
+
+```
+answers.request_fate.by_request_id["<request_id>"]
+    lifecycle            REQUEST_CREATED / VALIDATED / REJECTED / DUPLICATE /
+                         REPLAY_REJECTED / UNKNOWN
+    why_not_a_task.state closed set:
+                           BECAME_A_TASK                    only with a signed Task behind it
+                           ACCEPTANCE_CLAIMED_BUT_UNPROVEN   a claim that could not be corroborated
+                           REFUSED
+                           DUPLICATE_REQUEST_ID
+                           REPLAYED_SUBMISSION
+                           NOT_SETTLED_BY_BRIDGE            the Bridge spoke: not settled yet
+                           NO_BRIDGE_FACT_OBSERVED
+                           REQUEST_NOT_ON_THE_BUS
+    why_not_a_task.reason_code  the Bridge's own token, verbatim
+    binding.proof_state  TASK_SIGNATURE_AND_DIGEST_PREFIX / NOT_ESTABLISHED / NOT_APPLICABLE
+```
+
+`requests[].why_not_a_task` carries the same answer per Request, and
+`request_visibility` carries the counts, the refusals with their reason class and
+origin, the duplicate/replay list, and the submissions that could not be bound to
+a Request identity at all.
+
+Three things to hold on to:
+
+* **A Bridge fact is an observation, not a permission.** It authorizes no retry,
+  no replay and no action, whatever it says.
+* **A duplicate or a replay is never a success**, and each is reported with
+  `counted_as_success = false`.
+* **`BECAME_A_TASK` is the only state that means the Request became work**, and it
+  appears only when a signed Task on the control bus carries that Request's
+  digest and verifies. If the fact export is not wired yet, every Request reads
+  `REQUEST_CREATED` — that is honest, not a failure.

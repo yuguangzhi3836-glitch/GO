@@ -1,0 +1,157 @@
+name: Command Center state publication target (isolated)
+on:
+  push:
+    branches: [cc/github-native-delivery-v1, cc/v1-finalization-20260914]
+    paths:
+      - 'control-plane/command-center-state-publication-v1/**'
+      - 'control-plane/command-center-state-v1/evidence/PROJECTION_20260914/**'
+      - '.github/workflows/command-center-state-publication-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'control-plane/command-center-state-publication-v1/**'
+      - 'control-plane/command-center-state-v1/evidence/PROJECTION_20260914/**'
+      - '.github/workflows/command-center-state-publication-v1.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cc-state-publication-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  isolated-state-publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned test dependency
+        run: python -m pip install cryptography==46.0.0
+      - name: Check the publication manifest
+        working-directory: control-plane/command-center-state-publication-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Check the state layer manifest is untouched by this change
+        working-directory: control-plane/command-center-state-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Run the publication suite on Linux
+        working-directory: control-plane/command-center-state-publication-v1
+        run: python -m unittest discover -s tests -v
+      - name: Run the publisher built-in checks
+        working-directory: control-plane/command-center-state-publication-v1
+        run: python command-center/go-state-publication selftest
+      - name: Run the isolated verification and publish summary.json
+        working-directory: control-plane/command-center-state-publication-v1
+        run: python run_checks.py "$RUNNER_TEMP/state-publication-checks"
+      - name: Confirm the state layer suite still passes
+        working-directory: control-plane/command-center-state-v1
+        run: python -m unittest discover -s tests -q
+      - name: Prove the target is stable, traceable, tamper-evident and never authoritative
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, subprocess, sys
+
+          root = pathlib.Path('control-plane/command-center-state-publication-v1')
+          publisher = root / 'command-center' / 'go-state-publication'
+          projection = pathlib.Path('control-plane/command-center-state-v1/evidence/PROJECTION_20260914')
+          work = pathlib.Path(os.environ['RUNNER_TEMP']) / 'state-publication'
+          work.mkdir(parents=True, exist_ok=True)
+          target = work / 'target'
+          revision = os.environ['GITHUB_SHA']
+          heads = {'--tasks-head': 'a' * 40, '--evidence-head': 'b' * 40}
+
+          def run(*args, expect=0):
+              result = subprocess.run([sys.executable, str(publisher), *args],
+                                      capture_output=True, text=True)
+              assert result.returncode == expect, (result.returncode, result.stdout, result.stderr)
+              return dict(line.split('=', 1) for line in result.stdout.strip().splitlines() if '=' in line)
+
+          base = ['--target', str(target)]
+          pub = ['publish', '--projection', str(projection),
+                 '--tasks-ref', 'main', '--tasks-head', heads['--tasks-head'],
+                 '--evidence-ref', 'permission-test', '--evidence-head', heads['--evidence-head'],
+                 '--go-ref', 'main', '--projector-revision', revision]
+
+          # 1. nothing published yet reads UNKNOWN, not "fine"
+          assert run(*base, '--now', '2026-09-14T14:00:00Z', 'status')['PUBLICATION_STATUS'] == 'UNKNOWN'
+
+          # 2. publish, then republish the same content: the snapshot is not rewritten
+          first = run(*base, '--now', '2026-09-14T13:00:00Z', *pub)
+          assert first['PUBLISHED'] == 'YES' and first['SNAPSHOT_WRITTEN'] == 'NEW', first
+          second = run(*base, '--now', '2026-09-14T13:05:00Z', *pub)
+          assert second['SNAPSHOT_WRITTEN'] == 'ALREADY_PRESENT', second
+          assert second['RUN_ID'] == first['RUN_ID'], second
+          assert second['CONTENT_DIGEST'] == first['CONTENT_DIGEST'], second
+          runs = sorted(p.name for p in (target / 'runs').iterdir() if not p.name.startswith('.'))
+          assert len(runs) == 1, runs
+
+          # 3. the reader sees CURRENT, then STALE once the window passes
+          assert run(*base, '--now', '2026-09-14T14:00:00Z', 'status')['PUBLICATION_STATUS'] == 'CURRENT'
+          stale = run(*base, '--now', '2026-09-20T00:00:00Z', 'status')
+          assert stale['PUBLICATION_STATUS'] == 'STALE', stale
+
+          # 4. the snapshot is traceable to its inputs
+          verified = run(*base, '--now', '2026-09-14T14:00:00Z', 'verify')
+          assert verified['SOURCE_TASKS'] == 'a' * 40, verified
+          assert verified['SOURCE_EVIDENCE'] == 'b' * 40, verified
+          assert verified['PROJECTOR_REVISION'] == revision, verified
+          assert verified['DOCUMENTS_VERIFIED'] == '4', verified
+
+          # 5. a hand-edited snapshot is detected and the pointer does not move
+          pointer_before = (target / 'CURRENT.json').read_bytes()
+          snapshot = target / 'runs' / runs[0]
+          (snapshot / 'TASK_INDEX.json').write_text(json.dumps({'tasks': [{'hand_edited': True}]}))
+          run(*base, '--now', '2026-09-14T14:00:00Z', 'verify', expect=2)
+          assert (target / 'CURRENT.json').read_bytes() == pointer_before, 'pointer moved on failure'
+
+          # 6. nothing the publisher AUTHORS carries an authority-shaped key.
+          #    The copied projection documents are exempt by design: they are the
+          #    projector's own content, and they name actions on purpose. What
+          #    must never carry authority is the publication metadata.
+          forbidden = ('signature', 'signed_task', 'nonce', 'action_id', 'parameters',
+                       'grants_execution', 'execution_authority": true')
+          authored = [target / 'CURRENT.json', target / 'INDEX.json',
+                      snapshot / 'PUBLICATION_MANIFEST.json']
+          for path in authored:
+              blob = path.read_text(encoding='utf-8')
+              for needle in forbidden:
+                  assert needle not in blob, (path.name, needle)
+
+          binding = {
+              'event': os.environ['GITHUB_EVENT_NAME'],
+              'workflow_commit': revision,
+              'run_id': os.environ['GITHUB_RUN_ID'],
+              'issue': '#99 CC V1-04',
+              'reader_entry_point': 'CURRENT.json',
+              'reader_states': ['CURRENT', 'STALE', 'FAILED', 'UNKNOWN'],
+              'unpublished_reads_unknown': True,
+              'deterministic_rebuild': True,
+              'idempotent_republish': True,
+              'run_id_collision_refused': 'ASSERTED_BY_TEST_SUITE',
+              'traceable_to_source_refs': True,
+              'hand_edited_snapshot_detected': True,
+              'failure_does_not_advance_pointer': True,
+              'stale_state_reported': True,
+              'is_execution_authority': False,
+              'can_trigger_executor': False,
+              'holds_private_key': False,
+              'target_installed': False,
+              'scheduled_publication': False,
+              'deployed': False,
+              'hong_kong_accessed': False,
+              'production_accessed': False,
+          }
+          (work / 'binding.json').write_text(json.dumps(binding, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(binding, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cc-state-publication-${{ github.sha }}
+          path: ${{ runner.temp }}/state-publication/
+          if-no-files-found: error
+          retention-days: 30
