@@ -185,7 +185,7 @@ def execute(task, runner=_run):
         # TEST_PR outcome and is converted here, so it reaches the agent's failure
         # path as a reported failure rather than as an unhandled exception.
         try:
-            package = artifact_store.seal(runner, image, image_id, root=ARTIFACT_STORE)
+            diagnostic_id = hashlib.sha256(\n                (task["task_id"] + "\\0" + task["nonce"]).encode("utf-8")\n            ).hexdigest()\n            package = artifact_store.seal(runner, image, image_id, root=ARTIFACT_STORE,\n                                          diagnostic_id=diagnostic_id)
         except artifact_store.Reject as exc:
             raise durability_reject(exc) from exc
         return {
