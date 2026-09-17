@@ -170,12 +170,16 @@ jobs:
           assert replay['record']['replayed'] is True and replay['record']['written'] is False
           assert len(sorted(store.glob('*.json'))) == 1
 
-          # 3. every request-shape fault is a deterministic refusal with the Bridge's own token
+          # 3. every request-shape fault is a deterministic refusal with the Bridge's own token.
+          # The last case is the retired field. `plan_id` used to name a plan a human had
+          # written; the plan is derived now, so a Request that still carries one is refused
+          # as a wrong field set -- the Bridge compares the field set exactly, which is what
+          # keeps a caller-chosen name from re-entering as a caller-chosen deployment.
           cases = [
               ('shape-action', {'action_id': 'HK_STAGING_ROLLBACK'}, 'action'),
               ('shape-environment', {'environment': 'PRODUCTION'}, 'environment'),
               ('shape-stale', {'requested_at': '2026-09-14T00:00:00Z'}, 'stale_or_future_request'),
-              ('shape-plan-id', {'plan_id': 'x'}, 'plan_id'),
+              ('shape-retired-plan-id', {'plan_id': 'x'}, 'schema_fields'),
           ]
           for name, over, token in cases:
               path = write_request(name, **over)
