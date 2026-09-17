@@ -73,7 +73,7 @@ jobs:
       - name: Bind candidate identity
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD:application)" = "12c06ac84175458b936aa92a065ad17007712bce"
+          test "$(git rev-parse HEAD:application)" = "e77e0b36f523fb2437db83a5c4c8f1f40f181498"
           mkdir -p "$RUNNER_TEMP/integration-evidence"
           git rev-parse HEAD | tee "$RUNNER_TEMP/integration-evidence/candidate_sha.txt"
           git rev-parse HEAD:application | tee "$RUNNER_TEMP/integration-evidence/application_tree.txt"

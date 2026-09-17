@@ -2,8 +2,8 @@
   "schema": "go.integration_candidate.v1",
   "status": "DRAFT_ISOLATED_INTEGRATION",
   "base_candidate_sha": "9950bde1def11b27ed137d7db02a3047befda4fa",
-  "composed_product_commit": "c9ee4331809b5a78dd716b2c1dd8c65f3747f57e",
-  "application_git_tree": "12c06ac84175458b936aa92a065ad17007712bce",
+  "composed_product_commit": "9820236290bb7239c0aab5cf1d2794a00610aceb",
+  "application_git_tree": "e77e0b36f523fb2437db83a5c4c8f1f40f181498",
   "constraints": {
     "merge": "HOLD",
     "deploy": "HOLD",
@@ -143,7 +143,12 @@
         }
       ],
       "c14_comment": 5702132863,
-      "c13_comment": 5702178731
+      "c13_comment": 5702178731,
+      "integration_correction": {
+        "commit": "9820236290bb7239c0aab5cf1d2794a00610aceb",
+        "scope": "test-only cardinality assertion",
+        "reason": "grow(...,31) creates 30 additional rows plus one baseline; isolated run invalidated prior residual-data PASS"
+      }
     },
     "C11": {
       "product_sha": "913f8cb1930b8e672cd139efb87fa37e662e693f",
