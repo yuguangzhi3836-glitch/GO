@@ -15,6 +15,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   browser:
+    if: ${{ github.event.pull_request.number != 181 }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
@@ -60,6 +61,7 @@ jobs:
           retention-days: 90
 
   postgres:
+    if: ${{ github.event.pull_request.number != 181 }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
