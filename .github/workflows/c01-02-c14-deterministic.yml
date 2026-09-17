@@ -1,0 +1,131 @@
+name: C01-02 C14 deterministic scoped gate
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ops/c01-formal-20260915
+    paths:
+      - .github/workflows/c01-02-c14-deterministic.yml
+permissions:
+  contents: read
+  actions: read
+env:
+  TASK_ID: V70-R3-C01-02
+  BASE_SHA: dcb68a652429aa01e8428ce9f582e4bab6a6175e
+  PRODUCT_COMMIT: 9cd86c85d1aa141785eca2e44a1df9c7e9063a4c
+  CANDIDATE_SHA: 3b0432f8196ac086ae205352c44887aade1035c0
+  APPLICATION_TREE: b0dba98dccfead7f2a7f80ccc611fc153f5915ea
+  SOURCE_TREE_SHA256: ecf362b530e9ba2a1168fb6941933980c2016c627d9933ae90fd8df51747afd8
+  EVIDENCE_RUN: '35167613935'
+  EVIDENCE_ARTIFACT_ID: '10475259664'
+  EVIDENCE_ARTIFACT_DIGEST: sha256:8ea53528df768eac31c9ad14d204eac032cd78987ab103a7137601dcd7b151a1
+jobs:
+  c14:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact fixed candidate identity
+        run: |
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$APPLICATION_TREE"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          expected_tree='b0dba98dccfead7f2a7f80ccc611fc153f5915ea'
+          expected_source='ecf362b530e9ba2a1168fb6941933980c2016c627d9933ae90fd8df51747afd8'
+          expected_product='9cd86c85d1aa141785eca2e44a1df9c7e9063a4c'
+          for name in ['ci/retention/BASELINE.json','ci/next-depth/CANDIDATE.json','ci/cell-closure/CANDIDATE.json']:
+              data=json.loads(Path(name).read_text())
+              assert data['application_git_tree']==expected_tree, name
+              assert data['source_tree_sha256']==expected_source, name
+              assert data['product_candidate_commit']==expected_product, name
+          PY
+      - name: Verify bounded C01-02 diff and assertions
+        run: |
+          python - <<'PY'
+          import subprocess
+          expected={
+            'application/src/go_hotel/services/alipay_safeguarded_settlement.py',
+            'application/tests/test_v70_next_c01_unknown_funding.py',
+            'ci/cell-closure/CANDIDATE.json',
+            'ci/next-depth/CANDIDATE.json',
+            'ci/retention/BASELINE.json',
+          }
+          actual=set(subprocess.check_output(['git','diff','--name-only','dcb68a652429aa01e8428ce9f582e4bab6a6175e','3b0432f8196ac086ae205352c44887aade1035c0'],text=True).splitlines())
+          assert actual==expected, {'expected':sorted(expected),'actual':sorted(actual)}
+          source=open('application/src/go_hotel/services/alipay_safeguarded_settlement.py').read()
+          test=open('application/tests/test_v70_next_c01_unknown_funding.py').read()
+          for needle in [
+            'current_intent=s.get(OmnichannelPaymentIntentRow,payment_root.payment_intent_id)',
+            'cash_amount=current_intent.amount_minor if current_intent else a.amount_minor',
+            'cash_currency=current_intent.currency if current_intent else a.currency',
+            "if cash_currency!=r.currency or cash_amount+credited_minor!=r.amount_minor:raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')",
+          ]:
+              assert needle in source, needle
+          for needle in [
+            'test_final_capture_revalidates_authorization_terms',
+            'test_mixed_funding_capture_accepts_cash_leg_plus_frozen_credit',
+            'test_unknown_source_blocks_both_funding_legs_until_test_fixture_reconciles',
+            'test_lost_response_after_mixed_settlement_replays_without_second_charge',
+          ]:
+              assert needle in test, needle
+          PY
+      - name: Replay candidate Evidence and upstream terminal gates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          token=os.environ['GH_TOKEN']
+          base='https://api.github.com/repos/yuguangzhi3836-glitch/GO'
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
+              with urllib.request.urlopen(req) as r:return json.load(r)
+          candidate='3b0432f8196ac086ae205352c44887aade1035c0'
+          runs=[35167613940,35167613986,35167613933,35167613935,35167613943]
+          replay=[]
+          for rid in runs:
+              data=get(f'/actions/runs/{rid}')
+              assert data['head_sha']==candidate, (rid,data['head_sha'])
+              assert data['status']=='completed' and data['conclusion']=='success', (rid,data['status'],data['conclusion'])
+              replay.append({'run_id':rid,'name':data['name'],'conclusion':data['conclusion']})
+          artifact=get('/actions/artifacts/10475259664')
+          assert artifact['workflow_run']['head_sha']==candidate
+          assert artifact['digest']=='sha256:8ea53528df768eac31c9ad14d204eac032cd78987ab103a7137601dcd7b151a1'
+          assert not artifact['expired']
+          os.makedirs('c14-evidence',exist_ok=True)
+          with open('c14-evidence/EVIDENCE_REPLAY.json','w') as f:
+              json.dump({'candidate':candidate,'runs':replay,'artifact_id':artifact['id'],'artifact_digest':artifact['digest'],'status':'PASS'},f,indent=2)
+          PY
+      - name: Freeze C14 PASS_SCOPED
+        run: |
+          python - <<'PY'
+          import json, os
+          result={
+            'task_id':os.environ['TASK_ID'],
+            'candidate_sha':os.environ['CANDIDATE_SHA'],
+            'product_commit':os.environ['PRODUCT_COMMIT'],
+            'application_git_tree':os.environ['APPLICATION_TREE'],
+            'source_tree_sha256':os.environ['SOURCE_TREE_SHA256'],
+            'candidate_evidence_replay':'PASS',
+            'status':'PASS_SCOPED',
+            'merge':'NOT_RUN',
+            'final_release':'HOLD',
+            'hk_deploy':'HOLD',
+            'production':'HOLD'
+          }
+          os.makedirs('c14-evidence',exist_ok=True)
+          with open('c14-evidence/C14_RESULT.json','w') as f:json.dump(result,f,indent=2)
+          print(json.dumps(result))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c01-02-c14-${{ env.CANDIDATE_SHA }}
+          path: c14-evidence
+          if-no-files-found: error
+          retention-days: 90
