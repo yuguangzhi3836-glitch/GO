@@ -57,7 +57,7 @@ jobs:
           PY
       - name: Shared checksum writer focused gate
         id: hygiene
-        run: python -m unittest ci.shared_evidence.test_write_sha256s -v
+        run: python -m unittest discover -s ci/shared_evidence -p test_write_sha256s.py -v
       - name: Install application
         id: dependencies
         working-directory: application
