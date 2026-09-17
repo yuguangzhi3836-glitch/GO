@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v3",
-  "product_candidate_commit": "5de60713d1031fe0ef2d1919f0810e90c648991f",
-  "application_git_tree": "153e699d38f25d9fdde15e16ed210599e8561e31",
+  "product_candidate_commit": "de8436ded10b74ce54b93678251354e731110375",
+  "application_git_tree": "b7fccc50bb331a3ba6ef8384915d083d10e8f5ad",
   "source_anchor_main": "febb925eeb781223f17002b91479f2eac9b71acc",
   "preintegration_candidate": "9950bde1def11b27ed137d7db02a3047befda4fa",
   "preintegration_application_tree": "9c83d92434301356228c1b79294fcd829d675ebf",
@@ -23,13 +23,13 @@
     },
     "tests/test_depth25_migration_history.py": {
       "mode": "100644",
-      "git_blob": "e5117e28b6209cd345a4cc29c189657f94e95144",
-      "reason": "TEST_ONLY: fresh install reaches merged head"
+      "git_blob": "c22175490ea24a2bc24f382cbe840665b61c9c9b",
+      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
     },
     "tests/test_parent_implementation_code_review_debt_closure.py": {
       "mode": "100644",
-      "git_blob": "b8a88b7397086e42e68353568dd2797768827694",
-      "reason": "TEST_ONLY: assert unique merged head"
+      "git_blob": "729ae6ca8fffdc48e604eaae49e647dbed071786",
+      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
     },
     "src/go_hotel/go_ai/service.py": {
       "mode": "100644",
@@ -78,8 +78,8 @@
     },
     "tests/test_depth48_flight_migration.py": {
       "mode": "100644",
-      "git_blob": "92f58ebecf5bf61a21d89df01368c26e7ac4a671",
-      "reason": "TEST_ONLY: merged head includes GO AI table"
+      "git_blob": "a550091d9e8597826a59a429a66f78dfc7d0e671",
+      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
     },
     "src/go_hotel/services/alipay_safeguarded_settlement.py": {
       "mode": "100644",
@@ -293,8 +293,8 @@
     },
     "tests/test_final_depth_terminal_hardening.py": {
       "mode": "100644",
-      "git_blob": "4d17e5952ea1812e270f936cfba2e89cef15920d",
-      "reason": "Register existing PR172/173 C05 episode-aware test bytes; unchanged application content, unified regression required"
+      "git_blob": "1e7731c42bb6620dc266a7b7cc5e0322dcbebac0",
+      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
     }
   },
   "migration_head": "0137_hosted_unknown_episode",
@@ -315,7 +315,7 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "febb925eeb781223f17002b91479f2eac9b71acc",
-  "source_tree_sha256": "51a9061c764664323c0c23b66e4407f24e3e0212d3a79e5ede946d50442b6393",
+  "source_tree_sha256": "a0a4fe24987f4bd46fef34ce0b97e4c3dab93d54dabe0111da1d26a43e652430",
   "historical_pass_transferred": false,
   "migration_file": "alembic/versions/0137_hosted_money_unknown_episode.py",
   "verified_current_generation_ledger": "ci/integration/ACCEPTED_CELL_LEDGER.json",

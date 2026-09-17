@@ -29,6 +29,12 @@
           "zip_sha256": "2f07e56c20bd5d4b66dcc47657c34296a4429d476b5a650b644d405b237c1415"
         },
         "composition": "COMPOSED: inherit PR171 authorization replay only, preserving PR172/173 capture guards; requires unified gate"
+      },
+      "c14_comment": 5696981384,
+      "fingerprint_method": "sha256(git ls-tree -r --full-tree HEAD application)",
+      "evidence": {
+        "artifact": 10441225671,
+        "zip_sha256": "17ac07068b8c558838f7fb091eac4170602b81e60215609a250aa402200bc2df"
       }
     },
     "C02": {
@@ -358,12 +364,12 @@
     ]
   },
   "unified_candidate": {
-    "product_candidate_commit": "5de60713d1031fe0ef2d1919f0810e90c648991f",
-    "application_tree": "153e699d38f25d9fdde15e16ed210599e8561e31",
+    "product_candidate_commit": "de8436ded10b74ce54b93678251354e731110375",
+    "application_tree": "b7fccc50bb331a3ba6ef8384915d083d10e8f5ad",
     "source_files": 1386,
-    "source_fingerprint_sha256": "51a9061c764664323c0c23b66e4407f24e3e0212d3a79e5ede946d50442b6393",
+    "source_fingerprint_sha256": "a0a4fe24987f4bd46fef34ce0b97e4c3dab93d54dabe0111da1d26a43e652430",
     "migration_head": "0137_hosted_unknown_episode",
-    "status": "BOUND_PENDING_UNIFIED_GATE"
+    "status": "SHARED_TEST_HYGIENE_RETEST"
   },
   "inherited_integration": {
     "pr": 173,
@@ -393,5 +399,28 @@
     "failure_loop": "FAIL -> DIAGNOSE -> FIX -> RETEST -> PASS or EVIDENCED_BLOCKED",
     "shared_failures": "single shared repair",
     "accepted_cell_jobs": "INHERIT_DO_NOT_RERUN"
+  },
+  "shared_test_hygiene": {
+    "issue": 178,
+    "inheritance_plan": "ci/integration/TEST_ONLY_INHERITANCE.json",
+    "prior_gate_head": "2816b75a3a9b03c5502e38a64c7d7d2fcf82eaeb",
+    "changed_files": [
+      "application/tests/test_depth25_migration_history.py",
+      "application/tests/test_parent_implementation_code_review_debt_closure.py",
+      "application/tests/test_depth48_flight_migration.py",
+      "application/tests/test_final_depth_terminal_hardening.py"
+    ],
+    "rerun_shards": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "affected_shards": [
+      1,
+      2,
+      3
+    ],
+    "ci_policy": "All existing integration checks retained; automatic review rejected persistent PR-based skips. Historical Evidence is not a replacement for final gates."
   }
 }

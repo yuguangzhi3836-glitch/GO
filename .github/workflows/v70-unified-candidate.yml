@@ -42,6 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/unified/source"
+          python ci/integration/verify_test_only_inheritance.py "$RUNNER_TEMP/unified/source/INHERITANCE.json"
           python ci/retention/verify_source.py "$RUNNER_TEMP/unified/source"
           python ci/retention/verify_alignment.py "$RUNNER_TEMP/unified/source/ALIGNMENT_RESULT.json"
           python - <<'PY'
@@ -103,7 +104,7 @@ jobs:
           b=json.loads(Path('ci/retention/BASELINE.json').read_text())
           actual=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
           assert actual==os.environ['CANDIDATE_SHA']
-          report={'candidate_sha':actual,'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'source_fingerprint_sha256':b['source_tree_sha256'],'steps':steps,'status':'PASS' if all(v=='success' for v in steps.values()) else 'FAIL','scope':'unified binding, shared hygiene, isolated PG migration, composed C01 integration, C12 compatibility; parent regression is separate','inherited_nine_cell_jobs':'NOT_RERUN','c06_external':'HOLD','hk_staging':'HOLD','final_release':'HOLD','production':'HOLD'}
+          report={'candidate_sha':actual,'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'source_fingerprint_sha256':b['source_tree_sha256'],'steps':steps,'status':'PASS' if all(v=='success' for v in steps.values()) else 'FAIL','scope':'unified binding, shared hygiene, real isolated PG migration, SQLite C01/lease composition, C12 compatibility; parent regression is separate','inherited_nine_cell_jobs':'NOT_RERUN','c06_external':'HOLD','hk_staging':'HOLD','final_release':'HOLD','production':'HOLD'}
           (out/'RESULT.json').write_text(json.dumps(report,indent=2)+'\n')
           PY
           python ci/shared_evidence/write_sha256s.py "$RUNNER_TEMP/unified" "$RUNNER_TEMP/unified/SHA256SUMS"
