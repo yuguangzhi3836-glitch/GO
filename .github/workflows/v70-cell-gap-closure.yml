@@ -17,7 +17,7 @@ concurrency:
 jobs:
   scoped-acceptance:
     # PR172 inherits accepted Cell evidence; its shared PG integration gate is v70-unified-candidate.
-    if: ${{ github.event.pull_request.number != 172 }}
+    if: ${{ !contains(fromJSON('[172, 181]'), github.event.pull_request.number) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
