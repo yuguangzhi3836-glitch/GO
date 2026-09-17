@@ -190,6 +190,20 @@ def test_transport_exception_attempt_is_sealed_and_unknown_outcome_is_not_retrie
     assert "secret-bearing" not in repr(evidence.attempts[0])
 
 
+def test_transport_contract_violation_is_sealed_and_fails_closed():
+    class ParsedBodyTransport(Transport):
+        def request(self, method, url, *, headers, body, timeout_seconds):
+            return 200, {}, {"supplier_reference": "not-raw"}
+
+    evidence = Evidence()
+    result = execute_one(executor(transport=ParsedBodyTransport(), evidence=evidence))
+    assert result.ok is False
+    assert result.payload["normalized_error"] == "PROVIDER_UNKNOWN_ERROR_FAIL_CLOSED"
+    assert len(evidence.attempts) == 1
+    assert evidence.attempts[0]["transport_error"] == "SUPPLIER_TRANSPORT_RAW_BYTES_REQUIRED"
+    assert evidence.attempts[0]["response_body"] == b""
+
+
 def test_complex_auth_fails_closed_without_materializer():
     with pytest.raises(ValueError, match="SANDBOX_AUTH_MATERIALIZER_REQUIRED"):
         execute_one(executor(auth_method="HMAC"))
