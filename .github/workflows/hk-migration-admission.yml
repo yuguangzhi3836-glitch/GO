@@ -1,0 +1,81 @@
+name: HK candidate migration admission (isolated)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ci/hk-migration-admission/**
+      - .github/workflows/hk-migration-admission.yml
+permissions:
+  contents: read
+concurrency:
+  group: hk-migration-admission-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  forward-migration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_issue103_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_issue103_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: tooling
+          sparse-checkout: ci/hk-migration-admission
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: edd3500575d2f2b81298cc9273025e0a3b734897
+          path: candidate
+          sparse-checkout: |
+            application
+            ci
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: bba3b2589ec38404122fb9590fc8119410b96247
+          path: baseline
+          sparse-checkout: application/alembic
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install inherited frozen dependencies
+        run: |
+          set -euo pipefail
+          python candidate/ci/retention/dependencies.py --repository candidate --output "$RUNNER_TEMP/frozen-issue103"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen-issue103/wheelhouse" -r candidate/ci/retention/requirements.lock
+      - name: Fail-closed migration lineage checks
+        run: python -m unittest discover -s tooling/ci/hk-migration-admission -p 'test_*.py' -v
+      - name: Exact PR183 baseline-to-target PostgreSQL rehearsal
+        env:
+          DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_issue103_isolated
+        run: |
+          set -euo pipefail
+          python tooling/ci/hk-migration-admission/run_gate.py --candidate candidate --baseline baseline --out "$RUNNER_TEMP/hk-migration-admission"
+      - name: Check Evidence manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/hk-migration-admission"
+          sha256sum -c SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hk-migration-admission-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/hk-migration-admission
+          if-no-files-found: error
