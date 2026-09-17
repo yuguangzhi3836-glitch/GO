@@ -450,6 +450,44 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn('test "$(sha256sum "$path" | awk', rollback)
         self.assertLess(rollback.index('test "$(sha256sum "$path" | awk'), rollback.index('rm -- "$path"'))
 
+    def test_hk_installer_store_readback_is_syntax_checked_and_executable(self):
+        script = ROOT / "install" / "install-hk-agent.sh"
+        syntax = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
+        self.assertEqual(syntax.returncode, 0, syntax.stderr)
+
+        source = script.read_text(encoding="utf-8")
+        start = source.index("# Read back the artifact store")
+        end = source.index('"$root/install/preflight.sh" hk-staging postinstall', start)
+        readback = source[start:end]
+        self.assertNotIn("\\ntest ", readback)
+        self.assertEqual(readback.count('stat -c %u:%g "$store_root'), 2)
+        self.assertEqual(readback.count('stat -c %a "$store_root'), 3)
+
+        with tempfile.TemporaryDirectory() as raw:
+            store = pathlib.Path(raw) / "store"
+            store.mkdir(mode=0o700)
+            (store / "objects").mkdir(mode=0o700)
+            (store / "failures").mkdir(mode=0o700)
+            env = dict(os.environ, store_root=str(store),
+                       artifact_uid=str(os.getuid()), artifact_gid=str(os.getgid()))
+
+            accepted = subprocess.run(["/bin/sh", "-eu", "-c", readback], env=env,
+                                      capture_output=True, text=True)
+            self.assertEqual(accepted.returncode, 0, accepted.stderr)
+
+            for target in (store / "objects", store / "failures"):
+                with self.subTest(wrong_mode=target.name):
+                    target.chmod(0o755)
+                    refused = subprocess.run(["/bin/sh", "-eu", "-c", readback], env=env,
+                                             capture_output=True, text=True)
+                    self.assertNotEqual(refused.returncode, 0)
+                    target.chmod(0o700)
+
+            wrong_owner = dict(env, artifact_uid=str(os.getuid() + 1))
+            refused = subprocess.run(["/bin/sh", "-eu", "-c", readback], env=wrong_owner,
+                                     capture_output=True, text=True)
+            self.assertNotEqual(refused.returncode, 0)
+
     def test_hk_directory_rollback_refuses_drift_symlink_or_contents_before_files_change(self):
         for mutation in ("mode", "symlink", "contents"):
             raw, backup, targets, env = self.rollback_sandbox("hk-staging")
