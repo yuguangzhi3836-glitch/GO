@@ -34,12 +34,22 @@ Load-bearing consequences:
 * `CANARY` is `PASS` only when the canary proof itself verifies under the
   published identities, binds to *this* candidate, and completed inside the
   canary window — not because the plan says so.
-* `RELEASE_GATES` is `PASS` only when every release gate the live contract
-  requires carries `PASS`.
-* `LIVE_SWITCH_PROVENANCE` is `PASS` only when the switch state is covered by a
-  change record whose declared value equals the observed channel value and which
-  is **attributed to one of the authorised GitHub identities**. A switch that is
-  simply `on` keeps the verdict out of `YES`.
+* there is no `RELEASE_GATES` gate. The four product-release declarations the
+  plan used to carry (`three_end_ux`, `six_vertical_closed_loop`, `sealed_node`,
+  `final_release`) were removed from the deploy contract on 2026-09-17: they are
+  upstream product-acceptance verdicts, no machine process in this repository can
+  produce them, and the live executor never read them. Reporting on them would
+  make this evaluator a product reviewer, which is the opposite of the boundary
+  Issue #103 draws. The one name that stood for a real technical fact,
+  `sealed_node`, is now established by the signed TEST_PR the plan carries and the
+  ported TEST_PR proof checks it.
+* there is no deploy switch, and nothing that stands in for one. A deployment is
+  authorised by the authenticated DEPLOY Request, so `DEPLOYMENT_AUTHORIZATION`
+  `PASS`es only when the plan's authorization cites an exact Request digest and its
+  id is the **derived form** of that digest. An authorisation that was picked or
+  written rather than derived cannot be expressed, and keeps the verdict out of
+  `YES`; `LIVE_DEPLOY_MODE` separately reads whether the deployed configuration
+  declares that mode at all.
 * `HUMAN_APPROVAL` `PASS`es only when the approval is unexpired, binds the same
   plan digest, scope and environment, and names one of those authorised GitHub
   identities. An approval that names anyone else fails the gate, and the live
@@ -62,22 +72,18 @@ this component therefore cannot silently diverge from the real gate.
 | `--go-repo` | a GO checkout: the two canonical pointer files the state document names, **and** the published verifier identities under `identity/` | yes |
 | `--live-bundle` | an **operator-supplied, read-only** directory of live-host facts | no |
 
-The approved plan store (`/etc/go-command-center/deployment-plans-v1`) and the
-live Command Center request switch are **live-host facts an offline evaluator
-cannot read**. When the bundle is absent those gates are `UNKNOWN` *by
-construction* rather than assumed — which is exactly why the evaluator can be
-run safely from anywhere.
+The plan store (`/etc/go-command-center/deployment-plans-v1`) and the deployed
+Command Center configuration are **live-host facts an offline evaluator cannot
+read**. When the bundle is absent those gates are `UNKNOWN` *by construction*
+rather than assumed — which is exactly why the evaluator can be run safely from
+anywhere.
 
 ```text
 live-bundle/
-  <plan_id>.json     the six-field approved plan bundle (plan + approval + the
-                     canary/preflight task and evidence objects)
-  channel.json       {"deployment_requests_enabled", "publish_enabled",
+  <plan_id>.json     the registered plan bundle (plan + approval + the TEST_PR,
+                     canary and preflight task and evidence objects)
+  channel.json       {"deployment_authorization", "publish_enabled",
                       "allowed_actions", "allowed_environment"}
-  switch-provenance.json
-                     the change record for the switch: field, value, changed_at,
-                     change_record, approved_by, approval_id, valid window and the
-                     before/after digests, attributed to an authorised identity
 ```
 
 Symlinks are refused and every file is size-capped, matching the plan store's own
@@ -95,10 +101,9 @@ rules.
 | `TEST_PR` | yes | the candidate commit has a signed, successful TEST_PR on the control bus |
 | `VERIFY` | yes | the live runtime was verified, by signed Evidence, inside the freshness window |
 | `CURRENT_RUNTIME` | yes | the verified runtime matches the image the plan expects to be current |
-| `LIVE_SWITCH` | yes | the live request switch would accept a DEPLOY request *(live fact)* |
-| `LIVE_SWITCH_PROVENANCE` | yes | the switch state is covered by a change record, attributed to an authorised identity, whose value matches the observed channel |
+| `LIVE_DEPLOY_MODE` | yes | the deployed configuration declares request-authorised deployments and would accept a DEPLOY request *(live fact)* |
+| `DEPLOYMENT_AUTHORIZATION` | yes | the plan's authorisation is derived from an exact authenticated DEPLOY Request: it cites that Request's digest and its id is the derived form of it |
 | `CANARY` | yes | the plan's canary proof verifies, binds to this candidate and is inside its window |
-| `RELEASE_GATES` | yes | the plan carries PASS for every release gate the live contract requires |
 | `BRIDGE_ACCEPTANCE` | yes | the live Bridge's own rules, re-derived offline, would accept this request |
 
 `advisory_holds` still exists so the document shape is stable, and it is always
@@ -122,8 +127,9 @@ no TEST_PR for the candidate commit          FAIL
 TEST_PR that did not succeed                 FAIL
 VERIFY stale or drifted                      FAIL
 runtime drift                                FAIL
-switch closed / publish off / DEPLOY not allowed  FAIL
-plan / approval / switch not supplied        UNKNOWN
+mode not request / publish off / DEPLOY not allowed  FAIL
+authorisation not derived from a Request     FAIL
+plan / approval / channel not supplied       UNKNOWN
 live runtime not proven                      UNKNOWN
 ```
 
@@ -131,7 +137,8 @@ live runtime not proven                      UNKNOWN
 
 ```text
 is_execution_authority=false   can_create_task=false      can_publish_task=false
-can_open_the_request_switch=false  holds_private_key=false  signs_anything=false
+can_grant_the_deployment_authorization=false  holds_private_key=false
+signs_anything=false
 accepts_caller_supplied_parameters=false  touches_production=false
 is_a_deploy_approval=false     may_read_live_command_center_state=true
 ```
@@ -165,11 +172,11 @@ which surfaces it as `control_state.deploy_readiness` (`YES` / `NO`, or
 per-gate detail, and moves
 `control_state.out_of_scope.deploy_readiness_evaluation` to `EVALUATED_READ_ONLY`.
 
-## The real answer, as of the committed projection
+## The real answer, as re-read on 2026-09-17
 
-Run against `PROJECTION_20260915`, first with no live bundle and then with the
-channel configuration read read-only on the Command Center. In both runs
-`mandatory_gates=13` and `advisory_holds` is empty.
+Run against the `PROJECTION_20260915` control state, first with no live bundle and
+then with the deployed channel configuration read read-only off the Command Center.
+In both runs `mandatory_gates=12` and `advisory_holds` is empty.
 
 ```text
 DEPLOY_READY=NO                          (both runs)
@@ -177,21 +184,31 @@ DEPLOY_READY=NO                          (both runs)
 without a bundle
   FAIL     TEST_PR   the TEST_PR for this commit did not succeed: TASK_EXPIRED
   FAIL     VERIFY    the newest verified VERIFY is 164911 s old, window 86400 s
-  UNKNOWN  everything not listed, including LIVE_SWITCH and LIVE_SWITCH_PROVENANCE
+  UNKNOWN  PACKAGE_BINDING, DEPLOYMENT_PLAN, HUMAN_APPROVAL, CURRENT_RUNTIME,
+           LIVE_DEPLOY_MODE, DEPLOYMENT_AUTHORIZATION, CANARY, BRIDGE_ACCEPTANCE
 
 with the read-only channel bundle
-  FAIL     LIVE_SWITCH              deployment_requests_disabled
-  FAIL     DEPLOYMENT_PLAN          the plan store holds no plan
+  FAIL     DEPLOYMENT_PLAN          a bundle was supplied but no usable plan is in it
+  FAIL     LIVE_DEPLOY_MODE         deployment_authorization_mode_not_request
   FAIL     TEST_PR, VERIFY          as above
   UNKNOWN  PACKAGE_BINDING, HUMAN_APPROVAL, CURRENT_RUNTIME,
-           LIVE_SWITCH_PROVENANCE, CANARY, RELEASE_GATES, BRIDGE_ACCEPTANCE
+           DEPLOYMENT_AUTHORIZATION, CANARY, BRIDGE_ACCEPTANCE
 ```
 
-`LIVE_SWITCH` reports `deployment_requests_disabled`, which is the intended
-fail-closed posture: the switch is off, so no DEPLOY Request would be accepted.
-`LIVE_SWITCH_PROVENANCE` stays `UNKNOWN` because the change record for that
-switch state has not been supplied, so its attribution to an authorised identity
-is not established.
+`LIVE_DEPLOY_MODE` reports `deployment_authorization_mode_not_request` because the
+configuration installed on that host still carries the pre-2026-09-17 shape
+(`deployment_requests_enabled`), which this revision no longer recognises. That is
+the intended fail-closed reading of a host that has not been moved to this revision
+yet: the installation is the file set `INSTALL_HANDOFF.md` names, and until it is
+applied deployments are refused rather than silently governed by a field that no
+longer means anything. Nothing else on the host is affected by that refusal — the
+read-only probes keep running.
+
+The earlier 2026-09-15 reading of the same two runs reported
+`LIVE_SWITCH deployment_requests_disabled` and `LIVE_SWITCH_PROVENANCE UNKNOWN`,
+and `mandatory_gates=13`. Those gate names, and the switch they belonged to, are
+gone: a deployment is authorised by the authenticated Request, so there is no
+standing state for a verdict to establish and no change record to attribute.
 
 The `identity` block reports the two published signing roles and the authorised
 approval identities (`approval_identities`). No approval public key is published
@@ -215,5 +232,5 @@ ROLLBACK_READINESS=NOT_IN_SCOPE   CC V1-09 / #104 owns it. This evaluator says s
                                   rather than guessing.
 ```
 
-It does not create, sign or publish a Task, it cannot open the request switch,
-and it does not touch Production.
+It does not create, sign or publish a Task, it cannot grant a deployment
+authorisation, and it does not touch Production.

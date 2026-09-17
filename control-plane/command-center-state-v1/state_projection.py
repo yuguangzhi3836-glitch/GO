@@ -338,9 +338,13 @@ DEPLOY_READINESS_DOCUMENT = ("control-plane/command-center-deploy-readiness-v1/"
 DEPLOY_READY_VALUES = ("YES", "NO", "UNKNOWN")
 DEPLOY_READINESS_GATES = ("APPROVED_CANDIDATE", "SOURCE_BINDING", "PACKAGE_BINDING",
                           "DEPLOYMENT_PLAN", "HUMAN_APPROVAL", "TEST_PR", "VERIFY",
-                          "CURRENT_RUNTIME", "LIVE_SWITCH", "LIVE_SWITCH_PROVENANCE",
-                          "CANARY", "RELEASE_GATES", "BRIDGE_ACCEPTANCE")
-# The evaluator has no advisory gates left: treating CANARY and RELEASE_GATES as
+                          "CURRENT_RUNTIME", "LIVE_DEPLOY_MODE", "DEPLOYMENT_AUTHORIZATION",
+                          "CANARY", "BRIDGE_ACCEPTANCE")
+# RELEASE_GATES is deliberately absent: the four product-release declarations were
+# removed from the deploy contract on 2026-09-17, so an evaluator that still reported
+# one would be reporting on product acceptance rather than deployability. The fact one
+# of them named is now the sealed TEST_PR, which the deploy gate checks.
+# The evaluator has no advisory gates left either: treating CANARY and RELEASE_GATES as
 # advisory let it report YES while the live Bridge would deterministically refuse
 # the same plan. Every gate blocks. If the evaluator ever reintroduces an advisory
 # gate this tuple is what has to move with it, and DeployReadinessContractTests
@@ -352,7 +356,8 @@ DEPLOY_READINESS_GATE_STATES = ("PASS", "FAIL", "UNKNOWN")
 # one that says it only reads what it was handed.
 DEPLOY_READINESS_BOUNDARY = {
     "is_execution_authority": False, "can_create_task": False, "can_publish_task": False,
-    "can_open_the_request_switch": False, "holds_private_key": False, "signs_anything": False,
+    "can_grant_the_deployment_authorization": False, "holds_private_key": False,
+    "signs_anything": False,
     "accepts_caller_supplied_parameters": False, "touches_production": False,
     "may_read_live_command_center_state": True, "is_a_deploy_approval": False,
 }

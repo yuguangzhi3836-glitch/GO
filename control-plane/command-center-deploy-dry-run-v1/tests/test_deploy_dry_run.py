@@ -60,10 +60,12 @@ def readiness(verdict="YES", gates=None, boundary=None, contract=None):
             ("CURRENT_RUNTIME", True, {"image_config_id": "sha256:" + "e" * 64}),
             ("SOURCE_BINDING", True, None), ("TEST_PR", True, None),
             ("VERIFY", True, None), ("HUMAN_APPROVAL", True, None),
-            ("LIVE_SWITCH", True, None), ("LIVE_SWITCH_PROVENANCE", True, None),
+            ("LIVE_DEPLOY_MODE", True, None), ("DEPLOYMENT_AUTHORIZATION", True, None),
             ("BRIDGE_ACCEPTANCE", True, None),
             ("CANARY", False, None),
-            ("RELEASE_GATES", False, None)]
+            # A synthetic extra the readiness contract does not declare, so the advisory
+            # path stays covered without a retired real gate name.
+            ("SYNTHETIC_ADVISORY", False, None)]
     document = {
         "schema_version": "1", "contract": D.READINESS_CONTRACT,
         "scope": "READ_ONLY_DEPLOY_READINESS", "authority": "DERIVED_NON_AUTHORITATIVE",
@@ -81,9 +83,11 @@ def readiness(verdict="YES", gates=None, boundary=None, contract=None):
 
 
 def request(**over):
+    # The five common fields. A DEPLOY Request used to carry a plan_id; the plan is
+    # derived now, so a Request that still carries one is a wrong field set.
     value = {"schema_version": "1", "request_id": "rehearsal-one",
              "action_id": D.DEPLOY_ACTION, "environment": D.ENVIRONMENT,
-             "requested_at": "2026-09-15T00:59:30Z", "plan_id": "release-one"}
+             "requested_at": "2026-09-15T00:59:30Z"}
     value.update(over)
     return value
 
@@ -234,7 +238,7 @@ class RejectionTests(unittest.TestCase):
 
     def test_duplicate_json_key(self):
         fixture = Fixture(history={"consumed_plan_ids": []})
-        text = json.dumps(request())[:-1] + ', "plan_id": "release-one"}'
+        text = json.dumps(request())[:-1] + ', "requested_at": "2026-09-15T00:59:30Z"}'
         document = fixture.raw(text)
         self.assertEqual(check(document, "request_unique_keys")["reason_code"],
                          "duplicate_json_key")
@@ -287,9 +291,10 @@ class RejectionTests(unittest.TestCase):
         self.assertEqual(self.reject("request_freshness", fixture)["reason_code"],
                          "stale_or_future_request")
 
-    def test_bad_plan_id(self):
-        fixture = Fixture(history={"consumed_plan_ids": []}, body=request(plan_id="a"))
-        self.assertEqual(self.reject("request_plan_id_format", fixture)["reason_code"], "plan_id")
+    def test_a_request_that_still_names_a_plan_is_refused(self):
+        """The retired shape. A DEPLOY Request may no longer name a plan at all."""
+        fixture = Fixture(history={"consumed_plan_ids": []}, body=request(plan_id="release-one"))
+        self.assertEqual(self.reject("request_fields", fixture)["reason_code"], "schema_fields")
 
     def test_filename_not_bound_to_request_id(self):
         fixture = Fixture(history={"consumed_plan_ids": []}, file_name="something-else.json")
@@ -394,7 +399,7 @@ class CandidateTests(unittest.TestCase):
 
 class ReadinessCompositionTests(unittest.TestCase):
     def test_a_failing_gate_refuses_with_the_gate_name(self):
-        for name in ("HUMAN_APPROVAL", "TEST_PR", "VERIFY", "CURRENT_RUNTIME", "LIVE_SWITCH",
+        for name in ("HUMAN_APPROVAL", "TEST_PR", "VERIFY", "CURRENT_RUNTIME", "LIVE_DEPLOY_MODE",
                      "DEPLOYMENT_PLAN", "SOURCE_BINDING", "APPROVED_CANDIDATE"):
             gates = readiness()["gates"]
             for gate in gates:
@@ -418,7 +423,7 @@ class ReadinessCompositionTests(unittest.TestCase):
         self.assertIsNone(document["candidate"])
 
     def test_an_advisory_gate_never_blocks(self):
-        for name in ("CANARY", "RELEASE_GATES"):
+        for name in ("CANARY", "SYNTHETIC_ADVISORY"):
             gates = readiness()["gates"]
             for gate in gates:
                 if gate["gate"] == name:
@@ -454,8 +459,9 @@ class ReadinessCompositionTests(unittest.TestCase):
         self.assertEqual(reported, {"readiness:%s" % name for name in
                                     ("DEPLOYMENT_PLAN", "APPROVED_CANDIDATE", "PACKAGE_BINDING",
                                      "CURRENT_RUNTIME", "SOURCE_BINDING", "TEST_PR", "VERIFY",
-                                     "HUMAN_APPROVAL", "LIVE_SWITCH", "LIVE_SWITCH_PROVENANCE",
-                                     "CANARY", "RELEASE_GATES", "BRIDGE_ACCEPTANCE")})
+                                     "HUMAN_APPROVAL", "LIVE_DEPLOY_MODE",
+                                     "DEPLOYMENT_AUTHORIZATION",
+                                     "CANARY", "SYNTHETIC_ADVISORY", "BRIDGE_ACCEPTANCE")})
 
 
 class BoundaryTests(unittest.TestCase):
@@ -518,7 +524,7 @@ class ContractTests(unittest.TestCase):
     def test_the_contract_pins_the_three_impossible_things(self):
         forbidden = " ".join(self.schema["x-go-forbidden"])
         for phrase in ("Publishing, creating or signing a real DEPLOY Task",
-                       "Touching the live deploy enable switch",
+                       "Touching a deployment authorisation",
                        "Executing a deployment, contacting Hong Kong, or touching Production",
                        "Treating a dry-run record as a consumption"):
             self.assertIn(phrase, forbidden)

@@ -1,14 +1,26 @@
 #!/usr/bin/env python3
-"""Candidate Bridge 1.6: VERIFY / TEST_PR / approved DEPLOY plans / CANARY, plus a
+"""Candidate Bridge 1.7: VERIFY / TEST_PR / derived DEPLOY plans / CANARY, plus a
 read-only CONTROL_PLANE_HEALTH probe.
+
+The DEPLOY plan is derived, not registered.  Until this revision the plan bundle was
+written by an operator, which made "a human maintains the deployment plan" a necessary
+step of every deployment -- and the scope contract names exactly that as a V1 failure
+rather than an operating rule.  A DEPLOY Request is now the five common fields, exactly
+like a CANARY Request: it names an action and an environment and steers nothing.  On
+arrival the Bridge joins the facts it already holds -- the candidate admission record,
+the root-owned live baseline, the signed TEST_PR of that candidate, and the canary and
+preflight Tasks it published and signed itself -- derives the plan, validates it in
+memory against the gate, registers it, and reads it back before signing the Task.  The
+approval is the Request itself: the identity GitHub reports for its author, the moment
+GitHub reports it was created, and the digest of its canonical content.
 
 The canary action takes nothing from the Request either.  A CANARY Request is the five
 common fields; the candidate image, its sealed package and the image the canary expects
 to be current are read from a root-owned authority file, so no caller can steer what the
-canary executes.  CANARY is deliberately *not* gated by `deployment_requests_enabled`:
+canary executes.  CANARY is deliberately *not* gated by the deployment authorisation:
 the canary is the evidence a deployment plan must cite before that plan can exist, so the
-deploy switch cannot be a precondition for producing it.  Installing this revision does
-not turn the deploy switch on.
+authorisation for a deployment cannot be a precondition for producing it.  Installing this
+revision authorises no deployment at all.
 
 The health action is kept apart from the rest: it is deliberately not a member of the
 same family.
@@ -18,11 +30,28 @@ same family.
   block on the Task is a fixed constant rather than anything read out of the Request.
 * It is signed with the existing task identity, because what is signed is a Task
   identity and not an approval. It grants no execution, takes no part in the DEPLOY
-  arm, the approved plan or the release budget, and does not touch
-  `deployment_requests_enabled`.
+  arm, the approved plan or the release budget, and does not touch the deployment
+  authorisation.
 * It exists for one purpose: to let the HK agent publish fresh signed liveness
   Evidence, so `hk_agent_online` can be answered from a signature instead of from a
   reachability guess.
+
+A DEPLOY Request used to carry a `plan_id` naming a plan a human had written.  It no
+longer carries one -- not because the field moved, but because there is nothing left for
+it to select: the plan name is a function of the candidate and of the canary run that
+witnessed the host, so a caller-chosen name would be a caller-chosen deployment.
+
+There is no deploy switch any more either.  Until this revision the Bridge refused every
+DEPLOY Request until an operator had set `deployment_requests_enabled` to true in the
+root-owned channel configuration -- a standing authorisation, granted before the thing it
+authorised existed.  That inverted the order of the world: the authority V1 defines is the
+authenticated DEPLOY Request itself (`docs/project/CC_V1_SCOPE_20260916.md`), so a switch
+that has to be flipped first makes a human server operation a necessary step of every
+deployment, which that document names as V1 not being delivered.  The configuration now
+declares only *how* deployments are authorised, and every DEPLOY Request must still come
+from an authorised GitHub identity, cite a fresh canary and preflight, and name the exact
+candidate.  Setting the mode to anything but `request` refuses DEPLOY Requests and nothing
+else, so it still works as an emergency stop.
 
 Dispatch is explicit and fail-closed. An action that is not named in
 `derive_formal_task` is refused; it can never fall through into VERIFY, TEST_PR,
@@ -32,6 +61,7 @@ VERIFY. Nothing that the other three actions do or are allowed to do is changed.
 import argparse, datetime as dt, fcntl, hashlib, json, os, pathlib, re, secrets, subprocess, sys, tempfile
 from cryptography.hazmat.primitives import serialization
 import go_deploy_request as deploy_gate
+import plan_derivation
 
 REPO = "git@github.com:chenzhenxi1-sudo/go-control-tasks.git"
 REQUEST_RE = re.compile(r"^requests/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json$")
@@ -51,11 +81,23 @@ HEALTH_PARAMETERS = {}
 # The channel action contract, in full. The config has always been checked against an
 # exact list rather than a membership test; health is a member of that contract, not a
 # free-form toggle, so removing it takes a new Bridge revision rather than an edit to a
-# root-owned config file. `deployment_requests_enabled` is untouched and still defaults
-# to refusing.
+# root-owned config file.
 CHANNEL_ACTIONS = [POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, CANARY_ACTION, HEALTH_ACTION]
+# How a deployment is authorised. There is no standing switch to turn on: the authority is
+# the authenticated DEPLOY Request the authorised identity opened, and the Command Center
+# derives a one-time authorisation from it per request. This field declares that mode and
+# carries no authority of its own -- setting it to `request` grants nothing, because a
+# deployment still needs an authorised Request, a fresh canary, a fresh preflight and the
+# exact candidate. Any other value refuses every DEPLOY Request and nothing else.
+AUTHORIZATION_MODE = "request"
 GO_REPOSITORY = "git@github.com:yuguangzhi3836-glitch/GO.git"
 PR_RESOLVER_KEY = "/etc/go-command-center/keys/github-go-pr-resolver"
+# Both already exist and are read-only: the evidence reader was provisioned for the
+# evidence repository, and the GO resolver for the candidate pointer. Neither is new
+# authority, and neither can write anything.
+EVIDENCE_REPO = "git@github.com:chenzhenxi1-sudo/go-control-evidence.git"
+EVIDENCE_READER_KEY = "/etc/go-command-center/keys/github-evidence-reader"
+EVIDENCE_NAME_RE = re.compile(r"^evidence/[A-Za-z0-9][A-Za-z0-9._-]{0,127}-[A-Za-z0-9_-]{1,128}\.json$")
 COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 PR_NUMBER_RE = re.compile(r"^[1-9][0-9]{0,8}$")
 
@@ -76,7 +118,11 @@ def validate_request(raw, at=None):
     if not isinstance(request, dict): raise Reject("schema_fields")
     action=request.get('action_id')
     if not isinstance(action,str): raise Reject('action')
-    fields = TEST_ALLOWED if action == TEST_ACTION else (ALLOWED | {'plan_id'} if action == deploy_gate.ACTION else ALLOWED)
+    # DEPLOY carries the five common fields and nothing else.  A plan_id used to name a
+    # plan a human had written; the plan is derived now, so a caller-chosen name would
+    # only be a caller-chosen deployment.  A Request that still carries one is refused by
+    # the exact-set comparison below rather than being read as if the field were ignored.
+    fields = TEST_ALLOWED if action == TEST_ACTION else ALLOWED
     if set(request) != fields: raise Reject("schema_fields")
     if request["schema_version"] != POLICY["schema_version"]: raise Reject("schema_version")
     if not isinstance(request["request_id"], str) or not REQUEST_ID_RE.fullmatch(request["request_id"]): raise Reject("request_id")
@@ -86,7 +132,6 @@ def validate_request(raw, at=None):
     at = at or now()
     if when.tzinfo is None or when > at + dt.timedelta(seconds=60) or at - when > dt.timedelta(seconds=POLICY["max_age_seconds"]): raise Reject("stale_or_future_request")
     if request["action_id"] == TEST_ACTION and (not isinstance(request["pr_number"],str) or not PR_NUMBER_RE.fullmatch(request["pr_number"])): raise Reject("pr_number")
-    if action==deploy_gate.ACTION: deploy_gate.match(request['plan_id'],deploy_gate.IDENT,'plan_id')
     return request
 
 def load_baseline(path=BASELINE_CONFIG):
@@ -160,11 +205,15 @@ def sign(task, key_path):
     key = serialization.load_pem_private_key(pathlib.Path(key_path).read_bytes(), password=None)
     signed = dict(task); signed["signature"] = key.sign(canonical(task)).hex(); return signed
 
+def readonly_env(key_path):
+    """A git environment that authenticates with one dedicated read-only Deploy Key."""
+    env={"PATH":"/usr/bin:/bin","LC_ALL":"C","GIT_TERMINAL_PROMPT":"0","GIT_CONFIG_NOSYSTEM":"1","GIT_CONFIG_GLOBAL":"/dev/null"}
+    env["GIT_SSH_COMMAND"]="ssh -i %s -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes" % key_path
+    return env
+
 def pr_resolver_env():
     """The GO resolver uses only its dedicated read-only Deploy Key."""
-    env={"PATH":"/usr/bin:/bin","LC_ALL":"C","GIT_TERMINAL_PROMPT":"0","GIT_CONFIG_NOSYSTEM":"1","GIT_CONFIG_GLOBAL":"/dev/null"}
-    env["GIT_SSH_COMMAND"]="ssh -i %s -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes" % PR_RESOLVER_KEY
-    return env
+    return readonly_env(PR_RESOLVER_KEY)
 
 def resolve_pr(number):
     if not isinstance(number,str) or not PR_NUMBER_RE.fullmatch(number): raise Reject("pr_number")
@@ -175,6 +224,39 @@ def resolve_pr(number):
     parts=lines[0].split("\t")
     if len(parts)!=2 or parts[1]!=ref or not COMMIT_SHA_RE.fullmatch(parts[0]): raise Reject("pr_head_invalid")
     return parts[0]
+
+def read_repo_file(repo, key_path, path):
+    """One file out of a read-only remote, by shallow fetch. No working tree is kept."""
+    work=pathlib.Path(tempfile.mkdtemp(prefix="go-cc-read-")); env=readonly_env(key_path)
+    try:
+        git(env,"init","-q",str(work)); git(env,"-C",str(work),"remote","add","origin",repo)
+        git(env,"-C",str(work),"fetch","-q","--depth","1","origin","main")
+        got=subprocess.run(["/usr/bin/git","-C",str(work),"show","FETCH_HEAD:"+path],
+                           env=env,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
+        if got.returncode!=0: raise Reject("readable_file_unavailable")
+        return got.stdout
+    except (OSError,subprocess.SubprocessError) as exc:
+        raise Reject("readable_file_unavailable") from exc
+    finally: subprocess.run(["/usr/bin/rm","-rf",str(work)],check=True)
+
+def read_admission():
+    """The candidate admission record, as the GO repository publishes it."""
+    return deploy_gate.parse_json(read_repo_file(
+        GO_REPOSITORY, PR_RESOLVER_KEY, plan_derivation.ADMISSION_POINTER))
+
+def read_evidence(task):
+    """The signed Evidence of one published Task, addressed by the Task itself.
+
+    The HK agent writes one file per execution named "<task_id>-<nonce>.json", so the
+    Task the Bridge signed is what addresses its own result.  That is why the ledger
+    holds no Evidence: the lookup key is already signed, and a substituted file cannot
+    pass the gate, which re-verifies the signature and binds the content.
+    """
+    task_id=task.get("task_id"); nonce=task.get("nonce")
+    if not isinstance(task_id,str) or not isinstance(nonce,str): raise Reject("evidence_unaddressed")
+    name="evidence/%s-%s.json" % (task_id,nonce)
+    if not EVIDENCE_NAME_RE.fullmatch(name): raise Reject("evidence_unaddressed")
+    return deploy_gate.parse_json(read_repo_file(EVIDENCE_REPO, EVIDENCE_READER_KEY, name))
 
 def derive_test_pr(request, at=None, resolver=resolve_pr):
     commit=resolver(request["pr_number"])
@@ -243,6 +325,15 @@ def check_deploy_pr(number,head):
     login=value.get('user',{}).get('login')
     if not isinstance(login,str) or login not in deploy_gate.APPROVAL_IDENTITIES:
         raise Reject('request_pr_author_not_authorised')
+    # When the platform says the approval was given. This is a fact read from GitHub
+    # rather than a timestamp an approver writes, which is what lets the approval window
+    # stay exactly as strict as it was: the approval must still be younger than 15
+    # minutes and later than both proofs.
+    created=value.get('created_at')
+    if not isinstance(created,str): raise Reject('request_pr_created_at_missing')
+    try: moment=dt.datetime.fromisoformat(created.replace('Z','+00:00'))
+    except ValueError as exc: raise Reject('request_pr_created_at_invalid') from exc
+    if moment.tzinfo is None: raise Reject('request_pr_created_at_invalid')
     return value,login
 
 class Ledger:
@@ -393,6 +484,29 @@ def armed_process(number, head, ledger_root, key_path, arm_path):
         except StopIteration: pass
     return {"status":"published","task_id":task["task_id"],"task_commit":commit}
 
+def derive_and_register_deployment(request,pr,approval_identity,records):
+    """Derive this candidate's plan, validate it in memory, register it, read it back.
+
+    Nothing here comes from an operator.  The plan is a join of the candidate admission
+    record, the root-owned live baseline, the signed TEST_PR of that exact candidate, and
+    the canary and preflight Tasks this Bridge published and signed -- plus the DEPLOY
+    Request the authorised identity wrote, which is the approval itself.
+
+    The bundle is validated in memory *before* it is written, so an invalid plan is never
+    registered and a bad file never has to be cleaned up; and the context returned comes
+    from reading the registered file back, so the Task cites the bytes that are actually
+    on disk rather than the ones that happened to be in memory.
+    """
+    at=now(); approved_at=parse_time(pr["created_at"])
+    request_sha256=deploy_gate.request_digest(request)
+    plan_id,bundle=plan_derivation.derive(at=at,approval_identity=approval_identity,
+        approved_at=approved_at,request_sha256=request_sha256,admission=read_admission(),
+        verify_baseline=load_baseline(),ledger_records=records,read_evidence=read_evidence)
+    authority,hk=deploy_gate.load_keys()
+    deploy_gate.validate_bundle(bundle,plan_id,authority,hk,at,approval_identity,request_sha256)
+    plan_derivation.register(deploy_gate.STORE,plan_id,bundle)
+    return deploy_gate.load_context(plan_id,now(),approval_identity,request_sha256)
+
 def channel_v4(value):
     """The persistent channel contract, as a pure function.
 
@@ -403,10 +517,14 @@ def channel_v4(value):
     action cannot be enabled or disabled by hand-editing a field to something the
     Bridge would accept loosely.
     """
-    deploy_gate.exact(value,{'version','mode','publish_enabled','allowed_actions','allowed_environment','deployment_requests_enabled'},'channel_fields')
+    deploy_gate.exact(value,{'version','mode','publish_enabled','allowed_actions','allowed_environment','deployment_authorization'},'channel_fields')
     if value['version']!=4 or value['mode']!='PERSISTENT' or value['publish_enabled'] is not True or value['allowed_environment']!=POLICY['environment']:
         raise Reject('invalid_channel_configuration')
-    if value['allowed_actions']!=CHANNEL_ACTIONS or type(value['deployment_requests_enabled']) is not bool:
+    # The mode is read as a declaration, never as an authorisation, so a value this
+    # revision does not implement is accepted here and refused by the DEPLOY path. The
+    # split is deliberate: an emergency stop -- setting anything other than `request` --
+    # must silence deployments without also silencing the read-only probes.
+    if value['allowed_actions']!=CHANNEL_ACTIONS or not isinstance(value['deployment_authorization'],str) or not value['deployment_authorization']:
         raise Reject('invalid_channel_configuration')
     return value
 
@@ -450,10 +568,12 @@ def persistent_process(number, head, ledger_root, key_path, channel_path):
         if any(x.get("request_id")==request["request_id"] for x in data["requests"].values()): raise Reject("duplicate_request_id")
         extra={}
         if request['action_id']==deploy_gate.ACTION:
-            if channel.get('deployment_requests_enabled') is not True: raise Reject('deployment_requests_disabled')
+            # The authorisation is this Request. There is no switch to consult: the
+            # configuration only declares the mode.
+            if channel.get('deployment_authorization')!=AUTHORIZATION_MODE: raise Reject('deployment_authorization_mode_unsupported')
             if proposal['path']!='requests/'+request['request_id']+'.json': raise Reject('request_filename_binding')
-            _,approval_identity=check_deploy_pr(number,head)
-            context=deploy_gate.load_context(request['plan_id'],now(),approval_identity)
+            pr,approval_identity=check_deploy_pr(number,head)
+            context=derive_and_register_deployment(request,pr,approval_identity,data['requests'])
             deploy_gate.ensure_unused(context,data['requests'])
             unsigned=derive_deployment(request,context)
             extra={k:v for k,v in context.items() if k not in {'deadline','parameters'}}
@@ -470,12 +590,14 @@ def persistent_process(number, head, ledger_root, key_path, channel_path):
         except StopIteration: pass
     task=data["requests"][key]["task"]
     if task['action_id']==deploy_gate.ACTION:
-        # Recheck the request, revocation switch and exact approval bundle after
-        # the durable claim, immediately before publication. Never re-sign on failure.
+        # Recheck the request, the authorisation mode and the exact approval bundle
+        # after the durable claim, immediately before publication. Never re-sign on
+        # failure. The mode is re-read from disk rather than taken from the claim, so
+        # suspending deployments stops one that is already in flight.
         record=data['requests'][key]
-        if load_channel(channel_path).get('deployment_requests_enabled') is not True: raise Reject('deployment_requests_disabled')
+        if load_channel(channel_path).get('deployment_authorization')!=AUTHORIZATION_MODE: raise Reject('deployment_authorization_mode_unsupported')
         check_deploy_pr(number,head)
-        current=deploy_gate.load_context(record['plan_id'],now(),record.get('approval_identity'))
+        current=deploy_gate.load_context(record['plan_id'],now(),record.get('approval_identity'),record.get('request_sha256'))
         if current['bundle_sha256']!=record['bundle_sha256']: raise Reject('approved_plan_changed')
         if parse_time(task['expires_at'])<=now()+dt.timedelta(seconds=30): raise Reject('deployment_task_near_expiry')
     try: commit=publish_task(task)
@@ -500,7 +622,7 @@ def main():
         try: result.append({"pr":number,"head":head,**persistent_process(number,head,args.ledger_root,args.key,args.channel_config)})
         except Reject as exc: result.append({"pr":number,"head":head,"status":"rejected","reason":str(exc)})
     channel = load_channel(args.channel_config)
-    print(json.dumps({"bridge_version":"1.6.0-canary-channel", "channel_mode":channel["mode"],
+    print(json.dumps({"bridge_version":"1.8.0-request-authorized-deploy", "channel_mode":channel["mode"],
                       "publish_enabled":channel["publish_enabled"], "results":result},sort_keys=True)); return 0
 
 def run_tests():
@@ -514,8 +636,20 @@ def run_tests():
       def test_unknown_fields(self):
         with self.assertRaises(Reject): validate_request(self.request(extra=True))
       def test_action_and_env(self):
-        for value in (self.request(action_id="HK_STAGING_DEPLOY"),self.request(action_id="HK_STAGING_ROLLBACK"),self.request(environment="PRODUCTION")):
+        # DEPLOY is an action of this channel, so its Request is schema-valid; what
+        # refuses it is the deploy switch and the plan, not the request shape.
+        self.assertEqual(validate_request(self.request(action_id="HK_STAGING_DEPLOY"))["action_id"],"HK_STAGING_DEPLOY")
+        for value in (self.request(action_id="HK_STAGING_ROLLBACK"),self.request(environment="PRODUCTION")):
           with self.assertRaises(Reject): validate_request(value)
+      def test_a_deploy_request_carries_no_plan_and_no_deployment_fact(self):
+        # The plan is derived from what the Bridge already holds, so a Request has nothing
+        # to name and nothing to steer -- not even the plan's name.
+        self.assertNotIn("plan_id",ALLOWED)
+        body=validate_request(self.request(action_id="HK_STAGING_DEPLOY"))
+        self.assertEqual(sorted(body),["action_id","environment","request_id","requested_at","schema_version"])
+      def test_a_deploy_request_that_names_a_plan_is_refused(self):
+        for plan_id in ("synthetic-plan-001","../plan",True,"a/b",""):
+          with self.assertRaises(Reject): validate_request(self.request(action_id="HK_STAGING_DEPLOY",plan_id=plan_id))
       def test_stale_and_size(self):
         with self.assertRaises(Reject): validate_request(self.request(requested_at="2020-01-01T00:00:00Z"))
         with self.assertRaises(Reject): validate_request(b"x"*(POLICY["max_bytes"]+1))
@@ -656,19 +790,19 @@ def run_tests():
             self.assertEqual(load_arm(str(arm))["state"],"ARMED")
           finally: globals()["read_pr"]=original
       def test_channel_contract_expresses_exactly_five_actions(self):
-        value=channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
+        value=channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
         self.assertEqual(value["allowed_actions"],["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH"])
-        self.assertIs(value["deployment_requests_enabled"],False)
+        self.assertEqual(value["deployment_authorization"],"request")
       def test_channel_without_the_health_action_is_refused(self):
-        with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY"],"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
+        with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY"],"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
       def test_channel_without_the_canary_action_is_refused(self):
-        with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","CONTROL_PLANE_HEALTH"],"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
+        with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","CONTROL_PLANE_HEALTH"],"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
       def test_channel_rejects_an_unknown_or_reordered_action(self):
         for actions in (["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH","HK_STAGING_ROLLBACK"],
                         ["CONTROL_PLANE_HEALTH","HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY"],
                         ["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_ROLLBACK","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH"],
                         "CONTROL_PLANE_HEALTH"):
-          with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":actions,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False})
+          with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":actions,"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
       def test_existing_actions_are_unchanged_by_the_health_extension(self):
         baseline={"image_id":"sha256:"+"3"*64}
         verify=derive(validate_request(self.request()),baseline)
@@ -683,7 +817,7 @@ def run_tests():
           saved={name:globals()[name] for name in ("read_pr","load_channel","publish_task","remote_task")}
           try:
             globals()["read_pr"]=lambda n,h:{"path":"requests/liveness-control-plane-health-987654.json","raw":self.health()}
-            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False}
+            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"}
             globals()["publish_task"]=lambda task:(tasks.setdefault(task["task_id"],canonical(task)+b"\n") and "commit")
             globals()["remote_task"]=lambda task_id:tasks.get(task_id)
             out=persistent_process("31","a"*40,root,key.name,"channel-not-read")
@@ -773,7 +907,7 @@ def run_tests():
           self.assertNotEqual(task["action_id"],other)
         for parameter in ("source","builder_profile","canary_evidence_id","approval_id","source_deploy_task_id","plan_id","task_id"):
           self.assertNotIn(parameter,task["parameters"])
-      def test_canary_is_reachable_while_the_deploy_switch_is_off(self):
+      def test_canary_is_reachable_while_deployments_are_suspended(self):
         with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key, tempfile.NamedTemporaryFile("w",suffix=".json",delete=False) as authority:
           authority.write(json.dumps(self.canary_authority())); authority.flush()
           private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate()
@@ -782,7 +916,7 @@ def run_tests():
           saved={name:globals()[name] for name in ("read_pr","load_channel","publish_task","remote_task","load_canary_baseline")}
           try:
             globals()["read_pr"]=lambda n,h:{"path":"requests/canary-hk-staging-987654.json","raw":self.canary()}
-            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False}
+            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_authorization":"suspended"}
             globals()["load_canary_baseline"]=lambda _orig=saved["load_canary_baseline"], _path=authority.name: _orig(_path)
             globals()["publish_task"]=lambda task:(tasks.setdefault(task["task_id"],canonical(task)+b"\n") and "commit")
             globals()["remote_task"]=lambda task_id:tasks.get(task_id)
@@ -800,7 +934,7 @@ def run_tests():
           saved={name:globals()[name] for name in ("read_pr","load_channel","publish_task","remote_task")}
           try:
             globals()["read_pr"]=lambda n,h:{"path":"requests/canary-hk-staging-987654.json","raw":self.canary()}
-            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY"],"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False}
+            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY"],"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"}
             globals()["publish_task"]=lambda task:(_ for _ in ()).throw(AssertionError("a disabled action published a task"))
             globals()["remote_task"]=lambda task_id:None
             with self.assertRaises(Reject) as caught: persistent_process("42","b"*40,root,key.name,"channel-not-read")
@@ -819,7 +953,7 @@ def run_tests():
           tasks={}
           try:
             globals()["read_pr"]=lambda n,h:{"path":"requests/canary-hk-staging-987654.json","raw":self.canary()}
-            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_requests_enabled":False}
+            globals()["load_channel"]=lambda p:{"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_authorization":"suspended"}
             globals()["load_canary_baseline"]=lambda _orig=saved["load_canary_baseline"], _path=authority.name: _orig(_path)
             globals()["publish_task"]=lambda task:(tasks.setdefault(task["task_id"],canonical(task)+b"\n") and "commit")
             globals()["remote_task"]=lambda task_id:tasks.get(task_id)

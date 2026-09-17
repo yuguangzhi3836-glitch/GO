@@ -187,7 +187,7 @@
         "enabled_request_actions": {"type": "array", "items": {"type": "string"},
           "description": "Everything the channel may currently create, human and platform together."},
         "human_request_actions": {"type": "array", "items": {"type": "string"},
-          "description": "Actions a human / ChatGPT Request channel may express. HK_STAGING_DEPLOY belongs here and remains gated by deployment_requests_enabled, the approved plan and the approval."},
+          "description": "Actions a human / ChatGPT Request channel may express. HK_STAGING_DEPLOY belongs here and remains gated by the authenticated Request that authorises it, the derived plan and that plan own approval."},
         "platform_request_actions": {"type": "array", "items": {"type": "string"},
           "description": "Actions the platform's own bounded producer creates. Being listed here is never a human execution right."},
         "enabled_human_request_actions": {"type": "array", "items": {"type": "string"}},
@@ -283,8 +283,9 @@
             "properties": {
               "gate": {"enum": ["APPROVED_CANDIDATE", "SOURCE_BINDING", "PACKAGE_BINDING",
                                 "DEPLOYMENT_PLAN", "HUMAN_APPROVAL", "TEST_PR", "VERIFY",
-                                "CURRENT_RUNTIME", "LIVE_SWITCH", "LIVE_SWITCH_PROVENANCE",
-                                "CANARY", "RELEASE_GATES", "BRIDGE_ACCEPTANCE"]},
+                                "CURRENT_RUNTIME", "LIVE_DEPLOY_MODE",
+                                "DEPLOYMENT_AUTHORIZATION",
+                                "CANARY", "BRIDGE_ACCEPTANCE"]},
               "mandatory": {"type": "boolean"},
               "state": {"enum": ["PASS", "FAIL", "UNKNOWN"]},
               "reason": {"type": "string"}

@@ -29,6 +29,16 @@ ported here verbatim in behaviour (see BRIDGE_RULES / bridge_verdict), and the
 `BRIDGE_ACCEPTANCE` gate fails whenever those rules would refuse. Every gate is
 mandatory; there are no advisory gates left.
 
+The RELEASE_GATES gate is gone, and the four product-release declarations the plan
+used to carry with it. It asked readiness to report PASS for three_end_ux,
+six_vertical_closed_loop, sealed_node and final_release -- product acceptance verdicts
+that belong to the upstream side, that no machine process in this repository can
+produce, and that the live executor never reads. Keeping them here would have made this
+evaluator report on product desirability instead of deployability, which is the opposite
+of the boundary Issue #103 draws. The one name among them that stood for a real
+technical fact, sealed_node, is established instead by the signed TEST_PR the plan now
+carries, and the ported TEST_PR proof checks it.
+
 What it reads (read-only, and never anything else)
 --------------------------------------------------
     --control-state   the derived CURRENT_CONTROL_STATE.json from the projector
@@ -40,13 +50,12 @@ What it reads (read-only, and never anything else)
                       expresses one key in both roles this evaluator refuses to
                       claim a proven Task or a proven proof.
     --live-bundle     OPTIONAL operator-supplied directory of live-host facts.
-                      The approved plan store and the Command Center switch are
-                      live facts an offline evaluator cannot read, so when the
-                      bundle is absent those gates are UNKNOWN by construction
-                      rather than assumed. Files it may contain:
-                        <plan_id>.json        the six-part approved plan bundle
-                        channel.json          the live channel configuration
-                        switch-provenance.json  the change record for the switch
+                      The registered plan and the deployed Command Center
+                      configuration are live facts an offline evaluator cannot
+                      read, so when the bundle is absent those gates are UNKNOWN
+                      by construction rather than assumed. Files it may contain:
+                        <plan_id>.json        the registered plan bundle
+                        channel.json          the deployed channel configuration
 
 The Human Approval authority
 ----------------------------
@@ -62,8 +71,8 @@ enforcement point and this verdict is the pre-check, not the authority.
 
 What it can never do
 --------------------
-It holds no private key, signs nothing, creates or publishes no Task, opens no
-request switch, accepts no caller-supplied image/service/path/environment/
+It holds no private key, signs nothing, creates or publishes no Task, grants no
+deployment authorisation, accepts no caller-supplied image/service/path/environment/
 command, contacts no host, and does not touch Production. Every one of those is
 a `false` in the `authority_boundary` block of its own output.
 """
@@ -115,7 +124,11 @@ CANDIDATE_SOURCE_AGREEMENT = (("source_commit", "source_commit"),
 # scope reset cancelled the dedicated approval signing key, so an approval is
 # never signed and there is no approval public key to publish or to rotate.
 APPROVAL_IDENTITIES = ("yuguangzhi3836-glitch", "chenzhenxi1-sudo")
-BUNDLE_NON_PLAN_FILES = ("channel.json", "switch-provenance.json")
+# Only the configuration is a non-plan file now. The switch change record this used to
+# name no longer exists: a deployment is authorised by the Request, so there is no
+# change record to supply -- and a directory that still carries one names two candidate
+# plans rather than one, which is refused as ambiguous instead of being read around.
+BUNDLE_NON_PLAN_FILES = ("channel.json",)
 
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 SHA64 = re.compile(r"^[0-9a-f]{64}$")
@@ -127,25 +140,35 @@ MAX_BUNDLE_BYTES = 131072          # the plan store's own 128 KiB ceiling
 
 MANDATORY_GATES = ("APPROVED_CANDIDATE", "SOURCE_BINDING", "PACKAGE_BINDING",
                    "DEPLOYMENT_PLAN", "HUMAN_APPROVAL", "TEST_PR", "VERIFY",
-                   "CURRENT_RUNTIME", "LIVE_SWITCH", "LIVE_SWITCH_PROVENANCE",
-                   "CANARY", "RELEASE_GATES", "BRIDGE_ACCEPTANCE")
+                   "CURRENT_RUNTIME", "LIVE_DEPLOY_MODE", "DEPLOYMENT_AUTHORIZATION",
+                   "CANARY", "BRIDGE_ACCEPTANCE")
 ADVISORY_GATES = ()
 
 # --- ported from boss-deploy-request-v1/go_deploy_request.py ----------------
 # These are the live Bridge's own constants. A test re-reads that file and fails
 # if any of them drift, so this copy cannot silently diverge from the real gate.
-REQUIRED_PLAN_GATES = ("three_end_ux", "six_vertical_closed_loop", "sealed_node",
-                       "final_release")
 PLAN_FIELDS = ("schema_version", "plan_id", "environment", "action_id", "candidate",
                "expected_current_image_id", "target_services", "protected_non_targets",
-               "migration", "production", "automatic_rollback", "gates",
+               "migration", "production", "automatic_rollback",
+               "test_pr_task_sha256", "test_pr_evidence_sha256",
                "canary_task_sha256", "canary_evidence_sha256", "preflight_task_sha256",
                "preflight_evidence_sha256")
 CANDIDATE_FIELDS = ("repository", "source_commit", "application_git_tree",
                     "source_tree_sha256", "package_sha256", "image_id")
 APPROVAL_FIELDS = ("schema_version", "approval_id", "approved_by", "approved_at",
-                   "expires_at", "scope", "plan_sha256")
+                   "expires_at", "scope", "plan_sha256", "request_sha256")
+PROOF_OBJECTS = ("test_pr_task", "test_pr_evidence", "canary_task", "canary_evidence",
+                 "preflight_task", "preflight_evidence")
+TEST_PR_GATES = ("offline_build", "isolated_runtime_checks", "source_commit",
+                 "artifact_sealed")
+TEST_PR_PARAMETERS = ("builder_profile", "source")
+TEST_PR_SOURCE = ("repository", "pr_number", "commit_sha")
 APPROVAL_SCOPE = "HK_STAGING_DEPLOY_FIXED_EIGHT"
+# How a deployment is authorised, and the form of the one-time authorisation's id.
+# Ported from the live Bridge (`AUTHORIZATION_MODE`) and from go_deploy_request's
+# `approval_id_for`; the drift test re-reads both files.
+AUTHORIZATION_MODE = "request"
+APPROVAL_ID_PREFIX = "approval-"
 TASK_FIELDS = ("schema_version", "task_id", "nonce", "issued_at", "expires_at",
                "authority", "environment", "action_id", "parameters", "signature")
 TASK_AUTHORITY = "GO-COMMAND-CENTER"
@@ -183,7 +206,7 @@ AUTHORITY_BOUNDARY = {
     "is_execution_authority": False,
     "can_create_task": False,
     "can_publish_task": False,
-    "can_open_the_request_switch": False,
+    "can_grant_the_deployment_authorization": False,
     "holds_private_key": False,
     "signs_anything": False,
     "accepts_caller_supplied_parameters": False,
@@ -430,6 +453,124 @@ def verify_signature(key, value, encoding):
 # --------------------------------------------------------------------------- #
 # the live Bridge's own rules, ported read-only
 # --------------------------------------------------------------------------- #
+def candidate_remote(value):
+    """Port of go_deploy_request.candidate_repository()."""
+    if not isinstance(value, str) or not value:
+        return False
+    trimmed = value[:-4] if value.endswith(".git") else value
+    parts = trimmed.replace(":", "/").split("/")
+    return len(parts) >= 2 and "%s/%s" % (parts[-2], parts[-1]) == CANDIDATE_REPOSITORY
+
+
+def derived_plan_id(candidate, canary_task):
+    """Port of go_deploy_request.plan_id_for(): the name is a function, not a choice."""
+    parameters = canary_task.get("parameters") if isinstance(canary_task, dict) else None
+    release = parameters.get("release_id") if isinstance(parameters, dict) else None
+    if not isinstance(release, str) or not release:
+        return None
+    try:
+        return "hkstg-%s-%s-%s" % (candidate["source_commit"][:12], candidate["image_id"][7:19],
+                                   hashlib.sha256(release.encode()).hexdigest()[:12])
+    except (KeyError, TypeError, IndexError):
+        return None
+
+
+def bridge_test_pr_proof_problems(task, evidence, task_key, evidence_key):
+    """Port of go_deploy_request.test_pr_proof(): the sealed TEST_PR of this candidate.
+
+    This is what replaced the retired `sealed_node = PASS`. sealed_node's name stood for
+    one fact -- the artifact a deployment loads is the sealed product of this exact
+    source -- and these bindings establish it: a Task built for a named pull request of
+    the candidate repository, and Evidence reporting the commit it built from, the
+    artifact it produced, the sealed package that artifact was written into, and that the
+    sealing was proven. Unlike the canary and the preflight it carries no freshness
+    window, because an immutable candidate does not go stale and its binding is by
+    content.
+    """
+    problems = []
+    for label, value, key, encoding in (("task", task, task_key, "hex"),
+                                        ("evidence", evidence, evidence_key, "base64")):
+        try:
+            signed_unsigned(value)
+        except Refuse as exc:
+            problems.append("%s_%s" % (label, exc))
+            continue
+        ok, why = verify_signature(key, value, encoding)
+        if not ok:
+            problems.append("%s_signature_%s" % (label, why or "invalid"))
+    if problems:
+        return problems
+    try:
+        exact_set(task, TASK_FIELDS, "task_fields")
+    except Refuse as exc:
+        return ["%s" % exc]
+    if task["schema_version"] != "1" or task["authority"] != TASK_AUTHORITY:
+        problems.append("task_authority")
+    if task["action_id"] != "HK_STAGING_TEST_PR" or task["environment"] != ENVIRONMENT:
+        problems.append("test_pr_scope")
+    for field in ("task_id", "nonce", "action_id", "environment"):
+        if evidence.get(field) != task[field]:
+            problems.append("test_pr_binding_%s" % field)
+    parameters = task["parameters"]
+    try:
+        exact_set(parameters, TEST_PR_PARAMETERS, "test_pr_parameters")
+        exact_set(parameters["source"], TEST_PR_SOURCE, "test_pr_source_fields")
+    except Refuse as exc:
+        return problems + ["%s" % exc]
+    except (KeyError, TypeError):
+        return problems + ["test_pr_parameters"]
+    try:
+        matches(parameters["source"]["pr_number"], re.compile(r"^[1-9][0-9]{0,8}$"),
+                "test_pr_pr_number")
+        matches(parameters["source"]["commit_sha"], SHA40, "test_pr_commit")
+    except Refuse as exc:
+        problems.append("%s" % exc)
+    if not candidate_remote(parameters["source"]["repository"]):
+        problems.append("test_pr_repository")
+    if not isinstance(parameters.get("builder_profile"), str) or not parameters["builder_profile"]:
+        problems.append("test_pr_builder_profile")
+    if evidence.get("task_canonical_sha256") != digest(
+            {k: v for k, v in task.items() if k != "signature"}):
+        problems.append("test_pr_task_digest_binding")
+    try:
+        issued = parse_time(task["issued_at"], "task_issued_at")
+        expires = parse_time(task["expires_at"], "task_expires_at")
+        started = parse_time(evidence.get("started_at"), "evidence_started_at")
+        completed = parse_time(evidence.get("completed_at"), "evidence_completed_at")
+    except Refuse as exc:
+        return problems + ["%s" % exc]
+    if not (issued <= started <= completed <= expires):
+        problems.append("test_pr_stale_or_unbound_time")
+    if evidence.get("schema_version") != "1" or evidence.get("status") != "SUCCESS":
+        problems.append("test_pr_not_success")
+    if evidence.get("executor_result") != "TEST_PR_OK":
+        problems.append("test_pr_result")
+    if evidence.get("deployment_performed") is not False:
+        problems.append("test_pr_deployment_performed")
+    if evidence.get("source_commit_sha") != parameters["source"]["commit_sha"]:
+        problems.append("test_pr_commit_binding")
+    if str(evidence.get("source_pr_number")) != parameters["source"]["pr_number"]:
+        problems.append("test_pr_pr_binding")
+    if evidence.get("artifact_durability") != "PROVEN":
+        problems.append("test_pr_artifact_not_durable")
+    package = evidence.get("artifact_package")
+    if not isinstance(package, dict):
+        problems.append("test_pr_package")
+    elif package.get("schema") != "go.sealed-artifact.v1" \
+            or package.get("image_id") != evidence.get("artifact_digest"):
+        problems.append("test_pr_package_binding")
+    gates = evidence.get("gate_results")
+    if not isinstance(gates, dict):
+        problems.append("test_pr_gate_results_missing")
+    else:
+        missing = sorted(name for name in TEST_PR_GATES if gates.get(name) != "PASS")
+        if missing:
+            problems.append("test_pr_gate_failed:%s" % ",".join(missing))
+        if any(value != "PASS" and value is not False for value in gates.values()):
+            problems.append("test_pr_contains_failed_gate")
+    return problems, evidence
+
+
 def bridge_proof_problems(task, evidence, action, task_key, evidence_key, at, max_age):
     """Port of go_deploy_request.proof(): every reason the Bridge would refuse."""
     problems = []
@@ -513,8 +654,7 @@ def bridge_bundle_problems(bundle, identities, at):
     """Port of go_deploy_request.validate_bundle(). Returns (problems, detail)."""
     problems, detail = [], {}
     try:
-        exact_set(bundle, ("plan", "approval", "canary_task", "canary_evidence",
-                           "preflight_task", "preflight_evidence"), "bundle_fields")
+        exact_set(bundle, ("plan", "approval") + PROOF_OBJECTS, "bundle_fields")
     except Refuse as exc:
         return ["%s" % exc], detail
     plan, approval = bundle["plan"], bundle["approval"]
@@ -541,15 +681,6 @@ def bridge_bundle_problems(bundle, identities, at):
         problems.append("protected_non_targets_required")
     if any(plan.get(name) is not False for name in FORBIDDEN_OPERATIONS):
         problems.append("forbidden_operation")
-    try:
-        exact_set(plan["gates"], REQUIRED_PLAN_GATES, "release_gate_fields")
-    except Refuse as exc:
-        problems.append("%s" % exc)
-    else:
-        not_pass = sorted(name for name in REQUIRED_PLAN_GATES
-                          if plan["gates"].get(name) != "PASS")
-        if not_pass:
-            problems.append("release_gates_not_pass:%s" % ",".join(not_pass))
     candidate = plan.get("candidate")
     try:
         exact_set(candidate, CANDIDATE_FIELDS, "candidate_fields")
@@ -586,6 +717,15 @@ def bridge_bundle_problems(bundle, identities, at):
             problems.append("%s" % exc)
         if approval.get("approved_by") not in APPROVAL_IDENTITIES:
             problems.append("approval_identity_not_authorised")
+        # The approval is the DEPLOY Request, so it carries that Request's digest and its
+        # id follows from it. An offline evaluator cannot re-read the Request -- the live
+        # Bridge remains the enforcement point there -- but it can refuse an approval whose
+        # own two fields disagree, and it does.
+        request_sha256 = approval.get("request_sha256")
+        if not isinstance(request_sha256, str) or not SHA64.fullmatch(request_sha256):
+            problems.append("approval_request_sha256")
+        elif approval.get("approval_id") != "approval-" + request_sha256[:16]:
+            problems.append("approval_id_not_derived")
         try:
             approved = parse_time(approval["approved_at"], "approval_approved_at")
             expires = parse_time(approval["expires_at"], "approval_expires_at")
@@ -597,10 +737,15 @@ def bridge_bundle_problems(bundle, identities, at):
             if approved > at or expires <= at + dt.timedelta(seconds=60) \
                     or (expires - approved).total_seconds() > APPROVAL_MAX_WINDOW_SECONDS:
                 problems.append("approval_expired_or_invalid")
-    for name in ("canary_task", "canary_evidence", "preflight_task", "preflight_evidence"):
+    for name in PROOF_OBJECTS:
         declared = plan.get(name + "_sha256")
         if declared != digest(bundle[name]):
             problems.append("proof_hash_binding_%s" % name)
+    # The name is a function of the candidate and the canary run, so it is checkable
+    # offline: a registered plan whose name does not follow was not derived.
+    if detail.get("candidate"):
+        if plan.get("plan_id") != derived_plan_id(detail["candidate"], bundle["canary_task"]):
+            problems.append("plan_id_not_derived")
     task_key = identities.public_key(ROLE_TASK) if identities.usable(ROLE_TASK) else None
     evidence_key = (identities.public_key(ROLE_EVIDENCE)
                     if identities.usable(ROLE_EVIDENCE) else None)
@@ -617,6 +762,20 @@ def bridge_bundle_problems(bundle, identities, at):
     problems += ["preflight_" + p for p in preflight_list]
     detail["canary_checked_at"] = iso(canary_checked) if canary_checked else None
     detail["preflight_checked_at"] = iso(preflight_checked) if preflight_checked else None
+    # The sealed TEST_PR, which is what the retired sealed_node declaration stood for.
+    sealed = bridge_test_pr_proof_problems(bundle["test_pr_task"], bundle["test_pr_evidence"],
+                                           task_key, evidence_key)
+    sealed_problems, sealed_evidence = (sealed if isinstance(sealed, tuple) else (sealed, None))
+    problems += ["test_pr_" + p for p in sealed_problems]
+    if sealed_evidence and detail.get("candidate"):
+        sealed_config = detail["candidate"]
+        if sealed_evidence.get("source_commit_sha") != sealed_config.get("source_commit"):
+            problems.append("test_pr_candidate_source_binding")
+        if sealed_evidence.get("artifact_digest") != sealed_config.get("image_id"):
+            problems.append("test_pr_candidate_artifact_binding")
+        sealed_package = sealed_evidence.get("artifact_package") or {}
+        if sealed_package.get("package_sha256") != sealed_config.get("package_sha256"):
+            problems.append("test_pr_candidate_package_binding")
     if "approved_at" in detail and canary_checked and preflight_checked:
         approved = parse_time(detail["approved_at"], "approval_approved_at")
         if approved < max(canary_checked, preflight_checked):
@@ -688,9 +847,8 @@ class Inputs:
             return None, [], "bundle_directory_missing"
         names = sorted(p.name for p in folder.glob("*.json"))
         plan_files = [n for n in names if n not in BUNDLE_NON_PLAN_FILES]
-        bundle = {"plan": None, "channel": None, "switch_provenance": None}
-        for name, key in (("channel.json", "channel"),
-                          ("switch-provenance.json", "switch_provenance")):
+        bundle = {"plan": None, "channel": None}
+        for name, key in (("channel.json", "channel"),):
             if name in names:
                 try:
                     bundle[key] = read_json(folder / name)
@@ -726,9 +884,6 @@ class Inputs:
 
     def channel(self):
         return (self.bundle or {}).get("channel")
-
-    def switch_provenance(self):
-        return (self.bundle or {}).get("switch_provenance")
 
     def verified_runtime(self):
         """The newest signature-verified VERIFY observation, or None."""
@@ -1114,18 +1269,32 @@ def gate_current_runtime(inputs):
                 observed={"image_config_id": expected})
 
 
-def gate_live_switch(inputs):
+def gate_live_deploy_mode(inputs):
+    """How the deployed configuration says a deployment may be authorised.
+
+    There is no deploy switch any more. Until 2026-09-17 the deployed configuration
+    carried a boolean an operator had to turn on before any DEPLOY Request would be
+    considered -- a standing authorisation, which had to exist before the thing that
+    authorises could exist, and which made a human server operation a necessary step of
+    every deployment. What replaced it is a declaration of mode: this gate reads whether
+    the deployed configuration accepts a request-authorised deployment at all. It is a
+    live-host fact in exactly the way the old switch state was.
+
+    The declaration authorises nothing by itself and cannot be turned into a grant. The
+    only accepted value is the one that hands the decision to the authenticated Request,
+    so the field has one useful direction -- the emergency stop.
+    """
     channel = inputs.channel()
     if channel is None or not isinstance(channel, dict):
-        return gate("LIVE_SWITCH", "UNKNOWN",
-                    "the live Command Center request switch is a live-host fact and no channel "
-                    "bundle was supplied")
+        return gate("LIVE_DEPLOY_MODE", "UNKNOWN",
+                    "the deployed Command Center configuration is a live-host fact and no "
+                    "channel bundle was supplied")
     if "_unreadable" in channel:
-        return gate("LIVE_SWITCH", "FAIL",
+        return gate("LIVE_DEPLOY_MODE", "FAIL",
                     "the supplied channel bundle is unreadable: %s" % channel["_unreadable"])
     problems = []
-    if channel.get("deployment_requests_enabled") is not True:
-        problems.append("deployment_requests_disabled")
+    if channel.get("deployment_authorization") != AUTHORIZATION_MODE:
+        problems.append("deployment_authorization_mode_not_request")
     if channel.get("publish_enabled") is not True:
         problems.append("publish_disabled")
     if channel.get("allowed_environment") != ENVIRONMENT:
@@ -1133,92 +1302,63 @@ def gate_live_switch(inputs):
     if DEPLOY_ACTION not in (channel.get("allowed_actions") or []):
         problems.append("deploy_not_in_allowed_actions")
     if problems:
-        return gate("LIVE_SWITCH", "FAIL",
-                    "the live request switch would refuse a DEPLOY request: %s"
+        return gate("LIVE_DEPLOY_MODE", "FAIL",
+                    "the deployed configuration would refuse a DEPLOY request: %s"
                     % ", ".join(problems), observed=channel)
-    return gate("LIVE_SWITCH", "PASS", "the live request switch would accept a DEPLOY request",
-                observed={"allowed_actions": channel.get("allowed_actions"),
+    return gate("LIVE_DEPLOY_MODE", "PASS",
+                "the deployed configuration authorises deployments by Request and would "
+                "accept a DEPLOY request",
+                observed={"deployment_authorization": channel.get("deployment_authorization"),
+                          "allowed_actions": channel.get("allowed_actions"),
                           "allowed_environment": channel.get("allowed_environment")})
 
 
-def gate_live_switch_provenance(inputs):
-    """A switch that is on is only usable if somebody was entitled to turn it on.
+def gate_deployment_authorization(inputs):
+    """The one-time authorisation this deployment rests on.
 
-    The record must be signed by the distinct Human Approval authority. A record
-    that merely asserts itself, or that was signed by the Task signer, proves
-    nothing: the whole point is that the party who can create work is not the
-    party who authorised the switch.
+    There used to be a switch, and a change record tracing who turned it on. There is no
+    switch now: the authority V1 defines is the authenticated DEPLOY Request itself, and
+    the plan carries it as its `approval` object. What this gate establishes from the
+    bundle alone is that the authorisation was *derived* from such a Request rather than
+    chosen -- `request_sha256` is the digest of that Request's canonical content, and
+    `approval_id` is the derived form of it, so an id that was picked by hand, or a
+    standing authorisation written by an operator, has nothing to cite and fails here.
+
+    That is the whole point of the gate: under this contract an authorisation nobody
+    opened a Request for is not expressible. The identity that opened it, the window it is
+    in force for, and its binding to this exact plan are established by HUMAN_APPROVAL;
+    the single-use property is enforced where it can be -- the plan store never overwrites
+    a registered plan, and the ledger never re-issues a plan or an approval id it has
+    already recorded.
     """
-    channel = inputs.channel()
-    enabled = channel.get("deployment_requests_enabled") if isinstance(channel, dict) else None
-    record = inputs.switch_provenance()
-    if record is None:
-        if enabled is True:
-            return gate("LIVE_SWITCH_PROVENANCE", "UNKNOWN",
-                        "the DEPLOY request switch is on and no change record was supplied, so "
-                        "the authority for the switch being on is not established",
-                        observed={"deployment_requests_enabled": True})
-        return gate("LIVE_SWITCH_PROVENANCE", "UNKNOWN",
-                    "no switch change record was supplied, so the switch's authorisation state "
-                    "is not established")
-    if isinstance(record, dict) and "_unreadable" in record:
-        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "the supplied switch change record is unreadable: %s" % record["_unreadable"])
-    fields = ("schema_version", "field", "value", "changed_at", "change_record",
-              "approved_by", "approval_id", "valid_from", "valid_until",
-              "before_sha256", "after_sha256")
-    try:
-        exact_set(record, fields, "switch_provenance_fields")
-    except Refuse as exc:
-        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "the switch change record is not well formed: %s" % exc,
-                    observed={"fields": sorted(record) if isinstance(record, dict) else None})
-    if record["field"] != "deployment_requests_enabled":
-        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "the change record names a different field: %s" % record["field"])
-    if record["value"] is not enabled:
-        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "the change record's value disagrees with the live channel configuration",
-                    observed={"record": record["value"], "live": enabled})
-    for name in ("before_sha256", "after_sha256"):
-        if not isinstance(record[name], str) or not SHA64.fullmatch(record[name]):
-            return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                        "the change record's %s is not a sha256" % name)
-    if not isinstance(record["change_record"], str) or not record["change_record"]:
-        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "the change record names no change_record to trace it to")
-    try:
-        changed = parse_time(record["changed_at"], "changed_at")
-        valid_from = parse_time(record["valid_from"], "valid_from")
-        valid_until = parse_time(record["valid_until"], "valid_until")
-    except Refuse as exc:
-        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "the change record's times are unusable: %s" % exc)
-    if not valid_from <= changed <= valid_until:
-        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "the switch was changed outside the window the record declares",
-                    observed={"changed_at": iso(changed), "valid_from": iso(valid_from),
-                              "valid_until": iso(valid_until)})
-    if inputs.at > valid_until:
-        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "the window that authorised the switch has closed",
-                    observed={"valid_until": iso(valid_until), "as_of": iso(inputs.at)})
-    # The authority that may open the switch is the same authority that may
-    # approve a deployment: an authorised, authenticated GitHub identity. There
-    # is no approval key left to sign this record with, so attribution is the
-    # rule rather than a signature.
-    if record.get("approved_by") not in APPROVAL_IDENTITIES:
-        return gate("LIVE_SWITCH_PROVENANCE", "FAIL",
-                    "the change record is not attributed to an authorised GitHub identity: %s"
-                    % str(record.get("approved_by")),
-                    observed={"approved_by": record.get("approved_by"),
-                              "authorised_identities": list(APPROVAL_IDENTITIES)})
-    return gate("LIVE_SWITCH_PROVENANCE", "PASS",
-                "the switch state is covered by a change record attributed to the authorised "
-                "GitHub identity %s" % record["approved_by"],
-                observed={"change_record": record["change_record"],
-                          "changed_at": iso(changed), "value": record["value"],
-                          "approved_by": record["approved_by"]},
+    body, approval = inputs.plan_body(), inputs.approval()
+    if body is None:
+        return gate("DEPLOYMENT_AUTHORIZATION", "UNKNOWN",
+                    "no plan was supplied, so the authorisation it must carry cannot be read")
+    if approval is None:
+        return gate("DEPLOYMENT_AUTHORIZATION", "FAIL",
+                    "the supplied plan carries no authorisation: a deployment is authorised "
+                    "by the authenticated DEPLOY Request an authorised identity opened",
+                    evidence=inputs.bundle_files)
+    digest_value = approval.get("request_sha256")
+    if not isinstance(digest_value, str) or not SHA64.fullmatch(digest_value):
+        return gate("DEPLOYMENT_AUTHORIZATION", "FAIL",
+                    "the authorisation cites no exact Request: it carries no well-formed "
+                    "digest of the Request that authorised this deployment",
+                    observed={"request_sha256": digest_value}, evidence=inputs.bundle_files)
+    derived = APPROVAL_ID_PREFIX + digest_value[:16]
+    if approval.get("approval_id") != derived:
+        return gate("DEPLOYMENT_AUTHORIZATION", "FAIL",
+                    "the authorisation's id is not the derived form of the Request it cites, "
+                    "so it was chosen rather than derived from that Request",
+                    observed={"approval_id": approval.get("approval_id"), "derived": derived},
+                    evidence=inputs.bundle_files)
+    return gate("DEPLOYMENT_AUTHORIZATION", "PASS",
+                "the deployment rests on a one-time authorisation derived from the "
+                "authenticated Request %s..." % digest_value[:16],
+                observed={"approval_id": approval.get("approval_id"),
+                          "request_sha256": digest_value,
+                          "approved_by": approval.get("approved_by")},
                 evidence=inputs.bundle_files)
 
 
@@ -1244,20 +1384,6 @@ def gate_canary(inputs):
                 observed={"canary_task_sha256": body.get("canary_task_sha256"),
                           "canary_evidence_sha256": body.get("canary_evidence_sha256")},
                 evidence=inputs.bundle_files)
-
-
-def gate_release_gates(inputs):
-    body = inputs.plan_body()
-    if body is None:
-        return gate("RELEASE_GATES", "UNKNOWN", "no plan was supplied, so its gates are unknown")
-    declared = body.get("gates") or {}
-    not_pass = sorted(name for name in REQUIRED_PLAN_GATES if declared.get(name) != "PASS")
-    if not_pass:
-        return gate("RELEASE_GATES", "FAIL",
-                    "the plan does not carry PASS for: %s" % ", ".join(not_pass),
-                    observed=declared)
-    return gate("RELEASE_GATES", "PASS", "the plan carries PASS for every release gate",
-                observed=declared)
 
 
 def gate_bridge_acceptance(inputs):
@@ -1290,9 +1416,9 @@ def evaluate(control_state, go_repo, bundle_dir, at, generated_at):
     gates = [gate_approved_candidate(inputs), gate_source_binding(inputs),
              gate_package_binding(inputs), gate_deployment_plan(inputs),
              gate_human_approval(inputs, at), gate_test_pr(inputs), gate_verify(inputs),
-             gate_current_runtime(inputs), gate_live_switch(inputs),
-             gate_live_switch_provenance(inputs), gate_canary(inputs),
-             gate_release_gates(inputs), gate_bridge_acceptance(inputs)]
+             gate_current_runtime(inputs), gate_live_deploy_mode(inputs),
+             gate_deployment_authorization(inputs), gate_canary(inputs),
+             gate_bridge_acceptance(inputs)]
     order = {name: index for index, name in enumerate(MANDATORY_GATES + ADVISORY_GATES)}
     gates.sort(key=lambda g: order[g["gate"]])
 
@@ -1356,17 +1482,28 @@ def evaluate(control_state, go_repo, bundle_dir, at, generated_at):
             "thing in this document that can carry one.",
             "UNKNOWN is a first-class answer: a mandatory gate nobody could establish keeps the "
             "verdict out of YES rather than being rounded up.",
-            "Every gate is mandatory. CANARY and RELEASE_GATES block the verdict because the "
-            "live Bridge blocks on them: a readiness verdict that could say YES while the "
-            "request would be refused is worse than no verdict.",
+            "Every gate is mandatory. CANARY blocks the verdict because the live Bridge "
+            "blocks on it: a readiness verdict that could say YES while the request would be "
+            "refused is worse than no verdict.",
+            "There is no RELEASE_GATES gate. The four product-release declarations the plan "
+            "used to carry were removed from the deploy contract: they belong to the upstream "
+            "side, no machine process here can produce them, and the live executor never read "
+            "them. The deployability fact one of them named is now the sealed TEST_PR, which "
+            "the ported TEST_PR proof checks.",
             "BRIDGE_ACCEPTANCE re-runs the live Bridge's own bundle rules. It exists so that YES "
             "means 'the request would be accepted', and it names the rule that would refuse "
             "otherwise.",
             "The Human Approval authority must be a different key from the Task signer. If the "
             "published identities express one key in both roles, no approval is reported as "
             "proven.",
-            "Nothing here creates, signs or publishes a Task, and nothing here can open the "
-            "request switch.",
+            "There is no deploy switch, and no LIVE_SWITCH_PROVENANCE gate. A deployment is "
+            "authorised by the authenticated DEPLOY Request, so DEPLOYMENT_AUTHORIZATION "
+            "requires the plan's authorisation to be derived from an exact Request rather "
+            "than chosen, and LIVE_DEPLOY_MODE reads whether the deployed configuration "
+            "accepts request-authorised deployments at all. A standing authorisation is not "
+            "expressible in this contract.",
+            "Nothing here creates, signs or publishes a Task, and nothing here can grant a "
+            "deployment authorisation.",
         ],
     }
 
@@ -1485,14 +1622,31 @@ def run_selftest():
         (channel_only / "channel.json").write_text(json.dumps(
             {"version": 4, "mode": "PERSISTENT", "publish_enabled": True,
              "allowed_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY"],
-             "allowed_environment": ENVIRONMENT, "deployment_requests_enabled": True}),
+             "allowed_environment": ENVIRONMENT, "deployment_authorization": "request"}),
             encoding="utf-8")
         document = evaluate(state_path, None, channel_only, at, generated)
-        switch = [g for g in document["gates"] if g["gate"] == "LIVE_SWITCH"][0]
-        provenance = [g for g in document["gates"] if g["gate"] == "LIVE_SWITCH_PROVENANCE"][0]
-        check("a_switch_on_without_a_record_is_unknown", switch["state"] == "PASS"
-              and provenance["state"] == "UNKNOWN")
-        check("an_unproven_switch_can_never_be_yes",
+        mode = [g for g in document["gates"] if g["gate"] == "LIVE_DEPLOY_MODE"][0]
+        authorization = [g for g in document["gates"]
+                         if g["gate"] == "DEPLOYMENT_AUTHORIZATION"][0]
+        check("the_mode_is_accepted_and_authorises_nothing", mode["state"] == "PASS"
+              and authorization["state"] == "UNKNOWN")
+        check("an_unestablished_authorization_can_never_be_yes",
+              document["verdict"]["deploy_ready"] != "YES")
+
+        # The retired switch change record is not a bundle file any more, so a directory
+        # that still carries one names two candidate plans and is refused as ambiguous
+        # rather than being read as if the switch still existed.
+        retired = root / "retired-record"
+        retired.mkdir()
+        (retired / "channel.json").write_text(json.dumps(
+            {"version": 4, "mode": "PERSISTENT", "publish_enabled": True,
+             "allowed_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY"],
+             "allowed_environment": ENVIRONMENT, "deployment_authorization": "request"}),
+            encoding="utf-8")
+        (retired / "switch-provenance.json").write_text(json.dumps(
+            {"schema_version": "1", "field": "deployment_requests_enabled"}), encoding="utf-8")
+        document = evaluate(state_path, None, retired, at, generated)
+        check("the_retired_switch_record_is_no_longer_a_bundle_file",
               document["verdict"]["deploy_ready"] != "YES")
 
     if failures:
@@ -1509,7 +1663,7 @@ def main():
     parser.add_argument("--go-repo", help="a GO checkout holding the canonical pointer files")
     parser.add_argument("--live-bundle",
                         help="operator-supplied read-only directory of live-host facts "
-                             "(plan bundle, channel.json, switch-provenance.json)")
+                             "(the registered plan bundle and channel.json)")
     parser.add_argument("--out", help="directory to write DEPLOY_READINESS.json into")
     parser.add_argument("--now", help="the instant to evaluate at, so the output is reproducible")
     args = parser.parse_args()

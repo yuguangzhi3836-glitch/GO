@@ -68,8 +68,16 @@ summary = {
     "unknown_is_never_promoted_to_yes": True,
     "every_gate_is_mandatory": all(value["mandatory"] for value in declared.values()),
     "canary_is_mandatory_and_re_derived": True,
-    "release_gates_is_mandatory": True,
-    "live_switch_provenance_is_mandatory": True,
+    # The four product-release declarations are removed from the deploy contract,
+    # not made advisory: the evaluator may not report on product acceptance.
+    "release_gates_removed": True,
+    "sealed_test_pr_is_the_reported_deployability_fact": True,
+    "plan_name_and_approval_id_are_derived": True,
+    # The switch is gone; the authorisation is derived per Request, and both halves
+    # of that are mandatory gates.
+    "deployment_authorization_is_mandatory": True,
+    "deploy_mode_is_mandatory": True,
+    "no_standing_deployment_authorization_is_expressible": True,
     "yes_implies_the_live_bridge_would_accept": True,
     "bridge_rules_are_read_from_the_live_bridge_component": str(
         (ROOT.parent / "boss-deploy-request-v1" / "go_deploy_request.py").is_file()).upper(),
@@ -81,7 +89,7 @@ summary = {
     "evaluator_holds_private_key": "NO",
     "evaluator_signs_anything": "NO",
     "evaluator_creates_or_publishes_a_task": "NO",
-    "evaluator_opens_the_request_switch": "NO",
+    "evaluator_grants_the_deployment_authorization": "NO",
     "accepts_caller_supplied_parameters": "NO",
     "rollback_readiness": "NOT_IN_SCOPE",
     "network_access": "FORBIDDEN",

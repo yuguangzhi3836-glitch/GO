@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "go://control-plane/command-center-deploy-dry-run-v1/contracts/deploy_dry_run_v1.schema.json",
   "title": "GO Command Center Deploy Dry-Run V1",
-  "description": "A rehearsal of the DEPLOY Request path that publishes nothing. Given one DEPLOY Request file and the read-only deploy readiness verdict (CC V1-06), it decides whether the Request would be accepted or refused, and for a legal Request it produces only a TASK_CANDIDATE: an unsigned, unpublishable, non-executable description of what would be asked for. It never signs, never publishes a Task, never opens the request switch, never contacts Hong Kong, and never touches Production. DEPLOY_PERFORMED is false in every outcome.",
+  "description": "A rehearsal of the DEPLOY Request path that publishes nothing. Given one DEPLOY Request file and the read-only deploy readiness verdict (CC V1-06), it decides whether the Request would be accepted or refused, and for a legal Request it produces only a TASK_CANDIDATE: an unsigned, unpublishable, non-executable description of what would be asked for. It never signs, never publishes a Task, never grants a deployment authorisation, never contacts Hong Kong, and never touches Production. DEPLOY_PERFORMED is false in every outcome.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -99,7 +99,6 @@
         "request_id",
         "action_id",
         "environment",
-        "plan_id",
         "requested_at",
         "sha256"
       ],
@@ -123,12 +122,6 @@
           ]
         },
         "environment": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "plan_id": {
           "type": [
             "string",
             "null"
@@ -339,7 +332,7 @@
         "can_create_task",
         "can_sign",
         "can_publish_task",
-        "can_open_the_request_switch",
+        "can_grant_the_deployment_authorization",
         "holds_private_key",
         "accepts_caller_supplied_parameters",
         "executes_a_deployment",
@@ -359,7 +352,7 @@
         "can_publish_task": {
           "const": false
         },
-        "can_open_the_request_switch": {
+        "can_grant_the_deployment_authorization": {
           "const": false
         },
         "holds_private_key": {
@@ -401,7 +394,7 @@
   },
   "x-go-forbidden": [
     "Publishing, creating or signing a real DEPLOY Task in any form.",
-    "Touching the live deploy enable switch, the channel configuration or the plan store.",
+    "Touching a deployment authorisation, the channel configuration or the plan store.",
     "Executing a deployment, contacting Hong Kong, or touching Production.",
     "Accepting an image, repo digest, service list, path, environment file, shell command or any other execution parameter from the caller.",
     "Treating a dry-run record as a consumption: only the live channel consumes a plan or an approval.",
@@ -475,11 +468,6 @@
         "check": "request_freshness",
         "stage": "REQUEST_SHAPE",
         "token": "stale_or_future_request"
-      },
-      {
-        "check": "request_plan_id_format",
-        "stage": "REQUEST_SHAPE",
-        "token": "plan_id"
       },
       {
         "check": "request_filename_binding",

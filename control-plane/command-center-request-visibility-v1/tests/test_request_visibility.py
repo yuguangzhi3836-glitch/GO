@@ -42,6 +42,10 @@ BRIDGE_SOURCES = (
     / "go-boss-request-bridge",
     REPO / "control-plane" / "boss-deploy-request-v1" / "go-boss-request-bridge",
     REPO / "control-plane" / "boss-deploy-request-v1" / "go_deploy_request.py",
+    # The derivation module's refusals are emitted by the Bridge: persistent_process
+    # calls it inside the DEPLOY branch and the Reject propagates out of the tick, so a
+    # token it can raise is a token the channel can report to a Boss.
+    REPO / "control-plane" / "boss-deploy-request-v1" / "plan_derivation.py",
 )
 # Every refusing token is a literal string at its call site, but there are two
 # call shapes and they must both be scanned: ``Reject("token")`` raised directly,

@@ -79,14 +79,14 @@ jobs:
           COMMIT = 'a' * 40
           CURRENT_IMAGE = 'sha256:' + 'e' * 64
           CANDIDATE_IMAGE = 'sha256:' + 'f' * 64
-          GATES = ['three_end_ux', 'six_vertical_closed_loop', 'sealed_node', 'final_release']
           AT = '2026-09-15T01:00:00Z'
 
 
           def write_request(name, **over):
+              # The five common fields. A DEPLOY Request used to name a plan a human had
+              # written; the plan is derived now, so there is no plan_id to send.
               body = {'schema_version': '1', 'request_id': name, 'action_id': 'HK_STAGING_DEPLOY',
-                      'environment': 'HK-STAGING-01', 'requested_at': '2026-09-15T00:59:30Z',
-                      'plan_id': 'release-one'}
+                      'environment': 'HK-STAGING-01', 'requested_at': '2026-09-15T00:59:30Z'}
               body.update(over)
               path = requests_dir / ('%s.json' % name)
               path.write_text(json.dumps(body), encoding='utf-8')
@@ -109,7 +109,6 @@ jobs:
           COMMIT = t.COMMIT
           CURRENT_IMAGE = t.CURRENT_IMAGE
           CANDIDATE_IMAGE = t.CANDIDATE_IMAGE
-          GATES = list(t.R.REQUIRED_PLAN_GATES)
           channel = bundle / 'channel.json'
 
 
@@ -195,7 +194,7 @@ jobs:
                                             'action_id': 'HK_STAGING_DEPLOY',
                                             'environment': 'HK-STAGING-01',
                                             'requested_at': '2026-09-15T00:59:30Z',
-                                            'plan_id': 'release-one', 'extra': 'x'}), encoding='utf-8')
+                                            'extra': 'x'}), encoding='utf-8')
           summary, document = rehearse('run-fields', bad_fields, yes, history)
           assert document['decision']['refused'] == ['schema_fields'], document['decision']
 
@@ -205,29 +204,27 @@ jobs:
           summary, document = rehearse('run-gate-live', path, bare, history, store_dir=work / 'store-live')
           assert summary['DECISION'] == 'UNPROVEN', summary
           for gate in ('PACKAGE_BINDING', 'DEPLOYMENT_PLAN', 'HUMAN_APPROVAL', 'CURRENT_RUNTIME',
-                       'LIVE_SWITCH', 'LIVE_SWITCH_PROVENANCE', 'CANARY', 'RELEASE_GATES',
+                       'LIVE_DEPLOY_MODE', 'DEPLOYMENT_AUTHORIZATION', 'CANARY',
                        'BRIDGE_ACCEPTANCE'):
               assert ('readiness:%s' % gate) in document['decision']['unproven'], (gate, document['decision'])
           assert document['candidate'] is None
 
-          # 4b. a definite refusal from the live switch
+          # 4b. a definite refusal from the deployed configuration: the mode is set to
+          # something other than `request`, which is the emergency stop. It is the only
+          # direction the field has -- there is no setting that grants a deployment.
           channel.write_text(json.dumps({
-              'deployment_requests_enabled': False, 'publish_enabled': True,
+              'deployment_authorization': 'suspended', 'publish_enabled': True,
               'allowed_actions': ['HK_STAGING_DEPLOY'], 'allowed_environment': 'HK-STAGING-01'}),
               encoding='utf-8')
-          switch_off = readiness('readiness-switch-off')
-          path = write_request('gate-switch')
-          summary, document = rehearse('run-gate-switch', path, switch_off, history,
-                                       store_dir=work / 'store-switch')
+          mode_stopped = readiness('readiness-mode-stopped')
+          path = write_request('gate-mode-stopped')
+          summary, document = rehearse('run-gate-mode-stopped', path, mode_stopped, history,
+                                       store_dir=work / 'store-mode-stopped')
           assert summary['DECISION'] == 'REJECTED', summary
-          # the switch is off, and the change record still declares it on, so both the
-          # switch gate and its provenance gate refuse: the record has to agree with the
-          # live value, not merely exist
-          assert 'LIVE_SWITCH' in document['decision']['refused'], document['decision']
-          assert 'LIVE_SWITCH_PROVENANCE' in document['decision']['refused'], document['decision']
+          assert 'LIVE_DEPLOY_MODE' in document['decision']['refused'], document['decision']
           assert document['candidate'] is None
           channel.write_text(json.dumps({
-              'deployment_requests_enabled': True, 'publish_enabled': True,
+              'deployment_authorization': 'request', 'publish_enabled': True,
               'allowed_actions': ['HK_STAGING_VERIFY', 'HK_STAGING_TEST_PR', 'HK_STAGING_DEPLOY'],
               'allowed_environment': 'HK-STAGING-01'}), encoding='utf-8')
 
@@ -244,23 +241,37 @@ jobs:
           assert document['decision']['refused'] == ['TEST_PR'], document['decision']
           assert document['candidate'] is None
 
-          # 4d. the gates the live Bridge blocks on are mandatory here too: a HOLD release
-          # gate or an unverifiable canary refuses the request instead of being a note.
-          # CC V1-06.1 made CANARY and RELEASE_GATES block, so the dry-run must now see a
-          # refusal rather than an advisory entry.
-          def hold_gates(plan):
-              plan['plan']['gates'] = {name: 'HOLD' for name in GATES}
+          # 4d. the gates the live Bridge blocks on are mandatory here too: a broken canary
+          # or an unsealed artifact refuses the request instead of being a note. The plan is
+          # named by the facts, so the rehearsal reads the registered file rather than
+          # constructing a name.
+          PLAN = next(p for p in bundle.glob('*.json')
+                      if p.name != 'channel.json')
+
+
+          def break_sealed_test_pr(plan):
+              plan['test_pr_evidence']['artifact_durability'] = 'NOT_PROVEN'
 
 
           def break_canary(plan):
               plan['plan']['canary_evidence_sha256'] = '0' * 64
 
 
-          for gate, mangle in (('RELEASE_GATES', hold_gates), ('CANARY', break_canary)):
-              original = (bundle / 'release-one.json').read_text(encoding='utf-8')
+          def break_approval(plan):
+              plan['approval']['approved_by'] = 'someone-else-entirely'
+
+
+          # Each mutation is chosen so that the gate it must trip is the gate the readiness
+          # verdict actually names. The sealed TEST_PR, which is what replaced the retired
+          # sealed_node declaration, is enforced through BRIDGE_ACCEPTANCE -- the gate that
+          # re-runs the live Bridge's own bundle rules -- because the readiness TEST_PR gate
+          # reports admission, not the sealed-artifact binding.
+          for gate, mangle in (('CANARY', break_canary), ('HUMAN_APPROVAL', break_approval),
+                               ('BRIDGE_ACCEPTANCE', break_sealed_test_pr)):
+              original = PLAN.read_text(encoding='utf-8')
               plan = json.loads(original)
               mangle(plan)
-              (bundle / 'release-one.json').write_text(json.dumps(plan), encoding='utf-8')
+              PLAN.write_text(json.dumps(plan), encoding='utf-8')
               verdict = readiness('readiness-mandatory-%s' % gate.lower())
               path = write_request('gate-%s' % gate)
               summary, document = rehearse('run-gate-%s' % gate, path, verdict, history,
@@ -269,11 +280,11 @@ jobs:
               named = document['decision']['refused'] + document['decision']['unproven']
               assert gate in named or ('readiness:%s' % gate) in named, (gate, named)
               assert document['candidate'] is None, gate
-              (bundle / 'release-one.json').write_text(original, encoding='utf-8')
+              PLAN.write_text(original, encoding='utf-8')
 
           # 5. a consumed plan is refused
           consumed = work / 'history-consumed.json'
-          consumed.write_text(json.dumps({'consumed_plan_ids': ['release-one'],
+          consumed.write_text(json.dumps({'consumed_plan_ids': [PLAN.stem],
                                           'consumed_approval_ids': [],
                                           'consumed_request_ids': []}), encoding='utf-8')
           path = write_request('consumed-one')

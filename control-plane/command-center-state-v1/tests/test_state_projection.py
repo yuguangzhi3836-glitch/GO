@@ -35,7 +35,7 @@ AT = sp.parse_time("2026-09-14T12:00:00Z")
 # This component used to be pinned only against a document built from its own
 # DEPLOY_READINESS_GATES constant, so the two sides could disagree while every
 # test here still passed. They did: the evaluator made every gate mandatory and
-# added LIVE_SWITCH_PROVENANCE and BRIDGE_ACCEPTANCE, and the projector went on
+# added DEPLOYMENT_AUTHORIZATION and BRIDGE_ACCEPTANCE, and the projector went on
 # refusing the real document with DEPLOY_READINESS_UNREADABLE. The tests below
 # therefore load the real evaluator and the evaluator's own fixture builder --
 # neither of which knows this file's constants -- and pin the contract from the
@@ -2082,12 +2082,12 @@ class DeployReadinessTests(unittest.TestCase):
                         "failed": ([g for g in evaluator_gates
                                     if g == "TEST_PR"] if deploy_ready == "NO" else []),
                         "unknown": ([g for g in evaluator_gates
-                                     if g == "LIVE_SWITCH"] if deploy_ready == "UNKNOWN" else []),
+                                     if g == "LIVE_DEPLOY_MODE"] if deploy_ready == "UNKNOWN" else []),
                         "advisory_failed": []},
             "gates": gates if gates is not None else [
                 {"gate": name, "mandatory": True,
                  "state": ("FAIL" if (name == "TEST_PR" and deploy_ready == "NO")
-                           else "UNKNOWN" if (name == "LIVE_SWITCH" and deploy_ready == "UNKNOWN")
+                           else "UNKNOWN" if (name == "LIVE_DEPLOY_MODE" and deploy_ready == "UNKNOWN")
                            else "PASS"),
                  "reason": "synthetic %s" % name}
                 for name in evaluator_gates],
@@ -2146,7 +2146,7 @@ class DeployReadinessTests(unittest.TestCase):
         readiness = state["control_state"]["deploy_readiness"]
         self.assertEqual(readiness["state"], sp.STATE_UNKNOWN)
         self.assertIsNone(readiness["value"])
-        self.assertIn("LIVE_SWITCH", readiness["reason"])
+        self.assertIn("LIVE_DEPLOY_MODE", readiness["reason"])
         # The per-gate detail is still there: nothing is lost by the null value.
         self.assertEqual(len(state["control_state"]["deploy_readiness_gates"]),
                          len(sp.DEPLOY_READINESS_GATES))
@@ -2409,7 +2409,7 @@ class FailureEvidenceTests(unittest.TestCase):
 # Both halves used to be pinned only against documents built from this
 # component's own constants. That is a check that cannot fail: it compares a
 # constant with a fixture derived from it. When the evaluator made every gate
-# mandatory and added LIVE_SWITCH_PROVENANCE and BRIDGE_ACCEPTANCE, the
+# mandatory and added DEPLOYMENT_AUTHORIZATION and BRIDGE_ACCEPTANCE, the
 # projector silently went on refusing the real document, and no test here
 # noticed. The tests below take their gate list from the evaluator's source and
 # their document from the evaluator's own run.
@@ -2428,16 +2428,20 @@ class DeployReadinessContractTests(unittest.TestCase):
     def test_the_evaluator_has_no_advisory_gate_left(self):
         self.assertEqual(evaluator_gate_blocks()["ADVISORY_GATES"], ())
 
-    def test_canary_and_release_gates_are_mandatory_on_both_sides(self):
+    def test_canary_is_mandatory_on_both_sides_and_release_gates_is_gone(self):
         evaluator = evaluator_gate_blocks()["MANDATORY_GATES"]
-        for name in ("CANARY", "RELEASE_GATES"):
-            self.assertIn(name, evaluator)
-            self.assertIn(name, sp.DEPLOY_READINESS_MANDATORY)
-            self.assertNotIn(name, sp.DEPLOY_READINESS_ADVISORY_GATES)
+        self.assertIn("CANARY", evaluator)
+        self.assertIn("CANARY", sp.DEPLOY_READINESS_MANDATORY)
+        self.assertNotIn("CANARY", sp.DEPLOY_READINESS_ADVISORY_GATES)
+        # The four product-release declarations were removed from the deploy contract, so
+        # neither side may carry RELEASE_GATES: not as mandatory, and not as advisory.
+        self.assertNotIn("RELEASE_GATES", evaluator)
+        self.assertNotIn("RELEASE_GATES", sp.DEPLOY_READINESS_MANDATORY)
+        self.assertNotIn("RELEASE_GATES", sp.DEPLOY_READINESS_ADVISORY_GATES)
 
     def test_every_gate_the_projector_knows_is_mandatory(self):
         self.assertEqual(set(sp.DEPLOY_READINESS_MANDATORY), set(sp.DEPLOY_READINESS_GATES))
-        self.assertEqual(len(sp.DEPLOY_READINESS_GATES), 13)
+        self.assertEqual(len(sp.DEPLOY_READINESS_GATES), 12)
 
 
 class DeployReadinessIntegrationTests(unittest.TestCase):
@@ -2492,7 +2496,9 @@ class DeployReadinessIntegrationTests(unittest.TestCase):
         self.assertEqual(carried, [entry["gate"] for entry in document["gates"]])
         self.assertEqual(carried, list(sp.DEPLOY_READINESS_GATES))
         self.assertEqual(len(carried), document["verdict"]["mandatory_gates"])
-        self.assertEqual(len(carried), 13)
+        # Twelve gates: RELEASE_GATES was removed from the deploy contract on
+        # 2026-09-17, so the evaluator reports twelve and this projection carries twelve.
+        self.assertEqual(len(carried), 12)
 
     def test_every_gate_of_the_real_document_is_mandatory_here_too(self):
         _, path = self.produced()
@@ -2517,14 +2523,14 @@ class DeployReadinessIntegrationTests(unittest.TestCase):
                          "EVALUATED_READ_ONLY")
 
     def test_a_real_no_verdict_is_carried_verbatim(self):
-        document, path = self.produced(channel_value=False)
+        document, path = self.produced(channel_value="suspended")
         self.assertEqual(document["verdict"]["deploy_ready"], "NO")
         loaded = self.load(path)
         self.assertEqual(loaded.deploy_readiness["deploy_ready"], "NO")
         root, req_dir = layout()
         state = project(root, req_dir, readiness=path)
         self.assertEqual(state["control_state"]["deploy_readiness"]["value"], "NO")
-        self.assertIn("LIVE_SWITCH", state["control_state"]["deploy_readiness"]["reason"])
+        self.assertIn("LIVE_DEPLOY_MODE", state["control_state"]["deploy_readiness"]["reason"])
 
     def test_a_real_unknown_verdict_is_unknown_and_never_yes(self):
         document, path = self.produced(bundle=False)
@@ -2536,7 +2542,7 @@ class DeployReadinessIntegrationTests(unittest.TestCase):
         self.assertEqual(state["control_state"]["deploy_readiness"]["state"], sp.STATE_UNKNOWN)
         self.assertIsNone(state["control_state"]["deploy_readiness"]["value"])
         # The per-gate detail is not lost when the verdict is unknown.
-        self.assertEqual(len(state["control_state"]["deploy_readiness_gates"]), 13)
+        self.assertEqual(len(state["control_state"]["deploy_readiness_gates"]), 12)
 
     def test_the_full_projection_reports_the_real_gates_and_the_real_verdict(self):
         document, path = self.produced()

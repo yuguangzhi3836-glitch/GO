@@ -37,8 +37,10 @@ issuance. `DEPLOY_PERFORMED` is false in every outcome, including a legal one.
 | `--consumed-history` | a read-only export of what the live channel has consumed | no |
 
 The candidate's every value — `plan_id`, `source_commit`, `candidate_image_id`,
-`expected_current_image_id` — is read out of **the approved plan the readiness
-verdict approved**. No image, service list, path, environment file, shell command
+`expected_current_image_id` — is read out of **the plan the readiness verdict
+inspected**, which is the plan the Command Center derived. The plan is not named by
+the Request any more: the five common fields carry no `plan_id`, and a Request that
+still carries one is refused as a wrong field set. No image, service list, path, environment file, shell command
 or executor path is accepted from a caller at all.
 
 A record is an observation: `consumes_nothing: true`. Only the live channel
@@ -50,7 +52,7 @@ record is written once because its id is the request identity.
 
 | Stage | Checks |
 |---|---|
-| `REQUEST_SHAPE` | readable, size, JSON, duplicate keys, field set, schema version, request_id, action, environment, `requested_at` type / format / freshness, `plan_id`, file-name binding |
+| `REQUEST_SHAPE` | readable, size, JSON, duplicate keys, field set, schema version, request_id, action, environment, `requested_at` type / format / freshness, file-name binding |
 | `REQUEST_IDENTITY` | this request_id has not already been rehearsed against this store |
 | `PLAN_CONSUMPTION` | the live channel has not already consumed this plan or approval |
 | `READINESS` | one check per gate from the readiness verdict |
@@ -77,7 +79,8 @@ missing / unreadable / oversized Request            rejected with its own token
 duplicate JSON key                                  rejected
 wrong field set, schema version, action, environment rejected
 stale or future requested_at                        rejected
-plan_id malformed, file name not bound to request_id rejected
+a request that still names a plan (the retired field),    rejected
+file name not bound to request_id                         rejected
 already rehearsed request_id                        rejected
 plan or approval already consumed                   rejected
 any FAILing readiness gate                          rejected, reason = the gate name

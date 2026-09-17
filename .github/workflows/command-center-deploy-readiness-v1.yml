@@ -132,10 +132,21 @@ jobs:
                 str(work) not in json.dumps(emitted) and '/home/' not in json.dumps(emitted))
 
           # 3. the specific ways the first revision could over-report
-          document = t.Fixture(provenance=False).evaluate()
-          check('a_switch_on_without_a_record_is_never_yes',
+          def standing_authorization(_keys, bundle):
+              del bundle['approval']['request_sha256']
+
+          document = t.Fixture(mutate=standing_authorization).evaluate()
+          check('an_authorization_that_cites_no_request_is_never_yes',
                 document['verdict']['deploy_ready'] != 'YES'
-                and t.gate_of(document, 'LIVE_SWITCH_PROVENANCE')['state'] == 'UNKNOWN')
+                and t.gate_of(document, 'DEPLOYMENT_AUTHORIZATION')['state'] == 'FAIL')
+
+          def chosen_authorization_id(_keys, bundle):
+              bundle['approval']['approval_id'] = 'approval-chosen-by-hand'
+
+          document = t.Fixture(mutate=chosen_authorization_id).evaluate()
+          check('an_authorization_id_that_was_not_derived_is_never_yes',
+                document['verdict']['deploy_ready'] != 'YES'
+                and t.gate_of(document, 'DEPLOYMENT_AUTHORIZATION')['state'] == 'FAIL')
           def unauthorised_approver(_keys, bundle):
               bundle['approval']['approved_by'] = 'someone-else-entirely'
 
@@ -153,14 +164,27 @@ jobs:
                 document['verdict']['deploy_ready'] == 'UNKNOWN' and document['verdict']['failed'] == [])
 
 
-          def hold_release_gate(_keys, bundle):
-              bundle['plan']['gates']['sealed_node'] = 'HOLD'
+          # The four product-release declarations are gone, so what must block now is the
+          # fact one of them stood for: the sealed TEST_PR of this exact candidate.
+          def break_sealed_test_pr(_keys, bundle):
+              bundle['test_pr_evidence']['artifact_durability'] = 'NOT_PROVEN'
 
 
-          document = t.Fixture(mutate=hold_release_gate).evaluate()
-          check('a_release_gate_hold_blocks_instead_of_advising',
-                t.gate_of(document, 'RELEASE_GATES')['state'] == 'FAIL'
+          document = t.Fixture(mutate=break_sealed_test_pr).evaluate()
+          check('a_broken_sealed_test_pr_blocks_instead_of_advising',
+                t.gate_of(document, 'BRIDGE_ACCEPTANCE')['state'] == 'FAIL'
+                and document['verdict']['deploy_ready'] == 'NO'
                 and document['advisory_holds'] == [])
+          # and the retired declarations themselves can no longer be expressed at all
+          def retire_the_gates_back(_keys, bundle):
+              bundle['plan']['gates'] = {name: 'PASS' for name in (
+                  'three_end_ux', 'six_vertical_closed_loop', 'sealed_node', 'final_release')}
+
+
+          document = t.Fixture(mutate=retire_the_gates_back).evaluate()
+          check('a_plan_carrying_the_retired_release_gates_is_refused',
+                t.gate_of(document, 'BRIDGE_ACCEPTANCE')['state'] == 'FAIL'
+                and document['verdict']['deploy_ready'] == 'NO')
 
 
           def failed_canary(keys, bundle):

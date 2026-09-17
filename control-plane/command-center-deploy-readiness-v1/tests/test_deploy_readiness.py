@@ -9,8 +9,7 @@ re-derived. The rules pinned here are therefore:
   * any mandatory gate FAILs                 -> NO
   * a live fact nobody can prove             -> UNKNOWN, never an inferred yes
   * YES may never be reported while the live Bridge would refuse the same plan
-  * a switch that is on without a record signed by a distinct approval authority
-    is never PROVEN
+  * an authorisation that is not derived from an exact DEPLOY Request is never PROVEN
   * a readiness verdict authorises nothing
 
 Standard library plus `cryptography` for the Ed25519 fixtures. No network, no
@@ -54,7 +53,10 @@ CANDIDATE_IMAGE = "sha256:" + "f" * 64
 CANDIDATE_PACKAGE = "9" * 64
 CHANNEL_SHA = "1" * 64
 PREV_CHANNEL_SHA = "2" * 64
-PROOF_OBJECTS = ("canary_task", "canary_evidence", "preflight_task", "preflight_evidence")
+REQUEST_SHA = "3" * 64  # the DEPLOY Request digest the fixture deploys
+PROOF_OBJECTS = ("test_pr_task", "test_pr_evidence", "canary_task", "canary_evidence",
+                 "preflight_task", "preflight_evidence")
+TEST_PR_AT = "2026-09-14T00:00:00Z"   # the sealed TEST_PR of an immutable candidate
 # The authorised approver, taken from the evaluator's own allowlist so the two can
 # never drift, and a login that is deliberately outside it.
 APPROVER = R.APPROVAL_IDENTITIES[0]
@@ -131,7 +133,7 @@ def candidate_pointer(**over):
 def channel(**over):
     value = {"version": 4, "mode": "PERSISTENT", "publish_enabled": True,
              "allowed_actions": ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", R.DEPLOY_ACTION],
-             "allowed_environment": R.ENVIRONMENT, "deployment_requests_enabled": True}
+             "allowed_environment": R.ENVIRONMENT, "deployment_authorization": "request"}
     value.update(over)
     return value
 
@@ -181,6 +183,39 @@ def proof_pair(keys, action, executor_result, gate_names, parameters):
     return task, sign_b64(keys["evidence"]["private"], evidence)
 
 
+def test_pr_pair(keys, **over):
+    """The signed sealed TEST_PR the plan now carries, in the producer's own shape."""
+    parameters = {"builder_profile": "go-application-python-v1",
+                  "source": {"repository": "git@github.com:yuguangzhi3836-glitch/GO.git",
+                             "pr_number": "52", "commit_sha": COMMIT}}
+    task = {"schema_version": "1", "task_id": "go-boss-test-pr-52-synthetic",
+            "nonce": "synthetic-test-pr-nonce", "issued_at": "2026-09-14T00:00:00Z",
+            "expires_at": "2026-09-14T00:20:00Z", "authority": R.TASK_AUTHORITY,
+            "environment": R.ENVIRONMENT, "action_id": "HK_STAGING_TEST_PR",
+            "parameters": parameters}
+    task.update(over.pop("task", {}))
+    task = sign_hex(keys["task"]["private"], task)
+    evidence = {"schema_version": "1", "task_id": task["task_id"], "nonce": task["nonce"],
+                "action_id": "HK_STAGING_TEST_PR", "environment": R.ENVIRONMENT,
+                "status": "SUCCESS", "executor_result": "TEST_PR_OK",
+                "executor_version": "test-pr-v3", "started_at": "2026-09-14T00:05:00Z",
+                "completed_at": "2026-09-14T00:06:00Z",
+                "task_canonical_sha256": R.digest(
+                    {k: v for k, v in task.items() if k != "signature"}),
+                "source_commit_sha": COMMIT, "source_pr_number": "52",
+                "artifact_digest": CANDIDATE_IMAGE, "built_image_id": CANDIDATE_IMAGE,
+                "artifact_durability": "PROVEN", "deployment_performed": False,
+                "artifact_package": {"schema": "go.sealed-artifact.v1",
+                                     "package_sha256": CANDIDATE_PACKAGE,
+                                     "image_id": CANDIDATE_IMAGE,
+                                     "store": "go-hk-artifacts",
+                                     "image_identity_role": "root_descriptor"},
+                "gate_results": {name: "PASS" for name in R.TEST_PR_GATES}}
+    evidence.update(over.pop("evidence", {}))
+    assert not over, over
+    return task, sign_b64(keys["evidence"]["private"], evidence)
+
+
 def plan_bundle(keys, **over):
     canary_task, canary_evidence = proof_pair(
         keys, "HK_STAGING_CANARY", "CANARY_OK", R.CANARY_GATES,
@@ -191,6 +226,7 @@ def plan_bundle(keys, **over):
         keys, "HK_STAGING_VERIFY", "VERIFY_OK", R.VERIFY_GATES,
         {"release_id": "preflight-release-1", "candidate_image_id": CURRENT_IMAGE,
          "expected_current_image_id": CURRENT_IMAGE})
+    test_pr_task, test_pr_evidence = test_pr_pair(keys)
     plan = {"schema_version": "1", "plan_id": "release-one", "environment": R.ENVIRONMENT,
             "action_id": R.DEPLOY_ACTION,
             "candidate": {"repository": R.CANDIDATE_REPOSITORY, "source_commit": COMMIT,
@@ -201,7 +237,8 @@ def plan_bundle(keys, **over):
             "target_services": list(R.SERVICES),
             "protected_non_targets": list(R.PROTECTED_NON_TARGETS),
             "migration": False, "production": False, "automatic_rollback": False,
-            "gates": {name: "PASS" for name in R.REQUIRED_PLAN_GATES},
+            "test_pr_task_sha256": R.digest(test_pr_task),
+            "test_pr_evidence_sha256": R.digest(test_pr_evidence),
             "canary_task_sha256": R.digest(canary_task),
             "canary_evidence_sha256": R.digest(canary_evidence),
             "preflight_task_sha256": R.digest(preflight_task),
@@ -212,22 +249,20 @@ def plan_bundle(keys, **over):
     approval = {"schema_version": "1", "approval_id": "approval-synthetic-1",
                 "approved_by": APPROVER, "approved_at": "2026-09-15T00:58:30Z",
                 "expires_at": "2026-09-15T01:05:00Z", "scope": R.APPROVAL_SCOPE,
-                "plan_sha256": R.digest(plan)}
-    bundle = {"plan": plan, "approval": approval, "canary_task": canary_task,
+                "plan_sha256": R.digest(plan), "request_sha256": REQUEST_SHA}
+    # The name is a function of the candidate and the canary run, and the approval id is a
+    # function of the Request's digest, so the fixture derives both rather than choosing
+    # them: a fixture that could choose them would be testing a contract this project no
+    # longer has.
+    plan["plan_id"] = R.derived_plan_id(plan["candidate"], canary_task)
+    approval["plan_sha256"] = R.digest(plan)
+    approval["approval_id"] = "approval-" + approval["request_sha256"][:16]
+    bundle = {"plan": plan, "approval": approval, "test_pr_task": test_pr_task,
+              "test_pr_evidence": test_pr_evidence, "canary_task": canary_task,
               "canary_evidence": canary_evidence, "preflight_task": preflight_task,
               "preflight_evidence": preflight_evidence}
     bundle.update(over)
     return bundle
-
-
-def switch_provenance(**over):
-    record = {"schema_version": "1", "field": "deployment_requests_enabled", "value": True,
-              "changed_at": "2026-09-15T00:59:00Z", "change_record": "CC-CHANGE-SYNTHETIC-1",
-              "approved_by": APPROVER, "approval_id": "approval-synthetic-1",
-              "valid_from": "2026-09-15T00:58:00Z", "valid_until": "2026-09-15T01:30:00Z",
-              "before_sha256": PREV_CHANNEL_SHA, "after_sha256": CHANNEL_SHA}
-    record.update(over)
-    return record
 
 
 class Fixture:
@@ -240,8 +275,7 @@ class Fixture:
     """
 
     def __init__(self, collide_task_with_evidence=False, bundle=True, plan=True,
-                 channel_value=True, provenance=True, rebind=True, mutate=None,
-                 provenance_record=None, **overrides):
+                 channel_value="request", rebind=True, mutate=None, **overrides):
         self.root = pathlib.Path(tempfile.mkdtemp(prefix="ccv106-"))
         self.go = self.root / "GO"
         component = self.go / R.STATE_COMPONENT
@@ -284,14 +318,10 @@ class Fixture:
                 for name in PROOF_OBJECTS:
                     built["plan"][name + "_sha256"] = R.digest(built[name])
                 built["approval"]["plan_sha256"] = R.digest(built["plan"])
-            (self.bundle_dir / "release-one.json").write_text(json.dumps(built), encoding="utf-8")
+            (self.bundle_dir / (built["plan"]["plan_id"] + ".json")).write_text(
+                json.dumps(built), encoding="utf-8")
         (self.bundle_dir / "channel.json").write_text(
-            json.dumps(channel(deployment_requests_enabled=channel_value)), encoding="utf-8")
-        if provenance:
-            record = (switch_provenance(**provenance_record)
-                      if provenance_record is not None else switch_provenance())
-            (self.bundle_dir / "switch-provenance.json").write_text(json.dumps(record),
-                                                                    encoding="utf-8")
+            json.dumps(channel(deployment_authorization=channel_value)), encoding="utf-8")
 
     def evaluate(self, at=AT):
         return R.evaluate(self.state_path, self.go, self.bundle_dir, at, at)
@@ -354,7 +384,7 @@ class VerdictTests(unittest.TestCase):
         self.assertFalse(boundary["is_a_deploy_approval"])
         self.assertFalse(boundary["is_execution_authority"])
         self.assertFalse(boundary["can_publish_task"])
-        self.assertFalse(boundary["can_open_the_request_switch"])
+        self.assertFalse(boundary["can_grant_the_deployment_authorization"])
 
     def test_no_bundle_is_unknown_not_yes_and_never_fails(self):
         document = Fixture(bundle=False).evaluate()
@@ -367,10 +397,20 @@ class VerdictTests(unittest.TestCase):
         self.assertEqual(gate_of(document, "DEPLOYMENT_PLAN")["state"], "FAIL")
         self.assertEqual(document["verdict"]["deploy_ready"], "NO")
 
-    def test_a_switch_that_is_off_is_no(self):
-        document = Fixture(channel_value=False).evaluate()
-        self.assertEqual(gate_of(document, "LIVE_SWITCH")["state"], "FAIL")
-        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+    def test_a_configuration_that_refuses_deployments_is_no(self):
+        """The emergency stop, read as a live fact.
+
+        The mode has exactly one accepting value. Setting anything else refuses DEPLOY
+        Requests -- and it is the only direction the field can be used in, because the
+        field grants nothing.
+        """
+        for mode in ("suspended", "", None):
+            with self.subTest(mode=mode):
+                document = Fixture(channel_value=mode).evaluate()
+                self.assertEqual(gate_of(document, "LIVE_DEPLOY_MODE")["state"], "FAIL")
+                self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+        document = Fixture().evaluate()
+        self.assertEqual(gate_of(document, "LIVE_DEPLOY_MODE")["state"], "PASS")
 
     def test_every_gate_is_reported_and_mandatory(self):
         document = Fixture().evaluate()
@@ -434,77 +474,133 @@ class CanaryTests(unittest.TestCase):
         self.assertEqual(document["verdict"]["deploy_ready"], "NO")
 
 
-class ReleaseGateTests(unittest.TestCase):
-    """RELEASE_GATES is mandatory now: a HOLD may not be a non-blocking note."""
-
-    def test_a_hold_release_gate_blocks_the_verdict(self):
-        def mutate(_keys, bundle):
-            bundle["plan"]["gates"]["sealed_node"] = "HOLD"
-
-        document = Fixture(mutate=mutate).evaluate()
-        self.assertEqual(gate_of(document, "RELEASE_GATES")["state"], "FAIL")
-        self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "FAIL")
-        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
-        self.assertEqual(document["advisory_holds"], [])
+class RetiredReleaseGateTests(unittest.TestCase):
+    """The four product-release declarations are gone, and the fact one of them stood for
+    is now established by the sealed TEST_PR the plan carries."""
 
     def test_the_contract_no_longer_declares_any_advisory_gate(self):
         contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
         declared = {k: v for k, v in contract["x-go-gates"].items() if k != "note"}
         self.assertEqual(sorted(k for k, v in declared.items() if not v["mandatory"]), [])
         self.assertTrue(declared["CANARY"]["mandatory"])
-        self.assertTrue(declared["RELEASE_GATES"]["mandatory"])
         self.assertTrue(declared["BRIDGE_ACCEPTANCE"]["mandatory"])
+        # Not "advisory": absent. The evaluator may not report on product acceptance.
+        self.assertNotIn("RELEASE_GATES", declared)
+        self.assertNotIn("RELEASE_GATES",
+                         contract["properties"]["gates"]["items"]["properties"]["gate"]["enum"])
+        self.assertEqual(set(declared), set(R.MANDATORY_GATES))
+
+    def test_a_plan_that_still_carries_release_gates_is_refused(self):
+        """The retired contract is refused by the exact field set, not read around."""
+        def mutate(_keys, bundle):
+            bundle["plan"]["gates"] = {name: "PASS" for name in (
+                "three_end_ux", "six_vertical_closed_loop", "sealed_node", "final_release")}
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+        self.assertEqual(document["advisory_holds"], [])
+
+    def test_a_hold_declaration_can_no_longer_be_expressed_at_all(self):
+        """There is nowhere left to write HOLD: the plan has no gate block to hold."""
+        def mutate(_keys, bundle):
+            bundle["plan"]["sealed_node"] = "HOLD"
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_a_broken_sealed_test_pr_blocks_instead_of_the_retired_declaration(self):
+        for field, value in (("artifact_durability", "NOT_PROVEN"),
+                             ("deployment_performed", True),
+                             ("artifact_digest", "sha256:" + "9" * 64)):
+            with self.subTest(field=field):
+                def mutate(_keys, bundle, field=field, value=value):
+                    bundle["test_pr_evidence"][field] = value
+
+                document = Fixture(mutate=mutate).evaluate()
+                self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "FAIL")
+                self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_a_plan_name_that_was_not_derived_is_refused(self):
+        def mutate(_keys, bundle):
+            bundle["plan"]["plan_id"] = "chosen-by-hand"
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
 
 
-class SwitchProvenanceTests(unittest.TestCase):
-    def test_a_valid_record_is_proven(self):
+class DeploymentAuthorizationTests(unittest.TestCase):
+    """The authorisation a deployment rests on, and that it can only be one thing.
+
+    There is no switch and no change record for it any more. What authorises a
+    deployment is the authenticated DEPLOY Request, and the plan carries it as its
+    `approval` object, so what these tests pin is the derivation: the record must cite
+    an exact Request digest, and its id must be the derived form of that digest. A
+    standing authorisation -- the shape an operator would have had to write -- has
+    nothing to cite and therefore cannot be expressed at all.
+    """
+
+    def test_a_derived_authorization_is_proven(self):
         document = Fixture().evaluate()
-        entry = gate_of(document, "LIVE_SWITCH_PROVENANCE")
+        entry = gate_of(document, "DEPLOYMENT_AUTHORIZATION")
         self.assertEqual(entry["state"], "PASS")
-        self.assertEqual(entry["observed"]["change_record"], "CC-CHANGE-SYNTHETIC-1")
+        self.assertEqual(entry["observed"]["request_sha256"], REQUEST_SHA)
+        self.assertEqual(entry["observed"]["approval_id"], "approval-" + REQUEST_SHA[:16])
 
-    def test_an_absent_record_keeps_the_gate_unknown(self):
-        document = Fixture(provenance=False).evaluate()
-        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "UNKNOWN")
-        self.assertNotEqual(document["verdict"]["deploy_ready"], "YES")
-        self.assertIn("LIVE_SWITCH_PROVENANCE", document["verdict"]["unknown"])
-
-    def test_a_record_that_still_carries_the_cancelled_signature_is_refused(self):
-        """The cancelling is one-way: the old signed shape is not accepted back."""
-
-        document = Fixture(provenance_record={"signature": "0" * 128}).evaluate()
-        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+    def test_a_plan_without_an_authorization_is_refused(self):
+        document = Fixture(mutate=lambda _keys, bundle: bundle.__setitem__("approval", None),
+                           rebind=False).evaluate()
+        self.assertEqual(gate_of(document, "DEPLOYMENT_AUTHORIZATION")["state"], "FAIL")
         self.assertEqual(document["verdict"]["deploy_ready"], "NO")
 
-    def test_a_record_that_disagrees_with_the_live_channel_is_refused(self):
-        document = Fixture(provenance_record={"value": False}).evaluate()
-        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+    def test_an_authorization_that_cites_no_request_is_refused(self):
+        """The shape a hand-written approval has: nothing to cite."""
 
-    def test_a_closed_window_is_refused(self):
-        document = Fixture().evaluate(at=R.parse_time("2026-09-15T02:00:00Z"))
-        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+        def mutate(_keys, bundle):
+            del bundle["approval"]["request_sha256"]
 
-    def test_a_change_outside_its_window_is_refused(self):
-        document = Fixture(provenance_record={"changed_at": "2026-09-15T00:10:00Z"}).evaluate()
-        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
-
-    def test_a_record_attributed_to_an_unauthorised_identity_is_refused(self):
-        document = Fixture(provenance_record={"approved_by": UNAUTHORISED}).evaluate()
-        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "DEPLOYMENT_AUTHORIZATION")["state"], "FAIL")
         self.assertEqual(document["verdict"]["deploy_ready"], "NO")
 
-    def test_a_record_without_an_attribution_is_refused(self):
+    def test_an_authorization_id_that_was_chosen_is_refused(self):
+        """The id is a function of the Request, not a name anybody picks."""
+
+        def mutate(_keys, bundle):
+            bundle["approval"]["approval_id"] = "approval-chosen-by-hand"
+
+        document = Fixture(mutate=mutate).evaluate()
+        self.assertEqual(gate_of(document, "DEPLOYMENT_AUTHORIZATION")["state"], "FAIL")
+        self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+    def test_an_authorization_for_a_different_request_is_refused(self):
+        """A digest that is well formed but is not the derived id's own is still refused."""
+
+        def mutate(_keys, bundle):
+            bundle["approval"]["request_sha256"] = "0" * 64
+
+        document = Fixture(mutate=mutate, rebind=False).evaluate()
+        self.assertEqual(gate_of(document, "DEPLOYMENT_AUTHORIZATION")["state"], "FAIL")
+
+    def test_the_retired_switch_record_is_no_longer_a_bundle_file(self):
+        """It cannot be handed back in: the directory would name two plans."""
+
         fixture = Fixture()
-        record = switch_provenance()
-        del record["approved_by"]
-        (fixture.bundle_dir / "switch-provenance.json").write_text(json.dumps(record),
-                                                                   encoding="utf-8")
+        (fixture.bundle_dir / "switch-provenance.json").write_text(json.dumps(
+            {"schema_version": "1", "field": "deployment_requests_enabled", "value": True}),
+            encoding="utf-8")
         document = fixture.evaluate()
-        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+        self.assertNotEqual(gate_of(document, "DEPLOYMENT_PLAN")["state"], "PASS")
+        self.assertNotEqual(document["verdict"]["deploy_ready"], "YES")
 
-    def test_the_record_must_name_the_field_it_covers(self):
-        document = Fixture(provenance_record={"field": "publish_enabled"}).evaluate()
-        self.assertEqual(gate_of(document, "LIVE_SWITCH_PROVENANCE")["state"], "FAIL")
+    def test_nothing_reads_a_switch_any_more(self):
+        for name in ("LIVE_SWITCH", "LIVE_SWITCH_PROVENANCE"):
+            self.assertNotIn(name, R.MANDATORY_GATES)
+            self.assertFalse(hasattr(R, "gate_" + name.lower()))
+        contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        self.assertNotIn("LIVE_SWITCH", json.dumps(contract))
+        self.assertNotIn("deployment_requests_enabled", json.dumps(contract))
 
 
 class ApprovalTests(unittest.TestCase):
@@ -576,8 +672,18 @@ class BridgeAcceptanceTests(unittest.TestCase):
         def migration(_keys, bundle):
             bundle["plan"]["migration"] = True
 
-        def release_gate(_keys, bundle):
-            bundle["plan"]["gates"]["three_end_ux"] = "HOLD"
+        def retired_release_gate(_keys, bundle):
+            # The retired contract: a plan that still carries the four product-release
+            # declarations is refused by the exact field set, not read around.
+            bundle["plan"]["gates"] = {name: "PASS" for name in (
+                "three_end_ux", "six_vertical_closed_loop", "sealed_node", "final_release")}
+
+        def sealed_test_pr(_keys, bundle):
+            # What replaced sealed_node: an artifact whose sealing was never proven.
+            bundle["test_pr_evidence"]["artifact_durability"] = "NOT_PROVEN"
+
+        def plan_name_not_derived(_keys, bundle):
+            bundle["plan"]["plan_id"] = "chosen-by-hand"
 
         def package_not_the_sealed_one(_keys, bundle):
             # A plan may not name a package the candidate has not sealed.
@@ -599,7 +705,10 @@ class BridgeAcceptanceTests(unittest.TestCase):
             bundle["approval"]["scope"] = "SOMETHING_ELSE"
 
         return {"topology": (topology, True), "migration": (migration, True),
-                "release_gate": (release_gate, True), "package_binding": (package_not_the_sealed_one, True),
+                "retired_release_gate": (retired_release_gate, True),
+                "sealed_test_pr": (sealed_test_pr, True),
+                "plan_name_not_derived": (plan_name_not_derived, True),
+                "package_binding": (package_not_the_sealed_one, True),
                 "candidate_repository": (candidate_repository, True),
                 "protected_non_targets": (protected_non_targets, True),
                 "unknown_plan_field": (unknown_plan_field, True),
@@ -640,7 +749,7 @@ class LiveBridgeContractTests(unittest.TestCase):
         self.source = (BOSS / "go_deploy_request.py").read_text(encoding="utf-8")
 
     def brace_set(self, name):
-        found = re.search(r"^%s = \{(.*?)\}" % name, self.source, re.M | re.S)
+        found = re.search(r"^%s = [\{\(](.*?)[\}\)]" % name, self.source, re.M | re.S)
         self.assertIsNotNone(found, name)
         return set(re.findall(r"'([a-z_]+)'", found.group(1)))
 
@@ -663,8 +772,23 @@ class LiveBridgeContractTests(unittest.TestCase):
         self.assertIsNotNone(declared, "the field set %s is never declared" % constant)
         return set(re.findall(r"'([A-Za-z0-9_]+)'", declared.group(1)))
 
-    def test_release_gate_names_match_the_live_contract(self):
-        self.assertEqual(self.brace_set("RELEASE_GATES"), set(R.REQUIRED_PLAN_GATES))
+    def test_the_retired_release_gates_are_gone_from_the_live_contract(self):
+        """The drift guard, inverted: the four declarations must not come back.
+
+        They were product acceptance verdicts no machine process here can produce, and
+        the live executor never read them, so the live gate must not declare them and this
+        evaluator must not port them.
+        """
+        for name in ("three_end_ux", "six_vertical_closed_loop", "sealed_node", "final_release"):
+            with self.subTest(gate=name):
+                self.assertNotIn("'%s'" % name, self.source)
+        self.assertIsNone(re.search(r"^RELEASE_GATES = \{", self.source, re.M))
+        self.assertFalse(hasattr(R, "REQUIRED_PLAN_GATES"))
+
+    def test_the_test_pr_constants_match_the_live_contract(self):
+        self.assertEqual(self.brace_set("TEST_PR_GATES"), set(R.TEST_PR_GATES))
+        self.assertEqual(set(R.TEST_PR_PARAMETERS) | set(R.TEST_PR_SOURCE),
+                         {"builder_profile", "source", "repository", "pr_number", "commit_sha"})
 
     def test_canary_and_verify_gate_names_match(self):
         self.assertEqual(self.brace_set("CANARY_GATES"), set(R.CANARY_GATES))
@@ -689,23 +813,73 @@ class LiveBridgeContractTests(unittest.TestCase):
         self.assertIn("'%s'" % R.APPROVAL_SCOPE, self.source)
         self.assertIn("'%s'" % R.TASK_AUTHORITY, self.source)
 
+    def test_the_deployment_authorization_form_matches_the_live_gate(self):
+        """The authorisation's id is derived, on both sides, the same way.
+
+        This is what replaced the switch. What stops a hand-written authorisation is not
+        a signature -- there is no approval key -- but the derivation: the id has to be
+        the derived form of the Request digest the record cites, so a record that cites
+        nothing, or cites something and names itself, is refused.
+        """
+        derived = re.search(r"return '(approval-)'\+request_sha256\[:(\d+)\]", self.source)
+        self.assertIsNotNone(derived, "the live gate no longer derives the approval id")
+        self.assertEqual(derived.group(1), R.APPROVAL_ID_PREFIX)
+        self.assertEqual(int(derived.group(2)), 16)
+        bridge = (BOSS / "go-boss-request-bridge").read_text(encoding="utf-8")
+        mode = re.search(r'^AUTHORIZATION_MODE = "([a-z]+)"', bridge, re.M)
+        self.assertIsNotNone(mode, "the live Bridge no longer declares an authorisation mode")
+        self.assertEqual(mode.group(1), R.AUTHORIZATION_MODE)
+        self.assertNotIn("deployment_requests_enabled", bridge.replace(
+            "`deployment_requests_enabled`", ""))
+
+    def test_the_plan_name_is_derived_by_the_live_gate(self):
+        """The name is a function, and the port has to return the same one."""
+        self.assertIn("def plan_id_for(candidate,canary_task):", self.source)
+        candidate = {"source_commit": COMMIT, "image_id": CANDIDATE_IMAGE}
+        canary = {"parameters": {"release_id": "boss-request-canary-synthetic"}}
+        self.assertEqual(R.derived_plan_id(candidate, canary),
+                         "hkstg-%s-%s-%s" % (COMMIT[:12], CANDIDATE_IMAGE[7:19],
+                                             hashlib.sha256(
+                                                 b"boss-request-canary-synthetic").hexdigest()[:12]))
+        self.assertIsNone(R.derived_plan_id(candidate, {"parameters": {}}))
+
     def test_the_forbidden_operations_match(self):
         found = re.search(r"plan\[k\] is not False for k in \[(.*?)\]", self.source)
         self.assertIsNotNone(found)
         self.assertEqual(set(re.findall(r"'([a-z_]+)'", found.group(1))),
                          set(R.FORBIDDEN_OPERATIONS))
 
+    def scalar(self, name):
+        """The right-hand side of a module constant, whatever shape it has."""
+        found = re.search(r"^%s = (.*)$" % name, self.source, re.M)
+        self.assertIsNotNone(found, name)
+        return found.group(1).strip()
+
     def test_the_freshness_windows_match(self):
-        self.assertIn("'HK_STAGING_CANARY',authority_key,hk_key,at,1800", self.source)
-        self.assertIn("'HK_STAGING_VERIFY',authority_key,hk_key,at,300", self.source)
-        self.assertEqual(R.CANARY_MAX_AGE_SECONDS, 1800)
-        self.assertEqual(R.PREFLIGHT_MAX_AGE_SECONDS, 300)
-        self.assertIn("expires-approved>dt.timedelta(minutes=15)", self.source)
+        # The windows are named constants now, so the guard reads the constant and the
+        # value rather than a literal that a rename would silently invalidate.
+        self.assertIn("CANARY_ACTION,authority_key,hk_key,at,CANARY_EVIDENCE_MAX_AGE",
+                      self.source)
+        self.assertIn("VERIFY_ACTION,authority_key,hk_key,at,VERIFY_EVIDENCE_MAX_AGE",
+                      self.source)
+        self.assertEqual(self.scalar("CANARY_ACTION"), "'HK_STAGING_CANARY'")
+        self.assertEqual(self.scalar("VERIFY_ACTION"), "'HK_STAGING_VERIFY'")
+        self.assertEqual(self.scalar("CANARY_EVIDENCE_MAX_AGE"), str(R.CANARY_MAX_AGE_SECONDS))
+        self.assertEqual(self.scalar("VERIFY_EVIDENCE_MAX_AGE"), str(R.PREFLIGHT_MAX_AGE_SECONDS))
+        self.assertEqual(self.scalar("APPROVAL_MAX_LIFE"), "dt.timedelta(minutes=15)")
         self.assertEqual(R.APPROVAL_MAX_WINDOW_SECONDS, 900)
 
     def test_the_bridge_still_takes_the_task_key_from_the_store(self):
-        self.assertIn("authority=public_key(read_secure(STORE/'authority.pub',4096))", self.source)
-        self.assertIn("validate_bundle(bundle,plan_id,authority,hk,at,approval_identity)",
+        self.assertIn("public_key(read_secure(store/'authority.pub',4096))", self.source)
+        self.assertIn("public_key(read_secure(store/'hk-evidence.pub',4096))", self.source)
+        self.assertIn(
+            "validate_bundle(bundle,plan_id,authority,hk,at,approval_identity,request_sha256)",
+            self.source)
+        # The approval is the Request, so the digest is not optional: a gate that can be
+        # called without one would accept an approval that could name any Request.
+        self.assertIn("if request_sha256 is None: raise Reject('approval_request_digest_missing')",
+                      self.source)
+        self.assertIn("if approval['request_sha256']!=request_sha256: raise Reject('approval_request_mismatch')",
                       self.source)
 
     def test_the_two_authorised_approval_identities_match_the_live_gate(self):

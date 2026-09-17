@@ -552,6 +552,47 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 
 ## 11. 下一会话唯一入口
 
+> **2026-09-17 / B4-B1.10（CCV1-53）—— 再优先读这一段，它取代所有「部署开关」口径。**
+>
+> **① 部署开关已退役**。`deployment_requests_enabled` 不再存在：它要求「先有一份常备授权，才允许那份授权它的请求出现」，
+> 因此**每一次部署都必须有人登录 CC 手工改 root 文件**——正是 `docs/project/CC_V1_SCOPE_20260916.md` 点名的 V1 未达标形态。
+> v4 配置改为声明 `deployment_authorization`（本修订只实现 `request` 一种取值），**该字段不授予任何权限**：
+> 转成 `request` 什么也拿不到，因为部署仍须授权身份开的合法 Request ＋ 新鲜 canary ＋ 新鲜预检 ＋ 精确候选。
+> 取任何别的值只拒绝 DEPLOY Request、不影响只读探活，所以它仍是应急停止阀。
+> **② 一次性部署授权＝计划里的 `approval` 块**，由指挥中心按请求派生：`approval_id = 'approval-' + request_sha256[:16]`
+> （Request canonical 摘要的**函数**，不是任何人起的名字），`approved_by` ＝平台报告的 PR 作者，`approved_at` ＝平台 `created_at`；
+> 有效期受审批寿命（≤15 分钟）与 Task deadline（≤5 分钟）双重约束；**一次性**由「计划文件登记后不覆盖 ＋ ledger 拒绝已记录过的计划/授权」保证。
+> **不存在常备授权**，因此也没有「窗口一直开着」这回事。
+> **③ readiness 门改名**：`LIVE_SWITCH` → `LIVE_DEPLOY_MODE`（读安装期声明与「会不会接受 DEPLOY 请求」），
+> `LIVE_SWITCH_PROVENANCE` → `DEPLOYMENT_AUTHORIZATION`（校验计划里的授权是否**派生自**一份精确 Request）。
+> 门数仍为 12；`switch-provenance.json` 不再是 bundle 文件（残留它会让 bundle 出现两个候选计划而被判 ambiguous）。
+> scope doc TD-05（`LIVE_SWITCH_PROVENANCE` 历史 enable 来源未追认）随之关闭——概念本身被移除，而该文件自己也写明「V1 不要求追认历史」。
+> **④ 部署批准仍需要人工**：一次授权 GitHub 身份提交的 DEPLOY Request。这是 V1 定义的 Human Approval，不是新增步骤。
+> **⑤ 本轮未 commit / 未 push / 未安装 / 未触 live / 未开任何开关。**
+>
+> 仍然有效的旧表述：上面 150 / 197 / 301 / 486 / 675 / 677 行关于 `deployment_requests_enabled=false` 的记述属于**当时状态**；
+> 自本修订起该字段不存在，读到时按本块口径理解。
+
+> **2026-09-17 / B4-B1.9（CCV1-52）—— 优先读这一段，它取代上面 ①④ 的计划口径。**
+>
+> **① 四项产品发布声明已从部署合同里移除**：`three_end_ux` / `six_vertical_closed_loop` /
+> `sealed_node` / `final_release` 不再是 CC 的 mandatory deploy blocker。依据：范围契约
+> `docs/project/CC_V1_SCOPE_20260916.md` 把「手工维护 deployment plan」列为老板**不得**需要的步骤，
+> 而这三项产品验收结论本仓无任何进程能产出（journey 套件最好结果是带限定词的
+> `ISOLATED_WEB_SCOPED_PASS` / `ISOLATED_WEB_SIMULATOR_PASS`，且从未对本候选跑过），
+> `final_release` 更是「必须先最终发布才允许进入测试环境」的顺序倒置；`#103` Authority Boundary 明写
+> CC 不重新评判产品选择。**`sealed_node` 不是删掉而是被事实替换**：改由**本候选的签名 TEST_PR**
+> （source / artifact / sealed package / durability 逐字段绑定，且不设时效）承担。
+> **② 计划改为指挥中心派生**：DEPLOY Request 只剩五个公共字段（**没有 `plan_id`**），
+> 计划名是函数 `hkstg-<commit12>-<image12>-<canary release sha256[:12]>`，校验器重算；
+> 新增 `control-plane/boss-deploy-request-v1/plan_derivation.py`，Bridge 在 DEPLOY 分支先派生、
+> **在内存里过一遍校验器**、原子登记、回读，再签发 Task。审批＝那份 Request 本身
+> （作者登录名 + 平台 `created_at` + canonical `request_sha256`；`approval_id` 由摘要派生）。
+> **③ 顺序约束没变、且更强**：canary ≤30min、preflight ≤5min、审批 ≤15min 且必须晚于两份回执
+> ⇒ canary → preflight → 开开关 → DEPLOY Request 必须挤在同一段窗口内；被消费过的计划名不可复用
+> （重试需要新的 canary，它同时给出新的计划名）。
+> **④ 本轮未 commit / 未 push / 未安装 / 未触 live / 未开开关**：改动只在本地工作树。
+>
 > **2026-09-17 / B4-B1.8（CCV1-45 → CCV1-47）—— 再优先读这一段。**
 >
 > **① HK 侧已装**：`canary_runtime.py`（`a75dcb85…`）、`go-hk-deployctl`（`95c0b33d…`）、

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "go://control-plane/command-center-deploy-readiness-v1/contracts/deploy_readiness_v1.schema.json",
   "title": "GO Command Center Deploy Readiness V1",
-  "description": "A read-only answer to whether a deploy can proceed now, and if not why not. It combines the derived control state with an operator-supplied read-only bundle of live-host facts and the published verifier identities, re-derives the live Boss Request Bridge bundle acceptance rules, and returns DEPLOY_READY = YES / NO / UNKNOWN with the concrete blocking reasons. Every gate is mandatory: CANARY and RELEASE_GATES block because the live Bridge blocks on them, and BRIDGE_ACCEPTANCE exists so that YES can only be reported when the live gate would accept the same request. It never creates or publishes a DEPLOY Task, never opens the request switch, accepts no caller-controlled parameter, and does not touch Production. A readiness verdict is an observation about the current evidence, never an authorisation to deploy.",
+  "description": "A read-only answer to whether a deploy can proceed now, and if not why not. It combines the derived control state with an operator-supplied read-only bundle of live-host facts and the published verifier identities, re-derives the live Boss Request Bridge bundle acceptance rules, and returns DEPLOY_READY = YES / NO / UNKNOWN with the concrete blocking reasons. Every gate is mandatory: CANARY blocks because the live Bridge blocks on it, and BRIDGE_ACCEPTANCE exists so that YES can only be reported when the live gate would accept the same request. The four product-release declarations the previous contract carried -- three_end_ux, six_vertical_closed_loop, sealed_node and final_release -- are gone: they belong to the upstream side, no machine process here can produce them, and the live executor never read them. The deployability fact sealed_node named is now established by the signed TEST_PR of the exact candidate, which the plan carries and the ported TEST_PR proof checks. There is no deploy switch: a deployment is authorised by the authenticated DEPLOY Request, so this evaluator reports whether the deployed configuration admits that mode and whether the plan's authorisation was derived from such a Request. It never creates or publishes a DEPLOY Task, never grants a deployment authorisation, accepts no caller-controlled parameter, and does not touch Production. A readiness verdict is an observation about the current evidence, never an authorisation to deploy.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -156,10 +156,9 @@
               "TEST_PR",
               "VERIFY",
               "CURRENT_RUNTIME",
-              "LIVE_SWITCH",
-              "LIVE_SWITCH_PROVENANCE",
+              "LIVE_DEPLOY_MODE",
+              "DEPLOYMENT_AUTHORIZATION",
               "CANARY",
-              "RELEASE_GATES",
               "BRIDGE_ACCEPTANCE"
             ]
           },
@@ -392,7 +391,7 @@
         "is_execution_authority",
         "can_create_task",
         "can_publish_task",
-        "can_open_the_request_switch",
+        "can_grant_the_deployment_authorization",
         "holds_private_key",
         "signs_anything",
         "accepts_caller_supplied_parameters",
@@ -410,7 +409,7 @@
         "can_publish_task": {
           "const": false
         },
-        "can_open_the_request_switch": {
+        "can_grant_the_deployment_authorization": {
           "const": false
         },
         "holds_private_key": {
@@ -470,21 +469,17 @@
       "mandatory": true,
       "meaning": "the verified live runtime matches the image the plan expects to be current, so there is no drift"
     },
-    "LIVE_SWITCH": {
+    "LIVE_DEPLOY_MODE": {
       "mandatory": true,
-      "meaning": "the live Command Center request switch state; a live-host fact"
+      "meaning": "the deployed Command Center configuration declares that deployments are authorised by Request, and would accept a DEPLOY request; a live-host fact"
     },
-    "LIVE_SWITCH_PROVENANCE": {
+    "DEPLOYMENT_AUTHORIZATION": {
       "mandatory": true,
-      "meaning": "the switch state is covered by a change record signed by the distinct Human Approval authority, whose declared value equals the observed channel value and whose window is still open"
+      "meaning": "the deployment rests on a one-time authorisation derived from an exact authenticated DEPLOY Request -- the plan cites that Request own digest and its approval id is the derived form of it -- rather than on a standing authorisation"
     },
     "CANARY": {
       "mandatory": true,
       "meaning": "the plan canary proof verifies under the published identities, binds to this candidate and completed inside the canary window"
-    },
-    "RELEASE_GATES": {
-      "mandatory": true,
-      "meaning": "the plan carries PASS for every release gate the live contract requires"
     },
     "BRIDGE_ACCEPTANCE": {
       "mandatory": true,
@@ -496,12 +491,12 @@
     "A mandatory gate that cannot be established makes the verdict UNKNOWN. It is never rounded up to YES, and it never becomes an inferred approval.",
     "YES requires every mandatory gate to PASS, and it still authorises nothing: it means the evidence currently supports deploying, not that anyone has agreed to.",
     "YES may never be reported while the live Bridge would deterministically refuse the same request. BRIDGE_ACCEPTANCE is the gate that makes this impossible, not a convention.",
-    "A switch that is on without a change record attributed to the Human Approval authority keeps LIVE_SWITCH_PROVENANCE out of PASS, and therefore keeps the verdict out of YES.",
+    "There is no deploy switch and no standing authorisation. A plan whose approval cites no exact DEPLOY Request, or whose approval id is not the derived form of the digest it cites, keeps DEPLOYMENT_AUTHORIZATION out of PASS and the verdict out of YES.",
     "advisory_holds exists for contract stability and is always empty: no gate is advisory."
   ],
   "x-go-forbidden": [
     "Creating, signing or publishing a DEPLOY Task.",
-    "Opening, arming or toggling the DEPLOY request switch or the channel configuration.",
+    "Opening, arming or toggling a deployment authorisation, or writing the channel configuration.",
     "Any caller-supplied image, service, service list, path, compose file, environment file, shell command, executor path or signing parameter.",
     "Contacting Command Center or Hong Kong directly: only the operator read-only bundle, the derived state and the published identities are read.",
     "Touching Production in any form.",

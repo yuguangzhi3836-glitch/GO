@@ -42,9 +42,13 @@ Current confirmed Boss Request classification:
 - `HK_STAGING_VERIFY` — **SUPPORTED / PROVEN**.
 - `HK_STAGING_TEST_PR` — **SUPPORTED / PROVEN**. PR #50 recorded live install,
   successful E2E, and an independent blind retest.
-- `HK_STAGING_DEPLOY` — capability is **INSTALLED but DISABLED / FAIL-CLOSED**.
-  PR #57 records `deployment_requests_enabled=false`; capability presence is not
-  deployment authorization.
+- `HK_STAGING_DEPLOY` — capability is **INSTALLED**; since 2026-09-17 the
+  authorisation is **per Request** rather than a switch. The authenticated
+  `HK_STAGING_DEPLOY` Request is the Human Approval — its author, the platform's
+  `created_at` and the digest of its canonical content — and Command Center derives
+  a one-time plan and authorisation from it. The deployed configuration declares that
+  mode (`deployment_authorization`); setting it to anything else suspends deployments
+  and nothing else. There is no plan to write and no switch to open.
 - `HK_STAGING_CANARY` — **REQUESTABLE** since channel revision
   `1.6.0-canary-channel`. The Request carries the five common fields and nothing
   else; the candidate image, its sealed package and the expected current image come

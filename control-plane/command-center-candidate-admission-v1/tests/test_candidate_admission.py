@@ -557,7 +557,14 @@ class LiveConstantTests(unittest.TestCase):
         self.test_pr = TEST_PR.read_text(encoding="utf-8")
 
     def test_the_candidate_repository_matches_the_live_gate(self):
-        self.assertIn("candidate['repository']!='%s'" % A.CANDIDATE_REPOSITORY, self.gate)
+        # The gate names the repository once, as a module constant, and compares the plan's
+        # candidate against it. The guard resolves the constant rather than the literal, so
+        # renaming the constant cannot silently retire the check.
+        declared = re.search(r"^REPOSITORY = '([^']+)'", self.gate, re.M)
+        self.assertIsNotNone(declared, "the live gate no longer declares REPOSITORY")
+        self.assertEqual(declared.group(1), A.CANDIDATE_REPOSITORY)
+        self.assertIn("if candidate['repository']!=REPOSITORY: raise Reject('candidate_repository')",
+                      self.gate)
         self.assertIn("git@github.com:%s.git" % A.CANDIDATE_REPOSITORY, self.bridge)
 
     def test_the_fixed_service_topology_matches_the_live_gate(self):
