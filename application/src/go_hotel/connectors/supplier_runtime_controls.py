@@ -76,6 +76,7 @@ class _DatabaseControl:
             raise ValueError("CONTROLS_DATABASE_UNSUPPORTED")
         if engine.dialect.name == "sqlite" and (
             not engine.url.database or engine.url.database == ":memory:"
+            or engine.url.database.startswith("file:")
             or engine.url.query.get("mode") == "memory"
         ):
             raise ValueError("DURABLE_CONTROLS_DATABASE_REQUIRED")
@@ -258,4 +259,3 @@ class ContractResponseValidator:
         if rules.get("reference_field") and (not isinstance(reference, str) or not reference.strip()):
             raise ValueError("SUPPLIER_REFERENCE_INVALID")
         return VerifiedProviderResponse(reference)
-

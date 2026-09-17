@@ -259,10 +259,12 @@ class ContractDrivenHotelSupplyExecutor:
         identity = {"provider": self.contract["provider"]["provider_code"],
                     "credential_reference": credential_reference, "endpoint": endpoint.rstrip("/"),
                     "operation": operation, "key": idempotency_key}
-        operation_key = _sha256_bytes(_canonical_json(identity))
+        # Account isolation comes from the journal's explicit scope. Endpoint,
+        # credential-ref and provider drift must conflict, never open a new claim.
+        operation_key = _sha256_bytes(_canonical_json({"operation": operation, "key": idempotency_key}))
         request_hash = _sha256_bytes(_canonical_json({
-            "operation_contract": op, "payload": payload,
-            "documentation_hash": self.contract["contract_source"]["documentation_hash"],
+            "identity": identity, "operation_contract": op, "payload": payload,
+            "provider_contract": self.contract,
         }))
         claim = self.mutation_journal.begin(operation_key, request_hash)
         if not claim["claimed"]:

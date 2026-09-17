@@ -322,6 +322,28 @@ def test_missing_response_rules_block_before_network(database):
     assert transport.calls == []
 
 
+@pytest.mark.parametrize("changed", ["endpoint", "credential", "provider", "auth"])
+def test_contract_identity_drift_conflicts_instead_of_opening_new_mutation(database, changed):
+    engine, scope = database
+    transport = Transport()
+    runtime = build_runtime(engine, scope, transport)
+    assert book(runtime).ok
+    if changed == "endpoint":
+        runtime.contract["transport"]["base_url"] = "https://other.supplier.test"
+    elif changed == "credential":
+        runtime.contract["transport"]["auth"]["credential_reference"] = "vault://supplier/rotated"
+    elif changed == "auth":
+        runtime.contract["transport"]["auth"]["method"] = "BASIC"
+    else:
+        runtime.contract["provider"]["provider_code"] = "PROVIDER_RENAMED"
+    with pytest.raises(ValueError, match="SUPPLIER_IDEMPOTENCY_CONFLICT"):
+        runtime._execute_operation(
+            "BOOK", endpoint=runtime.contract["transport"]["base_url"],
+            credential_reference=runtime.contract["transport"]["auth"]["credential_reference"],
+            payload={"hotel": "H-1"}, idempotency_key="same-booking")
+    assert len(transport.calls) == 1
+
+
 def test_response_success_type_mismatch_cannot_equal_true(database):
     engine, scope = database
     runtime = build_runtime(engine, scope)
@@ -362,7 +384,8 @@ def test_unbound_endpoint_and_credentials_are_rejected_before_request(database):
     assert transport.calls == []
 
 
-def test_memory_only_database_and_missing_key_are_rejected():
-    engine = create_engine("sqlite:///:memory:")
+@pytest.mark.parametrize("url", ["sqlite:///:memory:", "sqlite:///file::memory:?cache=shared&uri=true"])
+def test_memory_only_database_is_rejected(url):
+    engine = create_engine(url)
     with pytest.raises(ValueError, match="DURABLE_CONTROLS_DATABASE_REQUIRED"):
         SQLWebhookReplayStore(engine, scope="account")
