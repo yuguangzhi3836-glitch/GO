@@ -787,7 +787,7 @@ class LiveBridgeContractTests(unittest.TestCase):
     def brace_set(self, name):
         found = re.search(r"^%s = [\{\(](.*?)[\}\)]" % name, self.source, re.M | re.S)
         self.assertIsNotNone(found, name)
-        return set(re.findall(r"'([a-z_]+)'", found.group(1)))
+        return set(re.findall(r"'([a-z0-9_]+)'", found.group(1)))
 
     def exact_fields(self, marker):
         """The field set the live gate compares that object against.
