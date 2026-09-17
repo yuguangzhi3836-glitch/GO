@@ -1,13 +1,13 @@
 {
   "reviewer": "C13",
-  "time_utc": "2026-09-17T22:37:53.459217+00:00",
+  "time_utc": "2026-09-17T22:50:28.543497+00:00",
   "core_verdict": "PASS_SCOPED",
   "installer_verdict": "PASS_SCOPED",
   "tests": {
     "hk-forward-migration-v1": 36,
     "boss-deploy-request-v1": 137,
     "failed": 0,
-    "installer_real_temporary_files": 3
+    "installer_real_temporary_files": 5
   },
   "core_findings": [
     "All 12 manifest files match after restoring six unlisted diagnostic overlays.",
@@ -44,13 +44,19 @@
     "Fresh before-hash/metadata and protected guard checks before and after timer quiescence.",
     "Complete before images and manifest fsynced before replace, including backup parent directory.",
     "Partial install failure restores bytes/metadata; failed rollback preserves stopped timers and records reconciliation.",
-    "Cleanup errors isolated; no authority/admission/deploy/database writes."
+    "Cleanup errors isolated; no authority/admission/deploy/database writes.",
+    "Guard-only ancestor directories now require exact observed uid/gid/mode and real-directory type; /etc/go-hk-agent retains existing 998:998 0750. Writable source ancestors still require root ownership and no group/world write."
   ],
   "installer_files_sha256": {
-    "install/test_install_source.py": "7feee28480d8088109c1d6a02b27f1246d2d7c1f79b753c0d649f2c5e72acdd3",
-    "install/SOURCE_PACKAGE.json": "4e42cb29bb16f5d07ef65ed4853b75d589101c4e1def02254f51b96ccfa2194c",
-    "install/install_source.py": "38a8533af785089405d6c5b556f65558a45bb7d4cc424b924032a2dd17175c4c",
+    "install/install_source.py.z64": "7e5149881876d16f2660e3d4fe04f6cff822ac233a457e5d4444adec43df1db1",
+    "install/test_install_source.py": "8c29fb6359bbca9fd587295d177f66998c0e23afe3ce6d41628430b10d163928",
+    "install/SOURCE_PACKAGE.json": "19b3924c9b30a191cd79b3ab287378cb4ca34b823bf9a1bf4319e67814ddbebf",
+    "install/install_source.py": "c887804a8197c23a1930cf5f8c569aa399957daa7d6a08575d2887e5787c7f61",
     "install/PREFLIGHT.json": "9c172e7509d187a99e7866c6278542f2fb2328be8d444b058741831e96c9b394",
-    "install/INSTALL_MANIFEST.json": "e8b8b2a9c327e1d5b5d067d7af610cce301db408e9e07bfdc873c59ad5d57a87"
-  }
+    "install/SOURCE_PACKAGE.json.z64": "4b0f4b7c5d03b05a36071dce322e8a29bdaf447c7970adee8a71a0f7f56a6693",
+    "install/GUARD_ANCESTORS.json": "9c965257ad43d04e9ecd5ca59dad230891820562191067ca50dbef70e55e8f9c",
+    "install/INSTALL_PLAN.md": "b5775cd044800d8c6b68160abb29944259f14adc4e6bb2a28ea5aed3aefea0f5",
+    "install/INSTALL_MANIFEST.json": "9f01becca46e9c9c3ff63d809807350b5bf8bda77de4efcb36ced192b8982dd0"
+  },
+  "transfer_status": "Both z64 transfers independently decompressed and matched frozen raw files."
 }
