@@ -1170,8 +1170,11 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(len(list(self.remote.glob('*.json'))),1)
         records=json.loads((self.root/'ledger/ledger.json').read_text())['requests']
         # The ledger also holds the seeded TEST_PR / canary / preflight history the plan is
-        # derived from, so what has to be exactly one is the DEPLOY record.
-        deploys=[r for r in records.values() if (r.get('task') or {}).get('action_id')==gate.ACTION]
+        # derived from, and the earlier deployment a rollback would undo, so what has to be
+        # exactly one is the DEPLOY record *this run* published -- not the seeded history,
+        # which the fixture writes under its own `synthetic:` prefix.
+        deploys=[r for key,r in records.items() if not key.startswith('synthetic:')
+                 and (r.get('task') or {}).get('action_id')==gate.ACTION]
         self.assertEqual(len(deploys),1)
     def test_test_pr_preserved_with_exact_resolved_source(self):
         request=self.f.request(); request.update(action_id=bridge.TEST_ACTION,pr_number='47')
