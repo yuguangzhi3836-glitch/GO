@@ -83,8 +83,8 @@
     },
     "src/go_hotel/services/alipay_safeguarded_settlement.py": {
       "mode": "100644",
-      "git_blob": "df03dc7a4f36626bbdee2599c6d223d32a1f489a",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+      "git_blob": "84f290f44bbea6564720c35f6e64aa2f92272910",
+      "reason": "exact inherited mixed-funding implementation blob present in C07 R6 candidate; rebound by Issue #168 full-tree audit"
     },
     "tests/test_v70_next_c01_unknown_funding.py": {
       "mode": "100644",
@@ -138,8 +138,8 @@
     },
     "src/go_hotel/travel_intelligence/preferences.py": {
       "mode": "100644",
-      "git_blob": "86d03a058b2b3a5c4888622df4ea429496015cd7",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+      "git_blob": "74182160de0ad6f1abfadd84f082d886b7800df1",
+      "reason": "exact C07 R6 consent-snapshot implementation blob; rebound by Issue #168 full-tree audit"
     },
     "tests/c07_preference_process_actor.py": {
       "mode": "100644",
@@ -210,6 +210,11 @@
       "C09",
       "C10",
       "C11"
-    ]
+    ],
+    "full_tree_blob_audit": {
+      "mismatches_rebound": 2,
+      "unexpected_files": 0,
+      "missing_files": 0
+    }
   }
 }
