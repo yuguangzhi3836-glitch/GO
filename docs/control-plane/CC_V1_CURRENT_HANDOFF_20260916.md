@@ -856,3 +856,71 @@ liveness-request-transport / projection / state-publication）。
       container 内 `alembic current`
 未读取、未复制、未记录任何私钥、token、password 或云 AK/SK。
 ```
+
+
+---
+
+## 2026-09-17 现场事实：动作后自动 VERIFY 已装机并在真实通道上跑通（CCV1-62）
+
+> 本节是**新增的当天事实**。上文（2026-09-16 及更早）的 `NOT_PROVEN` 陈述是**当时的历史状态**，
+> 不因本节自动改写；本节只陈述下面这些条目现在是什么。
+
+### 装机（GO Command Center）
+
+```text
+Bridge              /usr/local/libexec/go-boss-request-bridge
+版本                1.9.0-rollback-channel  ->  1.10.0-post-action-verify
+SHA256              d2ae9c88…  ->  74336fd1943d26663ac5b42cdf7cc918ecebb3e6f4ab4a01c50f4cb30ee1f770
+来源                cc/bridge-remote-default-branch-v1 @ 6d896bfe8c7f149b6f949ffad2af1721dc60e45f
+备份                /var/lib/go-command-center/ccv161-post-action-verify-backup-20260917T115042Z
+装机单元             一个文件；gate / plan / channel config 与 PR head 逐字节相同，故未替换
+通道                 v4 PERSISTENT，六项 action；deployment_authorization = request（无部署开关）
+```
+
+### 现在自动发生的事
+
+一个 DEPLOY 或 ROLLBACK 完成后，Bridge 在随后的 tick 里自行派生并发布**一个独立的 VERIFY Task**：
+镜像来自该动作的**签名字节**（DEPLOY 用它的 candidate；ROLLBACK 用它源部署的 expected_current），
+参数恰为 `{release_id, candidate_image_id, expected_current_image_id}`，一源一名，30 分钟新鲜度窗口，
+幂等记录写在 `post-action-verifies.json`（**不写**账本 `requests`）。不再需要有人看到动作完成后
+再手动补发一次 VERIFY —— 这正是本文件上文「验收」一节的第 4 条所要求的那个步骤。
+
+### 本轮真实通道的身份
+
+```text
+ROLLBACK  Task      go-boss-rollback-7a7d24bf55eb0c26e54d92f4        ROLLBACK_OK，7 门全 PASS
+          8 服务     6b92050e…  ->  1c9598d6…
+自动 VERIFY（回滚）  go-boss-post-rollback-verify-5f2598d70b05       VERIFY_OK，断言 1c9598d6
+CANARY    Task      go-boss-request-canary-20260917T120348Z-89179436aecf   CANARY_OK
+DEPLOY    Task      go-boss-deploy-37a902d0ed88254dbdba7fef          DEPLOY_OK，6 门全 PASS
+          plan_id   hkstg-bd25d7acca1b-6b92050ed42c-bc12be3e7a5d
+          8 服务     1c9598d6…  ->  6b92050e…
+自动 VERIFY（部署）  go-boss-post-deploy-verify-0f1a8ce9c20a         VERIFY_OK，断言 6b92050e
+控制状态            现场重算：live_verified_runtime = PROVEN，image_config_id = sha256:6b92050e…（与 docker ps 一致）
+结束态              8 业务服务 = 6b92050e…，10 容器，重启 0；caddy / redis 全程未重建
+PRODUCTION          NOT_TOUCHED
+```
+
+六件产物（4 个 Task/Evidence 对 + 预检）在本地进程内用
+`control-plane/command-center-state-v1/identity/keys/` 的两把公钥独立验签，全部 OK。
+
+### 仍未达成的（不要读成已交付）
+
+```text
+CHATGPT_COMMAND_CONTRACT   NOT_PROVEN   仓库内无该合同产物（#107）
+#103                       未关闭        其 Scope Clarification 纳入的 Alembic forward migration 未实现
+#106                       未关闭        存在「成功执行被记成 EVIDENCE_AFTER_EXPIRY」的实测反例
+COMMAND_CENTER_V1          未宣称 DELIVERED    #108 依赖 V1-01…V1-12 全 CLOSED，未满足
+MERGE_AUTHORIZED           NO           PR #179 保持 Draft，未合并，等待人工最终 Review
+```
+
+**已知技术债（`TECHNICAL_DEBT_V2`）：** DEPLOY Task 的 `expires_at` 继承自预检窗口
+（`min(approval_expires, 预检证据 + 300 s, now + 5 min)`），而一次**真实**镜像切换约 4.6 分钟。
+本例 issued `12:26:53Z` / expires `12:28:28Z` / Evidence `12:29:20Z` ⇒ 投影把它记为
+`FAILED_RECORD · EVIDENCE_TIMEOUT · EVIDENCE_AFTER_EXPIRY`，尽管执行是 `DEPLOY_OK`、宿主确实切换、
+其自动 post-deploy VERIFY 也 `VERIFY_OK`。修法要么改授权窗口的推导，要么让投影区分「交付晚到」与
+「执行失败」，两者都在 V1 合同面上，本轮按「不扩大范围」未动。
+
+**另一处既有欠账：** 同目录 `control-plane/boss-deploy-request-v1/PROVENANCE.json` 自述
+`bridge 1.5.0-control-plane-health`，与现场（此前 `1.9.0-rollback-channel`、现在
+`1.10.0-post-action-verify`）不符；装机技能的漂移门若以它为判据会恒停。本轮未改它，登记为发现项。
