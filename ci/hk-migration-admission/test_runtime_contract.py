@@ -27,6 +27,20 @@ def contract(**changes):
     value.update(changes);return value
 
 class MigrationContractTests(unittest.TestCase):
+    def test_candidate_proposal_is_bound_to_real_pg_rehearsal(self):
+        proposal=json.loads((ROOT/'ci/hk-migration-admission/CANDIDATE_PROPOSAL.json').read_text())
+        evidence=json.loads((ROOT/'ci/hk-migration-admission/EVIDENCE_BINDING.json').read_text())
+        block=proposal['release_candidate_v1'];admission=block['migration_admission']
+        self.assertEqual(derivation.migration_from_admission(block),admission)
+        self.assertEqual(admission['rehearsal_evidence_sha256'],evidence['evidence_json_sha256'])
+        self.assertEqual(admission['lineage_sha256'],evidence['lineage_sha256'])
+        self.assertEqual((admission['source_commit'],admission['application_git_tree'],
+                          admission['source_fingerprint_sha256']),
+                         (evidence['candidate_commit'],evidence['candidate_application_tree'],
+                          evidence['candidate_fingerprint_sha256']))
+        self.assertEqual((evidence['prestate_revision'],evidence['target_revision']),
+                         ('0133_flight_change_plan','0137_hosted_unknown_episode'))
+
     def test_derivation_accepts_only_source_bound_contract(self):
         block={'migration_required':True,'migration_head':'0137_hosted_unknown_episode',
                'source_commit':'a'*40,'application_tree':'b'*40,'source_fingerprint':'c'*64,
