@@ -298,7 +298,20 @@ class ContractDrivenHotelSupplyExecutor:
                 # retrying could duplicate the side effect.
                 break
             if not isinstance(response_body, bytes):
-                raise TypeError("SUPPLIER_TRANSPORT_RAW_BYTES_REQUIRED")
+                last_status, last_body = status, b""
+                last_audit = self._seal_attempt(
+                    operation=operation,
+                    attempt=attempt,
+                    method=method,
+                    url=url,
+                    request_body=request_body,
+                    response_status=status,
+                    response_headers=response_headers,
+                    response_body=b"",
+                    transport_error="SUPPLIER_TRANSPORT_RAW_BYTES_REQUIRED",
+                    started=started,
+                )
+                break
             last_status, last_body = status, response_body
             last_audit = self._seal_attempt(
                 operation=operation,
