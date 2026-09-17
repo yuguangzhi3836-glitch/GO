@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import base64
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 import json
 import time
 from typing import Any, Callable, Protocol
+from urllib.parse import urlsplit
+
+from go_hotel.connectors.supplier_runtime_controls import ContractResponseValidator
 
 from go_hotel.connectors.hotel_supply_sandbox import HotelSupplyOperationResult
 from go_hotel.connectors.provider_adapter_contract import validate_provider_adapter_contract
@@ -111,6 +114,8 @@ class ContractDrivenHotelSupplyExecutor:
         transport: HttpTransport,
         evidence_sink: RawEvidenceSink,
         replay_store: WebhookReplayStore,
+        mutation_journal: Any | None = None,
+        response_validator: Any | None = None,
         auth_materializer: ProviderAuthMaterializer | None = None,
         clock: Callable[[], datetime] | None = None,
     ):
@@ -119,6 +124,8 @@ class ContractDrivenHotelSupplyExecutor:
         self.transport = transport
         self.evidence_sink = evidence_sink
         self.replay_store = replay_store
+        self.mutation_journal = mutation_journal
+        self.response_validator = response_validator or ContractResponseValidator()
         self.auth_materializer = auth_materializer
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.audits: list[RuntimeAudit] = []
@@ -227,7 +234,51 @@ class ContractDrivenHotelSupplyExecutor:
         self.audits.append(audit)
         return audit
 
-    def _execute_operation(
+    def _execute_operation(self, operation: str, *, endpoint: str, credential_reference: str,
+                           payload: dict[str, Any], idempotency_key: str) -> HotelSupplyOperationResult:
+        op = self.contract["operations"].get(operation.lower())
+        if not op:
+            raise ValueError("OPERATION_CONTRACT_MISSING")
+        self.response_validator.validate_contract(operation, op)
+        base = self.contract["transport"]["base_url"]
+        parsed_endpoint = urlsplit(endpoint)
+        if (endpoint.rstrip("/") != base.rstrip("/") or parsed_endpoint.scheme != "https"
+                or not parsed_endpoint.hostname or parsed_endpoint.username or parsed_endpoint.password
+                or parsed_endpoint.query or parsed_endpoint.fragment):
+            raise ValueError("PROVIDER_CONTRACT_ENDPOINT_MISMATCH")
+        if credential_reference != self.contract["transport"]["auth"]["credential_reference"]:
+            raise ValueError("PROVIDER_CONTRACT_CREDENTIAL_MISMATCH")
+        if not isinstance(idempotency_key, str) or not idempotency_key.strip():
+            raise ValueError("SUPPLIER_IDEMPOTENCY_KEY_REQUIRED")
+        arguments = dict(endpoint=endpoint, credential_reference=credential_reference,
+                         payload=payload, idempotency_key=idempotency_key)
+        if operation not in {"BOOK", "CANCEL"}:
+            return self._perform_operation(operation, **arguments)
+        if self.mutation_journal is None:
+            raise ValueError("SUPPLIER_MUTATION_JOURNAL_REQUIRED")
+        identity = {"provider": self.contract["provider"]["provider_code"],
+                    "credential_reference": credential_reference, "endpoint": endpoint.rstrip("/"),
+                    "operation": operation, "key": idempotency_key}
+        operation_key = _sha256_bytes(_canonical_json(identity))
+        request_hash = _sha256_bytes(_canonical_json({
+            "operation_contract": op, "payload": payload,
+            "documentation_hash": self.contract["contract_source"]["documentation_hash"],
+        }))
+        claim = self.mutation_journal.begin(operation_key, request_hash)
+        if not claim["claimed"]:
+            if claim["result"] is not None:
+                return HotelSupplyOperationResult(**claim["result"])
+            return HotelSupplyOperationResult(operation, False, payload={
+                "normalized_error": "SUPPLIER_OUTCOME_UNKNOWN_RECONCILIATION_REQUIRED",
+                "idempotency_claim": "PENDING", "attempts": 0,
+            })
+        # PENDING commits before HTTP. A crash, timeout or Evidence failure never
+        # permits a second owner to resend; reconciliation is a separate action.
+        result = self._perform_operation(operation, **arguments)
+        self.mutation_journal.complete(operation_key, request_hash, asdict(result))
+        return result
+
+    def _perform_operation(
         self,
         operation: str,
         *,
@@ -333,11 +384,15 @@ class ContractDrivenHotelSupplyExecutor:
             except (UnicodeDecodeError, json.JSONDecodeError):
                 parsed = None
             if 200 <= status < 300:
-                if parsed is None and response_body:
-                    raise ValueError("SUPPLIER_RESPONSE_JSON_INVALID")
-                supplier_reference = None
-                if isinstance(parsed, dict):
-                    supplier_reference = parsed.get("supplier_reference") or parsed.get("booking_id") or parsed.get("id")
+                try:
+                    validated = self.response_validator.validate(operation, op, parsed)
+                except ValueError:
+                    return HotelSupplyOperationResult(operation, False, payload={
+                        "http_status": status, "response_hash": last_audit.response_hash,
+                        "attempts": attempt, "evidence_reference": last_audit.evidence_reference,
+                        "normalized_error": "SUPPLIER_RESPONSE_VALIDATION_FAILED",
+                    })
+                supplier_reference = validated.supplier_reference
                 return HotelSupplyOperationResult(
                     operation=operation,
                     ok=True,
@@ -395,32 +450,34 @@ class ContractDrivenHotelSupplyExecutor:
             raise ValueError("PROVIDER_CONTRACT_SUPPLIER_MISMATCH")
         common = {"test_hotel_reference": test_hotel_reference, "mapping": mapping}
         ordered = ["AVAILABILITY", "QUOTE", "BOOK", "QUERY", "CANCEL"]
-        results = [
-            self._execute_operation(
-                op,
-                endpoint=endpoint,
-                credential_reference=credential_reference,
-                payload=common,
-                idempotency_key=f"{idempotency_key}:{op}",
-            )
-            for op in ordered
-        ]
+        # Validate the complete contract before the first external request.
+        for operation in ordered:
+            self.response_validator.validate_contract(operation, self.contract["operations"][operation.lower()])
+        results = []
+        for op in ordered:
+            if results and not results[-1].ok:
+                results.append(HotelSupplyOperationResult(op, False, payload={"error": "PREREQUISITE_FAILED_NOT_SENT"}))
+                continue
+            results.append(self._execute_operation(
+                op, endpoint=endpoint, credential_reference=credential_reference,
+                payload=common, idempotency_key=f"{idempotency_key}:{op}",
+            ))
         by_op = {r.operation: r for r in results}
         availability_ok = by_op["AVAILABILITY"].ok
         results.extend(
             [
-                HotelSupplyOperationResult("CONNECTIVITY", availability_ok, payload={"evidence_reference": "runtime://https-connectivity"}),
+                HotelSupplyOperationResult("CONNECTIVITY", availability_ok, payload={"evidence_reference": (by_op["AVAILABILITY"].payload or {}).get("evidence_reference")}),
                 HotelSupplyOperationResult("PROPERTY_MAPPING", bool(mapping.get("supplier_property_id") and mapping.get("go_hotel_id"))),
                 HotelSupplyOperationResult("ROOM_MAPPING", bool(mapping.get("rooms"))),
                 HotelSupplyOperationResult("RATE_PLAN_MAPPING", bool(mapping.get("rooms"))),
-                HotelSupplyOperationResult("BOOK_IDEMPOTENCY", by_op["BOOK"].ok, supplier_reference=by_op["BOOK"].supplier_reference),
+                HotelSupplyOperationResult("BOOK_IDEMPOTENCY", False, payload={"status": "SUPPLIER_IDEMPOTENCY_NOT_OBSERVED"}),
                 HotelSupplyOperationResult(
                     "SIGNED_WEBHOOK",
-                    bool(self.contract["webhook"].get("signature")),
+                    False,
                     payload={"externally_observed": False, "status": "CONTRACT_READY_NOT_OBSERVED"},
                 ),
                 HotelSupplyOperationResult("ERROR_MAPPING", self.contract["error_mapping"].get("unknown_error_policy") == "FAIL_CLOSED"),
-                HotelSupplyOperationResult("RECONCILIATION", by_op["QUERY"].ok, payload={"evidence_reference": "runtime://query-reconciliation"}),
+                HotelSupplyOperationResult("RECONCILIATION", False, payload={"status": "SUPPLIER_RECONCILIATION_NOT_OBSERVED"}),
             ]
         )
         return results

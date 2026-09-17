@@ -1,0 +1,89 @@
+name: Supplier durable controls focused gate
+on:
+  pull_request:
+    branches: [supplier-preflight-runtime-p0p1-20260917]
+    paths:
+      - application/src/go_hotel/connectors/**
+      - application/tests/test_supplier*
+      - application/scripts/r82_rc142_external_sandbox_executor_gate.py
+      - ci/supplier-controls/**
+      - .github/workflows/supplier-controls.yml
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+concurrency:
+  group: supplier-controls-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  controls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: supplier_controls_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d supplier_controls_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install inherited frozen dependencies
+        run: |
+          set -euo pipefail
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+          mkdir -p "$RUNNER_TEMP/supplier-controls"
+      - name: SQLite durability and runtime cases
+        id: sqlite
+        working-directory: application
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python -m pytest -p no:cacheprovider -q tests/test_supplier_preflight_runtime.py tests/test_supplier_runtime_controls.py --junitxml="$RUNNER_TEMP/supplier-controls/sqlite.xml"
+      - name: PostgreSQL contention, restart, encryption and runtime
+        id: postgres
+        working-directory: application
+        env:
+          SUPPLIER_CONTROLS_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/supplier_controls_isolated
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python -m pytest -p no:cacheprovider -q tests/test_supplier_runtime_controls.py --junitxml="$RUNNER_TEMP/supplier-controls/postgres.xml"
+      - name: Runtime gate with truthful certification results
+        id: runtime
+        working-directory: application
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python scripts/r82_rc142_external_sandbox_executor_gate.py | tee "$RUNNER_TEMP/supplier-controls/runtime.log"
+      - name: Verify predecessor retention and seal exact-head Evidence
+        if: always()
+        env:
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+          SQLITE_OUTCOME: ${{ steps.sqlite.outcome }}
+          POSTGRES_OUTCOME: ${{ steps.postgres.outcome }}
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+        run: |
+          set -euo pipefail
+          python ci/supplier-controls/seal_evidence.py "$RUNNER_TEMP/supplier-controls"
+          cd "$RUNNER_TEMP/supplier-controls"
+          sha256sum -c SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: supplier-durable-controls-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/supplier-controls
+          if-no-files-found: error
+

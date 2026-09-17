@@ -6,6 +6,19 @@ import hmac
 import json
 
 import pytest
+from sqlalchemy import create_engine
+from go_hotel.connectors.supplier_runtime_controls import metadata, SQLMutationJournal
+
+pytestmark = pytest.mark.no_db
+
+@pytest.fixture(autouse=True)
+def durable_journal(tmp_path):
+    global _journal
+    engine = create_engine("sqlite:///" + str(tmp_path / "controls.db"))
+    metadata.create_all(engine)
+    _journal = SQLMutationJournal(engine, scope="tests/account")
+    yield
+    engine.dispose()
 
 from go_hotel.connectors.external_sandbox_runtime import ContractDrivenHotelSupplyExecutor
 
@@ -19,6 +32,7 @@ def contract(auth_method: str = "BEARER", max_attempts: int = 2) -> dict:
         "path": "/v1/op",
         "request_mapping": {"hotel": "hotel"},
         "response_mapping": {"id": "supplier_reference"},
+        "response_validation": {"required_fields": {"status": "string", "supplier_reference": "string"}, "success_equals": {"status": "ok"}, "reference_field": "supplier_reference"},
     }
     return {
         "provider": {"provider_code": "SIGNED_PROVIDER", "supplier_legal_name": "Signed Supplier Ltd", "environment": "SANDBOX"},
@@ -74,7 +88,7 @@ class Resolver:
 
 class Transport:
     def __init__(self, responses=None):
-        self.responses = list(responses or [(200, {"Content-Type": "application/json"}, b'{"supplier_reference":"S-42"}')])
+        self.responses = list(responses or [(200, {"Content-Type": "application/json"}, b'{"status":"ok","supplier_reference":"S-42"}')])
         self.calls = []
 
     def request(self, method, url, *, headers, body, timeout_seconds):
@@ -123,6 +137,7 @@ def executor(*, auth_method="BEARER", transport=None, evidence=None, replay=None
         transport=transport or Transport(),
         evidence_sink=evidence or Evidence(),
         replay_store=replay or Replay(),
+        mutation_journal=_journal,
         auth_materializer=materializer,
         clock=lambda: NOW,
     )
@@ -158,7 +173,7 @@ def test_exact_raw_request_and_response_are_sealed_before_success_is_accepted():
     assert result.supplier_reference == "S-42"
     assert transport.calls[0][3] == b'{"amount":"100.00","hotel":"H-1"}'
     assert evidence.attempts[0]["request_body"] == transport.calls[0][3]
-    assert evidence.attempts[0]["response_body"] == b'{"supplier_reference":"S-42"}'
+    assert evidence.attempts[0]["response_body"] == b'{"status":"ok","supplier_reference":"S-42"}'
     assert runtime.audits[0].request_hash == hashlib.sha256(transport.calls[0][3]).hexdigest()
     assert result.payload["evidence_reference"] == "evidence://raw/BOOK/1"
 
@@ -173,7 +188,7 @@ def test_each_retry_attempt_is_independently_sealed():
     transport = Transport(
         [
             (429, {}, b'{"error":"slow_down"}'),
-            (200, {}, b'{"supplier_reference":"S-43"}'),
+            (200, {}, b'{"status":"ok","supplier_reference":"S-43"}'),
         ]
     )
     result = execute_availability(executor(transport=transport, evidence=evidence))
@@ -187,7 +202,7 @@ def test_mutating_operation_does_not_retry_ambiguous_http_failure():
     transport = Transport(
         [
             (429, {}, b'{"error":"slow_down"}'),
-            (200, {}, b'{"supplier_reference":"duplicate-risk"}'),
+            (200, {}, b'{"status":"ok","supplier_reference":"duplicate-risk"}'),
         ]
     )
     result = execute_one(executor(transport=transport, evidence=evidence))
@@ -218,7 +233,7 @@ def test_transport_exception_attempt_is_sealed_and_unknown_outcome_is_not_retrie
 def test_transport_contract_violation_is_sealed_and_fails_closed():
     class ParsedBodyTransport(Transport):
         def request(self, method, url, *, headers, body, timeout_seconds):
-            return 200, {}, {"supplier_reference": "not-raw"}
+            return 200, {}, {"status":"ok","supplier_reference": "not-raw"}
 
     evidence = Evidence()
     result = execute_one(executor(transport=ParsedBodyTransport(), evidence=evidence))
@@ -314,5 +329,5 @@ def test_signed_webhook_suite_result_does_not_claim_external_observation():
         idempotency_key="suite-1",
     )
     webhook = next(item for item in results if item.operation == "SIGNED_WEBHOOK")
-    assert webhook.ok is True
+    assert webhook.ok is False
     assert webhook.payload == {"externally_observed": False, "status": "CONTRACT_READY_NOT_OBSERVED"}

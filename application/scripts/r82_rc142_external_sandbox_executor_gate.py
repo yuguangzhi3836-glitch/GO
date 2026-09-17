@@ -2,12 +2,15 @@
 from pathlib import Path
 import json
 import sys
+import tempfile
+from sqlalchemy import create_engine
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from go_hotel.connectors.hotel_supply_sandbox import hotel_supply_sandbox_executor
 from go_hotel.connectors.external_sandbox_runtime import ContractDrivenHotelSupplyExecutor
+from go_hotel.connectors.supplier_runtime_controls import metadata, SQLMutationJournal
 
 
 class Resolver:
@@ -21,7 +24,7 @@ class Transport:
 
     def request(self, method, url, *, headers, body, timeout_seconds):
         self.calls.append((method, url, headers.get("Idempotency-Key"), body))
-        response = {"supplier_reference": "ref-" + url.rsplit("/", 1)[-1]}
+        response = {"status": "ok", "supplier_reference": "ref-" + url.rsplit("/", 1)[-1]}
         return 200, {"Content-Type": "application/json"}, json.dumps(response, separators=(",", ":")).encode()
 
 
@@ -46,7 +49,7 @@ class Replay:
 
 
 def op(path):
-    return {"method": "POST", "path": path, "request_mapping": {"x": "x"}, "response_mapping": {"x": "x"}}
+    return {"method": "POST", "path": path, "request_mapping": {"x": "x"}, "response_mapping": {"x": "x"}, "response_validation": {"required_fields": {"status": "string", "supplier_reference": "string"}, "success_equals": {"status": "ok"}, "reference_field": "supplier_reference"}}
 
 
 contract = {
@@ -114,12 +117,16 @@ except ValueError as exc:
 
 transport = Transport()
 evidence = Evidence()
+temp = tempfile.TemporaryDirectory()
+engine = create_engine("sqlite:///" + str(Path(temp.name) / "controls.db"))
+metadata.create_all(engine)
 executor = ContractDrivenHotelSupplyExecutor(
     contract=contract,
     resolver=Resolver(),
     transport=transport,
     evidence_sink=evidence,
     replay_store=Replay(),
+    mutation_journal=SQLMutationJournal(engine, scope="gate/test"),
 )
 hotel_supply_sandbox_executor.install(executor)
 results = hotel_supply_sandbox_executor.execute_suite(
@@ -137,19 +144,20 @@ checks.update(
         "availability_quote_book_query_cancel": all(
             by_operation.get(name) for name in ("AVAILABILITY", "QUOTE", "BOOK", "QUERY", "CANCEL")
         ),
-        "book_idempotency": by_operation.get("BOOK_IDEMPOTENCY") is True,
-        "signed_webhook_contract": by_operation.get("SIGNED_WEBHOOK") is True,
+        "supplier_idempotency_not_fabricated": by_operation.get("BOOK_IDEMPOTENCY") is False,
+        "external_webhook_not_fabricated": by_operation.get("SIGNED_WEBHOOK") is False,
         "error_mapping_fail_closed": by_operation.get("ERROR_MAPPING") is True,
-        "reconciliation_runtime": by_operation.get("RECONCILIATION") is True,
+        "reconciliation_not_fabricated": by_operation.get("RECONCILIATION") is False,
         "raw_attempt_evidence": len(executor.audits) == 5
         and len(evidence.attempts) == 5
         and all(item.evidence_reference.startswith("evidence://raw/") for item in executor.audits),
     }
 )
 hotel_supply_sandbox_executor.clear()
+engine.dispose()
+temp.cleanup()
 for key, value in checks.items():
     print(f'{key}={"PASS" if value else "FAIL"}')
 if not all(checks.values()):
     raise SystemExit(1)
 print("R8.2_RC14_2_EXTERNAL_SANDBOX_EXECUTOR_GATE: PASS")
-

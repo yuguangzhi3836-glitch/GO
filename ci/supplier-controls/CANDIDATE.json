@@ -1,0 +1,23 @@
+{
+  "schema": "go.supplier-controls.candidate.v1",
+  "task": "SUPPLIER_CONTROLS_DURABILITY",
+  "base_candidate_sha": "cff423cf1a35b0e61081dc4f2f1cae54777c77da",
+  "base_application_tree": "9117bb94c2477865cd7839321647f6e57f960a8b",
+  "base_fingerprint": "fafe623561404446d9f3b8ce1c67007f266d510006015860dc2df393c4113005",
+  "allowed_changed_files": [
+    "application/src/go_hotel/connectors/supplier_runtime_controls.py",
+    "application/src/go_hotel/connectors/external_sandbox_runtime.py",
+    "application/tests/test_supplier_runtime_controls.py",
+    "application/tests/test_supplier_preflight_runtime.py",
+    "application/scripts/r82_rc142_external_sandbox_executor_gate.py",
+    "ci/supplier-controls/README.md",
+    "ci/supplier-controls/CANDIDATE.json",
+    "ci/supplier-controls/seal_evidence.py",
+    ".github/workflows/supplier-controls.yml"
+  ],
+  "scope": "persistent internal controls and truthful response acceptance",
+  "external_supplier": "HOLD",
+  "hk_staging": "HOLD",
+  "final_release": "HOLD",
+  "production": "HOLD"
+}
