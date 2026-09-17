@@ -1,12 +1,12 @@
 {
   "schema": "go.v70.next-depth.candidate-rebind.v3",
   "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
-  "product_candidate_commit": "9cd86c85d1aa141785eca2e44a1df9c7e9063a4c",
-  "application_git_tree": "b0dba98dccfead7f2a7f80ccc611fc153f5915ea",
+  "product_candidate_commit": "7e18ae4dec2d8226bcb4fcba0e27f133d5dfd0bc",
+  "application_git_tree": "9f781b7949b42d996ee0fc37d0c9962b219545ed",
   "preintegration_candidate_commit": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_git_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
   "parent_candidate_commit": "a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b",
-  "source_files": 1365,
+  "source_files": 1366,
   "inherited_candidate_manifest": {
     "path": "ci/next-depth/CANDIDATE_INHERITED_85FB.json",
     "git_blob": "d616e629a1d05f5955a04b60cb60d34bdf571917"
@@ -31,16 +31,21 @@
     },
     "application/src/go_hotel/services/alipay_safeguarded_settlement.py": {
       "mode": "100644",
-      "git_blob": "848fab15ac59515c9521c4eaefd2d67c0e7ba72c",
-      "reason": "V70-R3-C01-02 current funding generation settlement term revalidation"
+      "git_blob": "ec9cacc29b30418d124bff07cdf2110326405fb1",
+      "reason": "V70-R3-C01-03 same-reservation immutable authorization idempotent replay"
     },
     "application/tests/test_v70_next_c01_unknown_funding.py": {
       "mode": "100644",
       "git_blob": "f2c0bb64c456d53bee89c05d98fb613941a371ea",
       "reason": "V70-R3-C01-02 bounded regression"
+    },
+    "application/tests/test_v70_next_c01_authorization_replay.py": {
+      "mode": "100644",
+      "git_blob": "8445bed95c232f5904a8f55d0dbd4d0e35f8147b",
+      "reason": "V70-R3-C01-03 bounded idempotent authorization replay regression"
     }
   },
-  "source_tree_sha256_status": "BOUND_FROM_RETENTION_RUN_35167495813_SUBSTEP_PASS",
+  "source_tree_sha256_status": "PENDING_RECOMPUTE_FROM_RETENTION",
   "verified_inherited_evidence": {
     "pr74_postgresql_workflow_run": 34807203728,
     "c11_original_postgresql_cases": "10/10 PASS",
