@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {createRequire} from 'node:module';
 
+const require=createRequire(import.meta.url);
 const picker=require('../frontend/consumer/date-range.js');
 
 test('cross-month range stays in one two-step selection',()=>{
