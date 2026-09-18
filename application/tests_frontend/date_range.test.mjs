@@ -11,7 +11,7 @@ test('cross-month range stays in one two-step selection',()=>{
   const model=picker.createSelection();
   assert.equal(model.select('2026-01-31').complete,false);
   const result=model.select('2026-02-02');
-  assert.deepEqual(result,{start:'2026-01-31',end:'2026-02-02',status:'COMPLETE',complete:true});
+  assert.equal(JSON.stringify(result),JSON.stringify({start:'2026-01-31',end:'2026-02-02',status:'COMPLETE',complete:true}));
 });
 
 test('reverse second choice becomes the new start and still requires an end',()=>{
