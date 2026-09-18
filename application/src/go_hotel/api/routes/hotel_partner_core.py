@@ -1,4 +1,4 @@
-from fastapi import APIRouter,Depends,HTTPException
+from fastapi import APIRouter,Depends,HTTPException,Header
 from pydantic import BaseModel
 from go_hotel.security.deps import supplier_principal
 from go_hotel.security.service import Principal
@@ -6,7 +6,13 @@ from go_hotel.services.hotel_partner_core import hotel_partner_core_service as s
 router=APIRouter(prefix='/v1/supplier',tags=['hotel-partner-self-operating-core'])
 def call(fn,*args):
     try:return {'data':fn(*args)}
-    except ValueError as e:raise HTTPException(409,detail=str(e))
+    except ValueError as e:
+        code=str(e)
+        if code in {'PROPERTY_NOT_FOUND','ROOM_TYPE_NOT_FOUND','INBOX_ITEM_NOT_FOUND'}:status=404
+        elif code in {'IDEMPOTENCY_PAYLOAD_MISMATCH','IMPORT_ALREADY_IN_PROGRESS','SUPPLIER_PROVIDER_STATE_ALREADY_USED'}:status=409
+        elif code in {'SUPPLIER_PROVIDER_VERIFIER_UNAVAILABLE','AUTHORIZATION_UNAVAILABLE'}:status=503
+        else:status=422
+        raise HTTPException(status,detail=code)
 class Payload(BaseModel):model_config={'extra':'allow'}
 @router.post('/properties',status_code=201)
 def create_property(b:Payload,p:Principal=Depends(supplier_principal)):return call(svc.create_property,p.supplier_id,p.user_id,b.model_dump(exclude_none=True))
@@ -15,7 +21,7 @@ def properties(p:Principal=Depends(supplier_principal)):return {'data':svc.prope
 @router.get('/one-click-import/providers')
 def one_click_import_providers(p:Principal=Depends(supplier_principal)):return {'data':svc.import_providers()}
 @router.post('/properties/{property_id}/one-click-import')
-def one_click_import(property_id:str,b:Payload,p:Principal=Depends(supplier_principal)):return call(svc.one_click_import,p.supplier_id,p.user_id,property_id,b.model_dump(exclude_none=True))
+def one_click_import(property_id:str,b:Payload,idempotency_key:str|None=Header(None,alias='Idempotency-Key'),p:Principal=Depends(supplier_principal)):return call(svc.one_click_import,p.supplier_id,p.user_id,property_id,b.model_dump(exclude_none=True),idempotency_key)
 @router.patch('/properties/{property_id}')
 def patch_property(property_id:str,b:Payload,p:Principal=Depends(supplier_principal)):return call(svc.patch_property,p.supplier_id,p.user_id,property_id,b.model_dump(exclude_none=True))
 @router.get('/properties/{property_id}/command-center')

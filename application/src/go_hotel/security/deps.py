@@ -36,6 +36,10 @@ def admin_principal(p:Principal=Depends(current_principal)):
     if p.actor_type!='GO_ADMIN': raise HTTPException(403,detail='GO_ADMIN_REQUIRED')
     return p
 
+def connector_admin_principal(p:Principal=Depends(admin_principal)):
+    if 'admin:connector' not in p.permissions: raise HTTPException(403,detail='CONNECTOR_ADMIN_REQUIRED')
+    return p
+
 from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import OrderRow, RiskEventRuntimeRow

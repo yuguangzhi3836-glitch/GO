@@ -1,0 +1,34 @@
+[
+  {
+    "command": [
+      "python",
+      "-m",
+      "compileall",
+      "-q",
+      "src/go_hotel"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "python",
+      "-m",
+      "alembic",
+      "heads"
+    ],
+    "exit_code": 0,
+    "stdout": "0138_supplier_library_import (head)\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "node",
+      "scripts/contract-check.mjs"
+    ],
+    "exit_code": 0,
+    "stdout": "Sprint 1Z mobile contract: PASS\nC05 consumer Chinese/mobile copy governance: PASS (5 screens)\n",
+    "stderr": ""
+  }
+]

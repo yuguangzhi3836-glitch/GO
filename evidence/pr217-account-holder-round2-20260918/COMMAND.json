@@ -1,0 +1,28 @@
+{
+  "command": [
+    "python",
+    "-m",
+    "pytest",
+    "tests/test_hotel_partner_self_operating_core.py",
+    "tests/test_personal_travel_vault.py",
+    "tests/test_supplier_onboarding_and_member_comparison.py",
+    "tests/test_external_orders_in_go_trips.py",
+    "tests/test_consumer_ota_security_boundaries.py",
+    "tests/test_consumer_ota_acceptance_contract.py",
+    "tests/test_depth25_migration_history.py",
+    "tests/test_depth48_flight_migration.py",
+    "tests/test_parent_implementation_code_review_debt_closure.py",
+    "tests/test_account_holder_http_integration.py",
+    "tests/test_supplier_import_migration.py",
+    "tests/payments/test_c11_flight_idempotency_recovery.py",
+    "tests/test_v70_r3_c04_http_get_zero_write.py",
+    "-q",
+    "--junitxml=/workspace/scratch/a682af655fba/pr217-evidence/final.xml"
+  ],
+  "environment": {
+    "APP_ENV": "test",
+    "external_providers": "not_called",
+    "database": "isolated_SQLite"
+  },
+  "previous_screenshot_evidence_transferred": false
+}

@@ -5294,6 +5294,36 @@ class HotelPartnerAuditEventRow(Base):
     actor_id: Mapped[str]=mapped_column(String(64),nullable=False)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False,index=True)
 
+class HotelPartnerImportAuthorizationRow(Base):
+    __tablename__='hotel_partner_import_authorization'
+    authorization_id: Mapped[str]=mapped_column(String(64),primary_key=True)
+    property_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
+    supplier_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
+    provider: Mapped[str]=mapped_column(String(32),nullable=False,index=True)
+    state_hash: Mapped[str]=mapped_column(String(64),nullable=False,unique=True)
+    status: Mapped[str]=mapped_column(String(24),nullable=False,index=True)
+    requested_by: Mapped[str]=mapped_column(String(64),nullable=False)
+    created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
+    expires_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False,index=True)
+    consumed_at: Mapped[datetime|None]=mapped_column(DateTime(timezone=True))
+
+class HotelPartnerImportJobRow(Base):
+    __tablename__='hotel_partner_import_job'
+    import_job_id: Mapped[str]=mapped_column(String(64),primary_key=True)
+    property_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
+    supplier_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
+    provider: Mapped[str]=mapped_column(String(32),nullable=False,index=True)
+    method: Mapped[str]=mapped_column(String(32),nullable=False)
+    idempotency_key: Mapped[str]=mapped_column(String(160),nullable=False)
+    request_hash: Mapped[str]=mapped_column(String(64),nullable=False)
+    status: Mapped[str]=mapped_column(String(24),nullable=False,index=True)
+    result_json: Mapped[dict]=mapped_column(JSON,nullable=False,default=dict)
+    error_code: Mapped[str|None]=mapped_column(String(96))
+    created_by: Mapped[str]=mapped_column(String(64),nullable=False)
+    created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
+    completed_at: Mapped[datetime|None]=mapped_column(DateTime(timezone=True))
+    __table_args__=(UniqueConstraint('supplier_id','property_id','idempotency_key',name='uq_partner_import_idempotency'),)
+
 # Mother Plan Production Build 2 — Commercial Constitution + GO Admin Commercial OS.
 class CommercialPolicyVersionRow(Base):
     __tablename__='commercial_policy_version'

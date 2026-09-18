@@ -51,13 +51,17 @@ class SupplierOnboardingService:
                 brand_name=hotel.get("brand_name"), address_json=hotel.get("address") or {},
                 latitude=hotel.get("latitude"), longitude=hotel.get("longitude"),
                 contacts_json=hotel.get("contacts") or {}, legal_json=hotel.get("legal") or {},
-                operations_json={"onboarding_source": "SELF_REGISTRATION"}, poi_json=[],
+                operations_json={"onboarding_source": "SELF_REGISTRATION", "ownership": {
+                    "status": "DECLARED", "declared_by": user_id,
+                    "verification_required_before_publication": True,
+                }}, poi_json=[],
                 publication_state="DRAFT", version=1, created_at=created, updated_at=created,
             )
             session.add_all([user, prop, HotelPartnerAuditEventRow(
                 audit_event_id=_id("hpa"), property_id=property_id,
                 event_type="SUPPLIER_SELF_REGISTERED", aggregate_type="PROPERTY",
-                aggregate_id=property_id, payload_json={"supplier_id": supplier_id},
+                aggregate_id=property_id, payload_json={"supplier_id": supplier_id,
+                    "ownership_status": "DECLARED", "publication_blocked_until_verified": True},
                 actor_id=user_id, created_at=created,
             )])
             session.commit()

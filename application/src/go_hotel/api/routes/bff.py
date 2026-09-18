@@ -5,10 +5,9 @@ from go_hotel.core.config import settings
 from go_hotel.security.service import identity_service, Principal, uid, now
 from go_hotel.security.deps import current_principal
 from go_hotel.db.session import SessionLocal
-from go_hotel.db.models import AuditEventRow, IdentityUserRow
-from sqlalchemy import select
-import uuid
+from go_hotel.db.models import AuditEventRow
 from typing import Literal
+from go_hotel.services.supplier_onboarding import supplier_onboarding_service
 
 router=APIRouter(tags=['production-bff'])
 
@@ -76,11 +75,13 @@ def supplier_register(body:SupplierRegisterBody,request:Request,response:Respons
         raise HTTPException(422,detail='SUPPLIER_TERMS_ACCEPTANCE_REQUIRED')
     if any(body.term_versions.get(k)!=v for k,v in SUPPLIER_REGISTRATION_TERMS.items()):
         raise HTTPException(409,detail='SUPPLIER_TERMS_VERSION_MISMATCH')
-    with SessionLocal() as s:
-        if s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==email)):
-            raise HTTPException(409,detail='EMAIL_ALREADY_REGISTERED')
-    supplier_id='sup_'+uuid.uuid4().hex
-    user_id=identity_service.create_user(email,body.password,'SUPPLIER_USER',supplier_id,['SUPPLIER_OWNER'])
+    try:
+        registration=supplier_onboarding_service.register({'username':email,'password':body.password,'hotel':{
+            'name_zh':body.organization_name,'property_type':'HOTEL','contacts':{'contact_name':body.contact_name,'phone':body.phone},
+        }})
+    except ValueError as exc:
+        raise HTTPException(409,detail=str(exc)) from exc
+    supplier_id=registration['supplier_id'];user_id=registration['user_id'];property_id=registration['property_id']
     t=now()
     with SessionLocal() as s:
         s.add(AuditEventRow(
@@ -92,7 +93,7 @@ def supplier_register(body:SupplierRegisterBody,request:Request,response:Respons
         ));s.commit()
     tokens=identity_service.login(email,body.password,request.client.host if request.client else None,request.headers.get('user-agent'))
     set_session_cookies(response,tokens)
-    return {'data':{'authenticated':True,'supplier_id':supplier_id,'registration_state':'ACCOUNT_CREATED_TERMS_ACCEPTED','next_step':'ENTERPRISE_IDENTITY_AND_PROPERTY_BINDING'}}
+    return {'data':{'authenticated':True,'supplier_id':supplier_id,'property_id':property_id,'registration_state':'ACCOUNT_CREATED_TERMS_ACCEPTED','next_step':'BUILD_HOTEL_LIBRARY'}}
 
 @router.post('/bff/auth/login')
 def bff_login(body:LoginBody,request:Request,response:Response):
