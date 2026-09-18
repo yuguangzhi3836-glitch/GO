@@ -1376,7 +1376,7 @@ class ProductionRunnerContractTests(unittest.TestCase):
                 # The canary's runner owns a per-call timeout; the collector's is
                 # fixed and executor-owned, so it accepts the reader's and does not
                 # forward it.  Either way the call reaches Docker.
-                expected = 600 if name == "canary_runtime" else None
+                expected = 600 if name == "canary_runtime" else 120
                 self.assertEqual(recorder.calls[-1][1].get("timeout"), expected)
 
     def test_a_runner_offering_only_run_cannot_be_used_by_the_reader(self):
