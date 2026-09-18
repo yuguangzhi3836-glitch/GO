@@ -27,6 +27,57 @@ the manifest, and requires every manifest entry to validate after extraction.
 
 No private key, token, or runtime configuration value is included.
 
+## Issue #184 — bounded dependency compatibility and specific failures
+
+The PR #183 TEST_PR attempt produced signed FAILED Evidence with
+`UNCLASSIFIED_REJECT` and no original stderr. Repository inspection separately
+confirmed that its dependency fingerprint differs from the frozen profile only
+by `uvicorn>=0.30` becoming `uvicorn[standard]>=0.30`. That is a source-side
+compatibility defect; it does not prove the installed executor's first error.
+
+The legacy fingerprint `904ede5e7ee3408e5f80bc2957d5f4b4d32754be6797bf6a53cff545b2fc94aa`
+keeps its existing path. The exact standard-extra fingerprint
+`c3140ecf1e38bf7f635ff6a80758677441a56866d0aa18727a2f6193adc707e1`
+additionally requires an offline probe in the same pinned builder. The trusted
+probe validates installed distribution versions, declared extras and the active
+transitive requirement closure using the builder's own platform markers. It
+rejects missing packages, unknown extras, incompatible versions, malformed or
+oversized graphs and direct URLs. It installs nothing and loads no candidate
+code. A rejected probe stops before build or artifact seal; all other dependency
+fingerprints remain rejected. The image digest, isolation limits, immutable
+source binding, Task schema, signatures and one-attempt ledger are unchanged.
+
+Known `TEST_PR_*` refusals now survive the transport's closed reason vocabulary,
+with bounded/redacted diagnostics and the executor-reported `test-pr-v3` version.
+The failure schema accepts the same closed set. Unknown reasons still map to
+`UNCLASSIFIED_REJECT`; no failure authorizes replay or another action.
+
+The isolated workflow checks out the exact candidate SHA, records its tree,
+application tree, changed paths, source fingerprint and test-log digest, and
+writes `EVIDENCE.json` plus a checksum manifest excluding itself. Its synthetic
+TEST_PR failure uses disposable CI signing identities and reaches the real
+Command Center projection as a verified failure. It is not live HK Evidence.
+
+### Site handoff remains blocked
+
+This revision is a shared source candidate, not a host installation or a successful
+TEST_PR of #183. Before any controlled installation, obtain the live executor
+file hashes and original failure diagnostics through an approved operator path.
+Keep existing installer preflight pins; do not infer live hashes from repository
+main or overwrite them to make preflight pass. Then verify the staged candidate
+manifest and actual frozen-image dependency probe under the installation change.
+The frozen HK image may still lack a required extra; that outcome must remain a
+specific failure until a separately reviewed builder revision is available.
+
+Request PR `chenzhenxi1-sudo/go-control-tasks#44` and Task
+`go-boss-test-pr-183-b830d1b36e7e` are exhausted. Do not replay them. A future
+TEST_PR requires the normal fresh Request/Task admission after site prerequisites
+are satisfied. The separate `0133_flight_change_plan` to
+`0137_hosted_unknown_episode` migration gap remains outside this repair. PR #183
+at `edd3500575d2f2b81298cc9273025e0a3b734897` is unchanged; C06 external evidence,
+CANARY, VERIFY, DEPLOY, Final Release and Production are not authorized by this
+source-only result.
+
 ## CC V1-02 — failure closure (this revision)
 
 Before this revision a Task that was picked up and failed touched only the
@@ -394,3 +445,9 @@ INSTALLATION_PERFORMED=NO
 DEPLOYMENT_PERFORMED=NO
 HONG_KONG_TOUCHED=NO
 ```
+
+## Issue 103 shared migration extension
+
+The candidate-bound migration adapter extends this exact PR185 compatibility
+repair. See `../hk-forward-migration-v1/README.md`; previous source-only status
+paragraphs above remain historical to their own acceptance scope.

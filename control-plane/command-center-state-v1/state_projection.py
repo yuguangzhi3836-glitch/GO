@@ -43,6 +43,7 @@ The output is a DERIVED, NON-AUTHORITATIVE view.  The Signed Task is the only
 Execution Authority and the Signed Evidence is the only proof.  This file is
 never hand-edited and is always rebuildable.
 """
+import execution_window
 import argparse
 import base64
 import datetime as dt
@@ -720,6 +721,12 @@ def validate_task(task):
     # the projection with an explicit drift marker instead of being dropped, so
     # the state is never silently incomplete.
     current = set(task["parameters"]) == ACTION_PARAMETERS[action]
+    extended=(action in ('HK_STAGING_CANARY','HK_STAGING_DEPLOY','HK_STAGING_VERIFY')
+              and set(task['parameters'])==ACTION_PARAMETERS[action]|{'candidate_contract_sha256'})
+    if extended:
+        if not re.fullmatch(r'[0-9a-f]{64}',str(task['parameters']['candidate_contract_sha256'])):
+            raise Malformed('task_candidate_contract')
+        current=True
     superseded = set(task["parameters"]) in SUPERSEDED_PARAMETERS.get(action, ())
     task["_parameter_contract"] = ("CURRENT" if current
                                    else "SUPERSEDED" if superseded
@@ -1537,7 +1544,7 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
             }
         for key in ("built_image_id", "source_pr_number", "source_commit_sha",
                     "task_canonical_sha256", "deploy_record_id", "deploy_record_sha256",
-                    "rollback_record_id"):
+                    "rollback_record_id", "candidate_contract_sha256"):
             if isinstance(ev.get(key), str):
                 entry["evidence"][key] = ev[key]
         if isinstance(ev.get("agent_version"), str):
@@ -1546,6 +1553,10 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
             STATE_PROVEN if ev_signature else STATE_OBSERVED, ev["started_at"],
             "the Evidence carries started_at for this task/nonce", refs)
 
+        execution_error=None
+        if ev['status']=='SUCCESS' and execution_window.applies(task):
+            try: execution_window.validate(task,ev)
+            except execution_window.Invalid as exc: execution_error=str(exc)
         verified = ev_signature is True
         if ev_signature is False:
             entry.update({"lifecycle": "EVIDENCE_INVALID",
@@ -1577,7 +1588,10 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
                               "the signed Evidence reports a non-success status%s"
                               % (": " + described if described else ""), refs),
                           "failure": detail})
-        elif completed > expires:
+        elif execution_error is not None:
+            entry.update({'lifecycle':'EVIDENCE_INVALID',
+                          'assertion':assertion(STATE_FAILED,'EXECUTION_WINDOW_INVALID',execution_error,refs)})
+        elif completed > expires and not execution_window.applies(task):
             entry.update({"lifecycle": "EVIDENCE_TIMEOUT",
                           "assertion": assertion(STATE_FAILED, "EVIDENCE_AFTER_EXPIRY",
                                                  "Evidence completed_at is outside the task validity "

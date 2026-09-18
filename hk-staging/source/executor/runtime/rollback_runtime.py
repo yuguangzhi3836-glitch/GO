@@ -60,6 +60,7 @@ def resolve_source(release,source_task_id,rollback_task_id, *, handoff_dir=HANDO
     record=_read_regular(record_path)
     if hashlib.sha256(record_path.read_bytes()).hexdigest()!=record_sha or record.get("deploy_record_schema_version")!="2" or record.get("record_id")!=record_id: raise Reject("record integrity")
     if record.get("task_id")!=task["task_id"] or record.get("nonce")!=task["nonce"] or record.get("authority")!=task["authority"] or record.get("task_canonical_sha256")!=hashlib.sha256(canonical(task)).hexdigest(): raise Reject("record task binding")
+    if record.get('migration_required') is True or 'candidate_contract_sha256' in task.get('parameters',{}): raise Reject('migration rollback compatibility unproven')
     targets=record.get("targets")
     protected=record.get("protected_non_target_inventory")
     if not isinstance(targets,list) or [x.get("service") for x in targets]!=list(SERVICES) or not isinstance(protected,list) or sorted(x.get("service") for x in protected)!=sorted(PROTECTED): raise Reject("record scope")

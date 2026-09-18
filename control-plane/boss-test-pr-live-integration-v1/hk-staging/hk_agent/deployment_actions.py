@@ -48,7 +48,7 @@ class ProductionExecutor:
         try:
             completed = subprocess.run(exact_argv, check=True, shell=False, text=True,
                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                       timeout=300)
+                                       timeout=900 if "--candidate-contract-sha256" in argv and argv[1]=="deploy" else 300)
         except subprocess.CalledProcessError as exc:
             raise Reject("executor rejected", stdout=exc.stdout, stderr=exc.stderr,
                          returncode=exc.returncode, stage="subprocess_nonzero") from exc
@@ -79,7 +79,7 @@ def _exact(params, required):
     if not isinstance(params,dict) or set(params) != set(required): raise Reject("parameter schema rejected")
     return params
 
-def validate(action, params):
+def _validate_legacy(action, params):
     if action not in ACTIONS: raise Reject("unknown action")
     if action == "HK_STAGING_CANARY":
         p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id"))
@@ -92,6 +92,16 @@ def validate(action, params):
         return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id")}
     p=_exact(params,("release_id","source_deploy_task_id","approval_id"))
     return {"release_id":_id(p["release_id"],"release_id"),"source_deploy_task_id":_id(p["source_deploy_task_id"],"source_deploy_task_id"),"approval_id":_id(p["approval_id"],"approval_id")}
+
+def validate(action,params):
+    if isinstance(params,dict) and 'candidate_contract_sha256' in params:
+        if action not in ('HK_STAGING_CANARY','HK_STAGING_DEPLOY','HK_STAGING_VERIFY'):
+            raise Reject('candidate contract action rejected')
+        identity=_package(params['candidate_contract_sha256'])
+        rest={k:v for k,v in params.items() if k!='candidate_contract_sha256'}
+        result=_validate_legacy(action,rest)
+        return {**result,'candidate_contract_sha256':identity}
+    return _validate_legacy(action,params)
 
 def _binding(value):
     if not isinstance(value,dict) or set(value)!={"task_id","nonce","authority","canonical_sha256"}: raise Reject("task binding rejected")
@@ -109,6 +119,8 @@ def argv(action, params, task_binding=None):
     if action in ("HK_STAGING_DEPLOY","HK_STAGING_ROLLBACK"):
         b=_binding(task_binding)
         out += ["--task-id",b["task_id"],"--task-nonce",b["nonce"],"--task-authority",b["authority"],"--task-canonical-sha256",b["canonical_sha256"]]
+    if 'candidate_contract_sha256' in p:
+        out += ['--candidate-contract-sha256',p['candidate_contract_sha256']]
     return out
 
 def parse_executor_output(raw, action, params):
@@ -128,6 +140,7 @@ def parse_executor_output(raw, action, params):
     required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results"}
     if action=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256"}
     if action=="HK_STAGING_ROLLBACK": required |= {"source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256"}
+    if 'candidate_contract_sha256' in params: required.add('candidate_contract_sha256')
     if not isinstance(out,dict) or set(out) != required: raise Reject("executor result schema rejected", stdout=raw, stage="parser")
     if out["schema_version"] != "1" or out["action_id"] != action or out["status"] != "SUCCESS": raise Reject("executor result rejected", stdout=raw, stage="parser")
     if not isinstance(out["executor_version"],str) or not out["executor_version"]: raise Reject("executor version rejected", stdout=raw, stage="parser")
@@ -138,6 +151,8 @@ def parse_executor_output(raw, action, params):
     for key in correlation:
         expected=params.get(key)
         if out.get(key) != expected: raise Reject("executor correlation rejected", stdout=raw, stage="parser")
+    if 'candidate_contract_sha256' in params and out.get('candidate_contract_sha256')!=params['candidate_contract_sha256']:
+        raise Reject('executor contract binding rejected',stdout=raw,stage='parser')
     return out
 
 def dispatch(task, executor, task_binding=None):

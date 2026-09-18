@@ -1,3 +1,5 @@
+> Superseded for Issue 103 migration candidates. The legacy three-file installation below is historical. This candidate also requires the HK Agent adapter/transport/execution-window module, all pinned executor runtimes/program, and the CC projector/execution-window module. Use only the reviewed fixed installation manifest described in `../hk-forward-migration-v1/README.md`; do not run the old installer for this revision.
+
 # 安装交接（未执行）
 
 本文件供 Eason/授权指挥中心操作人员审核。用户本轮授权补齐源码入口；本轮没有安装入口、启用部署开关、发送 Request/Task、合并 PR 或改变香港/Production。

@@ -197,11 +197,23 @@ def validate_request(raw, at=None):
 def load_baseline(path=BASELINE_CONFIG):
     value=json.loads(pathlib.Path(path).read_text())
     required={"version","environment","image_id","evidence_task_id","evidence_commit","evidence_path"}
-    if set(value) != required or value["version"] != 1 or value["environment"] != POLICY["environment"]: raise Reject("invalid_authoritative_baseline")
+    if value.get("version") == 2: required.add("candidate_contract_sha256")
+    if set(value) != required or value["version"] not in (1,2) or value["environment"] != POLICY["environment"]: raise Reject("invalid_authoritative_baseline")
     if not re.fullmatch(r"sha256:[0-9a-f]{64}",value["image_id"]): raise Reject("invalid_authoritative_baseline")
     if not all(isinstance(value[x],str) and value[x] for x in ("evidence_task_id","evidence_commit","evidence_path")): raise Reject("invalid_authoritative_baseline")
+    if value['version'] == 2:
+        try:
+            contract=deploy_gate.candidate_contract.load(value['candidate_contract_sha256'],deploy_gate.candidate_contract.CC_STORE)
+            deploy_gate.candidate_contract.verify_profile(contract,value['image_id'])
+        except deploy_gate.candidate_contract.Reject as exc: raise Reject(str(exc)) from exc
     return value
 def load_canary_baseline(path=CANARY_BASELINE_CONFIG):
+    if path==CANARY_BASELINE_CONFIG:
+        try: active=deploy_gate.candidate_contract.active()
+        except deploy_gate.candidate_contract.Reject as exc: raise Reject(str(exc)) from exc
+        if active:
+            record,contract=active
+            return {"version":2,"environment":POLICY["environment"],"candidate_image_id":contract["candidate"]["image_id"],"candidate_package_sha256":contract["candidate"]["package_sha256"],"expected_current_image_id":contract["expected_current_image_id"],"candidate_contract_sha256":record["candidate_contract_sha256"]}
     """The root-owned binding a CANARY Request may not influence.
 
     A canary Task names a candidate image, that candidate's sealed package, and the
@@ -235,7 +247,8 @@ def derive(request, baseline, at=None):
     return {"schema_version":"1", "task_id":"go-boss-request-verify-" + unique_stamp,
       "nonce":secrets.token_urlsafe(24), "issued_at":iso(at), "expires_at":iso(at + dt.timedelta(minutes=15)),
       "authority":"GO-COMMAND-CENTER", "environment":POLICY["environment"], "action_id":POLICY["action_id"],
-      "parameters":{"release_id":"boss-request-verify-" + unique_stamp, "candidate_image_id":baseline["image_id"], "expected_current_image_id":baseline["image_id"]}}
+      "parameters":{"release_id":"boss-request-verify-" + unique_stamp, "candidate_image_id":baseline["image_id"], "expected_current_image_id":baseline["image_id"],
+                    **({"candidate_contract_sha256":baseline["candidate_contract_sha256"]} if "candidate_contract_sha256" in baseline else {})}}
 
 def derive_canary(request, baseline, at=None):
     """A candidate canary Task. It takes nothing at all from the Request.
@@ -259,7 +272,8 @@ def derive_canary(request, baseline, at=None):
       "parameters":{"release_id":"boss-request-canary-" + unique_stamp,
                     "candidate_image_id":baseline["candidate_image_id"],
                     "candidate_package_sha256":baseline["candidate_package_sha256"],
-                    "expected_current_image_id":baseline["expected_current_image_id"]}}
+                    "expected_current_image_id":baseline["expected_current_image_id"],
+                    **({"candidate_contract_sha256":baseline["candidate_contract_sha256"]} if "candidate_contract_sha256" in baseline else {})}}
 
 def sign(task, key_path):
     key = serialization.load_pem_private_key(pathlib.Path(key_path).read_bytes(), password=None)
@@ -327,6 +341,9 @@ def read_repo_file(repo, key_path, path):
 
 def read_admission():
     """The candidate admission record, as the GO repository publishes it."""
+    try: active=deploy_gate.candidate_contract.active()
+    except deploy_gate.candidate_contract.Reject as exc: raise Reject(str(exc)) from exc
+    if active: return active[0]["admission"]
     return deploy_gate.parse_json(read_repo_file(
         GO_REPOSITORY, PR_RESOLVER_KEY, plan_derivation.ADMISSION_POINTER))
 
@@ -723,7 +740,8 @@ def derive_post_action_verify(source_task,image,at=None):
             "authority":"GO-COMMAND-CENTER","environment":POLICY["environment"],
             "action_id":POLICY["action_id"],
             "parameters":{"release_id":release_id,"candidate_image_id":image,
-                          "expected_current_image_id":image}}
+                          "expected_current_image_id":image,
+                          **({"candidate_contract_sha256":source_task["parameters"]["candidate_contract_sha256"]} if source_task["action_id"]==deploy_gate.ACTION and "candidate_contract_sha256" in source_task.get("parameters",{}) else {})}}
 
 def adopt_published_verify(raw,authority_key,expected):
     """An already-published VERIFY under this name, if it is this Command Center's.

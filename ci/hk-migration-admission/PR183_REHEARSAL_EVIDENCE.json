@@ -1,0 +1,60 @@
+{
+  "baseline_business_tables": 550,
+  "binding": {
+    "artifact_image_id": "sha256:8f8beb568209393fd74660c226ca7b14b2efe171caf5521645ec6fe4cea56119",
+    "artifact_package_sha256": "93f6812337e491d9144d6fb44a52764e9fa82313d2bb08a6373a613e4cdf30bf",
+    "baseline_application_tree": "3025b2b6b36ea9211da561a4631f304216de9d90",
+    "baseline_revision": "0133_flight_change_plan",
+    "baseline_source_sha": "bba3b2589ec38404122fb9590fc8119410b96247",
+    "candidate_application_tree": "41221557ee5d3709775cd282b02d8c30fc7e0860",
+    "candidate_fingerprint_sha256": "5b792a2d3e68a7498d5cc152dc849b319631325bb8d7d36b65d0dc2b3c115b00",
+    "candidate_pr": 183,
+    "candidate_sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+    "deployment_authorized": false,
+    "live_migration_authorized": false,
+    "target_revision": "0137_hosted_unknown_episode",
+    "test_pr_evidence_commit": "bce4d64cddef7eed8143e6f65156cc7b73e8a352",
+    "test_pr_evidence_sha256": "ddb645db875fc5f8fc460317055a7476fea98803f2487e21890529f6ea79f5e5"
+  },
+  "ci_run_id": "35223407670",
+  "database_scope": "DISPOSABLE_GITHUB_ACTIONS_POSTGRES_ONLY",
+  "deploy_admission": "BLOCKED",
+  "deployment_authorized": false,
+  "existing_data_retention": "PASS",
+  "forward_upgrade": "PASS",
+  "historical_migration_retention": "PASS",
+  "holds": [
+    "REAL_SUPPLIER_CERTIFICATION",
+    "FINAL_RELEASE",
+    "PRODUCTION"
+  ],
+  "inherited_cell_tests_rerun": false,
+  "last_stage": "already_at_target",
+  "live_database_touched": false,
+  "migration_authorized": false,
+  "migration_lineage": "PASS",
+  "migration_required": true,
+  "migration_source_digest": "c53435b23cec77566690e3bffa3b4c3e00b36e9385c89462a39eec00bb434a2b",
+  "pg_trgm_version": "1.6",
+  "postgres_version": "18.4 (Debian 18.4-1.pgdg13+1)",
+  "poststate_revision": "0137_hosted_unknown_episode",
+  "prestate_revision": "0133_flight_change_plan",
+  "remaining_blockers": [
+    "LIVE_CANDIDATE_BINDING_NOT_UPDATED",
+    "INSTALLED_FORWARD_MIGRATION_UNSUPPORTED",
+    "EXACT_CANDIDATE_CANARY_NOT_PROVEN"
+  ],
+  "schema": "go.hk-migration-rehearsal.v1",
+  "separate_controls_database": {
+    "contract": "supplier_runtime_controls.metadata is explicitly isolated; external activation still HOLD",
+    "provisioned_by_business_migrations": []
+  },
+  "source_binding": "PASS",
+  "status": "PASS_SCOPED",
+  "target_noop": "PASS",
+  "tooling_sha": "76460b2fe75a7652b4723e258508420e6686456c",
+  "valid_trigram_indexes": [
+    "ix_go_journey_destination_lower_trgm",
+    "ix_go_journey_title_lower_trgm"
+  ]
+}
