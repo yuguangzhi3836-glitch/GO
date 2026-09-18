@@ -764,9 +764,16 @@ class LiveBridgeContractTests(unittest.TestCase):
         inline = re.search(r"exact\([^,]+,\{([^}]*)\},'%s'\)" % marker, self.source)
         if inline is not None:
             return set(re.findall(r"'([A-Za-z0-9_]+)'", inline.group(1)))
-        named = re.search(r"exact\([^,]+,\s*([A-Z][A-Z0-9_]*)\s*,'%s'\)" % marker, self.source)
-        self.assertIsNotNone(named, marker)
-        constant = named.group(1)
+        conditional = re.search(
+            r"exact\([^,]+,\s*\(\*([A-Z][A-Z0-9_]*),\s*'[^']+'\)\s*if\s+.*?\s+else\s+\\1\s*,'%s'\)"
+            % marker, self.source)
+        if conditional is not None:
+            constant = conditional.group(1)
+        else:
+            named = re.search(r"exact\([^,]+,\s*([A-Z][A-Z0-9_]*)\s*,'%s'\)" % marker,
+                              self.source)
+            self.assertIsNotNone(named, marker)
+            constant = named.group(1)
         declared = re.search(r"^%s = [\(\{]([^\)\}]*)[\)\}]" % re.escape(constant),
                              self.source, re.M)
         self.assertIsNotNone(declared, "the field set %s is never declared" % constant)
