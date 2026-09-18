@@ -1,0 +1,2181 @@
+{
+  "schema": "go.c13.independent-load-recompute.v1",
+  "at": "2026-09-18T00:40:16.784914+00:00",
+  "run_id": "hk3-mu67txw3-2d1cc6",
+  "network_requests": 0,
+  "inputs": {
+    "/workspace/scratch/c50388540b65/load1000/round04/evidence/run-01/report.json": "fe3af14823af2def24f1c034723150ecf363036abfdc06f1c65473ad899182c9",
+    "/workspace/scratch/c50388540b65/load1000/round04/evidence/run-01/requests.ndjson": "517a4b20d24c50cb53c289f0dda3315d0876971a30fdf96f48d004e82282fc2d",
+    "/workspace/scratch/c50388540b65/load1000/round04/evidence/run-01/activity.ndjson": "3e6bed9bdf4f6c7aa0d170cf06db85a5247ce85c29dade2b7099a11f56a98743",
+    "load1000/round04/evidence/host-telemetry-v2.ndjson": "045af00240fbdbe4ca8ee250b0e5695300a8637db0e1ccb81be5d117f27b3354"
+  },
+  "manifest_results": {
+    "activity.ndjson": {
+      "exists": true,
+      "matches": true
+    },
+    "report.json": {
+      "exists": true,
+      "matches": true
+    },
+    "requests.ndjson": {
+      "exists": true,
+      "matches": true
+    }
+  },
+  "input_manifest_present": true,
+  "independently_expected_harness_sha256": "52021f1d6b42bfd1d0ad77ad52e2a254cce5b313ece199b07ff262eccd6d1aa6",
+  "harness_sha_matches_reviewed_version": true,
+  "identity_declarations": {
+    "source_sha": "96721782158b5d665f7723305e5fb2212bd256ae",
+    "image": "sha256:6c005a88ec772ac971e560e5f29d0cfa6a8354bb16e0d52d9cbefef0def1dfe1",
+    "db_head": "0137_hosted_unknown_episode",
+    "environment": "staging",
+    "external_live": false,
+    "simulation_only": true,
+    "at": "2026-09-18T00:21:38.951450+00:00"
+  },
+  "expected_identity_declarations_match": true,
+  "raw_request_rows": 8964,
+  "duplicate_request_ids": 0,
+  "stored_ok_disagrees_with_fields": 0,
+  "invalid_request_time_rows": 0,
+  "active_user_evidence_limit": "Distinct VU aliases and request outcomes are recomputed. Raw bodies are intentionally omitted; distinct actual user_ids/session IDs and response semantic judgments cannot be independently rederived from hashes alone.",
+  "declared_account_population": {
+    "consumer": {
+      "authenticated_accounts": 700,
+      "distinct_user_ids": 700,
+      "distinct_session_fingerprints": 700,
+      "distinct_supplier_ids": 0
+    },
+    "supplier": {
+      "authenticated_accounts": 150,
+      "distinct_user_ids": 150,
+      "distinct_session_fingerprints": 150,
+      "distinct_supplier_ids": 150
+    },
+    "admin": {
+      "authenticated_accounts": 150,
+      "distinct_user_ids": 150,
+      "distinct_session_fingerprints": 150,
+      "distinct_supplier_ids": 0
+    }
+  },
+  "phase_statistics": {
+    "cleanup": {
+      "requests": 1000,
+      "errors": 0,
+      "error_rate": 0.0,
+      "semantic_errors": 0,
+      "request_id_echo_errors": 0,
+      "p50_ms": 120.33,
+      "p95_ms": 135.11,
+      "p99_ms": 166.71,
+      "statuses": {
+        "200": 1000
+      },
+      "error_codes": {}
+    },
+    "identity": {
+      "requests": 1000,
+      "errors": 0,
+      "error_rate": 0.0,
+      "semantic_errors": 0,
+      "request_id_echo_errors": 0,
+      "p50_ms": 107.34,
+      "p95_ms": 118.73,
+      "p99_ms": 136.04,
+      "statuses": {
+        "200": 1000
+      },
+      "error_codes": {}
+    },
+    "load": {
+      "requests": 4577,
+      "errors": 3,
+      "error_rate": 0.0006554511688879179,
+      "semantic_errors": 0,
+      "request_id_echo_errors": 0,
+      "p50_ms": 118.94,
+      "p95_ms": 1537.37,
+      "p99_ms": 2331.57,
+      "statuses": {
+        "200": 4574,
+        "0": 3
+      },
+      "error_codes": {
+        "REQUEST_TIMEOUT": 3
+      }
+    },
+    "login": {
+      "requests": 1000,
+      "errors": 0,
+      "error_rate": 0.0,
+      "semantic_errors": 0,
+      "request_id_echo_errors": 0,
+      "p50_ms": 408,
+      "p95_ms": 609.07,
+      "p99_ms": 764.81,
+      "statuses": {
+        "200": 1000
+      },
+      "error_codes": {}
+    },
+    "policy": {
+      "requests": 1,
+      "errors": 0,
+      "error_rate": 0.0,
+      "semantic_errors": 0,
+      "request_id_echo_errors": 0,
+      "p50_ms": 228.23,
+      "p95_ms": 228.23,
+      "p99_ms": 228.23,
+      "statuses": {
+        "200": 1
+      },
+      "error_codes": {}
+    },
+    "preflight": {
+      "requests": 17,
+      "errors": 0,
+      "error_rate": 0.0,
+      "semantic_errors": 0,
+      "request_id_echo_errors": 0,
+      "p50_ms": 109.06,
+      "p95_ms": 127.27,
+      "p99_ms": 127.27,
+      "statuses": {
+        "200": 17
+      },
+      "error_codes": {}
+    },
+    "ramp": {
+      "requests": 1282,
+      "errors": 5,
+      "error_rate": 0.0039001560062402497,
+      "semantic_errors": 0,
+      "request_id_echo_errors": 0,
+      "p50_ms": 128.42,
+      "p95_ms": 2772.65,
+      "p99_ms": 4262.19,
+      "statuses": {
+        "200": 1277,
+        "0": 5
+      },
+      "error_codes": {
+        "REQUEST_TIMEOUT": 5
+      }
+    }
+  },
+  "authenticated_vu_requests": {
+    "consumer": {
+      "successful_login_aliases": 700,
+      "successful_identity_check_aliases": 700,
+      "successful_logout_aliases": 700
+    },
+    "supplier": {
+      "successful_login_aliases": 150,
+      "successful_identity_check_aliases": 150,
+      "successful_logout_aliases": 150
+    },
+    "admin": {
+      "successful_login_aliases": 150,
+      "successful_identity_check_aliases": 150,
+      "successful_logout_aliases": 150
+    }
+  },
+  "stages": [
+    {
+      "vus": 20,
+      "expected_allocation": {
+        "consumer": 14,
+        "supplier": 3,
+        "admin": 3
+      },
+      "steady_start_ms": 1789691195827,
+      "effective_end_ms": 1789691255827,
+      "requested_seconds": 60.0,
+      "effective_steady_seconds": 60.0,
+      "activity_samples": 60,
+      "all_sampled_role_counts_match": true,
+      "first_activity_offset_ms": 171,
+      "last_activity_gap_to_end_ms": 212,
+      "maximum_activity_sampling_gap_ms": 1018,
+      "observed_peak_active_by_role": {
+        "consumer": 14,
+        "supplier": 3,
+        "admin": 3
+      },
+      "natural_tail_completions_after_steady_end": 0,
+      "ramp_natural_completions_after_steady_start": 2,
+      "stage_client_aborted_requests": 0,
+      "ramp_client_aborted_requests": 0,
+      "ramp_summary": {
+        "requests": 19,
+        "errors": 0,
+        "error_rate": 0.0,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 112.21,
+        "p95_ms": 401.41,
+        "p99_ms": 401.41,
+        "statuses": {
+          "200": 19
+        },
+        "error_codes": {}
+      },
+      "full_stage_summary": {
+        "requests": 246,
+        "errors": 0,
+        "error_rate": 0.0,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 106.79,
+        "p95_ms": 224.31,
+        "p99_ms": 289.77,
+        "statuses": {
+          "200": 246
+        },
+        "error_codes": {}
+      },
+      "ramp_per_role": {
+        "consumer": {
+          "requests": 13,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 111.46,
+          "p95_ms": 254.78,
+          "p99_ms": 254.78,
+          "statuses": {
+            "200": 13
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "supplier": {
+          "requests": 3,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 112.21,
+          "p95_ms": 216.99,
+          "p99_ms": 216.99,
+          "statuses": {
+            "200": 3
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "admin": {
+          "requests": 3,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 241.73,
+          "p95_ms": 401.41,
+          "p99_ms": 401.41,
+          "statuses": {
+            "200": 3
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        }
+      },
+      "full_stage_per_role": {
+        "consumer": {
+          "requests": 172,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 108.22,
+          "p95_ms": 130.8,
+          "p99_ms": 255.45,
+          "statuses": {
+            "200": 172
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "supplier": {
+          "requests": 37,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 111.88,
+          "p95_ms": 216.99,
+          "p99_ms": 247.28,
+          "statuses": {
+            "200": 37
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "admin": {
+          "requests": 37,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 105.02,
+          "p95_ms": 298.27,
+          "p99_ms": 401.41,
+          "statuses": {
+            "200": 37
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        }
+      },
+      "summary": {
+        "requests": 227,
+        "errors": 0,
+        "error_rate": 0.0,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 106.54,
+        "p95_ms": 135.04,
+        "p99_ms": 257.36,
+        "statuses": {
+          "200": 227
+        },
+        "error_codes": {}
+      },
+      "per_role": {
+        "consumer": {
+          "requests": 159,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 106.79,
+          "p95_ms": 126.02,
+          "p99_ms": 255.45,
+          "statuses": {
+            "200": 159
+          },
+          "error_codes": {},
+          "successful_distinct_vus": 14,
+          "rps": 2.65,
+          "thresholds_passed": true
+        },
+        "supplier": {
+          "requests": 34,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 111.29,
+          "p95_ms": 137.6,
+          "p99_ms": 247.28,
+          "statuses": {
+            "200": 34
+          },
+          "error_codes": {},
+          "successful_distinct_vus": 3,
+          "rps": 0.5666666666666667,
+          "thresholds_passed": true
+        },
+        "admin": {
+          "requests": 34,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 104.43,
+          "p95_ms": 289.77,
+          "p99_ms": 298.27,
+          "statuses": {
+            "200": 34
+          },
+          "error_codes": {},
+          "successful_distinct_vus": 3,
+          "rps": 0.5666666666666667,
+          "thresholds_passed": true
+        }
+      },
+      "per_kind": {
+        "ADMIN_ATTRACTION": {
+          "requests": 4,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 106.95,
+          "p95_ms": 254.26,
+          "p99_ms": 254.26,
+          "statuses": {
+            "200": 4
+          },
+          "error_codes": {}
+        },
+        "ADMIN_FLIGHT": {
+          "requests": 5,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 102.71,
+          "p95_ms": 111.55,
+          "p99_ms": 111.55,
+          "statuses": {
+            "200": 5
+          },
+          "error_codes": {}
+        },
+        "ADMIN_HOTEL": {
+          "requests": 4,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 105.26,
+          "p95_ms": 289.77,
+          "p99_ms": 289.77,
+          "statuses": {
+            "200": 4
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RAIL": {
+          "requests": 6,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 101.64,
+          "p95_ms": 298.27,
+          "p99_ms": 298.27,
+          "statuses": {
+            "200": 6
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RENTAL": {
+          "requests": 5,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 106.51,
+          "p95_ms": 113.13,
+          "p99_ms": 113.13,
+          "statuses": {
+            "200": 5
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RIDE": {
+          "requests": 6,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 104.46,
+          "p95_ms": 224.31,
+          "p99_ms": 224.31,
+          "statuses": {
+            "200": 6
+          },
+          "error_codes": {}
+        },
+        "ATTRACTION": {
+          "requests": 22,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 113.4,
+          "p95_ms": 121.38,
+          "p99_ms": 148.89,
+          "statuses": {
+            "200": 22
+          },
+          "error_codes": {}
+        },
+        "FLIGHT": {
+          "requests": 18,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 106.79,
+          "p95_ms": 257.36,
+          "p99_ms": 257.36,
+          "statuses": {
+            "200": 18
+          },
+          "error_codes": {}
+        },
+        "HOTEL": {
+          "requests": 17,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 116.62,
+          "p95_ms": 125.23,
+          "p99_ms": 125.23,
+          "statuses": {
+            "200": 17
+          },
+          "error_codes": {}
+        },
+        "ME": {
+          "requests": 42,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 96.54,
+          "p95_ms": 115.26,
+          "p99_ms": 247.28,
+          "statuses": {
+            "200": 42
+          },
+          "error_codes": {}
+        },
+        "RAIL": {
+          "requests": 19,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 112.7,
+          "p95_ms": 131.31,
+          "p99_ms": 131.31,
+          "statuses": {
+            "200": 19
+          },
+          "error_codes": {}
+        },
+        "RENTAL": {
+          "requests": 21,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 101.61,
+          "p95_ms": 116.47,
+          "p99_ms": 119.13,
+          "statuses": {
+            "200": 21
+          },
+          "error_codes": {}
+        },
+        "RIDE": {
+          "requests": 21,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 103.18,
+          "p95_ms": 120.28,
+          "p99_ms": 255.45,
+          "statuses": {
+            "200": 21
+          },
+          "error_codes": {}
+        },
+        "SUPPLIER_ORDERS": {
+          "requests": 17,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 113.24,
+          "p95_ms": 137.6,
+          "p99_ms": 137.6,
+          "statuses": {
+            "200": 17
+          },
+          "error_codes": {}
+        },
+        "TRIPS": {
+          "requests": 20,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 104.3,
+          "p95_ms": 130.8,
+          "p99_ms": 229.65,
+          "statuses": {
+            "200": 20
+          },
+          "error_codes": {}
+        }
+      },
+      "reported_passed": true,
+      "recomputed_stage_passed": true,
+      "ramp_passed": true,
+      "full_stage_passed": true,
+      "host": {
+        "sample_count": 16,
+        "window_includes_seconds_before": 15,
+        "window_includes_seconds_after": 5,
+        "first_sample_at": "2026-09-18T00:26:24.047318+00:00",
+        "last_sample_at": "2026-09-18T00:27:39.075323+00:00",
+        "maximum_gap_ms": 5002.921142578125,
+        "unhealthy_observations": [],
+        "min_available_memory_bytes": 1688735744,
+        "peak_container_cpu_percent": {
+          "go-822-staging-api-1": 178.73,
+          "go-822-staging-reconciliation-worker-1": 0.51,
+          "go-822-staging-recovery-worker-1": 0.2,
+          "go-822-staging-outbox-worker-1": 1.24,
+          "go-822-staging-mobile-push-worker-1": 0.17,
+          "go-822-staging-mobile-push-receipt-worker-1": 0.16,
+          "go-822-staging-judgment-worker-1": 0.0,
+          "go-822-staging-mobile-engagement-worker-1": 0.0,
+          "go-822-staging-redis-1": 2.97,
+          "go-822-staging-caddy-1": 1.55
+        },
+        "peak_database_connections": 12,
+        "peak_database_active_connections": 1,
+        "peak_single_pending_outbox_status_count": null,
+        "interpretation": "Temporal association only; no root-cause attribution from coincidence."
+      }
+    },
+    {
+      "vus": 100,
+      "expected_allocation": {
+        "consumer": 70,
+        "supplier": 15,
+        "admin": 15
+      },
+      "steady_start_ms": 1789691259813,
+      "effective_end_ms": 1789691319813,
+      "requested_seconds": 60.0,
+      "effective_steady_seconds": 60.0,
+      "activity_samples": 59,
+      "all_sampled_role_counts_match": true,
+      "first_activity_offset_ms": 839,
+      "last_activity_gap_to_end_ms": 709,
+      "maximum_activity_sampling_gap_ms": 1026,
+      "observed_peak_active_by_role": {
+        "consumer": 70,
+        "supplier": 15,
+        "admin": 15
+      },
+      "natural_tail_completions_after_steady_end": 2,
+      "ramp_natural_completions_after_steady_start": 3,
+      "stage_client_aborted_requests": 0,
+      "ramp_client_aborted_requests": 0,
+      "ramp_summary": {
+        "requests": 103,
+        "errors": 0,
+        "error_rate": 0.0,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 109.91,
+        "p95_ms": 137.16,
+        "p99_ms": 243.36,
+        "statuses": {
+          "200": 103
+        },
+        "error_codes": {}
+      },
+      "full_stage_summary": {
+        "requests": 1270,
+        "errors": 0,
+        "error_rate": 0.0,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 112.02,
+        "p95_ms": 145.17,
+        "p99_ms": 263.83,
+        "statuses": {
+          "200": 1270
+        },
+        "error_codes": {}
+      },
+      "ramp_per_role": {
+        "consumer": {
+          "requests": 71,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 111,
+          "p95_ms": 137.16,
+          "p99_ms": 241.26,
+          "statuses": {
+            "200": 71
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "supplier": {
+          "requests": 16,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 112.5,
+          "p95_ms": 257.71,
+          "p99_ms": 257.71,
+          "statuses": {
+            "200": 16
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "admin": {
+          "requests": 16,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 103.94,
+          "p95_ms": 243.36,
+          "p99_ms": 243.36,
+          "statuses": {
+            "200": 16
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        }
+      },
+      "full_stage_per_role": {
+        "consumer": {
+          "requests": 886,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 112.67,
+          "p95_ms": 145.17,
+          "p99_ms": 284.32,
+          "statuses": {
+            "200": 886
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "supplier": {
+          "requests": 192,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 112.19,
+          "p95_ms": 155.12,
+          "p99_ms": 261.18,
+          "statuses": {
+            "200": 192
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "admin": {
+          "requests": 192,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 106.81,
+          "p95_ms": 139.86,
+          "p99_ms": 263.83,
+          "statuses": {
+            "200": 192
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        }
+      },
+      "summary": {
+        "requests": 1167,
+        "errors": 0,
+        "error_rate": 0.0,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 112.25,
+        "p95_ms": 145.17,
+        "p99_ms": 278.09,
+        "statuses": {
+          "200": 1167
+        },
+        "error_codes": {}
+      },
+      "per_role": {
+        "consumer": {
+          "requests": 815,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 112.92,
+          "p95_ms": 145.43,
+          "p99_ms": 284.32,
+          "statuses": {
+            "200": 815
+          },
+          "error_codes": {},
+          "successful_distinct_vus": 70,
+          "rps": 13.55,
+          "thresholds_passed": true
+        },
+        "supplier": {
+          "requests": 176,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 112.13,
+          "p95_ms": 155.12,
+          "p99_ms": 261.18,
+          "statuses": {
+            "200": 176
+          },
+          "error_codes": {},
+          "successful_distinct_vus": 15,
+          "rps": 2.933333333333333,
+          "thresholds_passed": true
+        },
+        "admin": {
+          "requests": 176,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 107.13,
+          "p95_ms": 139.86,
+          "p99_ms": 263.83,
+          "statuses": {
+            "200": 176
+          },
+          "error_codes": {},
+          "successful_distinct_vus": 15,
+          "rps": 2.933333333333333,
+          "thresholds_passed": true
+        }
+      },
+      "per_kind": {
+        "ADMIN_ATTRACTION": {
+          "requests": 26,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 106.1,
+          "p95_ms": 147.95,
+          "p99_ms": 423.88,
+          "statuses": {
+            "200": 26
+          },
+          "error_codes": {}
+        },
+        "ADMIN_FLIGHT": {
+          "requests": 26,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 110.31,
+          "p95_ms": 255.49,
+          "p99_ms": 263.83,
+          "statuses": {
+            "200": 26
+          },
+          "error_codes": {}
+        },
+        "ADMIN_HOTEL": {
+          "requests": 25,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 108.26,
+          "p95_ms": 130.98,
+          "p99_ms": 132.96,
+          "statuses": {
+            "200": 25
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RAIL": {
+          "requests": 24,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 106.1,
+          "p95_ms": 132.92,
+          "p99_ms": 139.86,
+          "statuses": {
+            "200": 24
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RENTAL": {
+          "requests": 26,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 113.09,
+          "p95_ms": 146.32,
+          "p99_ms": 151.16,
+          "statuses": {
+            "200": 26
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RIDE": {
+          "requests": 24,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 110.53,
+          "p95_ms": 121.28,
+          "p99_ms": 121.61,
+          "statuses": {
+            "200": 24
+          },
+          "error_codes": {}
+        },
+        "ATTRACTION": {
+          "requests": 102,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 117.73,
+          "p95_ms": 160.62,
+          "p99_ms": 319.76,
+          "statuses": {
+            "200": 102
+          },
+          "error_codes": {}
+        },
+        "FLIGHT": {
+          "requests": 99,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 112.04,
+          "p95_ms": 143.62,
+          "p99_ms": 408.39,
+          "statuses": {
+            "200": 99
+          },
+          "error_codes": {}
+        },
+        "HOTEL": {
+          "requests": 101,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 123.02,
+          "p95_ms": 162.45,
+          "p99_ms": 256.93,
+          "statuses": {
+            "200": 101
+          },
+          "error_codes": {}
+        },
+        "ME": {
+          "requests": 217,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 98.72,
+          "p95_ms": 120.11,
+          "p99_ms": 191.65,
+          "statuses": {
+            "200": 217
+          },
+          "error_codes": {}
+        },
+        "RAIL": {
+          "requests": 102,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 119.16,
+          "p95_ms": 144.67,
+          "p99_ms": 161.36,
+          "statuses": {
+            "200": 102
+          },
+          "error_codes": {}
+        },
+        "RENTAL": {
+          "requests": 104,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 106.57,
+          "p95_ms": 131.79,
+          "p99_ms": 250.88,
+          "statuses": {
+            "200": 104
+          },
+          "error_codes": {}
+        },
+        "RIDE": {
+          "requests": 102,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 103.63,
+          "p95_ms": 126.12,
+          "p99_ms": 252.64,
+          "statuses": {
+            "200": 102
+          },
+          "error_codes": {}
+        },
+        "SUPPLIER_ORDERS": {
+          "requests": 88,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 118.28,
+          "p95_ms": 185.53,
+          "p99_ms": 405.68,
+          "statuses": {
+            "200": 88
+          },
+          "error_codes": {}
+        },
+        "TRIPS": {
+          "requests": 101,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 111.58,
+          "p95_ms": 138.15,
+          "p99_ms": 311.24,
+          "statuses": {
+            "200": 101
+          },
+          "error_codes": {}
+        }
+      },
+      "reported_passed": true,
+      "recomputed_stage_passed": true,
+      "ramp_passed": true,
+      "full_stage_passed": true,
+      "host": {
+        "sample_count": 16,
+        "window_includes_seconds_before": 15,
+        "window_includes_seconds_after": 5,
+        "first_sample_at": "2026-09-18T00:27:29.071328+00:00",
+        "last_sample_at": "2026-09-18T00:28:44.103330+00:00",
+        "maximum_gap_ms": 5002.91796875,
+        "unhealthy_observations": [],
+        "min_available_memory_bytes": 1687764992,
+        "peak_container_cpu_percent": {
+          "go-822-staging-api-1": 42.36,
+          "go-822-staging-reconciliation-worker-1": 0.0,
+          "go-822-staging-recovery-worker-1": 0.21,
+          "go-822-staging-outbox-worker-1": 1.88,
+          "go-822-staging-mobile-push-worker-1": 0.18,
+          "go-822-staging-mobile-push-receipt-worker-1": 0.17,
+          "go-822-staging-judgment-worker-1": 0.0,
+          "go-822-staging-mobile-engagement-worker-1": 0.0,
+          "go-822-staging-redis-1": 3.38,
+          "go-822-staging-caddy-1": 1.78
+        },
+        "peak_database_connections": 13,
+        "peak_database_active_connections": 2,
+        "peak_single_pending_outbox_status_count": 1,
+        "interpretation": "Temporal association only; no root-cause attribution from coincidence."
+      }
+    },
+    {
+      "vus": 250,
+      "expected_allocation": {
+        "consumer": 175,
+        "supplier": 38,
+        "admin": 37
+      },
+      "steady_start_ms": 1789691329883,
+      "effective_end_ms": 1789691389883,
+      "requested_seconds": 60.0,
+      "effective_steady_seconds": 60.0,
+      "activity_samples": 60,
+      "all_sampled_role_counts_match": true,
+      "first_activity_offset_ms": 293,
+      "last_activity_gap_to_end_ms": 205,
+      "maximum_activity_sampling_gap_ms": 1196,
+      "observed_peak_active_by_role": {
+        "consumer": 175,
+        "supplier": 38,
+        "admin": 37
+      },
+      "natural_tail_completions_after_steady_end": 6,
+      "ramp_natural_completions_after_steady_start": 4,
+      "stage_client_aborted_requests": 0,
+      "ramp_client_aborted_requests": 0,
+      "ramp_summary": {
+        "requests": 388,
+        "errors": 0,
+        "error_rate": 0.0,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 116.26,
+        "p95_ms": 178.02,
+        "p99_ms": 465.76,
+        "statuses": {
+          "200": 388
+        },
+        "error_codes": {}
+      },
+      "full_stage_summary": {
+        "requests": 3269,
+        "errors": 0,
+        "error_rate": 0.0,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 121.42,
+        "p95_ms": 503.11,
+        "p99_ms": 1715.74,
+        "statuses": {
+          "200": 3269
+        },
+        "error_codes": {}
+      },
+      "ramp_per_role": {
+        "consumer": {
+          "requests": 269,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 117.84,
+          "p95_ms": 188.4,
+          "p99_ms": 465.76,
+          "statuses": {
+            "200": 269
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "supplier": {
+          "requests": 60,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 113.13,
+          "p95_ms": 166.62,
+          "p99_ms": 470.06,
+          "statuses": {
+            "200": 60
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "admin": {
+          "requests": 59,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 114.34,
+          "p95_ms": 165,
+          "p99_ms": 238.14,
+          "statuses": {
+            "200": 59
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        }
+      },
+      "full_stage_per_role": {
+        "consumer": {
+          "requests": 2278,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 124.01,
+          "p95_ms": 503.11,
+          "p99_ms": 1766.97,
+          "statuses": {
+            "200": 2278
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "supplier": {
+          "requests": 502,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 116.16,
+          "p95_ms": 498.3,
+          "p99_ms": 1516.76,
+          "statuses": {
+            "200": 502
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        },
+        "admin": {
+          "requests": 489,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 117.67,
+          "p95_ms": 534.29,
+          "p99_ms": 1658.28,
+          "statuses": {
+            "200": 489
+          },
+          "error_codes": {},
+          "thresholds_passed": true
+        }
+      },
+      "summary": {
+        "requests": 2881,
+        "errors": 0,
+        "error_rate": 0.0,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 122.07,
+        "p95_ms": 624.28,
+        "p99_ms": 1756.05,
+        "statuses": {
+          "200": 2881
+        },
+        "error_codes": {}
+      },
+      "per_role": {
+        "consumer": {
+          "requests": 2009,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 124.96,
+          "p95_ms": 623.56,
+          "p99_ms": 1814.7,
+          "statuses": {
+            "200": 2009
+          },
+          "error_codes": {},
+          "successful_distinct_vus": 175,
+          "rps": 33.4,
+          "thresholds_passed": true
+        },
+        "supplier": {
+          "requests": 442,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 116.29,
+          "p95_ms": 667.07,
+          "p99_ms": 1573.6,
+          "statuses": {
+            "200": 442
+          },
+          "error_codes": {},
+          "successful_distinct_vus": 38,
+          "rps": 7.35,
+          "thresholds_passed": true
+        },
+        "admin": {
+          "requests": 430,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 118.25,
+          "p95_ms": 668.5,
+          "p99_ms": 1658.28,
+          "statuses": {
+            "200": 430
+          },
+          "error_codes": {},
+          "successful_distinct_vus": 37,
+          "rps": 7.166666666666667,
+          "thresholds_passed": true
+        }
+      },
+      "per_kind": {
+        "ADMIN_ATTRACTION": {
+          "requests": 62,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 120.59,
+          "p95_ms": 1552.25,
+          "p99_ms": 1912.56,
+          "statuses": {
+            "200": 62
+          },
+          "error_codes": {}
+        },
+        "ADMIN_FLIGHT": {
+          "requests": 61,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 120.01,
+          "p95_ms": 704.56,
+          "p99_ms": 1658.28,
+          "statuses": {
+            "200": 61
+          },
+          "error_codes": {}
+        },
+        "ADMIN_HOTEL": {
+          "requests": 62,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 123.56,
+          "p95_ms": 275.43,
+          "p99_ms": 1532.94,
+          "statuses": {
+            "200": 62
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RAIL": {
+          "requests": 62,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 117.76,
+          "p95_ms": 227.15,
+          "p99_ms": 1354.08,
+          "statuses": {
+            "200": 62
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RENTAL": {
+          "requests": 60,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 122.55,
+          "p95_ms": 1068.06,
+          "p99_ms": 1738.67,
+          "statuses": {
+            "200": 60
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RIDE": {
+          "requests": 61,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 117.62,
+          "p95_ms": 246.73,
+          "p99_ms": 1588.8,
+          "statuses": {
+            "200": 61
+          },
+          "error_codes": {}
+        },
+        "ATTRACTION": {
+          "requests": 254,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 131.23,
+          "p95_ms": 493.81,
+          "p99_ms": 1864.98,
+          "statuses": {
+            "200": 254
+          },
+          "error_codes": {}
+        },
+        "FLIGHT": {
+          "requests": 253,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 123.59,
+          "p95_ms": 582.41,
+          "p99_ms": 1756.05,
+          "statuses": {
+            "200": 253
+          },
+          "error_codes": {}
+        },
+        "HOTEL": {
+          "requests": 250,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 144.09,
+          "p95_ms": 1384.9,
+          "p99_ms": 2392.25,
+          "statuses": {
+            "200": 250
+          },
+          "error_codes": {}
+        },
+        "ME": {
+          "requests": 535,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 108.87,
+          "p95_ms": 498.3,
+          "p99_ms": 1607.32,
+          "statuses": {
+            "200": 535
+          },
+          "error_codes": {}
+        },
+        "RAIL": {
+          "requests": 248,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 134.68,
+          "p95_ms": 850.36,
+          "p99_ms": 1981.03,
+          "statuses": {
+            "200": 248
+          },
+          "error_codes": {}
+        },
+        "RENTAL": {
+          "requests": 249,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 118.43,
+          "p95_ms": 447.35,
+          "p99_ms": 1657.29,
+          "statuses": {
+            "200": 249
+          },
+          "error_codes": {}
+        },
+        "RIDE": {
+          "requests": 251,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 115.34,
+          "p95_ms": 279.01,
+          "p99_ms": 904.65,
+          "statuses": {
+            "200": 251
+          },
+          "error_codes": {}
+        },
+        "SUPPLIER_ORDERS": {
+          "requests": 221,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 127.89,
+          "p95_ms": 667.07,
+          "p99_ms": 1715.74,
+          "statuses": {
+            "200": 221
+          },
+          "error_codes": {}
+        },
+        "TRIPS": {
+          "requests": 252,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 120.49,
+          "p95_ms": 529.56,
+          "p99_ms": 1588.8,
+          "statuses": {
+            "200": 252
+          },
+          "error_codes": {}
+        }
+      },
+      "reported_passed": true,
+      "recomputed_stage_passed": true,
+      "ramp_passed": true,
+      "full_stage_passed": true,
+      "host": {
+        "sample_count": 16,
+        "window_includes_seconds_before": 15,
+        "window_includes_seconds_after": 5,
+        "first_sample_at": "2026-09-18T00:28:39.101807+00:00",
+        "last_sample_at": "2026-09-18T00:29:54.127345+00:00",
+        "maximum_gap_ms": 5002.68701171875,
+        "unhealthy_observations": [],
+        "min_available_memory_bytes": 1687764992,
+        "peak_container_cpu_percent": {
+          "go-822-staging-api-1": 101.74,
+          "go-822-staging-reconciliation-worker-1": 0.0,
+          "go-822-staging-recovery-worker-1": 0.33,
+          "go-822-staging-outbox-worker-1": 3.22,
+          "go-822-staging-mobile-push-worker-1": 0.17,
+          "go-822-staging-mobile-push-receipt-worker-1": 0.17,
+          "go-822-staging-judgment-worker-1": 0.0,
+          "go-822-staging-mobile-engagement-worker-1": 0.0,
+          "go-822-staging-redis-1": 3.49,
+          "go-822-staging-caddy-1": 4.45
+        },
+        "peak_database_connections": 14,
+        "peak_database_active_connections": 2,
+        "peak_single_pending_outbox_status_count": 3,
+        "interpretation": "Temporal association only; no root-cause attribution from coincidence."
+      }
+    },
+    {
+      "vus": 500,
+      "expected_allocation": {
+        "consumer": 350,
+        "supplier": 75,
+        "admin": 75
+      },
+      "steady_start_ms": 1789691400025,
+      "effective_end_ms": 1789691405741.0,
+      "requested_seconds": 60.0,
+      "effective_steady_seconds": 5.716,
+      "activity_samples": 6,
+      "all_sampled_role_counts_match": true,
+      "first_activity_offset_ms": 687,
+      "last_activity_gap_to_end_ms": 2.0,
+      "maximum_activity_sampling_gap_ms": 1013,
+      "observed_peak_active_by_role": {
+        "consumer": 350,
+        "supplier": 75,
+        "admin": 75
+      },
+      "natural_tail_completions_after_steady_end": 0,
+      "ramp_natural_completions_after_steady_start": 177,
+      "stage_client_aborted_requests": 87,
+      "ramp_client_aborted_requests": 0,
+      "ramp_summary": {
+        "requests": 772,
+        "errors": 5,
+        "error_rate": 0.006476683937823834,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 252.89,
+        "p95_ms": 3515.82,
+        "p99_ms": 4590.58,
+        "statuses": {
+          "200": 767,
+          "0": 5
+        },
+        "error_codes": {
+          "REQUEST_TIMEOUT": 5
+        }
+      },
+      "full_stage_summary": {
+        "requests": 1074,
+        "errors": 8,
+        "error_rate": 0.0074487895716946,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 761.59,
+        "p95_ms": 3550.96,
+        "p99_ms": 4590.58,
+        "statuses": {
+          "200": 1066,
+          "0": 8
+        },
+        "error_codes": {
+          "REQUEST_TIMEOUT": 8
+        }
+      },
+      "ramp_per_role": {
+        "consumer": {
+          "requests": 538,
+          "errors": 5,
+          "error_rate": 0.00929368029739777,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 271.28,
+          "p95_ms": 3686.05,
+          "p99_ms": 4750.26,
+          "statuses": {
+            "200": 533,
+            "0": 5
+          },
+          "error_codes": {
+            "REQUEST_TIMEOUT": 5
+          },
+          "thresholds_passed": false
+        },
+        "supplier": {
+          "requests": 117,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 176.92,
+          "p95_ms": 2413.55,
+          "p99_ms": 3152.86,
+          "statuses": {
+            "200": 117
+          },
+          "error_codes": {},
+          "thresholds_passed": false
+        },
+        "admin": {
+          "requests": 117,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 226.13,
+          "p95_ms": 2772.65,
+          "p99_ms": 3734.47,
+          "statuses": {
+            "200": 117
+          },
+          "error_codes": {},
+          "thresholds_passed": false
+        }
+      },
+      "full_stage_per_role": {
+        "consumer": {
+          "requests": 729,
+          "errors": 8,
+          "error_rate": 0.010973936899862825,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 777.14,
+          "p95_ms": 3840.66,
+          "p99_ms": 4999.77,
+          "statuses": {
+            "200": 721,
+            "0": 8
+          },
+          "error_codes": {
+            "REQUEST_TIMEOUT": 8
+          },
+          "thresholds_passed": false
+        },
+        "supplier": {
+          "requests": 174,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 737.27,
+          "p95_ms": 2515.18,
+          "p99_ms": 3485.97,
+          "statuses": {
+            "200": 174
+          },
+          "error_codes": {},
+          "thresholds_passed": false
+        },
+        "admin": {
+          "requests": 171,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 795.16,
+          "p95_ms": 2833.31,
+          "p99_ms": 3734.47,
+          "statuses": {
+            "200": 171
+          },
+          "error_codes": {},
+          "thresholds_passed": false
+        }
+      },
+      "summary": {
+        "requests": 302,
+        "errors": 3,
+        "error_rate": 0.009933774834437087,
+        "semantic_errors": 0,
+        "request_id_echo_errors": 0,
+        "p50_ms": 1621.08,
+        "p95_ms": 3770.77,
+        "p99_ms": 4324.12,
+        "statuses": {
+          "200": 299,
+          "0": 3
+        },
+        "error_codes": {
+          "REQUEST_TIMEOUT": 3
+        }
+      },
+      "per_role": {
+        "consumer": {
+          "requests": 191,
+          "errors": 3,
+          "error_rate": 0.015706806282722512,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1857.85,
+          "p95_ms": 4033.88,
+          "p99_ms": 5003.45,
+          "statuses": {
+            "200": 188,
+            "0": 3
+          },
+          "error_codes": {
+            "REQUEST_TIMEOUT": 3
+          },
+          "successful_distinct_vus": 187,
+          "rps": 33.4149755073478,
+          "thresholds_passed": false
+        },
+        "supplier": {
+          "requests": 57,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1218.52,
+          "p95_ms": 3283.12,
+          "p99_ms": 3813.14,
+          "statuses": {
+            "200": 57
+          },
+          "error_codes": {},
+          "successful_distinct_vus": 56,
+          "rps": 9.972008397480755,
+          "thresholds_passed": false
+        },
+        "admin": {
+          "requests": 54,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1389.96,
+          "p95_ms": 3256.55,
+          "p99_ms": 3490.09,
+          "statuses": {
+            "200": 54
+          },
+          "error_codes": {},
+          "successful_distinct_vus": 53,
+          "rps": 9.447165850244927,
+          "thresholds_passed": false
+        }
+      },
+      "per_kind": {
+        "ADMIN_ATTRACTION": {
+          "requests": 3,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1693.66,
+          "p95_ms": 2117,
+          "p99_ms": 2117,
+          "statuses": {
+            "200": 3
+          },
+          "error_codes": {}
+        },
+        "ADMIN_FLIGHT": {
+          "requests": 3,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1224.05,
+          "p95_ms": 1590.9,
+          "p99_ms": 1590.9,
+          "statuses": {
+            "200": 3
+          },
+          "error_codes": {}
+        },
+        "ADMIN_HOTEL": {
+          "requests": 8,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1388.94,
+          "p95_ms": 1800.26,
+          "p99_ms": 1800.26,
+          "statuses": {
+            "200": 8
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RAIL": {
+          "requests": 10,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1460.71,
+          "p95_ms": 3490.09,
+          "p99_ms": 3490.09,
+          "statuses": {
+            "200": 10
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RENTAL": {
+          "requests": 7,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1523.76,
+          "p95_ms": 3465.72,
+          "p99_ms": 3465.72,
+          "statuses": {
+            "200": 7
+          },
+          "error_codes": {}
+        },
+        "ADMIN_RIDE": {
+          "requests": 9,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1577.58,
+          "p95_ms": 3256.55,
+          "p99_ms": 3256.55,
+          "statuses": {
+            "200": 9
+          },
+          "error_codes": {}
+        },
+        "ATTRACTION": {
+          "requests": 25,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 2042.8,
+          "p95_ms": 2503.19,
+          "p99_ms": 4324.12,
+          "statuses": {
+            "200": 25
+          },
+          "error_codes": {}
+        },
+        "FLIGHT": {
+          "requests": 23,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1982.15,
+          "p95_ms": 2240.84,
+          "p99_ms": 3770.77,
+          "statuses": {
+            "200": 23
+          },
+          "error_codes": {}
+        },
+        "HOTEL": {
+          "requests": 10,
+          "errors": 3,
+          "error_rate": 0.3,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 4272.7,
+          "p95_ms": 5012.31,
+          "p99_ms": 5012.31,
+          "statuses": {
+            "200": 7,
+            "0": 3
+          },
+          "error_codes": {
+            "REQUEST_TIMEOUT": 3
+          }
+        },
+        "ME": {
+          "requests": 69,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1090.12,
+          "p95_ms": 2809.06,
+          "p99_ms": 3290.13,
+          "statuses": {
+            "200": 69
+          },
+          "error_codes": {}
+        },
+        "RAIL": {
+          "requests": 24,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1934.23,
+          "p95_ms": 2493.55,
+          "p99_ms": 2784.2,
+          "statuses": {
+            "200": 24
+          },
+          "error_codes": {}
+        },
+        "RENTAL": {
+          "requests": 24,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1858.19,
+          "p95_ms": 2666.23,
+          "p99_ms": 4103.3,
+          "statuses": {
+            "200": 24
+          },
+          "error_codes": {}
+        },
+        "RIDE": {
+          "requests": 24,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1863.87,
+          "p95_ms": 3786.65,
+          "p99_ms": 4134.27,
+          "statuses": {
+            "200": 24
+          },
+          "error_codes": {}
+        },
+        "SUPPLIER_ORDERS": {
+          "requests": 31,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1445.18,
+          "p95_ms": 3485.97,
+          "p99_ms": 3813.14,
+          "statuses": {
+            "200": 31
+          },
+          "error_codes": {}
+        },
+        "TRIPS": {
+          "requests": 32,
+          "errors": 0,
+          "error_rate": 0.0,
+          "semantic_errors": 0,
+          "request_id_echo_errors": 0,
+          "p50_ms": 1501.61,
+          "p95_ms": 3562.72,
+          "p99_ms": 3659.5,
+          "statuses": {
+            "200": 32
+          },
+          "error_codes": {}
+        }
+      },
+      "reported_passed": false,
+      "recomputed_stage_passed": false,
+      "ramp_passed": false,
+      "full_stage_passed": false,
+      "host": {
+        "sample_count": 5,
+        "window_includes_seconds_before": 15,
+        "window_includes_seconds_after": 5,
+        "first_sample_at": "2026-09-18T00:29:49.126863+00:00",
+        "last_sample_at": "2026-09-18T00:30:09.131338+00:00",
+        "maximum_gap_ms": 5002.51611328125,
+        "unhealthy_observations": [],
+        "min_available_memory_bytes": 1680924672,
+        "peak_container_cpu_percent": {
+          "go-822-staging-api-1": 109.77,
+          "go-822-staging-reconciliation-worker-1": 0.49,
+          "go-822-staging-recovery-worker-1": 0.21,
+          "go-822-staging-outbox-worker-1": 2.49,
+          "go-822-staging-mobile-push-worker-1": 0.17,
+          "go-822-staging-mobile-push-receipt-worker-1": 0.15,
+          "go-822-staging-judgment-worker-1": 0.0,
+          "go-822-staging-mobile-engagement-worker-1": 0.0,
+          "go-822-staging-redis-1": 3.49,
+          "go-822-staging-caddy-1": 9.34
+        },
+        "peak_database_connections": 13,
+        "peak_database_active_connections": 1,
+        "peak_single_pending_outbox_status_count": 3,
+        "interpretation": "Temporal association only; no root-cause attribution from coincidence."
+      }
+    }
+  ],
+  "discrepancies": [],
+  "maximum_in_flight_recomputed_bounds": {
+    "lower_bound": 209,
+    "upper_bound": 209,
+    "resolution": "millisecond_event_order_bounds"
+  },
+  "first_failure_examples_with_host": [
+    {
+      "request_id": "hk3-mu67txw3-2d1cc6-5rb",
+      "role": "consumer",
+      "vu": "c159",
+      "path": "/v1/search/hotels",
+      "kind": "HOTEL",
+      "status": 0,
+      "error_code": "REQUEST_TIMEOUT",
+      "started_at": "2026-09-18T00:29:58.987Z",
+      "elapsed_ms": 5013.83,
+      "preceding_host_sample_at": "2026-09-18T00:29:54.127345+00:00",
+      "host_sample_age_ms": 4859.655029296875,
+      "host_sample_within_15_seconds": true,
+      "host_healthy": true,
+      "host_reason": null
+    },
+    {
+      "request_id": "hk3-mu67txw3-2d1cc6-5s2",
+      "role": "consumer",
+      "vu": "c320",
+      "path": "/v1/search/hotels",
+      "kind": "HOTEL",
+      "status": 0,
+      "error_code": "REQUEST_TIMEOUT",
+      "started_at": "2026-09-18T00:29:59.200Z",
+      "elapsed_ms": 5000.69,
+      "preceding_host_sample_at": "2026-09-18T00:29:59.129861+00:00",
+      "host_sample_age_ms": 70.138916015625,
+      "host_sample_within_15_seconds": true,
+      "host_healthy": true,
+      "host_reason": null
+    },
+    {
+      "request_id": "hk3-mu67txw3-2d1cc6-5sp",
+      "role": "consumer",
+      "vu": "c191",
+      "path": "/v1/search/hotels",
+      "kind": "HOTEL",
+      "status": 0,
+      "error_code": "REQUEST_TIMEOUT",
+      "started_at": "2026-09-18T00:29:59.466Z",
+      "elapsed_ms": 4999.77,
+      "preceding_host_sample_at": "2026-09-18T00:29:59.129861+00:00",
+      "host_sample_age_ms": 336.138916015625,
+      "host_sample_within_15_seconds": true,
+      "host_healthy": true,
+      "host_reason": null
+    },
+    {
+      "request_id": "hk3-mu67txw3-2d1cc6-5t2",
+      "role": "consumer",
+      "vu": "c135",
+      "path": "/v1/search/hotels",
+      "kind": "HOTEL",
+      "status": 0,
+      "error_code": "REQUEST_TIMEOUT",
+      "started_at": "2026-09-18T00:29:59.528Z",
+      "elapsed_ms": 5011.65,
+      "preceding_host_sample_at": "2026-09-18T00:29:59.129861+00:00",
+      "host_sample_age_ms": 398.138916015625,
+      "host_sample_within_15_seconds": true,
+      "host_healthy": true,
+      "host_reason": null
+    },
+    {
+      "request_id": "hk3-mu67txw3-2d1cc6-5u5",
+      "role": "consumer",
+      "vu": "c344",
+      "path": "/v1/search/hotels",
+      "kind": "HOTEL",
+      "status": 0,
+      "error_code": "REQUEST_TIMEOUT",
+      "started_at": "2026-09-18T00:29:59.880Z",
+      "elapsed_ms": 5000.07,
+      "preceding_host_sample_at": "2026-09-18T00:29:59.129861+00:00",
+      "host_sample_age_ms": 750.138916015625,
+      "host_sample_within_15_seconds": true,
+      "host_healthy": true,
+      "host_reason": null
+    },
+    {
+      "request_id": "hk3-mu67txw3-2d1cc6-5uz",
+      "role": "consumer",
+      "vu": "c223",
+      "path": "/v1/search/hotels",
+      "kind": "HOTEL",
+      "status": 0,
+      "error_code": "REQUEST_TIMEOUT",
+      "started_at": "2026-09-18T00:30:00.159Z",
+      "elapsed_ms": 5003.45,
+      "preceding_host_sample_at": "2026-09-18T00:29:59.129861+00:00",
+      "host_sample_age_ms": 1029.138916015625,
+      "host_sample_within_15_seconds": true,
+      "host_healthy": true,
+      "host_reason": null
+    },
+    {
+      "request_id": "hk3-mu67txw3-2d1cc6-5vi",
+      "role": "consumer",
+      "vu": "c30",
+      "path": "/v1/search/hotels",
+      "kind": "HOTEL",
+      "status": 0,
+      "error_code": "REQUEST_TIMEOUT",
+      "started_at": "2026-09-18T00:30:00.479Z",
+      "elapsed_ms": 5001.08,
+      "preceding_host_sample_at": "2026-09-18T00:29:59.129861+00:00",
+      "host_sample_age_ms": 1349.138916015625,
+      "host_sample_within_15_seconds": true,
+      "host_healthy": true,
+      "host_reason": null
+    },
+    {
+      "request_id": "hk3-mu67txw3-2d1cc6-5vz",
+      "role": "consumer",
+      "vu": "c62",
+      "path": "/v1/search/hotels",
+      "kind": "HOTEL",
+      "status": 0,
+      "error_code": "REQUEST_TIMEOUT",
+      "started_at": "2026-09-18T00:30:00.682Z",
+      "elapsed_ms": 5012.31,
+      "preceding_host_sample_at": "2026-09-18T00:29:59.129861+00:00",
+      "host_sample_age_ms": 1552.138916015625,
+      "host_sample_within_15_seconds": true,
+      "host_healthy": true,
+      "host_reason": null
+    }
+  ],
+  "load_client_aborted_requests": 87,
+  "maximum_stage_passed": 250,
+  "scoped_performance_1000_passed": false,
+  "recomputation_consistent": true,
+  "host_evidence_available": true,
+  "evidence_identity_eligible": true,
+  "scope": "Authenticated protocol reads/searches only; no order, money, real browser or real-provider certification."
+}

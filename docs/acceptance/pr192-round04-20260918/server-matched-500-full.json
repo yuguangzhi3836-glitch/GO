@@ -1,0 +1,389 @@
+{
+  "service": "api",
+  "lines_seen": 2994,
+  "bytes_seen": 544498,
+  "json_lines": 1538,
+  "lines_without_access_event": 0,
+  "overlong_lines_discarded": 0,
+  "correlation": {
+    "matched_run": {
+      "access_events": 1535,
+      "statuses": {
+        "200": 1514,
+        "400": 21
+      },
+      "latency_observations": 1535,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 125.54,
+      "latency_p95_ms": 1886.87,
+      "latency_p99_ms": 3636.01,
+      "latency_mean_ms": 579.075,
+      "latency_max_ms": 4757.63
+    },
+    "other_request_id": {
+      "access_events": 3,
+      "statuses": {
+        "200": 3
+      },
+      "latency_observations": 3,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 1.46,
+      "latency_p95_ms": 258.94,
+      "latency_p99_ms": 258.94,
+      "latency_mean_ms": 87.073,
+      "latency_max_ms": 258.94
+    },
+    "unattributed_no_request_id": {
+      "access_events": 1456,
+      "statuses": {
+        "200": 1456
+      },
+      "latency_observations": 0,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": null,
+      "latency_p95_ms": null,
+      "latency_p99_ms": null,
+      "latency_mean_ms": null,
+      "latency_max_ms": null
+    }
+  },
+  "distinct_matched_request_ids": 1535,
+  "exception_matching_line_counts_unattributed": {},
+  "exception_line_sha256_samples": {},
+  "traceback_source_frames_unattributed": [],
+  "interpretation": "Unattributed events/tracebacks belong only to the selected time window, not proven to this load run. Exception categories may overlap on one line.",
+  "selected_500_requests": 1074,
+  "matched_500_requests": 1074,
+  "unmatched_500_by_kind": {},
+  "per_kind_500": {
+    "ME": {
+      "access_events": 211,
+      "statuses": {
+        "200": 211
+      },
+      "latency_observations": 211,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 453.25,
+      "latency_p95_ms": 1248.01,
+      "latency_p99_ms": 1419.96,
+      "latency_mean_ms": 454.165,
+      "latency_max_ms": 1446.32
+    },
+    "HOTEL": {
+      "access_events": 75,
+      "statuses": {
+        "200": 75
+      },
+      "latency_observations": 75,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 315.01,
+      "latency_p95_ms": 4124.72,
+      "latency_p99_ms": 4757.63,
+      "latency_mean_ms": 1393.265,
+      "latency_max_ms": 4757.63
+    },
+    "FLIGHT": {
+      "access_events": 90,
+      "statuses": {
+        "200": 90
+      },
+      "latency_observations": 90,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 544.92,
+      "latency_p95_ms": 1913.48,
+      "latency_p99_ms": 2004.29,
+      "latency_mean_ms": 832.85,
+      "latency_max_ms": 2004.29
+    },
+    "RIDE": {
+      "access_events": 93,
+      "statuses": {
+        "200": 93
+      },
+      "latency_observations": 93,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 802.5,
+      "latency_p95_ms": 1776.1,
+      "latency_p99_ms": 2099.35,
+      "latency_mean_ms": 791.066,
+      "latency_max_ms": 2099.35
+    },
+    "RAIL": {
+      "access_events": 92,
+      "statuses": {
+        "200": 92
+      },
+      "latency_observations": 92,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 914.67,
+      "latency_p95_ms": 1961.54,
+      "latency_p99_ms": 2152.82,
+      "latency_mean_ms": 873.118,
+      "latency_max_ms": 2152.82
+    },
+    "RENTAL": {
+      "access_events": 93,
+      "statuses": {
+        "200": 93
+      },
+      "latency_observations": 93,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 482.31,
+      "latency_p95_ms": 1764.49,
+      "latency_p99_ms": 1996.19,
+      "latency_mean_ms": 759.022,
+      "latency_max_ms": 1996.19
+    },
+    "SUPPLIER_ORDERS": {
+      "access_events": 88,
+      "statuses": {
+        "200": 88
+      },
+      "latency_observations": 88,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 688.25,
+      "latency_p95_ms": 1401.73,
+      "latency_p99_ms": 1523.7,
+      "latency_mean_ms": 595.776,
+      "latency_max_ms": 1523.7
+    },
+    "ADMIN_HOTEL": {
+      "access_events": 23,
+      "statuses": {
+        "200": 23
+      },
+      "latency_observations": 23,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 720.92,
+      "latency_p95_ms": 1434.03,
+      "latency_p99_ms": 1587.73,
+      "latency_mean_ms": 648.584,
+      "latency_max_ms": 1587.73
+    },
+    "ATTRACTION": {
+      "access_events": 94,
+      "statuses": {
+        "200": 94
+      },
+      "latency_observations": 94,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 968.36,
+      "latency_p95_ms": 2042.28,
+      "latency_p99_ms": 2180.08,
+      "latency_mean_ms": 887.147,
+      "latency_max_ms": 2180.08
+    },
+    "TRIPS": {
+      "access_events": 97,
+      "statuses": {
+        "200": 97
+      },
+      "latency_observations": 97,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 678.67,
+      "latency_p95_ms": 1420.06,
+      "latency_p99_ms": 1531.92,
+      "latency_mean_ms": 591.501,
+      "latency_max_ms": 1531.92
+    },
+    "ADMIN_FLIGHT": {
+      "access_events": 22,
+      "statuses": {
+        "200": 22
+      },
+      "latency_observations": 22,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 135.09,
+      "latency_p95_ms": 1201.45,
+      "latency_p99_ms": 1253.27,
+      "latency_mean_ms": 367.915,
+      "latency_max_ms": 1253.27
+    },
+    "ADMIN_RAIL": {
+      "access_events": 29,
+      "statuses": {
+        "200": 29
+      },
+      "latency_observations": 29,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 645.25,
+      "latency_p95_ms": 1483.12,
+      "latency_p99_ms": 1502.25,
+      "latency_mean_ms": 610.319,
+      "latency_max_ms": 1502.25
+    },
+    "ADMIN_RIDE": {
+      "access_events": 25,
+      "statuses": {
+        "200": 25
+      },
+      "latency_observations": 25,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 776.83,
+      "latency_p95_ms": 1341.05,
+      "latency_p99_ms": 1361.25,
+      "latency_mean_ms": 685.826,
+      "latency_max_ms": 1361.25
+    },
+    "ADMIN_RENTAL": {
+      "access_events": 20,
+      "statuses": {
+        "200": 20
+      },
+      "latency_observations": 20,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 111.4,
+      "latency_p95_ms": 1292.75,
+      "latency_p99_ms": 1419.71,
+      "latency_mean_ms": 505.924,
+      "latency_max_ms": 1419.71
+    },
+    "ADMIN_ATTRACTION": {
+      "access_events": 22,
+      "statuses": {
+        "200": 22
+      },
+      "latency_observations": 22,
+      "latency_quantiles_complete": true,
+      "latency_p50_ms": 174.32,
+      "latency_p95_ms": 1234.46,
+      "latency_p99_ms": 1249.34,
+      "latency_mean_ms": 461.379,
+      "latency_max_ms": 1249.34
+    }
+  },
+  "client_minus_server_ms": {
+    "ME": {
+      "min": 88.23,
+      "mean": 349.637,
+      "max": 2500.36
+    },
+    "HOTEL": {
+      "min": 88.91,
+      "mean": 315.035,
+      "max": 1520.26
+    },
+    "FLIGHT": {
+      "min": 89.82,
+      "mean": 381.495,
+      "max": 2228.93
+    },
+    "RIDE": {
+      "min": 88.62,
+      "mean": 395.87,
+      "max": 2392.45
+    },
+    "RAIL": {
+      "min": 88.84,
+      "mean": 369.449,
+      "max": 2291.75
+    },
+    "RENTAL": {
+      "min": 89.14,
+      "mean": 331.292,
+      "max": 2507.27
+    },
+    "SUPPLIER_ORDERS": {
+      "min": 88.63,
+      "mean": 349.329,
+      "max": 2411.41
+    },
+    "ADMIN_HOTEL": {
+      "min": 89.21,
+      "mean": 353.233,
+      "max": 2077.64
+    },
+    "ATTRACTION": {
+      "min": 90.25,
+      "mean": 383.338,
+      "max": 2834.0
+    },
+    "TRIPS": {
+      "min": 88.57,
+      "mean": 455.766,
+      "max": 2816.96
+    },
+    "ADMIN_FLIGHT": {
+      "min": 90.94,
+      "mean": 339.51,
+      "max": 1751.03
+    },
+    "ADMIN_RAIL": {
+      "min": 88.92,
+      "mean": 393.023,
+      "max": 2382.9
+    },
+    "ADMIN_RIDE": {
+      "min": 89.45,
+      "mean": 486.708,
+      "max": 2553.0
+    },
+    "ADMIN_RENTAL": {
+      "min": 89.55,
+      "mean": 290.147,
+      "max": 2197.86
+    },
+    "ADMIN_ATTRACTION": {
+      "min": 89.28,
+      "mean": 349.707,
+      "max": 1892.27
+    }
+  },
+  "client_timeouts_matched": [
+    {
+      "kind": "HOTEL",
+      "server_status": 200,
+      "server_ms": 3954.63,
+      "client_ms": 5013.83
+    },
+    {
+      "kind": "HOTEL",
+      "server_status": 200,
+      "server_ms": 3938.29,
+      "client_ms": 4999.77
+    },
+    {
+      "kind": "HOTEL",
+      "server_status": 200,
+      "server_ms": 4757.63,
+      "client_ms": 5000.69
+    },
+    {
+      "kind": "HOTEL",
+      "server_status": 200,
+      "server_ms": 4489.11,
+      "client_ms": 5011.65
+    },
+    {
+      "kind": "HOTEL",
+      "server_status": 200,
+      "server_ms": 4125.97,
+      "client_ms": 5000.07
+    },
+    {
+      "kind": "HOTEL",
+      "server_status": 200,
+      "server_ms": 3616.47,
+      "client_ms": 5001.08
+    },
+    {
+      "kind": "HOTEL",
+      "server_status": 200,
+      "server_ms": 3634.46,
+      "client_ms": 5003.45
+    },
+    {
+      "kind": "HOTEL",
+      "server_status": 200,
+      "server_ms": 3492.05,
+      "client_ms": 5012.31
+    }
+  ],
+  "docker_logs_exit_code": 0,
+  "truncated": false,
+  "truncation_reason": null,
+  "collection_seconds": 0.291,
+  "observed_at": "2026-09-18T00:48:24.234522+00:00",
+  "run_id": "hk3-mu67txw3-2d1cc6",
+  "scope": "Exact 500-stage client request IDs, fixed API container and 35-second window; aggregate only"
+}

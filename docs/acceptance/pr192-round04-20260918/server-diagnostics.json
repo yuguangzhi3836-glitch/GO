@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "collector": "READ_ONLY_FIXED_RUN_SAFE_LOG_SUMMARY",
+  "run_id": "hk3-mu67txw3-2d1cc6",
+  "compose_project": "go-822-staging",
+  "window": {
+    "since": "2026-09-18T00:29:45Z",
+    "until": "2026-09-18T00:30:20Z"
+  },
+  "collected_at": "2026-09-18T00:45:06.609527Z",
+  "containers": [
+    {
+      "id": "2dd8b826db6a2627bc8b5596c95c15958626ce31677f9cd067b4659cd1ff2fc8",
+      "name": "/go-822-staging-api-1",
+      "image": "sha256:6c005a88ec772ac971e560e5f29d0cfa6a8354bb16e0d52d9cbefef0def1dfe1",
+      "service": "api",
+      "status": "running",
+      "running": true,
+      "restarting": false,
+      "oom_killed": false,
+      "restart_count": 0,
+      "started_at": "2026-09-18T00:06:43.203501347Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "health": "healthy",
+      "memory_limit_bytes": 0,
+      "nano_cpus": 0
+    },
+    {
+      "id": "0a52d62367bdf6c9bbf47a794e9f0828f83b50f45d0856615f42c9a28596d038",
+      "name": "/go-822-staging-redis-1",
+      "image": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+      "service": "redis",
+      "status": "running",
+      "running": true,
+      "restarting": false,
+      "oom_killed": false,
+      "restart_count": 0,
+      "started_at": "2026-09-03T10:25:46.050848958Z",
+      "finished_at": "2026-09-03T10:24:53.630212631Z",
+      "health": "healthy",
+      "memory_limit_bytes": 0,
+      "nano_cpus": 0
+    }
+  ],
+  "observations": {
+    "discovery": {
+      "exit_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    "inspect": {
+      "exit_code": 1,
+      "stderr_sha256": "64abdd146333810f8a7fa5f6b7bba38306d732f84faaaad67af035a7f3b2dc63",
+      "stderr_bytes": 872
+    },
+    "stats": {
+      "exit_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0
+    },
+    "resources": {
+      "containers": [
+        {
+          "name": "go-822-staging-api-1",
+          "cpu_percent": 0.09,
+          "memory_percent": 6.64,
+          "memory_usage_bytes": 243374490,
+          "memory_limit_bytes": 3664680845,
+          "pids": 7
+        },
+        {
+          "name": "go-822-staging-reconciliation-worker-1",
+          "cpu_percent": 0.35,
+          "memory_percent": 3.46,
+          "memory_usage_bytes": 126877696,
+          "memory_limit_bytes": 3664680845,
+          "pids": 1
+        },
+        {
+          "name": "go-822-staging-recovery-worker-1",
+          "cpu_percent": 0.15,
+          "memory_percent": 3.58,
+          "memory_usage_bytes": 131176858,
+          "memory_limit_bytes": 3664680845,
+          "pids": 1
+        },
+        {
+          "name": "go-822-staging-outbox-worker-1",
+          "cpu_percent": 0.79,
+          "memory_percent": 3.59,
+          "memory_usage_bytes": 131701146,
+          "memory_limit_bytes": 3664680845,
+          "pids": 1
+        },
+        {
+          "name": "go-822-staging-mobile-push-worker-1",
+          "cpu_percent": 0.13,
+          "memory_percent": 3.51,
+          "memory_usage_bytes": 128660275,
+          "memory_limit_bytes": 3664680845,
+          "pids": 1
+        },
+        {
+          "name": "go-822-staging-mobile-push-receipt-worker-1",
+          "cpu_percent": 0.13,
+          "memory_percent": 3.48,
+          "memory_usage_bytes": 127716557,
+          "memory_limit_bytes": 3664680845,
+          "pids": 1
+        },
+        {
+          "name": "go-822-staging-judgment-worker-1",
+          "cpu_percent": 0.0,
+          "memory_percent": 3.48,
+          "memory_usage_bytes": 127506842,
+          "memory_limit_bytes": 3664680845,
+          "pids": 1
+        },
+        {
+          "name": "go-822-staging-mobile-engagement-worker-1",
+          "cpu_percent": 0.0,
+          "memory_percent": 3.63,
+          "memory_usage_bytes": 132959437,
+          "memory_limit_bytes": 3664680845,
+          "pids": 1
+        },
+        {
+          "name": "go-822-staging-redis-1",
+          "cpu_percent": 0.36,
+          "memory_percent": 0.28,
+          "memory_usage_bytes": 10277093,
+          "memory_limit_bytes": 3664680845,
+          "pids": 6
+        },
+        {
+          "name": "go-822-staging-caddy-1",
+          "cpu_percent": 0.0,
+          "memory_percent": 0.6,
+          "memory_usage_bytes": 22062039,
+          "memory_limit_bytes": 3664680845,
+          "pids": 11
+        }
+      ],
+      "cpu_percent_sum": 2.0,
+      "memory_usage_bytes_sum": 1182312433,
+      "pids_sum": 31,
+      "scope": "Current point-in-time docker stats; not historical load-window telemetry."
+    }
+  },
+  "logs": [
+    {
+      "service": "api",
+      "lines_seen": 2994,
+      "bytes_seen": 544498,
+      "json_lines": 1538,
+      "lines_without_access_event": 0,
+      "overlong_lines_discarded": 0,
+      "correlation": {
+        "matched_run": {
+          "access_events": 1535,
+          "statuses": {
+            "200": 1514,
+            "400": 21
+          },
+          "latency_observations": 1535,
+          "latency_quantiles_complete": true,
+          "latency_p50_ms": 125.54,
+          "latency_p95_ms": 1886.87,
+          "latency_p99_ms": 3636.01,
+          "latency_mean_ms": 579.075,
+          "latency_max_ms": 4757.63
+        },
+        "other_request_id": {
+          "access_events": 3,
+          "statuses": {
+            "200": 3
+          },
+          "latency_observations": 3,
+          "latency_quantiles_complete": true,
+          "latency_p50_ms": 1.46,
+          "latency_p95_ms": 258.94,
+          "latency_p99_ms": 258.94,
+          "latency_mean_ms": 87.073,
+          "latency_max_ms": 258.94
+        },
+        "unattributed_no_request_id": {
+          "access_events": 1456,
+          "statuses": {
+            "200": 1456
+          },
+          "latency_observations": 0,
+          "latency_quantiles_complete": true,
+          "latency_p50_ms": null,
+          "latency_p95_ms": null,
+          "latency_p99_ms": null,
+          "latency_mean_ms": null,
+          "latency_max_ms": null
+        }
+      },
+      "distinct_matched_request_ids": 1535,
+      "exception_matching_line_counts_unattributed": {},
+      "exception_line_sha256_samples": {},
+      "traceback_source_frames_unattributed": [],
+      "interpretation": "Unattributed events/tracebacks belong only to the selected time window, not proven to this load run. Exception categories may overlap on one line.",
+      "docker_logs_exit_code": 0,
+      "truncated": false,
+      "truncation_reason": null,
+      "collection_seconds": 0.282,
+      "container_id": "2dd8b826db6a2627bc8b5596c95c15958626ce31677f9cd067b4659cd1ff2fc8"
+    },
+    {
+      "service": "caddy",
+      "error": "RUNNING_SERVICE_NOT_FOUND_IN_FIXED_PROJECT"
+    }
+  ],
+  "privacy": "No raw log lines, request headers/body, SQL parameters, IP addresses, credentials or response bodies are emitted.",
+  "limitations": [
+    "Exception/source-frame counts are time-window observations, not automatically attributed to this run.",
+    "Request attribution requires an exact matching load-run request ID.",
+    "Missing access-log request IDs or missing latency remain explicitly unavailable.",
+    "Container/resource observations are current, not historical snapshots."
+  ]
+}

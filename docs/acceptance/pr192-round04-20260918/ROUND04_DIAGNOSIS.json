@@ -1,0 +1,159 @@
+{
+  "run_id": "hk3-mu67txw3-2d1cc6",
+  "identity": {
+    "source_sha": "96721782158b5d665f7723305e5fb2212bd256ae",
+    "image": "sha256:6c005a88ec772ac971e560e5f29d0cfa6a8354bb16e0d52d9cbefef0def1dfe1",
+    "db_head": "0137_hosted_unknown_episode",
+    "environment": "staging",
+    "external_live": false,
+    "simulation_only": true,
+    "at": "2026-09-18T00:21:38.951450+00:00"
+  },
+  "finished_at": "2026-09-18T00:34:06.147Z",
+  "highest_passed": 250,
+  "1000_executed": false,
+  "full_stage": {
+    "requests": 1074,
+    "errors": 8,
+    "error_rate": 0.0074487895716946,
+    "semantic_errors": 0,
+    "p50_ms": 761.59,
+    "p95_ms": 3550.96,
+    "p99_ms": 4590.58,
+    "statuses": {
+      "0": 8,
+      "200": 1066
+    }
+  },
+  "steady": {
+    "seconds": 5.716,
+    "summary": {
+      "requests": 302,
+      "errors": 3,
+      "error_rate": 0.009933774834437087,
+      "semantic_errors": 0,
+      "p50_ms": 1621.08,
+      "p95_ms": 3770.77,
+      "p99_ms": 4324.12,
+      "statuses": {
+        "0": 3,
+        "200": 299
+      }
+    },
+    "roles": {
+      "consumer": {
+        "requests": 191,
+        "errors": 3,
+        "error_rate": 0.015706806282722512,
+        "semantic_errors": 0,
+        "p50_ms": 1857.85,
+        "p95_ms": 4033.88,
+        "p99_ms": 5003.45,
+        "statuses": {
+          "0": 3,
+          "200": 188
+        },
+        "successful_distinct_vus": 187,
+        "rps": 33.4149755073478
+      },
+      "supplier": {
+        "requests": 57,
+        "errors": 0,
+        "error_rate": 0,
+        "semantic_errors": 0,
+        "p50_ms": 1218.52,
+        "p95_ms": 3283.12,
+        "p99_ms": 3813.14,
+        "statuses": {
+          "200": 57
+        },
+        "successful_distinct_vus": 56,
+        "rps": 9.972008397480755
+      },
+      "admin": {
+        "requests": 54,
+        "errors": 0,
+        "error_rate": 0,
+        "semantic_errors": 0,
+        "p50_ms": 1389.96,
+        "p95_ms": 3256.55,
+        "p99_ms": 3490.09,
+        "statuses": {
+          "200": 54
+        },
+        "successful_distinct_vus": 53,
+        "rps": 9.447165850244927
+      }
+    }
+  },
+  "server_correlated": {
+    "selected": 1074,
+    "matched": 1074,
+    "statuses": {
+      "200": 1074
+    },
+    "timeouts": [
+      {
+        "kind": "HOTEL",
+        "server_status": 200,
+        "server_ms": 3954.63,
+        "client_ms": 5013.83
+      },
+      {
+        "kind": "HOTEL",
+        "server_status": 200,
+        "server_ms": 3938.29,
+        "client_ms": 4999.77
+      },
+      {
+        "kind": "HOTEL",
+        "server_status": 200,
+        "server_ms": 4757.63,
+        "client_ms": 5000.69
+      },
+      {
+        "kind": "HOTEL",
+        "server_status": 200,
+        "server_ms": 4489.11,
+        "client_ms": 5011.65
+      },
+      {
+        "kind": "HOTEL",
+        "server_status": 200,
+        "server_ms": 4125.97,
+        "client_ms": 5000.07
+      },
+      {
+        "kind": "HOTEL",
+        "server_status": 200,
+        "server_ms": 3616.47,
+        "client_ms": 5001.08
+      },
+      {
+        "kind": "HOTEL",
+        "server_status": 200,
+        "server_ms": 3634.46,
+        "client_ms": 5003.45
+      },
+      {
+        "kind": "HOTEL",
+        "server_status": 200,
+        "server_ms": 3492.05,
+        "client_ms": 5012.31
+      }
+    ]
+  },
+  "evidence_sha256": {
+    "three-end-load-evidence-round04.zip": "480739fd327c5dba3809f1c1a1264328f7b3d944cc7dfe46438a3ac3d3ce8384",
+    "INDEPENDENT_RECOMPUTATION.json": "49e84575e8e6499a9b70508e0ddd8244b15d7980df9d460bde4402cf5dffbdfb",
+    "server-diagnostics.json": "eee04b01f42107230fcf8a69e7f043bfc271bd9fd0ef13d94b80af5fdcdec38e",
+    "server-matched-500-full.json": "e16037aa5709bd06c3fe590faaf2113b8680f15832ef2478c53bf7bf209f4914",
+    "match_500_server.py": "79175b55fcea6ed5a1984143842cda856ba706685c49d1735aa8b73dddefd5ec"
+  },
+  "diagnostic_limitations": [
+    "server-diagnostics inventory is partial (optional Health template failed for some containers); only original API logs collected",
+    "server-matched-500.json is exploratory: steady+abort includes deliberately cancelled requests; superseded for performance attribution by server-matched-500-full.json",
+    "No application queue/threadpool/limiter span timings; CPU and DB snapshots cannot establish exact causality",
+    "No rerun, deployment or application configuration mutation performed"
+  ]
+}
