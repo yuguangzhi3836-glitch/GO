@@ -765,7 +765,7 @@ class LiveBridgeContractTests(unittest.TestCase):
         if inline is not None:
             return set(re.findall(r"'([A-Za-z0-9_]+)'", inline.group(1)))
         conditional = re.search(
-            r"exact\([^,]+,\s*\(\*([A-Z][A-Z0-9_]*),\s*'[^']+'\)\s*if\s+.*?\s+else\s+\\1\s*,'%s'\)"
+            r"exact\([^,]+,\s*\(\*([A-Z][A-Z0-9_]*),\s*'[^']+'\)\s*if\s+.*?\s+else\s+\1\s*,'%s'\)"
             % marker, self.source)
         if conditional is not None:
             constant = conditional.group(1)
