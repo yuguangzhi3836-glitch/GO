@@ -5,6 +5,8 @@ on:
     paths:
       - 'application/src/go_hotel/api/routes/flight.py'
       - 'application/tests/flight/test_c02_three_end_change_quote.py'
+      - 'application/tests/flight/test_c02_airport_resolver.py'
+      - 'application/src/go_hotel/flight/airports.py'
       - '.github/workflows/c02-pr202-flight-selfcheck.yml'
       - 'evidence/c02-pr202-flight-trigger/**'
   workflow_dispatch:
@@ -67,7 +69,7 @@ jobs:
               'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),
               'test_exit_code':int('${{ steps.tests.outputs.exit_code || 99 }}'),
               'files':files,
-              'scope':'C02 flight change quote idempotency and three-end identity boundaries',
+              'scope':{'idempotency':'flight change quote and three-end identity boundaries','airport_resolution':'Chinese/multilingual aliases, IATA, ambiguity and no-match without fuzzy selection'},
               'hong_kong':'NOT_ACCESSED',
               'production':'HOLD',
               'real_supplier':'DISABLED',
