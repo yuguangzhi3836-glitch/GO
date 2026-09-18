@@ -1,0 +1,92 @@
+name: C05 isolated ride evidence binding
+on:
+  pull_request:
+    branches:
+      - fix/aoluguya-hero-public-gallery-20260918
+    paths:
+      - application/src/go_hotel/mobility/ride/recovery_evidence.py
+      - application/tests/test_v70_next_c05_recovery_evidence.py
+      - application/tests/test_v70_round2_c05_recovery_fulfillment.py
+      - .github/workflows/c05-isolated-ride-evidence.yml
+permissions:
+  contents: read
+concurrency:
+  group: c05-isolated-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  c05-isolated:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Bind exact pull request head
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          mkdir -p "$RUNNER_TEMP/c05-evidence"
+          git rev-parse HEAD | tee "$RUNNER_TEMP/c05-evidence/COMMIT_SHA"
+          git rev-parse HEAD^{tree} | tee "$RUNNER_TEMP/c05-evidence/TREE_SHA"
+          git rev-parse HEAD:application | tee "$RUNNER_TEMP/c05-evidence/APPLICATION_TREE_SHA"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install inherited frozen dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Run C05 isolated boundary suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd application
+          GO_TEST_DB_PATH="$RUNNER_TEMP/c05-ride.db" python -m pytest -p no:cacheprovider             tests/test_v70_next_c05_recovery_evidence.py             tests/test_v70_round2_c05_recovery_fulfillment.py             --junitxml="$RUNNER_TEMP/c05-evidence/JUNIT.xml"             2>&1 | tee "$RUNNER_TEMP/c05-evidence/RAW.log"
+      - name: Bind evidence digests
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c05-evidence"
+          mkdir -p "$out"
+          (
+            cd "$out"
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%P\n' |
+              LC_ALL=C sort |
+              xargs -r sha256sum > SHA256SUMS
+          )
+          python - <<'PY'
+          import json, os, pathlib, subprocess
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'c05-evidence'
+          result = {
+              'commit_sha': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+              'tree_sha': subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip(),
+              'application_tree_sha': subprocess.check_output(['git', 'rev-parse', 'HEAD:application'], text=True).strip(),
+              'scope': 'C05 isolated RIDE evidence binding only',
+              'production': 'HOLD',
+              'real_supplier': 'DISABLED',
+              'real_payment': 'DISABLED',
+              'merge': 'HOLD',
+              'deploy': 'HOLD',
+          }
+          (out / 'BINDING.json').write_text(json.dumps(result, indent=2) + '\n')
+          PY
+          (
+            cd "$out"
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%P\n' |
+              LC_ALL=C sort |
+              xargs -r sha256sum > SHA256SUMS
+          )
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c05-isolated-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/c05-evidence
+          if-no-files-found: error
+          retention-days: 90
