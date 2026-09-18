@@ -1,569 +1,753 @@
-# Command Center V1 — Global Single-Flight / Deployment Flow Guard 设计会诊稿
+# Command Center V1 — Global Single-Flight / Deployment Flow Guard 会诊后修订稿
 
-> Status: DESIGN ONLY / NOT IMPLEMENTED  
+> Status: DESIGN REVIEW V2 / NOT IMPLEMENTED  
 > Date: 2026-09-18  
-> Purpose: 给 WorkBuddy / ChatGPT / 人工审查做技术会诊，不是执行授权，不代表已经安装或部署。  
-> Scope: 只讨论 Command Center 的“同一时刻只处理一个外部业务意图”与部署三段串联，目标是最小改动，不把 CC 重做成通用 Workflow Engine。
+> PR: #203  
+> Purpose: 给 WorkBuddy / ChatGPT / 人工继续做技术会诊。本文是当前收敛方向，不是最终实现裁决，不是 Execution Authority，也不代表已经安装或部署。  
+> Principle: 只补当前真实缺口；优先复用现有 Bridge / Ledger / Request Visibility；不把 Command Center 重做成通用 Workflow Engine。
 
-## 0. 先说结论
+---
 
-当前缺口不是“没有幂等”，而是：
+## 0. 当前收敛结论（仍待 WorkBuddy 二次复核）
 
-1. 现有 ledger / request_id / plan_id / task_id / executor attempt 能防同一对象重复消费；
-2. 但没有一个“整个 Command Center 当前被谁占用”的全局单通道；
-3. DEPLOY 又需要 CANARY -> VERIFY -> DEPLOY 三个独立 Request；
-4. 只锁单个 Request 会允许两个部署意图在三个阶段之间交叉穿插；
-5. Bridge 的 Reject 原因目前主要停留在本机处理结果/日志，Boss GPT 若只看到“没有 Task”，无法知道为什么被拒绝。
+当前较有把握的方向：
 
-建议最小修补方向：
+1. 现有 request_id / plan_id / task_id / executor attempt 解决的是“同一对象不要重复消费”，不能阻止两个不同但合法的业务 Request 交叉。
+2. 最小的 CC 侧保护仍倾向放在现有 ledger.json 顶层，复用 Ledger.transaction() + fcntl.flock()。
+3. Boss / Eason 发起的业务动作应共享一个 business exclusive slot：
+   - HK_STAGING_TEST_PR
+   - HK_STAGING_CANARY
+   - HK_STAGING_VERIFY
+   - HK_STAGING_DEPLOY
+   - HK_STAGING_ROLLBACK
+4. CONTROL_PLANE_HEALTH 是自动观测探针，当前倾向不占 business slot，也不因 business slot 被拒绝；但其与 HK Agent / Evidence publication 的实际并发安全仍请 WorkBuddy 再核。
+5. DEPLOY 是跨 Request 的业务流程：
+   - external CANARY
+   - external preflight VERIFY
+   - external DEPLOY
+   - internal automatic post-deploy VERIFY
+6. ROLLBACK 是：
+   - external ROLLBACK
+   - internal automatic post-rollback VERIFY
+7. 当前倾向不增加 flow_id 字段，先利用 active_flow 自己记录 owner / candidate / stage，并只接受“同 owner + 当前正确下一动作”的 continuation；是否足够安全，请 WorkBuddy 重点复核。
+8. BUSY / EXPIRED / candidate changed 等拒绝信息不应新造 request-results 体系；当前倾向复用已安装的 command-center-request-visibility-v1 / REQUEST_REJECTED 链路，并补充结构化诊断上下文。
+9. 本轮仍不建议顺手加 Redis / SQL / queue / preemption / generic workflow engine / 新 daemon。
+10. HK executor 是否需要第二道环境级 mutex，本稿不下最终结论：当前补丁先以 CC gate 为最小范围；WorkBuddy 继续检查是否存在必须同期处理的执行侧并发窗口。
 
-- 复用现有 Ledger.transaction() + fcntl.flock()；
-- 在现有 ledger 中增加一个很小的 active_flow / active_slot；
-- 仅部署三段使用跨 Request 的 flow_id；
-- 其他动作仍按单步生命周期处理；
-- 任何非当前 flow 的外部 Request 在签发 Task 之前明确拒绝；
-- 拒绝结果必须写到 Boss GPT 能从 GitHub 读取的位置；
-- 不做排队、不做抢占、不做自动重试、不引入 Redis/SQL/新 daemon；
-- 已签发但结果未知时 fail-closed，不因超时自动释放；
-- DEPLOY / ROLLBACK 后现有自动 post-action VERIFY 属于内部 continuation，不应被自己的全局占用拦截。
+---
 
-## 1. 基线提醒：实现前必须重新核 live
+## 1. 基线：实现前必须重新核 live
 
-本 PR 只新增设计文档，分支从创建时的 canonical main 建立。
+本 PR 创建时 base：
 
-创建本设计 PR 时看到：
 - canonical main: dc34ee5cabed7c6e93507d178fdd3a62a426399e
 
-但 2026-09-18 的只读 live 审计报告显示，实际安装的关键 Bridge / deploy 模块字节对应：
-- origin/fix/hk-media-topology-v2-20260918 @ 9b932745
+2026-09-18 会诊现场确认：
 
-且 live channel 的 allowed_actions 已包含 6 项：
-- HK_STAGING_VERIFY
-- HK_STAGING_TEST_PR
-- HK_STAGING_DEPLOY
-- HK_STAGING_ROLLBACK
-- HK_STAGING_CANARY
-- CONTROL_PLANE_HEALTH
+- live Bridge SHA256 对应 9b932745
+- live channel 为 version 4 / PERSISTENT
+- allowed actions 为：
+  - HK_STAGING_VERIFY
+  - HK_STAGING_TEST_PR
+  - HK_STAGING_DEPLOY
+  - HK_STAGING_ROLLBACK
+  - HK_STAGING_CANARY
+  - CONTROL_PLANE_HEALTH
 
-所以后续真正编码前，WorkBuddy 必须重新核：
-1. 当前 canonical main 是否已经吸收 9b932745 或后续版本；
-2. 当前 live /usr/local/libexec 实际字节；
-3. 当前 ledger / post-action verify / rollback 行为；
-4. 不得把本设计 PR 的 base snapshot 当 live execution authority。
+因此真正落码前必须重新确认：
 
-## 2. 当前已有基础（尽量复用）
+1. 当前 canonical main；
+2. 当前 live /usr/local/libexec/go-boss-request-bridge 实际字节；
+3. 当前 ledger.json；
+4. 当前 post-action VERIFY 行为；
+5. 当前 request-visibility 安装状态；
+6. 当前 liveness producer / transport；
+7. 当前 HK Agent transport / executor。
 
-### 2.1 Ledger 已有进程间排他
+本文只描述设计方向，不可被当作 live truth。
+
+---
+
+## 2. 为什么仍需要这个补丁
+
+当前系统已经有很多“防重复”：
+
+- duplicate_request_id
+- already-seen PR head
+- plan one-time consumption
+- approval one-time binding
+- task_id uniqueness
+- nonce / executor attempt budget
+- publish-time recheck
+- host drift precheck
+
+但它们没有表达：
+
+> 当前 Command Center 已经有一个业务意图正在处理，第二个业务意图不得取得执行资格。
+
+例如：
+
+    Boss:  CANARY A
+    Eason: CANARY B
+    Boss:  VERIFY
+    Eason: VERIFY
+
+即使每个 Request 单独都合法，也会造成两个业务意图串线。
+
+本补丁要解决的是这个问题，而不是重做已有幂等体系。
+
+---
+
+## 3. 复用现有 Ledger，仍是当前首选
 
 路径：
+
 - control-plane/boss-deploy-request-v1/go-boss-request-bridge
 
 现有：
+
 - class Ledger
 - Ledger.transaction()
-
-当前做法：
 - ledger.lock
 - fcntl.flock(..., LOCK_EX)
-- ledger.json 原子替换 + fsync
+- tmp + fsync + os.replace
 
-这个锁已经适合保护“检查 active_flow + 占位 + claim Request”的原子读改写。
+当前倾向：
 
-不建议再引入第二套 CC 侧锁服务。
+    {
+      "version": 1,
+      "requests": {},
+      "active_flow": null
+    }
 
-### 2.2 当前 Request 已有 durable states
+有业务占用时可类似：
 
-persistent_process() 已经有：
-- prepared
-- publishing
-- published
-- already_seen
-- duplicate_request_id
-- ambiguous_publish_requires_operator_review
+    {
+      "active_flow": {
+        "flow_type": "DEPLOY",
+        "owner": "yuguangzhi3836-glitch",
+        "candidate_image_id": "sha256:...",
+        "candidate_contract_sha256": "...",
+        "started_at": "...",
+        "stage": "WAITING_FOR_PREFLIGHT_VERIFY",
+        "current_task_id": "..."
+      }
+    }
 
-DEPLOY 侧还有：
-- plan/approval one-time consumption
-- plan_id / approval idempotency
-- publish 前重新核验
-- task_id collision protection
+字段应尽量少。
 
-HK 侧还有 executor attempt / nonce 一次性控制。
+### 原子性原则
 
-这些继续保留；active_flow 不是替代它们，而是补“不同合法 Request 之间不得交叉”的一层。
+以下动作必须在同一 Ledger.transaction() / flock 里完成：
 
-## 3. 用户期望的业务语义
+1. reconcile 现有 active_flow；
+2. 检查是否可进入；
+3. 必要时创建 / 推进 active_flow；
+4. claim 当前 Request。
 
-### 3.1 总原则
+即使当前正常 tick 大多串行，也应防两个 Bridge tick / 人工进程重叠。
 
-Command Center 同一时刻只允许一个“外部业务意图”占用执行通道。
+---
 
-如果已有一个任务/流程正在处理：
-- 后来的外部 Request 不排队；
-- 不自动延迟执行；
-- 不静默丢弃；
-- 不签发正式 Task；
-- 必须返回明确 BUSY 原因，告诉调用方当前在做什么、谁触发、何时开始。
+## 4. 业务独占 vs 观测探针
 
-### 3.2 不等于“只锁单个 JSON Request”
+会诊后建议不再叫 MUTATING_ACTIONS，因为 CANARY / TEST_PR 并不修改业务环境。
 
-DEPLOY 的业务意图是一个整体：
+### 4.1 BUSINESS_EXCLUSIVE_ACTIONS（当前倾向）
 
-CANARY -> VERIFY -> DEPLOY -> automatic post-deploy VERIFY
+    HK_STAGING_TEST_PR
+    HK_STAGING_CANARY
+    HK_STAGING_VERIFY
+    HK_STAGING_DEPLOY
+    HK_STAGING_ROLLBACK
 
-如果 CANARY 完成就完全释放全局占用，则可能出现：
+这些动作共享 business slot。
 
-Boss flow A: CANARY SUCCESS  
-Eason flow B: CANARY SUCCESS  
-Boss flow A: VERIFY SUCCESS  
-Eason flow B: VERIFY ...
+目标是：
 
-虽然任何一秒只有一个 Request 在执行，但两个部署意图已经串线。
+> 同一时刻只允许一个人工 / GPT 业务意图推进，不允许另一条业务 Request 插队或串线。
 
-因此 DEPLOY 必须有“跨三段 Request 的占用”。
+### 4.2 OBSERVABILITY_ACTIONS（当前倾向）
 
-## 4. 建议的最小数据结构
+    CONTROL_PLANE_HEALTH
 
-不新增数据库。
+会诊确认 live 有周期性的 liveness producer / transport。
 
-直接在现有 ledger.json 顶层增加一个可空对象：
+如果 HEALTH 也拿长期 business slot，可能出现：
 
-```json
-{
-  "version": 1,
-  "requests": {},
-  "active_flow": {
-    "flow_id": "deploy-...",
-    "flow_type": "DEPLOY",
-    "owner": "yuguangzhi3836-glitch",
-    "candidate_id": "...",
-    "started_at": "...",
-    "stage": "CANARY_RUNNING",
-    "current_task_id": "...",
-    "stage_expires_at": "..."
-  }
-}
-```
+- 业务 flow 把探活 Request 拒绝；
+- 探活先到时反过来把部署 Request 拒绝；
+- 监控行为影响业务控制行为。
 
-字段只保留判断所需最小集合。
+因此当前更倾向：
 
-建议不要把几十个业务字段复制进去。
+> HEALTH 不参与 active_flow 业务准入。
 
-## 5. flow_id：建议只解决部署三段关联
+但这里仍需 WorkBuddy 二次核验：
 
-### 5.1 为什么需要显式 flow_id
+- HEALTH 与 DEPLOY 在 HK Agent / Evidence push 层是否可能形成实际竞态；
+- 现有 agent 是否天然顺序处理；
+- 若有 Git push 竞争，是否已有机制处理。
 
-仅靠：
-- GitHub author
-- candidate
-- action 顺序
+本稿不把“HEALTH 一定可以完全并行”写死。
 
-无法可靠区分“同一个老板账号的另一个 ChatGPT 对话”是否是原流程的 continuation。
+---
 
-所以建议给部署链三段 Request 增加一个很小的关联标识：
-- flow_id
+## 5. DEPLOY Flow：两种 VERIFY 必须明确区分
 
-同一次部署：
-- CANARY: flow_id=A
-- VERIFY: flow_id=A
-- DEPLOY: flow_id=A
+当前 DEPLOY 业务语义应写成：
 
-每一段仍有自己的 fresh request_id。
+    CANARY                         external Request
+      ↓
+    WAITING_FOR_PREFLIGHT_VERIFY
+      ↓
+    VERIFY                         external Request / preflight
+      ↓
+    WAITING_FOR_DEPLOY
+      ↓
+    DEPLOY                         external Request
+      ↓
+    POST_ACTION_VERIFY             Bridge internal continuation
+      ↓
+    terminal
 
-### 5.2 不建议用 request_id 命名约定偷偷编码关联
+### 5.1 external preflight VERIFY
 
-例如靠前缀解析：
-- deploy-A-canary-...
-- deploy-A-verify-...
+这是 DEPLOY 前置条件。
 
-虽然少一个字段，但协议隐式、易误判、后续更难审计。
+当前 plan_derivation.py 会从 Bridge ledger 中选择新鲜、参数匹配的 VERIFY Task / Evidence 作为 preflight。
 
-显式 flow_id 更小、更直观。
+所以：
 
-### 5.3 WorkBuddy 需要会诊的实现细节
+> 当一个 DEPLOY flow 已经存在时，不能让另一个 standalone VERIFY 随便插进来。
 
-当前 Request schema 对字段集合做 exact-set 校验：
-- 普通动作五字段
-- TEST_PR 六字段
+否则那个 VERIFY 可能成为后续 DEPLOY 派生计划时看到的“最新匹配 preflight”。
 
-因此增加 flow_id 会改 Request contract。
+当前倾向：
 
-请会诊：
-- flow_id 是否只对 CANARY/VERIFY/DEPLOY 的 deployment-flow 形态允许；
-- standalone CANARY / standalone VERIFY 是否继续保持旧五字段；
-- 或是否用一个更小的 parent_request_id 方案。
+- 没有 active deployment flow：standalone VERIFY 正常运行；
+- 已有 active deployment flow：只接受当前 flow 期待的 VERIFY continuation；
+- 其他 VERIFY Request：COMMAND_CENTER_BUSY。
 
-目标优先级：
-1. 不误把另一个 Chat 识别成 continuation；
-2. schema 变更尽量局部；
-3. 不破坏 standalone VERIFY / TEST_PR / HEALTH。
+### 5.2 internal post-action VERIFY
 
-## 6. 最小状态，不做通用状态机
+DEPLOY / ROLLBACK 成功后的 VERIFY 由 live Bridge 的 reconcile_post_action_verifies() 自动合成并发布。
 
-只需要以下业务阶段：
+它：
 
-### DEPLOY flow
+- 不是 Boss GPT 的新 Request；
+- 不走外部 Request 准入；
+- 不应被 active_flow 自己挡住。
 
-1. CANARY_RUNNING
-2. WAITING_FOR_VERIFY
-3. VERIFY_RUNNING
-4. WAITING_FOR_DEPLOY
-5. DEPLOY_RUNNING
-6. POST_VERIFY_RUNNING
-7. terminal -> active_flow cleared
+因此 active_flow 在：
 
-不需要：
-- PAUSED
-- RESUMING
-- PRIORITY
-- QUEUED
-- PREEMPTED
-- RETRYING
+    DEPLOY_RUNNING
+    → POST_ACTION_VERIFY_RUNNING
+    → terminal
 
-### ROLLBACK flow
+之间保持占用。
 
-1. ROLLBACK_RUNNING
-2. POST_VERIFY_RUNNING
-3. terminal -> clear
+---
 
-### 单步外部动作
+## 6. 当前倾向不增加 flow_id，但保留为待复核项
+
+初稿建议新增 flow_id。
+
+会诊后认为：为了最小改动，可以先尝试不改 Request schema。
+
+理由：
+
+- 当前 Request schema 是 exact-set；
+- 加 flow_id 会波及 Request contract、生成器、文档、测试；
+- 整个 CC 本来就只允许一个 active business flow。
+
+当前倾向用：
+
+    active_flow.owner
+    active_flow.candidate
+    active_flow.stage
+
+判断 continuation。
+
+例如：
+
+    active_flow:
+      owner = yuguangzhi3836-glitch
+      candidate = X
+      stage = WAITING_FOR_PREFLIGHT_VERIFY
+
+    新 Request:
+      action = VERIFY
+      GitHub author = yuguangzhi3836-glitch
+      active candidate 仍 = X
+
+    当前倾向：允许 continuation
+
+否则拒绝。
+
+### 6.1 必须让 WorkBuddy 复核的现实问题
+
+当前 DEPLOY Request 路径会获取 GitHub PR metadata 里的 approval_identity。
+
+但 CANARY / VERIFY / TEST_PR 是否已经同样取得 GitHub author，需要按 live 代码重新确认。
+
+如果没有：
+
+> 为了记录 owner 并验证 continuation，可能需要把“读取 PR author”的现有逻辑最小泛化到业务 Request。
+
+请 WorkBuddy 比较：
+
+A. 不改 schema，泛化 PR author lookup；  
+B. 增加一个最小 flow / parent 字段。
+
+当前偏向 A，但不是最终裁决。
+
+### 6.2 同一账号两个 Chat 的边界
+
+不加 flow_id 意味着：
+
+- 同一个 GitHub author；
+- 同一个 candidate；
+- 正好发送当前期待的下一动作；
+
+可能被视为 continuation，即便来自另一个聊天窗口。
+
+对于当前“老板账号 + 手机 GPT”的使用方式，这可能是可接受的最小化取舍。
+
+但请 WorkBuddy 评估是否存在实际误推进风险。
+
+---
+
+## 7. Candidate 从头绑定到尾
+
+CANARY flow 创建时，candidate 应从 CC 自己信任的事实取得，不从调用方取得：
+
+- current candidate / admission；
+- candidate contract；
+- candidate image；
+- expected current image。
+
+active_flow 记录最小 candidate identity。
+
+每次 continuation 前重新核：
+
+> 当前 active candidate 是否仍等于 flow candidate？
+
+若发生变化，当前倾向：
+
+- 不继续原 flow；
+- 返回明确原因，例如 FLOW_CANDIDATE_CHANGED；
+- 原 flow 终止 / 过期；
+- 新部署重新从 CANARY 开始。
+
+具体是立即清 slot，还是记录 terminal reason 后下一 tick 清，由 WorkBuddy 根据 ledger / reconciliation 结构决定。
+
+---
+
+## 8. 时间窗口：900 秒不等于整个 Flow 只能等 15 分钟
+
+live Request validation 有：
+
+    max_age_seconds = 900
+
+这表示：
+
+> 一条已经创建出来的 Request，从自己的 requested_at 起，最多约 15 分钟内要被 Bridge 接受。
+
+它不等于：
+
+> CANARY 完成以后，整个 flow 只能再等 15 分钟。
+
+因为下一阶段是一个 fresh Request，会有新的 request_id 和新的 requested_at。
+
+因此当前仍倾向直接复用现有证据时效：
+
+- CANARY Evidence：30 分钟；
+- preflight VERIFY Evidence：5 分钟。
+
+例如：
+
+    CANARY SUCCESS
+    ↓
+    20 分钟后 GPT 创建一个新的 VERIFY Request
+    requested_at = 当前时间
+    ↓
+    该 VERIFY 自己再受 900 秒 Request max-age 约束
+
+Scheduled Task 应在准备推进下一阶段时才创建下一 Request。
+
+不应提前创建一个 VERIFY PR 然后让它在 GitHub 上等 20 分钟。
+
+---
+
+## 9. active_flow 生命周期（当前建议）
+
+### 9.1 DEPLOY
+
+    CANARY_RUNNING
+    ↓ success
+    WAITING_FOR_PREFLIGHT_VERIFY
+    ↓ accepted
+    PREFLIGHT_VERIFY_RUNNING
+    ↓ success
+    WAITING_FOR_DEPLOY
+    ↓ accepted
+    DEPLOY_RUNNING
+    ↓ deploy success / Bridge post-verify created
+    POST_ACTION_VERIFY_RUNNING
+    ↓ terminal
+    CLEAR
+
+### 9.2 ROLLBACK
+
+    ROLLBACK_RUNNING
+    ↓
+    POST_ACTION_VERIFY_RUNNING
+    ↓
+    CLEAR
+
+### 9.3 standalone single-step business action
+
+例如：
 
 - TEST_PR
+- standalone CANARY
 - standalone VERIFY
-- standalone CANARY（如果保留）
-- CONTROL_PLANE_HEALTH
 
-这些只在 Task 未终结期间占用；结束即释放，不跨 Request 保留。
+当前倾向：
 
-## 7. 核心准入规则
+    SINGLE_RUNNING
+    ↓ terminal
+    CLEAR
 
-在 persistent_process() 内、现有 Ledger.transaction() 的同一排他事务里做：
+但 standalone CANARY 与“部署 flow 的第一步 CANARY”如何区分，仍是一个需要 WorkBuddy 再确认的协议问题。
 
-1. reconcile 当前 active_flow；
-2. 判断新 Request 是否可进入；
-3. 必要时创建/推进 active_flow；
-4. 再 claim / prepare 当前 Request。
+可能选择：
 
-伪规则：
+1. Boss 的“部署”意图生成 CANARY 时，由 Bridge 根据当前规则把 CANARY 默认视为 deployment flow start；
+2. 引入最小显式标记；
+3. 取消 standalone CANARY 的独立语义，把 CANARY 一律视为 deployment preparation。
 
-```text
-if no active_flow:
-    accept one legal external request
-    if it starts deployment flow:
-        create active_flow
-else:
-    if request is the exact allowed continuation
-       of active_flow
-       (same flow_id + same owner + correct next action + same candidate binding):
-        accept
-    else:
-        reject COMMAND_CENTER_BUSY
-        do not sign Task
-```
+本稿不预先选死。
 
-### 必须原子
+---
 
-“检查空闲”和“设置 active_flow”必须在同一次 ledger flock 事务里。
+## 10. FAILURE / UNKNOWN：不能混为一谈
 
-禁止：
-- 先无锁检查 idle
-- 后面再另一次写 active_flow
+### 明确 terminal
 
-否则两个并发 Request 仍可能同时通过检查。
+若 CC 能从可信事实确认：
 
-## 8. active_flow 怎么推进：不要新 daemon
+- SUCCESS
+- 明确 FAILED
+- flow evidence expired before next stage
 
-不建议加后台 workflow worker。
+可以进入 terminal / clear。
 
-最小做法：
-- 在 Bridge 每次 tick / 每次处理 Request 前，调用一个小 helper，例如 reconcile_active_flow()；
-- 使用现有 Evidence 读取/签名验证能力判断 current_task_id 是否已有 terminal Evidence。
+### Task 已发布，但执行结果未知
 
 例如：
 
-CANARY_RUNNING:
-- 无 terminal Evidence -> 仍 BUSY
-- SUCCESS -> WAITING_FOR_VERIFY
-- FAILED -> flow FAILED，清 slot
-- task 已签发但结果不明/证据异常 -> BLOCKED_REVIEW，不清 slot
+- Task 已签发；
+- 没看到可信 terminal Evidence；
+- publish / execution / evidence 状态存在歧义。
 
-WAITING_FOR_VERIFY:
-- 只允许同 flow 的 VERIFY
-- 超过 CANARY 证据现有有效期 -> FLOW_EXPIRED，清 slot
+不能因为等了固定分钟数就假定没执行。
 
-VERIFY_RUNNING:
-- 同理
+当前倾向：
 
-WAITING_FOR_DEPLOY:
-- 只允许同 flow 的 DEPLOY
-- 超过 VERIFY 证据现有 5 分钟有效期 -> FLOW_EXPIRED，清 slot
+    BLOCKED_REVIEW
 
-DEPLOY_RUNNING:
-- 无 terminal Evidence -> BUSY
-- SUCCESS -> 进入/等待既有 automatic post-deploy VERIFY
-- FAILED -> terminal
-- ambiguous -> BLOCKED_REVIEW
+并继续拒绝新的 business Request。
 
-这样没有新 service，也没有“CC 自己自动发 CANARY/VERIFY/DEPLOY”的工作流引擎。
+### 10.1 需要 WorkBuddy 特别核查
 
-Boss GPT 仍然负责三段 Request 的编排。
+live HK Agent transport.py 的执行失败路径目前看起来会：
 
-## 9. 超时原则
+- claim_attempt()
+- 本地 fail_attempt(...)
 
-### 9.1 只对“等待下一段 Request”使用现有证据有效期
+但并不一定为每一种执行失败都向 CC 发布 Signed failure Evidence。
 
-现有规则：
-- CANARY evidence: 30 分钟
-- VERIFY evidence: 5 分钟
+如果这个事实成立：
 
-可以直接复用，不再发明新 lease 时间。
+> active_flow 不能假设“所有失败都会有 Signed Evidence”，否则某些真实失败会停在 UNKNOWN / BLOCKED_REVIEW。
 
-例如：
-- CANARY SUCCESS 后 30 分钟内没等到同 flow VERIFY -> flow expired，释放；
-- VERIFY SUCCESS 后 5 分钟内没等到同 flow DEPLOY -> flow expired，释放。
+请 WorkBuddy 核实：
 
-过期以后：
-- 旧 Scheduled Task 再来不得复活旧 flow；
-- 必须重新从 CANARY 开始。
+1. 哪些 business action 的失败有远端可见 terminal Evidence；
+2. 哪些只有 HK 本地 attempts DB；
+3. 是否已有状态投影能把失败可靠带回 CC；
+4. 若没有，本补丁是否接受“少数执行失败需要人工解除 slot”，还是需要一个极小的 failure-result 补强。
 
-### 9.2 已签发 Task 但结果未知，不能靠时间自动释放
+优先保持最小，不要因此直接扩成新状态平台。
 
-这是关键安全边界。
+---
 
-如果正式 Task 已发布，CC 不知道 HK 到底执行没执行：
-- 不得因为“过了 10/20/30 分钟”自动把 slot 当空闲；
-- 标记 BLOCKED_REVIEW / UNKNOWN；
-- 新外部业务 Request 继续明确拒绝；
-- 等 signed terminal Evidence 或人工会诊。
+## 11. Request rejection 可见性：优先复用 request-visibility-v1
 
-UNKNOWN != IDLE。
+会诊确认仓库已有：
 
-## 10. Candidate 必须从头绑定到尾
+- control-plane/command-center-request-visibility-v1/
+- REQUEST_FACT_OBSERVATIONS
+- REQUEST_REJECTED
+- Bridge poll journal
+- Phase 2 发布到 control bus / request-facts/live
 
-部署 flow 创建时记录 candidate identity。
+其设计目的本来就是回答：
 
-后续 VERIFY / DEPLOY 必须仍指向同一候选事实。
+> 为什么我的 Request 没有变成 Task？
 
-若 active candidate / candidate contract 已变化：
-- 拒绝 continuation；
-- reason: CANDIDATE_CHANGED / FLOW_CANDIDATE_CHANGED；
-- 旧 flow 作废；
-- 重新从 CANARY 开始。
+因此初稿建议的新 request-results 目录当前不再作为首选。
+
+### 11.1 最小目标
+
+新的 gate 至少需要产生机器可读 Reject token，例如：
+
+- COMMAND_CENTER_BUSY
+- FLOW_CANDIDATE_CHANGED
+- FLOW_EXPIRED
+- FLOW_CONTINUATION_MISMATCH
+- FLOW_REQUIRES_OPERATOR_REVIEW
+
+并确保现有 request-visibility contract 能分类 / 发布。
+
+### 11.2 只有 reason token 可能不够
+
+用户明确要求 BUSY 时告诉调用方：
+
+- 当前在做什么；
+- 当前触发人；
+- 开始时间；
+- 当前 Task；
+- 为什么本 Request 没签发。
+
+所以还需要 WorkBuddy 核：
+
+> 当前 request fact schema 是否能携带结构化、非授权性的诊断上下文。
+
+当前倾向类似：
+
+    reason = COMMAND_CENTER_BUSY
+
+    diagnostic:
+      active_flow_type = DEPLOY
+      active_owner = yuguangzhi3836-glitch
+      active_stage = PREFLIGHT_VERIFY_RUNNING
+      active_candidate_image_id = sha256:...
+      active_started_at = ...
+      active_task_id = ...
+
+diagnostic 必须：
+
+- 明确 non-authoritative；
+- 不进入 Task 签名 / 执行；
+- 不能反向影响 ledger；
+- 只用于告诉 GPT / 人“为什么被拒绝”。
+
+具体应扩 Bridge stdout、request visibility exporter、schema 还是 state publication，交给 WorkBuddy 找最小落点。
+
+---
+
+## 12. HEALTH：当前建议作为业务锁例外，但不要写成绝对并行保证
+
+会诊发现：
+
+- liveness producer 周期运行；
+- HEALTH Request 走同一个 Request channel；
+- live 已有大量 HEALTH Task。
+
+因此初稿“HEALTH 也拿 slot”容易产生自伤。
+
+当前偏向：
+
+    business active_flow exists
+    +
+    HEALTH arrives
+    => HEALTH 仍按现有探活路径处理，不改变 active_flow
+
+    HEALTH exists
+    +
+    business Request arrives
+    => HEALTH 不构成 COMMAND_CENTER_BUSY 的理由
+
+但这只是 CC business admission 层的规则。
+
+不代表 HK 上保证两个进程可以真正并行执行。
+
+实际 HK 调度是否顺序、Evidence push 是否有竞争，WorkBuddy 还需核。
+
+---
+
+## 13. HK 第二道 mutex：本轮不做最终判断
+
+初稿曾倾向增加 HK environment flock。
+
+第一轮 WorkBuddy 会诊认为“不需要”。
+
+复核 live hk-staging/source/agent/hk_agent/transport.py 后，可以确认：
+
+- MAX_EXECUTOR_ATTEMPTS_PER_TASK = 1
+- claim_attempt(task_id, nonce) 防的是同 Task 重试；
+- 它不能单独证明两个不同 Task 永远不会并行。
+
+因此本稿不接受“HK 并发绝无可能”这种绝对结论。
+
+但为了最小改动，当前仍倾向：
+
+> #203 的第一阶段只补 CC business gate，不顺手改 HK executor。
+
+请 WorkBuddy 继续核：
+
+- 当前 HK Agent service / timer 是否可重入；
+- 两个 run_once() 能否同时存在；
+- 如果能，是否有真实证据表明需要同期修；
+- 若只是低概率 defense-in-depth，建议拆到后续独立小补丁。
+
+---
+
+## 14. Scheduled Task 的边界
+
+Boss GPT / Scheduled Task 负责编排，不是 Execution Authority。
+
+它只做：
+
+1. 发当前阶段 Request；
+2. 到点检查 Request fact / Task / Signed Evidence；
+3. SUCCESS 后创建下一 fresh Request；
+4. PENDING 就继续等；
+5. REJECTED / EXPIRED / FAILED / BLOCKED_REVIEW 就停止并报告。
 
 禁止：
-- CANARY 测 X
-- 中间 candidate 变 Y
-- DEPLOY Y
 
-## 11. CONTROL_PLANE_HEALTH
-
-当前 live action contract 包含 CONTROL_PLANE_HEALTH。
-
-设计建议保持最简单：
-
-- CC 空闲时，HEALTH 可作为普通单步只读任务执行；
-- HEALTH 一旦开始，也占用当前 slot，直到 terminal；
-- 如果业务 flow 已占用，新的 HEALTH Request 直接拒绝/跳过，不排队；
-- 如果 HEALTH 已经先开始，此时来了 DEPLOY/CANARY/VERIFY 等，也不抢占 HEALTH，明确 BUSY 拒绝；
-- HEALTH 不创建跨阶段 active_flow；
-- liveness producer 后续自己下一个 bucket 再探活即可。
-
-不做“健康检查低优先级抢占”系统。
-
-## 12. TEST_PR / standalone VERIFY / standalone CANARY
-
-这些保持单步：
-
-Request accepted -> Task published -> terminal Evidence -> release
-
-它们不应占用一个“等待下一 Request”的 deployment flow。
-
-但在它们执行期间：
-- 其他外部 Request 一律 BUSY reject。
-
-这样满足“CC 同时只干一件事”。
-
-## 13. ROLLBACK
-
-live revision 已有 HK_STAGING_ROLLBACK，并且 ROLLBACK 后会自动 post-action VERIFY。
-
-建议把它视为一个短 flow：
-
-ROLLBACK -> automatic post-rollback VERIFY -> terminal -> release
-
-ROLLBACK 不排队、不抢占当前 DEPLOY flow。
-
-如果已有 active flow：
-- 新 ROLLBACK 也 BUSY reject。
-
-不做“回滚优先级高于部署”的抢占规则，除非以后明确提出。
-
-## 14. Automatic post-action VERIFY 必须绕过外部 BUSY gate
-
-现有 Bridge 的 DEPLOY / ROLLBACK 成功后会内部合成并发布 VERIFY。
-
-这是当前 flow 的内部 continuation，不是新的外部 Request。
-
-因此：
-- 不得走“有 active_flow 就 reject”的外部准入规则；
-- 仍须保留它原有的签名、Evidence 绑定和 idempotency；
-- active_flow 直到这个 post-action VERIFY terminal 后才最终释放。
-
-否则会发生“DEPLOY 自己把自己的自动 VERIFY 挡掉”。
-
-## 15. 明确拒绝：这是本补丁的功能要求，不是日志优化
-
-Boss GPT 不能只看到：
-- Request PR 存在
-- 但没有 Signed Task
-
-它必须知道为什么没签发。
-
-建议增加一个 GitHub 可读的 Request Result 对象，例如：
-
-```
-request-results/<request_id>.json
-```
-
-示例：
-
-```json
-{
-  "schema_version": "1",
-  "request_id": "...",
-  "status": "REJECTED",
-  "reason": "COMMAND_CENTER_BUSY",
-  "message": "Command Center 当前已有流程正在执行，本次请求未签发，请等待当前流程结束后重新提交。",
-  "active_flow": {
-    "flow_id": "...",
-    "flow_type": "DEPLOY",
-    "owner": "yuguangzhi3836-glitch",
-    "stage": "VERIFY_RUNNING",
-    "candidate_id": "...",
-    "started_at": "...",
-    "current_task_id": "..."
-  }
-}
-```
-
-要求：
-- 这是回执，不是 Signed Task；
-- 不具备执行授权；
-- 不得让调用者通过 result 写入影响 active_flow；
-- 同 request_id result 幂等，不覆盖不同内容；
-- Scheduled Task / Boss GPT 能从 GitHub 直接读到。
-
-WorkBuddy 请会诊：
-- 使用同一个 go-control-tasks 仓库的 request-results/ 是否最小；
-- 是否能复用现有 tasks writer key / publish helper，而不增加新 credential；
-- 是否更适合 PR comment（若需要新 API write token，则通常反而更复杂）。
-
-偏向：复用现有 Git writer，在同控制仓库写结果文件。
-
-## 16. Scheduled Task 的边界
-
-Scheduled Task 只负责：
-1. 重新醒来；
-2. 查 Request Result / Signed Task / Signed Evidence；
-3. 当前阶段 SUCCESS 时创建下一合法 Request；
-4. PENDING 时继续等；
-5. FAILED / REJECTED / EXPIRED 时停止并报告。
-
-禁止 Scheduled Task：
-- 因为没看到结果就重复提交同一阶段；
-- 重用旧 request_id；
+- 没看到结果就重复发当前阶段；
+- 重用 request_id；
 - 复活 expired flow；
 - 绕过 BUSY；
-- 自动 retry DEPLOY。
+- 自动 retry DEPLOY / ROLLBACK；
+- 猜测结果。
 
-## 17. 明确不做
+---
 
-本补丁不应引入：
+## 15. 当前最小实现候选（不是最终文件清单）
+
+### A. control-plane/boss-deploy-request-v1/go-boss-request-bridge
+
+可能包含：
+
+- ledger 顶层兼容 active_flow；
+- business admission gate；
+- active_flow reconcile；
+- owner / candidate / stage continuation check；
+- post-action VERIFY 与 active_flow 收尾；
+- structured BUSY diagnostic；
+- self-tests。
+
+### B. request visibility contract / exporter（视现状）
+
+只在现有 REQUEST_REJECTED 还不能表达 BUSY diagnostic 时扩。
+
+不新造平行 result 系统。
+
+### C. Boss GPT guide / architecture docs
+
+写清：
+
+- business BUSY；
+- HEALTH 例外；
+- DEPLOY preflight VERIFY 与 post-action VERIFY 的区别；
+- Scheduled Task 如何推进；
+- 被拒绝后不盲重试。
+
+### 当前尽量不动
+
+- go_deploy_request.py plan derivation（除非 WorkBuddy 证明 gate 需要最小绑定补强）
+- plan_derivation.py
+- HK deploy runtime
+- HK rollback runtime
+- Evidence signer
+- execution window
+- Docker scope
+
+---
+
+## 16. 建议测试矩阵（修订）
+
+最少应讨论 / 覆盖：
+
+1. 两个 Bridge tick / 进程重叠抢空闲 slot，只能有一个 business flow 成功占位；
+2. Boss CANARY flow 运行中，Eason CANARY -> BUSY；
+3. Boss CANARY SUCCESS 后，Eason CANARY -> 仍 BUSY；
+4. 当前 owner 的 expected preflight VERIFY -> 允许；
+5. 其他 owner VERIFY -> BUSY；
+6. 同 owner 但 candidate 已变化 -> 不继续；
+7. active DEPLOY flow 时 standalone VERIFY 不能插入成为新的 preflight；
+8. preflight VERIFY SUCCESS 后超 5 分钟才 DEPLOY -> flow 不再继续；
+9. CANARY proof 超 30 分钟 -> flow 不再继续；
+10. fresh Request 自己仍受 900 秒 max-age；
+11. old Scheduled Task 不能复活已结束 / expired flow；
+12. DEPLOY Task 已发布但 outcome unknown -> 不自动清 slot；
+13. explicit terminal failure 的实际回传路径确认；
+14. automatic post-deploy VERIFY 不被外部 gate 拦；
+15. ROLLBACK + automatic post-rollback VERIFY 占用到最终 terminal；
+16. TEST_PR / standalone VERIFY / standalone CANARY 作为单步 business action 时互斥；
+17. HEALTH 不获取 business slot；
+18. HEALTH 与 business action 的实际 HK / transport 共存行为不会制造新的执行风险；
+19. BUSY Request 不产生 Signed Task；
+20. Request Visibility 能让 Boss GPT 读到 reject reason、current owner、current action/stage、started_at、current task 和 human-readable message；
+21. Bridge 重启后 active_flow 从 durable state 恢复；
+22. prepared / publishing / ambiguous publish 时 fail-closed；
+23. active_flow 不依赖内存锁；
+24. 同 GitHub owner 的另一个 Chat 在“正确下一阶段”是否会被误认为 continuation，要有明确产品决定。
+
+---
+
+## 17. WorkBuddy 第二轮会诊问题
+
+请基于当前 live 重新回答，不要把本稿当最终设计：
+
+1. active_flow 放现有 Bridge ledger 是否仍是最小改法？
+2. BUSINESS_EXCLUSIVE_ACTIONS 与 CONTROL_PLANE_HEALTH 例外是否会在 HK Agent / Evidence push 侧产生真实竞态？
+3. standalone VERIFY 在 active deployment flow 中是否必须拦截？请用 plan_derivation.latest_pair() 的实际选择规则证明。
+4. 不加 flow_id，只靠 owner + candidate + expected stage，是否足够？如果不够，最小补充字段是什么？
+5. CANARY / VERIFY / TEST_PR 当前如何取得 GitHub author？泛化现有 PR metadata lookup 的改动面多大？
+6. standalone CANARY 与 deployment-start CANARY 如何最小区分？
+7. active_flow reconcile 应复用哪些现有 evidence / helper，哪些语义不能复用？
+8. HK business action 失败是否都有 CC 可见的 terminal fact？没有的话，最小 recovery 是什么？
+9. request-visibility-v1 是否能直接承载 structured BUSY diagnostic？最小需要改哪些文件？
+10. 900 秒 Request max-age 与 30min CANARY / 5min VERIFY proof freshness 的实际组合，请给出时序测试确认。
+11. HK executor 是否需要第二道 mutex？不要给绝对结论，按 live service / timer / transport 的可重入事实回答。
+12. 最后给出最小文件变更清单，并指出哪些改动可以拆成第二阶段。
+
+---
+
+## 18. 验收口径（产品层）
+
+如果最终实现成立，产品体验应接近：
+
+> Command Center 同一时刻只推进一个人工 / GPT 业务意图。部署从 CANARY 开始后，只有该流程合法的下一阶段可以继续，其他业务 Request 在 Task 签发前被明确拒绝，并能从现有 GitHub 可见性链看到“当前谁在做什么、从什么时候开始”。CONTROL_PLANE_HEALTH 不应因为这个业务锁而破坏现有探活。流程过期不会自动继续，已签发但结果未知时不会被误认为 IDLE。
+
+这是当前目标描述，不是对具体实现细节的最终裁决。
+
+---
+
+## 19. 明确不做
+
+除非第二轮会诊证明“不做就无法满足上述目标”，否则本补丁不引入：
 
 - Redis
-- SQL 状态库
+- SQL 新状态库
 - Job Queue
 - FIFO 排队
 - 优先级队列
 - 抢占
-- 自动取消别人任务
+- 自动取消
 - 通用 Workflow Engine
 - 新后台 daemon
-- 多环境资源调度
-- 自动重试 DEPLOY / ROLLBACK
-- 任意 shell / executor 参数扩权
+- 自动 retry DEPLOY / ROLLBACK
 - ChatGPT 持有签名权限
+- 任意 shell / Docker 参数扩权
 
-## 18. 最小改动位置建议（只给方向，不预设最终函数名）
+核心原则仍然是：
 
-主要候选：
-- control-plane/boss-deploy-request-v1/go-boss-request-bridge
-  - Ledger 结构兼容
-  - persistent_process() 外部准入
-  - reconcile active flow
-  - BUSY result publish
-  - post-action VERIFY 与 active_flow 的生命周期衔接
-
-可能需要小改：
-- Request schema validation（若采用 flow_id）
-- tests/test_deploy_entry.py / Bridge self-tests
-- BOSS_GPT_REQUEST_GUIDE.md
-- 当前 architecture / contract 文档
-
-尽量不动：
-- HK executor runtime
-- Docker 部署实现
-- Evidence signer
-- existing plan derivation 逻辑
-
-除非 WorkBuddy 证明只做 CC gate 仍存在无法接受的执行侧并发漏洞。
-
-## 19. 必须有的测试场景
-
-最少覆盖：
-
-1. 两个进程同时抢空闲 slot -> 只有一个接受；
-2. Boss flow A CANARY 运行时，Eason CANARY B -> B 明确 BUSY；
-3. A CANARY SUCCESS 后，B CANARY -> 仍 BUSY；
-4. A 同 flow VERIFY -> 允许；
-5. 错 flow_id VERIFY -> 拒绝；
-6. 同 flow 但错 owner -> 拒绝；
-7. 同 flow 但 candidate 已变化 -> 拒绝；
-8. VERIFY SUCCESS 后超 5 分钟再 DEPLOY -> FLOW_EXPIRED；
-9. 旧 Scheduled Task 不能复活 expired flow；
-10. DEPLOY Task 已发布但 Evidence unknown -> slot 不释放；
-11. explicit FAILED Evidence -> 正确 terminal / release；
-12. automatic post-deploy VERIFY 不被 BUSY gate 拦；
-13. ROLLBACK + post-verify 占用到 terminal；
-14. HEALTH 在业务 flow 中 -> 明确拒绝/跳过；
-15. HEALTH 已运行时新业务 Request -> 明确 BUSY；
-16. rejected Request 没有 Signed Task；
-17. GitHub-visible rejection result 内容包含：
-    - reason
-    - active flow/action
-    - owner
-    - started_at
-    - current task
-    - human-readable message
-18. Bridge 进程重启后 active_flow 仍可恢复/重算，不出现“内存锁丢失”。
-
-## 20. WorkBuddy 会诊问题
-
-请不要直接按本文编码，先回答：
-
-1. 在当前最新 live / current branch 上，active_flow 放现有 ledger 是否确实是最小、安全方案？
-2. active flow reconciliation 最适合复用哪个现有 Evidence reader / post-action verify helper？
-3. flow_id 最小 schema 改法是什么，如何保持 standalone VERIFY/CANARY 兼容？
-4. GitHub-visible rejection result 最小实现是 result file 还是 PR comment？
-5. 当前 liveness producer 是否会因 BUSY rejection 产生不可接受的噪音？
-6. active_flow 在 prepared / publishing / ambiguous publish 崩溃场景如何保持 fail-closed？
-7. 是否真的需要 HK executor 再加物理 mutex？若不需要，请给出现有单 executor / transport 的事实依据；若需要，说明能否作为独立第二阶段，不扩大本 PR 设计范围。
-8. 当前 main 与 live 9b932745/后续版本的差异中，哪些会改变本设计？
-9. 给出“最小文件变更清单”，避免顺手重构。
-
-## 21. 验收口径
-
-补丁完成后，产品层应能用一句话描述：
-
-> Command Center 同一时刻只服务一个外部业务意图。部署从 CANARY 开始后，直到 VERIFY、DEPLOY 和自动部署后 VERIFY 完成，其他外部请求都不会取得执行资格；它们会在 Task 签发前被明确拒绝，并从 GitHub 得到“当前谁在做什么、从什么时候开始”的可读原因。流程过期不会自动继续，已签发但结果未知时不会误释放。
-
-这就是本设计稿的边界。不要把它扩成通用调度平台。
+> 能复用现有 ledger / visibility / evidence 链，就不要再造一套系统。
