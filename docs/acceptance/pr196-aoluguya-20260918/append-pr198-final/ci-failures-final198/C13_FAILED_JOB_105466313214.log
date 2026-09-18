@@ -1,0 +1,584 @@
+﻿2026-09-18T03:07:06.5864989Z Current runner version: '2.337.0'
+2026-09-18T03:07:06.5901226Z ##[group]Runner Image Provisioner
+2026-09-18T03:07:06.5902857Z Hosted Compute Agent
+2026-09-18T03:07:06.5903851Z Version: 20260828.587
+2026-09-18T03:07:06.5905013Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-18T03:07:06.5906580Z Build Date: 2026-08-28T16:44:25Z
+2026-09-18T03:07:06.5907756Z Worker ID: {935581e2-b371-4161-9350-142ee42a49ba}
+2026-09-18T03:07:06.5909272Z Azure Region: westus
+2026-09-18T03:07:06.5910284Z ##[endgroup]
+2026-09-18T03:07:06.5912741Z ##[group]Operating System
+2026-09-18T03:07:06.5913819Z Ubuntu
+2026-09-18T03:07:06.5914672Z 24.04.5
+2026-09-18T03:07:06.5916066Z LTS
+2026-09-18T03:07:06.5917023Z ##[endgroup]
+2026-09-18T03:07:06.5918118Z ##[group]Runner Image
+2026-09-18T03:07:06.5919399Z Image: ubuntu-24.04
+2026-09-18T03:07:06.5920512Z Version: 20260907.300.1
+2026-09-18T03:07:06.5922943Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-18T03:07:06.5926031Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-18T03:07:06.5927953Z ##[endgroup]
+2026-09-18T03:07:06.5930000Z ##[group]GITHUB_TOKEN Permissions
+2026-09-18T03:07:06.5932934Z Contents: read
+2026-09-18T03:07:06.5933952Z Metadata: read
+2026-09-18T03:07:06.5934986Z ##[endgroup]
+2026-09-18T03:07:06.5938412Z Secret source: Actions
+2026-09-18T03:07:06.5940029Z Cache mode: write
+2026-09-18T03:07:06.5941223Z Prepare workflow directory
+2026-09-18T03:07:06.6901446Z Prepare all required actions
+2026-09-18T03:07:06.6980118Z Getting action download info
+2026-09-18T03:07:07.1309498Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-18T03:07:07.2782049Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-18T03:07:07.3768392Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-18T03:07:07.6587340Z Complete job name: postgres (C09, go_c09_isolated, ci/next_depth/c09_postgres.py)
+2026-09-18T03:07:07.7070197Z ##[group]Checking docker version
+2026-09-18T03:07:07.7083821Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-09-18T03:07:08.8112250Z '1.48'
+2026-09-18T03:07:08.8134301Z Docker daemon API version: '1.48'
+2026-09-18T03:07:08.8136567Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-09-18T03:07:08.8312190Z '1.48'
+2026-09-18T03:07:08.8326883Z Docker client API version: '1.48'
+2026-09-18T03:07:08.8332984Z ##[endgroup]
+2026-09-18T03:07:08.8337316Z ##[group]Clean up resources from previous jobs
+2026-09-18T03:07:08.8343433Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=f1bb99"
+2026-09-18T03:07:08.8559923Z ##[command]/usr/bin/docker network prune --force --filter "label=f1bb99"
+2026-09-18T03:07:08.8715825Z ##[endgroup]
+2026-09-18T03:07:08.8717808Z ##[group]Create local container network
+2026-09-18T03:07:08.8730326Z ##[command]/usr/bin/docker network create --label f1bb99 github_network_6992bfee9daa4782a41e03af3df80286
+2026-09-18T03:07:08.9538246Z 298dfc2c05742c12787d219508b75419422c6bb962d29c260e151e5972498de2
+2026-09-18T03:07:08.9564707Z ##[endgroup]
+2026-09-18T03:07:08.9606880Z ##[group]Starting postgres service container
+2026-09-18T03:07:08.9639962Z ##[command]/usr/bin/docker pull postgres:18.4
+2026-09-18T03:07:09.9148097Z 18.4: Pulling from library/postgres
+2026-09-18T03:07:10.1858583Z 26c307b5e35a: Pulling fs layer
+2026-09-18T03:07:10.1859040Z 5db2b7edf527: Pulling fs layer
+2026-09-18T03:07:10.1859346Z 130549402290: Pulling fs layer
+2026-09-18T03:07:10.1859642Z 8241f4a14319: Pulling fs layer
+2026-09-18T03:07:10.1859944Z a4dcdc0137d7: Pulling fs layer
+2026-09-18T03:07:10.1860254Z d1052e262c2e: Pulling fs layer
+2026-09-18T03:07:10.1860553Z 39762d0b4bb2: Pulling fs layer
+2026-09-18T03:07:10.1860839Z 38639b9be6a6: Pulling fs layer
+2026-09-18T03:07:10.1861136Z 4e6c52c74256: Pulling fs layer
+2026-09-18T03:07:10.1861441Z f51baa0c6c0d: Pulling fs layer
+2026-09-18T03:07:10.1862155Z 88bb22edda9b: Pulling fs layer
+2026-09-18T03:07:10.1862459Z f7d54729e84b: Pulling fs layer
+2026-09-18T03:07:10.1862796Z f90dd111f2e5: Pulling fs layer
+2026-09-18T03:07:10.1863170Z 8241f4a14319: Waiting
+2026-09-18T03:07:10.1863475Z a4dcdc0137d7: Waiting
+2026-09-18T03:07:10.1863722Z d1052e262c2e: Waiting
+2026-09-18T03:07:10.1863965Z 39762d0b4bb2: Waiting
+2026-09-18T03:07:10.1864213Z 38639b9be6a6: Waiting
+2026-09-18T03:07:10.1864457Z 4e6c52c74256: Waiting
+2026-09-18T03:07:10.1864698Z f51baa0c6c0d: Waiting
+2026-09-18T03:07:10.1864940Z 88bb22edda9b: Waiting
+2026-09-18T03:07:10.1865184Z f7d54729e84b: Waiting
+2026-09-18T03:07:10.1868115Z f90dd111f2e5: Waiting
+2026-09-18T03:07:10.4159536Z 5db2b7edf527: Verifying Checksum
+2026-09-18T03:07:10.4165869Z 5db2b7edf527: Download complete
+2026-09-18T03:07:10.4619023Z 130549402290: Verifying Checksum
+2026-09-18T03:07:10.4621435Z 130549402290: Download complete
+2026-09-18T03:07:10.5414188Z 26c307b5e35a: Verifying Checksum
+2026-09-18T03:07:10.5419652Z 26c307b5e35a: Download complete
+2026-09-18T03:07:10.6510361Z 8241f4a14319: Verifying Checksum
+2026-09-18T03:07:10.6515057Z 8241f4a14319: Download complete
+2026-09-18T03:07:10.7369825Z a4dcdc0137d7: Download complete
+2026-09-18T03:07:10.7861699Z d1052e262c2e: Verifying Checksum
+2026-09-18T03:07:10.7862917Z d1052e262c2e: Download complete
+2026-09-18T03:07:10.8714460Z 39762d0b4bb2: Verifying Checksum
+2026-09-18T03:07:10.8726339Z 39762d0b4bb2: Download complete
+2026-09-18T03:07:10.9608025Z 38639b9be6a6: Download complete
+2026-09-18T03:07:11.1103040Z f51baa0c6c0d: Verifying Checksum
+2026-09-18T03:07:11.1105639Z f51baa0c6c0d: Download complete
+2026-09-18T03:07:11.1931848Z 88bb22edda9b: Verifying Checksum
+2026-09-18T03:07:11.1953801Z 88bb22edda9b: Download complete
+2026-09-18T03:07:11.3604164Z f7d54729e84b: Verifying Checksum
+2026-09-18T03:07:11.3604771Z f7d54729e84b: Download complete
+2026-09-18T03:07:11.4296019Z f90dd111f2e5: Verifying Checksum
+2026-09-18T03:07:11.4296411Z f90dd111f2e5: Download complete
+2026-09-18T03:07:11.8758486Z 26c307b5e35a: Pull complete
+2026-09-18T03:07:11.9283776Z 4e6c52c74256: Verifying Checksum
+2026-09-18T03:07:11.9284437Z 4e6c52c74256: Download complete
+2026-09-18T03:07:11.9440753Z 5db2b7edf527: Pull complete
+2026-09-18T03:07:15.0369958Z 130549402290: Pull complete
+2026-09-18T03:07:15.0938835Z 8241f4a14319: Pull complete
+2026-09-18T03:07:15.4579433Z a4dcdc0137d7: Pull complete
+2026-09-18T03:07:15.5706310Z d1052e262c2e: Pull complete
+2026-09-18T03:07:15.5877897Z 39762d0b4bb2: Pull complete
+2026-09-18T03:07:15.6028321Z 38639b9be6a6: Pull complete
+2026-09-18T03:07:20.0780668Z 4e6c52c74256: Pull complete
+2026-09-18T03:07:20.1015146Z f51baa0c6c0d: Pull complete
+2026-09-18T03:07:20.1160706Z 88bb22edda9b: Pull complete
+2026-09-18T03:07:20.1308314Z f7d54729e84b: Pull complete
+2026-09-18T03:07:20.1447571Z f90dd111f2e5: Pull complete
+2026-09-18T03:07:20.1476963Z Digest: sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+2026-09-18T03:07:20.1504171Z Status: Downloaded newer image for postgres:18.4
+2026-09-18T03:07:20.1522628Z docker.io/library/postgres:18.4
+2026-09-18T03:07:20.1573066Z ##[command]/usr/bin/docker create --name 188947ad336a4604ac44b4f9ec920b12_postgres184_837b66 --label f1bb99 --network github_network_6992bfee9daa4782a41e03af3df80286 --network-alias postgres -p 5432:5432 --health-cmd "pg_isready -U go_ci -d go_c09_isolated" --health-interval 5s --health-timeout 5s --health-retries 20 -e "POSTGRES_DB=go_c09_isolated" -e "POSTGRES_USER=go_ci" -e "POSTGRES_PASSWORD=isolated_ci_only" -e GITHUB_ACTIONS=true -e CI=true postgres:18.4
+2026-09-18T03:07:20.1927405Z a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd
+2026-09-18T03:07:20.1951809Z ##[command]/usr/bin/docker start a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd
+2026-09-18T03:07:20.9323444Z a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd
+2026-09-18T03:07:20.9351041Z ##[command]/usr/bin/docker ps --all --filter id=a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-09-18T03:07:20.9531439Z a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd Up Less than a second (health: starting)
+2026-09-18T03:07:20.9576115Z ##[command]/usr/bin/docker port a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd
+2026-09-18T03:07:20.9828267Z 5432/tcp -> 0.0.0.0:5432
+2026-09-18T03:07:20.9828926Z 5432/tcp -> [::]:5432
+2026-09-18T03:07:20.9888161Z ##[endgroup]
+2026-09-18T03:07:20.9899791Z ##[group]Waiting for all services to be ready
+2026-09-18T03:07:20.9920178Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd
+2026-09-18T03:07:21.0138105Z starting
+2026-09-18T03:07:21.0233320Z postgres service is starting, waiting 2 seconds before checking again.
+2026-09-18T03:07:23.0234023Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd
+2026-09-18T03:07:23.0378146Z starting
+2026-09-18T03:07:23.0457546Z postgres service is starting, waiting 4 seconds before checking again.
+2026-09-18T03:07:27.2644857Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd
+2026-09-18T03:07:27.2783017Z healthy
+2026-09-18T03:07:27.2801237Z postgres service is healthy.
+2026-09-18T03:07:27.2801914Z ##[endgroup]
+2026-09-18T03:07:27.3088193Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T03:07:27.3096238Z ##[group]Run actions/checkout@v4
+2026-09-18T03:07:27.3096669Z with:
+2026-09-18T03:07:27.3096943Z   ref: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:27.3097272Z   persist-credentials: false
+2026-09-18T03:07:27.3097551Z   repository: yuguangzhi3836-glitch/GO
+2026-09-18T03:07:27.3100301Z   token: ***
+2026-09-18T03:07:27.3100515Z   ssh-strict: true
+2026-09-18T03:07:27.3100726Z   ssh-user: git
+2026-09-18T03:07:27.3100924Z   clean: true
+2026-09-18T03:07:27.3101138Z   sparse-checkout-cone-mode: true
+2026-09-18T03:07:27.3101393Z   fetch-depth: 1
+2026-09-18T03:07:27.3101615Z   fetch-tags: false
+2026-09-18T03:07:27.3101883Z   show-progress: true
+2026-09-18T03:07:27.3102098Z   lfs: false
+2026-09-18T03:07:27.3102286Z   submodules: false
+2026-09-18T03:07:27.3102496Z   set-safe-directory: true
+2026-09-18T03:07:27.3102742Z   allow-unsafe-pr-checkout: false
+2026-09-18T03:07:27.3103186Z env:
+2026-09-18T03:07:27.3103395Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:27.3104017Z   GO_C07_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:27.3104627Z   GO_C09_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:27.3105221Z   GO_C11_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:27.3105990Z   GO_C10_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:27.3106386Z   GO_C07_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:27.3106787Z   GO_C09_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:27.3107182Z   GO_C11_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:27.3107571Z   GO_C10_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:27.3107889Z ##[endgroup]
+2026-09-18T03:07:27.4236916Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-18T03:07:27.4239794Z ##[group]Getting Git version info
+2026-09-18T03:07:27.4240679Z Working directory is '/home/runner/work/GO/GO'
+2026-09-18T03:07:27.4280135Z [command]/usr/bin/git version
+2026-09-18T03:07:27.4416447Z git version 2.55.0
+2026-09-18T03:07:27.4486935Z ##[endgroup]
+2026-09-18T03:07:27.4493631Z Temporarily overriding HOME='/home/runner/work/_temp/7c06d089-4c9a-4f7b-93c5-2616679da3fb' before making global git config changes
+2026-09-18T03:07:27.4495191Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-18T03:07:27.4496767Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-18T03:07:27.4590484Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-18T03:07:27.4591995Z ##[group]Initializing the repository
+2026-09-18T03:07:27.4592850Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-18T03:07:27.4723609Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-18T03:07:27.4736398Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-18T03:07:27.4750186Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-18T03:07:27.4769736Z hint: call:
+2026-09-18T03:07:27.4784770Z hint:
+2026-09-18T03:07:27.4786049Z hint: 	git config --global init.defaultBranch <name>
+2026-09-18T03:07:27.4786857Z hint:
+2026-09-18T03:07:27.4787741Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-18T03:07:27.4790121Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-18T03:07:27.4790972Z hint:
+2026-09-18T03:07:27.4791491Z hint: 	git branch -m <name>
+2026-09-18T03:07:27.4792045Z hint:
+2026-09-18T03:07:27.4793351Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-18T03:07:27.4794719Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-18T03:07:27.4802108Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-18T03:07:27.4833292Z ##[endgroup]
+2026-09-18T03:07:27.4834002Z ##[group]Disabling automatic garbage collection
+2026-09-18T03:07:27.4834633Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-18T03:07:27.4898093Z ##[endgroup]
+2026-09-18T03:07:27.4899064Z ##[group]Setting up auth
+2026-09-18T03:07:27.4900370Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-18T03:07:27.4974190Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-18T03:07:27.5601086Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-18T03:07:27.5604057Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-18T03:07:27.5879784Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-18T03:07:27.5920893Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-18T03:07:27.6173608Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-18T03:07:27.6220276Z ##[endgroup]
+2026-09-18T03:07:27.6221385Z ##[group]Fetching the repository
+2026-09-18T03:07:27.6232871Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:39.5858711Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-18T03:07:39.5859577Z  * branch            f827a3aefd95fd95dedb2bd2ecc93ae01111ea90 -> FETCH_HEAD
+2026-09-18T03:07:39.5869837Z ##[endgroup]
+2026-09-18T03:07:39.5871265Z ##[group]Determining the checkout info
+2026-09-18T03:07:39.5872889Z ##[endgroup]
+2026-09-18T03:07:39.5879698Z [command]/usr/bin/git sparse-checkout disable
+2026-09-18T03:07:39.5944577Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-18T03:07:39.5986404Z ##[group]Checking out the ref
+2026-09-18T03:07:39.6006339Z [command]/usr/bin/git checkout --progress --force f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:40.7519198Z Updating files:  29% (1758/5882)
+2026-09-18T03:07:41.2173699Z Updating files:  30% (1765/5882)
+2026-09-18T03:07:41.2229300Z Updating files:  31% (1824/5882)
+2026-09-18T03:07:41.2286776Z Updating files:  32% (1883/5882)
+2026-09-18T03:07:41.2432259Z Updating files:  33% (1942/5882)
+2026-09-18T03:07:41.2501204Z Updating files:  34% (2000/5882)
+2026-09-18T03:07:41.2640941Z Updating files:  35% (2059/5882)
+2026-09-18T03:07:41.2692319Z Updating files:  36% (2118/5882)
+2026-09-18T03:07:41.2757807Z Updating files:  37% (2177/5882)
+2026-09-18T03:07:41.2796268Z Updating files:  38% (2236/5882)
+2026-09-18T03:07:41.2860304Z Updating files:  39% (2294/5882)
+2026-09-18T03:07:41.2911291Z Updating files:  40% (2353/5882)
+2026-09-18T03:07:41.2967178Z Updating files:  41% (2412/5882)
+2026-09-18T03:07:41.3027465Z Updating files:  42% (2471/5882)
+2026-09-18T03:07:41.3070887Z Updating files:  43% (2530/5882)
+2026-09-18T03:07:41.3118856Z Updating files:  44% (2589/5882)
+2026-09-18T03:07:41.3158990Z Updating files:  45% (2647/5882)
+2026-09-18T03:07:41.3202040Z Updating files:  46% (2706/5882)
+2026-09-18T03:07:41.3251596Z Updating files:  47% (2765/5882)
+2026-09-18T03:07:41.3284355Z Updating files:  48% (2824/5882)
+2026-09-18T03:07:41.3326992Z Updating files:  49% (2883/5882)
+2026-09-18T03:07:41.3362536Z Updating files:  50% (2941/5882)
+2026-09-18T03:07:41.3397710Z Updating files:  51% (3000/5882)
+2026-09-18T03:07:41.3431074Z Updating files:  52% (3059/5882)
+2026-09-18T03:07:41.4311959Z Updating files:  53% (3118/5882)
+2026-09-18T03:07:41.4347434Z Updating files:  54% (3177/5882)
+2026-09-18T03:07:41.4423564Z Updating files:  55% (3236/5882)
+2026-09-18T03:07:41.4671569Z Updating files:  56% (3294/5882)
+2026-09-18T03:07:41.5016381Z Updating files:  57% (3353/5882)
+2026-09-18T03:07:41.5404862Z Updating files:  58% (3412/5882)
+2026-09-18T03:07:41.5470156Z Updating files:  59% (3471/5882)
+2026-09-18T03:07:41.5501165Z Updating files:  60% (3530/5882)
+2026-09-18T03:07:41.5528649Z Updating files:  61% (3589/5882)
+2026-09-18T03:07:41.5566710Z Updating files:  62% (3647/5882)
+2026-09-18T03:07:41.5630003Z Updating files:  63% (3706/5882)
+2026-09-18T03:07:41.5657767Z Updating files:  64% (3765/5882)
+2026-09-18T03:07:41.5689558Z Updating files:  65% (3824/5882)
+2026-09-18T03:07:41.5730658Z Updating files:  66% (3883/5882)
+2026-09-18T03:07:41.5773761Z Updating files:  67% (3941/5882)
+2026-09-18T03:07:41.5812540Z Updating files:  68% (4000/5882)
+2026-09-18T03:07:41.5849112Z Updating files:  69% (4059/5882)
+2026-09-18T03:07:41.5884279Z Updating files:  70% (4118/5882)
+2026-09-18T03:07:41.5954215Z Updating files:  71% (4177/5882)
+2026-09-18T03:07:41.6114748Z Updating files:  72% (4236/5882)
+2026-09-18T03:07:41.6136449Z Updating files:  72% (4270/5882)
+2026-09-18T03:07:41.6417315Z Updating files:  73% (4294/5882)
+2026-09-18T03:07:41.6777621Z Updating files:  74% (4353/5882)
+2026-09-18T03:07:41.6839395Z Updating files:  75% (4412/5882)
+2026-09-18T03:07:41.6908074Z Updating files:  76% (4471/5882)
+2026-09-18T03:07:41.6967444Z Updating files:  77% (4530/5882)
+2026-09-18T03:07:41.7005974Z Updating files:  78% (4588/5882)
+2026-09-18T03:07:41.7025967Z Updating files:  79% (4647/5882)
+2026-09-18T03:07:41.7045931Z Updating files:  80% (4706/5882)
+2026-09-18T03:07:41.7061846Z Updating files:  81% (4765/5882)
+2026-09-18T03:07:41.7109794Z Updating files:  82% (4824/5882)
+2026-09-18T03:07:41.7148429Z Updating files:  83% (4883/5882)
+2026-09-18T03:07:41.7168901Z Updating files:  84% (4941/5882)
+2026-09-18T03:07:41.7212093Z Updating files:  85% (5000/5882)
+2026-09-18T03:07:41.7242182Z Updating files:  86% (5059/5882)
+2026-09-18T03:07:41.7267793Z Updating files:  87% (5118/5882)
+2026-09-18T03:07:41.7305433Z Updating files:  88% (5177/5882)
+2026-09-18T03:07:41.7344676Z Updating files:  89% (5235/5882)
+2026-09-18T03:07:41.7372971Z Updating files:  90% (5294/5882)
+2026-09-18T03:07:41.7399453Z Updating files:  91% (5353/5882)
+2026-09-18T03:07:41.7464608Z Updating files:  92% (5412/5882)
+2026-09-18T03:07:41.7492179Z Updating files:  93% (5471/5882)
+2026-09-18T03:07:41.7519193Z Updating files:  94% (5530/5882)
+2026-09-18T03:07:41.7551241Z Updating files:  95% (5588/5882)
+2026-09-18T03:07:41.7597612Z Updating files:  96% (5647/5882)
+2026-09-18T03:07:41.7630365Z Updating files:  97% (5706/5882)
+2026-09-18T03:07:41.7667845Z Updating files:  98% (5765/5882)
+2026-09-18T03:07:41.7699124Z Updating files:  99% (5824/5882)
+2026-09-18T03:07:41.7700746Z Updating files: 100% (5882/5882)
+2026-09-18T03:07:41.7701386Z Updating files: 100% (5882/5882), done.
+2026-09-18T03:07:42.6763515Z Note: switching to 'f827a3aefd95fd95dedb2bd2ecc93ae01111ea90'.
+2026-09-18T03:07:42.6764703Z 
+2026-09-18T03:07:42.6765458Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-18T03:07:42.6767080Z changes and commit them, and you can discard any commits you make in this
+2026-09-18T03:07:42.6773180Z state without impacting any branches by switching back to a branch.
+2026-09-18T03:07:42.6773834Z 
+2026-09-18T03:07:42.6774300Z If you want to create a new branch to retain commits you create, you may
+2026-09-18T03:07:42.6775181Z do so (now or later) by using -c with the switch command. Example:
+2026-09-18T03:07:42.6776000Z 
+2026-09-18T03:07:42.6776324Z   git switch -c <new-branch-name>
+2026-09-18T03:07:42.6776748Z 
+2026-09-18T03:07:42.6777054Z Or undo this operation with:
+2026-09-18T03:07:42.6777467Z 
+2026-09-18T03:07:42.6777746Z   git switch -
+2026-09-18T03:07:42.6778089Z 
+2026-09-18T03:07:42.6778577Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-18T03:07:42.6779504Z 
+2026-09-18T03:07:42.6780031Z HEAD is now at f827a3a fix(catalog): bind gallery harvest to measured HK CDN bytes
+2026-09-18T03:07:42.6877554Z ##[endgroup]
+2026-09-18T03:07:42.6932958Z [command]/usr/bin/git log -1 --format=%H
+2026-09-18T03:07:42.6967150Z f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:42.6996522Z ##[group]Removing auth
+2026-09-18T03:07:42.6997529Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-18T03:07:42.7049379Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-18T03:07:42.7406582Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-18T03:07:42.7427052Z http.https://github.com/.extraheader
+2026-09-18T03:07:42.7465704Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-18T03:07:42.7717928Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-18T03:07:42.8006740Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-18T03:07:42.8053003Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-18T03:07:42.8334481Z ##[endgroup]
+2026-09-18T03:07:42.8594401Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T03:07:42.8596520Z ##[group]Run actions/setup-python@v5
+2026-09-18T03:07:42.8596802Z with:
+2026-09-18T03:07:42.8597008Z   python-version: 3.13.5
+2026-09-18T03:07:42.8597253Z   check-latest: false
+2026-09-18T03:07:42.8599861Z   token: ***
+2026-09-18T03:07:42.8600078Z   update-environment: true
+2026-09-18T03:07:42.8600337Z   allow-prereleases: false
+2026-09-18T03:07:42.8600569Z   freethreaded: false
+2026-09-18T03:07:42.8600777Z env:
+2026-09-18T03:07:42.8600975Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:42.8601588Z   GO_C07_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:42.8602465Z   GO_C09_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:42.8603065Z   GO_C11_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:42.8603659Z   GO_C10_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:42.8604065Z   GO_C07_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:42.8604479Z   GO_C09_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:42.8604878Z   GO_C11_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:42.8605587Z   GO_C10_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:42.8606015Z ##[endgroup]
+2026-09-18T03:07:43.0064122Z ##[group]Installed versions
+2026-09-18T03:07:43.1776239Z Version 3.13.5 was not found in the local cache
+2026-09-18T03:07:43.1913746Z (node:2567) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-18T03:07:43.1915671Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-18T03:07:44.0407820Z Version 3.13.5 is available for downloading
+2026-09-18T03:07:44.0409375Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-24.04-x64.tar.gz"
+2026-09-18T03:07:45.1667415Z Extract downloaded archive
+2026-09-18T03:07:45.1833710Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/4500a3b5-87a1-4c80-b071-0e376cda59ca -f /home/runner/work/_temp/29243d47-87e8-499b-9540-42153f890033
+2026-09-18T03:07:47.6839506Z Execute installation script
+2026-09-18T03:07:47.7008605Z Check if Python hostedtoolcache folder exist...
+2026-09-18T03:07:47.7010735Z Create Python 3.13.5 folder
+2026-09-18T03:07:47.7026076Z Copy Python binaries to hostedtoolcache folder
+2026-09-18T03:07:48.2375748Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-18T03:07:48.2421516Z Upgrading pip...
+2026-09-18T03:07:50.9786447Z Looking in links: /tmp/tmpiq5f6xdc
+2026-09-18T03:07:50.9797082Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-18T03:07:53.0822444Z Collecting pip
+2026-09-18T03:07:53.1656407Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-18T03:07:53.1932150Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-18T03:07:53.3339297Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 19.5 MB/s eta 0:00:00
+2026-09-18T03:07:53.3341104Z 
+2026-09-18T03:07:53.3533642Z Installing collected packages: pip
+2026-09-18T03:07:53.3536820Z Attempting uninstall: pip
+2026-09-18T03:07:53.3576200Z Found existing installation: pip 25.1.1
+2026-09-18T03:07:53.3911530Z Uninstalling pip-25.1.1:
+2026-09-18T03:07:53.3966655Z Successfully uninstalled pip-25.1.1
+2026-09-18T03:07:54.2885895Z Successfully installed pip-26.2.1
+2026-09-18T03:07:54.3508639Z Create complete file
+2026-09-18T03:07:54.3550433Z Successfully set up CPython (3.13.5)
+2026-09-18T03:07:54.3552077Z ##[endgroup]
+2026-09-18T03:07:54.4060067Z ##[group]Run set -euo pipefail
+2026-09-18T03:07:54.4060702Z [36;1mset -euo pipefail[0m
+2026-09-18T03:07:54.4061406Z [36;1mpython ci/retention/verify_source.py "$RUNNER_TEMP/next-depth-pg/source"[0m
+2026-09-18T03:07:54.4062431Z [36;1mpython ci/retention/verify_alignment.py "$RUNNER_TEMP/next-depth-pg/alignment.json"[0m
+2026-09-18T03:07:54.4063225Z [36;1mpython - <<'PY'[0m
+2026-09-18T03:07:54.4063649Z [36;1mimport json, pathlib, subprocess[0m
+2026-09-18T03:07:54.4064402Z [36;1mcandidate=json.loads(pathlib.Path('ci/next-depth/CANDIDATE.json').read_text())[0m
+2026-09-18T03:07:54.4065698Z [36;1mactual=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()[0m
+2026-09-18T03:07:54.4066601Z [36;1massert actual==candidate['application_git_tree'][0m
+2026-09-18T03:07:54.4067412Z [36;1massert candidate['source_anchor']=='fef9c748adb77d37ba5d4dc4fa4662eb668303a1'[0m
+2026-09-18T03:07:54.4068809Z [36;1massert candidate['parent_candidate_commit']=='a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b'[0m
+2026-09-18T03:07:54.4069577Z [36;1mPY[0m
+2026-09-18T03:07:54.4197296Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-18T03:07:54.4197891Z env:
+2026-09-18T03:07:54.4198222Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:54.4199305Z   GO_C07_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.4200381Z   GO_C09_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.4201459Z   GO_C11_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.4202469Z   GO_C10_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.4203190Z   GO_C07_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.4203897Z   GO_C09_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.4204585Z   GO_C11_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.4242580Z   GO_C10_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.4243496Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.4244264Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T03:07:54.4245639Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.4246355Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.4246973Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.4247571Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T03:07:54.4248091Z ##[endgroup]
+2026-09-18T03:07:54.6737841Z Traceback (most recent call last):
+2026-09-18T03:07:54.6964304Z   File "/home/runner/work/GO/GO/ci/retention/verify_source.py", line 67, in <module>
+2026-09-18T03:07:54.6965626Z     main()
+2026-09-18T03:07:54.6966384Z     ~~~~^^
+2026-09-18T03:07:54.6967249Z   File "/home/runner/work/GO/GO/ci/retention/verify_source.py", line 28, in main
+2026-09-18T03:07:54.6968602Z     assert actual == expected, {'missing': sorted(expected-actual), 'unexpected': sorted(actual-expected)}
+2026-09-18T03:07:54.6969644Z            ^^^^^^^^^^^^^^^^^^
+2026-09-18T03:07:54.6974486Z AssertionError: {'missing': [], 'unexpected': ['scripts/test_catalog_graph_visibility.py', 'scripts/test_catalog_scope.py', 'scripts/test_catalog_scope_postgres.py', 'scripts/test_hotel_search_event_loop.py', 'src/go_hotel/connectors/supplier_runtime_controls.py', 'src/go_hotel/services/catalog_scope.py', 'tests/test_supplier_preflight_runtime.py', 'tests/test_supplier_runtime_controls.py', 'tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan.json', 'tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan_legacy_jpeg.json', 'tests_frontend/fixtures/aoluguya_normalized_ingest_plan.json', 'tests_frontend/hotel_catalog_contacts.test.mjs', 'tests_frontend/hotel_catalog_hyatt_gallery.test.mjs', 'tests_frontend/hotel_catalog_reviewed_import.test.mjs']}
+2026-09-18T03:07:54.7056453Z ##[error]Process completed with exit code 1.
+2026-09-18T03:07:54.7119490Z ##[group]Run python - <<'PY'
+2026-09-18T03:07:54.7119836Z [36;1mpython - <<'PY'[0m
+2026-09-18T03:07:54.7120138Z [36;1mimport hashlib,json,os,pathlib,subprocess[0m
+2026-09-18T03:07:54.7120646Z [36;1mout=pathlib.Path(os.environ['RUNNER_TEMP'])/'next-depth-pg';out.mkdir(exist_ok=True)[0m
+2026-09-18T03:07:54.7121405Z [36;1mfiles={str(p.relative_to(out)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.rglob('*')) if p.is_file()}[0m
+2026-09-18T03:07:54.7123300Z [36;1mreport={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'application_git_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'files':files,'environment':'disposable GitHub Actions PostgreSQL 18.4 service','scope':'C09 scoped concurrency and recovery; gates depend on original process observations','hong_kong':'NOT_ACCESSED','production':'HOLD','full_release':'HOLD'}[0m
+2026-09-18T03:07:54.7125541Z [36;1m(out/'EVIDENCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')[0m
+2026-09-18T03:07:54.7125992Z [36;1mPY[0m
+2026-09-18T03:07:54.7163635Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-18T03:07:54.7163991Z env:
+2026-09-18T03:07:54.7164199Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:54.7164843Z   GO_C07_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.7165829Z   GO_C09_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.7166457Z   GO_C11_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.7167052Z   GO_C10_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.7167453Z   GO_C07_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.7167861Z   GO_C09_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.7168256Z   GO_C11_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.7168673Z   GO_C10_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.7169070Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.7169493Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T03:07:54.7169922Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.7170297Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.7170686Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.7171064Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T03:07:54.7171381Z ##[endgroup]
+2026-09-18T03:07:54.9242850Z ##[group]Run python - <<'PY'
+2026-09-18T03:07:54.9243384Z [36;1mpython - <<'PY'[0m
+2026-09-18T03:07:54.9243830Z [36;1mimport json,os,pathlib[0m
+2026-09-18T03:07:54.9244451Z [36;1mout=pathlib.Path(os.environ['RUNNER_TEMP'])/'next-depth-pg'[0m
+2026-09-18T03:07:54.9245155Z [36;1mfor p in sorted(out.rglob('*')):[0m
+2026-09-18T03:07:54.9246313Z [36;1m    if p.is_file() and p.suffix in ('.json','.xml','.log') and p.stat().st_size <= 100000:[0m
+2026-09-18T03:07:54.9247610Z [36;1m        print('EVIDENCE_FILE '+json.dumps({'path':str(p.relative_to(out)),'content':p.read_text(errors='strict')},ensure_ascii=False))[0m
+2026-09-18T03:07:54.9248602Z [36;1mPY[0m
+2026-09-18T03:07:54.9306112Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-18T03:07:54.9306710Z env:
+2026-09-18T03:07:54.9307071Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:54.9308203Z   GO_C07_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.9309540Z   GO_C09_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.9310655Z   GO_C11_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.9311733Z   GO_C10_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:54.9312463Z   GO_C07_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.9313200Z   GO_C09_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.9314024Z   GO_C11_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.9314767Z   GO_C10_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:54.9315857Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.9316625Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T03:07:54.9317380Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.9318019Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.9318707Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:54.9319394Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T03:07:54.9319961Z ##[endgroup]
+2026-09-18T03:07:55.1388039Z EVIDENCE_FILE {"path": "EVIDENCE_BINDING.json", "content": "{\n  \"source_commit\": \"f827a3aefd95fd95dedb2bd2ecc93ae01111ea90\",\n  \"application_git_tree\": \"eef8adc0d99f679220e51efc9d6c5ca28ba6ab0c\",\n  \"files\": {},\n  \"environment\": \"disposable GitHub Actions PostgreSQL 18.4 service\",\n  \"scope\": \"C09 scoped concurrency and recovery; gates depend on original process observations\",\n  \"hong_kong\": \"NOT_ACCESSED\",\n  \"production\": \"HOLD\",\n  \"full_release\": \"HOLD\"\n}\n"}
+2026-09-18T03:07:55.1510088Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T03:07:55.1511423Z ##[group]Run actions/upload-artifact@v4
+2026-09-18T03:07:55.1511696Z with:
+2026-09-18T03:07:55.1512019Z   name: v70-next-depth-pg-C09-f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:55.1512465Z   path: /home/runner/work/_temp/next-depth-pg
+2026-09-18T03:07:55.1512776Z   if-no-files-found: error
+2026-09-18T03:07:55.1513040Z   retention-days: 90
+2026-09-18T03:07:55.1513259Z   compression-level: 6
+2026-09-18T03:07:55.1513477Z   overwrite: false
+2026-09-18T03:07:55.1513694Z   include-hidden-files: false
+2026-09-18T03:07:55.1513937Z env:
+2026-09-18T03:07:55.1514134Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:55.1514809Z   GO_C07_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:55.1515819Z   GO_C09_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:55.1516459Z   GO_C11_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:55.1517061Z   GO_C10_RUNTIME_DATABASE_URL: ***127.0.0.1:5432/go_c09_isolated
+2026-09-18T03:07:55.1517459Z   GO_C07_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:55.1517859Z   GO_C09_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:55.1518255Z   GO_C11_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:55.1518645Z   GO_C10_SOURCE_COMMIT: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:55.1519052Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:55.1519478Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T03:07:55.1519896Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:55.1520288Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:55.1520686Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:55.1521070Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T03:07:55.1521400Z ##[endgroup]
+2026-09-18T03:07:55.3926463Z (node:2707) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-18T03:07:55.3940274Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-18T03:07:55.4156320Z With the provided path, there will be 1 file uploaded
+2026-09-18T03:07:55.4208860Z Artifact name is valid!
+2026-09-18T03:07:55.4255973Z Root directory input is valid!
+2026-09-18T03:07:55.8166179Z Beginning upload of artifact content to blob storage
+2026-09-18T03:07:55.8587282Z (node:2707) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-18T03:07:56.1201284Z Uploaded bytes 436
+2026-09-18T03:07:56.1929149Z Finished uploading artifact content to blob storage!
+2026-09-18T03:07:56.1930640Z SHA256 digest of uploaded artifact zip is 9c93fb50ba3cc087aef746d5a89bd0fbad371e338820c22415e400d7713df980
+2026-09-18T03:07:56.1932670Z Finalizing artifact upload
+2026-09-18T03:07:56.4667672Z Artifact v70-next-depth-pg-C09-f827a3aefd95fd95dedb2bd2ecc93ae01111ea90.zip successfully finalized. Artifact ID 10529778777
+2026-09-18T03:07:56.4669909Z Artifact v70-next-depth-pg-C09-f827a3aefd95fd95dedb2bd2ecc93ae01111ea90 has been successfully uploaded! Final size is 436 bytes. Artifact ID is 10529778777
+2026-09-18T03:07:56.4674310Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976162/artifacts/10529778777
+2026-09-18T03:07:56.4942598Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T03:07:56.4944842Z Post job cleanup.
+2026-09-18T03:07:56.6476244Z [command]/usr/bin/git version
+2026-09-18T03:07:56.6536027Z git version 2.55.0
+2026-09-18T03:07:56.6602327Z Temporarily overriding HOME='/home/runner/work/_temp/a6b983d6-3e63-4c92-80f1-c9d5575b1b01' before making global git config changes
+2026-09-18T03:07:56.6616479Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-18T03:07:56.6647150Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-18T03:07:56.6827599Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-18T03:07:56.6986932Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-18T03:07:56.7538217Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-18T03:07:56.7617906Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-18T03:07:56.8002370Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-18T03:07:56.8047023Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-18T03:07:56.8578392Z Print service container logs: 188947ad336a4604ac44b4f9ec920b12_postgres184_837b66
+2026-09-18T03:07:56.8584307Z ##[command]/usr/bin/docker logs --details a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd
+2026-09-18T03:07:57.0938580Z  initdb: warning: enabling "trust" authentication for local connections
+2026-09-18T03:07:57.0950700Z  The files belonging to this database system will be owned by user "postgres".
+2026-09-18T03:07:57.0958920Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+2026-09-18T03:07:57.0960495Z  This user must also own the server process.
+2026-09-18T03:07:57.0962047Z  2026-09-18 03:07:22.062 UTC [1] LOG:  starting PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-09-18T03:07:57.0963023Z  
+2026-09-18T03:07:57.0963513Z  2026-09-18 03:07:22.062 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-09-18T03:07:57.0964406Z  The database cluster will be initialized with locale "en_US.utf8".
+2026-09-18T03:07:57.0965536Z  2026-09-18 03:07:22.062 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-09-18T03:07:57.0966374Z  The default database encoding has accordingly been set to "UTF8".
+2026-09-18T03:07:57.0967107Z  The default text search configuration will be set to "english".
+2026-09-18T03:07:57.0967677Z  
+2026-09-18T03:07:57.0968006Z  Data page checksums are enabled.
+2026-09-18T03:07:57.0968419Z  
+2026-09-18T03:07:57.0968944Z  fixing permissions on existing directory /var/lib/postgresql/18/docker ... ok
+2026-09-18T03:07:57.0969649Z  creating subdirectories ... ok
+2026-09-18T03:07:57.0970183Z  selecting dynamic shared memory implementation ... posix
+2026-09-18T03:07:57.0970608Z  selecting default "max_connections" ... 100
+2026-09-18T03:07:57.0970922Z  selecting default "shared_buffers" ... 128MB
+2026-09-18T03:07:57.0971227Z  selecting default time zone ... Etc/UTC
+2026-09-18T03:07:57.0971524Z  creating configuration files ... ok
+2026-09-18T03:07:57.0972067Z  running bootstrap script ... ok
+2026-09-18T03:07:57.0972369Z  performing post-bootstrap initialization ... ok
+2026-09-18T03:07:57.0972677Z  syncing data to disk ... ok
+2026-09-18T03:07:57.0972905Z  
+2026-09-18T03:07:57.0973080Z  
+2026-09-18T03:07:57.0973307Z  Success. You can now start the database server using:
+2026-09-18T03:07:57.0973607Z  
+2026-09-18T03:07:57.0973855Z      pg_ctl -D /var/lib/postgresql/18/docker -l logfile start
+2026-09-18T03:07:57.0974184Z  
+2026-09-18T03:07:57.0974825Z  waiting for server to start....2026-09-18 03:07:21.727 UTC [52] LOG:  starting PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-09-18T03:07:57.0976242Z  2026-09-18 03:07:21.727 UTC [52] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-18T03:07:57.0976982Z  2026-09-18 03:07:21.732 UTC [58] LOG:  database system was shut down at 2026-09-18 03:07:21 UTC
+2026-09-18T03:07:57.0977531Z  2026-09-18 03:07:21.735 UTC [52] LOG:  database system is ready to accept connections
+2026-09-18T03:07:57.0977925Z   done
+2026-09-18T03:07:57.0978119Z  server started
+2026-09-18T03:07:57.0978322Z  CREATE DATABASE
+2026-09-18T03:07:57.0978516Z  
+2026-09-18T03:07:57.0978692Z  
+2026-09-18T03:07:57.0979016Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+2026-09-18T03:07:57.0979417Z  
+2026-09-18T03:07:57.0979673Z  2026-09-18 03:07:21.934 UTC [52] LOG:  received fast shutdown request
+2026-09-18T03:07:57.0980207Z  waiting for server to shut down...2026-09-18 03:07:21.934 UTC [52] LOG:  aborting any active transactions
+2026-09-18T03:07:57.0980908Z  .2026-09-18 03:07:21.938 UTC [52] LOG:  background worker "logical replication launcher" (PID 61) exited with exit code 1
+2026-09-18T03:07:57.0981456Z  2026-09-18 03:07:21.939 UTC [56] LOG:  shutting down
+2026-09-18T03:07:57.0982110Z  2026-09-18 03:07:21.939 UTC [56] LOG:  checkpoint starting: shutdown immediate
+2026-09-18T03:07:57.0983316Z  2026-09-18 03:07:21.956 UTC [56] LOG:  checkpoint complete: wrote 943 buffers (5.8%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.013 s, sync=0.003 s, total=0.017 s; sync files=303, longest=0.001 s, average=0.001 s; distance=4352 kB, estimate=4352 kB; lsn=0/1B9FBA8, redo lsn=0/1B9FBA8
+2026-09-18T03:07:57.0984493Z  2026-09-18 03:07:21.968 UTC [52] LOG:  database system is shut down
+2026-09-18T03:07:57.0984827Z   done
+2026-09-18T03:07:57.0985019Z  server stopped
+2026-09-18T03:07:57.0985217Z  
+2026-09-18T03:07:57.0986268Z  PostgreSQL init process complete; ready for start up.
+2026-09-18T03:07:57.0986805Z  
+2026-09-18T03:07:57.0987400Z  2026-09-18 03:07:22.063 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-18T03:07:57.0988372Z  2026-09-18 03:07:22.068 UTC [74] LOG:  database system was shut down at 2026-09-18 03:07:21 UTC
+2026-09-18T03:07:57.0989258Z  2026-09-18 03:07:22.073 UTC [1] LOG:  database system is ready to accept connections
+2026-09-18T03:07:57.0995083Z Stop and remove container: 188947ad336a4604ac44b4f9ec920b12_postgres184_837b66
+2026-09-18T03:07:57.1001037Z ##[command]/usr/bin/docker rm --force a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd
+2026-09-18T03:07:57.3917173Z a820acfa1b89f311a1d1fe8d395e9d21ba8c89dffc7dbce090c06e1b04a9e0bd
+2026-09-18T03:07:57.3954355Z Remove container network: github_network_6992bfee9daa4782a41e03af3df80286
+2026-09-18T03:07:57.3959500Z ##[command]/usr/bin/docker network rm github_network_6992bfee9daa4782a41e03af3df80286
+2026-09-18T03:07:57.4773818Z github_network_6992bfee9daa4782a41e03af3df80286
+2026-09-18T03:07:57.4848023Z Cleaning up orphan processes
+2026-09-18T03:07:57.5172756Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

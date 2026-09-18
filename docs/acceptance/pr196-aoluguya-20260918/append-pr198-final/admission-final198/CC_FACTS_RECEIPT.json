@@ -1,0 +1,41 @@
+{
+  "after": {
+    "/etc/go-command-center/active-candidate-v1.json": {
+      "gid": 0,
+      "mode": 384,
+      "regular": true,
+      "sha256": "a79f8747d5f3b5ae605324d68436fe8e9d4c1b69bea78c53026c2c5aa4738cc5",
+      "uid": 0
+    },
+    "/etc/go-command-center/boss-request-verify-baseline-v1.json": {
+      "gid": 0,
+      "mode": 384,
+      "regular": true,
+      "sha256": "4b58bc2b04bcaad0bfeb2f3a87c508d5b592d78e37f0e811c945af29a2264a0c",
+      "uid": 0
+    },
+    "/etc/go-command-center/candidate-contracts-v1/d0a4d82a1e56e7ff96ddedc1668534f57961aab6875ca9c0f7997d37e72b56fb.json": {
+      "gid": 0,
+      "mode": 384,
+      "regular": true,
+      "sha256": "d0a4d82a1e56e7ff96ddedc1668534f57961aab6875ca9c0f7997d37e72b56fb",
+      "uid": 0
+    }
+  },
+  "authority_changed": false,
+  "backup": "/var/backups/GO-SAME-REVISION-FACTS-go-cc-20260918T032850191159Z",
+  "business_runtime_changed": false,
+  "cleanup_errors": [],
+  "finished_at": "2026-09-18T03:28:50.333751+00:00",
+  "host": "go-cc",
+  "manifest_sha256": "72b3eb48d35b2c8f455aa416f8d21a18d9c162bf26aa292bd127a8fbda9a39fb",
+  "result": "FACTS_ADMITTED_NO_TASK_OR_DEPLOY",
+  "schema": "go.same-revision.facts-install.v1",
+  "smoke": "FACTS_BINDING_PASS",
+  "task_dispatched": false,
+  "timer_after": {
+    "go-boss-request-bridge.timer": "active"
+  },
+  "timer_restart_errors": [],
+  "timers_intentionally_held": false
+}

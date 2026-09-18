@@ -1,0 +1,631 @@
+{
+  "schema": "go.catalog-acceptance.append.v1",
+  "assembled_at": "2026-09-18T04:13:50.791990+00:00",
+  "source_commit": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+  "ci_required_catalog_gate": "PASS_EXACT_FINAL198_REQUIRED_CATALOG_GATE_ONLY",
+  "tests": {
+    "frontend_gallery": 13,
+    "frontend_contacts": 16,
+    "frontend_facts_scope": 12,
+    "frontend_total": 41,
+    "backend_search": 5,
+    "backend_scope": 10,
+    "backend_graph": 6,
+    "backend_postgres18_4": 4,
+    "backend_existing": 13,
+    "backend_total": 38
+  },
+  "all_ci_pass": false,
+  "other_checks": {
+    "skipped": 3,
+    "failure": 14,
+    "success": 2
+  },
+  "other_failure_causes": "C13_13_FIXED_SOURCE_PATHSET_1_FIXED_APPLICATION_TREE_PRECONDITIONS_FUNCTIONAL_SUITES_NOT_CERTIFIED",
+  "memory_probe": "21_WEBP_METADATA_DECODED_IN_MEMORY_NOT_21_PERSISTED_ASSETS",
+  "last_catalog_write_state": "POST_PR198_3_CONTACTS_17_ROOM_FACTS_DRAFT69_CURRENT_MEDIA0",
+  "new_public_area_assets": "19_DOWNLOADED_EASON_ONLY_PLUS_PRIOR21_DISTINCT_DAM40_NOT_HK_INGESTED_RIGHTS_UNKNOWN",
+  "overall_catalog_acceptance": "PARTIAL",
+  "address_normalization": {
+    "schema": "go.catalog.contact-address-normalization.v1",
+    "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+    "environment": "HK-STAGING-01",
+    "source_commit": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+    "ui_source_last_observed": "2026-09-18T12:12:17.421799+08:00",
+    "action": "Normal authenticated admin UI preview and confirm-save",
+    "address": "黑龙江省哈尔滨市松北区创新三路800号",
+    "address_change": "Normalize administrative suffixes to existing higher-confidence same-place official address",
+    "result": {
+      "draft": true,
+      "room_count": 17,
+      "media_count": 0,
+      "source_count": 12,
+      "contact_count": 3,
+      "completeness_percent": 69,
+      "anomaly_count": 14,
+      "address_conflict_visible": false
+    },
+    "contacts": [
+      {
+        "value": "1720574900@qq.com",
+        "purpose": "PUBLIC_GENERAL",
+        "provenance": "USER_PROVIDED_CTRIP_ATTRIBUTION",
+        "independently_crawled": false
+      },
+      {
+        "value": "anson.liu@hyatt.com",
+        "purpose": "WEDDINGS_EVENTS_CONTACT",
+        "provenance": "HYATT_OFFICIAL"
+      },
+      {
+        "value": "+8645188800808",
+        "purpose": "PUBLIC_GENERAL"
+      }
+    ],
+    "snapshot": "CONTACTS_NORMALIZED_PR198_20260918.txt",
+    "overall": "PARTIAL"
+  },
+  "final_head_test_pr": "ORIGINAL_SIGNED_TASK_EVIDENCE_INCLUDED",
+  "final_head_admission": "PASS_OFFLINE_RECEIPT_BINDING_NOT_DEPLOYMENT",
+  "final_head_canary": "ORIGINAL_SIGNED_PAIR_PASS",
+  "final_head_verify": "ORIGINAL_SIGNED_PAIR_PASS",
+  "final_head_deploy": "DEPLOY_POST_VERIFY_AND_HOST_BINDING_PASS",
+  "contact_email_database_write": "UI_NOTICE_AND_READBACK_3_CONTACTS_PROVENANCE_PRESERVED",
+  "gallery_21_persisted_readback": "CURRENT0_NO_PERSISTENT_MOUNT_FORMER1_NOT_CURRENT",
+  "publication_performed": false,
+  "performance_evidence": "PR197_NOT_DUPLICATED",
+  "files": [
+    {
+      "archive_path": "hk-memory-probe/HK_PUBLIC_MEMORY_PREFLIGHT.json",
+      "source_path": "catalog_review/hk_media_preflight/HK_PUBLIC_MEMORY_PREFLIGHT.json",
+      "bytes": 21722,
+      "sha256": "2399f6c827b48af612a4a05f6494b00ee281cf9812079e37b1cc8ba6fc38e566"
+    },
+    {
+      "archive_path": "hk-memory-probe/HK_MEASURED_PLAN_BINDING.json",
+      "source_path": "catalog_review/hk_media_preflight/HK_MEASURED_PLAN_BINDING.json",
+      "bytes": 602,
+      "sha256": "aedcee0c55c45b5eaab560a3135f4b974135503e3b5072aa69d9a4b77d144db7"
+    },
+    {
+      "archive_path": "hk-memory-probe/C13_RESULT_REVIEW.json",
+      "source_path": "catalog_review/hk_media_preflight/C13_RESULT_REVIEW.json",
+      "bytes": 1184,
+      "sha256": "808784381867df2c4d4f48295bd2847ecb7b094c65edb5e1a31875a6da3d71db"
+    },
+    {
+      "archive_path": "hk-memory-probe/C13_REVIEW.json",
+      "source_path": "catalog_review/hk_media_preflight/C13_REVIEW.json",
+      "bytes": 2093,
+      "sha256": "fcb4ef0a983724518f1f320dc81f01ad6d149f20ce9edf782049e7109edf3866"
+    },
+    {
+      "archive_path": "hk-memory-probe/operator_hk_public_media_probe.py",
+      "source_path": "catalog_review/hk_media_preflight/operator_hk_public_media_probe.py",
+      "bytes": 9803,
+      "sha256": "b01c92944512fcdd80b42db5bd9f8ba7e37a624978773c68a5f3b64bc1376969"
+    },
+    {
+      "archive_path": "hk-memory-probe/host_readonly_wrapper.py",
+      "source_path": "catalog_review/hk_media_preflight/host_readonly_wrapper.py",
+      "bytes": 8069,
+      "sha256": "04229396b99a67191e2b88ec0d8746be7a2104427636c6122d8a5d48d59e8065"
+    },
+    {
+      "archive_path": "hk-memory-probe/probe_inside_container.py",
+      "source_path": "catalog_review/hk_media_preflight/probe_inside_container.py",
+      "bytes": 6719,
+      "sha256": "823d6750f226476a5f0a0be6b022dc5602ea05371a90dbb5ff154be323530609"
+    },
+    {
+      "archive_path": "plans/aoluguya_hyatt_gallery_harvest_hk_measured_plan.json",
+      "source_path": "catalog_review/operator_inputs/aoluguya_hyatt_gallery_harvest_hk_measured_plan.json",
+      "bytes": 54055,
+      "sha256": "2ae830176f074c893a0f508ce4a003e7567ffce70e3fc4c0edecec780a7e5172"
+    },
+    {
+      "archive_path": "plans/aoluguya_hyatt_gallery_harvest_plan.json",
+      "source_path": "catalog_review/operator_inputs/aoluguya_hyatt_gallery_harvest_plan.json",
+      "bytes": 42286,
+      "sha256": "78013dc8595f1e21325d51b2e8a57e496bb9ee83bf50adc12ac07ab122973a11"
+    },
+    {
+      "archive_path": "final-pr198/C13_REVIEW.json",
+      "source_path": "catalog-gallery-format-ui/C13_REVIEW.json",
+      "bytes": 3429,
+      "sha256": "b4717708200c7f9334fdc4867abf95a76be1595b3e85a6326e7b7f28d0bf73fb"
+    },
+    {
+      "archive_path": "final-pr198/C13_PREVIOUS_HOLD_REVIEW.json",
+      "source_path": "catalog-gallery-format-ui/C13_PREVIOUS_HOLD_REVIEW.json",
+      "bytes": 1641,
+      "sha256": "36cccf2649ffccfa051a557953273199b730843f4a78c8686b336a5f50e66b02"
+    },
+    {
+      "archive_path": "final-pr198/C13_TEST.log",
+      "source_path": "catalog-gallery-format-ui/C13_TEST.log",
+      "bytes": 3403,
+      "sha256": "d0cc5ecb13f56e3e34b9d4e6b7da460f34e2ead522f43b0a19f81831427ff9f1"
+    },
+    {
+      "archive_path": "final-pr198/tests.log",
+      "source_path": "catalog-gallery-format-ui/tests.log",
+      "bytes": 3401,
+      "sha256": "e963743c871feecd5faa5ebab1dd4792b705905e3117ed854a1d0d1b0e93c5dd"
+    },
+    {
+      "archive_path": "final-pr198/SUBMITTED.json",
+      "source_path": "catalog-gallery-format-ui/SUBMITTED.json",
+      "bytes": 317,
+      "sha256": "f40e9340c790d78b737c1d82e5fdcd4c521808eb425da45e308cfd25729a1f1f"
+    },
+    {
+      "archive_path": "final-pr198/SOURCE_BINDING.json",
+      "source_path": "catalog-gallery-format-ui/SOURCE_BINDING.json",
+      "bytes": 188,
+      "sha256": "c6d048f4818c6b219452a8d3d2997603a76c0c4f6a02f8b52e4effc6092e7ba1"
+    },
+    {
+      "archive_path": "final-pr198/REVIEW.md",
+      "source_path": "catalog-gallery-format-ui/REVIEW.md",
+      "bytes": 3628,
+      "sha256": "3a9e6df85ae3bc72cd63b3c12010b7eff86996ccfd5b1de7469e087d9c94d878"
+    },
+    {
+      "archive_path": "final-pr198/C13_FINAL198_CI_REVIEW.json",
+      "source_path": "catalog-gallery-format-ui/C13_FINAL198_CI_REVIEW.json",
+      "bytes": 7594,
+      "sha256": "89a7d3686d6ba9875b5112e968b4b469ce09b957d2764ada33c9af8162aaf69f"
+    },
+    {
+      "archive_path": "final-pr198/C13_FINAL198_TREE_BINDING.json",
+      "source_path": "catalog-gallery-format-ui/C13_FINAL198_TREE_BINDING.json",
+      "bytes": 168705,
+      "sha256": "7e2e2f97e9db36405191ff8c78f2cae1a73a9cc7d9680423aacd1b434c53248c"
+    },
+    {
+      "archive_path": "final-pr198/C13_FINAL198_CHECKS_SNAPSHOT.json",
+      "source_path": "catalog-gallery-format-ui/C13_FINAL198_CHECKS_SNAPSHOT.json",
+      "bytes": 4870,
+      "sha256": "76d04449feedc23b027bf05426410e1f2845da30850aef637d87f47fb1160e93"
+    },
+    {
+      "archive_path": "final-pr198/C13_CI_JOB_105466300759.log",
+      "source_path": "catalog-gallery-format-ui/C13_CI_JOB_105466300759.log",
+      "bytes": 74463,
+      "sha256": "b0f029bbffbb5fc18b9c06764ac9dda7f8649b89b480bb27ad87e8124bdae5c2"
+    },
+    {
+      "archive_path": "admission-final198/CANDIDATE_SOURCE.json",
+      "source_path": "integration-gate/contacts-next/CANDIDATE_SOURCE.json",
+      "bytes": 861,
+      "sha256": "d20734edac62181f64916076ed06dbe9ea4a247e1261840e1ea325be2a2d0833"
+    },
+    {
+      "archive_path": "admission-final198/SOURCE_PROOF_RAW.json",
+      "source_path": "integration-gate/contacts-next/SOURCE_PROOF_RAW.json",
+      "bytes": 3154,
+      "sha256": "a0a12e71d6102721c0e2a212fffe1af116b8cc21498fbf54e864718f119481bf"
+    },
+    {
+      "archive_path": "admission-final198/CANDIDATE_PROOF.json",
+      "source_path": "integration-gate/contacts-next/CANDIDATE_PROOF.json",
+      "bytes": 844,
+      "sha256": "6047c5023d57130feda032a4df7ec6c6c3d7803aac62976f493db385bc3d43ca"
+    },
+    {
+      "archive_path": "admission-final198/C13_SOURCE_PROBE_REVIEW.json",
+      "source_path": "integration-gate/contacts-next/C13_SOURCE_PROBE_REVIEW.json",
+      "bytes": 945,
+      "sha256": "abbdc1ceda4c26c42ea7c583e47d2daee5aea42728f9c39a4432648f75e5ec5b"
+    },
+    {
+      "archive_path": "admission-final198/C13_FINAL_FACTS_REVIEW.json",
+      "source_path": "integration-gate/contacts-next/C13_FINAL_FACTS_REVIEW.json",
+      "bytes": 2046,
+      "sha256": "ff0fc64af4df418f8f33567cc25c9054e1e9aa86cceef643ec9e802ee9fb6b0f"
+    },
+    {
+      "archive_path": "admission-final198/C13_FINAL_TEST.log",
+      "source_path": "integration-gate/contacts-next/C13_FINAL_TEST.log",
+      "bytes": 1390,
+      "sha256": "40017a6e0eb7f039b41e946ec8ff2a2494bd1e07bc4cfdc70aae813d5ff7bc9f"
+    },
+    {
+      "archive_path": "admission-final198/C13_HASHONLY_REVIEW.json",
+      "source_path": "integration-gate/contacts-next/C13_HASHONLY_REVIEW.json",
+      "bytes": 720,
+      "sha256": "f2299cf3a2535b940a5c5f4c55610b6577ac2e9d122001cf4e26c28b696f8a4f"
+    },
+    {
+      "archive_path": "admission-final198/C13_HASHONLY_TEST.log",
+      "source_path": "integration-gate/contacts-next/C13_HASHONLY_TEST.log",
+      "bytes": 757,
+      "sha256": "d54d503cf95f18e56712802953eb1df4037bb8e03e56ab2dc11a4d2f09ce678f"
+    },
+    {
+      "archive_path": "admission-final198/FACTS_PACKAGE.json",
+      "source_path": "integration-gate/contacts-next/FACTS_PACKAGE.json",
+      "bytes": 25447,
+      "sha256": "5da0669990e2c4f0f35840e46005d6709285ab4790d80e5a5232336d3d6f0727"
+    },
+    {
+      "archive_path": "admission-final198/FACTS_MANIFEST.json",
+      "source_path": "integration-gate/contacts-next/FACTS_MANIFEST.json",
+      "bytes": 9352,
+      "sha256": "72b3eb48d35b2c8f455aa416f8d21a18d9c162bf26aa292bd127a8fbda9a39fb"
+    },
+    {
+      "archive_path": "admission-final198/FROZEN_HASHES.json",
+      "source_path": "integration-gate/contacts-next/FROZEN_HASHES.json",
+      "bytes": 845,
+      "sha256": "057ed0e7fe38e621e097c7b3808f9022989d4c9b1b5a8e26c187bdf592235526"
+    },
+    {
+      "archive_path": "admission-final198/ACTIVE_CANDIDATE.json",
+      "source_path": "integration-gate/contacts-next/ACTIVE_CANDIDATE.json",
+      "bytes": 1998,
+      "sha256": "a79f8747d5f3b5ae605324d68436fe8e9d4c1b69bea78c53026c2c5aa4738cc5"
+    },
+    {
+      "archive_path": "admission-final198/CANDIDATE_CONTRACT.json",
+      "source_path": "integration-gate/contacts-next/CANDIDATE_CONTRACT.json",
+      "bytes": 1058,
+      "sha256": "d0a4d82a1e56e7ff96ddedc1668534f57961aab6875ca9c0f7997d37e72b56fb"
+    },
+    {
+      "archive_path": "admission-final198/CURRENT_BASELINE_PROOF.json",
+      "source_path": "integration-gate/contacts-next/CURRENT_BASELINE_PROOF.json",
+      "bytes": 807,
+      "sha256": "d43d6d70d3197f7f96cc01e0aebc0397a43a24ccc95da3c3f583849df391cb85"
+    },
+    {
+      "archive_path": "admission-final198/HK_FACTS_RECEIPT.json",
+      "source_path": "integration-gate/contacts-next/HK_FACTS_RECEIPT.json",
+      "bytes": 1403,
+      "sha256": "af9f686f93779e523e10cfbf82d072806d625fe38a37ac97a352fa2184df4e98"
+    },
+    {
+      "archive_path": "admission-final198/CC_FACTS_RECEIPT.json",
+      "source_path": "integration-gate/contacts-next/CC_FACTS_RECEIPT.json",
+      "bytes": 1390,
+      "sha256": "ae1f8da007c21c66fd8954294b3cee91054892b9ac0c0e15baf33acdf3dd2371"
+    },
+    {
+      "archive_path": "admission-final198/CC_FACTS_RECEIPT_RAW_ENVELOPE.json",
+      "source_path": "integration-gate/contacts-next/CC_FACTS_RECEIPT_RAW_ENVELOPE.json",
+      "bytes": 1953,
+      "sha256": "dcd4c7ad93054fea1a3808f9de79ca61b197f71b2267634bccc04ef801865b18"
+    },
+    {
+      "archive_path": "admission-final198/ADMISSION_RECEIPT_VERIFICATION.json",
+      "source_path": "integration-gate/contacts-next/ADMISSION_RECEIPT_VERIFICATION.json",
+      "bytes": 1588,
+      "sha256": "a9bcd3cada6969f31f0fb328857d80781ed8bfedefc9996fe4a14a1a9dca4362"
+    },
+    {
+      "archive_path": "admission-final198/PREFLIGHT_AND_TASK_VERIFICATION.json",
+      "source_path": "integration-gate/contacts-next/PREFLIGHT_AND_TASK_VERIFICATION.json",
+      "bytes": 895,
+      "sha256": "cb4b1a1019d573565a91ea908c77d67d44ee8cb3003e8692c0cbae5a64a3259a"
+    },
+    {
+      "archive_path": "test-final198/TASK.json",
+      "source_path": "integration-gate/contacts-next/formal/TASK.json",
+      "bytes": 638,
+      "sha256": "c817db379aad92016b96571f5f95cbcda21d00022cdff6899d9a4d7e1f0a7af8"
+    },
+    {
+      "archive_path": "test-final198/EVIDENCE.json",
+      "source_path": "integration-gate/contacts-next/formal/EVIDENCE.json",
+      "bytes": 1543,
+      "sha256": "5d589ed6c4193dc7e2b86e20f928285e359ee4d966ba6a1269d453c50ebb4fc2"
+    },
+    {
+      "archive_path": "test-final198/REFERENCES.json",
+      "source_path": "integration-gate/contacts-next/formal/REFERENCES.json",
+      "bytes": 482,
+      "sha256": "c8e2821e3c5a68c7acbdd4073f8d5f7d305a2236f79e9d711519fe76e8d96820"
+    },
+    {
+      "archive_path": "test-final198/REFERENCES_ORIGINAL.json",
+      "source_path": "integration-gate/contacts-next/formal/REFERENCES_ORIGINAL.json",
+      "bytes": 224,
+      "sha256": "5afaa539d30aa2fc80780819ab21e9d6872cc5d25568b181f5f80979d8ee16f0"
+    },
+    {
+      "archive_path": "test-final198/CANARY_SUBMITTED.json",
+      "source_path": "integration-gate/contacts-next/formal/CANARY_SUBMITTED.json",
+      "bytes": 337,
+      "sha256": "f4e907d545f854e55faabc439f0560a79c763788b2b49258d0a1aef75fe37500"
+    },
+    {
+      "archive_path": "test-final198/VERIFY_SUBMITTED.json",
+      "source_path": "integration-gate/contacts-next/formal/VERIFY_SUBMITTED.json",
+      "bytes": 337,
+      "sha256": "aa42c491c7febe2c09164f9adb1fdf9ec411897dea36637646e8a0a3c11ae063"
+    },
+    {
+      "archive_path": "test-final198/DEPLOY_PREPARED.json",
+      "source_path": "integration-gate/contacts-next/formal/DEPLOY_PREPARED.json",
+      "bytes": 334,
+      "sha256": "e6c75e15b1d41bc40e559c95527ca85bf4dabc0bc4021f9ec3bb52cda5cb8eda"
+    },
+    {
+      "archive_path": "canary-final198/CANARY_TASK.json",
+      "source_path": "integration-gate/pr198-formal/CANARY_TASK.json",
+      "bytes": 919,
+      "sha256": "3f815568e0ed6024021d5b0f3a3a74ceb8cab9d2a32b9210ae7df7ed92305c58"
+    },
+    {
+      "archive_path": "canary-final198/CANARY_EVIDENCE.json",
+      "source_path": "integration-gate/pr198-formal/CANARY_EVIDENCE.json",
+      "bytes": 1185,
+      "sha256": "cbf9fe8504f2d7460938e52a191398b09fca7e7f845130a3b3c589f2be43dcce"
+    },
+    {
+      "archive_path": "canary-final198/CHAIN_VERIFICATION.json",
+      "source_path": "integration-gate/pr198-formal/CHAIN_VERIFICATION.json",
+      "bytes": 3140,
+      "sha256": "065f228aa66f2ca315d62f67aff33d12deaba2f12cfbb79bbeb5fdf0dcb7a0ca"
+    },
+    {
+      "archive_path": "canary-final198/REFERENCES.json",
+      "source_path": "integration-gate/pr198-formal/REFERENCES.json",
+      "bytes": 628,
+      "sha256": "2d6947b56b2e5c74967a051967308a1a84e3a809421b582a339490b23294f32e"
+    },
+    {
+      "archive_path": "canary-final198/C13_PREPARATION_REVIEW.json",
+      "source_path": "integration-gate/pr198-formal/C13_PREPARATION_REVIEW.json",
+      "bytes": 962,
+      "sha256": "d70c7b468d2746c4248c48a2738394682303ca0af03f08df4449df92a4e574e4"
+    },
+    {
+      "archive_path": "canary-final198/ARCHIVE_FILES.json",
+      "source_path": "integration-gate/pr198-formal/ARCHIVE_FILES.json",
+      "bytes": 1740,
+      "sha256": "6e5a0b2a7064a92e2fb1237bb92f17e3129222ffe0bf39c2043dcb2951d6964e"
+    },
+    {
+      "archive_path": "canary-final198/VERIFY_TASK.json",
+      "source_path": "integration-gate/pr198-formal/VERIFY_TASK.json",
+      "bytes": 825,
+      "sha256": "76d7d444f710bc71f3350448ee521119dd7ca45971b2f54408d6e66f589a561e"
+    },
+    {
+      "archive_path": "canary-final198/VERIFY_EVIDENCE.json",
+      "source_path": "integration-gate/pr198-formal/VERIFY_EVIDENCE.json",
+      "bytes": 1114,
+      "sha256": "a34d958f328add48a5aea367736ffa9a873bb40f8ea77d75bbc89b43269c6571"
+    },
+    {
+      "archive_path": "canary-final198/DEPLOY_TASK.json",
+      "source_path": "integration-gate/pr198-formal/DEPLOY_TASK.json",
+      "bytes": 1001,
+      "sha256": "77a47a4fe93f7290bf4a1fefee7763ab1d15661b057706926de285cce557ae33"
+    },
+    {
+      "archive_path": "canary-final198/DEPLOY_EVIDENCE.json",
+      "source_path": "integration-gate/pr198-formal/DEPLOY_EVIDENCE.json",
+      "bytes": 1823,
+      "sha256": "008dd80cbd81873b5f743e0550c48fc3154f9c12833eb43c0429c5f3f7eb57e4"
+    },
+    {
+      "archive_path": "canary-final198/DEPLOY_REFERENCES.json",
+      "source_path": "integration-gate/pr198-formal/DEPLOY_REFERENCES.json",
+      "bytes": 637,
+      "sha256": "5ac16cce91647c4db446e76d6848292891bf6522e79c6c84d95eac4e30de181d"
+    },
+    {
+      "archive_path": "canary-final198/POST_VERIFY_TASK.json",
+      "source_path": "integration-gate/pr198-formal/POST_VERIFY_TASK.json",
+      "bytes": 794,
+      "sha256": "ba5933a9b2b1748e76a744c5af1e9a8ba47d40f6fdce801c88245be35e392cfa"
+    },
+    {
+      "archive_path": "canary-final198/POST_VERIFY_EVIDENCE.json",
+      "source_path": "integration-gate/pr198-formal/POST_VERIFY_EVIDENCE.json",
+      "bytes": 1083,
+      "sha256": "78d029f865a6f5608edc959d9cb7f260ce19b880384a920893a1c16609db8634"
+    },
+    {
+      "archive_path": "canary-final198/POST_VERIFY_REFERENCES.json",
+      "source_path": "integration-gate/pr198-formal/POST_VERIFY_REFERENCES.json",
+      "bytes": 609,
+      "sha256": "dd29fe97f274509e58b5eff9c128b9ef9818609537d52c74267d1904aed625ea"
+    },
+    {
+      "archive_path": "canary-final198/HK_HOST_READBACK.json",
+      "source_path": "integration-gate/pr198-formal/HK_HOST_READBACK.json",
+      "bytes": 18252,
+      "sha256": "f8d668601053a2abb959f8bc7a83f371d625cf6dc5ae422befc88d34f8e3bea1"
+    },
+    {
+      "archive_path": "canary-final198/VERIFICATION.json",
+      "source_path": "integration-gate/pr198-formal/VERIFICATION.json",
+      "bytes": 1505,
+      "sha256": "5bc4f0700f20b72fbf87b7b2b6053c792635067c81ec56ff184bfa4259527f20"
+    },
+    {
+      "archive_path": "canary-final198/C13_BOUND_READONLY_REVIEW.json",
+      "source_path": "integration-gate/pr198-formal/C13_BOUND_READONLY_REVIEW.json",
+      "bytes": 1030,
+      "sha256": "634cfaf2ed8434b6078a0e3fb4fd0d7d3f7d5ccc92676e780dbc61d304fac3ec"
+    },
+    {
+      "archive_path": "canary-final198/host_readback.py",
+      "source_path": "integration-gate/pr198-formal/host_readback.py",
+      "bytes": 4284,
+      "sha256": "92e80f1b30475101053a7c8edb19432a2534d13b2425846c07fcf96f95e14150"
+    },
+    {
+      "archive_path": "canary-final198/verify_chain.py",
+      "source_path": "integration-gate/pr198-formal/verify_chain.py",
+      "bytes": 8586,
+      "sha256": "f0fd56d3169091eac6610b49718e302da4661b1e94bef498bcec1f177f88a898"
+    },
+    {
+      "archive_path": "canary-final198/verify_host_closeout.py",
+      "source_path": "integration-gate/pr198-formal/verify_host_closeout.py",
+      "bytes": 4302,
+      "sha256": "3db398639e11d67fe12dcf4320b7280e74c2f8c7061e5ded37b67b1de7bae57b"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_CHECK_CLASSIFICATION.json",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_CHECK_CLASSIFICATION.json",
+      "bytes": 4719,
+      "sha256": "885188b164d3d442fdc268b3e1988237df1099462c6e544ac79d18418929b386"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466312398.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466312398.log",
+      "bytes": 31404,
+      "sha256": "173c10fa5bc3d5e0ff5e2dffe9aaecdeccd333478f37116718e13d16658905a2"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466312578.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466312578.log",
+      "bytes": 38907,
+      "sha256": "9fe10f24c092a1e004821c73f7cacf2f57a4d9d0dca590e665233541cbae25db"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466312806.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466312806.log",
+      "bytes": 78933,
+      "sha256": "2e09a86d995c422b3ecfb33d2e2b562e82e3874eb5f6dce1ca59e91b4b838030"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466312857.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466312857.log",
+      "bytes": 23170,
+      "sha256": "01e7c1a1a5370e1a9a58dde937742bf64c828349812a7543fce0df5009c5c214"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466313061.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466313061.log",
+      "bytes": 32913,
+      "sha256": "85d0867ad7d1e1faa640cd3a6cb1232857f628744672bbdd2f51145ebc129560"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466313165.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466313165.log",
+      "bytes": 29302,
+      "sha256": "a0116be2207615450ae5fa7dc28ad4b2b2c1b3e1fe4bf14574a61665b1cc6768"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466313214.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466313214.log",
+      "bytes": 49246,
+      "sha256": "d7eb2b849f98fb3df2ccc6ba60a39c933febda5010b66627032190c8ce0622f8"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466313233.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466313233.log",
+      "bytes": 30494,
+      "sha256": "ca409da141fec7374262046fbb94aff3401e45341cc9b5c027e9fbdc3f44a0ce"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466313259.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466313259.log",
+      "bytes": 30744,
+      "sha256": "dc05aee8fec7c61f3e206c6f3f9530c34d01e5aca2f5000901f3aed8b1bbd9f3"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466313284.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466313284.log",
+      "bytes": 30496,
+      "sha256": "df49c45d4a5f8352f2fe914f22b98e7727d40f2723e5bfac5d2987f2e6eede5e"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466313303.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466313303.log",
+      "bytes": 30500,
+      "sha256": "5c6a45146a7d6e750e890be5cc6144c13f056e84e9ecbd35470a6a1dade37379"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466313322.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466313322.log",
+      "bytes": 49362,
+      "sha256": "5076c85232f3d44fb84d698c77c4ff84519976348dcf39bdd91748d9b7a6241f"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466313378.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466313378.log",
+      "bytes": 49310,
+      "sha256": "d4f15b0b76a58dc75aba0c2a0c01acc045163c5a01a931da87e9fb210f338b00"
+    },
+    {
+      "archive_path": "ci-failures-final198/C13_FAILED_JOB_105466313389.log",
+      "source_path": "catalog-gallery-format-ui/C13_FAILED_JOB_105466313389.log",
+      "bytes": 49219,
+      "sha256": "cbf2b2a3bd2d840db408cfbd362dd54445c2d60dec1a595f3651b88eec498328"
+    },
+    {
+      "archive_path": "post-deploy-ui/CONTACTS_WRITTEN_PR198_20260918.json",
+      "source_path": "catalog_review/CONTACTS_WRITTEN_PR198_20260918.json",
+      "bytes": 727,
+      "sha256": "d35d90b81fefe54fdc4a01c54e930dfeb04ae22524a7ff576cf0d6f6e150bb65"
+    },
+    {
+      "archive_path": "post-deploy-ui/CONTACTS_AFTER_PR198_20260918.txt",
+      "source_path": "catalog_review/CONTACTS_AFTER_PR198_20260918.txt",
+      "bytes": 10813,
+      "sha256": "48908c346135b45d5b63275b8995a06804e51b6902f137883794c96cd0aa8a5c"
+    },
+    {
+      "archive_path": "post-deploy-ui/CONTACTS_NORMALIZED_PR198_20260918.txt",
+      "source_path": "catalog_review/CONTACTS_NORMALIZED_PR198_20260918.txt",
+      "bytes": 11207,
+      "sha256": "774dd0df382c7dd7a5795a9fbbafa34573b95e8c60d9650d9c0a3368b3df9f5a"
+    },
+    {
+      "archive_path": "post-deploy-ui/CONTACTS_NORMALIZED_PR198_20260918.json",
+      "source_path": "catalog_review/CONTACTS_NORMALIZED_PR198_20260918.json",
+      "bytes": 1246,
+      "sha256": "c92118a04d7d02671e924d4211f334693dea606666ddddf3c3022d3eaab7496a"
+    },
+    {
+      "archive_path": "media-persistence/OBSERVATION.json",
+      "source_path": "catalog_review/media_persistence_diagnosis/OBSERVATION.json",
+      "bytes": 700,
+      "sha256": "3d99a1de012470cccc24117bacc17e2cc666e89eb753afb227cef2748844fa00"
+    },
+    {
+      "archive_path": "public-area-capture/aoluguya_hyatt_public_area_candidates.json",
+      "source_path": "catalog_review/aoluguya_hyatt_public_area_candidates.json",
+      "bytes": 9029,
+      "sha256": "01496653b549252c619125371a7b97561b73d06de8ac741841d5c57fa4a873ed"
+    },
+    {
+      "archive_path": "public-area-capture/EASON_PUBLIC_AREA_FETCH.json",
+      "source_path": "catalog_review/EASON_PUBLIC_AREA_FETCH.json",
+      "bytes": 26858,
+      "sha256": "866b42b10f8eb8238aa923c6464b0f61139b12257e441e8d821cd7c2cc3ca288"
+    },
+    {
+      "archive_path": "public-area-capture/HYATT_PUBLIC_AREA_CAPTURE_SUMMARY.json",
+      "source_path": "catalog_review/HYATT_PUBLIC_AREA_CAPTURE_SUMMARY.json",
+      "bytes": 991,
+      "sha256": "d42f8733535e3e0ad74aa9f6bd90f81d981f0d0894fae0958bc5d2dc987fa516"
+    },
+    {
+      "archive_path": "public-area-capture/HYATT_HOME_LIVE_DOM_20260918.json",
+      "source_path": "catalog_review/HYATT_HOME_LIVE_DOM_20260918.json",
+      "bytes": 28671,
+      "sha256": "58ad9c0a26b08bb332cac2885355a276784996028b765f9a7b4c9aba74a8c91a"
+    },
+    {
+      "archive_path": "public-area-capture/HYATT_PUBLIC_GALLERY_LIVE_DOM_20260918.json",
+      "source_path": "catalog_review/HYATT_PUBLIC_GALLERY_LIVE_DOM_20260918.json",
+      "bytes": 6845,
+      "sha256": "35eccb0695e2854d5e5ff7fb47e5ba7d4ed5620fc5e9f693fefb14ed5027e1ae"
+    },
+    {
+      "archive_path": "contact-provenance/CONTACTS_PUBLIC_SOURCES_20260918.json",
+      "source_path": "catalog_review/CONTACTS_PUBLIC_SOURCES_20260918.json",
+      "bytes": 1545,
+      "sha256": "dc97e00210f6d3f5882df492fb0328d8010e722aba206b7e3fe526894c0b04fc"
+    }
+  ]
+}

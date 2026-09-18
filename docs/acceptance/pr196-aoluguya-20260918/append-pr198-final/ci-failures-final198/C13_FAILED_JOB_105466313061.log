@@ -1,0 +1,394 @@
+﻿2026-09-18T03:07:04.5074468Z Current runner version: '2.337.0'
+2026-09-18T03:07:04.5141683Z ##[group]Runner Image Provisioner
+2026-09-18T03:07:04.5143221Z Hosted Compute Agent
+2026-09-18T03:07:04.5144258Z Version: 20260828.587
+2026-09-18T03:07:04.5145400Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-18T03:07:04.5146883Z Build Date: 2026-08-28T16:44:25Z
+2026-09-18T03:07:04.5148894Z Worker ID: {2191a041-0ff6-46c1-bcba-6a9dc5b98819}
+2026-09-18T03:07:04.5150523Z Azure Region: eastus2
+2026-09-18T03:07:04.5151707Z ##[endgroup]
+2026-09-18T03:07:04.5154110Z ##[group]Operating System
+2026-09-18T03:07:04.5155307Z Ubuntu
+2026-09-18T03:07:04.5156222Z 24.04.5
+2026-09-18T03:07:04.5157195Z LTS
+2026-09-18T03:07:04.5178590Z ##[endgroup]
+2026-09-18T03:07:04.5179798Z ##[group]Runner Image
+2026-09-18T03:07:04.5180866Z Image: ubuntu-24.04
+2026-09-18T03:07:04.5181830Z Version: 20260907.300.1
+2026-09-18T03:07:04.5184153Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-18T03:07:04.5187145Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-18T03:07:04.5199371Z ##[endgroup]
+2026-09-18T03:07:04.5201595Z ##[group]GITHUB_TOKEN Permissions
+2026-09-18T03:07:04.5204407Z Contents: read
+2026-09-18T03:07:04.5205641Z Metadata: read
+2026-09-18T03:07:04.5206695Z ##[endgroup]
+2026-09-18T03:07:04.5230467Z Secret source: Actions
+2026-09-18T03:07:04.5232153Z Cache mode: write
+2026-09-18T03:07:04.5233413Z Prepare workflow directory
+2026-09-18T03:07:04.6311276Z Prepare all required actions
+2026-09-18T03:07:04.6451817Z Getting action download info
+2026-09-18T03:07:04.9029488Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-18T03:07:05.0256299Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-18T03:07:05.1236104Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-18T03:07:05.2191591Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-18T03:07:05.4813748Z Complete job name: frontend-http-compat
+2026-09-18T03:07:05.5783619Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T03:07:05.5795645Z ##[group]Run actions/checkout@v4
+2026-09-18T03:07:05.5796952Z with:
+2026-09-18T03:07:05.5797881Z   ref: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:05.5799366Z   persist-credentials: false
+2026-09-18T03:07:05.5800426Z   repository: yuguangzhi3836-glitch/GO
+2026-09-18T03:07:05.5809956Z   token: ***
+2026-09-18T03:07:05.5810812Z   ssh-strict: true
+2026-09-18T03:07:05.5811660Z   ssh-user: git
+2026-09-18T03:07:05.5812486Z   clean: true
+2026-09-18T03:07:05.5813406Z   sparse-checkout-cone-mode: true
+2026-09-18T03:07:05.5814451Z   fetch-depth: 1
+2026-09-18T03:07:05.5815302Z   fetch-tags: false
+2026-09-18T03:07:05.5816248Z   show-progress: true
+2026-09-18T03:07:05.5817153Z   lfs: false
+2026-09-18T03:07:05.5818122Z   submodules: false
+2026-09-18T03:07:05.5819025Z   set-safe-directory: true
+2026-09-18T03:07:05.5820033Z   allow-unsafe-pr-checkout: false
+2026-09-18T03:07:05.5821377Z env:
+2026-09-18T03:07:05.5822208Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:05.5823179Z ##[endgroup]
+2026-09-18T03:07:05.7094118Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-18T03:07:05.7099971Z ##[group]Getting Git version info
+2026-09-18T03:07:05.7151205Z Working directory is '/home/runner/work/GO/GO'
+2026-09-18T03:07:05.7169005Z [command]/usr/bin/git version
+2026-09-18T03:07:05.7186717Z git version 2.55.0
+2026-09-18T03:07:05.7194613Z ##[endgroup]
+2026-09-18T03:07:05.7210594Z Temporarily overriding HOME='/home/runner/work/_temp/1492cb8b-ac45-43b9-a352-2433afcb1b86' before making global git config changes
+2026-09-18T03:07:05.7216632Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-18T03:07:05.7221157Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-18T03:07:05.7289201Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-18T03:07:05.7292845Z ##[group]Initializing the repository
+2026-09-18T03:07:05.7294802Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-18T03:07:05.7452933Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-18T03:07:05.7479479Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-18T03:07:05.7485132Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-18T03:07:05.7490256Z hint: call:
+2026-09-18T03:07:05.7491483Z hint:
+2026-09-18T03:07:05.7492996Z hint: 	git config --global init.defaultBranch <name>
+2026-09-18T03:07:05.7494977Z hint:
+2026-09-18T03:07:05.7496859Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-18T03:07:05.7500388Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-18T03:07:05.7502839Z hint:
+2026-09-18T03:07:05.7504082Z hint: 	git branch -m <name>
+2026-09-18T03:07:05.7505564Z hint:
+2026-09-18T03:07:05.7507548Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-18T03:07:05.7514114Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-18T03:07:05.7519651Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-18T03:07:05.7615438Z ##[endgroup]
+2026-09-18T03:07:05.7641401Z ##[group]Disabling automatic garbage collection
+2026-09-18T03:07:05.7662230Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-18T03:07:05.7692611Z ##[endgroup]
+2026-09-18T03:07:05.7695732Z ##[group]Setting up auth
+2026-09-18T03:07:05.7698685Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-18T03:07:05.7733294Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-18T03:07:05.8186217Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-18T03:07:05.8422802Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-18T03:07:05.8658763Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-18T03:07:05.8692098Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-18T03:07:05.8939900Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-18T03:07:05.8982944Z ##[endgroup]
+2026-09-18T03:07:05.8985935Z ##[group]Fetching the repository
+2026-09-18T03:07:05.8995123Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:16.2024833Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-18T03:07:16.2039760Z  * branch            f827a3aefd95fd95dedb2bd2ecc93ae01111ea90 -> FETCH_HEAD
+2026-09-18T03:07:16.2064471Z ##[endgroup]
+2026-09-18T03:07:16.2065823Z ##[group]Determining the checkout info
+2026-09-18T03:07:16.2089299Z ##[endgroup]
+2026-09-18T03:07:16.2102582Z [command]/usr/bin/git sparse-checkout disable
+2026-09-18T03:07:16.2259690Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-18T03:07:16.2319423Z ##[group]Checking out the ref
+2026-09-18T03:07:16.2323551Z [command]/usr/bin/git checkout --progress --force f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:17.6297511Z Updating files:  29% (1751/5882)
+2026-09-18T03:07:18.0754217Z Updating files:  30% (1765/5882)
+2026-09-18T03:07:18.0785852Z Updating files:  31% (1824/5882)
+2026-09-18T03:07:18.0817670Z Updating files:  32% (1883/5882)
+2026-09-18T03:07:18.0925711Z Updating files:  33% (1942/5882)
+2026-09-18T03:07:18.1008721Z Updating files:  34% (2000/5882)
+2026-09-18T03:07:18.1097907Z Updating files:  35% (2059/5882)
+2026-09-18T03:07:18.1137859Z Updating files:  36% (2118/5882)
+2026-09-18T03:07:18.1166725Z Updating files:  37% (2177/5882)
+2026-09-18T03:07:18.1195512Z Updating files:  38% (2236/5882)
+2026-09-18T03:07:18.1228956Z Updating files:  39% (2294/5882)
+2026-09-18T03:07:18.1264796Z Updating files:  40% (2353/5882)
+2026-09-18T03:07:18.1295956Z Updating files:  41% (2412/5882)
+2026-09-18T03:07:18.1324803Z Updating files:  42% (2471/5882)
+2026-09-18T03:07:18.1370573Z Updating files:  43% (2530/5882)
+2026-09-18T03:07:18.1414790Z Updating files:  44% (2589/5882)
+2026-09-18T03:07:18.1466210Z Updating files:  45% (2647/5882)
+2026-09-18T03:07:18.1523233Z Updating files:  46% (2706/5882)
+2026-09-18T03:07:18.1586119Z Updating files:  47% (2765/5882)
+2026-09-18T03:07:18.1627767Z Updating files:  48% (2824/5882)
+2026-09-18T03:07:18.1672330Z Updating files:  49% (2883/5882)
+2026-09-18T03:07:18.1708273Z Updating files:  50% (2941/5882)
+2026-09-18T03:07:18.1744567Z Updating files:  51% (3000/5882)
+2026-09-18T03:07:18.1779063Z Updating files:  52% (3059/5882)
+2026-09-18T03:07:18.2479358Z Updating files:  53% (3118/5882)
+2026-09-18T03:07:18.2666659Z Updating files:  53% (3154/5882)
+2026-09-18T03:07:18.2698800Z Updating files:  54% (3177/5882)
+2026-09-18T03:07:18.2775071Z Updating files:  55% (3236/5882)
+2026-09-18T03:07:18.3023588Z Updating files:  56% (3294/5882)
+2026-09-18T03:07:18.3419300Z Updating files:  57% (3353/5882)
+2026-09-18T03:07:18.3877840Z Updating files:  58% (3412/5882)
+2026-09-18T03:07:18.3941671Z Updating files:  59% (3471/5882)
+2026-09-18T03:07:18.3993502Z Updating files:  60% (3530/5882)
+2026-09-18T03:07:18.4049858Z Updating files:  61% (3589/5882)
+2026-09-18T03:07:18.4088708Z Updating files:  62% (3647/5882)
+2026-09-18T03:07:18.4215740Z Updating files:  63% (3706/5882)
+2026-09-18T03:07:18.4258772Z Updating files:  64% (3765/5882)
+2026-09-18T03:07:18.4310550Z Updating files:  65% (3824/5882)
+2026-09-18T03:07:18.4389840Z Updating files:  66% (3883/5882)
+2026-09-18T03:07:18.4432445Z Updating files:  67% (3941/5882)
+2026-09-18T03:07:18.4507564Z Updating files:  68% (4000/5882)
+2026-09-18T03:07:18.4558780Z Updating files:  69% (4059/5882)
+2026-09-18T03:07:18.4588921Z Updating files:  70% (4118/5882)
+2026-09-18T03:07:18.4656954Z Updating files:  71% (4177/5882)
+2026-09-18T03:07:18.4837795Z Updating files:  72% (4236/5882)
+2026-09-18T03:07:18.5945425Z Updating files:  73% (4294/5882)
+2026-09-18T03:07:18.7762957Z Updating files:  74% (4353/5882)
+2026-09-18T03:07:18.7827117Z Updating files:  75% (4412/5882)
+2026-09-18T03:07:18.7966082Z Updating files:  76% (4471/5882)
+2026-09-18T03:07:18.8113314Z Updating files:  77% (4530/5882)
+2026-09-18T03:07:18.8139956Z Updating files:  78% (4588/5882)
+2026-09-18T03:07:18.8164145Z Updating files:  79% (4647/5882)
+2026-09-18T03:07:18.8186312Z Updating files:  80% (4706/5882)
+2026-09-18T03:07:18.8207615Z Updating files:  81% (4765/5882)
+2026-09-18T03:07:18.8236668Z Updating files:  82% (4824/5882)
+2026-09-18T03:07:18.8278722Z Updating files:  83% (4883/5882)
+2026-09-18T03:07:18.8299494Z Updating files:  84% (4941/5882)
+2026-09-18T03:07:18.8342584Z Updating files:  85% (5000/5882)
+2026-09-18T03:07:18.8373873Z Updating files:  86% (5059/5882)
+2026-09-18T03:07:18.8401847Z Updating files:  87% (5118/5882)
+2026-09-18T03:07:18.8452299Z Updating files:  88% (5177/5882)
+2026-09-18T03:07:18.8502966Z Updating files:  89% (5235/5882)
+2026-09-18T03:07:18.8531799Z Updating files:  90% (5294/5882)
+2026-09-18T03:07:18.8559291Z Updating files:  91% (5353/5882)
+2026-09-18T03:07:18.8626310Z Updating files:  92% (5412/5882)
+2026-09-18T03:07:18.8653885Z Updating files:  93% (5471/5882)
+2026-09-18T03:07:18.8680988Z Updating files:  94% (5530/5882)
+2026-09-18T03:07:18.8721496Z Updating files:  95% (5588/5882)
+2026-09-18T03:07:18.8775770Z Updating files:  96% (5647/5882)
+2026-09-18T03:07:18.8809055Z Updating files:  97% (5706/5882)
+2026-09-18T03:07:18.8859325Z Updating files:  98% (5765/5882)
+2026-09-18T03:07:18.8891704Z Updating files:  99% (5824/5882)
+2026-09-18T03:07:18.8893397Z Updating files: 100% (5882/5882)
+2026-09-18T03:07:18.8894229Z Updating files: 100% (5882/5882), done.
+2026-09-18T03:07:19.2625685Z Note: switching to 'f827a3aefd95fd95dedb2bd2ecc93ae01111ea90'.
+2026-09-18T03:07:19.2629799Z 
+2026-09-18T03:07:19.2630617Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-18T03:07:19.2631615Z changes and commit them, and you can discard any commits you make in this
+2026-09-18T03:07:19.2632436Z state without impacting any branches by switching back to a branch.
+2026-09-18T03:07:19.2632970Z 
+2026-09-18T03:07:19.2633370Z If you want to create a new branch to retain commits you create, you may
+2026-09-18T03:07:19.2634136Z do so (now or later) by using -c with the switch command. Example:
+2026-09-18T03:07:19.2634656Z 
+2026-09-18T03:07:19.2634954Z   git switch -c <new-branch-name>
+2026-09-18T03:07:19.2635329Z 
+2026-09-18T03:07:19.2635624Z Or undo this operation with:
+2026-09-18T03:07:19.2635989Z 
+2026-09-18T03:07:19.2636254Z   git switch -
+2026-09-18T03:07:19.2636566Z 
+2026-09-18T03:07:19.2636986Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-18T03:07:19.2637545Z 
+2026-09-18T03:07:19.2637978Z HEAD is now at f827a3a fix(catalog): bind gallery harvest to measured HK CDN bytes
+2026-09-18T03:07:19.3116884Z ##[endgroup]
+2026-09-18T03:07:19.4433165Z [command]/usr/bin/git log -1 --format=%H
+2026-09-18T03:07:19.4452440Z f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:19.4477636Z ##[group]Removing auth
+2026-09-18T03:07:19.4479558Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-18T03:07:19.4530362Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-18T03:07:19.4811044Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-18T03:07:19.6970389Z http.https://github.com/.extraheader
+2026-09-18T03:07:19.6993203Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-18T03:07:19.7438289Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-18T03:07:19.7682879Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-18T03:07:19.7717779Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-18T03:07:19.7971254Z ##[endgroup]
+2026-09-18T03:07:19.8242072Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T03:07:19.8243991Z ##[group]Run actions/setup-python@v5
+2026-09-18T03:07:19.8244343Z with:
+2026-09-18T03:07:19.8244633Z   python-version: 3.13.5
+2026-09-18T03:07:19.8244957Z   check-latest: false
+2026-09-18T03:07:19.8247604Z   token: ***
+2026-09-18T03:07:19.8247907Z   update-environment: true
+2026-09-18T03:07:19.8248469Z   allow-prereleases: false
+2026-09-18T03:07:19.8248789Z   freethreaded: false
+2026-09-18T03:07:19.8249086Z env:
+2026-09-18T03:07:19.8249369Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:19.8249688Z ##[endgroup]
+2026-09-18T03:07:19.9849752Z ##[group]Installed versions
+2026-09-18T03:07:20.0072349Z Version 3.13.5 was not found in the local cache
+2026-09-18T03:07:20.0199970Z (node:2118) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-18T03:07:20.0218776Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-18T03:07:20.6970384Z Version 3.13.5 is available for downloading
+2026-09-18T03:07:20.6971655Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-24.04-x64.tar.gz"
+2026-09-18T03:07:21.5858927Z Extract downloaded archive
+2026-09-18T03:07:21.6032717Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/2b4d433f-0614-4e93-bb7d-00f5606f2f44 -f /home/runner/work/_temp/121c412a-0877-47f4-8062-4a2ae3e42409
+2026-09-18T03:07:24.0920921Z Execute installation script
+2026-09-18T03:07:24.1047361Z Check if Python hostedtoolcache folder exist...
+2026-09-18T03:07:24.1056084Z Create Python 3.13.5 folder
+2026-09-18T03:07:24.1066016Z Copy Python binaries to hostedtoolcache folder
+2026-09-18T03:07:24.7924006Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-18T03:07:24.7967775Z Upgrading pip...
+2026-09-18T03:07:27.2129367Z Looking in links: /tmp/tmpi5bpwj99
+2026-09-18T03:07:27.2134396Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-18T03:07:28.7708896Z Collecting pip
+2026-09-18T03:07:28.8199686Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-18T03:07:28.8335458Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-18T03:07:28.9345287Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 20.9 MB/s eta 0:00:00
+2026-09-18T03:07:28.9351912Z 
+2026-09-18T03:07:28.9543520Z Installing collected packages: pip
+2026-09-18T03:07:28.9546172Z Attempting uninstall: pip
+2026-09-18T03:07:28.9575578Z Found existing installation: pip 25.1.1
+2026-09-18T03:07:28.9929560Z Uninstalling pip-25.1.1:
+2026-09-18T03:07:28.9986105Z Successfully uninstalled pip-25.1.1
+2026-09-18T03:07:29.9287728Z Successfully installed pip-26.2.1
+2026-09-18T03:07:29.9838822Z Create complete file
+2026-09-18T03:07:29.9889173Z Successfully set up CPython (3.13.5)
+2026-09-18T03:07:29.9891022Z ##[endgroup]
+2026-09-18T03:07:30.0145972Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T03:07:30.0147328Z ##[group]Run actions/setup-node@v4
+2026-09-18T03:07:30.0147666Z with:
+2026-09-18T03:07:30.0147947Z   node-version: 22.22.0
+2026-09-18T03:07:30.0148551Z   always-auth: false
+2026-09-18T03:07:30.0148856Z   check-latest: false
+2026-09-18T03:07:30.0151470Z   token: ***
+2026-09-18T03:07:30.0151753Z env:
+2026-09-18T03:07:30.0152037Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:30.0152439Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:30.0152979Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T03:07:30.0153486Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:30.0153981Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:30.0154429Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:30.0154882Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T03:07:30.0155284Z ##[endgroup]
+2026-09-18T03:07:30.2198844Z Attempting to download 22.22.0...
+2026-09-18T03:07:30.2315465Z (node:2192) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-18T03:07:30.2322476Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-18T03:07:30.7613965Z Acquiring 22.22.0 - x64 from https://github.com/actions/node-versions/releases/download/22.22.0-20981702931/node-22.22.0-linux-x64.tar.gz
+2026-09-18T03:07:31.3438677Z Extracting ...
+2026-09-18T03:07:31.3579248Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/fa80976c-bb80-4838-9736-1d1d015ddfff -f /home/runner/work/_temp/754f8308-1ae6-4b17-a524-a50e22d61ac9
+2026-09-18T03:07:32.7965982Z Adding to the cache ...
+2026-09-18T03:07:35.6024413Z ##[group]Environment details
+2026-09-18T03:07:35.8755962Z node: v22.22.0
+2026-09-18T03:07:35.8756840Z npm: 10.9.4
+2026-09-18T03:07:35.8757742Z yarn: 1.22.22
+2026-09-18T03:07:35.8759072Z ##[endgroup]
+2026-09-18T03:07:35.8957738Z ##[group]Run python ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"
+2026-09-18T03:07:35.8958836Z [36;1mpython ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"[0m
+2026-09-18T03:07:35.8959542Z [36;1mpython ci/retention/verify_alignment.py "$RUNNER_TEMP/evidence/source/ALIGNMENT_RESULT.json"[0m
+2026-09-18T03:07:35.9002907Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-18T03:07:35.9003334Z env:
+2026-09-18T03:07:35.9003638Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:35.9004035Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:35.9004540Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T03:07:35.9005039Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:35.9005486Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:35.9005952Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:35.9006442Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T03:07:35.9006846Z ##[endgroup]
+2026-09-18T03:07:36.0775559Z Traceback (most recent call last):
+2026-09-18T03:07:36.0920523Z   File "/home/runner/work/GO/GO/ci/retention/verify_source.py", line 67, in <module>
+2026-09-18T03:07:36.0921533Z     main()
+2026-09-18T03:07:36.0922179Z     ~~~~^^
+2026-09-18T03:07:36.0923153Z   File "/home/runner/work/GO/GO/ci/retention/verify_source.py", line 28, in main
+2026-09-18T03:07:36.0924567Z     assert actual == expected, {'missing': sorted(expected-actual), 'unexpected': sorted(actual-expected)}
+2026-09-18T03:07:36.0925598Z            ^^^^^^^^^^^^^^^^^^
+2026-09-18T03:07:36.0932145Z AssertionError: {'missing': [], 'unexpected': ['scripts/test_catalog_graph_visibility.py', 'scripts/test_catalog_scope.py', 'scripts/test_catalog_scope_postgres.py', 'scripts/test_hotel_search_event_loop.py', 'src/go_hotel/connectors/supplier_runtime_controls.py', 'src/go_hotel/services/catalog_scope.py', 'tests/test_supplier_preflight_runtime.py', 'tests/test_supplier_runtime_controls.py', 'tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan.json', 'tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan_legacy_jpeg.json', 'tests_frontend/fixtures/aoluguya_normalized_ingest_plan.json', 'tests_frontend/hotel_catalog_contacts.test.mjs', 'tests_frontend/hotel_catalog_hyatt_gallery.test.mjs', 'tests_frontend/hotel_catalog_reviewed_import.test.mjs']}
+2026-09-18T03:07:36.1011447Z ##[error]Process completed with exit code 1.
+2026-09-18T03:07:36.1074242Z ##[group]Run python -B -m unittest discover -s control-plane/depth40-compat-v2/tests -v 2>&1 | tee "$RUNNER_TEMP/evidence/compatibility.log"
+2026-09-18T03:07:36.1075298Z [36;1mpython -B -m unittest discover -s control-plane/depth40-compat-v2/tests -v 2>&1 | tee "$RUNNER_TEMP/evidence/compatibility.log"[0m
+2026-09-18T03:07:36.1115443Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-18T03:07:36.1115868Z env:
+2026-09-18T03:07:36.1116173Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:36.1116573Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.1117081Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T03:07:36.1117584Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.1118291Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.1118866Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.1119558Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T03:07:36.1119970Z ##[endgroup]
+2026-09-18T03:07:36.1195705Z tee: /home/runner/work/_temp/evidence/compatibility.log: No such file or directory
+2026-09-18T03:07:36.7112926Z test_compatibility (unittest.loader._FailedTest.test_compatibility) ... ERROR
+2026-09-18T03:07:36.7114050Z 
+2026-09-18T03:07:36.7114694Z ======================================================================
+2026-09-18T03:07:36.7115818Z ERROR: test_compatibility (unittest.loader._FailedTest.test_compatibility)
+2026-09-18T03:07:36.7116953Z ----------------------------------------------------------------------
+2026-09-18T03:07:36.7118288Z ImportError: Failed to import test module: test_compatibility
+2026-09-18T03:07:36.7119236Z Traceback (most recent call last):
+2026-09-18T03:07:36.7120482Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/unittest/loader.py", line 396, in _find_test_path
+2026-09-18T03:07:36.7121729Z     module = self._get_module_from_name(name)
+2026-09-18T03:07:36.7123108Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/unittest/loader.py", line 339, in _get_module_from_name
+2026-09-18T03:07:36.7124364Z     __import__(name)
+2026-09-18T03:07:36.7124974Z     ~~~~~~~~~~^^^^^^
+2026-09-18T03:07:36.7126111Z   File "/home/runner/work/GO/GO/control-plane/depth40-compat-v2/tests/test_compatibility.py", line 16, in <module>
+2026-09-18T03:07:36.7127542Z     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+2026-09-18T03:07:36.7128898Z ModuleNotFoundError: No module named 'cryptography'
+2026-09-18T03:07:36.7129487Z 
+2026-09-18T03:07:36.7129660Z 
+2026-09-18T03:07:36.7130226Z ----------------------------------------------------------------------
+2026-09-18T03:07:36.7131050Z Ran 1 test in 0.000s
+2026-09-18T03:07:36.7131470Z 
+2026-09-18T03:07:36.7131852Z FAILED (errors=1)
+2026-09-18T03:07:36.7274892Z ##[error]Process completed with exit code 1.
+2026-09-18T03:07:36.7304658Z ##[group]Run tree=$(python -c 'import json,os; print(json.load(open(os.environ["RUNNER_TEMP"]+"/evidence/source/RETENTION_RESULT.json"))["source_tree_sha256"])')
+2026-09-18T03:07:36.7305826Z [36;1mtree=$(python -c 'import json,os; print(json.load(open(os.environ["RUNNER_TEMP"]+"/evidence/source/RETENTION_RESULT.json"))["source_tree_sha256"])')[0m
+2026-09-18T03:07:36.7307165Z [36;1mpython -B application/scripts/acceptance_smoke.py --source application --fingerprint "$RUNNER_TEMP/evidence/source/SOURCE_FINGERPRINT.json" --expected-tree "$tree" --evidence "$RUNNER_TEMP/evidence/http"[0m
+2026-09-18T03:07:36.7345318Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-18T03:07:36.7345749Z env:
+2026-09-18T03:07:36.7346044Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:36.7346449Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.7346971Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T03:07:36.7347555Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.7348303Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.7348820Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.7349293Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T03:07:36.7349705Z ##[endgroup]
+2026-09-18T03:07:36.8517859Z Traceback (most recent call last):
+2026-09-18T03:07:36.8664831Z   File "<string>", line 1, in <module>
+2026-09-18T03:07:36.8666257Z     import json,os; print(json.load(open(os.environ["RUNNER_TEMP"]+"/evidence/source/RETENTION_RESULT.json"))["source_tree_sha256"])
+2026-09-18T03:07:36.8667940Z                                     ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-18T03:07:36.8669783Z FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/_temp/evidence/source/RETENTION_RESULT.json'
+2026-09-18T03:07:36.8725187Z ##[error]Process completed with exit code 1.
+2026-09-18T03:07:36.8796625Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T03:07:36.8798526Z ##[group]Run actions/upload-artifact@v4
+2026-09-18T03:07:36.8798898Z with:
+2026-09-18T03:07:36.8799344Z   name: canonical-frontend-http-compat-f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+2026-09-18T03:07:36.8799880Z   path: /home/runner/work/_temp/evidence
+2026-09-18T03:07:36.8800257Z   if-no-files-found: error
+2026-09-18T03:07:36.8800587Z   compression-level: 6
+2026-09-18T03:07:36.8800899Z   overwrite: false
+2026-09-18T03:07:36.8801203Z   include-hidden-files: false
+2026-09-18T03:07:36.8801524Z env:
+2026-09-18T03:07:36.8801807Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T03:07:36.8802209Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.8802749Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T03:07:36.8803266Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.8803720Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.8804169Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T03:07:36.8804623Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T03:07:36.8805027Z ##[endgroup]
+2026-09-18T03:07:37.0994849Z (node:2235) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-18T03:07:37.0996782Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-18T03:07:37.1192613Z ##[error]No files were found with the provided path: /home/runner/work/_temp/evidence. No artifacts will be uploaded.
+2026-09-18T03:07:37.1447816Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T03:07:37.1450315Z Post job cleanup.
+2026-09-18T03:07:37.2518881Z [command]/usr/bin/git version
+2026-09-18T03:07:37.2589150Z git version 2.55.0
+2026-09-18T03:07:37.2659859Z Temporarily overriding HOME='/home/runner/work/_temp/b5b68c37-3330-4312-a8fd-b49a9620d503' before making global git config changes
+2026-09-18T03:07:37.2662980Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-18T03:07:37.2664558Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-18T03:07:37.2729322Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-18T03:07:37.2808312Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-18T03:07:37.3170727Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-18T03:07:37.3226170Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-18T03:07:37.3890171Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-18T03:07:37.3984950Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-18T03:07:37.4733646Z Cleaning up orphan processes
+2026-09-18T03:07:37.5137799Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

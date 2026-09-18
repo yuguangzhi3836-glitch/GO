@@ -1,0 +1,191 @@
+{
+  "reviewer": "C13",
+  "reviewed_at": "2026-09-18T03:10:02.500404+00:00",
+  "verdict": "PASS_EXACT_FINAL198_REQUIRED_CATALOG_GATE_ONLY",
+  "source_commit": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+  "root_tree": "87f105397eaa6d9dba2caa28919336163a1c39b9",
+  "parents": [
+    "f80f13acfb6eb5653770bd880bcb92d455292a54"
+  ],
+  "application_tree": "eef8adc0d99f679220e51efc9d6c5ca28ba6ab0c",
+  "application_blob_count": 1400,
+  "delta": [
+    {
+      "path": "application/frontend/admin/hotel-page-factory.js",
+      "before": "5d3045b19755a0fdaad7352915d0e145b16fa70a",
+      "after": "31ccde0a3404c0c44e73efb40b353494390a7289"
+    },
+    {
+      "path": "application/tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan.json",
+      "before": "d5e4c22e93658806c0dedad32fa62eaaf85088e5",
+      "after": "2c3325ba26c35ad8b891298f21e6e4156e37a5b9"
+    },
+    {
+      "path": "application/tests_frontend/hotel_catalog_hyatt_gallery.test.mjs",
+      "before": "fcc80b7f5d2f3af5133758c0dd6c422be6dfda0e",
+      "after": "606bc62292cc1a80159f6725763a0f791cfca866"
+    },
+    {
+      "path": "application/tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan_legacy_jpeg.json",
+      "before": null,
+      "after": "d5e4c22e93658806c0dedad32fa62eaaf85088e5"
+    },
+    {
+      "path": "docs/evidence/aoluguya-gallery-format-20260918/REVIEW.md",
+      "before": null,
+      "after": "d29e42ebf6313f07dfa9efbae0bab0ff1e4254b9"
+    }
+  ],
+  "all5delta_match_reviewed_local_bytes": true,
+  "run_id": 35301971860,
+  "job_id": 105466300759,
+  "status": "completed",
+  "conclusion": "success",
+  "tests": {
+    "frontend_gallery": 13,
+    "frontend_contacts": 16,
+    "frontend_facts_scope": 12,
+    "frontend_total": 41,
+    "backend_search": 5,
+    "backend_scope": 10,
+    "backend_graph": 6,
+    "backend_postgres18_4": 4,
+    "backend_existing": 13,
+    "backend_total": 38
+  },
+  "frontend_test_names_individually_verified": true,
+  "other_checks": {
+    "summary": {
+      "skipped": 3,
+      "failure": 14,
+      "success": 2
+    },
+    "failures": [
+      {
+        "id": 105466313389,
+        "name": "postgres (C07, go_c07_isolated, ci/next_depth/c07_postgres.py)",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976162/job/105466313389"
+      },
+      {
+        "id": 105466313378,
+        "name": "postgres (C11, go_c11_isolated, ci/next_depth/c11_postgres.py)",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976162/job/105466313378"
+      },
+      {
+        "id": 105466313322,
+        "name": "postgres (C10, go_c10_isolated, ../ci/c10-pg/plan.py)",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976162/job/105466313322"
+      },
+      {
+        "id": 105466313303,
+        "name": "regression (3)",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976107/job/105466313303"
+      },
+      {
+        "id": 105466313284,
+        "name": "regression (0)",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976107/job/105466313284"
+      },
+      {
+        "id": 105466313259,
+        "name": "regression (2)",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976107/job/105466313259"
+      },
+      {
+        "id": 105466313233,
+        "name": "regression (1)",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976107/job/105466313233"
+      },
+      {
+        "id": 105466313214,
+        "name": "postgres (C09, go_c09_isolated, ci/next_depth/c09_postgres.py)",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976162/job/105466313214"
+      },
+      {
+        "id": 105466313165,
+        "name": "scoped-acceptance",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976113/job/105466313165"
+      },
+      {
+        "id": 105466313061,
+        "name": "frontend-http-compat",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976107/job/105466313061"
+      },
+      {
+        "id": 105466312857,
+        "name": "mobile-source-and-native-linking",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976092/job/105466312857"
+      },
+      {
+        "id": 105466312806,
+        "name": "exact-unified-candidate",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301976089/job/105466312806"
+      },
+      {
+        "id": 105466312578,
+        "name": "postgres",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301975981/job/105466312578"
+      },
+      {
+        "id": 105466312398,
+        "name": "browser",
+        "status": "completed",
+        "conclusion": "failure",
+        "head_sha": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+        "details_url": "https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35301975981/job/105466312398"
+      }
+    ],
+    "classification": "Other automatically triggered broad regression/mobile/cell/PostgreSQL/browser workflows have failed. Causes not triaged here; not claimed unrelated or passing. Only required Catalog/load gate reviewed as PASS."
+  },
+  "all_ci_pass": false,
+  "artifact_id": 10529498959,
+  "artifact_zip_sha256_from_log": "3375076d747607c9122c04e57db2379a9b0efef37231fe556c2f4179fa9bfb53",
+  "evidence_sha256": {
+    "C13_CI_JOB_105466300759.log": "b0f029bbffbb5fc18b9c06764ac9dda7f8649b89b480bb27ad87e8124bdae5c2",
+    "C13_FINAL198_TREE_BINDING.json": "7e2e2f97e9db36405191ff8c78f2cae1a73a9cc7d9680423aacd1b434c53248c",
+    "C13_FINAL198_CHECKS_SNAPSHOT.json": "76d04449feedc23b027bf05426410e1f2845da30850aef637d87f47fb1160e93"
+  },
+  "old_head_ci_reused": false,
+  "hk_actions_performed": false,
+  "superset_ci_rerun": false,
+  "deployment_acceptance": false
+}

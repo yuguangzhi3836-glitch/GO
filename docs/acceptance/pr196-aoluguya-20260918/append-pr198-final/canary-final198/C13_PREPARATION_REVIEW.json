@@ -1,0 +1,18 @@
+{
+  "status": "PASS_LOCAL_PREPARATION",
+  "verifier_sha256": "f0fd56d3169091eac6610b49718e302da4661b1e94bef498bcec1f177f88a898",
+  "host_template_sha256": "6b064283ac045aad07790aa89ceb85de1df7dbc2e3df3cdbb9065df4f4ccc0d4",
+  "checks": [
+    "Verifier diff from PR196 limited to identities, exact contract paths and schema label",
+    "Real CANARY task signature and candidate/current/package bindings verified",
+    "Immutable contracts validated; baseline PR196 36622/633 to PR198 d0a4/28c8",
+    "Missing chain returns WAIT, not PASS",
+    "PENDING host template tested to stop before subprocess"
+  ],
+  "limits": [
+    "No evidence of full new formal chain completion from this review",
+    "Host template differs substantively from original PR196 template: stricter runtime checks and fixed single signed record",
+    "Host template must bind actual signed DEPLOY/POST_VERIFY/record identity then re-review before execution",
+    "No remote execution"
+  ]
+}

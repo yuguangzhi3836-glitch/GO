@@ -1,0 +1,19 @@
+{
+  "reviewer": "C13",
+  "verdict": "PASS_LOCAL_HASH_ONLY_PREFLIGHT_REVIEW",
+  "sha256": "800f4f70c698b17f50f1dc65b44d674ffafb0d83f2402463d586333d1ab00780",
+  "ast_comparison": "Identical to previously reviewed50f5add8 probe except FIXED_PATHS adds exact PR196 contract36622f\u20264b120 once per host",
+  "paths": {
+    "go-cc": 14,
+    "hk-staging": 21
+  },
+  "tests_passed": 5,
+  "test_log": "C13_HASHONLY_TEST.log",
+  "blocking_findings": [],
+  "remote_execution": false,
+  "limitations": [
+    "Fixed-file hash/metadata only; no config content export",
+    "No candidateabsence/image/package or freshservice proof",
+    "Installer must recheck observations; local review does not bypass applicable toolreview"
+  ]
+}

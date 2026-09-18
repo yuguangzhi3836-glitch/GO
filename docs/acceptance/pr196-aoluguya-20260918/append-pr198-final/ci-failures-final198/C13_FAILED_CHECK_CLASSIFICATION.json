@@ -1,0 +1,122 @@
+{
+  "reviewer": "C13",
+  "source": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+  "scope": "Readonly original logs for all14failedchecks; no reruns or changes",
+  "classification_counts": {
+    "FIXED_SOURCE_PATHSET_PRECONDITION": 13,
+    "FIXED_APPLICATION_TREE_PRECONDITION": 1
+  },
+  "jobs": [
+    {
+      "job_id": 105466312398,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [],
+      "log": "C13_FAILED_JOB_105466312398.log",
+      "sha256": "173c10fa5bc3d5e0ff5e2dffe9aaecdeccd333478f37116718e13d16658905a2"
+    },
+    {
+      "job_id": 105466312578,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [],
+      "log": "C13_FAILED_JOB_105466312578.log",
+      "sha256": "9fe10f24c092a1e004821c73f7cacf2f57a4d9d0dca590e665233541cbae25db"
+    },
+    {
+      "job_id": 105466312806,
+      "primary_failure": "FIXED_APPLICATION_TREE_PRECONDITION",
+      "follow_on": [],
+      "log": "C13_FAILED_JOB_105466312806.log",
+      "sha256": "2e09a86d995c422b3ecfb33d2e2b562e82e3874eb5f6dce1ca59e91b4b838030"
+    },
+    {
+      "job_id": 105466312857,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [],
+      "log": "C13_FAILED_JOB_105466312857.log",
+      "sha256": "01e7c1a1a5370e1a9a58dde937742bf64c828349812a7543fce0df5009c5c214"
+    },
+    {
+      "job_id": 105466313061,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [
+        "cryptography_missing_follow_on"
+      ],
+      "log": "C13_FAILED_JOB_105466313061.log",
+      "sha256": "85d0867ad7d1e1faa640cd3a6cb1232857f628744672bbdd2f51145ebc129560"
+    },
+    {
+      "job_id": 105466313165,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [],
+      "log": "C13_FAILED_JOB_105466313165.log",
+      "sha256": "a0116be2207615450ae5fa7dc28ad4b2b2c1b3e1fe4bf14574a61665b1cc6768"
+    },
+    {
+      "job_id": 105466313214,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [],
+      "log": "C13_FAILED_JOB_105466313214.log",
+      "sha256": "d7eb2b849f98fb3df2ccc6ba60a39c933febda5010b66627032190c8ce0622f8"
+    },
+    {
+      "job_id": 105466313233,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [
+        "pytest_not_installed_follow_on"
+      ],
+      "log": "C13_FAILED_JOB_105466313233.log",
+      "sha256": "ca409da141fec7374262046fbb94aff3401e45341cc9b5c027e9fbdc3f44a0ce"
+    },
+    {
+      "job_id": 105466313259,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [
+        "pytest_not_installed_follow_on"
+      ],
+      "log": "C13_FAILED_JOB_105466313259.log",
+      "sha256": "dc05aee8fec7c61f3e206c6f3f9530c34d01e5aca2f5000901f3aed8b1bbd9f3"
+    },
+    {
+      "job_id": 105466313284,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [
+        "pytest_not_installed_follow_on"
+      ],
+      "log": "C13_FAILED_JOB_105466313284.log",
+      "sha256": "df49c45d4a5f8352f2fe914f22b98e7727d40f2723e5bfac5d2987f2e6eede5e"
+    },
+    {
+      "job_id": 105466313303,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [
+        "pytest_not_installed_follow_on"
+      ],
+      "log": "C13_FAILED_JOB_105466313303.log",
+      "sha256": "5c6a45146a7d6e750e890be5cc6144c13f056e84e9ecbd35470a6a1dade37379"
+    },
+    {
+      "job_id": 105466313322,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [],
+      "log": "C13_FAILED_JOB_105466313322.log",
+      "sha256": "5076c85232f3d44fb84d698c77c4ff84519976348dcf39bdd91748d9b7a6241f"
+    },
+    {
+      "job_id": 105466313378,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [],
+      "log": "C13_FAILED_JOB_105466313378.log",
+      "sha256": "d4f15b0b76a58dc75aba0c2a0c01acc045163c5a01a931da87e9fb210f338b00"
+    },
+    {
+      "job_id": 105466313389,
+      "primary_failure": "FIXED_SOURCE_PATHSET_PRECONDITION",
+      "follow_on": [],
+      "log": "C13_FAILED_JOB_105466313389.log",
+      "sha256": "cbf2b2a3bd2d840db408cfbd362dd54445c2d60dec1a595f3651b88eec498328"
+    }
+  ],
+  "conclusion": "All14 firstfailures are fixed tree/pathset inheritance preconditions. Thirteen report missing=[] and same14unexpected paths including new catalogscope/UI files; unified stops exact applicationtree assertion. This is direct evidence of baseline-binding failure, not runtime function assertions. Regression follow-ons lack pytest; frontend compatibility follow-on lacks cryptography. These broad functional suites are NOT certified as passing.",
+  "catalog_gate": "Separate exacthead41frontend+38backend PASS",
+  "all_ci_pass": false
+}

@@ -1,0 +1,32 @@
+{
+  "reviewer": "C13",
+  "verdict": "PASS_FIXED_PUBLIC_IMAGE_MEMORY_PROBE_LOCAL_REVIEW",
+  "reviewed_at": "2026-09-18T02:54:55.611430+00:00",
+  "sha256": {
+    "probe_inside_container.py": "823d6750f226476a5f0a0be6b022dc5602ea05371a90dbb5ff154be323530609",
+    "host_readonly_wrapper.py": "04229396b99a67191e2b88ec0d8746be7a2104427636c6122d8a5d48d59e8065",
+    "operator_hk_public_media_probe.py": "b01c92944512fcdd80b42db5bd9f8ba7e37a624978773c68a5f3b64bc1376969"
+  },
+  "checks": [
+    "All21URLs exact original approvedHyattplan; no arbitraryURL input",
+    "Hostname and actualPR196 image pinned; inspect only containerId/image/Running before and after",
+    "Embeddedprobe/hostscript byte equality verified across all3files",
+    "Actual harvester UA+Accept used; no allWebP assumption afterfirst",
+    "First image SHA/bytes/dimensions/format exact actualHKcache readback required before other20",
+    "Localdriver mock3cases: first mismatch/fetch failure stops at1; only success continues21",
+    "DNS addresses must allbe global; fixedHTTPS assets.hyatt.com; trust_envfalse/noRedirect; onlyHTTP200",
+    "12MiB byte ceiling,12srequest/deadline checks,40million pixel decompression warning refused, JPEG/PNG/WEBP decode/hash in memory",
+    "No app import,DB/cache/config/credential read,harvest,write,rights or lifecycle mutation; python-B avoidsbytecode; outputonly hash/image metadata",
+    "EASONoutput under approvedDCode path; refusing overwrite; noHK persistent fileoutput"
+  ],
+  "limitations": [
+    "DNSprecheck is not a pin of actualconnection destination; fixedofficial domain only",
+    "Read-only containerexec runs transient process; not yet remotelyexecuted byreviewer",
+    "Localdriver mockedfetch only; fullnetwork/decode acceptance depends on actualprobe result",
+    "Changing CDN responses may still causeHOLD; nofuture byte stability guarantee",
+    "This approves script scope locally, not newgalleryplan/sourcecandidate or toolauthorization"
+  ],
+  "remote_execution": false,
+  "image_rights_changed": false,
+  "first_image_reused_or_deleted_by_probe": false
+}

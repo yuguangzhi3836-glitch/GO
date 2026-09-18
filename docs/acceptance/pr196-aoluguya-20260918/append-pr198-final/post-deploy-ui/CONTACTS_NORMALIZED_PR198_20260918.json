@@ -1,0 +1,39 @@
+{
+  "schema": "go.catalog.contact-address-normalization.v1",
+  "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+  "environment": "HK-STAGING-01",
+  "source_commit": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+  "ui_source_last_observed": "2026-09-18T12:12:17.421799+08:00",
+  "action": "Normal authenticated admin UI preview and confirm-save",
+  "address": "黑龙江省哈尔滨市松北区创新三路800号",
+  "address_change": "Normalize administrative suffixes to existing higher-confidence same-place official address",
+  "result": {
+    "draft": true,
+    "room_count": 17,
+    "media_count": 0,
+    "source_count": 12,
+    "contact_count": 3,
+    "completeness_percent": 69,
+    "anomaly_count": 14,
+    "address_conflict_visible": false
+  },
+  "contacts": [
+    {
+      "value": "1720574900@qq.com",
+      "purpose": "PUBLIC_GENERAL",
+      "provenance": "USER_PROVIDED_CTRIP_ATTRIBUTION",
+      "independently_crawled": false
+    },
+    {
+      "value": "anson.liu@hyatt.com",
+      "purpose": "WEDDINGS_EVENTS_CONTACT",
+      "provenance": "HYATT_OFFICIAL"
+    },
+    {
+      "value": "+8645188800808",
+      "purpose": "PUBLIC_GENERAL"
+    }
+  ],
+  "snapshot": "CONTACTS_NORMALIZED_PR198_20260918.txt",
+  "overall": "PARTIAL"
+}

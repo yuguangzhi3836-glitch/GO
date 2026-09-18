@@ -1,0 +1,31 @@
+{
+  "status": "PASS_LOCAL_REVIEW_FOR_EXACT_FACTS_INSTALL",
+  "frozen_hashes": {
+    "install_facts.py": "be08bdf059ea397ccce49a88e694c4c69b5fd70c97d9cf65585cef542841956e",
+    "FACTS_PACKAGE.json": "5da0669990e2c4f0f35840e46005d6709285ab4790d80e5a5232336d3d6f0727",
+    "FACTS_MANIFEST.json": "72b3eb48d35b2c8f455aa416f8d21a18d9c162bf26aa292bd127a8fbda9a39fb",
+    "CANDIDATE_CONTRACT.json": "d0a4d82a1e56e7ff96ddedc1668534f57961aab6875ca9c0f7997d37e72b56fb",
+    "ACTIVE_CANDIDATE.json": "a79f8747d5f3b5ae605324d68436fe8e9d4c1b69bea78c53026c2c5aa4738cc5",
+    "VERIFY_BASELINE.json": "4b58bc2b04bcaad0bfeb2f3a87c508d5b592d78e37f0e811c945af29a2264a0c",
+    "install_facts.py.z64": "339ba460a565b402116894e6b851526e4e8444e64b8c585e0291fe5bcf9c4d96",
+    "FACTS_PACKAGE.json.z64": "912657aa30590b972c535e9b5cd40140428f9e1aeb3b99ef9fcd1a76501543b2",
+    "eason_operator.py": "b7e14aa35e35be32df451087bd3eb76b682b800f557abc437af6aad735f037eb"
+  },
+  "checks": [
+    "Actual Ed25519 TEST and current PR196 DEPLOY plus subsequent VERIFY verified",
+    "Source raw exact a0a12e71d6102721c0e2a212fffe1af116b8cc21498fbf54e864718f119481bf and normalized identity checked",
+    "1400 tracked equals 1396 image plus 4 excluded GitHub blobs",
+    "Every manifest before/guard/ancestor matches actual preflight; unique new contract absence matches both hosts",
+    "Installer helpers/main unchanged from independently reviewed PR196; only identity pins and PR fields changed",
+    "Operator changes limited to PR labels and two exact hashes; receipt raw bytes and <=300s validation preserved",
+    "Both z64 decode to frozen exact installer/package bytes",
+    "8 fault/receipt tests independently pass"
+  ],
+  "limitations": [
+    "No remote execution by reviewer",
+    "Facts installation is not deployment or admission task authorization",
+    "Fresh eight-service and receipt chain checks still execute on host",
+    "Broader CI has 14 classified failures; required catalog gate 41 frontend and 38 backend passes"
+  ],
+  "test_log": "C13_FINAL_TEST.log"
+}

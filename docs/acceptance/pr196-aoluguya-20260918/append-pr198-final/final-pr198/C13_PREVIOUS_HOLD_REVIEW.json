@@ -1,0 +1,26 @@
+{
+  "reviewer": "C13",
+  "reviewed_at": "2026-09-18T02:50:14.090656+00:00",
+  "verdict": "CHANGE_REQUESTED_BLOCKED_SOURCE_FORMAT_BASELINE",
+  "blocking_findings": [
+    {
+      "issue": "Fixed Accept:image/webp does not yield consistent expected bytes across independent collection and HK harvest",
+      "evidence": "C01 first-item observation reports JPEG sha12950a5e06ece4f90ee1e0a4085df43ddf862feceb417c36108e8597962d98db bytes298403 versus actual HK WebP sha973ff3e051d5707dd29c5e88c3d137c0dbffb5f815a9ba45e803de4b1e2cba08 bytes212140",
+      "impact": "No genuine21item WebP plan exists. UI candidate cannot pin invented expected hashes or claim deterministic content negotiation.",
+      "evidence_originals_read": true
+    }
+  ],
+  "status": [
+    "C01 stopped after first-item gate; remaining20not fetched",
+    "Implementation agent stopped WIP and did not alter frozen PR198",
+    "Original PR198 f80f13acfb6eb5653770bd880bcb92d455292a54 and CI remain historical exacthead results only"
+  ],
+  "required_before_resumption": "Obtain an explicitly scoped genuine downloadable21image byte baseline aligned with actual harvest behavior; then review full plan and source bindings without relaxing hash/rights/identity guards",
+  "wip_submittable": false,
+  "new_head_ci_pass_claimed": false,
+  "remote_execution_by_reviewer": false,
+  "reviewed_originals_sha256": {
+    "catalog_review/HYATT_WEBP_REFRESH_FIRST_ITEM_HOLD.json": "53b71d63f69d311ea79065940e74611f7fa2f41e12f50a6222ed57a911cf60f7",
+    "catalog_review/gallery_diagnosis/FIRST_ASSET_READBACK.json": "8d9950e61bd3527b8bf9b54adfc07161723803ba665945ccc5d97c9720703575"
+  }
+}

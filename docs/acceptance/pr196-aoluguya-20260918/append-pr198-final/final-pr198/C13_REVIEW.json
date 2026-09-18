@@ -1,0 +1,72 @@
+{
+  "reviewer": "C13",
+  "verdict": "PASS_LOCAL_REAL_HK_MEASURED_GALLERY_DELTA",
+  "reviewed_at": "2026-09-18T03:01:49.072471+00:00",
+  "blocking_findings": [],
+  "base_commit": "f80f13acfb6eb5653770bd880bcb92d455292a54",
+  "files": [
+    {
+      "path": "application/frontend/admin/hotel-page-factory.js",
+      "sha256": "874a64b91655b24ac96bf49bf117de291437fb717e7ee026fe8965e4545c022a"
+    },
+    {
+      "path": "application/tests_frontend/hotel_catalog_hyatt_gallery.test.mjs",
+      "sha256": "2ef51e38685599dd9e65173fadd1a497552f746d0dbee2e85d65b682e9e9241e"
+    },
+    {
+      "path": "application/tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan.json",
+      "sha256": "2ae830176f074c893a0f508ce4a003e7567ffce70e3fc4c0edecec780a7e5172"
+    },
+    {
+      "path": "application/tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan_legacy_jpeg.json",
+      "sha256": "78013dc8595f1e21325d51b2e8a57e496bb9ee83bf50adc12ac07ab122973a11"
+    },
+    {
+      "path": "docs/evidence/aoluguya-gallery-format-20260918/REVIEW.md",
+      "sha256": "3a9e6df85ae3bc72cd63b3c12010b7eff86996ccfd5b1de7469e087d9c94d878"
+    }
+  ],
+  "tests": {
+    "gallery": 13,
+    "contacts": 16,
+    "facts_scope": 12,
+    "total": 41,
+    "failed": 0,
+    "syntax": "PASS",
+    "log": "C13_TEST.log",
+    "log_sha256": "d0cc5ecb13f56e3e34b9d4e6b7da460f34e2ead522f43b0a19f81831427ff9f1"
+  },
+  "plan_semantic_sha256": "999fa2bd61fc6cf6a6228873728a3ca4f37d6bef137386402005f08a1558f228",
+  "actual_probe": {
+    "records": 21,
+    "first_gate": "PASS",
+    "all_gate": "PASS",
+    "observed_formats": {
+      "WEBP": 21
+    },
+    "total_bytes": 4932966,
+    "eason_crlf_sha256": "c52da77ff7d2227908a7fbb1b9b279ce8cc26a87490907b9ebbf2b2c768babc5",
+    "local_lf_sha256": "2399f6c827b48af612a4a05f6494b00ee281cf9812079e37b1cc8ba6fc38e566",
+    "crlf_reconstruction_equals_original_hash": true
+  },
+  "checks": [
+    "All21planURLs/order/observed_at/expectedSHA-size-dimensions-MIME exactly match realHKmemoryprobe output",
+    "Plan request Accept equals actualharvester fullAccept; inherited UA remains exact probeprofile; not failedsingleimage/webpprofile",
+    "Source change limited to reviewedplanhash and exactheader/MIME guard; originalhash/rights/identity/role/decode/indexreadback controls retained",
+    "ActualHK firstasset973ff3…ba08 reused withoutPOST; onlyremaining20harvest in regressiontest",
+    "No delete/recreate/rights/publish/room-binding operations; legacyJPEG plan retained as fixture and rejected before API calls",
+    "All5deltafile hashes verified; basebytes equal reviewedPR198initialhead; inheritedcontacts/facts tests unchanged",
+    "Prior independentWebP-onlyfetch failure retained separately and superseded only by genuineHK21measurement"
+  ],
+  "limitations": [
+    "Newhead CI not yet run; oldPR19837+38CI does not certify thisdelta",
+    "LocalAPI-double41tests only, no browser/liveharvest byreviewer",
+    "HKmemoryprobe is actualdecodedsourcebytes metadata, not independentlocalredecode or adminservedcachebyteverification forremaining20",
+    "ActualCDNresponse may change; mismatch muststop, noformat/byte stability guarantee fromAccept",
+    "Full21assetadmincontent/publicdenial acceptance and remainingimage rights/roomcrosswalk stillpending"
+  ],
+  "source_modified_by_reviewer": false,
+  "submitted_by_reviewer": false,
+  "new_head_ci_pass": false,
+  "live_harvest_by_reviewer": false
+}
