@@ -50,3 +50,11 @@ def test_one_click_media_import_is_fail_closed_without_rights_evidence():
     p=prop()
     with pytest.raises(ValueError,match='MEDIA_RIGHTS_EVIDENCE_REQUIRED'):
         svc.one_click_import(SID,ACT,p['property_id'],{'provider':'MEITUAN','method':'FILE_UPLOAD','hotel_package':{'media':[{'url':'https://example.test/hotel.jpg'}]}})
+
+def test_supplier_account_holder_gets_provider_hosted_login(monkeypatch):
+    monkeypatch.setenv('GO_CTRIP_SUPPLIER_AUTHORIZATION_URL','https://open.ctrip.example/oauth/authorize?client_id=go')
+    p=prop();result=svc.one_click_import(SID,ACT,p['property_id'],{'provider':'CTRIP','method':'OFFICIAL_AUTHORIZATION'})
+    assert result['status']=='AUTHORIZATION_REQUIRED'
+    assert result['authorization_url'].startswith('https://open.ctrip.example/')
+    assert 'state=' in result['authorization_url']
+    assert result['credentials_received_by_go'] is False

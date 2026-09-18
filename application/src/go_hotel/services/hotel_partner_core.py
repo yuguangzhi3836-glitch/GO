@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime, timezone, timedelta
-import uuid
+import hashlib, os, secrets, uuid
+from urllib.parse import urlencode
 from sqlalchemy import select, func
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (
@@ -20,11 +21,11 @@ class HotelPartnerCoreService:
     HIGH_RISK={'LEGAL','ADDRESS','BRAND','QUALIFICATION'}
     FOUR_STATE={'YES','NO','UNKNOWN','NOT_APPLICABLE'}
     IMPORT_PROVIDERS={
-        'CTRIP':{'label':'携程','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD']},
-        'MEITUAN':{'label':'美团','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD']},
-        'FLIGGY':{'label':'飞猪','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD']},
-        'BOOKING':{'label':'Booking.com','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD']},
-        'OTHER_OTA':{'label':'其他 OTA','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD']},
+        'CTRIP':{'label':'携程','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_CTRIP_SUPPLIER_AUTHORIZATION_URL'},
+        'MEITUAN':{'label':'美团','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_MEITUAN_SUPPLIER_AUTHORIZATION_URL'},
+        'FLIGGY':{'label':'飞猪','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_FLIGGY_SUPPLIER_AUTHORIZATION_URL'},
+        'BOOKING':{'label':'Booking.com','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_BOOKING_SUPPLIER_AUTHORIZATION_URL'},
+        'OTHER_OTA':{'label':'其他 OTA','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_OTHER_OTA_SUPPLIER_AUTHORIZATION_URL'},
     }
     FORBIDDEN_CREDENTIAL_KEYS={'password','passwd','otp','captcha','cookie','cookies','session','session_id','access_token','refresh_token'}
     def _property(self,s,pid,supplier_id):
@@ -34,7 +35,8 @@ class HotelPartnerCoreService:
     def _audit(self,s,pid,event,typ,aid,payload,actor):
         s.add(HotelPartnerAuditEventRow(audit_event_id=ident('hpa'),property_id=pid,event_type=event,aggregate_type=typ,aggregate_id=aid,payload_json=payload,actor_id=actor,created_at=now()))
     def import_providers(self):
-        return {'providers':self.IMPORT_PROVIDERS,'credential_policy':'PROVIDER_HOSTED_LOGIN_ONLY','fallback':'DATA_EXPORT_OR_FILE_UPLOAD'}
+        providers={key:{'label':value['label'],'methods':value['methods'],'official_authorization_available':bool(os.getenv(value['authorization_env']))} for key,value in self.IMPORT_PROVIDERS.items()}
+        return {'providers':providers,'credential_policy':'PROVIDER_HOSTED_LOGIN_ONLY','fallback':'DATA_EXPORT_OR_FILE_UPLOAD'}
     def _reject_credentials(self,value):
         if isinstance(value,dict):
             for key,item in value.items():
@@ -48,7 +50,17 @@ class HotelPartnerCoreService:
         if method not in self.IMPORT_PROVIDERS[provider]['methods']:raise ValueError('UNSUPPORTED_IMPORT_METHOD')
         self._reject_credentials(b)
         if method=='OFFICIAL_AUTHORIZATION' and not b.get('authorization_code'):
-            return {'status':'AUTHORIZATION_REQUIRED','provider':provider,'login_surface':'PROVIDER_HOSTED','credentials_received_by_go':False,'fallback':'DATA_EXPORT'}
+            authorization_base=os.getenv(self.IMPORT_PROVIDERS[provider]['authorization_env'])
+            if not authorization_base:return {'status':'AUTHORIZATION_UNAVAILABLE','provider':provider,'login_surface':'PROVIDER_HOSTED','credentials_received_by_go':False,'fallback':'DATA_EXPORT'}
+            state=secrets.token_urlsafe(32)
+            with SessionLocal() as s:
+                prop=self._property(s,pid,supplier_id);ops=dict(prop.operations_json or {});ops['ota_authorization']={'provider':provider,'state_hash':hashlib.sha256(state.encode()).hexdigest(),'requested_by':actor};prop.operations_json=ops;prop.updated_at=now();s.commit()
+            query=urlencode({'state':state,'property_id':pid})
+            return {'status':'AUTHORIZATION_REQUIRED','provider':provider,'authorization_url':authorization_base+('&' if '?' in authorization_base else '?')+query,'login_surface':'PROVIDER_HOSTED','credentials_received_by_go':False,'fallback':'DATA_EXPORT'}
+        if method=='OFFICIAL_AUTHORIZATION':
+            with SessionLocal() as s:
+                prop=self._property(s,pid,supplier_id);intent=(prop.operations_json or {}).get('ota_authorization') or {}
+                if intent.get('provider')!=provider or hashlib.sha256(str(b.get('authorization_state') or '').encode()).hexdigest()!=intent.get('state_hash'):raise ValueError('SUPPLIER_PROVIDER_STATE_INVALID')
         package=b.get('hotel_package')
         if not isinstance(package,dict):raise ValueError('HOTEL_DATA_PACKAGE_REQUIRED')
         hotel=package.get('hotel') or {};rooms=package.get('room_types') or []
