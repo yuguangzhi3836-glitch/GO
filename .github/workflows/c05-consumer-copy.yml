@@ -6,6 +6,7 @@ on:
       - fix/aoluguya-hero-public-gallery-20260918
     paths:
       - 'application/mobile/go-app/**'
+      - 'application/frontend/consumer/**'
       - '.github/workflows/c05-consumer-copy.yml'
   workflow_dispatch:
 
@@ -18,15 +19,17 @@ jobs:
     timeout-minutes: 15
     env:
       BASE_SHA: cd6345e32dd258c7f11f0766a36a168bad99a7f5
+      EVIDENCE_DIR: ${{ runner.temp }}/c05-evidence
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Bind exact revision and preserve B/admin trees
         run: |
           set -euo pipefail
-          mkdir -p evidence
+          mkdir -p "$EVIDENCE_DIR"
           head_sha="$(git rev-parse HEAD)"
           head_tree="$(git show -s --format=%T HEAD)"
           app_tree="$(git rev-parse HEAD:application)"
@@ -43,9 +46,9 @@ jobs:
             echo "application_tree=${app_tree}"
             echo "admin_tree=${admin_head}"
             echo "supplier_tree=${supplier_head}"
-          } | tee evidence/BINDING.txt
-          git diff --name-only "${BASE_SHA}" HEAD | tee evidence/CHANGED_FILES.txt
-          if grep -Eq '^application/frontend/(admin|supplier)/' evidence/CHANGED_FILES.txt; then
+          } | tee "$EVIDENCE_DIR/BINDING.txt"
+          git diff --name-only "${BASE_SHA}" HEAD | tee "$EVIDENCE_DIR/CHANGED_FILES.txt"
+          if grep -Eq '^application/frontend/(admin|supplier)/' "$EVIDENCE_DIR/CHANGED_FILES.txt"; then
             echo "B/admin diagnostic surface changed" >&2
             exit 1
           fi
@@ -54,41 +57,42 @@ jobs:
         working-directory: application/mobile/go-app
         run: |
           set -euo pipefail
-          node scripts/contract-check.mjs | tee ../../../evidence/CONTRACT_RAW.txt
+          node scripts/contract-check.mjs | tee "$EVIDENCE_DIR/CONTRACT_RAW.txt"
 
       - name: Scan consumer runtime sources
         run: |
           set -euo pipefail
           targets=(application/mobile/go-app/src)
           if test -d application/frontend/consumer; then targets+=(application/frontend/consumer); fi
-          if grep -RInE --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' --include='*.vue' --include='*.html' '模拟体验|模拟数据|模拟 Token' "${targets[@]}" | tee evidence/CONSUMER_COPY_SCAN.txt; then
+          if grep -RInE --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' --include='*.vue' --include='*.html' '模拟' "${targets[@]}" | tee "$EVIDENCE_DIR/CONSUMER_COPY_SCAN.txt"; then
             echo "consumer-visible simulation notice remains" >&2
             exit 1
           fi
-          echo "PASS: no prohibited consumer simulation notice" | tee evidence/CONSUMER_COPY_SCAN.txt
+          echo "PASS: no prohibited consumer simulation notice" | tee "$EVIDENCE_DIR/CONSUMER_COPY_SCAN.txt"
 
       - name: Typecheck mobile frontend
         working-directory: application/mobile/go-app
         run: |
           set -euo pipefail
           npm ci --ignore-scripts
-          npm run typecheck | tee ../../../evidence/TYPECHECK_RAW.txt
+          npm run typecheck | tee "$EVIDENCE_DIR/TYPECHECK_RAW.txt"
 
       - name: Seal evidence
         if: always()
         run: |
           set -euo pipefail
+          touch "$EVIDENCE_DIR/BINDING.txt" "$EVIDENCE_DIR/CHANGED_FILES.txt" "$EVIDENCE_DIR/CONSUMER_COPY_SCAN.txt" "$EVIDENCE_DIR/CONTRACT_RAW.txt" "$EVIDENCE_DIR/TYPECHECK_RAW.txt"
           (
-            cd evidence
+            cd "$EVIDENCE_DIR"
             sha256sum BINDING.txt CHANGED_FILES.txt CONSUMER_COPY_SCAN.txt CONTRACT_RAW.txt TYPECHECK_RAW.txt > SHA256SUMS
           )
-          cat evidence/SHA256SUMS
+          cat "$EVIDENCE_DIR/SHA256SUMS"
 
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: c05-consumer-copy-evidence-${{ github.event.pull_request.head.sha || github.sha }}
-          path: evidence/
+          path: ${{ env.EVIDENCE_DIR }}/
           if-no-files-found: error
           retention-days: 14
