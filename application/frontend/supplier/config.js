@@ -9,6 +9,7 @@ window.GO_CONSOLE={title:'GO 合作伙伴平台',subtitle:'酒店、机票、铁
 {route:'/supplier-exception-center',label:'异常中心',custom:'supplierExceptionCenter'}],hiddenNav:[
 {route:'/hotel-webpage',label:'酒店网页',custom:'supplierHotelWebpage'},
 {route:'/property',label:'酒店资料',custom:'supplierPropertyProfile'},
+{route:'/one-click-build',label:'一键建立酒店库',custom:'supplierOneClickBuild'},
 {route:'/rooms',label:'房型管理',custom:'supplierProductGraph'},
 {route:'/rates',label:'房态房价',custom:'supplierInventoryRates'},
 {route:'/benefits',label:'官方权益',custom:'supplierOfficialBenefits'},
