@@ -43,13 +43,15 @@ jobs:
         run: |
           set -euo pipefail
           python -B hk-staging/tests/test_media_topology.py 2>&1 | tee "$RUNNER_TEMP/media-topology/primitives.log"
-          python -B hk-staging/tests/test_media_topology_hooks.py 2>&1 | tee "$RUNNER_TEMP/media-topology/hooks.log"
+          # These fixtures exercise actual root-owned metadata in temporary paths.
+          # Elevation is limited to the disposable runner; no live host is contacted.
+          sudo --preserve-env=LD_LIBRARY_PATH "$(command -v python)" -B hk-staging/tests/test_media_topology_hooks.py 2>&1 | tee "$RUNNER_TEMP/media-topology/hooks.log"
           python -B control-plane/hk-forward-migration-v1/tests/test_same_revision.py 2>&1 | tee "$RUNNER_TEMP/media-topology/same-revision.log"
           python -B hk-staging/source/executor/runtime/rollback_runtime_regression.py 2>&1 | tee "$RUNNER_TEMP/media-topology/rollback.log"
           python -B hk-staging/source/executor/runtime/collector_runtime_regression.py 2>&1 | tee "$RUNNER_TEMP/media-topology/collector.log"
           python -B -m unittest discover -s control-plane/boss-deploy-request-v1/tests -p test_deploy_entry.py 2>&1 | tee "$RUNNER_TEMP/media-topology/cc.log"
           python -B control-plane/boss-deploy-request-v1/go-boss-request-bridge --self-test 2>&1 | tee "$RUNNER_TEMP/media-topology/bridge.log"
-          python -B -m unittest discover -s hk-staging/install/media-topology-source -p 'test_*.py' 2>&1 | tee "$RUNNER_TEMP/media-topology/installer.log"
+          sudo --preserve-env=LD_LIBRARY_PATH "$(command -v python)" -B -m unittest discover -s hk-staging/install/media-topology-source -p 'test_*.py' 2>&1 | tee "$RUNNER_TEMP/media-topology/installer.log"
       - name: Isolated Docker recreation and image rollback
         run: |
           set -euo pipefail
