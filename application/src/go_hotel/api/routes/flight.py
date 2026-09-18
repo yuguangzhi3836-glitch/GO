@@ -79,7 +79,12 @@ def order(order_id:str,p:Principal=Depends(consumer_principal)): return wrap(fli
 @router.get('/v1/flights/trips')
 def trips(p:Principal=Depends(consumer_principal)): return {"data":{"items":flight_service.trips(p.user_id)}}
 @router.post('/v1/flights/orders/{order_id}/change-quote')
-def change_quote(order_id:str,body:ChangeQuoteBody,p:Principal=Depends(consumer_principal)): return wrap(flight_service.change_quote,p.user_id,order_id,body.new_departure_date,body.leg_index,[x.model_dump() for x in body.changes] if body.changes is not None else None)
+def change_quote(order_id:str,body:ChangeQuoteBody,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+    changes=[x.model_dump() for x in body.changes] if body.changes is not None else None
+    payload={'user_id':p.user_id,'order_id':order_id,'new_departure_date':body.new_departure_date,
+             'leg_index':body.leg_index,'changes':changes}
+    return run_idempotent('FLIGHT_CHANGE_QUOTE',idempotency_key,payload,
+        lambda:wrap(flight_service.change_quote,p.user_id,order_id,body.new_departure_date,body.leg_index,changes))
 @router.post('/v1/flights/orders/{order_id}/execute-change/{quote_id}')
 def execute_change(order_id:str,quote_id:str,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key'),body:ChangeConfirmation|None=Body(default=None)):
     confirmation=body.model_dump() if body else None
