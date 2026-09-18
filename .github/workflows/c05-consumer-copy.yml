@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 15
     env:
       BASE_SHA: cd6345e32dd258c7f11f0766a36a168bad99a7f5
-      EVIDENCE_DIR: ${{ runner.temp }}/c05-evidence
+      EVIDENCE_DIR: c05-ci-evidence
     steps:
       - uses: actions/checkout@v4
         with:
