@@ -1,0 +1,1920 @@
+{
+  "schema": "AOLUGUYA_HYATT_EXPANDED_GALLERY_HK_MEASURED_V3",
+  "mode": "REVIEW_ONLY",
+  "canonical_hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+  "protected_secondary_id": "hotel_d17851be16724affb355375cacc5e58c",
+  "authentication": "Existing admin principal with admin:rules; do not elevate GO_READ_ONLY",
+  "source_capture": {
+    "url_discovery_date": "2026-09-07",
+    "official_page_source_sha256": "b32b3245784ba02f4327581cdf064e4a2bbc27f27ca132a1a8a4a3697a16e3b1",
+    "fresh_asset_fetch": "Per-item HK observed_at; previous EASON JPEG evidence retained separately",
+    "fresh_html": "HTTP403",
+    "room_identity_mapping": "NOT_PROVEN",
+    "hk_memory_preflight": {
+      "evidence_path": "catalog_review/hk_media_preflight/HK_PUBLIC_MEMORY_PREFLIGHT.json",
+      "local_lf_sha256": "2399f6c827b48af612a4a05f6494b00ee281cf9812079e37b1cc8ba6fc38e566",
+      "eason_crlf_original_sha256": "c52da77ff7d2227908a7fbb1b9b279ce8cc26a87490907b9ebbf2b2c768babc5",
+      "probe_sha256": "823d6750f226476a5f0a0be6b022dc5602ea05371a90dbb5ff154be323530609",
+      "runtime_binding": {
+        "hostname": "iZj6ccs8t04f1p4d8pe69zZ",
+        "container": "go-822-staging-api-1",
+        "container_id": "7366c503c0d8ec2120dd5c18cbe55017f0aa96cddfb5313ce8225d1e3955a4d7",
+        "image_id": "sha256:633a22a0766e587587eeb324ebb6db78dee321118f996b58803da0d7ac34cbf0",
+        "before_after_equal": true
+      },
+      "storage": "MEMORY_ONLY_NO_IMAGE_FILES",
+      "observed_at_first": "2026-09-18T02:57:04.679465+00:00",
+      "observed_at_last": "2026-09-18T02:57:37.639921+00:00"
+    },
+    "previous_jpeg_plan_sha256": "78013dc8595f1e21325d51b2e8a57e496bb9ee83bf50adc12ac07ab122973a11",
+    "public_area_hk_probe": {
+      "raw_sha256": "2f63764c44d947f0ce2cac90faec892e59234e37711c331a2900b00ca9d59f3c",
+      "runtime_binding": {
+        "hostname": "iZj6ccs8t04f1p4d8pe69zZ",
+        "container": "go-822-staging-api-1",
+        "container_id": "e9a39cd55754c95d8061b3511a33848725e87dbc4dfaa6aaee4e6b4677ad5bf4",
+        "image_id": "sha256:28c8b3b34992d9d4aefb4a58d892507ef06c063d955b2da86fe0e3560013d3fe",
+        "before_after_equal": true
+      },
+      "probe_sha256": "1b310f59bbf54ac335f4376a346e7225f33b79a17744bf67bd60040092684f90",
+      "eason_original_crlf_sha256": "12e5ff5a599b129cc3900aae0e08f4e2fbfc415eddeb95f4fab79cb46245d431",
+      "local_serialization_note": "Local capture has LF and an additional final newline; EASON original reconstructed from JSON indent=2 + single CRLF terminal newline matches original hash."
+    }
+  },
+  "preflight": [
+    {
+      "method": "GET",
+      "path": "/internal/v1/hotel-autopage/media/assets?hotel_id=hotel_ac72aa53c89d4c3984b72436cb85f617&publishable_only=false",
+      "purpose": "Check existing matching source URL, SHA, GALLERY role, no room identity; reuse verified record, never duplicate after lost response"
+    }
+  ],
+  "items": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0042-Maria-Suo-Suite-Dining-Area.jpg/HRBUB-P0042-Maria-Suo-Suite-Dining-Area.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:04.679465+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "973ff3e051d5707dd29c5e88c3d137c0dbffb5f815a9ba45e803de4b1e2cba08",
+        "byte_size": 212140,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 0,
+        "observed_at": "2026-09-18T02:57:04.679465+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0042-Maria-Suo-Suite-Dining-Area.jpg/HRBUB-P0042-Maria-Suo-Suite-Dining-Area.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0043-Maria-Suo-Suite-Living-Area.jpg/HRBUB-P0043-Maria-Suo-Suite-Living-Area.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:05.059360+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "72d6acf6fa20ee97373fb6771d75df7d129c3a4105d6321cdff1259e36c753ec",
+        "byte_size": 303750,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 1,
+        "observed_at": "2026-09-18T02:57:05.059360+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0043-Maria-Suo-Suite-Living-Area.jpg/HRBUB-P0043-Maria-Suo-Suite-Living-Area.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0044-Maria-Suo-Suite-Spa-Area.jpg/HRBUB-P0044-Maria-Suo-Suite-Spa-Area.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:07.288796+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "c2560c2e92857a922e99931e527b4d1b7790211d6b0e1d046175509a34aa7743",
+        "byte_size": 243816,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 2,
+        "observed_at": "2026-09-18T02:57:07.288796+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0044-Maria-Suo-Suite-Spa-Area.jpg/HRBUB-P0044-Maria-Suo-Suite-Spa-Area.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0045-Cloudspire-Haven-Deluxe-King-Bed.jpg/HRBUB-P0045-Cloudspire-Haven-Deluxe-King-Bed.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:08.733245+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "2eafe32dceed528d7df5853c8bf905514f708e65c1e3e508d14e5958b6ec9189",
+        "byte_size": 174342,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 3,
+        "observed_at": "2026-09-18T02:57:08.733245+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0045-Cloudspire-Haven-Deluxe-King-Bed.jpg/HRBUB-P0045-Cloudspire-Haven-Deluxe-King-Bed.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0046-Cloudspire-Haven-Deluxe-King-Bed-Living-Room.jpg/HRBUB-P0046-Cloudspire-Haven-Deluxe-King-Bed-Living-Room.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:10.400010+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "be09ed03d6e1d2959d8661edce23ab2f7e7680387935c7ee8c2acafb49f66ed2",
+        "byte_size": 328836,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 4,
+        "observed_at": "2026-09-18T02:57:10.400010+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0046-Cloudspire-Haven-Deluxe-King-Bed-Living-Room.jpg/HRBUB-P0046-Cloudspire-Haven-Deluxe-King-Bed-Living-Room.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0047-Cloudspire-Haven-Deluxe-Twin-Bed.jpg/HRBUB-P0047-Cloudspire-Haven-Deluxe-Twin-Bed.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:12.025026+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "1f5a0d235fff87fe7ea29f44298dde308e38c49d7327ae0581a31ef463b260cc",
+        "byte_size": 224698,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 5,
+        "observed_at": "2026-09-18T02:57:12.025026+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0047-Cloudspire-Haven-Deluxe-Twin-Bed.jpg/HRBUB-P0047-Cloudspire-Haven-Deluxe-Twin-Bed.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0048-Cloudspire-Haven-Deluxe-Twin-Bed-Bathroom.jpg/HRBUB-P0048-Cloudspire-Haven-Deluxe-Twin-Bed-Bathroom.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:13.756538+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "b7852da603f1f5b8333ae228fa5eebd625823473703b3242a959ec577390490d",
+        "byte_size": 158654,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 6,
+        "observed_at": "2026-09-18T02:57:13.756538+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0048-Cloudspire-Haven-Deluxe-Twin-Bed-Bathroom.jpg/HRBUB-P0048-Cloudspire-Haven-Deluxe-Twin-Bed-Bathroom.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0049-Maria-Suo-Suite-Bed.jpg/HRBUB-P0049-Maria-Suo-Suite-Bed.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:15.375854+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "cab44a07aaf48d6e464de59b9eddd2ac33fd244fdcd8ed6257341e76d54b3215",
+        "byte_size": 358844,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 7,
+        "observed_at": "2026-09-18T02:57:15.375854+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0049-Maria-Suo-Suite-Bed.jpg/HRBUB-P0049-Maria-Suo-Suite-Bed.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0050-Dreamweaver-Room-Twin-Bed-Window-View.jpg/HRBUB-P0050-Dreamweaver-Room-Twin-Bed-Window-View.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:17.109109+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "37a09621e09da545fb7d4faf4b1857e0b4d4fa1a58ab8ebdcd195831f201644d",
+        "byte_size": 215422,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 8,
+        "observed_at": "2026-09-18T02:57:17.109109+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0050-Dreamweaver-Room-Twin-Bed-Window-View.jpg/HRBUB-P0050-Dreamweaver-Room-Twin-Bed-Window-View.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0051-Luar-Ebrace-Suite-Twin-Bed.jpg/HRBUB-P0051-Luar-Ebrace-Suite-Twin-Bed.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:18.721325+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "a770c6dc575474d77ec142bc68db2a09b1dceb80e372499cf3850513b9194259",
+        "byte_size": 125028,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 9,
+        "observed_at": "2026-09-18T02:57:18.721325+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0051-Luar-Ebrace-Suite-Twin-Bed.jpg/HRBUB-P0051-Luar-Ebrace-Suite-Twin-Bed.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0052-Luar-Ebrace-Suite-Twin-Bed-Bathroom.jpg/HRBUB-P0052-Luar-Ebrace-Suite-Twin-Bed-Bathroom.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:20.185322+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "daacdcd10d1083497030a95a774536c7ef3a8bebcfecf0ec9c29b74256d70bb7",
+        "byte_size": 186280,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 10,
+        "observed_at": "2026-09-18T02:57:20.185322+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0052-Luar-Ebrace-Suite-Twin-Bed-Bathroom.jpg/HRBUB-P0052-Luar-Ebrace-Suite-Twin-Bed-Bathroom.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0053-Luar-Ebrace-Suite-Twin-Bed-Living-Area.jpg/HRBUB-P0053-Luar-Ebrace-Suite-Twin-Bed-Living-Area.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:21.905811+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "de53fd637cb27c98dfa613a3f844903870cf11144b984a7ed34110aa1399327d",
+        "byte_size": 228918,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 11,
+        "observed_at": "2026-09-18T02:57:21.905811+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0053-Luar-Ebrace-Suite-Twin-Bed-Living-Area.jpg/HRBUB-P0053-Luar-Ebrace-Suite-Twin-Bed-Living-Area.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0054-Dreamweaver-Room-One-Bed.jpg/HRBUB-P0054-Dreamweaver-Room-One-Bed.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:23.522436+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "b06fcee756d6739718f64e7c8fe486a9dc75f048e31700ab5c8e5f8d87f1269e",
+        "byte_size": 147862,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 12,
+        "observed_at": "2026-09-18T02:57:23.522436+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0054-Dreamweaver-Room-One-Bed.jpg/HRBUB-P0054-Dreamweaver-Room-One-Bed.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0055-Dreamweaver-Room-One-Bed-Window-View.jpg/HRBUB-P0055-Dreamweaver-Room-One-Bed-Window-View.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:25.137069+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "178ec7ecfd188df74402b439ae0531e7b35c50e6b864f96064943c3f9cbb6f20",
+        "byte_size": 236606,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 13,
+        "observed_at": "2026-09-18T02:57:25.137069+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0055-Dreamweaver-Room-One-Bed-Window-View.jpg/HRBUB-P0055-Dreamweaver-Room-One-Bed-Window-View.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0056-Dreamweaver-Room-Twin-Bed.jpg/HRBUB-P0056-Dreamweaver-Room-Twin-Bed.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:26.791211+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "778c343a4352eaa94f696ecf9cee8bca027fd78148fd82169c83a74ad6a609b3",
+        "byte_size": 249532,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 14,
+        "observed_at": "2026-09-18T02:57:26.791211+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0056-Dreamweaver-Room-Twin-Bed.jpg/HRBUB-P0056-Dreamweaver-Room-Twin-Bed.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0057-Dreamweaver-Room-Twin-Bed-Bathroom.jpg/HRBUB-P0057-Dreamweaver-Room-Twin-Bed-Bathroom.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:28.644478+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "1fae1c8692a6af2f7c2f5583e089ae2201c5ee65323bc8c7d0de26106ee2e60c",
+        "byte_size": 232784,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 15,
+        "observed_at": "2026-09-18T02:57:28.644478+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0057-Dreamweaver-Room-Twin-Bed-Bathroom.jpg/HRBUB-P0057-Dreamweaver-Room-Twin-Bed-Bathroom.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0058-Stardust-Suite-Bathroom.jpg/HRBUB-P0058-Stardust-Suite-Bathroom.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:30.377048+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "f148389989d20d15b913e52bc6ed72dda4d127ac434822bf8569fd5e8b0f84ef",
+        "byte_size": 396924,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 16,
+        "observed_at": "2026-09-18T02:57:30.377048+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0058-Stardust-Suite-Bathroom.jpg/HRBUB-P0058-Stardust-Suite-Bathroom.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0059-Stardust-Suite-Bed.jpg/HRBUB-P0059-Stardust-Suite-Bed.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:32.466670+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "f6a375f0da559d7580cd7923c34027e38e529ef0f23c6474c9b43069a9228ea3",
+        "byte_size": 105444,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 17,
+        "observed_at": "2026-09-18T02:57:32.466670+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0059-Stardust-Suite-Bed.jpg/HRBUB-P0059-Stardust-Suite-Bed.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0060-Stardust-Suite-Living-Area.jpg/HRBUB-P0060-Stardust-Suite-Living-Area.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:34.265620+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "0354e5a8a9c69e02f639335d63ad2f88286ca1ff0d911eac87919aec0d53c6bb",
+        "byte_size": 384098,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 18,
+        "observed_at": "2026-09-18T02:57:34.265620+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0060-Stardust-Suite-Living-Area.jpg/HRBUB-P0060-Stardust-Suite-Living-Area.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0061-Sunset-Perch-Deluxe-Twin-Bed.jpg/HRBUB-P0061-Sunset-Perch-Deluxe-Twin-Bed.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:36.026243+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "910bd9ceb0eaa2da426cbc03a7dda697856bff8917053b6d13dd654c36b632c7",
+        "byte_size": 129504,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 19,
+        "observed_at": "2026-09-18T02:57:36.026243+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0061-Sunset-Perch-Deluxe-Twin-Bed.jpg/HRBUB-P0061-Sunset-Perch-Deluxe-Twin-Bed.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0062-Sunset-Perch-Deluxe-Twin-Bed-Bathroom.jpg/HRBUB-P0062-Sunset-Perch-Deluxe-Twin-Bed-Bathroom.4x3.jpg",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T02:57:37.639921+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "935dd98ed7ef94c4d5cc6b74a04c346fe5e2c54f5c06ac7d13943778c1d60c6f",
+        "byte_size": 289484,
+        "width": 2560,
+        "height": 1920,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "reason": "Hotel identity HRBUB is established; no Golden room binding inferred",
+      "actual_observation": {
+        "index": 20,
+        "observed_at": "2026-09-18T02:57:37.639921+00:00",
+        "resolved_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0062-Sunset-Perch-Deluxe-Twin-Bed-Bathroom.jpg/HRBUB-P0062-Sunset-Perch-Deluxe-Twin-Bed-Bathroom.4x3.jpg",
+        "http_status": 200,
+        "response_content_type": "image/webp",
+        "response_vary": null,
+        "image_format": "WEBP",
+        "source_bytes_storage": "MEMORY_ONLY_NO_LOCAL_IMAGE_FILE"
+      },
+      "display_evidence": {
+        "category": "ROOM_GALLERY_UNBOUND",
+        "room_type_id": null,
+        "source": "Retained previously reviewed 21-image plan; no Golden room binding asserted"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/04/03/0205/HRBUB-P0063-Hotel-Exterior-Sunglow.jpg/HRBUB-P0063-Hotel-Exterior-Sunglow.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "HERO",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:37.771961+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "fc3b314e4beebd07bc5646be8254f45a88245d2a02264a25b90c3cdca7069e95",
+        "byte_size": 174258,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "HERO_EXTERIOR",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya",
+        "page_position": "main img[0], Masthead SECTION",
+        "caption": "AOLUGUYA Hotel Exterior Sunglow",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 0
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0037-Lobby-Concierge-Lounge.jpg/HRBUB-P0037-Lobby-Concierge-Lounge.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:38.122690+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "b541f9ac12c8c05ad1091e4066ea4112e40e90bfc17e21cb7fda6b9f3c6032bd",
+        "byte_size": 435672,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Hotel",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Hotel section",
+        "caption": "AOLUGUYA Lobby Concierge Lounge",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 1
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0038-Lobby-Concierge-Lounge-Table.jpg/HRBUB-P0038-Lobby-Concierge-Lounge-Table.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:38.291982+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "a32737720118bc72e31f4a9c82d4b3a5f93ba76c05a2b3a2b42ad8a59eb193f6",
+        "byte_size": 495552,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Hotel",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Hotel section",
+        "caption": "AOLUGUYA Lobby Concierge Lounge Table",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 2
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0039-Lobby-Night-View.jpg/HRBUB-P0039-Lobby-Night-View.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:38.407137+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "f3e66754d51a0f7195ba5222b191e0d2b6254b134c7c3df6590c2dcacf25fa5a",
+        "byte_size": 190414,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Hotel",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Hotel section",
+        "caption": "AOLUGUYA Lobby Night View",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 3
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0033-Executive-Lounge-Night-View.jpg/HRBUB-P0033-Executive-Lounge-Night-View.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:38.508978+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "5d83df69ff882c5fc04bf97d8bebd0e366b8287a4df8441ea951abca54ec20b6",
+        "byte_size": 276272,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Hotel",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Hotel section",
+        "caption": "AOLUGUYA Executive Lounge Night View",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 4
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0041-Steak-House-River-View.jpg/HRBUB-P0041-Steak-House-River-View.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:38.627325+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "61e53736e3ba1d4f5009ccb18de4eeb2d229330aa9dede6ecf9c04db529aa18a",
+        "byte_size": 305248,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Dining",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Dining section",
+        "caption": "AOLUGUYA Steak House River View",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 5
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0032-Chinese-Restaurant-Private-Dining-Room.jpg/HRBUB-P0032-Chinese-Restaurant-Private-Dining-Room.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:38.780016+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "3e191cdb09303403875e9ba6a72187fad3fbcccc6d6d51d29fc3d879fed66695",
+        "byte_size": 370444,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Dining",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Dining section",
+        "caption": "AOLUGUYA Chinese Restaurant Private Dining Room",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 6
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0030-Lobby-Bar.jpg/HRBUB-P0030-Lobby-Bar.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:38.899402+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "d11be01d302df25574e0eac4cb38266cd321514336122f02ecaa14def7a961c7",
+        "byte_size": 271808,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Dining",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Dining section",
+        "caption": "AOLUGUYA Lobby Bar",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 7
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0003-Chieftain-Retreat.jpg/HRBUB-P0003-Chieftain-Retreat.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:39.011849+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "d70fa9bcfeda8827144ccbb70871fc0c827fac963ab327d77b6067ec76585d04",
+        "byte_size": 194676,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Dining",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Dining section",
+        "caption": "AOLUGUYA Chieftain Retreat",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 8
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0024-All-Day-Dining-Private-Dining-Room.jpg/HRBUB-P0024-All-Day-Dining-Private-Dining-Room.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:39.118421+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "8cdc831e1c0a17fc250f69feb927ae66088378d30c9f9c9e53a4949c1e82d61f",
+        "byte_size": 314550,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Dining",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Dining section",
+        "caption": "AOLUGUYA All Day Dining Private Dining Room",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 9
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0023-All-Day-Dining-Hot-Dishes.jpg/HRBUB-P0023-All-Day-Dining-Hot-Dishes.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:39.257360+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "e697597c49c7ba7d22c91994f07130b052a2a3240494da13f3e09103755161d8",
+        "byte_size": 309932,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Dining",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Dining section",
+        "caption": "AOLUGUYA All Day Dining Hot Dishes",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 10
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0026-All-Day-Dining-River-View.jpg/HRBUB-P0026-All-Day-Dining-River-View.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:39.400651+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "83c4bf5f3f2d007407df0b5e3a39305c4bc21e605004adfea621a071519a8011",
+        "byte_size": 230152,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Dining",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Dining section",
+        "caption": "AOLUGUYA All Day Dining River View",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 11
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0036-Health-Club.jpg/HRBUB-P0036-Health-Club.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:39.517202+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "de42605d93908632b2edb882b24a790852fdfe9290c62207ab7181a51ca7c618",
+        "byte_size": 320498,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Fitness",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Fitness section",
+        "caption": "AOLUGUYA Health Club",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 12
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0040-Pool.jpg/HRBUB-P0040-Pool.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:39.640075+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "6ab26a8ec5d51cd8d540d9e6e89ae8c6bb09515dc860bd1c16fc8b9534e58025",
+        "byte_size": 351794,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Pool",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Pool section",
+        "caption": "AOLUGUYA Pool",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 13
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0031-Meeting-Room.jpg/HRBUB-P0031-Meeting-Room.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:39.769589+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "eab153b07becc049a90574aac960a109d8a5dcd7e68ee3fc3d5c15fc7ca41e50",
+        "byte_size": 243650,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Meetings",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Meetings section",
+        "caption": "AOLUGUYA Meeting Room",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 14
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0035-Function-Room-Vip-Area.jpg/HRBUB-P0035-Function-Room-Vip-Area.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:39.879725+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "21a5ea212f88646405dd67b46a0f4678fd0fe528ea07460dc63daf35ce42ab5a",
+        "byte_size": 335062,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Meetings",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Meetings section",
+        "caption": "AOLUGUYA Function Room Vip Area",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 15
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0027-Banquet-Hall-Front-View.jpg/HRBUB-P0027-Banquet-Hall-Front-View.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:40.009977+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "519e204f25614165d4732684c34d052818f5057f64d5bcac2d3272831fac376e",
+        "byte_size": 343744,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Meetings",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/gallery",
+        "page_position": "gallery Meetings section",
+        "caption": "AOLUGUYA Banquet Hall Front View",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 16
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0025-All-Day-Dining-Reception-Desk.jpg/HRBUB-P0025-All-Day-Dining-Reception-Desk.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:40.136489+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "7490af4a8b883b11d83d76842a200e7926ca5a8011096369e6902c0495d4adf5",
+        "byte_size": 314994,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Dining",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya",
+        "page_position": "DINING carousel; alt empty; filename retained without invented caption",
+        "caption": "",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 17
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/internal/v1/hotel-autopage/media/harvest",
+        "body": {
+          "source_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0028-Chinese-Restaurant-Lobby.jpg/HRBUB-P0028-Chinese-Restaurant-Lobby.16x9.jpg?imwidth=2560",
+          "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+          "role": "GALLERY",
+          "source_type": "OFFICIAL_WEBSITE",
+          "observed_at": "2026-09-18T06:02:40.245608+00:00",
+          "allow_private": false,
+          "timeout_seconds": 12,
+          "request_headers": {
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+          }
+        }
+      },
+      "expected": {
+        "sha256": "f5929c7f16288357e8d7be109e00091668a96b13741d937a8a00df4090cac621",
+        "byte_size": 288956,
+        "width": 2560,
+        "height": 1440,
+        "mime_type": "image/webp",
+        "rights_state": "RIGHTS_UNKNOWN",
+        "publishable": false
+      },
+      "room_type_id": null,
+      "display_evidence": {
+        "category": "Dining",
+        "page_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya",
+        "page_position": "DINING carousel; alt empty; filename retained without invented caption",
+        "caption": "",
+        "source_bytes_storage": "HK_MEMORY_ONLY_NO_LOCAL_FILE",
+        "evidence_record_index": 18
+      }
+    }
+  ],
+  "postconditions": [
+    "Harvest response data SHA256/byte_size/width/height/mime must match expected",
+    "GET assets confirms same asset_id and hotel/source identity",
+    "Authenticated /internal/v1/hotel-autopage/media/{asset_id}/content bytes hash equals expected",
+    "Public /v1/hotel-media/{asset_id} must deny while rights unknown",
+    "No rights endpoint, no page publish/compose, no order or inventory writes"
+  ],
+  "failure_policy": [
+    "Mismatch stops subsequent harvest; actual failed asset may already be indexed as RIGHTS_UNKNOWN; report it rather than pretending transaction rollback",
+    "If request outcome unknown, query asset list before retry",
+    "Do not assign historical UUID or Golden ID as room_type_id without approved mapping"
+  ],
+  "room_mapping_review": [
+    {
+      "historical_official_id": "1d7ce889-3df2-33b7-8fe0-fdb3d5ae7a6a",
+      "historical_room_code": "2BDS",
+      "historical_name": "撮罗子 - 牵星家庭套房（1 张特大床，2 张单人床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0060-Stardust-Suite-Living-Area.jpg/HRBUB-P0060-Stardust-Suite-Living-Area.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0059-Stardust-Suite-Bed.jpg/HRBUB-P0059-Stardust-Suite-Bed.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0058-Stardust-Suite-Bathroom.jpg/HRBUB-P0058-Stardust-Suite-Bathroom.4x3.jpg"
+      ],
+      "image_count": 3,
+      "minimum_three_met": true
+    },
+    {
+      "historical_official_id": "b683f6e8-3c3e-3856-a343-91c9d140060d",
+      "historical_room_code": "PREM",
+      "historical_name": "撮罗子 - 抱月套房（1 张特大床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0053-Luar-Ebrace-Suite-Twin-Bed-Living-Area.jpg/HRBUB-P0053-Luar-Ebrace-Suite-Twin-Bed-Living-Area.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0051-Luar-Ebrace-Suite-Twin-Bed.jpg/HRBUB-P0051-Luar-Ebrace-Suite-Twin-Bed.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0052-Luar-Ebrace-Suite-Twin-Bed-Bathroom.jpg/HRBUB-P0052-Luar-Ebrace-Suite-Twin-Bed-Bathroom.4x3.jpg"
+      ],
+      "image_count": 3,
+      "minimum_three_met": true
+    },
+    {
+      "historical_official_id": "899ecf1f-cc39-3349-b3dc-b745b150a070",
+      "historical_room_code": "FAMS",
+      "historical_name": "撮罗子 - 握虹家庭套房（1 张特大床，2 张单人床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0053-Luar-Ebrace-Suite-Twin-Bed-Living-Area.jpg/HRBUB-P0053-Luar-Ebrace-Suite-Twin-Bed-Living-Area.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0051-Luar-Ebrace-Suite-Twin-Bed.jpg/HRBUB-P0051-Luar-Ebrace-Suite-Twin-Bed.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0052-Luar-Ebrace-Suite-Twin-Bed-Bathroom.jpg/HRBUB-P0052-Luar-Ebrace-Suite-Twin-Bed-Bathroom.4x3.jpg"
+      ],
+      "image_count": 3,
+      "minimum_three_met": true
+    },
+    {
+      "historical_official_id": "89e3ad74-0600-3c39-a14a-5b3b692954e8",
+      "historical_room_code": "KING",
+      "historical_name": "撮罗子 - 映日（1 张特大床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0055-Dreamweaver-Room-One-Bed-Window-View.jpg/HRBUB-P0055-Dreamweaver-Room-One-Bed-Window-View.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0054-Dreamweaver-Room-One-Bed.jpg/HRBUB-P0054-Dreamweaver-Room-One-Bed.4x3.jpg"
+      ],
+      "image_count": 2,
+      "minimum_three_met": false
+    },
+    {
+      "historical_official_id": "b7f4e537-80fa-3f5d-8cc7-94ac8a907265",
+      "historical_room_code": "TWIN",
+      "historical_name": "撮罗子 - 映日（2 张单人床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0050-Dreamweaver-Room-Twin-Bed-Window-View.jpg/HRBUB-P0050-Dreamweaver-Room-Twin-Bed-Window-View.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0056-Dreamweaver-Room-Twin-Bed.jpg/HRBUB-P0056-Dreamweaver-Room-Twin-Bed.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0057-Dreamweaver-Room-Twin-Bed-Bathroom.jpg/HRBUB-P0057-Dreamweaver-Room-Twin-Bed-Bathroom.4x3.jpg"
+      ],
+      "image_count": 3,
+      "minimum_three_met": true
+    },
+    {
+      "historical_official_id": "13eeddab-bd68-34e1-a49f-1dc0600421f5",
+      "historical_room_code": "1VWK",
+      "historical_name": "撮罗子 - 圆梦（1 张特大床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0055-Dreamweaver-Room-One-Bed-Window-View.jpg/HRBUB-P0055-Dreamweaver-Room-One-Bed-Window-View.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0054-Dreamweaver-Room-One-Bed.jpg/HRBUB-P0054-Dreamweaver-Room-One-Bed.4x3.jpg"
+      ],
+      "image_count": 2,
+      "minimum_three_met": false
+    },
+    {
+      "historical_official_id": "87792bc1-3c0f-37a2-9827-342448917e63",
+      "historical_room_code": "1VWT",
+      "historical_name": "撮罗子 - 圆梦（2 张单人床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0050-Dreamweaver-Room-Twin-Bed-Window-View.jpg/HRBUB-P0050-Dreamweaver-Room-Twin-Bed-Window-View.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0056-Dreamweaver-Room-Twin-Bed.jpg/HRBUB-P0056-Dreamweaver-Room-Twin-Bed.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0057-Dreamweaver-Room-Twin-Bed-Bathroom.jpg/HRBUB-P0057-Dreamweaver-Room-Twin-Bed-Bathroom.4x3.jpg"
+      ],
+      "image_count": 3,
+      "minimum_three_met": true
+    },
+    {
+      "historical_official_id": "660ef702-abb1-3347-a373-2175c1dd7812",
+      "historical_room_code": "2VWK",
+      "historical_name": "撮罗子 - 乐水（1 张特大床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0055-Dreamweaver-Room-One-Bed-Window-View.jpg/HRBUB-P0055-Dreamweaver-Room-One-Bed-Window-View.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0054-Dreamweaver-Room-One-Bed.jpg/HRBUB-P0054-Dreamweaver-Room-One-Bed.4x3.jpg"
+      ],
+      "image_count": 2,
+      "minimum_three_met": false
+    },
+    {
+      "historical_official_id": "b0c6af7d-5a7e-398c-b3a7-3c4e98661739",
+      "historical_room_code": "2VWT",
+      "historical_name": "撮罗子 - 乐水（2 张单人床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0050-Dreamweaver-Room-Twin-Bed-Window-View.jpg/HRBUB-P0050-Dreamweaver-Room-Twin-Bed-Window-View.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0056-Dreamweaver-Room-Twin-Bed.jpg/HRBUB-P0056-Dreamweaver-Room-Twin-Bed.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0057-Dreamweaver-Room-Twin-Bed-Bathroom.jpg/HRBUB-P0057-Dreamweaver-Room-Twin-Bed-Bathroom.4x3.jpg"
+      ],
+      "image_count": 3,
+      "minimum_three_met": true
+    },
+    {
+      "historical_official_id": "e46712a0-49d8-34c9-b71d-7ed2326bdf8c",
+      "historical_room_code": "DLXK",
+      "historical_name": "撮罗子 - 枕月（1 张特大床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0046-Cloudspire-Haven-Deluxe-King-Bed-Living-Room.jpg/HRBUB-P0046-Cloudspire-Haven-Deluxe-King-Bed-Living-Room.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0045-Cloudspire-Haven-Deluxe-King-Bed.jpg/HRBUB-P0045-Cloudspire-Haven-Deluxe-King-Bed.4x3.jpg"
+      ],
+      "image_count": 2,
+      "minimum_three_met": false
+    },
+    {
+      "historical_official_id": "b9daef2b-e715-3101-a9b7-d49230c665e4",
+      "historical_room_code": "DLXT",
+      "historical_name": "撮罗子 - 枕月（2 张单人床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0047-Cloudspire-Haven-Deluxe-Twin-Bed.jpg/HRBUB-P0047-Cloudspire-Haven-Deluxe-Twin-Bed.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0048-Cloudspire-Haven-Deluxe-Twin-Bed-Bathroom.jpg/HRBUB-P0048-Cloudspire-Haven-Deluxe-Twin-Bed-Bathroom.4x3.jpg"
+      ],
+      "image_count": 2,
+      "minimum_three_met": false
+    },
+    {
+      "historical_official_id": "fe2018a1-06cc-3586-b732-17c207c8061b",
+      "historical_room_code": "PRMK",
+      "historical_name": "撮罗子 - 卧云（1 张特大床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0046-Cloudspire-Haven-Deluxe-King-Bed-Living-Room.jpg/HRBUB-P0046-Cloudspire-Haven-Deluxe-King-Bed-Living-Room.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0045-Cloudspire-Haven-Deluxe-King-Bed.jpg/HRBUB-P0045-Cloudspire-Haven-Deluxe-King-Bed.4x3.jpg"
+      ],
+      "image_count": 2,
+      "minimum_three_met": false
+    },
+    {
+      "historical_official_id": "007cba64-995a-36b3-89be-dafe8868e8c6",
+      "historical_room_code": "PRMT",
+      "historical_name": "撮罗子 - 卧云（2 张单人床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0047-Cloudspire-Haven-Deluxe-Twin-Bed.jpg/HRBUB-P0047-Cloudspire-Haven-Deluxe-Twin-Bed.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0048-Cloudspire-Haven-Deluxe-Twin-Bed-Bathroom.jpg/HRBUB-P0048-Cloudspire-Haven-Deluxe-Twin-Bed-Bathroom.4x3.jpg"
+      ],
+      "image_count": 2,
+      "minimum_three_met": false
+    },
+    {
+      "historical_official_id": "1f8355aa-9fdc-3d6a-b2d8-6cb884604b9b",
+      "historical_room_code": "1VDK",
+      "historical_name": "撮罗子 - 阅江（1 张特大床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0046-Cloudspire-Haven-Deluxe-King-Bed-Living-Room.jpg/HRBUB-P0046-Cloudspire-Haven-Deluxe-King-Bed-Living-Room.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0045-Cloudspire-Haven-Deluxe-King-Bed.jpg/HRBUB-P0045-Cloudspire-Haven-Deluxe-King-Bed.4x3.jpg"
+      ],
+      "image_count": 2,
+      "minimum_three_met": false
+    },
+    {
+      "historical_official_id": "585f2cfd-ac83-330b-b299-740094a2f066",
+      "historical_room_code": "1VDT",
+      "historical_name": "撮罗子 - 阅江（2 张单人床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0047-Cloudspire-Haven-Deluxe-Twin-Bed.jpg/HRBUB-P0047-Cloudspire-Haven-Deluxe-Twin-Bed.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0048-Cloudspire-Haven-Deluxe-Twin-Bed-Bathroom.jpg/HRBUB-P0048-Cloudspire-Haven-Deluxe-Twin-Bed-Bathroom.4x3.jpg"
+      ],
+      "image_count": 2,
+      "minimum_three_met": false
+    },
+    {
+      "historical_official_id": "28e63a24-5344-3563-a8ba-6da0c3d5bb0c",
+      "historical_room_code": "PMKG",
+      "historical_name": "撮罗子 - 栖霞（1 张特大床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0061-Sunset-Perch-Deluxe-Twin-Bed.jpg/HRBUB-P0061-Sunset-Perch-Deluxe-Twin-Bed.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0062-Sunset-Perch-Deluxe-Twin-Bed-Bathroom.jpg/HRBUB-P0062-Sunset-Perch-Deluxe-Twin-Bed-Bathroom.4x3.jpg"
+      ],
+      "image_count": 2,
+      "minimum_three_met": false
+    },
+    {
+      "historical_official_id": "f2963d0b-8c34-3a2c-a835-1fea7a779cc3",
+      "historical_room_code": "MSTE",
+      "historical_name": "撮罗子 - 朴悦（1 张特大床）",
+      "current_golden_room_type_id": null,
+      "mapping_state": "UNMATCHED_REQUIRES_EXPLICIT_CROSSWALK",
+      "official_image_urls": [
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0043-Maria-Suo-Suite-Living-Area.jpg/HRBUB-P0043-Maria-Suo-Suite-Living-Area.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0042-Maria-Suo-Suite-Dining-Area.jpg/HRBUB-P0042-Maria-Suo-Suite-Dining-Area.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0049-Maria-Suo-Suite-Bed.jpg/HRBUB-P0049-Maria-Suo-Suite-Bed.4x3.jpg",
+        "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2025/03/17/2307/HRBUB-P0044-Maria-Suo-Suite-Spa-Area.jpg/HRBUB-P0044-Maria-Suo-Suite-Spa-Area.4x3.jpg"
+      ],
+      "image_count": 4,
+      "minimum_three_met": true
+    }
+  ],
+  "minimum_missing_evidence": [
+    "Current official structural room ID/code capture OR hotel-confirmed versioned identity crosswalk to Golden IDs with room attributes",
+    "For ten historical official room entries carrying only two images: at least one additional officially bound image per affected room; no cross-family guessing",
+    "Original 199-row asset manifest with source URLs/hash and ownership history; 21 current assets do not prove remaining unique count",
+    "Recorded rights approval evidence before public use"
+  ],
+  "summary": {
+    "asset_count": 40,
+    "hero_count": 1,
+    "gallery_count": 39,
+    "room_bound_assets": 0,
+    "publishable_assets": 0,
+    "actual_total_bytes": 10700642,
+    "execution": "REVIEW_ONLY_NOT_IMPORTED"
+  },
+  "existing_first_asset_policy": "Preflight every asset by hotel/source/role/no-room/actual metadata; prior first room-gallery record may be absent after container change. Reuse only verified existing matches; do not assume count."
+}

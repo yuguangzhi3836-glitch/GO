@@ -171,7 +171,7 @@
   }
   function anomalyLabel(item){return ANOMALY_LABELS[item?.code]||(/[\u3400-\u9fff]/.test(item?.label||'')?item.label:'酒店资料需要核对')}
 
-  const HYATT_GALLERY_PLAN_SHA='999fa2bd61fc6cf6a6228873728a3ca4f37d6bef137386402005f08a1558f228';
+  const HYATT_GALLERY_PLAN_SHA='59e04e59b5a27a1a6df2baeca1ba269430c605fe3f48bcbb86d536a4a2cdf6ba';
   const reviewedGalleryPlans=new WeakSet();
   const galleryAssetsRoute='/internal/v1/hotel-autopage/media/assets?hotel_id='+IMPORT_HOTEL+'&publishable_only=false';
   async function reviewedGalleryPlan(text,hotelId){
@@ -180,15 +180,16 @@
     const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(stable(plan)));
     const hash=Array.from(new Uint8Array(bytes),x=>x.toString(16).padStart(2,'0')).join('');
     requireImport(hash===HYATT_GALLERY_PLAN_SHA,'图库文件与已审定的凯悦官网清单不一致；尚未采集');
-    requireImport(hotelId===IMPORT_HOTEL&&plan.canonical_hotel_id===hotelId&&plan.items.length===21,'图库只能导入指定的敖麓谷雅档案');
+    requireImport(hotelId===IMPORT_HOTEL&&plan.canonical_hotel_id===hotelId&&plan.items.length===40,'图库只能导入指定的敖麓谷雅档案');
     requireImport(plan.items.every(item=>stable(item.request?.body?.request_headers)===stable({Accept:'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'})&&item.expected?.mime_type==='image/webp'),'官网图库须使用审定的 WebP 格式及固定请求头；尚未采集');
+    requireImport(plan.items.filter(x=>x.request.body.role==='HERO').length===1&&plan.items.filter(x=>x.request.body.role==='GALLERY').length===39,'首图与图库用途不一致');
     // Only documented harvest kwargs leave the browser. Expected bytes and local paths are review evidence only.
-    const items=plan.items.map(item=>({body:JSON.parse(JSON.stringify(item.request.body)),expected:JSON.parse(JSON.stringify(item.expected))}));
+    const items=plan.items.map(item=>({body:JSON.parse(JSON.stringify(item.request.body)),expected:JSON.parse(JSON.stringify(item.expected)),display:JSON.parse(JSON.stringify(item.display_evidence))}));
     const reviewed=freezeImport({hotelId,hash,items});reviewedGalleryPlans.add(reviewed);return reviewed;
   }
   function verifyGalleryAsset(item,asset){
     requireImport(asset&&typeof asset.asset_id==='string'&&asset.asset_id.length>0,'图片记录缺少有效身份，已停止采集');
-    requireImport(asset.hotel_id===IMPORT_HOTEL&&asset.source_url===item.body.source_url&&asset.source_type==='OFFICIAL_WEBSITE'&&asset.role==='GALLERY'&&asset.room_type_id==null,'图片归属或用途不一致，已停止采集');
+    requireImport(asset.hotel_id===IMPORT_HOTEL&&asset.source_url===item.body.source_url&&asset.source_type==='OFFICIAL_WEBSITE'&&asset.role===item.body.role&&asset.room_type_id==null,'图片归属或用途不一致，已停止采集');
     for(const key of ['sha256','byte_size','width','height','mime_type','rights_state','publishable'])requireImport(asset[key]===item.expected[key],'图片内容或授权状态与审定清单不一致，已停止后续采集');
     requireImport(asset.cache_state==='VALIDATED','图片缓存状态尚未通过校验，已停止采集');
     return asset;
@@ -210,7 +211,7 @@
     requireImport(rooms.length===17&&new Set(rooms.map(room=>room.room_type_id)).size===17&&rooms.every(room=>room.room_type_id),'请先核对 17 个房型资料，再采集官网图库');
     const assets=(await api.request(galleryAssetsRoute)).data;
     const reused=plan.items.map(item=>existingGalleryAsset(item,assets)).filter(Boolean);
-    return {reused:reused.length,pending:21-reused.length};
+    return {reused:reused.length,pending:plan.items.length-reused.length};
   }
   async function executeGalleryImport(api,plan,progress=()=>{}){
     await galleryPreflight(api,plan);const checked=[];let harvested=0,reused=0;
@@ -224,7 +225,7 @@
       }
       const after=(await api.request(galleryAssetsRoute)).data,readback=existingGalleryAsset(item,after);
       requireImport(readback&&readback.asset_id===asset.asset_id,'图片索引回读不一致，已停止后续采集');
-      checked.push({asset_id:asset.asset_id,source_url:asset.source_url,sha256:asset.sha256,width:asset.width,height:asset.height});progress({checked:checked.length,harvested,reused,asset:checked[checked.length-1]});
+      checked.push({asset_id:asset.asset_id,source_url:asset.source_url,sha256:asset.sha256,width:asset.width,height:asset.height,role:asset.role,category:item.display.category,page_url:item.display.page_url||null,caption:item.display.caption||null});progress({checked:checked.length,harvested,reused,asset:checked[checked.length-1]});
     }
     const finalAssets=(await api.request(galleryAssetsRoute)).data;
     for(const item of plan.items)requireImport(existingGalleryAsset(item,finalAssets),'最终图库索引核对未通过');
@@ -233,20 +234,20 @@
     // JSON API metadata is not an independent download-and-hash of served bytes.
     return {checked:checked.length,harvested,reused,assets:checked,rights:'RIGHTS_UNKNOWN',published:false,roomBindings:0,independentServedByteHashVerified:false};
   }
-  function galleryPanel(){return `<section class="card" aria-labelledby="hyattGalleryTitle"><div class="section-head"><h2 id="hyattGalleryTitle">采集凯悦官网图库</h2><span>21 张 · 待授权审核</span></div><p>从审定的凯悦官网图片地址重新采集。保存为酒店图库，暂不关联房型、不公开发布。</p><label class="business-field"><span>选择审定图库清单</span><input id="hyattGalleryFile" type="file" accept=".json,application/json"></label><p id="hyattGalleryStatus" role="status" aria-live="polite">请先完成酒店资料导入，再核对官网图库清单。</p><div class="structured-actions"><button class="btn" id="hyattGalleryReview">核对图库清单</button><button class="btn primary" id="hyattGalleryApply" disabled>采集并保存待审核图库</button></div><div id="hyattGalleryResults"></div></section>`}
+  function galleryPanel(){return `<section class="card" aria-labelledby="hyattGalleryTitle"><div class="section-head"><h2 id="hyattGalleryTitle">采集凯悦官网图库</h2><span>40 张 · 待授权审核</span></div><p>从审定的凯悦官网图片地址重新采集。包括 1 张官网首图、18 张公区图片及 21 张未绑定房型的图片。保存为酒店图库，暂不关联房型、不公开发布。</p><label class="business-field"><span>选择审定图库清单</span><input id="hyattGalleryFile" type="file" accept=".json,application/json"></label><p id="hyattGalleryStatus" role="status" aria-live="polite">请先完成酒店资料导入，再核对官网图库清单。</p><div class="structured-actions"><button class="btn" id="hyattGalleryReview">核对图库清单</button><button class="btn primary" id="hyattGalleryApply" disabled>采集并保存待审核图库</button></div><div id="hyattGalleryResults"></div></section>`}
   function bindGallery(hotelId,ctx){
     const {api,root,notice}=ctx,file=root.querySelector('#hyattGalleryFile');if(!file)return;
     const review=root.querySelector('#hyattGalleryReview'),apply=root.querySelector('#hyattGalleryApply'),status=root.querySelector('#hyattGalleryStatus'),results=root.querySelector('#hyattGalleryResults');let prepared=null,busy=false;
     file.onchange=()=>{prepared=null;apply.disabled=true;status.textContent='图库文件已变更，请重新核对。'};
     review.onclick=async()=>{if(busy)return;busy=true;review.disabled=true;file.disabled=true;apply.disabled=true;prepared=null;
-      try{requireImport(file.files?.length===1&&file.files[0].size<=1048576,'请选择不超过 1 MB 的审定图库文件');const plan=await reviewedGalleryPlan(await file.files[0].text(),hotelId),preview=await galleryPreflight(api,plan);prepared=plan;status.textContent=`清单核对通过：21 张官网图片，已有 ${preview.reused} 张记录可复用，待采集 ${preview.pending} 张。图片授权仍待核验。`;apply.disabled=false}
+      try{requireImport(file.files?.length===1&&file.files[0].size<=1048576,'请选择不超过 1 MB 的审定图库文件');const plan=await reviewedGalleryPlan(await file.files[0].text(),hotelId),preview=await galleryPreflight(api,plan);prepared=plan;status.textContent=`清单核对通过：40 张官网图片，已有 ${preview.reused} 张记录可复用，待采集 ${preview.pending} 张。图片授权仍待核验。`;apply.disabled=false}
       catch(e){status.textContent=catalogError(e);notice(status.textContent,true)}finally{busy=false;review.disabled=false;file.disabled=false}
     };
     apply.onclick=async()=>{if(busy||catalogWriteBusy||!prepared)return;catalogWriteBusy=true;busy=true;file.disabled=true;review.disabled=true;apply.disabled=true;results.textContent='';let checked=0;
       root.querySelectorAll('[data-factory-action],#catalogImportApply,#catalogImportReview,#catalogScopeOpen,#factoryBack').forEach(button=>button.disabled=true);
-      try{const outcome=await executeGalleryImport(api,prepared,state=>{checked=state.checked;status.textContent=`已核对 ${state.checked}/21 张：新采集 ${state.harvested} 张，复用 ${state.reused} 张。`;const row=document.createElement('p');row.className='metric-sub';row.textContent=`图片 ${state.checked} · ${state.asset.width} × ${state.asset.height} · 待授权审核`;results.appendChild(row)});
-        status.textContent=`21 张官网图库已保存并核对图片指纹与索引。新采集 ${outcome.harvested} 张，复用 ${outcome.reused} 张；待文件回读复核与授权审核，尚未关联房型。`;notice('官网图库已保存为待审核资料，未发布');
-      }catch(e){prepared=null;status.textContent=`采集已停止，已核对 ${checked}/21 张。当前请求可能已保存图片，请重新核对清单后继续。${catalogError(e)}`;notice(status.textContent,true)}
+      try{const outcome=await executeGalleryImport(api,prepared,state=>{checked=state.checked;status.textContent=`已核对 ${state.checked}/40 张：新采集 ${state.harvested} 张，复用 ${state.reused} 张。`;const row=document.createElement('p');row.className='metric-sub';const categories={HERO_EXTERIOR:'官网首图 · 酒店外观',Hotel:'酒店公区',Dining:'餐饮',Fitness:'健身',Pool:'泳池',Meetings:'会议',ROOM_GALLERY_UNBOUND:'客房图片 · 未绑定房型'};row.textContent=`${categories[state.asset.category]||'酒店图库'} · 图片 ${state.checked} · ${state.asset.width} × ${state.asset.height} · 待授权审核`;results.appendChild(row)});
+        status.textContent=`40 张官网图库已保存并核对图片指纹与索引。新采集 ${outcome.harvested} 张，复用 ${outcome.reused} 张；待文件回读复核与授权审核，尚未关联房型。`;notice('官网图库已保存为待审核资料，未发布');
+      }catch(e){prepared=null;status.textContent=`采集已停止，已核对 ${checked}/40 张。当前请求可能已保存图片，请重新核对清单后继续。${catalogError(e)}`;notice(status.textContent,true)}
       finally{catalogWriteBusy=false;busy=false;file.disabled=false;review.disabled=false;const back=root.querySelector('#factoryBack');if(back)back.disabled=false}
     };
   }
