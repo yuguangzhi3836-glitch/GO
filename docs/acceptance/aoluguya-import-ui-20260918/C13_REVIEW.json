@@ -1,0 +1,54 @@
+{
+  "reviewer": "C13",
+  "reviewed_at": "2026-09-18T00:08:14.628441+00:00",
+  "verdict": "PASS_LOCAL_REVIEW_WITH_LIMITATIONS",
+  "blocking_findings": [],
+  "base_commit": "96721782158b5d665f7723305e5fb2212bd256ae",
+  "base_frontend_git_blob": "722586f2d67a0a7810e811ff88fddc113e3def75",
+  "exact_api_client_git_blob": "cf69e18de3b0fe5f65c183a77ed9244608b63bf7",
+  "files": [
+    {
+      "path": "application/frontend/admin/hotel-page-factory.js",
+      "sha256": "9ac60b8ee41338924338fbdfefc6b64601f85689d3dc2464014753881382a958"
+    },
+    {
+      "path": "application/tests_frontend/fixtures/aoluguya_normalized_ingest_plan.json",
+      "sha256": "d417c1e085d198a40c2c52421f1270383072684a42fa71e5c0b8094cfa979ba6"
+    },
+    {
+      "path": "application/tests_frontend/hotel_catalog_reviewed_import.test.mjs",
+      "sha256": "ce1ad4ec2ce415173ef9268a22db32ede812213e0e480d8df5240655e972b37b"
+    }
+  ],
+  "tests": {
+    "independently_run": 12,
+    "passed": 12,
+    "failed": 0,
+    "original_log": "C13_TEST.log",
+    "log_sha256": "c4d438f1882b16b0433badda3ab58bd469abb2cee9861e07b795442099ae8b52",
+    "node_syntax": "PASS"
+  },
+  "verified": [
+    "Actual PR192 authenticated API error status/payload matches archived readback checks; existing backend admin:rules is authoritative",
+    "Exactly two protected IDs and 112 distinct nonprotected archived IDs; 114/2 overview identity checks; running queue and fingerprint drift refusal before activation",
+    "Only scope activate endpoint changes reversible visibility; original data and immutable audit retained; no physical deletion API",
+    "Canonical semantic SHA256 allows only actual reviewed facts plan; deep freeze and WeakSet reject injected runner objects",
+    "Three fixed source bodies keep official9500 and public5000 provenance, fixed identity and idempotence keys; no rights promotion or media import",
+    "Higher-priority or unknown conflicting visible canonical provenance refuses before unpublish; backend source identity conflict guard remains active",
+    "Sequential UNPUBLISH and three ingests, error stops further writes, progress reports only returned successes; final full facts/contact/rooms/DRAFT/media readback",
+    "Activation verifies every archived record rejects with exact409 archive code; fingerprint and queue are server-locked",
+    "Chinese anomaly labels and generic fallback; no proof upload, credential reads or custom authentication"
+  ],
+  "limitations": [
+    "Frontend-only change; 12 tests use actual JS module with API doubles, not a live database/browser; no visual QA",
+    "Import is not an atomic transaction: UNPUBLISH and successful prior ingests remain after later failure; retry requires re-review and backend idempotence",
+    "Visible-source identity preflight reads only the two retained profiles; a conflicting source bound to an archived profile is refused by backend during ingest, potentially after UNPUBLISH or prior successful source writes",
+    "Source-priority preflight is a snapshot; concurrent later changes are detected by backend policy/final readback, not a global import lock",
+    "Fixed2/112 scope intentionally refuses changed catalogs; current metadata documentation must describe added scope UI and12 tests",
+    "Formal signed DEPLOY/VERIFY and fresh host checks remain operator prerequisites before live clicks; UI does not self-verify deployment"
+  ],
+  "live_execution": false,
+  "deployed": false,
+  "source_modified_by_reviewer": false,
+  "submitted": false
+}
