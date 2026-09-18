@@ -9,16 +9,17 @@ import re
 import stat
 import sys
 
-VERSION = "0.5.1-same-revision"
-_CONTRACT_SHA256 = "3b5897e734749df5be1ca6befa2da88d7c7b58bf02683838341b46b519e8f618"
-_SAME_REVISION_SHA256 = "d984b5716add576079e25509d48abe9bc21f4338e8efdf928e54cfe473881efe"
+VERSION = "0.6.0-media-topology-v2"
+_TOPOLOGY_SHA256 = "080a03163389df84bc61e8b193b2eb6310898e14277573d0d27551c890e0a98d"
+_CONTRACT_SHA256 = "cb53abdc802251843fc7b2344740f8f4b1455fe7ab45bddaaef4d229789377b2"
+_SAME_REVISION_SHA256 = "2378734d3ee536fa210a879e6d783f4b59a0efedcd1f154d5391aaf69582412c"
 _MIGRATION_SHA256 = "be60700cc8dd10d402e2d0e7ddcab3269d93a5acf7ebfd6cd5ba6840ecc8fd0d"
 _IMAGE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _RELEASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
-_COLLECTOR_SHA256 = "fb3d966d8736bcb49a76ff52db01a417bc745f7b5ad47addf9d576e8bf4fa1a6"
+_COLLECTOR_SHA256 = "44958b44f0247bc0e7d52bc2e7a26492512240db4431193a0dc0b4bb2c6bc7ee"
 _CANARY_SHA256 = "c3c74678d640150380af572899c303c18f4c62c0333e4e766af0b963bd0dcefb"
-_DEPLOY_SHA256 = "79e5b840c14601bf8d720e1300df2fb98838bfd9ec48af881c483588cb788f6b"
-_ROLLBACK_SHA256 = "274c39f7e430805fb2355bc302b8d559452c0d0b11b1a92461bb8e09a0aab1bd"
+_DEPLOY_SHA256 = "1372ce0c3d3e7fabce937b01a16ee04ed5c568dc13aa63e9aa274f1e21449dbe"
+_ROLLBACK_SHA256 = "a76f485089b4f78916a30ba14918958ba32dad151f23d59aa5738423c178f4c4"
 _ARTIFACT_SHA256 = "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b"
 
 
@@ -39,6 +40,8 @@ def _contract(identity,candidate,expected,package=None,verify=False):
     else: module.bind(value,candidate,expected,package)
     return value
 
+def _topology(): return _load_extra('media_topology_runtime',_TOPOLOGY_SHA256)
+def _contract_module(): return _load_extra('hk_candidate_contract',_CONTRACT_SHA256)
 def _migration(): return _load_extra('migration_runtime',_MIGRATION_SHA256)
 def _same_revision(): return _load_extra('same_revision_runtime',_SAME_REVISION_SHA256)
 
@@ -147,7 +150,7 @@ def _deploy(release,candidate,package,expected,approval,canary_evidence,binding,
         if contract:
             extra.update({'same_revision':_same_revision()} if contract.get('migration_required') is False else {'migration':_migration()})
         if not contract: _migration().require_clear()
-        gates=runtime.run_deploy(release,candidate,package,expected,binding,runner or collector.ProductionRunner(),collector,artifact,**extra)
+        gates=runtime.run_deploy(release,candidate,package,expected,binding,runner or collector.ProductionRunner(),collector,artifact,topology=_topology(),**extra)
         record={key:gates.pop(key) for key in ("deploy_record_schema_version","deploy_record_id","deploy_record_sha256")}
         out=_document("SUCCESS",release,candidate,expected,gates,"DEPLOY_OK"); out["action_id"]="HK_STAGING_DEPLOY"; out.update(record)
         if contract_sha: out['candidate_contract_sha256']=contract_sha
@@ -163,7 +166,9 @@ def _canary(release_id,candidate_image_id,candidate_package_sha256,expected_curr
         extra={'contract':contract} if contract else {}
         if contract:
             extra.update({'same_revision':_same_revision()} if contract.get('migration_required') is False else {'migration':_migration()})
+        topology_gates=_topology().canary_preflight(contract,runner or _load_collector().ProductionRunner(),expected_current_image_id)
         gates=runtime.run_canary(release_id,candidate_image_id,candidate_package_sha256,expected_current_image_id,runner,inputs,artifact,**extra)
+        gates.update(topology_gates)
         output=_document("SUCCESS",release_id,candidate_image_id,expected_current_image_id,gates,"CANARY_OK")
         output["action_id"]="HK_STAGING_CANARY"
         if contract_sha: output["candidate_contract_sha256"]=contract_sha
@@ -178,7 +183,7 @@ def _rollback(release,source_task_id,binding,runner=None):
     try:
         _migration().require_clear()
         runtime=_load_rollback(); collector=_load_collector()
-        gates=runtime.run_rollback(release,source_task_id,binding,runner or collector.ProductionRunner(),collector)
+        gates=runtime.run_rollback(release,source_task_id,binding,runner or collector.ProductionRunner(),collector,topology=_topology(),contract_module=_contract_module())
         out=_document("SUCCESS",release,"","",gates,"ROLLBACK_OK"); out["action_id"]="HK_STAGING_ROLLBACK"
         out.update({key:gates[key] for key in ("source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256")})
         return out,0
@@ -205,7 +210,7 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
             expected_current_image_id,
             inputs or collector._PRODUCTION_VERIFY_INPUTS,
             sleeper or __import__("time").sleep,
-            **({"contract":contract} if contract else {}),
+            **({"contract":contract} if contract else {}),topology=_topology(),
         )
         gates = {
             "compose_baseline": "PASS",
@@ -222,6 +227,8 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
             raise ValueError("collector result")
         output=_document("SUCCESS", release_id, candidate_image_id,expected_current_image_id,gates,"VERIFY_OK")
         if contract_sha: output["candidate_contract_sha256"]=contract_sha
+        for key in ('topology_id','topology_version','topology_pending_version','topology_sha256','media_storage_identity','media_persistence'):
+            if key in result:gates[key]=result[key]
         return output,0
     except (OSError, ValueError, TypeError):
         return _document("REJECTED", release_id, candidate_image_id,

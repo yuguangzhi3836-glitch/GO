@@ -12,6 +12,8 @@ import stat
 
 SCHEMA = 'go.hk-candidate-contract.v1'
 SAME_SCHEMA = 'go.hk-candidate-contract.v2'
+TOPOLOGY_SCHEMA = 'go.hk-candidate-contract.v3'
+TOPOLOGY_SHA256 = '3efa422ebcfeee97528e829228a5f1c78a91151c88c50c606bab95479f3fddb1'
 ENVIRONMENT = 'HK-STAGING-01'
 REPOSITORY = 'yuguangzhi3836-glitch/GO'
 PROFILE = 'go-application-python-v2'
@@ -56,10 +58,11 @@ def match(value,pattern):
         raise Reject('candidate_contract_identity')
 
 def validate(value,identity=None):
-    same = isinstance(value,dict) and value.get('schema') == SAME_SCHEMA
-    if not isinstance(value,dict) or set(value)!=(SAME_FIELDS if same else FIELDS):
+    topology = isinstance(value,dict) and value.get('schema') == TOPOLOGY_SCHEMA
+    same = isinstance(value,dict) and value.get('schema') in (SAME_SCHEMA,TOPOLOGY_SCHEMA)
+    if not isinstance(value,dict) or set(value)!=((SAME_FIELDS | {'topology'}) if topology else (SAME_FIELDS if same else FIELDS)):
         raise Reject('candidate_contract_fields')
-    if value['schema'] not in (SCHEMA,SAME_SCHEMA) or value['environment']!=ENVIRONMENT or value['profile']!=PROFILE:
+    if value['schema'] not in (SCHEMA,SAME_SCHEMA,TOPOLOGY_SCHEMA) or value['environment']!=ENVIRONMENT or value['profile']!=PROFILE:
         raise Reject('candidate_contract_scope')
     if identity is not None:
         match(identity,SHA)
@@ -72,6 +75,8 @@ def validate(value,identity=None):
     for key in ('source_tree_sha256','package_sha256'): match(candidate[key],SHA)
     match(candidate['image_id'],IMAGE); match(value['expected_current_image_id'],IMAGE)
     for key in ('baseline_revision','target_revision'): match(value[key],REVISION)
+    if topology:
+        validate_topology(value['topology'])
     if same:
         if value['migration_required'] is not False: raise Reject('candidate_contract_no_migration_mode')
         if value['baseline_revision'] != value['target_revision']: raise Reject('candidate_contract_same_revision_required')
@@ -178,4 +183,11 @@ def active():
         or block.get('rollback_relation',{}).get('previous_known_good_image_id')!=contract['expected_current_image_id']
         or block.get('candidate_contract_sha256')!=identity):
         raise Reject('active_candidate_migration')
+    if block.get('topology')!=contract.get('topology'):raise Reject('active_candidate_topology')
     return record,contract
+
+
+def validate_topology(value):
+    if not isinstance(value,dict) or set(value)!={'topology_id','topology_version','topology_sha256','baseline_topology_version','media_rollback_compatible'}:raise Reject('topology_fields')
+    if value['topology_id']!='HK_STAGING_BUSINESS_TOPOLOGY' or type(value['topology_version']) is not int or value['topology_version']!=2 or value['topology_sha256']!=TOPOLOGY_SHA256 or type(value['baseline_topology_version']) is not int or value['baseline_topology_version'] not in (1,2) or value['media_rollback_compatible'] is not True:raise Reject('topology_scope')
+    return value

@@ -101,7 +101,7 @@ def _atomic_record(record):
         except OSError: pass
         raise Reject('E_DEPLOY_RECORD_PERSIST') from exc
     return {'deploy_record_schema_version':'2','deploy_record_id':record['record_id'],'deploy_record_sha256':hashlib.sha256(payload).hexdigest(),'record_path':str(final)}
-def _record_v2(release,candidate,package,expected,data,runner,binding,contract=None,contract_sha=None):
+def _record_v2(release,candidate,package,expected,data,runner,binding,contract=None,contract_sha=None,media_identity=None,topology=None):
     binding=_task_binding(binding)
     targets=[]
     for service,container in zip(SERVICES,data):
@@ -114,6 +114,7 @@ def _record_v2(release,candidate,package,expected,data,runner,binding,contract=N
     record={'deploy_record_schema_version':'2','record_id':record_identity,'created_at':int(time.time()),'environment':'HK-STAGING-01','action_id':'HK_STAGING_DEPLOY','task_id':binding['task_id'],'nonce':binding['nonce'],'authority':binding['authority'],'task_canonical_sha256':binding['canonical_sha256'],'release_id':release,'candidate_image_id':candidate,'candidate_package_sha256':package,'expected_current_image_id':expected,'compose_path':COMPOSE,'compose_sha256':COMPOSE_SHA,'runtime_env_path':ENV,'env_sha256':ENV_SHA,'target_count':8,'targets':targets,'non_target_container_inventory_sha256':_non_target_snapshot(runner,[x['container_id'] for x in targets]),'protected_non_target_inventory':protected_inventory,'protected_non_target_inventory_sha256':protected_hash}
     if contract:
         record.update(candidate_contract_sha256=contract_sha,baseline_revision=contract['baseline_revision'],target_revision=contract['target_revision'],migration_required=contract.get('migration_required',True))
+    if topology:record.update(topology.record_fields(media_identity,contract))
     return _atomic_record(record)
 def rollback_source_eligible(record,record_sha256,task,evidence):
     """Pure future-rollback source validator; it performs no Docker operation."""
@@ -171,32 +172,36 @@ def _wait_for_api_health(runner,candidate,sleeper=time.sleep):
             if attempt + 1 == API_READINESS_ATTEMPTS:
                 raise Reject('E_DEPLOY_API_READINESS_TIMEOUT')
             sleeper(API_READINESS_INTERVAL_SECONDS)
-def run_deploy(release,candidate,package,expected,binding,runner,collector,artifact,sleeper=time.sleep,contract=None,contract_sha=None,migration=None,same_revision=None):
+def run_deploy(release,candidate,package,expected,binding,runner,collector,artifact,sleeper=time.sleep,contract=None,contract_sha=None,migration=None,same_revision=None,topology=None):
     data=_precheck(runner,candidate,package,expected,artifact)
+    media_identity=topology.predeploy(contract,data,expected) if topology else None
     needs_migration = contract is not None and contract.get('migration_required',True) is True
     if contract and not needs_migration:
         same_revision.require_clear()
         same_revision.check_images(runner,contract)
         collector._collect_alembic_for_api(runner,data[0],contract['baseline_revision'],'/workspace')
-    record=_record_v2(release,candidate,package,expected,data,runner,binding,contract,contract_sha)
+    record=_record_v2(release,candidate,package,expected,data,runner,binding,contract,contract_sha,media_identity,topology)
     override=None; receipt=None
     try:
         try:
             override=_override(candidate,contract)
         except OSError as exc:
             raise Reject('E_DEPLOY_TEMP_CREATION') from exc
+        if topology:topology.begin(media_identity,contract,record)
         if needs_migration:
             receipt=migration.execute(contract,contract_sha,binding,record,runner,_RuntimeConstants(),override)
         # Same-image deployments are intentionally a fixed, scoped recreation.
         # The flag is executor-owned: no Task parameter can add, remove, or vary it.
-        _run(runner,[DOCKER,'compose','--env-file',ENV,'-p',PROJECT,'-f',COMPOSE,'-f',override,'up','-d','--no-deps','--force-recreate',*SERVICES],300)
+        _run(runner,[DOCKER,'compose','--env-file',ENV,'-p',PROJECT,'-f',COMPOSE,*(topology.compose_args(media_identity) if topology else []),'-f',override,'up','-d','--no-deps','--force-recreate',*SERVICES],300)
         _,post_protected_hash=_protected_non_target_snapshot(runner)
         if post_protected_hash!=json.loads(pathlib.Path(record['record_path']).read_text(encoding='utf-8'))['protected_non_target_inventory_sha256']:
             raise Reject('E_DEPLOY_PROTECTED_NON_TARGET_MUTATION')
         _wait_for_api_health(runner,candidate,sleeper)
-        check=collector._collect_verify(runner,candidate,candidate,collector._PRODUCTION_VERIFY_INPUTS,sleeper,contract=contract) if contract else collector._collect_verify(runner,candidate,candidate,collector._PRODUCTION_VERIFY_INPUTS,sleeper)
+        check=collector._collect_verify(runner,candidate,candidate,collector._PRODUCTION_VERIFY_INPUTS,sleeper,contract=contract,topology=topology) if contract else collector._collect_verify(runner,candidate,candidate,collector._PRODUCTION_VERIFY_INPUTS,sleeper,topology=topology)
         if check.get('target_service_count')!=8: raise Reject('E_DEPLOY_PARTIAL_CONVERGENCE')
         gates={'durable_previous_state':'PASS','candidate_binding':'PASS','current_state':'PASS','fixed_scope':'PASS','post_deploy_verify':'PASS',**record}
+        if topology:gates.update(topology.postdeploy(media_identity,_inspect(runner,_ids(runner)),candidate))
+        if media_identity is not None:gates.update(topology.record_fields(media_identity,contract))
         if needs_migration:
             migration.complete(receipt)
             gates.update(migration_source_bound='PASS',rds_prestate_match='PASS',alembic_forward_migration='PASS',rds_poststate_match='PASS',migration_evidence='PASS',migration_record_sha256=receipt['receipt_sha256'])

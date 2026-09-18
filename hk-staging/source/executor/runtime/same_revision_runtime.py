@@ -28,11 +28,23 @@ def program():
     return raw.decode() + '\nentry()\n'
 
 def check_images(runner, contract):
-    if (contract.get('schema') != 'go.hk-candidate-contract.v2'
+    if (contract.get('schema') not in ('go.hk-candidate-contract.v2', 'go.hk-candidate-contract.v3')
         or contract.get('migration_required') is not False
         or contract['baseline_revision'] != contract['target_revision']
         or contract['migration_source_digest'] != contract['baseline_migration_source_digest']):
         raise Reject('E_SAME_SOURCE_CONTRACT')
+    if contract.get('schema') == 'go.hk-candidate-contract.v3':
+        topology = contract.get('topology')
+        if (not isinstance(topology, dict)
+            or set(topology) != {'topology_id','topology_version','topology_sha256','baseline_topology_version','media_rollback_compatible'}
+            or topology.get('topology_id') != 'HK_STAGING_BUSINESS_TOPOLOGY'
+            or type(topology.get('topology_version')) is not int or topology['topology_version'] != 2
+            or topology.get('topology_sha256') != '3efa422ebcfeee97528e829228a5f1c78a91151c88c50c606bab95479f3fddb1'
+            or type(topology.get('baseline_topology_version')) is not int or topology['baseline_topology_version'] not in (1,2)
+            or topology.get('media_rollback_compatible') is not True):
+            raise Reject('E_SAME_SOURCE_TOPOLOGY')
+    elif 'topology' in contract:
+        raise Reject('E_SAME_SOURCE_TOPOLOGY_SCHEMA')
     spec = json.dumps({'revision':contract['target_revision'],
                        'graph_sha256':contract['migration_source_digest']},sort_keys=True,separators=(',',':'))
     expected = {'source':'PASS','revision':contract['target_revision'],
