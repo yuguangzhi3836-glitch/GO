@@ -1,0 +1,57 @@
+{
+  "schema": "go.pr202.session-observation-recovery.v1",
+  "observation_kind": "Historical results directly observed earlier in this session; original EASON files not re-read during recovery",
+  "observed_deploy_utc": "2026-09-18T08:14:28Z",
+  "observed_post_verify_utc": "2026-09-18T08:17:06Z",
+  "host": {
+    "observed_at": "2026-09-18T08:19:17.303743+00:00",
+    "raw_file": "D:\\Code\\go-three-end-load-20260917\\pr202_host_readback.json",
+    "sha256": "869bbae78cb00c3b584c7f4cba5b7ee48c6435c13ea8d9ae560713f72f42f4b9",
+    "api_container_id": "ce5f5f0de0f2efaa58ac72b592a5908bb339fb120983f7162f3449021a439794",
+    "service_count": 8,
+    "mount_count": 8
+  },
+  "media": {
+    "before21": {
+      "path": "D:\\Code\\go-three-end-load-20260917\\v2_cache_BEFORE21_BYTES_V2.json",
+      "sha256": "12fb74c48638adc387ccf6d05b04513c6897f0b548ae8d19b0d557d4190d3afa",
+      "count": 21,
+      "bytes": 4932966
+    },
+    "after21": {
+      "path": "D:\\Code\\go-three-end-load-20260917\\v2_cache_AFTER21.json",
+      "sha256": "e4887a1eae48611c1c1b2cc45693da3c2e4c93ca387d3c511ae4563c202d7d50",
+      "preserved_count": 21
+    },
+    "final40": {
+      "path": "D:\\Code\\go-three-end-load-20260917\\v2_cache_FINAL40.json",
+      "sha256": "719410a24940e6dc2143d7adf50e724a7715dff2ee99a5dc53ac3e95d8dbda90",
+      "count": 40,
+      "bytes": 10700642,
+      "hero": 1,
+      "public_area": 18,
+      "room_material": 21
+    },
+    "ui_save": {
+      "new": 19,
+      "reused": 21
+    },
+    "ui_recheck": {
+      "reused": 40,
+      "pending": 0
+    },
+    "rights": "RIGHTS_UNKNOWN",
+    "room_mapping_completed": false,
+    "published": false,
+    "http_served_bytes_proven": false
+  },
+  "final_ui": {
+    "room_count": 17,
+    "image_count": 40,
+    "completeness_percent": 69,
+    "issues": 15,
+    "email": "1720574900@qq.com",
+    "email_provenance": "USER_PROVIDED_CTRIP_ATTRIBUTION"
+  },
+  "recovery_limitation": "EASON connector reported no devices available on2026-09-18 around17:23UTC. Original host/cache files are not included in this recovered increment; they were successfully read and independently reviewed before the interrupted full archive upload. No fresh deployment/media mutation performed during recovery."
+}

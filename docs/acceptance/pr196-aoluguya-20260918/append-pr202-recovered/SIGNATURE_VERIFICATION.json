@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "scope": "Recovered original signatures, Task/Evidence identity, candidate and execution window; no fresh host or media observation",
+  "stages": {
+    "TEST": {
+      "status": "PASS",
+      "task_id": "go-boss-test-pr-202-a47c73fb9f42",
+      "executor_result": "TEST_PR_OK",
+      "completed_at": "2026-09-18T06:32:58Z"
+    },
+    "CANARY": {
+      "status": "PASS",
+      "task_id": "go-boss-request-canary-20260918T080410Z-c48185c0baad",
+      "executor_result": "CANARY_OK",
+      "completed_at": "2026-09-18T08:05:24Z"
+    },
+    "VERIFY": {
+      "status": "PASS",
+      "task_id": "go-boss-request-verify-20260918T080546Z-70510835084d",
+      "executor_result": "VERIFY_OK",
+      "completed_at": "2026-09-18T08:07:27Z"
+    },
+    "DEPLOY": {
+      "status": "PASS",
+      "task_id": "go-boss-deploy-606bdf6d8c92ac303eb86822",
+      "executor_result": "DEPLOY_OK",
+      "completed_at": "2026-09-18T08:14:28Z"
+    },
+    "POST_VERIFY": {
+      "status": "PASS",
+      "task_id": "go-boss-post-deploy-verify-d5e1763cbeb0",
+      "executor_result": "VERIFY_OK",
+      "completed_at": "2026-09-18T08:17:06Z"
+    }
+  }
+}
