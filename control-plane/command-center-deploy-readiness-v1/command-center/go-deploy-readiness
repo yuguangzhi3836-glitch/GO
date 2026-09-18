@@ -177,7 +177,7 @@ SERVICES = ("api", "recovery-worker", "outbox-worker", "mobile-push-receipt-work
             "reconciliation-worker", "mobile-push-worker", "mobile-engagement-worker",
             "judgment-worker")
 PROTECTED_NON_TARGETS = ("redis", "caddy")
-FORBIDDEN_OPERATIONS = ("migration", "production", "automatic_rollback")
+FORBIDDEN_OPERATIONS = ("production", "automatic_rollback")
 CANARY_GATES = ("compose_baseline", "env_baseline", "expected_current_image",
                 "candidate_image", "python_compile", "alembic_head",
                 "container_isolation", "container_cleanup")
