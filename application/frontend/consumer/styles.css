@@ -132,3 +132,17 @@ body{margin:0}.shell,.home-shell{width:100%;max-width:768px;margin:0 auto;min-he
 
 
 .supplier-remedy{border-left:3px solid var(--navy,#0b1f3a)}.supplier-remedy .fare-breakdown{margin:16px 0}.supplier-remedy .fare-breakdown>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #e4e8ee}.supplier-remedy .fare-breakdown dd{margin:0;font-variant-numeric:tabular-nums;font-weight:600}.supplier-remedy .fine{font-size:12px;color:#566779}
+
+
+/* Shared two-step date-range picker: hotel/rental only; single-date verticals stay native. */
+.go-date-range-backdrop{position:fixed;inset:0;z-index:120;background:rgba(7,27,85,.34);display:flex;align-items:center;justify-content:center;padding:16px}
+.go-date-range{width:min(430px,100%);max-height:min(760px,calc(100vh - 32px));overflow:auto;background:#fff;border-radius:18px;padding:16px;color:var(--go-navy);box-shadow:0 18px 60px rgba(7,27,85,.18)}
+.go-date-range header{display:flex;gap:12px;align-items:flex-start}.go-date-range header [data-close]{width:44px;height:44px;flex:0 0 44px;border:1px solid var(--go-divider);border-radius:999px;background:#fff;color:var(--go-navy);font-size:24px}
+.go-date-range h2{margin:0;font-size:19px;line-height:28px}.go-date-range header p{margin:2px 0 0;color:var(--go-text-secondary);font-size:12px;line-height:18px}
+.go-date-range-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}.go-date-range-summary span{min-height:44px;padding:10px;border:1px solid var(--go-divider);border-radius:10px;font-size:12px;display:flex;align-items:center}
+.go-calendar-nav{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;text-align:center;margin-bottom:6px}.go-calendar-nav button{min-width:44px;min-height:44px;border:0;background:#fff;color:var(--go-navy);font-size:26px}
+.go-calendar-week,.go-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.go-calendar-week span{font-size:11px;text-align:center;color:var(--go-text-tertiary);padding:6px 0}
+.go-calendar-grid button{min-width:44px;min-height:44px;border:0;border-radius:10px;background:#fff;color:var(--go-navy);font:inherit}.go-calendar-grid button.in-range{background:rgba(8,120,249,.05)}.go-calendar-grid button.selected{background:var(--go-blue);color:#fff}
+.go-date-range-times{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.go-date-range-times label{font-size:11px;color:var(--go-text-secondary)}.go-date-range-times input{display:block;width:100%;min-height:44px;margin-top:4px;border:1px solid var(--go-divider);border-radius:10px;padding:8px;color:var(--go-navy);background:#fff}
+.go-date-range-error{min-height:20px;margin:8px 0;color:#B83813;font-size:12px;line-height:18px}.go-date-range [data-confirm]:disabled{opacity:.38;cursor:not-allowed}
+@media(max-width:600px){.go-date-range-backdrop{padding:0;align-items:flex-end}.go-date-range{width:100%;max-height:88vh;border-radius:18px 18px 0 0;padding:16px 14px calc(16px + env(safe-area-inset-bottom))}.go-calendar-grid button{min-width:0;min-height:46px}}
