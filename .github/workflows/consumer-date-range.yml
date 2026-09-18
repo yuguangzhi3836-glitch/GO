@@ -1,0 +1,98 @@
+name: Consumer shared date-range gate
+on:
+  push:
+    branches: [fix/shared-date-range-ux-20260918]
+  pull_request:
+    branches: [fix/aoluguya-hero-public-gallery-20260918]
+    paths:
+      - application/frontend/consumer/date-range.js
+      - application/frontend/consumer/app.js
+      - application/frontend/consumer/index.html
+      - application/frontend/consumer/styles.css
+      - application/tests_frontend/date_range.test.mjs
+      - .github/workflows/consumer-date-range.yml
+permissions:
+  contents: read
+jobs:
+  date-range:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify scoped diff and syntax
+        run: |
+          set -euo pipefail
+          mkdir -p evidence-out
+          git diff --name-only cd6345e32dd258c7f11f0766a36a168bad99a7f5...HEAD | sort | tee evidence-out/changed-files.txt
+          python - <<'PY'
+          import subprocess
+          allowed={
+            '.github/workflows/consumer-date-range.yml',
+            'application/frontend/consumer/app.js',
+            'application/frontend/consumer/date-range.js',
+            'application/frontend/consumer/index.html',
+            'application/frontend/consumer/styles.css',
+            'application/tests_frontend/date_range.test.mjs',
+          }
+          changed=set(subprocess.check_output(['git','diff','--name-only','cd6345e32dd258c7f11f0766a36a168bad99a7f5...HEAD'],text=True).splitlines())
+          extra=changed-allowed
+          assert not extra, f'out-of-scope files: {sorted(extra)}'
+          assert 'application/src/go_hotel/api/routes/operations_console.py' not in changed
+          assert 'application/src/go_hotel/security/deps.py' not in changed
+          PY
+          node --check application/frontend/consumer/date-range.js
+          node --check application/frontend/consumer/app.js
+      - name: Reproduce baseline gap
+        run: |
+          set -euo pipefail
+          git show cd6345e32dd258c7f11f0766a36a168bad99a7f5:application/frontend/consumer/app.js > "$RUNNER_TEMP/base-app.js"
+          python - <<'PY' | tee evidence-out/baseline-reproduction.log
+          from pathlib import Path
+          source=Path('/tmp/base-app.js')
+          import os
+          source=Path(os.environ['RUNNER_TEMP'])/'base-app.js'
+          text=source.read_text()
+          assert 'id="cin" type="date"' in text and 'id="cout" type="date"' in text
+          assert 'id="mt1" type="datetime-local"' in text and 'id="mt2" type="datetime-local"' in text
+          assert 'GODateRange' not in text
+          print('BASELINE_REPRODUCED: hotel and rental use independent native inputs; no shared range state/gate')
+          PY
+      - name: Run focused frontend tests
+        run: |
+          set -euo pipefail
+          cd application
+          node --test tests_frontend/date_range.test.mjs 2>&1 | tee ../evidence-out/raw.log
+      - name: Bind exact source and seal Evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > evidence-out/candidate.txt
+          git rev-parse HEAD:application > evidence-out/application-tree.txt
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          paths=[
+            Path('application/frontend/consumer/date-range.js'),
+            Path('application/frontend/consumer/app.js'),
+            Path('application/frontend/consumer/index.html'),
+            Path('application/frontend/consumer/styles.css'),
+            Path('application/tests_frontend/date_range.test.mjs'),
+          ]
+          manifest={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+          Path('evidence-out/SOURCE_FINGERPRINT.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+chr(10))
+          digest=hashlib.sha256(''.join(f'{p}\\0{h}\\n' for p,h in sorted(manifest.items())).encode()).hexdigest()
+          Path('evidence-out/source-fingerprint-sha256.txt').write_text(digest+chr(10))
+          json.loads(Path('evidence-out/SOURCE_FINGERPRINT.json').read_text())
+          PY
+          (cd evidence-out && find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS && sha256sum -c SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: consumer-date-range-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence-out
+          if-no-files-found: error
+          retention-days: 90
