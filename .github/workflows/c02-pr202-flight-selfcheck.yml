@@ -1,0 +1,84 @@
+name: C02 PR202 flight selfcheck
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'application/src/go_hotel/api/routes/flight.py'
+      - 'application/tests/flight/test_c02_three_end_change_quote.py'
+      - '.github/workflows/c02-pr202-flight-selfcheck.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: c02-pr202-flight-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  exact-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_TEST_DB_PATH: ${{ runner.temp }}/go-c02-three-end.db
+      REQUIRED_BASE_SHA: cd6345e32dd258c7f11f0766a36a168bad99a7f5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify PR202 ancestry and exact candidate
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git merge-base --is-ancestor "$REQUIRED_BASE_SHA" HEAD
+          mkdir -p "$RUNNER_TEMP/c02-evidence"
+          git rev-parse HEAD > "$RUNNER_TEMP/c02-evidence/candidate-sha.txt"
+          git rev-parse HEAD:application > "$RUNNER_TEMP/c02-evidence/application-tree.txt"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated application dependencies
+        working-directory: application
+        run: python -m pip install -e '.[dev]'
+      - name: Run C02 exact-candidate tests
+        id: tests
+        working-directory: application
+        run: |
+          set +e
+          PYTHONPATH=src python -m pytest             tests/flight/test_c02_three_end_change_quote.py             -p no:cacheprovider -q             --junitxml="$RUNNER_TEMP/c02-evidence/junit.xml"             > "$RUNNER_TEMP/c02-evidence/test.log" 2>&1
+          rc=$?
+          echo "exit_code=$rc" >> "$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/c02-evidence/test.log"
+          exit "$rc"
+      - name: Bind evidence to candidate
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'c02-evidence'
+          out.mkdir(exist_ok=True)
+          files={}
+          for path in sorted(out.glob('*')):
+              if path.is_file():
+                  files[path.name]=hashlib.sha256(path.read_bytes()).hexdigest()
+          result={
+              'cell':'C02',
+              'required_base_sha':os.environ['REQUIRED_BASE_SHA'],
+              'candidate_sha':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+              'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),
+              'test_exit_code':int('${{ steps.tests.outputs.exit_code || 99 }}'),
+              'files':files,
+              'scope':'C02 flight change quote idempotency and three-end identity boundaries',
+              'hong_kong':'NOT_ACCESSED',
+              'production':'HOLD',
+              'real_supplier':'DISABLED',
+              'real_payment':'DISABLED',
+          }
+          (out/'binding.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          PY
+          (cd "$RUNNER_TEMP/c02-evidence" && sha256sum * > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c02-pr202-flight-${{ github.sha }}
+          path: ${{ runner.temp }}/c02-evidence/
+          if-no-files-found: error
+          retention-days: 90
