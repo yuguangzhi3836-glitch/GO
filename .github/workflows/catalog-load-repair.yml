@@ -1,7 +1,7 @@
 name: Catalog and hotel load repair gate
 on:
   push:
-    branches: [fix/catalog-aoluguya-load-20260917]
+    branches: [fix/catalog-aoluguya-load-20260917, fix/aoluguya-complete-import-20260918]
   workflow_dispatch:
 permissions:
   contents: read
@@ -37,6 +37,11 @@ jobs:
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
           mkdir -p "$RUNNER_TEMP/catalog-load"
+      - name: Reviewed catalog and gallery UI behaviors
+        working-directory: application
+        run: |
+          set -euo pipefail
+          node --test tests_frontend/hotel_catalog_reviewed_import.test.mjs tests_frontend/hotel_catalog_hyatt_gallery.test.mjs 2>&1 | tee "$RUNNER_TEMP/catalog-load/catalog-ui.log"
       - name: Search event-loop regression
         working-directory: application
         run: |

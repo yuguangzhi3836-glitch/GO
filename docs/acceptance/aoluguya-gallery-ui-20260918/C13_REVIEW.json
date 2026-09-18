@@ -1,0 +1,69 @@
+{
+  "reviewer": "C13",
+  "reviewed_at": "2026-09-18T00:26:02.000436+00:00",
+  "verdict": "PASS_LOCAL_REVIEW_WITH_LIMITATIONS",
+  "blocking_findings": [],
+  "base_commit": "f2976f9cebe9555e8eab424817d956bf611fe19f",
+  "files": [
+    {
+      "path": "application/frontend/admin/hotel-page-factory.js",
+      "sha256": "b5a2580a5fa7074c653a3833baa646c4147fb910fa365c1a2923083213821b8f"
+    },
+    {
+      "path": "application/tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan.json",
+      "sha256": "78013dc8595f1e21325d51b2e8a57e496bb9ee83bf50adc12ac07ab122973a11"
+    },
+    {
+      "path": "application/tests_frontend/hotel_catalog_hyatt_gallery.test.mjs",
+      "sha256": "15eeba92bfe877d7b65d8628df78a0339fbcfb4ce7a22b919e64824889dc7033"
+    }
+  ],
+  "tests": {
+    "media": {
+      "passed": 9,
+      "failed": 0
+    },
+    "inherited_scope_facts": {
+      "passed": 12,
+      "failed": 0
+    },
+    "node_syntax": "PASS",
+    "actual_candidate_equals_regression_runtime": true
+  },
+  "original_logs": {
+    "C13_MEDIA_TEST.log": "a69fd41b69d1bbb8a1a0e06ba7d75d7d09a0e49aed49d91e37dcf26b8f4d1ee9",
+    "C13_INHERITED_TEST.log": "e6b3636764af6a1a9095a5e9b2cf3fc7d9b0a1ca3797e29012fb6d662577e782"
+  },
+  "source_checks": [
+    "Both base files git blob hashes independently matched SOURCE_BINDING",
+    "Actual C01 gallery plan semantically equals committed fixture;21 distinct fixed URLs",
+    "All request fields verified against actual harvest keyword-only signature, including allow_private=false and timeout_seconds=12",
+    "Actual backend harvest returns record with original source_url/source_type, GALLERY/null room, RIGHTS_UNKNOWN/publishable=false/VALIDATED plus bytes/dimensions/MIME/SHA256",
+    "Actual list_assets returns record array with computed publishable; route wraps in data; UI uses list index readback, not invented per-asset JSON get",
+    "Existing PR192 route blob ad8a0333d99632cc25c3ead2b136029eeaa38ccc verified against original application tree; admin:rules required for harvest and catalog scope guards preserved"
+  ],
+  "verified": [
+    "Reviewed semantic plan SHA and frozen WeakSet membership prevent arbitrary plan objects/URLs/request options",
+    "Normal existing authentication and admin:rules only; active two-hotel protected scope,112 archives,zero running queue,DRAFT and17 unique rooms preflight",
+    "Before each POST existing source-url records checked; exact matching asset reused, duplicate/mismatched record refused",
+    "Only harvest mutations; no publication/compose/rights/room-binding calls; expected values require UNKNOWN and nonpublishable",
+    "POST metadata and index metadata checked against expected content; returned asset ID must equal indexed ID",
+    "Lost POST response stops; next attempt rereads index and reuses committed asset; partial failures remain explicit and no rollback claimed",
+    "Shared facts/gallery button mutation guard; inherited12 tests run on byte-identical new frontend",
+    "Result and product wording explicitly leave independent served-byte hash/rights acceptance pending"
+  ],
+  "limitations": [
+    "No live API, browser rendering, deployment, submission or source edits by reviewer",
+    "API-double behavioral tests do not prove remote download or actual cache bytes",
+    "Metadata SHA comparison is NOT independent served-byte verification; independentServedByteHashVerified remains false; separate authenticated content-byte hash/public-denial acceptance still required",
+    "No backend source-url idempotency key: different pages/admins can race; duplicate detection stops but does not undo records",
+    "Requests are sequential and not a transaction; failed or response-lost harvest may already have saved UNKNOWN asset",
+    "Preflight observes a moment in time; other authorized clients may change draft/rights/scope during run, final readback detects relevant changes but cannot globally lock UI workflows",
+    "Only21 hotel-gallery images; no17-room image mapping, original199 recovery or complete media coverage claim",
+    "Exact integrated candidate signed DEPLOY/VERIFY plus fresh host verification required before live use by root"
+  ],
+  "live_execution": false,
+  "deployed": false,
+  "independent_served_byte_hash_verified": false,
+  "source_modified_by_reviewer": false
+}

@@ -1,0 +1,20 @@
+✔ only exact reviewed JSON is accepted, IDs and media boundaries retained (8.97986ms)
+✔ readonly account never sends a write (2.320702ms)
+✔ scope and higher-priority conflicts stop before UNPUBLISH or ingest (3.754359ms)
+✔ unreviewed objects cannot call the import runner (0.876529ms)
+✔ approved flow uses only unpublish + three existing ingest APIs, then readback (3.266595ms)
+✔ partial failures stop subsequent imports and do not report success (2.051697ms)
+✔ incorrect merged facts fail final readback (2.132648ms)
+✔ scope preview is readonly and activation verifies all 112 archived records (4.865055ms)
+✔ readonly or running-job scope does not write (1.571474ms)
+✔ scope fingerprint drift refuses activation without writing (1.487928ms)
+✔ scope readback leak is not reported as success (1.264973ms)
+✔ known anomaly codes are translated and unknown codes are not displayed (0.736078ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 123.001989

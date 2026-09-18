@@ -1,0 +1,17 @@
+✔ exact Hyatt plan admitted; changes, wrong hotel and invented kwargs rejected (13.250606ms)
+✔ readonly user and unreviewed plans never write (6.497676ms)
+✔ 21 new images are metadata-checked without rights/publication/room writes (6.537897ms)
+✔ existing reviewed gallery assets are reused without POST (3.78168ms)
+✔ lost harvest response resumes by querying index instead of duplicating (2.800804ms)
+✔ harvest mismatch stops immediately and does not pretend indexed row rolled back (2.89115ms)
+✔ wrong existing hash or duplicate source records stop before write (5.360906ms)
+✔ missing index readback stops after first image (2.47226ms)
+✔ public or room-bound asset is never silently reused (2.135433ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 132.829806
