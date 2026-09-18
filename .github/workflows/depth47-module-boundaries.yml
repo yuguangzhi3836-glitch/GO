@@ -1,13 +1,14 @@
 name: DEPTH48 ordered repair acceptance
 on:
   pull_request:
-    branches: [main]
+    branches: [main, cell/c02-pr202-three-end-selfcheck-20260918]
     paths:
       - application/**
       - ci/depth47/**
       - ci/journey-v2/**
       - ci/retention/**
       - .github/workflows/depth47-module-boundaries.yml
+      - evidence/c02-pr202-flight-trigger/**
 permissions:
   contents: read
 concurrency:
@@ -100,5 +101,64 @@ jobs:
         with:
           name: depth47-postgres-${{ github.event.pull_request.head.sha }}
           path: ${{ runner.temp }}/postgres-evidence
+          if-no-files-found: error
+          retention-days: 90
+
+  c02-exact-candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_TEST_DB_PATH: ${{ runner.temp }}/go-c02-three-end.db
+      REQUIRED_BASE_SHA: cd6345e32dd258c7f11f0766a36a168bad99a7f5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Bind PR202 ancestry and exact application tree
+        run: |
+          git merge-base --is-ancestor "$REQUIRED_BASE_SHA" HEAD
+          mkdir -p "$RUNNER_TEMP/c02-evidence"
+          git rev-parse HEAD > "$RUNNER_TEMP/c02-evidence/candidate-sha.txt"
+          git rev-parse HEAD:application > "$RUNNER_TEMP/c02-evidence/application-tree.txt"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated application dependencies
+        working-directory: application
+        run: python -m pip install -e '.[dev]'
+      - name: Execute only C02 idempotency, identity and airport resolver tests
+        id: c02
+        working-directory: application
+        run: |
+          set +e
+          PYTHONPATH=src python -m pytest             tests/flight/test_c02_three_end_change_quote.py             tests/flight/test_c02_airport_resolver.py             -p no:cacheprovider -q             --junitxml="$RUNNER_TEMP/c02-evidence/junit.xml"             > "$RUNNER_TEMP/c02-evidence/test.log" 2>&1
+          rc=$?
+          echo "exit_code=$rc" >> "$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/c02-evidence/test.log"
+          exit "$rc"
+      - name: Seal C02 evidence
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'c02-evidence'
+          files={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.glob('*')) if p.is_file()}
+          result={'cell':'C02','required_base_sha':os.environ['REQUIRED_BASE_SHA'],
+            'candidate_sha':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+            'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),
+            'test_exit_code':int('${{ steps.c02.outputs.exit_code || 99 }}'),'files':files,
+            'evidence_sections':['change_quote_idempotency_and_three_end_identity','multilingual_airport_resolution'],
+            'hong_kong':'NOT_ACCESSED','production':'HOLD','real_supplier':'DISABLED','real_payment':'DISABLED'}
+          (out/'binding.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          PY
+          (cd "$RUNNER_TEMP/c02-evidence" && sha256sum * > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c02-pr202-flight-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/c02-evidence
           if-no-files-found: error
           retention-days: 90
