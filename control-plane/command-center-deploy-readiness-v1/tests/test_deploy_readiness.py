@@ -203,7 +203,7 @@ def test_pr_pair(keys, **over):
                 "task_canonical_sha256": R.digest(
                     {k: v for k, v in task.items() if k != "signature"}),
                 "source_commit_sha": COMMIT, "source_pr_number": "52",
-                "artifact_digest": CANDIDATE_IMAGE, "built_image_id": CANDIDATE_IMAGE,
+                "built_image_id": CANDIDATE_IMAGE,
                 "artifact_durability": "PROVEN", "deployment_performed": False,
                 "artifact_package": {"schema": "go.sealed-artifact.v1",
                                      "package_sha256": CANDIDATE_PACKAGE,
@@ -512,7 +512,7 @@ class RetiredReleaseGateTests(unittest.TestCase):
     def test_a_broken_sealed_test_pr_blocks_instead_of_the_retired_declaration(self):
         for field, value in (("artifact_durability", "NOT_PROVEN"),
                              ("deployment_performed", True),
-                             ("artifact_digest", "sha256:" + "9" * 64)):
+                             ("built_image_id", "sha256:" + "9" * 64)):
             with self.subTest(field=field):
                 def mutate(_keys, bundle, field=field, value=value):
                     bundle["test_pr_evidence"][field] = value
