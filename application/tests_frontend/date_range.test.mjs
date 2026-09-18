@@ -48,7 +48,9 @@ test('mobile picker is a full-width bottom sheet with touch-size controls',()=>{
   const css=fs.readFileSync('frontend/consumer/styles.css','utf8');
   assert.match(css,/\.go-date-range-backdrop/);
   assert.match(css,/\.go-calendar-grid button\{[^}]*min-height:44px/);
-  assert.match(css,/@media\(max-width:600px\)\{\.go-date-range\{[^}]*width:100%/);
+  assert.ok(css.includes('@media(max-width:600px)'));
+  assert.ok(css.includes('.go-date-range{width:100%;max-height:88vh'));
+  assert.ok(css.includes('.go-calendar-grid button{min-width:0;min-height:46px}'));
 });
 
 test('range day clicks never close the dialog and confirmation starts disabled',()=>{
