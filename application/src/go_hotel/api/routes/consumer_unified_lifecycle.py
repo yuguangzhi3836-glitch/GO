@@ -16,5 +16,12 @@ def trips(p:Principal=Depends(consumer_principal)):
  try:return {'data':{'items':list_trips(p.user_id)}}
  except ValueError as e:
   raise HTTPException(503 if 'PROVIDER_TRUTH_REQUIRED' in str(e) else 409,detail=str(e))
+@router.post('/v1/consumer/unified-trips/external-orders',status_code=201)
+def import_external_order(b:P,p:Principal=Depends(consumer_principal)):return call(svc.import_external_order,p.user_id,b.model_dump(exclude_none=True),trusted_provider=False)
+@router.post('/internal/v1/consumer-lifecycle/external-orders/project')
+def project_external_order(b:P,p:Principal=Depends(admin_principal)):
+ data=b.model_dump(exclude_none=True);account_id=data.pop('account_id',None)
+ if not account_id:raise HTTPException(422,detail='ACCOUNT_ID_REQUIRED')
+ return call(svc.import_external_order,account_id,data,trusted_provider=True)
 @router.get('/v1/consumer/unified-trips/{lid}')
 def detail(lid:str,p:Principal=Depends(consumer_principal)):return call(svc.detail,p.user_id,lid)

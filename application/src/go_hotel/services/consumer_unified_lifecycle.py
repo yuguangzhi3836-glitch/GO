@@ -10,6 +10,19 @@ def ident(p):return f'{p}_{uuid.uuid4().hex}'
 def out(r):return {c.name:(getattr(r,c.name).isoformat() if isinstance(getattr(r,c.name),datetime) else getattr(r,c.name)) for c in r.__table__.columns}
 
 class ConsumerUnifiedLifecycleService:
+ def import_external_order(self,account_id,b,*,trusted_provider=False):
+  provider=str(b.get('provider') or '').upper();external_id=str(b.get('external_order_id') or '').strip();vertical=str(b.get('vertical') or '').upper()
+  if provider not in {'CTRIP','MEITUAN','FLIGGY','BOOKING','OTHER_OTA'}:raise ValueError('UNSUPPORTED_EXTERNAL_ORDER_PROVIDER')
+  if not external_id:raise ValueError('EXTERNAL_ORDER_ID_REQUIRED')
+  if vertical not in VERTICALS:raise ValueError('INVALID_VERTICAL_OR_LIFECYCLE_STATE')
+  source_updated_at=b.get('source_updated_at') or now().isoformat()
+  requested_state=str(b.get('lifecycle_state') or 'CONFIRMED').upper()
+  lifecycle_state=requested_state if trusted_provider and requested_state in STATES else 'MANUAL_REVIEW'
+  payment_state=str(b.get('payment_state') or 'UNKNOWN_EXTERNAL_STATE').upper() if trusted_provider else 'UNKNOWN_EXTERNAL_STATE'
+  refund_state=str(b.get('refund_state') or 'NOT_REQUESTED').upper() if trusted_provider else 'UNKNOWN_EXTERNAL_STATE'
+  deep_link=b.get('servicing_deep_link')
+  facts={**(b.get('facts') or {}),'transaction_platform':provider,'external_order_id':external_id,'fulfillment_owner':provider,'servicing_deep_link':deep_link,'imported_to_go_trips':True,'source_verification':'OFFICIAL_PROVIDER' if trusted_provider else 'USER_SUBMITTED_PENDING_VERIFICATION'}
+  return self.project({'account_id':account_id,'vertical':vertical,'order_id':f'ext:{provider}:{external_id}','title':b.get('title') or f'{provider} {vertical} 订单','lifecycle_state':lifecycle_state,'payment_state':payment_state,'refund_state':refund_state,'change_allowed':False,'cancel_allowed':False,'facts':facts,'evidence_reference':b.get('evidence_reference') if trusted_provider else f'user-import://{provider}/{external_id}','source_updated_at':source_updated_at,'event_type':'EXTERNAL_ORDER_IMPORTED'})
  def project_in_session(self,s,b,*,allow_new_refund_cycle=False):
   required=('account_id','vertical','order_id','title','lifecycle_state','payment_state','refund_state','evidence_reference','source_updated_at')
   if any(b.get(x) in (None,'') for x in required):raise ValueError('COMPLETE_VERTICAL_LIFECYCLE_FACT_REQUIRED')
