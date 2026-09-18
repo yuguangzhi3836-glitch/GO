@@ -25,6 +25,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13.5'
+      - name: Verify control source manifest
+        working-directory: control-plane/boss-deploy-request-v1
+        run: sha256sum --check SHA256SUMS
       - name: Exact deployed media-index fixture
         uses: actions/checkout@v4
         with:
