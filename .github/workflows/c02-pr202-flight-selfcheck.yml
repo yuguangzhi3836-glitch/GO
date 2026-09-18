@@ -6,6 +6,7 @@ on:
       - 'application/src/go_hotel/api/routes/flight.py'
       - 'application/tests/flight/test_c02_three_end_change_quote.py'
       - '.github/workflows/c02-pr202-flight-selfcheck.yml'
+      - 'evidence/c02-pr202-flight-trigger/**'
   workflow_dispatch:
 permissions:
   contents: read
