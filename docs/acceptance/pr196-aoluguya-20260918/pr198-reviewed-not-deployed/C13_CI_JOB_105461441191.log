@@ -1,0 +1,891 @@
+﻿2026-09-18T02:41:27.6691731Z Current runner version: '2.337.0'
+2026-09-18T02:41:27.6786628Z ##[group]Runner Image Provisioner
+2026-09-18T02:41:27.6788070Z Hosted Compute Agent
+2026-09-18T02:41:27.6789036Z Version: 20260828.587
+2026-09-18T02:41:27.6790204Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-18T02:41:27.6791764Z Build Date: 2026-08-28T16:44:25Z
+2026-09-18T02:41:27.6792964Z Worker ID: {4f358052-aa1b-4ee7-a485-203175e1799e}
+2026-09-18T02:41:27.6794238Z Azure Region: eastus
+2026-09-18T02:41:27.6795204Z ##[endgroup]
+2026-09-18T02:41:27.6797539Z ##[group]Operating System
+2026-09-18T02:41:27.6798762Z Ubuntu
+2026-09-18T02:41:27.6799682Z 24.04.5
+2026-09-18T02:41:27.6800561Z LTS
+2026-09-18T02:41:27.6804796Z ##[endgroup]
+2026-09-18T02:41:27.6805990Z ##[group]Runner Image
+2026-09-18T02:41:27.6807003Z Image: ubuntu-24.04
+2026-09-18T02:41:27.6808011Z Version: 20260907.300.1
+2026-09-18T02:41:27.6810188Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-18T02:41:27.6813265Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-18T02:41:27.6814905Z ##[endgroup]
+2026-09-18T02:41:27.6816872Z ##[group]GITHUB_TOKEN Permissions
+2026-09-18T02:41:27.6820036Z Contents: read
+2026-09-18T02:41:27.6841497Z Metadata: read
+2026-09-18T02:41:27.6842705Z ##[endgroup]
+2026-09-18T02:41:27.6845939Z Secret source: Actions
+2026-09-18T02:41:27.6847574Z Cache mode: write
+2026-09-18T02:41:27.6848737Z Prepare workflow directory
+2026-09-18T02:41:27.8022690Z Prepare all required actions
+2026-09-18T02:41:27.8141872Z Getting action download info
+2026-09-18T02:41:28.0056175Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-18T02:41:28.1232522Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-18T02:41:28.2175371Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-18T02:41:28.4568871Z Complete job name: acceptance
+2026-09-18T02:41:28.5254125Z ##[group]Checking docker version
+2026-09-18T02:41:28.5272936Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-09-18T02:41:28.6324026Z '1.48'
+2026-09-18T02:41:28.6343825Z Docker daemon API version: '1.48'
+2026-09-18T02:41:28.6345190Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-09-18T02:41:28.6693370Z '1.48'
+2026-09-18T02:41:28.6700100Z Docker client API version: '1.48'
+2026-09-18T02:41:28.6708047Z ##[endgroup]
+2026-09-18T02:41:28.6714860Z ##[group]Clean up resources from previous jobs
+2026-09-18T02:41:28.6724217Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=b4b276"
+2026-09-18T02:41:28.6973999Z ##[command]/usr/bin/docker network prune --force --filter "label=b4b276"
+2026-09-18T02:41:28.7272245Z ##[endgroup]
+2026-09-18T02:41:28.7273063Z ##[group]Create local container network
+2026-09-18T02:41:28.7285446Z ##[command]/usr/bin/docker network create --label b4b276 github_network_3aecf0d637f74c8f974b80b48c986d36
+2026-09-18T02:41:28.7978309Z de00c9b47d7e84c5fc172544dbf8fc22a9ba553ec0614cfe10257000395e4863
+2026-09-18T02:41:28.8000850Z ##[endgroup]
+2026-09-18T02:41:28.8039198Z ##[group]Starting postgres service container
+2026-09-18T02:41:28.8065755Z ##[command]/usr/bin/docker pull postgres:18.4
+2026-09-18T02:41:29.0848620Z 18.4: Pulling from library/postgres
+2026-09-18T02:41:29.1470139Z 26c307b5e35a: Pulling fs layer
+2026-09-18T02:41:29.1471348Z 5db2b7edf527: Pulling fs layer
+2026-09-18T02:41:29.1472660Z 130549402290: Pulling fs layer
+2026-09-18T02:41:29.1474313Z 8241f4a14319: Pulling fs layer
+2026-09-18T02:41:29.1476236Z a4dcdc0137d7: Pulling fs layer
+2026-09-18T02:41:29.1477829Z d1052e262c2e: Pulling fs layer
+2026-09-18T02:41:29.1479887Z 39762d0b4bb2: Pulling fs layer
+2026-09-18T02:41:29.1481440Z 38639b9be6a6: Pulling fs layer
+2026-09-18T02:41:29.1484458Z 4e6c52c74256: Pulling fs layer
+2026-09-18T02:41:29.1485949Z f51baa0c6c0d: Pulling fs layer
+2026-09-18T02:41:29.1491912Z 88bb22edda9b: Pulling fs layer
+2026-09-18T02:41:29.1493333Z f7d54729e84b: Pulling fs layer
+2026-09-18T02:41:29.1494612Z f90dd111f2e5: Pulling fs layer
+2026-09-18T02:41:29.1495907Z 38639b9be6a6: Waiting
+2026-09-18T02:41:29.1497055Z 8241f4a14319: Waiting
+2026-09-18T02:41:29.1498018Z a4dcdc0137d7: Waiting
+2026-09-18T02:41:29.1498625Z d1052e262c2e: Waiting
+2026-09-18T02:41:29.1499225Z 39762d0b4bb2: Waiting
+2026-09-18T02:41:29.1499699Z 4e6c52c74256: Waiting
+2026-09-18T02:41:29.1500340Z f51baa0c6c0d: Waiting
+2026-09-18T02:41:29.1500840Z 88bb22edda9b: Waiting
+2026-09-18T02:41:29.1502146Z f7d54729e84b: Waiting
+2026-09-18T02:41:29.1502796Z f90dd111f2e5: Waiting
+2026-09-18T02:41:29.1810082Z 5db2b7edf527: Verifying Checksum
+2026-09-18T02:41:29.1819527Z 5db2b7edf527: Download complete
+2026-09-18T02:41:29.2208461Z 130549402290: Download complete
+2026-09-18T02:41:29.2372550Z 8241f4a14319: Verifying Checksum
+2026-09-18T02:41:29.2374864Z 8241f4a14319: Download complete
+2026-09-18T02:41:29.3240632Z a4dcdc0137d7: Verifying Checksum
+2026-09-18T02:41:29.3243958Z a4dcdc0137d7: Download complete
+2026-09-18T02:41:29.3332999Z 26c307b5e35a: Verifying Checksum
+2026-09-18T02:41:29.3343585Z 26c307b5e35a: Download complete
+2026-09-18T02:41:29.3449638Z d1052e262c2e: Verifying Checksum
+2026-09-18T02:41:29.3453260Z d1052e262c2e: Download complete
+2026-09-18T02:41:29.3600698Z 39762d0b4bb2: Verifying Checksum
+2026-09-18T02:41:29.3602784Z 39762d0b4bb2: Download complete
+2026-09-18T02:41:29.3685586Z 38639b9be6a6: Verifying Checksum
+2026-09-18T02:41:29.3688937Z 38639b9be6a6: Download complete
+2026-09-18T02:41:29.3893356Z f51baa0c6c0d: Verifying Checksum
+2026-09-18T02:41:29.3896770Z f51baa0c6c0d: Download complete
+2026-09-18T02:41:29.4034583Z 88bb22edda9b: Verifying Checksum
+2026-09-18T02:41:29.4039130Z 88bb22edda9b: Download complete
+2026-09-18T02:41:29.4240603Z f7d54729e84b: Verifying Checksum
+2026-09-18T02:41:29.4243517Z f7d54729e84b: Download complete
+2026-09-18T02:41:29.4382201Z f90dd111f2e5: Verifying Checksum
+2026-09-18T02:41:29.4395626Z f90dd111f2e5: Download complete
+2026-09-18T02:41:30.1276660Z 4e6c52c74256: Verifying Checksum
+2026-09-18T02:41:30.1284612Z 4e6c52c74256: Download complete
+2026-09-18T02:41:30.8365072Z 26c307b5e35a: Pull complete
+2026-09-18T02:41:31.6963787Z 5db2b7edf527: Pull complete
+2026-09-18T02:41:31.9126500Z 130549402290: Pull complete
+2026-09-18T02:41:31.9708568Z 8241f4a14319: Pull complete
+2026-09-18T02:41:32.3403464Z a4dcdc0137d7: Pull complete
+2026-09-18T02:41:32.4377735Z d1052e262c2e: Pull complete
+2026-09-18T02:41:32.4540326Z 39762d0b4bb2: Pull complete
+2026-09-18T02:41:32.4661649Z 38639b9be6a6: Pull complete
+2026-09-18T02:41:36.8929183Z 4e6c52c74256: Pull complete
+2026-09-18T02:41:36.9155668Z f51baa0c6c0d: Pull complete
+2026-09-18T02:41:36.9299984Z 88bb22edda9b: Pull complete
+2026-09-18T02:41:36.9499079Z f7d54729e84b: Pull complete
+2026-09-18T02:41:36.9604929Z f90dd111f2e5: Pull complete
+2026-09-18T02:41:36.9678940Z Digest: sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
+2026-09-18T02:41:36.9685037Z Status: Downloaded newer image for postgres:18.4
+2026-09-18T02:41:36.9698382Z docker.io/library/postgres:18.4
+2026-09-18T02:41:36.9768224Z ##[command]/usr/bin/docker create --name 1d3718d80ced459db785634c75d4dbb5_postgres184_925706 --label b4b276 --network github_network_3aecf0d637f74c8f974b80b48c986d36 --network-alias postgres -p 5432:5432 --health-cmd "pg_isready -U go_ci -d go_catalog_scope_ci" --health-interval 5s --health-timeout 5s --health-retries 20 -e "POSTGRES_DB=go_catalog_scope_ci" -e "POSTGRES_USER=go_ci" -e "POSTGRES_PASSWORD=isolated_ci_only" -e GITHUB_ACTIONS=true -e CI=true postgres:18.4
+2026-09-18T02:41:37.0068612Z 89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3
+2026-09-18T02:41:37.0095739Z ##[command]/usr/bin/docker start 89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3
+2026-09-18T02:41:37.2767262Z 89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3
+2026-09-18T02:41:37.2778257Z ##[command]/usr/bin/docker ps --all --filter id=89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-09-18T02:41:37.2980591Z 89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3 Up Less than a second (health: starting)
+2026-09-18T02:41:37.3009614Z ##[command]/usr/bin/docker port 89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3
+2026-09-18T02:41:37.3267918Z 5432/tcp -> 0.0.0.0:5432
+2026-09-18T02:41:37.3271800Z 5432/tcp -> [::]:5432
+2026-09-18T02:41:37.3324503Z ##[endgroup]
+2026-09-18T02:41:37.3337449Z ##[group]Waiting for all services to be ready
+2026-09-18T02:41:37.3358519Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3
+2026-09-18T02:41:37.3578251Z starting
+2026-09-18T02:41:37.3613218Z postgres service is starting, waiting 2 seconds before checking again.
+2026-09-18T02:41:39.3617114Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3
+2026-09-18T02:41:39.3755849Z starting
+2026-09-18T02:41:39.3769389Z postgres service is starting, waiting 3 seconds before checking again.
+2026-09-18T02:41:43.1278420Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3
+2026-09-18T02:41:43.1426280Z healthy
+2026-09-18T02:41:43.1446985Z postgres service is healthy.
+2026-09-18T02:41:43.1447958Z ##[endgroup]
+2026-09-18T02:41:43.1818464Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T02:41:43.1826766Z ##[group]Run actions/checkout@v4
+2026-09-18T02:41:43.1827269Z with:
+2026-09-18T02:41:43.1827500Z   persist-credentials: false
+2026-09-18T02:41:43.1827782Z   repository: yuguangzhi3836-glitch/GO
+2026-09-18T02:41:43.1830300Z   token: ***
+2026-09-18T02:41:43.1830505Z   ssh-strict: true
+2026-09-18T02:41:43.1830703Z   ssh-user: git
+2026-09-18T02:41:43.1830885Z   clean: true
+2026-09-18T02:41:43.1831346Z   sparse-checkout-cone-mode: true
+2026-09-18T02:41:43.1831601Z   fetch-depth: 1
+2026-09-18T02:41:43.1831791Z   fetch-tags: false
+2026-09-18T02:41:43.1831991Z   show-progress: true
+2026-09-18T02:41:43.1832186Z   lfs: false
+2026-09-18T02:41:43.1832405Z   submodules: false
+2026-09-18T02:41:43.1832605Z   set-safe-directory: true
+2026-09-18T02:41:43.1832844Z   allow-unsafe-pr-checkout: false
+2026-09-18T02:41:43.1833638Z env:
+2026-09-18T02:41:43.1833855Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T02:41:43.1834110Z   APP_ENV: test
+2026-09-18T02:41:43.1834751Z   CATALOG_SCOPE_TEST_DATABASE_URL: ***127.0.0.1:5432/go_catalog_scope_ci
+2026-09-18T02:41:43.1835112Z ##[endgroup]
+2026-09-18T02:41:43.3007652Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-18T02:41:43.3009462Z ##[group]Getting Git version info
+2026-09-18T02:41:43.3010000Z Working directory is '/home/runner/work/GO/GO'
+2026-09-18T02:41:43.3010787Z [command]/usr/bin/git version
+2026-09-18T02:41:43.3223492Z git version 2.55.0
+2026-09-18T02:41:43.3265946Z ##[endgroup]
+2026-09-18T02:41:43.3298834Z Temporarily overriding HOME='/home/runner/work/_temp/39d1b0a7-b539-4dd4-a5b7-6ccb0353e720' before making global git config changes
+2026-09-18T02:41:43.3312156Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-18T02:41:43.3313668Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-18T02:41:43.3401874Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-18T02:41:43.3421314Z ##[group]Initializing the repository
+2026-09-18T02:41:43.3436829Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-18T02:41:43.3612760Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-18T02:41:43.3618936Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-18T02:41:43.3620081Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-18T02:41:43.3621328Z hint: call:
+2026-09-18T02:41:43.3651511Z hint:
+2026-09-18T02:41:43.3653155Z hint: 	git config --global init.defaultBranch <name>
+2026-09-18T02:41:43.3654125Z hint:
+2026-09-18T02:41:43.3654858Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-18T02:41:43.3655849Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-18T02:41:43.3656589Z hint:
+2026-09-18T02:41:43.3657117Z hint: 	git branch -m <name>
+2026-09-18T02:41:43.3657709Z hint:
+2026-09-18T02:41:43.3658415Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-18T02:41:43.3659480Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-18T02:41:43.3662398Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-18T02:41:43.3733034Z ##[endgroup]
+2026-09-18T02:41:43.3733900Z ##[group]Disabling automatic garbage collection
+2026-09-18T02:41:43.3734641Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-18T02:41:43.3787512Z ##[endgroup]
+2026-09-18T02:41:43.3788441Z ##[group]Setting up auth
+2026-09-18T02:41:43.3812830Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-18T02:41:43.3912923Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-18T02:41:43.4382693Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-18T02:41:43.4448769Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-18T02:41:43.4702153Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-18T02:41:43.4742499Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-18T02:41:43.4991966Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-18T02:41:43.5033832Z ##[endgroup]
+2026-09-18T02:41:43.5034968Z ##[group]Fetching the repository
+2026-09-18T02:41:43.5045195Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +f80f13acfb6eb5653770bd880bcb92d455292a54:refs/remotes/origin/fix/aoluguya-contact-email-20260918
+2026-09-18T02:41:54.8492517Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-18T02:41:54.8493747Z  * [new ref]         f80f13acfb6eb5653770bd880bcb92d455292a54 -> origin/fix/aoluguya-contact-email-20260918
+2026-09-18T02:41:54.8539410Z ##[endgroup]
+2026-09-18T02:41:54.8540238Z ##[group]Determining the checkout info
+2026-09-18T02:41:54.8542197Z ##[endgroup]
+2026-09-18T02:41:54.8542682Z [command]/usr/bin/git sparse-checkout disable
+2026-09-18T02:41:54.8620091Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-18T02:41:54.8690201Z ##[group]Checking out the ref
+2026-09-18T02:41:54.8723770Z [command]/usr/bin/git checkout --progress --force -B fix/aoluguya-contact-email-20260918 refs/remotes/origin/fix/aoluguya-contact-email-20260918
+2026-09-18T02:41:56.0366567Z Updating files:  29% (1757/5880)
+2026-09-18T02:41:56.4910264Z Updating files:  30% (1764/5880)
+2026-09-18T02:41:56.4939030Z Updating files:  31% (1823/5880)
+2026-09-18T02:41:56.4968193Z Updating files:  32% (1882/5880)
+2026-09-18T02:41:56.5073194Z Updating files:  33% (1941/5880)
+2026-09-18T02:41:56.5142310Z Updating files:  34% (2000/5880)
+2026-09-18T02:41:56.5225223Z Updating files:  35% (2058/5880)
+2026-09-18T02:41:56.5258524Z Updating files:  36% (2117/5880)
+2026-09-18T02:41:56.5293284Z Updating files:  37% (2176/5880)
+2026-09-18T02:41:56.5322992Z Updating files:  38% (2235/5880)
+2026-09-18T02:41:56.5355331Z Updating files:  39% (2294/5880)
+2026-09-18T02:41:56.5390349Z Updating files:  40% (2352/5880)
+2026-09-18T02:41:56.5421324Z Updating files:  41% (2411/5880)
+2026-09-18T02:41:56.5450360Z Updating files:  42% (2470/5880)
+2026-09-18T02:41:56.5496033Z Updating files:  43% (2529/5880)
+2026-09-18T02:41:56.5543811Z Updating files:  44% (2588/5880)
+2026-09-18T02:41:56.5584046Z Updating files:  45% (2646/5880)
+2026-09-18T02:41:56.5627067Z Updating files:  46% (2705/5880)
+2026-09-18T02:41:56.5673129Z Updating files:  47% (2764/5880)
+2026-09-18T02:41:56.5706773Z Updating files:  48% (2823/5880)
+2026-09-18T02:41:56.5745466Z Updating files:  49% (2882/5880)
+2026-09-18T02:41:56.5781013Z Updating files:  50% (2940/5880)
+2026-09-18T02:41:56.5816478Z Updating files:  51% (2999/5880)
+2026-09-18T02:41:56.5850218Z Updating files:  52% (3058/5880)
+2026-09-18T02:41:56.6770306Z Updating files:  53% (3117/5880)
+2026-09-18T02:41:56.6812422Z Updating files:  54% (3176/5880)
+2026-09-18T02:41:56.6895004Z Updating files:  55% (3234/5880)
+2026-09-18T02:41:56.7137408Z Updating files:  56% (3293/5880)
+2026-09-18T02:41:56.7430439Z Updating files:  57% (3352/5880)
+2026-09-18T02:41:56.7817281Z Updating files:  58% (3411/5880)
+2026-09-18T02:41:56.7856667Z Updating files:  59% (3470/5880)
+2026-09-18T02:41:56.7888502Z Updating files:  60% (3528/5880)
+2026-09-18T02:41:56.7917312Z Updating files:  61% (3587/5880)
+2026-09-18T02:41:56.7957269Z Updating files:  62% (3646/5880)
+2026-09-18T02:41:56.8019450Z Updating files:  63% (3705/5880)
+2026-09-18T02:41:56.8047231Z Updating files:  64% (3764/5880)
+2026-09-18T02:41:56.8078954Z Updating files:  65% (3822/5880)
+2026-09-18T02:41:56.8119801Z Updating files:  66% (3881/5880)
+2026-09-18T02:41:56.8162606Z Updating files:  67% (3940/5880)
+2026-09-18T02:41:56.8200755Z Updating files:  68% (3999/5880)
+2026-09-18T02:41:56.8237601Z Updating files:  69% (4058/5880)
+2026-09-18T02:41:56.8271606Z Updating files:  70% (4116/5880)
+2026-09-18T02:41:56.8344044Z Updating files:  71% (4175/5880)
+2026-09-18T02:41:56.8521411Z Updating files:  72% (4234/5880)
+2026-09-18T02:41:56.8800096Z Updating files:  73% (4293/5880)
+2026-09-18T02:41:56.8818652Z Updating files:  74% (4352/5880)
+2026-09-18T02:41:56.9159191Z Updating files:  74% (4363/5880)
+2026-09-18T02:41:56.9218994Z Updating files:  75% (4410/5880)
+2026-09-18T02:41:56.9287394Z Updating files:  76% (4469/5880)
+2026-09-18T02:41:56.9345152Z Updating files:  77% (4528/5880)
+2026-09-18T02:41:56.9373208Z Updating files:  78% (4587/5880)
+2026-09-18T02:41:56.9397975Z Updating files:  79% (4646/5880)
+2026-09-18T02:41:56.9420111Z Updating files:  80% (4704/5880)
+2026-09-18T02:41:56.9440816Z Updating files:  81% (4763/5880)
+2026-09-18T02:41:56.9466893Z Updating files:  82% (4822/5880)
+2026-09-18T02:41:56.9513103Z Updating files:  83% (4881/5880)
+2026-09-18T02:41:56.9533853Z Updating files:  84% (4940/5880)
+2026-09-18T02:41:56.9576717Z Updating files:  85% (4998/5880)
+2026-09-18T02:41:56.9606679Z Updating files:  86% (5057/5880)
+2026-09-18T02:41:56.9632115Z Updating files:  87% (5116/5880)
+2026-09-18T02:41:56.9668658Z Updating files:  88% (5175/5880)
+2026-09-18T02:41:56.9703765Z Updating files:  89% (5234/5880)
+2026-09-18T02:41:56.9732036Z Updating files:  90% (5292/5880)
+2026-09-18T02:41:56.9758307Z Updating files:  91% (5351/5880)
+2026-09-18T02:41:56.9824564Z Updating files:  92% (5410/5880)
+2026-09-18T02:41:56.9851778Z Updating files:  93% (5469/5880)
+2026-09-18T02:41:56.9894015Z Updating files:  94% (5528/5880)
+2026-09-18T02:41:56.9917486Z Updating files:  95% (5586/5880)
+2026-09-18T02:41:56.9964472Z Updating files:  96% (5645/5880)
+2026-09-18T02:41:56.9997273Z Updating files:  97% (5704/5880)
+2026-09-18T02:41:57.0034847Z Updating files:  98% (5763/5880)
+2026-09-18T02:41:57.0066414Z Updating files:  99% (5822/5880)
+2026-09-18T02:41:57.0067857Z Updating files: 100% (5880/5880)
+2026-09-18T02:41:57.0068584Z Updating files: 100% (5880/5880), done.
+2026-09-18T02:41:57.5442475Z Switched to a new branch 'fix/aoluguya-contact-email-20260918'
+2026-09-18T02:41:58.1322444Z branch 'fix/aoluguya-contact-email-20260918' set up to track 'origin/fix/aoluguya-contact-email-20260918'.
+2026-09-18T02:41:58.1413352Z ##[endgroup]
+2026-09-18T02:41:58.2868007Z [command]/usr/bin/git log -1 --format=%H
+2026-09-18T02:41:58.2906734Z f80f13acfb6eb5653770bd880bcb92d455292a54
+2026-09-18T02:41:58.2942325Z ##[group]Removing auth
+2026-09-18T02:41:58.2944100Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-18T02:41:58.2979397Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-18T02:41:58.3237252Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-18T02:41:58.4270057Z http.https://github.com/.extraheader
+2026-09-18T02:41:58.4301835Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-18T02:41:58.4340755Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-18T02:41:58.4606332Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-18T02:41:58.4664217Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-18T02:41:58.4940837Z ##[endgroup]
+2026-09-18T02:41:58.5190397Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T02:41:58.5192757Z ##[group]Run actions/setup-python@v5
+2026-09-18T02:41:58.5193042Z with:
+2026-09-18T02:41:58.5193239Z   python-version: 3.13.5
+2026-09-18T02:41:58.5193465Z   check-latest: false
+2026-09-18T02:41:58.5195880Z   token: ***
+2026-09-18T02:41:58.5196096Z   update-environment: true
+2026-09-18T02:41:58.5196328Z   allow-prereleases: false
+2026-09-18T02:41:58.5196554Z   freethreaded: false
+2026-09-18T02:41:58.5196752Z env:
+2026-09-18T02:41:58.5196941Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T02:41:58.5197172Z   APP_ENV: test
+2026-09-18T02:41:58.5197747Z   CATALOG_SCOPE_TEST_DATABASE_URL: ***127.0.0.1:5432/go_catalog_scope_ci
+2026-09-18T02:41:58.5198140Z ##[endgroup]
+2026-09-18T02:41:58.6621662Z ##[group]Installed versions
+2026-09-18T02:41:58.6652678Z Version 3.13.5 was not found in the local cache
+2026-09-18T02:41:58.6762960Z (node:2572) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-18T02:41:58.6764502Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-18T02:41:59.2308473Z Version 3.13.5 is available for downloading
+2026-09-18T02:41:59.2309848Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-24.04-x64.tar.gz"
+2026-09-18T02:42:00.1213258Z Extract downloaded archive
+2026-09-18T02:42:00.1410218Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/7495ff23-b1f4-4b09-8ee4-2c11e9d390a9 -f /home/runner/work/_temp/2b0163a1-8d49-4794-8035-ff163c370d1d
+2026-09-18T02:42:02.5912071Z Execute installation script
+2026-09-18T02:42:02.6106252Z Check if Python hostedtoolcache folder exist...
+2026-09-18T02:42:02.6115462Z Create Python 3.13.5 folder
+2026-09-18T02:42:02.6144282Z Copy Python binaries to hostedtoolcache folder
+2026-09-18T02:42:03.2717689Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-18T02:42:03.2760359Z Upgrading pip...
+2026-09-18T02:42:05.6482480Z Looking in links: /tmp/tmpi4qknuha
+2026-09-18T02:42:05.6488124Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-18T02:42:07.1855451Z Collecting pip
+2026-09-18T02:42:07.2228450Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-18T02:42:07.2344878Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-18T02:42:07.2785526Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 61.2 MB/s eta 0:00:00
+2026-09-18T02:42:07.2792245Z 
+2026-09-18T02:42:07.2983617Z Installing collected packages: pip
+2026-09-18T02:42:07.2986142Z Attempting uninstall: pip
+2026-09-18T02:42:07.3016276Z Found existing installation: pip 25.1.1
+2026-09-18T02:42:07.3362732Z Uninstalling pip-25.1.1:
+2026-09-18T02:42:07.3417886Z Successfully uninstalled pip-25.1.1
+2026-09-18T02:42:09.1008940Z Successfully installed pip-26.2.1
+2026-09-18T02:42:09.1631781Z Create complete file
+2026-09-18T02:42:09.1676699Z Successfully set up CPython (3.13.5)
+2026-09-18T02:42:09.1678392Z ##[endgroup]
+2026-09-18T02:42:09.1867264Z ##[group]Run set -euo pipefail
+2026-09-18T02:42:09.1867628Z [36;1mset -euo pipefail[0m
+2026-09-18T02:42:09.1868374Z [36;1mpython ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"[0m
+2026-09-18T02:42:09.1869572Z [36;1mpython -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock[0m
+2026-09-18T02:42:09.1870542Z [36;1mmkdir -p "$RUNNER_TEMP/catalog-load"[0m
+2026-09-18T02:42:09.1933154Z shell: /usr/bin/bash -e {0}
+2026-09-18T02:42:09.1933561Z env:
+2026-09-18T02:42:09.1933896Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T02:42:09.1934301Z   APP_ENV: test
+2026-09-18T02:42:09.1935244Z   CATALOG_SCOPE_TEST_DATABASE_URL: ***127.0.0.1:5432/go_catalog_scope_ci
+2026-09-18T02:42:09.1966691Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:09.1967502Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T02:42:09.1968279Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:09.1968914Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:09.1969545Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:09.1970178Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T02:42:09.1970726Z ##[endgroup]
+2026-09-18T02:42:09.6003053Z {"archive_sha256": "b13a76ab9351f81da70e8e2c8873c20141abe953cd3f96aeb181ef86a34b58dd", "verified_wheels": 37, "source": "pinned GO repository ci/dependency_parts only", "application_source_restored": false}
+2026-09-18T02:42:10.6088582Z Looking in links: /home/runner/work/_temp/frozen/wheelhouse
+2026-09-18T02:42:10.6188210Z Processing /home/runner/work/_temp/frozen/wheelhouse/alembic-1.16.5-py3-none-any.whl (from -r ci/retention/requirements.lock (line 1))
+2026-09-18T02:42:10.6264566Z Processing /home/runner/work/_temp/frozen/wheelhouse/annotated_doc-0.0.4-py3-none-any.whl (from -r ci/retention/requirements.lock (line 2))
+2026-09-18T02:42:10.6292638Z Processing /home/runner/work/_temp/frozen/wheelhouse/annotated_types-0.7.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 3))
+2026-09-18T02:42:10.6322397Z Processing /home/runner/work/_temp/frozen/wheelhouse/anyio-4.13.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 4))
+2026-09-18T02:42:10.6358893Z Processing /home/runner/work/_temp/frozen/wheelhouse/certifi-2026.5.20-py3-none-any.whl (from -r ci/retention/requirements.lock (line 5))
+2026-09-18T02:42:10.6385534Z Processing /home/runner/work/_temp/frozen/wheelhouse/cffi-2.0.0-cp313-cp313-manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 6))
+2026-09-18T02:42:10.6413645Z Processing /home/runner/work/_temp/frozen/wheelhouse/click-8.5.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 7))
+2026-09-18T02:42:10.6437495Z Processing /home/runner/work/_temp/frozen/wheelhouse/cryptography-46.0.4-cp311-abi3-manylinux_2_34_x86_64.whl (from -r ci/retention/requirements.lock (line 8))
+2026-09-18T02:42:10.6533345Z Processing /home/runner/work/_temp/frozen/wheelhouse/fastapi-0.128.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 9))
+2026-09-18T02:42:10.6604152Z Processing /home/runner/work/_temp/frozen/wheelhouse/greenlet-3.5.1-cp313-cp313-manylinux_2_24_x86_64.whl (from -r ci/retention/requirements.lock (line 10))
+2026-09-18T02:42:10.6653751Z Processing /home/runner/work/_temp/frozen/wheelhouse/h11-0.16.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 11))
+2026-09-18T02:42:10.6684757Z Processing /home/runner/work/_temp/frozen/wheelhouse/httpcore-1.0.9-py3-none-any.whl (from -r ci/retention/requirements.lock (line 12))
+2026-09-18T02:42:10.6739383Z Processing /home/runner/work/_temp/frozen/wheelhouse/httpx-0.28.1-py3-none-any.whl (from -r ci/retention/requirements.lock (line 13))
+2026-09-18T02:42:10.6776429Z Processing /home/runner/work/_temp/frozen/wheelhouse/idna-3.17-py3-none-any.whl (from -r ci/retention/requirements.lock (line 14))
+2026-09-18T02:42:10.6807990Z Processing /home/runner/work/_temp/frozen/wheelhouse/iniconfig-2.3.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 15))
+2026-09-18T02:42:10.6834389Z Processing /home/runner/work/_temp/frozen/wheelhouse/mako-1.3.10-py3-none-any.whl (from -r ci/retention/requirements.lock (line 16))
+2026-09-18T02:42:10.6866233Z Processing /home/runner/work/_temp/frozen/wheelhouse/markupsafe-3.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from -r ci/retention/requirements.lock (line 17))
+2026-09-18T02:42:10.6890755Z Processing /home/runner/work/_temp/frozen/wheelhouse/packaging-25.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 18))
+2026-09-18T02:42:10.6919654Z Processing /home/runner/work/_temp/frozen/wheelhouse/pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.whl (from -r ci/retention/requirements.lock (line 19))
+2026-09-18T02:42:10.7032878Z Processing /home/runner/work/_temp/frozen/wheelhouse/pluggy-1.6.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 20))
+2026-09-18T02:42:10.7063271Z Processing /home/runner/work/_temp/frozen/wheelhouse/psycopg_binary-3.2.10-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 21))
+2026-09-18T02:42:10.7133946Z Processing /home/runner/work/_temp/frozen/wheelhouse/psycopg-3.2.10-py3-none-any.whl (from -r ci/retention/requirements.lock (line 22))
+2026-09-18T02:42:10.7190319Z Processing /home/runner/work/_temp/frozen/wheelhouse/pycparser-3.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 23))
+2026-09-18T02:42:10.7218449Z Processing /home/runner/work/_temp/frozen/wheelhouse/pydantic_settings-2.14.1-py3-none-any.whl (from -r ci/retention/requirements.lock (line 24))
+2026-09-18T02:42:10.7250759Z Processing /home/runner/work/_temp/frozen/wheelhouse/pydantic-2.13.4-py3-none-any.whl (from -r ci/retention/requirements.lock (line 25))
+2026-09-18T02:42:10.7329857Z Processing /home/runner/work/_temp/frozen/wheelhouse/pydantic_core-2.46.4-cp313-cp313-manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 26))
+2026-09-18T02:42:10.7382579Z Processing /home/runner/work/_temp/frozen/wheelhouse/Pygments-2.20.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 27))
+2026-09-18T02:42:10.7471619Z Processing /home/runner/work/_temp/frozen/wheelhouse/PyJWT-2.13.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 28))
+2026-09-18T02:42:10.7499237Z Processing /home/runner/work/_temp/frozen/wheelhouse/pytest_asyncio-1.3.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 29))
+2026-09-18T02:42:10.7530661Z Processing /home/runner/work/_temp/frozen/wheelhouse/pytest-9.0.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 30))
+2026-09-18T02:42:10.7584149Z Processing /home/runner/work/_temp/frozen/wheelhouse/python_dotenv-1.2.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 31))
+2026-09-18T02:42:10.7622437Z Processing /home/runner/work/_temp/frozen/wheelhouse/redis-5.2.1-py3-none-any.whl (from -r ci/retention/requirements.lock (line 32))
+2026-09-18T02:42:10.7658551Z Processing /home/runner/work/_temp/frozen/wheelhouse/SQLAlchemy-2.0.50-cp313-cp313-manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 33))
+2026-09-18T02:42:10.7813365Z Processing /home/runner/work/_temp/frozen/wheelhouse/starlette-0.50.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 34))
+2026-09-18T02:42:10.7849967Z Processing /home/runner/work/_temp/frozen/wheelhouse/typing_inspection-0.4.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 35))
+2026-09-18T02:42:10.7878468Z Processing /home/runner/work/_temp/frozen/wheelhouse/typing_extensions-4.16.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 36))
+2026-09-18T02:42:10.7905097Z Processing /home/runner/work/_temp/frozen/wheelhouse/uvicorn-0.35.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 37))
+2026-09-18T02:42:10.9224529Z Installing collected packages: typing_extensions, redis, python-dotenv, PyJWT, Pygments, pycparser, psycopg-binary, psycopg, pluggy, Pillow, packaging, MarkupSafe, iniconfig, idna, h11, greenlet, click, certifi, annotated-types, annotated-doc, uvicorn, typing-inspection, SQLAlchemy, pytest, pydantic_core, Mako, httpcore, cffi, anyio, starlette, pytest-asyncio, pydantic, httpx, cryptography, alembic, pydantic-settings, fastapi
+2026-09-18T02:42:16.0546169Z 
+2026-09-18T02:42:16.0604295Z Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 Pillow-12.3.0 PyJWT-2.13.0 Pygments-2.20.0 SQLAlchemy-2.0.50 alembic-1.16.5 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 certifi-2026.5.20 cffi-2.0.0 click-8.5.0 cryptography-46.0.4 fastapi-0.128.2 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.17 iniconfig-2.3.0 packaging-25.0 pluggy-1.6.0 psycopg-3.2.10 psycopg-binary-3.2.10 pycparser-3.0 pydantic-2.13.4 pydantic-settings-2.14.1 pydantic_core-2.46.4 pytest-9.0.2 pytest-asyncio-1.3.0 python-dotenv-1.2.2 redis-5.2.1 starlette-0.50.0 typing-inspection-0.4.2 typing_extensions-4.16.0 uvicorn-0.35.0
+2026-09-18T02:42:16.1238337Z ##[group]Run set -euo pipefail
+2026-09-18T02:42:16.1238680Z [36;1mset -euo pipefail[0m
+2026-09-18T02:42:16.1239559Z [36;1mnode --test tests_frontend/hotel_catalog_reviewed_import.test.mjs tests_frontend/hotel_catalog_hyatt_gallery.test.mjs tests_frontend/hotel_catalog_contacts.test.mjs 2>&1 | tee "$RUNNER_TEMP/catalog-load/catalog-ui.log"[0m
+2026-09-18T02:42:16.1278566Z shell: /usr/bin/bash -e {0}
+2026-09-18T02:42:16.1278816Z env:
+2026-09-18T02:42:16.1279025Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T02:42:16.1279272Z   APP_ENV: test
+2026-09-18T02:42:16.1279887Z   CATALOG_SCOPE_TEST_DATABASE_URL: ***127.0.0.1:5432/go_catalog_scope_ci
+2026-09-18T02:42:16.1280330Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:16.1280752Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T02:42:16.1281516Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:16.1281932Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:16.1282319Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:16.1282689Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T02:42:16.1283000Z ##[endgroup]
+2026-09-18T02:42:16.3467759Z TAP version 13
+2026-09-18T02:42:16.4267344Z # Subtest: restricted form accepts updated valid public facts without whole-file hash
+2026-09-18T02:42:16.4288905Z ok 1 - restricted form accepts updated valid public facts without whole-file hash
+2026-09-18T02:42:16.4297457Z   ---
+2026-09-18T02:42:16.4298085Z   duration_ms: 4.52378
+2026-09-18T02:42:16.4298700Z   type: 'test'
+2026-09-18T02:42:16.4299251Z   ...
+2026-09-18T02:42:16.4299968Z # Subtest: wrong hotel, types, URL and phone/email are rejected
+2026-09-18T02:42:16.4300909Z ok 2 - wrong hotel, types, URL and phone/email are rejected
+2026-09-18T02:42:16.4302131Z   ---
+2026-09-18T02:42:16.4302690Z   duration_ms: 2.390717
+2026-09-18T02:42:16.4303280Z   type: 'test'
+2026-09-18T02:42:16.4304262Z   ...
+2026-09-18T02:42:16.4304894Z # Subtest: readonly principal sends no writes
+2026-09-18T02:42:16.4305691Z ok 3 - readonly principal sends no writes
+2026-09-18T02:42:16.4306368Z   ---
+2026-09-18T02:42:16.4306861Z   duration_ms: 1.774585
+2026-09-18T02:42:16.4307443Z   type: 'test'
+2026-09-18T02:42:16.4307984Z   ...
+2026-09-18T02:42:16.4338882Z # Subtest: normal form writes two truthful sources and events-only email
+2026-09-18T02:42:16.4350791Z ok 4 - normal form writes two truthful sources and events-only email
+2026-09-18T02:42:16.4352005Z   ---
+2026-09-18T02:42:16.4352989Z   duration_ms: 14.93913
+2026-09-18T02:42:16.4353549Z   type: 'test'
+2026-09-18T02:42:16.4354054Z   ...
+2026-09-18T02:42:16.4422946Z # Subtest: higher official address is retained and supplementary source snapshot recorded
+2026-09-18T02:42:16.4426754Z ok 5 - higher official address is retained and supplementary source snapshot recorded
+2026-09-18T02:42:16.4428772Z   ---
+2026-09-18T02:42:16.4429417Z   duration_ms: 8.46782
+2026-09-18T02:42:16.4430099Z   type: 'test'
+2026-09-18T02:42:16.4431509Z   ...
+2026-09-18T02:42:16.4492657Z # Subtest: higher-ranked same phone is reused without source downgrade
+2026-09-18T02:42:16.4502166Z ok 6 - higher-ranked same phone is reused without source downgrade
+2026-09-18T02:42:16.4507247Z   ---
+2026-09-18T02:42:16.4515045Z   duration_ms: 4.422651
+2026-09-18T02:42:16.4521386Z   type: 'test'
+2026-09-18T02:42:16.4522036Z   ...
+2026-09-18T02:42:16.4523075Z # Subtest: suppression or incompatible stronger purpose prevents write
+2026-09-18T02:42:16.4524544Z ok 7 - suppression or incompatible stronger purpose prevents write
+2026-09-18T02:42:16.4525365Z   ---
+2026-09-18T02:42:16.4526011Z   duration_ms: 2.507152
+2026-09-18T02:42:16.4526908Z   type: 'test'
+2026-09-18T02:42:16.4527386Z   ...
+2026-09-18T02:42:16.4542895Z # Subtest: changed profile after preview requires re-review before writes
+2026-09-18T02:42:16.4547838Z ok 8 - changed profile after preview requires re-review before writes
+2026-09-18T02:42:16.4548257Z   ---
+2026-09-18T02:42:16.4548745Z   duration_ms: 4.514315
+2026-09-18T02:42:16.4548995Z   type: 'test'
+2026-09-18T02:42:16.4549196Z   ...
+2026-09-18T02:42:16.4623046Z # Subtest: repeat unchanged form keeps stable source identity and no duplicate contacts
+2026-09-18T02:42:16.4625212Z ok 9 - repeat unchanged form keeps stable source identity and no duplicate contacts
+2026-09-18T02:42:16.4626211Z   ---
+2026-09-18T02:42:16.4628712Z   duration_ms: 7.761364
+2026-09-18T02:42:16.4630171Z   type: 'test'
+2026-09-18T02:42:16.4635406Z   ...
+2026-09-18T02:42:16.4677029Z # Subtest: general-reservations misclassification fails final verification
+2026-09-18T02:42:16.4689596Z ok 10 - general-reservations misclassification fails final verification
+2026-09-18T02:42:16.4690773Z   ---
+2026-09-18T02:42:16.4692347Z   duration_ms: 4.719325
+2026-09-18T02:42:16.4693133Z   type: 'test'
+2026-09-18T02:42:16.4694048Z   ...
+2026-09-18T02:42:16.4721900Z # Subtest: same-grade higher confidence phone is not downgraded
+2026-09-18T02:42:16.4727982Z ok 11 - same-grade higher confidence phone is not downgraded
+2026-09-18T02:42:16.4728887Z   ---
+2026-09-18T02:42:16.4729472Z   duration_ms: 5.431622
+2026-09-18T02:42:16.4730133Z   type: 'test'
+2026-09-18T02:42:16.4735218Z   ...
+2026-09-18T02:42:16.4808776Z # Subtest: user supplied Ctrip mailbox has separate attributed snapshot and GENERAL purpose
+2026-09-18T02:42:16.4812123Z ok 12 - user supplied Ctrip mailbox has separate attributed snapshot and GENERAL purpose
+2026-09-18T02:42:16.4813233Z   ---
+2026-09-18T02:42:16.4813920Z   duration_ms: 8.487447
+2026-09-18T02:42:16.4814499Z   type: 'test'
+2026-09-18T02:42:16.4815046Z   ...
+2026-09-18T02:42:16.4838288Z # Subtest: updated attributed email remains configurable without new release
+2026-09-18T02:42:16.4851373Z ok 13 - updated attributed email remains configurable without new release
+2026-09-18T02:42:16.4882440Z   ---
+2026-09-18T02:42:16.4900378Z   duration_ms: 3.512857
+2026-09-18T02:42:16.4919474Z   type: 'test'
+2026-09-18T02:42:16.4941810Z   ...
+2026-09-18T02:42:16.4942696Z # Subtest: tampered attribution snapshot stops before remaining source writes
+2026-09-18T02:42:16.4943916Z ok 14 - tampered attribution snapshot stops before remaining source writes
+2026-09-18T02:42:16.4944872Z   ---
+2026-09-18T02:42:16.4945433Z   duration_ms: 4.410849
+2026-09-18T02:42:16.4946025Z   type: 'test'
+2026-09-18T02:42:16.4946569Z   ...
+2026-09-18T02:42:16.4947348Z # Subtest: public email cannot masquerade as the weddings email or inject markup
+2026-09-18T02:42:16.4948542Z ok 15 - public email cannot masquerade as the weddings email or inject markup
+2026-09-18T02:42:16.4951789Z   ---
+2026-09-18T02:42:16.4952383Z   duration_ms: 1.167826
+2026-09-18T02:42:16.4953004Z   type: 'test'
+2026-09-18T02:42:16.4953553Z   ...
+2026-09-18T02:42:16.4954299Z # Subtest: email local parts reject terminal dot and more than 64 characters
+2026-09-18T02:42:16.4955407Z ok 16 - email local parts reject terminal dot and more than 64 characters
+2026-09-18T02:42:16.4956287Z   ---
+2026-09-18T02:42:16.4956875Z   duration_ms: 1.042102
+2026-09-18T02:42:16.4957464Z   type: 'test'
+2026-09-18T02:42:16.4958005Z   ...
+2026-09-18T02:42:16.5676332Z # Subtest: exact Hyatt plan admitted; changes, wrong hotel and invented kwargs rejected
+2026-09-18T02:42:16.5683485Z ok 17 - exact Hyatt plan admitted; changes, wrong hotel and invented kwargs rejected
+2026-09-18T02:42:16.5684519Z   ---
+2026-09-18T02:42:16.5685083Z   duration_ms: 16.927805
+2026-09-18T02:42:16.5685716Z   type: 'test'
+2026-09-18T02:42:16.5686231Z   ...
+2026-09-18T02:42:16.5733739Z # Subtest: readonly user and unreviewed plans never write
+2026-09-18T02:42:16.5751721Z ok 18 - readonly user and unreviewed plans never write
+2026-09-18T02:42:16.5760125Z   ---
+2026-09-18T02:42:16.5760785Z   duration_ms: 4.321894
+2026-09-18T02:42:16.5781800Z   type: 'test'
+2026-09-18T02:42:16.5801700Z   ...
+2026-09-18T02:42:16.5813324Z # Subtest: 21 new images are metadata-checked without rights/publication/room writes
+2026-09-18T02:42:16.5823041Z ok 19 - 21 new images are metadata-checked without rights/publication/room writes
+2026-09-18T02:42:16.5841670Z   ---
+2026-09-18T02:42:16.5861816Z   duration_ms: 8.056674
+2026-09-18T02:42:16.5896469Z   type: 'test'
+2026-09-18T02:42:16.5897832Z   ...
+2026-09-18T02:42:16.5922154Z # Subtest: existing reviewed gallery assets are reused without POST
+2026-09-18T02:42:16.5941657Z ok 20 - existing reviewed gallery assets are reused without POST
+2026-09-18T02:42:16.5951564Z   ---
+2026-09-18T02:42:16.5961683Z   duration_ms: 8.443345
+2026-09-18T02:42:16.5978473Z   type: 'test'
+2026-09-18T02:42:16.5996159Z   ...
+2026-09-18T02:42:16.6011854Z # Subtest: lost harvest response resumes by querying index instead of duplicating
+2026-09-18T02:42:16.6014046Z ok 21 - lost harvest response resumes by querying index instead of duplicating
+2026-09-18T02:42:16.6014923Z   ---
+2026-09-18T02:42:16.6015424Z   duration_ms: 7.600274
+2026-09-18T02:42:16.6015964Z   type: 'test'
+2026-09-18T02:42:16.6016451Z   ...
+2026-09-18T02:42:16.6044379Z # Subtest: harvest mismatch stops immediately and does not pretend indexed row rolled back
+2026-09-18T02:42:16.6052351Z ok 22 - harvest mismatch stops immediately and does not pretend indexed row rolled back
+2026-09-18T02:42:16.6062076Z   ---
+2026-09-18T02:42:16.6062612Z   duration_ms: 7.017608
+2026-09-18T02:42:16.6063227Z   type: 'test'
+2026-09-18T02:42:16.6063812Z   ...
+2026-09-18T02:42:16.6113106Z # Subtest: wrong existing hash or duplicate source records stop before write
+2026-09-18T02:42:16.6114398Z ok 23 - wrong existing hash or duplicate source records stop before write
+2026-09-18T02:42:16.6115347Z   ---
+2026-09-18T02:42:16.6115916Z   duration_ms: 6.881356
+2026-09-18T02:42:16.6116562Z   type: 'test'
+2026-09-18T02:42:16.6117121Z   ...
+2026-09-18T02:42:16.6161810Z # Subtest: missing index readback stops after first image
+2026-09-18T02:42:16.6173350Z ok 24 - missing index readback stops after first image
+2026-09-18T02:42:16.6182069Z   ---
+2026-09-18T02:42:16.6182618Z   duration_ms: 4.128513
+2026-09-18T02:42:16.6183230Z   type: 'test'
+2026-09-18T02:42:16.6184209Z   ...
+2026-09-18T02:42:16.6184868Z # Subtest: public or room-bound asset is never silently reused
+2026-09-18T02:42:16.6192211Z ok 25 - public or room-bound asset is never silently reused
+2026-09-18T02:42:16.6192996Z   ---
+2026-09-18T02:42:16.6193632Z   duration_ms: 3.739158
+2026-09-18T02:42:16.6194323Z   type: 'test'
+2026-09-18T02:42:16.6194900Z   ...
+2026-09-18T02:42:16.6894518Z # Subtest: only exact reviewed JSON is accepted, IDs and media boundaries retained
+2026-09-18T02:42:16.6921924Z ok 26 - only exact reviewed JSON is accepted, IDs and media boundaries retained
+2026-09-18T02:42:16.6926268Z   ---
+2026-09-18T02:42:16.6926920Z   duration_ms: 14.598304
+2026-09-18T02:42:16.6927594Z   type: 'test'
+2026-09-18T02:42:16.6928183Z   ...
+2026-09-18T02:42:16.6934538Z # Subtest: readonly account never sends a write
+2026-09-18T02:42:16.6935581Z ok 27 - readonly account never sends a write
+2026-09-18T02:42:16.6936461Z   ---
+2026-09-18T02:42:16.6937050Z   duration_ms: 2.815877
+2026-09-18T02:42:16.6937737Z   type: 'test'
+2026-09-18T02:42:16.6938342Z   ...
+2026-09-18T02:42:16.6982299Z # Subtest: scope and higher-priority conflicts stop before UNPUBLISH or ingest
+2026-09-18T02:42:16.6990542Z ok 28 - scope and higher-priority conflicts stop before UNPUBLISH or ingest
+2026-09-18T02:42:16.6996103Z   ---
+2026-09-18T02:42:16.6996742Z   duration_ms: 4.918737
+2026-09-18T02:42:16.6997358Z   type: 'test'
+2026-09-18T02:42:16.6997942Z   ...
+2026-09-18T02:42:16.6998679Z # Subtest: unreviewed objects cannot call the import runner
+2026-09-18T02:42:16.6999619Z ok 29 - unreviewed objects cannot call the import runner
+2026-09-18T02:42:16.7000364Z   ---
+2026-09-18T02:42:16.7000887Z   duration_ms: 0.94994
+2026-09-18T02:42:16.7001745Z   type: 'test'
+2026-09-18T02:42:16.7002287Z   ...
+2026-09-18T02:42:16.7040806Z # Subtest: approved flow uses only unpublish + three existing ingest APIs, then readback
+2026-09-18T02:42:16.7071902Z ok 30 - approved flow uses only unpublish + three existing ingest APIs, then readback
+2026-09-18T02:42:16.7086744Z   ---
+2026-09-18T02:42:16.7087535Z   duration_ms: 4.611323
+2026-09-18T02:42:16.7088140Z   type: 'test'
+2026-09-18T02:42:16.7088684Z   ...
+2026-09-18T02:42:16.7105014Z # Subtest: partial failures stop subsequent imports and do not report success
+2026-09-18T02:42:16.7112172Z ok 31 - partial failures stop subsequent imports and do not report success
+2026-09-18T02:42:16.7119601Z   ---
+2026-09-18T02:42:16.7120195Z   duration_ms: 6.242223
+2026-09-18T02:42:16.7120892Z   type: 'test'
+2026-09-18T02:42:16.7121922Z   ...
+2026-09-18T02:42:16.7236237Z # Subtest: incorrect merged facts fail final readback
+2026-09-18T02:42:16.7249154Z ok 32 - incorrect merged facts fail final readback
+2026-09-18T02:42:16.7281979Z   ---
+2026-09-18T02:42:16.7282668Z   duration_ms: 2.586162
+2026-09-18T02:42:16.7283373Z   type: 'test'
+2026-09-18T02:42:16.7284009Z   ...
+2026-09-18T02:42:16.7284872Z # Subtest: scope preview is readonly and activation verifies all 112 archived records
+2026-09-18T02:42:16.7286223Z ok 33 - scope preview is readonly and activation verifies all 112 archived records
+2026-09-18T02:42:16.7287197Z   ---
+2026-09-18T02:42:16.7287780Z   duration_ms: 5.911387
+2026-09-18T02:42:16.7288425Z   type: 'test'
+2026-09-18T02:42:16.7289020Z   ...
+2026-09-18T02:42:16.7289695Z # Subtest: readonly or running-job scope does not write
+2026-09-18T02:42:16.7290600Z ok 34 - readonly or running-job scope does not write
+2026-09-18T02:42:16.7293706Z   ---
+2026-09-18T02:42:16.7294335Z   duration_ms: 1.798422
+2026-09-18T02:42:16.7294975Z   type: 'test'
+2026-09-18T02:42:16.7295563Z   ...
+2026-09-18T02:42:16.7296306Z # Subtest: scope fingerprint drift refuses activation without writing
+2026-09-18T02:42:16.7297419Z ok 35 - scope fingerprint drift refuses activation without writing
+2026-09-18T02:42:16.7298313Z   ---
+2026-09-18T02:42:16.7298912Z   duration_ms: 1.670603
+2026-09-18T02:42:16.7299562Z   type: 'test'
+2026-09-18T02:42:16.7300143Z   ...
+2026-09-18T02:42:16.7300831Z # Subtest: scope readback leak is not reported as success
+2026-09-18T02:42:16.7302407Z ok 36 - scope readback leak is not reported as success
+2026-09-18T02:42:16.7303217Z   ---
+2026-09-18T02:42:16.7303799Z   duration_ms: 2.34672
+2026-09-18T02:42:16.7304437Z   type: 'test'
+2026-09-18T02:42:16.7304995Z   ...
+2026-09-18T02:42:16.7305810Z # Subtest: known anomaly codes are translated and unknown codes are not displayed
+2026-09-18T02:42:16.7307032Z ok 37 - known anomaly codes are translated and unknown codes are not displayed
+2026-09-18T02:42:16.7307977Z   ---
+2026-09-18T02:42:16.7308535Z   duration_ms: 0.684586
+2026-09-18T02:42:16.7309123Z   type: 'test'
+2026-09-18T02:42:16.7309688Z   ...
+2026-09-18T02:42:16.7381431Z 1..37
+2026-09-18T02:42:16.7383118Z # tests 37
+2026-09-18T02:42:16.7383785Z # suites 0
+2026-09-18T02:42:16.7384396Z # pass 37
+2026-09-18T02:42:16.7385495Z # fail 0
+2026-09-18T02:42:16.7386245Z # cancelled 0
+2026-09-18T02:42:16.7386918Z # skipped 0
+2026-09-18T02:42:16.7387652Z # todo 0
+2026-09-18T02:42:16.7388185Z # duration_ms 422.30302
+2026-09-18T02:42:16.7475623Z ##[group]Run set -euo pipefail
+2026-09-18T02:42:16.7475959Z [36;1mset -euo pipefail[0m
+2026-09-18T02:42:16.7476428Z [36;1mpython scripts/test_hotel_search_event_loop.py 2>&1 | tee "$RUNNER_TEMP/catalog-load/search.log"[0m
+2026-09-18T02:42:16.7513683Z shell: /usr/bin/bash -e {0}
+2026-09-18T02:42:16.7513922Z env:
+2026-09-18T02:42:16.7514120Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T02:42:16.7514358Z   APP_ENV: test
+2026-09-18T02:42:16.7514954Z   CATALOG_SCOPE_TEST_DATABASE_URL: ***127.0.0.1:5432/go_catalog_scope_ci
+2026-09-18T02:42:16.7515398Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:16.7515824Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T02:42:16.7516235Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:16.7516603Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:16.7516975Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:16.7517391Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T02:42:16.7517760Z ##[endgroup]
+2026-09-18T02:42:17.3374424Z test_empty_search_keeps_decision_without_offer_writes (__main__.SearchConcurrency.test_empty_search_keeps_decision_without_offer_writes) ... ok
+2026-09-18T02:42:17.5355543Z test_judgment_failure_propagates (__main__.SearchConcurrency.test_judgment_failure_propagates) ... ok
+2026-09-18T02:42:17.7344416Z test_search_all_sync_work_off_loop_and_business_effects_retained (__main__.SearchConcurrency.test_search_all_sync_work_off_loop_and_business_effects_retained) ... ok
+2026-09-18T02:42:17.9764984Z test_threadpool_bound_preserved_under_concurrent_search (__main__.SearchConcurrency.test_threadpool_bound_preserved_under_concurrent_search) ... ok
+2026-09-18T02:42:18.3265696Z test_write_failure_propagates_without_false_success (__main__.SearchConcurrency.test_write_failure_propagates_without_false_success) ... ok
+2026-09-18T02:42:18.3272831Z 
+2026-09-18T02:42:18.3273588Z ----------------------------------------------------------------------
+2026-09-18T02:42:18.3274565Z Ran 5 tests in 1.065s
+2026-09-18T02:42:18.3275037Z 
+2026-09-18T02:42:18.3275331Z OK
+2026-09-18T02:42:18.3507364Z ##[group]Run set -euo pipefail
+2026-09-18T02:42:18.3507711Z [36;1mset -euo pipefail[0m
+2026-09-18T02:42:18.3508160Z [36;1mpython scripts/test_catalog_scope.py 2>&1 | tee "$RUNNER_TEMP/catalog-load/catalog.log"[0m
+2026-09-18T02:42:18.3508843Z [36;1mpython scripts/test_catalog_graph_visibility.py 2>&1 | tee "$RUNNER_TEMP/catalog-load/graph.log"[0m
+2026-09-18T02:42:18.3547281Z shell: /usr/bin/bash -e {0}
+2026-09-18T02:42:18.3547531Z env:
+2026-09-18T02:42:18.3547735Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T02:42:18.3547991Z   APP_ENV: test
+2026-09-18T02:42:18.3548615Z   CATALOG_SCOPE_TEST_DATABASE_URL: ***127.0.0.1:5432/go_catalog_scope_ci
+2026-09-18T02:42:18.3549068Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:18.3549494Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T02:42:18.3550133Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:18.3550548Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:18.3551140Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:18.3551603Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T02:42:18.3551955Z   DATABASE_URL: sqlite+pysqlite:///:memory:
+2026-09-18T02:42:18.3552236Z   PYTHONPATH: src
+2026-09-18T02:42:18.3552438Z ##[endgroup]
+2026-09-18T02:42:22.3192396Z ..........
+2026-09-18T02:42:22.3193271Z ----------------------------------------------------------------------
+2026-09-18T02:42:22.3202029Z Ran 10 tests in 1.113s
+2026-09-18T02:42:22.3202401Z 
+2026-09-18T02:42:22.3202737Z OK
+2026-09-18T02:42:26.0921630Z test_catalog_only_hidden_without_deleting_audit_or_shared_rows (__main__.CatalogGraphVisibility.test_catalog_only_hidden_without_deleting_audit_or_shared_rows) ... ok
+2026-09-18T02:42:26.1279403Z test_legacy_destructive_reset_cannot_bypass_scope (__main__.CatalogGraphVisibility.test_legacy_destructive_reset_cannot_bypass_scope) ... ok
+2026-09-18T02:42:26.1545861Z test_reprojection_and_writes_cannot_restore_archived_catalog (__main__.CatalogGraphVisibility.test_reprojection_and_writes_cannot_restore_archived_catalog) ... ok
+2026-09-18T02:42:26.1712897Z test_shared_entity_keeps_order_alias_but_hides_catalog_fact (__main__.CatalogGraphVisibility.test_shared_entity_keeps_order_alias_but_hides_catalog_fact) ... ok
+2026-09-18T02:42:26.1954500Z test_snapshot_facts_require_visible_canonical_binding (__main__.CatalogGraphVisibility.test_snapshot_facts_require_visible_canonical_binding) ... ok
+2026-09-18T02:42:26.3625226Z test_visible_evidence_after_archived_first_page_is_not_lost (__main__.CatalogGraphVisibility.test_visible_evidence_after_archived_first_page_is_not_lost) ... ok
+2026-09-18T02:42:26.3627092Z 
+2026-09-18T02:42:26.3627628Z ----------------------------------------------------------------------
+2026-09-18T02:42:26.3628480Z Ran 6 tests in 0.629s
+2026-09-18T02:42:26.3628879Z 
+2026-09-18T02:42:26.3629163Z OK
+2026-09-18T02:42:26.8494722Z ##[group]Run set -euo pipefail
+2026-09-18T02:42:26.8495256Z [36;1mset -euo pipefail[0m
+2026-09-18T02:42:26.8496077Z [36;1mpython scripts/test_catalog_scope_postgres.py 2>&1 | tee "$RUNNER_TEMP/catalog-load/postgres.log"[0m
+2026-09-18T02:42:26.8549599Z shell: /usr/bin/bash -e {0}
+2026-09-18T02:42:26.8550013Z env:
+2026-09-18T02:42:26.8550354Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T02:42:26.8550790Z   APP_ENV: test
+2026-09-18T02:42:26.8552146Z   CATALOG_SCOPE_TEST_DATABASE_URL: ***127.0.0.1:5432/go_catalog_scope_ci
+2026-09-18T02:42:26.8552904Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:26.8553621Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T02:42:26.8554332Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:26.8554978Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:26.8555638Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:26.8556335Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T02:42:26.8556950Z   DATABASE_URL: sqlite+pysqlite:///:memory:
+2026-09-18T02:42:26.8557425Z   PYTHONPATH: src
+2026-09-18T02:42:26.8557768Z ##[endgroup]
+2026-09-18T02:42:29.9693648Z Verified PostgreSQL 18.4; all writes restricted to per-test random schemas
+2026-09-18T02:42:30.4597617Z test_activation_wins_stale_enqueue_claim_and_protected_writer (__main__.CatalogScopePostgres.test_activation_wins_stale_enqueue_claim_and_protected_writer) ... ok
+2026-09-18T02:42:30.5847631Z test_claim_wins_and_active_lease_blocks_even_fresh_activation (__main__.CatalogScopePostgres.test_claim_wins_and_active_lease_blocks_even_fresh_activation) ... ok
+2026-09-18T02:42:30.8953879Z test_enqueue_wins_invalidates_reviewed_snapshot (__main__.CatalogScopePostgres.test_enqueue_wins_invalidates_reviewed_snapshot) ... ok
+2026-09-18T02:42:30.9922071Z test_explicit_rollback_restores_queue_and_preserves_audit (__main__.CatalogScopePostgres.test_explicit_rollback_restores_queue_and_preserves_audit) ... ok
+2026-09-18T02:42:30.9924080Z 
+2026-09-18T02:42:30.9924666Z ----------------------------------------------------------------------
+2026-09-18T02:42:30.9925444Z Ran 4 tests in 1.038s
+2026-09-18T02:42:30.9925833Z 
+2026-09-18T02:42:30.9926111Z OK
+2026-09-18T02:42:31.5379547Z ##[group]Run set -euo pipefail
+2026-09-18T02:42:31.5380095Z [36;1mset -euo pipefail[0m
+2026-09-18T02:42:31.5382555Z [36;1mpython -m pytest -p no:cacheprovider tests/test_sprint1i_routing.py tests/test_sprint1j_merge.py tests/test_hotel_autopage_factory.py tests/test_hotel_discovery_orchestrator.py --junitxml="$RUNNER_TEMP/catalog-load/retention.xml" 2>&1 | tee "$RUNNER_TEMP/catalog-load/retention.log"[0m
+2026-09-18T02:42:31.5439872Z shell: /usr/bin/bash -e {0}
+2026-09-18T02:42:31.5440279Z env:
+2026-09-18T02:42:31.5440617Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T02:42:31.5441423Z   APP_ENV: test
+2026-09-18T02:42:31.5442674Z   CATALOG_SCOPE_TEST_DATABASE_URL: ***127.0.0.1:5432/go_catalog_scope_ci
+2026-09-18T02:42:31.5443485Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:31.5444231Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T02:42:31.5444970Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:31.5445652Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:31.5446291Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:31.5446946Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T02:42:31.5447568Z   DATABASE_URL: sqlite+pysqlite:///:memory:
+2026-09-18T02:42:31.5448066Z   PYTHONPATH: src
+2026-09-18T02:42:31.5448424Z ##[endgroup]
+2026-09-18T02:42:46.5240855Z .............                                                            [100%]
+2026-09-18T02:42:46.5242270Z 13 passed in 12.31s
+2026-09-18T02:42:47.9138186Z ##[group]Run set -euo pipefail
+2026-09-18T02:42:47.9138888Z [36;1mset -euo pipefail[0m
+2026-09-18T02:42:47.9139225Z [36;1mmkdir -p "$RUNNER_TEMP/catalog-load"[0m
+2026-09-18T02:42:47.9139642Z [36;1mgit rev-parse HEAD > "$RUNNER_TEMP/catalog-load/source-commit.txt"[0m
+2026-09-18T02:42:47.9140189Z [36;1mgit rev-parse HEAD:application > "$RUNNER_TEMP/catalog-load/application-tree.txt"[0m
+2026-09-18T02:42:47.9140635Z [36;1mcd "$RUNNER_TEMP/catalog-load"[0m
+2026-09-18T02:42:47.9141416Z [36;1mfind . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS[0m
+2026-09-18T02:42:47.9178332Z shell: /usr/bin/bash -e {0}
+2026-09-18T02:42:47.9178584Z env:
+2026-09-18T02:42:47.9178785Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T02:42:47.9179029Z   APP_ENV: test
+2026-09-18T02:42:47.9179644Z   CATALOG_SCOPE_TEST_DATABASE_URL: ***127.0.0.1:5432/go_catalog_scope_ci
+2026-09-18T02:42:47.9180092Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:47.9180560Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T02:42:47.9181318Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:47.9181720Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:47.9182092Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:47.9182465Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T02:42:47.9182779Z ##[endgroup]
+2026-09-18T02:42:47.9440890Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T02:42:47.9442715Z ##[group]Run actions/upload-artifact@v4
+2026-09-18T02:42:47.9442988Z with:
+2026-09-18T02:42:47.9443264Z   name: catalog-load-f80f13acfb6eb5653770bd880bcb92d455292a54
+2026-09-18T02:42:47.9443642Z   path: /home/runner/work/_temp/catalog-load
+2026-09-18T02:42:47.9444157Z   if-no-files-found: error
+2026-09-18T02:42:47.9444393Z   compression-level: 6
+2026-09-18T02:42:47.9444606Z   overwrite: false
+2026-09-18T02:42:47.9444820Z   include-hidden-files: false
+2026-09-18T02:42:47.9445045Z env:
+2026-09-18T02:42:47.9445235Z   PYTHONDONTWRITEBYTECODE: 1
+2026-09-18T02:42:47.9445467Z   APP_ENV: test
+2026-09-18T02:42:47.9446131Z   CATALOG_SCOPE_TEST_DATABASE_URL: ***127.0.0.1:5432/go_catalog_scope_ci
+2026-09-18T02:42:47.9446573Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:47.9446995Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-18T02:42:47.9447408Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:47.9447778Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:47.9448146Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-18T02:42:47.9448523Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-18T02:42:47.9448858Z ##[endgroup]
+2026-09-18T02:42:48.1312018Z (node:2965) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-18T02:42:48.1322066Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-18T02:42:48.1861830Z With the provided path, there will be 10 files uploaded
+2026-09-18T02:42:48.1889114Z Artifact name is valid!
+2026-09-18T02:42:48.1911745Z Root directory input is valid!
+2026-09-18T02:42:48.3871560Z Beginning upload of artifact content to blob storage
+2026-09-18T02:42:48.4267792Z (node:2965) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-18T02:42:48.4599014Z Uploaded bytes 5048
+2026-09-18T02:42:48.4772868Z Finished uploading artifact content to blob storage!
+2026-09-18T02:42:48.4774428Z SHA256 digest of uploaded artifact zip is de5f18676b1c0d4f698b6e23120ee282ef367c918f209b3bb21738e6e061ba10
+2026-09-18T02:42:48.4775844Z Finalizing artifact upload
+2026-09-18T02:42:48.6815852Z Artifact catalog-load-f80f13acfb6eb5653770bd880bcb92d455292a54.zip successfully finalized. Artifact ID 10529199741
+2026-09-18T02:42:48.6817994Z Artifact catalog-load-f80f13acfb6eb5653770bd880bcb92d455292a54 has been successfully uploaded! Final size is 5048 bytes. Artifact ID is 10529199741
+2026-09-18T02:42:48.6823334Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/35300335723/artifacts/10529199741
+2026-09-18T02:42:48.7002209Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T02:42:48.7003496Z Post job cleanup.
+2026-09-18T02:42:48.8323430Z (node:2998) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-18T02:42:48.8325097Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-18T02:42:48.8553352Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-18T02:42:48.8574038Z Post job cleanup.
+2026-09-18T02:42:49.0081582Z [command]/usr/bin/git version
+2026-09-18T02:42:49.0141663Z git version 2.55.0
+2026-09-18T02:42:49.0201752Z Temporarily overriding HOME='/home/runner/work/_temp/f6abb4e9-c7a8-4026-930e-b6e8db79e30d' before making global git config changes
+2026-09-18T02:42:49.0213086Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-18T02:42:49.0214491Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-18T02:42:49.0271727Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-18T02:42:49.0332807Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-18T02:42:49.0772422Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-18T02:42:49.0831761Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-18T02:42:49.1211950Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-18T02:42:49.1258749Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-18T02:42:49.2058047Z Print service container logs: 1d3718d80ced459db785634c75d4dbb5_postgres184_925706
+2026-09-18T02:42:49.2063134Z ##[command]/usr/bin/docker logs --details 89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3
+2026-09-18T02:42:49.2212379Z  initdb: warning: enabling "trust" authentication for local connections
+2026-09-18T02:42:49.2213000Z  The files belonging to this database system will be owned by user "postgres".
+2026-09-18T02:42:49.2222512Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+2026-09-18T02:42:49.2223611Z  This user must also own the server process.
+2026-09-18T02:42:49.2224088Z  
+2026-09-18T02:42:49.2224574Z  The database cluster will be initialized with locale "en_US.utf8".
+2026-09-18T02:42:49.2225836Z  The default database encoding has accordingly been set to "UTF8".
+2026-09-18T02:42:49.2226772Z  The default text search configuration will be set to "english".
+2026-09-18T02:42:49.2227457Z  
+2026-09-18T02:42:49.2227661Z  Data page checksums are enabled.
+2026-09-18T02:42:49.2227910Z  
+2026-09-18T02:42:49.2228230Z  fixing permissions on existing directory /var/lib/postgresql/18/docker ... ok
+2026-09-18T02:42:49.2228659Z  creating subdirectories ... ok
+2026-09-18T02:42:49.2228973Z  selecting dynamic shared memory implementation ... posix
+2026-09-18T02:42:49.2229327Z  selecting default "max_connections" ... 100
+2026-09-18T02:42:49.2229636Z  selecting default "shared_buffers" ... 128MB
+2026-09-18T02:42:49.2229927Z  selecting default time zone ... Etc/UTC
+2026-09-18T02:42:49.2230203Z  creating configuration files ... ok
+2026-09-18T02:42:49.2230477Z  running bootstrap script ... ok
+2026-09-18T02:42:49.2230771Z  performing post-bootstrap initialization ... ok
+2026-09-18T02:42:49.2231427Z  syncing data to disk ... ok
+2026-09-18T02:42:49.2231692Z  
+2026-09-18T02:42:49.2231862Z  
+2026-09-18T02:42:49.2232095Z  Success. You can now start the database server using:
+2026-09-18T02:42:49.2232415Z  
+2026-09-18T02:42:49.2232677Z      pg_ctl -D /var/lib/postgresql/18/docker -l logfile start
+2026-09-18T02:42:49.2232996Z  
+2026-09-18T02:42:49.2233647Z  waiting for server to start....2026-09-18 02:41:38.076 UTC [51] LOG:  starting PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-09-18T02:42:49.2234549Z  2026-09-18 02:41:38.077 UTC [51] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-18T02:42:49.2235124Z  2026-09-18 02:41:38.081 UTC [57] LOG:  database system was shut down at 2026-09-18 02:41:37 UTC
+2026-09-18T02:42:49.2235638Z  2026-09-18 02:41:38.084 UTC [51] LOG:  database system is ready to accept connections
+2026-09-18T02:42:49.2236012Z   done
+2026-09-18T02:42:49.2236193Z  server started
+2026-09-18T02:42:49.2236391Z  CREATE DATABASE
+2026-09-18T02:42:49.2236582Z  
+2026-09-18T02:42:49.2236746Z  
+2026-09-18T02:42:49.2237058Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+2026-09-18T02:42:49.2237688Z  
+2026-09-18T02:42:49.2238045Z  waiting for server to shut down...2026-09-18 02:41:38.286 UTC [51] LOG:  received fast shutdown request
+2026-09-18T02:42:49.2238589Z  .2026-09-18 02:41:38.287 UTC [51] LOG:  aborting any active transactions
+2026-09-18T02:42:49.2239169Z  2026-09-18 02:41:38.291 UTC [51] LOG:  background worker "logical replication launcher" (PID 60) exited with exit code 1
+2026-09-18T02:42:49.2239709Z  2026-09-18 02:41:38.291 UTC [55] LOG:  shutting down
+2026-09-18T02:42:49.2240366Z  2026-09-18 02:41:38.413 UTC [1] LOG:  starting PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-09-18T02:42:49.2241627Z  2026-09-18 02:41:38.291 UTC [55] LOG:  checkpoint starting: shutdown immediate
+2026-09-18T02:42:49.2243181Z  2026-09-18 02:41:38.309 UTC [55] LOG:  checkpoint complete: wrote 943 buffers (5.8%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.015 s, sync=0.002 s, total=0.018 s; sync files=303, longest=0.001 s, average=0.001 s; distance=4352 kB, estimate=4352 kB; lsn=0/1B9FBB0, redo lsn=0/1B9FBB0
+2026-09-18T02:42:49.2244375Z  2026-09-18 02:41:38.321 UTC [51] LOG:  database system is shut down
+2026-09-18T02:42:49.2244707Z   done
+2026-09-18T02:42:49.2244893Z  server stopped
+2026-09-18T02:42:49.2245098Z  
+2026-09-18T02:42:49.2245341Z  PostgreSQL init process complete; ready for start up.
+2026-09-18T02:42:49.2245643Z  
+2026-09-18T02:42:49.2245978Z  2026-09-18 02:41:38.414 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-09-18T02:42:49.2246754Z  2026-09-18 02:41:38.414 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-09-18T02:42:49.2247360Z  2026-09-18 02:41:38.415 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-18T02:42:49.2248014Z  2026-09-18 02:41:38.421 UTC [73] LOG:  database system was shut down at 2026-09-18 02:41:38 UTC
+2026-09-18T02:42:49.2248617Z  2026-09-18 02:41:38.425 UTC [1] LOG:  database system is ready to accept connections
+2026-09-18T02:42:49.2254672Z Stop and remove container: 1d3718d80ced459db785634c75d4dbb5_postgres184_925706
+2026-09-18T02:42:49.2259789Z ##[command]/usr/bin/docker rm --force 89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3
+2026-09-18T02:42:49.3779837Z 89d9c991c97f372b5c1bc30a9ec90686396f7e69f5b493598dfeffc471301ad3
+2026-09-18T02:42:49.3832712Z Remove container network: github_network_3aecf0d637f74c8f974b80b48c986d36
+2026-09-18T02:42:49.3837196Z ##[command]/usr/bin/docker network rm github_network_3aecf0d637f74c8f974b80b48c986d36
+2026-09-18T02:42:49.4592380Z github_network_3aecf0d637f74c8f974b80b48c986d36
+2026-09-18T02:42:49.4662803Z Cleaning up orphan processes
+2026-09-18T02:42:49.5013980Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

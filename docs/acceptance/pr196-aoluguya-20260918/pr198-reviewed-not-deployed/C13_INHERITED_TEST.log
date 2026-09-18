@@ -1,0 +1,29 @@
+✔ exact Hyatt plan admitted; changes, wrong hotel and invented kwargs rejected (15.453304ms)
+✔ readonly user and unreviewed plans never write (5.568346ms)
+✔ 21 new images are metadata-checked without rights/publication/room writes (4.123512ms)
+✔ existing reviewed gallery assets are reused without POST (3.479554ms)
+✔ lost harvest response resumes by querying index instead of duplicating (3.621537ms)
+✔ harvest mismatch stops immediately and does not pretend indexed row rolled back (2.717147ms)
+✔ wrong existing hash or duplicate source records stop before write (4.702032ms)
+✔ missing index readback stops after first image (2.331467ms)
+✔ public or room-bound asset is never silently reused (2.495103ms)
+✔ only exact reviewed JSON is accepted, IDs and media boundaries retained (10.008204ms)
+✔ readonly account never sends a write (2.844248ms)
+✔ scope and higher-priority conflicts stop before UNPUBLISH or ingest (2.860202ms)
+✔ unreviewed objects cannot call the import runner (0.907084ms)
+✔ approved flow uses only unpublish + three existing ingest APIs, then readback (2.686201ms)
+✔ partial failures stop subsequent imports and do not report success (1.622621ms)
+✔ incorrect merged facts fail final readback (1.977034ms)
+✔ scope preview is readonly and activation verifies all 112 archived records (3.247024ms)
+✔ readonly or running-job scope does not write (1.3292ms)
+✔ scope fingerprint drift refuses activation without writing (1.128127ms)
+✔ scope readback leak is not reported as success (1.147997ms)
+✔ known anomaly codes are translated and unknown codes are not displayed (0.690969ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 150.713813

@@ -1,0 +1,43 @@
+- complementary:
+  - img "GO"
+  - generic: GO 全生态运营管理系统
+  - navigation:
+    - link "直订酒店取消与赔付":
+      - /url: "#/hosted-supplier-cancellation"
+    - link "运营":
+      - /url: "#/operations"
+    - link "异常中心":
+      - /url: "#/exception-center"
+    - link "治理后台":
+      - /url: "#/governance"
+  - text: goadmin
+  - text: GO_GOVERNANCE
+- main:
+  - generic: 酒店数字基础设施
+  - generic: GO_ADMIN
+  - button "退出"
+  - generic: 历史建库资料归档及回读核对完成
+  - heading "酒店数字基础设施" [level=2]
+  - paragraph: 当前状态 → 核心指标 → 业务对象 → 待办异常 → 可执行动作 → 状态与审计
+  - generic: 运营工作台
+  - button "返回酒店建库"
+  - heading "核对保留与归档清单" [level=2]
+  - paragraph: 保留敖麓谷雅 2 条档案；归档其他 112 条历史酒店资料。归档保留原始记录，不执行物理删除。
+  - heading "保留档案" [level=3]
+  - list:
+    - strong: 敖麓谷雅酒店
+    - text: hotel_ac72aa53c89d4c3984b72436cb85f617
+    - strong: 敖麓谷雅
+    - text: hotel_d17851be16724affb355375cacc5e58c
+  - generic "查看 112 条归档清单"
+  - generic "本次核对标识"
+  - paragraph: 75400dfb6828120562efc307b3affe108a67a305c4a321b963322673b11afa45
+  - status: 已核对：保留 2 条敖麓谷雅档案，112 条历史资料已归档。可返回酒店建库继续导入。
+  - button "确认归档 112 条历史资料" [disabled]
+  - heading "运营操作" [level=3]
+  - paragraph: 正常流程由系统自动运行；人工只处理异常、决策和高风险治理动作。
+  - button "刷新当前模块"
+  - link "异常中心":
+    - /url: "#/exception-center"
+  - link "治理后台":
+    - /url: "#/governance"

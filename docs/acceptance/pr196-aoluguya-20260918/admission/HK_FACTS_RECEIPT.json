@@ -1,0 +1,43 @@
+{
+  "after": {
+    "/etc/go-hk-deployctl/candidate-contracts-v1/36622f0648051d57d5918ea4ff7b9ac4e74f9c686e8f2c503f66bda15bd4b120.json": {
+      "gid": 0,
+      "mode": 384,
+      "regular": true,
+      "sha256": "36622f0648051d57d5918ea4ff7b9ac4e74f9c686e8f2c503f66bda15bd4b120",
+      "uid": 0
+    }
+  },
+  "authority_changed": false,
+  "backup": "/var/backups/GO-SAME-REVISION-FACTS-hk-staging-20260918T005738923321Z",
+  "business_runtime_changed": false,
+  "cleanup_errors": [],
+  "finished_at": "2026-09-18T00:57:39.385161+00:00",
+  "host": "hk-staging",
+  "live_runtime": {
+    "checked_at": "2026-09-18T00:57:39.377054+00:00",
+    "external_egress_enabled": false,
+    "image_id": "sha256:6c005a88ec772ac971e560e5f29d0cfa6a8354bb16e0d52d9cbefef0def1dfe1",
+    "restart_count": 0,
+    "services": [
+      "api",
+      "judgment-worker",
+      "mobile-engagement-worker",
+      "mobile-push-receipt-worker",
+      "mobile-push-worker",
+      "outbox-worker",
+      "reconciliation-worker",
+      "recovery-worker"
+    ]
+  },
+  "manifest_sha256": "65b55d1dc1348cc281c58ffaf99ad1f70c35a319cb30383108bc59ea0d1d6a12",
+  "result": "FACTS_ADMITTED_NO_TASK_OR_DEPLOY",
+  "schema": "go.same-revision.facts-install.v1",
+  "smoke": "FACTS_BINDING_PASS",
+  "task_dispatched": false,
+  "timer_after": {
+    "go-hk-agent.timer": "active"
+  },
+  "timer_restart_errors": [],
+  "timers_intentionally_held": false
+}

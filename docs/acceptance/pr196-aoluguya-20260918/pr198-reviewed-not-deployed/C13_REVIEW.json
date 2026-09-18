@@ -1,0 +1,67 @@
+{
+  "reviewer": "C13",
+  "reviewed_at": "2026-09-18T02:28:27.615861+00:00",
+  "verdict": "PASS_LOCAL_CONTACTS_CANDIDATE",
+  "blocking_findings": [],
+  "base_commit": "aad78d00052c243186657072b872637a85ba1a8f",
+  "base_git_blob": "20ba49a4761339a8345113dea474af5a67c405a2",
+  "files": [
+    {
+      "path": ".github/workflows/catalog-load-repair.yml",
+      "sha256": "b95b2b74fe54cc2f66704aa7cead655e9160b38e3b6b1e5a9bd0d0916a33935a"
+    },
+    {
+      "path": "application/frontend/admin/hotel-page-factory.js",
+      "sha256": "2070baf3eeafa7c82b7f57e1b3c485a6bab36a079e01917ba47b5b52fcb199f9"
+    },
+    {
+      "path": "application/tests_frontend/hotel_catalog_contacts.test.mjs",
+      "sha256": "b2f2a2b90e3aa5ee3307ab09eb3298dfe507a13d9fcee5c086df68855696387e"
+    },
+    {
+      "path": "docs/evidence/aoluguya-contact-email-20260918/REVIEW.md",
+      "sha256": "51892d36264f51996efcf390cf071cfcb7c5bad08e3eeea918f9095d1f92cf99"
+    }
+  ],
+  "tests": {
+    "contacts": 16,
+    "inherited": 21,
+    "failed": 0,
+    "syntax": "PASS"
+  },
+  "logs": {
+    "C13_CONTACT_TEST.log": "5d05bdf91f0b987e70c591eb19166d258b4f66a2df686a8f5cbe608dc8c25312",
+    "C13_INHERITED_TEST.log": "6c72809bf65588a1cb27708e29dcea1e6b9c96e24acfd831c21d32b06377d2d2"
+  },
+  "resolved_findings": [
+    {
+      "issue": "Email dot-atom local part accepted trailing dot / over64characters",
+      "resolution": "Both official and public email validators now reject these; independent16thbehavior test passes"
+    }
+  ],
+  "verified": [
+    "PR196 exact base and inherited test source blob binding; all final3file hashes and runtime frontend byte equality",
+    "Fixed primary hotel,2protected/112archive scope,zero running tasks,DRAFT and actual admin:rules required; recheck review fingerprint before writes",
+    "Only supported contact/address fields; fixed Ctrip hotel and Hyatt hotel-events URL patterns; credentials/query/fragment refused; no arbitrary endpoint/type/rights/confidence inputs",
+    "Harbin local phone normalized to+8645188800808; E164/email normalization and defensive validation",
+    "User supplied1720574900@qq.com is explicitly USER_PROVIDED_CTRIP_ATTRIBUTION, separate PUBLIC_SOURCE/GENERAL snapshot; no claim of independent Ctrip retrieval",
+    "Hyatt anson.liu@hyatt.com is separate OFFICIAL_WEBSITE/WEDDINGS_EVENTS_CONTACT, not general reservations",
+    "Existing stronger source/confidence same-value contacts retained; suppressed/nonpublic/unknown/duplicate/incompatible stronger purposes fail closed; stronger canonical address retained while supplement snapshot recorded",
+    "Actual source ingest response shape matched; snapshot payload/key/type/URL and final contacts/source/purpose/address/DRAFT readback checked",
+    "Stable URL-derived source identity and unchanged payload permit backend idempotence; failures stop and report possible prior writes",
+    "CI diff only adds contacts branch and test path, leaving existing frontend/backend/PG evidence gates unchanged"
+  ],
+  "limitations": [
+    "Local API-double tests only; no browser/live data/CI execution or deployment by reviewer",
+    "No independent retrieval of user-attributedQQemail; attribution remains user-provided",
+    "Frontend preflight is not transaction or cross-client lock; existing backend contact upsert does not enforce source rank, so concurrent other edits after preflight can race",
+    "Archived source identities cannot be read by normal UI; backend may reject after earlier sequential writes",
+    "Changing contact values adds new contacts; no automatic deletion/suppression of historical entries",
+    "ROOM media mapping remains HOLD; this candidate does not grant image rights or publish",
+    "Formal exactcandidate signed deployment/VERIFY and freshhost acceptance still required for live clicks"
+  ],
+  "source_modified_by_reviewer": false,
+  "live_execution": false,
+  "deployed": false,
+  "submitted": false
+}

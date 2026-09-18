@@ -1,0 +1,19 @@
+{
+  "reviewer": "C13",
+  "verdict": "PASS_STATIC_EXACT_TARGET_ABSENCE_PROBE",
+  "script_sha256": "9242a88c0ae8969e321ddcaebd2770f4b322c326b6947c5d4e75f55dab13d6be",
+  "contract": "36622f0648051d57d5918ea4ff7b9ac4e74f9c686e8f2c503f66bda15bd4b120",
+  "checks": [
+    "Two exact hostname pins and root required before filesystem access",
+    "Only fixed contract path per host; no caller supplied path",
+    "All parents opened with O_DIRECTORY/O_NOFOLLOW and checked root-owned/no group-world write",
+    "Only final lstat-equivalent lookup; any existing entry including dangling symlink rejected",
+    "No file content read, no write, no network/runtime command; generic errors only"
+  ],
+  "limitations": [
+    "Local static review; not run remotely",
+    "Absence observation is not atomic reservation; installer must recheck before create/replace",
+    "Does not approve generated facts or sealed installer"
+  ],
+  "remote_execution": false
+}

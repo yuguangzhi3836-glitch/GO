@@ -1,0 +1,557 @@
+{
+  "schema": "go.pr196.catalog-acceptance.local-archive.v1",
+  "assembled_at": "2026-09-18T02:52:07.839311+00:00",
+  "publication_performed": false,
+  "source": {
+    "schema": "go.next-candidate.reviewed-source.v1",
+    "pr_number": "196",
+    "source_commit": "aad78d00052c243186657072b872637a85ba1a8f",
+    "application_git_tree": "b3052a06c649a36c0118e25960932b7b2e5c8f57",
+    "application_blob_count": 1398,
+    "source_repository": "yuguangzhi3836-glitch/GO",
+    "current_contract_sha256": "474dc4edaf3e9e222176d324d8116ae295c381a382ae8545bb82eddb6b7241c5",
+    "test_pr_available": true,
+    "candidate_artifact_identity": {
+      "image_id": "sha256:633a22a0766e587587eeb324ebb6db78dee321118f996b58803da0d7ac34cbf0",
+      "package_sha256": "bb4f62f6087f368a33cf154d225ed96860c910a98eba9c70c0d7342f73bb8af5"
+    }
+  },
+  "formal_chain_status": "PASS",
+  "old_deploy_attempt": {
+    "task_id": "go-boss-deploy-ab83c3212eee427fd797ea95",
+    "expires_at": "2026-09-18T01:14:41Z",
+    "attempts": [],
+    "processed": [],
+    "observation": "read-only exact-task ledger after task expiry",
+    "deployment_performed": false,
+    "next_action": "new ordinary VERIFY and new formal DEPLOY request; no task reuse or ledger change"
+  },
+  "room_code_chain": {
+    "live_room_code_to_historical_uuid": "17_OF_17_PASS",
+    "golden_room_id_crosswalk": "HOLD",
+    "room_bindings": 42,
+    "unique_official_images": 21
+  },
+  "user_email_provenance": {
+    "type": "EMAIL",
+    "value": "1720574900@qq.com",
+    "purpose": "GENERAL",
+    "source_url": "https://hotels.ctrip.com/hotels/2670932.html",
+    "provenance": "USER_PROVIDED_CTRIP_ATTRIBUTION",
+    "provided_at": "2026-09-18T02:23:00.100174+00:00",
+    "independently_observed_on_ctrip": false,
+    "user_statement": "敖麓谷雅邮箱1720574900@qq.com",
+    "verification_note": "User supplied mailbox after stating Ctrip has a new email. Public web page did not expose email; browser login redirect was rejected by automatic review. No login workaround attempted."
+  },
+  "fresh_host_readback": {
+    "all_restart_count_zero": true,
+    "all_same_image": true,
+    "api_health": "healthy",
+    "application_health_proven": false,
+    "candidate_contract_sha256": "36622f0648051d57d5918ea4ff7b9ac4e74f9c686e8f2c503f66bda15bd4b120",
+    "control_plane_modified_by_readback": false,
+    "database_head": "0137_hosted_unknown_episode",
+    "database_revision": "0137_hosted_unknown_episode",
+    "deploy_completed_at": "2026-09-18T02:17:14Z",
+    "deploy_record_sha256": "bd1f4b0e658b9ab34f7aa4e8737b918d4fddd9cd8da9f98478b528a2a410dbbc",
+    "deploy_task_id": "go-boss-deploy-74080bacd5d4fac2c14a9406",
+    "external_egress_enabled": false,
+    "host_stdout_sha256": "0335e815ab9f8e8ae70f2bea89f5b0b50f4446fe31929d87f934de11d92d1f48",
+    "image_id": "sha256:633a22a0766e587587eeb324ebb6db78dee321118f996b58803da0d7ac34cbf0",
+    "limits": [
+      "Read-only host snapshot at recorded time, not an extended-load guarantee",
+      "No catalog records or media writes performed by this acceptance capture"
+    ],
+    "migration_required": false,
+    "observed_at": "2026-09-18T02:25:07.787012+00:00",
+    "post_verify_completed_at": "2026-09-18T02:21:29Z",
+    "post_verify_task_id": "go-boss-post-deploy-verify-4c1b9fcb54e9",
+    "schema": "go.pr196.formal-and-host-acceptance.v1",
+    "source_commit": "aad78d00052c243186657072b872637a85ba1a8f",
+    "status": "PASS_SIGNED_CHAIN_AND_READONLY_HOST_BINDING",
+    "target_service_count": 8
+  },
+  "post_mutation_ui_readback": {
+    "observed_at": "2026-09-18T02:48:41.779837+00:00",
+    "runtime_source": "aad78d00052c243186657072b872637a85ba1a8f",
+    "hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+    "catalog_scope": {
+      "retained": 2,
+      "archived": 112,
+      "individually_read_back": 112,
+      "physical_deletion": false,
+      "scope_sha256": "75400dfb6828120562efc307b3affe108a67a305c4a321b963322673b11afa45"
+    },
+    "facts": {
+      "source_groups_saved_and_verified": 3,
+      "rooms": 17,
+      "complete_percent_displayed": 69,
+      "anomalies_displayed": 14,
+      "address": "黑龙江省哈尔滨市松北区创新三路800号",
+      "phone": "+8645188800808",
+      "page_state": "DRAFT"
+    },
+    "gallery": {
+      "saved_assets": 1,
+      "verified_against_original_jpeg_plan": 0,
+      "required_unique_assets": 21,
+      "stop_reason": "CDN returned valid WEBP while reviewed plan expected JPEG",
+      "raw_cache_bytes_independently_read": true,
+      "rights_state": "RIGHTS_UNKNOWN",
+      "publishable": false
+    },
+    "email": {
+      "value": "1720574900@qq.com",
+      "database_written": false,
+      "provenance": "USER_PROVIDED_CTRIP_ATTRIBUTION"
+    },
+    "acceptance_complete": false
+  },
+  "overall_catalog_acceptance": "PARTIAL",
+  "catalog_archive_112": "ARCHIVED_RETAINED_2_INDIVIDUALLY_READ_BACK_112_NO_PHYSICAL_DELETE",
+  "facts_17": "3_SOURCES_17_ROOMS_DRAFT_69_PERCENT_14_ANOMALIES",
+  "gallery_21": "1_SAVED_WEBP_0_MATCH_ORIGINAL_JPEG_PLAN_STOPPED_RIGHTS_UNKNOWN_NOT_PUBLISHABLE",
+  "pr198_email": {
+    "source_commit": "f80f13acfb6eb5653770bd880bcb92d455292a54",
+    "review": "PASS_EXACT_SOURCE_AND_CI_37_FRONTEND_38_BACKEND",
+    "deployed": false,
+    "email_database_written": false
+  },
+  "performance_evidence": "PR197_NOT_DUPLICATED",
+  "files": [
+    {
+      "archive_path": "source/HASHONLY_RESULT.json",
+      "original_workspace_path": "integration-gate/pr196-source/HASHONLY_RESULT.json",
+      "bytes": 2889,
+      "sha256": "fde764eba11c34c93649b849cfe8e7ab14fcc27d352ccc44ada1c083c517d582",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/CANDIDATE_SOURCE.json",
+      "original_workspace_path": "integration-gate/pr195-admission/CANDIDATE_SOURCE.json",
+      "bytes": 641,
+      "sha256": "48cb1e9d70b5c3a534a1757a94442bb67e060685b095cf55222538b0c87ab0f5",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/ACTIVE_CANDIDATE.json",
+      "original_workspace_path": "integration-gate/pr195-admission/ACTIVE_CANDIDATE.json",
+      "bytes": 1998,
+      "sha256": "f0ba7a2309f3e89e5ddf78a93bfb3714b66e9d3ce504fe012d932c9342e9355d",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/FACTS_PACKAGE.json",
+      "original_workspace_path": "integration-gate/pr195-admission/FACTS_PACKAGE.json",
+      "bytes": 24648,
+      "sha256": "86d550d7c9668d2a4896571bb46e969c44487de9c370bc394526e26436547589",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/FACTS_MANIFEST.json",
+      "original_workspace_path": "integration-gate/pr195-admission/FACTS_MANIFEST.json",
+      "bytes": 8878,
+      "sha256": "65b55d1dc1348cc281c58ffaf99ad1f70c35a319cb30383108bc59ea0d1d6a12",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/FROZEN_HASHES.json",
+      "original_workspace_path": "integration-gate/pr195-admission/FROZEN_HASHES.json",
+      "bytes": 845,
+      "sha256": "5d94a68915735798b971fb2b54be22b542dcfa8a7b6ae50907c997fbfff28210",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/CANDIDATE_CONTRACT.json",
+      "original_workspace_path": "integration-gate/pr195-admission/CANDIDATE_CONTRACT.json",
+      "bytes": 1058,
+      "sha256": "36622f0648051d57d5918ea4ff7b9ac4e74f9c686e8f2c503f66bda15bd4b120",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/CC_FACTS_RECEIPT.json",
+      "original_workspace_path": "integration-gate/pr195-admission/CC_FACTS_RECEIPT.json",
+      "bytes": 1226,
+      "sha256": "a3eb98468619d656139049b111c53319f5b6d4a2051644fe5e961e40208a9eef",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/HK_FACTS_RECEIPT.json",
+      "original_workspace_path": "integration-gate/pr195-admission/HK_FACTS_RECEIPT.json",
+      "bytes": 1403,
+      "sha256": "4ae734c7778ae6e1589269e94fc0cb46360f644f5be2510091fcb981fe49d9a1",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/ADMISSION_RECEIPT_VERIFICATION.json",
+      "original_workspace_path": "integration-gate/pr195-admission/ADMISSION_RECEIPT_VERIFICATION.json",
+      "bytes": 1620,
+      "sha256": "5c98eac444f02b62340d3ee0cf2978c35f94dfb43ad2f21b8486c5c49a2c4424",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/C13_FINAL_FACTS_REVIEW.json",
+      "original_workspace_path": "integration-gate/pr195-admission/C13_FINAL_FACTS_REVIEW.json",
+      "bytes": 2980,
+      "sha256": "00a04f82f4ef279f777e6877e46e06d33dc1c4581840e057e15f6a0167337759",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/C13_ABSENCE_REVIEW.json",
+      "original_workspace_path": "integration-gate/pr195-admission/C13_ABSENCE_REVIEW.json",
+      "bytes": 945,
+      "sha256": "8aa6f7f231d5efb200f9fdc60cbabe7009d14dad130782de0eb7d1d1aa6af036",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/CURRENT_BASELINE_PROOF.json",
+      "original_workspace_path": "integration-gate/pr195-admission/CURRENT_BASELINE_PROOF.json",
+      "bytes": 757,
+      "sha256": "6587c0cc53f84e7fadb66f6752c836369e1912a5f7ac81f02e727dc16a7d846c",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "admission/CONTROL_SOURCE_PROVENANCE_CORRECTION.json",
+      "original_workspace_path": "integration-gate/pr195-admission/CONTROL_SOURCE_PROVENANCE_CORRECTION.json",
+      "bytes": 1909,
+      "sha256": "97df7199da0d07bd75e59656ed5d0c361f2dbbbd98541aedae4c098ae23460da",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "test-pr/TASK.json",
+      "original_workspace_path": "integration-gate/pr195-admission/formal/TASK.json",
+      "bytes": 638,
+      "sha256": "073dbe791febde6a9debca22b3bf76c4f1db40cf4b1d2efedbc67854743922f6",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "test-pr/EVIDENCE.json",
+      "original_workspace_path": "integration-gate/pr195-admission/formal/EVIDENCE.json",
+      "bytes": 1543,
+      "sha256": "f95c5f9bf8fc0f4920dbeb00e3aa28d31c49e990653b7e441b450b652c739091",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "test-pr/TASK_VERIFICATION.json",
+      "original_workspace_path": "integration-gate/pr195-admission/formal/TASK_VERIFICATION.json",
+      "bytes": 292,
+      "sha256": "f410f9f932c4f18133c4c3f50aa6c0dbef8fe188c161cb02ef33b657b80322dc",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "test-pr/INDEPENDENT_VERIFICATION.json",
+      "original_workspace_path": "integration-gate/pr195-admission/formal/INDEPENDENT_VERIFICATION.json",
+      "bytes": 548,
+      "sha256": "79f821154723f62bc342f1ebca06124766d9b9da53692ee70c3916d393481542",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "test-pr/REFERENCES.json",
+      "original_workspace_path": "integration-gate/pr195-admission/formal/REFERENCES.json",
+      "bytes": 276,
+      "sha256": "b83d89aed5d9b8075aa6746eeb014e140f78cd80ff05e29a76244b26596ebe2a",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/VERIFY_TASK.json",
+      "original_workspace_path": "integration-gate/pr196-formal/VERIFY_TASK.json",
+      "bytes": 825,
+      "sha256": "97b1992a3c9c63373e9222a96b6876eb72699252e4d186af83f7467554f82956",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/VERIFY_EVIDENCE.json",
+      "original_workspace_path": "integration-gate/pr196-formal/VERIFY_EVIDENCE.json",
+      "bytes": 1114,
+      "sha256": "3876d023fb7b583c98cc40db6406c014a3b9c3bf81a2c505d0f3c313571083d8",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/CANARY_TASK.json",
+      "original_workspace_path": "integration-gate/pr196-formal/CANARY_TASK.json",
+      "bytes": 919,
+      "sha256": "7152383380ff5e52335bf62eea70501a535f486bab3b9ad63dbb2b350c57aed2",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/CANARY_EVIDENCE.json",
+      "original_workspace_path": "integration-gate/pr196-formal/CANARY_EVIDENCE.json",
+      "bytes": 1185,
+      "sha256": "37f52ccd732860da8d49984aa7b0a6cf6fe8e1aaf2479ec9da42a4712ce23cd9",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/DEPLOY_TASK.json",
+      "original_workspace_path": "integration-gate/pr196-formal/DEPLOY_TASK.json",
+      "bytes": 1001,
+      "sha256": "f2dd2c063ac1b6d466d26c54df475e84db86fda1529ae987ac5f14da1b8d536e",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/DEPLOY_EVIDENCE.json",
+      "original_workspace_path": "integration-gate/pr196-formal/DEPLOY_EVIDENCE.json",
+      "bytes": 1823,
+      "sha256": "fc1ed05ee3de87d4fa93de1d0fc68b37174e9c786eec7e1a0d65cf499ff695e1",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/POST_VERIFY_TASK.json",
+      "original_workspace_path": "integration-gate/pr196-formal/POST_VERIFY_TASK.json",
+      "bytes": 794,
+      "sha256": "2af99d7bf1163810086f34c9dc1a19b2b5ab9001facbdc3c12bac5022ab69e2d",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/POST_VERIFY_EVIDENCE.json",
+      "original_workspace_path": "integration-gate/pr196-formal/POST_VERIFY_EVIDENCE.json",
+      "bytes": 1083,
+      "sha256": "789226f80161c65da09a30e50dfd4de3abcb8a9bbde6389a84ad8297bdcd7e0b",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/CHAIN_VERIFICATION.json",
+      "original_workspace_path": "integration-gate/pr196-formal/CHAIN_VERIFICATION.json",
+      "bytes": 3140,
+      "sha256": "d09793aba770f57e6826d77a3cee040b61501d20639247396c8969bc112f0c3f",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/POST_VERIFY_REFERENCES.json",
+      "original_workspace_path": "integration-gate/pr196-formal/POST_VERIFY_REFERENCES.json",
+      "bytes": 631,
+      "sha256": "f7ffd1c1d45abc41a3ab0a98cd8857f6918b83ba82d1b6042035be0782473c62",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/ARCHIVE_FILES.json",
+      "original_workspace_path": "integration-gate/pr196-formal/ARCHIVE_FILES.json",
+      "bytes": 2999,
+      "sha256": "2213e9c630181a23518ec1e1e15d49913228e4ea69649be4a75992717ee92a3e",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/HK_HOST_READBACK.json",
+      "original_workspace_path": "integration-gate/pr196-formal/HK_HOST_READBACK.json",
+      "bytes": 15903,
+      "sha256": "0335e815ab9f8e8ae70f2bea89f5b0b50f4446fe31929d87f934de11d92d1f48",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/VERIFICATION.json",
+      "original_workspace_path": "integration-gate/pr196-formal/VERIFICATION.json",
+      "bytes": 1389,
+      "sha256": "a9c523e5df610b81da8638434a530f07b945198d8d9b2536c7f443c4437a4363",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/host_readback.py",
+      "original_workspace_path": "integration-gate/pr196-formal/host_readback.py",
+      "bytes": 4169,
+      "sha256": "08b3f2de209c56e94bce1c1f94101b2d5f48e4ed0f604c7df613aabeda148b1e",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/verify_chain.py",
+      "original_workspace_path": "integration-gate/pr196-formal/verify_chain.py",
+      "bytes": 8583,
+      "sha256": "05a8a8fe3f46e42062fa430378ad96d9dcf40d4f79b7a38ea8bbff26fa37e953",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/test_verify_chain.py",
+      "original_workspace_path": "integration-gate/pr196-formal/test_verify_chain.py",
+      "bytes": 3718,
+      "sha256": "23bee0ac4de28248602d70d9d883f21dee4d361eba73a8fc9c89655137b0edc7",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "formal/VERIFY_CHAIN_TEST_LOG.txt",
+      "original_workspace_path": "integration-gate/pr196-formal/VERIFY_CHAIN_TEST_LOG.txt",
+      "bytes": 1352,
+      "sha256": "a5df5648ccf78960a3114b59f064ed9383268c8f83248d4508d9f594fedcbd3c",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "expired-attempt/ATTEMPT1_VERIFY_TASK.json",
+      "original_workspace_path": "integration-gate/pr196-formal/ATTEMPT1_VERIFY_TASK.json",
+      "bytes": 825,
+      "sha256": "dc0c646805e44b1d66c172a41b5a155597059bf6f2bc1d4b16a8ba97054809bb",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "expired-attempt/ATTEMPT1_VERIFY_EVIDENCE.json",
+      "original_workspace_path": "integration-gate/pr196-formal/ATTEMPT1_VERIFY_EVIDENCE.json",
+      "bytes": 1114,
+      "sha256": "271ab60f11303f2fc780cc2c0a24f71a16e73ed8077c8606e8ddba34f163a31f",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "expired-attempt/ATTEMPT1_CANARY_TASK.json",
+      "original_workspace_path": "integration-gate/pr196-formal/ATTEMPT1_CANARY_TASK.json",
+      "bytes": 919,
+      "sha256": "1962f7027b1046d67ac322a38f562ddbc34e4cc343200c68648585ed5e53b025",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "expired-attempt/ATTEMPT1_CANARY_EVIDENCE.json",
+      "original_workspace_path": "integration-gate/pr196-formal/ATTEMPT1_CANARY_EVIDENCE.json",
+      "bytes": 1185,
+      "sha256": "c6d4ea11ffad86457df63ba969e7e5cf815103ce3cb4551ef745cb53e909fccb",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "expired-attempt/ATTEMPT1_DEPLOY_TASK.json",
+      "original_workspace_path": "integration-gate/pr196-formal/ATTEMPT1_DEPLOY_TASK.json",
+      "bytes": 1001,
+      "sha256": "7ab3fee55e1a48ea8e4fac886b170b275ef10aaddb49d210438b3d2d3dd3c0a0",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "expired-attempt/ATTEMPT1_NOT_EXECUTED.json",
+      "original_workspace_path": "integration-gate/pr196-formal/ATTEMPT1_NOT_EXECUTED.json",
+      "bytes": 337,
+      "sha256": "9ace019fe4ff0d5970d255bf567dcd6ad2c3bb73a6b2e6dbe12d868ef4421908",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "expired-attempt/REQUEST_REFERENCES.json",
+      "original_workspace_path": "integration-gate/pr196-formal/REQUEST_REFERENCES.json",
+      "bytes": 1286,
+      "sha256": "5a0dac7f1557663659ce8e1e743162753065e184c907bcdb33946b5afd1e0792",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "rooms/HYATT_ROOM_DETAIL_CODE_CHAIN_20260918.json",
+      "original_workspace_path": "catalog_review/HYATT_ROOM_DETAIL_CODE_CHAIN_20260918.json",
+      "bytes": 4807,
+      "sha256": "3594ba286b78688599567aae6f84c373085bc89754ccd6a14337b271354d8827",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "rooms/HYATT_OFFICIAL_CODE_CROSSWALK_REVIEW_20260918.json",
+      "original_workspace_path": "catalog_review/HYATT_OFFICIAL_CODE_CROSSWALK_REVIEW_20260918.json",
+      "bytes": 19798,
+      "sha256": "0dd052bde041c5c5997a23a3c695c7084b0f0d8de2c4ccaab92f795297a143c1",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "rooms/HYATT_ROOMS_LIVE_DOM_20260918.json",
+      "original_workspace_path": "catalog_review/HYATT_ROOMS_LIVE_DOM_20260918.json",
+      "bytes": 88805,
+      "sha256": "87758b0b753e3f5f2c29c22d701775798c03f50f48fca7f9e1444ddc2f539b51",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "rooms/HYATT_LIVE_DOM_INDEPENDENT_REVIEW_20260918.json",
+      "original_workspace_path": "catalog_review/HYATT_LIVE_DOM_INDEPENDENT_REVIEW_20260918.json",
+      "bytes": 45065,
+      "sha256": "f2c1136f0cd7af29e7eabef91661612018670e3cbe3bee29c8822146ee9fa348",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "build-ui/BUILD_SCOPE_AFTER_20260918.txt",
+      "original_workspace_path": "catalog_review/BUILD_SCOPE_AFTER_20260918.txt",
+      "bytes": 1791,
+      "sha256": "5c24e10de8bac85e2aa58f95bbbf0b79cafdbb812230e3b9b46d7a01cd7f4620",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "build-ui/BUILD_FACTS_AFTER_20260918.txt",
+      "original_workspace_path": "catalog_review/BUILD_FACTS_AFTER_20260918.txt",
+      "bytes": 7779,
+      "sha256": "c5e58ce0523a3157e0f26fa2ac82d5d3bb0a7a8b7f6abd8007e769912b039463",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "build-ui/BUILD_PROGRESS_20260918.json",
+      "original_workspace_path": "catalog_review/BUILD_PROGRESS_20260918.json",
+      "bytes": 1151,
+      "sha256": "38104ea7ebece251e5f41edad88a6fa815a66b1af8d02dd371bc52e6559ffaa1",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "build-ui/HYATT_WEBP_REFRESH_FIRST_ITEM_HOLD.json",
+      "original_workspace_path": "catalog_review/HYATT_WEBP_REFRESH_FIRST_ITEM_HOLD.json",
+      "bytes": 963,
+      "sha256": "53b71d63f69d311ea79065940e74611f7fa2f41e12f50a6222ed57a911cf60f7",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "gallery-diagnosis/FIRST_ASSET_READBACK.json",
+      "original_workspace_path": "catalog_review/gallery_diagnosis/FIRST_ASSET_READBACK.json",
+      "bytes": 1092,
+      "sha256": "8d9950e61bd3527b8bf9b54adfc07161723803ba665945ccc5d97c9720703575",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "pr198-reviewed-not-deployed/C13_REVIEW.json",
+      "original_workspace_path": "catalog-contacts-ui/C13_REVIEW.json",
+      "bytes": 3925,
+      "sha256": "9ff9c920c8da2d9454b81624e39e3435644f96f4c88b4b54272fded105a9148d",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "pr198-reviewed-not-deployed/C13_PR198_CI_REVIEW.json",
+      "original_workspace_path": "catalog-contacts-ui/C13_PR198_CI_REVIEW.json",
+      "bytes": 2337,
+      "sha256": "aeb297d21dfdb84496e4693d925923c6586565fc066572e182bb5df5896ab6ed",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "pr198-reviewed-not-deployed/C13_PR198_TREE_BINDING.json",
+      "original_workspace_path": "catalog-contacts-ui/C13_PR198_TREE_BINDING.json",
+      "bytes": 168308,
+      "sha256": "6046d150e197f5085bc5f1a71fb0154bfd637c4369e487388b4a7ec324809f0d",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "pr198-reviewed-not-deployed/SUBMITTED.json",
+      "original_workspace_path": "catalog-contacts-ui/SUBMITTED.json",
+      "bytes": 285,
+      "sha256": "64a0781f761cad58062dc36a7259d54977ec52f572a23a904f8de3baff98cd24",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "pr198-reviewed-not-deployed/C13_CONTACT_TEST.log",
+      "original_workspace_path": "catalog-contacts-ui/C13_CONTACT_TEST.log",
+      "bytes": 1420,
+      "sha256": "5d05bdf91f0b987e70c591eb19166d258b4f66a2df686a8f5cbe608dc8c25312",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "pr198-reviewed-not-deployed/C13_INHERITED_TEST.log",
+      "original_workspace_path": "catalog-contacts-ui/C13_INHERITED_TEST.log",
+      "bytes": 1756,
+      "sha256": "6c72809bf65588a1cb27708e29dcea1e6b9c96e24acfd831c21d32b06377d2d2",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "pr198-reviewed-not-deployed/C13_CI_JOB_105461441191.log",
+      "original_workspace_path": "catalog-contacts-ui/C13_CI_JOB_105461441191.log",
+      "bytes": 72859,
+      "sha256": "6caf742964d2b92c8b1fee7b07b10a2fcc1346c5eb9da8b562bb7a9ffd0c0cc4",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "contacts/CONTACTS_PUBLIC_SOURCES_20260918.json",
+      "original_workspace_path": "catalog_review/CONTACTS_PUBLIC_SOURCES_20260918.json",
+      "bytes": 1545,
+      "sha256": "dc97e00210f6d3f5882df492fb0328d8010e722aba206b7e3fe526894c0b04fc",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "contact-independent-review/FACTS.json",
+      "original_workspace_path": "catalog-reset/ctrip-contact/FACTS.json",
+      "bytes": 1966,
+      "sha256": "5bcaabf6bb3fb1b53c9523670d48a792da6e37bba295bae34d626d4dd226fe39",
+      "bytes_preserved": true
+    },
+    {
+      "archive_path": "contact-independent-review/official-source-excerpts.txt",
+      "original_workspace_path": "catalog-reset/ctrip-contact/official-source-excerpts.txt",
+      "bytes": 645,
+      "sha256": "9fa38aa12b56d2319d568ffb1d03466d12551986ef5412e85dec041214904a86",
+      "bytes_preserved": true
+    }
+  ]
+}

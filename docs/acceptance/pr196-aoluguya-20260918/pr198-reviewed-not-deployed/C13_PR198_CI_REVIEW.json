@@ -1,0 +1,61 @@
+{
+  "reviewer": "C13",
+  "reviewed_at": "2026-09-18T02:43:58.792990+00:00",
+  "verdict": "PASS_EXACT_PR198_SOURCE_AND_REQUIRED_CI",
+  "source_commit": "f80f13acfb6eb5653770bd880bcb92d455292a54",
+  "root_tree": "f39fff3d74364f25779c2f6ad639076b70f51084",
+  "parents": [
+    "aad78d00052c243186657072b872637a85ba1a8f"
+  ],
+  "application_tree": "7f279f99576c96b325ec8fb3a2497e1ea88c23d3",
+  "application_blob_count": 1399,
+  "delta": [
+    {
+      "path": ".github/workflows/catalog-load-repair.yml",
+      "before": "c28c92447656b3f08e6191ecd7fc5ac4bb1c1430",
+      "after": "0aa2802845b86f407e456ecd661ceceeb51bca6e"
+    },
+    {
+      "path": "application/frontend/admin/hotel-page-factory.js",
+      "before": "20ba49a4761339a8345113dea474af5a67c405a2",
+      "after": "5d3045b19755a0fdaad7352915d0e145b16fa70a"
+    },
+    {
+      "path": "application/tests_frontend/hotel_catalog_contacts.test.mjs",
+      "before": null,
+      "after": "75ed5c10312a8d2a58fb8678575e0f61202fe7d3"
+    },
+    {
+      "path": "docs/evidence/aoluguya-contact-email-20260918/REVIEW.md",
+      "before": null,
+      "after": "43354ca85a073749a37ef55e67f6142d2e0bc882"
+    }
+  ],
+  "local_reviewed_bytes_equal_all_delta_blobs": true,
+  "run_id": 35300335723,
+  "job_id": 105461441191,
+  "status": "completed",
+  "conclusion": "success",
+  "tests": {
+    "frontend_contacts": 16,
+    "frontend_inherited": 21,
+    "frontend_total": 37,
+    "backend_search": 5,
+    "backend_scope": 10,
+    "backend_graph": 6,
+    "backend_postgres18_4": 4,
+    "backend_existing": 13,
+    "backend_total": 38
+  },
+  "all_frontend_test_names_verified_in_log": true,
+  "artifact_id": 10529199741,
+  "artifact_zip_sha256_from_log": "de5f18676b1c0d4f698b6e23120ee282ef367c918f209b3bb21738e6e061ba10",
+  "originals_sha256": {
+    "C13_CI_JOB_105461441191.log": "6caf742964d2b92c8b1fee7b07b10a2fcc1346c5eb9da8b562bb7a9ffd0c0cc4",
+    "C13_PR198_TREE_BINDING.json": "6046d150e197f5085bc5f1a71fb0154bfd637c4369e487388b4a7ec324809f0d"
+  },
+  "fingerprint_scope": "Changed-file SHA256 equals local review manifest and GitHub Git blob identities. Full canonical SHA256 file fingerprint must come from actual sealed-image/source proof; Git SHA1 tree is not mislabeled that fingerprint.",
+  "hk_actions_performed": false,
+  "superset_ci_rerun": false,
+  "deployment_acceptance": false
+}

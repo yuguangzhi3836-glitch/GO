@@ -1,0 +1,43 @@
+{
+  "schema": "go.control-source-provenance-correction.v1",
+  "incorrect_claim": "PR194 execution-window installed",
+  "correction": "Unsupported PR attribution withdrawn. PR194 documentation was not deployed. Execution-window and transport sources were already in gate103/bc71 base, unchanged by this PR193 repair.",
+  "evidence_manifest": "/workspace/scratch/600706fc3884/gate103/install/SOURCE_MANIFEST.json",
+  "base_commit": "bc71a91bff31a092aae003e061622878b8ef4bf6",
+  "retained_manifest_entries": [
+    {
+      "host": "go-cc",
+      "mode": 420,
+      "sha256": "8b4213eea8ea29b838490d41b99070fc5726d8207812be10be872ab149f6ff3e",
+      "source": "control-plane/boss-deploy-request-v1/execution_window.py",
+      "target": "/usr/local/libexec/execution_window.py"
+    },
+    {
+      "host": "go-cc",
+      "mode": 420,
+      "sha256": "8b4213eea8ea29b838490d41b99070fc5726d8207812be10be872ab149f6ff3e",
+      "source": "control-plane/command-center-state-v1/execution_window.py",
+      "target": "/opt/go-command-center/state-publication-v1/projection/execution_window.py"
+    },
+    {
+      "host": "hk-staging",
+      "mode": 420,
+      "sha256": "7f1977a22fa6bfc178b0f559d44c982c010ad97f603e7098a51585e31adc5a94",
+      "source": "control-plane/boss-test-pr-live-integration-v1/hk-staging/hk_agent/transport.py",
+      "target": "/opt/go-hk-agent-rebuilt/hk_agent/transport.py"
+    },
+    {
+      "host": "hk-staging",
+      "mode": 420,
+      "sha256": "8b4213eea8ea29b838490d41b99070fc5726d8207812be10be872ab149f6ff3e",
+      "source": "control-plane/boss-test-pr-live-integration-v1/hk-staging/hk_agent/execution_window.py",
+      "target": "/opt/go-hk-agent-rebuilt/hk_agent/execution_window.py"
+    }
+  ],
+  "observed_local_trees_equal": [
+    "gate103/review-bc71",
+    "same-revision-fix/base",
+    "same-revision-fix/candidate"
+  ],
+  "live_current_source_requires_fresh_preflight": true
+}

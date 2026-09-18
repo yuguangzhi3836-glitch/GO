@@ -1,0 +1,43 @@
+{
+  "reviewer": "C13",
+  "reviewed_at": "2026-09-18T00:56:14.304500+00:00",
+  "verdict": "PASS_FROZEN_PR196_FACTS_INSTALLER_LOCAL_REVIEW",
+  "blocking_findings": [],
+  "frozen_sha256": {
+    "install_facts.py": "92d43688dd27e54ff1c6f0e257d775c3052003e6a823fc711c7324c77999fb9d",
+    "FACTS_PACKAGE.json": "86d550d7c9668d2a4896571bb46e969c44487de9c370bc394526e26436547589",
+    "FACTS_MANIFEST.json": "65b55d1dc1348cc281c58ffaf99ad1f70c35a319cb30383108bc59ea0d1d6a12",
+    "CANDIDATE_CONTRACT.json": "36622f0648051d57d5918ea4ff7b9ac4e74f9c686e8f2c503f66bda15bd4b120",
+    "ACTIVE_CANDIDATE.json": "f0ba7a2309f3e89e5ddf78a93bfb3714b66e9d3ce504fe012d932c9342e9355d",
+    "VERIFY_BASELINE.json": "e05a0d82a90f819fb07244deb089f18b1dc7c4daebcb1cde7db58fa07db3c8c8",
+    "install_facts.py.z64": "77455b05f43bc894250e69b726c6d421eef789e8efeacbd987c0d549103661ef",
+    "FACTS_PACKAGE.json.z64": "3670176ade924730b13e23486dd6f679045c9ccffaa134a0afc370ee398b356d",
+    "eason_operator.py": "21d212c9af28b3fb6de92a23e0dd0a66547496b83a2f53ccdfe82bb07f402467"
+  },
+  "contract": "36622f0648051d57d5918ea4ff7b9ac4e74f9c686e8f2c503f66bda15bd4b120",
+  "tests": {
+    "installer_fault_and_receipt": 8,
+    "current_signed_baseline": 4,
+    "log": "C13_INSTALLER_TEST.log"
+  },
+  "checks": [
+    "Actual PR196 TEST_PR and PR192 current VERIFY signatures verified by frozen facts_proof with actual public keys and locally validated current immutable contract",
+    "Actual current signed DEPLOY execution window plus later VERIFY and deployed-record raw hash verified independently",
+    "All frozen SHA256, canonical pins and two compressed transfer payloads verified byte-identical",
+    "Three exact facts and source-observation fields bound to real raw evidence; current image/graph equality validated",
+    "Four fixed write targets and every before/guard/ancestor match original dual-host preflight and exact-target absence results",
+    "All expected installed-source hashes match actual preflight originals",
+    "Final installer exactly concatenated reviewed header, unchanged atomic helpers and unchanged main with three sealed hash replacements",
+    "Operator matches reviewed PR192 operator with only PR labels and two byte pins updated",
+    "HK direct fresh8service check then genuine receipt exactSHA <=300s on CC; no timestamp rewrite or re-signing",
+    "Rollback/new-file cleanup/reconciliation timer hold validated by8independent local tests"
+  ],
+  "limitations": [
+    "Reviewer did not execute remotely; local fault tests mock host commands",
+    "Only candidate facts admission permitted by this review, no Task/signature/plan/deploy/database mutation",
+    "Historical preflight is rechecked by final installer; busy/mismatch/freshness rejection must stop normally",
+    "Current baseline and real source proof do not replace later formal CANARY/DEPLOY/VERIFY acceptance",
+    "Existing contract and consumed plan records remain untouched"
+  ],
+  "remote_execution": false
+}
