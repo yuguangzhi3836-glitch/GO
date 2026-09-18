@@ -1,0 +1,89 @@
+name: C04 three-end identity isolation
+on:
+  push:
+    branches: [cell/c04-three-end-identity-isolation-20260918]
+  pull_request:
+    branches: [fix/aoluguya-hero-public-gallery-20260918]
+    paths:
+      - application/tests/test_v70_r3_c04_http_get_zero_write.py
+      - .github/workflows/c04-three-end-identity-isolation.yml
+permissions:
+  contents: read
+jobs:
+  identity-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go
+          POSTGRES_PASSWORD: go
+          POSTGRES_DB: go_c04_identity
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U go -d go_c04_identity"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql+psycopg://go:go@localhost:5432/go_c04_identity
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install frozen dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Run only new C/B identity boundary
+        run: |
+          set -euo pipefail
+          mkdir -p evidence-out
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("application/tests/conftest.py")
+          s=p.read_text()
+          old='os.environ["DATABASE_URL"] = f"sqlite+pysqlite:///{DB}"'
+          assert old in s
+          p.write_text(s.replace(old, 'os.environ.setdefault("DATABASE_URL", f"sqlite+pysqlite:///{DB}")'))
+          PY
+          git diff -- application/tests/conftest.py > evidence-out/temporary-harness.patch
+          cd application
+          python -m pytest -p no:cacheprovider tests/test_v70_r3_c04_http_get_zero_write.py -k consumer_and_supplier -vv --junitxml=../evidence-out/junit.xml 2>&1 | tee ../evidence-out/raw.log
+          cd ..
+          git checkout -- application/tests/conftest.py
+          test -z "$(git diff -- application/tests/conftest.py)"
+      - name: Bind exact source and seal Evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > evidence-out/candidate.txt
+          git rev-parse HEAD:application > evidence-out/application-tree.txt
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          app=Path("application")
+          hashes={}
+          for folder in ["src","frontend","alembic","tests","tests_frontend"]:
+              root=app/folder
+              if not root.exists():
+                  continue
+              for p in root.rglob("*"):
+                  if p.is_file() and "__pycache__" not in p.parts and p.suffix not in {".pyc",".pyo"}:
+                      hashes[p.relative_to(app).as_posix()]=hashlib.sha256(p.read_bytes()).hexdigest()
+          digest=hashlib.sha256("".join(f"{p}\\0{h}\\n" for p,h in sorted(hashes.items())).encode()).hexdigest()
+          Path("evidence-out/SOURCE_FINGERPRINT.json").write_text(json.dumps(hashes,sort_keys=True,indent=2)+chr(10))
+          Path("evidence-out/source-fingerprint-sha256.txt").write_text(digest+chr(10))
+          json.loads(Path("evidence-out/SOURCE_FINGERPRINT.json").read_text())
+          PY
+          (cd evidence-out && find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS && sha256sum -c SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c04-three-end-identity-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence-out
+          if-no-files-found: error
+          retention-days: 90
