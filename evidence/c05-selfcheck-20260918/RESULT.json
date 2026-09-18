@@ -1,0 +1,31 @@
+{
+  "cell_id": "C05",
+  "domain": "RIDE",
+  "base_pr": 202,
+  "base_sha": "cd6345e32dd258c7f11f0766a36a168bad99a7f5",
+  "product_candidate_sha": "2856592e4ff7107c724e34aa7e27596cfe37c1a3",
+  "product_tree": "5d731684955abff226f0f7b967b6fb431e84c508",
+  "draft_pr": 205,
+  "status": "AWAITING_ISOLATED_CI",
+  "finding": {
+    "severity": "P1",
+    "code": "RIDE_EVIDENCE_EXECUTION_BINDING_NOT_VALIDATED",
+    "fixed": true
+  },
+  "tests": {
+    "added": 1,
+    "runtime_run": "NOT_TRIGGERED",
+    "pass_claimed": false
+  },
+  "inherited": {
+    "c14": "PASS_SCOPED_NOT_RERUN",
+    "c13": "PASS_SCOPED_NOT_RERUN"
+  },
+  "boundaries": {
+    "production": "HOLD",
+    "real_supplier": "DISABLED",
+    "real_payment": "DISABLED",
+    "merge": "HOLD",
+    "deploy": "HOLD"
+  }
+}
