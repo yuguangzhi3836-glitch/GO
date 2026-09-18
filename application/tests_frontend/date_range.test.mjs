@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {createRequire} from 'node:module';
+import vm from 'node:vm';
 
-const require=createRequire(import.meta.url);
-const picker=require('../frontend/consumer/date-range.js');
+const module={exports:{}};
+vm.runInNewContext(fs.readFileSync('frontend/consumer/date-range.js','utf8'),{module,exports:module.exports});
+const picker=module.exports;
 
 test('cross-month range stays in one two-step selection',()=>{
   const model=picker.createSelection();
