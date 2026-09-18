@@ -58,8 +58,8 @@ export default function CheckoutScreen({route,navigation,vertical}:any) {
     {!!notice&&<Text style={screen.sub}>{notice}</Text>}
     {id&&view&&<View style={screen.card}><Text style={screen.h2}>原订单 {id}</Text><StatusPill text={view.order.status||'状态待核对'}/>
       {Number.isSafeInteger(view.order.total_amount_minor)?<Price minor={view.order.total_amount_minor} currency={view.order.currency}/>:<Text>金额待核对</Text>}
-      <Text style={screen.sub}>{view.simulation?'隔离模拟支付：不产生真实扣款或实际旅行凭证。':'当前没有可用的付款通道，订单会保留。'}</Text>
-      <Btn title={busy?'正在核对…':'确认金额并模拟支付'} disabled={busy||loading||!view.simulation||!payable(view.order)} onPress={()=>{void pay();}}/>
+      <Text style={screen.sub}>{view.simulation?'当前支付服务不可用于实际扣款，订单会保留。':'当前没有可用的付款通道，订单会保留。'}</Text>
+      <Btn title={busy?'正在核对…':'确认金额并验证支付'} disabled={busy||loading||!view.simulation||!payable(view.order)} onPress={()=>{void pay();}}/>
       <Btn title="查看原订单详情" secondary disabled={busy} onPress={details}/>
     </View>}
     {!id&&!loading&&<View style={screen.card}><Text style={screen.h2}>先建立待付款订单</Text><Text style={screen.sub}>建立订单与完成支付分别确认。出行资料按本次业务所需字段使用，权限不足时不会创建订单。</Text>
