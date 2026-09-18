@@ -112,7 +112,7 @@ RELEASE_CANDIDATE_FIELDS = ("schema", "candidate_id", "source_repository", "sour
 # the candidate was built as still exists as a sealed, deliverable package; a
 # candidate written before that store existed simply omits it, and omission is
 # never read as PROVEN.
-RELEASE_CANDIDATE_OPTIONAL_FIELDS = ("artifact_package",)
+RELEASE_CANDIDATE_OPTIONAL_FIELDS = ("artifact_package", "candidate_contract_sha256")
 # The three identities the block must agree with the lineage pointer about. The
 # document stays authoritative; the block may not contradict it.
 CANDIDATE_SOURCE_AGREEMENT = (("source_commit", "source_commit"),
@@ -153,6 +153,7 @@ PLAN_FIELDS = ("schema_version", "plan_id", "environment", "action_id", "candida
                "test_pr_task_sha256", "test_pr_evidence_sha256",
                "canary_task_sha256", "canary_evidence_sha256", "preflight_task_sha256",
                "preflight_evidence_sha256")
+PLAN_OPTIONAL_FIELDS = ("candidate_contract_sha256",)
 CANDIDATE_FIELDS = ("repository", "source_commit", "application_git_tree",
                     "source_tree_sha256", "package_sha256", "image_id")
 APPROVAL_FIELDS = ("schema_version", "approval_id", "approved_by", "approved_at",
@@ -557,7 +558,7 @@ def bridge_test_pr_proof_problems(task, evidence, task_key, evidence_key):
     if not isinstance(package, dict):
         problems.append("test_pr_package")
     elif package.get("schema") != "go.sealed-artifact.v1" \
-            or package.get("image_id") != evidence.get("artifact_digest"):
+            or package.get("image_id") != evidence.get("built_image_id"):
         problems.append("test_pr_package_binding")
     gates = evidence.get("gate_results")
     if not isinstance(gates, dict):
@@ -606,6 +607,13 @@ def bridge_proof_problems(task, evidence, action, task_key, evidence_key, at, ma
     expected = {"release_id", "candidate_image_id", "expected_current_image_id"}
     if action == "HK_STAGING_CANARY":
         expected.add("candidate_package_sha256")
+    if "candidate_contract_sha256" in parameters:
+        expected.add("candidate_contract_sha256")
+        identity = parameters.get("candidate_contract_sha256")
+        if not isinstance(identity, str) or not SHA64.fullmatch(identity):
+            problems.append("contract_identity")
+        elif evidence.get("candidate_contract_sha256") != identity:
+            problems.append("proof_contract_binding")
     try:
         exact_set(parameters, expected, "proof_parameters")
     except Refuse as exc:
@@ -650,7 +658,7 @@ def bridge_proof_problems(task, evidence, action, task_key, evidence_key, at, ma
     return problems, completed
 
 
-def bridge_bundle_problems(bundle, identities, at):
+def bridge_bundle_problems(bundle, identities, at, candidate_pointer=None):
     """Port of go_deploy_request.validate_bundle(). Returns (problems, detail)."""
     problems, detail = [], {}
     try:
@@ -664,8 +672,10 @@ def bridge_bundle_problems(bundle, identities, at):
     # proofs below cannot be trusted and every gate that reads them says so.
     if identities.collision():
         problems.append("proof_identities_not_distinct:%s" % ",".join(identities.collision()))
+    contract_sha = plan.get("candidate_contract_sha256") if isinstance(plan, dict) else None
+    plan_fields = PLAN_FIELDS + (PLAN_OPTIONAL_FIELDS if contract_sha is not None else ())
     try:
-        exact_set(plan, PLAN_FIELDS, "plan_fields")
+        exact_set(plan, plan_fields, "plan_fields")
     except Refuse as exc:
         return ["%s" % exc], detail
     if (plan["schema_version"] != "1" or plan["environment"] != ENVIRONMENT
@@ -681,6 +691,20 @@ def bridge_bundle_problems(bundle, identities, at):
         problems.append("protected_non_targets_required")
     if any(plan.get(name) is not False for name in FORBIDDEN_OPERATIONS):
         problems.append("forbidden_operation")
+    if contract_sha is None:
+        if plan.get("migration") is not False:
+            problems.append("forbidden_operation")
+    else:
+        if not isinstance(contract_sha, str) or not SHA64.fullmatch(contract_sha):
+            problems.append("candidate_contract_identity")
+        block, block_problem = release_candidate_block(candidate_pointer)
+        if block_problem:
+            problems.append("candidate_contract_unproven")
+        else:
+            if block.get("candidate_contract_sha256") != contract_sha:
+                problems.append("migration_plan_binding")
+            if block.get("migration_required") is not plan.get("migration"):
+                problems.append("forbidden_operation")
     candidate = plan.get("candidate")
     try:
         exact_set(candidate, CANDIDATE_FIELDS, "candidate_fields")
@@ -771,7 +795,7 @@ def bridge_bundle_problems(bundle, identities, at):
         sealed_config = detail["candidate"]
         if sealed_evidence.get("source_commit_sha") != sealed_config.get("source_commit"):
             problems.append("test_pr_candidate_source_binding")
-        if sealed_evidence.get("artifact_digest") != sealed_config.get("image_id"):
+        if sealed_evidence.get("built_image_id") != sealed_config.get("image_id"):
             problems.append("test_pr_candidate_artifact_binding")
         sealed_package = sealed_evidence.get("artifact_package") or {}
         if sealed_package.get("package_sha256") != sealed_config.get("package_sha256"):
@@ -782,6 +806,8 @@ def bridge_bundle_problems(bundle, identities, at):
             problems.append("approval_predates_evidence")
     cp = (bundle["canary_task"].get("parameters") or {})
     vp = (bundle["preflight_task"].get("parameters") or {})
+    if cp.get("candidate_contract_sha256") != contract_sha:
+        problems.append("canary_contract_binding")
     if detail.get("candidate"):
         candidate = detail["candidate"]
         if (cp.get("candidate_image_id"), cp.get("candidate_package_sha256"),
@@ -920,7 +946,8 @@ class Inputs:
             if self.plan() is None:
                 self._bridge = (["no_plan_supplied"], {})
             else:
-                self._bridge = bridge_bundle_problems(self.plan(), self.identities, self.at)
+                self._bridge = bridge_bundle_problems(
+                    self.plan(), self.identities, self.at, self.candidate)
         return self._bridge
 
 
