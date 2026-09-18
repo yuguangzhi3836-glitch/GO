@@ -1,0 +1,26 @@
+{
+  "observed_at": "2026-09-18T05:24:03.446282+00:00",
+  "rc": 0,
+  "result": {
+    "status": "PASS",
+    "isolated": true,
+    "host_runtime_targeted": false,
+    "phases": [
+      {
+        "phase": "seed",
+        "image": "sha256:28c8b3b34992d9d4aefb4a58d892507ef06c063d955b2da86fe0e3560013d3fe",
+        "sha256": "02ed3c6c462e2320014c77f32ba471e6c1db29829ed3efe0ffdf59cd17050dcb"
+      },
+      {
+        "phase": "recreate",
+        "image": "sha256:28c8b3b34992d9d4aefb4a58d892507ef06c063d955b2da86fe0e3560013d3fe",
+        "sha256": "02ed3c6c462e2320014c77f32ba471e6c1db29829ed3efe0ffdf59cd17050dcb"
+      },
+      {
+        "phase": "image_rollback",
+        "image": "sha256:633a22a0766e587587eeb324ebb6db78dee321118f996b58803da0d7ac34cbf0",
+        "sha256": "02ed3c6c462e2320014c77f32ba471e6c1db29829ed3efe0ffdf59cd17050dcb"
+      }
+    ]
+  }
+}

@@ -113,7 +113,7 @@ class _VerifyInputs:
 
 _PRODUCTION_VERIFY_INPUTS=_VerifyInputs(COMPOSE_FILE,COMPOSE_SHA256,ENV_FILE,ENV_SHA256)
 
-def _collect_verify(runner, candidate_image_id, expected_current_image_id, inputs, sleeper=time.sleep, contract=None):
+def _collect_verify(runner, candidate_image_id, expected_current_image_id, inputs, sleeper=time.sleep, contract=None,topology=None):
  if candidate_image_id!=expected_current_image_id:raise ValueError('candidate image')
  if sha256_file(inputs.compose_path)!=inputs.compose_sha256:raise ValueError('compose baseline')
  if sha256_file(inputs.env_path)!=inputs.env_sha256:raise ValueError('env baseline')
@@ -122,8 +122,22 @@ def _collect_verify(runner, candidate_image_id, expected_current_image_id, input
  if contract:
   if candidate_image_id!=contract['candidate']['image_id']:raise ValueError('contract image')
   alembic_result=_collect_alembic_for_api(runner,api,contract['target_revision'],'/workspace')
+ elif topology and topology.installed() is not None:
+  profile=topology.installed()['runtime_profile'];alembic_result=_collect_alembic_for_api(runner,api,profile['revision'],profile['workdir'])
  else: alembic_result=_collect_alembic_for_api(runner,api)
+ media={}
+ if topology and topology.installed() is not None:
+  ids=[]
+  for service in topology.SERVICES:
+   result=runner.run([DOCKER,'ps','-q','--filter','label=com.docker.compose.project='+PROJECT,'--filter','label=com.docker.compose.service='+service])
+   found=result.stdout.split()
+   if result.returncode or len(found)!=1:raise ValueError('topology service count')
+   ids.extend(found)
+  result=runner.run([DOCKER,'inspect',*ids])
+  if result.returncode:raise ValueError('topology inspect')
+  media=topology.verify(json.loads(result.stdout),candidate_image_id,allow_unmounted_baseline=not (contract and contract.get('topology')))
  return {
+  **media,
   'target_service_count':1+len(WORKERS),
   'all_target_services_same_image':True,
   'api_docker_health':'healthy',

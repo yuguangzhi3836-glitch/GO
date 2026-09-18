@@ -159,7 +159,7 @@ class RuntimeTests(unittest.TestCase):
 
     def test_executor_never_loads_migration_module_for_same_revision(self):
         value=fixture();mock_runtime=Mock();mock_runtime.run_deploy.return_value={'deploy_record_schema_version':'2','deploy_record_id':'a'*64,'deploy_record_sha256':'b'*64,'no_migration':'PASS'}
-        with patch.object(executor,'_contract',return_value=value),patch.object(executor,'_load_deploy',return_value=mock_runtime),patch.object(executor,'_load_collector'),patch.object(executor,'_load_artifact'),patch.object(executor,'_same_revision'),patch.object(executor,'_migration',side_effect=AssertionError('MIGRATION MODULE LOADED')):
+        with patch.object(executor,'_contract',return_value=value),patch.object(executor,'_load_deploy',return_value=mock_runtime),patch.object(executor,'_load_collector'),patch.object(executor,'_load_artifact'),patch.object(executor,'_same_revision'),patch.object(executor,'_topology'),patch.object(executor,'_migration',side_effect=AssertionError('MIGRATION MODULE LOADED')):
             out,code=executor._deploy('release',value['candidate']['image_id'],value['candidate']['package_sha256'],value['expected_current_image_id'],'approval','canary',{},contract_sha=contract.digest(value))
             self.assertEqual(code,0);self.assertNotIn('migration',mock_runtime.run_deploy.call_args.kwargs)
 

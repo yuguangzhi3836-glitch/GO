@@ -1,0 +1,111 @@
+{
+  "schema": "go.media-topology.baseline-binding.v1",
+  "baseline_kind": "REVIEWED_INSTALLED_SAME_REVISION_SOURCES",
+  "not_f827_control_plane": true,
+  "fresh_remote_source_read_performed": false,
+  "sources": [
+    {
+      "source": "control-plane/boss-deploy-request-v1/go-boss-request-bridge",
+      "target": "/usr/local/libexec/go-boss-request-bridge",
+      "sha256": "a6aade3e573e91c49b08a3cb1c8a7822fa1e9acab3c764807d43de8f744c600a",
+      "binding": "EXACT_INSTALL_MANIFEST_AND_AFTER_RECEIPT",
+      "receipt_host": "go-cc"
+    },
+    {
+      "source": "control-plane/boss-deploy-request-v1/go_deploy_request.py",
+      "target": "/usr/local/libexec/go_deploy_request.py",
+      "sha256": "0b0b771cba901b4b487858ec7c8a6fcea7fe36edcc537e3d4470bf60848dc8bb",
+      "binding": "EXACT_INSTALL_MANIFEST_AND_AFTER_RECEIPT",
+      "receipt_host": "go-cc"
+    },
+    {
+      "source": "control-plane/boss-deploy-request-v1/hk_candidate_contract.py",
+      "target": "/usr/local/libexec/hk_candidate_contract.py",
+      "sha256": "3b5897e734749df5be1ca6befa2da88d7c7b58bf02683838341b46b519e8f618",
+      "binding": "EXACT_INSTALL_MANIFEST_AND_AFTER_RECEIPT",
+      "receipt_host": "go-cc"
+    },
+    {
+      "source": "control-plane/boss-deploy-request-v1/plan_derivation.py",
+      "target": "/usr/local/libexec/plan_derivation.py",
+      "sha256": "ca1b690003221c619a9ac816ed533c6ba9291830dd867529eba3f0083b433e25",
+      "binding": "EXACT_INSTALL_MANIFEST_AND_AFTER_RECEIPT",
+      "receipt_host": "go-cc"
+    },
+    {
+      "source": "hk-staging/source/executor/go-hk-deployctl",
+      "target": "/usr/local/libexec/go-hk-deployctl",
+      "sha256": "edc845d33442ef35583628547b6b1dd151315aebcfcc5758625d6fe4fd54309a",
+      "binding": "EXACT_INSTALL_MANIFEST_AND_AFTER_RECEIPT",
+      "receipt_host": "hk-staging"
+    },
+    {
+      "source": "hk-staging/source/executor/runtime/canary_runtime.py",
+      "target": "/usr/local/libexec/go-hk-deployctl-runtime/canary_runtime.py",
+      "sha256": "c3c74678d640150380af572899c303c18f4c62c0333e4e766af0b963bd0dcefb",
+      "binding": "EXACT_INSTALL_MANIFEST_AND_AFTER_RECEIPT",
+      "receipt_host": "hk-staging"
+    },
+    {
+      "source": "hk-staging/source/executor/runtime/deploy_runtime.py",
+      "target": "/usr/local/libexec/go-hk-deployctl-runtime/deploy_runtime.py",
+      "sha256": "79e5b840c14601bf8d720e1300df2fb98838bfd9ec48af881c483588cb788f6b",
+      "binding": "EXACT_INSTALL_MANIFEST_AND_AFTER_RECEIPT",
+      "receipt_host": "hk-staging"
+    },
+    {
+      "source": "hk-staging/source/executor/runtime/hk_candidate_contract.py",
+      "target": "/usr/local/libexec/go-hk-deployctl-runtime/hk_candidate_contract.py",
+      "sha256": "3b5897e734749df5be1ca6befa2da88d7c7b58bf02683838341b46b519e8f618",
+      "binding": "EXACT_INSTALL_MANIFEST_AND_AFTER_RECEIPT",
+      "receipt_host": "hk-staging"
+    },
+    {
+      "source": "hk-staging/source/executor/runtime/same_revision_program.py",
+      "target": "/usr/local/libexec/go-hk-deployctl-runtime/same_revision_program.py",
+      "sha256": "4db9cba95c05cb5f5d0ad661aa2686f237206b9b5bdf18d8736983d35392c88c",
+      "binding": "EXACT_INSTALL_MANIFEST_AND_AFTER_RECEIPT",
+      "receipt_host": "hk-staging"
+    },
+    {
+      "source": "hk-staging/source/executor/runtime/same_revision_runtime.py",
+      "target": "/usr/local/libexec/go-hk-deployctl-runtime/same_revision_runtime.py",
+      "sha256": "d984b5716add576079e25509d48abe9bc21f4338e8efdf928e54cfe473881efe",
+      "binding": "EXACT_INSTALL_MANIFEST_AND_AFTER_RECEIPT",
+      "receipt_host": "hk-staging"
+    },
+    {
+      "source": "hk-staging/source/executor/runtime/collector_runtime.py",
+      "sha256": "fb3d966d8736bcb49a76ff52db01a417bc745f7b5ad47addf9d576e8bf4fa1a6",
+      "binding": "EXACT_INSTALLED_EXECUTOR_PIN_AND_SUCCESSFUL_INSTALL_SMOKE",
+      "fresh_file_receipt": false
+    },
+    {
+      "source": "hk-staging/source/executor/runtime/rollback_runtime.py",
+      "sha256": "274c39f7e430805fb2355bc302b8d559452c0d0b11b1a92461bb8e09a0aab1bd",
+      "binding": "EXACT_INSTALLED_EXECUTOR_PIN_AND_SUCCESSFUL_INSTALL_SMOKE",
+      "fresh_file_receipt": false
+    },
+    {
+      "source": "hk-staging/source/executor/runtime/artifact_runtime.py",
+      "sha256": "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b",
+      "binding": "EXACT_INSTALLED_EXECUTOR_PIN_AND_SUCCESSFUL_INSTALL_SMOKE",
+      "fresh_file_receipt": false
+    },
+    {
+      "source": "hk-staging/source/executor/runtime/migration_runtime.py",
+      "sha256": "be60700cc8dd10d402e2d0e7ddcab3269d93a5acf7ebfd6cd5ba6840ecc8fd0d",
+      "binding": "EXACT_INSTALLED_EXECUTOR_PIN_AND_SUCCESSFUL_INSTALL_SMOKE",
+      "fresh_file_receipt": false
+    }
+  ],
+  "unverified": [
+    "fresh live source hashes since receipts",
+    "future V2 storage parent type and ownership",
+    "formal first-topology installation authority artifact"
+  ],
+  "install_manifest_file_sha256": "9f01becca46e9c9c3ff63d809807350b5bf8bda77de4efcb36ced192b8982dd0",
+  "install_evidence_tree_sha256": "c78f3fb4fff704ebce384b39ae7b5ee4353c71873a0ab9a628c55851efc923e8",
+  "independent_review": "integration-gate/media-topology-admission/INSTALLED_BASELINE_BINDING.json",
+  "latest_observation": "C14 verified all 8 loader pins against 03:14 preflight; not fresh for later installation"
+}

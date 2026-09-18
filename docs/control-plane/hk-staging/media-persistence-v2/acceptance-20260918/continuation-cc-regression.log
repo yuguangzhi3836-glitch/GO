@@ -1,0 +1,190 @@
+test_a_candidate_that_disagrees_with_the_live_host_is_refused (test_deploy_entry.DerivationTests.test_a_candidate_that_disagrees_with_the_live_host_is_refused)
+The admission record and the root-owned baseline must name the same live image. ... ok
+test_a_candidate_that_needs_a_migration_is_refused_not_ignored (test_deploy_entry.DerivationTests.test_a_candidate_that_needs_a_migration_is_refused_not_ignored)
+#103 scopes controlled forward migration; this contract does not carry it yet, ... ok
+test_a_full_derivation_is_a_valid_plan (test_deploy_entry.DerivationTests.test_a_full_derivation_is_a_valid_plan) ... ok
+test_a_preflight_that_did_not_verify_is_refused (test_deploy_entry.DerivationTests.test_a_preflight_that_did_not_verify_is_refused) ... ok
+test_a_stale_canary_or_preflight_is_refused (test_deploy_entry.DerivationTests.test_a_stale_canary_or_preflight_is_refused) ... ok
+test_a_test_pr_the_ledger_does_not_hold_is_refused (test_deploy_entry.DerivationTests.test_a_test_pr_the_ledger_does_not_hold_is_refused) ... ok
+test_an_unadmitted_candidate_is_refused (test_deploy_entry.DerivationTests.test_an_unadmitted_candidate_is_refused) ... ok
+test_no_canary_for_this_candidate_is_a_refusal (test_deploy_entry.DerivationTests.test_no_canary_for_this_candidate_is_a_refusal) ... ok
+test_register_never_overwrites_a_different_plan (test_deploy_entry.DerivationTests.test_register_never_overwrites_a_different_plan) ... ok
+test_register_refuses_a_symlinked_plan_path (test_deploy_entry.DerivationTests.test_register_refuses_a_symlinked_plan_path) ... ok
+test_the_bridge_derives_and_registers_the_plan_by_itself (test_deploy_entry.DerivationTests.test_the_bridge_derives_and_registers_the_plan_by_itself)
+End to end through the Bridge's own derivation path. ... ok
+test_the_newest_canary_decides_even_when_it_failed (test_deploy_entry.DerivationTests.test_the_newest_canary_decides_even_when_it_failed)
+A refused canary is a finding about the candidate, not an inconvenience. ... ok
+test_the_plan_name_is_a_function_of_the_candidate_and_the_canary (test_deploy_entry.DerivationTests.test_the_plan_name_is_a_function_of_the_candidate_and_the_canary) ... ok
+test_advanced_main_does_not_inject_unrelated_task_deletions (test_deploy_entry.GitDiffTests.test_advanced_main_does_not_inject_unrelated_task_deletions) ... ok
+test_missing_metadata_credentials_fails_closed (test_deploy_entry.MetadataTests.test_missing_metadata_credentials_fails_closed) ... ok
+test_pr_metadata_open_base_same_repo_exact_head (test_deploy_entry.MetadataTests.test_pr_metadata_open_base_same_repo_exact_head) ... ok
+test_a_channel_that_does_not_enable_verify_publishes_nothing (test_deploy_entry.PostActionVerifyTests.test_a_channel_that_does_not_enable_verify_publishes_nothing) ... ok
+test_a_foreign_task_under_the_derived_name_stops_for_a_human (test_deploy_entry.PostActionVerifyTests.test_a_foreign_task_under_the_derived_name_stops_for_a_human) ... ok
+test_a_lost_store_write_is_reconciled_from_the_bus (test_deploy_entry.PostActionVerifyTests.test_a_lost_store_write_is_reconciled_from_the_bus)
+A publish that succeeded and a store write that did not must not re-publish. ... ok
+test_a_newer_action_is_verified_instead_of_the_one_it_replaced (test_deploy_entry.PostActionVerifyTests.test_a_newer_action_is_verified_instead_of_the_one_it_replaced)
+Only the current state is verifiable; the older one has no state left. ... ok
+test_a_preparing_marker_whose_task_never_landed_is_republished (test_deploy_entry.PostActionVerifyTests.test_a_preparing_marker_whose_task_never_landed_is_republished) ... ok
+test_a_rollback_source_is_still_spent_exactly_once (test_deploy_entry.PostActionVerifyTests.test_a_rollback_source_is_still_spent_exactly_once)
+The reconciliation must not look like a second rollback of the same source. ... ok
+test_a_rollback_that_did_not_succeed_is_not_verified (test_deploy_entry.PostActionVerifyTests.test_a_rollback_that_did_not_succeed_is_not_verified) ... ok
+test_a_rollback_whose_gates_did_not_all_pass_is_not_verified (test_deploy_entry.PostActionVerifyTests.test_a_rollback_whose_gates_did_not_all_pass_is_not_verified) ... ok
+test_a_rollback_whose_source_deployment_is_gone_is_refused (test_deploy_entry.PostActionVerifyTests.test_a_rollback_whose_source_deployment_is_gone_is_refused) ... ok
+test_a_rollback_whose_source_record_does_not_match_is_refused (test_deploy_entry.PostActionVerifyTests.test_a_rollback_whose_source_record_does_not_match_is_refused)
+The restored image is only believable if it is the source pair's own. ... ok
+test_a_successful_deployment_is_followed_by_an_automatic_verify (test_deploy_entry.PostActionVerifyTests.test_a_successful_deployment_is_followed_by_an_automatic_verify) ... ok
+test_a_successful_rollback_is_followed_by_an_independent_verify (test_deploy_entry.PostActionVerifyTests.test_a_successful_rollback_is_followed_by_an_independent_verify)
+The gap PR #179 recorded, closed: no human sends this VERIFY. ... ok
+test_a_task_whose_signature_does_not_verify_is_not_verified (test_deploy_entry.PostActionVerifyTests.test_a_task_whose_signature_does_not_verify_is_not_verified) ... ok
+test_an_action_that_finished_too_long_ago_is_not_verified (test_deploy_entry.PostActionVerifyTests.test_an_action_that_finished_too_long_ago_is_not_verified)
+A VERIFY of a state three hours gone would be about the past, not the host. ... ok
+test_an_action_whose_evidence_has_not_arrived_is_the_next_ticks_work (test_deploy_entry.PostActionVerifyTests.test_an_action_whose_evidence_has_not_arrived_is_the_next_ticks_work) ... ok
+test_evidence_whose_signature_does_not_verify_cannot_trigger_a_verify (test_deploy_entry.PostActionVerifyTests.test_evidence_whose_signature_does_not_verify_cannot_trigger_a_verify)
+The trigger is a signature, so a forged or edited Evidence buys nothing. ... ok
+test_nothing_is_published_when_the_ledger_holds_no_action (test_deploy_entry.PostActionVerifyTests.test_nothing_is_published_when_the_ledger_holds_no_action) ... ok
+test_the_hong_kong_agent_accepts_the_derived_parameters (test_deploy_entry.PostActionVerifyTests.test_the_hong_kong_agent_accepts_the_derived_parameters)
+Pinned from the other side: the agent's own validator is run on the Task. ... ok
+test_the_ledger_is_not_written_to (test_deploy_entry.PostActionVerifyTests.test_the_ledger_is_not_written_to)
+The store is kept apart on purpose. ... ok
+test_the_preflight_pool_still_selects_the_operators_verify (test_deploy_entry.PostActionVerifyTests.test_the_preflight_pool_still_selects_the_operators_verify) ... ok
+test_the_reconciliation_publishes_at_most_one_task_per_tick (test_deploy_entry.PostActionVerifyTests.test_the_reconciliation_publishes_at_most_one_task_per_tick)
+A backlog of older actions does not become a burst of probes. ... ok
+test_the_rollback_gate_names_are_pinned_to_the_executor_that_writes_them (test_deploy_entry.PostActionVerifyTests.test_the_rollback_gate_names_are_pinned_to_the_executor_that_writes_them)
+The contract is pinned from the other side's source, not restated from memory. ... ok
+test_the_same_action_is_never_verified_twice (test_deploy_entry.PostActionVerifyTests.test_the_same_action_is_never_verified_twice) ... ok
+test_the_two_actions_produce_different_verify_names_and_the_same_contract (test_deploy_entry.PostActionVerifyTests.test_the_two_actions_produce_different_verify_names_and_the_same_contract) ... ok
+test_a_plan_name_that_was_not_derived_is_refused (test_deploy_entry.ProofTests.test_a_plan_name_that_was_not_derived_is_refused)
+A plan is named by the facts, so a name that does not follow is refused. ... ok
+test_a_test_pr_gate_that_did_not_pass_is_refused (test_deploy_entry.ProofTests.test_a_test_pr_gate_that_did_not_pass_is_refused) ... ok
+test_a_test_pr_package_that_is_not_the_candidates_is_refused (test_deploy_entry.ProofTests.test_a_test_pr_package_that_is_not_the_candidates_is_refused) ... ok
+test_an_old_test_pr_of_the_same_candidate_is_still_valid (test_deploy_entry.ProofTests.test_an_old_test_pr_of_the_same_candidate_is_still_valid)
+Content-bound proof, stated positively: the artifact never expires. ... ok
+test_an_unauthorised_github_identity_is_refused (test_deploy_entry.ProofTests.test_an_unauthorised_github_identity_is_refused) ... ok
+test_approval_expiry_and_postdated_evidence (test_deploy_entry.ProofTests.test_approval_expiry_and_postdated_evidence) ... ok
+test_approval_hash_and_snapshot_hash (test_deploy_entry.ProofTests.test_approval_hash_and_snapshot_hash) ... ok
+test_candidate_binding_and_package_compatibility (test_deploy_entry.ProofTests.test_candidate_binding_and_package_compatibility) ... ok
+test_evidence_for_another_task_is_refused (test_deploy_entry.ProofTests.test_evidence_for_another_task_is_refused)
+The Evidence names the exact Task bytes it executed; a digest of some other ... ok
+test_executor_identifier_compatibility (test_deploy_entry.ProofTests.test_executor_identifier_compatibility) ... ok
+test_executor_identifier_compatibility_is_kept_but_the_name_is_derived (test_deploy_entry.ProofTests.test_executor_identifier_compatibility_is_kept_but_the_name_is_derived)
+The id a Task carries must be a derived one; a chosen id is refused. ... ok
+test_no_authenticated_identity_is_refused (test_deploy_entry.ProofTests.test_no_authenticated_identity_is_refused) ... ok
+test_numeric_false_is_not_a_signed_gate (test_deploy_entry.ProofTests.test_numeric_false_is_not_a_signed_gate) ... ok
+test_rejected_signed_plan_fields (test_deploy_entry.ProofTests.test_rejected_signed_plan_fields) ... ok
+test_signed_canary_must_match_candidate (test_deploy_entry.ProofTests.test_signed_canary_must_match_candidate) ... ok
+test_stale_or_failed_signed_evidence (test_deploy_entry.ProofTests.test_stale_or_failed_signed_evidence) ... ok
+test_the_approval_cannot_borrow_another_authorised_name (test_deploy_entry.ProofTests.test_the_approval_cannot_borrow_another_authorised_name)
+The name the approval carries must be the identity that authenticated. ... ok
+test_the_approval_carries_no_signature_field (test_deploy_entry.ProofTests.test_the_approval_carries_no_signature_field) ... ok
+test_the_approval_is_authorised_by_an_authenticated_identity (test_deploy_entry.ProofTests.test_the_approval_is_authorised_by_an_authenticated_identity)
+The V1 authority, asserted directly: the login GitHub reports is what counts. ... ok
+test_the_approval_is_bound_to_the_request_it_is (test_deploy_entry.ProofTests.test_the_approval_is_bound_to_the_request_it_is)
+The approval is one exact Request, not a class of them. ... ok
+test_the_authorised_identities_are_named_in_one_place (test_deploy_entry.ProofTests.test_the_authorised_identities_are_named_in_one_place) ... ok
+test_the_signed_test_pr_is_what_replaces_sealed_node (test_deploy_entry.ProofTests.test_the_signed_test_pr_is_what_replaces_sealed_node)
+Every binding sealed_node stood for, refused one at a time when broken. ... ok
+test_valid_plan_and_hk_wire_contract (test_deploy_entry.ProofTests.test_valid_plan_and_hk_wire_contract) ... ok
+test_wrong_keys_and_unsigned_approval (test_deploy_entry.ProofTests.test_wrong_keys_and_unsigned_approval) ... ok
+test_a_consumed_plan_and_approval_are_never_reused (test_deploy_entry.QueueTests.test_a_consumed_plan_and_approval_are_never_reused)
+Two Requests against the same facts give the same plan, and it is spent once. ... ok
+test_a_newer_deployment_landing_before_publication_stops_the_rollback (test_deploy_entry.QueueTests.test_a_newer_deployment_landing_before_publication_stops_the_rollback)
+The source is re-derived from the durable ledger, not taken from the claim. ... ok
+test_a_rollback_cannot_deploy_and_a_deployment_cannot_undo (test_deploy_entry.QueueTests.test_a_rollback_cannot_deploy_and_a_deployment_cannot_undo)
+The two actions stay separate: neither Request can produce the other's Task. ... ok
+test_a_rollback_is_silenced_by_the_same_emergency_stop_as_a_deployment (test_deploy_entry.QueueTests.test_a_rollback_is_silenced_by_the_same_emergency_stop_as_a_deployment) ... ok
+test_a_rollback_of_the_published_deployment_is_derived_signed_and_published (test_deploy_entry.QueueTests.test_a_rollback_of_the_published_deployment_is_derived_signed_and_published) ... ok
+test_a_rollback_registers_no_plan_and_records_no_plan_fields (test_deploy_entry.QueueTests.test_a_rollback_registers_no_plan_and_records_no_plan_fields) ... ok
+test_a_second_rollback_of_the_same_deployment_is_refused (test_deploy_entry.QueueTests.test_a_second_rollback_of_the_same_deployment_is_refused) ... ok
+test_a_source_evidence_that_changed_before_publication_stops_the_rollback (test_deploy_entry.QueueTests.test_a_source_evidence_that_changed_before_publication_stops_the_rollback)
+The Evidence is re-read from the repository, so a replaced one is caught. ... ok
+test_ambiguous_publish_no_second_attempt (test_deploy_entry.QueueTests.test_ambiguous_publish_no_second_attempt) ... ok
+test_an_unwritable_plan_store_is_a_refusal_not_a_crash (test_deploy_entry.QueueTests.test_an_unwritable_plan_store_is_a_refusal_not_a_crash)
+The store's writability is the host's job; a failure here must not kill the tick. ... ok
+test_deploy_refused_while_the_authorization_mode_is_not_request (test_deploy_entry.QueueTests.test_deploy_refused_while_the_authorization_mode_is_not_request)
+The emergency stop: any mode but `request` silences deployments. ... ok
+test_midflight_authorization_mode_suspension (test_deploy_entry.QueueTests.test_midflight_authorization_mode_suspension)
+A deployment already claimed is stopped when the mode stops accepting. ... ok
+test_midflight_head_change_consumes_claim_without_publish (test_deploy_entry.QueueTests.test_midflight_head_change_consumes_claim_without_publish) ... ok
+test_midflight_plan_replacement (test_deploy_entry.QueueTests.test_midflight_plan_replacement)
+A plan that changes under a live claim is refused, not silently deployed. ... ok
+test_prepared_published_bytes_reconciled_after_restart (test_deploy_entry.QueueTests.test_prepared_published_bytes_reconciled_after_restart) ... ok
+test_publish_replay_and_duplicate_plan (test_deploy_entry.QueueTests.test_publish_replay_and_duplicate_plan) ... ok
+test_published_before_lost_ack_is_reconciled (test_deploy_entry.QueueTests.test_published_before_lost_ack_is_reconciled) ... ok
+test_request_filename_binding (test_deploy_entry.QueueTests.test_request_filename_binding) ... ok
+test_test_pr_preserved_with_exact_resolved_source (test_deploy_entry.QueueTests.test_test_pr_preserved_with_exact_resolved_source) ... ok
+test_the_authorization_is_the_request_and_is_recorded_as_such (test_deploy_entry.QueueTests.test_the_authorization_is_the_request_and_is_recorded_as_such)
+The one-time authorisation the Command Center establishes, and where it lives. ... ok
+test_the_declared_mode_does_not_authorise_a_deployment_by_itself (test_deploy_entry.QueueTests.test_the_declared_mode_does_not_authorise_a_deployment_by_itself)
+The property that replaces the switch. ... ok
+test_two_processes_one_plan_one_publication (test_deploy_entry.QueueTests.test_two_processes_one_plan_one_publication) ... ok
+test_v2_cannot_enable_new_actions (test_deploy_entry.QueueTests.test_v2_cannot_enable_new_actions) ... ok
+test_a_branch_name_that_is_really_an_option_is_refused (test_deploy_entry.RemoteReadTests.test_a_branch_name_that_is_really_an_option_is_refused)
+The name reaches git as an argument, so it is validated first. ... ok
+test_a_file_that_cannot_be_shown_is_a_refusal_not_a_crash (test_deploy_entry.RemoteReadTests.test_a_file_that_cannot_be_shown_is_a_refusal_not_a_crash)
+An escaping error here would end the tick and stop every other action too. ... ok
+test_a_remote_that_declares_no_default_branch_is_refused (test_deploy_entry.RemoteReadTests.test_a_remote_that_declares_no_default_branch_is_refused)
+Fail closed, and before the fetch: an unnamed branch is not a reason to guess. ... ok
+test_the_branch_is_the_one_the_remote_declares (test_deploy_entry.RemoteReadTests.test_the_branch_is_the_one_the_remote_declares)
+One reader, two remotes, and the name comes from the remote each time. ... ok
+test_the_fetch_is_filtered_and_shallow (test_deploy_entry.RemoteReadTests.test_the_fetch_is_filtered_and_shallow)
+What makes a repository of that size readable inside a poll tick. ... ok
+test_the_remote_is_asked_which_branch_it_publishes (test_deploy_entry.RemoteReadTests.test_the_remote_is_asked_which_branch_it_publishes) ... ok
+test_a_deploy_request_naming_a_plan_is_refused (test_deploy_entry.RequestTests.test_a_deploy_request_naming_a_plan_is_refused)
+The shape this gate no longer accepts must fail rather than be read around it. ... ok
+test_deploy_cannot_enter_legacy_derivation (test_deploy_entry.RequestTests.test_deploy_cannot_enter_legacy_derivation) ... ok
+test_deploy_shape (test_deploy_entry.RequestTests.test_deploy_shape)
+A DEPLOY Request is the five common fields; it steers no deployment fact. ... ok
+test_duplicate_keys_and_nonfinite_json (test_deploy_entry.RequestTests.test_duplicate_keys_and_nonfinite_json) ... ok
+test_invalid_scope (test_deploy_entry.RequestTests.test_invalid_scope) ... ok
+test_legacy_modes_cannot_downgrade_deploy_to_verify (test_deploy_entry.RequestTests.test_legacy_modes_cannot_downgrade_deploy_to_verify) ... ok
+test_no_caller_runtime_or_approval_override (test_deploy_entry.RequestTests.test_no_caller_runtime_or_approval_override) ... ok
+test_a_deployment_that_did_not_report_deploy_ok_is_not_a_source (test_deploy_entry.RollbackProofTests.test_a_deployment_that_did_not_report_deploy_ok_is_not_a_source) ... ok
+test_a_deployment_whose_evidence_was_refused_is_not_a_source (test_deploy_entry.RollbackProofTests.test_a_deployment_whose_evidence_was_refused_is_not_a_source) ... ok
+test_a_deployment_with_a_failed_gate_is_not_a_source (test_deploy_entry.RollbackProofTests.test_a_deployment_with_a_failed_gate_is_not_a_source) ... ok
+test_a_ledger_holding_only_probes_has_nothing_to_roll_back (test_deploy_entry.RollbackProofTests.test_a_ledger_holding_only_probes_has_nothing_to_roll_back) ... ok
+test_a_record_identity_that_is_not_a_digest_is_refused (test_deploy_entry.RollbackProofTests.test_a_record_identity_that_is_not_a_digest_is_refused) ... ok
+test_a_record_that_is_not_schema_two_is_refused (test_deploy_entry.RollbackProofTests.test_a_record_that_is_not_schema_two_is_refused) ... ok
+test_a_release_id_that_is_not_an_identifier_is_refused (test_deploy_entry.RollbackProofTests.test_a_release_id_that_is_not_an_identifier_is_refused) ... ok
+test_a_rollback_approval_and_a_deploy_approval_are_not_interchangeable (test_deploy_entry.RollbackProofTests.test_a_rollback_approval_and_a_deploy_approval_are_not_interchangeable) ... ok
+test_a_source_carrying_a_parameter_the_deployment_never_sends_is_refused (test_deploy_entry.RollbackProofTests.test_a_source_carrying_a_parameter_the_deployment_never_sends_is_refused) ... ok
+test_a_source_is_spent_by_any_published_rollback_that_cites_it (test_deploy_entry.RollbackProofTests.test_a_source_is_spent_by_any_published_rollback_that_cites_it) ... ok
+test_a_source_task_that_is_not_a_deployment_is_refused (test_deploy_entry.RollbackProofTests.test_a_source_task_that_is_not_a_deployment_is_refused) ... ok
+test_a_source_that_outlived_its_task_window_is_still_a_source (test_deploy_entry.RollbackProofTests.test_a_source_that_outlived_its_task_window_is_still_a_source)
+The second invented rule, caught the same way: `completed <= expires`. ... ok
+test_a_source_whose_own_timeline_is_incoherent_is_refused (test_deploy_entry.RollbackProofTests.test_a_source_whose_own_timeline_is_incoherent_is_refused)
+What the bound that remains is for: the executor cannot start before it was told. ... ok
+test_an_unpublished_deployment_is_not_yet_a_source (test_deploy_entry.RollbackProofTests.test_an_unpublished_deployment_is_not_yet_a_source) ... ok
+test_an_unpublished_rollback_has_not_spent_its_source (test_deploy_entry.RollbackProofTests.test_an_unpublished_rollback_has_not_spent_its_source) ... ok
+test_an_unsigned_or_foreign_source_task_is_refused (test_deploy_entry.RollbackProofTests.test_an_unsigned_or_foreign_source_task_is_refused) ... ok
+test_no_published_deployment_means_nothing_to_roll_back (test_deploy_entry.RollbackProofTests.test_no_published_deployment_means_nothing_to_roll_back) ... ok
+test_record_path_is_an_annotation_and_a_real_deployment_still_validates (test_deploy_entry.RollbackProofTests.test_record_path_is_an_annotation_and_a_real_deployment_still_validates)
+The mistake this guards: applying "every gate value is PASS" to a DEPLOY Evidence. ... ok
+test_the_agent_accepts_the_rollback_evidence_shape_this_gate_expects (test_deploy_entry.RollbackProofTests.test_the_agent_accepts_the_rollback_evidence_shape_this_gate_expects)
+The executor result the Bridge will read back, built by the agent's own builder. ... ok
+test_the_approval_id_is_derived_not_chosen (test_deploy_entry.RollbackProofTests.test_the_approval_id_is_derived_not_chosen) ... ok
+test_the_authorisation_cannot_be_borrowed_for_another_request (test_deploy_entry.RollbackProofTests.test_the_authorisation_cannot_be_borrowed_for_another_request) ... ok
+test_the_authorisation_cannot_borrow_another_authorised_name (test_deploy_entry.RollbackProofTests.test_the_authorisation_cannot_borrow_another_authorised_name) ... ok
+test_the_authorisation_expires (test_deploy_entry.RollbackProofTests.test_the_authorisation_expires) ... ok
+test_the_authorisation_field_set_is_exact (test_deploy_entry.RollbackProofTests.test_the_authorisation_field_set_is_exact) ... ok
+test_the_authorisation_is_bound_to_the_pair_it_undoes (test_deploy_entry.RollbackProofTests.test_the_authorisation_is_bound_to_the_pair_it_undoes) ... ok
+test_the_authorisation_must_be_authorised_by_an_authenticated_identity (test_deploy_entry.RollbackProofTests.test_the_authorisation_must_be_authorised_by_an_authenticated_identity) ... ok
+test_the_authorisation_must_postdate_the_source_evidence (test_deploy_entry.RollbackProofTests.test_the_authorisation_must_postdate_the_source_evidence)
+A rollback cannot be authorised before the deployment it undoes has finished. ... ok
+test_the_authorisation_scope_is_the_rollback_scope (test_deploy_entry.RollbackProofTests.test_the_authorisation_scope_is_the_rollback_scope) ... ok
+test_the_deadline_never_outlives_the_authorisation (test_deploy_entry.RollbackProofTests.test_the_deadline_never_outlives_the_authorisation) ... ok
+test_the_derived_parameters_are_exactly_what_the_hk_agent_accepts (test_deploy_entry.RollbackProofTests.test_the_derived_parameters_are_exactly_what_the_hk_agent_accepts)
+Our parameter contract is a claim about the agent; this checks it against it. ... ok
+test_the_newest_deployment_wins_and_there_is_no_fallback_to_an_older_one (test_deploy_entry.RollbackProofTests.test_the_newest_deployment_wins_and_there_is_no_fallback_to_an_older_one)
+A newer deployment whose Evidence is missing stops the derivation. ... ok
+test_the_newest_published_deployment_is_the_source (test_deploy_entry.RollbackProofTests.test_the_newest_published_deployment_is_the_source) ... ok
+test_a_channel_that_does_not_declare_the_mode_is_refused (test_deploy_entry.StorageTests.test_a_channel_that_does_not_declare_the_mode_is_refused) ... ok
+test_a_malformed_channel_is_refused (test_deploy_entry.StorageTests.test_a_malformed_channel_is_refused) ... ok
+test_secure_plan_load_and_absence (test_deploy_entry.StorageTests.test_secure_plan_load_and_absence) ... ok
+test_symlink_writable_oversized_and_bad_owner (test_deploy_entry.StorageTests.test_symlink_writable_oversized_and_bad_owner) ... ok
+test_the_shipped_configuration_declares_the_mode_and_grants_nothing (test_deploy_entry.StorageTests.test_the_shipped_configuration_declares_the_mode_and_grants_nothing)
+There is no switch to ship on, and none to ship off either. ... ok
+
+----------------------------------------------------------------------
+Ran 137 tests in 0.543s
+
+OK

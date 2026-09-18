@@ -1,0 +1,88 @@
+name: Media topology V2 isolated gate
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'hk-staging/source/executor/**'
+      - 'hk-staging/tests/**'
+      - 'hk-staging/install/**'
+      - 'control-plane/boss-deploy-request-v1/**'
+      - 'control-plane/hk-forward-migration-v1/tests/**'
+      - 'deploy/hk-staging/docker-compose.business-runtime-v2.yml'
+      - 'docs/control-plane/hk-staging/DEPLOYMENT_TOPOLOGY_V2.json'
+      - '.github/workflows/media-topology-v2.yml'
+permissions:
+  contents: read
+jobs:
+  isolated:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify control source manifest
+        working-directory: control-plane/boss-deploy-request-v1
+        run: sha256sum --check SHA256SUMS
+      - name: Exact deployed media-index fixture
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90
+          path: .media-business-fixture
+          sparse-checkout: application/src/go_hotel/services/media_index.py
+          sparse-checkout-cone-mode: false
+      - name: Frozen Python dependencies
+        run: |
+          set -euo pipefail
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+          mkdir -p "$RUNNER_TEMP/media-topology"
+      - name: Signed contracts and fixed executor regressions
+        run: |
+          set -euo pipefail
+          python -B hk-staging/tests/test_media_topology.py 2>&1 | tee "$RUNNER_TEMP/media-topology/primitives.log"
+          # These fixtures exercise actual root-owned metadata in temporary paths.
+          # Elevation is limited to the disposable runner; no live host is contacted.
+          sudo --preserve-env=LD_LIBRARY_PATH "$(command -v python)" -B hk-staging/tests/test_media_topology_hooks.py 2>&1 | tee "$RUNNER_TEMP/media-topology/hooks.log"
+          python -B control-plane/hk-forward-migration-v1/tests/test_same_revision.py 2>&1 | tee "$RUNNER_TEMP/media-topology/same-revision.log"
+          python -B hk-staging/source/executor/runtime/rollback_runtime_regression.py 2>&1 | tee "$RUNNER_TEMP/media-topology/rollback.log"
+          python -B hk-staging/source/executor/runtime/collector_runtime_regression.py 2>&1 | tee "$RUNNER_TEMP/media-topology/collector.log"
+          python -B -m unittest discover -s control-plane/boss-deploy-request-v1/tests -p test_deploy_entry.py 2>&1 | tee "$RUNNER_TEMP/media-topology/cc.log"
+          python -B control-plane/boss-deploy-request-v1/go-boss-request-bridge --self-test 2>&1 | tee "$RUNNER_TEMP/media-topology/bridge.log"
+          sudo --preserve-env=LD_LIBRARY_PATH "$(command -v python)" -B -m unittest discover -s hk-staging/install/media-topology-source -p 'test_*.py' 2>&1 | tee "$RUNNER_TEMP/media-topology/installer.log"
+      - name: Isolated Docker recreation and image rollback
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/media-topology/images"
+          touch "$RUNNER_TEMP/media-topology/isolated.env"
+          GO_BUSINESS_IMAGE_TAG=go-media-isolated:new GO_RUNTIME_ENV_FILE="$RUNNER_TEMP/media-topology/isolated.env" docker compose -f deploy/hk-staging/docker-compose.business-runtime.yml -f deploy/hk-staging/docker-compose.business-runtime-v2.yml config --quiet
+          docker pull python:3.12-slim
+          MEDIA_TEST_BASE="$(docker image inspect python:3.12-slim --format '{{index .RepoDigests 0}}')"
+          printf '%s  %s\n' '7ef6aa48d669ed0ed65352f20daf08858245c08be3f1be1601a659c92ed74802' '.media-business-fixture/application/src/go_hotel/services/media_index.py' | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/media-topology/images/src/go_hotel/services"
+          cp .media-business-fixture/application/src/go_hotel/services/media_index.py "$RUNNER_TEMP/media-topology/images/src/go_hotel/services/media_index.py"
+          printf 'FROM %s\nCOPY src /workspace/src\nLABEL go.media.test.revision="old"\n' "$MEDIA_TEST_BASE" > "$RUNNER_TEMP/media-topology/images/old.Dockerfile"
+          printf 'FROM %s\nCOPY src /workspace/src\nLABEL go.media.test.revision="new"\n' "$MEDIA_TEST_BASE" > "$RUNNER_TEMP/media-topology/images/new.Dockerfile"
+          docker build --network=none --pull=false -t go-media-isolated:old -f "$RUNNER_TEMP/media-topology/images/old.Dockerfile" "$RUNNER_TEMP/media-topology/images"
+          docker build --network=none --pull=false -t go-media-isolated:new -f "$RUNNER_TEMP/media-topology/images/new.Dockerfile" "$RUNNER_TEMP/media-topology/images"
+          MEDIA_TEST_NEW="$(docker image inspect go-media-isolated:new --format '{{.Id}}')"
+          MEDIA_TEST_OLD="$(docker image inspect go-media-isolated:old --format '{{.Id}}')"
+          printf '%s\n' "$MEDIA_TEST_BASE" > "$RUNNER_TEMP/media-topology/base-image-digest.txt"
+          printf '%s\n' 'PR198 fixture: f827a3aefd95fd95dedb2bd2ecc93ae01111ea90; MediaIndex SHA256: 7ef6aa48d669ed0ed65352f20daf08858245c08be3f1be1601a659c92ed74802; CI images are test-only, not HK business images.' > "$RUNNER_TEMP/media-topology/media-fixture.txt"
+          python -B hk-staging/tests/isolated_media_container_persistence.py --run-isolated-docker --image "$MEDIA_TEST_NEW" --rollback-image "$MEDIA_TEST_OLD" | tee "$RUNNER_TEMP/media-topology/docker-persistence.json"
+      - name: Record exact source
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/media-topology"
+          git rev-parse HEAD > "$RUNNER_TEMP/media-topology/source-commit.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: media-topology-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/media-topology
+          if-no-files-found: error

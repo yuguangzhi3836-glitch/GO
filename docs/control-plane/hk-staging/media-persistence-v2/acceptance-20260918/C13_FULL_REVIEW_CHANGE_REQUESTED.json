@@ -1,0 +1,38 @@
+{
+  "status": "CHANGE_REQUESTED",
+  "findings": [
+    {
+      "severity": "blocking",
+      "location": "installed-base/hk-staging/source/executor/runtime/same_revision_runtime.py:31",
+      "issue": "Real check_images rejects every new V3 contract before Docker calls; current hook test mocks same_revision object",
+      "reproduction": "E_SAME_SOURCE_CONTRACT",
+      "requested": "Strictly support validated V3, update exact source installation/loader pins, add integration test using actual helper"
+    },
+    {
+      "severity": "blocking",
+      "location": "candidate/control-plane/boss-deploy-request-v1/go_deploy_request.py main block",
+      "issue": "validate_topology_evidence defined after executable __main__ block; CLI --check-plan invokes proof before function exists",
+      "requested": "Move definition before main and exercise CLI branch"
+    },
+    {
+      "severity": "blocking_for_provision",
+      "location": "install/provision_media_topology.py Docker ID preflight",
+      "issue": "docker ps -q gives short IDs; inspect .Id gives full IDs; equality rejects healthy intended runtime",
+      "requested": "Use --no-trunc or explicitly resolve full identity and test faithful formats"
+    }
+  ],
+  "independent_tests": {
+    "primitives": 8,
+    "hooks_test_runtime": 13,
+    "same_revision": 16,
+    "rollback_checks": 31,
+    "collector_checks": 23,
+    "cc": 137,
+    "bridge": 65
+  },
+  "limits": [
+    "Passing tests do not cover blockers",
+    "Sparse candidate directly running hooks lacks inherited test fixture; complete test-runtime used for 13/13 with implementation bytes verified equal",
+    "No actual Docker or HK transition tested; no remote actions performed"
+  ]
+}

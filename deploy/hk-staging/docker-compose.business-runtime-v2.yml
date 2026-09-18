@@ -1,0 +1,73 @@
+services:
+  api:
+    environment:
+      GO_MEDIA_CACHE_DIR: /var/lib/go-hotel/media-cache
+    volumes:
+      - type: bind
+        source: /var/lib/go-hotel/media-cache
+        target: /var/lib/go-hotel/media-cache
+        bind:
+          create_host_path: false
+  recovery-worker:
+    environment:
+      GO_MEDIA_CACHE_DIR: /var/lib/go-hotel/media-cache
+    volumes:
+      - type: bind
+        source: /var/lib/go-hotel/media-cache
+        target: /var/lib/go-hotel/media-cache
+        bind:
+          create_host_path: false
+  outbox-worker:
+    environment:
+      GO_MEDIA_CACHE_DIR: /var/lib/go-hotel/media-cache
+    volumes:
+      - type: bind
+        source: /var/lib/go-hotel/media-cache
+        target: /var/lib/go-hotel/media-cache
+        bind:
+          create_host_path: false
+  mobile-push-receipt-worker:
+    environment:
+      GO_MEDIA_CACHE_DIR: /var/lib/go-hotel/media-cache
+    volumes:
+      - type: bind
+        source: /var/lib/go-hotel/media-cache
+        target: /var/lib/go-hotel/media-cache
+        bind:
+          create_host_path: false
+  reconciliation-worker:
+    environment:
+      GO_MEDIA_CACHE_DIR: /var/lib/go-hotel/media-cache
+    volumes:
+      - type: bind
+        source: /var/lib/go-hotel/media-cache
+        target: /var/lib/go-hotel/media-cache
+        bind:
+          create_host_path: false
+  mobile-push-worker:
+    environment:
+      GO_MEDIA_CACHE_DIR: /var/lib/go-hotel/media-cache
+    volumes:
+      - type: bind
+        source: /var/lib/go-hotel/media-cache
+        target: /var/lib/go-hotel/media-cache
+        bind:
+          create_host_path: false
+  mobile-engagement-worker:
+    environment:
+      GO_MEDIA_CACHE_DIR: /var/lib/go-hotel/media-cache
+    volumes:
+      - type: bind
+        source: /var/lib/go-hotel/media-cache
+        target: /var/lib/go-hotel/media-cache
+        bind:
+          create_host_path: false
+  judgment-worker:
+    environment:
+      GO_MEDIA_CACHE_DIR: /var/lib/go-hotel/media-cache
+    volumes:
+      - type: bind
+        source: /var/lib/go-hotel/media-cache
+        target: /var/lib/go-hotel/media-cache
+        bind:
+          create_host_path: false

@@ -260,7 +260,8 @@ def proof(task,evidence,action,authority_key,hk_key,at,max_age):
     gates=evidence.get('gate_results')
     required=CANARY_GATES if action==CANARY_ACTION else VERIFY_GATES
     if not isinstance(gates,dict) or any(gates.get(k)!='PASS' for k in required): raise Reject('proof_gate_failed')
-    if any(v != 'PASS' and v is not False for v in gates.values()): raise Reject('proof_contains_failed_gate')
+    metadata=validate_topology_evidence(gates,action)
+    if any(v != 'PASS' and v is not False for k,v in gates.items() if k not in metadata): raise Reject('proof_contains_failed_gate')
     return completed
 
 def candidate_repository(value):
@@ -403,13 +404,17 @@ def rollback_source_proof(task,evidence,authority_key,hk_key):
     if not isinstance(record_sha256,str) or SHA.fullmatch(record_sha256) is None:
         raise Reject('rollback_source_record_binding')
     gates=evidence.get('gate_results')
-    needs_migration=bool(contract_sha)
+    needs_migration=bool(contract_sha);topology_rollback=False
     if contract_sha and isinstance(gates,dict) and gates.get('no_migration')=='PASS':
         try:
             source_contract=candidate_contract.load(contract_sha,candidate_contract.CC_STORE)
             candidate_contract.bind(source_contract,parameters['candidate_image_id'],parameters['expected_current_image_id'],parameters['candidate_package_sha256'])
             needs_migration=candidate_contract.migration_required(source_contract)
             if needs_migration: raise Reject('proof_contract_mode')
+            if source_contract.get('topology'):
+                topo=source_contract['topology']
+                if evidence.get('gate_results',{}).get('topology_id')!=topo['topology_id'] or evidence.get('gate_results',{}).get('topology_version')!=2 or evidence.get('gate_results',{}).get('topology_sha256')!=topo['topology_sha256'] or evidence.get('gate_results',{}).get('media_rollback_compatible') is not True or gates.get('media_persistence')!='PASS':raise Reject('topology_rollback_evidence')
+                topology_rollback=True
         except candidate_contract.Reject as exc: raise Reject(str(exc)) from exc
     required=tuple(k for k in DEPLOY_GATES if k!='no_migration')+('migration_source_bound','rds_prestate_match','alembic_forward_migration','rds_poststate_match','migration_evidence') if needs_migration else DEPLOY_GATES
     if needs_migration and (not isinstance(gates,dict) or not SHA.fullmatch(str(gates.get('migration_record_sha256','')))): raise Reject('migration_receipt_missing')
@@ -418,7 +423,7 @@ def rollback_source_proof(task,evidence,authority_key,hk_key):
     return {'record_id':record_id,'record_sha256':record_sha256,
             'candidate_image_id':parameters['candidate_image_id'],
             'expected_current_image_id':parameters['expected_current_image_id'],
-            'completed_at':completed,'migration_required':needs_migration,'contract_bound':contract_sha is not None}
+            'completed_at':completed,'migration_required':needs_migration,'contract_bound':contract_sha is not None,'topology_rollback':topology_rollback}
 
 def plan_id_for(candidate,canary_task):
     """The one plan name this gate will accept, derived rather than chosen.
@@ -465,7 +470,7 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
     exact(bundle,BUNDLE_FIELDS,'bundle_fields')
     plan=bundle['plan']; approval=bundle['approval']
     contract_sha=plan.get('candidate_contract_sha256') if isinstance(plan,dict) else None
-    exact(plan,(*PLAN_FIELDS,'candidate_contract_sha256') if contract_sha is not None else PLAN_FIELDS,'plan_fields')
+    exact(plan,tuple(PLAN_FIELDS)+(('candidate_contract_sha256',) if contract_sha is not None else ())+(('topology',) if isinstance(plan,dict) and 'topology' in plan else ()),'plan_fields')
     if plan['schema_version']!='1' or plan['plan_id']!=plan_id or plan['environment']!=ENVIRONMENT or plan['action_id']!=ACTION:
         raise Reject('plan_scope')
     match(plan_id,IDENT,'plan_id')
@@ -487,9 +492,10 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
         try: contract=candidate_contract.load(contract_sha,candidate_contract.CC_STORE)
         except candidate_contract.Reject as exc: raise Reject(str(exc)) from exc
         if contract['candidate']!=candidate or contract['expected_current_image_id']!=plan['expected_current_image_id']: raise Reject('migration_plan_binding')
+    if plan.get('topology')!=(contract.get('topology') if contract else None):raise Reject('topology_plan_binding')
     if plan['migration'] is not (candidate_contract.migration_required(contract) if contract else False): raise Reject('forbidden_operation')
     exact(approval,APPROVAL_FIELDS,'approval_fields')
-    if approval['schema_version']!='1' or approval['scope']!='HK_STAGING_DEPLOY_FIXED_EIGHT' or approval['plan_sha256']!=digest(plan):
+    if approval['schema_version']!='1' or approval['scope']!=('HK_STAGING_DEPLOY_FIXED_EIGHT_TOPOLOGY_V2' if plan.get('topology') else 'HK_STAGING_DEPLOY_FIXED_EIGHT') or approval['plan_sha256']!=digest(plan):
         raise Reject('approval_binding')
     # The approval is the Request's own content, so the digest it carries must be that
     # Request and nothing else.
@@ -513,6 +519,10 @@ def validate_bundle(bundle,plan_id,authority_key,hk_key,at,approval_identity=Non
     canary_checked=proof(bundle['canary_task'],bundle['canary_evidence'],CANARY_ACTION,authority_key,hk_key,at,CANARY_EVIDENCE_MAX_AGE)
     checked=proof(bundle['preflight_task'],bundle['preflight_evidence'],VERIFY_ACTION,authority_key,hk_key,at,VERIFY_EVIDENCE_MAX_AGE)
     cp=bundle['canary_task']['parameters'];vp=bundle['preflight_task']['parameters']
+    if contract and contract.get('topology'):
+        topo=contract['topology'];cg=bundle['canary_evidence']['gate_results'];vg=bundle['preflight_evidence']['gate_results']
+        if cg.get('topology_preflight')!='PASS' or cg.get('topology_sha256')!=topo['topology_sha256'] or cg.get('topology_version')!=2:raise Reject('topology_canary_evidence')
+        if vg.get('topology_id')!=topo['topology_id'] or vg.get('topology_version')!=topo['baseline_topology_version'] or vg.get('media_persistence')!=('NOT_ACTIVE' if topo['baseline_topology_version']==1 else 'PASS'):raise Reject('topology_preflight_evidence')
     if cp.get('candidate_contract_sha256')!=contract_sha: raise Reject('canary_contract_binding')
     if contract is not None and digest(bundle['test_pr_evidence'])!=candidate_contract.test_pr_digest(contract):
         raise Reject('migration_test_pr_evidence_binding')
@@ -568,7 +578,7 @@ def validate_rollback(release_id,authorization,source_task,source_evidence,
     if approved>at or expires<=at+dt.timedelta(seconds=60) or expires-approved>APPROVAL_MAX_LIFE:
         raise Reject('approval_expired_or_invalid')
     source=rollback_source_proof(source_task,source_evidence,authority_key,hk_key)
-    if source.get('migration_required') or source.get('contract_bound'): raise Reject('migration_rollback_compatibility_unproven')
+    if source.get('migration_required') or (source.get('contract_bound') and not source.get('topology_rollback')): raise Reject('migration_rollback_compatibility_unproven')
     # Recomputed from the objects themselves rather than taken from the authorisation's
     # own word: an authorisation naming a different deployment, or one whose Evidence was
     # replaced, is refused here instead of being read as "some deployment".
@@ -627,6 +637,28 @@ def ensure_rollback_unused(records,source_deploy_task_id):
         parameters=task.get('parameters')
         if isinstance(parameters,dict) and parameters.get('source_deploy_task_id')==source_deploy_task_id:
             raise Reject('rollback_source_already_rolled_back')
+
+def validate_topology_evidence(gates,action):
+    names={'topology_id','topology_version','topology_pending_version','topology_sha256','media_storage_identity','media_persistence'}
+    present=names.intersection(gates)
+    if not present:return set()
+    if gates.get('topology_id')!='HK_STAGING_BUSINESS_TOPOLOGY' or type(gates.get('topology_version')) is not int or gates['topology_version'] not in (1,2):raise Reject('topology_evidence_identity')
+    if gates['topology_version']==1:
+        if (action!=VERIFY_ACTION or present!={'topology_id','topology_version','topology_pending_version','media_persistence'}
+            or gates['media_persistence']!='NOT_ACTIVE' or type(gates['topology_pending_version']) is not int
+            or gates['topology_pending_version']!=2):raise Reject('topology_baseline_evidence')
+        return present
+    if 'topology_pending_version' in gates:raise Reject('topology_pending_after_activation')
+    required={'topology_id','topology_version','topology_sha256','media_storage_identity'}
+    if not required.issubset(present) or gates['topology_sha256']!=candidate_contract.TOPOLOGY_SHA256:raise Reject('topology_evidence_binding')
+    if action==CANARY_ACTION:
+        if gates.get('topology_preflight')!='PASS':raise Reject('topology_preflight_gate')
+    elif gates.get('media_persistence')!='PASS':raise Reject('topology_persistence_gate')
+    identity=gates['media_storage_identity']
+    if not isinstance(identity,dict) or set(identity)!={'topology_id','topology_version','contract_sha256','host_path','container_path','device','inode','marker_sha256'}:raise Reject('media_identity_fields')
+    if identity['topology_id']!='HK_STAGING_BUSINESS_TOPOLOGY' or identity['topology_version']!=2 or identity['contract_sha256']!=candidate_contract.TOPOLOGY_SHA256 or identity['host_path']!='/var/lib/go-hotel/media-cache' or identity['container_path']!=identity['host_path']:raise Reject('media_identity_scope')
+    if any(type(identity[k]) is not int or identity[k]<0 for k in ('device','inode')) or not isinstance(identity['marker_sha256'],str) or not SHA.fullmatch(identity['marker_sha256']):raise Reject('media_identity_type')
+    return present
 
 if __name__=='__main__':
     import argparse
