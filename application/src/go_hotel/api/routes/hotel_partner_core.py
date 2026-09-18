@@ -12,6 +12,10 @@ class Payload(BaseModel):model_config={'extra':'allow'}
 def create_property(b:Payload,p:Principal=Depends(supplier_principal)):return call(svc.create_property,p.supplier_id,p.user_id,b.model_dump(exclude_none=True))
 @router.get('/properties')
 def properties(p:Principal=Depends(supplier_principal)):return {'data':svc.properties(p.supplier_id)}
+@router.get('/one-click-import/providers')
+def one_click_import_providers(p:Principal=Depends(supplier_principal)):return {'data':svc.import_providers()}
+@router.post('/properties/{property_id}/one-click-import')
+def one_click_import(property_id:str,b:Payload,p:Principal=Depends(supplier_principal)):return call(svc.one_click_import,p.supplier_id,p.user_id,property_id,b.model_dump(exclude_none=True))
 @router.patch('/properties/{property_id}')
 def patch_property(property_id:str,b:Payload,p:Principal=Depends(supplier_principal)):return call(svc.patch_property,p.supplier_id,p.user_id,property_id,b.model_dump(exclude_none=True))
 @router.get('/properties/{property_id}/command-center')

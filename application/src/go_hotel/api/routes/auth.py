@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 from go_hotel.security.service import identity_service, approval_service, audit_service, Principal
 from go_hotel.security.deps import current_principal, require_permission
+from go_hotel.services.supplier_onboarding import supplier_onboarding_service
 
 router=APIRouter(tags=['identity-security'])
 class LoginBody(BaseModel): username:str; password:str
@@ -9,11 +10,19 @@ class RefreshBody(BaseModel): refresh_token:str
 class UserCreateBody(BaseModel): username:str; password:str=Field(min_length=10); actor_type:str; supplier_id:str|None=None; roles:list[str]
 class ApprovalBody(BaseModel): operation_type:str; subject_type:str; subject_id:str; payload:dict={}
 class ApprovalDecisionBody(BaseModel): note:str|None=None
+class SupplierRegistrationBody(BaseModel):
+    username:str
+    password:str=Field(min_length=10)
+    hotel:dict
 
 @router.post('/v1/auth/login')
 def login(body:LoginBody,request:Request):
     try: return {'data':identity_service.login(body.username,body.password,request.client.host if request.client else None,request.headers.get('user-agent'))}
     except ValueError as e: raise HTTPException(401,detail=str(e))
+@router.post('/v1/supplier/self-registration',status_code=201)
+def supplier_self_registration(body:SupplierRegistrationBody):
+    try:return {'data':supplier_onboarding_service.register(body.model_dump())}
+    except ValueError as e:raise HTTPException(409,detail=str(e))
 @router.post('/v1/auth/refresh')
 def refresh(body:RefreshBody):
     try: return {'data':identity_service.refresh(body.refresh_token)}

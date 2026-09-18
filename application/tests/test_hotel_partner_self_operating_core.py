@@ -36,3 +36,17 @@ def test_go_offer_system_generation_requires_isolated_authorized_supply():
 def test_go_offer_and_commercial_value_never_buy_recommendation():
     p=prop();svc.upsert_offer_authority(SID,ACT,p['property_id'],{'requirement_type':'MEETING_OR_EVENT','quote_mode':'MANUAL_QUOTE'})
     c=svc.command_center(SID,p['property_id']);assert c['guardrails']['recommendation_value_separated'] is True and c['guardrails']['ai_may_mutate_supplier_price_inventory_rule'] is False
+
+def test_one_click_hotel_library_import_requires_owner_and_rejects_ota_credentials():
+    p=prop();pid=p['property_id']
+    with pytest.raises(ValueError,match='OTA_CREDENTIALS_NOT_ACCEPTED'):
+        svc.one_click_import(SID,ACT,pid,{'provider':'CTRIP','method':'DATA_EXPORT','password':'secret','hotel_package':{}})
+    result=svc.one_click_import(SID,ACT,pid,{'provider':'CTRIP','method':'DATA_EXPORT','hotel_package':{'hotel':{'brand_name':'GO Brand'},'room_types':[{'name_zh':'大床房','physical_room_count':2,'occupancy':{'max_occupancy':2,'max_adults':2,'max_children':0}}]}})
+    assert result['status']=='IMPORTED' and result['room_types_created']==1
+    with pytest.raises(ValueError,match='PROPERTY_NOT_FOUND'):
+        svc.one_click_import('another_supplier',ACT,pid,{'provider':'CTRIP','method':'DATA_EXPORT','hotel_package':{}})
+
+def test_one_click_media_import_is_fail_closed_without_rights_evidence():
+    p=prop()
+    with pytest.raises(ValueError,match='MEDIA_RIGHTS_EVIDENCE_REQUIRED'):
+        svc.one_click_import(SID,ACT,p['property_id'],{'provider':'MEITUAN','method':'FILE_UPLOAD','hotel_package':{'media':[{'url':'https://example.test/hotel.jpg'}]}})

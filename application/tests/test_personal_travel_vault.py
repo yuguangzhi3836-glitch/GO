@@ -65,3 +65,21 @@ def test_consumer_cannot_self_assert_official_or_verified_source():
     body['items'][1]['verification_method']='NFC'
     with pytest.raises(ValueError,match='TRUSTED_PROFILE_SOURCE_ADAPTER_REQUIRED'):
         svc.create_import(user,body)
+
+def test_account_holder_connection_never_accepts_ota_password_and_has_upload_fallback(monkeypatch):
+    user='consumer_provider_1'
+    monkeypatch.delenv('GO_CTRIP_PROFILE_AUTHORIZATION_URL',raising=False)
+    with pytest.raises(ValueError,match='OTA_CREDENTIALS_NOT_ACCEPTED'):
+        svc.create_provider_connection(user,{'provider':'CTRIP','password':'secret'})
+    connection=svc.create_provider_connection(user,{'provider':'CTRIP','method':'OFFICIAL_AUTHORIZATION','account_holder_confirmed':True})
+    assert connection['status']=='AWAITING_USER_UPLOAD'
+    assert connection['authorization_url'] is None
+    assert connection['credentials_received_by_go'] is False
+
+def test_account_holder_connection_returns_provider_hosted_authorization(monkeypatch):
+    monkeypatch.setenv('GO_MEITUAN_PROFILE_AUTHORIZATION_URL','https://open.meituan.example/oauth/authorize?client_id=go')
+    connection=svc.create_provider_connection('consumer_provider_2',{'provider':'MEITUAN','method':'OFFICIAL_AUTHORIZATION','account_holder_confirmed':True})
+    assert connection['status']=='AWAITING_PROVIDER_AUTHORIZATION'
+    assert connection['authorization_url'].startswith('https://open.meituan.example/')
+    assert 'state=' in connection['authorization_url']
+    assert connection['login_surface']=='PROVIDER_HOSTED'

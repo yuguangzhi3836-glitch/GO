@@ -22,6 +22,12 @@ def bootstrap_vault(b:P,p:Principal=Depends(consumer_principal)):return call(svc
 
 @router.post('/v1/consumer/profile/imports',status_code=201)
 def create_import(b:P,p:Principal=Depends(consumer_principal)):return call(svc.create_import,p.user_id,b.model_dump(exclude_none=True))
+@router.get('/v1/consumer/profile/provider-connections/options')
+def provider_connection_options(p:Principal=Depends(consumer_principal)):return {'data':svc.provider_options()}
+@router.post('/v1/consumer/profile/provider-connections',status_code=201)
+def create_provider_connection(b:P,p:Principal=Depends(consumer_principal)):return call(svc.create_provider_connection,p.user_id,b.model_dump(exclude_none=True))
+@router.post('/internal/v1/profile/provider-connections/{connection_id}/complete')
+def complete_provider_connection(connection_id:str,b:P,p:Principal=Depends(admin_principal)):return call(svc.complete_provider_connection,connection_id,b.model_dump(exclude_none=True))
 @router.get('/v1/consumer/profile/imports')
 def import_list(p:Principal=Depends(consumer_principal)):return call(svc.import_list,p.user_id)
 @router.get('/v1/consumer/profile/sources')

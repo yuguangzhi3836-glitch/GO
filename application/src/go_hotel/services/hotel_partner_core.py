@@ -19,12 +19,54 @@ def out(row):
 class HotelPartnerCoreService:
     HIGH_RISK={'LEGAL','ADDRESS','BRAND','QUALIFICATION'}
     FOUR_STATE={'YES','NO','UNKNOWN','NOT_APPLICABLE'}
+    IMPORT_PROVIDERS={
+        'CTRIP':{'label':'携程','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD']},
+        'MEITUAN':{'label':'美团','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD']},
+        'FLIGGY':{'label':'飞猪','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD']},
+        'BOOKING':{'label':'Booking.com','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD']},
+        'OTHER_OTA':{'label':'其他 OTA','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD']},
+    }
+    FORBIDDEN_CREDENTIAL_KEYS={'password','passwd','otp','captcha','cookie','cookies','session','session_id','access_token','refresh_token'}
     def _property(self,s,pid,supplier_id):
         r=s.get(HotelPartnerPropertyRow,pid)
         if not r or r.supplier_id!=supplier_id: raise ValueError('PROPERTY_NOT_FOUND')
         return r
     def _audit(self,s,pid,event,typ,aid,payload,actor):
         s.add(HotelPartnerAuditEventRow(audit_event_id=ident('hpa'),property_id=pid,event_type=event,aggregate_type=typ,aggregate_id=aid,payload_json=payload,actor_id=actor,created_at=now()))
+    def import_providers(self):
+        return {'providers':self.IMPORT_PROVIDERS,'credential_policy':'PROVIDER_HOSTED_LOGIN_ONLY','fallback':'DATA_EXPORT_OR_FILE_UPLOAD'}
+    def _reject_credentials(self,value):
+        if isinstance(value,dict):
+            for key,item in value.items():
+                if str(key).lower() in self.FORBIDDEN_CREDENTIAL_KEYS:raise ValueError('OTA_CREDENTIALS_NOT_ACCEPTED')
+                self._reject_credentials(item)
+        elif isinstance(value,list):
+            for item in value:self._reject_credentials(item)
+    def one_click_import(self,supplier_id,actor,pid,b):
+        provider=str(b.get('provider') or '').upper();method=str(b.get('method') or '').upper()
+        if provider not in self.IMPORT_PROVIDERS:raise ValueError('UNSUPPORTED_OTA_PROVIDER')
+        if method not in self.IMPORT_PROVIDERS[provider]['methods']:raise ValueError('UNSUPPORTED_IMPORT_METHOD')
+        self._reject_credentials(b)
+        if method=='OFFICIAL_AUTHORIZATION' and not b.get('authorization_code'):
+            return {'status':'AUTHORIZATION_REQUIRED','provider':provider,'login_surface':'PROVIDER_HOSTED','credentials_received_by_go':False,'fallback':'DATA_EXPORT'}
+        package=b.get('hotel_package')
+        if not isinstance(package,dict):raise ValueError('HOTEL_DATA_PACKAGE_REQUIRED')
+        hotel=package.get('hotel') or {};rooms=package.get('room_types') or []
+        media=package.get('media') or []
+        if media:
+            rights=b.get('media_rights') or {}
+            if rights.get('status') not in {'HOTEL_SUBMITTED','DISTRIBUTION_LICENSE'} or not rights.get('evidence_reference'):
+                raise ValueError('MEDIA_RIGHTS_EVIDENCE_REQUIRED')
+        patch={k:hotel[k] for k in ('name_zh','name_en','property_type','group_name','brand_name','address','contacts','legal','poi') if k in hotel}
+        if media:patch['operations']={'import_provider':provider,'media_candidates':media,'media_rights':b['media_rights']}
+        if patch:self.patch_property(supplier_id,actor,pid,patch)
+        created=[]
+        for room in rooms:
+            if not isinstance(room,dict):raise ValueError('INVALID_ROOM_TYPE')
+            created.append(self.create_room_type(supplier_id,actor,pid,room))
+        with SessionLocal() as s:
+            self._property(s,pid,supplier_id);self._audit(s,pid,'HOTEL_LIBRARY_IMPORTED','PROPERTY',pid,{'provider':provider,'method':method,'room_count':len(created),'media_count':len(media)},actor);s.commit()
+        return {'status':'IMPORTED','property_id':pid,'provider':provider,'method':method,'room_types_created':len(created),'media_candidates':len(media),'publication_state':'DRAFT'}
     def create_property(self,supplier_id,actor,b):
         t=now(); r=HotelPartnerPropertyRow(property_id=ident('prop'),supplier_id=supplier_id,name_zh=b['name_zh'],name_en=b.get('name_en'),property_type=b['property_type'],group_name=b.get('group_name'),brand_name=b.get('brand_name'),address_json=b.get('address',{}),latitude=b.get('latitude'),longitude=b.get('longitude'),contacts_json=b.get('contacts',{}),legal_json=b.get('legal',{}),operations_json=b.get('operations',{}),poi_json=b.get('poi',[]),publication_state='DRAFT',version=1,created_at=t,updated_at=t)
         with SessionLocal() as s:s.add(r);self._audit(s,r.property_id,'PROPERTY_CREATED','PROPERTY',r.property_id,{},actor);s.commit();return out(r)
