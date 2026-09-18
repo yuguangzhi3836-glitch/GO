@@ -49,6 +49,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 RUNTIME_DIR = pathlib.Path(__file__).resolve().parent
 EXECUTOR_DIR = RUNTIME_DIR.parent
 ROLLBACK_PY = RUNTIME_DIR / "rollback_runtime.py"
+DEPLOY_PY = RUNTIME_DIR / "deploy_runtime.py"
 COLLECTOR_PY = RUNTIME_DIR / "collector_runtime.py"
 LAUNCHER = EXECUTOR_DIR / "go-hk-deployctl"
 
@@ -59,6 +60,7 @@ ROLLBACK_TASK_ID = "go-boss-rollback-be119fa22df0a096b2dd5ed1"
 RELEASE_ID = "boss-rollback-be119fa22df0a096b2dd5ed1"
 DEPLOY_RELEASE_ID = "boss-deploy-6344dcdd3ccd103d5efdc1b6"
 BASE_TAG = "go-hotel:aoluguya-direct-r3-1-20260906"
+CONTRACT_SHA = "d0a4d82a1e56e7ff96ddedc1668534f57961aab6875ca9c0f7997d37e72b56fb"
 
 
 def image(prefix):
@@ -211,7 +213,7 @@ def sign(obj, key, hexadecimal):
     return out
 
 
-def build_fixture(root):
+def build_fixture(root, *, contract_bound=False, migration_required=False):
     root = pathlib.Path(root)
     dirs = {name: root / name for name in ("handoff", "deploy", "rollback", "run")}
     for d in dirs.values():
@@ -225,10 +227,13 @@ def build_fixture(root):
     for key, path in ((task_key, task_pub), (evidence_key, evidence_pub)):
         path.write_bytes(key.public_key().public_bytes(serialization.Encoding.OpenSSH,
                                                        serialization.PublicFormat.OpenSSH))
+    parameters = {"release_id": DEPLOY_RELEASE_ID}
+    if contract_bound:
+        parameters["candidate_contract_sha256"] = CONTRACT_SHA
     task = {"schema_version": "1", "task_id": SOURCE_TASK_ID, "nonce": "nonce-deploy-0001",
             "authority": "GO-COMMAND-CENTER", "action_id": "HK_STAGING_DEPLOY",
             "environment": "HK-STAGING-01", "issued_at": "2026-09-17T06:00:00Z",
-            "parameters": {"release_id": DEPLOY_RELEASE_ID}}
+            "parameters": parameters}
     task = sign(task, task_key, True)
     record_id = hashlib.sha256(b"deploy-record-2efcbabf").hexdigest()
     record = {
@@ -244,14 +249,24 @@ def build_fixture(root):
         "protected_non_target_inventory": [{"service": "redis", "image_id": REDIS},
                                            {"service": "caddy", "image_id": CADDY}],
     }
+    protected = record["protected_non_target_inventory"]
+    record["protected_non_target_inventory_sha256"] = hashlib.sha256(
+        json.dumps(protected, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    if contract_bound:
+        record.update(candidate_contract_sha256=CONTRACT_SHA,
+                      baseline_revision="0133_flight_change_plan",
+                      target_revision="0133_flight_change_plan",
+                      migration_required=bool(migration_required))
     raw = json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")
     (dirs["deploy"] / (record_id + ".json")).write_bytes(raw)
     record_sha = hashlib.sha256(raw).hexdigest()
     evidence = {"schema_version": "1", "task_id": task["task_id"], "nonce": task["nonce"],
                 "action_id": "HK_STAGING_DEPLOY", "environment": "HK-STAGING-01",
                 "status": "SUCCESS", "executor_result": "DEPLOY_OK",
-                "release_id": DEPLOY_RELEASE_ID, "deploy_record_id": record_id,
-                "deploy_record_sha256": record_sha}
+                "release_id": DEPLOY_RELEASE_ID, "deploy_record_schema_version": "2",
+                "deploy_record_id": record_id, "deploy_record_sha256": record_sha}
+    if contract_bound:
+        evidence["candidate_contract_sha256"] = CONTRACT_SHA
     evidence = sign(evidence, evidence_key, False)
     (dirs["handoff"] / (ROLLBACK_TASK_ID + ".json")).write_text(json.dumps({
         "schema_version": "1", "rollback_task_id": ROLLBACK_TASK_ID,
@@ -261,7 +276,7 @@ def build_fixture(root):
         "history": [{"task": task, "evidence": evidence}]}, sort_keys=True))
     return {"root": root, "compose": compose, "env": env, "task_key": task_pub,
             "evidence_key": evidence_pub, "record": record, "record_id": record_id,
-            "record_sha": record_sha, "task": task, "dirs": dirs}
+            "record_sha": record_sha, "task": task, "evidence": evidence, "dirs": dirs}
 
 
 def invoke(fx, host):
@@ -347,7 +362,28 @@ def run():
         check("NO_MUTATING_DOCKER_ARGV_NAMES_A_PROTECTED_SERVICE", not names_protected,
               "saw %r" % (names_protected,))
 
-    # 4. the pre-mutation record, and the failure path
+    # 4. a candidate contract may be same-revision; only a real migration blocks rollback
+    with tempfile.TemporaryDirectory(prefix="go-hk-rollback-contract-") as raw:
+        fx = build_fixture(raw, contract_bound=True, migration_required=False)
+        host = Host()
+        result, error = invoke(fx, host)
+        check("SAME_REVISION_CONTRACT_SOURCE_ROLLS_BACK", result is not None, error or "")
+        check("SAME_REVISION_CONTRACT_IS_FUTURE_ROLLBACK_ELIGIBLE",
+              DEP.rollback_source_eligible(fx["record"], fx["record_sha"], fx["task"], fx["evidence"]),
+              "same-revision contract was classified as non-rollbackable")
+
+    with tempfile.TemporaryDirectory(prefix="go-hk-rollback-migration-") as raw:
+        fx = build_fixture(raw, contract_bound=True, migration_required=True)
+        host = Host()
+        result, error = invoke(fx, host)
+        check("MIGRATED_CONTRACT_SOURCE_REMAINS_BLOCKED",
+              result is None and error == "migration rollback compatibility unproven",
+              "error=%r" % (error,))
+        check("MIGRATED_CONTRACT_IS_NOT_FUTURE_ROLLBACK_ELIGIBLE",
+              not DEP.rollback_source_eligible(fx["record"], fx["record_sha"], fx["task"], fx["evidence"]),
+              "migrated contract was classified as rollbackable")
+
+    # 5. the pre-mutation record, and the failure path
     with tempfile.TemporaryDirectory(prefix="go-hk-rollback-") as raw:
         fx = build_fixture(raw)
         host = Host(fail_compose=True)
@@ -446,6 +482,7 @@ def run():
 
 
 R = load("rollback_runtime_under_test", ROLLBACK_PY)
+DEP = load("deploy_runtime_under_test", DEPLOY_PY)
 COL = load("collector_runtime_under_test", COLLECTOR_PY)
 
 

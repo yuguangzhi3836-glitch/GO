@@ -119,7 +119,11 @@ def rollback_source_eligible(record,record_sha256,task,evidence):
     """Pure future-rollback source validator; it performs no Docker operation."""
     try:
         if not isinstance(record,dict) or record.get('deploy_record_schema_version')!='2' or not SHA256.fullmatch(record_sha256): return False
-        if record.get('migration_required') is True or 'candidate_contract_sha256' in record: return False
+        contract_sha=record.get('candidate_contract_sha256')
+        if record.get('migration_required') is True: return False
+        if contract_sha is not None:
+            if not isinstance(contract_sha,str) or not SHA256.fullmatch(contract_sha): return False
+            if record.get('migration_required') is not False: return False
         if record.get('action_id')!='HK_STAGING_DEPLOY' or record.get('environment')!='HK-STAGING-01' or record.get('target_count')!=8 or len(record.get('targets',[]))!=8: return False
         if any(not IMAGE.fullmatch(x.get('image_id','')) for x in record['targets']): return False
         protected=record.get('protected_non_target_inventory')
@@ -133,6 +137,10 @@ def rollback_source_eligible(record,record_sha256,task,evidence):
         # would either reject real formal tasks or silently widen the schema.
         parameters=task.get('parameters')
         if not isinstance(parameters,dict): return False
+        if contract_sha is not None:
+            if parameters.get('candidate_contract_sha256')!=contract_sha or evidence.get('candidate_contract_sha256')!=contract_sha: return False
+        elif 'candidate_contract_sha256' in parameters or 'candidate_contract_sha256' in evidence:
+            return False
         release_id=parameters.get('release_id')
         if not isinstance(release_id,str) or not release_id: return False
         for key in ('task_id','nonce'):

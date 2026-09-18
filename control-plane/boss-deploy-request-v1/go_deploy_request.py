@@ -568,7 +568,12 @@ def validate_rollback(release_id,authorization,source_task,source_evidence,
     if approved>at or expires<=at+dt.timedelta(seconds=60) or expires-approved>APPROVAL_MAX_LIFE:
         raise Reject('approval_expired_or_invalid')
     source=rollback_source_proof(source_task,source_evidence,authority_key,hk_key)
-    if source.get('migration_required') or source.get('contract_bound'): raise Reject('migration_rollback_compatibility_unproven')
+    # A content-addressed candidate contract is not itself a migration.  The source
+    # proof reports migration_required=False only after it has loaded and bound the
+    # contract and the signed DEPLOY Evidence carries no_migration=PASS.  Refuse only
+    # deployments whose schema actually changed; an explicitly proven same-revision
+    # contract remains rollbackable.
+    if source.get('migration_required'): raise Reject('migration_rollback_compatibility_unproven')
     # Recomputed from the objects themselves rather than taken from the authorisation's
     # own word: an authorisation naming a different deployment, or one whose Evidence was
     # replaced, is refused here instead of being read as "some deployment".

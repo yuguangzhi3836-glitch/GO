@@ -607,6 +607,24 @@ class RollbackProofTests(unittest.TestCase):
         self.assertEqual(context['source_deploy_task_sha256'], gate.digest(self.source_task))
         self.assertEqual(context['source_deploy_evidence_sha256'], gate.digest(self.source_evidence))
 
+    def test_a_same_revision_contract_bound_source_is_rollbackable(self):
+        """A contract identifies candidate facts; it does not imply a schema migration."""
+        proof = gate.rollback_source_proof(self.source_task, self.source_evidence,
+                                           self.f.authority.public_key(), self.f.hk.public_key())
+        proof = {**proof, 'contract_bound': True, 'migration_required': False}
+        with patch.object(gate, 'rollback_source_proof', return_value=proof):
+            context = self.validate(self.authorization())
+        self.assertEqual(context['source_deploy_task_id'], self.source_task['task_id'])
+
+    def test_a_migrated_contract_bound_source_is_still_refused(self):
+        """The repair must not make a real forward migration automatically reversible."""
+        proof = gate.rollback_source_proof(self.source_task, self.source_evidence,
+                                           self.f.authority.public_key(), self.f.hk.public_key())
+        proof = {**proof, 'contract_bound': True, 'migration_required': True}
+        with patch.object(gate, 'rollback_source_proof', return_value=proof), \
+             self.assertRaisesRegex(gate.Reject, 'migration_rollback_compatibility_unproven'):
+            self.validate(self.authorization())
+
     def test_the_deadline_never_outlives_the_authorisation(self):
         context = self.derive()
         self.assertLessEqual(context['deadline'],
