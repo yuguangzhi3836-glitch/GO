@@ -171,7 +171,7 @@
   }
   function anomalyLabel(item){return ANOMALY_LABELS[item?.code]||(/[\u3400-\u9fff]/.test(item?.label||'')?item.label:'酒店资料需要核对')}
 
-  const HYATT_GALLERY_PLAN_SHA='4e59c43e72ef21a5ee3333381adb146bd84599b5cb58cf70ec0f7b2d4aa535eb';
+  const HYATT_GALLERY_PLAN_SHA='999fa2bd61fc6cf6a6228873728a3ca4f37d6bef137386402005f08a1558f228';
   const reviewedGalleryPlans=new WeakSet();
   const galleryAssetsRoute='/internal/v1/hotel-autopage/media/assets?hotel_id='+IMPORT_HOTEL+'&publishable_only=false';
   async function reviewedGalleryPlan(text,hotelId){
@@ -181,6 +181,7 @@
     const hash=Array.from(new Uint8Array(bytes),x=>x.toString(16).padStart(2,'0')).join('');
     requireImport(hash===HYATT_GALLERY_PLAN_SHA,'图库文件与已审定的凯悦官网清单不一致；尚未采集');
     requireImport(hotelId===IMPORT_HOTEL&&plan.canonical_hotel_id===hotelId&&plan.items.length===21,'图库只能导入指定的敖麓谷雅档案');
+    requireImport(plan.items.every(item=>stable(item.request?.body?.request_headers)===stable({Accept:'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'})&&item.expected?.mime_type==='image/webp'),'官网图库须使用审定的 WebP 格式及固定请求头；尚未采集');
     // Only documented harvest kwargs leave the browser. Expected bytes and local paths are review evidence only.
     const items=plan.items.map(item=>({body:JSON.parse(JSON.stringify(item.request.body)),expected:JSON.parse(JSON.stringify(item.expected))}));
     const reviewed=freezeImport({hotelId,hash,items});reviewedGalleryPlans.add(reviewed);return reviewed;
