@@ -1,7 +1,7 @@
 name: Catalog and hotel load repair gate
 on:
   push:
-    branches: [fix/catalog-aoluguya-load-20260917, fix/aoluguya-complete-import-20260918]
+    branches: [fix/catalog-aoluguya-load-20260917, fix/aoluguya-complete-import-20260918, fix/aoluguya-contact-email-20260918]
   workflow_dispatch:
 permissions:
   contents: read
@@ -41,7 +41,7 @@ jobs:
         working-directory: application
         run: |
           set -euo pipefail
-          node --test tests_frontend/hotel_catalog_reviewed_import.test.mjs tests_frontend/hotel_catalog_hyatt_gallery.test.mjs 2>&1 | tee "$RUNNER_TEMP/catalog-load/catalog-ui.log"
+          node --test tests_frontend/hotel_catalog_reviewed_import.test.mjs tests_frontend/hotel_catalog_hyatt_gallery.test.mjs tests_frontend/hotel_catalog_contacts.test.mjs 2>&1 | tee "$RUNNER_TEMP/catalog-load/catalog-ui.log"
       - name: Search event-loop regression
         working-directory: application
         run: |

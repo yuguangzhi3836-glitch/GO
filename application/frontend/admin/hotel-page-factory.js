@@ -15,7 +15,8 @@
   </article>`}
   function seedRow(x){return `<article class="card factory-hotel-card" data-factory-stage="WAIT_BUILD" data-name="${esc((x.name||'').toLowerCase())}"><div class="factory-hotel-main"><div><div class="factory-card-title">${esc(x.name||'待采集酒店')}</div><div class="factory-card-sub">${esc(addressText(x.address))}</div></div><span class="status warn">待建网页</span></div><p class="metric-sub">种子已登记，尚未形成酒店标准档案。</p><details class="tech-diagnostics"><summary>技术信息</summary><div class="mono">任务编号：${esc(x.job_id||'—')}</div></details></article>`}
   function sourceRows(items){if(!items?.length)return `<div class="structured-empty"><div><h3>暂无来源快照</h3><p>完成采集后，系统会在这里保留来源、观察时间和事实等级。</p></div></div>`;return `<div class="table-wrap"><table><thead><tr><th>来源</th><th>类型</th><th>Rights</th><th>可信度</th><th>最后观察</th></tr></thead><tbody>${items.map(x=>`<tr><td>${x.source_url?`<a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_key)}</a>`:esc(x.source_key)}</td><td>${esc(x.source_type)}</td><td>${esc(RIGHTS_LABELS[x.rights_status]||x.rights_status)}</td><td>${Math.round(Number(x.confidence_bps||0)/100)}%</td><td>${esc(x.observed_at||'—')}</td></tr>`).join('')}</tbody></table></div>`}
-  function contactRows(items){if(!items?.length)return '<p class="metric-sub">尚未发现公开联系方式。</p>';return items.slice(0,8).map(x=>`<div class="business-fact"><span>${esc(x.contact_type||'联系')}</span><b>${esc(x.value)}</b></div>`).join('')}
+  const CONTACT_TYPE_LABELS={GENERAL:'公开联系',RESERVATIONS:'预订联系',SALES:'销售联系',WEDDINGS_EVENTS_CONTACT:'婚宴／活动联系'};
+  function contactRows(items){if(!items?.length)return '<p class="metric-sub">尚未发现公开联系方式。</p>';return items.slice(0,8).map(x=>`<div class="business-fact"><span>${esc(CONTACT_TYPE_LABELS[x.contact_type]||'公开联系')}</span><b>${esc(x.value)}</b></div>`).join('')}
   function detailsHtml(d){const p=d.profile||{},f=d.factory||{},disp=d.display||{},an=d.anomalies||[],media=d.media||{};const canPublish=p.page_state!=='PUBLISHED';return `<div class="productized-admin-head"><div><h2>${esc(disp.name||'酒店网页')}</h2><p>${esc(addressText(disp.address))}</p></div><span class="status ${f.primary_stage==='GO_DIRECT'?'ok':''}">${esc(STAGE_LABELS[f.primary_stage]||f.primary_stage)}</span></div>
     <div class="grid structured-metrics">${metric('资料完整度',Math.round(Number(p.completeness_bps||0)/100)+'%')}${metric('来源数',f.source_count||0)}${metric('房型数',f.room_count||0)}${metric('图片数',media.count||0,media.rights_pending_count?`${media.rights_pending_count} 张待 Rights 审核`:'Rights 已无待审')}</div>
     ${an.length?`<section class="card"><div class="section-head"><h2>待办与异常</h2><span class="status warn">${an.length} 项</span></div>${an.map(x=>`<div class="business-fact"><span>需要处理</span><b>${esc(anomalyLabel(x))}</b></div>`).join('')}</section>`:`<section class="card structured-section"><div><h3>当前无阻断异常</h3><p>页面仍需按来源证据、媒体 Rights 和酒店认领状态持续维护。</p></div><span class="status ok">正常</span></section>`}
@@ -249,6 +250,107 @@
     };
   }
 
+  const contactReviews=new WeakSet();
+  const CONTACT_PURPOSE='WEDDINGS_EVENTS_CONTACT';
+  function contactUrl(value,kind){
+    let url;try{url=new URL(String(value||'').trim())}catch{throw new Error('请输入完整的公开来源网址')}
+    requireImport(url.protocol==='https:'&&!url.username&&!url.password&&!url.port&&!url.hash&&!url.search,'来源须为不含账号、参数或片段的 HTTPS 网址');
+    if(kind==='PUBLIC_SOURCE')requireImport(url.hostname==='hotels.ctrip.com'&&url.pathname==='/hotels/2670932.html','请填写敖麓谷雅的携程酒店资料页');
+    else requireImport(url.hostname==='www.hyatt.com'&&/^\/unbound-collection\/[a-z]{2}-[A-Z]{2}\/hrbub-aoluguya\/(weddings|meetings|special-events)$/.test(url.pathname),'请填写敖麓谷雅的凯悦婚宴或活动联系页面');
+    return url.href;
+  }
+  function normalizeContactPhone(value){
+    const clean=String(value||'').trim();requireImport(/^[+\d\s()-]{7,40}$/.test(clean),'联系电话格式不正确');
+    let number=clean.replace(/[\s()-]/g,'');if(/^0451\d{8}$/.test(number))number='+86'+number.slice(1);
+    requireImport(/^\+[1-9]\d{7,14}$/.test(number),'请填写带国家区号的电话，或哈尔滨 0451 开头的固定电话');return number;
+  }
+  function normalizePublicEmail(value,eventsEmail){
+    const email=String(value||'').trim().toLowerCase();if(!email)return '';
+    requireImport(email.length<=254&&/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(email)&&!email.startsWith('.')&&!email.includes('..')&&!email.split('@')[0].endsWith('.')&&email.split('@')[0].length<=64,'请填写有效的公开联系邮箱');
+    requireImport(email!==eventsEmail,'携程公开邮箱与婚宴活动邮箱用途不能混填，请核对');return email;
+  }
+  function contactFields(fields,hotelId){
+    requireImport(hotelId===IMPORT_HOTEL,'只能补充指定的敖麓谷雅档案');
+    requireImport(fields&&typeof fields==='object'&&Object.keys(fields).every(k=>['phone','address','publicSource','publicEmail','eventsEmail','eventsSource'].includes(k)),'联系方式包含不支持的字段');
+    const phone=normalizeContactPhone(fields.phone),address=String(fields.address||'').trim(),email=String(fields.eventsEmail||'').trim().toLowerCase();
+    requireImport(address.length>=5&&address.length<=500&&!/[<>\x00-\x1f]/.test(address),'请填写有效的酒店地址');
+    requireImport(email.length<=254&&/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@hyatt\.com$/.test(email)&&!email.startsWith('.')&&!email.includes('..')&&!email.split('@')[0].endsWith('.')&&email.split('@')[0].length<=64,'请填写经凯悦婚宴或活动页面核验的 hyatt.com 邮箱');
+    return freezeImport({phone,address,publicSource:contactUrl(fields.publicSource,'PUBLIC_SOURCE'),publicEmail:normalizePublicEmail(fields.publicEmail,email),eventsEmail:email,eventsSource:contactUrl(fields.eventsSource,'OFFICIAL_WEBSITE')});
+  }
+  async function contactSourceKey(prefix,url){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(url));return prefix+Array.from(new Uint8Array(bytes),x=>x.toString(16).padStart(2,'0')).join('').slice(0,24)}
+  function matchingContact(detail,channel,value){
+    const matches=(detail.contacts||[]).filter(c=>c.channel===channel&&c.normalized_value===value);
+    requireImport(matches.length<=1,'存在重复联系方式记录，请先核对');
+    if(matches[0])requireImport(!matches[0].do_not_contact&&matches[0].is_public_business_contact===true,'该联系方式有停用或非公开标记，请先核对，不自动修改');
+    return matches[0]||null;
+  }
+  function preserveContact(existing,sourceType,contactType,confidence){
+    if(!existing)return false;
+    const rank=SOURCE_RANK[existing.source_type];requireImport(rank!==undefined,'已有联系方式来源不明，请先核对');
+    if(rank>SOURCE_RANK[sourceType]||(rank===SOURCE_RANK[sourceType]&&Number(existing.confidence_bps||5000)>confidence)){requireImport(existing.contact_type===contactType,'较高等级来源的联系方式用途不同，请先核对');return true}
+    return false;
+  }
+  async function previewContacts(api,fields,hotelId){
+    const normalized=contactFields(fields,hotelId);await requireCatalogWriter(api);
+    const scope=(await api.request('/internal/v1/hotel-infrastructure/catalog-scope/preview')).data||{};assertScope(scope);
+    const overview=(await api.request('/internal/v1/hotel-autopage/factory/overview?limit=1000')).data||{};
+    requireImport(overview.total_hotels===2&&stable((overview.items||[]).map(x=>x.hotel_id).sort())===stable([...IMPORT_PROTECTED].sort()),'请先完成历史酒店资料整理');
+    const detail=(await api.request(`/internal/v1/hotel-autopage/factory/hotels/${encodeURIComponent(hotelId)}`)).data;
+    requireImport(detail?.profile?.hotel_id===hotelId&&detail.profile.page_state==='DRAFT','请在酒店档案保持草稿状态时补充联系方式');
+    const phone=matchingContact(detail,'PHONE',normalized.phone),email=matchingContact(detail,'EMAIL',normalized.eventsEmail),publicEmail=normalized.publicEmail?matchingContact(detail,'EMAIL',normalized.publicEmail):null;
+    const reusePhone=preserveContact(phone,'PUBLIC_SOURCE','GENERAL',5000),reuseEmail=preserveContact(email,'OFFICIAL_WEBSITE',CONTACT_PURPOSE,9500),reusePublicEmail=normalized.publicEmail?preserveContact(publicEmail,'PUBLIC_SOURCE','GENERAL',5000):false;
+    const publicKey=await contactSourceKey('aoluguya-public-contacts:',normalized.publicSource),officialKey=await contactSourceKey('aoluguya-events-contacts:',normalized.eventsSource),attributedKey=await contactSourceKey('USER_PROVIDED_CTRIP_ATTRIBUTION:',normalized.publicSource);
+    const other=(await api.request(`/internal/v1/hotel-autopage/factory/hotels/${encodeURIComponent(IMPORT_PROTECTED[1])}`)).data;
+    requireImport(!(other.sources||[]).some(s=>[publicKey,officialKey,attributedKey].includes(s.source_key)),'联系来源已关联另一酒店档案，请先核对身份');
+    const common={canonical_hotel_id:hotelId,external_hotel_id:'HRBUB',rights_status:'PUBLIC_BUSINESS_FACT'};
+    const requests=[{...common,source_key:publicKey,source_type:'PUBLIC_SOURCE',source_url:normalized.publicSource,confidence_bps:5000,payload:{address:normalized.address}}];
+    if(!reusePhone)requests[0].payload.contacts=[{contact_type:'GENERAL',channel:'PHONE',value:normalized.phone,is_public_business_contact:true,jurisdiction:'CN'}];
+    if(normalized.publicEmail&&!reusePublicEmail)requests.push({...common,source_key:attributedKey,source_type:'PUBLIC_SOURCE',source_url:normalized.publicSource,confidence_bps:5000,payload:{contacts:[{contact_type:'GENERAL',channel:'EMAIL',value:normalized.publicEmail,is_public_business_contact:true,jurisdiction:'CN'}]}});
+    if(!reuseEmail)requests.push({...common,source_key:officialKey,source_type:'OFFICIAL_WEBSITE',source_url:normalized.eventsSource,confidence_bps:9500,payload:{contacts:[{contact_type:CONTACT_PURPOSE,channel:'EMAIL',value:normalized.eventsEmail,is_public_business_contact:true,jurisdiction:'CN'}]}});
+    const canonical=detail.profile.canonical_json||{},prior=detail.profile.field_provenance_json?.address;
+    let expectedAddress=normalized.address,preserveAddress=false;
+    if(canonical.address&&stable(canonical.address)!==stable(normalized.address)){
+      const rank=SOURCE_RANK[prior?.source_type];requireImport(rank!==undefined,'现有地址来源尚未核准，请先核对');
+      if(rank>45||(rank===45&&Number(prior.confidence_bps||5000)>5000)){expectedAddress=canonical.address;preserveAddress=true}
+    }
+    const fingerprint=stable({version:detail.profile.version,address:canonical.address,provenance:detail.profile.field_provenance_json,phone,email,publicEmail});
+    const result=freezeImport({hotelId,fields:normalized,requests,expectedAddress,preserveAddress,reusePhone,reuseEmail,reusePublicEmail,fingerprint});contactReviews.add(result);return result;
+  }
+  async function executeContacts(api,reviewed){
+    requireImport(contactReviews.has(reviewed),'请先核对联系方式预览');
+    const fresh=await previewContacts(api,reviewed.fields,reviewed.hotelId);
+    requireImport(fresh.fingerprint===reviewed.fingerprint&&stable(fresh.requests)===stable(reviewed.requests),'预览后酒店资料已变化，请重新核对；尚未写入');
+    let sources=0;
+    for(const body of fresh.requests){
+      const result=(await api.request('/internal/v1/hotel-autopage/sources/ingest',{method:'POST',body})).data;
+      requireImport(result?.profile?.hotel_id===reviewed.hotelId&&result.snapshot?.source_key===body.source_key&&result.snapshot?.source_type===body.source_type&&result.snapshot?.source_url===body.source_url&&stable(result.snapshot?.payload_json)===stable(body.payload),'联系来源快照回读不一致，已停止');sources++;
+    }
+    const detail=(await api.request(`/internal/v1/hotel-autopage/factory/hotels/${encodeURIComponent(reviewed.hotelId)}`)).data;
+    requireImport(detail?.profile?.page_state==='DRAFT'&&stable(detail.profile.canonical_json?.address)===stable(reviewed.expectedAddress),'补充后地址或草稿状态回读不一致，请核对');
+    const phone=matchingContact(detail,'PHONE',reviewed.fields.phone),email=matchingContact(detail,'EMAIL',reviewed.fields.eventsEmail);
+    requireImport(phone?.contact_type==='GENERAL'&&email?.contact_type===CONTACT_PURPOSE,'联系方式或婚宴活动用途回读不一致，请核对');
+    if(!reviewed.reusePhone)requireImport(phone.source_url===reviewed.fields.publicSource&&phone.source_type==='PUBLIC_SOURCE','电话来源回读不一致');
+    if(!reviewed.reuseEmail)requireImport(email.source_url===reviewed.fields.eventsSource&&email.source_type==='OFFICIAL_WEBSITE','婚宴活动邮箱来源回读不一致');
+    if(reviewed.fields.publicEmail){const publicEmail=matchingContact(detail,'EMAIL',reviewed.fields.publicEmail);requireImport(publicEmail?.contact_type==='GENERAL','携程公开邮箱用途回读不一致');if(!reviewed.reusePublicEmail)requireImport(publicEmail.source_url===reviewed.fields.publicSource&&publicEmail.source_type==='PUBLIC_SOURCE','携程公开邮箱来源回读不一致')}
+    contactReviews.delete(reviewed);return {sources,preserveAddress:reviewed.preserveAddress,reusedContacts:Number(reviewed.reusePhone)+Number(reviewed.reuseEmail)+Number(reviewed.reusePublicEmail),draft:true};
+  }
+  function contactsPanel(){return `<section class="card" aria-labelledby="aoluguyaContactsTitle"><div class="section-head"><h2 id="aoluguyaContactsTitle">补充公开联系方式</h2><span>敖麓谷雅 · 保留来源</span></div><p>公开酒店电话与地址来自携程；下方凯悦邮箱仅用于婚宴及活动联系。</p><div class="business-form-grid"><label class="business-field"><span>酒店联系电话</span><input id="contactPhone" value="0451-88800808" maxlength="40"></label><label class="business-field"><span>公开地址</span><input id="contactAddress" value="黑龙江哈尔滨松北区创新三路800号" maxlength="500"></label><label class="business-field"><span>携程电话、地址及公开邮箱来源</span><input id="contactPublicSource" type="url" value="https://hotels.ctrip.com/hotels/2670932.html"></label><label class="business-field"><span>携程公开邮箱（可选）</span><input id="contactPublicEmail" type="email" value="1720574900@qq.com" maxlength="254"><small>用户提供并指明携程来源；尚未独立核验页面，不认定为总预订邮箱。</small></label><label class="business-field"><span>婚宴／活动联系邮箱</span><input id="contactEventsEmail" type="email" value="anson.liu@hyatt.com" maxlength="254"></label><label class="business-field"><span>婚宴／活动邮箱来源</span><input id="contactEventsSource" type="url" value="https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/weddings"></label></div><p class="metric-sub">已有更高等级来源的地址与联系方式会保留，补充资料不会自动发布网页。</p><div id="contactReviewSummary" role="status" aria-live="polite">请核对公开资料与用途后预览。</div><div class="structured-actions"><button class="btn" id="contactPreview">预览联系方式</button><button class="btn primary" id="contactApply" disabled>确认保存为草稿</button></div></section>`}
+  function bindContacts(hotelId,ctx){
+    const {api,root,notice}=ctx,preview=root.querySelector('#contactPreview');if(!preview)return;
+    const apply=root.querySelector('#contactApply'),summary=root.querySelector('#contactReviewSummary');
+    const elements=Object.fromEntries([['phone','contactPhone'],['address','contactAddress'],['publicSource','contactPublicSource'],['publicEmail','contactPublicEmail'],['eventsEmail','contactEventsEmail'],['eventsSource','contactEventsSource']].map(([key,id])=>[key,root.querySelector('#'+id)]));let reviewed=null,busy=false;
+    const values=()=>Object.fromEntries(Object.entries(elements).map(([key,input])=>[key,input.value]));
+    Object.values(elements).forEach(input=>input.oninput=()=>{reviewed=null;apply.disabled=true;summary.textContent='资料已变更，请重新预览。'});
+    preview.onclick=async()=>{if(busy||catalogWriteBusy)return;busy=true;preview.disabled=true;apply.disabled=true;Object.values(elements).forEach(input=>input.disabled=true);
+      try{reviewed=await previewContacts(api,values(),hotelId);summary.innerHTML=`<div class="business-facts-grid"><div class="business-fact"><span>酒店电话（携程公开资料）</span><b>${esc(reviewed.fields.phone)}</b></div><div class="business-fact"><span>补充地址</span><b>${esc(reviewed.fields.address)}</b></div><div class="business-fact">${reviewed.fields.publicEmail?`<span>公开邮箱（用户提供，指明携程来源，页面未独立核验）</span><b>${esc(reviewed.fields.publicEmail)}</b></div><div class="business-fact">`:""}<span>婚宴／活动邮箱（凯悦官网）</span><b>${esc(reviewed.fields.eventsEmail)}</b></div></div><p>${reviewed.preserveAddress?'现有较高等级来源的地址保留；本次地址存为补充来源。':'本次地址将按现有来源规则合并。'}${reviewed.reusePhone?'已有更高等级来源的同值电话将复用。':''}${reviewed.reuseEmail?'已有更高等级来源的同用途邮箱将复用。':''}</p>`;apply.disabled=false}
+      catch(e){reviewed=null;summary.textContent=catalogError(e);notice(summary.textContent,true)}finally{busy=false;preview.disabled=false;Object.values(elements).forEach(input=>input.disabled=false)}
+    };
+    apply.onclick=async()=>{if(busy||catalogWriteBusy||!reviewed)return;busy=true;catalogWriteBusy=true;apply.disabled=true;preview.disabled=true;Object.values(elements).forEach(input=>input.disabled=true);root.querySelectorAll('[data-factory-action],#catalogImportApply,#catalogImportReview,#hyattGalleryApply,#hyattGalleryReview,#catalogScopeOpen,#factoryBack').forEach(button=>button.disabled=true);
+      try{await executeContacts(api,reviewed);notice('公开联系方式已核对保存；网页保持草稿');await openHotel(hotelId,ctx)}
+      catch(e){reviewed=null;summary.textContent='保存未完成核验，已有来源可能已保存。请重新预览后核对。'+catalogError(e);notice(summary.textContent,true)}finally{catalogWriteBusy=false;busy=false;preview.disabled=false;Object.values(elements).forEach(input=>input.disabled=false);const back=root.querySelector('#factoryBack');if(back)back.disabled=false}
+    };
+  }
+
   async function render(ctx){
     const {api,root,notice}=ctx; let overview;
     root.innerHTML='<div class="card"><h2>全国酒店数字基础设施控制台</h2><p>正在读取全国建库与页面生产状态…</p></div>';
@@ -293,9 +395,10 @@
     root.querySelector('#regionBuild').onclick=async()=>{const province=root.querySelector('#regionProvince').value.trim(),city=root.querySelector('#regionCity').value.trim();if(!province&&!city){notice('请至少填写省或城市',true);return}try{await api.request('/internal/v1/hotel-infrastructure/build-runs',{method:'POST',body:{mode:'REGION',country:'CN',province:province||null,city:city||null}});notice('指定区域建库已进入队列');render(ctx)}catch(e){const msg=e.message.includes('REGIONAL_DISCOVERY_PROVIDER_NOT_CONFIGURED')?'该区域尚未配置可用的酒店发现数据源。':e.message;notice(msg,true)}};
     root.querySelectorAll('[data-retry-run]').forEach(b=>b.onclick=async()=>{try{await api.request(`/internal/v1/hotel-infrastructure/build-runs/${encodeURIComponent(b.dataset.retryRun)}/retry`,{method:'POST'});notice('已重新进入自动处理队列');render(ctx)}catch(e){notice(e.message,true)}});
   }
-  async function openHotel(hotelId,ctx){const {api,root,notice}=ctx;try{const d=(await api.request(`/internal/v1/hotel-autopage/factory/hotels/${encodeURIComponent(hotelId)}`)).data;root.innerHTML=`<div class="structured-actions" style="margin-bottom:14px"><button class="btn" id="factoryBack">← 返回酒店网页工厂</button></div>${detailsHtml(d)}${hotelId===IMPORT_HOTEL?scopeEntry()+importPanel()+galleryPanel():''}`;bindImport(hotelId,ctx);bindGallery(hotelId,ctx);const scopeButton=root.querySelector('#catalogScopeOpen');if(scopeButton)scopeButton.onclick=()=>openScope(ctx);root.querySelector('#factoryBack').onclick=()=>render(ctx);root.querySelectorAll('[data-factory-action]').forEach(b=>b.onclick=async()=>{try{b.disabled=true;const action=b.dataset.factoryAction;if(action==='compose')await api.request(`/internal/v1/hotel-autopage/hotels/${encodeURIComponent(hotelId)}/compose`,{method:'POST'});if(action==='recollect'){const job=d.factory?.latest_discovery_job_id;if(!job)throw new Error('当前没有可重试的采集任务');await api.request(`/internal/v1/hotel-discovery/jobs/${encodeURIComponent(job)}/retry`,{method:'POST',body:{max_retries:2}})}if(action==='publish'||action==='unpublish')await api.request(`/internal/v1/hotel-autopage/factory/hotels/${encodeURIComponent(hotelId)}/publication`,{method:'POST',body:{action:action==='publish'?'PUBLISH':'UNPUBLISH'}});notice(action==='recollect'?'重新采集完成':action==='compose'?'网页已重新生成':action==='publish'?'网页已发布':'网页已下架');openHotel(hotelId,ctx)}catch(e){notice(e.message,true);b.disabled=false}})}catch(e){notice(e.message,true)}}
+  async function openHotel(hotelId,ctx){const {api,root,notice}=ctx;try{const d=(await api.request(`/internal/v1/hotel-autopage/factory/hotels/${encodeURIComponent(hotelId)}`)).data;root.innerHTML=`<div class="structured-actions" style="margin-bottom:14px"><button class="btn" id="factoryBack">← 返回酒店网页工厂</button></div>${detailsHtml(d)}${hotelId===IMPORT_HOTEL?scopeEntry()+importPanel()+contactsPanel()+galleryPanel():''}`;bindImport(hotelId,ctx);bindGallery(hotelId,ctx);bindContacts(hotelId,ctx);const scopeButton=root.querySelector('#catalogScopeOpen');if(scopeButton)scopeButton.onclick=()=>openScope(ctx);root.querySelector('#factoryBack').onclick=()=>render(ctx);root.querySelectorAll('[data-factory-action]').forEach(b=>b.onclick=async()=>{try{b.disabled=true;const action=b.dataset.factoryAction;if(action==='compose')await api.request(`/internal/v1/hotel-autopage/hotels/${encodeURIComponent(hotelId)}/compose`,{method:'POST'});if(action==='recollect'){const job=d.factory?.latest_discovery_job_id;if(!job)throw new Error('当前没有可重试的采集任务');await api.request(`/internal/v1/hotel-discovery/jobs/${encodeURIComponent(job)}/retry`,{method:'POST',body:{max_retries:2}})}if(action==='publish'||action==='unpublish')await api.request(`/internal/v1/hotel-autopage/factory/hotels/${encodeURIComponent(hotelId)}/publication`,{method:'POST',body:{action:action==='publish'?'PUBLISH':'UNPUBLISH'}});notice(action==='recollect'?'重新采集完成':action==='compose'?'网页已重新生成':action==='publish'?'网页已发布':'网页已下架');openHotel(hotelId,ctx)}catch(e){notice(e.message,true);b.disabled=false}})}catch(e){notice(e.message,true)}}
   function openCreate(ctx){const {root,api,notice}=ctx;root.innerHTML=`<div class="structured-actions" style="margin-bottom:14px"><button class="btn" id="factoryBack">← 返回酒店网页工厂</button></div><div class="productized-admin-head"><div><h2>采集并建立酒店网页</h2><p>一次只建立一家酒店。至少提供一个可合法访问的公开来源。</p></div><span class="status">单酒店受控采集</span></div><section class="card business-form-section"><div class="business-form-grid"><label class="business-field"><span>酒店名称<b>*</b></span><input id="factoryName" placeholder="例如：哈尔滨某酒店"></label><label class="business-field"><span>酒店地址</span><input id="factoryAddress" placeholder="城市 / 区域 / 详细地址"></label><label class="business-field"><span>酒店官网<b>*</b></span><input id="factoryOfficial" type="url" placeholder="https://..."><small>优先使用酒店或集团官方公开页面。</small></label><label class="business-field"><span>补充公开来源</span><input id="factoryPublic" type="url" placeholder="https://..."><small>仅用于公开商业事实；媒体仍需独立 Rights Gate。</small></label></div><div class="structured-actions"><button class="btn primary" id="factoryRun">开始采集并建立网页</button></div></section><section class="card structured-section"><div><h3>安全与发布边界</h3><p>Discovery 会阻断私网、metadata、非 HTTP(S) 与异常跳转；抓取到的图片候选不会自动公开，酒店也不会因此自动成为 GO Direct。</p></div></section>`;root.querySelector('#factoryBack').onclick=()=>render(ctx);root.querySelector('#factoryRun').onclick=async()=>{const name=root.querySelector('#factoryName').value.trim(),address=root.querySelector('#factoryAddress').value.trim(),official=root.querySelector('#factoryOfficial').value.trim(),pub=root.querySelector('#factoryPublic').value.trim();if(!name||!official){notice('请填写酒店名称和酒店官网',true);return}const hints=[{kind:'OFFICIAL_WEBSITE',url:official}];if(pub)hints.push({kind:'PUBLIC_SOURCE',url:pub});try{const btn=root.querySelector('#factoryRun');btn.disabled=true;btn.textContent='采集中…';const reg=(await api.request('/internal/v1/hotel-discovery/seeds',{method:'POST',body:{name,address,source_hints:hints}})).data;const run=(await api.request(`/internal/v1/hotel-discovery/jobs/${encodeURIComponent(reg.job_id)}/run`,{method:'POST',body:{max_retries:2}})).data;if(run.hotel_id){notice('采集完成，已进入酒店网页生产流程');return openHotel(run.hotel_id,ctx)}notice('采集任务已完成，但尚未形成酒店档案');render(ctx)}catch(e){notice(e.message,true);const btn=root.querySelector('#factoryRun');if(btn){btn.disabled=false;btn.textContent='开始采集并建立网页'}}}}
-  window.GO_HOTEL_PAGE_FACTORY={render,reviewedImport:{reviewedPlan,importPreflight,executeImport,verifyImported},reviewedScope:{previewScope,activateScope},reviewedGallery:{reviewedGalleryPlan,galleryPreflight,executeGalleryImport,verifyGalleryAsset},anomalyLabel};
+  window.GO_HOTEL_PAGE_FACTORY={render,reviewedImport:{reviewedPlan,importPreflight,executeImport,verifyImported},reviewedScope:{previewScope,activateScope},reviewedGallery:{reviewedGalleryPlan,galleryPreflight,executeGalleryImport,verifyGalleryAsset},reviewedContacts:{contactFields,previewContacts,executeContacts},anomalyLabel};
 })();
+
 
 
