@@ -76,6 +76,10 @@ class ConsumerUnifiedLifecycleService:
   supplied=b.get('facts') or {}
   if not isinstance(supplied,dict):raise ValueError('EXTERNAL_ORDER_FACTS_INVALID')
   safe_facts={key:value for key,value in supplied.items() if key in SAFE_EXTERNAL_FACTS}
+  # A projected amount is data, never a coercion from a display string or flag.
+  # Reject invalid money before opening a transaction, including on re-import.
+  if 'amount_minor' in safe_facts and (type(safe_facts['amount_minor']) is not int or safe_facts['amount_minor']<0):
+   raise ValueError('EXTERNAL_ORDER_AMOUNT_INVALID')
   if len(json.dumps(safe_facts,ensure_ascii=False,default=str))>16384:raise ValueError('EXTERNAL_ORDER_FACTS_INVALID')
   masked_id='*'*max(0,len(external_id)-4)+external_id[-4:]
   facts={**safe_facts,'transaction_platform':provider,'external_order_id_masked':masked_id,'external_order_id_hash':hashlib.sha256(f'{provider}\0{external_id}'.encode()).hexdigest(),'order_origin':'EXTERNAL_OTA','fulfillment_owner':provider,'support_owner':provider,'go_role':'AGGREGATION_AND_NAVIGATION','servicing_deep_link':service_link,'service_actions':{'change':{'owner':provider,'deep_link':change_link} if change_link else None,'refund_or_cancel':{'owner':provider,'deep_link':refund_link} if refund_link else None},'imported_to_go_trips':True,'source_verification':verification,'source_event_id':source_event_id,'source_adapter_id':adapter_id if official else None,'provider_evidence_hash':hashlib.sha256(str(provider_evidence or '').encode()).hexdigest() if provider_evidence else None}

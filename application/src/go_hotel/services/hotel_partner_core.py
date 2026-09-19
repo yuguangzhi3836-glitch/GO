@@ -30,6 +30,7 @@ class HotelPartnerCoreService:
         'OTHER_OTA':{'label':'其他 OTA','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_OTHER_OTA_SUPPLIER_AUTHORIZATION_URL'},
     }
     FORBIDDEN_CREDENTIAL_KEYS={'password','passwd','otp','captcha','cookie','cookies','session','session_id','access_token','refresh_token'}
+    IMPORT_HOTEL_FIELDS={'name_zh','name_en','property_type','group_name','brand_name','address','contacts','legal','poi'}
     def _property(self,s,pid,supplier_id):
         r=s.get(HotelPartnerPropertyRow,pid)
         if not r or r.supplier_id!=supplier_id: raise ValueError('PROPERTY_NOT_FOUND')
@@ -49,6 +50,27 @@ class HotelPartnerCoreService:
     def _request_hash(self,b):
         safe={k:v for k,v in b.items() if k not in {'authorization_code','authorization_state'}}
         return hashlib.sha256(json.dumps(safe,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
+    def _select_import_package(self,package,selection):
+        """Select whole hotel fields before validation or writes; omitted means legacy full import.
+
+        Selection never grants ownership or publication authority. Room and media
+        collections are opt-in as a whole when an explicit selection is supplied.
+        """
+        if selection is None:return package
+        if not isinstance(selection,list) or not selection:raise ValueError('IMPORT_SELECTION_REQUIRED')
+        allowed={f'hotel.{field}' for field in self.IMPORT_HOTEL_FIELDS}|{'room_types','media'}
+        if any(not isinstance(field,str) or field not in allowed for field in selection):raise ValueError('INVALID_IMPORT_SELECTION')
+        if not isinstance(package,dict):raise ValueError('HOTEL_DATA_PACKAGE_REQUIRED')
+        selected={}
+        for field in selection:
+            if field.startswith('hotel.'):
+                name=field.split('.',1)[1];hotel=package.get('hotel')
+                if not isinstance(hotel,dict) or name not in hotel:raise ValueError('IMPORT_SELECTED_FIELD_MISSING')
+                selected.setdefault('hotel',{})[name]=hotel[name]
+            else:
+                if field not in package:raise ValueError('IMPORT_SELECTED_FIELD_MISSING')
+                selected[field]=package[field]
+        return selected
     def _validate_media_rights(self,media,rights):
         if not media:return
         if rights.get('status') not in {'HOTEL_SUBMITTED','DISTRIBUTION_LICENSE'}:raise ValueError('MEDIA_RIGHTS_EVIDENCE_REQUIRED')
@@ -69,7 +91,7 @@ class HotelPartnerCoreService:
         hotel=package.get('hotel') or {};rooms=package.get('room_types') or [];media=package.get('media') or []
         if not isinstance(hotel,dict) or not isinstance(rooms,list) or not isinstance(media,list):raise ValueError('HOTEL_DATA_PACKAGE_INVALID')
         if len(rooms)>500 or len(media)>2000:raise ValueError('HOTEL_DATA_PACKAGE_LIMIT')
-        allowed={'name_zh','name_en','property_type','group_name','brand_name','address','contacts','legal','poi'}
+        allowed=self.IMPORT_HOTEL_FIELDS
         patch={k:hotel[k] for k in allowed if k in hotel}
         normalized=[]
         for raw in rooms:
@@ -120,7 +142,8 @@ class HotelPartnerCoreService:
             query=urlencode({'state':state,'property_id':pid})
             return {'status':'AUTHORIZATION_REQUIRED','provider':provider,'authorization_url':authorization_base+('&' if '?' in authorization_base else '?')+query,'login_surface':'PROVIDER_HOSTED','credentials_received_by_go':False,'fallback':'DATA_EXPORT'}
         authorization_evidence=self._verify_provider_authorization(provider,b) if method=='OFFICIAL_AUTHORIZATION' else None
-        patch,rooms,media=self._normalize_package(b.get('hotel_package'))
+        package=self._select_import_package(b.get('hotel_package'),b.get('selected_fields'))
+        patch,rooms,media=self._normalize_package(package)
         self._validate_media_rights(media,b.get('media_rights') or {})
         request_hash=self._request_hash(b);key=str(idempotency_key or b.get('idempotency_key') or request_hash)
         if not key or len(key)>160:raise ValueError('INVALID_IDEMPOTENCY_KEY')
@@ -144,12 +167,19 @@ class HotelPartnerCoreService:
             t=now();job=HotelPartnerImportJobRow(import_job_id=ident('hpij'),property_id=pid,supplier_id=supplier_id,provider=provider,method=method,idempotency_key=key,request_hash=request_hash,status='PROCESSING',result_json={},error_code=None,created_by=actor,created_at=t,completed_at=None);s.add(job)
             mapping={'name_zh':'name_zh','name_en':'name_en','property_type':'property_type','group_name':'group_name','brand_name':'brand_name','address':'address_json','contacts':'contacts_json','legal':'legal_json','poi':'poi_json'}
             for k,v in patch.items():setattr(prop,mapping[k],v)
+            source={'provider':provider,'method':method,'source_kind':'OTA_IMPORT','import_job_id':job.import_job_id,'imported_at':t.isoformat()}
+            ops=dict(prop.operations_json or {});sources=dict(ops.get('import_field_sources') or {})
+            for field in patch:sources[f'hotel.{field}']=dict(source)
+            if rooms:sources['room_types']=dict(source)
+            if media:sources['media']=dict(source)
+            ops['import_field_sources']=sources
             if media:
-                ops=dict(prop.operations_json or {});ops['import_provider']=provider;ops['media_candidates']=media;ops['media_rights']=b['media_rights'];prop.operations_json=ops
+                ops['import_provider']=provider;ops['media_candidates']=media;ops['media_rights']=b['media_rights']
+            prop.operations_json=ops
             prop.version+=1;prop.updated_at=t
             for room in rooms:
                 r=HotelPartnerRoomTypeRow(room_type_id=ident('room'),property_id=pid,name_zh=room['name_zh'],name_en=room.get('name_en'),sale_unit=room.get('sale_unit','WHOLE_ROOM'),physical_room_count=room['physical_room_count'],occupancy_json=room['occupancy'],bed_configurations_json=room.get('bed_configurations',[]),attributes_json=room.get('attributes',{}),media_json=[],state='ACTIVE',created_at=t,updated_at=t);s.add(r)
-            result={'status':'IMPORTED','property_id':pid,'provider':provider,'method':method,'room_types_created':len(rooms),'media_candidates':len(media),'publication_state':'DRAFT','mapping':{'hotel_fields':sorted(patch),'room_types':len(rooms),'ignored_unknown_fields':True}}
+            result={'status':'IMPORTED','property_id':pid,'provider':provider,'method':method,'source_kind':'OTA_IMPORT','room_types_created':len(rooms),'media_candidates':len(media),'publication_state':prop.publication_state,'mapping':{'hotel_fields':sorted(patch),'room_types':len(rooms),'ignored_unknown_fields':True}}
             job.status='COMPLETED';job.result_json=result;job.completed_at=t
             audit_payload={'provider':provider,'method':method,'room_count':len(rooms),'media_count':len(media),'request_hash':request_hash}
             if authorization_evidence:audit_payload|=authorization_evidence

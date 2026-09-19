@@ -123,7 +123,8 @@ class ConsumerOtaComparisonService:
             "price_basis": quote.get("price_basis"),
             "tax_fee_basis": quote.get("tax_fee_basis"),
         }
-        if quote_basis != {key: basis[key] for key in quote_basis}:
+        occupancy_types_valid = all(type(quote.get(key)) is int for key in ("rooms", "adults", "children"))
+        if not occupancy_types_valid or quote_basis != {key: basis[key] for key in quote_basis}:
             reasons.append("COMPARISON_BASIS_MISMATCH")
         observed = _utc(quote.get("observed_at"))
         expires = _utc(quote.get("expires_at"))
@@ -133,7 +134,9 @@ class ConsumerOtaComparisonService:
             reasons.append("QUOTE_STALE")
         elif observed > now:
             reasons.append("QUOTE_OBSERVED_IN_FUTURE")
-        if expires is not None and expires <= now:
+        if expires is None:
+            reasons.append("QUOTE_EXPIRES_AT_REQUIRED")
+        elif expires <= now:
             reasons.append("QUOTE_EXPIRED")
         return reasons
 
