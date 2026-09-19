@@ -147,17 +147,17 @@ class RealExternalExecutionService:
             ext=payload.get('external_operation_id') or op.external_operation_id or f'callback:{delivery_id}'
             evidence=[f'external-webhook://{delivery_id}']
             if op.operation_type=='AUTHORIZE':
-                movement=unified_money_movement_service.create(op.payment_intent_id,{'movement_type':'AUTHORIZATION','amount_minor':int(payload.get('amount_minor') or i.amount_minor),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':ext},'ext-auth:'+op.idempotency_key,'p0-0100')
+                movement=unified_money_movement_service.record_verified_external_fact(op.payment_intent_id,{'movement_type':'AUTHORIZATION','amount_minor':int(payload.get('amount_minor') or i.amount_minor),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':ext},'ext-auth:'+op.idempotency_key,'p0-0100',r.external_truth_webhook_receipt_id)
             elif op.operation_type=='CAPTURE':
                 with SessionLocal() as s:
                     parent=s.scalar(select(Movement).where(Movement.root_payment_intent_id==op.payment_intent_id,Movement.movement_type=='AUTHORIZATION',Movement.state=='CONFIRMED').order_by(Movement.created_at.desc()))
                 if not parent:raise ValueError('CONFIRMED_EXTERNAL_AUTHORIZATION_REQUIRED_BEFORE_CAPTURE')
-                movement=unified_money_movement_service.create(op.payment_intent_id,{'movement_type':'CAPTURE','parent_movement_id':parent.money_movement_id,'amount_minor':int(payload.get('amount_minor') or i.amount_minor),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':ext},'ext-cap:'+op.idempotency_key,'p0-0100')
+                movement=unified_money_movement_service.record_verified_external_fact(op.payment_intent_id,{'movement_type':'CAPTURE','parent_movement_id':parent.money_movement_id,'amount_minor':int(payload.get('amount_minor') or i.amount_minor),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':ext},'ext-cap:'+op.idempotency_key,'p0-0100',r.external_truth_webhook_receipt_id)
             elif op.operation_type=='REFUND':
                 with SessionLocal() as s:
                     parent=s.scalar(select(Movement).where(Movement.root_payment_intent_id==op.payment_intent_id,Movement.movement_type=='CAPTURE',Movement.state=='CONFIRMED').order_by(Movement.created_at.desc()))
                 if not parent:raise ValueError('CONFIRMED_EXTERNAL_CAPTURE_REQUIRED_BEFORE_REFUND')
-                movement=unified_money_movement_service.create(op.payment_intent_id,{'movement_type':'REFUND','parent_movement_id':parent.money_movement_id,'amount_minor':int(payload.get('amount_minor') or i.amount_minor),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':ext},'ext-ref:'+op.idempotency_key,'p0-0100')
+                movement=unified_money_movement_service.record_verified_external_fact(op.payment_intent_id,{'movement_type':'REFUND','parent_movement_id':parent.money_movement_id,'amount_minor':int(payload.get('amount_minor') or i.amount_minor),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':ext},'ext-ref:'+op.idempotency_key,'p0-0100',r.external_truth_webhook_receipt_id)
         return {'duplicate':False,'receipt':out(r),'intent':out(i),'money_movement':movement}
     def supplier_callback(self,operation_id,delivery_id,payload,signature):
         with SessionLocal() as s:
