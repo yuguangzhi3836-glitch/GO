@@ -518,12 +518,20 @@ def load_environment_slots(path):
 
 
 def save_environment_slots(slots, path):
-    """Write the slot document the way the ledger is written: 0600, fsync, rename."""
+    """Write the slot document the way the ledger is written: 0600, fsync, rename.
+
+    The temporary name carries the writer's pid, and that is the one place this differs
+    from the ledger.  The ledger can use a single fixed name because every writer of it
+    holds the ledger lock; this document is the thing that *states* one environment
+    admits one mutation, so a writer that reached it another way must not be able to
+    consume another writer's temporary file and then be refused with a reason
+    ('environment_slot_store_unwritable') that is not true.
+    """
     target=pathlib.Path(path)
     directory=target.parent
     try:
         if not directory.is_dir() or directory.is_symlink(): raise Reject('environment_slot_store_unwritable')
-        temporary=directory/('.'+target.name+'.tmp')
+        temporary=directory/('.'+target.name+'.'+str(os.getpid())+'.tmp')
         fd=os.open(temporary,os.O_WRONLY|os.O_CREAT|os.O_TRUNC|os.O_NOFOLLOW,0o600)
         with os.fdopen(fd,'wb') as stream:
             stream.write(canonical(slots)); stream.flush(); os.fsync(stream.fileno())
