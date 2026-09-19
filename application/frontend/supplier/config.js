@@ -37,3 +37,4 @@ window.GO_CONSOLE={title:'GO 合作伙伴平台',subtitle:'酒店、机票、铁
 {route:'/help',label:'帮助与工单',custom:'supplierHelpTemplate'},
 {route:'/vertical-capabilities',label:'全品类能力',custom:'supplierVerticals'},
 {route:'/growth',label:'经营增长记录',custom:'supplierJudgments'}],principles:{recommendationValueSeparated:true,aiSupplierMutationRequiresApproval:true,goOfferDedicatedSupplyOnly:true,structuredOperationsRequired:true,noFakeGrowthMetrics:true,partnerHomeTaskOriented:true,partnerPrimaryNavMax:7,ownerStaffBenefitsInPromotion:true,goConsumerBenefitsNotSupplierBusinessModule:true}};
+

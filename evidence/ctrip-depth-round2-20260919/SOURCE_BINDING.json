@@ -1,0 +1,26 @@
+{
+  "base_pr": 219,
+  "base_commit": "5f62478b970fdd2bce9ef2f6e7dea7e35d67cc38",
+  "base_tree": "a7d1d3d3b021563997b69d3d0a3ed223676bb79e",
+  "source_sha256": {
+    "application/src/go_hotel/services/hotel_partner_core.py": "d79caab3738e9bcad5e76c9af03bbf6bdd942c56612012200875ef45e41abdbe",
+    "application/src/go_hotel/api/routes/hotel_partner_core.py": "eabc93b78b7a1162b3671c2198dd9f271cb8910fbca178623d36b83f592e06f0",
+    "application/frontend/shared/app.js": "a1b9da369bca8e46a1d2dae0b3060c3db5c43dd91439c213bff488ec2c4a0604",
+    "application/frontend/supplier/config.js": "05ed4f6512b4018dd3378b9c7dbbc1e39de3432a6b5049e6c8666eab4b462b3e",
+    "application/src/go_hotel/services/hosted_fare_rules.py": "3ac91d435cd683081d93a82316621c47a02d8075dc48fa67c5080092094e2ecb",
+    "application/src/go_hotel/services/catalog_fare_snapshot.py": "bcf3ae135a8d6e1ed8bf352a4c9617d30d9223abe981c00229a3734792d97972",
+    "application/src/go_hotel/services/hotel_partner_media_upload.py": "f61fe8b3a6a46b1da054f2e923189f92b8d48c726670b2df7468041c6a1a4730",
+    "application/src/go_hotel/services/hotel_cancellation_clock.py": "123e99568e52f418c66699b97dd3db371db0ca9acb13e69c4618a488375dc6e2",
+    "application/tests/test_hotel_partner_media_upload.py": "94afb10b3436f674bc88b6f44bdda739b57cf492ca2914e42915982cd88c7019",
+    "application/tests/test_hotel_source_room_mapping.py": "bee85b9841b3160535bdc77dadbd6a88a4d2f8f987952050302b30344d542c9f",
+    "application/tests/test_hotel_cancellation_clock.py": "f08c1a5097b704b99a15ea50edb96f73ed88a5d1bf394a427de80de7162e1817",
+    "application/tests/test_supplier_hotel_import_ui.cjs": "b090a4658fe7431b8cda2c6d6abf80d270b31cb29095a228a82ef706d9ba5026"
+  },
+  "verification": {
+    "backend_pytest_pass": 138,
+    "deselected": 1,
+    "cancellation_unittest_pass": 18,
+    "frontend_node_pass": 13
+  },
+  "environment": "Local isolated SQLite + Node. Partial source/dependency materialization; not full checkout/build. No live supplier, HK, payment or production operations."
+}

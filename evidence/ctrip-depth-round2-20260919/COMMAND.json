@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/workspace/scratch/7375eae00ed5/go-depth-venv/bin/python",
+    "-m",
+    "pytest",
+    "tests/test_external_order_money_projection.py",
+    "tests/test_member_comparison_quote_validity.py",
+    "tests/test_hotel_partner_selected_import.py",
+    "tests/test_ctrip_rate_plan_identity.py",
+    "tests/test_external_orders_in_go_trips.py",
+    "tests/test_hotel_partner_self_operating_core.py",
+    "tests/test_consumer_ota_security_boundaries.py",
+    "tests/test_supplier_onboarding_and_member_comparison.py",
+    "tests/test_hotel_partner_media_upload.py",
+    "tests/test_hotel_source_room_mapping.py",
+    "-k",
+    "not member_context_api",
+    "--tb=short",
+    "--junitxml=/workspace/scratch/7375eae00ed5/go-depth-work/evidence/ctrip-depth-round2-20260919/pytest.xml"
+  ],
+  "cwd": "/workspace/scratch/7375eae00ed5/go-depth-work/application",
+  "scope": "isolated SQLite; partial dependency materialization; no live deployment"
+}

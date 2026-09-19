@@ -8,7 +8,7 @@ def call(fn,*args):
     try:return {'data':fn(*args)}
     except ValueError as e:
         code=str(e)
-        if code in {'PROPERTY_NOT_FOUND','ROOM_TYPE_NOT_FOUND','INBOX_ITEM_NOT_FOUND'}:status=404
+        if code in {'PROPERTY_NOT_FOUND','ROOM_TYPE_NOT_FOUND','INBOX_ITEM_NOT_FOUND','MEDIA_ASSET_NOT_FOUND'}:status=404
         elif code in {'IDEMPOTENCY_PAYLOAD_MISMATCH','IMPORT_ALREADY_IN_PROGRESS','SUPPLIER_PROVIDER_STATE_ALREADY_USED'}:status=409
         elif code in {'SUPPLIER_PROVIDER_VERIFIER_UNAVAILABLE','AUTHORIZATION_UNAVAILABLE'}:status=503
         else:status=422
@@ -50,3 +50,33 @@ def inbox_create(property_id:str,b:Payload,p:Principal=Depends(supplier_principa
 def inbox_transition(item_id:str,b:Payload,p:Principal=Depends(supplier_principal)):return call(svc.transition_inbox,p.supplier_id,p.user_id,item_id,b.model_dump(exclude_none=True))
 @router.put('/properties/{property_id}/go-offer-authority')
 def offer_authority(property_id:str,b:Payload,p:Principal=Depends(supplier_principal)):return call(svc.upsert_offer_authority,p.supplier_id,p.user_id,property_id,b.model_dump(exclude_none=True))
+
+
+# Direct uploads remain private drafts until the existing rights/publication gate.
+from fastapi.responses import Response
+from pydantic import Field
+from go_hotel.services.hotel_partner_media_upload import hotel_partner_media_upload_service as media_svc
+from go_hotel.services.media_harvester import MAX_IMAGE_BYTES
+
+class MediaUploadPayload(BaseModel):
+    model_config = {'extra': 'forbid'}
+    content_base64: str = Field(min_length=1, max_length=4 * ((MAX_IMAGE_BYTES + 2) // 3))
+    role: str
+    room_type_id: str | None = None
+    rights: dict
+
+@router.post('/properties/{property_id}/media-uploads', status_code=201)
+def upload_media(property_id:str,b:MediaUploadPayload,p:Principal=Depends(supplier_principal)):
+    return call(media_svc.upload,p.supplier_id,p.user_id,property_id,b.model_dump(exclude_none=True))
+
+@router.get('/properties/{property_id}/media-uploads')
+def list_media_uploads(property_id:str,p:Principal=Depends(supplier_principal)):
+    return call(media_svc.list_uploads,p.supplier_id,property_id)
+
+@router.get('/properties/{property_id}/media-uploads/{asset_id}/original')
+def media_upload_original(property_id:str,asset_id:str,p:Principal=Depends(supplier_principal)):
+    raw,mime=call(media_svc.original,p.supplier_id,property_id,asset_id)['data']
+    return Response(content=raw,media_type=mime,headers={
+        'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff',
+        'Content-Disposition':'attachment',
+    })

@@ -385,15 +385,71 @@ async function adminR8Readiness(){const x=unwrap(await api.request('/internal/v1
 async function adminTrips(){const x=unwrap(await api.request('/internal/v1/admin/operations/trips'));$('#view').innerHTML=`<div class="section-head"><h2>GO Trips</h2><span>跨品类统一旅行事实入口</span></div>${metrics(x.metrics||{})}<h2>Journeys</h2>${table(x.journeys||[])}<h2>Journey Items</h2>${table(x.items||[])}`}
 
 
+const HOTEL_IMPORT_FIELDS={'hotel.name_zh':'酒店中文名','hotel.name_en':'酒店英文名','hotel.property_type':'酒店类型','hotel.group_name':'集团','hotel.brand_name':'品牌','hotel.address':'地址','hotel.contacts':'联系方式','hotel.legal':'资质','hotel.poi':'周边位置','room_types':'房型'};
+function hotelImportError(error){
+ const code=String(error?.message||'');
+ const labels={IMPORT_SELECTION_REQUIRED:'请至少选择一项资料。',IMPORT_SELECTED_FIELD_MISSING:'所选资料已变化，请重新预览。',INVALID_IMPORT_SELECTION:'所选资料无法导入，请重新预览。',HOTEL_DATA_PACKAGE_REQUIRED:'请提供酒店资料包。',HOTEL_DATA_PACKAGE_INVALID:'资料格式不正确，请检查后重试。',ROOM_MAPPING_CONFIRMATION_REQUIRED:'来源房型需要先核对与GO房型的对应关系；当前页面暂不支持确认映射，请取消勾选房型，先导入其他资料。',INVALID_ROOM_TYPE:'房型资料不完整，请检查名称和房量。',INVALID_OCCUPANCY_CONSTRAINT:'房型入住人数不完整，请核对。',OTA_CREDENTIALS_NOT_ACCEPTED:'请移除资料中的账号密码、验证码或访问凭据。',MEDIA_IMAGE_TOO_SMALL:'图片清晰度不足，请使用短边至少720、长边至少1280像素的高清文件。',MEDIA_IMAGE_TOO_LARGE:'图片超过15MB，请选择较小的高清文件。',MEDIA_CONTENT_NOT_VALID_IMAGE:'文件不是可读取的图片，请重新选择。',MEDIA_IMAGE_FORMAT_NOT_ALLOWED:'请选择JPEG、PNG或WEBP图片。',MEDIA_IMAGE_PIXEL_LIMIT:'图片超过4000万像素，请调整后重试。',MEDIA_RIGHTS_EVIDENCE_REQUIRED:'请填写图片权利人和授权依据。',MEDIA_RIGHTS_EXPIRED:'图片授权已过期，请更新授权依据。',PROPERTY_NOT_FOUND:'酒店资料不可用，请确认当前酒店。',ROOM_TYPE_NOT_FOUND:'房型不可用，请重新选择。'};
+ return labels[code]||'操作未完成，输入和选择已保留，请核对后重试。';
+}
+function hotelImportPreview(raw){
+ let pack;try{pack=JSON.parse(raw)}catch{throw new Error('HOTEL_DATA_PACKAGE_INVALID')}
+ if(!pack||typeof pack!=='object'||Array.isArray(pack))throw new Error('HOTEL_DATA_PACKAGE_INVALID');
+ if(Object.hasOwn(pack,'room_types')&&(!Array.isArray(pack.room_types)||pack.room_types.some(room=>!room||typeof room!=='object'||Array.isArray(room))))throw new Error('HOTEL_DATA_PACKAGE_INVALID');
+ const fields=Object.entries(HOTEL_IMPORT_FIELDS).filter(([key])=>key==='room_types'?Object.hasOwn(pack,key):pack.hotel&&typeof pack.hotel==='object'&&!Array.isArray(pack.hotel)&&Object.hasOwn(pack.hotel,key.slice(6)));
+ return {pack,fields};
+}
+function hotelSelectedPackage(pack,selected){
+ const result={};
+ for(const key of selected){if(key==='room_types'){result.room_types=(pack.room_types||[]).map(room=>{const {media,media_json,...facts}=room;return facts})}else{result.hotel||={};result.hotel[key.slice(6)]=pack.hotel[key.slice(6)]}}
+ return result;
+}
 async function supplierOneClickBuild(){
  const props=unwrap(await api.request('/v1/supplier/properties'))||[],p=props[0];
- if(!p){$('#view').innerHTML=supplierStructuredShell('/one-click-build','<section class="card"><h3>先建立酒店主体</h3><p>完成酒店注册后，才能把资料导入属于该酒店的资料库。</p><a class="btn primary" href="#/property">添加我的酒店</a></section>');return}
+ if(!p){$('#view').innerHTML=supplierStructuredShell('/one-click-build','<section class="card"><h3>先建立酒店主体</h3><p>完成酒店注册后，才能导入酒店资料。</p><a class="btn primary" href="#/property">添加我的酒店</a></section>');return}
  const providers=unwrap(await api.request('/v1/supplier/one-click-import/providers'))?.providers||{};
  const options=Object.entries(providers).map(([key,value])=>`<option value="${esc(key)}">${esc(value.label||key)}</option>`).join('');
- const body=`<section class="card"><div class="section-head"><div><h3>一键建立酒店库</h3><span>以酒店账号持有人或授权管理员身份导入</span></div><span class="status">当前酒店：${esc(p.name_zh)}</span></div><p>关联登录会打开 OTA 官方页面；账号、密码和验证码不进入 GO。没有官方授权接口时，请从原平台导出资料后上传。</p><div class="business-form-grid"><label class="business-field"><span>来源平台</span><select id="buildProvider">${options}</select></label></div><div class="actionbar"><button class="btn primary" id="connectProvider">关联平台账号</button></div></section><section class="card"><h3>导入平台导出资料</h3><p>粘贴酒店资料包 JSON；图片只有在酒店提交或具备分发授权证据时才进入发布审核。</p><textarea id="hotelPackage" rows="12" placeholder='{"hotel":{"name_zh":"酒店名称"},"room_types":[]}'></textarea><label class="business-field"><span>媒体权利证据编号（有图片时必填）</span><input id="rightsEvidence"></label><button class="btn primary" id="importHotelPackage">预览并导入</button></section>`;
- $('#view').innerHTML=supplierStructuredShell('/one-click-build',body,{'当前酒店':p.name_zh,'资料状态':p.publication_state,'导入方式':'官方授权 / 数据包','媒体':'Rights Gate'});
- $('#connectProvider').onclick=async()=>{try{const x=unwrap(await api.request(`/v1/supplier/properties/${encodeURIComponent(p.property_id)}/one-click-import`,{method:'POST',body:{provider:$('#buildProvider').value,method:'OFFICIAL_AUTHORIZATION'}}));if(x.authorization_url)window.open(x.authorization_url,'_blank','noopener');else notice('该平台尚未开放官方授权接口，请使用数据包导入。',true)}catch(e){notice(e.message,true)}};
- $('#importHotelPackage').onclick=async()=>{try{const pack=JSON.parse($('#hotelPackage').value||'{}'),evidence=$('#rightsEvidence').value.trim(),body={provider:$('#buildProvider').value,method:'DATA_EXPORT',hotel_package:pack};if((pack.media||[]).length)body.media_rights={status:'HOTEL_SUBMITTED',evidence_reference:evidence};const x=unwrap(await api.request(`/v1/supplier/properties/${encodeURIComponent(p.property_id)}/one-click-import`,{method:'POST',body}));notice(`已导入 ${x.room_types_created||0} 个房型，资料进入草稿核对。`)}catch(e){notice(e.message,true)}};
+ const endpoint=`/v1/supplier/properties/${encodeURIComponent(p.property_id)}`;
+ const body=`<section class="card"><h3>酒店资料导入</h3><p>当前酒店：${esc(p.name_zh)}。酒店自主选择导入内容；预览只在当前页面整理，不保存资料。</p><label>来源平台<select id="buildProvider">${options}</select></label><button class="btn" id="connectProvider">关联平台账号</button><p>账号、密码和验证码不进入GO。平台授权暂不可用时，可使用酒店资料包。</p></section><section class="card"><h3>选择要导入的资料</h3><p>粘贴酒店资料包后点击预览，再勾选需要保存的内容。图片由酒店直接上传高清文件；资料包里的图片不会搬入。</p><label for="hotelPackage">酒店资料包</label><textarea id="hotelPackage" rows="12" placeholder='{"hotel":{"name_zh":"酒店名称"},"room_types":[]}'></textarea><button class="btn" id="previewHotelPackage">预览资料（不保存）</button><div id="hotelImportPreview" aria-live="polite"></div><button class="btn primary" id="importHotelPackage" disabled>确认导入所选资料</button><p id="hotelImportStatus" role="status"></p></section><section class="card"><h3>酒店直接上传高清图片</h3><p>支持JPEG、PNG、WEBP，单张不超过15MB及4000万像素，短边至少720、长边至少1280像素。上传后进入草稿，尚未发布。</p><label>图片文件<input id="hotelMediaFile" type="file" accept="image/jpeg,image/png,image/webp"></label><label>图片用途<select id="hotelMediaRole"><option value="GALLERY">酒店图库</option><option value="HERO">酒店首图</option></select></label><label>图片权利人<input id="hotelMediaHolder"></label><label>授权依据或酒店自有素材记录<input id="hotelMediaEvidence"></label><label><input id="hotelMediaRights" type="checkbox">酒店确认有权将该图片用于GO展示</label><button class="btn primary" id="uploadHotelMedia">上传高清图片</button><p id="hotelMediaStatus" role="status"></p></section>`;
+ $('#view').innerHTML=supplierStructuredShell('/one-click-build',body,{'当前酒店':p.name_zh,'资料状态':supplierFriendlyValue(p.publication_state),'导入方式':'酒店自主选择','图片':'酒店直接上传'});
+ let preview=null,busy=false;
+ const invalidate=()=>{preview=null;$('#importHotelPackage').disabled=true;$('#hotelImportPreview').innerHTML='';$('#hotelImportStatus').textContent='资料已变化，请重新预览。'};
+ $('#hotelPackage').oninput=invalidate;$('#buildProvider').onchange=invalidate;
+ $('#previewHotelPackage').onclick=()=>{
+  if(busy)return;
+  try{const raw=$('#hotelPackage').value;const parsed=hotelImportPreview(raw);preview={...parsed,raw,provider:$('#buildProvider').value};
+   $('#hotelImportPreview').innerHTML=parsed.fields.map(([key,label])=>`<section class="card"><label><input type="checkbox" data-import-field value="${esc(key)}" ${key==='room_types'&&(parsed.pack.room_types.some(room=>Object.hasOwn(room,'source_room_id'))||Object.hasOwn(parsed.pack,'room_mappings'))?'disabled':''}>导入${esc(label)}</label>${key==='room_types'&&(parsed.pack.room_types.some(room=>Object.hasOwn(room,'source_room_id'))||Object.hasOwn(parsed.pack,'room_mappings'))?'<p>该资料包含来源房型，需先确认与GO房型的对应关系。当前页面暂不支持映射，请先导入其他资料。</p>':''}<pre style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(JSON.stringify(key==='room_types'?hotelSelectedPackage(parsed.pack,['room_types']).room_types:parsed.pack.hotel[key.slice(6)],null,2))}</pre></section>`).join('')||'<p>资料包内没有可导入的字段。</p>';
+   $('#importHotelPackage').disabled=parsed.fields.length===0;$('#hotelImportStatus').textContent='仅预览，未保存。请勾选需要导入的内容。';
+  }catch(e){preview=null;$('#importHotelPackage').disabled=true;$('#hotelImportStatus').textContent=hotelImportError(e)}
+ };
+ $('#connectProvider').onclick=async()=>{try{const x=unwrap(await api.request(endpoint+'/one-click-import',{method:'POST',body:{provider:$('#buildProvider').value,method:'OFFICIAL_AUTHORIZATION'}}));if(x.authorization_url)window.open(x.authorization_url,'_blank','noopener');else notice('该平台尚未开放官方授权接口，请使用资料包导入。',true)}catch(e){notice(hotelImportError(e),true)}};
+ $('#importHotelPackage').onclick=async()=>{
+  if(busy)return;
+  if(!preview||preview.raw!==$('#hotelPackage').value||preview.provider!==$('#buildProvider').value){invalidate();return}
+  const selected=[...document.querySelectorAll('[data-import-field]:checked')].map(x=>x.value).filter(x=>preview.fields.some(([field])=>field===x));
+  if(!selected.length){$('#hotelImportStatus').textContent='请至少选择一项资料。';return}
+  if(selected.includes('room_types')&&(preview.pack.room_types.some(room=>Object.hasOwn(room,'source_room_id'))||Object.hasOwn(preview.pack,'room_mappings'))){$('#hotelImportStatus').textContent=hotelImportError(new Error('ROOM_MAPPING_CONFIRMATION_REQUIRED'));return}
+  busy=true;$('#importHotelPackage').disabled=true;$('#previewHotelPackage').disabled=true;
+  try{const body={provider:preview.provider,method:'DATA_EXPORT',hotel_package:hotelSelectedPackage(preview.pack,selected),selected_fields:selected};
+   const x=unwrap(await api.request(endpoint+'/one-click-import',{method:'POST',body}));
+   if(x?.status!=='IMPORTED')throw new Error('IMPORT_NOT_CONFIRMED');
+   $('#hotelImportStatus').textContent=`所选资料已保存，新增${x.room_types_created||0}个房型。请继续核对酒店资料；本次没有发布。`;
+  }catch(e){$('#hotelImportStatus').textContent=hotelImportError(e)}finally{busy=false;$('#importHotelPackage').disabled=!preview;$('#previewHotelPackage').disabled=false}
+ };
+ let uploading=false;
+ $('#uploadHotelMedia').onclick=async()=>{
+  if(uploading)return;const file=$('#hotelMediaFile').files?.[0],status=$('#hotelMediaStatus');
+  if(!file){status.textContent='请先选择高清图片文件。';return}
+  if(file.size>15*1024*1024){status.textContent='图片超过15MB，请选择较小的高清文件。';return}
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){status.textContent='请选择JPEG、PNG或WEBP图片。';return}
+  const holder=$('#hotelMediaHolder').value.trim(),evidence=$('#hotelMediaEvidence').value.trim(),role=$('#hotelMediaRole').value;
+  if(!holder||!evidence||!$('#hotelMediaRights').checked){status.textContent='请填写图片权利人、授权依据并确认展示权利。';return}
+  uploading=true;$('#uploadHotelMedia').disabled=true;status.textContent='正在上传并核验图片，请稍候。';
+  try{const content=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(new Error('READ_FAILED'));reader.readAsDataURL(file)});
+   const x=unwrap(await api.request(endpoint+'/media-uploads',{method:'POST',body:{content_base64:content,role,rights:{rights_holder:holder,evidence_reference:evidence,usage_scope:['DISTRIBUTE_ON_GO']}}}));
+   if(!x?.asset_id||x.state!=='DRAFT'||x.publishable!==false||!Number.isInteger(x.width)||x.width<=0||!Number.isInteger(x.height)||x.height<=0)throw new Error('UPLOAD_NOT_CONFIRMED');
+   status.textContent=`${x.deduplicated?'该图片已存在':'上传成功'}：${x.width}×${x.height}像素，已存为草稿，尚未发布。`;
+  }catch(e){status.textContent=hotelImportError(e)}finally{uploading=false;$('#uploadHotelMedia').disabled=false}
+ };
 }
 async function supplierPropertyProfile(){const rows=unwrap(await api.request('/v1/supplier/properties'))||[];const p=rows[0];if(!p){const create=`<section class="card"><h3>添加我的酒店</h3><p class="muted">GO 会自动建立全国酒店库。若您的酒店尚未被发现，可在酒店端补充最少身份信息；后续资料可由 GO AI 导入并请您核对。</p><div class="business-form-grid"><label class="business-field"><span>酒店中文名*</span><input id="propNameZh"></label><label class="business-field"><span>酒店英文名</span><input id="propNameEn"></label><label class="business-field"><span>酒店类型*</span><select id="propType"><option value="HOTEL">酒店</option><option value="RESORT">度假酒店</option></select></label><label class="business-field"><span>联系电话</span><input id="propPhone" type="tel"></label></div><button class="btn primary" id="createProperty">添加我的酒店</button></section>`;$('#view').innerHTML=supplierStructuredShell('/property',create+supplierStructuredEmpty('/property','后续资料'),{'资料完整度':'0%','基础资料':'待建立','政策':'待完善','媒体':'待完善'});$('#createProperty').onclick=async()=>{try{await api.request('/v1/supplier/properties',{method:'POST',body:{name_zh:$('#propNameZh').value,name_en:$('#propNameEn').value||null,property_type:$('#propType').value,contacts:{phone:$('#propPhone').value},operations:{}}});notice('酒店已添加，后续将进入资料核对与绑定流程');supplierPropertyProfile()}catch(e){notice(e.message,true)}};return}
 const contacts=p.contacts_json||{},ops=p.operations_json||{},addr=p.address_json||{};
