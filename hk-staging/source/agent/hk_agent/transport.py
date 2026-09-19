@@ -6,7 +6,7 @@ from . import deployment_actions
 
 VERSION = "0.5.7-rebuilt"
 MAX_EXECUTOR_ATTEMPTS_PER_TASK = 1
-ALLOWLIST = {"CONTROL_PLANE_HEALTH", "HK_STAGING_CANARY", "HK_STAGING_DEPLOY", "HK_STAGING_VERIFY", "HK_STAGING_ROLLBACK"}
+ALLOWLIST = {"CONTROL_PLANE_HEALTH", "HK_STAGING_CANARY", "HK_STAGING_DEPLOY", "HK_STAGING_VERIFY", "HK_STAGING_ROLLBACK", "HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY"}
 
 class Reject(Exception): pass
 
@@ -144,7 +144,12 @@ def control_plane_health():
 def evidence(task,result):
     stamp=utcnow()
     record = {"schema_version":"1","task_id":task["task_id"],"nonce":task["nonce"],"action_id":task["action_id"],"environment":task["environment"],"status":"SUCCESS","started_at":stamp,"completed_at":stamp,"agent_version":VERSION,"gate_results":{"schema":"PASS","environment":"PASS","authority":"PASS","signature":"PASS","expiry":"PASS","replay":"PASS","allowlist":"PASS"},"executor_result":result}
-    if task["action_id"] != "CONTROL_PLANE_HEALTH":
+    if task["action_id"] == "HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY":
+        required={"schema_version","executor_version","action_id","status","result","gate_results"}
+        required_gates={"sender_identity","credentials_usable","test_code_sent","delivery","code_verified","audit","secret_redaction"}
+        if not isinstance(result,dict) or set(result)!=required or result["action_id"]!=task["action_id"] or result["status"]!="SUCCESS" or result["result"]!="REGISTRATION_EMAIL_CONFIG_VERIFY_OK" or not isinstance(result["gate_results"],dict) or set(result["gate_results"])!=required_gates or any(value!="PASS" for value in result["gate_results"].values()): raise Reject("EXECUTOR_RESULT_REJECT")
+        record.update({"executor_version":result["executor_version"],"executor_result":result["result"],"gate_results":result["gate_results"]})
+    elif task["action_id"] != "CONTROL_PLANE_HEALTH":
         required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results"}
         if task["action_id"]=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256"}
         if task["action_id"]=="HK_STAGING_ROLLBACK": required |= {"source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256"}

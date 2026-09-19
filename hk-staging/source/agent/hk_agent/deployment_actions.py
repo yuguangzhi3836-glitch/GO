@@ -12,7 +12,7 @@ from typing import Any
 SUDO_EXECUTABLE = "/usr/bin/sudo"
 SUDO_NONINTERACTIVE_FLAG = "-n"
 EXECUTOR_PATH = "/usr/local/libexec/go-hk-deployctl"
-ACTIONS = frozenset(("HK_STAGING_CANARY", "HK_STAGING_DEPLOY", "HK_STAGING_VERIFY", "HK_STAGING_ROLLBACK"))
+ACTIONS = frozenset(("HK_STAGING_CANARY", "HK_STAGING_DEPLOY", "HK_STAGING_VERIFY", "HK_STAGING_ROLLBACK", "HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY"))
 IMAGE = re.compile(r"^sha256:[0-9a-f]{64}$")
 IDENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$")
 TASK_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -32,7 +32,8 @@ class FakeExecutor:
     def run(self, argv):
         if not isinstance(argv,list) or not all(isinstance(v,str) for v in argv): raise AssertionError("argv list required")
         self.calls.append(argv)
-        action={"canary":"HK_STAGING_CANARY","deploy":"HK_STAGING_DEPLOY","verify":"HK_STAGING_VERIFY","rollback":"HK_STAGING_ROLLBACK"}[argv[1]]
+        action={"canary":"HK_STAGING_CANARY","deploy":"HK_STAGING_DEPLOY","verify":"HK_STAGING_VERIFY","rollback":"HK_STAGING_ROLLBACK","registration-email-config-verify":"HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY"}[argv[1]]
+        if action=="HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY": return {"stdout":json.dumps({"schema_version":"1","executor_version":"fake","action_id":action,"status":"SUCCESS","result":"REGISTRATION_EMAIL_CONFIG_VERIFY_OK","gate_results":{"sender_identity":"PASS","credentials_usable":"PASS","test_code_sent":"PASS","delivery":"PASS","code_verified":"PASS","audit":"PASS","secret_redaction":"PASS"}},separators=(",",":"))}
         values=dict(zip(argv[2::2],argv[3::2]))
         result={"schema_version":"1","executor_version":"0.4.0-rollback-runtime","action_id":action,"status":"SUCCESS","release_id":values["--release-id"],"candidate_image_id":values.get("--candidate-image-id"),"expected_current_image_id":values.get("--expected-current-image-id"),"result":"DEPLOY_OK" if action=="HK_STAGING_DEPLOY" else ("ROLLBACK_OK" if action=="HK_STAGING_ROLLBACK" else "VERIFY_OK"),"gate_results":{"fake":"PASS"}}
         if action=="HK_STAGING_DEPLOY": result.update({"deploy_record_schema_version":"2","deploy_record_id":"a"*64,"deploy_record_sha256":"b"*64})
@@ -87,6 +88,9 @@ def validate(action, params):
     if action == "HK_STAGING_DEPLOY":
         p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","approval_id"))
         return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id"),"canary_evidence_id":_id(p["canary_evidence_id"],"canary_evidence_id"),"approval_id":_id(p["approval_id"],"approval_id")}
+    if action == "HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY":
+        _exact(params,())
+        return {}
     if action == "HK_STAGING_VERIFY":
         p=_exact(params,("release_id","candidate_image_id","expected_current_image_id"))
         return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id")}
@@ -102,6 +106,8 @@ def argv(action, params, task_binding=None):
     p=validate(action,params)
     if action in ("HK_STAGING_CANARY", "HK_STAGING_DEPLOY"):
         _package(p["candidate_package_sha256"])
+    if action == "HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY":
+        return [EXECUTOR_PATH, "registration-email-config-verify"]
     name={"HK_STAGING_CANARY":"canary","HK_STAGING_DEPLOY":"deploy","HK_STAGING_VERIFY":"verify","HK_STAGING_ROLLBACK":"rollback"}[action]
     out=[EXECUTOR_PATH,name,"--release-id",p["release_id"]]
     for key in ("candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","source_deploy_task_id","approval_id"):
@@ -125,6 +131,13 @@ def parse_executor_output(raw, action, params):
         raise Reject("executor stdout rejected", stdout=raw, stage="parser")
     try: out=json.loads(raw)
     except (TypeError, ValueError) as exc: raise Reject("executor json rejected", stdout=raw, stage="parser") from exc
+    if action=="HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY":
+        required={"schema_version","executor_version","action_id","status","result","gate_results"}
+        if not isinstance(out,dict) or set(out) != required: raise Reject("executor result schema rejected", stdout=raw, stage="parser")
+        if out["schema_version"]!="1" or out["action_id"]!=action or out["status"]!="SUCCESS" or out["result"]!="REGISTRATION_EMAIL_CONFIG_VERIFY_OK": raise Reject("executor result rejected", stdout=raw, stage="parser")
+        required_gates={"sender_identity","credentials_usable","test_code_sent","delivery","code_verified","audit","secret_redaction"}
+        if not isinstance(out["executor_version"],str) or not out["executor_version"] or not isinstance(out["gate_results"],dict) or set(out["gate_results"])!=required_gates or any(v!="PASS" for v in out["gate_results"].values()): raise Reject("executor result rejected", stdout=raw, stage="parser")
+        return out
     required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results"}
     if action=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256"}
     if action=="HK_STAGING_ROLLBACK": required |= {"source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256"}
@@ -157,6 +170,7 @@ def dispatch(task, executor, task_binding=None):
 
 def _base(action):
     old="sha256:"+"3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88"; new="sha256:"+"a"*64
+    if action=="HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY": return {"action_id":action,"parameters":{}}
     p={"release_id":"r315","candidate_image_id":new,"candidate_package_sha256":"d"*64,"expected_current_image_id":old}
     if action=="HK_STAGING_DEPLOY": p.update({"canary_evidence_id":"canary1","approval_id":"approval1"})
     if action=="HK_STAGING_VERIFY": p.pop("candidate_package_sha256")

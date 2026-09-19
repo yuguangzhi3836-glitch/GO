@@ -9,7 +9,7 @@ import re
 import stat
 import sys
 
-VERSION = "0.4.3-rollback-runtime"
+VERSION = "0.4.4-registration-email-verify"
 _IMAGE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _RELEASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 _COLLECTOR_SHA256 = "dff91265a5e3e80704277664f1952129ff19c6c7174d78e9b3e66125b9618ccc"
@@ -189,8 +189,27 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
                          expected_current_image_id, gates, "VERIFY_REJECTED"), 2
 
 
+def _registration_email_config_verify():
+    """Invoke one fixed local probe. No task input, secret, code, or mailbox data crosses this boundary."""
+    gates={}
+    try:
+        executable_dir=os.path.dirname(os.path.abspath(__file__))
+        probe=os.path.join(executable_dir,"go-hk-deployctl-runtime","registration_email_verify_runtime.py")
+        if not stat.S_ISREG(os.lstat(probe).st_mode): raise ValueError("probe path")
+        spec=importlib.util.spec_from_file_location("_go_registration_email_verify",probe)
+        if spec is None or spec.loader is None: raise ValueError("probe loader")
+        module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        gates=module.run_probe()
+        required={"sender_identity","credentials_usable","test_code_sent","delivery","code_verified","audit","secret_redaction"}
+        if set(gates)!=required or any(gates[k]!="PASS" for k in required): raise ValueError("probe gates")
+        return {"schema_version":"1","executor_version":VERSION,"action_id":"HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY","status":"SUCCESS","result":"REGISTRATION_EMAIL_CONFIG_VERIFY_OK","gate_results":gates},0
+    except (OSError,ValueError,TypeError):
+        return {"schema_version":"1","executor_version":VERSION,"action_id":"HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY","status":"REJECTED","result":"REGISTRATION_EMAIL_CONFIG_VERIFY_REJECTED","gate_results":gates},2
+
 def main(argv=None, runner=None, inputs=None, sleeper=None):
     values = list(sys.argv[1:] if argv is None else argv)
+    if values == ["registration-email-config-verify"]:
+        output, code = _registration_email_config_verify(); print(json.dumps(output,separators=(",",":"))); return code
     canary = values[:1] == ["canary"]
     deploy = values[:1] == ["deploy"]
     rollback=values[:1]==["rollback"]

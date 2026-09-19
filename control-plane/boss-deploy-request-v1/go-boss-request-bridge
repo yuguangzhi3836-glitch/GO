@@ -74,6 +74,8 @@ TEST_ACTION = "HK_STAGING_TEST_PR"
 TEST_ALLOWED = ALLOWED | {"pr_number"}
 CANARY_ACTION = "HK_STAGING_CANARY"
 HEALTH_ACTION = "CONTROL_PLANE_HEALTH"
+REGISTRATION_EMAIL_CONFIG_VERIFY_ACTION = "HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY"
+REGISTRATION_EMAIL_CONFIG_VERIFY_PARAMETERS = {}
 # The one and only parameter block a health Task may carry. It is a constant, not
 # anything derived from the Request: the Request for this action is the five common
 # fields, so it has no field that could contribute here even if someone tried.
@@ -82,7 +84,7 @@ HEALTH_PARAMETERS = {}
 # exact list rather than a membership test; health is a member of that contract, not a
 # free-form toggle, so removing it takes a new Bridge revision rather than an edit to a
 # root-owned config file.
-CHANNEL_ACTIONS = [POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, CANARY_ACTION, HEALTH_ACTION]
+CHANNEL_ACTIONS = [POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, CANARY_ACTION, HEALTH_ACTION, REGISTRATION_EMAIL_CONFIG_VERIFY_ACTION]
 # How a deployment is authorised. There is no standing switch to turn on: the authority is
 # the authenticated DEPLOY Request the authorised identity opened, and the Command Center
 # derives a one-time authorisation from it per request. This field declares that mode and
@@ -126,7 +128,7 @@ def validate_request(raw, at=None):
     if set(request) != fields: raise Reject("schema_fields")
     if request["schema_version"] != POLICY["schema_version"]: raise Reject("schema_version")
     if not isinstance(request["request_id"], str) or not REQUEST_ID_RE.fullmatch(request["request_id"]): raise Reject("request_id")
-    if request["action_id"] not in {POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, CANARY_ACTION, HEALTH_ACTION}: raise Reject("action")
+    if request["action_id"] not in {POLICY["action_id"], TEST_ACTION, deploy_gate.ACTION, CANARY_ACTION, HEALTH_ACTION, REGISTRATION_EMAIL_CONFIG_VERIFY_ACTION}: raise Reject("action")
     if request["environment"] != POLICY["environment"]: raise Reject("environment")
     when = parse_time(request["requested_at"])
     at = at or now()
@@ -278,6 +280,11 @@ def derive_health(request, at=None):
       "authority":"GO-COMMAND-CENTER", "environment":POLICY["environment"],
       "action_id":HEALTH_ACTION, "parameters":dict(HEALTH_PARAMETERS)}
 
+def derive_registration_email_config_verify(request, at=None):
+    """Bounded config verification: no caller-controlled parameters or secrets."""
+    at = at or now(); suffix = hashlib.sha256(request["request_id"].encode()).hexdigest()[:12]
+    return {"schema_version":"1","task_id":"go-boss-registration-email-verify-"+at.strftime("%Y%m%dT%H%M%SZ")+"-"+suffix,"nonce":secrets.token_urlsafe(24),"issued_at":iso(at),"expires_at":iso(at+dt.timedelta(minutes=15)),"authority":"GO-COMMAND-CENTER","environment":POLICY["environment"],"action_id":REGISTRATION_EMAIL_CONFIG_VERIFY_ACTION,"parameters":dict(REGISTRATION_EMAIL_CONFIG_VERIFY_PARAMETERS)}
+
 def derive_formal_task(request, at=None, resolver=resolve_pr):
     # Explicit dispatch, fail-closed. Every named action is bound to its own builder
     # and anything else is refused. The order matters for readability only; no branch
@@ -285,6 +292,7 @@ def derive_formal_task(request, at=None, resolver=resolve_pr):
     # an unnamed action used to reach derive(), i.e. it silently became a VERIFY.
     action = request["action_id"]
     if action == HEALTH_ACTION: return derive_health(request, at)
+    if action == REGISTRATION_EMAIL_CONFIG_VERIFY_ACTION: return derive_registration_email_config_verify(request, at)
     if action == TEST_ACTION: return derive_test_pr(request, at, resolver)
     if action == POLICY["action_id"]: return derive(request, load_baseline(), at)
     if action == CANARY_ACTION: return derive_canary(request, load_canary_baseline(), at)
