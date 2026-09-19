@@ -2,6 +2,16 @@
 
 **审查包版本：2026-09-19｜状态：所有对象均为 Draft/未合并候选；本包不授权任何部署。**
 
+> **香港 intake 控制更正（CCV1-102）：** 2026-09-19 的只读物料核验已确认本包原始范围完整，但发现若干事实性偏差。本节优先于后文的旧概述：
+>
+> - 真实叠加链为 **#216 → #217 → #219 → #221 → #222 → #223 → #224 → #225 → #226 → #227**；链根不在 main。#221–#227 不是独立七段链。
+> - #217 当前 head `0c3da07b…` 的真实 `application/` tree 为 `f6d329352dd8484010036448810a927d5eec4be7`（1441 blobs）；round2 `SOURCE_BINDING.json` 中的 `92066965…` 对应上一 head `0cdff19160…`，不得用于当前候选。
+> - #229 将 `0c3da07b…` 与旧 tree `92066965…` 硬编码为同一候选，三元组在任何合法仓库状态下均不自洽；C14=`FAIL`、`C13_RUNNER=NOT_RESTORED`。
+> - #216 的 `date-range` CI 为 failure；#228 的 `isolated-contract` CI 为 failure；其余多数当前 head 没有 GitHub CI run，提交者本地测试不等同独立验收。
+> - 本次 intake 执行身份不满足独立香港审查身份条件，因此只构成物料核验，不构成 C13/C14 签名结论。
+>
+> 原始 intake：`docs/review/CCV1-102-HK-TWO-DAY-REVIEW-INTAKE-2026-09-19.md`。
+
 ## 总任务
 
 对 2026-09-18 至 2026-09-19 形成、尚未由香港独立身份完成统一验收的 GO 成果做一次总复审。香港只读审查身份必须与实现者、此前审查者和未来 C13 Runner 隔离。
@@ -45,16 +55,16 @@
 
 既有材料显示 129 项候选定向测试通过，但这不是独立 C13 verdict；香港必须重新验证其与固定 candidate/tree 的绑定。
 
-### PR #220–#227 酒店/注册叠加线
+### PR #216–#227 酒店/注册叠加线
 
-#221 → #222 → #223 → #224 → #225 → #226 → #227 是连续叠加链。任何单 PR 的测试 PASS 只能覆盖该 PR 固定 head，香港需先核验 base/head 连续性和无遗漏的 migration/manifest/evidence 关系，再在 #227 固定 head 做统一冻结回归。
+#216 → #217 → #219 → #221 → #222 → #223 → #224 → #225 → #226 → #227 是连续叠加链。任何单 PR 的测试 PASS 只能覆盖该 PR 固定 head，香港需先核验 base/head 连续性和无遗漏的 migration/manifest/evidence 关系，再在 #227 固定 head 做统一冻结回归。
 
 其中 #220 是独立的 Command Center V1 收敛线，不得与应用叠加链混为一个候选；其 CI 绿灯不能替代任何产品、香港或 C13/C14 验收。
 
 ### PR #228–#229 控制面线
 
 - #228 只允许固定的邮件配置核验动作，不读取或回传密钥、验证码、邮件正文或供应商响应；其本身不能发送真实业务邮件或部署。
-- #229 当前结论为 **C14 FAIL**：Runner 注册、资格和独立性仍在同一 PR 的可变源码中；receipt 也无可验证签名/签发者/摘要绑定。因此 `C13_RUNNER = NOT_RESTORED`。
+- #229 当前结论为 **C14 FAIL**：Runner 注册、资格和独立性仍在同一 PR 的可变源码中；receipt 也无可验证签名/签发者/摘要绑定。更严重的是，其固定 `0c3da07b… / 92066965…` 将当前 candidate 与上一个 head 的 tree 拼接为无效组合。因此 `C13_RUNNER = NOT_RESTORED`。
 
 ## 香港审查顺序
 
@@ -88,5 +98,5 @@
 
 ## 原件入口
 
-- PR 全集：`https://github.com/yuguangzhi3836-glitch/GO/pulls?q=is%3Apr+is%3Aopen+author%3Ayuguangzhi3836-glitch`
+- PR 全集：`https://github.com/yuguangzhi3836-glitch/GO/pulls?q=is%3Apr+is%3Aopen`（不得按作者过滤；#220 的作者不同，仍属于本包）
 - #216–#229 的每一份完整原件均以各自 `https://github.com/yuguangzhi3836-glitch/GO/pull/<PR号>/files` 为唯一读取入口。
