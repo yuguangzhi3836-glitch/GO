@@ -140,10 +140,77 @@ class ConsumerOtaComparisonService:
             reasons.append("QUOTE_EXPIRED")
         return reasons
 
+    @staticmethod
+    def _product_comparison(quote: dict, basis: dict) -> tuple[dict | None, list[str]]:
+        """Only adapter-normalized, complete terms define an equivalence group.
+
+        Provider room/rate ids are provenance, never cross-provider identities.
+        Unsupported extra terms fail closed rather than silently losing conditions.
+        """
+        terms = quote.get("product_terms")
+        required = {"canonical_room_type_id", "room_mapping_source", "provider_room_id",
+                    "provider_rate_plan_id", "meal", "cancellation", "payment_timing", "confirmation_mode", "included_benefits"}
+        if not isinstance(terms, dict) or set(terms) != required:
+            return None, ["COMPLETE_PRODUCT_TERMS_REQUIRED"]
+        if terms["room_mapping_source"] != "GO_CANONICAL_VERIFIED" or any(
+            not isinstance(terms[key], str) or not terms[key].strip()
+            for key in ("canonical_room_type_id", "provider_room_id", "provider_rate_plan_id")
+        ):
+            return None, ["VERIFIED_ROOM_MAPPING_AND_RATE_PROVENANCE_REQUIRED"]
+        if (terms["payment_timing"] not in ("PREPAY", "PAY_AT_PROPERTY")
+            or terms["confirmation_mode"] not in ("INSTANT_CONFIRMED", "ON_REQUEST")
+            or terms["included_benefits"] != []):
+            return None, ["COMPLETE_PAYMENT_CONFIRMATION_AND_BENEFIT_TERMS_REQUIRED"]
+        meal = terms["meal"]
+        if (not isinstance(meal, dict) or set(meal) != {"code", "breakfast_per_room"}
+            or meal["code"] not in ("ROOM_ONLY", "BREAKFAST")
+            or type(meal["breakfast_per_room"]) is not int or meal["breakfast_per_room"] < 0
+            or (meal["code"] == "ROOM_ONLY" and meal["breakfast_per_room"] != 0)
+            or (meal["code"] != "ROOM_ONLY" and meal["breakfast_per_room"] == 0)):
+            return None, ["COMPLETE_MEAL_TERMS_REQUIRED"]
+        cancellation = terms["cancellation"]
+        if not isinstance(cancellation, dict) or cancellation.get("policy_complete") is not True:
+            return None, ["COMPLETE_CANCELLATION_TERMS_REQUIRED"]
+        if cancellation == {"policy_complete": True, "policy_type": "NON_REFUNDABLE"}:
+            normalized_cancellation = dict(cancellation)
+        elif (set(cancellation) == {"policy_complete", "policy_type", "free_until", "penalty_after"}
+              and cancellation["policy_type"] == "FREE_UNTIL"):
+            deadline = cancellation["free_until"]
+            # A local clock without a timezone cannot be compared as an instant.
+            try:
+                parsed = datetime.fromisoformat(deadline.replace("Z", "+00:00")) if isinstance(deadline, str) else None
+            except ValueError:
+                parsed = None
+            penalty = cancellation["penalty_after"]
+            if (parsed is None or parsed.tzinfo is None or not isinstance(penalty, dict)
+                or set(penalty) != {"type", "value"} or type(penalty["value"]) is not int
+                or penalty["value"] < 0 or penalty["type"] not in ("FULL_STAY", "FIRST_NIGHT", "AMOUNT_MINOR", "PERCENT")
+                or (penalty["type"] in ("FULL_STAY", "FIRST_NIGHT") and penalty["value"] != 1)
+                or (penalty["type"] == "PERCENT" and penalty["value"] > 100)):
+                return None, ["COMPLETE_CANCELLATION_TERMS_REQUIRED"]
+            normalized_cancellation = cancellation | {"free_until": parsed.astimezone(timezone.utc).isoformat()}
+        else:
+            return None, ["UNSUPPORTED_CANCELLATION_TERMS"]
+        identity = {"basis": basis["fingerprint"], "canonical_room_type_id": terms["canonical_room_type_id"],
+                    "meal": meal, "cancellation": normalized_cancellation,
+                    "payment_timing": terms["payment_timing"], "confirmation_mode": terms["confirmation_mode"],
+                    "included_benefits": sorted(set(terms["included_benefits"]))}
+        fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        return {"group_id": fingerprint, "canonical_room_type_id": terms["canonical_room_type_id"],
+                "provider_room_id": terms["provider_room_id"], "provider_rate_plan_id": terms["provider_rate_plan_id"],
+                "meal": meal, "cancellation": normalized_cancellation,
+                    "payment_timing": terms["payment_timing"], "confirmation_mode": terms["confirmation_mode"],
+                    "included_benefits": sorted(set(terms["included_benefits"]))}, []
+
     def options(self, user_id: str, search: dict, provider_quotes: list[dict] | None = None, now: datetime | None = None):
         basis = self._basis(search)
         now = _utc(now) or datetime.now(timezone.utc)
-        quotes = {str(q.get("provider") or "").upper(): q for q in (provider_quotes or [])}
+        quotes = {}
+        for quote in provider_quotes or []:
+            provider = str(quote.get("provider") or "").upper()
+            if provider in quotes:
+                raise ValueError("MULTIPLE_PROVIDER_QUOTE_VARIANTS_REQUIRE_EXPLICIT_SELECTION")
+            quotes[provider] = quote
         with SessionLocal() as session:
             jobs = session.scalars(select(ProfileImportJobRow).where(ProfileImportJobRow.user_id == user_id)).all()
         linked = {str(row.source_provider or "").upper() for row in jobs if
@@ -160,6 +227,7 @@ class ConsumerOtaComparisonService:
             deep_link, deep_link_status = self._official_deep_link(provider, os.getenv(spec["env"]), params)
             quote = quotes.get(provider)
             reasons = self._quote_reasons(provider, quote, user_id, basis, now) if quote else ["NO_VERIFIED_QUOTE"]
+            product, product_reasons = self._product_comparison(quote, basis) if not reasons else (None, ["VERIFIED_QUOTE_REQUIRED"])
             linked_account = provider in linked
             item = {
                 "provider": provider,
@@ -170,7 +238,11 @@ class ConsumerOtaComparisonService:
                 "deep_link_status": deep_link_status,
                 "login_session": "PROVIDER_APP_OR_SITE",
                 "credentials_received_by_go": False,
-                "eligible_for_price_comparison": not reasons,
+                "eligible_for_price_comparison": not reasons and not product_reasons,
+                "product_comparability": {"state": "COMPARABLE_WITHIN_GROUP" if product else "UNKNOWN",
+                                          "reasons": product_reasons, "terms": product},
+                "price_rank_within_group": None,
+                "savings_against_group_highest_minor": None,
                 "member_price_status": "VERIFIED_PERSONAL_MEMBER_PRICE" if not reasons else ("QUOTE_SUPPRESSED" if quote else "VISIBLE_AFTER_PROVIDER_LOGIN"),
                 "suppression_reasons": reasons,
                 "verified_member_price": None,
@@ -188,11 +260,28 @@ class ConsumerOtaComparisonService:
                     "comparison_basis_fingerprint": basis["fingerprint"],
                 }
             items.append(item)
+        groups = {}
+        for item in items:
+            if item["eligible_for_price_comparison"]:
+                group_id = item["product_comparability"]["terms"]["group_id"]
+                groups.setdefault(group_id, []).append(item)
+        for peers in groups.values():
+            if len(peers) < 2:
+                continue
+            amounts = sorted({peer["verified_member_price"]["total_amount_minor"] for peer in peers})
+            for peer in peers:
+                amount = peer["verified_member_price"]["total_amount_minor"]
+                peer["price_rank_within_group"] = amounts.index(amount) + 1
+                peer["savings_against_group_highest_minor"] = amounts[-1] - amount
         return {
+            "comparison_groups": [{"group_id": key, "providers": [item["provider"] for item in peers]}
+                                  for key, peers in groups.items()],
             "comparison_scope": "CURRENT_CONSUMER",
             "comparison_basis": basis,
             "misleading_price_prevention": {
                 "rank_only_verified_fresh_same_basis_quotes": True,
+                "rank_only_complete_equivalent_product_terms": True,
+                "cross_group_ranking_and_savings_prohibited": True,
                 "login_only_deep_links_are_not_prices": True,
                 "suppressed_quote_amounts_are_not_returned": True,
                 "maximum_quote_age_seconds": self.MAX_QUOTE_AGE_SECONDS,

@@ -54,7 +54,9 @@ def test_verified_personal_member_price_requires_same_basis_and_freshness():
     result=comparison.options('consumer-comparison',SEARCH,[quote(now)],now)
     ctrip=next(x for x in result['providers'] if x['provider']=='CTRIP')
     assert ctrip['member_price_status']=='VERIFIED_PERSONAL_MEMBER_PRICE'
-    assert ctrip['eligible_for_price_comparison'] is True
+    # Quote authenticity and same-product comparability are distinct.
+    assert ctrip['eligible_for_price_comparison'] is False
+    assert ctrip['product_comparability']['state'] == 'UNKNOWN'
     assert ctrip['verified_member_price']['total_amount_minor']==88000
     assert ctrip['verified_member_price']['currency']=='CNY'
     assert ctrip['verified_member_price']['comparison_basis_fingerprint']==result['comparison_basis']['fingerprint']
@@ -120,3 +122,4 @@ def test_member_context_api_returns_explicit_comparison_contract(monkeypatch):
 def test_invalid_comparison_basis_fails_closed():
     with pytest.raises(ValueError,match='INVALID_OTA_COMPARISON_BASIS'):
         comparison.options('consumer-comparison',SEARCH|{'check_out':'2026-09-30'})
+

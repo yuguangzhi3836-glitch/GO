@@ -61,10 +61,11 @@ def test_boolean_or_float_occupancy_cannot_pass_integer_basis_equality(field, va
     assert_suppressed(ctrip_result(verified_quote() | {field: value}), "COMPARISON_BASIS_MISMATCH")
 
 
-def test_valid_member_quote_remains_eligible_until_exact_expiration():
+def test_valid_member_quote_remains_visible_until_exact_expiration():
     quote = verified_quote()
     before = ctrip_result(quote, NOW + timedelta(minutes=3, microseconds=-1))
-    assert before["eligible_for_price_comparison"] is True
+    # Freshness permits display; missing product terms cannot permit ranking.
+    assert before["eligible_for_price_comparison"] is False
     assert before["suppression_reasons"] == []
     assert before["verified_member_price"]["total_amount_minor"] == 88000
     assert before["verified_member_price"]["member_tier"] == "DIAMOND"
@@ -73,5 +74,5 @@ def test_valid_member_quote_remains_eligible_until_exact_expiration():
 
 def test_equivalent_expiry_timezone_uses_the_same_instant():
     quote = verified_quote() | {"expires_at": "2026-09-19T18:03:00+08:00"}
-    assert ctrip_result(quote)["eligible_for_price_comparison"] is True
+    assert ctrip_result(quote)["eligible_for_price_comparison"] is False
     assert_suppressed(ctrip_result(quote, NOW + timedelta(minutes=3)), "QUOTE_EXPIRED")
