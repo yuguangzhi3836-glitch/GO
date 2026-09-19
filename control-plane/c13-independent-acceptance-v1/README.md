@@ -1,11 +1,7 @@
-# C13 independent acceptance — Draft capability
+# C13 repair candidate — Draft only
 
-This is an offline, fail-closed C13-only control-plane candidate. It accepts only
-an immutable candidate SHA, application-tree fingerprint and C14 receipt ID.
-Runner identity comes from a host-owned qualification registry and must identify
-itself as independent of both implementation and C14. The task profile disables
-network, providers, payments, deployment and production; only isolated PostgreSQL
-and frozen tests are permitted by the installed runner.
+This candidate repairs the source-binding and trust-boundary defects found in PR #229. It has no Runner installation, signing key, dispatch, deployment, Hong Kong, provider, payment, secret or Production capability.
 
-It does not install a runner, contain a signing key, dispatch a task, merge a PR,
-or modify Hong Kong/Production. Installation requires a separate reviewed action.
+The fixed application identity is PR #217 candidate `0c3da07bc32009dee16c69125111f8e4ea9d546b` with its actual `application/` tree `f6d329352dd8484010036448810a927d5eec4be7`.
+
+The source checkout holds no Runner registry and no C14 receipt. `derive_task` fails closed unless a separately reviewed host trust boundary verifies both: (1) a signed C14 PASS receipt bound to candidate/tree, issuer and digest; (2) an immutable host registration of exactly one independent C13 Runner. The production host adapter is intentionally not in this PR.
