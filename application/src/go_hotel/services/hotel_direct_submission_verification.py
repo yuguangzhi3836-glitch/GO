@@ -5,9 +5,8 @@ Trusted review is held separately from supplier-editable metadata.
 Supplier-editable JSON and strings in the manifest cannot clear this blocker.
 """
 from datetime import datetime, timezone
-import hashlib
-import io
 from PIL import Image
+from go_hotel.services.hotel_original_verification_scope import original_facts
 from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import HotelPartnerRoomTypeRow, HotelRegistrationDirectRow, HotelCanonicalProfileRow
@@ -78,16 +77,7 @@ class HotelDirectSubmissionVerificationService:
                 block('ASSET_BINDING_MISMATCH', aid)
             try:
                 self.media._authorize(supplier_id, property_id, rec.get('room_type_id'))
-                raw = self.media._read_bytes(rec)
-                with Image.open(io.BytesIO(raw)) as im:
-                    width, height = im.size
-                    if width * height > 40000000 or getattr(im, 'n_frames', 1) != 1:
-                        raise ValueError('invalid image')
-                    mime = {'JPEG':'image/jpeg', 'PNG':'image/png', 'WEBP':'image/webp'}.get(im.format)
-                    im.verify()
-                with Image.open(io.BytesIO(raw)) as im: im.load()
-                facts = {'original_sha256': hashlib.sha256(raw).hexdigest(), 'width':width,
-                         'height':height, 'byte_size':len(raw), 'mime_type':mime}
+                facts = original_facts(self.media, rec)
                 if any(asset[key] != value for key,value in facts.items()):
                     block('ORIGINAL_FACTS_MISMATCH', aid)
                 else: result['original_verified'] = True

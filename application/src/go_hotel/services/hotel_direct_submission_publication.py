@@ -7,6 +7,7 @@ from copy import deepcopy
 from urllib.parse import quote
 from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
+from go_hotel.services.hotel_original_verification_scope import original_verification_scope
 from go_hotel.db.models import HotelCanonicalProfileRow, HotelAutoPageVersionRow
 from go_hotel.services import catalog_scope
 
@@ -80,6 +81,7 @@ class HotelDirectSubmissionPublicationService:
         return {'hotel_id':hotel_id,'review_id':review_id,'manifest_sha256':resolved['manifest_sha256'],
                 'idempotent':result['idempotent'],'published':published,'page':page}
 
+    @original_verification_scope
     def public_content(self, review_id, asset_id):
         # Find the reference only in an existing currently published canonical
         # page. Approved submissions alone are not public image endpoints.

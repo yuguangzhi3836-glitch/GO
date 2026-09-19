@@ -10,6 +10,7 @@ from uuid import uuid4
 from urllib.parse import quote
 from sqlalchemy import select, func
 from go_hotel.db.session import SessionLocal
+from go_hotel.services.hotel_original_verification_scope import original_verification_scope
 from go_hotel.db.models import (HotelPartnerChangeRequestRow, HotelPartnerPropertyRow,
     HotelPartnerRoomTypeRow, HotelCanonicalProfileRow, HotelRegistrationDirectRow, HotelAutoPageVersionRow)
 from go_hotel.services.hotel_partner_core import hotel_partner_core_service as core
@@ -103,6 +104,7 @@ class HotelDirectSubmissionReviewService:
                 items.append(item)
             return {'items':items, 'total':total, 'offset':offset, 'limit':limit}
 
+    @original_verification_scope
     def inspection(self, review_id):
         reviewed = self.get(review_id)
         manifest = reviewed['manifest']
@@ -198,6 +200,7 @@ class HotelDirectSubmissionReviewService:
             core._property(session, property_id, supplier_id)
         return self.list_reviews(property_id, state, offset, limit)
 
+    @original_verification_scope
     def supplier_get(self, supplier_id, property_id, review_id):
         with SessionLocal() as session:
             core._property(session, property_id, supplier_id)

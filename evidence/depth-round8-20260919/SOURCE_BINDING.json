@@ -1,0 +1,28 @@
+{
+  "parent_commit": "a9c36e9cd8a7e7ec0691b876258848bc74cf6331",
+  "source_sha256": {
+    "application/src/go_hotel/services/hotel_original_verification_scope.py": "321ed874761b1a7ca8be4dd8d299e7505ed23f6b3d40d36d8ff55e24cc955d9e",
+    "application/src/go_hotel/services/hotel_direct_submission_verification.py": "318c5b267948f99d360c645e29eb1c74a49a2062b9fc2a7690ff0ab68f27738e",
+    "application/src/go_hotel/services/hotel_direct_submission_review.py": "ca13968045bdec8fcf59359825edc21d0be9f8d1c573e8bbc3bf49e9ab4dcd17",
+    "application/src/go_hotel/services/hotel_direct_submission_publication.py": "650812d4da0878fd392abccc63a2f081343b067e00fd9dddb898a6c9080700d3",
+    "application/src/go_hotel/services/hotel_autopage_factory.py": "3ec0cc286ab7d764c07711fce870dad996364c143b8fba231a6108b45dedb0ea",
+    "application/tests/test_hotel_original_verification_scope.py": "e67ab31098752588cbb0f646cbea9741193129ac68bf2c6543d2e8efe7eb2307",
+    "application/tests/test_hotel_direct_submission_gallery_probe.py": "d1ee1172b60504a77dc1cd8206b342fbd65b0b5b633655ec02b46ff18fa2bee8"
+  },
+  "scope": "candidate PR226 only; no merge/deploy/live hotel change",
+  "regression": {
+    "passed": 59,
+    "includes_previous_50": true,
+    "scope_tests_at_collection": 9
+  },
+  "scope_final": {
+    "passed": 12,
+    "overlaps_regression": true
+  },
+  "gallery_sizes": [
+    20,
+    100
+  ],
+  "browser_scenarios": 0,
+  "postgres_concurrency": "NOT_RUN"
+}

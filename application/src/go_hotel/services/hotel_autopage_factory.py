@@ -5,6 +5,7 @@ from sqlalchemy import select, func
 from go_hotel.services import catalog_scope
 from go_hotel.autonomy.durable import transaction
 from go_hotel.db.session import SessionLocal
+from go_hotel.services.hotel_original_verification_scope import original_verification_scope
 from go_hotel.services.media_harvester import media_harvester_service
 from go_hotel.services.hotel_catalog_quality import quality
 from go_hotel.db.models import (
@@ -292,6 +293,7 @@ class HotelAutoPageFactoryService:
             if not p:raise ValueError('HOTEL_PROFILE_NOT_FOUND')
             self._merge(s,p);v=self._publish_version(s,p,actor);s.flush();return {'profile':out(p),'page_version':out(v),'catalog_quality':self.catalog_quality(p)}
 
+    @original_verification_scope
     def public_page(self,slug):
         with SessionLocal() as s:
             p=s.scalar(select(HotelCanonicalProfileRow).where(HotelCanonicalProfileRow.slug==slug))
@@ -315,6 +317,7 @@ class HotelAutoPageFactoryService:
             page['trust']['media_projection_mode']='DYNAMIC_RIGHTS_GATED_CACHE'
             return page
 
+    @original_verification_scope
     def public_page_by_hotel(self,hotel_id):
         with SessionLocal() as s:
             p=s.get(HotelCanonicalProfileRow,hotel_id)
