@@ -1,0 +1,181 @@
+{
+  "runs": [
+    {
+      "name": "red",
+      "argv": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_c04_change_refund_receipts.py",
+        "tests/test_c05_fleet_stale_snapshot.py",
+        "-q",
+        "--junitxml=../evidence/cell-depth-20260918/c04_c05/red.xml"
+      ],
+      "env": {
+        "APP_ENV": "test"
+      },
+      "cwd": "/workspace/scratch/a682af655fba/cell-c04_c05/application",
+      "exit_code": 1,
+      "phase": "Initial fault reproduction before either new repair; 8 test cases, before adding the two finalization-race tests.",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "8",
+        "skipped": "0",
+        "tests": "8",
+        "time": "4.470",
+        "timestamp": "2026-09-18T12:50:00.436851-04:00",
+        "hostname": "localhost"
+      },
+      "stdout_stderr": "red.log"
+    },
+    {
+      "name": "green",
+      "argv": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_c04_change_refund_receipts.py",
+        "tests/test_c05_fleet_stale_snapshot.py",
+        "-q",
+        "--junitxml=../evidence/cell-depth-20260918/c04_c05/green.xml"
+      ],
+      "env": {
+        "APP_ENV": "test"
+      },
+      "cwd": "/workspace/scratch/a682af655fba/cell-c04_c05/application",
+      "exit_code": 0,
+      "phase": "First repaired refund/stale-dispatch verification; 8 test cases.",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "8",
+        "time": "4.626",
+        "timestamp": "2026-09-18T12:50:49.988005-04:00",
+        "hostname": "localhost"
+      },
+      "stdout_stderr": "green.log"
+    },
+    {
+      "name": "regression",
+      "argv": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_c04_change_refund_receipts.py",
+        "tests/test_c05_fleet_stale_snapshot.py",
+        "tests/test_depth06_rental_settlement.py",
+        "tests/test_v70_round2_c04_rental_receipts.py",
+        "tests/test_v70_r3_c04_http_get_zero_write.py",
+        "tests/test_depth19_ride_sync.py",
+        "tests/test_v70_next_c05_recovery_evidence.py",
+        "-q",
+        "--junitxml=../evidence/cell-depth-20260918/c04_c05/regression.xml"
+      ],
+      "env": {
+        "APP_ENV": "test"
+      },
+      "cwd": "/workspace/scratch/a682af655fba/cell-c04_c05/application",
+      "exit_code": 0,
+      "phase": "Affected regression before positive capture validation; 69 cases.",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "69",
+        "time": "15.758",
+        "timestamp": "2026-09-18T12:51:45.532886-04:00",
+        "hostname": "localhost"
+      },
+      "stdout_stderr": "regression.log"
+    },
+    {
+      "name": "capture-red",
+      "argv": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_c04_change_capture_receipts.py",
+        "-q",
+        "--junitxml=../evidence/cell-depth-20260918/c04_c05/capture-red.xml"
+      ],
+      "env": {
+        "APP_ENV": "test"
+      },
+      "cwd": "/workspace/scratch/a682af655fba/cell-c04_c05/application",
+      "exit_code": 1,
+      "phase": "Positive-capture fault reproduction; refund guard already applied but positive capture still unverified.",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "8",
+        "skipped": "0",
+        "tests": "8",
+        "time": "4.043",
+        "timestamp": "2026-09-18T12:53:14.649294-04:00",
+        "hostname": "localhost"
+      },
+      "stdout_stderr": "capture-red.log"
+    },
+    {
+      "name": "final",
+      "argv": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_c04_change_capture_receipts.py",
+        "tests/test_c04_change_refund_receipts.py",
+        "tests/test_c05_fleet_stale_snapshot.py",
+        "tests/test_depth06_rental_settlement.py",
+        "tests/test_v70_round2_c04_rental_receipts.py",
+        "tests/test_v70_r3_c04_http_get_zero_write.py",
+        "tests/test_depth19_ride_sync.py",
+        "tests/test_v70_next_c05_recovery_evidence.py",
+        "-q",
+        "--junitxml=../evidence/cell-depth-20260918/c04_c05/final.xml"
+      ],
+      "env": {
+        "APP_ENV": "test"
+      },
+      "cwd": "/workspace/scratch/a682af655fba/cell-c04_c05/application",
+      "exit_code": 0,
+      "phase": "Final exact source below; all modified behavior and affected acceptance tests.",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "77",
+        "time": "14.954",
+        "timestamp": "2026-09-18T12:54:04.933975-04:00",
+        "hostname": "localhost"
+      },
+      "stdout_stderr": "final.log"
+    }
+  ],
+  "static_checks": [
+    {
+      "argv": [
+        "python",
+        "-m",
+        "compileall",
+        "-q",
+        "application/src/go_hotel/mobility/rental/changes.py",
+        "application/src/go_hotel/mobility/ride/flight_sync.py",
+        "application/src/go_hotel/mobility/ride/recovery_evidence.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0
+    }
+  ]
+}

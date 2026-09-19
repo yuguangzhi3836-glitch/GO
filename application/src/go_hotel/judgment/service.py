@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 from hashlib import sha256
-from datetime import timedelta
+from datetime import timedelta, timezone
 from sqlalchemy import select, text
 from go_hotel.db.session import SessionLocal
 from go_hotel.autonomy.durable import transaction
@@ -261,17 +261,61 @@ class JudgmentService:
             ids=[x.hook_id for x in s.scalars(select(JudgmentHookRow).where(JudgmentHookRow.status=="REQUESTED").order_by(JudgmentHookRow.created_at).limit(limit)).all()]
         return [self.process_hook(x) for x in ids]
 
+    def _public_binding_in(self, s, hotel_id):
+        """Read a currently valid, hotel-bound endorsement in one read session.
+
+        Historical judgment reads remain available for audit. Public surfaces
+        fail closed when a decision or its sealed evidence no longer matches.
+        """
+        judgments = list(s.scalars(select(JudgmentRuntimeRow).where(
+            JudgmentRuntimeRow.hotel_id == hotel_id, JudgmentRuntimeRow.status == "ACTIVE")))
+        if not judgments:
+            return None, None, None, "INSUFFICIENT_EVIDENCE"
+        if len(judgments) != 1:
+            return None, None, None, "JUDGMENT_RESULT_REVIEW_REQUIRED"
+        j = judgments[0]
+        p = s.get(JudgmentEvidencePackageRow, j.evidence_package_id)
+        decisions = list(s.scalars(select(RecommendationDecisionRow).where(
+            RecommendationDecisionRow.judgment_id == j.judgment_id)))
+        r = decisions[0] if len(decisions) == 1 else None
+        current = now_utc()
+        def utc(value):
+            return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+        def valid(row):
+            return utc(row.valid_from) <= current and (row.valid_to is None or current < utc(row.valid_to))
+        if (not p or not r or p.hotel_id != hotel_id or r.hotel_id != hotel_id
+            or not valid(j) or not valid(r)
+            or r.good_hotel_standard_version_id != j.good_hotel_standard_version_id
+            or r.status not in {"GO_RECOMMENDED", "GO_NOT_RECOMMENDED", "NOT_YET_RATED"}
+            or (r.status == "GO_RECOMMENDED" and (r.public_go_score_milli != j.go_score_milli or j.public_at is None or utc(j.public_at) > current))
+            or (r.status != "GO_RECOMMENDED" and r.public_go_score_milli is not None)):
+            return None, None, None, "JUDGMENT_RESULT_REVIEW_REQUIRED"
+        raw = json.dumps({"hotel_id": hotel_id, "source_refs": p.source_refs, "feature_snapshot": p.feature_snapshot},
+                         sort_keys=True, separators=(",", ":"), default=str).encode()
+        if sha256(raw).hexdigest() != p.content_hash:
+            return None, None, None, "JUDGMENT_RESULT_REVIEW_REQUIRED"
+        return j, p, r, None
+
     def public_summary_or_default(self,hotel_id:str)->dict:
         with SessionLocal() as s:
-            j=s.scalar(select(JudgmentRuntimeRow).where(JudgmentRuntimeRow.hotel_id==hotel_id,JudgmentRuntimeRow.status=="ACTIVE").order_by(JudgmentRuntimeRow.created_at.desc()))
-            if not j:
-                return {"judgment_id":None,"go_score":None,"recommendation_status":"NOT_YET_RATED","reason_codes":["INSUFFICIENT_EVIDENCE"]}
-            r=s.scalar(select(RecommendationDecisionRow).where(RecommendationDecisionRow.judgment_id==j.judgment_id).order_by(RecommendationDecisionRow.created_at.desc()))
-            return {"judgment_id":j.judgment_id,"go_score":None if not r or r.public_go_score_milli is None else r.public_go_score_milli/1000,"recommendation_status":r.status if r else "NOT_YET_RATED","reason_codes":r.reason_codes if r else ["DECISION_PENDING"]}
+            j, p, r, reason = self._public_binding_in(s, hotel_id)
+            if reason:
+                return {"judgment_id":None,"go_score":None,"recommendation_status":"NOT_YET_RATED","reason_codes":[reason]}
+            return {"judgment_id":j.judgment_id,"go_score":None if r.public_go_score_milli is None else r.public_go_score_milli/1000,"recommendation_status":r.status,"reason_codes":r.reason_codes}
 
     def public_view(self,hotel_id:str)->dict:
-        latest=self.get_latest(hotel_id)
-        return {"judgment_id":latest["judgment_id"],"hotel_id":hotel_id,"go_score":latest["public_go_score"],"recommendation":latest["recommendation"],"explanation":latest["explanation"],"confidence_bps":latest["confidence_bps"],"evidence_package_id":latest["evidence_package"]["package_id"],"validity":{"status":latest["status"]}}
+        with SessionLocal() as s:
+            j, p, r, reason = self._public_binding_in(s, hotel_id)
+            if reason == "INSUFFICIENT_EVIDENCE":
+                not_found("JUDGMENT_NOT_FOUND", "No judgment exists for hotel")
+            if reason:
+                unprocessable(reason, "Public judgment binding requires review")
+            return {"judgment_id":j.judgment_id,"hotel_id":hotel_id,
+                "go_score":None if r.public_go_score_milli is None else r.public_go_score_milli/1000,
+                "recommendation":{"decision_id":r.decision_id,"status":r.status,"reason_codes":r.reason_codes,
+                    "rule_version":r.rule_version,"good_hotel_standard_version_id":r.good_hotel_standard_version_id},
+                "explanation":j.explanation,"confidence_bps":j.confidence_bps,
+                "evidence_package_id":p.package_id,"validity":{"status":j.status}}
 
     def get_latest(self,hotel_id:str)->dict:
         with SessionLocal() as s:

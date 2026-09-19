@@ -1,0 +1,59 @@
+{
+  "cwd": "application",
+  "environment": {
+    "APP_ENV": "test",
+    "DATABASE_URL": "isolated temporary SQLite selected by tests/conftest.py"
+  },
+  "before": {
+    "argv": [
+      "python",
+      "-m",
+      "pytest",
+      "tests/flight/test_c02_prebook_consumption.py",
+      "tests/test_c03_change_quote_supersession.py",
+      "-q",
+      "--tb=short",
+      "--junitxml=../evidence/cell-depth-20260918/c02_c03/before.xml"
+    ],
+    "exit_code": 1,
+    "tests": 12,
+    "failures": 10,
+    "note": "Before source repair. Concurrent rail quote test was added after this run."
+  },
+  "final": {
+    "argv": [
+      "python",
+      "-m",
+      "pytest",
+      "tests/flight/test_c02_prebook_consumption.py",
+      "tests/test_c03_change_quote_supersession.py",
+      "tests/flight/test_c02_airport_resolver.py",
+      "tests/flight/test_c02_three_end_change_quote.py",
+      "tests/test_sprint3a_flight.py",
+      "tests/test_sprint3b_rail.py",
+      "tests/test_depth05_flight_parties.py",
+      "tests/test_depth48_flight_changes.py",
+      "tests/test_depth32_flight_refund_consent.py",
+      "tests/test_depth22_rail_resolution.py",
+      "tests/test_depth20_api_fulfillment.py",
+      "tests/test_depth23_capacity.py",
+      "tests/payments/test_c11_flight_idempotency_recovery.py",
+      "-q",
+      "--tb=short",
+      "--junitxml=../evidence/cell-depth-20260918/c02_c03/final.xml"
+    ],
+    "exit_code": 0,
+    "tests": 203,
+    "failures": 0,
+    "skipped": 0
+  },
+  "intermediate": {
+    "tests": 30,
+    "failures": 0,
+    "note": "focused.xml/log records intermediate source; final.xml/log supersedes it. Resolver tests were restored to PR216 complete superset before final run."
+  },
+  "static": {
+    "command": "git diff --check",
+    "exit_code": 0
+  }
+}

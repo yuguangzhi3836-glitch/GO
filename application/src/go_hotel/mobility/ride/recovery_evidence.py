@@ -47,6 +47,7 @@ def reject_reused_unknown_episode(session, order, episode_reference):
                 or row.previous_hash != previous or body.get('previous_hash') != previous
                 or body.get('sequence_no') != number or body.get('vertical') != 'RIDE'
                 or body.get('order_id') != order.order_id
+                or row.execution_item_id != order.order_id
                 or body.get('kind') != row.evidence_kind or body.get('status') != row.observed_status
                 or row.evidence_hash != _stable_hash(body)
                 or row.entry_hash != _stable_hash({'evidence_hash': row.evidence_hash,

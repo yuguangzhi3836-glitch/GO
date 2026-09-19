@@ -1,0 +1,58 @@
+{
+  "classification": "ACTIVE_CANDIDATE_LOCAL_ONLY",
+  "base_commit": "42f3e62da844279cc3569c90eaa58d24a291a4d5",
+  "source_commit": "7af43cc64cdae062389950baca3518e11512d4b1",
+  "application_git_tree_local_snapshot": "bc620f70af052e629a96e1a988cc6edb82e4ee28",
+  "tree_limit": "Local snapshot includes the parent-restored application files, including inherited tracked runtime/cache files. This is not canonical/main, a remote PR tree, or the cleaned root integration tree. Changed-path hashes bind the transferable patch. Root integration must obtain its own final tree/evidence.",
+  "changed_files_sha256": {
+    "application/src/go_hotel/api/routes/flight.py": "2d1ccac045387c3d24599b06097c36c6653a9e954815e6dae960df26d773e551",
+    "application/src/go_hotel/flight/service.py": "b2589272632845c705193ae10078bc5041aafe1cc63e21acbaf9cd9c850eef69",
+    "application/src/go_hotel/rail/service.py": "11b3804d838b8c68e1f260a8f8a2c5080e479a02a4ae5e65b0b9598fecfd8da4",
+    "application/tests/flight/test_c02_prebook_consumption.py": "6c895c029e8edddb015aa163a097100c54ef9a8f7e4b1256c336e307f3a06d02",
+    "application/tests/flight/test_c02_three_end_change_quote.py": "12988bbdfd4b6c3f3f464ff65ced75280724a5b436e2cea3bc6694ff948bb16e",
+    "application/tests/test_c03_change_quote_supersession.py": "d68ed58623eaeb834979f2a9004892e6b9a4c8857207a18fbb4c0a0885229ca1"
+  },
+  "retained_airport_resolver_blob": "7e7d6dad6f1426a49b41bd72d976ed56388714df",
+  "retained_airport_tests_blob": "b8519b2828cbe2f766016990f7cb900bf2c0f797",
+  "inherited_pr208": {
+    "sha": "d22fcf0319271b7cc0b200e0c4e27f1189c29a6f",
+    "three_end_test_blob": "e115ab76e974df379f2997329e504be4507c5718",
+    "route": "Only change_quote function delta imported. Existing checkout/execute-change recoverable idempotency preserved.",
+    "airports": "Current PR216 source and resolver tests are a later superset; kept byte-identical."
+  },
+  "gaps": [
+    {
+      "cell": "C02",
+      "gap": "Same flight prebook created multiple orders across HTTP keys, processes or owners.",
+      "task": "C02-DEPTH-20260918-PREBOOK-CONSUMPTION",
+      "tests": "test_c02_prebook_consumption.py (8 cases)",
+      "result": "LOCAL_SCOPED_PASS"
+    },
+    {
+      "cell": "C02",
+      "gap": "PR208 flight change-quote idempotency candidate delta absent from the PR217 branch lineage.",
+      "task": "C02-DEPTH-20260918-PR208-RETENTION",
+      "tests": "test_c02_three_end_change_quote.py (2 cases) and retained resolver suite",
+      "result": "LOCAL_SCOPED_PASS"
+    },
+    {
+      "cell": "C03",
+      "gap": "Unselected stale rail change quotes could execute after supplier success/failure; concurrent quote issuance was not synchronized.",
+      "task": "C03-DEPTH-20260918-QUOTE-SUPERSESSION",
+      "tests": "test_c03_change_quote_supersession.py (5 cases)",
+      "result": "LOCAL_SCOPED_PASS"
+    }
+  ],
+  "holds": [
+    "PostgreSQL lock/concurrency validation not run here",
+    "Remote upload/review integration blocked; no remote mutations attempted",
+    "Exact integrated-tree C14/C13 decisions pending",
+    "No provider certification, three-end browser/device acceptance, or live runtime verification",
+    "No merge, deployment, real booking or money movement"
+  ],
+  "next_task": [
+    "Root integrate source into clean all-Cell candidate preserving changed hashes",
+    "C14 policy review then independent C13 on the final integrated tree",
+    "Isolated PostgreSQL adversarial concurrency for prebook claims and rail quote selection"
+  ]
+}

@@ -2,14 +2,18 @@ from fastapi import APIRouter,Depends,Header,HTTPException
 from pydantic import BaseModel
 from go_hotel.security.deps import consumer_principal,supplier_principal,admin_principal
 from go_hotel.security.service import Principal
-from go_hotel.services.omnichannel_payment import omnichannel_payment_service as svc
+from go_hotel.services.omnichannel_payment import ORDER_TYPES,omnichannel_payment_service as svc
 class P(BaseModel):model_config={'extra':'allow'}
 def call(fn,*a):
  try:return {'data':fn(*a)}
  except ValueError as e:raise HTTPException(409,detail=str(e))
 router=APIRouter(tags=['omnichannel-payment-finance'])
 @router.post('/v1/payments/intents')
-def create(b:P,idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(consumer_principal)):return call(svc.create_intent,b.model_dump(exclude_none=True),idempotency_key,p.user_id)
+def create(b:P,idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(consumer_principal)):
+ body=b.model_dump(exclude_none=True)
+ if not isinstance(body.get('business_type'),str) or body['business_type'] not in ORDER_TYPES:
+  raise HTTPException(409,detail='CONSUMER_AUTHORITATIVE_ORDER_REQUIRED')
+ return call(svc.create_intent,body,idempotency_key,p.user_id)
 @router.post('/v1/payments/intents/{iid}/channel')
 def channel(iid:str,b:P,p:Principal=Depends(consumer_principal)):return call(svc.select_channel,iid,b.model_dump()['channel'],p.user_id,True)
 @router.get('/v1/payments')

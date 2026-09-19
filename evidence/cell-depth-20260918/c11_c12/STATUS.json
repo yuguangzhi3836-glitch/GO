@@ -1,0 +1,115 @@
+{
+  "task_ids": [
+    "C11-DEPTH-20260918-PAYMENT-BOUNDARY",
+    "C12-DEPTH-20260918-IDENTITY-BINDING"
+  ],
+  "scope_status": "LOCAL_SCOPED_PASS_PENDING_INTEGRATION_C14_C13",
+  "truth_class": "ACTIVE_LOCAL_CANDIDATE",
+  "source_commit": "5b8d2b82ac02cafdb4146d8ea033103ba984096d",
+  "base_local_snapshot": "42f3e62da844279cc3569c90eaa58d24a291a4d5",
+  "ancestor_remote_pr": 217,
+  "ancestor_remote_head": "1d1b6b45a5e6e3507bda8c4f3d9ca7b7c8e7175c",
+  "parent_prepared_application_tree": "9206696542000e020601f14233c339cfec6b364c",
+  "local_application_tree": "bf9b62db512f94e4d50d4cc3adfc312fcb8057d5",
+  "tree_note": "Local ancestor includes parent-identified media cache artifact. Only five listed source/test files are the change; integration must apply them to the parent clean tree and issue its own binding.",
+  "changed_files": {
+    "application/src/go_hotel/api/routes/omnichannel_payment.py": "0f13c30435a0939e57647993170cad72c49b1a8b8777c6adb5ba1b0a7f9e83ce",
+    "application/src/go_hotel/security/service.py": "f4e26e54e929706ca276ccec080dd2234a1b48ae9aaf23eb906e6d544d0829e4",
+    "application/src/go_hotel/services/omnichannel_payment.py": "6acba3d3973a91c8a7fa8f55894fa91ea8e7227e253bb7fc71586aa87ac3819f",
+    "application/tests/test_cell_depth_c11_payment_boundary.py": "1d321441aaef1b31c4fa049a24e286886434f5cbe3b7f855154cdf6054597d14",
+    "application/tests/test_cell_depth_c12_identity_binding.py": "96cbaf192a5bd1833b4b34e620a4b627e4ea2c67d37fbbddbc05847d99b1abe5"
+  },
+  "recorded_at": "2026-09-18T16:56:31.396992+00:00",
+  "verification": {
+    "database": "isolated SQLite",
+    "external_services": "not contacted",
+    "command": "APP_ENV=test PYTHONDONTWRITEBYTECODE=1 python -m pytest tests/test_cell_depth_c11_payment_boundary.py tests/test_cell_depth_c12_identity_binding.py tests/test_omnichannel_payment_finance_os.py tests/test_sprint1r_identity_security.py tests/test_depth35_refresh_scope.py tests/test_v70_r3_c04_http_get_zero_write.py tests/payments/test_c11_flight_idempotency_recovery.py tests/test_c11_idempotency_completion_guard.py tests/test_sprint3c_mobility.py tests/test_sprint3d_attractions.py -q -p no:cacheprovider --tb=short --junitxml=../evidence/cell-depth-20260918/c11_c12/verification.xml",
+    "working_directory": "application",
+    "exit_code": 0,
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "119",
+      "time": "23.445",
+      "timestamp": "2026-09-18T12:54:12.920592-04:00",
+      "hostname": "localhost"
+    }
+  },
+  "reproduction": {
+    "source": "unchanged local baseline 42f3e62",
+    "tests": 28,
+    "failures": 27,
+    "passed": 1,
+    "errors": 0,
+    "exit_code": 1,
+    "note": "Preserved pre-fix run. Final suite adds one BFF HTTP denial test and prevents concurrent-test assertion from rendering synthetic token values."
+  },
+  "closed_findings": [
+    {
+      "cell": "C11",
+      "gap": "Non-order idempotency key returned a prior payment despite payer or financial request mismatch",
+      "result": "Compares payer, business identity, payee, operation, amount, currency, channel priority and fallback permission against stored immutable fields"
+    },
+    {
+      "cell": "C11",
+      "gap": "Consumer payment endpoint accepted arbitrary unbound obligations",
+      "result": "Only existing authoritative ORDER_TYPES pass to the existing resolver; server-created non-order obligations remain supported"
+    },
+    {
+      "cell": "C11",
+      "gap": "Signed callback reused event identity with a changed payload and was reported duplicate",
+      "result": "Receipt payload hash must match; timezone-less timestamps fail with a controlled error"
+    },
+    {
+      "cell": "C12",
+      "gap": "SSO username automatically linked an unrelated external subject to an existing privileged local account",
+      "result": "Known provider/subject bindings retain their identity; username collisions require explicit linking and do not mutate or issue sessions"
+    },
+    {
+      "cell": "C12",
+      "gap": "Access and refresh tokens did not verify session ownership",
+      "result": "Session user must match the authenticated subject"
+    },
+    {
+      "cell": "C12",
+      "gap": "Two refresh calls could consume the same active token and both create successors",
+      "result": "Conditional database update consumes once; concurrent SQLite regression proves one usable successor and coherent CSRF"
+    }
+  ],
+  "next_tasks": [
+    {
+      "cell": "C11",
+      "id": "C11-NEXT-POSTGRES-REPLAY",
+      "scope": "Run exact integrated-source payment and callback concurrency contracts on isolated PostgreSQL; no historical PASS transfer"
+    },
+    {
+      "cell": "C11",
+      "id": "C11-NEXT-EXTERNAL-PSP",
+      "scope": "Real PSP evidence and Payment Center discovery remain separate from these existing-contract repairs; live money is not authorized"
+    },
+    {
+      "cell": "C12",
+      "id": "C12-NEXT-ISSUER-IDENTITY-MIGRATION",
+      "scope": "Review immutable issuer+subject persistence and uniqueness migration with existing provider-alias mappings; current callback issuer verification is retained"
+    },
+    {
+      "cell": "C12",
+      "id": "C12-NEXT-POSTGRES-IDP",
+      "scope": "Verify token concurrency on PostgreSQL and independently test the configured real IdP; no live identity-system access performed"
+    },
+    {
+      "cell": "C13/C14",
+      "id": "INDEPENDENT-INTEGRATED-SOURCE-REVIEW",
+      "scope": "Parent integration and independent gate verdicts remain required"
+    }
+  ],
+  "release": {
+    "remote_upload": "NOT_ATTEMPTED",
+    "merge": "NOT_PERFORMED",
+    "deployment": "NOT_PERFORMED",
+    "production": "HOLD",
+    "percent_complete": "NOT_CLAIMED"
+  }
+}

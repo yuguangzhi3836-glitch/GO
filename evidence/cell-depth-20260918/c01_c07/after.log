@@ -1,0 +1,120 @@
+FFFF...................                                                  [100%]
+=================================== FAILURES ===================================
+_ test_api_field_names_require_review_and_keep_mixed_patch_atomic[legal-value0-LEGAL] _
+
+field = 'legal', value = {'company': 'Changed Legal'}, group = 'LEGAL'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+        assert result['mode'] == 'CHANGE_REQUEST'
+        assert result['change_request']['field_group'] == group
+        assert result['change_request']['proposed_value_json'] == body
+        current = svc.graph('c01-owner', prop['property_id'])['property']
+>       assert current == prop
+E       AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}
+E         
+E         Omitting 16 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-18T16:49:43.829190'} != {'updated_at': '2026-09-18T16:49:43.829190+00:00'}
+E         {'created_at': '2026-09-18T16:49:43.829190'} != {'created_at': '2026-09-18T16:49:43.829190+00:00'}
+E         Use -v to get more diff
+
+tests/test_c01_property_change_boundaries.py:32: AssertionError
+_ test_api_field_names_require_review_and_keep_mixed_patch_atomic[address-value1-ADDRESS] _
+
+field = 'address', value = {'city': 'Changed City'}, group = 'ADDRESS'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+        assert result['mode'] == 'CHANGE_REQUEST'
+        assert result['change_request']['field_group'] == group
+        assert result['change_request']['proposed_value_json'] == body
+        current = svc.graph('c01-owner', prop['property_id'])['property']
+>       assert current == prop
+E       AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}
+E         
+E         Omitting 16 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-18T16:49:44.273498'} != {'updated_at': '2026-09-18T16:49:44.273498+00:00'}
+E         {'created_at': '2026-09-18T16:49:44.273498'} != {'created_at': '2026-09-18T16:49:44.273498+00:00'}
+E         Use -v to get more diff
+
+tests/test_c01_property_change_boundaries.py:32: AssertionError
+_ test_api_field_names_require_review_and_keep_mixed_patch_atomic[brand_name-Changed Brand-BRAND] _
+
+field = 'brand_name', value = 'Changed Brand', group = 'BRAND'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+        assert result['mode'] == 'CHANGE_REQUEST'
+        assert result['change_request']['field_group'] == group
+        assert result['change_request']['proposed_value_json'] == body
+        current = svc.graph('c01-owner', prop['property_id'])['property']
+>       assert current == prop
+E       AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}
+E         
+E         Omitting 16 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-18T16:49:44.348186'} != {'updated_at': '2026-09-18T16:49:44.348186+00:00'}
+E         {'created_at': '2026-09-18T16:49:44.348186'} != {'created_at': '2026-09-18T16:49:44.348186+00:00'}
+E         Use -v to get more diff
+
+tests/test_c01_property_change_boundaries.py:32: AssertionError
+_ test_api_field_names_require_review_and_keep_mixed_patch_atomic[group_name-Changed Group-BRAND] _
+
+field = 'group_name', value = 'Changed Group', group = 'BRAND'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+        assert result['mode'] == 'CHANGE_REQUEST'
+        assert result['change_request']['field_group'] == group
+        assert result['change_request']['proposed_value_json'] == body
+        current = svc.graph('c01-owner', prop['property_id'])['property']
+>       assert current == prop
+E       AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}
+E         
+E         Omitting 16 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-18T16:49:44.422852'} != {'updated_at': '2026-09-18T16:49:44.422852+00:00'}
+E         {'created_at': '2026-09-18T16:49:44.422852'} != {'created_at': '2026-09-18T16:49:44.422852+00:00'}
+E         Use -v to get more diff
+
+tests/test_c01_property_change_boundaries.py:32: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_c01_property_change_boundaries.py::test_api_field_names_require_review_and_keep_mixed_patch_atomic[legal-value0-LEGAL]
+FAILED tests/test_c01_property_change_boundaries.py::test_api_field_names_require_review_and_keep_mixed_patch_atomic[address-value1-ADDRESS]
+FAILED tests/test_c01_property_change_boundaries.py::test_api_field_names_require_review_and_keep_mixed_patch_atomic[brand_name-Changed Brand-BRAND]
+FAILED tests/test_c01_property_change_boundaries.py::test_api_field_names_require_review_and_keep_mixed_patch_atomic[group_name-Changed Group-BRAND]
+4 failed, 19 passed in 5.13s

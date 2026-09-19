@@ -1,0 +1,1186 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="35" skipped="0" tests="35" time="8.204" timestamp="2026-09-18T12:59:17.242387-04:00" hostname="localhost"><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[missing_last-CONFIRMED-CONFIRMED]" time="1.782"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'CONFIRMED', fault = 'missing_last'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[missing_last-CONFIRMED-IN_PROGRESS]" time="0.096"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'CONFIRMED', fault = 'missing_last'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[missing_last-FAILED-CONFIRMED]" time="0.090"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'FAILED', fault = 'missing_last'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[missing_last-FAILED-IN_PROGRESS]" time="0.087"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'FAILED', fault = 'missing_last'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[missing_all-CONFIRMED-CONFIRMED]" time="0.082"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'CONFIRMED', fault = 'missing_all'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[missing_all-CONFIRMED-IN_PROGRESS]" time="0.087"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'CONFIRMED', fault = 'missing_all'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[missing_all-FAILED-CONFIRMED]" time="0.081"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'FAILED', fault = 'missing_all'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[missing_all-FAILED-IN_PROGRESS]" time="0.096"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'FAILED', fault = 'missing_all'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[payload_corruption-CONFIRMED-CONFIRMED]" time="0.095"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'CONFIRMED', fault = 'payload_corruption'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[payload_corruption-CONFIRMED-IN_PROGRESS]" time="0.089"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'CONFIRMED', fault = 'payload_corruption'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[payload_corruption-FAILED-CONFIRMED]" time="0.084"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'FAILED', fault = 'payload_corruption'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[payload_corruption-FAILED-IN_PROGRESS]" time="0.079"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'FAILED', fault = 'payload_corruption'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[invalid_phase-CONFIRMED-CONFIRMED]" time="0.078"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'CONFIRMED', fault = 'invalid_phase'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[invalid_phase-CONFIRMED-IN_PROGRESS]" time="0.085"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'CONFIRMED', fault = 'invalid_phase'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[invalid_phase-FAILED-CONFIRMED]" time="0.082"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'FAILED', fault = 'invalid_phase'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[invalid_phase-FAILED-IN_PROGRESS]" time="0.081"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'FAILED', fault = 'invalid_phase'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[contradictory_phase-CONFIRMED-CONFIRMED]" time="0.083"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'CONFIRMED', fault = 'contradictory_phase'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[contradictory_phase-CONFIRMED-IN_PROGRESS]" time="0.088"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'CONFIRMED', fault = 'contradictory_phase'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[contradictory_phase-FAILED-CONFIRMED]" time="0.084"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'FAILED', fault = 'contradictory_phase'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[contradictory_phase-FAILED-IN_PROGRESS]" time="0.093"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'FAILED', fault = 'contradictory_phase'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[foreign_row-CONFIRMED-CONFIRMED]" time="0.085"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'CONFIRMED', fault = 'foreign_row'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[foreign_row-CONFIRMED-IN_PROGRESS]" time="0.094"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'CONFIRMED', fault = 'foreign_row'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[foreign_row-FAILED-CONFIRMED]" time="0.095"><failure message="Failed: DID NOT RAISE ValueError">phase = 'CONFIRMED', state = 'FAILED', fault = 'foreign_row'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_invalid_unknown_evidence_never_restores_or_terminates_rental[foreign_row-FAILED-IN_PROGRESS]" time="0.089"><failure message="Failed: DID NOT RAISE ValueError">phase = 'IN_PROGRESS', state = 'FAILED', fault = 'foreign_row'
+
+    @pytest.mark.parametrize('phase', ['CONFIRMED', 'IN_PROGRESS'])
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('fault', [
+        'missing_last', 'missing_all', 'payload_corruption', 'invalid_phase',
+        'contradictory_phase', 'foreign_row',
+    ])
+    def test_invalid_unknown_evidence_never_restores_or_terminates_rental(phase, state, fault):
+        svc, owner, oid = booked('RENTAL')
+        if phase == 'IN_PROGRESS':
+            svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        episode = 'isolated://rental-unknown'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            last = rows[-1]
+            if fault == 'missing_last':
+                session.delete(last)
+            elif fault == 'missing_all':
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+            elif fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                body = deepcopy(last.evidence_json)
+                body['payload']['previous_status'] = 'IN_PROGRESS' if phase == 'CONFIRMED' else 'CONFIRMED'
+                if fault == 'invalid_phase':
+                    body['payload']['previous_status'] = 'COMPLETED'
+                last.evidence_json = body
+                if fault != 'payload_corruption':
+                    last.evidence_hash = _stable_hash(body)
+                    last.entry_hash = _stable_hash({'evidence_hash': last.evidence_hash,
+                        'previous_hash': last.previous_hash, 'sequence_no': last.sequence_no})
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:54: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_missing_or_older_confirmation_cannot_resolve_current_episode[None-CONFIRMED]" time="0.099"><failure message="Failed: DID NOT RAISE ValueError">state = 'CONFIRMED', episode = None
+
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('episode', [None, '', 'isolated://previous-episode'])
+    def test_missing_or_older_confirmation_cannot_resolve_current_episode(state, episode):
+        svc, owner, oid = booked('RENTAL')
+        first = 'isolated://previous-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', first, 'rental-ops')
+        assert resolve(oid, 'CONFIRMED', first)['status'] == 'CONFIRMED'
+        svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        second = 'isolated://current-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', second, 'rental-ops')
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CONFIRMATION_EPISODE_MISMATCH'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:70: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_missing_or_older_confirmation_cannot_resolve_current_episode[None-FAILED]" time="0.093"><failure message="Failed: DID NOT RAISE ValueError">state = 'FAILED', episode = None
+
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('episode', [None, '', 'isolated://previous-episode'])
+    def test_missing_or_older_confirmation_cannot_resolve_current_episode(state, episode):
+        svc, owner, oid = booked('RENTAL')
+        first = 'isolated://previous-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', first, 'rental-ops')
+        assert resolve(oid, 'CONFIRMED', first)['status'] == 'CONFIRMED'
+        svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        second = 'isolated://current-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', second, 'rental-ops')
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CONFIRMATION_EPISODE_MISMATCH'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:70: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_missing_or_older_confirmation_cannot_resolve_current_episode[-CONFIRMED]" time="0.094"><failure message="Failed: DID NOT RAISE ValueError">state = 'CONFIRMED', episode = ''
+
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('episode', [None, '', 'isolated://previous-episode'])
+    def test_missing_or_older_confirmation_cannot_resolve_current_episode(state, episode):
+        svc, owner, oid = booked('RENTAL')
+        first = 'isolated://previous-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', first, 'rental-ops')
+        assert resolve(oid, 'CONFIRMED', first)['status'] == 'CONFIRMED'
+        svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        second = 'isolated://current-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', second, 'rental-ops')
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CONFIRMATION_EPISODE_MISMATCH'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:70: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_missing_or_older_confirmation_cannot_resolve_current_episode[-FAILED]" time="0.090"><failure message="Failed: DID NOT RAISE ValueError">state = 'FAILED', episode = ''
+
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('episode', [None, '', 'isolated://previous-episode'])
+    def test_missing_or_older_confirmation_cannot_resolve_current_episode(state, episode):
+        svc, owner, oid = booked('RENTAL')
+        first = 'isolated://previous-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', first, 'rental-ops')
+        assert resolve(oid, 'CONFIRMED', first)['status'] == 'CONFIRMED'
+        svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        second = 'isolated://current-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', second, 'rental-ops')
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CONFIRMATION_EPISODE_MISMATCH'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:70: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_missing_or_older_confirmation_cannot_resolve_current_episode[isolated://previous-episode-CONFIRMED]" time="0.090"><failure message="Failed: DID NOT RAISE ValueError">state = 'CONFIRMED', episode = 'isolated://previous-episode'
+
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('episode', [None, '', 'isolated://previous-episode'])
+    def test_missing_or_older_confirmation_cannot_resolve_current_episode(state, episode):
+        svc, owner, oid = booked('RENTAL')
+        first = 'isolated://previous-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', first, 'rental-ops')
+        assert resolve(oid, 'CONFIRMED', first)['status'] == 'CONFIRMED'
+        svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        second = 'isolated://current-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', second, 'rental-ops')
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CONFIRMATION_EPISODE_MISMATCH'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:70: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_missing_or_older_confirmation_cannot_resolve_current_episode[isolated://previous-episode-FAILED]" time="0.098"><failure message="Failed: DID NOT RAISE ValueError">state = 'FAILED', episode = 'isolated://previous-episode'
+
+    @pytest.mark.parametrize('state', ['CONFIRMED', 'FAILED'])
+    @pytest.mark.parametrize('episode', [None, '', 'isolated://previous-episode'])
+    def test_missing_or_older_confirmation_cannot_resolve_current_episode(state, episode):
+        svc, owner, oid = booked('RENTAL')
+        first = 'isolated://previous-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', first, 'rental-ops')
+        assert resolve(oid, 'CONFIRMED', first)['status'] == 'CONFIRMED'
+        svc.fulfill(owner, oid, 'PICKUP', 'isolated://rental-pickup')
+        second = 'isolated://current-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', second, 'rental-ops')
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CONFIRMATION_EPISODE_MISMATCH'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:70: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_resolved_episode_reference_cannot_be_reopened" time="0.086"><failure message="Failed: DID NOT RAISE ValueError">def test_resolved_episode_reference_cannot_be_reopened():
+        svc, owner, oid = booked('RENTAL')
+        episode = 'isolated://stable-rental-episode'
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', episode, 'rental-ops')
+        resolve(oid, 'CONFIRMED', episode)
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_UNKNOWN_EPISODE_REFERENCE_REUSED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:82: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_damaged_history_cannot_open_unknown_episode[foreign_row]" time="0.089"><failure message="Failed: DID NOT RAISE ValueError">fault = 'foreign_row'
+
+    @pytest.mark.parametrize('fault', ['foreign_row', 'missing_all'])
+    def test_damaged_history_cannot_open_unknown_episode(fault):
+        svc, owner, oid = booked('RENTAL')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            if fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:98: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_damaged_history_cannot_open_unknown_episode[missing_all]" time="0.098"><failure message="Failed: DID NOT RAISE ValueError">fault = 'missing_all'
+
+    @pytest.mark.parametrize('fault', ['foreign_row', 'missing_all'])
+    def test_damaged_history_cannot_open_unknown_episode(fault):
+        svc, owner, oid = booked('RENTAL')
+        with SessionLocal.begin() as session:
+            rows = list(session.scalars(select(Evidence).where(
+                Evidence.execution_id == 'rc20:RENTAL:' + oid).order_by(Evidence.sequence_no)))
+            if fault == 'foreign_row':
+                rows[0].execution_item_id = 'other-rental-order'
+            else:
+                session.execute(delete(Evidence).where(Evidence.execution_id == 'rc20:RENTAL:' + oid))
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RENTAL_RECOVERY_EVIDENCE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_unknown_episode_evidence.py:98: Failed</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_concurrent_unknown_open_has_one_winner_and_single_episode" time="0.210"><failure message="AssertionError: assert 'MOBILITY_ILL...TE_TRANSITION' == 'RENTAL_UNKNO..._ALREADY_OPEN'&#10;  &#10;  - RENTAL_UNKNOWN_EPISODE_ALREADY_OPEN&#10;  + MOBILITY_ILLEGAL_STATE_TRANSITION">index = 0
+
+    def open_episode(index):
+        barrier.wait()
+        try:
+&gt;           svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', f'isolated://race-{index}', 'rental-ops')
+
+tests/test_c04_unknown_episode_evidence.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;go_hotel.mobility.rental.service.RentalService object at 0x7f30df99fe00&gt;
+order_id = 'rent_ord_5ccec559a11c444c', state = 'UNKNOWN_EXTERNAL_STATE'
+evidence_reference = 'isolated://race-0', actor = 'rental-ops'
+
+    def admin_external_state(self, order_id: str, state: str, evidence_reference: str, actor: str):
+        if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
+        state = state.upper()
+        if state not in {"UNKNOWN_EXTERNAL_STATE", "CONFIRMED", "FAILED"}:
+            raise ValueError("MOBILITY_EXTERNAL_STATE_INVALID")
+        with transaction() as s:
+            o = s.get(MobilityRentalOrderRow, order_id, with_for_update=True)
+            if not o:
+                raise ValueError("MOBILITY_ORDER_NOT_FOUND")
+            if state == "UNKNOWN_EXTERNAL_STATE":
+                if o.status not in {"CONFIRMED", "IN_PROGRESS"}:
+&gt;                   raise ValueError("MOBILITY_ILLEGAL_STATE_TRANSITION")
+E                   ValueError: MOBILITY_ILLEGAL_STATE_TRANSITION
+
+src/go_hotel/mobility/rental/service.py:209: ValueError
+
+During handling of the above exception, another exception occurred:
+
+    def test_concurrent_unknown_open_has_one_winner_and_single_episode():
+        svc, owner, oid = booked('RENTAL')
+        barrier = Barrier(6)
+    
+        def open_episode(index):
+            barrier.wait()
+            try:
+                svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', f'isolated://race-{index}', 'rental-ops')
+                return index
+            except ValueError as error:
+                assert str(error) == 'RENTAL_UNKNOWN_EPISODE_ALREADY_OPEN'
+                return None
+    
+        with ThreadPoolExecutor(max_workers=6) as pool:
+&gt;           results = list(pool.map(open_episode, range(6)))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_c04_unknown_episode_evidence.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+index = 0
+
+    def open_episode(index):
+        barrier.wait()
+        try:
+            svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', f'isolated://race-{index}', 'rental-ops')
+            return index
+        except ValueError as error:
+&gt;           assert str(error) == 'RENTAL_UNKNOWN_EPISODE_ALREADY_OPEN'
+E           AssertionError: assert 'MOBILITY_ILL...TE_TRANSITION' == 'RENTAL_UNKNO..._ALREADY_OPEN'
+E             
+E             - RENTAL_UNKNOWN_EPISODE_ALREADY_OPEN
+E             + MOBILITY_ILLEGAL_STATE_TRANSITION
+
+tests/test_c04_unknown_episode_evidence.py:113: AssertionError</failure></testcase><testcase classname="tests.test_c04_unknown_episode_evidence" name="test_real_admin_http_preserves_rental_episode_binding" time="1.623"><failure message="AssertionError: {&quot;data&quot;:{&quot;vertical&quot;:&quot;RENTAL&quot;,&quot;order_id&quot;:&quot;rent_ord_3cf0acb0dd77437f&quot;,&quot;status&quot;:&quot;CONFIRMED&quot;,&quot;pickup_location&quot;:&quot;NRT&quot;,&quot;return_location&quot;:&quot;NRT&quot;,&quot;pickup_at&quot;:&quot;2026-10-10T10:00:00+08:00&quot;,&quot;return_at&quot;:&quot;2026-10-13T10:00:00+08:00&quot;,&quot;vehicle_class&quot;:&quot;COMPACT&quot;,&quot;insurance&quot;:{&quot;type&quot;:&quot;BASIC&quot;,&quot;excess_minor&quot;:500000},&quot;mileage&quot;:{&quot;type&quot;:&quot;UNLIMITED&quot;},&quot;deposit_minor&quot;:200000,&quot;total_amount_minor&quot;:126000,&quot;currency&quot;:&quot;CNY&quot;,&quot;drivers&quot;:[{&quot;full_name&quot;:&quot;ISOLATED DRIVER&quot;}],&quot;supplier_reference&quot;:&quot;CONF-rent_ord_3cf0acb0dd77437f&quot;,&quot;payment_deadline_ms&quot;:1789751665251,&quot;unpaid_reservation_state&quot;:&quot;PAYMENT_STARTED&quot;,&quot;external_live&quot;:false}}&#10;assert 200 in {404, 409, 422}&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f30dd133170&gt;
+
+    def test_real_admin_http_preserves_rental_episode_binding(client):
+        svc, owner, oid = booked('RENTAL')
+        identity_service.create_user('c04_recovery_admin', 'local-recovery-admin-pass',
+                                     'GO_ADMIN', None, ['GO_SUPER_ADMIN'])
+        token = identity_service.login('c04_recovery_admin', 'local-recovery-admin-pass',
+                                       expected_actor_type='GO_ADMIN')['access_token']
+        headers = {'Authorization': 'Bearer ' + token, 'X-GO-Actor': 'GO_ADMIN'}
+        path = f'/internal/v1/admin/mobility/orders/{oid}/external-state'
+        opened = client.post(path, headers=headers, json={
+            'state': 'UNKNOWN_EXTERNAL_STATE', 'evidence_reference': 'isolated://http-episode'})
+        assert opened.status_code == 200, opened.text
+        before = svc.get(owner, oid)
+        denied = client.post(path, headers=headers, json={
+            'state': 'CONFIRMED', 'evidence_reference': 'isolated://http-confirm',
+            'confirmation_episode_reference': 'isolated://other-episode'})
+&gt;       assert denied.status_code in {404, 409, 422}, denied.text
+E       AssertionError: {"data":{"vertical":"RENTAL","order_id":"rent_ord_3cf0acb0dd77437f","status":"CONFIRMED","pickup_location":"NRT","return_location":"NRT","pickup_at":"2026-10-10T10:00:00+08:00","return_at":"2026-10-13T10:00:00+08:00","vehicle_class":"COMPACT","insurance":{"type":"BASIC","excess_minor":500000},"mileage":{"type":"UNLIMITED"},"deposit_minor":200000,"total_amount_minor":126000,"currency":"CNY","drivers":[{"full_name":"ISOLATED DRIVER"}],"supplier_reference":"CONF-rent_ord_3cf0acb0dd77437f","payment_deadline_ms":1789751665251,"unpaid_reservation_state":"PAYMENT_STARTED","external_live":false}}
+E       assert 200 in {404, 409, 422}
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_c04_unknown_episode_evidence.py:139: AssertionError</failure></testcase></testsuite></testsuites>

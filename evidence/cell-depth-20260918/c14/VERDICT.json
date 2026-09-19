@@ -1,0 +1,482 @@
+{
+  "schema_version": 1,
+  "review_id": "C14-CELL-DEPTH-20260918-FINAL",
+  "reviewed_at_utc": "2026-09-18T17:19:31.638304+00:00",
+  "verdict": "PASS_SCOPED_LOCAL_CODE_REVIEW",
+  "independent_product_author": false,
+  "scope": "Independent review of this round 41 changed application files (19 product/source and 22 test files) against local prepared PR217 baseline 617823b; exact candidate binding and development evidence integrity. This is not a full audit of every inherited PR217 file or an automated execution-authority approval.",
+  "candidate_sha": "43d62cf6682d4ee93469dace60eb5fe42f894fdb",
+  "application_git_tree": "f6d329352dd8484010036448810a927d5eec4be7",
+  "application_source_sha256": "bd50ea8c91fd9d590840e54c83bdb00f408200fbc8d93cde7ad6d433eb81f166",
+  "application_files": 1441,
+  "fingerprint_algorithm": "SHA256 of UTF-8-byte-sorted tracked application paths, each encoded as path (including application/ prefix) + NUL + file-content SHA256 lowercase hex + LF",
+  "prepared_base_application_tree": "9206696542000e020601f14233c339cfec6b364c",
+  "observed_canonical_main": "dc34ee5cabed7c6e93507d178fdd3a62a426399e",
+  "canonical_main_application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "remote_pr217_readback": {
+    "head": "0cdff19160845b22f3aa9fa5e281413ddd460514",
+    "application_tree": "9206696542000e020601f14233c339cfec6b364c",
+    "draft": true,
+    "merged": false,
+    "original_37_authorized_files_match": true,
+    "source": "Root readback snapshot captured in CONTEXT_SNAPSHOT.json",
+    "uploader_identity": "UNKNOWN",
+    "new_cell_changes_uploaded": false
+  },
+  "checks": [
+    {
+      "cell": "C01",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "Property high-risk legal/address/brand inputs remain review requests; import may change only DRAFT property rows."
+    },
+    {
+      "cell": "C02",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "Durable prebook consumption binds one order, account and passenger payload; expiry cannot create another order on replay."
+    },
+    {
+      "cell": "C03",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "Rail quote creation shares the order lock with execution; sibling quotes are superseded before money preparation."
+    },
+    {
+      "cell": "C04",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "Rental settlement requires the exact durable capture/refund allocation, owner, amount and currency; UNKNOWN recovery requires an intact current episode chain and restores only its evidenced prior phase."
+    },
+    {
+      "cell": "C05",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "Ride recovery includes execution-item ownership, and fleet execution refreshes its adjustment snapshot after acquiring the consistent ride/adjustment locks."
+    },
+    {
+      "cell": "C06",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "Attraction changes enforce the frozen order terms and validity while holding the order lock, and invalidate sibling quotes."
+    },
+    {
+      "cell": "C07",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "Provider nonce comparison is byte-exact; preview publication and disconnect/delete are transactional; imported-row associations are owner/provider/source-bound; account transaction fencing precedes source lifecycle row locks and covers new import rows."
+    },
+    {
+      "cell": "C08",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "Planning and verification failures finalize the existing request audit with bounded failure codes; no new execution permission or model availability is invented."
+    },
+    {
+      "cell": "C09",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "Public endorsements require matching hotel, standard, score visibility, validity window and sealed evidence content; invalid endorsement is withheld while historical audit stays available."
+    },
+    {
+      "cell": "C10",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "A first trusted provider event may supersede a later manual-import timestamp, but account binding, official event deduplication, terminal-state checks and provider servicing ownership remain enforced."
+    },
+    {
+      "cell": "C11",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "Consumer payment creation requires an authoritative owned order; non-consumer replay requires the same request; signed callbacks claim only their channel/event uniqueness key before payment effects and roll back on failure."
+    },
+    {
+      "cell": "C12",
+      "status": "PASS_WITHIN_THIS_REVIEW_SCOPE",
+      "invariant": "SSO display usernames cannot link existing identities; sessions and refresh tokens must bind the same user; refresh consumption is conditional and single-use."
+    }
+  ],
+  "resolved_findings": [
+    {
+      "id": "C14-C07-001",
+      "finding": "Deletion could read facts before a concurrent existing-job commit inserted new facts.",
+      "resolution": "Stable source-job locks now precede fact reads, with compatible connection/delete lock order; account fence also precedes those locks.",
+      "status": "RESOLVED_IN_SCOPED_SOURCE",
+      "fix_commits": [
+        "0a6370cdef1fcd47fcfea3c8cf84ed5582a94c5d",
+        "c318980c5bd6d8c55756c22d8dfeb6046d9ab7db"
+      ]
+    },
+    {
+      "id": "C14-C07-002",
+      "finding": "Untrusted metadata could forge a connection pointer and disconnect another user import.",
+      "origin": "Root discovery, independently confirmed by C14 inspection and Cell reproduction",
+      "resolution": "Reserved server metadata is rejected from user import; related import reads enforce owner, provider, source type, reverse connection pointer and source fingerprint before any write.",
+      "status": "RESOLVED_IN_SCOPED_SOURCE",
+      "fix_commits": [
+        "08791c00ad8aaed7c0fc65f0f8019d9acef92f67"
+      ]
+    },
+    {
+      "id": "C14-C07-003",
+      "finding": "Row locks on existing jobs alone do not fence same-source new-row insertion.",
+      "resolution": "A parameterized account-scoped PostgreSQL transaction advisory lock is taken before row locks by the listed source lifecycle entrypoints; borrowed sessions retain that same account lock. SQLite retains its immediate writer transaction.",
+      "status": "SOURCE_GAP_CLOSED_REAL_POSTGRES_CONTENTION_NOT_RUN",
+      "fix_commits": [
+        "c318980c5bd6d8c55756c22d8dfeb6046d9ab7db"
+      ]
+    },
+    {
+      "id": "C04-UNKNOWN-FOLLOWUP",
+      "origin": "C04/root discovery, C14 follow-up review",
+      "resolution": "Missing/corrupt/stale UNKNOWN evidence no longer falls back to CONFIRMED; both successful and failed resolutions require current episode binding.",
+      "status": "RESOLVED_IN_SCOPED_SOURCE"
+    },
+    {
+      "id": "C11-CALLBACK-RACE",
+      "origin": "Independent C13 reproduction, C14 follow-up review",
+      "resolution": "The exact callback event is claimed atomically before reading/mutating payment state; duplicate payloads are compared; invalid attempt or unrelated integrity errors roll back the uncommitted receipt and effects.",
+      "status": "RESOLVED_IN_SCOPED_SOURCE_PENDING_C13_RETEST"
+    }
+  ],
+  "unresolved_blocking_findings_in_reviewed_delta": [],
+  "binding_verification": {
+    "application_git_blobs_match_working_bytes": true,
+    "tracked_application_dirty": false,
+    "untracked_non_generated_application_files": 0,
+    "committed_development_evidence_files": 111,
+    "checksum_manifests": 11,
+    "checksum_members_verified": 100,
+    "checksum_mismatches": 0,
+    "untracked_context_snapshots": 4
+  },
+  "change_classes": [
+    "PRODUCT_FIX",
+    "TEST_ONLY",
+    "DOCUMENTATION"
+  ],
+  "no_new_change_classes": [
+    "MIGRATION",
+    "TOPOLOGY",
+    "CONTROL_PLANE",
+    "INFRASTRUCTURE"
+  ],
+  "review_method": [
+    "Read repository/application operating instructions and current-state constraints.",
+    "Inspected all changed product code and related invariant tests, plus inherited call paths needed to check ownership/authority.",
+    "Used PostgreSQL best-practices guidance for lock ordering and transaction scope.",
+    "Independently bound all tracked application bytes to Git blobs and verified all scoped checksum manifests.",
+    "No product code or tests were authored by C14; no duplicate whole-suite execution was substituted for independent C13."
+  ],
+  "remaining_gates": [
+    "C13 independent final combined-candidate execution and callback-race recheck after this verdict.",
+    "Real PostgreSQL contention and rollback testing for this exact candidate, including account advisory locks and callback event claims; SQLite/SQL capture is not PostgreSQL acceptance.",
+    "Inherited migration 0138 upgrade/preservation/downgrade verification on the intended PostgreSQL environment; this round adds no migration.",
+    "Hosted CI and exact remote candidate publication/readback for the new Cell delta.",
+    "Real provider/OTA account authorization, inventory and receipt provenance; real payment provider/bank evidence.",
+    "Full consumer/supplier/admin visual acceptance and physical-device acceptance.",
+    "An accepted complete requirements denominator and fulfillment of all remaining gates before any 100% product-completion claim."
+  ],
+  "gate_order": {
+    "C14": "PASS_SCOPED_LOCAL_CODE_REVIEW",
+    "C13": "PENDING_FINAL_INDEPENDENT_EXECUTION"
+  },
+  "authority": {
+    "merge": "NOT_AUTHORIZED",
+    "deploy": "NOT_AUTHORIZED",
+    "production": "HOLD",
+    "new_money_truth": "NOT_CREATED",
+    "runtime_mutation_performed": false,
+    "remote_write_performed_by_reviewer": false,
+    "historical_pass_transferred": false,
+    "global_completion": "NOT_PROVEN"
+  },
+  "evidence_files": {
+    "SOURCE_BINDING.json": "2c54fba78699a6d713bb99cd0558215d0752842fb29a01dbe8b7ddab02aad7cb",
+    "APPLICATION_MANIFEST.json": "98ac0d065956952c5a30b47a475a02e6bdf1e7778e26ad7416ed07ce9ef0e088",
+    "EVIDENCE_MANIFEST.json": "463d84196db68126d91a40c4d4de9e4f9d39d209e44d16bfdfa04307da127c23",
+    "CONTEXT_SNAPSHOT.json": "f6cdd8b54459b17ef1aeff67c1e440f901194c3c54a2d5b4b189794f59905f89",
+    "initial-evidence-check.json": "e7411a67cfe69fc105f84aa9ada233f670df69343c8ab6552e138d4f7a304eb4",
+    "findings-in-progress.json": "babd9337e7682d2085a6217fa5ce309ef0f437061e33693fc5206690621f19c0",
+    "bind_candidate.py": "462cadc083f02df3b0500359079b0efdcb01be63842cbd3fd0bc4ea0caecb514"
+  },
+  "changed_application_manifest": [
+    {
+      "path": "application/src/go_hotel/api/routes/flight.py",
+      "mode": "100644",
+      "git_blob": "3c240667e04ace8556a262397a6163bc2ef72924",
+      "sha256": "2d1ccac045387c3d24599b06097c36c6653a9e954815e6dae960df26d773e551",
+      "bytes": 9005
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/omnichannel_payment.py",
+      "mode": "100644",
+      "git_blob": "93e48e47a090d5677d26d66886ff21de3d0e79cf",
+      "sha256": "0f13c30435a0939e57647993170cad72c49b1a8b8777c6adb5ba1b0a7f9e83ce",
+      "bytes": 3068
+    },
+    {
+      "path": "application/src/go_hotel/attractions/service.py",
+      "mode": "100644",
+      "git_blob": "8e567363eff60d34ad3e204944f5c954986362ff",
+      "sha256": "c1b626f5448ac5dffd376f044067125494d8fc6bc4ea15e859ee37e179749288",
+      "bytes": 18648
+    },
+    {
+      "path": "application/src/go_hotel/flight/service.py",
+      "mode": "100644",
+      "git_blob": "9e850afaf6c314994335ae022ac3e1c1773e7c52",
+      "sha256": "b2589272632845c705193ae10078bc5041aafe1cc63e21acbaf9cd9c850eef69",
+      "bytes": 24944
+    },
+    {
+      "path": "application/src/go_hotel/go_ai/service.py",
+      "mode": "100644",
+      "git_blob": "8c9f18226b0774abb119c6d7dba823e33e45214f",
+      "sha256": "4af44851fc420608365cfb298a94a3bb5289c9a985c80e903178d5b04d22d4ff",
+      "bytes": 35309
+    },
+    {
+      "path": "application/src/go_hotel/judgment/service.py",
+      "mode": "100644",
+      "git_blob": "e2e577a0c0a18d022655805cdd4255e11cb969cb",
+      "sha256": "87487b59616395f77400d4c2b9e46abbeef67f51736b2102456ddfdaf7c44b0e",
+      "bytes": 23794
+    },
+    {
+      "path": "application/src/go_hotel/mobility/rental/changes.py",
+      "mode": "100644",
+      "git_blob": "76898b88e65007962227f8dca5668b3eac0f3cda",
+      "sha256": "5bc7e33d4859550a785101ce45ae112716ef88a023da4c4c791c059cd7d607eb",
+      "bytes": 10546
+    },
+    {
+      "path": "application/src/go_hotel/mobility/rental/recovery_evidence.py",
+      "mode": "100644",
+      "git_blob": "73118730cb30b47209e60147dede3f9392dc56e7",
+      "sha256": "b6a8d3bd5a481a9661e97ff95a8773fe0f66047ab1c2cd514e7f80be9c6b90f5",
+      "bytes": 3333
+    },
+    {
+      "path": "application/src/go_hotel/mobility/rental/service.py",
+      "mode": "100644",
+      "git_blob": "04a24ad2e46f77b0b8483823a90994b2d859ade2",
+      "sha256": "efcdc6242d0d4d1eae4cf8562df3bc34e4bce0e027a8ce5832829f16a3677f0d",
+      "bytes": 16265
+    },
+    {
+      "path": "application/src/go_hotel/mobility/ride/flight_sync.py",
+      "mode": "100644",
+      "git_blob": "4ebcd86769dee83f98c2a3c3965460c59b9e98f8",
+      "sha256": "fb23864060306af4d07214df1225e61ab523d62c6726869b3ac1e316572c8de3",
+      "bytes": 18528
+    },
+    {
+      "path": "application/src/go_hotel/mobility/ride/recovery_evidence.py",
+      "mode": "100644",
+      "git_blob": "3438857d17cb982b7ea36e2ca81ce8805a718e68",
+      "sha256": "9ddf87ca4a0cb8482f8d910074cda5f7419784c56955217b9771be478cae89e1",
+      "bytes": 4524
+    },
+    {
+      "path": "application/src/go_hotel/mobility/service.py",
+      "mode": "100644",
+      "git_blob": "bf4f607f762ae9e308d84b4babb4d146a4392efe",
+      "sha256": "5118f6998ecafedab93469e7e89cb23a9449dbea6de4f33ef450518201bdd4f8",
+      "bytes": 2747
+    },
+    {
+      "path": "application/src/go_hotel/rail/service.py",
+      "mode": "100644",
+      "git_blob": "77e78b1ab9f09767d4fd6a128d01524b6b8f88da",
+      "sha256": "11b3804d838b8c68e1f260a8f8a2c5080e479a02a4ae5e65b0b9598fecfd8da4",
+      "bytes": 18749
+    },
+    {
+      "path": "application/src/go_hotel/security/service.py",
+      "mode": "100644",
+      "git_blob": "b0089a04187e8184e7f538f0747125defc01d9a0",
+      "sha256": "f4e26e54e929706ca276ccec080dd2234a1b48ae9aaf23eb906e6d544d0829e4",
+      "bytes": 16648
+    },
+    {
+      "path": "application/src/go_hotel/services/consumer_unified_lifecycle.py",
+      "mode": "100644",
+      "git_blob": "dd9ea7925d21aacad56d82030004c50b82f5d0bc",
+      "sha256": "ecc9a32f2b49b59cc3f93eeb82881b0275515c0436b3a91ba4508bd00c103348",
+      "bytes": 13321
+    },
+    {
+      "path": "application/src/go_hotel/services/hotel_partner_core.py",
+      "mode": "100644",
+      "git_blob": "8f2f41e0c04b566878d23d3b0227a0e4f0bdf8b2",
+      "sha256": "de3796fe5e5f9886d627b20c3e8ea57392b40341e51d00ae77207fea69c6528c",
+      "bytes": 33131
+    },
+    {
+      "path": "application/src/go_hotel/services/omnichannel_payment.py",
+      "mode": "100644",
+      "git_blob": "d791ce82d0d10b4b1c2e2651195c7b889a965ac1",
+      "sha256": "d967f617252f4d5c6f81073da39468aedcb4408d27e41a89012544e0bacffa21",
+      "bytes": 21559
+    },
+    {
+      "path": "application/src/go_hotel/services/personal_travel_vault.py",
+      "mode": "100644",
+      "git_blob": "783deac12ae7608c8b5a6642a6fa059f61491f04",
+      "sha256": "575ffe8719689c4c5feb558a2445cde2f78f454a56febead7f6b6860046d76c7",
+      "bytes": 65258
+    },
+    {
+      "path": "application/src/go_hotel/services/personal_vault_management.py",
+      "mode": "100644",
+      "git_blob": "3b745ca35b0b25acf9096780f29d6f350f377500",
+      "sha256": "81f5e7e1fe8d73dc9f2321a2ba3f58a6691283553eae3f66fc60faaa0becfe98",
+      "bytes": 18695
+    },
+    {
+      "path": "application/tests/flight/test_c02_prebook_consumption.py",
+      "mode": "100644",
+      "git_blob": "77ed5408ddc0ccad5b1e0588bfc3d8579d663fcc",
+      "sha256": "6c895c029e8edddb015aa163a097100c54ef9a8f7e4b1256c336e307f3a06d02",
+      "bytes": 4440
+    },
+    {
+      "path": "application/tests/flight/test_c02_three_end_change_quote.py",
+      "mode": "100644",
+      "git_blob": "e115ab76e974df379f2997329e504be4507c5718",
+      "sha256": "12988bbdfd4b6c3f3f464ff65ced75280724a5b436e2cea3bc6694ff948bb16e",
+      "bytes": 3168
+    },
+    {
+      "path": "application/tests/go_ai/test_c08_planning_verification_failures.py",
+      "mode": "100644",
+      "git_blob": "b086dff2b6532db3aa2df3a30c5adaa830bbfe0e",
+      "sha256": "4327f60cb421ade508accc53a70444c1aaa3a425eaaf4506ca0318eccc1656ca",
+      "bytes": 3228
+    },
+    {
+      "path": "application/tests/judgment/test_cell_depth_c09_public_binding.py",
+      "mode": "100644",
+      "git_blob": "ef96b67edd0a43f5fff7e86e7e5fde5600254612",
+      "sha256": "3e070e7c671f7ed36ac2c4b224ba1fdf57d697b3d097a04464d711799c2d6a61",
+      "bytes": 6485
+    },
+    {
+      "path": "application/tests/test_c01_property_change_boundaries.py",
+      "mode": "100644",
+      "git_blob": "13689c830b42cfeb7e72daaef0ad133ae0904928",
+      "sha256": "ee4dc579db3fd7b71b7d6531fd6929003e4512f6b7af2cb8fe19e78d0167e369",
+      "bytes": 3116
+    },
+    {
+      "path": "application/tests/test_c03_change_quote_supersession.py",
+      "mode": "100644",
+      "git_blob": "4e6fa3936bd80fd5eaae48e1c8d2f4c5057f882b",
+      "sha256": "d68ed58623eaeb834979f2a9004892e6b9a4c8857207a18fbb4c0a0885229ca1",
+      "bytes": 4091
+    },
+    {
+      "path": "application/tests/test_c04_change_capture_receipts.py",
+      "mode": "100644",
+      "git_blob": "92abc3b99db7e7c9c1e732828953e0acac773c64",
+      "sha256": "3ddc9050d8e74d69c1231ca672da70c7c445ecab12076863eb394679457dcce9",
+      "bytes": 4917
+    },
+    {
+      "path": "application/tests/test_c04_change_refund_receipts.py",
+      "mode": "100644",
+      "git_blob": "9ef0b1de8d1b5b6a57ea0267480e6ac91691f8d3",
+      "sha256": "f846faa0e9a3632174b170af0b4e6ac29465aba36333a11a69b531265c529d61",
+      "bytes": 3896
+    },
+    {
+      "path": "application/tests/test_c04_unknown_episode_evidence.py",
+      "mode": "100644",
+      "git_blob": "ca44e2e81e6b72fad85d1b102de2cbea7f0f706d",
+      "sha256": "f6ede0d12ac4dfe7f4fd2067f66c000bb8f46761dd331ce22c053b6f5e6d1c89",
+      "bytes": 7476
+    },
+    {
+      "path": "application/tests/test_c05_fleet_stale_snapshot.py",
+      "mode": "100644",
+      "git_blob": "8e619a54e815e20cb3f9e153a30543cf32a9bdb4",
+      "sha256": "a1495207bc71b8f620bad79c832d3f3af8c7627274ff9ad892d7bf1f6d60c099",
+      "bytes": 4534
+    },
+    {
+      "path": "application/tests/test_c07_account_transaction_fence.py",
+      "mode": "100644",
+      "git_blob": "c7892e0d8d7cbbd2c6d88ea6b0ce584be7f111a7",
+      "sha256": "dc6fb560a2a9c93c4b0a0cb129eff243dfe5a524ade9d99a42a6f8716f1facd2",
+      "bytes": 8089
+    },
+    {
+      "path": "application/tests/test_c07_connection_metadata_isolation.py",
+      "mode": "100644",
+      "git_blob": "b5713f3d715c132675489f8f61e45a332e1e758f",
+      "sha256": "eb62c8e56de9e3554e3684ecf6d331f62c611470775a460845d8d55e892704a7",
+      "bytes": 3854
+    },
+    {
+      "path": "application/tests/test_c07_connection_transaction_boundaries.py",
+      "mode": "100644",
+      "git_blob": "582f41ce129253dc51144b0fe88abb3f3f561738",
+      "sha256": "6f5a6eaf5af030cf1c2aacb9c14c4fd6f78b26e5e244afe10a72b6427e98fef0",
+      "bytes": 6499
+    },
+    {
+      "path": "application/tests/test_c07_source_revocation_locking.py",
+      "mode": "100644",
+      "git_blob": "40cc2e45bf2b394bf662a93f4b3687b7b70e97d5",
+      "sha256": "b5415bce0feced6837720038379dc7a10d605a5ff02cd9c96aa77fd511f98be3",
+      "bytes": 6078
+    },
+    {
+      "path": "application/tests/test_c10_external_verification_precedence.py",
+      "mode": "100644",
+      "git_blob": "8581cc95e8a9d84eb5f777b50bda8a315ff80c8a",
+      "sha256": "a3bef4ba1681a131fabf0347cfee7913a623d2c973a013835d2996ee7e442256",
+      "bytes": 4968
+    },
+    {
+      "path": "application/tests/test_cell_depth_c06_change_quote_binding.py",
+      "mode": "100644",
+      "git_blob": "647f66f2d10443f72bc50c9ddf7bad360f1fd7ff",
+      "sha256": "0e588cd736cd3f5e53bd4cc00657f5b7e4abe0887fc4472c5578cc221558795a",
+      "bytes": 2976
+    },
+    {
+      "path": "application/tests/test_cell_depth_c11_callback_races.py",
+      "mode": "100644",
+      "git_blob": "013c258dfb3823171868497a7de6ca854779dc54",
+      "sha256": "1652bfac073d3428a9044f2d6fa344206c80e40ed1edde76c93c7b1a99e482ed",
+      "bytes": 8134
+    },
+    {
+      "path": "application/tests/test_cell_depth_c11_payment_boundary.py",
+      "mode": "100644",
+      "git_blob": "e3e8472754ffbedc28d4fbd4a92670e926378d73",
+      "sha256": "1d321441aaef1b31c4fa049a24e286886434f5cbe3b7f855154cdf6054597d14",
+      "bytes": 5231
+    },
+    {
+      "path": "application/tests/test_cell_depth_c12_identity_binding.py",
+      "mode": "100644",
+      "git_blob": "55c79cb669eec6bf16d88b2d0f5d1d60e3c53dd3",
+      "sha256": "96cbaf192a5bd1833b4b34e620a4b627e4ea2c67d37fbbddbc05847d99b1abe5",
+      "bytes": 5934
+    },
+    {
+      "path": "application/tests/test_rc20_2_all_b_to_a.py",
+      "mode": "100644",
+      "git_blob": "3f8fdc92ba644242ce42d876ffb39da8902e4693",
+      "sha256": "4facb9915b736721a4327772a2d83e1c38d6a939fca21cdba7906ddcc735e315",
+      "bytes": 10914
+    },
+    {
+      "path": "application/tests/test_v70_next_c05_recovery_evidence.py",
+      "mode": "100644",
+      "git_blob": "b2e0e6467a37bccf5a38ccdfbcfad34dcbb15d14",
+      "sha256": "3ae014806dd283ecf79a0bc83cdbfc5f027c1abc08356443f3cd3fa177b44145",
+      "bytes": 3251
+    },
+    {
+      "path": "application/tests/test_v70_r3_c04_http_get_zero_write.py",
+      "mode": "100644",
+      "git_blob": "d4139cf1b2e2cdadb63b20ca337109f9f5b0ac32",
+      "sha256": "713a66fabd87e6748ceb8e1e5a9b6f33f6c11a95c13f079703189ace4861b19a",
+      "bytes": 4285
+    }
+  ],
+  "next_task": "Run independent C13 against this exact SHA/tree/fingerprint; any product change invalidates this scoped verdict and requires a new binding/review."
+}

@@ -1,0 +1,60 @@
+{
+  "task_id": "C11-DEPTH-20260918-C13-CALLBACK-RACE",
+  "status": "LOCAL_SCOPED_PASS_PENDING_INDEPENDENT_REVIEW",
+  "source_commit": "8e9e645e9efdc0ea4b012cb58236969354c1058e",
+  "base_commit": "67a2300e1c9bbfd0306d89307926b7f3f9e35ec0",
+  "changed_files": {
+    "application/src/go_hotel/services/omnichannel_payment.py": "d967f617252f4d5c6f81073da39468aedcb4408d27e41a89012544e0bacffa21",
+    "application/tests/test_cell_depth_c11_callback_races.py": "1652bfac073d3428a9044f2d6fa344206c80e40ed1edde76c93c7b1a99e482ed"
+  },
+  "discovery": "Independent C13 reproduced concurrent same signed event causing one success and one receipt-unique IntegrityError.",
+  "reproduction": {
+    "tests": 7,
+    "failures": 6,
+    "passed": 1,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 1
+  },
+  "intermediate_verification": {
+    "tests": 99,
+    "failures": 0,
+    "skipped": 0,
+    "note": "Pre-final ordering; retained as intermediate history only."
+  },
+  "final_verification": {
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "101",
+      "time": "20.457",
+      "timestamp": "2026-09-18T13:05:32.312749-04:00",
+      "hostname": "localhost"
+    },
+    "exit_code": 0,
+    "database": "isolated SQLite",
+    "new_tests": 9,
+    "command": "APP_ENV=test PYTHONDONTWRITEBYTECODE=1 python -m pytest tests/test_cell_depth_c11_callback_races.py tests/test_cell_depth_c11_payment_boundary.py tests/test_omnichannel_payment_finance_os.py tests/test_c11_idempotency_completion_guard.py tests/payments/test_c11_flight_idempotency_recovery.py tests/test_sprint3c_mobility.py tests/test_sprint3d_attractions.py -q -p no:cacheprovider --tb=short --junitxml=../evidence/cell-depth-20260918/c11_c12/callback-race/final.xml",
+    "working_directory": "application"
+  },
+  "fix": "Atomically claim Receipt using INSERT ON CONFLICT(channel, external_event_id) DO NOTHING RETURNING before reading/mutating payment state. Conflicting claims re-read the committed receipt and compare the full payload hash. No generic IntegrityError is caught; unrelated constraint failures roll back the claim and state changes.",
+  "coverage": [
+    "Both sessions first observe no receipt; same successful/failed/pending callback gives one transition and one safe duplicate.",
+    "Same event with changed state/operation/another attempt gives one success and one payload mismatch, with exactly one receipt and no second payment transition.",
+    "Different events cannot overwrite terminal state on the same attempt.",
+    "Unrelated external-operation uniqueness violation remains IntegrityError and rolls back the receipt; a corrected retry can succeed.",
+    "Invalid attempt rolls back the event claim and leaves no receipt."
+  ],
+  "instrumentation": "The synchronization barrier applies only to each thread first receipt read. Conflict rereads are intentionally not blocked; initial race scheduling is preserved.",
+  "next_task": "Independent C13 rerun against integrated exact source; PostgreSQL concurrent callback acceptance remains unexecuted.",
+  "limitations": [
+    "No hosted CI",
+    "No real PSP",
+    "No database migration",
+    "No remote publication",
+    "No merge or deployment",
+    "Not a claim of C11 or overall 100% completion"
+  ]
+}

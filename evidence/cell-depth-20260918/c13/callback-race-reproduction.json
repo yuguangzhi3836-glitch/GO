@@ -1,0 +1,21 @@
+{
+  "scope": "Local isolated SQLite; no real provider calls",
+  "outcomes": [
+    {
+      "ok": false,
+      "exception": "IntegrityError",
+      "message": "(sqlite3.IntegrityError) UNIQUE constraint failed: omnichannel_webhook_receipt.channel, omnichannel_webhook_receipt.external_event_id"
+    },
+    {
+      "ok": true,
+      "duplicate": false
+    }
+  ],
+  "receipt_count": 1,
+  "expected": "Both calls succeed; exactly one duplicate and one receipt",
+  "reproduced": true,
+  "source_commit": "b2ab33a5df337579d4a95c62be43e72da33c3b64",
+  "application_tree": "f1f143ff184660498613af9233abbec1beab8f48",
+  "source_file_sha256": "6acba3d3973a91c8a7fa8f55894fa91ea8e7227e253bb7fc71586aa87ac3819f",
+  "script_sha256": "cbc3f123fd55a4f22864e604a102dae5a26ca66b737e92878319a55b6c06af53"
+}

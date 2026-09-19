@@ -1,0 +1,176 @@
+{
+  "cwd_relative_to_repo": "application",
+  "environment": {
+    "APP_ENV": "test"
+  },
+  "test_files": [
+    "tests/test_cell_depth_c06_change_quote_binding.py",
+    "tests/judgment/test_cell_depth_c09_public_binding.py",
+    "tests/test_next_depth_c06_supplier_validity.py",
+    "tests/test_depth26_attraction_terms.py",
+    "tests/test_depth20_attraction_contract.py",
+    "tests/test_sprint3d_attractions.py",
+    "tests/test_sprint1p_judgment_runtime.py",
+    "tests/judgment/test_next_depth_concurrent_judgment.py",
+    "tests/judgment/test_round2_evidence_authority.py",
+    "tests/test_wave03_c07_c09_authority_contract.py"
+  ],
+  "final_command": [
+    "python",
+    "-m",
+    "pytest",
+    "tests/test_cell_depth_c06_change_quote_binding.py",
+    "tests/judgment/test_cell_depth_c09_public_binding.py",
+    "tests/test_next_depth_c06_supplier_validity.py",
+    "tests/test_depth26_attraction_terms.py",
+    "tests/test_depth20_attraction_contract.py",
+    "tests/test_sprint3d_attractions.py",
+    "tests/test_sprint1p_judgment_runtime.py",
+    "tests/judgment/test_next_depth_concurrent_judgment.py",
+    "tests/judgment/test_round2_evidence_authority.py",
+    "tests/test_wave03_c07_c09_authority_contract.py",
+    "-q",
+    "-p",
+    "no:cacheprovider"
+  ],
+  "runs": [
+    {
+      "name": "before",
+      "cwd": ".",
+      "test_files": [
+        "application/tests/test_cell_depth_c06_change_quote_binding.py",
+        "application/tests/judgment/test_cell_depth_c09_public_binding.py"
+      ],
+      "result": "11 failed, 1 passed before source repair; pytest exit not separately captured because shell printed log afterward"
+    },
+    {
+      "name": "focused",
+      "cwd": ".",
+      "test_files": [
+        "application/tests/test_cell_depth_c06_change_quote_binding.py",
+        "application/tests/judgment/test_cell_depth_c09_public_binding.py"
+      ],
+      "exit_code": 0,
+      "result": "12 passed"
+    },
+    {
+      "name": "collection-regression",
+      "cwd": ".",
+      "test_files": [
+        "application/tests/test_cell_depth_c06_change_quote_binding.py",
+        "application/tests/judgment/test_cell_depth_c09_public_binding.py",
+        "application/tests/test_next_depth_c06_supplier_validity.py",
+        "application/tests/test_depth26_attraction_terms.py",
+        "application/tests/test_depth20_attraction_contract.py",
+        "application/tests/test_sprint3d_attractions.py",
+        "application/tests/test_sprint1p_judgment_runtime.py",
+        "application/tests/judgment/test_next_depth_concurrent_judgment.py",
+        "application/tests/judgment/test_round2_evidence_authority.py",
+        "application/tests/test_wave03_c07_c09_authority_contract.py"
+      ],
+      "exit_code": 2,
+      "result": "2 package-import collection errors; corrected cwd to application without source changes"
+    },
+    {
+      "name": "regression",
+      "cwd": "application",
+      "test_files": [
+        "tests/test_cell_depth_c06_change_quote_binding.py",
+        "tests/judgment/test_cell_depth_c09_public_binding.py",
+        "tests/test_next_depth_c06_supplier_validity.py",
+        "tests/test_depth26_attraction_terms.py",
+        "tests/test_depth20_attraction_contract.py",
+        "tests/test_sprint3d_attractions.py",
+        "tests/test_sprint1p_judgment_runtime.py",
+        "tests/judgment/test_next_depth_concurrent_judgment.py",
+        "tests/judgment/test_round2_evidence_authority.py",
+        "tests/test_wave03_c07_c09_authority_contract.py"
+      ],
+      "exit_code": 0,
+      "result": "148 passed, 0 skipped"
+    },
+    {
+      "name": "fixture-error-focused",
+      "cwd": "application",
+      "test_files": [
+        "tests/test_cell_depth_c06_change_quote_binding.py",
+        "tests/judgment/test_cell_depth_c09_public_binding.py"
+      ],
+      "exit_code": 1,
+      "result": "16 passed, 1 test fixture failure: identical standard content hash violates unique constraint; fixture corrected to create changed standard"
+    },
+    {
+      "name": "final-focused",
+      "cwd": "application",
+      "test_files": [
+        "tests/test_cell_depth_c06_change_quote_binding.py",
+        "tests/judgment/test_cell_depth_c09_public_binding.py"
+      ],
+      "exit_code": 0,
+      "result": "17 passed, 0 skipped"
+    }
+  ],
+  "junit_summaries": {
+    "before.xml": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "11",
+      "skipped": "0",
+      "tests": "12",
+      "time": "4.930",
+      "timestamp": "2026-09-18T12:48:24.722233-04:00",
+      "hostname": "localhost"
+    },
+    "collection-regression.xml": {
+      "name": "pytest",
+      "errors": "2",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "2",
+      "time": "1.899",
+      "timestamp": "2026-09-18T12:50:38.782377-04:00",
+      "hostname": "localhost"
+    },
+    "final-focused.xml": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "17",
+      "time": "6.192",
+      "timestamp": "2026-09-18T12:54:01.908471-04:00",
+      "hostname": "localhost"
+    },
+    "fixture-error-focused.xml": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "1",
+      "skipped": "0",
+      "tests": "17",
+      "time": "6.746",
+      "timestamp": "2026-09-18T12:53:08.147933-04:00",
+      "hostname": "localhost"
+    },
+    "focused.xml": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "12",
+      "time": "4.957",
+      "timestamp": "2026-09-18T12:49:41.806688-04:00",
+      "hostname": "localhost"
+    },
+    "regression.xml": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "148",
+      "time": "18.883",
+      "timestamp": "2026-09-18T12:51:21.597939-04:00",
+      "hostname": "localhost"
+    }
+  },
+  "interpretation": "Final product source passed 148 affected regression cases. Only two additional test cases and a fixture correction followed; final focused run passed all 17 new cases. These runs cover 150 distinct tests, not 165 distinct tests."
+}

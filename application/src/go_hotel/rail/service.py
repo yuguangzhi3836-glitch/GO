@@ -144,8 +144,8 @@ class RailService:
         try:
             if date.fromisoformat(new_travel_date).isoformat()!=new_travel_date:raise ValueError()
         except (ValueError,TypeError):raise ValueError('RAIL_DATE_INVALID') from None
-        with SessionLocal.begin() as s:
-            o=s.get(RailOrderRow,order_id)
+        with transaction(SessionLocal) as s:
+            o=s.get(RailOrderRow,order_id,with_for_update=True)
             if not o or o.account_id!=account_id or o.status!="TICKETED": raise ValueError("RAIL_ORDER_NOT_CHANGEABLE")
             current=o.current_journey or {}; seat=new_seat_class or current.get("seat_class","SECOND_CLASS")
             count=contracts.party_count(len(o.passengers or []))
@@ -166,6 +166,13 @@ class RailService:
                 target=capacity.rail_resource(dict(o.current_journey,travel_date=q.new_travel_date,train_no=q.new_train_no,seat_class=q.new_seat_class))
                 capacity.prepare_change_in(s,'RAIL',order_id,quote_id,target,capacity.RAIL_LIMITS[q.new_seat_class],len(o.passengers))
                 q.status='PREPARING';o.status='CHANGE_PENDING';o.updated_at=now()
+                # Every other quote was calculated from the old journey. Once
+                # one choice starts, neither success nor failure can revive it.
+                for other in s.scalars(select(RailChangeQuoteRow).where(
+                        RailChangeQuoteRow.order_id==order_id,
+                        RailChangeQuoteRow.quote_id!=quote_id,
+                        RailChangeQuoteRow.status=='QUOTED')).all():
+                    other.status='SUPERSEDED'
                 append_vertical_evidence(s,'RAIL',order_id,'CHANGE_PAYMENT_PREPARING',o.status,{'quote_id':quote_id})
                 project_vertical_lifecycle(s,'RAIL',o,'change-preparing:'+quote_id,facts={'quote_id':quote_id})
             due=q.total_due_minor

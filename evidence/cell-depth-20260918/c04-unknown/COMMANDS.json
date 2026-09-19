@@ -1,0 +1,120 @@
+{
+  "runs": [
+    {
+      "name": "red",
+      "argv": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_c04_unknown_episode_evidence.py",
+        "-q",
+        "--junitxml=../evidence/cell-depth-20260918/c04-unknown/red.xml"
+      ],
+      "cwd": "/workspace/scratch/a682af655fba/cell-c04_c05/application",
+      "env": {
+        "APP_ENV": "test"
+      },
+      "exit_code": 1,
+      "phase": "Before UNKNOWN repair, source parent8c59be1. 34 unsafe behavior assertions plus one specific concurrent-loser error-contract assertion fail.",
+      "stdout_stderr": "red.log",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "35",
+        "skipped": "0",
+        "tests": "35",
+        "time": "8.204",
+        "timestamp": "2026-09-18T12:59:17.242387-04:00",
+        "hostname": "localhost"
+      }
+    },
+    {
+      "name": "green",
+      "argv": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_c04_unknown_episode_evidence.py",
+        "tests/test_rc20_2_all_b_to_a.py",
+        "-k",
+        "rental or unknown or episode or damaged",
+        "-q",
+        "--junitxml=../evidence/cell-depth-20260918/c04-unknown/green.xml"
+      ],
+      "cwd": "/workspace/scratch/a682af655fba/cell-c04_c05/application",
+      "env": {
+        "APP_ENV": "test"
+      },
+      "exit_code": 0,
+      "phase": "New repair and first affected legacy cases.",
+      "stdout_stderr": "green.log",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "39",
+        "time": "10.873",
+        "timestamp": "2026-09-18T13:00:40.098400-04:00",
+        "hostname": "localhost"
+      }
+    },
+    {
+      "name": "final",
+      "argv": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_c04_unknown_episode_evidence.py",
+        "tests/test_rc20_2_all_b_to_a.py::test_rental_pickup_return_cancel_rules_and_reconciliation",
+        "tests/test_rc20_2_all_b_to_a.py::test_ride_state_machine_recovery_illegal_transition_and_evidence",
+        "tests/test_v70_round2_c05_recovery_fulfillment.py",
+        "tests/test_v70_r3_c05_current_unknown_episode.py",
+        "tests/test_v70_r4_c05_failed_episode.py",
+        "tests/test_v70_r4_c05_episode_reference_reuse.py",
+        "tests/test_v70_r5_c05_concurrent_unknown.py",
+        "-q",
+        "--junitxml=../evidence/cell-depth-20260918/c04-unknown/final.xml"
+      ],
+      "cwd": "/workspace/scratch/a682af655fba/cell-c04_c05/application",
+      "env": {
+        "APP_ENV": "test"
+      },
+      "exit_code": 0,
+      "phase": "Final exact frozen source and focused mobility recovery compatibility checks.",
+      "stdout_stderr": "final.log",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "51",
+        "time": "11.622",
+        "timestamp": "2026-09-18T13:01:48.568719-04:00",
+        "hostname": "localhost"
+      }
+    }
+  ],
+  "static_checks": [
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "python",
+        "-m",
+        "compileall",
+        "-q",
+        "application/src/go_hotel/mobility/rental/recovery_evidence.py",
+        "application/src/go_hotel/mobility/rental/service.py",
+        "application/src/go_hotel/mobility/service.py"
+      ],
+      "exit_code": 0
+    }
+  ]
+}

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="8" time="4.043" timestamp="2026-09-18T12:53:14.649294-04:00" hostname="localhost"><testcase classname="tests.test_c04_change_capture_receipts" name="test_wrong_capture_cannot_extend_rental_and_valid_retry_recovers[absent]" time="1.852"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9e479e6c30&gt;
+fault = 'absent'
+
+    @pytest.mark.parametrize('fault', ['absent', 'original', 'authorization', 'foreign'])
+    def test_wrong_capture_cannot_extend_rental_and_valid_retry_recovers(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = extension(owner, oid)
+        capture_id = 'absent'
+        if fault == 'original':
+            capture_id = money.original('RENTAL', oid)[2].money_movement_id
+        elif fault == 'foreign':
+            _, other_owner, other_oid = booked('RENTAL')
+            other = extension(other_owner, other_oid)
+            execute(other_owner, other_oid, other)
+            with SessionLocal() as session:
+                root = session.scalar(select(Root).where(Root.business_type == 'RENTAL_CHANGE',
+                                                        Root.business_id == other['quote_id']))
+                capture_id = session.scalar(select(Movement.money_movement_id).where(
+                    Movement.root_payment_intent_id == root.payment_intent_id,
+                    Movement.movement_type == 'CAPTURE'))
+        original = money.capture_adjustment
+    
+        def wrong_capture(*args):
+            nonlocal capture_id
+            if fault == 'authorization':
+                with SessionLocal() as session:
+                    root = session.scalar(select(Root).where(Root.business_type == 'RENTAL_CHANGE',
+                                                            Root.business_id == quote['quote_id']))
+                    capture_id = session.scalar(select(Movement.money_movement_id).where(
+                        Movement.root_payment_intent_id == root.payment_intent_id,
+                        Movement.movement_type == 'AUTHORIZATION'))
+            return {'capture_id': capture_id}
+    
+        monkeypatch.setattr(money, 'capture_adjustment', wrong_capture)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CHANGE_CAPTURE_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_capture_receipts.py:62: Failed</failure></testcase><testcase classname="tests.test_c04_change_capture_receipts" name="test_wrong_capture_cannot_extend_rental_and_valid_retry_recovers[original]" time="0.085"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9e41d33440&gt;
+fault = 'original'
+
+    @pytest.mark.parametrize('fault', ['absent', 'original', 'authorization', 'foreign'])
+    def test_wrong_capture_cannot_extend_rental_and_valid_retry_recovers(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = extension(owner, oid)
+        capture_id = 'absent'
+        if fault == 'original':
+            capture_id = money.original('RENTAL', oid)[2].money_movement_id
+        elif fault == 'foreign':
+            _, other_owner, other_oid = booked('RENTAL')
+            other = extension(other_owner, other_oid)
+            execute(other_owner, other_oid, other)
+            with SessionLocal() as session:
+                root = session.scalar(select(Root).where(Root.business_type == 'RENTAL_CHANGE',
+                                                        Root.business_id == other['quote_id']))
+                capture_id = session.scalar(select(Movement.money_movement_id).where(
+                    Movement.root_payment_intent_id == root.payment_intent_id,
+                    Movement.movement_type == 'CAPTURE'))
+        original = money.capture_adjustment
+    
+        def wrong_capture(*args):
+            nonlocal capture_id
+            if fault == 'authorization':
+                with SessionLocal() as session:
+                    root = session.scalar(select(Root).where(Root.business_type == 'RENTAL_CHANGE',
+                                                            Root.business_id == quote['quote_id']))
+                    capture_id = session.scalar(select(Movement.money_movement_id).where(
+                        Movement.root_payment_intent_id == root.payment_intent_id,
+                        Movement.movement_type == 'AUTHORIZATION'))
+            return {'capture_id': capture_id}
+    
+        monkeypatch.setattr(money, 'capture_adjustment', wrong_capture)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CHANGE_CAPTURE_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_capture_receipts.py:62: Failed</failure></testcase><testcase classname="tests.test_c04_change_capture_receipts" name="test_wrong_capture_cannot_extend_rental_and_valid_retry_recovers[authorization]" time="0.089"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9e41d325d0&gt;
+fault = 'authorization'
+
+    @pytest.mark.parametrize('fault', ['absent', 'original', 'authorization', 'foreign'])
+    def test_wrong_capture_cannot_extend_rental_and_valid_retry_recovers(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = extension(owner, oid)
+        capture_id = 'absent'
+        if fault == 'original':
+            capture_id = money.original('RENTAL', oid)[2].money_movement_id
+        elif fault == 'foreign':
+            _, other_owner, other_oid = booked('RENTAL')
+            other = extension(other_owner, other_oid)
+            execute(other_owner, other_oid, other)
+            with SessionLocal() as session:
+                root = session.scalar(select(Root).where(Root.business_type == 'RENTAL_CHANGE',
+                                                        Root.business_id == other['quote_id']))
+                capture_id = session.scalar(select(Movement.money_movement_id).where(
+                    Movement.root_payment_intent_id == root.payment_intent_id,
+                    Movement.movement_type == 'CAPTURE'))
+        original = money.capture_adjustment
+    
+        def wrong_capture(*args):
+            nonlocal capture_id
+            if fault == 'authorization':
+                with SessionLocal() as session:
+                    root = session.scalar(select(Root).where(Root.business_type == 'RENTAL_CHANGE',
+                                                            Root.business_id == quote['quote_id']))
+                    capture_id = session.scalar(select(Movement.money_movement_id).where(
+                        Movement.root_payment_intent_id == root.payment_intent_id,
+                        Movement.movement_type == 'AUTHORIZATION'))
+            return {'capture_id': capture_id}
+    
+        monkeypatch.setattr(money, 'capture_adjustment', wrong_capture)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CHANGE_CAPTURE_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_capture_receipts.py:62: Failed</failure></testcase><testcase classname="tests.test_c04_change_capture_receipts" name="test_wrong_capture_cannot_extend_rental_and_valid_retry_recovers[foreign]" time="0.108"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9e41dc2180&gt;
+fault = 'foreign'
+
+    @pytest.mark.parametrize('fault', ['absent', 'original', 'authorization', 'foreign'])
+    def test_wrong_capture_cannot_extend_rental_and_valid_retry_recovers(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = extension(owner, oid)
+        capture_id = 'absent'
+        if fault == 'original':
+            capture_id = money.original('RENTAL', oid)[2].money_movement_id
+        elif fault == 'foreign':
+            _, other_owner, other_oid = booked('RENTAL')
+            other = extension(other_owner, other_oid)
+            execute(other_owner, other_oid, other)
+            with SessionLocal() as session:
+                root = session.scalar(select(Root).where(Root.business_type == 'RENTAL_CHANGE',
+                                                        Root.business_id == other['quote_id']))
+                capture_id = session.scalar(select(Movement.money_movement_id).where(
+                    Movement.root_payment_intent_id == root.payment_intent_id,
+                    Movement.movement_type == 'CAPTURE'))
+        original = money.capture_adjustment
+    
+        def wrong_capture(*args):
+            nonlocal capture_id
+            if fault == 'authorization':
+                with SessionLocal() as session:
+                    root = session.scalar(select(Root).where(Root.business_type == 'RENTAL_CHANGE',
+                                                            Root.business_id == quote['quote_id']))
+                    capture_id = session.scalar(select(Movement.money_movement_id).where(
+                        Movement.root_payment_intent_id == root.payment_intent_id,
+                        Movement.movement_type == 'AUTHORIZATION'))
+            return {'capture_id': capture_id}
+    
+        monkeypatch.setattr(money, 'capture_adjustment', wrong_capture)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CHANGE_CAPTURE_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_capture_receipts.py:62: Failed</failure></testcase><testcase classname="tests.test_c04_change_capture_receipts" name="test_divergent_durable_capture_keeps_rental_pending_for_reconciliation[state-UNKNOWN]" time="0.087"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9e41dc0bc0&gt;
+field = 'state', value = 'UNKNOWN'
+
+    @pytest.mark.parametrize('field,value', [
+        ('state', 'UNKNOWN'), ('currency', 'USD'), ('amount_minor', 42001),
+        ('parent_movement_id', 'absent'),
+    ])
+    def test_divergent_durable_capture_keeps_rental_pending_for_reconciliation(monkeypatch, field, value):
+        svc, owner, oid = booked('RENTAL')
+        quote = extension(owner, oid)
+        original = money.capture_adjustment
+        observed = {}
+    
+        def damaged_capture(*args):
+            result = original(*args)
+            with SessionLocal.begin() as session:
+                row = session.get(Movement, result['capture_id'])
+                observed.update(id=row.money_movement_id, original=getattr(row, field))
+                setattr(row, field, value)
+            return result
+    
+        monkeypatch.setattr(money, 'capture_adjustment', damaged_capture)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CHANGE_CAPTURE_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_capture_receipts.py:91: Failed</failure></testcase><testcase classname="tests.test_c04_change_capture_receipts" name="test_divergent_durable_capture_keeps_rental_pending_for_reconciliation[currency-USD]" time="0.099"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9e41c24da0&gt;
+field = 'currency', value = 'USD'
+
+    @pytest.mark.parametrize('field,value', [
+        ('state', 'UNKNOWN'), ('currency', 'USD'), ('amount_minor', 42001),
+        ('parent_movement_id', 'absent'),
+    ])
+    def test_divergent_durable_capture_keeps_rental_pending_for_reconciliation(monkeypatch, field, value):
+        svc, owner, oid = booked('RENTAL')
+        quote = extension(owner, oid)
+        original = money.capture_adjustment
+        observed = {}
+    
+        def damaged_capture(*args):
+            result = original(*args)
+            with SessionLocal.begin() as session:
+                row = session.get(Movement, result['capture_id'])
+                observed.update(id=row.money_movement_id, original=getattr(row, field))
+                setattr(row, field, value)
+            return result
+    
+        monkeypatch.setattr(money, 'capture_adjustment', damaged_capture)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CHANGE_CAPTURE_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_capture_receipts.py:91: Failed</failure></testcase><testcase classname="tests.test_c04_change_capture_receipts" name="test_divergent_durable_capture_keeps_rental_pending_for_reconciliation[amount_minor-42001]" time="0.083"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9e41dc3590&gt;
+field = 'amount_minor', value = 42001
+
+    @pytest.mark.parametrize('field,value', [
+        ('state', 'UNKNOWN'), ('currency', 'USD'), ('amount_minor', 42001),
+        ('parent_movement_id', 'absent'),
+    ])
+    def test_divergent_durable_capture_keeps_rental_pending_for_reconciliation(monkeypatch, field, value):
+        svc, owner, oid = booked('RENTAL')
+        quote = extension(owner, oid)
+        original = money.capture_adjustment
+        observed = {}
+    
+        def damaged_capture(*args):
+            result = original(*args)
+            with SessionLocal.begin() as session:
+                row = session.get(Movement, result['capture_id'])
+                observed.update(id=row.money_movement_id, original=getattr(row, field))
+                setattr(row, field, value)
+            return result
+    
+        monkeypatch.setattr(money, 'capture_adjustment', damaged_capture)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CHANGE_CAPTURE_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_capture_receipts.py:91: Failed</failure></testcase><testcase classname="tests.test_c04_change_capture_receipts" name="test_divergent_durable_capture_keeps_rental_pending_for_reconciliation[parent_movement_id-absent]" time="0.083"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9e41dc2540&gt;
+field = 'parent_movement_id', value = 'absent'
+
+    @pytest.mark.parametrize('field,value', [
+        ('state', 'UNKNOWN'), ('currency', 'USD'), ('amount_minor', 42001),
+        ('parent_movement_id', 'absent'),
+    ])
+    def test_divergent_durable_capture_keeps_rental_pending_for_reconciliation(monkeypatch, field, value):
+        svc, owner, oid = booked('RENTAL')
+        quote = extension(owner, oid)
+        original = money.capture_adjustment
+        observed = {}
+    
+        def damaged_capture(*args):
+            result = original(*args)
+            with SessionLocal.begin() as session:
+                row = session.get(Movement, result['capture_id'])
+                observed.update(id=row.money_movement_id, original=getattr(row, field))
+                setattr(row, field, value)
+            return result
+    
+        monkeypatch.setattr(money, 'capture_adjustment', damaged_capture)
+&gt;       with pytest.raises(ValueError, match='RENTAL_CHANGE_CAPTURE_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_capture_receipts.py:91: Failed</failure></testcase></testsuite></testsuites>

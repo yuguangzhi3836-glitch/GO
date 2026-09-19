@@ -63,7 +63,7 @@ def test_rental_pickup_return_cancel_rules_and_reconciliation(client):
     pay_and_confirm(client,h,'RENTAL_ORDER',oid,'RENTAL-'+oid[-6:])
     assert o['insurance'] and o['deposit_minor']>0 and o['mileage']
     mobility_service.admin_external_state(oid,'UNKNOWN_EXTERNAL_STATE','fleet-timeout','expert-review')
-    mobility_service.admin_external_state(oid,'CONFIRMED','fleet-confirmed','expert-review')
+    mobility_service.admin_external_state(oid,'CONFIRMED','fleet-confirmed','expert-review','fleet-timeout')
     p=client.post(f'/v1/mobility/orders/{oid}/fulfillment',headers=h,json={'action':'PICKUP','evidence_reference':'rental-pickup'})
     assert p.status_code==200 and p.json()['data']['status']=='IN_PROGRESS'
     assert client.post(f'/v1/mobility/orders/{oid}/cancel',headers=h).status_code==422

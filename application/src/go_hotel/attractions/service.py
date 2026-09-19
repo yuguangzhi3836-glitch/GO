@@ -127,21 +127,33 @@ class AttractionService:
   with SessionLocal() as s:return [self.out(x) for x in s.scalars(select(AttractionOrderRow).where(AttractionOrderRow.account_id==account)).all()]
  def change_quote(self,account,order_id,new_visit_date,new_session_time=None):
   production_truth_required("ATTRACTION", "CHANGE_QUOTE")
-  order=self.get(account,order_id)
-  with SessionLocal() as read:x=self._order_terms(read,order_id)
-  self._catalog(order["product_id"],new_visit_date,new_session_time or order["session_time"],order["currency"])
-  if order["status"]!="CONFIRMED": raise ValueError("ATTRACTION_ORDER_NOT_CHANGEABLE")
-  if not x["changeable"]: raise ValueError("ATTRACTION_NOT_CHANGEABLE")
   with transaction(SessionLocal) as s:
-   q=AttractionChangeQuoteRow(quote_id=new_id("attr_chg"),order_id=order_id,new_visit_date=new_visit_date,new_session_time=new_session_time or order["session_time"],change_fee_minor=0,total_due_minor=0,currency=order["currency"],status="QUOTED",expires_at=now()+timedelta(minutes=10),created_at=now());s.add(q);s.flush();return {"quote_id":q.quote_id,"order_id":order_id,"new_visit_date":q.new_visit_date,"new_session_time":q.new_session_time,"change_fee_minor":0,"total_due_minor":0,"currency":q.currency,"expires_at":q.expires_at.isoformat()}
+   # Quote issuance shares the order lock with execution. Otherwise a quote can
+   # be minted after execution has already superseded the old quote set.
+   o=s.get(AttractionOrderRow,order_id,with_for_update=True)
+   if not o or o.account_id!=account:raise ValueError('ATTRACTION_ORDER_NOT_FOUND')
+   x=self._order_terms(s,order_id)
+   session=new_session_time or o.session_time
+   self._catalog(o.product_id,new_visit_date,session,o.currency)
+   if o.status!='CONFIRMED':raise ValueError('ATTRACTION_ORDER_NOT_CHANGEABLE')
+   if not x['changeable']:raise ValueError('ATTRACTION_NOT_CHANGEABLE')
+   validity.for_order(x,new_visit_date,session)
+   q=AttractionChangeQuoteRow(quote_id=new_id("attr_chg"),order_id=order_id,new_visit_date=new_visit_date,new_session_time=session,change_fee_minor=0,total_due_minor=0,currency=o.currency,status="QUOTED",expires_at=now()+timedelta(minutes=10),created_at=now());s.add(q);s.flush();return {"quote_id":q.quote_id,"order_id":order_id,"new_visit_date":q.new_visit_date,"new_session_time":q.new_session_time,"change_fee_minor":0,"total_due_minor":0,"currency":q.currency,"expires_at":q.expires_at.isoformat()}
  def execute_change(self,account,order_id,quote_id):
   production_truth_required("ATTRACTION", "EXECUTE_CHANGE")
   self.get(account,order_id)
   with transaction(SessionLocal) as s:
    o=s.get(AttractionOrderRow,order_id,with_for_update=True);q=s.get(AttractionChangeQuoteRow,quote_id,with_for_update=True)
    if not o or o.account_id!=account or o.status!="CONFIRMED" or not q or q.order_id!=order_id or q.status!="QUOTED" or q.expires_at<now(): raise ValueError("ATTRACTION_CHANGE_QUOTE_NOT_FOUND")
+   terms=self._order_terms(s,order_id)
+   if not terms['changeable']:raise ValueError('ATTRACTION_NOT_CHANGEABLE')
+   validity.for_order(terms,q.new_visit_date,q.new_session_time)
    current,_=self._catalog(o.product_id,q.new_visit_date,q.new_session_time,o.currency)
    capacity.prepare_change_in(s,'ATTRACTION',order_id,quote_id,capacity.attraction_resource(o.product_id,q.new_visit_date,q.new_session_time),current['inventory'],o.quantity)
+   # Every sibling was quoted against the same pre-change journey. It must not
+   # regain authority after the selected change is reconciled to CONFIRMED.
+   for sibling in s.scalars(select(AttractionChangeQuoteRow).where(AttractionChangeQuoteRow.order_id==order_id,AttractionChangeQuoteRow.status=='QUOTED',AttractionChangeQuoteRow.quote_id!=quote_id)):
+    sibling.status='SUPERSEDED'
    q.status='PENDING_SUPPLIER';o.status='UNKNOWN_EXTERNAL_STATE';o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",o.order_id,"CHANGE_SUBMITTED_AWAITING_SUPPLIER",o.status,{"quote_id":quote_id,"previous_voucher_code":o.voucher_code,"previous_supplier_reference":o.supplier_reference});project_vertical_lifecycle(s,"ATTRACTION",o,"change-pending:"+quote_id,facts={"quote_id":quote_id});return self.out(o)
  def _refund_quote_in(self,s,o):
   x=self._order_terms(s,o.order_id)

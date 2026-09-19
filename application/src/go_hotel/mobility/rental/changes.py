@@ -1,6 +1,8 @@
 """Owner-locked rental quotes and recoverable settlement for isolated acceptance."""
 from contextlib import contextmanager
+from collections import Counter
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from sqlalchemy import select, text
 from go_hotel.core.config import settings
 from go_hotel.db.models import MobilityRentalOrderRow as Order, RentalChangeQuoteRow as Quote
@@ -49,6 +51,36 @@ def revision(order):
 def adjustment_ids(s, order_id):
     return list(s.scalars(select(Quote.quote_id).where(Quote.order_id==order_id,
         Quote.status=='EXECUTED',Quote.difference_minor>0).order_by(Quote.created_at,Quote.quote_id)))
+
+
+def confirmed_capture(s, order, quote, result):
+    """Prove the extension's exact capture and its original-payment ownership."""
+    from go_hotel.db.models import (OmnichannelMoneyMovementRow as Movement,
+        OmnichannelPaymentIntentRow as Intent, PaymentOrderRootRow as Root)
+    root = s.scalar(select(Root).where(Root.business_type == 'RENTAL_CHANGE',
+                                      Root.business_id == quote.quote_id))
+    intent = s.get(Intent, root.payment_intent_id) if root else None
+    original_root = s.scalar(select(Root).where(Root.business_type == 'RENTAL_ORDER',
+                                               Root.business_id == order.order_id))
+    original = s.get(Intent, original_root.payment_intent_id) if original_root else None
+    capture_id = result.get('capture_id') if isinstance(result, dict) else None
+    capture = s.get(Movement, capture_id) if isinstance(capture_id, str) and capture_id else None
+    authorization = s.get(Movement, capture.parent_movement_id) if capture and capture.parent_movement_id else None
+    if (not root or not intent or not original or not capture or not authorization
+            or intent.business_type != 'RENTAL_CHANGE' or intent.business_id != quote.quote_id
+            or intent.payer_id != order.account_id or original.payer_id != order.account_id
+            or intent.payee_id != original.payee_id
+            or intent.currency != quote.currency or original.currency != quote.currency
+            or intent.amount_minor != quote.difference_minor
+            or capture.root_payment_intent_id != root.payment_intent_id
+            or capture.movement_type != 'CAPTURE' or capture.state != 'CONFIRMED'
+            or capture.amount_minor != quote.difference_minor or capture.currency != quote.currency
+            or capture.idempotency_key != 'rental-change-cap:' + quote.quote_id
+            or authorization.root_payment_intent_id != root.payment_intent_id
+            or authorization.movement_type != 'AUTHORIZATION' or authorization.state != 'CONFIRMED'
+            or authorization.amount_minor != quote.difference_minor or authorization.currency != quote.currency):
+        raise ValueError('RENTAL_CHANGE_CAPTURE_NOT_CONFIRMED')
+    return [capture.money_movement_id]
 
 
 def quote(account, order_id, pickup_at, return_at):
@@ -104,7 +136,7 @@ def execute(account, order_id, quote_id, expected_difference_minor, currency):
         prepared=money.prepare_adjustment('RENTAL',order_id,quote_id,difference,evidence)
         if prepared['released']:raise ValueError('RENTAL_CHANGE_RELEASED_RECONCILIATION_REQUIRED')
         movement=money.capture_adjustment('RENTAL',quote_id,difference,evidence)
-        movement_ids=[movement['capture_id']]
+        movement_ids=[]  # Filled only after the durable capture is checked.
     elif difference<0:
         movement=money.execute_refund_plan(plan,evidence)
         if movement['state']!='CONFIRMED':raise ValueError('RENTAL_REFUND_MONEY_NOT_CONFIRMED')
@@ -115,6 +147,26 @@ def execute(account, order_id, quote_id, expected_difference_minor, currency):
         if q.status=='EXECUTED':return {**out(q),'data_mode':'SIMULATION','external_live':False}
         if q.status!='MONEY_PENDING' or order.status!='CHANGE_PENDING':
             raise ValueError('RENTAL_CHANGE_RECONCILIATION_REQUIRED')
+        if difference > 0:
+            movement_ids = confirmed_capture(s, order, q, movement)
+        elif difference < 0:
+            # The executor's CONFIRMED label is not a durable money receipt.
+            # Bind each refund to this owner and this exact change allocation,
+            # including its key; an equal earlier refund is not this refund.
+            from go_hotel.db.models import OmnichannelMoneyMovementRow as Movement
+            from go_hotel.services.vertical_refund_recovery import _confirmed_money_in
+            movement_ids = _confirmed_money_in(s, SimpleNamespace(
+                vertical='RENTAL', order_id=order_id, account_id=account,
+                adjustment_ids_json=adjustment_ids(s, order_id),
+                quote_json={'currency': q.currency, 'refund_amount_minor': -q.difference_minor}),
+                movement)
+            expected = Counter((item['payment_intent_id'], item['capture_id'],
+                                item['amount_minor'], item['key']) for item in q.refund_plan_json)
+            receipts = [s.get(Movement, mid) for mid in movement_ids]
+            observed = Counter((row.root_payment_intent_id, row.parent_movement_id,
+                                row.amount_minor, row.idempotency_key) for row in receipts)
+            if observed != expected:
+                raise ValueError('REFUND_RECEIPT_PLAN_MISMATCH')
         order.pickup_at=q.new_pickup_at;order.return_at=q.new_return_at
         order.total_amount_minor=q.new_amount_minor;order.status='CONFIRMED';order.updated_at=now()
         q.status='EXECUTED';q.updated_at=now()

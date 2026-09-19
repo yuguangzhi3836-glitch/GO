@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-18T16:56:49.660212+00:00",
+  "cells": [
+    "C04",
+    "C05"
+  ],
+  "status": "LOCAL_SCOPED_PASS_EXTERNAL_GATES_OPEN",
+  "source_commit": "c23a449d9bd117dc2f6ee2c249e65c343e050589",
+  "baseline_commit": "42f3e62da844279cc3569c90eaa58d24a291a4d5",
+  "application_tree": "13eea6f7d970c798ecefaef3991e42b5f67a35a4",
+  "baseline_note": "Local prepared PR217 candidate, not canonical main and not remotely uploaded. Parent integration separately removes an inherited tracked runtime media database; use changed-file hashes and retest the integrated application tree.",
+  "change_classes": [
+    "PRODUCT_FIX",
+    "TEST_ONLY"
+  ],
+  "files": [
+    {
+      "path": "application/src/go_hotel/mobility/rental/changes.py",
+      "sha256": "5bc7e33d4859550a785101ce45ae112716ef88a023da4c4c791c059cd7d607eb",
+      "bytes": 10546
+    },
+    {
+      "path": "application/src/go_hotel/mobility/ride/flight_sync.py",
+      "sha256": "fb23864060306af4d07214df1225e61ab523d62c6726869b3ac1e316572c8de3",
+      "bytes": 18528
+    },
+    {
+      "path": "application/src/go_hotel/mobility/ride/recovery_evidence.py",
+      "sha256": "9ddf87ca4a0cb8482f8d910074cda5f7419784c56955217b9771be478cae89e1",
+      "bytes": 4524
+    },
+    {
+      "path": "application/tests/test_c04_change_capture_receipts.py",
+      "sha256": "3ddc9050d8e74d69c1231ca672da70c7c445ecab12076863eb394679457dcce9",
+      "bytes": 4917
+    },
+    {
+      "path": "application/tests/test_c04_change_refund_receipts.py",
+      "sha256": "f846faa0e9a3632174b170af0b4e6ac29465aba36333a11a69b531265c529d61",
+      "bytes": 3896
+    },
+    {
+      "path": "application/tests/test_c05_fleet_stale_snapshot.py",
+      "sha256": "a1495207bc71b8f620bad79c832d3f3af8c7627274ff9ad892d7bf1f6d60c099",
+      "bytes": 4534
+    },
+    {
+      "path": "application/tests/test_v70_next_c05_recovery_evidence.py",
+      "sha256": "3ae014806dd283ecf79a0bc83cdbfc5f027c1abc08356443f3cd3fa177b44145",
+      "bytes": 3251
+    },
+    {
+      "path": "application/tests/test_v70_r3_c04_http_get_zero_write.py",
+      "sha256": "713a66fabd87e6748ceb8e1e5a9b6f33f6c11a95c13f079703189ace4861b19a",
+      "bytes": 4285
+    }
+  ],
+  "final_tests": 77,
+  "failures": 0,
+  "skipped": 0,
+  "new_test_cases": 18,
+  "inherited_candidates": [
+    {
+      "pr": 204,
+      "head": "e9667461dcdc848f1fcfdf024bba905202235b49",
+      "scope": "Exact additional real CONSUMER/SUPPLIER_USER denial and last_seen no-write test; workflow not copied."
+    },
+    {
+      "pr": 205,
+      "head": "6a7377321b90e38e2a09ef4b9a5cc3673bb34d19",
+      "scope": "Exact execution_item_id/order binding check and corruption regression; workflow and old evidence not copied."
+    }
+  ],
+  "tasks": [
+    {
+      "gap_id": "GAP-C04-CHANGE-RECEIPT-20260918",
+      "task_id": "TASK-C04-CHANGE-RECEIPT-20260918",
+      "change": "Require actual authorization/capture receipts for extensions and exact frozen refund allocation for shortenings. Keep dates, totals, and MONEY_PENDING on unverifiable results. Valid retries recover without duplicate money.",
+      "tests": [
+        "test_c04_change_capture_receipts.py",
+        "test_c04_change_refund_receipts.py",
+        "test_depth06_rental_settlement.py",
+        "test_v70_round2_c04_rental_receipts.py"
+      ]
+    },
+    {
+      "gap_id": "GAP-C05-FLEET-STALE-SNAPSHOT-20260918",
+      "task_id": "TASK-C05-FLEET-STALE-SNAPSHOT-20260918",
+      "change": "Acquire ride lock then refresh/lock adjustment before both dispatch decisions and final receipt updates. Stale snapshots cannot resend or overwrite a confirmed result.",
+      "tests": [
+        "test_c05_fleet_stale_snapshot.py",
+        "test_depth19_ride_sync.py"
+      ]
+    }
+  ],
+  "gates": {
+    "local_sqlite": "PASS",
+    "fault_injection": "PASS",
+    "hosted_ci": "NOT_RUN",
+    "postgresql_concurrency": "NOT_RUN",
+    "real_rental_supplier": "NOT_ACCEPTED",
+    "real_fleet": "NOT_ACCEPTED",
+    "three_end_physical_ui": "NOT_RUN",
+    "C14": "PENDING_INDEPENDENT_REVIEW",
+    "C13": "PENDING_INDEPENDENT_REVIEW",
+    "upload": "BLOCKED_PRIOR_TOOL_REJECTION_NOT_RETRIED",
+    "merge": "NOT_AUTHORIZED_NOT_ATTEMPTED",
+    "deploy": "NOT_AUTHORIZED_NOT_ATTEMPTED"
+  },
+  "next_tasks": [
+    {
+      "cell": "C04",
+      "id": "NEXT-C04-UNKNOWN-EVIDENCE",
+      "description": "Rental admin_external_state currently defaults missing/unvalidated UNKNOWN evidence to CONFIRMED. Implement fail-closed evidence chain verification and coordinate a current-episode confirmation contract with the mobility facade."
+    },
+    {
+      "cell": "C05",
+      "id": "NEXT-C05-PG-REAL-COMPETITION",
+      "description": "Run controlled two-session PostgreSQL READ COMMITTED dispatch/finalization races against the integrated candidate; fault injection and SQLite serialization do not prove PostgreSQL contention behavior."
+    },
+    {
+      "cell": "C04/C05",
+      "id": "NEXT-MOBILITY-INTEGRATED-GATES",
+      "description": "Independent C14 then C13 evidence bound to the final integrated tree, and external provider plus visible three-end acceptance after separately authorized integration."
+    }
+  ]
+}

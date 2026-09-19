@@ -21,6 +21,7 @@ def out(row):
 
 class HotelPartnerCoreService:
     HIGH_RISK={'LEGAL','ADDRESS','BRAND','QUALIFICATION'}
+    HIGH_RISK_ALIASES={'BRAND_NAME':'BRAND','GROUP_NAME':'BRAND'}
     FOUR_STATE={'YES','NO','UNKNOWN','NOT_APPLICABLE'}
     IMPORT_PROVIDERS={
         'CTRIP':{'label':'携程','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_CTRIP_SUPPLIER_AUTHORIZATION_URL'},
@@ -131,6 +132,7 @@ class HotelPartnerCoreService:
                 if existing.request_hash!=request_hash:raise ValueError('IDEMPOTENCY_PAYLOAD_MISMATCH')
                 if existing.status=='COMPLETED':return dict(existing.result_json)|{'idempotent_replay':True,'import_job_id':existing.import_job_id}
                 raise ValueError('IMPORT_ALREADY_IN_PROGRESS')
+            if prop.publication_state!='DRAFT':raise ValueError('PROPERTY_IMPORT_REQUIRES_DRAFT')
             authorization=None
             if method=='OFFICIAL_AUTHORIZATION':
                 state_hash=hashlib.sha256(str(b.get('authorization_state') or '').encode()).hexdigest()
@@ -165,7 +167,7 @@ class HotelPartnerCoreService:
     def properties(self,supplier_id):
         with SessionLocal() as s:return [out(x) for x in s.scalars(select(HotelPartnerPropertyRow).where(HotelPartnerPropertyRow.supplier_id==supplier_id)).all()]
     def patch_property(self,supplier_id,actor,pid,b):
-        risk=set(b)&self.HIGH_RISK
+        risk={self.HIGH_RISK_ALIASES.get(str(key).upper(),str(key).upper()) for key in b}&self.HIGH_RISK
         operations=b.get('operations') or {}
         if not isinstance(operations,dict):raise ValueError('PROPERTY_OPERATIONS_INVALID')
         operation_media=operations.get('media_candidates') or operations.get('media') or []

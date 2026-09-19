@@ -1,0 +1,71 @@
+{
+  "status": "LOCAL_SCOPED_PASS_PENDING_INTEGRATION_C14_C13",
+  "classification": "ACTIVE_CANDIDATE",
+  "source_commit": "123df6fc580b528d1e12dea6eef2045c51cac0f6",
+  "base_commit": "42f3e62da844279cc3569c90eaa58d24a291a4d5",
+  "source_files": {
+    "application/src/go_hotel/go_ai/service.py": "4af44851fc420608365cfb298a94a3bb5289c9a985c80e903178d5b04d22d4ff",
+    "application/src/go_hotel/services/consumer_unified_lifecycle.py": "ecc9a32f2b49b59cc3f93eeb82881b0275515c0436b3a91ba4508bd00c103348",
+    "application/tests/go_ai/test_c08_planning_verification_failures.py": "4327f60cb421ade508accc53a70444c1aaa3a425eaaf4506ca0318eccc1656ca",
+    "application/tests/test_c10_external_verification_precedence.py": "a3bef4ba1681a131fabf0347cfee7913a623d2c973a013835d2996ee7e442256"
+  },
+  "test_files": [
+    "tests/go_ai/test_c08_audit_commit_failure.py",
+    "tests/go_ai/test_c08_durable_execution.py",
+    "tests/go_ai/test_c08_hard_exit_recovery.py",
+    "tests/go_ai/test_c08_planning_verification_failures.py",
+    "tests/go_ai/test_c08_synthesis_audit_finalization.py",
+    "tests/test_go_ai_multimodel.py",
+    "tests/test_c10_external_verification_precedence.py",
+    "tests/test_external_orders_in_go_trips.py",
+    "tests/test_consumer_unified_lifecycle.py",
+    "tests/test_depth29_trip_reentry.py",
+    "tests/test_depth43_hotel_change_trips.py",
+    "tests/test_account_holder_http_integration.py"
+  ],
+  "reproduction": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "8",
+    "skipped": "0",
+    "tests": "9",
+    "time": "2.455",
+    "timestamp": "2026-09-18T12:52:54.090539-04:00",
+    "hostname": "localhost"
+  },
+  "regression": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "63",
+    "time": "17.767",
+    "timestamp": "2026-09-18T12:53:11.298129-04:00",
+    "hostname": "localhost"
+  },
+  "tasks": [
+    {
+      "cell": "C08",
+      "gap": "Unexpected classifier, planner, model-verification or deterministic-gate exception leaves a ROUTING audit after request creation.",
+      "task": "C08-20260918-ORCHESTRATION-FAILURE-FINALIZATION",
+      "implemented": "Finalize specific planning/verification failure codes without replaying completed provider calls; preserve advisory behavior for expected verifier unavailability.",
+      "tests": "test_c08_planning_verification_failures.py (5 cases), plus durable-ownership, synthesis, commit-failure, hard-exit and multimodel retained tests.",
+      "next_task": "Verify durable execution lifecycle against independently provisioned PostgreSQL and provider fault evidence; no automatic model replay authorized."
+    },
+    {
+      "cell": "C10",
+      "gap": "Manual-import timestamps suppress older/equal first official evidence; concurrent first official imports raise unique-key failures; a stale ORM identity can bypass terminal-state checks.",
+      "task": "C10-20260918-EXTERNAL-ORDER-VERIFICATION-PRECEDENCE",
+      "implemented": "First official evidence upgrades unverified imports despite local timestamp; bounded creation-race reconciliation; deduplication after row lock and refreshed ORM state before transition validation.",
+      "tests": "test_c10_external_verification_precedence.py (4 cases), plus existing external-order, trip-read, after-sales and HTTP owner/connector coverage.",
+      "next_task": "Exercise PostgreSQL concurrent duplicate/different provider events and real authenticated OTA evidence when available; verify GO Trips in supported clients."
+    }
+  ],
+  "holds": [
+    "No real provider/model/OTA calls were made.",
+    "PostgreSQL locking and concurrent different-event delivery are not proven by SQLite tests.",
+    "No hosted CI, mobile-device acceptance, C14 or independent C13 performed by this worker.",
+    "No upload, merge, deployment, live data access, schema change or runtime topology change.",
+    "Main source and live runtime are unchanged. Source-tree acceptance must be rebound after root integration; local base includes known inherited cache/database artifacts outside this four-file change."
+  ]
+}

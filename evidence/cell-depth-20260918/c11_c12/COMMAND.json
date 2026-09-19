@@ -1,0 +1,10 @@
+{
+  "working_directory": "application",
+  "command": "APP_ENV=test PYTHONDONTWRITEBYTECODE=1 python -m pytest tests/test_cell_depth_c11_payment_boundary.py tests/test_cell_depth_c12_identity_binding.py tests/test_omnichannel_payment_finance_os.py tests/test_sprint1r_identity_security.py tests/test_depth35_refresh_scope.py tests/test_v70_r3_c04_http_get_zero_write.py tests/payments/test_c11_flight_idempotency_recovery.py tests/test_c11_idempotency_completion_guard.py tests/test_sprint3c_mobility.py tests/test_sprint3d_attractions.py -q -p no:cacheprovider --tb=short --junitxml=../evidence/cell-depth-20260918/c11_c12/verification.xml",
+  "exit_code": 0,
+  "database": "isolated SQLite",
+  "environment": {
+    "APP_ENV": "test",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  }
+}

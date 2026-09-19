@@ -1,0 +1,21 @@
+{
+  "scope": "Local isolated SQLite; no real provider calls",
+  "outcomes": [
+    {
+      "ok": true,
+      "duplicate": true
+    },
+    {
+      "ok": true,
+      "duplicate": false
+    }
+  ],
+  "receipt_count": 1,
+  "expected": "Both calls succeed; exactly one duplicate and one receipt",
+  "reproduced": false,
+  "source_commit": "43d62cf6682d4ee93469dace60eb5fe42f894fdb",
+  "application_tree": "f6d329352dd8484010036448810a927d5eec4be7",
+  "executed_by": "root continuation using existing C13 reproduction script",
+  "exit_code": 0,
+  "verified_at": "2026-09-18T18:26:00.257343+00:00"
+}

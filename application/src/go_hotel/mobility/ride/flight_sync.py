@@ -200,9 +200,14 @@ class FlightRideSync:
             a = s.get(Adjustment, adjustment_id)
             if not a:
                 raise ValueError('RIDE_ADJUSTMENT_NOT_FOUND')
+            ride = s.scalar(select(Ride).where(Ride.order_id == a.ride_order_id).with_for_update())
+            # Another worker may have dispatched while this transaction waited
+            # for the ride lock. Refresh the earlier ORM snapshot under lock
+            # before deciding whether execute or query is permitted. Keep the
+            # same ride -> adjustment lock order in the receipt transaction.
+            s.refresh(a, with_for_update=True)
             if a.status not in {'PENDING', 'DISPATCHED', 'UNKNOWN'}:
                 return adjustment_out(a)
-            ride = s.scalar(select(Ride).where(Ride.order_id == a.ride_order_id).with_for_update())
             sending = a.status == 'PENDING'
             if sending:
                 try:
@@ -226,6 +231,8 @@ class FlightRideSync:
             result = {'status': 'UNKNOWN', 'request_hash': request_hash}
         with travel_transaction(self.factory) as s:
             a = s.get(Adjustment, adjustment_id)
+            ride = s.scalar(select(Ride).where(Ride.order_id == a.ride_order_id).with_for_update())
+            s.refresh(a, with_for_update=True)
             if a.status not in {'DISPATCHED', 'UNKNOWN'}:
                 return adjustment_out(a)
             if not isinstance(result, dict) or result.get('request_hash') != a.request_hash:
@@ -236,7 +243,6 @@ class FlightRideSync:
                 if result['status'] == 'REJECTED':
                     a.status = 'REJECTED'
                 else:
-                    ride = s.scalar(select(Ride).where(Ride.order_id == a.ride_order_id).with_for_update())
                     try:
                         b, _ = self._current(s, ride, a)
                         if instant(result.get('pickup_at')) != a.proposed_pickup_at:

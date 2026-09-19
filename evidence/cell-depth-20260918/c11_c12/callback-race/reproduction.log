@@ -1,0 +1,549 @@
+FFFFFF.                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_simultaneous_identical_callbacks_have_one_transition_and_one_safe_duplicate[SUCCEEDED] _
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlite3.IntegrityError: UNIQUE constraint failed: omnichannel_webhook_receipt.channel, omnichannel_webhook_receipt.external_event_id
+
+The above exception was the direct cause of the following exception:
+tests/test_cell_depth_c11_callback_races.py:78: in test_simultaneous_identical_callbacks_have_one_transition_and_one_safe_duplicate
+    results = concurrent_callbacks([body, body])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:60: in concurrent_callbacks
+    return list(pool.map(call, bodies))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:53: in call
+    return invoke(body)
+           ^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:38: in invoke
+    return svc.webhook("ALIPAY", body, signature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/omnichannel_payment.py:175: in webhook
+    r=Receipt(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=a.payment_attempt_id,signature_verified=True,payload_hash=digest(b),received_at=now());s.add(r);self._transition(s,a,i,mapped,b.get('external_operation_id'));s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
+                                                                                                                                                                                                                                                                                        ^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2035: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: omnichannel_webhook_receipt.channel, omnichannel_webhook_receipt.external_event_id
+E   [SQL: INSERT INTO omnichannel_webhook_receipt (webhook_receipt_id, channel, external_event_id, payment_attempt_id, signature_verified, payload_hash, received_at) VALUES (?, ?, ?, ?, ?, ?, ?)]
+E   [parameters: ('owr_d8bb6f68929e4707b0b232454e2d9767', 'ALIPAY', 'depth-race-event', 'opa_0411d2c8cedf4b1eac68e0d3c6330c66', 1, '0947b7c6d00fa81d2aef7a06d6a91eac2ee76d3962af4c629f796d17a2feea8c', '2026-09-18 17:03:10.168635')]
+E   (Background on this error at: https://sqlalche.me/e/20/gkpj)
+_ test_simultaneous_identical_callbacks_have_one_transition_and_one_safe_duplicate[FAILED] _
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlite3.IntegrityError: UNIQUE constraint failed: omnichannel_webhook_receipt.channel, omnichannel_webhook_receipt.external_event_id
+
+The above exception was the direct cause of the following exception:
+tests/test_cell_depth_c11_callback_races.py:78: in test_simultaneous_identical_callbacks_have_one_transition_and_one_safe_duplicate
+    results = concurrent_callbacks([body, body])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:60: in concurrent_callbacks
+    return list(pool.map(call, bodies))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:53: in call
+    return invoke(body)
+           ^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:38: in invoke
+    return svc.webhook("ALIPAY", body, signature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/omnichannel_payment.py:175: in webhook
+    r=Receipt(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=a.payment_attempt_id,signature_verified=True,payload_hash=digest(b),received_at=now());s.add(r);self._transition(s,a,i,mapped,b.get('external_operation_id'));s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
+                                                                                                                                                                                                                                                                                        ^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2035: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: omnichannel_webhook_receipt.channel, omnichannel_webhook_receipt.external_event_id
+E   [SQL: INSERT INTO omnichannel_webhook_receipt (webhook_receipt_id, channel, external_event_id, payment_attempt_id, signature_verified, payload_hash, received_at) VALUES (?, ?, ?, ?, ?, ?, ?)]
+E   [parameters: ('owr_3f154f91160b41c4af5d2ec7db4100d5', 'ALIPAY', 'depth-race-event', 'opa_ed292e0afab14a8ab1acaca366248fbb', 1, '0bad50629bc83f7d525ad0f4d43470ad9025b8017fd0be17c3124493cf717d2e', '2026-09-18 17:03:10.536068')]
+E   (Background on this error at: https://sqlalche.me/e/20/gkpj)
+_ test_simultaneous_identical_callbacks_have_one_transition_and_one_safe_duplicate[PENDING] _
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlite3.IntegrityError: UNIQUE constraint failed: omnichannel_webhook_receipt.channel, omnichannel_webhook_receipt.external_event_id
+
+The above exception was the direct cause of the following exception:
+tests/test_cell_depth_c11_callback_races.py:78: in test_simultaneous_identical_callbacks_have_one_transition_and_one_safe_duplicate
+    results = concurrent_callbacks([body, body])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:60: in concurrent_callbacks
+    return list(pool.map(call, bodies))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:53: in call
+    return invoke(body)
+           ^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:38: in invoke
+    return svc.webhook("ALIPAY", body, signature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/omnichannel_payment.py:175: in webhook
+    r=Receipt(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=a.payment_attempt_id,signature_verified=True,payload_hash=digest(b),received_at=now());s.add(r);self._transition(s,a,i,mapped,b.get('external_operation_id'));s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
+                                                                                                                                                                                                                                                                                        ^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2035: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: omnichannel_webhook_receipt.channel, omnichannel_webhook_receipt.external_event_id
+E   [SQL: INSERT INTO omnichannel_webhook_receipt (webhook_receipt_id, channel, external_event_id, payment_attempt_id, signature_verified, payload_hash, received_at) VALUES (?, ?, ?, ?, ?, ?, ?)]
+E   [parameters: ('owr_709108413b4b4125898cf52f15142a81', 'ALIPAY', 'depth-race-event', 'opa_28b03e33e13043f3a2b5ca92799c190a', 1, 'd4bafb137a4af27b97cb96afda4353b342e3ebace8878dca79421cbacf499728', '2026-09-18 17:03:10.877802')]
+E   (Background on this error at: https://sqlalche.me/e/20/gkpj)
+_ test_simultaneous_reused_event_with_different_payload_rejects_before_second_transition[state] _
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlite3.IntegrityError: UNIQUE constraint failed: omnichannel_webhook_receipt.channel, omnichannel_webhook_receipt.external_event_id
+
+The above exception was the direct cause of the following exception:
+tests/test_cell_depth_c11_callback_races.py:108: in test_simultaneous_reused_event_with_different_payload_rejects_before_second_transition
+    results = concurrent_callbacks([body, changed])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:60: in concurrent_callbacks
+    return list(pool.map(call, bodies))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:53: in call
+    return invoke(body)
+           ^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:38: in invoke
+    return svc.webhook("ALIPAY", body, signature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/omnichannel_payment.py:175: in webhook
+    r=Receipt(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=a.payment_attempt_id,signature_verified=True,payload_hash=digest(b),received_at=now());s.add(r);self._transition(s,a,i,mapped,b.get('external_operation_id'));s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
+                                                                                                                                                                                                                                                                                        ^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2035: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: omnichannel_webhook_receipt.channel, omnichannel_webhook_receipt.external_event_id
+E   [SQL: INSERT INTO omnichannel_webhook_receipt (webhook_receipt_id, channel, external_event_id, payment_attempt_id, signature_verified, payload_hash, received_at) VALUES (?, ?, ?, ?, ?, ?, ?)]
+E   [parameters: ('owr_d514fff3e74145fb887c197ec4e8ff42', 'ALIPAY', 'depth-race-event', 'opa_67440b76e86f41618bfeca932d6ca2d7', 1, '3dd24772a25a09d486b57a97f8cb23e4b107716bee3c1aef3ba5d0552988eb73', '2026-09-18 17:03:11.269064')]
+E   (Background on this error at: https://sqlalche.me/e/20/gkpj)
+_ test_simultaneous_reused_event_with_different_payload_rejects_before_second_transition[operation] _
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlite3.IntegrityError: UNIQUE constraint failed: omnichannel_webhook_receipt.channel, omnichannel_webhook_receipt.external_event_id
+
+The above exception was the direct cause of the following exception:
+tests/test_cell_depth_c11_callback_races.py:108: in test_simultaneous_reused_event_with_different_payload_rejects_before_second_transition
+    results = concurrent_callbacks([body, changed])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:60: in concurrent_callbacks
+    return list(pool.map(call, bodies))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:53: in call
+    return invoke(body)
+           ^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:38: in invoke
+    return svc.webhook("ALIPAY", body, signature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/omnichannel_payment.py:175: in webhook
+    r=Receipt(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=a.payment_attempt_id,signature_verified=True,payload_hash=digest(b),received_at=now());s.add(r);self._transition(s,a,i,mapped,b.get('external_operation_id'));s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
+                                                                                                                                                                                                                                                                                        ^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2035: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: omnichannel_webhook_receipt.channel, omnichannel_webhook_receipt.external_event_id
+E   [SQL: INSERT INTO omnichannel_webhook_receipt (webhook_receipt_id, channel, external_event_id, payment_attempt_id, signature_verified, payload_hash, received_at) VALUES (?, ?, ?, ?, ?, ?, ?)]
+E   [parameters: ('owr_235e23e10267469280864fd0a35608c4', 'ALIPAY', 'depth-race-event', 'opa_257ac3547c334477b98b267fd3bbbca0', 1, 'a12246977ed9156d1bd64ff3eba62ccdc2442d29106faae0ac56f3a0e973ede8', '2026-09-18 17:03:11.633487')]
+E   (Background on this error at: https://sqlalche.me/e/20/gkpj)
+_ test_simultaneous_reused_event_with_different_payload_rejects_before_second_transition[other_attempt] _
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlite3.IntegrityError: UNIQUE constraint failed: omnichannel_payment_attempt.external_operation_id
+
+The above exception was the direct cause of the following exception:
+tests/test_cell_depth_c11_callback_races.py:108: in test_simultaneous_reused_event_with_different_payload_rejects_before_second_transition
+    results = concurrent_callbacks([body, changed])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:60: in concurrent_callbacks
+    return list(pool.map(call, bodies))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:53: in call
+    return invoke(body)
+           ^^^^^^^^^^^^
+tests/test_cell_depth_c11_callback_races.py:38: in invoke
+    return svc.webhook("ALIPAY", body, signature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/omnichannel_payment.py:175: in webhook
+    r=Receipt(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=a.payment_attempt_id,signature_verified=True,payload_hash=digest(b),received_at=now());s.add(r);self._transition(s,a,i,mapped,b.get('external_operation_id'));s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
+                                                                                                                                                                                                                                                                                        ^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2035: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:86: in save_obj
+    _emit_update_statements(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:913: in _emit_update_statements
+    c = connection.execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: omnichannel_payment_attempt.external_operation_id
+E   [SQL: UPDATE omnichannel_payment_attempt SET external_operation_id=?, state=?, updated_at=? WHERE omnichannel_payment_attempt.payment_attempt_id = ?]
+E   [parameters: ('depth-race-operation', 'SUCCEEDED', '2026-09-18 17:03:12.026575', 'opa_d77986ff1c314215bd486b85ab7e43dc')]
+E   (Background on this error at: https://sqlalche.me/e/20/gkpj)
+=========================== short test summary info ============================
+FAILED tests/test_cell_depth_c11_callback_races.py::test_simultaneous_identical_callbacks_have_one_transition_and_one_safe_duplicate[SUCCEEDED]
+FAILED tests/test_cell_depth_c11_callback_races.py::test_simultaneous_identical_callbacks_have_one_transition_and_one_safe_duplicate[FAILED]
+FAILED tests/test_cell_depth_c11_callback_races.py::test_simultaneous_identical_callbacks_have_one_transition_and_one_safe_duplicate[PENDING]
+FAILED tests/test_cell_depth_c11_callback_races.py::test_simultaneous_reused_event_with_different_payload_rejects_before_second_transition[state]
+FAILED tests/test_cell_depth_c11_callback_races.py::test_simultaneous_reused_event_with_different_payload_rejects_before_second_transition[operation]
+FAILED tests/test_cell_depth_c11_callback_races.py::test_simultaneous_reused_event_with_different_payload_rejects_before_second_transition[other_attempt]

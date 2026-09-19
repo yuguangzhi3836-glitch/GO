@@ -1,0 +1,255 @@
+FFFFFFFFFFFFFF.                                                          [100%]
+=================================== FAILURES ===================================
+_________ test_client_metadata_cannot_disconnect_another_users_import __________
+
+    def test_client_metadata_cannot_disconnect_another_users_import():
+        victim = svc.create_import('victim', {'items': [], 'metadata': {'note': 'untouched'}})
+        blocked = False
+        try:
+            forged = svc.create_import('attacker', {'items': [], 'metadata': {
+                'connection_intent': True, 'import_job_id': victim['import_job_id'],
+            }})
+            svc.disconnect_provider_connection('attacker', forged['import_job_id'])
+        except ValueError as exc:
+            assert str(exc) == 'PROFILE_IMPORT_METADATA_RESERVED'
+            blocked = True
+        with SessionLocal() as session:
+>           assert session.get(ProfileImportJobRow, victim['import_job_id']).metadata_json == {'note': 'untouched'}
+E           AssertionError: assert {'note': 'unt...nected': True} == {'note': 'untouched'}
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Left contains 1 more item:
+E             {'source_disconnected': True}
+E             Use -v to get more diff
+
+tests/test_c07_connection_metadata_isolation.py:31: AssertionError
+_ test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata0] _
+
+metadata = {'connection_intent': True}
+
+    @pytest.mark.parametrize('metadata', [
+        {'connection_intent': True}, {'provider_connection_id': 'forged'},
+        {'account_holder_authorized': True}, {'account_holder_verified': True},
+        {'provider_account_subject_hash': 'forged'}, {'authorization_evidence_hash': 'forged'},
+        {'source_disconnected': False}, {'values_deleted': False}, {'state_hash': 'forged'},
+    ])
+    def test_server_managed_metadata_cannot_be_supplied_by_an_import_client(metadata):
+>       with pytest.raises(ValueError, match='PROFILE_IMPORT_METADATA_RESERVED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:42: Failed
+_ test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata1] _
+
+metadata = {'provider_connection_id': 'forged'}
+
+    @pytest.mark.parametrize('metadata', [
+        {'connection_intent': True}, {'provider_connection_id': 'forged'},
+        {'account_holder_authorized': True}, {'account_holder_verified': True},
+        {'provider_account_subject_hash': 'forged'}, {'authorization_evidence_hash': 'forged'},
+        {'source_disconnected': False}, {'values_deleted': False}, {'state_hash': 'forged'},
+    ])
+    def test_server_managed_metadata_cannot_be_supplied_by_an_import_client(metadata):
+>       with pytest.raises(ValueError, match='PROFILE_IMPORT_METADATA_RESERVED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:42: Failed
+_ test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata2] _
+
+metadata = {'account_holder_authorized': True}
+
+    @pytest.mark.parametrize('metadata', [
+        {'connection_intent': True}, {'provider_connection_id': 'forged'},
+        {'account_holder_authorized': True}, {'account_holder_verified': True},
+        {'provider_account_subject_hash': 'forged'}, {'authorization_evidence_hash': 'forged'},
+        {'source_disconnected': False}, {'values_deleted': False}, {'state_hash': 'forged'},
+    ])
+    def test_server_managed_metadata_cannot_be_supplied_by_an_import_client(metadata):
+>       with pytest.raises(ValueError, match='PROFILE_IMPORT_METADATA_RESERVED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:42: Failed
+_ test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata3] _
+
+metadata = {'account_holder_verified': True}
+
+    @pytest.mark.parametrize('metadata', [
+        {'connection_intent': True}, {'provider_connection_id': 'forged'},
+        {'account_holder_authorized': True}, {'account_holder_verified': True},
+        {'provider_account_subject_hash': 'forged'}, {'authorization_evidence_hash': 'forged'},
+        {'source_disconnected': False}, {'values_deleted': False}, {'state_hash': 'forged'},
+    ])
+    def test_server_managed_metadata_cannot_be_supplied_by_an_import_client(metadata):
+>       with pytest.raises(ValueError, match='PROFILE_IMPORT_METADATA_RESERVED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:42: Failed
+_ test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata4] _
+
+metadata = {'provider_account_subject_hash': 'forged'}
+
+    @pytest.mark.parametrize('metadata', [
+        {'connection_intent': True}, {'provider_connection_id': 'forged'},
+        {'account_holder_authorized': True}, {'account_holder_verified': True},
+        {'provider_account_subject_hash': 'forged'}, {'authorization_evidence_hash': 'forged'},
+        {'source_disconnected': False}, {'values_deleted': False}, {'state_hash': 'forged'},
+    ])
+    def test_server_managed_metadata_cannot_be_supplied_by_an_import_client(metadata):
+>       with pytest.raises(ValueError, match='PROFILE_IMPORT_METADATA_RESERVED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:42: Failed
+_ test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata5] _
+
+metadata = {'authorization_evidence_hash': 'forged'}
+
+    @pytest.mark.parametrize('metadata', [
+        {'connection_intent': True}, {'provider_connection_id': 'forged'},
+        {'account_holder_authorized': True}, {'account_holder_verified': True},
+        {'provider_account_subject_hash': 'forged'}, {'authorization_evidence_hash': 'forged'},
+        {'source_disconnected': False}, {'values_deleted': False}, {'state_hash': 'forged'},
+    ])
+    def test_server_managed_metadata_cannot_be_supplied_by_an_import_client(metadata):
+>       with pytest.raises(ValueError, match='PROFILE_IMPORT_METADATA_RESERVED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:42: Failed
+_ test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata6] _
+
+metadata = {'source_disconnected': False}
+
+    @pytest.mark.parametrize('metadata', [
+        {'connection_intent': True}, {'provider_connection_id': 'forged'},
+        {'account_holder_authorized': True}, {'account_holder_verified': True},
+        {'provider_account_subject_hash': 'forged'}, {'authorization_evidence_hash': 'forged'},
+        {'source_disconnected': False}, {'values_deleted': False}, {'state_hash': 'forged'},
+    ])
+    def test_server_managed_metadata_cannot_be_supplied_by_an_import_client(metadata):
+>       with pytest.raises(ValueError, match='PROFILE_IMPORT_METADATA_RESERVED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:42: Failed
+_ test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata7] _
+
+metadata = {'values_deleted': False}
+
+    @pytest.mark.parametrize('metadata', [
+        {'connection_intent': True}, {'provider_connection_id': 'forged'},
+        {'account_holder_authorized': True}, {'account_holder_verified': True},
+        {'provider_account_subject_hash': 'forged'}, {'authorization_evidence_hash': 'forged'},
+        {'source_disconnected': False}, {'values_deleted': False}, {'state_hash': 'forged'},
+    ])
+    def test_server_managed_metadata_cannot_be_supplied_by_an_import_client(metadata):
+>       with pytest.raises(ValueError, match='PROFILE_IMPORT_METADATA_RESERVED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:42: Failed
+_ test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata8] _
+
+metadata = {'state_hash': 'forged'}
+
+    @pytest.mark.parametrize('metadata', [
+        {'connection_intent': True}, {'provider_connection_id': 'forged'},
+        {'account_holder_authorized': True}, {'account_holder_verified': True},
+        {'provider_account_subject_hash': 'forged'}, {'authorization_evidence_hash': 'forged'},
+        {'source_disconnected': False}, {'values_deleted': False}, {'state_hash': 'forged'},
+    ])
+    def test_server_managed_metadata_cannot_be_supplied_by_an_import_client(metadata):
+>       with pytest.raises(ValueError, match='PROFILE_IMPORT_METADATA_RESERVED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:42: Failed
+_ test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[False-owner] _
+
+other_owner = 'owner', delete_values = False
+
+    @pytest.mark.parametrize('other_owner', ['owner', 'another-owner'])
+    @pytest.mark.parametrize('delete_values', [False, True])
+    def test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import(other_owner, delete_values):
+        connection, preview = upload('owner')
+        other_connection, other_preview = upload(other_owner)
+        with SessionLocal.begin() as session:
+            row = session.get(ProfileImportJobRow, connection['connection_id'])
+            row.metadata_json = {**row.metadata_json, 'import_job_id': other_preview['import_job_id']}
+>       with pytest.raises(ValueError, match='PROFILE_PROVIDER_IMPORT_BINDING_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:54: Failed
+_ test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[False-another-owner] _
+
+other_owner = 'another-owner', delete_values = False
+
+    @pytest.mark.parametrize('other_owner', ['owner', 'another-owner'])
+    @pytest.mark.parametrize('delete_values', [False, True])
+    def test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import(other_owner, delete_values):
+        connection, preview = upload('owner')
+        other_connection, other_preview = upload(other_owner)
+        with SessionLocal.begin() as session:
+            row = session.get(ProfileImportJobRow, connection['connection_id'])
+            row.metadata_json = {**row.metadata_json, 'import_job_id': other_preview['import_job_id']}
+>       with pytest.raises(ValueError, match='PROFILE_PROVIDER_IMPORT_BINDING_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:54: Failed
+_ test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[True-owner] _
+
+other_owner = 'owner', delete_values = True
+
+    @pytest.mark.parametrize('other_owner', ['owner', 'another-owner'])
+    @pytest.mark.parametrize('delete_values', [False, True])
+    def test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import(other_owner, delete_values):
+        connection, preview = upload('owner')
+        other_connection, other_preview = upload(other_owner)
+        with SessionLocal.begin() as session:
+            row = session.get(ProfileImportJobRow, connection['connection_id'])
+            row.metadata_json = {**row.metadata_json, 'import_job_id': other_preview['import_job_id']}
+>       with pytest.raises(ValueError, match='PROFILE_PROVIDER_IMPORT_BINDING_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_metadata_isolation.py:54: Failed
+_ test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[True-another-owner] _
+
+other_owner = 'another-owner', delete_values = True
+
+    @pytest.mark.parametrize('other_owner', ['owner', 'another-owner'])
+    @pytest.mark.parametrize('delete_values', [False, True])
+    def test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import(other_owner, delete_values):
+        connection, preview = upload('owner')
+        other_connection, other_preview = upload(other_owner)
+        with SessionLocal.begin() as session:
+            row = session.get(ProfileImportJobRow, connection['connection_id'])
+            row.metadata_json = {**row.metadata_json, 'import_job_id': other_preview['import_job_id']}
+>       with pytest.raises(ValueError, match='PROFILE_PROVIDER_IMPORT_BINDING_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'PROFILE_PROVIDER_IMPORT_BINDING_INVALID'
+E         Actual message: 'PROFILE_SOURCE_NOT_FOUND'
+
+tests/test_c07_connection_metadata_isolation.py:54: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_c07_connection_metadata_isolation.py::test_client_metadata_cannot_disconnect_another_users_import
+FAILED tests/test_c07_connection_metadata_isolation.py::test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata0]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata1]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata2]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata3]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata4]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata5]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata6]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata7]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata8]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[False-owner]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[False-another-owner]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[True-owner]
+FAILED tests/test_c07_connection_metadata_isolation.py::test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[True-another-owner]
+14 failed, 1 passed in 4.15s

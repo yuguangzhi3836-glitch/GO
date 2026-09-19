@@ -195,7 +195,7 @@ class RentalService:
             append_vertical_evidence(s, "RENTAL", order_id, f"FULFILLMENT_{action}", target, {"evidence_reference": evidence_reference, "supplier_reference": o.supplier_reference}); project_vertical_lifecycle(s,"RENTAL",o,evidence_reference,facts={"action":action,"supplier_reference":o.supplier_reference})
             return self.out(o)
 
-    def admin_external_state(self, order_id: str, state: str, evidence_reference: str, actor: str):
+    def admin_external_state(self, order_id: str, state: str, evidence_reference: str, actor: str, confirmation_episode_reference: str | None = None):
         if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
         state = state.upper()
         if state not in {"UNKNOWN_EXTERNAL_STATE", "CONFIRMED", "FAILED"}:
@@ -205,25 +205,31 @@ class RentalService:
             if not o:
                 raise ValueError("MOBILITY_ORDER_NOT_FOUND")
             if state == "UNKNOWN_EXTERNAL_STATE":
+                if o.status == "UNKNOWN_EXTERNAL_STATE":
+                    raise ValueError("RENTAL_UNKNOWN_EPISODE_ALREADY_OPEN")
                 if o.status not in {"CONFIRMED", "IN_PROGRESS"}:
                     raise ValueError("MOBILITY_ILLEGAL_STATE_TRANSITION")
+                from go_hotel.mobility.rental.recovery_evidence import reject_reused_unknown_episode
+                reject_reused_unknown_episode(s, o, evidence_reference)
                 previous_status=o.status
                 o.status = state; kind = "EXTERNAL_STATE_UNKNOWN"
                 payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference, "previous_status": previous_status}
             elif state == "FAILED":
                 if o.status != "UNKNOWN_EXTERNAL_STATE":
                     raise ValueError("MOBILITY_RECONCILIATION_NOT_REQUIRED")
+                from go_hotel.mobility.rental.recovery_evidence import previous_phase
+                previous_phase(s, o, confirmation_episode_reference)
                 o.status = "FAILED"; kind = "RECONCILED_TO_FAILED"
-                payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference}
+                payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference,
+                         "confirmation_episode_reference": confirmation_episode_reference}
             else:
                 if o.status != "UNKNOWN_EXTERNAL_STATE":
                     raise ValueError("MOBILITY_RECONCILIATION_NOT_REQUIRED")
-                evidence=list_vertical_evidence(s, "RENTAL", order_id)
-                unknown=next((x for x in reversed(evidence) if x.get("kind")=="EXTERNAL_STATE_UNKNOWN"),None)
-                previous_status=((unknown or {}).get("payload") or {}).get("previous_status") or "CONFIRMED"
-                if previous_status not in {"CONFIRMED","IN_PROGRESS"}: previous_status="CONFIRMED"
+                from go_hotel.mobility.rental.recovery_evidence import previous_phase
+                previous_status=previous_phase(s, o, confirmation_episode_reference)
                 o.status = previous_status; kind = "RECONCILED_TO_"+previous_status
-                payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference, "restored_status": previous_status}
+                payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference,
+                         "restored_status": previous_status, "confirmation_episode_reference": confirmation_episode_reference}
             o.updated_at = now(); append_vertical_evidence(s, "RENTAL", order_id, kind, o.status, payload); project_vertical_lifecycle(s,"RENTAL",o,evidence_reference,facts={"actor":actor,"native_status":o.status})
             return self.out(o)
 

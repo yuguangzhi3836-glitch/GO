@@ -1,0 +1,841 @@
+FFFFFFFFF.FFFFFFFFFFFFFFFFFF                                             [100%]
+=================================== FAILURES ===================================
+_ test_obligation_idempotency_rejects_changed_request_without_mutation[changes0] _
+tests/test_cell_depth_c11_payment_boundary.py:31: in test_obligation_idempotency_rejects_changed_request_without_mutation
+    with pytest.raises(ValueError, match="IDEMPOTENCY_KEY_REQUEST_FINGERPRINT_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_obligation_idempotency_rejects_changed_request_without_mutation[changes1] _
+tests/test_cell_depth_c11_payment_boundary.py:31: in test_obligation_idempotency_rejects_changed_request_without_mutation
+    with pytest.raises(ValueError, match="IDEMPOTENCY_KEY_REQUEST_FINGERPRINT_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_obligation_idempotency_rejects_changed_request_without_mutation[changes2] _
+tests/test_cell_depth_c11_payment_boundary.py:31: in test_obligation_idempotency_rejects_changed_request_without_mutation
+    with pytest.raises(ValueError, match="IDEMPOTENCY_KEY_REQUEST_FINGERPRINT_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_obligation_idempotency_rejects_changed_request_without_mutation[changes3] _
+tests/test_cell_depth_c11_payment_boundary.py:31: in test_obligation_idempotency_rejects_changed_request_without_mutation
+    with pytest.raises(ValueError, match="IDEMPOTENCY_KEY_REQUEST_FINGERPRINT_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_obligation_idempotency_rejects_changed_request_without_mutation[changes4] _
+tests/test_cell_depth_c11_payment_boundary.py:31: in test_obligation_idempotency_rejects_changed_request_without_mutation
+    with pytest.raises(ValueError, match="IDEMPOTENCY_KEY_REQUEST_FINGERPRINT_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_obligation_idempotency_rejects_changed_request_without_mutation[changes5] _
+tests/test_cell_depth_c11_payment_boundary.py:31: in test_obligation_idempotency_rejects_changed_request_without_mutation
+    with pytest.raises(ValueError, match="IDEMPOTENCY_KEY_REQUEST_FINGERPRINT_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_obligation_idempotency_rejects_changed_request_without_mutation[changes6] _
+tests/test_cell_depth_c11_payment_boundary.py:31: in test_obligation_idempotency_rejects_changed_request_without_mutation
+    with pytest.raises(ValueError, match="IDEMPOTENCY_KEY_REQUEST_FINGERPRINT_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_obligation_idempotency_rejects_changed_request_without_mutation[changes7] _
+tests/test_cell_depth_c11_payment_boundary.py:31: in test_obligation_idempotency_rejects_changed_request_without_mutation
+    with pytest.raises(ValueError, match="IDEMPOTENCY_KEY_REQUEST_FINGERPRINT_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+____________ test_global_key_cannot_disclose_another_payers_payment ____________
+tests/test_cell_depth_c11_payment_boundary.py:39: in test_global_key_cannot_disclose_another_payers_payment
+    with pytest.raises(ValueError, match="IDEMPOTENCY_KEY_REQUEST_FINGERPRINT_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_consumer_http_cannot_create_unbound_money_obligations[SUBSCRIPTION_INVOICE] _
+tests/test_cell_depth_c11_payment_boundary.py:60: in test_consumer_http_cannot_create_unbound_money_obligations
+    assert response.status_code == 409, response.text
+E   AssertionError: {"data":{"payment_intent_id":"opi_54af8d65a1e3433b8d1d25766392e0a9","business_type":"SUBSCRIPTION_INVOICE","business_id":"invoice-depth","payer_id":"usr_23a52d2c08194938b7f1bcaf6110053a","payee_id":"GO","operation":"PAY","amount_minor":69900,"currency":"CNY","channel_priority_json":["ALIPAY","VISA"],"selected_channel":null,"state":"REQUIRES_CHANNEL_SELECTION","idempotency_key":"depth-http","automatic_fallback_allowed":false,"user_channel_consent_at":null,"created_at":"2026-09-18T16:51:50.658003+00:00","updated_at":"2026-09-18T16:51:50.658005+00:00"}}
+E   assert 200 == 409
+E    +  where 200 = <Response [200 OK]>.status_code
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-18T16:51:50.660901+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a74b36f75eae446b87a5ccc291fb4fa5","trace_id":"tr_afd8057f711d46319e4e08e042edb075","path":"/v1/payments/intents","method":"POST","status_code":200,"duration_ms":426.45}
+{"ts":"2026-09-18T16:51:50.661962+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents "HTTP/1.1 200 OK"
+_____ test_consumer_http_cannot_create_unbound_money_obligations[UNKNOWN] ______
+tests/test_cell_depth_c11_payment_boundary.py:60: in test_consumer_http_cannot_create_unbound_money_obligations
+    assert response.status_code == 409, response.text
+E   AssertionError: {"data":{"payment_intent_id":"opi_ca773ccd04754d44b19dc04cca90557a","business_type":"UNKNOWN","business_id":"invoice-depth","payer_id":"usr_f77b893871b048a6ae15ec6aeb138755","payee_id":"GO","operation":"PAY","amount_minor":69900,"currency":"CNY","channel_priority_json":["ALIPAY","VISA"],"selected_channel":null,"state":"REQUIRES_CHANNEL_SELECTION","idempotency_key":"depth-http","automatic_fallback_allowed":false,"user_channel_consent_at":null,"created_at":"2026-09-18T16:51:50.857187+00:00","updated_at":"2026-09-18T16:51:50.857188+00:00"}}
+E   assert 200 == 409
+E    +  where 200 = <Response [200 OK]>.status_code
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-18T16:51:50.858920+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_ca10195eee564ca5b303ed2f567c3579","trace_id":"tr_7d0a7afc1a0247f786ee9b69e2e24ff9","path":"/v1/payments/intents","method":"POST","status_code":200,"duration_ms":9.19}
+{"ts":"2026-09-18T16:51:50.859422+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents "HTTP/1.1 200 OK"
+_______ test_consumer_http_cannot_create_unbound_money_obligations[None] _______
+  + Exception Group Traceback (most recent call last):
+  |   File "/root/.local/lib/python3.12/site-packages/starlette/_utils.py", line 85, in create_collapsing_task_group
+  |     async with anyio.create_task_group() as tg:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/root/.local/lib/python3.12/site-packages/_pytest/runner.py", line 361, in from_call
+    |     result: TResult | None = func()
+    |                              ^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/_pytest/runner.py", line 250, in <lambda>
+    |     lambda: runtest_hook(item=item, **kwds),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+    |     raise exception
+    |   File "/root/.local/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/root/.local/lib/python3.12/site-packages/_pytest/logging.py", line 865, in pytest_runtest_call
+    |     yield
+    |   File "/root/.local/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/root/.local/lib/python3.12/site-packages/_pytest/capture.py", line 900, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/root/.local/lib/python3.12/site-packages/_pytest/skipping.py", line 268, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+    |     res = hook_impl.function(*args)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/_pytest/runner.py", line 184, in pytest_runtest_call
+    |     item.runtest()
+    |   File "/root/.local/lib/python3.12/site-packages/_pytest/python.py", line 1707, in runtest
+    |     self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    |   File "/root/.local/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+    |     raise exception
+    |   File "/root/.local/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+    |     res = hook_impl.function(*args)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/_pytest/python.py", line 167, in pytest_pyfunc_call
+    |     result = testfunction(**testargs)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/tests/test_cell_depth_c11_payment_boundary.py", line 58, in test_consumer_http_cannot_create_unbound_money_obligations
+    |     response = client.post("/v1/payments/intents", json=body, headers={
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/testclient.py", line 556, in post
+    |     return super().post(
+    |            ^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 1144, in post
+    |     return self.request(
+    |            ^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/testclient.py", line 455, in request
+    |     return super().request(
+    |            ^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 825, in request
+    |     return self.send(request, auth=auth, follow_redirects=follow_redirects)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 914, in send
+    |     response = self._send_handling_auth(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    |     response = self._send_handling_redirects(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    |     response = self._send_single_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    |     response = transport.handle_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/testclient.py", line 354, in handle_request
+    |     raise exc
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/testclient.py", line 351, in handle_request
+    |     portal.call(self.app, scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/anyio/from_thread.py", line 340, in call
+    |     return cast(T_Retval, self.start_task_soon(func, *args).result())
+    |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    |     return self.__get_result()
+    |            ^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    |     raise self._exception
+    |   File "/root/.local/lib/python3.12/site-packages/anyio/from_thread.py", line 265, in _call_func
+    |     retval = await retval_or_awaitable
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/applications.py", line 1163, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    |     raise exc
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 302, in dispatch
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 256, in dispatch
+    |     response=await call_next(request)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 210, in dispatch
+    |     response=await call_next(request)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 2734, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1780, in handle
+    |     await self.original_router.handle(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 2789, in handle
+    |     await included_router._handle_selected(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    |     await original_route.handle(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1279, in handle
+    |     await app(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 158, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 144, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 706, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 354, in run_endpoint_function
+    |     return await run_in_threadpool(dependant.call, **values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    |     return await anyio.to_thread.run_sync(func)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    |     return await get_async_backend().run_sync_in_worker_thread(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    |     return await future
+    |            ^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    |     result = context.run(func, *args)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py", line 12, in create
+    |     def create(b:P,idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(consumer_principal)):return call(svc.create_intent,b.model_dump(exclude_none=True),idempotency_key,p.user_id)
+    |                                                                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py", line 8, in call
+    |     try:return {'data':fn(*a)}
+    |                        ^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/services/omnichannel_payment.py", line 54, in create_intent
+    |     if b['business_type'] in ORDER_TYPES:
+    |        ~^^^^^^^^^^^^^^^^^
+    | KeyError: 'business_type'
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/tests/test_cell_depth_c11_payment_boundary.py", line 58, in test_consumer_http_cannot_create_unbound_money_obligations
+    response = client.post("/v1/payments/intents", json=body, headers={
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/starlette/testclient.py", line 556, in post
+    return super().post(
+           ^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 1144, in post
+    return self.request(
+           ^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/starlette/testclient.py", line 455, in request
+    return super().request(
+           ^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/starlette/testclient.py", line 354, in handle_request
+    raise exc
+  File "/root/.local/lib/python3.12/site-packages/starlette/testclient.py", line 351, in handle_request
+    portal.call(self.app, scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/anyio/from_thread.py", line 340, in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/root/.local/lib/python3.12/site-packages/anyio/from_thread.py", line 265, in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 302, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 256, in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 210, in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 354, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py", line 12, in create
+    def create(b:P,idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(consumer_principal)):return call(svc.create_intent,b.model_dump(exclude_none=True),idempotency_key,p.user_id)
+                                                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py", line 8, in call
+    try:return {'data':fn(*a)}
+                       ^^^^^^
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/services/omnichannel_payment.py", line 54, in create_intent
+    if b['business_type'] in ORDER_TYPES:
+       ~^^^^^^^^^^^^^^^^^
+KeyError: 'business_type'
+
+The above exception was the direct cause of the following exception:
+tests/test_cell_depth_c11_payment_boundary.py:58: in test_consumer_http_cannot_create_unbound_money_obligations
+    response = client.post("/v1/payments/intents", json=body, headers={
+/root/.local/lib/python3.12/site-packages/starlette/testclient.py:556: in post
+    return super().post(
+/root/.local/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+/root/.local/lib/python3.12/site-packages/starlette/testclient.py:455: in request
+    return super().request(
+/root/.local/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+/root/.local/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+/root/.local/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/starlette/testclient.py:354: in handle_request
+    raise exc
+/root/.local/lib/python3.12/site-packages/starlette/testclient.py:351: in handle_request
+    portal.call(self.app, scope, receive, send)
+/root/.local/lib/python3.12/site-packages/anyio/from_thread.py:340: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/root/.local/lib/python3.12/site-packages/anyio/from_thread.py:265: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/fastapi/applications.py:1163: in __call__
+    await super().__call__(scope, receive, send)
+/root/.local/lib/python3.12/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+/root/.local/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+/root/.local/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:302: in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:256: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:210: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+/root/.local/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/root/.local/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+/root/.local/lib/python3.12/site-packages/starlette/routing.py:670: in __call__
+    await self.middleware_stack(scope, receive, send)
+/root/.local/lib/python3.12/site-packages/fastapi/routing.py:2734: in app
+    await route.handle(scope, receive, send)
+/root/.local/lib/python3.12/site-packages/fastapi/routing.py:1780: in handle
+    await self.original_router.handle(scope, receive, send)
+/root/.local/lib/python3.12/site-packages/fastapi/routing.py:2789: in handle
+    await included_router._handle_selected(scope, receive, send)
+/root/.local/lib/python3.12/site-packages/fastapi/routing.py:1800: in _handle_selected
+    await original_route.handle(scope, receive, send)
+/root/.local/lib/python3.12/site-packages/fastapi/routing.py:1279: in handle
+    await app(scope, receive, send)
+/root/.local/lib/python3.12/site-packages/fastapi/routing.py:158: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/root/.local/lib/python3.12/site-packages/fastapi/routing.py:144: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/fastapi/routing.py:706: in app
+    raw_response = await run_endpoint_function(
+/root/.local/lib/python3.12/site-packages/fastapi/routing.py:354: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/starlette/concurrency.py:34: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/anyio/to_thread.py:65: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:2706: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1100: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/api/routes/omnichannel_payment.py:12: in create
+    def create(b:P,idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(consumer_principal)):return call(svc.create_intent,b.model_dump(exclude_none=True),idempotency_key,p.user_id)
+                                                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/api/routes/omnichannel_payment.py:8: in call
+    try:return {'data':fn(*a)}
+                       ^^^^^^
+src/go_hotel/services/omnichannel_payment.py:54: in create_intent
+    if b['business_type'] in ORDER_TYPES:
+       ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'business_type'
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-18T16:51:51.090146+00:00","level":"ERROR","logger":"go.runtime","message":"request_failed","request_id":"req_0ab72cb2fa6c49abadd67b5e0fea26a1","trace_id":"tr_f7c71d0333c24989837abcddfd93d925","path":"/v1/payments/intents","method":"POST","duration_ms":7.8,"exception":"  + Exception Group Traceback (most recent call last):\n  |   File \"/root/.local/lib/python3.12/site-packages/starlette/_utils.py\", line 85, in create_collapsing_task_group\n  |     async with anyio.create_task_group() as tg:\n  |                ^^^^^^^^^^^^^^^^^^^^^^^^^\n  |   File \"/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 847, in __aexit__\n  |     raise BaseExceptionGroup(\n  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)\n  +-+---------------- 1 ----------------\n    | Traceback (most recent call last):\n    |   File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py\", line 302, in dispatch\n    |     response = await call_next(request)\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    |     raise app_exc from app_exc.__cause__ or app_exc.__context__\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    |     await self.app(scope, receive_or_disconnect, send_no_error)\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 193, in __call__\n    |     response = await self.dispatch_func(request, call_next)\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py\", line 256, in dispatch\n    |     response=await call_next(request)\n    |              ^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    |     raise app_exc from app_exc.__cause__ or app_exc.__context__\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    |     await self.app(scope, receive_or_disconnect, send_no_error)\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 193, in __call__\n    |     response = await self.dispatch_func(request, call_next)\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py\", line 210, in dispatch\n    |     response=await call_next(request)\n    |              ^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    |     raise app_exc from app_exc.__cause__ or app_exc.__context__\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    |     await self.app(scope, receive_or_disconnect, send_no_error)\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    |     raise exc\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    |     await app(scope, receive, sender)\n    |   File \"/root/.local/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    |     await self.app(scope, receive, send)\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/routing.py\", line 670, in __call__\n    |     await self.middleware_stack(scope, receive, send)\n    |   File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 2734, in app\n    |     await route.handle(scope, receive, send)\n    |   File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 1780, in handle\n    |     await self.original_router.handle(scope, receive, send)\n    |   File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 2789, in handle\n    |     await included_router._handle_selected(scope, receive, send)\n    |   File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 1800, in _handle_selected\n    |     await original_route.handle(scope, receive, send)\n    |   File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 1279, in handle\n    |     await app(scope, receive, send)\n    |   File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 158, in app\n    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    |     raise exc\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    |     await app(scope, receive, sender)\n    |   File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 144, in app\n    |     response = await f(request)\n    |                ^^^^^^^^^^^^^^^^\n    |   File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 706, in app\n    |     raw_response = await run_endpoint_function(\n    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 354, in run_endpoint_function\n    |     return await run_in_threadpool(dependant.call, **values)\n    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/root/.local/lib/python3.12/site-packages/starlette/concurrency.py\", line 34, in run_in_threadpool\n    |     return await anyio.to_thread.run_sync(func)\n    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/root/.local/lib/python3.12/site-packages/anyio/to_thread.py\", line 65, in run_sync\n    |     return await get_async_backend().run_sync_in_worker_thread(\n    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 2706, in run_sync_in_worker_thread\n    |     return await future\n    |            ^^^^^^^^^^^^\n    |   File \"/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 1100, in run\n    |     result = context.run(func, *args)\n    |              ^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py\", line 12, in create\n    |     def create(b:P,idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(consumer_principal)):return call(svc.create_intent,b.model_dump(exclude_none=True),idempotency_key,p.user_id)\n    |                                                                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py\", line 8, in call\n    |     try:return {'data':fn(*a)}\n    |                        ^^^^^^\n    |   File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/services/omnichannel_payment.py\", line 54, in create_intent\n    |     if b['business_type'] in ORDER_TYPES:\n    |        ~^^^^^^^^^^^^^^^^^\n    | KeyError: 'business_type'\n    +------------------------------------\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py\", line 302, in dispatch\n    response = await call_next(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    raise app_exc from app_exc.__cause__ or app_exc.__context__\n  File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    await self.app(scope, receive_or_disconnect, send_no_error)\n  File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 193, in __call__\n    response = await self.dispatch_func(request, call_next)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py\", line 256, in dispatch\n    response=await call_next(request)\n             ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    raise app_exc from app_exc.__cause__ or app_exc.__context__\n  File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    await self.app(scope, receive_or_disconnect, send_no_error)\n  File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 193, in __call__\n    response = await self.dispatch_func(request, call_next)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py\", line 210, in dispatch\n    response=await call_next(request)\n             ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    raise app_exc from app_exc.__cause__ or app_exc.__context__\n  File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    await self.app(scope, receive_or_disconnect, send_no_error)\n  File \"/root/.local/lib/python3.12/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/root/.local/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"/root/.local/lib/python3.12/site-packages/starlette/routing.py\", line 670, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 2734, in app\n    await route.handle(scope, receive, send)\n  File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 1780, in handle\n    await self.original_router.handle(scope, receive, send)\n  File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 2789, in handle\n    await included_router._handle_selected(scope, receive, send)\n  File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 1800, in _handle_selected\n    await original_route.handle(scope, receive, send)\n  File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 1279, in handle\n    await app(scope, receive, send)\n  File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 158, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 144, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 706, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/.local/lib/python3.12/site-packages/fastapi/routing.py\", line 354, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/.local/lib/python3.12/site-packages/starlette/concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/.local/lib/python3.12/site-packages/anyio/to_thread.py\", line 65, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 2706, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 1100, in run\n    result = context.run(func, *args)\n             ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py\", line 12, in create\n    def create(b:P,idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(consumer_principal)):return call(svc.create_intent,b.model_dump(exclude_none=True),idempotency_key,p.user_id)\n                                                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py\", line 8, in call\n    try:return {'data':fn(*a)}\n                       ^^^^^^\n  File \"/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/services/omnichannel_payment.py\", line 54, in create_intent\n    if b['business_type'] in ORDER_TYPES:\n       ~^^^^^^^^^^^^^^^^^\nKeyError: 'business_type'"}
+------------------------------ Captured log call -------------------------------
+ERROR    go.runtime:main.py:308 request_failed
+  + Exception Group Traceback (most recent call last):
+  |   File "/root/.local/lib/python3.12/site-packages/starlette/_utils.py", line 85, in create_collapsing_task_group
+  |     async with anyio.create_task_group() as tg:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 302, in dispatch
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 256, in dispatch
+    |     response=await call_next(request)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 210, in dispatch
+    |     response=await call_next(request)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 2734, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1780, in handle
+    |     await self.original_router.handle(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 2789, in handle
+    |     await included_router._handle_selected(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    |     await original_route.handle(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1279, in handle
+    |     await app(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 158, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 144, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 706, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 354, in run_endpoint_function
+    |     return await run_in_threadpool(dependant.call, **values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    |     return await anyio.to_thread.run_sync(func)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    |     return await get_async_backend().run_sync_in_worker_thread(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    |     return await future
+    |            ^^^^^^^^^^^^
+    |   File "/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    |     result = context.run(func, *args)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py", line 12, in create
+    |     def create(b:P,idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(consumer_principal)):return call(svc.create_intent,b.model_dump(exclude_none=True),idempotency_key,p.user_id)
+    |                                                                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py", line 8, in call
+    |     try:return {'data':fn(*a)}
+    |                        ^^^^^^
+    |   File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/services/omnichannel_payment.py", line 54, in create_intent
+    |     if b['business_type'] in ORDER_TYPES:
+    |        ~^^^^^^^^^^^^^^^^^
+    | KeyError: 'business_type'
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 302, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 256, in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/main.py", line 210, in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/root/.local/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/.local/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/fastapi/routing.py", line 354, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/root/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py", line 12, in create
+    def create(b:P,idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(consumer_principal)):return call(svc.create_intent,b.model_dump(exclude_none=True),idempotency_key,p.user_id)
+                                                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/api/routes/omnichannel_payment.py", line 8, in call
+    try:return {'data':fn(*a)}
+                       ^^^^^^
+  File "/workspace/scratch/a682af655fba/cell-c11_c12/application/src/go_hotel/services/omnichannel_payment.py", line 54, in create_intent
+    if b['business_type'] in ORDER_TYPES:
+       ~^^^^^^^^^^^^^^^^^
+KeyError: 'business_type'
+_ test_signed_event_identity_cannot_be_reused_for_different_payload[changes0] __
+tests/test_cell_depth_c11_payment_boundary.py:88: in test_signed_event_identity_cannot_be_reused_for_different_payload
+    with pytest.raises(ValueError, match="PAYMENT_CALLBACK_REPLAY_PAYLOAD_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_signed_event_identity_cannot_be_reused_for_different_payload[changes1] __
+tests/test_cell_depth_c11_payment_boundary.py:88: in test_signed_event_identity_cannot_be_reused_for_different_payload
+    with pytest.raises(ValueError, match="PAYMENT_CALLBACK_REPLAY_PAYLOAD_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_signed_event_identity_cannot_be_reused_for_different_payload[changes2] __
+tests/test_cell_depth_c11_payment_boundary.py:88: in test_signed_event_identity_cannot_be_reused_for_different_payload
+    with pytest.raises(ValueError, match="PAYMENT_CALLBACK_REPLAY_PAYLOAD_MISMATCH"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+________ test_signed_naive_timestamp_is_rejected_without_callback_state ________
+tests/test_cell_depth_c11_payment_boundary.py:101: in test_signed_naive_timestamp_is_rejected_without_callback_state
+    svc.webhook("ALIPAY", body, signed(body))
+src/go_hotel/services/omnichannel_payment.py:161: in webhook
+    if event_at<now()-timedelta(hours=24) or event_at>now()+timedelta(minutes=5):raise ValueError('PAYMENT_CALLBACK_OUTSIDE_REPLAY_WINDOW')
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: can't compare offset-naive and offset-aware datetimes
+_ test_sso_username_collision_cannot_take_over_existing_password_account[GO_ADMIN-roles0] _
+tests/test_cell_depth_c12_identity_binding.py:18: in test_sso_username_collision_cannot_take_over_existing_password_account
+    with pytest.raises(ValueError, match="SSO_ACCOUNT_LINK_REQUIRED"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_sso_username_collision_cannot_take_over_existing_password_account[SUPPLIER_USER-roles1] _
+tests/test_cell_depth_c12_identity_binding.py:18: in test_sso_username_collision_cannot_take_over_existing_password_account
+    with pytest.raises(ValueError, match="SSO_ACCOUNT_LINK_REQUIRED"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_____ test_sso_username_collision_cannot_replace_existing_external_subject _____
+tests/test_cell_depth_c12_identity_binding.py:31: in test_sso_username_collision_cannot_replace_existing_external_subject
+    with pytest.raises(ValueError, match="SSO_ACCOUNT_LINK_REQUIRED"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_________ test_sso_rejects_incomplete_external_identity[-subject-name] _________
+tests/test_cell_depth_c12_identity_binding.py:43: in test_sso_rejects_incomplete_external_identity
+    with pytest.raises(ValueError, match="INVALID_SSO_IDENTITY"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+________ test_sso_rejects_incomplete_external_identity[corporate--name] ________
+tests/test_cell_depth_c12_identity_binding.py:43: in test_sso_rejects_incomplete_external_identity
+    with pytest.raises(ValueError, match="INVALID_SSO_IDENTITY"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+______ test_sso_rejects_incomplete_external_identity[corporate-subject-] _______
+tests/test_cell_depth_c12_identity_binding.py:43: in test_sso_rejects_incomplete_external_identity
+    with pytest.raises(ValueError, match="INVALID_SSO_IDENTITY"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_______ test_sso_rejects_incomplete_external_identity[None-subject-name] _______
+tests/test_cell_depth_c12_identity_binding.py:43: in test_sso_rejects_incomplete_external_identity
+    with pytest.raises(ValueError, match="INVALID_SSO_IDENTITY"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+______ test_sso_rejects_incomplete_external_identity[corporate-None-name] ______
+tests/test_cell_depth_c12_identity_binding.py:43: in test_sso_rejects_incomplete_external_identity
+    with pytest.raises(ValueError, match="INVALID_SSO_IDENTITY"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_____________ test_access_token_session_must_belong_to_its_subject _____________
+tests/test_cell_depth_c12_identity_binding.py:52: in test_access_token_session_must_belong_to_its_subject
+    with pytest.raises(ValueError, match="SESSION_REVOKED"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+____________ test_refresh_token_session_must_belong_to_its_subject _____________
+tests/test_cell_depth_c12_identity_binding.py:64: in test_refresh_token_session_must_belong_to_its_subject
+    with pytest.raises(ValueError, match="SESSION_REVOKED"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+____ test_concurrent_refresh_consumes_once_and_leaves_one_usable_successor _____
+tests/test_cell_depth_c12_identity_binding.py:90: in test_concurrent_refresh_consumes_once_and_leaves_one_usable_successor
+    assert len(winners) == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([{'access_token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiU1VQUExJRVJfVVNFUiIsImV4cCI6MTc4OTc1MTIxMy...'bearer', 'expires_in': 900, 'refresh_token': 'k9Pt3oQAgz_uOqav3vU73gVjhAsTViQtv2qyztf9jKWD5TN_WYqTIEqIeYdbzQv6', ...}])
+=============================== warnings summary ===============================
+tests/test_cell_depth_c11_payment_boundary.py::test_consumer_http_cannot_create_unbound_money_obligations[SUBSCRIPTION_INVOICE]
+  /root/.local/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_cell_depth_c11_payment_boundary.py::test_consumer_http_cannot_create_unbound_money_obligations[SUBSCRIPTION_INVOICE]
+  /root/.local/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_obligation_idempotency_rejects_changed_request_without_mutation[changes0]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_obligation_idempotency_rejects_changed_request_without_mutation[changes1]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_obligation_idempotency_rejects_changed_request_without_mutation[changes2]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_obligation_idempotency_rejects_changed_request_without_mutation[changes3]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_obligation_idempotency_rejects_changed_request_without_mutation[changes4]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_obligation_idempotency_rejects_changed_request_without_mutation[changes5]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_obligation_idempotency_rejects_changed_request_without_mutation[changes6]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_obligation_idempotency_rejects_changed_request_without_mutation[changes7]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_global_key_cannot_disclose_another_payers_payment
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_consumer_http_cannot_create_unbound_money_obligations[SUBSCRIPTION_INVOICE]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_consumer_http_cannot_create_unbound_money_obligations[UNKNOWN]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_consumer_http_cannot_create_unbound_money_obligations[None]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_signed_event_identity_cannot_be_reused_for_different_payload[changes0]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_signed_event_identity_cannot_be_reused_for_different_payload[changes1]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_signed_event_identity_cannot_be_reused_for_different_payload[changes2]
+FAILED tests/test_cell_depth_c11_payment_boundary.py::test_signed_naive_timestamp_is_rejected_without_callback_state
+FAILED tests/test_cell_depth_c12_identity_binding.py::test_sso_username_collision_cannot_take_over_existing_password_account[GO_ADMIN-roles0]
+FAILED tests/test_cell_depth_c12_identity_binding.py::test_sso_username_collision_cannot_take_over_existing_password_account[SUPPLIER_USER-roles1]
+FAILED tests/test_cell_depth_c12_identity_binding.py::test_sso_username_collision_cannot_replace_existing_external_subject
+FAILED tests/test_cell_depth_c12_identity_binding.py::test_sso_rejects_incomplete_external_identity[-subject-name]
+FAILED tests/test_cell_depth_c12_identity_binding.py::test_sso_rejects_incomplete_external_identity[corporate--name]
+FAILED tests/test_cell_depth_c12_identity_binding.py::test_sso_rejects_incomplete_external_identity[corporate-subject-]
+FAILED tests/test_cell_depth_c12_identity_binding.py::test_sso_rejects_incomplete_external_identity[None-subject-name]
+FAILED tests/test_cell_depth_c12_identity_binding.py::test_sso_rejects_incomplete_external_identity[corporate-None-name]
+FAILED tests/test_cell_depth_c12_identity_binding.py::test_access_token_session_must_belong_to_its_subject
+FAILED tests/test_cell_depth_c12_identity_binding.py::test_refresh_token_session_must_belong_to_its_subject
+FAILED tests/test_cell_depth_c12_identity_binding.py::test_concurrent_refresh_consumes_once_and_leaves_one_usable_successor

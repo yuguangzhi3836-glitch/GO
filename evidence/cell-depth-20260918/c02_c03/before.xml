@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="10" skipped="0" tests="12" time="7.072" timestamp="2026-09-18T12:48:26.656188-04:00" hostname="localhost"><testcase classname="tests.flight.test_c02_prebook_consumption" name="test_retries_across_service_restart_and_expiry_return_one_order" time="1.929"><failure message="ValueError: FLIGHT_PREBOOK_INVALID">tests/flight/test_c02_prebook_consumption.py:32: in test_retries_across_service_restart_and_expiry_return_one_order
+    replay = FlightService().create_order('owner', pid, PEOPLE)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/flight/service.py:55: in create_order
+    if not p or p.status!="CONFIRMED" or p.expires_at&lt;now(): raise ValueError("FLIGHT_PREBOOK_INVALID")
+                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FLIGHT_PREBOOK_INVALID</failure></testcase><testcase classname="tests.flight.test_c02_prebook_consumption" name="test_consumed_prebook_cannot_be_rebound[other-owner-people0]" time="0.105"><failure message="Failed: DID NOT RAISE ValueError">tests/flight/test_c02_prebook_consumption.py:41: in test_consumed_prebook_cannot_be_rebound
+    with pytest.raises(ValueError, match='FLIGHT_PREBOOK_'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.flight.test_c02_prebook_consumption" name="test_consumed_prebook_cannot_be_rebound[owner-people1]" time="0.069"><failure message="Failed: DID NOT RAISE ValueError">tests/flight/test_c02_prebook_consumption.py:41: in test_consumed_prebook_cannot_be_rebound
+    with pytest.raises(ValueError, match='FLIGHT_PREBOOK_'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.flight.test_c02_prebook_consumption" name="test_concurrent_claims_commit_only_one_order[owners0]" time="0.098"><failure message="AssertionError: assert 2 == 1&#10; +  where 2 = len([&lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea000&gt;, &lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafe9fd0&gt;])&#10; +    where [&lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea000&gt;, &lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafe9fd0&gt;] = orders('flt_pb_02dfa78081b14d67')">tests/flight/test_c02_prebook_consumption.py:60: in test_concurrent_claims_commit_only_one_order
+    assert len(orders(pid)) == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([&lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea000&gt;, &lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafe9fd0&gt;])
+E    +    where [&lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea000&gt;, &lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafe9fd0&gt;] = orders('flt_pb_02dfa78081b14d67')</failure></testcase><testcase classname="tests.flight.test_c02_prebook_consumption" name="test_concurrent_claims_commit_only_one_order[owners1]" time="0.078"><failure message="AssertionError: assert 2 == 1&#10; +  where 2 = len([&lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea690&gt;, &lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea090&gt;])&#10; +    where [&lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea690&gt;, &lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea090&gt;] = orders('flt_pb_a6a21fd779b14b40')">tests/flight/test_c02_prebook_consumption.py:60: in test_concurrent_claims_commit_only_one_order
+    assert len(orders(pid)) == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([&lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea690&gt;, &lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea090&gt;])
+E    +    where [&lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea690&gt;, &lt;go_hotel.db.models.FlightOrderRow object at 0x7f65aafea090&gt;] = orders('flt_pb_a6a21fd779b14b40')</failure></testcase><testcase classname="tests.flight.test_c02_prebook_consumption" name="test_order_evidence_failure_rolls_back_prebook_claim" time="0.068" /><testcase classname="tests.flight.test_c02_prebook_consumption" name="test_existing_legacy_order_does_not_allow_a_second_claim" time="0.061"><failure message="AssertionError: assert 'flt_ord_691bcd15d083497f' == 'flt_ord_b8a030ad418a4e41'&#10;  &#10;  - flt_ord_b8a030ad418a4e41&#10;  + flt_ord_691bcd15d083497f">tests/flight/test_c02_prebook_consumption.py:89: in test_existing_legacy_order_does_not_allow_a_second_claim
+    assert FlightService().create_order('owner', pid, PEOPLE)['order_id'] == first['order_id']
+E   AssertionError: assert 'flt_ord_691bcd15d083497f' == 'flt_ord_b8a030ad418a4e41'
+E     
+E     - flt_ord_b8a030ad418a4e41
+E     + flt_ord_691bcd15d083497f</failure></testcase><testcase classname="tests.flight.test_c02_prebook_consumption" name="test_http_different_idempotency_keys_share_order_and_conflict_on_party" time="2.025"><failure message="AssertionError: assert 'flt_ord_1e6574b6f66f4461' == 'flt_ord_be81093082874720'&#10;  &#10;  - flt_ord_be81093082874720&#10;  + flt_ord_1e6574b6f66f4461">tests/flight/test_c02_prebook_consumption.py:102: in test_http_different_idempotency_keys_share_order_and_conflict_on_party
+    assert first.json()['data']['order_id'] == replay.json()['data']['order_id']
+E   AssertionError: assert 'flt_ord_1e6574b6f66f4461' == 'flt_ord_be81093082874720'
+E     
+E     - flt_ord_be81093082874720
+E     + flt_ord_1e6574b6f66f4461</failure></testcase><testcase classname="tests.test_c03_change_quote_supersession" name="test_unselected_quote_cannot_execute_after_a_supplier_decision[TICKETED]" time="0.211"><failure message="Failed: DID NOT RAISE ValueError">tests/test_c03_change_quote_supersession.py:23: in test_unselected_quote_cannot_execute_after_a_supplier_decision
+    with pytest.raises(ValueError, match='RAIL_CHANGE_QUOTE_INVALID'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_c03_change_quote_supersession" name="test_unselected_quote_cannot_execute_after_a_supplier_decision[FAILED]" time="0.169"><failure message="Failed: DID NOT RAISE ValueError">tests/test_c03_change_quote_supersession.py:23: in test_unselected_quote_cannot_execute_after_a_supplier_decision
+    with pytest.raises(ValueError, match='RAIL_CHANGE_QUOTE_INVALID'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_c03_change_quote_supersession" name="test_authorization_interruption_preserves_selected_quote_only" time="0.143"><failure message="AssertionError: assert 'QUOTED' == 'SUPERSEDED'&#10;  &#10;  - SUPERSEDED&#10;  + QUOTED">tests/test_c03_change_quote_supersession.py:44: in test_authorization_interruption_preserves_selected_quote_only
+    assert session.get(RailChangeQuoteRow, stale).status == 'SUPERSEDED'
+E   AssertionError: assert 'QUOTED' == 'SUPERSEDED'
+E     
+E     - SUPERSEDED
+E     + QUOTED</failure></testcase><testcase classname="tests.test_c03_change_quote_supersession" name="test_invalid_selection_does_not_supersede_valid_quotes" time="0.094" /></testsuite></testsuites>

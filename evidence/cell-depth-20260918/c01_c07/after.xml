@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="23" time="5.131" timestamp="2026-09-18T12:49:40.696265-04:00" hostname="localhost"><testcase classname="tests.test_c01_property_change_boundaries" name="test_api_field_names_require_review_and_keep_mixed_patch_atomic[legal-value0-LEGAL]" time="1.946"><failure message="AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}&#10;  &#10;  Omitting 16 identical items, use -vv to show&#10;  Differing items:&#10;  {'updated_at': '2026-09-18T16:49:43.829190'} != {'updated_at': '2026-09-18T16:49:43.829190+00:00'}&#10;  {'created_at': '2026-09-18T16:49:43.829190'} != {'created_at': '2026-09-18T16:49:43.829190+00:00'}&#10;  Use -v to get more diff">field = 'legal', value = {'company': 'Changed Legal'}, group = 'LEGAL'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+        assert result['mode'] == 'CHANGE_REQUEST'
+        assert result['change_request']['field_group'] == group
+        assert result['change_request']['proposed_value_json'] == body
+        current = svc.graph('c01-owner', prop['property_id'])['property']
+&gt;       assert current == prop
+E       AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}
+E         
+E         Omitting 16 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-18T16:49:43.829190'} != {'updated_at': '2026-09-18T16:49:43.829190+00:00'}
+E         {'created_at': '2026-09-18T16:49:43.829190'} != {'created_at': '2026-09-18T16:49:43.829190+00:00'}
+E         Use -v to get more diff
+
+tests/test_c01_property_change_boundaries.py:32: AssertionError</failure></testcase><testcase classname="tests.test_c01_property_change_boundaries" name="test_api_field_names_require_review_and_keep_mixed_patch_atomic[address-value1-ADDRESS]" time="0.118"><failure message="AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}&#10;  &#10;  Omitting 16 identical items, use -vv to show&#10;  Differing items:&#10;  {'updated_at': '2026-09-18T16:49:44.273498'} != {'updated_at': '2026-09-18T16:49:44.273498+00:00'}&#10;  {'created_at': '2026-09-18T16:49:44.273498'} != {'created_at': '2026-09-18T16:49:44.273498+00:00'}&#10;  Use -v to get more diff">field = 'address', value = {'city': 'Changed City'}, group = 'ADDRESS'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+        assert result['mode'] == 'CHANGE_REQUEST'
+        assert result['change_request']['field_group'] == group
+        assert result['change_request']['proposed_value_json'] == body
+        current = svc.graph('c01-owner', prop['property_id'])['property']
+&gt;       assert current == prop
+E       AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}
+E         
+E         Omitting 16 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-18T16:49:44.273498'} != {'updated_at': '2026-09-18T16:49:44.273498+00:00'}
+E         {'created_at': '2026-09-18T16:49:44.273498'} != {'created_at': '2026-09-18T16:49:44.273498+00:00'}
+E         Use -v to get more diff
+
+tests/test_c01_property_change_boundaries.py:32: AssertionError</failure></testcase><testcase classname="tests.test_c01_property_change_boundaries" name="test_api_field_names_require_review_and_keep_mixed_patch_atomic[brand_name-Changed Brand-BRAND]" time="0.070"><failure message="AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}&#10;  &#10;  Omitting 16 identical items, use -vv to show&#10;  Differing items:&#10;  {'updated_at': '2026-09-18T16:49:44.348186'} != {'updated_at': '2026-09-18T16:49:44.348186+00:00'}&#10;  {'created_at': '2026-09-18T16:49:44.348186'} != {'created_at': '2026-09-18T16:49:44.348186+00:00'}&#10;  Use -v to get more diff">field = 'brand_name', value = 'Changed Brand', group = 'BRAND'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+        assert result['mode'] == 'CHANGE_REQUEST'
+        assert result['change_request']['field_group'] == group
+        assert result['change_request']['proposed_value_json'] == body
+        current = svc.graph('c01-owner', prop['property_id'])['property']
+&gt;       assert current == prop
+E       AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}
+E         
+E         Omitting 16 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-18T16:49:44.348186'} != {'updated_at': '2026-09-18T16:49:44.348186+00:00'}
+E         {'created_at': '2026-09-18T16:49:44.348186'} != {'created_at': '2026-09-18T16:49:44.348186+00:00'}
+E         Use -v to get more diff
+
+tests/test_c01_property_change_boundaries.py:32: AssertionError</failure></testcase><testcase classname="tests.test_c01_property_change_boundaries" name="test_api_field_names_require_review_and_keep_mixed_patch_atomic[group_name-Changed Group-BRAND]" time="0.078"><failure message="AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}&#10;  &#10;  Omitting 16 identical items, use -vv to show&#10;  Differing items:&#10;  {'updated_at': '2026-09-18T16:49:44.422852'} != {'updated_at': '2026-09-18T16:49:44.422852+00:00'}&#10;  {'created_at': '2026-09-18T16:49:44.422852'} != {'created_at': '2026-09-18T16:49:44.422852+00:00'}&#10;  Use -v to get more diff">field = 'group_name', value = 'Changed Group', group = 'BRAND'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+        assert result['mode'] == 'CHANGE_REQUEST'
+        assert result['change_request']['field_group'] == group
+        assert result['change_request']['proposed_value_json'] == body
+        current = svc.graph('c01-owner', prop['property_id'])['property']
+&gt;       assert current == prop
+E       AssertionError: assert {'property_id...n': None, ...} == {'property_id...n': None, ...}
+E         
+E         Omitting 16 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-18T16:49:44.422852'} != {'updated_at': '2026-09-18T16:49:44.422852+00:00'}
+E         {'created_at': '2026-09-18T16:49:44.422852'} != {'created_at': '2026-09-18T16:49:44.422852+00:00'}
+E         Use -v to get more diff
+
+tests/test_c01_property_change_boundaries.py:32: AssertionError</failure></testcase><testcase classname="tests.test_c01_property_change_boundaries" name="test_import_cannot_change_non_draft_library_or_claim_it_is_draft[PUBLISHED]" time="0.066" /><testcase classname="tests.test_c01_property_change_boundaries" name="test_import_cannot_change_non_draft_library_or_claim_it_is_draft[UNDER_REVIEW]" time="0.061" /><testcase classname="tests.test_c01_property_change_boundaries" name="test_draft_import_and_low_risk_contact_edit_remain_available" time="0.077" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_malformed_export_rolls_back_claim_and_allows_corrected_upload" time="0.103" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_disconnect_after_authorization_consume_prevents_late_preview[False]" time="0.062" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_disconnect_after_authorization_consume_prevents_late_preview[True]" time="0.058" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_disconnect_blocks_uncommitted_preview_without_erasing_retained_values" time="0.063" /><testcase classname="tests.test_personal_travel_vault" name="test_screenshot_import_requires_review_and_masks_sensitive_fact" time="0.090" /><testcase classname="tests.test_personal_travel_vault" name="test_sensitive_release_requires_consent_and_releases_only_requested_fields" time="0.079" /><testcase classname="tests.test_personal_travel_vault" name="test_import_idempotency_and_conflict_no_silent_overwrite" time="0.095" /><testcase classname="tests.test_personal_travel_vault" name="test_completeness_is_capability_based_not_percent_only" time="0.070" /><testcase classname="tests.test_personal_travel_vault" name="test_consumer_cannot_self_assert_official_or_verified_source" time="0.044" /><testcase classname="tests.test_personal_travel_vault" name="test_account_holder_connection_never_accepts_ota_password_and_has_upload_fallback" time="0.055" /><testcase classname="tests.test_personal_travel_vault" name="test_account_holder_connection_returns_provider_hosted_authorization" time="0.075" /><testcase classname="tests.test_personal_travel_vault" name="test_provider_connection_requires_explicit_holder_confirmation_and_rejects_nested_credentials" time="0.042" /><testcase classname="tests.test_personal_travel_vault" name="test_official_authorization_is_bound_to_holder_and_state_is_one_time" time="0.062" /><testcase classname="tests.test_personal_travel_vault" name="test_official_authorization_rejects_unverified_holder_and_expired_state" time="0.083" /><testcase classname="tests.test_personal_travel_vault" name="test_fallback_upload_previews_then_delete_removes_imported_values" time="0.101" /><testcase classname="tests.test_personal_travel_vault" name="test_provider_upload_is_one_time_and_requires_owner_confirmation" time="0.081" /></testsuite></testsuites>

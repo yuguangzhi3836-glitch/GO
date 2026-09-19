@@ -1,0 +1,38 @@
+{
+  "argv": [
+    "python",
+    "-m",
+    "pytest",
+    "tests/go_ai",
+    "tests/test_go_ai_multimodel.py",
+    "tests/test_c10_external_verification_precedence.py",
+    "tests/test_external_orders_in_go_trips.py",
+    "tests/test_consumer_unified_lifecycle.py",
+    "tests/test_depth29_trip_reentry.py",
+    "tests/test_depth43_hotel_change_trips.py",
+    "tests/test_account_holder_http_integration.py",
+    "--junitxml=/workspace/scratch/a682af655fba/cell-c08_c10/evidence/cell-depth-20260918/c08_c10/regression.xml"
+  ],
+  "cwd": "application",
+  "env_overrides": {
+    "APP_ENV": "test"
+  },
+  "exit_code": 0,
+  "database": "isolated SQLite created by test fixtures",
+  "external_calls": false,
+  "test_files": [
+    "tests/go_ai/test_c08_audit_commit_failure.py",
+    "tests/go_ai/test_c08_durable_execution.py",
+    "tests/go_ai/test_c08_hard_exit_recovery.py",
+    "tests/go_ai/test_c08_planning_verification_failures.py",
+    "tests/go_ai/test_c08_synthesis_audit_finalization.py",
+    "tests/test_go_ai_multimodel.py",
+    "tests/test_c10_external_verification_precedence.py",
+    "tests/test_external_orders_in_go_trips.py",
+    "tests/test_consumer_unified_lifecycle.py",
+    "tests/test_depth29_trip_reentry.py",
+    "tests/test_depth43_hotel_change_trips.py",
+    "tests/test_account_holder_http_integration.py"
+  ],
+  "source_commit": "123df6fc580b528d1e12dea6eef2045c51cac0f6"
+}

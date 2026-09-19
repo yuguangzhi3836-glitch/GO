@@ -1,0 +1,29 @@
+{
+  "reviewer": "C14 independent scoped rules/authority review",
+  "status": "WAITING_FOR_FROZEN_CANDIDATE",
+  "basis": "local candidate only; no deployed/canonical acceptance",
+  "findings": [
+    {
+      "id": "C14-C07-001",
+      "status": "FIX_IN_PROGRESS",
+      "origin": "C14 code inspection",
+      "file": "application/src/go_hotel/services/personal_travel_vault.py",
+      "boundary": "delete_source versus commit_import",
+      "finding": "delete_source reads facts before acquiring a source-job lock; concurrent commit can add an ACTIVE fact after deletion has read the old facts and before values_deleted is set. SQLite BEGIN IMMEDIATE masks the PostgreSQL interleaving.",
+      "required": "Lock existing source jobs in stable import_job_id order before reading facts, use compatible lock order from disconnect, then prove rollback and commit-after-delete denial.",
+      "limits": "Source creation phantom insertion is a separate concurrency boundary; this fix alone does not prove it."
+    },
+    {
+      "id": "C14-C07-002",
+      "status": "FIX_IN_PROGRESS",
+      "origin": "Root discovery independently confirmed by C14 code inspection",
+      "file": "application/src/go_hotel/services/personal_travel_vault.py",
+      "boundary": "consumer-supplied metadata to provider disconnect",
+      "finding": "create_import persists arbitrary metadata. A same-user fake connection_intent can point import_job_id to another user. disconnect fetches that row by unscoped primary key and its non-delete branch mutates the foreign source_disconnected flag.",
+      "required": "Reject reserved connection metadata at untrusted import input and validate user/provider/source association before imported-row mutation; prove zero foreign writes on rejection."
+    }
+  ],
+  "remote_upload": "BLOCKED_PRIOR_TOOL_REJECTION",
+  "merge": "NOT_AUTHORIZED",
+  "deploy": "NOT_AUTHORIZED"
+}

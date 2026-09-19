@@ -1,0 +1,22 @@
+{
+  "scope": "Local isolated SQLite; no real provider calls",
+  "outcomes": [
+    {
+      "ok": true,
+      "duplicate": true
+    },
+    {
+      "ok": true,
+      "duplicate": false
+    }
+  ],
+  "receipt_count": 1,
+  "expected": "Both calls succeed; exactly one duplicate and one receipt",
+  "reproduced": false,
+  "source_commit": "d4ddfb6cb38ffb279a9dd6ced9f60536df9fe3a1",
+  "application_tree": "cc871f21b56717ba9927362aa03c6f4b8c0c4f90",
+  "source_file_sha256": "d967f617252f4d5c6f81073da39468aedcb4408d27e41a89012544e0bacffa21",
+  "script_sha256": "2b105604ce18bd9ca09e084fb7cf7b4d284afa114f0dc2fb0fcd6c07a4993678",
+  "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python /workspace/scratch/a682af655fba/cell-depth-review/c13/verify_callback_race.py",
+  "exit_code": 0
+}

@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "status": "LOCAL_PRODUCT_FIX_CANDIDATE",
+  "cells": [
+    "C01",
+    "C07"
+  ],
+  "parent_local_snapshot": "42f3e62da844279cc3569c90eaa58d24a291a4d5",
+  "parent_remote_pr217_head": "1d1b6b45a5e6e3507bda8c4f3d9ca7b7c8e7175c",
+  "parent_note": "Local snapshot includes the prepared, upload-blocked PR217 changes. It is not canonical main or remote PR217. Root integration removes an inherited generated media cache and rebinds the combined application tree.",
+  "local_application_index_tree": "fb1f702638f0d6408756e020fe3260f06cfa53f7",
+  "changed_files_sha256": {
+    "application/src/go_hotel/services/hotel_partner_core.py": "de3796fe5e5f9886d627b20c3e8ea57392b40341e51d00ae77207fea69c6528c",
+    "application/src/go_hotel/services/personal_travel_vault.py": "c083c14ae10c26d964ca0016098fee693b48453a490482503b76862f665bc01c",
+    "application/tests/test_c01_property_change_boundaries.py": "ee4dc579db3fd7b71b7d6531fd6929003e4512f6b7af2cb8fe19e78d0167e369",
+    "application/tests/test_c07_connection_transaction_boundaries.py": "6f5a6eaf5af030cf1c2aacb9c14c4fd6f78b26e5e244afe10a72b6427e98fef0"
+  },
+  "tasks": [
+    {
+      "gap": "C01-HIGH-RISK-CASE-BYPASS",
+      "task": "Route lowercase legal/address/brand_name/group_name into existing change-request review; keep mixed patches atomic",
+      "test_file": "application/tests/test_c01_property_change_boundaries.py",
+      "result": "PASS_LOCAL"
+    },
+    {
+      "gap": "C01-NONDRAFT-IMPORT",
+      "task": "Require DRAFT for a new import before consuming authorization or writing property/rooms; retain completed idempotent replay",
+      "test_file": "application/tests/test_c01_property_change_boundaries.py",
+      "result": "PASS_LOCAL"
+    },
+    {
+      "gap": "C07-CONNECTION-TRANSACTION-RACE",
+      "task": "Publish previews and connection pointers atomically; lock cancellation/commit paths; roll back invalid upload claims; prevent disconnected callbacks and imports; preserve DELETED terminal state",
+      "test_file": "application/tests/test_c07_connection_transaction_boundaries.py",
+      "result": "PASS_LOCAL"
+    },
+    {
+      "gap": "C07-OPAQUE-STATE-NORMALIZATION",
+      "task": "Hash exact authorization-state bytes, rejecting case or whitespace changes while allowing the original state",
+      "test_file": "application/tests/test_c07_connection_transaction_boundaries.py",
+      "result": "PASS_LOCAL"
+    }
+  ],
+  "runs": [
+    {
+      "name": "before",
+      "command": "APP_ENV=test python -m pytest tests/test_c01_property_change_boundaries.py tests/test_c07_connection_transaction_boundaries.py --junitxml=../evidence/cell-depth-20260918/c01_c07/before.xml",
+      "working_directory": "application",
+      "source": "42f3e62 baseline source",
+      "role": "initial defect reproduction: 10 FAIL / 1 PASS",
+      "counts": {
+        "tests": 11,
+        "failures": 10,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "before.log",
+      "junit": "before.xml"
+    },
+    {
+      "name": "after",
+      "command": "APP_ENV=test python -m pytest tests/test_c01_property_change_boundaries.py tests/test_c07_connection_transaction_boundaries.py tests/test_personal_travel_vault.py --junitxml=../evidence/cell-depth-20260918/c01_c07/after.xml",
+      "working_directory": "application",
+      "source": "intermediate fix",
+      "role": "19 PASS / 4 FAIL caused by SQLite timezone serialization in new assertion; assertion corrected to compare stored property before/after",
+      "counts": {
+        "tests": 23,
+        "failures": 4,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "after.log",
+      "junit": "after.xml"
+    },
+    {
+      "name": "verification",
+      "command": "APP_ENV=test python -m pytest tests/test_c01_property_change_boundaries.py tests/test_c07_connection_transaction_boundaries.py tests/test_personal_travel_vault.py tests/test_hotel_partner_self_operating_core.py --junitxml=../evidence/cell-depth-20260918/c01_c07/verification.xml",
+      "working_directory": "application",
+      "source": "final C01 source; C07 before exact opaque-state hash repair",
+      "role": "41 PASS; final C01 coverage 23 cases",
+      "counts": {
+        "tests": 41,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "verification.log",
+      "junit": "verification.xml"
+    },
+    {
+      "name": "nonce-before",
+      "command": "APP_ENV=test python -m pytest tests/test_c07_connection_transaction_boundaries.py -k exact_opaque --junitxml=../evidence/cell-depth-20260918/c01_c07/nonce-before.xml",
+      "working_directory": "application",
+      "source": "C07 before exact opaque-state hash repair",
+      "role": "2 FAIL: case change and whitespace incorrectly accepted",
+      "counts": {
+        "tests": 2,
+        "failures": 2,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "nonce-before.log",
+      "junit": "nonce-before.xml"
+    },
+    {
+      "name": "final-c07",
+      "command": "APP_ENV=test python -m pytest tests/test_c07_connection_transaction_boundaries.py tests/test_personal_travel_vault.py --junitxml=../evidence/cell-depth-20260918/c01_c07/final-c07.xml",
+      "working_directory": "application",
+      "source": "final C07 source",
+      "role": "20 PASS, including 2 opaque-state fixes",
+      "counts": {
+        "tests": 20,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "final-c07.log",
+      "junit": "final-c07.xml"
+    }
+  ],
+  "verification": {
+    "unique_final_scope_tests": 43,
+    "c01_tests": 23,
+    "c07_tests": 20,
+    "failures": 0,
+    "skipped": 0,
+    "compile": "python -m py_compile: PASS",
+    "diff_check": "git diff --cached --check -- application/src application/tests: PASS. Raw pytest failure logs/JUnit retain original trailing whitespace."
+  },
+  "limitations": [
+    "SQLite isolated service tests only; controlled interleaving is not PostgreSQL concurrency evidence.",
+    "No real OTA/provider authorization, hotel inventory, publication review operation, UI or physical-device acceptance.",
+    "C14 and independent C13 acceptance pending for the combined exact source.",
+    "No remote source upload, merge, migration, deployment, or live runtime operation.",
+    "A pending authorization created with the old normalized-state hash must restart authorization after this fix; the current feature remains an unuploaded candidate."
+  ],
+  "next_tasks": {
+    "C01": "Independent C13 review of changed property gates and actual supplier publication/change-request workflow acceptance.",
+    "C07": "Run PostgreSQL concurrent callback/disconnect/delete and import/commit contention cases against the combined candidate.",
+    "integration": "Root cherry-picks only this focused source/test/evidence commit, rebinds source identity, then C14 and independent C13."
+  },
+  "final_test_files": [
+    "tests/test_c01_property_change_boundaries.py",
+    "tests/test_c07_connection_transaction_boundaries.py",
+    "tests/test_personal_travel_vault.py",
+    "tests/test_hotel_partner_self_operating_core.py"
+  ]
+}

@@ -1,0 +1,102 @@
+FFFFF.FFFFF.                                                             [100%]
+=================================== FAILURES ===================================
+_______ test_retries_across_service_restart_and_expiry_return_one_order ________
+tests/flight/test_c02_prebook_consumption.py:32: in test_retries_across_service_restart_and_expiry_return_one_order
+    replay = FlightService().create_order('owner', pid, PEOPLE)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/flight/service.py:55: in create_order
+    if not p or p.status!="CONFIRMED" or p.expires_at<now(): raise ValueError("FLIGHT_PREBOOK_INVALID")
+                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FLIGHT_PREBOOK_INVALID
+_________ test_consumed_prebook_cannot_be_rebound[other-owner-people0] _________
+tests/flight/test_c02_prebook_consumption.py:41: in test_consumed_prebook_cannot_be_rebound
+    with pytest.raises(ValueError, match='FLIGHT_PREBOOK_'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+____________ test_consumed_prebook_cannot_be_rebound[owner-people1] ____________
+tests/flight/test_c02_prebook_consumption.py:41: in test_consumed_prebook_cannot_be_rebound
+    with pytest.raises(ValueError, match='FLIGHT_PREBOOK_'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+____________ test_concurrent_claims_commit_only_one_order[owners0] _____________
+tests/flight/test_c02_prebook_consumption.py:60: in test_concurrent_claims_commit_only_one_order
+    assert len(orders(pid)) == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([<go_hotel.db.models.FlightOrderRow object at 0x7f65aafea000>, <go_hotel.db.models.FlightOrderRow object at 0x7f65aafe9fd0>])
+E    +    where [<go_hotel.db.models.FlightOrderRow object at 0x7f65aafea000>, <go_hotel.db.models.FlightOrderRow object at 0x7f65aafe9fd0>] = orders('flt_pb_02dfa78081b14d67')
+____________ test_concurrent_claims_commit_only_one_order[owners1] _____________
+tests/flight/test_c02_prebook_consumption.py:60: in test_concurrent_claims_commit_only_one_order
+    assert len(orders(pid)) == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([<go_hotel.db.models.FlightOrderRow object at 0x7f65aafea690>, <go_hotel.db.models.FlightOrderRow object at 0x7f65aafea090>])
+E    +    where [<go_hotel.db.models.FlightOrderRow object at 0x7f65aafea690>, <go_hotel.db.models.FlightOrderRow object at 0x7f65aafea090>] = orders('flt_pb_a6a21fd779b14b40')
+___________ test_existing_legacy_order_does_not_allow_a_second_claim ___________
+tests/flight/test_c02_prebook_consumption.py:89: in test_existing_legacy_order_does_not_allow_a_second_claim
+    assert FlightService().create_order('owner', pid, PEOPLE)['order_id'] == first['order_id']
+E   AssertionError: assert 'flt_ord_691bcd15d083497f' == 'flt_ord_b8a030ad418a4e41'
+E     
+E     - flt_ord_b8a030ad418a4e41
+E     + flt_ord_691bcd15d083497f
+____ test_http_different_idempotency_keys_share_order_and_conflict_on_party ____
+tests/flight/test_c02_prebook_consumption.py:102: in test_http_different_idempotency_keys_share_order_and_conflict_on_party
+    assert first.json()['data']['order_id'] == replay.json()['data']['order_id']
+E   AssertionError: assert 'flt_ord_1e6574b6f66f4461' == 'flt_ord_be81093082874720'
+E     
+E     - flt_ord_be81093082874720
+E     + flt_ord_1e6574b6f66f4461
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-18T16:48:32.947730+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_7fb5495a897042999e41e769d91a3e87","trace_id":"tr_5c44503121e34136b060af5800c33f38","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":107.72}
+{"ts":"2026-09-18T16:48:32.948648+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-18T16:48:33.001469+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_471a8d5e4f5a42edaf8606d3ee8f63c5","trace_id":"tr_3648b79a99c846e8a1ddfe0de316ffaa","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":51.94}
+{"ts":"2026-09-18T16:48:33.002028+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-18T16:48:33.075569+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_82a861a685ed41169b2a21a5590417f2","trace_id":"tr_56ce5adfd1f4491fb20a4d85a211c7f5","path":"/v1/flights/orders","method":"POST","status_code":200,"duration_ms":70.66}
+{"ts":"2026-09-18T16:48:33.076168+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/flights/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-18T16:48:33.085120+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_c93f0b0fab1144c5863d824e5e88bebf","trace_id":"tr_e6de1ef5789a4c6398552941918f8526","path":"/v1/flights/orders","method":"POST","status_code":200,"duration_ms":8.02}
+{"ts":"2026-09-18T16:48:33.085501+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/flights/orders \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/flights/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:321 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/flights/orders "HTTP/1.1 200 OK"
+___ test_unselected_quote_cannot_execute_after_a_supplier_decision[TICKETED] ___
+tests/test_c03_change_quote_supersession.py:23: in test_unselected_quote_cannot_execute_after_a_supplier_decision
+    with pytest.raises(ValueError, match='RAIL_CHANGE_QUOTE_INVALID'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+____ test_unselected_quote_cannot_execute_after_a_supplier_decision[FAILED] ____
+tests/test_c03_change_quote_supersession.py:23: in test_unselected_quote_cannot_execute_after_a_supplier_decision
+    with pytest.raises(ValueError, match='RAIL_CHANGE_QUOTE_INVALID'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+________ test_authorization_interruption_preserves_selected_quote_only _________
+tests/test_c03_change_quote_supersession.py:44: in test_authorization_interruption_preserves_selected_quote_only
+    assert session.get(RailChangeQuoteRow, stale).status == 'SUPERSEDED'
+E   AssertionError: assert 'QUOTED' == 'SUPERSEDED'
+E     
+E     - SUPERSEDED
+E     + QUOTED
+=============================== warnings summary ===============================
+tests/flight/test_c02_prebook_consumption.py::test_http_different_idempotency_keys_share_order_and_conflict_on_party
+  /root/.local/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/flight/test_c02_prebook_consumption.py::test_http_different_idempotency_keys_share_order_and_conflict_on_party
+  /root/.local/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/flight/test_c02_prebook_consumption.py::test_retries_across_service_restart_and_expiry_return_one_order
+FAILED tests/flight/test_c02_prebook_consumption.py::test_consumed_prebook_cannot_be_rebound[other-owner-people0]
+FAILED tests/flight/test_c02_prebook_consumption.py::test_consumed_prebook_cannot_be_rebound[owner-people1]
+FAILED tests/flight/test_c02_prebook_consumption.py::test_concurrent_claims_commit_only_one_order[owners0]
+FAILED tests/flight/test_c02_prebook_consumption.py::test_concurrent_claims_commit_only_one_order[owners1]
+FAILED tests/flight/test_c02_prebook_consumption.py::test_existing_legacy_order_does_not_allow_a_second_claim
+FAILED tests/flight/test_c02_prebook_consumption.py::test_http_different_idempotency_keys_share_order_and_conflict_on_party
+FAILED tests/test_c03_change_quote_supersession.py::test_unselected_quote_cannot_execute_after_a_supplier_decision[TICKETED]
+FAILED tests/test_c03_change_quote_supersession.py::test_unselected_quote_cannot_execute_after_a_supplier_decision[FAILED]
+FAILED tests/test_c03_change_quote_supersession.py::test_authorization_interruption_preserves_selected_quote_only

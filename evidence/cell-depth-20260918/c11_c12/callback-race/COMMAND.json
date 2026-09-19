@@ -1,0 +1,5 @@
+{
+  "working_directory": "application",
+  "command": "APP_ENV=test PYTHONDONTWRITEBYTECODE=1 python -m pytest tests/test_cell_depth_c11_callback_races.py tests/test_cell_depth_c11_payment_boundary.py tests/test_omnichannel_payment_finance_os.py tests/test_c11_idempotency_completion_guard.py tests/payments/test_c11_flight_idempotency_recovery.py tests/test_sprint3c_mobility.py tests/test_sprint3d_attractions.py -q -p no:cacheprovider --tb=short --junitxml=../evidence/cell-depth-20260918/c11_c12/callback-race/final.xml",
+  "exit_code": 0
+}

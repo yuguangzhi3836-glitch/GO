@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="3.403" timestamp="2026-09-18T12:51:45.288076-04:00" hostname="localhost"><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_authorization_state_is_an_exact_opaque_value[swapcase]" time="1.763"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fde7d34c2c0&gt;
+alter = &lt;method 'swapcase' of 'str' objects&gt;
+
+    @pytest.mark.parametrize('alter', [str.swapcase, lambda value: ' ' + value + ' '])
+    def test_authorization_state_is_an_exact_opaque_value(monkeypatch, alter):
+        monkeypatch.setenv('GO_CTRIP_PROFILE_AUTHORIZATION_URL', 'https://accounts.ctrip.example/authorize')
+        monkeypatch.setattr(module.secrets, 'token_urlsafe', lambda size: 'MixedCASE_opaque-State-123')
+        connection = svc.create_provider_connection(USER, {'provider': 'CTRIP', 'account_holder_confirmed': True})
+        state = parse_qs(urlparse(connection['authorization_url']).query)['state'][0]
+        body = {'state': alter(state), 'account_holder_verified': True,
+                'provider_account_subject': 'provider-test-holder',
+                'authorization_evidence_reference': 'adapter://test-only/authorization', 'items': ITEMS}
+&gt;       with pytest.raises(ValueError, match='PROFILE_PROVIDER_STATE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_transaction_boundaries.py:129: Failed</failure></testcase><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_authorization_state_is_an_exact_opaque_value[&lt;lambda&gt;]" time="0.093"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fde7d2c6570&gt;
+alter = &lt;function &lt;lambda&gt; at 0x7fde7d332ca0&gt;
+
+    @pytest.mark.parametrize('alter', [str.swapcase, lambda value: ' ' + value + ' '])
+    def test_authorization_state_is_an_exact_opaque_value(monkeypatch, alter):
+        monkeypatch.setenv('GO_CTRIP_PROFILE_AUTHORIZATION_URL', 'https://accounts.ctrip.example/authorize')
+        monkeypatch.setattr(module.secrets, 'token_urlsafe', lambda size: 'MixedCASE_opaque-State-123')
+        connection = svc.create_provider_connection(USER, {'provider': 'CTRIP', 'account_holder_confirmed': True})
+        state = parse_qs(urlparse(connection['authorization_url']).query)['state'][0]
+        body = {'state': alter(state), 'account_holder_verified': True,
+                'provider_account_subject': 'provider-test-holder',
+                'authorization_evidence_reference': 'adapter://test-only/authorization', 'items': ITEMS}
+&gt;       with pytest.raises(ValueError, match='PROFILE_PROVIDER_STATE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_transaction_boundaries.py:129: Failed</failure></testcase></testsuite></testsuites>

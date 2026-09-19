@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "task_id": "C07-SOURCE-REVOCATION-LOCK-20260918",
+  "status": "LOCAL_SCOPED_PASS",
+  "source_commit": "0a6370cdef1fcd47fcfea3c8cf84ed5582a94c5d",
+  "files_sha256": {
+    "application/src/go_hotel/services/personal_travel_vault.py": "755e07fe5b4f589fe33b7c05754c65841bc547ed475c20ddbddee375bcc6f213",
+    "application/src/go_hotel/services/personal_vault_management.py": "7fd13de05a90e440fc66ec7087684bbbb3c74e2dab25e237d498a3cf3dea7290",
+    "application/tests/test_c07_source_revocation_locking.py": "b5415bce0feced6837720038379dc7a10d605a5ff02cd9c96aa77fd511f98be3"
+  },
+  "gap": "An existing import job can commit after source deletion reads facts but before deletion marks the job revoked, leaving a newly committed fact ACTIVE.",
+  "fix": "Lock all existing source jobs in ascending import_job_id before reading facts; preserve job-to-traveler order. Provider disconnect does not prelock one imported job when deleting. Source reconnect/disconnect uses the same stable order.",
+  "before": {
+    "tests": 3,
+    "failures": 3,
+    "note": "One regression proves deleted_facts=0 after injected commit; lock intention/order assertions also fail. Final test assertions corrected plural table names to actual singular schema names."
+  },
+  "final": {
+    "tests": 42,
+    "failures": 0,
+    "skipped": 0
+  },
+  "final_test_files": [
+    "tests/test_c07_source_revocation_locking.py",
+    "tests/test_c07_connection_transaction_boundaries.py",
+    "tests/test_personal_travel_vault.py",
+    "tests/test_depth04_vault_management.py"
+  ],
+  "command": "APP_ENV=test python -m pytest tests/test_c07_source_revocation_locking.py tests/test_c07_connection_transaction_boundaries.py tests/test_personal_travel_vault.py tests/test_depth04_vault_management.py --junitxml=../evidence/cell-depth-20260918/c01_c07/source-lock-fix/final.xml",
+  "working_directory": "application",
+  "limitations": [
+    "SQL FOR UPDATE intent compiled for PostgreSQL; execution and controlled interleaving use isolated SQLite, not PostgreSQL runtime evidence.",
+    "Only existing import jobs are serialized. Concurrent creation of a new job with the same source fingerprint remains a phantom-insertion scope needing separate source-level locking design and PostgreSQL proof.",
+    "Combined source requires C14 and independent C13 re-review; no upload, merge, deployment or live mutation."
+  ],
+  "next_task": "C14 review this exact existing-job revocation boundary; PostgreSQL contention proof remains HOLD."
+}

@@ -2,6 +2,8 @@ from go_hotel.services import vertical_reservation_expiry as reservation_expiry
 from datetime import datetime,timezone,timedelta
 import hashlib,hmac,json,uuid,os
 from sqlalchemy import select,func
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from go_hotel.db.session import SessionLocal
 from go_hotel.autonomy.durable import transaction
 from go_hotel.db.models import (
@@ -69,7 +71,10 @@ class OmnichannelPaymentService:
     s.add(FactBinding(payment_order_fact_binding_id=ident('pofb'),payment_intent_id=r.payment_intent_id,business_type=fact['business_type'],business_id=fact['business_id'],payer_id=fact['payer_id'],payee_id=fact['payee_id'],amount_minor=fact['amount_minor'],currency=fact['currency'],legal_entity_id=entity,source_decision_id=decision.vertical_source_decision_id,request_fingerprint=fp,order_fact_hash=digest(fact),evidence_reference=decision.evidence_reference,created_at=now()));s.commit();return out(r)
    # Non-consumer obligations (for example subscription invoices) remain server/admin-created.
    if b.get('operation') not in OPERATIONS or int(b.get('amount_minor',0))<=0:raise ValueError('VALID_PAYMENT_OPERATION_AND_AMOUNT_REQUIRED')
-   if old:return out(old)
+   if old:
+    request={'business_type':b['business_type'],'business_id':b['business_id'],'payer_id':payer,'payee_id':b['payee_id'],'operation':b['operation'],'amount_minor':int(b['amount_minor']),'currency':b.get('currency','CNY'),'channel_priority_json':channels,'automatic_fallback_allowed':bool(b.get('automatic_fallback_allowed',False))}
+    if any(getattr(old,field)!=value for field,value in request.items()):raise ValueError('IDEMPOTENCY_KEY_REQUEST_FINGERPRINT_MISMATCH')
+    return out(old)
    r=Intent(payment_intent_id=ident('opi'),business_type=b['business_type'],business_id=b['business_id'],payer_id=payer,payee_id=b['payee_id'],operation=b['operation'],amount_minor=int(b['amount_minor']),currency=b.get('currency','CNY'),channel_priority_json=channels,selected_channel=None,state='REQUIRES_CHANNEL_SELECTION',idempotency_key=key,automatic_fallback_allowed=bool(b.get('automatic_fallback_allowed',False)),created_at=now(),updated_at=now());s.add(r);s.commit();return out(r)
  def select_channel(self,iid,channel,actor,consent=True):
   with SessionLocal() as s:
@@ -158,15 +163,35 @@ class OmnichannelPaymentService:
   occurred=b.get('occurred_at')
   if not occurred:raise ValueError('PAYMENT_CALLBACK_OCCURRED_AT_REQUIRED')
   event_at=datetime.fromisoformat(occurred.replace('Z','+00:00'))
+  if event_at.tzinfo is None or event_at.utcoffset() is None:raise ValueError('PAYMENT_CALLBACK_TIMEZONE_REQUIRED')
   if event_at<now()-timedelta(hours=24) or event_at>now()+timedelta(minutes=5):raise ValueError('PAYMENT_CALLBACK_OUTSIDE_REPLAY_WINDOW')
   with SessionLocal() as s:
    old=s.scalar(select(Receipt).where(Receipt.channel==channel,Receipt.external_event_id==b['external_event_id']))
-   if old:return {'duplicate':True,'receipt':out(old)}
-   a=s.scalar(select(Attempt).where(Attempt.payment_attempt_id==b['payment_attempt_id']).with_for_update());i=s.scalar(select(Intent).where(Intent.payment_intent_id==a.payment_intent_id).with_for_update()) if a else None
-   if not a or a.channel!=channel:raise ValueError('PAYMENT_ATTEMPT_CHANNEL_MISMATCH')
+   if old:
+    if old.payload_hash!=digest(b):raise ValueError('PAYMENT_CALLBACK_REPLAY_PAYLOAD_MISMATCH')
+    return {'duplicate':True,'receipt':out(old)}
    mapped={'SUCCEEDED':'SUCCEEDED','FAILED':'FAILED','PENDING':'UNKNOWN_EXTERNAL_STATE'}.get(b['state'])
    if not mapped:raise ValueError('INVALID_EXTERNAL_PAYMENT_STATE')
-   r=Receipt(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=a.payment_attempt_id,signature_verified=True,payload_hash=digest(b),received_at=now());s.add(r);self._transition(s,a,i,mapped,b.get('external_operation_id'));s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
+   # Claim the event before any payment-state mutation. Attempt locks serialize
+   # one attempt on PostgreSQL; the event key also arbitrates different attempts
+   # and SQLite sessions. In SQLite the insert obtains the writer before reading
+   # payment state, so a concurrent different event cannot use stale state.
+   # Only this exact conflict is an idempotent candidate:
+   # unrelated uniqueness/integrity failures still abort the whole transaction.
+   dialect=s.get_bind().dialect.name
+   if dialect not in {'postgresql','sqlite'}:raise ValueError('UNSUPPORTED_PAYMENT_CALLBACK_DATABASE')
+   insert=pg_insert if dialect=='postgresql' else sqlite_insert
+   values=dict(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=b['payment_attempt_id'],signature_verified=True,payload_hash=digest(b),received_at=now())
+   receipt_id=s.scalar(insert(Receipt).values(**values).on_conflict_do_nothing(
+    index_elements=['channel','external_event_id']).returning(Receipt.webhook_receipt_id))
+   if receipt_id is None:
+    old=s.scalar(select(Receipt).where(Receipt.channel==channel,Receipt.external_event_id==b['external_event_id']))
+    if not old or old.payload_hash!=digest(b):raise ValueError('PAYMENT_CALLBACK_REPLAY_PAYLOAD_MISMATCH')
+    return {'duplicate':True,'receipt':out(old)}
+   a=s.scalar(select(Attempt).where(Attempt.payment_attempt_id==b['payment_attempt_id']).with_for_update());i=s.scalar(select(Intent).where(Intent.payment_intent_id==a.payment_intent_id).with_for_update()) if a else None
+   if not a or a.channel!=channel:raise ValueError('PAYMENT_ATTEMPT_CHANNEL_MISMATCH')
+   r=s.get(Receipt,receipt_id)
+   self._transition(s,a,i,mapped,b.get('external_operation_id'));s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
  def _ledger(self,s,i):
   raise ValueError('PAYMENT_SUCCESS_DOES_NOT_POST_GL_USE_CAPTURE_MOVEMENT')
  def _legacy_ledger_disabled(self,s,i):

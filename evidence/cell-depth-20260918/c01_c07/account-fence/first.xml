@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="62" time="9.570" timestamp="2026-09-18T13:13:22.705471-04:00" hostname="localhost"><testcase classname="tests.test_c07_account_transaction_fence" name="test_postgres_fence_is_parameterized_transaction_scoped_and_account_scoped" time="0.001" /><testcase classname="tests.test_c07_account_transaction_fence" name="test_mutation_paths_take_account_fence_before_rows_and_reuse_transaction" time="1.772"><failure message="AssertionError: assert ('execute' == 'get'&#10;  &#10;  - get&#10;  + execute)">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fa8259313a0&gt;
+
+    def test_mutation_paths_take_account_fence_before_rows_and_reuse_transaction(monkeypatch):
+        real_lock = management.lock_vault_account
+        real_mutation = module.mutation_session
+        probe_reads = []
+        borrowed_sessions = []
+    
+        def capture_lock(session, user):
+            if session.info.get('test_account_fenced') is not None:
+                assert session.info['test_account_fenced'] == user
+                borrowed_sessions.append(session)
+            session.info['test_account_fenced'] = user
+            real_lock(session, user)
+    
+        @contextmanager
+        def inspect_transaction():
+            with real_mutation() as session:
+                for method in ('get', 'scalar', 'scalars', 'execute', 'add', 'flush'):
+                    original = getattr(session, method)
+    
+                    def fenced_call(*args, _method=method, _original=original, **kwargs):
+                        if not session.info.get('test_account_fenced'):
+                            assert _method == 'get' and args[0] is ProfileImportJobRow
+                            assert not kwargs.get('with_for_update')
+                            assert not session.info.get('test_owner_probe')
+                            session.info['test_owner_probe'] = True
+                            probe_reads.append(args[1])
+                        if _method == 'get' and session.info.get('test_owner_probe') and kwargs.get('with_for_update'):
+                            assert kwargs.get('populate_existing') is True
+                        return _original(*args, **kwargs)
+    
+                    monkeypatch.setattr(session, method, fenced_call)
+                yield session
+    
+        monkeypatch.setattr(module, 'lock_vault_account', capture_lock)
+        monkeypatch.setattr(management, 'lock_vault_account', capture_lock)
+        monkeypatch.setattr(module, 'mutation_session', inspect_transaction)
+        monkeypatch.setattr(management, 'mutation_session', inspect_transaction)
+        job = svc.create_import('owner', {'source_fingerprint': 'same-source', 'items': [
+            {'entity_type': 'TRAVELER', 'value': {'full_name': 'Owner'}, 'confidence_bps': 10000},
+        ]})
+        svc.review_item('owner', job['import_job_id'], job['items'][0]['import_item_id'], 'ACCEPT')
+        svc.commit_import('owner', job['import_job_id'])
+        svc.set_source_connection('owner', 'same-source', False)
+        svc.set_source_connection('owner', 'same-source', True)
+        svc.delete_source('owner', 'same-source')
+        with pytest.raises(ValueError, match='PROFILE_SOURCE_DISCONNECTED'):
+            svc.create_import('owner', {'source_fingerprint': 'same-source', 'items': [], 'content_hash': 'new'})
+        connection = svc.create_provider_connection('owner', {
+            'provider': 'CTRIP', 'method': 'FILE_UPLOAD', 'account_holder_confirmed': True,
+        })
+        svc.upload_provider_export('owner', connection['connection_id'], {'account_holder_confirmed': True, 'items': []})
+        svc.disconnect_provider_connection('owner', connection['connection_id'])
+        svc.disconnect_provider_connection('owner', connection['connection_id'], True)
+        monkeypatch.setenv('GO_CTRIP_PROFILE_AUTHORIZATION_URL', 'https://accounts.ctrip.example/authorize')
+        official = svc.create_provider_connection('owner', {'provider': 'CTRIP', 'account_holder_confirmed': True})
+        state = parse_qs(urlparse(official['authorization_url']).query)['state'][0]
+&gt;       svc.complete_provider_connection(official['connection_id'], {'state': state,
+            'account_holder_verified': True, 'provider_account_subject': 'holder',
+            'authorization_evidence_reference': 'adapter://isolated-only', 'items': []})
+
+tests/test_c07_account_transaction_fence.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/services/personal_travel_vault.py:586: in complete_provider_connection
+    probe=s.get(ProfileImportJobRow,connection_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_c07_account_transaction_fence.py:61: in fenced_call
+    return _original(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:3702: in get
+    return self._get_impl(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:3881: in _get_impl
+    return db_load_fn(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/loading.py:695: in load_on_pk_identity
+    session.execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_method = 'execute'
+_original = &lt;bound method Session.execute of &lt;sqlalchemy.orm.session.Session object at 0x7fa81fdb7ad0&gt;&gt;
+args = (&lt;sqlalchemy.sql.selectable.Select object at 0x7fa81fdb6d50&gt;,)
+kwargs = {'params': {'pk_1': 'pij_4abef6876e1046da'}, 'execution_options': immutabledict({'_sa_orm_load_options': &lt;class 'sqlalchemy.orm.context.QueryContext.default_load_options'&gt;}), 'bind_arguments': None}
+
+    def fenced_call(*args, _method=method, _original=original, **kwargs):
+        if not session.info.get('test_account_fenced'):
+&gt;           assert _method == 'get' and args[0] is ProfileImportJobRow
+E           AssertionError: assert ('execute' == 'get'
+E             
+E             - get
+E             + execute)
+
+tests/test_c07_account_transaction_fence.py:54: AssertionError</failure></testcase><testcase classname="tests.test_c07_account_transaction_fence" name="test_callback_reloads_owner_and_state_after_account_fence[change0-PROFILE_PROVIDER_STATE_ALREADY_USED]" time="0.059" /><testcase classname="tests.test_c07_account_transaction_fence" name="test_callback_reloads_owner_and_state_after_account_fence[change1-PROFILE_PROVIDER_CONNECTION_NOT_FOUND]" time="0.062" /><testcase classname="tests.test_c07_account_transaction_fence" name="test_concurrent_new_same_source_job_cannot_survive_completed_revocation" time="0.075" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_client_metadata_cannot_disconnect_another_users_import" time="0.058" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata0]" time="0.045" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata1]" time="0.044" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata2]" time="0.043" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata3]" time="0.043" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata4]" time="0.046" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata5]" time="0.044" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata6]" time="0.042" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata7]" time="0.041" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_server_managed_metadata_cannot_be_supplied_by_an_import_client[metadata8]" time="0.042" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[False-owner]" time="0.062" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[False-another-owner]" time="0.060" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[True-owner]" time="0.062" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_legacy_or_corrupt_connection_pointer_must_reverse_bind_to_its_import[True-another-owner]" time="0.060" /><testcase classname="tests.test_c07_connection_metadata_isolation" name="test_ordinary_metadata_is_preserved_and_real_connection_can_still_be_deleted" time="0.061" /><testcase classname="tests.test_c07_source_revocation_locking" name="test_commit_just_before_source_lock_is_included_in_deletion" time="0.076" /><testcase classname="tests.test_c07_source_revocation_locking" name="test_source_delete_locks_all_jobs_in_order_before_reading_facts" time="0.067" /><testcase classname="tests.test_c07_source_revocation_locking" name="test_provider_delete_defers_import_job_lock_until_ordered_source_lock" time="0.066" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_malformed_export_rolls_back_claim_and_allows_corrected_upload" time="0.066" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_disconnect_after_authorization_consume_prevents_late_preview[False]" time="0.062" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_disconnect_after_authorization_consume_prevents_late_preview[True]" time="0.060" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_disconnect_blocks_uncommitted_preview_without_erasing_retained_values" time="0.059" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_upload_preview_and_connection_pointer_roll_back_together" time="0.056" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_deleted_connection_cannot_be_downgraded_to_disconnected" time="0.059" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_authorization_state_is_an_exact_opaque_value[swapcase]" time="0.059" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_authorization_state_is_an_exact_opaque_value[&lt;lambda&gt;]" time="0.059" /><testcase classname="tests.test_personal_travel_vault" name="test_screenshot_import_requires_review_and_masks_sensitive_fact" time="0.074" /><testcase classname="tests.test_personal_travel_vault" name="test_sensitive_release_requires_consent_and_releases_only_requested_fields" time="0.079" /><testcase classname="tests.test_personal_travel_vault" name="test_import_idempotency_and_conflict_no_silent_overwrite" time="0.085" /><testcase classname="tests.test_personal_travel_vault" name="test_completeness_is_capability_based_not_percent_only" time="0.071" /><testcase classname="tests.test_personal_travel_vault" name="test_consumer_cannot_self_assert_official_or_verified_source" time="0.042" /><testcase classname="tests.test_personal_travel_vault" name="test_account_holder_connection_never_accepts_ota_password_and_has_upload_fallback" time="0.061" /><testcase classname="tests.test_personal_travel_vault" name="test_account_holder_connection_returns_provider_hosted_authorization" time="0.056" /><testcase classname="tests.test_personal_travel_vault" name="test_provider_connection_requires_explicit_holder_confirmation_and_rejects_nested_credentials" time="0.047" /><testcase classname="tests.test_personal_travel_vault" name="test_official_authorization_is_bound_to_holder_and_state_is_one_time" time="0.066" /><testcase classname="tests.test_personal_travel_vault" name="test_official_authorization_rejects_unverified_holder_and_expired_state" time="0.058" /><testcase classname="tests.test_personal_travel_vault" name="test_fallback_upload_previews_then_delete_removes_imported_values" time="0.080" /><testcase classname="tests.test_personal_travel_vault" name="test_provider_upload_is_one_time_and_requires_owner_confirmation" time="0.057" /><testcase classname="tests.test_depth04_vault_management" name="test_fact_edit_creates_user_revision_and_drops_prior_document_certification" time="0.077" /><testcase classname="tests.test_depth04_vault_management" name="test_two_concurrent_person_edits_cannot_silently_overwrite" time="0.079" /><testcase classname="tests.test_depth04_vault_management" name="test_revoking_self_permission_blocks_real_data_release[USE_FOR_BOOKING-LEGAL_NAME]" time="0.071" /><testcase classname="tests.test_depth04_vault_management" name="test_revoking_self_permission_blocks_real_data_release[SENSITIVE_DATA-DATE_OF_BIRTH]" time="0.073" /><testcase classname="tests.test_depth04_vault_management" name="test_companion_identity_match_cannot_bypass_edit_permission" time="0.077" /><testcase classname="tests.test_depth04_vault_management" name="test_unknown_or_rejected_reference_never_falls_back_to_account_owner[missing]" time="0.077" /><testcase classname="tests.test_depth04_vault_management" name="test_unknown_or_rejected_reference_never_falls_back_to_account_owner[rejected]" time="0.078" /><testcase classname="tests.test_depth04_vault_management" name="test_source_disconnect_blocks_new_and_pending_imports_but_keeps_saved_facts" time="0.080" /><testcase classname="tests.test_depth04_vault_management" name="test_conflict_choice_requires_review_again_when_existing_value_changes[edit]" time="0.085" /><testcase classname="tests.test_depth04_vault_management" name="test_conflict_choice_requires_review_again_when_existing_value_changes[delete]" time="0.082" /><testcase classname="tests.test_depth04_vault_management" name="test_deleted_revision_chain_is_erased_from_export_core_and_import_copies" time="0.077" /><testcase classname="tests.test_depth04_vault_management" name="test_invalid_edit_is_atomic_and_cannot_change_relationship_or_certification" time="0.069" /><testcase classname="tests.test_depth04_vault_management" name="test_api_requires_owner_strict_permission_and_explicit_uncached_inspection" time="2.315" /><testcase classname="tests.test_depth04_vault_management" name="test_completed_import_review_is_immutable_and_replay_does_not_duplicate" time="0.083" /><testcase classname="tests.test_depth04_vault_management" name="test_duplicate_traveler_reference_is_rejected_atomically" time="0.056" /><testcase classname="tests.test_depth04_vault_management" name="test_source_delete_erases_core_values_and_reconnect_requires_fresh_import" time="0.070" /><testcase classname="tests.test_depth04_vault_management" name="test_clearing_birth_date_also_erases_original_traveler_declaration" time="0.065" /><testcase classname="tests.test_depth04_vault_management" name="test_source_deletion_retains_independent_manual_revision" time="0.071" /><testcase classname="tests.test_depth04_vault_management" name="test_self_export_respects_revoked_share_and_sensitive_permissions" time="0.069" /></testsuite></testsuites>

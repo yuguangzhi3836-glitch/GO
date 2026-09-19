@@ -1,0 +1,119 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_________ test_commit_just_before_source_lock_is_included_in_deletion __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f0adfa01100>
+
+    def test_commit_just_before_source_lock_is_included_in_deletion(monkeypatch):
+        job = pending_import()
+        original = module.mutation_session
+        nested = False
+        queries = []
+    
+        @contextmanager
+        def read_committed_interleaving():
+            nonlocal nested
+            if nested:
+                with original() as session:
+                    yield session
+                return
+            # SQLite BEGIN IMMEDIATE would serialize the test before the vulnerable
+            # read. Omit it only in this injection harness to model READ COMMITTED.
+            with SessionLocal() as session:
+                real_scalars = session.scalars
+    
+                def before_source_jobs(statement, *args, **kwargs):
+                    nonlocal nested
+                    entities = [item.get('entity') for item in statement.column_descriptions]
+                    if ProfileImportJobRow in entities:
+                        queries.append(str(statement.compile(dialect=postgresql.dialect())))
+                        if not nested:
+                            nested = True
+                            svc.commit_import(USER, job['import_job_id'])
+                    return real_scalars(statement, *args, **kwargs)
+    
+                monkeypatch.setattr(session, 'scalars', before_source_jobs)
+                yield session
+                session.commit()
+    
+        monkeypatch.setattr(module, 'mutation_session', read_committed_interleaving)
+        result = svc.delete_source(USER, job['source_fingerprint'])
+>       assert result['deleted_facts'] == 1
+E       assert 0 == 1
+
+tests/test_c07_source_revocation_locking.py:65: AssertionError
+_______ test_source_delete_locks_all_jobs_in_order_before_reading_facts ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f0adeef0f50>
+
+    def test_source_delete_locks_all_jobs_in_order_before_reading_facts(monkeypatch):
+        first = pending_import()
+        second = svc.create_import(USER, {
+            'source_type': 'MANUAL', 'source_fingerprint': first['source_fingerprint'],
+            'items': [], 'content_hash': 'second-content',
+        })
+        statements = []
+        original = module.mutation_session
+    
+        @contextmanager
+        def observe_queries():
+            with original() as session:
+                real_scalars = session.scalars
+    
+                def observe(statement, *args, **kwargs):
+                    statements.append(str(statement.compile(dialect=postgresql.dialect())))
+                    return real_scalars(statement, *args, **kwargs)
+    
+                monkeypatch.setattr(session, 'scalars', observe)
+                yield session
+    
+        monkeypatch.setattr(module, 'mutation_session', observe_queries)
+        svc.delete_source(USER, first['source_fingerprint'])
+>       assert 'FROM profile_import_jobs' in statements[0]
+E       AssertionError: assert 'FROM profile_import_jobs' in 'SELECT profile_fact.fact_id, profile_fact.user_id, profile_fact.traveler_id, profile_fact.field_type, profile_fact.va...= %(user_id_1)s AND profile_fact.source_fingerprint = %(source_fingerprint_1)s AND profile_fact.status != %(status_1)s'
+
+tests/test_c07_source_revocation_locking.py:98: AssertionError
+____ test_provider_delete_defers_import_job_lock_until_ordered_source_lock _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f0ae30eab10>
+
+    def test_provider_delete_defers_import_job_lock_until_ordered_source_lock(monkeypatch):
+        connection = svc.create_provider_connection(USER, {
+            'provider': 'CTRIP', 'method': 'FILE_UPLOAD', 'account_holder_confirmed': True,
+        })
+        preview = svc.upload_provider_export(USER, connection['connection_id'], {
+            'account_holder_confirmed': True, 'items': [],
+        })['preview']
+        operations = []
+        original = module.mutation_session
+    
+        @contextmanager
+        def observe_locks():
+            with original() as session:
+                real_get, real_scalars = session.get, session.scalars
+    
+                def observe_get(entity, ident, *args, **kwargs):
+                    if entity is ProfileImportJobRow:
+                        operations.append(('get', ident, kwargs.get('with_for_update', False)))
+                    return real_get(entity, ident, *args, **kwargs)
+    
+                def observe_scalars(statement, *args, **kwargs):
+                    operations.append(('select', str(statement.compile(dialect=postgresql.dialect()))))
+                    return real_scalars(statement, *args, **kwargs)
+    
+                monkeypatch.setattr(session, 'get', observe_get)
+                monkeypatch.setattr(session, 'scalars', observe_scalars)
+                yield session
+    
+        monkeypatch.setattr(module, 'mutation_session', observe_locks)
+        assert svc.disconnect_provider_connection(USER, connection['connection_id'], True)['status'] == 'DELETED'
+        assert operations[0] == ('get', connection['connection_id'], True)
+>       assert ('get', preview['import_job_id'], True) not in operations
+E       AssertionError: assert ('get', 'pij_d32e4859f3b748dc', True) not in [('get', 'pij_3706e3a8b3574f22', True), ('get', 'pij_d32e4859f3b748dc', True), ('select', 'SELECT profile_fact.fact_id...le_import_item.updated_at \nFROM profile_import_item \nWHERE profile_import_item.import_job_id = %(import_job_id_1)s')]
+
+tests/test_c07_source_revocation_locking.py:137: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_c07_source_revocation_locking.py::test_commit_just_before_source_lock_is_included_in_deletion
+FAILED tests/test_c07_source_revocation_locking.py::test_source_delete_locks_all_jobs_in_order_before_reading_facts
+FAILED tests/test_c07_source_revocation_locking.py::test_provider_delete_defers_import_job_lock_until_ordered_source_lock
+3 failed in 3.49s

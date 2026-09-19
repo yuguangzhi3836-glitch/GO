@@ -1,0 +1,234 @@
+...............F.                                                        [100%]
+=================================== FAILURES ===================================
+___ test_standard_upgrade_keeps_one_decision_per_judgment_and_public_history ___
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f86750fe2a0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f86772c77d0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f86750b2480>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f86752133b0>
+parameters = [('ghsv_3e140fa7973646899ae4e338abe8136b', 2, 'GO_GOOD_HOTEL_STANDARD', '["FULFILLMENT_TRUTH", "ROOM_ACCURACY", "CLEAN... "WORTH_THE_JOURNEY"]', '{"minimum_completed_reviews_for_go_score": 1}', '["UNRESOLVED_CONFIRMED_SERIOUS_RISK"]', ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f86772c77d0>
+cursor = <sqlite3.Cursor object at 0x7f8670cd1640>
+statement = 'INSERT INTO good_hotel_standard_version (good_hotel_standard_version_id, version_no, standard_key, dimensions_json, t...te, requested_by, approved_by, effective_at, retired_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('ghsv_3e140fa7973646899ae4e338abe8136b', 2, 'GO_GOOD_HOTEL_STANDARD', '["FULFILLMENT_TRUTH", "ROOM_ACCURACY", "CLEANL..., "WORTH_THE_JOURNEY"]', '{"minimum_completed_reviews_for_go_score": 1}', '["UNRESOLVED_CONFIRMED_SERIOUS_RISK"]', ...)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f86750b2480>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: good_hotel_standard_version.content_hash
+
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+    def test_standard_upgrade_keeps_one_decision_per_judgment_and_public_history():
+        from go_hotel.judgment.good_hotel_standard import good_hotel_standard_service, DEFAULT
+        first = publish()
+>       version = good_hotel_standard_service.create(DEFAULT, 'maker')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/judgment/test_cell_depth_c09_public_binding.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/judgment/good_hotel_standard.py:30: in create
+    n=(s.scalar(select(func.max(GoodHotelStandardVersionRow.version_no))) or 0)+1;row=GoodHotelStandardVersionRow(good_hotel_standard_version_id=ident('ghsv'),version_no=n,standard_key='GO_GOOD_HOTEL_STANDARD',dimensions_json=raw['dimensions'],thresholds_json=raw['thresholds'],disqualifiers_json=raw['disqualifiers'],evidence_requirements_json=raw['evidence_requirements'],content_hash=digest(raw),state='DRAFT',requested_by=actor,created_at=now());s.add(row);self._event(s,row,'STANDARD_VERSION_CREATED',actor,{});s.commit();return out(row)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2035: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f86772c77d0>
+cursor = <sqlite3.Cursor object at 0x7f8670cd1640>
+statement = 'INSERT INTO good_hotel_standard_version (good_hotel_standard_version_id, version_no, standard_key, dimensions_json, t...te, requested_by, approved_by, effective_at, retired_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('ghsv_3e140fa7973646899ae4e338abe8136b', 2, 'GO_GOOD_HOTEL_STANDARD', '["FULFILLMENT_TRUTH", "ROOM_ACCURACY", "CLEANL..., "WORTH_THE_JOURNEY"]', '{"minimum_completed_reviews_for_go_score": 1}', '["UNRESOLVED_CONFIRMED_SERIOUS_RISK"]', ...)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f86750b2480>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: good_hotel_standard_version.content_hash
+E       [SQL: INSERT INTO good_hotel_standard_version (good_hotel_standard_version_id, version_no, standard_key, dimensions_json, thresholds_json, disqualifiers_json, evidence_requirements_json, content_hash, state, requested_by, approved_by, effective_at, retired_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('ghsv_3e140fa7973646899ae4e338abe8136b', 2, 'GO_GOOD_HOTEL_STANDARD', '["FULFILLMENT_TRUTH", "ROOM_ACCURACY", "CLEANLINESS", "SAFETY", "SLEEP_QUALITY", "SERVICE_RECOVERY", "POLICY_TRANSPARENCY", "WORK_OF_HOSPITALITY", "IRREPLACEABILITY", "SENSE_OF_PLACE", "AESTHETIC_JUDGMENT", "EMOTIONAL_RESONANCE", "WORTH_THE_JOURNEY"]', '{"minimum_completed_reviews_for_go_score": 1}', '["UNRESOLVED_CONFIRMED_SERIOUS_RISK"]', '{"required": ["GO_TRUTH_OR_VERIFIED_OPERATIONAL_EVIDENCE"], "recommendation_requires_independent_assessment": true, "recommendation_not_derived_from_ ... (120 characters truncated) ... "commercial_fields_forbidden": true, "price_value_fields_excluded": true, "city_quota_forbidden": true, "fixed_recommendation_ratio_forbidden": true}', 'ed010de3b203fbf9c59568110e157d115fa1a70d09b8a6a7d0aa9c2205d8624d', 'DRAFT', 'maker', None, None, None, '2026-09-18 16:53:14.165192')]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+=============================== warnings summary ===============================
+tests/judgment/test_cell_depth_c09_public_binding.py::test_http_public_endpoint_rejects_cross_hotel_decision
+  /root/.local/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/judgment/test_cell_depth_c09_public_binding.py::test_http_public_endpoint_rejects_cross_hotel_decision
+  /root/.local/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/judgment/test_cell_depth_c09_public_binding.py::test_standard_upgrade_keeps_one_decision_per_judgment_and_public_history

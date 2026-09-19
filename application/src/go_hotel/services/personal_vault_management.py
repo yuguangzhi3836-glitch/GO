@@ -10,6 +10,16 @@ from go_hotel.db.models import (TravelerProfileRow, ProfileFactRow, ProfileImpor
 from go_hotel.domain.models import new_id
 from go_hotel.security.crypto import encrypt_secret, decrypt_secret
 
+def lock_vault_account(session,user_id):
+    """Fence first-source inserts as well as existing rows across processes.
+
+    Source lifecycle mutations acquire this transaction-scoped account lock
+    before row locks. SQLite mutation_session reserves its writer before reads.
+    """
+    if session.bind.dialect.name=='postgresql':
+        key=int.from_bytes(hashlib.sha256(('go.personal_travel_vault.account:v1\0'+str(user_id)).encode()).digest()[:8],'big',signed=True)
+        session.execute(text('SELECT pg_advisory_xact_lock(:key)'),{'key':key})
+
 @contextmanager
 def mutation_session():
     with SessionLocal() as session:
@@ -84,6 +94,7 @@ class VaultManagementMixin:
         allowed={'full_name':'LEGAL_NAME','nationality':'NATIONALITY','date_of_birth':'DATE_OF_BIRTH'}
         if set(body)-set(allowed)-{'confirmed','expected_revision'}:raise ValueError('PROFILE_EDIT_FIELD_NOT_ALLOWED')
         with mutation_session() as s:
+            lock_vault_account(s,user)
             tr=owned_traveler(s,user,tid,edit=True);confirmed_revision(tr,body);changed=[]
             if 'date_of_birth' in body and not permission(s,user,tr,'SENSITIVE_DATA'):
                 raise ValueError('TRAVELER_SENSITIVE_PERMISSION_REQUIRED')
@@ -119,6 +130,7 @@ class VaultManagementMixin:
         from go_hotel.services.personal_travel_vault import SENSITIVE_FIELDS, now
         if set(body)-{'value','valid_from','valid_until','confirmed','expected_revision'}:raise ValueError('PROFILE_EDIT_FIELD_NOT_ALLOWED')
         with mutation_session() as s:
+            lock_vault_account(s,user)
             old=s.get(ProfileFactRow,fid,with_for_update=True)
             if not old or old.user_id!=user:raise ValueError('PROFILE_FACT_NOT_FOUND')
             if old.status!='ACTIVE':raise ValueError('PROFILE_CHANGED_RELOAD_REQUIRED')
@@ -159,8 +171,10 @@ class VaultManagementMixin:
     def set_source_connection(self,user,fingerprint,enabled):
         if type(enabled) is not bool:raise ValueError('PERMISSION_BOOLEAN_REQUIRED')
         with mutation_session() as s:
+            lock_vault_account(s,user)
             jobs=s.scalars(select(ProfileImportJobRow).where(ProfileImportJobRow.user_id==user,
-                ProfileImportJobRow.source_fingerprint==fingerprint).with_for_update()).all()
+                ProfileImportJobRow.source_fingerprint==fingerprint)
+                .order_by(ProfileImportJobRow.import_job_id).with_for_update()).all()
             if not jobs:raise ValueError('PROFILE_SOURCE_NOT_FOUND')
             for j in jobs:j.metadata_json={**(j.metadata_json or {}),'source_disconnected':not enabled}
             self._audit(s,user,user,'CONSUMER','PROFILE_SOURCE_RECONNECTED' if enabled else 'PROFILE_SOURCE_DISCONNECTED',
@@ -202,6 +216,7 @@ class VaultManagementMixin:
         from go_hotel.services.personal_travel_vault import SENSITIVE_FIELDS
         if confirmed is not True:raise ValueError('PROFILE_INSPECTION_CONFIRMATION_REQUIRED')
         with mutation_session() as s:
+            lock_vault_account(s,user)
             job=s.get(ProfileImportJobRow,job_id);item=s.get(ProfileImportItemRow,item_id)
             if not job or job.user_id!=user or not item or item.import_job_id!=job_id or item.user_id!=user:
                 raise ValueError('PROFILE_IMPORT_ITEM_NOT_FOUND')
@@ -227,6 +242,7 @@ class VaultManagementMixin:
     def assign_import_traveler(self,user,job_id,item_id,body):
         from go_hotel.services.personal_travel_vault import SENSITIVE_FIELDS,now
         with mutation_session() as s:
+            lock_vault_account(s,user)
             job=s.get(ProfileImportJobRow,job_id);item=s.get(ProfileImportItemRow,item_id)
             if not job or job.user_id!=user or not item or item.import_job_id!=job_id or item.user_id!=user:
                 raise ValueError('PROFILE_IMPORT_ITEM_NOT_FOUND')

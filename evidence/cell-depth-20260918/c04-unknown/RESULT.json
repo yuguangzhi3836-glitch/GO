@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-18T17:03:44.934203+00:00",
+  "cell": "C04",
+  "status": "LOCAL_SCOPED_PASS",
+  "gap_id": "GAP-C04-UNKNOWN-EVIDENCE-20260918",
+  "task_id": "TASK-C04-UNKNOWN-EVIDENCE-20260918",
+  "closes_previous_next_task": "NEXT-C04-UNKNOWN-EVIDENCE",
+  "previous_result": "../c04_c05/RESULT.json",
+  "source_commit": "f8fe5a969802ae1ca210f69e8bde7963c7968df2",
+  "parent_commit": "8c59be13a1a6d39bec8c3f9ba0d64889cf4023fa",
+  "application_tree": "c5a0af9c50b22643c0304a2968325886d4b211c8",
+  "changed_files": [
+    {
+      "path": "application/src/go_hotel/mobility/rental/recovery_evidence.py",
+      "bytes": 3333,
+      "sha256": "b6a8d3bd5a481a9661e97ff95a8773fe0f66047ab1c2cd514e7f80be9c6b90f5"
+    },
+    {
+      "path": "application/src/go_hotel/mobility/rental/service.py",
+      "bytes": 16265,
+      "sha256": "efcdc6242d0d4d1eae4cf8562df3bc34e4bce0e027a8ce5832829f16a3677f0d"
+    },
+    {
+      "path": "application/src/go_hotel/mobility/service.py",
+      "bytes": 2747,
+      "sha256": "5118f6998ecafedab93469e7e89cb23a9449dbea6de4f33ef450518201bdd4f8"
+    },
+    {
+      "path": "application/tests/test_c04_unknown_episode_evidence.py",
+      "bytes": 7476,
+      "sha256": "f6ede0d12ac4dfe7f4fd2067f66c000bb8f46761dd331ce22c053b6f5e6d1c89"
+    },
+    {
+      "path": "application/tests/test_rc20_2_all_b_to_a.py",
+      "bytes": 10914,
+      "sha256": "4facb9915b736721a4327772a2d83e1c38d6a939fca21cdba7906ddcc735e315"
+    }
+  ],
+  "tests": {
+    "final": 51,
+    "new": 35,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "pre_fix_failures": 35,
+    "pre_fix_failures_note": "34 safety behavior failures; one existing concurrency protection had a generic error code instead of the explicit episode-already-open contract."
+  },
+  "changes": [
+    "No fallback to CONFIRMED when evidence is absent or invalid.",
+    "Validate chain sequence, hashes, order/row binding, latest observed state, original phase, supplier reference, actor and episode reference.",
+    "Both CONFIRMED and FAILED require the exact current UNKNOWN episode reference.",
+    "Episode opening verifies existing history, rejects replayed references, and serializes concurrent opening.",
+    "Pass the API existing confirmation_episode_reference through the rental facade instead of discarding it."
+  ],
+  "contract_note": "The HTTP schema already exposed confirmation_episode_reference. Rental recovery previously ignored it. Legacy callers now must supply the current UNKNOWN episode reference; no migration or new endpoint.",
+  "legacy_test_change": "One existing successful rental recovery call now passes the reference of the episode it just opened. All original acceptance assertions preserved.",
+  "gates": {
+    "isolated_sqlite_and_http": "PASS",
+    "C14": "PENDING_INDEPENDENT_SOURCE_REVIEW",
+    "C13": "PENDING_INTEGRATED_SOURCE_REVIEW",
+    "postgresql_concurrency": "NOT_RUN",
+    "hosted_ci": "NOT_RUN",
+    "real_rental_supplier": "NOT_ACCEPTED",
+    "real_fleet": "NOT_ACCEPTED",
+    "physical_three_end_ui": "NOT_RUN",
+    "upload": "NOT_ATTEMPTED_PRIOR_TOOL_REJECTION_REMAINS",
+    "merge": "NOT_ATTEMPTED",
+    "deploy": "NOT_ATTEMPTED"
+  },
+  "next_tasks": [
+    "Bind final integrated tree and finish independent C14/C13 checks.",
+    "Run controlled PostgreSQL competing-session validation for ride and rental recovery.",
+    "Provider-origin signed outcomes, fleet/rental supply acceptance and physical three-end UI remain external acceptance work; correlation references are not provider signatures."
+  ]
+}

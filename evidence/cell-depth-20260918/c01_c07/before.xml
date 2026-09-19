@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="10" skipped="0" tests="11" time="4.015" timestamp="2026-09-18T12:48:20.179772-04:00" hostname="localhost"><testcase classname="tests.test_c01_property_change_boundaries" name="test_api_field_names_require_review_and_keep_mixed_patch_atomic[legal-value0-LEGAL]" time="1.660"><failure message="AssertionError: assert 'IMMEDIATE' == 'CHANGE_REQUEST'&#10;  &#10;  - CHANGE_REQUEST&#10;  + IMMEDIATE">field = 'legal', value = {'company': 'Changed Legal'}, group = 'LEGAL'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+&gt;       assert result['mode'] == 'CHANGE_REQUEST'
+E       AssertionError: assert 'IMMEDIATE' == 'CHANGE_REQUEST'
+E         
+E         - CHANGE_REQUEST
+E         + IMMEDIATE
+
+tests/test_c01_property_change_boundaries.py:28: AssertionError</failure></testcase><testcase classname="tests.test_c01_property_change_boundaries" name="test_api_field_names_require_review_and_keep_mixed_patch_atomic[address-value1-ADDRESS]" time="0.058"><failure message="AssertionError: assert 'IMMEDIATE' == 'CHANGE_REQUEST'&#10;  &#10;  - CHANGE_REQUEST&#10;  + IMMEDIATE">field = 'address', value = {'city': 'Changed City'}, group = 'ADDRESS'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+&gt;       assert result['mode'] == 'CHANGE_REQUEST'
+E       AssertionError: assert 'IMMEDIATE' == 'CHANGE_REQUEST'
+E         
+E         - CHANGE_REQUEST
+E         + IMMEDIATE
+
+tests/test_c01_property_change_boundaries.py:28: AssertionError</failure></testcase><testcase classname="tests.test_c01_property_change_boundaries" name="test_api_field_names_require_review_and_keep_mixed_patch_atomic[brand_name-Changed Brand-BRAND]" time="0.056"><failure message="AssertionError: assert 'IMMEDIATE' == 'CHANGE_REQUEST'&#10;  &#10;  - CHANGE_REQUEST&#10;  + IMMEDIATE">field = 'brand_name', value = 'Changed Brand', group = 'BRAND'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+&gt;       assert result['mode'] == 'CHANGE_REQUEST'
+E       AssertionError: assert 'IMMEDIATE' == 'CHANGE_REQUEST'
+E         
+E         - CHANGE_REQUEST
+E         + IMMEDIATE
+
+tests/test_c01_property_change_boundaries.py:28: AssertionError</failure></testcase><testcase classname="tests.test_c01_property_change_boundaries" name="test_api_field_names_require_review_and_keep_mixed_patch_atomic[group_name-Changed Group-BRAND]" time="0.060"><failure message="AssertionError: assert 'IMMEDIATE' == 'CHANGE_REQUEST'&#10;  &#10;  - CHANGE_REQUEST&#10;  + IMMEDIATE">field = 'group_name', value = 'Changed Group', group = 'BRAND'
+
+    @pytest.mark.parametrize('field,value,group', [
+        ('legal', {'company': 'Changed Legal'}, 'LEGAL'),
+        ('address', {'city': 'Changed City'}, 'ADDRESS'),
+        ('brand_name', 'Changed Brand', 'BRAND'),
+        ('group_name', 'Changed Group', 'BRAND'),
+    ])
+    def test_api_field_names_require_review_and_keep_mixed_patch_atomic(field, value, group):
+        prop = property_row()
+        body = {field: value, 'contacts': {'phone': 'must-be-staged'}}
+        result = svc.patch_property('c01-owner', 'c01-actor', prop['property_id'], body)
+&gt;       assert result['mode'] == 'CHANGE_REQUEST'
+E       AssertionError: assert 'IMMEDIATE' == 'CHANGE_REQUEST'
+E         
+E         - CHANGE_REQUEST
+E         + IMMEDIATE
+
+tests/test_c01_property_change_boundaries.py:28: AssertionError</failure></testcase><testcase classname="tests.test_c01_property_change_boundaries" name="test_import_cannot_change_non_draft_library_or_claim_it_is_draft[PUBLISHED]" time="0.063"><failure message="Failed: DID NOT RAISE ValueError">state = 'PUBLISHED'
+
+    @pytest.mark.parametrize('state', ['PUBLISHED', 'UNDER_REVIEW'])
+    def test_import_cannot_change_non_draft_library_or_claim_it_is_draft(state):
+        prop = property_row()
+        with SessionLocal.begin() as session:
+            session.get(HotelPartnerPropertyRow, prop['property_id']).publication_state = state
+&gt;       with pytest.raises(ValueError, match='PROPERTY_IMPORT_REQUIRES_DRAFT'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c01_property_change_boundaries.py:40: Failed</failure></testcase><testcase classname="tests.test_c01_property_change_boundaries" name="test_import_cannot_change_non_draft_library_or_claim_it_is_draft[UNDER_REVIEW]" time="0.058"><failure message="Failed: DID NOT RAISE ValueError">state = 'UNDER_REVIEW'
+
+    @pytest.mark.parametrize('state', ['PUBLISHED', 'UNDER_REVIEW'])
+    def test_import_cannot_change_non_draft_library_or_claim_it_is_draft(state):
+        prop = property_row()
+        with SessionLocal.begin() as session:
+            session.get(HotelPartnerPropertyRow, prop['property_id']).publication_state = state
+&gt;       with pytest.raises(ValueError, match='PROPERTY_IMPORT_REQUIRES_DRAFT'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c01_property_change_boundaries.py:40: Failed</failure></testcase><testcase classname="tests.test_c01_property_change_boundaries" name="test_draft_import_and_low_risk_contact_edit_remain_available" time="0.057" /><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_malformed_export_rolls_back_claim_and_allows_corrected_upload" time="0.066"><failure message="AssertionError: assert 'UPLOAD_CONSUMED' == 'AWAITING_USER_UPLOAD'&#10;  &#10;  - AWAITING_USER_UPLOAD&#10;  + UPLOAD_CONSUMED">def test_malformed_export_rolls_back_claim_and_allows_corrected_upload():
+        connection = upload_connection()
+        cid = connection['connection_id']
+        with pytest.raises(ValueError, match='PROFILE_IMPORT_ENTITY_INVALID'):
+            svc.upload_provider_export(USER, cid, {
+                'account_holder_confirmed': True, 'items': [None],
+            })
+        with SessionLocal() as session:
+&gt;           assert session.get(ProfileImportJobRow, cid).status == 'AWAITING_USER_UPLOAD'
+E           AssertionError: assert 'UPLOAD_CONSUMED' == 'AWAITING_USER_UPLOAD'
+E             
+E             - AWAITING_USER_UPLOAD
+E             + UPLOAD_CONSUMED
+
+tests/test_c07_connection_transaction_boundaries.py:33: AssertionError</failure></testcase><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_disconnect_after_authorization_consume_prevents_late_preview[False]" time="0.077"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fa72dc3f8f0&gt;
+delete_values = False
+
+    @pytest.mark.parametrize('delete_values', [False, True])
+    def test_disconnect_after_authorization_consume_prevents_late_preview(monkeypatch, delete_values):
+        monkeypatch.setenv('GO_CTRIP_PROFILE_AUTHORIZATION_URL', 'https://accounts.ctrip.example/authorize')
+        connection = svc.create_provider_connection(USER, {
+            'provider': 'CTRIP', 'account_holder_confirmed': True,
+        })
+        cid = connection['connection_id']
+        body = {'state': parse_qs(urlparse(connection['authorization_url']).query)['state'][0],
+                'account_holder_verified': True, 'provider_account_subject': 'provider-test-holder',
+                'authorization_evidence_reference': 'adapter://test-only/authorization', 'items': ITEMS}
+        original = module.mutation_session
+        injected = False
+    
+        @contextmanager
+        def interleave_disconnect():
+            nonlocal injected
+            with original() as session:
+                yield session
+            if not injected:
+                injected = True
+                svc.disconnect_provider_connection(USER, cid, delete_values)
+    
+        monkeypatch.setattr(module, 'mutation_session', interleave_disconnect)
+&gt;       with pytest.raises(ValueError, match='PROFILE_SOURCE_DISCONNECTED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_transaction_boundaries.py:65: Failed</failure></testcase><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_disconnect_after_authorization_consume_prevents_late_preview[True]" time="0.063"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fa72dc3d400&gt;
+delete_values = True
+
+    @pytest.mark.parametrize('delete_values', [False, True])
+    def test_disconnect_after_authorization_consume_prevents_late_preview(monkeypatch, delete_values):
+        monkeypatch.setenv('GO_CTRIP_PROFILE_AUTHORIZATION_URL', 'https://accounts.ctrip.example/authorize')
+        connection = svc.create_provider_connection(USER, {
+            'provider': 'CTRIP', 'account_holder_confirmed': True,
+        })
+        cid = connection['connection_id']
+        body = {'state': parse_qs(urlparse(connection['authorization_url']).query)['state'][0],
+                'account_holder_verified': True, 'provider_account_subject': 'provider-test-holder',
+                'authorization_evidence_reference': 'adapter://test-only/authorization', 'items': ITEMS}
+        original = module.mutation_session
+        injected = False
+    
+        @contextmanager
+        def interleave_disconnect():
+            nonlocal injected
+            with original() as session:
+                yield session
+            if not injected:
+                injected = True
+                svc.disconnect_provider_connection(USER, cid, delete_values)
+    
+        monkeypatch.setattr(module, 'mutation_session', interleave_disconnect)
+&gt;       with pytest.raises(ValueError, match='PROFILE_SOURCE_DISCONNECTED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_transaction_boundaries.py:65: Failed</failure></testcase><testcase classname="tests.test_c07_connection_transaction_boundaries" name="test_disconnect_blocks_uncommitted_preview_without_erasing_retained_values" time="0.066"><failure message="Failed: DID NOT RAISE ValueError">def test_disconnect_blocks_uncommitted_preview_without_erasing_retained_values():
+        connection = upload_connection()
+        preview = svc.upload_provider_export(USER, connection['connection_id'], {
+            'account_holder_confirmed': True, 'items': ITEMS,
+        })['preview']
+        svc.disconnect_provider_connection(USER, connection['connection_id'])
+&gt;       with pytest.raises(ValueError, match='PROFILE_SOURCE_DISCONNECTED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c07_connection_transaction_boundaries.py:80: Failed</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "task_id": "C07-ACCOUNT-SOURCE-TRANSACTION-FENCE-20260918",
+  "status": "LOCAL_SCOPED_PASS_POSTGRES_RUNTIME_NOT_RUN",
+  "source_commit": "c318980c5bd6d8c55756c22d8dfeb6046d9ab7db",
+  "supersedes": {
+    "path": "evidence/cell-depth-20260918/c01_c07/source-lock-fix/RESULT.json",
+    "scope": "The same-fingerprint new-job phantom is now fenced in source code by an account-scoped transaction lock; prior missing-code limitation is superseded. Historical evidence is retained. PostgreSQL actual contention still NOT_RUN."
+  },
+  "gap": "Locking existing source jobs does not serialize concurrent insertion of another same-source job before revocation commits.",
+  "before": {
+    "basis": "C14 source review of 08791c00ad8aaed7c0fc65f0f8019d9acef92f67 showed no shared account/source database fence between create_import and delete_source.",
+    "postgres_runtime_reproduction": "NOT_RUN",
+    "prior_existing_job_reproduction": "source-lock-fix/before.log proves stale fact read; this is a separate existing-job boundary."
+  },
+  "fix": "Fixed namespace signed 64-bit SHA256 account key with parameterized pg_advisory_xact_lock. Source lifecycle callers lock the account before connection/job/traveler rows. SQLite retains BEGIN IMMEDIATE. Borrowed _session reuses the same transaction and already fenced caller. Callback uses an unlocked owner probe, then the account lock, then populate_existing FOR UPDATE and owner recheck.",
+  "lock_order": [
+    "account transaction lock",
+    "provider connection when applicable",
+    "source import jobs in import_job_id order",
+    "traveler/fact mutation within the same transaction"
+  ],
+  "covered_entrypoints": {
+    "personal_travel_vault": [
+      "create_import",
+      "review_item",
+      "commit_import",
+      "delete_source",
+      "create_provider_connection",
+      "complete_provider_connection:authorization-consume",
+      "complete_provider_connection:preview-publish",
+      "upload_provider_export",
+      "disconnect_provider_connection"
+    ],
+    "personal_vault_management": [
+      "edit_traveler",
+      "edit_fact",
+      "set_source_connection",
+      "inspect_import_item",
+      "assign_import_traveler"
+    ]
+  },
+  "borrowed_session_callers": [
+    "complete_provider_connection -> create_import",
+    "upload_provider_export -> create_import",
+    "disconnect_provider_connection -> delete_source"
+  ],
+  "tests": {
+    "first_run": {
+      "tests": 62,
+      "passed": 61,
+      "failed": 1,
+      "reason": "New test spy incorrectly treated SQLAlchemy internal SELECT for permitted callback owner probe as a service row access. Source behavior unchanged; narrowed spy to service entry operations."
+    },
+    "final_fence_run": {
+      "tests": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    "unique_final_scope": 62,
+    "raw_sql_capture": "LOCK_SQL_CAPTURE.json",
+    "proof_scope": [
+      "Parameterized transaction lock SQL with stable per-account key and distinct test-account keys.",
+      "Each tested source lifecycle entry fences before service row access; borrowed sessions retain the same account.",
+      "Callback owner/status modified after probe is refreshed and rejected.",
+      "Concurrent SQLite new import request after source revocation begins is rejected after deletion commits, leaving only the revoked source job.",
+      "Prior import/consent/owner-management acceptance retained."
+    ]
+  },
+  "final_test_files": [
+    "tests/test_c07_account_transaction_fence.py",
+    "tests/test_c07_connection_metadata_isolation.py",
+    "tests/test_c07_source_revocation_locking.py",
+    "tests/test_c07_connection_transaction_boundaries.py",
+    "tests/test_personal_travel_vault.py",
+    "tests/test_depth04_vault_management.py"
+  ],
+  "commands": [
+    "APP_ENV=test python -m pytest tests/test_c07_account_transaction_fence.py tests/test_c07_connection_metadata_isolation.py tests/test_c07_source_revocation_locking.py tests/test_c07_connection_transaction_boundaries.py tests/test_personal_travel_vault.py tests/test_depth04_vault_management.py --junitxml=../evidence/cell-depth-20260918/c01_c07/account-fence/first.xml",
+    "APP_ENV=test python -m pytest tests/test_c07_account_transaction_fence.py --junitxml=../evidence/cell-depth-20260918/c01_c07/account-fence/final-fence.xml"
+  ],
+  "working_directory": "application",
+  "files_sha256": {
+    "application/src/go_hotel/services/personal_travel_vault.py": "575ffe8719689c4c5feb558a2445cde2f78f454a56febead7f6b6860046d76c7",
+    "application/src/go_hotel/services/personal_vault_management.py": "81f5e7e1fe8d73dc9f2321a2ba3f58a6691283553eae3f66fc60faaa0becfe98",
+    "application/tests/test_c07_account_transaction_fence.py": "dc6fb560a2a9c93c4b0a0cb129eff243dfe5a524ade9d99a42a6f8716f1facd2"
+  },
+  "limitations": [
+    "PostgreSQL runtime lock contention/rollback verification is NOT_RUN; SQL capture is not an actual PostgreSQL execution.",
+    "This evidence covers source lifecycle/import boundaries, not serialization of every vault operation.",
+    "No schema change, remote upload, merge, deployment or live-provider operation.",
+    "Root combined-source C14 and independent C13 remain required."
+  ],
+  "next_task": "C14 final combined-source review, then C13 union execution; PostgreSQL real contention remains a separate gate."
+}

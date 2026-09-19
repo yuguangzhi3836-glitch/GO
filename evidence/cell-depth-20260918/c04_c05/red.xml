@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="8" time="4.470" timestamp="2026-09-18T12:50:00.436851-04:00" hostname="localhost"><testcase classname="tests.test_c04_change_refund_receipts" name="test_unproven_change_refund_preserves_dates_and_recovers_once[absent]" time="1.771"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8cfde2a720&gt;
+fault = 'absent'
+
+    @pytest.mark.parametrize('fault', ['absent', 'empty', 'capture', 'foreign', 'duplicate'])
+    def test_unproven_change_refund_preserves_dates_and_recovers_once(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = shorten(owner, oid, 12)
+        before = svc.get(owner, oid)
+        receipt = {'state': 'CONFIRMED', 'money_movement_ids': ['absent']}
+        if fault == 'empty':
+            receipt['money_movement_ids'] = []
+        elif fault == 'capture':
+            receipt['money_movement_ids'] = [money.original('RENTAL', oid)[2].money_movement_id]
+        elif fault in {'foreign', 'duplicate'}:
+            _, other_owner, other_oid = booked('RENTAL')
+            execute(other_owner, other_oid, shorten(other_owner, other_oid, 12))
+            mid = refunded_movements()[0].money_movement_id
+            receipt['money_movement_ids'] = [mid] * (2 if fault == 'duplicate' else 1)
+        count = len(refunded_movements())
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: receipt)
+    
+&gt;       with pytest.raises(ValueError, match='REFUND_MONEY_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_refund_receipts.py:42: Failed</failure></testcase><testcase classname="tests.test_c04_change_refund_receipts" name="test_unproven_change_refund_preserves_dates_and_recovers_once[empty]" time="0.111"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8cfbb743b0&gt;
+fault = 'empty'
+
+    @pytest.mark.parametrize('fault', ['absent', 'empty', 'capture', 'foreign', 'duplicate'])
+    def test_unproven_change_refund_preserves_dates_and_recovers_once(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = shorten(owner, oid, 12)
+        before = svc.get(owner, oid)
+        receipt = {'state': 'CONFIRMED', 'money_movement_ids': ['absent']}
+        if fault == 'empty':
+            receipt['money_movement_ids'] = []
+        elif fault == 'capture':
+            receipt['money_movement_ids'] = [money.original('RENTAL', oid)[2].money_movement_id]
+        elif fault in {'foreign', 'duplicate'}:
+            _, other_owner, other_oid = booked('RENTAL')
+            execute(other_owner, other_oid, shorten(other_owner, other_oid, 12))
+            mid = refunded_movements()[0].money_movement_id
+            receipt['money_movement_ids'] = [mid] * (2 if fault == 'duplicate' else 1)
+        count = len(refunded_movements())
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: receipt)
+    
+&gt;       with pytest.raises(ValueError, match='REFUND_MONEY_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_refund_receipts.py:42: Failed</failure></testcase><testcase classname="tests.test_c04_change_refund_receipts" name="test_unproven_change_refund_preserves_dates_and_recovers_once[capture]" time="0.099"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8cfbcfd0d0&gt;
+fault = 'capture'
+
+    @pytest.mark.parametrize('fault', ['absent', 'empty', 'capture', 'foreign', 'duplicate'])
+    def test_unproven_change_refund_preserves_dates_and_recovers_once(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = shorten(owner, oid, 12)
+        before = svc.get(owner, oid)
+        receipt = {'state': 'CONFIRMED', 'money_movement_ids': ['absent']}
+        if fault == 'empty':
+            receipt['money_movement_ids'] = []
+        elif fault == 'capture':
+            receipt['money_movement_ids'] = [money.original('RENTAL', oid)[2].money_movement_id]
+        elif fault in {'foreign', 'duplicate'}:
+            _, other_owner, other_oid = booked('RENTAL')
+            execute(other_owner, other_oid, shorten(other_owner, other_oid, 12))
+            mid = refunded_movements()[0].money_movement_id
+            receipt['money_movement_ids'] = [mid] * (2 if fault == 'duplicate' else 1)
+        count = len(refunded_movements())
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: receipt)
+    
+&gt;       with pytest.raises(ValueError, match='REFUND_MONEY_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_refund_receipts.py:42: Failed</failure></testcase><testcase classname="tests.test_c04_change_refund_receipts" name="test_unproven_change_refund_preserves_dates_and_recovers_once[foreign]" time="0.139"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8cfbbf6390&gt;
+fault = 'foreign'
+
+    @pytest.mark.parametrize('fault', ['absent', 'empty', 'capture', 'foreign', 'duplicate'])
+    def test_unproven_change_refund_preserves_dates_and_recovers_once(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = shorten(owner, oid, 12)
+        before = svc.get(owner, oid)
+        receipt = {'state': 'CONFIRMED', 'money_movement_ids': ['absent']}
+        if fault == 'empty':
+            receipt['money_movement_ids'] = []
+        elif fault == 'capture':
+            receipt['money_movement_ids'] = [money.original('RENTAL', oid)[2].money_movement_id]
+        elif fault in {'foreign', 'duplicate'}:
+            _, other_owner, other_oid = booked('RENTAL')
+            execute(other_owner, other_oid, shorten(other_owner, other_oid, 12))
+            mid = refunded_movements()[0].money_movement_id
+            receipt['money_movement_ids'] = [mid] * (2 if fault == 'duplicate' else 1)
+        count = len(refunded_movements())
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: receipt)
+    
+&gt;       with pytest.raises(ValueError, match='REFUND_MONEY_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_refund_receipts.py:42: Failed</failure></testcase><testcase classname="tests.test_c04_change_refund_receipts" name="test_unproven_change_refund_preserves_dates_and_recovers_once[duplicate]" time="0.132"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8cfbc25190&gt;
+fault = 'duplicate'
+
+    @pytest.mark.parametrize('fault', ['absent', 'empty', 'capture', 'foreign', 'duplicate'])
+    def test_unproven_change_refund_preserves_dates_and_recovers_once(monkeypatch, fault):
+        svc, owner, oid = booked('RENTAL')
+        quote = shorten(owner, oid, 12)
+        before = svc.get(owner, oid)
+        receipt = {'state': 'CONFIRMED', 'money_movement_ids': ['absent']}
+        if fault == 'empty':
+            receipt['money_movement_ids'] = []
+        elif fault == 'capture':
+            receipt['money_movement_ids'] = [money.original('RENTAL', oid)[2].money_movement_id]
+        elif fault in {'foreign', 'duplicate'}:
+            _, other_owner, other_oid = booked('RENTAL')
+            execute(other_owner, other_oid, shorten(other_owner, other_oid, 12))
+            mid = refunded_movements()[0].money_movement_id
+            receipt['money_movement_ids'] = [mid] * (2 if fault == 'duplicate' else 1)
+        count = len(refunded_movements())
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: receipt)
+    
+&gt;       with pytest.raises(ValueError, match='REFUND_MONEY_NOT_CONFIRMED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_refund_receipts.py:42: Failed</failure></testcase><testcase classname="tests.test_c04_change_refund_receipts" name="test_same_order_equal_earlier_receipt_cannot_finalize_new_change" time="0.101"><failure message="Failed: DID NOT RAISE ValueError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8cfbc26060&gt;
+
+    def test_same_order_equal_earlier_receipt_cannot_finalize_new_change(monkeypatch):
+        svc, owner, oid = booked('RENTAL')
+        execute(owner, oid, shorten(owner, oid, 12))
+        old = refunded_movements()[0]
+        quote = shorten(owner, oid, 11)
+        assert old.amount_minor == -quote['difference_minor']
+        original = money.execute_refund_plan
+        monkeypatch.setattr(money, 'execute_refund_plan', lambda *a, **kw: {
+            'state': 'CONFIRMED', 'money_movement_ids': [old.money_movement_id]})
+    
+&gt;       with pytest.raises(ValueError, match='REFUND_RECEIPT_PLAN_MISMATCH'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_c04_change_refund_receipts.py:76: Failed</failure></testcase><testcase classname="tests.test_c05_fleet_stale_snapshot" name="test_stale_pending_snapshot_never_resends_dispatched_fleet_intent[DISPATCHED]" time="0.098"><failure message="assert 1 == 0&#10; +  where 1 = &lt;test_c05_fleet_stale_snapshot.test_stale_pending_snapshot_never_resends_dispatched_fleet_intent.&lt;locals&gt;.QueryOnly object at 0x7f8cfba43e30&gt;.execute_calls">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-7/test_stale_pending_snapshot_ne0')
+competing_status = 'DISPATCHED'
+
+    @pytest.mark.parametrize('competing_status', ['DISPATCHED', 'UNKNOWN'])
+    def test_stale_pending_snapshot_never_resends_dispatched_fleet_intent(tmp_path, competing_status):
+        auth = authority()
+        ride, identity = seed_ride(auth)
+        aid = proposal(auth, ride, identity)
+        factory = sessionmaker(bind=engine, expire_on_commit=False)
+        injected = []
+    
+        def competing_transition(session, instance):
+            if isinstance(instance, Adjustment) and instance.adjustment_id == aid and not injected:
+                assert instance.status == 'PENDING'
+                session.connection().execute(update(Adjustment).where(
+                    Adjustment.adjustment_id == aid).values(status=competing_status))
+                # The ORM identity remains stale although durable state has moved.
+                assert instance.status == 'PENDING'
+                injected.append(True)
+    
+        event.listen(factory, 'loaded_as_persistent', competing_transition)
+    
+        class QueryOnly(IsolatedFleetAdapter):
+            execute_calls = 0
+            query_calls = 0
+    
+            def execute(self, *args):
+                self.execute_calls += 1
+                return super().execute(*args)
+    
+            def query(self, *args):
+                self.query_calls += 1
+                return super().query(*args)
+    
+        adapter = QueryOnly(tmp_path / 'fleet.db')
+        result = FlightRideSync(factory).process(aid, adapter)
+        assert injected == [True]
+&gt;       assert adapter.execute_calls == 0
+E       assert 1 == 0
+E        +  where 1 = &lt;test_c05_fleet_stale_snapshot.test_stale_pending_snapshot_never_resends_dispatched_fleet_intent.&lt;locals&gt;.QueryOnly object at 0x7f8cfba43e30&gt;.execute_calls
+
+tests/test_c05_fleet_stale_snapshot.py:52: AssertionError</failure></testcase><testcase classname="tests.test_c05_fleet_stale_snapshot" name="test_stale_pending_snapshot_never_resends_dispatched_fleet_intent[UNKNOWN]" time="0.086"><failure message="assert 1 == 0&#10; +  where 1 = &lt;test_c05_fleet_stale_snapshot.test_stale_pending_snapshot_never_resends_dispatched_fleet_intent.&lt;locals&gt;.QueryOnly object at 0x7f8cfbc37980&gt;.execute_calls">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-7/test_stale_pending_snapshot_ne1')
+competing_status = 'UNKNOWN'
+
+    @pytest.mark.parametrize('competing_status', ['DISPATCHED', 'UNKNOWN'])
+    def test_stale_pending_snapshot_never_resends_dispatched_fleet_intent(tmp_path, competing_status):
+        auth = authority()
+        ride, identity = seed_ride(auth)
+        aid = proposal(auth, ride, identity)
+        factory = sessionmaker(bind=engine, expire_on_commit=False)
+        injected = []
+    
+        def competing_transition(session, instance):
+            if isinstance(instance, Adjustment) and instance.adjustment_id == aid and not injected:
+                assert instance.status == 'PENDING'
+                session.connection().execute(update(Adjustment).where(
+                    Adjustment.adjustment_id == aid).values(status=competing_status))
+                # The ORM identity remains stale although durable state has moved.
+                assert instance.status == 'PENDING'
+                injected.append(True)
+    
+        event.listen(factory, 'loaded_as_persistent', competing_transition)
+    
+        class QueryOnly(IsolatedFleetAdapter):
+            execute_calls = 0
+            query_calls = 0
+    
+            def execute(self, *args):
+                self.execute_calls += 1
+                return super().execute(*args)
+    
+            def query(self, *args):
+                self.query_calls += 1
+                return super().query(*args)
+    
+        adapter = QueryOnly(tmp_path / 'fleet.db')
+        result = FlightRideSync(factory).process(aid, adapter)
+        assert injected == [True]
+&gt;       assert adapter.execute_calls == 0
+E       assert 1 == 0
+E        +  where 1 = &lt;test_c05_fleet_stale_snapshot.test_stale_pending_snapshot_never_resends_dispatched_fleet_intent.&lt;locals&gt;.QueryOnly object at 0x7f8cfbc37980&gt;.execute_calls
+
+tests/test_c05_fleet_stale_snapshot.py:52: AssertionError</failure></testcase></testsuite></testsuites>

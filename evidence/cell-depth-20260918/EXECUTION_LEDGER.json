@@ -1,0 +1,111 @@
+{
+  "candidate_kind": "LOCAL_DEVELOPMENT_ONLY",
+  "cells": [
+    {
+      "cell": "C01",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C02",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C03",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C04",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C05",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C06",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C07",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C08",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C09",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C10",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C11",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C12",
+      "status": "PASS_SCOPED_FINAL_REGRESSION"
+    },
+    {
+      "cell": "C13",
+      "status": "FINAL_REGRESSION_PASS_INDEPENDENT_SIGNOFF_PENDING"
+    },
+    {
+      "cell": "C14",
+      "status": "PASS_SCOPED_LOCAL_CODE_REVIEW"
+    }
+  ],
+  "global_completion": "NOT_PROVEN",
+  "known_external_gates": [
+    "real supplier identity/authentication and original response provenance",
+    "real payment provider evidence",
+    "PostgreSQL concurrency and migration verification for final new candidate",
+    "physical-device and complete three-end UX acceptance",
+    "new Cell changes not yet updated into remote draft; original authorized37 verified on remote"
+  ],
+  "merge": "NOT_AUTHORIZED",
+  "deploy": "NOT_AUTHORIZED",
+  "notes": [
+    "Existing PASS stays bound to its exact source; this round gets new validation.",
+    "No artificial percentage without an accepted total requirements denominator."
+  ],
+  "review_findings": [
+    {
+      "id": "C14-C07-DELETE-COMMIT",
+      "status": "FIXED_SCOPED_REGRESSION_PASS",
+      "impact": "source deletion can miss concurrently committed active facts"
+    },
+    {
+      "id": "C14-C07-TENANT-LINK",
+      "status": "FIXED_SCOPED_REGRESSION_PASS",
+      "impact": "forged import metadata can modify another tenant import"
+    },
+    {
+      "id": "C13-C11-CALLBACK-RACE",
+      "status": "FIXED_SCOPED_REGRESSION_PASS",
+      "impact": "same signed event concurrently raises integrity error rather than idempotent result"
+    },
+    {
+      "id": "C04-UNKNOWN-EPISODE",
+      "status": "FIXED_SCOPED_REGRESSION_PASS",
+      "impact": "unknown rental result must bind exact recovery episode and valid proof"
+    }
+  ],
+  "final_source": {
+    "candidate_sha": "43d62cf6682d4ee93469dace60eb5fe42f894fdb",
+    "application_tree": "f6d329352dd8484010036448810a927d5eec4be7",
+    "application_file_count": 1441,
+    "application_fingerprint_sha256": "bd50ea8c91fd9d590840e54c83bdb00f408200fbc8d93cde7ad6d433eb81f166"
+  },
+  "final_tests": {
+    "tests": 709,
+    "unique_cases": 709,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "declared_tests": 709
+  }
+}

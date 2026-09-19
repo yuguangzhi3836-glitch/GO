@@ -1,0 +1,119 @@
+{
+  "candidate_sha": "43d62cf6682d4ee93469dace60eb5fe42f894fdb",
+  "application_git_tree": "f6d329352dd8484010036448810a927d5eec4be7",
+  "application_files": 1441,
+  "application_source_sha256": "bd50ea8c91fd9d590840e54c83bdb00f408200fbc8d93cde7ad6d433eb81f166",
+  "fingerprint_algorithm": "SHA256 of UTF-8-byte-sorted tracked application paths, each encoded as path (including application/ prefix) + NUL + file-content SHA256 lowercase hex + LF",
+  "working_tree_content_mismatches": [],
+  "tracked_application_dirty": [],
+  "untracked_non_generated_application_files": [],
+  "changed_application_files_from_local_base": [
+    "M\tapplication/src/go_hotel/api/routes/flight.py",
+    "M\tapplication/src/go_hotel/api/routes/omnichannel_payment.py",
+    "M\tapplication/src/go_hotel/attractions/service.py",
+    "M\tapplication/src/go_hotel/flight/service.py",
+    "M\tapplication/src/go_hotel/go_ai/service.py",
+    "M\tapplication/src/go_hotel/judgment/service.py",
+    "M\tapplication/src/go_hotel/mobility/rental/changes.py",
+    "A\tapplication/src/go_hotel/mobility/rental/recovery_evidence.py",
+    "M\tapplication/src/go_hotel/mobility/rental/service.py",
+    "M\tapplication/src/go_hotel/mobility/ride/flight_sync.py",
+    "M\tapplication/src/go_hotel/mobility/ride/recovery_evidence.py",
+    "M\tapplication/src/go_hotel/mobility/service.py",
+    "M\tapplication/src/go_hotel/rail/service.py",
+    "M\tapplication/src/go_hotel/security/service.py",
+    "M\tapplication/src/go_hotel/services/consumer_unified_lifecycle.py",
+    "M\tapplication/src/go_hotel/services/hotel_partner_core.py",
+    "M\tapplication/src/go_hotel/services/omnichannel_payment.py",
+    "M\tapplication/src/go_hotel/services/personal_travel_vault.py",
+    "M\tapplication/src/go_hotel/services/personal_vault_management.py",
+    "A\tapplication/tests/flight/test_c02_prebook_consumption.py",
+    "A\tapplication/tests/flight/test_c02_three_end_change_quote.py",
+    "A\tapplication/tests/go_ai/test_c08_planning_verification_failures.py",
+    "A\tapplication/tests/judgment/test_cell_depth_c09_public_binding.py",
+    "A\tapplication/tests/test_c01_property_change_boundaries.py",
+    "A\tapplication/tests/test_c03_change_quote_supersession.py",
+    "A\tapplication/tests/test_c04_change_capture_receipts.py",
+    "A\tapplication/tests/test_c04_change_refund_receipts.py",
+    "A\tapplication/tests/test_c04_unknown_episode_evidence.py",
+    "A\tapplication/tests/test_c05_fleet_stale_snapshot.py",
+    "A\tapplication/tests/test_c07_account_transaction_fence.py",
+    "A\tapplication/tests/test_c07_connection_metadata_isolation.py",
+    "A\tapplication/tests/test_c07_connection_transaction_boundaries.py",
+    "A\tapplication/tests/test_c07_source_revocation_locking.py",
+    "A\tapplication/tests/test_c10_external_verification_precedence.py",
+    "A\tapplication/tests/test_cell_depth_c06_change_quote_binding.py",
+    "A\tapplication/tests/test_cell_depth_c11_callback_races.py",
+    "A\tapplication/tests/test_cell_depth_c11_payment_boundary.py",
+    "A\tapplication/tests/test_cell_depth_c12_identity_binding.py",
+    "M\tapplication/tests/test_rc20_2_all_b_to_a.py",
+    "M\tapplication/tests/test_v70_next_c05_recovery_evidence.py",
+    "M\tapplication/tests/test_v70_r3_c04_http_get_zero_write.py"
+  ],
+  "evidence_checksum_manifests": [
+    {
+      "manifest": "evidence/cell-depth-20260918/c01_c07/SHA256SUMS.json",
+      "files_checked": 12,
+      "mismatches": []
+    },
+    {
+      "manifest": "evidence/cell-depth-20260918/c01_c07/account-fence/SHA256SUMS.json",
+      "files_checked": 7,
+      "mismatches": []
+    },
+    {
+      "manifest": "evidence/cell-depth-20260918/c01_c07/metadata-isolation/SHA256SUMS.json",
+      "files_checked": 5,
+      "mismatches": []
+    },
+    {
+      "manifest": "evidence/cell-depth-20260918/c01_c07/source-lock-fix/SHA256SUMS.json",
+      "files_checked": 5,
+      "mismatches": []
+    },
+    {
+      "manifest": "evidence/cell-depth-20260918/c02_c03/SHA256SUMS.json",
+      "files_checked": 9,
+      "mismatches": []
+    },
+    {
+      "manifest": "evidence/cell-depth-20260918/c04-unknown/SHA256SUMS.json",
+      "files_checked": 9,
+      "mismatches": []
+    },
+    {
+      "manifest": "evidence/cell-depth-20260918/c04_c05/SHA256SUMS.json",
+      "files_checked": 13,
+      "mismatches": []
+    },
+    {
+      "manifest": "evidence/cell-depth-20260918/c06_c09/SHA256SUMS.json",
+      "files_checked": 15,
+      "mismatches": []
+    },
+    {
+      "manifest": "evidence/cell-depth-20260918/c08_c10/SHA256SUMS.json",
+      "files_checked": 7,
+      "mismatches": []
+    },
+    {
+      "manifest": "evidence/cell-depth-20260918/c11_c12/SHA256SUMS.json",
+      "files_checked": 9,
+      "mismatches": []
+    },
+    {
+      "manifest": "evidence/cell-depth-20260918/c11_c12/callback-race/SHA256SUMS.json",
+      "files_checked": 9,
+      "mismatches": []
+    }
+  ],
+  "evidence_files": 115,
+  "committed_evidence_files": 111,
+  "untracked_context_snapshot_files": [
+    "evidence/cell-depth-20260918/BASELINE.json",
+    "evidence/cell-depth-20260918/EXECUTION_LEDGER.json",
+    "evidence/cell-depth-20260918/PR212_RETENTION.json",
+    "evidence/cell-depth-20260918/REMOTE_BASE_READBACK.json"
+  ],
+  "scoped_checksum_members_verified": 100
+}

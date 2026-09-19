@@ -1,0 +1,36 @@
+{
+  "task_id": "C07-CONNECTION-METADATA-ISOLATION-20260918",
+  "status": "LOCAL_SCOPED_PASS",
+  "source_commit": "08791c00ad8aaed7c0fc65f0f8019d9acef92f67",
+  "gap": "Client-supplied connection_intent/import_job_id metadata let an owner disconnect another user import; corrupt connection pointers could target another same-owner connection.",
+  "before": {
+    "tests": 15,
+    "failures": 14,
+    "passed": 1,
+    "observed": "Victim metadata gained source_disconnected=true."
+  },
+  "fix": "Reject reserved client metadata while preserving ordinary annotations. Server callback/upload metadata uses private internal parameter. Bound import query includes owner, connection source_reference, provider and source_type; reverse metadata pointer and fingerprint must match before mutation.",
+  "final": {
+    "tests": 57,
+    "failures": 0,
+    "skipped": 0
+  },
+  "final_test_files": [
+    "tests/test_c07_connection_metadata_isolation.py",
+    "tests/test_c07_source_revocation_locking.py",
+    "tests/test_c07_connection_transaction_boundaries.py",
+    "tests/test_personal_travel_vault.py",
+    "tests/test_depth04_vault_management.py"
+  ],
+  "command": "APP_ENV=test python -m pytest tests/test_c07_connection_metadata_isolation.py tests/test_c07_source_revocation_locking.py tests/test_c07_connection_transaction_boundaries.py tests/test_personal_travel_vault.py tests/test_depth04_vault_management.py --junitxml=../evidence/cell-depth-20260918/c01_c07/metadata-isolation/final.xml",
+  "files_sha256": {
+    "application/src/go_hotel/services/personal_travel_vault.py": "a9f90c9db88fce8b0f9a2f0cf465eedc6d87a6d800f34f9cb10d4ce82b4ad319",
+    "application/tests/test_c07_connection_metadata_isolation.py": "eb62c8e56de9e3554e3684ecf6d331f62c611470775a460845d8d55e892704a7"
+  },
+  "limitations": [
+    "Local SQLite service and existing HTTP tests only.",
+    "No real OTA, PostgreSQL contention, deployment or remote upload.",
+    "Final combined source still requires C14 and independent C13."
+  ],
+  "next_task": "Account-scoped transaction fence for concurrently created same-fingerprint jobs is being implemented separately."
+}

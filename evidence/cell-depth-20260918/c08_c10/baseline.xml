@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="9" time="2.455" timestamp="2026-09-18T12:52:54.090539-04:00" hostname="localhost"><testcase classname="tests.go_ai.test_c08_planning_verification_failures" name="test_unexpected_stage_failure_finalizes_audit_without_replay[classification]" time="0.349"><failure message="RuntimeError: isolated GO-owned stage failure">audit_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:////tmp/pytest-of-root/pytest-14/test_unexpected_stage_failure_0/c08-audit.sqlite), autoflush=True, expire_on_commit=False)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3bf7c35e50&gt;
+stage = 'classification'
+
+    @pytest.mark.parametrize("stage", ["classification", "planning", "model_verification", "verification_gate"])
+    def test_unexpected_stage_failure_finalizes_audit_without_replay(audit_session, monkeypatch, stage):
+        provider = SynthesisProvider()
+        service = service_module.GOAIService(GOAIProviderRegistry([provider]))
+        calls = []
+        original_compute = service._execute_compute_task
+    
+        def compute(**kwargs):
+            calls.append(kwargs["task_id"])
+            if stage == "model_verification" and kwargs["task_id"] == "task_verification":
+                raise RuntimeError("isolated verifier audit storage failure")
+            return original_compute(**kwargs)
+    
+        def fail(*args, **kwargs):
+            raise RuntimeError("isolated GO-owned stage failure")
+    
+        monkeypatch.setattr(service, "_execute_compute_task", compute)
+        if stage == "classification":
+            monkeypatch.setattr(service.complexity_classifier, "classify", fail)
+        elif stage == "planning":
+            monkeypatch.setattr(service.task_planner, "plan", fail)
+        elif stage == "verification_gate":
+            monkeypatch.setattr(service.verification_gate, "verify", fail)
+    
+        code = ("GO_AI_ORCHESTRATION_PLANNING_FAILED" if stage in {"classification", "planning"}
+                else "GO_AI_ORCHESTRATION_VERIFICATION_FAILED")
+        with pytest.raises(ValueError, match=f"^{code}$"):
+&gt;           service.orchestrate(message="Explain refund choices", account_id="c08_owner")
+
+tests/go_ai/test_c08_planning_verification_failures.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/go_ai/service.py:227: in orchestrate
+    assessment = self.complexity_classifier.classify(request.message, context=request.context)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = ('Explain refund choices',), kwargs = {'context': {}}
+
+    def fail(*args, **kwargs):
+&gt;       raise RuntimeError("isolated GO-owned stage failure")
+E       RuntimeError: isolated GO-owned stage failure
+
+tests/go_ai/test_c08_planning_verification_failures.py:27: RuntimeError</failure></testcase><testcase classname="tests.go_ai.test_c08_planning_verification_failures" name="test_unexpected_stage_failure_finalizes_audit_without_replay[planning]" time="0.005"><failure message="RuntimeError: isolated GO-owned stage failure">audit_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:////tmp/pytest-of-root/pytest-14/test_unexpected_stage_failure_1/c08-audit.sqlite), autoflush=True, expire_on_commit=False)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3bf7c48bc0&gt;
+stage = 'planning'
+
+    @pytest.mark.parametrize("stage", ["classification", "planning", "model_verification", "verification_gate"])
+    def test_unexpected_stage_failure_finalizes_audit_without_replay(audit_session, monkeypatch, stage):
+        provider = SynthesisProvider()
+        service = service_module.GOAIService(GOAIProviderRegistry([provider]))
+        calls = []
+        original_compute = service._execute_compute_task
+    
+        def compute(**kwargs):
+            calls.append(kwargs["task_id"])
+            if stage == "model_verification" and kwargs["task_id"] == "task_verification":
+                raise RuntimeError("isolated verifier audit storage failure")
+            return original_compute(**kwargs)
+    
+        def fail(*args, **kwargs):
+            raise RuntimeError("isolated GO-owned stage failure")
+    
+        monkeypatch.setattr(service, "_execute_compute_task", compute)
+        if stage == "classification":
+            monkeypatch.setattr(service.complexity_classifier, "classify", fail)
+        elif stage == "planning":
+            monkeypatch.setattr(service.task_planner, "plan", fail)
+        elif stage == "verification_gate":
+            monkeypatch.setattr(service.verification_gate, "verify", fail)
+    
+        code = ("GO_AI_ORCHESTRATION_PLANNING_FAILED" if stage in {"classification", "planning"}
+                else "GO_AI_ORCHESTRATION_VERIFICATION_FAILED")
+        with pytest.raises(ValueError, match=f"^{code}$"):
+&gt;           service.orchestrate(message="Explain refund choices", account_id="c08_owner")
+
+tests/go_ai/test_c08_planning_verification_failures.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/go_ai/service.py:232: in orchestrate
+    plan = self.task_planner.plan(request.message, assessment)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = ('Explain refund choices', ComplexityAssessment(tier='TIER_5_HIGH_ASSURANCE', score=9, reasons=('TRANSACTION_OR_MONEY_SENSITIVE',), max_parallel_tasks=4, requires_model_verification=True, requires_deterministic_gate=True))
+kwargs = {}
+
+    def fail(*args, **kwargs):
+&gt;       raise RuntimeError("isolated GO-owned stage failure")
+E       RuntimeError: isolated GO-owned stage failure
+
+tests/go_ai/test_c08_planning_verification_failures.py:27: RuntimeError</failure></testcase><testcase classname="tests.go_ai.test_c08_planning_verification_failures" name="test_unexpected_stage_failure_finalizes_audit_without_replay[model_verification]" time="0.010"><failure message="RuntimeError: isolated verifier audit storage failure">audit_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:////tmp/pytest-of-root/pytest-14/test_unexpected_stage_failure_2/c08-audit.sqlite), autoflush=True, expire_on_commit=False)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3bf6f1a300&gt;
+stage = 'model_verification'
+
+    @pytest.mark.parametrize("stage", ["classification", "planning", "model_verification", "verification_gate"])
+    def test_unexpected_stage_failure_finalizes_audit_without_replay(audit_session, monkeypatch, stage):
+        provider = SynthesisProvider()
+        service = service_module.GOAIService(GOAIProviderRegistry([provider]))
+        calls = []
+        original_compute = service._execute_compute_task
+    
+        def compute(**kwargs):
+            calls.append(kwargs["task_id"])
+            if stage == "model_verification" and kwargs["task_id"] == "task_verification":
+                raise RuntimeError("isolated verifier audit storage failure")
+            return original_compute(**kwargs)
+    
+        def fail(*args, **kwargs):
+            raise RuntimeError("isolated GO-owned stage failure")
+    
+        monkeypatch.setattr(service, "_execute_compute_task", compute)
+        if stage == "classification":
+            monkeypatch.setattr(service.complexity_classifier, "classify", fail)
+        elif stage == "planning":
+            monkeypatch.setattr(service.task_planner, "plan", fail)
+        elif stage == "verification_gate":
+            monkeypatch.setattr(service.verification_gate, "verify", fail)
+    
+        code = ("GO_AI_ORCHESTRATION_PLANNING_FAILED" if stage in {"classification", "planning"}
+                else "GO_AI_ORCHESTRATION_VERIFICATION_FAILED")
+        with pytest.raises(ValueError, match=f"^{code}$"):
+&gt;           service.orchestrate(message="Explain refund choices", account_id="c08_owner")
+
+tests/go_ai/test_c08_planning_verification_failures.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/go_ai/service.py:302: in orchestrate
+    self._execute_compute_task(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+kwargs = {'parent_request': GOAIRequest(request_id='goai_9d7036ef37a2475ba79b7121f16b69ce', message='Explain refund choices', t...GO transaction truth.\n\nOriginal request:\nExplain refund choices\n\nCandidate answer:\nGO AI advisory response', ...}
+
+    def compute(**kwargs):
+        calls.append(kwargs["task_id"])
+        if stage == "model_verification" and kwargs["task_id"] == "task_verification":
+&gt;           raise RuntimeError("isolated verifier audit storage failure")
+E           RuntimeError: isolated verifier audit storage failure
+
+tests/go_ai/test_c08_planning_verification_failures.py:23: RuntimeError</failure></testcase><testcase classname="tests.go_ai.test_c08_planning_verification_failures" name="test_unexpected_stage_failure_finalizes_audit_without_replay[verification_gate]" time="0.009"><failure message="RuntimeError: isolated GO-owned stage failure">audit_session = sessionmaker(class_='Session', bind=Engine(sqlite+pysqlite:////tmp/pytest-of-root/pytest-14/test_unexpected_stage_failure_3/c08-audit.sqlite), autoflush=True, expire_on_commit=False)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3bf6f1abd0&gt;
+stage = 'verification_gate'
+
+    @pytest.mark.parametrize("stage", ["classification", "planning", "model_verification", "verification_gate"])
+    def test_unexpected_stage_failure_finalizes_audit_without_replay(audit_session, monkeypatch, stage):
+        provider = SynthesisProvider()
+        service = service_module.GOAIService(GOAIProviderRegistry([provider]))
+        calls = []
+        original_compute = service._execute_compute_task
+    
+        def compute(**kwargs):
+            calls.append(kwargs["task_id"])
+            if stage == "model_verification" and kwargs["task_id"] == "task_verification":
+                raise RuntimeError("isolated verifier audit storage failure")
+            return original_compute(**kwargs)
+    
+        def fail(*args, **kwargs):
+            raise RuntimeError("isolated GO-owned stage failure")
+    
+        monkeypatch.setattr(service, "_execute_compute_task", compute)
+        if stage == "classification":
+            monkeypatch.setattr(service.complexity_classifier, "classify", fail)
+        elif stage == "planning":
+            monkeypatch.setattr(service.task_planner, "plan", fail)
+        elif stage == "verification_gate":
+            monkeypatch.setattr(service.verification_gate, "verify", fail)
+    
+        code = ("GO_AI_ORCHESTRATION_PLANNING_FAILED" if stage in {"classification", "planning"}
+                else "GO_AI_ORCHESTRATION_VERIFICATION_FAILED")
+        with pytest.raises(ValueError, match=f"^{code}$"):
+&gt;           service.orchestrate(message="Explain refund choices", account_id="c08_owner")
+
+tests/go_ai/test_c08_planning_verification_failures.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/go_ai/service.py:316: in orchestrate
+    verification = self.verification_gate.verify(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = ()
+kwargs = {'answer': 'GO AI advisory response', 'assessment': ComplexityAssessment(tier='TIER_5_HIGH_ASSURANCE', score=9, reason..._parallel_tasks=4, requires_model_verification=True, requires_deterministic_gate=True), 'model_check_completed': False}
+
+    def fail(*args, **kwargs):
+&gt;       raise RuntimeError("isolated GO-owned stage failure")
+E       RuntimeError: isolated GO-owned stage failure
+
+tests/go_ai/test_c08_planning_verification_failures.py:27: RuntimeError</failure></testcase><testcase classname="tests.go_ai.test_c08_planning_verification_failures" name="test_expected_verifier_unavailability_keeps_advisory_answer" time="0.016" /><testcase classname="tests.test_c10_external_verification_precedence" name="test_older_first_official_event_upgrades_manual_claim" time="0.010"><failure message="assert True is False">service = (&lt;go_hotel.services.consumer_unified_lifecycle.ConsumerUnifiedLifecycleService object at 0x7f3bf6f839b0&gt;, datetime.datetime(2026, 9, 18, 12, 0, tzinfo=datetime.timezone.utc))
+
+    def test_older_first_official_event_upgrades_manual_claim(service):
+        svc, imported_at = service
+        manual = svc.import_external_order("c10_owner", dict(provider="BOOKING", external_order_id="existing-order", vertical="HOTEL"))
+        verified = official(svc, imported_at - timedelta(days=2))
+        assert verified["consumer_unified_lifecycle_id"] == manual["consumer_unified_lifecycle_id"]
+&gt;       assert verified["stale_ignored"] is False
+E       assert True is False
+
+tests/test_c10_external_verification_precedence.py:41: AssertionError</failure></testcase><testcase classname="tests.test_c10_external_verification_precedence" name="test_equal_timestamp_official_event_also_upgrades_manual_claim" time="0.008"><failure message="AssertionError: assert 'USER_SUBMITT..._VERIFICATION' == 'OFFICIAL_PROVIDER'&#10;  &#10;  - OFFICIAL_PROVIDER&#10;  + USER_SUBMITTED_PENDING_VERIFICATION">service = (&lt;go_hotel.services.consumer_unified_lifecycle.ConsumerUnifiedLifecycleService object at 0x7f3bf6dff200&gt;, datetime.datetime(2026, 9, 18, 12, 0, tzinfo=datetime.timezone.utc))
+
+    def test_equal_timestamp_official_event_also_upgrades_manual_claim(service):
+        svc, imported_at = service
+        svc.import_external_order("c10_owner", dict(provider="BOOKING", external_order_id="existing-order", vertical="HOTEL"))
+&gt;       assert official(svc, imported_at)["facts_json"]["source_verification"] == "OFFICIAL_PROVIDER"
+E       AssertionError: assert 'USER_SUBMITT..._VERIFICATION' == 'OFFICIAL_PROVIDER'
+E         
+E         - OFFICIAL_PROVIDER
+E         + USER_SUBMITTED_PENDING_VERIFICATION
+
+tests/test_c10_external_verification_precedence.py:59: AssertionError</failure></testcase><testcase classname="tests.test_c10_external_verification_precedence" name="test_concurrent_first_official_delivery_preserves_one_event" time="0.014"><failure message="sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: consumer_unified_lifecycle.vertical, consumer_unified_lifecycle.order_id&#10;[SQL: INSERT INTO consumer_unified_lifecycle (consumer_unified_lifecycle_id, account_id, vertical, order_id, supplier_id, title, lifecycle_state, payment_state, refund_state, change_allowed, cancel_allowed, facts_json, evidence_reference, source_updated_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]&#10;[parameters: ('cul_284644b7d1bf47598504520f361cb18e', 'c10_owner', 'HOTEL', 'ext:BOOKING:f006ad637b72996565442173f872ad67', None, 'Verified hotel booking', 'CONFIRMED', 'PAID', 'NOT_REQUESTED', 0, 1, '{&quot;transaction_platform&quot;: &quot;BOOKING&quot;, &quot;external_order_id_masked&quot;: &quot;**********rder&quot;, &quot;external_order_id_hash&quot;: &quot;577ac94a58d40d0db39bf73591d2f9b440b74f2e ... (508 characters truncated) ... ial-event-1&quot;, &quot;source_adapter_id&quot;: &quot;booking-orders-v1&quot;, &quot;provider_evidence_hash&quot;: &quot;8ad4e98515e5e9244aa049048c2d350e172325976ea6d08a638a9b768b3da102&quot;}', 'ota-event://booking-orders-v1/bef76c76134dcb3c9efb8d1ce8d6e6f27a773ca120b0556f8f4f515a71516e20', '2026-09-18 12:00:00.000000', '2026-09-18 12:00:00.000000')]&#10;(Background on this error at: https://sqlalche.me/e/20/gkpj)">self = &lt;sqlalchemy.engine.base.Connection object at 0x7f3bf6e1bd70&gt;
+dialect = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3bf6e19ac0&gt;
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3bf6e1bbc0&gt;
+statement = &lt;sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7f3bf6dc94f0&gt;
+parameters = [('cul_284644b7d1bf47598504520f361cb18e', 'c10_owner', 'HOTEL', 'ext:BOOKING:f006ad637b72996565442173f872ad67', None, 'Verified hotel booking', ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -&gt; CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+&gt;                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3bf6e19ac0&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f3bf6dc5f40&gt;
+statement = 'INSERT INTO consumer_unified_lifecycle (consumer_unified_lifecycle_id, account_id, vertical, order_id, supplier_id, t...d, facts_json, evidence_reference, source_updated_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('cul_284644b7d1bf47598504520f361cb18e', 'c10_owner', 'HOTEL', 'ext:BOOKING:f006ad637b72996565442173f872ad67', None, 'Verified hotel booking', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3bf6e1bbc0&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: consumer_unified_lifecycle.vertical, consumer_unified_lifecycle.order_id
+
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+service = (&lt;go_hotel.services.consumer_unified_lifecycle.ConsumerUnifiedLifecycleService object at 0x7f3bf6e19b50&gt;, datetime.datetime(2026, 9, 18, 12, 0, tzinfo=datetime.timezone.utc))
+
+    def test_concurrent_first_official_delivery_preserves_one_event(service):
+        svc, source_at = service
+        with ThreadPoolExecutor(max_workers=4) as pool:
+&gt;           results = list(pool.map(lambda _: official(svc, source_at), range(4)))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_c10_external_verification_precedence.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_c10_external_verification_precedence.py:65: in &lt;lambda&gt;
+    results = list(pool.map(lambda _: official(svc, source_at), range(4)))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_c10_external_verification_precedence.py:33: in official
+    return svc.import_external_order("c10_owner", body, trusted_provider=True, adapter_id="booking-orders-v1")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/consumer_unified_lifecycle.py:91: in import_external_order
+    result=self.project_in_session(s,payload,idempotent_if_exists=not official);s.commit();return result
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/consumer_unified_lifecycle.py:121: in project_in_session
+    if not r:r=Life(consumer_unified_lifecycle_id=ident('cul'),vertical=b['vertical'],order_id=b['order_id'],**vals);s.add(r);s.flush()
+                                                                                                                              ^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/root/.local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7f3bf6e19ac0&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7f3bf6dc5f40&gt;
+statement = 'INSERT INTO consumer_unified_lifecycle (consumer_unified_lifecycle_id, account_id, vertical, order_id, supplier_id, t...d, facts_json, evidence_reference, source_updated_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+parameters = ('cul_284644b7d1bf47598504520f361cb18e', 'c10_owner', 'HOTEL', 'ext:BOOKING:f006ad637b72996565442173f872ad67', None, 'Verified hotel booking', ...)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7f3bf6e1bbc0&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: consumer_unified_lifecycle.vertical, consumer_unified_lifecycle.order_id
+E       [SQL: INSERT INTO consumer_unified_lifecycle (consumer_unified_lifecycle_id, account_id, vertical, order_id, supplier_id, title, lifecycle_state, payment_state, refund_state, change_allowed, cancel_allowed, facts_json, evidence_reference, source_updated_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('cul_284644b7d1bf47598504520f361cb18e', 'c10_owner', 'HOTEL', 'ext:BOOKING:f006ad637b72996565442173f872ad67', None, 'Verified hotel booking', 'CONFIRMED', 'PAID', 'NOT_REQUESTED', 0, 1, '{"transaction_platform": "BOOKING", "external_order_id_masked": "**********rder", "external_order_id_hash": "577ac94a58d40d0db39bf73591d2f9b440b74f2e ... (508 characters truncated) ... ial-event-1", "source_adapter_id": "booking-orders-v1", "provider_evidence_hash": "8ad4e98515e5e9244aa049048c2d350e172325976ea6d08a638a9b768b3da102"}', 'ota-event://booking-orders-v1/bef76c76134dcb3c9efb8d1ce8d6e6f27a773ca120b0556f8f4f515a71516e20', '2026-09-18 12:00:00.000000', '2026-09-18 12:00:00.000000')]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+/root/.local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: IntegrityError</failure></testcase><testcase classname="tests.test_c10_external_verification_precedence" name="test_projection_reloads_cached_state_before_terminal_transition_check" time="0.012"><failure message="Failed: DID NOT RAISE ValueError">service = (&lt;go_hotel.services.consumer_unified_lifecycle.ConsumerUnifiedLifecycleService object at 0x7f3bf6e1a1b0&gt;, datetime.datetime(2026, 9, 18, 12, 0, tzinfo=datetime.timezone.utc))
+
+    def test_projection_reloads_cached_state_before_terminal_transition_check(service):
+        svc, source_at = service
+        initial = official(svc, source_at - timedelta(minutes=2))
+        with module.SessionLocal() as stale_session:
+            cached = stale_session.get(ConsumerUnifiedLifecycleRow, initial["consumer_unified_lifecycle_id"])
+            terminal = official(svc, source_at - timedelta(minutes=1), source_event_id="cancel-event", lifecycle_state="CANCELLED")
+            assert cached.lifecycle_state == "CONFIRMED"  # Deliberately stale identity map.
+            payload = dict(account_id="c10_owner", vertical="HOTEL", order_id=initial["order_id"],
+                           title="Later provider observation", lifecycle_state="IN_PROGRESS", payment_state="PAID",
+                           refund_state="NOT_REQUESTED", evidence_reference="provider-adapter:later-event",
+                           source_updated_at=source_at.isoformat())
+&gt;           with pytest.raises(ValueError, match="UNIFIED_LIFECYCLE_TERMINAL_STATE_IMMUTABLE"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE ValueError
+
+tests/test_c10_external_verification_precedence.py:82: Failed</failure></testcase></testsuite></testsuites>

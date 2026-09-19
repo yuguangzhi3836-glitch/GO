@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import time, uuid, hmac, json
-from sqlalchemy import select
+from sqlalchemy import select, update
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import IdentityUserRow, AuthSessionRow, RefreshTokenRow, ApprovalRequestRow, AuditEventRow
 from go_hotel.core.config import settings
@@ -87,7 +87,7 @@ class IdentityService:
         c=decode_jwt(token)
         with SessionLocal() as s:
             u=s.get(IdentityUserRow,c['sub']); ses=s.get(AuthSessionRow,c['sid'])
-            if not u or u.status!='ACTIVE' or u.token_version!=c.get('ver') or not ses or ses.status!='ACTIVE' or aware(ses.expires_at)<now(): raise ValueError('SESSION_REVOKED')
+            if not u or u.status!='ACTIVE' or u.token_version!=c.get('ver') or not ses or ses.user_id!=u.user_id or ses.status!='ACTIVE' or aware(ses.expires_at)<now(): raise ValueError('SESSION_REVOKED')
             if touch_session:
                 ses.last_seen_at=now(); s.commit()
             return Principal(u.user_id,u.username,u.actor_type,u.supplier_id,list(u.roles or []),ses.session_id,permissions_for(list(u.roles or [])))
@@ -97,21 +97,35 @@ class IdentityService:
             rt=s.scalar(select(RefreshTokenRow).where(RefreshTokenRow.token_hash==h));
             if not rt or rt.status!='ACTIVE' or aware(rt.expires_at)<now(): raise ValueError('INVALID_REFRESH_TOKEN')
             ses=s.get(AuthSessionRow,rt.session_id); u=s.get(IdentityUserRow,rt.user_id)
-            if not ses or ses.status!='ACTIVE' or aware(ses.expires_at)<now() or not u or u.status!='ACTIVE': raise ValueError('SESSION_REVOKED')
+            if not ses or ses.status!='ACTIVE' or aware(ses.expires_at)<now() or not u or u.status!='ACTIVE' or ses.user_id!=u.user_id: raise ValueError('SESSION_REVOKED')
             # Reject cross-end use before consuming a token or rotating CSRF.
             if allowed_actor_types is not None and u.actor_type not in allowed_actor_types:
                 raise ValueError('ACCOUNT_TYPE_MISMATCH')
-            rt.status='REVOKED'; rt.revoked_at=now(); new_refresh=random_token(); nrt=RefreshTokenRow(token_id=uid('rt'),session_id=ses.session_id,user_id=u.user_id,token_hash=token_hash(new_refresh),status='ACTIVE',expires_at=now()+timedelta(days=settings.refresh_token_days),created_at=now())
+            # Consume once in the database before issuing a successor. An ORM
+            # read followed by an unconditional write lets two refreshes win.
+            consumed_at=now()
+            consumed=s.execute(update(RefreshTokenRow).where(
+                RefreshTokenRow.token_id==rt.token_id,
+                RefreshTokenRow.status=='ACTIVE',
+                RefreshTokenRow.expires_at>consumed_at,
+            ).values(status='REVOKED',revoked_at=consumed_at).execution_options(synchronize_session=False))
+            if consumed.rowcount!=1: raise ValueError('INVALID_REFRESH_TOKEN')
+            new_refresh=random_token(); nrt=RefreshTokenRow(token_id=uid('rt'),session_id=ses.session_id,user_id=u.user_id,token_hash=token_hash(new_refresh),status='ACTIVE',expires_at=now()+timedelta(days=settings.refresh_token_days),created_at=now())
             csrf=random_token(); ses.csrf_token_hash=token_hash(csrf); s.add(nrt); s.commit(); return self._tokens(u,ses.session_id,new_refresh,csrf)
 
 
     def login_sso(self, provider:str, subject:str, username:str, client_ip=None, user_agent=None):
+        if any(not isinstance(value,str) or not value.strip() or len(value)>limit
+               for value,limit in ((provider,64),(subject,256),(username,128))):
+            raise ValueError('INVALID_SSO_IDENTITY')
         with SessionLocal() as s:
             u=s.scalar(select(IdentityUserRow).where(IdentityUserRow.sso_provider==provider, IdentityUserRow.sso_subject==subject))
             if not u:
                 existing=s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==username))
                 if existing:
-                    u=existing; u.sso_provider=provider; u.sso_subject=subject
+                    # A mutable upstream username is not proof of ownership of
+                    # a password account or another bound external identity.
+                    raise ValueError('SSO_ACCOUNT_LINK_REQUIRED')
                 else:
                     roles=[r.strip() for r in settings.oidc_default_roles.split(',') if r.strip()]
                     u=IdentityUserRow(user_id=uid('usr'),username=username,password_hash=hash_password(random_token()),actor_type=settings.oidc_default_actor_type,supplier_id=None,roles=roles,status='ACTIVE',token_version=1,sso_provider=provider,sso_subject=subject,created_at=now(),updated_at=now())

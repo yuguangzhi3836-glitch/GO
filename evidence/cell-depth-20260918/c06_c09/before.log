@@ -1,0 +1,261 @@
+FFFFFFFFFFF.                                                             [100%]
+=================================== FAILURES ===================================
+_____ test_sibling_quote_cannot_be_replayed_after_another_change_completes _____
+
+    def test_sibling_quote_cannot_be_replayed_after_another_change_completes():
+        svc, owner, oid = booked('ATTRACTION')
+        stale = svc.change_quote(owner, oid, '2026-09-16')
+        current = svc.change_quote(owner, oid, '2026-09-17')
+        svc.execute_change(owner, oid, current['quote_id'])
+        svc.admin_external_state(oid, 'CONFIRMED', 'isolated://changed', 'ops', 'SUP-NEW', 'VOUCHER-NEW')
+>       with pytest.raises(ValueError, match='ATTRACTION_CHANGE_QUOTE_NOT_FOUND'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+application/tests/test_cell_depth_c06_change_quote_binding.py:16: Failed
+_ test_change_cannot_quote_ambiguous_or_nonexistent_frozen_supplier_session[2026-03-08-02:30] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f554742bd40>
+day = '2026-03-08', clock = '02:30'
+
+    @pytest.mark.parametrize('day,clock', [('2026-03-08', '02:30'), ('2026-11-01', '01:30')])
+    def test_change_cannot_quote_ambiguous_or_nonexistent_frozen_supplier_session(monkeypatch, day, clock):
+        monkeypatch.setitem(CATALOG['tokyo_skytree'], 'supplier_validity_policy', {
+            'destination_timezone': 'America/New_York', 'opens_minutes_before_session': 30,
+            'closes_minutes_after_session': 120, 'policy_reference': 'isolated://new-york-policy'})
+        svc, owner, oid = booked('ATTRACTION')
+        monkeypatch.setitem(CATALOG['tokyo_skytree'], 'sessions', ['16:00', clock])
+>       with pytest.raises(ValueError, match='ATTRACTION_SUPPLIER_LOCAL_TIME_REVIEW_REQUIRED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+application/tests/test_cell_depth_c06_change_quote_binding.py:33: Failed
+_ test_change_cannot_quote_ambiguous_or_nonexistent_frozen_supplier_session[2026-11-01-01:30] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f55472e3cb0>
+day = '2026-11-01', clock = '01:30'
+
+    @pytest.mark.parametrize('day,clock', [('2026-03-08', '02:30'), ('2026-11-01', '01:30')])
+    def test_change_cannot_quote_ambiguous_or_nonexistent_frozen_supplier_session(monkeypatch, day, clock):
+        monkeypatch.setitem(CATALOG['tokyo_skytree'], 'supplier_validity_policy', {
+            'destination_timezone': 'America/New_York', 'opens_minutes_before_session': 30,
+            'closes_minutes_after_session': 120, 'policy_reference': 'isolated://new-york-policy'})
+        svc, owner, oid = booked('ATTRACTION')
+        monkeypatch.setitem(CATALOG['tokyo_skytree'], 'sessions', ['16:00', clock])
+>       with pytest.raises(ValueError, match='ATTRACTION_SUPPLIER_LOCAL_TIME_REVIEW_REQUIRED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+application/tests/test_cell_depth_c06_change_quote_binding.py:33: Failed
+______________ test_invalid_binding_is_not_published[other_hotel] ______________
+
+damage = 'other_hotel'
+
+    @pytest.mark.parametrize('damage', ['other_hotel', 'expired_decision', 'future_decision', 'expired_judgment',
+        'standard_mismatch', 'score_mismatch', 'evidence_hotel', 'evidence_content'])
+    def test_invalid_binding_is_not_published(damage):
+        result = publish()
+        with SessionLocal.begin() as session:
+            j = session.get(JudgmentRuntimeRow, result['judgment_id'])
+            r = session.scalar(select(RecommendationDecisionRow).where(RecommendationDecisionRow.judgment_id == j.judgment_id))
+            p = session.get(JudgmentEvidencePackageRow, j.evidence_package_id)
+            if damage == 'other_hotel': r.hotel_id = 'another-hotel'
+            elif damage == 'expired_decision': r.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'future_decision': r.valid_from = now_utc() + timedelta(days=1)
+            elif damage == 'expired_judgment': j.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'standard_mismatch': r.good_hotel_standard_version_id = 'different-standard'
+            elif damage == 'score_mismatch': r.public_go_score_milli = j.go_score_milli + 100
+            elif damage == 'evidence_hotel': p.hotel_id = 'another-hotel'
+            elif damage == 'evidence_content': p.feature_snapshot = {**p.feature_snapshot, 'unsealed_fact': True}
+        summary = svc.public_summary_or_default('bound-hotel')
+>       assert summary['go_score'] is None
+E       assert 4.6 is None
+
+application/tests/judgment/test_cell_depth_c09_public_binding.py:34: AssertionError
+___________ test_invalid_binding_is_not_published[expired_decision] ____________
+
+damage = 'expired_decision'
+
+    @pytest.mark.parametrize('damage', ['other_hotel', 'expired_decision', 'future_decision', 'expired_judgment',
+        'standard_mismatch', 'score_mismatch', 'evidence_hotel', 'evidence_content'])
+    def test_invalid_binding_is_not_published(damage):
+        result = publish()
+        with SessionLocal.begin() as session:
+            j = session.get(JudgmentRuntimeRow, result['judgment_id'])
+            r = session.scalar(select(RecommendationDecisionRow).where(RecommendationDecisionRow.judgment_id == j.judgment_id))
+            p = session.get(JudgmentEvidencePackageRow, j.evidence_package_id)
+            if damage == 'other_hotel': r.hotel_id = 'another-hotel'
+            elif damage == 'expired_decision': r.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'future_decision': r.valid_from = now_utc() + timedelta(days=1)
+            elif damage == 'expired_judgment': j.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'standard_mismatch': r.good_hotel_standard_version_id = 'different-standard'
+            elif damage == 'score_mismatch': r.public_go_score_milli = j.go_score_milli + 100
+            elif damage == 'evidence_hotel': p.hotel_id = 'another-hotel'
+            elif damage == 'evidence_content': p.feature_snapshot = {**p.feature_snapshot, 'unsealed_fact': True}
+        summary = svc.public_summary_or_default('bound-hotel')
+>       assert summary['go_score'] is None
+E       assert 4.6 is None
+
+application/tests/judgment/test_cell_depth_c09_public_binding.py:34: AssertionError
+____________ test_invalid_binding_is_not_published[future_decision] ____________
+
+damage = 'future_decision'
+
+    @pytest.mark.parametrize('damage', ['other_hotel', 'expired_decision', 'future_decision', 'expired_judgment',
+        'standard_mismatch', 'score_mismatch', 'evidence_hotel', 'evidence_content'])
+    def test_invalid_binding_is_not_published(damage):
+        result = publish()
+        with SessionLocal.begin() as session:
+            j = session.get(JudgmentRuntimeRow, result['judgment_id'])
+            r = session.scalar(select(RecommendationDecisionRow).where(RecommendationDecisionRow.judgment_id == j.judgment_id))
+            p = session.get(JudgmentEvidencePackageRow, j.evidence_package_id)
+            if damage == 'other_hotel': r.hotel_id = 'another-hotel'
+            elif damage == 'expired_decision': r.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'future_decision': r.valid_from = now_utc() + timedelta(days=1)
+            elif damage == 'expired_judgment': j.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'standard_mismatch': r.good_hotel_standard_version_id = 'different-standard'
+            elif damage == 'score_mismatch': r.public_go_score_milli = j.go_score_milli + 100
+            elif damage == 'evidence_hotel': p.hotel_id = 'another-hotel'
+            elif damage == 'evidence_content': p.feature_snapshot = {**p.feature_snapshot, 'unsealed_fact': True}
+        summary = svc.public_summary_or_default('bound-hotel')
+>       assert summary['go_score'] is None
+E       assert 4.6 is None
+
+application/tests/judgment/test_cell_depth_c09_public_binding.py:34: AssertionError
+___________ test_invalid_binding_is_not_published[expired_judgment] ____________
+
+damage = 'expired_judgment'
+
+    @pytest.mark.parametrize('damage', ['other_hotel', 'expired_decision', 'future_decision', 'expired_judgment',
+        'standard_mismatch', 'score_mismatch', 'evidence_hotel', 'evidence_content'])
+    def test_invalid_binding_is_not_published(damage):
+        result = publish()
+        with SessionLocal.begin() as session:
+            j = session.get(JudgmentRuntimeRow, result['judgment_id'])
+            r = session.scalar(select(RecommendationDecisionRow).where(RecommendationDecisionRow.judgment_id == j.judgment_id))
+            p = session.get(JudgmentEvidencePackageRow, j.evidence_package_id)
+            if damage == 'other_hotel': r.hotel_id = 'another-hotel'
+            elif damage == 'expired_decision': r.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'future_decision': r.valid_from = now_utc() + timedelta(days=1)
+            elif damage == 'expired_judgment': j.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'standard_mismatch': r.good_hotel_standard_version_id = 'different-standard'
+            elif damage == 'score_mismatch': r.public_go_score_milli = j.go_score_milli + 100
+            elif damage == 'evidence_hotel': p.hotel_id = 'another-hotel'
+            elif damage == 'evidence_content': p.feature_snapshot = {**p.feature_snapshot, 'unsealed_fact': True}
+        summary = svc.public_summary_or_default('bound-hotel')
+>       assert summary['go_score'] is None
+E       assert 4.6 is None
+
+application/tests/judgment/test_cell_depth_c09_public_binding.py:34: AssertionError
+___________ test_invalid_binding_is_not_published[standard_mismatch] ___________
+
+damage = 'standard_mismatch'
+
+    @pytest.mark.parametrize('damage', ['other_hotel', 'expired_decision', 'future_decision', 'expired_judgment',
+        'standard_mismatch', 'score_mismatch', 'evidence_hotel', 'evidence_content'])
+    def test_invalid_binding_is_not_published(damage):
+        result = publish()
+        with SessionLocal.begin() as session:
+            j = session.get(JudgmentRuntimeRow, result['judgment_id'])
+            r = session.scalar(select(RecommendationDecisionRow).where(RecommendationDecisionRow.judgment_id == j.judgment_id))
+            p = session.get(JudgmentEvidencePackageRow, j.evidence_package_id)
+            if damage == 'other_hotel': r.hotel_id = 'another-hotel'
+            elif damage == 'expired_decision': r.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'future_decision': r.valid_from = now_utc() + timedelta(days=1)
+            elif damage == 'expired_judgment': j.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'standard_mismatch': r.good_hotel_standard_version_id = 'different-standard'
+            elif damage == 'score_mismatch': r.public_go_score_milli = j.go_score_milli + 100
+            elif damage == 'evidence_hotel': p.hotel_id = 'another-hotel'
+            elif damage == 'evidence_content': p.feature_snapshot = {**p.feature_snapshot, 'unsealed_fact': True}
+        summary = svc.public_summary_or_default('bound-hotel')
+>       assert summary['go_score'] is None
+E       assert 4.6 is None
+
+application/tests/judgment/test_cell_depth_c09_public_binding.py:34: AssertionError
+____________ test_invalid_binding_is_not_published[score_mismatch] _____________
+
+damage = 'score_mismatch'
+
+    @pytest.mark.parametrize('damage', ['other_hotel', 'expired_decision', 'future_decision', 'expired_judgment',
+        'standard_mismatch', 'score_mismatch', 'evidence_hotel', 'evidence_content'])
+    def test_invalid_binding_is_not_published(damage):
+        result = publish()
+        with SessionLocal.begin() as session:
+            j = session.get(JudgmentRuntimeRow, result['judgment_id'])
+            r = session.scalar(select(RecommendationDecisionRow).where(RecommendationDecisionRow.judgment_id == j.judgment_id))
+            p = session.get(JudgmentEvidencePackageRow, j.evidence_package_id)
+            if damage == 'other_hotel': r.hotel_id = 'another-hotel'
+            elif damage == 'expired_decision': r.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'future_decision': r.valid_from = now_utc() + timedelta(days=1)
+            elif damage == 'expired_judgment': j.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'standard_mismatch': r.good_hotel_standard_version_id = 'different-standard'
+            elif damage == 'score_mismatch': r.public_go_score_milli = j.go_score_milli + 100
+            elif damage == 'evidence_hotel': p.hotel_id = 'another-hotel'
+            elif damage == 'evidence_content': p.feature_snapshot = {**p.feature_snapshot, 'unsealed_fact': True}
+        summary = svc.public_summary_or_default('bound-hotel')
+>       assert summary['go_score'] is None
+E       assert 4.7 is None
+
+application/tests/judgment/test_cell_depth_c09_public_binding.py:34: AssertionError
+____________ test_invalid_binding_is_not_published[evidence_hotel] _____________
+
+damage = 'evidence_hotel'
+
+    @pytest.mark.parametrize('damage', ['other_hotel', 'expired_decision', 'future_decision', 'expired_judgment',
+        'standard_mismatch', 'score_mismatch', 'evidence_hotel', 'evidence_content'])
+    def test_invalid_binding_is_not_published(damage):
+        result = publish()
+        with SessionLocal.begin() as session:
+            j = session.get(JudgmentRuntimeRow, result['judgment_id'])
+            r = session.scalar(select(RecommendationDecisionRow).where(RecommendationDecisionRow.judgment_id == j.judgment_id))
+            p = session.get(JudgmentEvidencePackageRow, j.evidence_package_id)
+            if damage == 'other_hotel': r.hotel_id = 'another-hotel'
+            elif damage == 'expired_decision': r.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'future_decision': r.valid_from = now_utc() + timedelta(days=1)
+            elif damage == 'expired_judgment': j.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'standard_mismatch': r.good_hotel_standard_version_id = 'different-standard'
+            elif damage == 'score_mismatch': r.public_go_score_milli = j.go_score_milli + 100
+            elif damage == 'evidence_hotel': p.hotel_id = 'another-hotel'
+            elif damage == 'evidence_content': p.feature_snapshot = {**p.feature_snapshot, 'unsealed_fact': True}
+        summary = svc.public_summary_or_default('bound-hotel')
+>       assert summary['go_score'] is None
+E       assert 4.6 is None
+
+application/tests/judgment/test_cell_depth_c09_public_binding.py:34: AssertionError
+___________ test_invalid_binding_is_not_published[evidence_content] ____________
+
+damage = 'evidence_content'
+
+    @pytest.mark.parametrize('damage', ['other_hotel', 'expired_decision', 'future_decision', 'expired_judgment',
+        'standard_mismatch', 'score_mismatch', 'evidence_hotel', 'evidence_content'])
+    def test_invalid_binding_is_not_published(damage):
+        result = publish()
+        with SessionLocal.begin() as session:
+            j = session.get(JudgmentRuntimeRow, result['judgment_id'])
+            r = session.scalar(select(RecommendationDecisionRow).where(RecommendationDecisionRow.judgment_id == j.judgment_id))
+            p = session.get(JudgmentEvidencePackageRow, j.evidence_package_id)
+            if damage == 'other_hotel': r.hotel_id = 'another-hotel'
+            elif damage == 'expired_decision': r.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'future_decision': r.valid_from = now_utc() + timedelta(days=1)
+            elif damage == 'expired_judgment': j.valid_to = now_utc() - timedelta(seconds=1)
+            elif damage == 'standard_mismatch': r.good_hotel_standard_version_id = 'different-standard'
+            elif damage == 'score_mismatch': r.public_go_score_milli = j.go_score_milli + 100
+            elif damage == 'evidence_hotel': p.hotel_id = 'another-hotel'
+            elif damage == 'evidence_content': p.feature_snapshot = {**p.feature_snapshot, 'unsealed_fact': True}
+        summary = svc.public_summary_or_default('bound-hotel')
+>       assert summary['go_score'] is None
+E       assert 4.6 is None
+
+application/tests/judgment/test_cell_depth_c09_public_binding.py:34: AssertionError
+=========================== short test summary info ============================
+FAILED application/tests/test_cell_depth_c06_change_quote_binding.py::test_sibling_quote_cannot_be_replayed_after_another_change_completes
+FAILED application/tests/test_cell_depth_c06_change_quote_binding.py::test_change_cannot_quote_ambiguous_or_nonexistent_frozen_supplier_session[2026-03-08-02:30]
+FAILED application/tests/test_cell_depth_c06_change_quote_binding.py::test_change_cannot_quote_ambiguous_or_nonexistent_frozen_supplier_session[2026-11-01-01:30]
+FAILED application/tests/judgment/test_cell_depth_c09_public_binding.py::test_invalid_binding_is_not_published[other_hotel]
+FAILED application/tests/judgment/test_cell_depth_c09_public_binding.py::test_invalid_binding_is_not_published[expired_decision]
+FAILED application/tests/judgment/test_cell_depth_c09_public_binding.py::test_invalid_binding_is_not_published[future_decision]
+FAILED application/tests/judgment/test_cell_depth_c09_public_binding.py::test_invalid_binding_is_not_published[expired_judgment]
+FAILED application/tests/judgment/test_cell_depth_c09_public_binding.py::test_invalid_binding_is_not_published[standard_mismatch]
+FAILED application/tests/judgment/test_cell_depth_c09_public_binding.py::test_invalid_binding_is_not_published[score_mismatch]
+FAILED application/tests/judgment/test_cell_depth_c09_public_binding.py::test_invalid_binding_is_not_published[evidence_hotel]
+FAILED application/tests/judgment/test_cell_depth_c09_public_binding.py::test_invalid_binding_is_not_published[evidence_content]

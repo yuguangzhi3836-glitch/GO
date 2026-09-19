@@ -1,0 +1,25 @@
+{
+  "mode": "CAPTURE_ONLY_NO_POSTGRES_CONNECTION",
+  "calls": [
+    {
+      "sql": "SELECT pg_advisory_xact_lock(:key)",
+      "bound_parameters": {
+        "key": -645151027526526448
+      }
+    },
+    {
+      "sql": "SELECT pg_advisory_xact_lock(:key)",
+      "bound_parameters": {
+        "key": -645151027526526448
+      }
+    },
+    {
+      "sql": "SELECT pg_advisory_xact_lock(:key)",
+      "bound_parameters": {
+        "key": 697742245860713761
+      }
+    }
+  ],
+  "same_account_same_key": true,
+  "different_accounts_different_key": true
+}

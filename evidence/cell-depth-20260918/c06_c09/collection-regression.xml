@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="2" failures="0" skipped="0" tests="2" time="1.899" timestamp="2026-09-18T12:50:38.782377-04:00" hostname="localhost"><testcase classname="" name="tests.test_next_depth_c06_supplier_validity" time="0.000"><error message="collection failure">ImportError while importing test module '/workspace/scratch/a682af655fba/cell-c06_c09/application/tests/test_next_depth_c06_supplier_validity.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+application/tests/test_next_depth_c06_supplier_validity.py:162: in &lt;module&gt;
+    from tests.test_c06_internal_policy_registry import *  # noqa: F401,F403,E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests'</error></testcase><testcase classname="" name="tests.test_sprint3d_attractions" time="0.000"><error message="collection failure">ImportError while importing test module '/workspace/scratch/a682af655fba/cell-c06_c09/application/tests/test_sprint3d_attractions.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+application/tests/test_sprint3d_attractions.py:1: in &lt;module&gt;
+    from tests.attraction_fixtures import quoted_attraction
+E   ModuleNotFoundError: No module named 'tests'</error></testcase></testsuite></testsuites>

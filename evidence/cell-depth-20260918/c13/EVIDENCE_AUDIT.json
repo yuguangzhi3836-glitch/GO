@@ -1,0 +1,318 @@
+{
+  "audited_at": "2026-09-18T17:17:18.631882+00:00",
+  "sha256_validation": [
+    {
+      "directory": "c01_c07",
+      "files": 12,
+      "mismatches": []
+    },
+    {
+      "directory": "c01_c07/account-fence",
+      "files": 7,
+      "mismatches": []
+    },
+    {
+      "directory": "c01_c07/metadata-isolation",
+      "files": 5,
+      "mismatches": []
+    },
+    {
+      "directory": "c01_c07/source-lock-fix",
+      "files": 5,
+      "mismatches": []
+    },
+    {
+      "directory": "c02_c03",
+      "files": 9,
+      "mismatches": []
+    },
+    {
+      "directory": "c04-unknown",
+      "files": 9,
+      "mismatches": []
+    },
+    {
+      "directory": "c04_c05",
+      "files": 13,
+      "mismatches": []
+    },
+    {
+      "directory": "c06_c09",
+      "files": 15,
+      "mismatches": []
+    },
+    {
+      "directory": "c08_c10",
+      "files": 7,
+      "mismatches": []
+    },
+    {
+      "directory": "c11_c12",
+      "files": 9,
+      "mismatches": []
+    },
+    {
+      "directory": "c11_c12/callback-race",
+      "files": 9,
+      "mismatches": []
+    }
+  ],
+  "junit_actual": {
+    "c01_c07/account-fence/final-fence.xml": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 5
+    },
+    "c01_c07/account-fence/first.xml": {
+      "tests": 62,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 62
+    },
+    "c01_c07/after.xml": {
+      "tests": 23,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 23
+    },
+    "c01_c07/before.xml": {
+      "tests": 11,
+      "failures": 10,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 11
+    },
+    "c01_c07/final-c07.xml": {
+      "tests": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 20
+    },
+    "c01_c07/metadata-isolation/before.xml": {
+      "tests": 15,
+      "failures": 14,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 15
+    },
+    "c01_c07/metadata-isolation/final.xml": {
+      "tests": 57,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 57
+    },
+    "c01_c07/nonce-before.xml": {
+      "tests": 2,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 2
+    },
+    "c01_c07/source-lock-fix/before.xml": {
+      "tests": 3,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 3
+    },
+    "c01_c07/source-lock-fix/final.xml": {
+      "tests": 42,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 42
+    },
+    "c01_c07/verification.xml": {
+      "tests": 41,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 41
+    },
+    "c02_c03/before.xml": {
+      "tests": 12,
+      "failures": 10,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 12
+    },
+    "c02_c03/final.xml": {
+      "tests": 203,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 203
+    },
+    "c02_c03/focused.xml": {
+      "tests": 30,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 30
+    },
+    "c04-unknown/final.xml": {
+      "tests": 51,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 51
+    },
+    "c04-unknown/green.xml": {
+      "tests": 39,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 39
+    },
+    "c04-unknown/red.xml": {
+      "tests": 35,
+      "failures": 35,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 35
+    },
+    "c04_c05/capture-red.xml": {
+      "tests": 8,
+      "failures": 8,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 8
+    },
+    "c04_c05/final.xml": {
+      "tests": 77,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 77
+    },
+    "c04_c05/green.xml": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 8
+    },
+    "c04_c05/red.xml": {
+      "tests": 8,
+      "failures": 8,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 8
+    },
+    "c04_c05/regression.xml": {
+      "tests": 69,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 69
+    },
+    "c06_c09/before.xml": {
+      "tests": 12,
+      "failures": 11,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 12
+    },
+    "c06_c09/collection-regression.xml": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 2,
+      "skipped": 0,
+      "declared_tests": 2
+    },
+    "c06_c09/final-focused.xml": {
+      "tests": 17,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 17
+    },
+    "c06_c09/fixture-error-focused.xml": {
+      "tests": 17,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 17
+    },
+    "c06_c09/focused.xml": {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 12
+    },
+    "c06_c09/regression.xml": {
+      "tests": 148,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 148
+    },
+    "c08_c10/baseline.xml": {
+      "tests": 9,
+      "failures": 8,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 9
+    },
+    "c08_c10/regression.xml": {
+      "tests": 63,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 63
+    },
+    "c11_c12/callback-race/final.xml": {
+      "tests": 101,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 101
+    },
+    "c11_c12/callback-race/reproduction.xml": {
+      "tests": 7,
+      "failures": 6,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 7
+    },
+    "c11_c12/callback-race/verification.xml": {
+      "tests": 99,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 99
+    },
+    "c11_c12/focused.xml": {
+      "tests": 28,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 28
+    },
+    "c11_c12/reproduction.xml": {
+      "tests": 28,
+      "failures": 27,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 28
+    },
+    "c11_c12/verification.xml": {
+      "tests": 119,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "declared_tests": 119
+    }
+  },
+  "files_hash_checked": 100,
+  "hash_mismatch_count": 0,
+  "junit_count_mismatches": [],
+  "interpretation": "Historical red/intermediate runs are retained; these counts are not added as final distinct tests. The final C13 union is separate."
+}

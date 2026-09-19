@@ -57,3 +57,54 @@ def test_admin_reconciliation_http_get_is_zero_write_with_real_auth(client):
 
     with SessionLocal() as session:
         assert session.get(AuthSessionRow, session_id).last_seen_at == last_seen_before
+
+
+def test_consumer_and_supplier_real_identities_cannot_read_admin_reconciliation(client):
+    """C04 three-end boundary: C/B identities are authenticated, but remain outside admin."""
+    identities = [
+        {
+            'username': 'c04_consumer',
+            'password': 'c04-consumer-pass',
+            'actor_type': 'CONSUMER',
+            'supplier_id': None,
+            'roles': ['TRAVELER'],
+        },
+        {
+            'username': 'c04_supplier',
+            'password': 'c04-supplier-pass',
+            'actor_type': 'SUPPLIER_USER',
+            'supplier_id': 'supplier_c04',
+            'roles': ['SUPPLIER_OWNER'],
+        },
+    ]
+
+    for identity in identities:
+        identity_service.create_user(
+            identity['username'],
+            identity['password'],
+            identity['actor_type'],
+            identity['supplier_id'],
+            identity['roles'],
+        )
+        token = identity_service.login(
+            identity['username'],
+            identity['password'],
+            expected_actor_type=identity['actor_type'],
+        )['access_token']
+        session_id = decode_jwt(token)['sid']
+        with SessionLocal() as session:
+            last_seen_before = session.get(AuthSessionRow, session_id).last_seen_at
+
+        response = client.get(
+            '/internal/v1/admin/operations/reconciliations/rental/'
+            'order-not-visible/refund-not-visible',
+            headers={
+                'Authorization': 'Bearer ' + token,
+                'X-GO-Actor': identity['actor_type'],
+            },
+        )
+
+        assert response.status_code == 403, response.text
+        assert response.json()['detail'] == 'GO_ADMIN_REQUIRED'
+        with SessionLocal() as session:
+            assert session.get(AuthSessionRow, session_id).last_seen_at == last_seen_before

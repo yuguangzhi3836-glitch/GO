@@ -1,0 +1,27 @@
+
+==================================== ERRORS ====================================
+_______ ERROR collecting tests/test_next_depth_c06_supplier_validity.py ________
+ImportError while importing test module '/workspace/scratch/a682af655fba/cell-c06_c09/application/tests/test_next_depth_c06_supplier_validity.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+application/tests/test_next_depth_c06_supplier_validity.py:162: in <module>
+    from tests.test_c06_internal_policy_registry import *  # noqa: F401,F403,E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests'
+_____________ ERROR collecting tests/test_sprint3d_attractions.py ______________
+ImportError while importing test module '/workspace/scratch/a682af655fba/cell-c06_c09/application/tests/test_sprint3d_attractions.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+application/tests/test_sprint3d_attractions.py:1: in <module>
+    from tests.attraction_fixtures import quoted_attraction
+E   ModuleNotFoundError: No module named 'tests'
+=========================== short test summary info ============================
+ERROR application/tests/test_next_depth_c06_supplier_validity.py
+ERROR application/tests/test_sprint3d_attractions.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!

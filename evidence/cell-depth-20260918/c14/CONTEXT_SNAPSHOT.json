@@ -1,0 +1,227 @@
+{
+  "note": "Untracked root observation context captured at C14 review; later ledger changes do not change application verdict. The byte hashes are for the observed files at capture.",
+  "snapshots": [
+    {
+      "path": "evidence/cell-depth-20260918/BASELINE.json",
+      "sha256": "f71b970571233781be6cb599c508ce40748685b798e1f5001e1422a0052da777",
+      "content": {
+        "observed_main": "dc34ee5cabed7c6e93507d178fdd3a62a426399e",
+        "main_application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+        "local_prepared_base_application_tree": "9206696542000e020601f14233c339cfec6b364c",
+        "development_truth_class": "LOCAL_CANDIDATE",
+        "candidate_sources": [
+          {
+            "pr": 217,
+            "sha": "1d1b6b45a5e6e3507bda8c4f3d9ca7b7c8e7175c",
+            "branch": "feat/account-holder-library-import-20260918",
+            "draft": true,
+            "base": "fix/consumer-entry-requirements-20260918",
+            "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/217"
+          },
+          {
+            "pr": 216,
+            "sha": "ff0005dacc6e3aa6d6ea27003a3ccd5deb4f1de3",
+            "branch": "fix/consumer-entry-requirements-20260918",
+            "draft": true,
+            "base": "fix/aoluguya-hero-public-gallery-20260918",
+            "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/216"
+          },
+          {
+            "pr": 212,
+            "sha": "d782863f2562fc4e5ebfab435ca9bb806ade7f25",
+            "branch": "fix/c05-consumer-simulation-copy-20260918",
+            "draft": true,
+            "base": "fix/aoluguya-hero-public-gallery-20260918",
+            "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/212"
+          },
+          {
+            "pr": 208,
+            "sha": "d22fcf0319271b7cc0b200e0c4e27f1189c29a6f",
+            "branch": "cell/c02-pr202-three-end-selfcheck-20260918",
+            "draft": true,
+            "base": "fix/aoluguya-hero-public-gallery-20260918",
+            "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/208"
+          },
+          {
+            "pr": 205,
+            "sha": "6a7377321b90e38e2a09ef4b9a5cc3673bb34d19",
+            "branch": "cell/c05/ride-evidence-binding-selfcheck-20260918",
+            "draft": true,
+            "base": "fix/aoluguya-hero-public-gallery-20260918",
+            "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/205"
+          },
+          {
+            "pr": 204,
+            "sha": "e9667461dcdc848f1fcfdf024bba905202235b49",
+            "branch": "cell/c04-three-end-identity-isolation-20260918",
+            "draft": true,
+            "base": "fix/aoluguya-hero-public-gallery-20260918",
+            "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/204"
+          },
+          {
+            "pr": 183,
+            "sha": "edd3500575d2f2b81298cc9273025e0a3b734897",
+            "branch": "supplier-durable-controls-20260917",
+            "draft": true,
+            "base": "supplier-preflight-runtime-p0p1-20260917",
+            "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/183"
+          },
+          {
+            "pr": 173,
+            "sha": "582b5fc4e53ef63c75c7d671978a9cce6ea26c93",
+            "branch": "integration/c02-c12-gate-ledger-20260917",
+            "draft": true,
+            "base": "main",
+            "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/173"
+          },
+          {
+            "pr": 172,
+            "sha": "2d5fff4742949744cfba653ec9428c8f32a58c1a",
+            "branch": "integration/v70-current-cells-unified-20260917",
+            "draft": true,
+            "base": "main",
+            "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/172"
+          }
+        ],
+        "merge": "HOLD",
+        "deploy": "HOLD",
+        "authorization_scope": "Cell development; prior 29 source/test + 8 evidence authorization now observed in remote draft; merge and deploy remain excluded",
+        "prior_upload_status_at_turn_start": "BLOCKED_PRIOR_TOOL_REJECTION",
+        "original_authorized_37_files": "VERIFIED_REMOTE_0cdff19160845b22f3aa9fa5e281413ddd460514",
+        "source_upload_current_cell_round": "NOT_ATTEMPTED",
+        "remote_candidate_base": "0cdff19160845b22f3aa9fa5e281413ddd460514"
+      }
+    },
+    {
+      "path": "evidence/cell-depth-20260918/EXECUTION_LEDGER.json",
+      "sha256": "ccf50d2b4fe229118b73f426cadd32e0d1bdc2c9dac84b5b4c4a9589ef1322f6",
+      "content": {
+        "candidate_kind": "LOCAL_DEVELOPMENT_ONLY",
+        "cells": [
+          {
+            "cell": "C01",
+            "status": "SCOPED_FIX_TESTED_AWAITING_INTEGRATION_REVIEW"
+          },
+          {
+            "cell": "C02",
+            "status": "SCOPED_FIX_TESTED_AWAITING_INTEGRATION_REVIEW"
+          },
+          {
+            "cell": "C03",
+            "status": "SCOPED_FIX_TESTED_AWAITING_INTEGRATION_REVIEW"
+          },
+          {
+            "cell": "C04",
+            "status": "FIX_IN_PROGRESS"
+          },
+          {
+            "cell": "C05",
+            "status": "SCOPED_FIX_TESTED_AWAITING_INTEGRATION_REVIEW"
+          },
+          {
+            "cell": "C06",
+            "status": "SCOPED_FIX_TESTED_AWAITING_INTEGRATION_REVIEW"
+          },
+          {
+            "cell": "C07",
+            "status": "FIX_IN_PROGRESS"
+          },
+          {
+            "cell": "C08",
+            "status": "SCOPED_FIX_TESTED_AWAITING_INTEGRATION_REVIEW"
+          },
+          {
+            "cell": "C09",
+            "status": "SCOPED_FIX_TESTED_AWAITING_INTEGRATION_REVIEW"
+          },
+          {
+            "cell": "C10",
+            "status": "SCOPED_FIX_TESTED_AWAITING_INTEGRATION_REVIEW"
+          },
+          {
+            "cell": "C11",
+            "status": "FIX_IN_PROGRESS"
+          },
+          {
+            "cell": "C12",
+            "status": "SCOPED_FIX_TESTED_AWAITING_INTEGRATION_REVIEW"
+          },
+          {
+            "cell": "C13",
+            "status": "REVIEW_IN_PROGRESS"
+          },
+          {
+            "cell": "C14",
+            "status": "REVIEW_IN_PROGRESS"
+          }
+        ],
+        "global_completion": "NOT_PROVEN",
+        "known_external_gates": [
+          "real supplier identity/authentication and original response provenance",
+          "real payment provider evidence",
+          "PostgreSQL concurrency and migration verification for final new candidate",
+          "physical-device and complete three-end UX acceptance",
+          "new Cell changes not yet updated into remote draft; original authorized37 verified on remote"
+        ],
+        "merge": "NOT_AUTHORIZED",
+        "deploy": "NOT_AUTHORIZED",
+        "notes": [
+          "Existing PASS stays bound to its exact source; this round gets new validation.",
+          "No artificial percentage without an accepted total requirements denominator."
+        ],
+        "review_findings": [
+          {
+            "id": "C14-C07-DELETE-COMMIT",
+            "status": "FIX_IN_PROGRESS",
+            "impact": "source deletion can miss concurrently committed active facts"
+          },
+          {
+            "id": "C14-C07-TENANT-LINK",
+            "status": "FIX_IN_PROGRESS",
+            "impact": "forged import metadata can modify another tenant import"
+          },
+          {
+            "id": "C13-C11-CALLBACK-RACE",
+            "status": "FIX_IN_PROGRESS",
+            "impact": "same signed event concurrently raises integrity error rather than idempotent result"
+          },
+          {
+            "id": "C04-UNKNOWN-EPISODE",
+            "status": "FIX_IN_PROGRESS",
+            "impact": "unknown rental result must bind exact recovery episode and valid proof"
+          }
+        ]
+      }
+    },
+    {
+      "path": "evidence/cell-depth-20260918/PR212_RETENTION.json",
+      "sha256": "dc9be9acda1b12d0fb17f63e5f037da226195dfd393038c46f62c0dbc796efd4",
+      "content": {
+        "scope": "preservation check only, no new UI implementation",
+        "pr": 212,
+        "head": "d782863f2562fc4e5ebfab435ca9bb806ade7f25",
+        "result": "copy changes retained; differing files also contain later candidate additions",
+        "checks": [
+          "truthful unavailable-airline inventory notice retained",
+          "no real-travel claim added",
+          "updated vault screens preserved rather than replacing with PR212 older screen"
+        ],
+        "optional_ui_tests_not_repeated": true
+      }
+    },
+    {
+      "path": "evidence/cell-depth-20260918/REMOTE_BASE_READBACK.json",
+      "sha256": "954d3fea2408313aa9b5ad20c09439f2a335cc6e6cbc8568d5afe7de69a3bade",
+      "content": {
+        "remote_pr217_head": "0cdff19160845b22f3aa9fa5e281413ddd460514",
+        "application_tree": "9206696542000e020601f14233c339cfec6b364c",
+        "draft": true,
+        "merged": false,
+        "original_37_authorized_files_match": true,
+        "observed_after_prior_rejection": true,
+        "performed_upload_in_this_turn": false,
+        "new_cell_changes_uploaded": false
+      }
+    }
+  ]
+}

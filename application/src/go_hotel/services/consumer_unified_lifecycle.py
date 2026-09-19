@@ -85,30 +85,42 @@ class ConsumerUnifiedLifecycleService:
   with SessionLocal() as s:
    existing=s.scalar(select(Life).where(Life.account_id==account_id,Life.vertical==vertical,Life.order_id==order_id))
    if existing and not official: return out(existing)|{'stale_ignored':True}
-   if existing and official and s.scalar(select(Event).where(Event.consumer_unified_lifecycle_id==existing.consumer_unified_lifecycle_id,Event.evidence_reference==evidence)):
-    return out(existing)|{'stale_ignored':True}
    try:
-    result=self.project_in_session(s,payload,idempotent_if_exists=not official);s.commit();return result
+    result=self.project_in_session(s,payload,idempotent_if_exists=not official,external_verification=official);s.commit();return result
    except IntegrityError:
     s.rollback()
-    if official:raise
+    if existing is not None:raise
     existing=s.scalar(select(Life).where(Life.account_id==account_id,Life.vertical==vertical,Life.order_id==order_id))
     if not existing:raise
+    if official:
+     # A competing first delivery may have created the trip. Re-enter normal
+     # ordering/dedup checks once; never retry arbitrary failed event writes.
+     result=self.project_in_session(s,payload,external_verification=True);s.commit();return result
     return out(existing)|{'stale_ignored':True}
 
- def project_in_session(self,s,b,*,allow_new_refund_cycle=False,idempotent_if_exists=False):
+ def project_in_session(self,s,b,*,allow_new_refund_cycle=False,idempotent_if_exists=False,external_verification=False):
   required=('account_id','vertical','order_id','title','lifecycle_state','payment_state','refund_state','evidence_reference','source_updated_at')
   if any(b.get(x) in (None,'') for x in required):raise ValueError('COMPLETE_VERTICAL_LIFECYCLE_FACT_REQUIRED')
   if b['vertical'] not in VERTICALS or b['lifecycle_state'] not in STATES:raise ValueError('INVALID_VERTICAL_OR_LIFECYCLE_STATE')
   source_raw=b['source_updated_at'];source_at=source_raw if isinstance(source_raw,datetime) else datetime.fromisoformat(str(source_raw).replace('Z','+00:00'))
   if source_at.tzinfo is None:source_at=source_at.replace(tzinfo=timezone.utc)
-  r=s.scalar(select(Life).where(Life.vertical==b['vertical'],Life.order_id==b['order_id']).with_for_update())
+  r=s.scalar(select(Life).where(Life.vertical==b['vertical'],Life.order_id==b['order_id']).with_for_update().execution_options(populate_existing=True))
   if r:
    if r.account_id!=b['account_id']:raise ValueError('UNIFIED_LIFECYCLE_ACCOUNT_IMMUTABLE')
    if idempotent_if_exists:return out(r)|{'stale_ignored':True}
+   if external_verification and s.scalar(select(Event).where(Event.consumer_unified_lifecycle_id==r.consumer_unified_lifecycle_id,Event.evidence_reference==b['evidence_reference'])):
+    return out(r)|{'stale_ignored':True}
    existing_at=r.source_updated_at
    if existing_at.tzinfo is None:existing_at=existing_at.replace(tzinfo=timezone.utc)
-   if source_at<=existing_at:return out(r)|{'stale_ignored':True}
+   old_facts=r.facts_json or {};new_facts=b.get('facts') or {}
+   # User submission time is not provider truth. The first authenticated
+   # observation may predate the import and must still replace that claim.
+   verifies_user_import=(external_verification
+    and old_facts.get('source_verification')=='USER_SUBMITTED_PENDING_VERIFICATION'
+    and new_facts.get('source_verification')=='OFFICIAL_PROVIDER'
+    and old_facts.get('external_order_id_hash')==new_facts.get('external_order_id_hash')
+    and old_facts.get('transaction_platform')==new_facts.get('transaction_platform'))
+   if source_at<=existing_at and not verifies_user_import:return out(r)|{'stale_ignored':True}
    terminal={'CONVERTED_TO_CREDIT','COMPLETED','CANCELLED','FAILED'}
    if r.lifecycle_state in terminal and b['lifecycle_state']!=r.lifecycle_state:raise ValueError('UNIFIED_LIFECYCLE_TERMINAL_STATE_IMMUTABLE')
    rank={'PENDING':0,'CONFIRMED':1,'IN_PROGRESS':2,'COMPLETED':3}

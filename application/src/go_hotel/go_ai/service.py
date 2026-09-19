@@ -224,12 +224,17 @@ class GOAIService:
             temperature=min(max(float(temperature), 0.0), 1.0),
         )
         self._create_request_audit(request, account_id)
-        assessment = self.complexity_classifier.classify(request.message, context=request.context)
+        try:
+            assessment = self.complexity_classifier.classify(request.message, context=request.context)
+            plan = (self.task_planner.plan(request.message, assessment)
+                    if assessment.tier != "TIER_0_DETERMINISTIC" else [])
+        except Exception as exc:
+            self._complete_request(request.request_id, failure_code="GO_AI_ORCHESTRATION_PLANNING_FAILED")
+            raise ValueError("GO_AI_ORCHESTRATION_PLANNING_FAILED") from exc
         if assessment.tier == "TIER_0_DETERMINISTIC":
             self._complete_request(request.request_id, failure_code="GO_AI_DETERMINISTIC_SYSTEM_REQUIRED")
             raise ValueError("GO_AI_DETERMINISTIC_SYSTEM_REQUIRED")
 
-        plan = self.task_planner.plan(request.message, assessment)
         if not plan:
             self._complete_request(request.request_id, failure_code="GO_AI_TASK_PLAN_EMPTY")
             raise ValueError("GO_AI_TASK_PLAN_EMPTY")
@@ -312,10 +317,19 @@ class GOAIService:
             except ValueError:
                 # Verification provider diversity is desirable but must not fabricate availability.
                 model_check_completed = False
+            except Exception as exc:
+                # An unavailable verifier is advisory. An unexpected execution
+                # or audit-storage failure must not strand a ROUTING request.
+                self._complete_request(request.request_id, failure_code="GO_AI_ORCHESTRATION_VERIFICATION_FAILED")
+                raise ValueError("GO_AI_ORCHESTRATION_VERIFICATION_FAILED") from exc
 
-        verification = self.verification_gate.verify(
-            answer=synthesis_text, assessment=assessment, model_check_completed=model_check_completed
-        )
+        try:
+            verification = self.verification_gate.verify(
+                answer=synthesis_text, assessment=assessment, model_check_completed=model_check_completed
+            )
+        except Exception as exc:
+            self._complete_request(request.request_id, failure_code="GO_AI_ORCHESTRATION_VERIFICATION_FAILED")
+            raise ValueError("GO_AI_ORCHESTRATION_VERIFICATION_FAILED") from exc
         if not verification.deterministic_checks_passed:
             self._complete_request(request.request_id, failure_code="GO_AI_VERIFICATION_BLOCKED")
             raise ValueError("GO_AI_VERIFICATION_BLOCKED")

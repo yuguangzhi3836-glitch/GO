@@ -10,6 +10,7 @@ from go_hotel.services.vertical_money_bridge import vertical_money_bridge
 from go_hotel.core.production_truth_gate import production_truth_required
 from go_hotel.services.vertical_transaction_bridge import vertical_transaction_bridge
 from go_hotel.services import refund_consent, flight_refund_consent
+from go_hotel.autonomy.durable import transaction, db_now_ms
 
 def now(): return datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -50,15 +51,29 @@ class FlightService:
             return {"passenger_count":(o.segments[0].get("passenger_count",1) if o.segments else 1),"prebook_id":p.prebook_id,"offer_id":offer_id,"status":p.status,"total_amount_minor":p.total_amount_minor,"currency":p.currency,"price_locked":True,"inventory_confirmed":True,"expires_at":p.expires_at.isoformat()}
     def create_order(self,account_id,prebook_id,passengers):
         production_truth_required("FLIGHT", "CREATE_ORDER")
-        with SessionLocal.begin() as s:
-            p=s.get(FlightPrebookRow,prebook_id)
-            if not p or p.status!="CONFIRMED" or p.expires_at<now(): raise ValueError("FLIGHT_PREBOOK_INVALID")
+        with transaction(SessionLocal) as s:
+            # The prebook is the durable claim boundary, including when clients
+            # retry with a different HTTP idempotency key or after a restart.
+            p=s.get(FlightPrebookRow,prebook_id,with_for_update=True)
+            if not p:raise ValueError('FLIGHT_PREBOOK_INVALID')
+            existing=s.scalars(select(FlightOrderRow).where(FlightOrderRow.prebook_id==prebook_id).limit(2)).all()
+            if existing:
+                # Historical rows may still have CONFIRMED prebooks. Preserve
+                # those orders without silently choosing among duplicates.
+                if len(existing)!=1:raise ValueError('FLIGHT_PREBOOK_ORDER_INTEGRITY_INVALID')
+                old=existing[0]
+                if old.account_id!=account_id:raise ValueError('FLIGHT_PREBOOK_INVALID')
+                if old.passengers!=passengers:raise ValueError('FLIGHT_PREBOOK_CONFLICT')
+                return self._order(old)
+            if p.status!='CONFIRMED' or p.expires_at.replace(tzinfo=p.expires_at.tzinfo or timezone.utc).timestamp()*1000<=db_now_ms(s):
+                raise ValueError('FLIGHT_PREBOOK_INVALID')
             off=s.get(FlightOfferRow,p.offer_id)
             expected=off.segments[0].get('passenger_count',1) if off.segments else 1
             if len(passengers)!=expected:raise ValueError('FLIGHT_PASSENGER_COUNT_INVALID:REQUOTE_REQUIRED')
             if any(not isinstance(p,dict) or p.get('type','ADT')!='ADT' or not isinstance(p.get('full_name'),str) or not p['full_name'].strip() for p in passengers):
                 raise ValueError('FLIGHT_PASSENGER_INVALID:ADULT_NAME_REQUIRED')
             o=FlightOrderRow(order_id=new_id("flt_ord"),account_id=account_id,prebook_id=prebook_id,status="PAYMENT_PENDING",total_amount_minor=p.total_amount_minor,currency=p.currency,passengers=passengers,payment_method_id=None,pnr=None,ticket_numbers=[],current_itinerary=off.segments,created_at=now(),updated_at=now())
+            p.status='CONSUMED'
             s.add(o); s.flush(); append_vertical_evidence(s,"FLIGHT",o.order_id,"ORDER_CREATED",o.status,{"prebook_id":prebook_id}); return self._order(o)
     def recover_checkout(self,account_id,order_id,payment_method_id,boundary):
         if not boundary or not boundary.recovering:

@@ -57,7 +57,7 @@ class MobilityService:
     def admin_external_state(self, order_id, state, evidence_reference, actor, confirmation_episode_reference=None):
         if self._vertical(order_id) == "RIDE":
             return ride_service.admin_external_state(order_id, state, evidence_reference, actor, confirmation_episode_reference)
-        return rental_service.admin_external_state(order_id, state, evidence_reference, actor)
+        return rental_service.admin_external_state(order_id, state, evidence_reference, actor, confirmation_episode_reference)
 
 
 mobility_service = MobilityService()
