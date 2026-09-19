@@ -96,6 +96,17 @@ def request_media_publication(property_id:str,b:MediaPublicationPayload,p:Princi
 def media_publication_requests(property_id:str,p:Principal=Depends(supplier_principal)):
     return call(media_svc.publication_requests,p.supplier_id,property_id)
 
+from go_hotel.services.hotel_direct_submission_verification import hotel_direct_submission_verification_service as submission_verifier
+
+class DirectSubmissionVerificationPayload(BaseModel):
+    model_config = {'extra': 'forbid'}
+    manifest: dict
+    expected_sha256: str | None = None
+
+@router.post('/properties/{property_id}/direct-submission-verification')
+def verify_direct_submission(property_id:str,b:DirectSubmissionVerificationPayload,p:Principal=Depends(supplier_principal)):
+    return call(submission_verifier.verify,p.supplier_id,property_id,b.manifest,b.expected_sha256)
+
 @router.get('/properties/{property_id}/media-uploads/{asset_id}/original')
 def media_upload_original(property_id:str,asset_id:str,p:Principal=Depends(supplier_principal)):
     raw,mime=call(media_svc.original,p.supplier_id,property_id,asset_id)['data']
