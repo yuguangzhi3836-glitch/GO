@@ -210,32 +210,63 @@ class PaymentSandboxRuntimeService:
             }
 
     def create_payment_link(self, intent_id: str, actor: str) -> dict[str, Any]:
+        """Persist the attempt before crossing the external PSP boundary.
+
+        A timeout or process failure after dispatch is an unknown external state,
+        not permission to silently resend or create a second payment link.
+        """
         if not payment_sandbox_executor.configured:
             raise ValueError("EXTERNAL_PAYMENT_SANDBOX_EXECUTOR_NOT_CONFIGURED")
         with SessionLocal() as s:
             intent = s.scalar(select(Intent).where(Intent.payment_intent_id == intent_id).with_for_update())
             if not intent or intent.state != "READY" or not intent.selected_channel:
                 raise ValueError("PAYMENT_INTENT_NOT_READY_FOR_LINK")
+            hotel = s.scalar(select(HostedDirectHotelRow).where(HostedDirectHotelRow.page_slug == AOLUGUYA_SLUG))
+            if not hotel:
+                raise ValueError("AOLUGUYA_HOSTED_DIRECT_HOTEL_REQUIRED")
             cutover_svc.assert_sandbox_execution_allowed(intent.selected_channel)
-            merchant = s.scalar(select(Merchant).where(Merchant.channel == intent.selected_channel, Merchant.state == "ACTIVE_CERTIFIED"))
+            merchant = s.scalar(select(Merchant).where(
+                Merchant.owner_type == "HOSTED_HOTEL",
+                Merchant.owner_id == hotel.hosted_hotel_id,
+                Merchant.channel == intent.selected_channel,
+                Merchant.state == CERTIFIED_STATE,
+            ))
             if not merchant:
                 raise ValueError("CERTIFIED_PSP_SANDBOX_MERCHANT_REQUIRED")
             active = s.scalar(select(Attempt).where(Attempt.payment_intent_id == intent_id, Attempt.state.in_(["PROCESSING","UNKNOWN_EXTERNAL_STATE"])))
             if active:
                 raise ValueError("ACTIVE_PAYMENT_ATTEMPT_BLOCKS_NEW_LINK")
-            result = payment_sandbox_executor.create_payment_link(
-                payment_intent_id=intent.payment_intent_id, amount_minor=intent.amount_minor,
-                currency=intent.currency, channel=intent.selected_channel,
-                idempotency_key=intent.idempotency_key,
-            )
             attempt_no = len(s.scalars(select(Attempt).where(Attempt.payment_intent_id == intent_id)).all()) + 1
             attempt = Attempt(
                 payment_attempt_id=ident("opa"), payment_intent_id=intent_id, channel=intent.selected_channel,
-                attempt_no=attempt_no, external_operation_id=result.external_operation_id,
+                attempt_no=attempt_no, external_operation_id=None,
                 channel_idempotency_key=f"{intent.idempotency_key}:{attempt_no}", state="PROCESSING",
                 external_invoked=True, created_at=now(), updated_at=now(),
             )
             s.add(attempt); intent.state="PROCESSING"; intent.updated_at=now(); s.commit()
+            attempt_id = attempt.payment_attempt_id
+            request = {
+                "payment_intent_id": intent.payment_intent_id, "amount_minor": intent.amount_minor,
+                "currency": intent.currency, "channel": intent.selected_channel,
+                "idempotency_key": attempt.channel_idempotency_key,
+            }
+        try:
+            result = payment_sandbox_executor.create_payment_link(**request)
+            if not result.external_operation_id:
+                raise ValueError("EXTERNAL_PAYMENT_LINK_OPERATION_ID_REQUIRED")
+        except Exception as exc:
+            with SessionLocal() as s:
+                attempt = s.scalar(select(Attempt).where(Attempt.payment_attempt_id == attempt_id).with_for_update())
+                intent = s.scalar(select(Intent).where(Intent.payment_intent_id == intent_id).with_for_update())
+                if attempt: attempt.state = "UNKNOWN_EXTERNAL_STATE"; attempt.updated_at = now()
+                if intent: intent.state = "UNKNOWN_EXTERNAL_STATE"; intent.updated_at = now()
+                s.commit()
+            raise ValueError("PAYMENT_LINK_EXTERNAL_STATE_UNKNOWN_RECONCILIATION_REQUIRED") from exc
+        with SessionLocal() as s:
+            attempt = s.scalar(select(Attempt).where(Attempt.payment_attempt_id == attempt_id).with_for_update())
+            if not attempt or attempt.state != "PROCESSING":
+                raise ValueError("PAYMENT_LINK_ATTEMPT_STATE_CHANGED_RECONCILIATION_REQUIRED")
+            attempt.external_operation_id = result.external_operation_id; attempt.updated_at = now(); s.commit()
             return {"payment_attempt": out(attempt), "payment_url": result.payment_url, "expires_at": result.expires_at,
                     "evidence_reference": result.evidence_reference, "external_invoked": True, "actor": actor}
 
