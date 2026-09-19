@@ -352,6 +352,7 @@
     "The exporter holds no private key, signs nothing, writes no Task, and has no code path to an executor."
   ],
   "x-go-reason-classes": {
+    "note": "A class becomes a fact kind. The migration family is two codes since CCV1-84 WP-2: both are refusals of policy, so both are NOT_ALLOWED. The pre-convergence token migration_required_not_supported stays classified because a fact written before the convergence still cites it; the Bridge no longer emits it, which the extraction in the component checks." ,
     "note": "The closed classes a refusing reason may map to, and the Bridge tokens that map to them. Every token the Bridge can emit is classified here, in BOTH call shapes: Reject(\"token\") directly, and the reason argument of exact(...) / match(...). A token that is missing is UNCLASSIFIED_REJECT and is preserved, never dropped.",
     "INVALID_REQUEST": [
       "action",
@@ -376,11 +377,14 @@
       "approval_identity_not_authorised",
       "deployment_authorization_mode_unsupported",
       "deployment_context_required",
+      "environment_slot_store_unwritable",
       "fixed_topology_required",
       "forbidden_operation",
       "invalid_arm_configuration",
       "invalid_channel_configuration",
       "legacy_mode_verify_only",
+      "E_DATABASE_MIGRATION_GRAPH_MISMATCH",
+      "E_DATABASE_MIGRATION_REQUIRED",
       "migration_required_not_supported",
       "persistent_channel_configuration_required",
       "persistent_publish_not_enabled",
@@ -411,6 +415,8 @@
       "channel_fields",
       "channel_unavailable",
       "deployment_plan_unavailable_or_invalid",
+      "environment_slot_action_not_mutating",
+      "environment_slot_store_invalid",
       "evidence_unaddressed",
       "human_reviewer_id",
       "invalid_authoritative_baseline",
@@ -419,6 +425,7 @@
       "invalid_signature",
       "invalid_time",
       "invalid_trust_key",
+      "ledger_unavailable",
       "missing_signature",
       "naive_time",
       "plan_fields",
@@ -498,6 +505,7 @@
       "deployment_plan_already_consumed",
       "deployment_plan_or_approval_already_consumed",
       "deployment_task_near_expiry",
+      "environment_deployment_in_flight",
       "plan_id_not_derived",
       "pr_head_changed",
       "preflight_near_expiry",
@@ -505,6 +513,7 @@
       "task_id_already_exists"
     ],
     "AMBIGUOUS": [
+      "abandoned_mutating_action_requires_operator_review",
       "ambiguous_claim_requires_operator_review",
       "ambiguous_publish_requires_operator_review",
       "published_task_readback_mismatch"

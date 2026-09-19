@@ -47,6 +47,12 @@ jobs:
       - name: Run the HK agent lineage suite on Linux
         working-directory: control-plane/boss-test-pr-live-integration-v1
         run: python -m unittest discover -s tests -v
+      - name: Prove one environment admits one mutating execution
+        # The executor's environment lock, with real processes contending for it.
+        # This is the second door: the Command Center refuses a second mutating
+        # Request, and the lock is what stops two executions that reached Hong Kong
+        # anyway from both replacing the same eight containers.
+        run: python -B hk-staging/source/executor/runtime/environment_lock_regression.py
       - name: Prove that a synthetic failure becomes verifiable Evidence the projection reads
         run: |
           python - <<'PY'

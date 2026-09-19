@@ -58,7 +58,7 @@ Dispatch is explicit and fail-closed. An action that is not named in
 DEPLOY or ROLLBACK, and before this revision an unnamed action silently became a
 VERIFY. Nothing that the other three actions do or are allowed to do is changed.
 """
-import argparse, datetime as dt, fcntl, hashlib, json, os, pathlib, re, secrets, subprocess, sys, tempfile
+import argparse, contextlib, datetime as dt, fcntl, hashlib, json, os, pathlib, re, secrets, subprocess, sys, tempfile
 from cryptography.hazmat.primitives import serialization
 import go_deploy_request as deploy_gate
 import plan_derivation
@@ -244,6 +244,20 @@ def read_admission():
     return deploy_gate.parse_json(read_repo_file(
         GO_REPOSITORY, PR_RESOLVER_KEY, plan_derivation.ADMISSION_POINTER))
 
+def read_supported_migration_head():
+    """The migration graph the environment currently supports.
+
+    Read from the canonical runtime pointer in the GO repository -- the same
+    read-only resolver the candidate pointer already uses, and no new authority --
+    rather than from the host or from the Request.  V1 executes no database
+    migration, so the graph canonical main declares for this environment is the
+    only graph a deployable candidate may declare for it.  A pointer that cannot be
+    read, or that carries no head, raises rather than returning something benign:
+    an unestablished environment graph must not let a candidate through.
+    """
+    return plan_derivation.environment_migration_head(deploy_gate.parse_json(
+        read_repo_file(GO_REPOSITORY, PR_RESOLVER_KEY, plan_derivation.RUNTIME_POINTER)))
+
 def read_evidence(task):
     """The signed Evidence of one published Task, addressed by the Task itself.
 
@@ -354,6 +368,18 @@ class Ledger:
         fd=os.open(self.root,os.O_RDONLY|os.O_DIRECTORY)
         try: os.fsync(fd)
         finally: os.close(fd)
+    @contextlib.contextmanager
+    def held(self):
+        """The ledger lock alone, without the read-modify-write.
+
+        The environment slots are a second durable document that has to be read and
+        written in the same critical section as the ledger, so that a slot cannot be
+        reserved on a view of the world another tick has already changed.  It is the
+        same lock file `transaction()` uses, so the two cannot overlap.
+        """
+        handle=open(self.lock, "a+"); fcntl.flock(handle, fcntl.LOCK_EX)
+        try: yield
+        finally: fcntl.flock(handle, fcntl.LOCK_UN); handle.close()
 
 def git(env, *argv, cwd=None): return subprocess.run(["/usr/bin/git", *argv], cwd=cwd, env=env, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 def ssh_env():
@@ -501,7 +527,9 @@ def derive_and_register_deployment(request,pr,approval_identity,records):
     request_sha256=deploy_gate.request_digest(request)
     plan_id,bundle=plan_derivation.derive(at=at,approval_identity=approval_identity,
         approved_at=approved_at,request_sha256=request_sha256,admission=read_admission(),
-        verify_baseline=load_baseline(),ledger_records=records,read_evidence=read_evidence)
+        verify_baseline=load_baseline(),
+        supported_migration_head=read_supported_migration_head(),
+        ledger_records=records,read_evidence=read_evidence)
     authority,hk=deploy_gate.load_keys()
     deploy_gate.validate_bundle(bundle,plan_id,authority,hk,at,approval_identity,request_sha256)
     plan_derivation.register(deploy_gate.STORE,plan_id,bundle)
@@ -544,6 +572,57 @@ def load_channel(path):
     if value["allowed_action_id"] != POLICY["action_id"] or value["allowed_environment"] != POLICY["environment"]: raise Reject("invalid_channel_configuration")
     return value
 
+
+def durable_ledger_records(ledger_root):
+    """The durable ledger as it stands on disk right now, not a claim-time snapshot.
+
+    The slot guard reconciles against what was actually published, and its cycle runs
+    before the Request loop -- outside any transaction view -- so it has to read the
+    document rather than be handed one. `Ledger.save` writes a temporary file and
+    renames it over the target, so a reader never observes a partial ledger and needs
+    no lock to read one.
+    """
+    try: return json.loads((pathlib.Path(ledger_root)/"ledger.json").read_text())["requests"]
+    except (OSError,ValueError,TypeError,KeyError) as exc: raise Reject("ledger_unavailable") from exc
+
+
+def slot_store(ledger_root):
+    """The environment slot document, beside the ledger it is reconciled against."""
+    return pathlib.Path(ledger_root)/deploy_gate.ENVIRONMENT_SLOT_NAME
+
+
+def environment_slot_cycle(ledger_root):
+    """Reconcile the per-environment mutation slots, under the ledger lock.
+
+    Runs before the Request loop so an action that has just reached its terminal
+    Evidence hands its environment back in the same tick it is noticed, and so the
+    reservations the loop is about to make are checked against a document nothing
+    else can be changing.  It publishes nothing and signs nothing: the only thing it
+    writes is the slot document itself.
+    """
+    ledger=Ledger(ledger_root); at=now(); store=slot_store(ledger_root)
+    with ledger.held():
+        try: records=durable_ledger_records(ledger_root)
+        except Reject as exc:
+            # An unreadable ledger is not an empty ledger.  Reconciling against one
+            # would read every reservation as "its record is gone" and release an
+            # environment that may still be busy, so nothing is touched.
+            return {"status":"unavailable","reason":str(exc)}
+        slots=deploy_gate.load_environment_slots(store)
+        if slots is None:
+            slots=deploy_gate.activate_environment_guard(records,at,read_evidence)
+            deploy_gate.save_environment_slots(slots,store)
+            return {"status":"activated","guard_since":slots["guard_since"],
+                    "environments":sorted(slots["environments"]),
+                    "legacy_adopted":sorted(slots["legacy"].get("adopted") or []),
+                    "legacy_ignored":len(slots["legacy"].get("ignored") or [])}
+        changes=deploy_gate.reconcile_environment_slots(slots,at,records,read_evidence)
+        if changes: deploy_gate.save_environment_slots(slots,store)
+        return {"status":"reconciled","changes":changes,
+                "held":sorted(name for name,slot in slots["environments"].items()
+                              if slot.get("state")!="released")}
+
+
 def persistent_process(number, head, ledger_root, key_path, channel_path):
     # The immutable root-owned channel config is intentionally checked on every
     # poll.  PR content never controls action, environment, image, or signing.
@@ -579,6 +658,27 @@ def persistent_process(number, head, ledger_root, key_path, channel_path):
             extra={k:v for k,v in context.items() if k not in {'deadline','parameters'}}
         else: unsigned=derive_formal_task(request)
         task=sign(unsigned,key_path)
+        if task['action_id'] in deploy_gate.MUTATING_ACTIONS:
+            # One environment, one mutation.  The check and the reservation are here,
+            # inside the ledger lock this function already holds, and BEFORE anything
+            # is published: that ordering is what makes two ticks -- or two Requests in
+            # one tick -- unable to both see an idle environment.  A reservation whose
+            # Request never reaches the ledger is released by the next tick's
+            # reconciliation, so a crash between these two writes cannot lock the host.
+            # The candidate's identity is carried through as the converged content
+            # address and is never interpreted here.
+            slots=deploy_gate.load_environment_slots(slot_store(ledger_root))
+            if slots is None: slots=deploy_gate.activate_environment_guard(data["requests"],now(),read_evidence)
+            deploy_gate.ensure_environment_idle(slots,task['environment'])
+            parameters=task['parameters']
+            deploy_gate.reserve_environment(slots,task['environment'],now(),
+                action=task['action_id'],request_key=key,request_id=request['request_id'],
+                release_id=parameters.get('release_id'),approval_id=parameters.get('approval_id'),
+                plan_id=extra.get('plan_id'),
+                candidate_identity=parameters.get('candidate_contract_sha256'),
+                candidate_image_id=parameters.get('candidate_image_id'),
+                triggered_by=approval_identity)
+            deploy_gate.save_environment_slots(slots,slot_store(ledger_root))
         data["requests"][key]={"status":"prepared","request_id":request["request_id"],"task":task,"task_sha256":hashlib.sha256(canonical(task)).hexdigest(),**extra}
     finally:
         try: next(tx)
@@ -614,16 +714,40 @@ def persistent_process(number, head, ledger_root, key_path, channel_path):
     return {"status":"published","task_id":task["task_id"],"task_commit":commit}
 
 def main():
-    parser=argparse.ArgumentParser(); parser.add_argument("--once",action="store_true"); parser.add_argument("--ledger-root",default="/var/lib/go-command-center/boss-request-bridge-v1"); parser.add_argument("--key",default="/etc/go-command-center/keys/task-manifest-signing.pem"); parser.add_argument("--channel-config"); parser.add_argument("--self-test",action="store_true"); args=parser.parse_args()
+    parser=argparse.ArgumentParser(); parser.add_argument("--once",action="store_true"); parser.add_argument("--ledger-root",default="/var/lib/go-command-center/boss-request-bridge-v1"); parser.add_argument("--key",default="/etc/go-command-center/keys/task-manifest-signing.pem"); parser.add_argument("--channel-config"); parser.add_argument("--environment-slots",action="store_true"); parser.add_argument("--self-test",action="store_true"); args=parser.parse_args()
     if args.self_test: return run_tests()
+    if args.environment_slots:
+        # Read-only: the same document the guard refuses on, printed for an operator.
+        # It is the operator's only way to see who holds an environment, which version
+        # they started, and why an abandoned slot has not been released.
+        slots=deploy_gate.load_environment_slots(slot_store(args.ledger_root))
+        if slots is None: print(json.dumps({"status":"guard_not_activated"},sort_keys=True))
+        else: print(json.dumps(slots,sort_keys=True))
+        return 0
     if not args.channel_config: raise Reject("persistent_channel_configuration_required")
+    # The slot cycle runs BEFORE the Request loop: an action whose terminal Evidence
+    # has arrived hands its environment back in the tick that notices it, and the
+    # reservations the loop is about to make are checked against a document no other
+    # tick can be changing.  A failure here is reported, never raised -- a defect in
+    # the guard must not be able to stop every Request in the channel from being served.
+    try: slots_cycle=environment_slot_cycle(args.ledger_root)
+    except Reject as exc: slots_cycle={"status":"rejected","reason":str(exc)}
+    except Exception as exc: slots_cycle={"status":"error","reason":type(exc).__name__}
     result=[]
     for number,head in sorted(discover_heads().items(), key=lambda v:int(v[0])):
         try: result.append({"pr":number,"head":head,**persistent_process(number,head,args.ledger_root,args.key,args.channel_config)})
-        except Reject as exc: result.append({"pr":number,"head":head,"status":"rejected","reason":str(exc)})
+        except Reject as exc:
+            entry={"pr":number,"head":head,"status":"rejected","reason":str(exc)}
+            # A refusal that names the environment holding the slot carries the detail
+            # on the exception, so the tick says who is deploying and since when
+            # without the reason token itself having to be a sentence.
+            if getattr(exc,"payload",None) is not None: entry["detail"]=exc.payload
+            result.append(entry)
     channel = load_channel(args.channel_config)
-    print(json.dumps({"bridge_version":"1.8.0-request-authorized-deploy", "channel_mode":channel["mode"],
-                      "publish_enabled":channel["publish_enabled"], "results":result},sort_keys=True)); return 0
+    print(json.dumps({"bridge_version":"1.9.0-environment-slot", "channel_mode":channel["mode"],
+                      "publish_enabled":channel["publish_enabled"],
+                      "environment_slots":slots_cycle,
+                      "results":result},sort_keys=True)); return 0
 
 def run_tests():
     import unittest

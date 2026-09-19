@@ -270,11 +270,45 @@ class RejectionTests(Base):
                       "candidate_source_fingerprint")
 
     def test_a_candidate_that_needs_a_migration_is_rejected(self):
+        """CCV1 V1 runs no migration, so this is refused in the stable public code."""
         self.rejected(self.write(block=candidate(migration_required=True)),
-                      "candidate_migration_required")
+                      "E_DATABASE_MIGRATION_REQUIRED")
 
     def test_a_missing_migration_head_is_rejected(self):
-        self.rejected(self.write(block=candidate(migration_head=None)), "candidate_migration_head")
+        """A candidate that does not declare its graph cannot be shown to be on ours.
+
+        The field exists in the candidate contract to make that declaration, so
+        failing to make it is a graph failure and not merely a missing field -- which
+        is why it is refused with the graph code rather than a field-shape token.
+        """
+        self.rejected(self.write(block=candidate(migration_head=None)),
+                      "E_DATABASE_MIGRATION_GRAPH_MISMATCH")
+
+    def test_the_migration_family_is_refused_in_exactly_two_public_codes(self):
+        """No third migration spelling escapes admission.
+
+        The two codes are the whole vocabulary: every migration refusal this
+        component can produce is one of them, and the tokens it used before the
+        convergence are aliases that nothing emits any more.
+        """
+        results = []
+        for edit in ({"migration_required": True}, {"migration_required": "false"},
+                     {"migration_head": None}, {"migration_head": ""},
+                     {"migration_head": "not a head"}):
+            results.append(self.write(block=candidate(**edit)))
+        observed = set()
+        for result in results:
+            observed |= {r for r in result["verdict"]["rejected"]
+                        if "MIGRATION" in r.upper()}
+        self.assertTrue(observed, "the fixture stopped producing migration refusals")
+        self.assertTrue(observed <= {"E_DATABASE_MIGRATION_REQUIRED",
+                                     "E_DATABASE_MIGRATION_GRAPH_MISMATCH"},
+                        "an un-converged migration token escaped: %s" % sorted(observed))
+        for legacy in A.LEGACY_MIGRATION_REASON_ALIAS:
+            self.assertNotIn(legacy, observed, legacy)
+        self.assertEqual(set(A.LEGACY_MIGRATION_REASON_ALIAS.values()),
+                         {"E_DATABASE_MIGRATION_REQUIRED",
+                          "E_DATABASE_MIGRATION_GRAPH_MISMATCH"})
 
     def test_a_build_definition_from_another_builder_is_rejected(self):
         self.rejected(self.write(block=candidate(build_definition={"profile": "someone-elses"})),

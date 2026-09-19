@@ -30,11 +30,12 @@ def load_extensionless_executor(candidate=None):
 
 deployctl=load_extensionless_executor()
 OLD='sha256:'+'3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88'
+IDENTITY={"schema":"go.hk-installed-identity.v1","installation_id":"install-fixture","source_commit":"f"*40,"launcher_version":"0.7.0-environment-lock","launcher_sha256":"e"*64,"runtime_digest":"d"*64}
 TASK={'action_id':'HK_STAGING_VERIFY','parameters':{'release_id':'r315','candidate_image_id':OLD,'expected_current_image_id':OLD}}
 class Bridge:
  def __init__(self,m=None):self.calls=[];self.m=m
  def run(self,argv):
-  self.calls.append(argv);v=dict(zip(argv[2::2],argv[3::2]));x=deployctl._document('SUCCESS',v['--release-id'],v['--candidate-image-id'],v['--expected-current-image-id'],{'synthetic':'PASS'},'VERIFY_OK')
+  self.calls.append(argv);v=dict(zip(argv[2::2],argv[3::2]));x=deployctl._document('SUCCESS',v['--release-id'],v['--candidate-image-id'],v['--expected-current-image-id'],{'synthetic':'PASS'},'VERIFY_OK',IDENTITY)
   if self.m:x=self.m(x)
   return {'stdout':x if isinstance(x,str) else json.dumps(x,separators=(',',':'))}
 def run():

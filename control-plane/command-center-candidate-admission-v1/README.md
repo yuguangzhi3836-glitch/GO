@@ -147,6 +147,59 @@ It never writes, never contacts a host, and never touches Production. Its own
 contract refuses any reason token that is not in the contract's vocabulary, so the
 component cannot invent a refusal nobody can look up.
 
+## One candidate identity, and the digest over it
+
+`go.release-candidate.v1` is the **only** candidate identity in the converged
+baseline. The Hong Kong media-topology line carried a second one
+(`go.hk-candidate-contract.v1/v2/v3`); those documents are now **read-only history**
+and are retired at T10. This component owns both the converged fact and the reader
+for the legacy one, so there is exactly one place where "what is this candidate"
+is answered.
+
+`candidate_fact.py` is the single implementation of the cross-component candidate
+digest:
+
+```text
+candidate_contract_sha256 = sha256(canonical_json(RELEASE_CANDIDATE_V1_CONVERGED))
+canonical_json = json.dumps(value, sort_keys=True, separators=(",", ":"),
+                            ensure_ascii=False, allow_nan=False).encode("utf-8")
+```
+
+The digest covers the candidate facts and **nothing else**. It deliberately does
+not cover a rehearsal body, a rehearsal checksum, a topology implementation hash,
+a launcher module hash, a runtime pin, an execution window or a deployment mode --
+those either belong to the plan, to a capability, or to the installation facts.
+
+Consequences worth stating plainly:
+
+* the same candidate digests the same however its JSON is key-ordered, indented or
+  spaced, and differently as soon as any candidate fact changes;
+* a candidate that declares the prohibited migration condition has **no** converged
+  form, so it has no digest and admits nothing;
+* `migration_required` is a **PROHIBITED_CONDITION_DECLARATION**, pinned to `false`
+  in the contract. V1 does not execute database migrations. It is stated rather
+  than omitted so that "no migration" is a declaration instead of a missing field.
+* the admission document reports the digest as `candidate_contract_sha256`, and
+  reports `null` when the candidate was refused -- `null` means "no such identity
+  exists", never "unknown but probably fine".
+
+## Reading the legacy contract
+
+`legacy_candidate_contract.py` is marked `LEGACY READ ONLY / DO NOT WRITE /
+RETIRE AT T10`. It validates the three legacy shapes, produces an explicit
+`LEGACY_CANDIDATE_VIEW`, and keeps that view's non-candidate fields -- rehearsal,
+topology, revisions, environment, profile -- out of the converged fact.
+
+Its mapping table is explicit and tested. Where a legacy field has no loss-free
+destination the gap is **named**, not papered over: `LEGACY_MAPPING_GAPS` records
+six identities a converged candidate must state that no legacy document can
+supply, including `source_fingerprint` -- the legacy `source_tree_sha256` has the
+same shape but a different definition, so mapping it would silently redefine the
+identity admission checks. A legacy view is therefore never promotable, and a
+legacy digest can never be compared against a converged one: the two are
+different kinds, and `verify_task_candidate_digest` refuses the legacy kind by
+name.
+
 ## What it deliberately does not do
 
 * No rollback eligibility beyond naming the previous known-good target (#104).

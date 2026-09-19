@@ -1,5 +1,29 @@
 #!/usr/bin/env python3
-"""Fixed HK-STAGING VERIFY plus isolated candidate-image CANARY executor."""
+"""Fixed HK-STAGING VERIFY plus isolated candidate-image CANARY executor.
+
+One environment, one mutation at a time
+---------------------------------------
+`deploy` and `rollback` mutate the same eight business containers, so they share
+one environment-scoped lock: `/var/lib/go-hk-deployctl/deploy-<environment>.lock`,
+taken with an exclusive non-blocking lock before the runtime is entered.  The lock
+is deliberately taken HERE rather than inside the runtime, so it is already held
+before `deploy_runtime._precheck()` reads the host: a second executor that passes
+`_precheck` concurrently with the first is exactly the race this closes.  The lock
+is released by the kernel when the process exits, so a crash cannot leave the
+environment locked.
+
+A second executor does not wait, queue or retry -- it fails immediately with
+`E_ENVIRONMENT_DEPLOYMENT_BUSY`, because by the time the first one finishes the
+second one's own preconditions (`expected_current_image_id` above all) describe a
+host that no longer exists.  `CANARY` and `VERIFY` take no lock: they mutate no
+business runtime.
+
+This is the second door, not the first: the Command Center already refuses a second
+mutating Request for a busy environment.  Neither replaces the other, and neither
+claims to stop a process that already has root on this host.
+"""
+import contextlib
+import errno
 import json
 import hashlib
 import importlib
@@ -9,13 +33,28 @@ import re
 import stat
 import sys
 
-VERSION = "0.4.3-rollback-runtime"
+VERSION = "0.7.0-environment-lock"
+ENVIRONMENT = "HK-STAGING-01"
+ENVIRONMENT_RE = re.compile(r"^[A-Z0-9][A-Z0-9-]{0,31}$")
+LOCK_DIR = "/var/lib/go-hk-deployctl"
+LOCK_TEMPLATE = "deploy-%s.lock"
 _IMAGE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _RELEASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
+# The content address of the candidate this deployment is about.  It is an argument
+# rather than something the launcher derives: the value is the Command Center's, the
+# verification is the runtime's, and the launcher's job is to refuse a Task that does not
+# carry a well-formed one.
+_CONTRACT = re.compile(r"^[0-9a-f]{64}$")
 _COLLECTOR_SHA256 = "dff91265a5e3e80704277664f1952129ff19c6c7174d78e9b3e66125b9618ccc"
 _CANARY_SHA256 = "f93d4365116a52942c457accb41be53625d3f3f1a7a6eafe92d53c457c86aed1"
-_DEPLOY_SHA256 = "60cc42dd0b8fd285bffcbed2fa857a43ef8a558a06a5bbaccc865b7519a88afd"
-_ROLLBACK_SHA256 = "a49e12eafab85331477241a4db791ad1c38133b9a7925eade627c1c27cf5e9f5"
+# Updated by CCV1-85 (WP-4A) and again by WP-9's product decision of 2026-09-19:
+# deploy_runtime.py resolves the candidate the Task names, applies the migration rule, and
+# recreates the containers through the shared media-mount builder; rollback_runtime.py
+# recreates them through the same builder.  Both values changed because both runtimes now
+# delegate their Compose command instead of assembling it; the other three pins and the
+# shape of the pin set are untouched.
+_DEPLOY_SHA256 = "7d185ce7dd73e62bbafdba55386b4f98c679aa522364ef61ab0463b1b26dbdb4"
+_ROLLBACK_SHA256 = "d5ce99c91b562af4187181613c481b25d11000a7f956e216f50b3ab0c3e42af4"
 _ARTIFACT_SHA256 = "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b"
 
 
@@ -46,8 +85,15 @@ def _load_collector():
 
 
 def _document(status, release_id, candidate_image_id, expected_current_image_id,
-              gates, result):
-    return {
+              gates, result, installed_identity=None):
+    """The one shape every action's output has.
+
+    `installed_identity` is present on an action that ran under a verified installation and
+    absent from a refusal, which is the honest distinction: a document that reports a
+    refusal did not necessarily get far enough to know what it was installed as.  The agent
+    requires one exact key set per action, so an absence is refused rather than ignored.
+    """
+    document = {
         "schema_version": "1",
         "executor_version": VERSION,
         "action_id": "HK_STAGING_VERIFY",
@@ -58,6 +104,9 @@ def _document(status, release_id, candidate_image_id, expected_current_image_id,
         "result": result,
         "gate_results": gates,
     }
+    if installed_identity is not None:
+        document["installed_identity"] = installed_identity
+    return document
 
 def _load_canary():
     executable_dir = os.path.dirname(os.path.abspath(__file__))
@@ -113,24 +162,162 @@ def _load_rollback():
     module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module
 
-def _deploy(release,candidate,package,expected,approval,canary_evidence,binding,runner=None):
+def _load_install_fact():
+    """Load the verifier for the installation fact.
+
+    Deliberately *not* guarded by a SHA256 constant compiled into this file. A constant
+    here would be the verifier checking the verifier, and it would reintroduce exactly the
+    coupling this replaces: updating any module would mean editing this launcher. What
+    protects `install_fact.py` is what protects this file -- the runtime directory is
+    root-owned and neither the executor nor the agent account can write it -- and the fact
+    lists `install_fact` among the modules it describes, so a fact that disagrees with the
+    verifier's own bytes is refused by the verifier itself.
+    """
+    executable_dir=os.path.dirname(os.path.abspath(__file__))
+    path=os.path.join(executable_dir,"go-hk-deployctl-runtime","install_fact.py")
+    try:
+        if not stat.S_ISREG(os.lstat(path).st_mode): raise ValueError("install fact path")
+    except (OSError,ValueError): raise ValueError("E_INSTALL_FACT_MODULE")
+    spec=importlib.util.spec_from_file_location("_go_hk_install_fact",path)
+    if spec is None or spec.loader is None: raise ValueError("E_INSTALL_FACT_MODULE")
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    if os.path.abspath(getattr(module,"__file__",""))!=os.path.abspath(path): raise ValueError("E_INSTALL_FACT_MODULE")
+    return module
+
+
+def _verify_installation():
+    """The trust root, checked before any action runs.
+
+    Dual verification while the switch is being made (CCV1-82 T5). The five per-module
+    pins above still apply to the modules they cover, and the signed installation fact is
+    checked as well; the two must agree, which a test pins. The pins are not removed here:
+    that is a later, separately reviewed step. The fact is what makes "which bytes are
+    installed, and since when" answerable; the pins are what made this launcher refuse to
+    start with the wrong ones, and both properties are worth having during a transition.
+
+    This is also where the launcher's own bytes are checked -- against a number that came
+    from outside, in a signed document. The launcher does not attest itself.
+    """
+    executable_dir=os.path.dirname(os.path.abspath(__file__))
+    runtime_dir=os.path.join(executable_dir,"go-hk-deployctl-runtime")
+    return _load_install_fact().load_installation(os.path.abspath(__file__),runtime_dir)
+
+
+def _installed_identity():
+    """The block an Evidence carries: which bytes were installed when this action ran.
+
+    It is derived from the document `_verify_installation()` has just returned, by the
+    module that defines the block, so the answer comes from the verification that already
+    gates every action rather than from something assembled beside it.  An identity a
+    caller could produce without that check would be a claim; this one is a reading.
+    """
+    fact=_verify_installation()
+    return _load_install_fact().installed_identity(fact)
+
+
+try:
+    import fcntl
+except ImportError:                      # this host has no flock; see _lock_exclusive
+    fcntl = None
+
+
+def _lock_exclusive(descriptor):
+    """Take the environment's exclusive lock without waiting, or raise OSError.
+
+    `fcntl.flock` is the shipped primitive, and the kernel releases it when the
+    descriptor closes -- including when the process dies -- so a crash cannot leave the
+    environment locked and no marker has to be cleared by hand.
+
+    The indirection is deliberate and has two purposes. A host without `fcntl` must be
+    *shown* to refuse rather than assumed to proceed unlocked, which `_environment_lock`
+    does by turning a missing primitive into E_ENVIRONMENT_DEPLOYMENT_LOCK. And the
+    concurrency regression can exercise the same discipline with its own host's kernel
+    primitive, so the assertions run everywhere instead of being skipped on whichever
+    platform the reviewer happens to use.
+    """
+    if fcntl is None: raise OSError(errno.ENOSYS, "no file locking primitive on this host")
+    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def _unlock(descriptor):
+    if fcntl is None: return
+    try: fcntl.flock(descriptor, fcntl.LOCK_UN)
+    except OSError: pass
+
+
+@contextlib.contextmanager
+def _environment_lock(environment=ENVIRONMENT):
+    """The environment's one mutation slot, held for the whole critical section.
+
+    `LOCK_EX|LOCK_NB`: exclusive, and never blocking.  A second executor must fail
+    at once rather than wait, because it already read the host's expected state and
+    that reading is invalidated by the first executor's success.
+
+    `O_NOFOLLOW` on open so a planted symlink cannot redirect the lock; the kernel
+    drops the lock when the descriptor closes, including on a crash, so no marker
+    file has to be cleared by hand.
+    """
+    if not isinstance(environment,str) or not ENVIRONMENT_RE.fullmatch(environment):
+        raise ValueError("E_ENVIRONMENT_DEPLOYMENT_LOCK")
+    path=os.path.join(LOCK_DIR,LOCK_TEMPLATE % environment)
+    try:
+        fd=os.open(path,os.O_WRONLY|os.O_CREAT|getattr(os,"O_NOFOLLOW",0),0o600)
+    except OSError as exc:
+        raise ValueError("E_ENVIRONMENT_DEPLOYMENT_LOCK") from exc
+    try:
+        try:
+            _lock_exclusive(fd)
+        except OSError as exc:
+            if exc.errno in (errno.EACCES,errno.EAGAIN,errno.EWOULDBLOCK):
+                # Contention is its own answer: another executor holds the environment.
+                raise ValueError("E_ENVIRONMENT_DEPLOYMENT_BUSY") from exc
+            raise ValueError("E_ENVIRONMENT_DEPLOYMENT_LOCK") from exc
+        yield
+    finally:
+        _unlock(fd)
+        os.close(fd)
+
+def _deploy(release,candidate,package,expected,approval,canary_evidence,candidate_contract_sha256,binding,runner=None):
+    """The DEPLOY entry.  The candidate digest is required, and required to be well formed.
+
+    An absent or malformed digest is refused here, before the runtime is even loaded, so
+    a Task that carries no candidate identity never reaches the code that could replace a
+    container.  The digest the document reports on success is the one the runtime
+    recomputed from the fact it loaded -- popped from the runtime's own result rather
+    than echoed from this argument, because a value that echoes itself proves nothing.
+    """
     gates={}
     try:
+        identity=_installed_identity()
         if not isinstance(approval,str) or not _RELEASE.fullmatch(approval): raise ValueError("approval")
         if not isinstance(canary_evidence,str) or not _RELEASE.fullmatch(canary_evidence): raise ValueError("canary evidence")
-        runtime=_load_deploy(); collector=_load_collector(); artifact=_load_artifact()
-        gates=runtime.run_deploy(release,candidate,package,expected,binding,runner or collector.ProductionRunner(),collector,artifact)
+        if not isinstance(candidate_contract_sha256,str) or not _CONTRACT.fullmatch(candidate_contract_sha256): raise ValueError("candidate_digest_absent")
+        # The lock is taken before the runtime is loaded, so it is already held when
+        # `deploy_runtime._precheck()` reads the eight containers: a second executor
+        # cannot pass its own precondition check while this one is mutating them, and
+        # it fails before it has spent anything on the attempt.
+        with _environment_lock():
+            runtime=_load_deploy(); collector=_load_collector(); artifact=_load_artifact()
+            gates=runtime.run_deploy(release,candidate,package,expected,binding,runner or collector.ProductionRunner(),collector,artifact,candidate_contract_sha256)
         record={key:gates.pop(key) for key in ("deploy_record_schema_version","deploy_record_id","deploy_record_sha256")}
-        out=_document("SUCCESS",release,candidate,expected,gates,"DEPLOY_OK"); out["action_id"]="HK_STAGING_DEPLOY"; out.update(record); return out,0
+        verified_digest=gates.pop("candidate_contract_sha256",None)
+        if not isinstance(verified_digest,str) or not _CONTRACT.fullmatch(verified_digest): raise ValueError("candidate_digest_unverified")
+        out=_document("SUCCESS",release,candidate,expected,gates,"DEPLOY_OK",identity); out["action_id"]="HK_STAGING_DEPLOY"; out.update(record); out["candidate_contract_sha256"]=verified_digest; return out,0
     except (OSError,ValueError,TypeError) as exc:
+        # A refusal that already knows its gate results reports them.  `MEDIA_MOUNT=FAILED`
+        # and its reason are findings about the operation rather than sentences to be read
+        # out of an error string, and keeping them here is what makes
+        # `DEPLOY=SUCCESS` with `MEDIA_MOUNT=FAILED` unrepresentable.
+        gates=getattr(exc,"gate_results",None) or gates
         out=_document("REJECTED",release,candidate,expected,gates,"DEPLOY_REJECTED"); out["action_id"]="HK_STAGING_DEPLOY"; out["error_code"]=str(exc)[:80]; return out,2
 
 def _canary(release_id,candidate_image_id,candidate_package_sha256,expected_current_image_id,runner=None,inputs=None):
     gates={}
     try:
+        identity=_installed_identity()
         runtime=_load_canary(); artifact=_load_artifact()
         gates=runtime.run_canary(release_id,candidate_image_id,candidate_package_sha256,expected_current_image_id,runner,inputs,artifact)
-        output=_document("SUCCESS",release_id,candidate_image_id,expected_current_image_id,gates,"CANARY_OK")
+        output=_document("SUCCESS",release_id,candidate_image_id,expected_current_image_id,gates,"CANARY_OK",identity)
         output["action_id"]="HK_STAGING_CANARY"
         return output,0
     except (OSError,ValueError,TypeError) as exc:
@@ -141,12 +328,18 @@ def _canary(release_id,candidate_image_id,candidate_package_sha256,expected_curr
 def _rollback(release,source_task_id,binding,runner=None):
     gates={}
     try:
-        runtime=_load_rollback(); collector=_load_collector()
-        gates=runtime.run_rollback(release,source_task_id,binding,runner or collector.ProductionRunner(),collector)
-        out=_document("SUCCESS",release,"","",gates,"ROLLBACK_OK"); out["action_id"]="HK_STAGING_ROLLBACK"
+        identity=_installed_identity()
+        # A rollback mutates the same eight containers as a deployment, so it takes the
+        # same environment lock: `deploy` and `rollback` share one slot, and a rollback
+        # cannot start while a deployment is mid-flight (nor the reverse).
+        with _environment_lock():
+            runtime=_load_rollback(); collector=_load_collector()
+            gates=runtime.run_rollback(release,source_task_id,binding,runner or collector.ProductionRunner(),collector)
+        out=_document("SUCCESS",release,"","",gates,"ROLLBACK_OK",identity); out["action_id"]="HK_STAGING_ROLLBACK"
         out.update({key:gates[key] for key in ("source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256")})
         return out,0
     except (OSError,ValueError,TypeError) as exc:
+        gates=getattr(exc,"gate_results",None) or gates
         out=_document("REJECTED",release,"","",gates,"ROLLBACK_REJECTED"); out["action_id"]="HK_STAGING_ROLLBACK"; out["error_code"]=str(exc)[:80]
         return out,2
 
@@ -155,6 +348,7 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
             runner=None, inputs=None, sleeper=None):
     gates = {}
     try:
+        identity = _installed_identity()
         if not isinstance(release_id, str) or not _RELEASE.fullmatch(release_id):
             raise ValueError("release id")
         if not isinstance(candidate_image_id, str) or not _IMAGE.fullmatch(candidate_image_id):
@@ -183,7 +377,8 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
         if result["target_service_count"] != 8 or result["application_health_proven_count"] != 0:
             raise ValueError("collector result")
         return _document("SUCCESS", release_id, candidate_image_id,
-                         expected_current_image_id, gates, "VERIFY_OK"), 0
+                         expected_current_image_id, gates, "VERIFY_OK",
+                         identity), 0
     except (OSError, ValueError, TypeError):
         return _document("REJECTED", release_id, candidate_image_id,
                          expected_current_image_id, gates, "VERIFY_REJECTED"), 2
@@ -194,14 +389,14 @@ def main(argv=None, runner=None, inputs=None, sleeper=None):
     canary = values[:1] == ["canary"]
     deploy = values[:1] == ["deploy"]
     rollback=values[:1]==["rollback"]
-    expected_flags = ["--release-id","--candidate-image-id","--candidate-package-sha256","--expected-current-image-id","--canary-evidence-id","--approval-id","--task-id","--task-nonce","--task-authority","--task-canonical-sha256"] if deploy else (["--release-id","--source-deploy-task-id","--approval-id","--task-id","--task-nonce","--task-authority","--task-canonical-sha256"] if rollback else (["--release-id","--candidate-image-id","--candidate-package-sha256","--expected-current-image-id"] if canary else ["--release-id","--candidate-image-id","--expected-current-image-id"]))
+    expected_flags = ["--release-id","--candidate-image-id","--candidate-package-sha256","--expected-current-image-id","--canary-evidence-id","--approval-id","--candidate-contract-sha256","--task-id","--task-nonce","--task-authority","--task-canonical-sha256"] if deploy else (["--release-id","--source-deploy-task-id","--approval-id","--task-id","--task-nonce","--task-authority","--task-canonical-sha256"] if rollback else (["--release-id","--candidate-image-id","--candidate-package-sha256","--expected-current-image-id"] if canary else ["--release-id","--candidate-image-id","--expected-current-image-id"]))
     if (values[0:1] not in (["verify"],["canary"],["deploy"],["rollback"]) or len(values) != 1+2*len(expected_flags) or values[1::2] != expected_flags):
         release = values[2] if len(values) > 2 and values[1] == "--release-id" else ""
         output = _document("REJECTED", release, "", "", {}, "VERIFY_REJECTED")
         print(json.dumps(output, separators=(",", ":")))
         return 2
     if values[0]=="canary": output, code = _canary(values[2], values[4], values[6], values[8], runner, inputs)
-    elif values[0]=="deploy": output, code = _deploy(values[2],values[4],values[6],values[8],values[12],values[10],{"task_id":values[14],"nonce":values[16],"authority":values[18],"canonical_sha256":values[20]},runner)
+    elif values[0]=="deploy": output, code = _deploy(values[2],values[4],values[6],values[8],values[12],values[10],values[14],{"task_id":values[16],"nonce":values[18],"authority":values[20],"canonical_sha256":values[22]},runner)
     elif values[0]=="rollback": output, code = _rollback(values[2],values[4],{"task_id":values[8],"nonce":values[10],"authority":values[12],"canonical_sha256":values[14]},runner)
     else: output, code = _verify(values[2], values[4], values[6], runner, inputs, sleeper)
     print(json.dumps(output, separators=(",", ":")))

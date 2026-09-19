@@ -214,7 +214,12 @@ def run():
           and RETIRED_R315_REVISION != C.EXPECTED_REVISION)
 
     deployctl = DEPLOYCTL.read_text(encoding="utf-8")
-    collector_bytes = COLLECTOR.read_bytes()
+    # The pin is the hash of the file **as the repository stores it** (LF). A checkout with
+    # `core.autocrlf` holds CRLF bytes, so hashing the working tree directly reports a
+    # mismatch on Windows for a file that is byte-identical to its blob -- a false red about
+    # the pin, which is the one thing this check is for. Compare the form the pin was
+    # computed over, and say which form was compared. (CCV1-89)
+    collector_bytes = COLLECTOR.read_bytes().replace(b"\r\n", b"\n")
     pin = None
     for line in deployctl.splitlines():
         if line.startswith("_COLLECTOR_SHA256"):

@@ -18,6 +18,21 @@ IDENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$")
 TASK_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 NONCE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
+# The installation the executor says it ran under.  There is one producer of this block --
+# `install_fact.installed_identity()` on the host, from a fact the launcher has already
+# signature-checked -- so the agent checks the shape it is about to sign into Evidence
+# rather than assembling a second identity of its own.  The forms mirror the fact's own
+# constraints, because a block that disagrees with them is not the block the host derived.
+INSTALLED_IDENTITY_SCHEMA = "go.hk-installed-identity.v1"
+IDENTITY_FIELDS = ("schema", "installation_id", "source_commit", "launcher_version",
+                   "launcher_sha256", "runtime_digest")
+COMMIT = re.compile(r"^[0-9a-f]{40}$")
+INSTALLATION_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+LAUNCHER_VERSION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$")
+IDENTITY_FIXTURE = {"schema": INSTALLED_IDENTITY_SCHEMA,
+                    "installation_id": "install-fixture", "source_commit": "f" * 40,
+                    "launcher_version": "0.7.0-environment-lock",
+                    "launcher_sha256": "e" * 64, "runtime_digest": "d" * 64}
 
 class Reject(ValueError):
     """Fail-closed executor rejection with bounded diagnostic context."""
@@ -34,8 +49,8 @@ class FakeExecutor:
         self.calls.append(argv)
         action={"canary":"HK_STAGING_CANARY","deploy":"HK_STAGING_DEPLOY","verify":"HK_STAGING_VERIFY","rollback":"HK_STAGING_ROLLBACK"}[argv[1]]
         values=dict(zip(argv[2::2],argv[3::2]))
-        result={"schema_version":"1","executor_version":"0.4.0-rollback-runtime","action_id":action,"status":"SUCCESS","release_id":values["--release-id"],"candidate_image_id":values.get("--candidate-image-id"),"expected_current_image_id":values.get("--expected-current-image-id"),"result":"DEPLOY_OK" if action=="HK_STAGING_DEPLOY" else ("ROLLBACK_OK" if action=="HK_STAGING_ROLLBACK" else "VERIFY_OK"),"gate_results":{"fake":"PASS"}}
-        if action=="HK_STAGING_DEPLOY": result.update({"deploy_record_schema_version":"2","deploy_record_id":"a"*64,"deploy_record_sha256":"b"*64})
+        result={"schema_version":"1","executor_version":"0.4.0-rollback-runtime","action_id":action,"status":"SUCCESS","release_id":values["--release-id"],"candidate_image_id":values.get("--candidate-image-id"),"expected_current_image_id":values.get("--expected-current-image-id"),"result":"DEPLOY_OK" if action=="HK_STAGING_DEPLOY" else ("ROLLBACK_OK" if action=="HK_STAGING_ROLLBACK" else "VERIFY_OK"),"gate_results":{"fake":"PASS"},"installed_identity":dict(IDENTITY_FIXTURE)}
+        if action=="HK_STAGING_DEPLOY": result.update({"deploy_record_schema_version":"2","deploy_record_id":"a"*64,"deploy_record_sha256":"b"*64,"candidate_contract_sha256":values["--candidate-contract-sha256"]})
         if action=="HK_STAGING_ROLLBACK": result.update({"source_deploy_task_id":values["--source-deploy-task-id"],"source_deploy_record_id":"a"*64,"source_deploy_record_sha256":"b"*64,"rollback_record_id":"c"*64,"rollback_record_sha256":"d"*64})
         return {"stdout":json.dumps(result,separators=(",",":"))}
 
@@ -65,6 +80,17 @@ def _image(value, name):
     if not isinstance(value,str) or not IMAGE.fullmatch(value): raise Reject(name+" rejected")
     return value
 
+def _digest(value):
+    """The candidate's content address: 64 lowercase hex, and nothing else.
+
+    A malformed digest is refused here rather than forwarded, because a value the
+    executor cannot load a fact for would otherwise become a deployment attempt whose
+    only outcome is a rejection from the far end of a subprocess.
+    """
+    if not isinstance(value,str) or not re.fullmatch(r"[0-9a-f]{64}",value): raise Reject("candidate_contract_sha256 rejected")
+    return value
+
+
 def _package(value):
     """The sealed package content address; a registry digest is not one.
 
@@ -73,6 +99,23 @@ def _package(value):
     never satisfiable. The package SHA256 is the delivery identity instead.
     """
     if not isinstance(value,str) or not re.fullmatch(r"[0-9a-f]{64}",value): raise Reject("candidate_package_sha256 rejected")
+    return value
+
+def _identity(value):
+    """The installation the executor says it ran under: the block, or a refusal.
+
+    The host derives this from an installation fact it has already verified, so it is
+    relayed rather than re-derived -- but the shape is checked here, because a malformed
+    block that reached the Evidence would be a claim the Command Center cannot evaluate.
+    Every field's form is required, nothing is repaired, and an unknown or missing key is a
+    refusal rather than a default.
+    """
+    if not isinstance(value,dict) or set(value)!=set(IDENTITY_FIELDS): raise Reject("installed_identity rejected")
+    if value["schema"]!=INSTALLED_IDENTITY_SCHEMA: raise Reject("installed_identity rejected")
+    if not INSTALLATION_ID.fullmatch(value["installation_id"]): raise Reject("installed_identity rejected")
+    if not COMMIT.fullmatch(value["source_commit"]): raise Reject("installed_identity rejected")
+    if not LAUNCHER_VERSION.fullmatch(value["launcher_version"]): raise Reject("installed_identity rejected")
+    if not SHA256.fullmatch(value["launcher_sha256"]) or not SHA256.fullmatch(value["runtime_digest"]): raise Reject("installed_identity rejected")
     return value
 
 def _exact(params, required):
@@ -85,8 +128,8 @@ def validate(action, params):
         p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id"))
         return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id")}
     if action == "HK_STAGING_DEPLOY":
-        p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","approval_id"))
-        return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id"),"canary_evidence_id":_id(p["canary_evidence_id"],"canary_evidence_id"),"approval_id":_id(p["approval_id"],"approval_id")}
+        p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","approval_id","candidate_contract_sha256"))
+        return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id"),"canary_evidence_id":_id(p["canary_evidence_id"],"canary_evidence_id"),"approval_id":_id(p["approval_id"],"approval_id"),"candidate_contract_sha256":_digest(p["candidate_contract_sha256"])}
     if action == "HK_STAGING_VERIFY":
         p=_exact(params,("release_id","candidate_image_id","expected_current_image_id"))
         return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id")}
@@ -104,7 +147,7 @@ def argv(action, params, task_binding=None):
         _package(p["candidate_package_sha256"])
     name={"HK_STAGING_CANARY":"canary","HK_STAGING_DEPLOY":"deploy","HK_STAGING_VERIFY":"verify","HK_STAGING_ROLLBACK":"rollback"}[action]
     out=[EXECUTOR_PATH,name,"--release-id",p["release_id"]]
-    for key in ("candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","source_deploy_task_id","approval_id"):
+    for key in ("candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","source_deploy_task_id","approval_id","candidate_contract_sha256"):
         if key in p: out += ["--"+key.replace("_","-"),p[key]]
     if action in ("HK_STAGING_DEPLOY","HK_STAGING_ROLLBACK"):
         b=_binding(task_binding)
@@ -125,16 +168,23 @@ def parse_executor_output(raw, action, params):
         raise Reject("executor stdout rejected", stdout=raw, stage="parser")
     try: out=json.loads(raw)
     except (TypeError, ValueError) as exc: raise Reject("executor json rejected", stdout=raw, stage="parser") from exc
-    required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results"}
-    if action=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256"}
+    required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results","installed_identity"}
+    if action=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256","candidate_contract_sha256"}
     if action=="HK_STAGING_ROLLBACK": required |= {"source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256"}
-    if not isinstance(out,dict) or set(out) != required: raise Reject("executor result schema rejected", stdout=raw, stage="parser")
-    if out["schema_version"] != "1" or out["action_id"] != action or out["status"] != "SUCCESS": raise Reject("executor result rejected", stdout=raw, stage="parser")
+    # A refusal is a wire form the executor emits on purpose: it carries no installation
+    # block, because an action that failed may never have got as far as knowing what it was
+    # installed as.  Classifying it here, before the shape check, keeps "the executor
+    # refused" from being reported as "the executor's output was malformed".
+    if not isinstance(out,dict): raise Reject("executor result schema rejected", stdout=raw, stage="parser")
+    if out.get("status") != "SUCCESS": raise Reject("executor result rejected", stdout=raw, stage="parser")
+    if set(out) != required: raise Reject("executor result schema rejected", stdout=raw, stage="parser")
+    if out["schema_version"] != "1" or out["action_id"] != action: raise Reject("executor result rejected", stdout=raw, stage="parser")
     if not isinstance(out["executor_version"],str) or not out["executor_version"]: raise Reject("executor version rejected", stdout=raw, stage="parser")
     if not isinstance(out["result"],str) or not isinstance(out["gate_results"],dict): raise Reject("executor result rejected", stdout=raw, stage="parser")
+    _identity(out["installed_identity"])
     if action=="HK_STAGING_DEPLOY" and (out["result"]!="DEPLOY_OK" or out["deploy_record_schema_version"]!="2" or not SHA256.fullmatch(out["deploy_record_id"]) or not SHA256.fullmatch(out["deploy_record_sha256"])): raise Reject("executor record rejected", stdout=raw, stage="parser")
     if action=="HK_STAGING_ROLLBACK" and (out["result"]!="ROLLBACK_OK" or out["source_deploy_task_id"]!=params["source_deploy_task_id"] or any(not SHA256.fullmatch(out[x]) for x in ("source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256"))): raise Reject("executor rollback record rejected", stdout=raw, stage="parser")
-    correlation=("release_id","source_deploy_task_id") if action=="HK_STAGING_ROLLBACK" else ("release_id","candidate_image_id","expected_current_image_id")
+    correlation=("release_id","source_deploy_task_id") if action=="HK_STAGING_ROLLBACK" else (("release_id","candidate_image_id","expected_current_image_id","candidate_contract_sha256") if action=="HK_STAGING_DEPLOY" else ("release_id","candidate_image_id","expected_current_image_id"))
     for key in correlation:
         expected=params.get(key)
         if out.get(key) != expected: raise Reject("executor correlation rejected", stdout=raw, stage="parser")
@@ -181,6 +231,13 @@ def offline_tests():
         t=_base("HK_STAGING_ROLLBACK") if name=="ROLLBACK_IMAGE_OVERRIDE_REJECTED" else _base("HK_STAGING_CANARY"); t["parameters"][key]=value; reject(name,t)
     for name,action,key in (("DEPLOY_WITHOUT_APPROVAL_REJECTED","HK_STAGING_DEPLOY","approval_id"),("DEPLOY_WITHOUT_CANARY_EVIDENCE_REJECTED","HK_STAGING_DEPLOY","canary_evidence_id"),("ROLLBACK_WITHOUT_APPROVAL_REJECTED","HK_STAGING_ROLLBACK","approval_id"),("AI_SELF_APPROVAL_REJECTED","HK_STAGING_DEPLOY","approval_id")):
         t=_base(action); t["parameters"].pop(key); reject(name,t)
-    out["FAKE_EXECUTOR_CALLED"]="YES"; out["NEGATIVE_FAKE_EXECUTOR_CALLED"]="NO"; out["TEST_COUNT"]="21";out["PASS_COUNT"]="21";out["FAIL_COUNT"]="0";return out
+    class _MalformedIdentity:
+        def run(self,argv):
+            result=json.loads(fake.run(argv)["stdout"]); result["installed_identity"]={"schema":INSTALLED_IDENTITY_SCHEMA}
+            return {"stdout":json.dumps(result,separators=(",",":"))}
+    try: dispatch(_base("HK_STAGING_CANARY"),_MalformedIdentity())
+    except Reject: out["MALFORMED_INSTALLED_IDENTITY_REJECTED"]="REJECT"
+    else: raise AssertionError("MALFORMED_INSTALLED_IDENTITY_REJECTED")
+    out["FAKE_EXECUTOR_CALLED"]="YES"; out["NEGATIVE_FAKE_EXECUTOR_CALLED"]="NO"; out["TEST_COUNT"]="22";out["PASS_COUNT"]="22";out["FAIL_COUNT"]="0";return out
 if __name__=="__main__":
     for k,v in offline_tests().items(): print(k+"="+v)

@@ -1,0 +1,246 @@
+name: Command Center canonical provenance (isolated)
+on:
+  push:
+    branches: [cc/github-native-delivery-v1, cc/v1-finalization-20260914]
+    paths:
+      - 'control-plane/command-center-canonical-provenance-v1/**'
+      # The candidate the proof reads, the component whose digest it imports, and the
+      # installer whose gate consumes its verdict: a change on any side has to run this job,
+      # or the seam stops being a seam.
+      - 'control-plane/command-center-candidate-admission-v1/**'
+      - 'control-plane/boss-test-pr-live-integration-v1/**'
+      - 'hk-staging/install/**'
+      - 'hk-staging/source/executor/runtime/**'
+      - 'docs/canonical-baseline/**'
+      - '.github/workflows/command-center-canonical-provenance-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'control-plane/command-center-canonical-provenance-v1/**'
+      - 'control-plane/command-center-candidate-admission-v1/**'
+      - 'control-plane/boss-test-pr-live-integration-v1/**'
+      - 'hk-staging/install/**'
+      - 'hk-staging/source/executor/runtime/**'
+      - 'docs/canonical-baseline/**'
+      - '.github/workflows/command-center-canonical-provenance-v1.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cc-canonical-provenance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  isolated-canonical-provenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The credential stays configured, because a later step fetches the branch heads the
+          # proof reads and the only alternative is to put the token on a command line.  This
+          # workflow grants `contents: read`, so a credential that is persisted here cannot
+          # write anything -- which is what that setting was protecting.
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      # The verifier is standard-library only. This pin is the WP-5 installer suite's, which
+      # reads and signs an install fact and therefore needs the same cryptography the launcher
+      # uses.
+      - name: Install pinned test dependency
+        run: python -m pip install cryptography==46.0.0
+      - name: Check the canonical provenance manifest
+        working-directory: control-plane/command-center-canonical-provenance-v1
+        run: sha256sum -c SHA256SUMS
+      - name: Run the canonical provenance suite on Linux
+        working-directory: control-plane/command-center-canonical-provenance-v1
+        run: python -m unittest discover -s tests -v
+      - name: Run the built-in checks
+        working-directory: control-plane/command-center-canonical-provenance-v1
+        run: python command-center/go-canonical-provenance selftest --out "$RUNNER_TEMP/cc-canonical-provenance-selftest"
+      - name: Run the isolated verification and write summary.json
+        working-directory: control-plane/command-center-canonical-provenance-v1
+        run: python run_checks.py "$RUNNER_TEMP/cc-canonical-provenance-checks"
+      # The installer's gate is what makes the proof worth having. Its suite runs here because
+      # the proof and the gate are one seam, and a seam tested on one side only is a seam that
+      # can drift.
+      - name: Confirm the WP-5 installer suite still passes, with the gate in place
+        working-directory: control-plane/boss-test-pr-live-integration-v1/tests
+        run: python -m unittest test_hk_install_fact -q
+      - name: Confirm the candidate admission suite still passes
+        working-directory: control-plane/command-center-candidate-admission-v1
+        run: python run_checks.py "$RUNNER_TEMP/cc-candidate-admission-checks"
+      # The proof compares real commits, so it needs the ones a pull-request checkout does not
+      # carry: canonical main, and the commit the live Hong Kong runtime corresponds to. Both are
+      # branch heads of this repository, so one refspec gets them. Commits and trees only -- this
+      # repository holds ~1.7 GB of blobs and the verifier reads none of them out of the object
+      # store -- and no --depth, because the ancestry question is the point and main's whole
+      # history is 251 commits. Untested against a branch that is deleted, not against a commit
+      # that is unreachable: if the live runtime's branch ever goes away, this job should say so
+      # rather than quietly prove less.
+      - name: Fetch the branch heads the proof reads
+        run: |
+          if [ -f .git/shallow ]; then unshallow=--unshallow; else unshallow=; fi
+          git fetch --no-tags --filter=blob:none $unshallow origin "+refs/heads/*:refs/remotes/origin/*"
+
+      # The real proof, on the real repository, against real commits: the published candidate,
+      # a file that is its blob, a file that is not, and the commit the live Hong Kong runtime
+      # corresponds to. A step that only exercised the synthetic fixtures would not have found
+      # either of the two adapter defects the false-drift sample found (CCV1-88).
+      - name: Prove the verifier on the real repository
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import subprocess
+          import sys
+
+          repo = pathlib.Path('.').resolve()
+          component = repo / 'control-plane' / 'command-center-canonical-provenance-v1'
+          cli = component / 'command-center' / 'go-canonical-provenance'
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'cc-canonical-provenance-real'
+          sys.path.insert(0, str(component))
+          import canonical_provenance as P
+          from git_repository import GitRepository
+
+          failures = []
+
+
+          def check(name, condition, detail=''):
+              if condition:
+                  print('PASS  %s' % name, flush=True)
+              else:
+                  failures.append(name)
+                  print('FAIL  %s %s' % (name, detail), flush=True)
+
+
+          repository = GitRepository(repo)
+          main = repository.resolve('origin/main')
+          check('origin/main_resolves', bool(main), main)
+          check('the_live_hk_commit_is_a_real_commit',
+                repository.has_commit('9b93274569ed0aaff75f43f2e330aef8acb14335'))
+
+          # Both are inputs to every check below, and the fetch step above is what provides them.
+          # Stopping here by name is the difference between a red that says what is missing and a
+          # traceback from plumbing that was handed a commit it cannot use -- which is what this
+          # step did on its first run in CI, before the fetch existed.
+          if failures:
+              print('E2E_FAILED: %s' % ', '.join(failures), flush=True)
+              sys.exit(1)
+
+          # 1. the candidate the repository publishes, with the signed result of the same build
+          pointer = json.loads((repo / 'docs' / 'canonical-baseline'
+                                / 'CURRENT_CANDIDATE.json').read_text(encoding='utf-8'))
+          evidence_dir = (repo / 'control-plane' / 'command-center-candidate-admission-v1'
+                          / 'tests' / 'fixtures' / 'real' / 'evidence')
+          evidence = json.loads(sorted(evidence_dir.glob('*.json'))[0]
+                                .read_text(encoding='utf-8'))
+          verdict = P.prove_candidate(repository, pointer['release_candidate_v1'], evidence)
+          check('the_published_candidate_proves_out', verdict['verdict'] == 'PASS',
+                verdict['refusal'])
+          check('and_it_proves_against_the_commit_it_names',
+                verdict['authorized_deploy_commit']
+                == pointer['release_candidate_v1']['source_commit'])
+
+          # 2. the false drift: a file on disk that IS the commit's blob, whatever its line
+          #    endings, must not be reported as drift
+          clean = 'docs/canonical-baseline/CURRENT_CANDIDATE.json'
+          clean_verdict = P.prove_checkout(repository, main, [(clean, repo / clean)])
+          check('a_file_that_is_its_blob_is_not_drift', clean_verdict['verdict'] == 'PASS',
+                clean_verdict['refusal'])
+
+          # 3. the real drift: bytes that are not the commit's blob are named
+          dirty = repo / 'application' / 'Dockerfile'
+          if dirty.is_file():
+              original = dirty.read_bytes()
+              try:
+                  dirty.write_bytes(original + b'# a byte that the commit does not hold\n')
+                  dirty_verdict = P.prove_checkout(
+                      repository, main, [('application/Dockerfile', dirty)])
+                  check('a_changed_byte_is_reported',
+                        P.refusal_code(dirty_verdict) == 'E_BLOB_DRIFT',
+                        dirty_verdict['refusal'])
+                  check('and_the_file_is_named',
+                        P.drift_paths(dirty_verdict) == ['application/Dockerfile'],
+                        P.drift_paths(dirty_verdict))
+              finally:
+                  dirty.write_bytes(original)
+          else:
+              check('the_application_tree_is_in_this_checkout', False, 'sparse checkout?')
+
+          # 4. the live Hong Kong runtime, against canonical main
+          #
+          # `modules` is the runtime module list an install fact records, so it is read out of
+          # the live commit rather than passed empty: the verifier refuses an empty list by
+          # contract -- an empty module list is a caller that has not said what to prove -- and
+          # a fabricated entry would be indistinguishable from a real one on the day step 5 is
+          # evaluated instead of being NOT_EVALUATED behind step 1.
+          #
+          # The names come from the set this line declares and the bytes from the live commit,
+          # so the list is their intersection. It has to be: the live commit predates the four
+          # modules WP-5 added, and an install fact for a host cannot name a module that was
+          # never installed there. Building the list from this line's nine names alone would
+          # assert that the live commit holds bytes it does not have.
+          live_commit = '9b93274569ed0aaff75f43f2e330aef8acb14335'
+          runtime_prefix = 'hk-staging/source/executor/runtime'
+          sys.path.insert(0, str(repo / runtime_prefix))
+          import install_fact as live_runtime
+          live_modules = []
+          for module_name in live_runtime.RUNTIME_MODULES:
+              blob = repository.object_at(live_commit,
+                                          '%s/%s.py' % (runtime_prefix, module_name))
+              if blob is None:
+                  continue
+              live_modules.append({'name': module_name,
+                                   'sha256': hashlib.sha256(blob[1]).hexdigest(),
+                                   'version': live_runtime.declared_version(blob[1])})
+          check('the_live_commit_holds_modules_an_installation_could_have_recorded',
+                bool(live_modules), live_modules)
+          live = P.prove_installation(
+              repository, pointer['release_candidate_v1']['source_commit'],
+              {'source_commit': live_commit},
+              repository.tree_id(live_commit, ''), live_modules,
+              module_prefix=runtime_prefix)
+          check('the_live_runtime_commit_is_not_canonical',
+                P.refusal_code(live) == 'E_COMMIT_NOT_CANONICAL', live['refusal'])
+          check('and_it_is_provenance_broken_rather_than_unresolvable',
+                live['refusal']['condition'] == 'PROVENANCE_BROKEN', live['refusal'])
+          # Step 1 refusing is not the whole claim: this is the post-deploy composition, and
+          # the host being a different commit from the authorized one is its own row.
+          live_steps = {step['step']: step['state'] for step in live['steps']}
+          check('and_the_host_is_not_the_commit_that_was_authorized',
+                live_steps.get(P.STEP_INSTALLED_IDENTITY_IS_THE_AUTHORIZED_COMMIT) == P.FAIL,
+                live_steps)
+
+          # 5. the CLI writes the verdict the contract describes
+          proc = subprocess.run(
+              [sys.executable, str(cli), 'candidate', '--repository', str(repo),
+               '--candidate', str(repo / 'docs' / 'canonical-baseline'
+                                  / 'CURRENT_CANDIDATE.json'),
+               '--test-pr-evidence', str(sorted(evidence_dir.glob('*.json'))[0]),
+               '--out', str(out), '--expect', 'ANY'],
+              cwd=str(repo), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          check('the_cli_runs_and_writes_a_verdict', proc.returncode == 0, proc.stdout[-800:])
+          document = json.loads((out / 'CANONICAL_PROVENANCE.json').read_text(encoding='utf-8'))
+          check('the_verdict_carries_all_six_steps_in_order',
+                [step['step'] for step in document['steps']] == list(P.STEPS))
+          check('the_verdict_grants_nothing',
+                sorted(key for key, value in document['authority'].items() if value is True)
+                == ['may_read_the_candidate_and_its_evidence', 'may_read_the_repository'])
+
+          if failures:
+              print('E2E_FAILED: %s' % ', '.join(failures), flush=True)
+              sys.exit(1)
+          print('E2E PASS', flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cc-canonical-provenance-checks
+          path: |
+            ${{ runner.temp }}/cc-canonical-provenance-checks
+            ${{ runner.temp }}/cc-canonical-provenance-real
+          if-no-files-found: warn

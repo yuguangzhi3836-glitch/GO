@@ -4,8 +4,15 @@ The agent may fetch source metadata, but this module independently verifies
 the signed task/evidence and derives all rollback targets from an immutable
 DEPLOY_RECORD_V2.  Production uses only fixed filesystem paths and fixed
 Docker compose argv; tests inject a runner and paths.
+
+A rollback recreates the same eight business containers as a deployment, so it
+recreates them the same way: through `media_mount.recreate()`, which adds the fixed
+media bind mount to the command and then checks the containers that are actually
+running.  `MEDIA_MOUNT` is part of this rollback's result for the same reason it is
+part of a deployment's -- a rollback that left the media directory unmounted is not a
+rollback that succeeded.
 """
-import base64, hashlib, json, os, pathlib, re, tempfile
+import base64, hashlib, importlib.util, json, os, pathlib, re, stat, tempfile
 from cryptography.hazmat.primitives import serialization
 
 PROJECT="go-822-staging"
@@ -19,6 +26,12 @@ ROLLBACK_RECORD_DIR="/var/lib/go-hk-deployctl/rollback-records"
 SERVICES=("api","recovery-worker","outbox-worker","mobile-push-receipt-worker","reconciliation-worker","mobile-push-worker","mobile-engagement-worker","judgment-worker")
 PROTECTED=("redis","caddy")
 HEX=re.compile(r"^[0-9a-f]{64}$")
+
+# The rollback recreates the same eight business containers as a deployment, so it goes
+# through the same shared command builder and is pinned to the same definition of the
+# fixed media mount -- pinned here as well as in the deploy runtime, so a swap of that
+# module is caught by both doors rather than by one.
+_MEDIA_MOUNT_SHA256="92af6bfc444510f44819719a48a6309e1712393916e69a4fc95f9037914fd059"
 
 class Reject(ValueError): pass
 
@@ -81,6 +94,26 @@ def resolve_source(release,source_task_id,rollback_task_id, *, handoff_dir=HANDO
     if not found: raise Reject("lineage")
     return task,evidence,record,targets
 
+def _load_media_mount():
+    """Load the fixed media mount beside this file, after checking its bytes.
+
+    The definition of the mount, the command that carries it and the check that reads it
+    back all live in that one module, so this door cannot disagree with the deploy door
+    about what the media directory is or where it belongs.
+    """
+    directory=os.path.dirname(os.path.abspath(__file__))
+    path=os.path.join(directory,"media_mount.py")
+    try:
+        if not stat.S_ISREG(os.lstat(path).st_mode): raise ValueError("media mount path")
+        with open(path,"rb") as handle:
+            if hashlib.sha256(handle.read()).hexdigest()!=_MEDIA_MOUNT_SHA256: raise ValueError("media mount integrity")
+    except (OSError,ValueError) as exc:
+        raise Reject("E_ROLLBACK_MEDIA_MOUNT_INTEGRITY") from exc
+    spec=importlib.util.spec_from_file_location("_go_hk_media_mount",path)
+    if spec is None or spec.loader is None: raise Reject("E_ROLLBACK_MEDIA_MOUNT_INTEGRITY")
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
 def _run(runner,argv):
     out=runner.run(argv)
     if getattr(out,"returncode",None)!=0: raise Reject("docker read")
@@ -138,9 +171,12 @@ def run_rollback(release,source_task_id,binding,runner,collector, *, handoff_dir
     source_sha=hashlib.sha256((pathlib.Path(deploy_dir)/("%s.json" % source_record["record_id"])).read_bytes()).hexdigest()
     record={"schema_version":"1","task_id":binding["task_id"],"nonce":binding["nonce"],"authority":binding["authority"],"canonical_task_sha256":binding["canonical_sha256"],"release_id":release,"source_deploy_task_id":source_task_id,"source_deploy_record_id":source_record["record_id"],"source_deploy_record_sha256":source_sha,"current_targets":current,"target_images":[{"service":x["service"],"image_id":x["image_id"],"repo_digest":x.get("repo_digest")} for x in targets],"protected_non_target_inventory":protected}
     rid,rsha=_atomic_record(record,rollback_dir)
-    # Fixed argv, exactly eight services; no pull/migration/non-target path exists.
-    argv=["/usr/bin/docker","compose","--env-file",ENV_FILE,"-p",PROJECT,"-f",COMPOSE,"up","-d","--no-deps","--force-recreate",*SERVICES]
-    _run(runner,argv)
+    # Fixed argv, exactly eight services; no pull/migration/non-target path exists.  The
+    # command and the fixed media bind mount come from the shared builder, so a rollback
+    # cannot recreate the containers without mounting the media directory -- and the
+    # check reads the containers that are running, not the command that was built.
+    media=_load_media_mount()
+    media_result=media.recreate(runner,lambda argv:_run(runner,argv))
     after=_inventory(runner,SERVICES); after_protected=_inventory(runner,PROTECTED)
     if any(x["running"] is not True or x["status"]!="running" for x in after) or [x["container_id"] for x in after_protected] != [x["container_id"] for x in protected]: raise Reject("postcheck")
-    return {"rollback_source":"PASS","lineage":"PASS","target_derivation":"PASS","fresh_drift":"PASS","rollback_record":"PASS","fixed_scope":"PASS","postcheck":"PASS","source_deploy_task_id":source_task_id,"source_deploy_record_id":source_record["record_id"],"source_deploy_record_sha256":source_sha,"rollback_record_id":rid,"rollback_record_sha256":rsha}
+    return {"rollback_source":"PASS","lineage":"PASS","target_derivation":"PASS","fresh_drift":"PASS","rollback_record":"PASS","fixed_scope":"PASS","postcheck":"PASS",**media_result,"source_deploy_task_id":source_task_id,"source_deploy_record_id":source_record["record_id"],"source_deploy_record_sha256":source_sha,"rollback_record_id":rid,"rollback_record_sha256":rsha}

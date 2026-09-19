@@ -150,6 +150,7 @@ ADVISORY_GATES = ()
 PLAN_FIELDS = ("schema_version", "plan_id", "environment", "action_id", "candidate",
                "expected_current_image_id", "target_services", "protected_non_targets",
                "migration", "production", "automatic_rollback",
+               "candidate_contract_sha256",
                "test_pr_task_sha256", "test_pr_evidence_sha256",
                "canary_task_sha256", "canary_evidence_sha256", "preflight_task_sha256",
                "preflight_evidence_sha256")

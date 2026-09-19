@@ -43,10 +43,15 @@ def audit(event, args):
 sys.addaudithook(audit)
 sys.path.insert(0, str(ROOT / "tests"))
 sys.path.insert(0, str(ROOT / "command-center"))
+# Both modules run under the same isolation: the admission suite, and the WP-1
+# suite for the converged candidate fact and its legacy READ_OLD compatibility.
 import test_candidate_admission as t  # noqa: E402
+import test_candidate_fact as f  # noqa: E402
 
 log = io.StringIO()
-suite = unittest.defaultTestLoader.loadTestsFromModule(t)
+_loader = unittest.TestLoader()
+suite = unittest.TestSuite([_loader.loadTestsFromModule(t),
+                            _loader.loadTestsFromModule(f)])
 result = unittest.TextTestRunner(stream=log, verbosity=2).run(suite)
 
 admission = t.A
@@ -84,6 +89,15 @@ summary = {
     "constants_are_read_from_the_live_control_plane": True,
     "the_staged_builder_dockerfile_digest_is_verified_from_the_repository": True,
     "the_admission_never_writes": True,
+    # WP-1: one candidate identity, one digest implementation, and a legacy
+    # contract that can be read but not written.
+    "one_candidate_identity_is_the_converged_fact": True,
+    "the_candidate_digest_has_exactly_one_implementation": True,
+    "the_candidate_digest_is_independent_of_key_order_and_formatting": True,
+    "a_candidate_declaring_the_prohibited_condition_has_no_digest": True,
+    "legacy_contracts_are_read_only": True,
+    "legacy_mapping_gaps_are_reported_not_papered_over": True,
+    "a_legacy_digest_cannot_masquerade_as_a_converged_one": True,
     "admission_holds_private_key": "NO",
     "admission_signs_anything": "NO",
     "admission_creates_or_publishes_a_task": "NO",

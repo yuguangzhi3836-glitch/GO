@@ -5,7 +5,7 @@ from . import transport as t
 
 IMAGE="sha256:"+"3a109d70e1e515173b89e0b510c5cbc5454d6b405760ce0ba69ec5811f314c88"
 PARAMS={"release_id":"r31-5-baseline-20260906","candidate_image_id":IMAGE,"expected_current_image_id":IMAGE}
-BASE={"schema_version":"1","executor_version":"0.1.3-readonly-verify-runtime","action_id":"HK_STAGING_VERIFY","status":"SUCCESS","release_id":PARAMS["release_id"],"candidate_image_id":IMAGE,"expected_current_image_id":IMAGE,"result":"VERIFY_OK","gate_results":{"all":"PASS"}}
+BASE={"schema_version":"1","executor_version":"0.1.3-readonly-verify-runtime","action_id":"HK_STAGING_VERIFY","status":"SUCCESS","release_id":PARAMS["release_id"],"candidate_image_id":IMAGE,"expected_current_image_id":IMAGE,"result":"VERIFY_OK","gate_results":{"all":"PASS"},"installed_identity":{"schema":"go.hk-installed-identity.v1","installation_id":"install-fixture","source_commit":"f"*40,"launcher_version":"0.7.0-environment-lock","launcher_sha256":"e"*64,"runtime_digest":"d"*64}}
 
 def raw(): return json.dumps(BASE,separators=(",",":"))
 def accepted(value):

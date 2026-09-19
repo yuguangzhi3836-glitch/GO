@@ -56,6 +56,12 @@ import pathlib
 import re
 import sys
 
+# The converged candidate fact authority lives at this component's root so that the
+# canonical byte form and `candidate_contract_sha256` have exactly one implementation
+# (CCV1-82 CONTRACT SPEC section 5).  This component is that authority's owner.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+import candidate_fact  # noqa: E402  (imported after the component-root bootstrap)
+
 COMPONENT = "command-center-candidate-admission-v1"
 CONTRACT_FILE = "contracts/release_candidate_v1.schema.json"
 SCHEMA = "go.release-candidate.v1"
@@ -94,6 +100,17 @@ BUILDER_IMAGE_ID = "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452
 # The live deploy contract forbids migration outright. A candidate that needs one
 # is refused here, by name, instead of being discovered by the executor.
 MIGRATION_REQUIRED = False
+# The two stable public migration refusal codes (CCV1-82 section 10, CCV1-84 WP-2).
+# The literals are owned by the candidate fact authority; a test pins them equal to
+# the ones the plan derivation uses, so the two layers cannot drift apart while
+# still refusing to import each other's component.
+MIGRATION_REQUIRED_REASON = "E_DATABASE_MIGRATION_REQUIRED"
+MIGRATION_GRAPH_MISMATCH_REASON = "E_DATABASE_MIGRATION_GRAPH_MISMATCH"
+# Read old, write new: the tokens this component emitted before the convergence.
+LEGACY_MIGRATION_REASON_ALIAS = {
+    "candidate_migration_required": MIGRATION_REQUIRED_REASON,
+    "candidate_migration_head": MIGRATION_GRAPH_MISMATCH_REASON,
+}
 
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 SHA64 = re.compile(r"^[0-9a-f]{64}$")
@@ -108,16 +125,14 @@ IMAGE_TAG = re.compile(r"^[a-z0-9][a-z0-9._/-]{0,127}:[A-Za-z0-9][A-Za-z0-9._-]{
 MUTABLE_SOURCE = re.compile(r"(^refs/)|(^origin/)|(^HEAD$)|(^latest$)|(^main$)|(^master$)"
                             r"|(/)|(^[0-9a-f]{7,39}$)")
 
-RELEASE_CANDIDATE_FIELDS = ("schema", "candidate_id", "source_repository", "source_commit",
-                            "application_tree", "source_fingerprint", "migration_head",
-                            "migration_required", "build_definition", "artifact_digest",
-                            "required_services", "test_result_identity", "rollback_relation")
+# The field set is owned by the candidate fact authority; this component follows it.
+RELEASE_CANDIDATE_FIELDS = candidate_fact.CONVERGED_REQUIRED_FIELDS
 # OPTIONAL_FIELDS are declared by a candidate that has more to say about its
 # artifact.  `artifact_package` is where a candidate records whether the image it
 # was built as still exists as a sealed, deliverable package.  It is optional so
 # that a candidate written before the store existed stays readable, and its absence
 # is reported as NOT_PROVEN rather than guessed at.
-OPTIONAL_FIELDS = ("artifact_package",)
+OPTIONAL_FIELDS = candidate_fact.CONVERGED_OPTIONAL_FIELDS
 ARTIFACT_PACKAGE_FIELDS = ("durability", "package_sha256")
 ARTIFACT_DURABILITY_VALUES = ("PROVEN", "NOT_PROVEN")
 BUILD_DEFINITION_FIELDS = ("profile", "dockerfile", "dockerfile_sha256", "executor_version",
@@ -154,11 +169,24 @@ class Refuse(Exception):
 # primitives
 # --------------------------------------------------------------------------- #
 def canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    """The canonical byte form.  The rule is owned by `candidate_fact`."""
+    return candidate_fact.canonical_bytes(value)
 
 
 def digest(value):
     return hashlib.sha256(canonical(value)).hexdigest()
+
+
+def candidate_fact_of(block):
+    """The converged candidate fact inside an admission document, or None.
+
+    Only the fields the converged fact is allowed to carry are taken, so an
+    admission document can never leak a non-candidate field into the digest.
+    """
+    if not isinstance(block, dict):
+        return None
+    names = tuple(RELEASE_CANDIDATE_FIELDS) + tuple(OPTIONAL_FIELDS)
+    return {name: block[name] for name in names if name in block}
 
 
 def iso(value):
@@ -343,15 +371,34 @@ def check_source(adm, block, document):
 
 
 def check_migration(adm, block):
+    """The V1 migration refusal, in the two stable public codes.
+
+    CCV1 V1 does not execute database migrations, so this is where a candidate that
+    would need one is refused first -- at the cheapest point, before any plan is
+    derived and long before an executor could be asked.  The refusal is one of two
+    codes and never a third:
+
+    * `migration_head` absent or not a usable head token: the candidate does not
+      declare which migration graph it is on, so its graph cannot be shown to be
+      the one the environment supports -> E_DATABASE_MIGRATION_GRAPH_MISMATCH.
+      The field exists in the candidate contract precisely to make that claim, so
+      failing to make it is a graph failure, not merely a missing field.
+    * `migration_required` absent, not a boolean, or not false: the candidate
+      declares the prohibited condition -> E_DATABASE_MIGRATION_REQUIRED.
+
+    The detail that distinguishes the two -- which field, what value was seen, what
+    was expected -- stays in `observed`, so convergence costs no diagnosability.
+    """
     head = block.get("migration_head")
     if not isinstance(head, str) or MIGRATION_HEAD.fullmatch(head) is None:
-        return adm.fails("migration", "candidate_migration_head", observed={"migration_head": head})
+        return adm.fails("migration", MIGRATION_GRAPH_MISMATCH_REASON,
+                         observed={"migration_head": head})
     obliged = block.get("migration_required")
     if not isinstance(obliged, bool):
-        return adm.fails("migration", "candidate_migration_required",
+        return adm.fails("migration", MIGRATION_REQUIRED_REASON,
                          observed={"migration_required": obliged})
     if obliged is not MIGRATION_REQUIRED:
-        return adm.fails("migration", "candidate_migration_required",
+        return adm.fails("migration", MIGRATION_REQUIRED_REASON,
                          observed={"migration_required": obliged},
                          expected={"migration_required": MIGRATION_REQUIRED})
     return adm.passes("migration", observed={"migration_head": head, "migration_required": obliged})
@@ -700,6 +747,19 @@ def admit(contract_path, candidate_path, evidence_path=None, plan_path=None,
         candidate = {name: block.get(name) for name in RELEASE_CANDIDATE_FIELDS}
         if isinstance(block.get("source_commit"), str):
             candidate["source_commit"] = block["source_commit"]
+
+    # The cross-component candidate digest.  It exists only for a candidate this
+    # component accepted: a refused candidate has no identity to agree on, and a
+    # candidate that declares the prohibited migration condition has no converged
+    # form at all, so no digest is produced for either.
+    candidate_contract_sha256 = None
+    if verdict == ACCEPT:
+        fact = candidate_fact_of(block)
+        if fact is not None:
+            try:
+                candidate_contract_sha256 = candidate_fact.candidate_contract_sha256(fact)
+            except candidate_fact.CandidateFactError:
+                candidate_contract_sha256 = None
     return {
         "schema_version": "1",
         "contract": CONTRACT_NAME,
@@ -749,6 +809,10 @@ def admit(contract_path, candidate_path, evidence_path=None, plan_path=None,
         },
         "refusal_reasons": list(adm.reasons),
         "release_candidate": candidate,
+        # The converged candidate digest: sha256 over the canonical byte form of the
+        # converged candidate fact, and nothing else.  None means "no digest exists",
+        # never "the digest is unknown but probably fine".
+        "candidate_contract_sha256": candidate_contract_sha256,
         "checks": adm.checks,
         "authority_boundary": dict(AUTHORITY_BOUNDARY),
         "not_established_by_this_component": [

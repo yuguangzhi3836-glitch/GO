@@ -56,6 +56,11 @@ direct_tokens, argument_tokens = t.bridge_refusal_tokens()
 bridge_tokens = sorted(direct_tokens | argument_tokens)
 unclassified = sorted(token for token in bridge_tokens
                       if vocabulary.classify(token) == "UNCLASSIFIED_REJECT")
+# The third call shape: a stable code written once as a module constant and raised by
+# name.  Literal patterns cannot see those, so they are extracted and classified too.
+named_tokens = sorted(t.bridge_named_refusal_tokens())
+named_unclassified = sorted(token for token in named_tokens
+                            if vocabulary.classify(token) == "UNCLASSIFIED_REJECT")
 
 summary = {
     "schema_version": "1",
@@ -77,7 +82,9 @@ summary = {
     "bridge_refusal_tokens_via_the_reason_argument": len(argument_tokens),
     "bridge_refusal_call_shapes_scanned": 2,
     "bridge_refusal_tokens_unclassified": unclassified,
-    "every_bridge_refusal_is_classified": unclassified == [],
+    "bridge_named_refusal_tokens": named_tokens,
+    "bridge_named_refusals_unclassified": named_unclassified,
+    "every_bridge_refusal_is_classified": unclassified == [] and named_unclassified == [],
     "unknown_token_preserved_as": "UNCLASSIFIED_REJECT",
     "duplicate_and_replay_have_their_own_kinds": True,
     "acceptance_requires_proof": "binding.proof_required is true for REQUEST_VALIDATED",
