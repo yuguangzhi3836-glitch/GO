@@ -67,6 +67,27 @@ def bridge_refusal_tokens():
     return direct, passed
 
 
+# A stable refusal code is written once as a module constant and raised by name, so
+# neither literal pattern above can see it.  `Reject('literal')` also stays lowercase
+# in those patterns, which would hide an ``E_...`` code even when it is a literal.
+# Both shapes matter for the same reason: an unclassified refusal is reported to a
+# Boss as UNCLASSIFIED_REJECT, and nothing else would catch the gap.
+NAMED_CONSTANT = re.compile(r"^([A-Z][A-Z0-9_]*) = '([^']+)'$", re.M)
+NAMED_RAISE = re.compile(r"Reject\(\s*([A-Z][A-Z0-9_]*)\s*\)")
+
+
+def bridge_named_refusal_tokens():
+    """Refusal codes the Bridge raises through a named module constant."""
+    found = set()
+    for path in BRIDGE_SOURCES:
+        text = path.read_text(encoding="utf-8")
+        values = dict(NAMED_CONSTANT.findall(text))
+        for name in NAMED_RAISE.findall(text):
+            if name in values:
+                found.add(values[name])
+    return found
+
+
 def request_body(request_id=REQUEST_ID, **over):
     value = {"schema_version": "1", "request_id": request_id, "action_id": "HK_STAGING_VERIFY",
              "environment": "HK-STAGING-01", "requested_at": "2026-09-14T11:00:00Z"}
@@ -184,6 +205,24 @@ class VocabularyCoverageTests(unittest.TestCase):
         missed = sorted(t for t in (passed - direct)
                         if self.vocabulary.classify(t) == "UNCLASSIFIED_REJECT")
         self.assertEqual(missed, [], "unclassified reason arguments: %s" % missed)
+
+    def test_refusals_raised_through_a_named_constant_are_classified_too(self):
+        """The third call shape, and the one a stable code is most likely to use.
+
+        Both converged migration codes are raised as module constants, so a scan that
+        only reads literals would prove nothing about them while still reporting that
+        every Bridge refusal is classified.
+        """
+        named = bridge_named_refusal_tokens()
+        self.assertTrue(named, "no named refusal constants were found to check")
+        unclassified = sorted(token for token in named
+                              if self.vocabulary.classify(token) == "UNCLASSIFIED_REJECT")
+        self.assertEqual(unclassified, [],
+                         "a named refusal constant is unclassified: %s" % unclassified)
+        for code in ("E_DATABASE_MIGRATION_REQUIRED",
+                     "E_DATABASE_MIGRATION_GRAPH_MISMATCH"):
+            self.assertIn(code, named, "%s is not raised as a named constant" % code)
+            self.assertEqual(self.vocabulary.classify(code), "NOT_ALLOWED")
 
     def test_every_class_maps_to_exactly_one_kind(self):
         schema = json.loads(CONTRACT.read_text(encoding="utf-8"))
@@ -846,6 +885,73 @@ class ActionRegistryTests(unittest.TestCase):
         self.assertEqual([a["kind"] for a in index["anomalies"]],
                          ["SUBMISSION_WITHOUT_REQUEST_FACT"])
         self.assertIn("request_action_unresolved", index["anomalies"][0]["detail"])
+
+
+class InjectedSourceTests(unittest.TestCase):
+    """The scan must be able to fail, or its all-clear means nothing.
+
+    A scan that read the wrong files, or matched the wrong shape, reports exactly the same
+    green as a repository that really has a token nobody classified. The only way to tell
+    those two apart is to put a token in front of it that is certainly unclassified and
+    require it to be seen -- once per call shape.
+
+    The sources are copied, not edited: this is a claim about the scan, and it must not
+    change the repository the scan is about.
+    """
+
+    LITERAL = "a_refusal_the_contract_never_classified"
+    CODE = "E_A_CODE_NOBODY_CLASSIFIED"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.vocabulary = X.Vocabulary(CONTRACT)
+
+    def _injected(self, extra):
+        """Point the scan at copies of the Bridge sources, with `extra` appended."""
+        scratch = tempfile.TemporaryDirectory(prefix="go-cc-visibility-")
+        self.addCleanup(scratch.cleanup)
+        root = pathlib.Path(scratch.name)
+        original = BRIDGE_SOURCES
+        self.addCleanup(lambda: globals().__setitem__("BRIDGE_SOURCES", original))
+        copies = []
+        for path in BRIDGE_SOURCES:
+            target = root / path.name
+            target.write_text(path.read_text(encoding="utf-8") + extra, encoding="utf-8")
+            copies.append(target)
+        globals()["BRIDGE_SOURCES"] = tuple(copies)
+
+    def test_the_scan_sees_an_injected_reject_literal(self):
+        self._injected("\nraise Reject('%s')\n" % self.LITERAL)
+        direct, _ = bridge_refusal_tokens()
+        self.assertIn(self.LITERAL, direct)
+        self.assertEqual(self.vocabulary.classify(self.LITERAL), "UNCLASSIFIED_REJECT")
+
+    def test_the_scan_sees_an_injected_reason_argument(self):
+        self._injected("\ndef check(plan, fields):\n    exact(plan, fields, '%s')\n"
+                       % self.LITERAL)
+        _, passed = bridge_refusal_tokens()
+        self.assertIn(self.LITERAL, passed)
+        self.assertEqual(self.vocabulary.classify(self.LITERAL), "UNCLASSIFIED_REJECT")
+
+    def test_the_scan_sees_an_injected_named_constant(self):
+        self._injected("\n%s = '%s'\nraise Reject(%s)\n" % (self.CODE, self.CODE, self.CODE))
+        named = bridge_named_refusal_tokens()
+        self.assertIn(self.CODE, named)
+        self.assertEqual(self.vocabulary.classify(self.CODE), "UNCLASSIFIED_REJECT")
+
+    def test_the_probe_does_not_touch_the_repository(self):
+        # Copies, not edits: the files the scan is about must be exactly as they were.
+        before = {path: hashlib.sha256(path.read_bytes()).hexdigest()
+                  for path in BRIDGE_SOURCES}
+        self._injected("\nraise Reject('%s')\n" % self.LITERAL)
+        after = {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in before}
+        self.assertEqual(before, after)
+
+    def test_the_scan_still_points_at_the_repository(self):
+        # If a probe's cleanup leaked, this test would be reading a temporary directory --
+        # and so would every test after it, while still reporting green.
+        for path in BRIDGE_SOURCES:
+            self.assertTrue(str(path).startswith(str(REPO)), path)
 
 
 if __name__ == "__main__":

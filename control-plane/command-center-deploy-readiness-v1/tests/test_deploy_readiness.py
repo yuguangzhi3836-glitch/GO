@@ -237,6 +237,9 @@ def plan_bundle(keys, **over):
             "target_services": list(R.SERVICES),
             "protected_non_targets": list(R.PROTECTED_NON_TARGETS),
             "migration": False, "production": False, "automatic_rollback": False,
+            # The candidate's content address, which the derivation states and the gate
+            # refuses to be without (CCV1-85).
+            "candidate_contract_sha256": "d0" * 32,
             "test_pr_task_sha256": R.digest(test_pr_task),
             "test_pr_evidence_sha256": R.digest(test_pr_evidence),
             "canary_task_sha256": R.digest(canary_task),

@@ -55,9 +55,62 @@ import go_deploy_request as deploy_gate
 from go_deploy_request import Reject
 
 ADMISSION_POINTER = 'docs/canonical-baseline/CURRENT_CANDIDATE.json'
+# The migration graph the environment currently supports is published by the
+# canonical runtime pointer -- not by the candidate and not by a Request.  V1
+# executes no migration, so "the graph the host is on" is the only graph a
+# deployable candidate may declare.  See CCV1-82 CONTRACT SPEC section 10.
+RUNTIME_POINTER = 'docs/canonical-baseline/CURRENT_HK_RUNTIME.json'
 ADMISSION_SCHEMA = 'go.depth48.current-candidate.v1'
 CANDIDATE_SCHEMA = 'go.release-candidate.v1'
 SEALED_ARTIFACT_SCHEMA = 'go.sealed-artifact.v1'
+
+# --------------------------------------------------------------------------- #
+# the V1 migration refusal (CCV1-84 WP-2)
+# --------------------------------------------------------------------------- #
+# Two stable public codes, and no third.  The literals are also declared by the
+# candidate admission component; a test reads both sources and pins them equal, so
+# the two layers cannot drift apart while still not importing each other's
+# component.
+E_DATABASE_MIGRATION_REQUIRED = 'E_DATABASE_MIGRATION_REQUIRED'
+E_DATABASE_MIGRATION_GRAPH_MISMATCH = 'E_DATABASE_MIGRATION_GRAPH_MISMATCH'
+
+# Read old, write new: the token this module raised before the convergence.
+LEGACY_MIGRATION_REASON_ALIAS = {
+    'migration_required_not_supported': E_DATABASE_MIGRATION_REQUIRED,
+}
+
+# The plan state a migration refusal leaves the derivation in (CONTRACT SPEC 3.2).
+# Both codes land in the same state, because from the plan's point of view the two
+# are the same outcome -- there is no executable DEPLOY -- while the *reason* stays
+# distinct, so the refusal is still diagnosable from the fact alone.
+PLAN_STATE_DERIVABLE = 'DERIVABLE'
+PLAN_STATE_DATABASE_MIGRATION_REFUSED = 'REFUSED_DATABASE_MIGRATION_REQUIRED'
+PLAN_STATE_BY_MIGRATION_REFUSAL = {
+    E_DATABASE_MIGRATION_REQUIRED: PLAN_STATE_DATABASE_MIGRATION_REFUSED,
+    E_DATABASE_MIGRATION_GRAPH_MISMATCH: PLAN_STATE_DATABASE_MIGRATION_REFUSED,
+}
+
+
+def migration_refusal_plan_state(reason):
+    """The plan state a migration refusal leaves behind, or None otherwise."""
+    return PLAN_STATE_BY_MIGRATION_REFUSAL.get(reason)
+
+
+def environment_migration_head(pointer):
+    """The migration graph the environment supports, out of the canonical pointer.
+
+    Returns the head a candidate's declaration is compared against, or raises
+    `E_DATABASE_MIGRATION_GRAPH_MISMATCH`.  Raising rather than returning None is
+    deliberate: if the environment's own graph cannot be established then a
+    candidate's graph cannot be shown to be it, and "I could not tell" must not be
+    rounded up to "they agree" at the one gate whose job is to refuse that.
+    """
+    database = pointer.get('database') if isinstance(pointer, dict) else None
+    head = database.get('alembic_head') if isinstance(database, dict) else None
+    if not isinstance(head, str) or not head:
+        raise Reject(E_DATABASE_MIGRATION_GRAPH_MISMATCH)
+    return head
+
 
 def canonical(value): return deploy_gate.canonical(value)
 
@@ -71,6 +124,25 @@ def admission_block(pointer):
     if not isinstance(block,dict) or block.get('schema')!=CANDIDATE_SCHEMA:
         raise Reject('release_candidate_missing')
     return block
+
+def admission_digest(pointer):
+    """The converged candidate digest the admission record publishes.
+
+    The Command Center does not recompute this value: the digest has one implementation
+    and it belongs to the candidate admission component, so the pointer is the handoff
+    between them.  What the derivation guarantees is that the digest is *stated* and
+    well formed -- an admission record that does not say which candidate it is about is
+    refused here, rather than carried downstream as an empty binding that every later
+    layer would have to guess the meaning of.
+
+    `candidate_admission_incomplete` is the existing refusal for exactly this: the
+    admission record is missing something the derivation cannot invent.
+    """
+    digest = pointer.get('candidate_contract_sha256') if isinstance(pointer, dict) else None
+    if not isinstance(digest, str) or deploy_gate.SHA.fullmatch(digest) is None:
+        raise Reject('candidate_admission_incomplete')
+    return digest
+
 
 def candidate_from_admission(block):
     """The plan's candidate block, read out of the admission record.
@@ -170,19 +242,26 @@ def latest_pair(records,action,read_evidence,at,max_age,binding,reason):
     return task,evidence
 
 def derive_bundle(plan_id,request_sha256,approval_identity,approved_at,expires_at,
-                  candidate,expected_current_image_id,test_pr,canary,preflight):
+                  candidate,expected_current_image_id,candidate_contract_sha256,
+                  test_pr,canary,preflight):
     """The eight-object bundle, assembled from the joined facts. Pure function."""
     plan={'schema_version':'1','plan_id':plan_id,'environment':deploy_gate.ENVIRONMENT,
           'action_id':deploy_gate.ACTION,'candidate':dict(candidate),
           'expected_current_image_id':expected_current_image_id,
           'target_services':list(deploy_gate.SERVICES),
           'protected_non_targets':['redis','caddy'],
-          # A candidate that needs a schema migration is not deployable through this
-          # contract yet: the controlled forward migration Issue #103 scopes needs
-          # executor work this revision does not do, so the derivation refuses it up
-          # front rather than deriving a plan the gate would then reject as a
-          # forbidden operation.
+          # `migration` is the plan's copy of the candidate's declaration and is
+          # always False: V1 executes no database migration, the derivation refuses a
+          # candidate that declares one, and the gate refuses a plan whose
+          # `migration` is not False (`forbidden_operation`).  Three refusals of one
+          # rule, at three different distances from the host.
           'migration':False,'production':False,'automatic_rollback':False,
+          # Which candidate this plan is about, as the admission record stated it. The
+          # value travels unchanged into the signed DEPLOY Task and comes back in the
+          # Evidence, which is what lets the Hong Kong side prove it deployed the
+          # candidate whose fact it loaded, and lets the Command Center prove that all
+          # three named the same one.
+          'candidate_contract_sha256':candidate_contract_sha256,
           'test_pr_task_sha256':deploy_gate.digest(test_pr[0]),
           'test_pr_evidence_sha256':deploy_gate.digest(test_pr[1]),
           'canary_task_sha256':deploy_gate.digest(canary[0]),
@@ -200,11 +279,30 @@ def derive_bundle(plan_id,request_sha256,approval_identity,approved_at,expires_a
             'preflight_task':preflight[0],'preflight_evidence':preflight[1]}
 
 def derive(*,at,approval_identity,approved_at,request_sha256,admission,verify_baseline,
-           ledger_records,read_evidence,approval_life=deploy_gate.APPROVAL_MAX_LIFE):
-    """Derive the plan name and the bundle. Writes nothing."""
+           supported_migration_head,ledger_records,read_evidence,
+           approval_life=deploy_gate.APPROVAL_MAX_LIFE):
+    """Derive the plan name and the bundle. Writes nothing.
+
+    `supported_migration_head` is the migration graph the environment currently
+    supports, read from the canonical runtime pointer by the caller. There is no
+    default on purpose: a caller that omits it supplies None, and None never equals
+    a candidate's declared head, so the derivation refuses rather than silently
+    skipping the check. A plan cannot be derived without stating which graph the
+    candidate is being judged against.
+    """
     block=admission_block(admission)
-    if block.get('migration_required') is True: raise Reject('migration_required_not_supported')
+    # CCV1 V1 does not execute database migrations.  Two refusals, in the two stable
+    # public codes, and the derivation stops here: no plan is named, no plan is
+    # registered, and no DEPLOY Task can be published for a candidate that would
+    # need one.  The two are kept apart on purpose -- "this candidate needs a
+    # migration" is a statement about the candidate, "this candidate's graph is not
+    # the environment's" is a statement about the host, and the two are fixed
+    # differently.
+    if block.get('migration_required') is True: raise Reject(E_DATABASE_MIGRATION_REQUIRED)
+    if block.get('migration_head') != supported_migration_head:
+        raise Reject(E_DATABASE_MIGRATION_GRAPH_MISMATCH)
     candidate=candidate_from_admission(block)
+    candidate_contract_sha256=admission_digest(admission)
     expected=expected_current_from(block,verify_baseline)
     test_pr_task,_record=pair_by_task_id(ledger_records,deploy_gate.TEST_PR_ACTION,
                                          test_pr_task_id(block),'test_pr_task_not_in_ledger')
@@ -229,7 +327,8 @@ def derive(*,at,approval_identity,approved_at,request_sha256,admission,verify_ba
         raise Reject('deployment_plan_already_consumed')
     expires_at=approved_at+approval_life
     bundle=derive_bundle(plan_id,request_sha256,approval_identity,approved_at,expires_at,
-                         candidate,expected,test_pr,canary,preflight)
+                         candidate,expected,candidate_contract_sha256,
+                         test_pr,canary,preflight)
     return plan_id,bundle
 
 def store_ready(store):

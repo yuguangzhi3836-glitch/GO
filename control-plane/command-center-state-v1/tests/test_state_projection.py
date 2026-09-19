@@ -2757,5 +2757,128 @@ class RequestFactExporterIntegrationTests(RequestVisibilityFixture, unittest.Tes
         self.assertEqual(state["requests"][0]["lifecycle"], "REQUEST_REJECTED")
 
 
+# --------------------------------------------------------------------------- #
+# CCV1-85 (WP-4A): the candidate digest, and what a disagreement means
+# --------------------------------------------------------------------------- #
+class CandidateDigestBindingTests(unittest.TestCase):
+    """The Command Center cannot recompute the digest, but it can refuse a contradiction.
+
+    A DEPLOY Task under the current contract states the digest of the candidate it is
+    about, and the Hong Kong side reports back the digest it loaded and recomputed. Those
+    two agreeing is the finding; this class is about the two not agreeing, and about the
+    historical Evidence that predates the field being read rather than broken.
+    """
+
+    DIGEST = "c" * 64
+
+    def setUp(self):
+        self.task_key, self.task_pub = key_pair("cc-task")
+        self.evidence_key, self.evidence_pub = key_pair("hk-evidence")
+
+    def deploy_task(self, **over):
+        parameters = {"release_id": "release-1",
+                      "candidate_image_id": "sha256:" + "a" * 64,
+                      "candidate_package_sha256": "b" * 64,
+                      "expected_current_image_id": "sha256:" + "a" * 64,
+                      "canary_evidence_id": "canary-1", "approval_id": "approval-1",
+                      "candidate_contract_sha256": self.DIGEST}
+        value = task(action="HK_STAGING_DEPLOY", parameters=parameters)
+        value.update(over)
+        return sign(value, self.task_key, "hex")
+
+    def deploy_evidence(self, tk, digest="SENTINEL", **over):
+        value = evidence(tk, executor_result="DEPLOY_OK",
+                         agent_version="0.5.8-candidate-digest",
+                         deploy_record_schema_version="2", deploy_record_id="d" * 64,
+                         deploy_record_sha256="e" * 64,
+                         result="DEPLOY_OK")
+        if digest == "SENTINEL":
+            digest = self.DIGEST
+        if digest is not None:
+            value["candidate_contract_sha256"] = digest
+        value.update(over)
+        return sign(value, self.evidence_key, "base64")
+
+    def project_one(self, tk, ev):
+        return build(*layout(tasks=[("t.json", tk)], evidences=[("e.json", ev)]),
+                     task_pub=self.task_pub, evidence_pub=self.evidence_pub)
+
+    def test_evidence_naming_the_tasks_candidate_is_accepted(self):
+        tk = self.deploy_task()
+        _loaded, state, _status = self.project_one(tk, self.deploy_evidence(tk))
+        entry = state["tasks"][0]
+        self.assertNotEqual(entry["lifecycle"], "EVIDENCE_INVALID")
+        self.assertEqual(entry["evidence"]["candidate_contract_sha256"], self.DIGEST)
+
+    def test_evidence_naming_another_candidate_is_refused(self):
+        tk = self.deploy_task()
+        _loaded, state, _status = self.project_one(
+            tk, self.deploy_evidence(tk, digest="9" * 64))
+        entry = state["tasks"][0]
+        self.assertEqual(entry["lifecycle"], "EVIDENCE_INVALID")
+        self.assertEqual(entry["assertion"]["value"], "EVIDENCE_CANDIDATE_DIGEST_BINDING")
+        self.assertEqual(entry["assertion"]["state"], sp.STATE_FAILED)
+
+    def test_evidence_that_omits_the_digest_its_task_states_is_refused(self):
+        """The field is required for a Task that carries one, not optional forever."""
+        tk = self.deploy_task()
+        _loaded, state, _status = self.project_one(tk, self.deploy_evidence(tk, digest=None))
+        entry = state["tasks"][0]
+        self.assertEqual(entry["lifecycle"], "EVIDENCE_INVALID")
+        self.assertEqual(entry["assertion"]["value"], "EVIDENCE_CANDIDATE_DIGEST_BINDING")
+
+    def test_a_malformed_digest_in_the_evidence_is_refused(self):
+        for wrong in ("not-a-digest", "C" * 64, "c" * 63):
+            with self.subTest(digest=wrong):
+                tk = self.deploy_task()
+                _loaded, state, _status = self.project_one(
+                    tk, self.deploy_evidence(tk, digest=wrong))
+                self.assertEqual(state["tasks"][0]["lifecycle"], "EVIDENCE_INVALID")
+
+    def test_historical_evidence_for_a_task_without_the_field_is_still_read(self):
+        """LEGACY_EVIDENCE_READ_COMPAT, keyed on the Task rather than on the Evidence.
+
+        A deployment that happened before the field existed is not a disagreement: its
+        Task states no digest, so there is nothing for the Evidence to contradict. It is
+        marked SUPERSEDED -- the shape CCV1-85 replaced -- and it stays in the projection
+        rather than being dropped or re-read as current.
+        """
+        legacy_parameters = {"release_id": "release-1",
+                             "candidate_image_id": "sha256:" + "a" * 64,
+                             "candidate_package_sha256": "b" * 64,
+                             "expected_current_image_id": "sha256:" + "a" * 64,
+                             "canary_evidence_id": "canary-1", "approval_id": "approval-1"}
+        tk = sign(task(action="HK_STAGING_DEPLOY", parameters=legacy_parameters),
+                  self.task_key, "hex")
+        _loaded, state, _status = self.project_one(
+            tk, self.deploy_evidence(tk, digest=None, agent_version="0.5.7-rebuilt"))
+        entry = state["tasks"][0]
+        self.assertEqual(entry["parameter_contract"], "SUPERSEDED")
+        self.assertNotEqual(entry["lifecycle"], "EVIDENCE_INVALID")
+
+    def test_the_parameter_contract_carries_the_digest_and_the_old_shape_is_superseded(self):
+        self.assertEqual(sp.ACTION_PARAMETERS["HK_STAGING_DEPLOY"],
+                         {"release_id", "candidate_image_id", "candidate_package_sha256",
+                          "expected_current_image_id", "canary_evidence_id", "approval_id",
+                          "candidate_contract_sha256"})
+        legacy = {"release_id", "candidate_image_id", "candidate_package_sha256",
+                  "expected_current_image_id", "canary_evidence_id", "approval_id"}
+        self.assertIn(legacy, sp.SUPERSEDED_PARAMETERS["HK_STAGING_DEPLOY"])
+
+    def test_the_binding_rule_is_a_pure_decision(self):
+        """The rule, stated directly, so its edges are visible without a fixture."""
+        tk = {"action_id": "HK_STAGING_DEPLOY",
+              "parameters": {"candidate_contract_sha256": self.DIGEST}}
+        self.assertTrue(sp.candidate_digest_binding(tk, {"candidate_contract_sha256": self.DIGEST}))
+        self.assertFalse(sp.candidate_digest_binding(tk, {}))
+        self.assertFalse(sp.candidate_digest_binding(tk, {"candidate_contract_sha256": "9" * 64}))
+        self.assertFalse(sp.candidate_digest_binding(tk, {"candidate_contract_sha256": None}))
+        # a Task that states no digest is not a disagreement, and neither is another action
+        self.assertTrue(sp.candidate_digest_binding(
+            {"action_id": "HK_STAGING_DEPLOY", "parameters": {}}, {}))
+        self.assertTrue(sp.candidate_digest_binding(
+            {"action_id": "HK_STAGING_VERIFY", "parameters": {"release_id": "r"}}, {}))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

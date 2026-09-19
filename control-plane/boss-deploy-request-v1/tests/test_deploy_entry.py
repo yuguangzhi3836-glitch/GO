@@ -19,7 +19,9 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / 'tests'))
 import go_deploy_request as gate
+import slot_race_worker
 import plan_derivation as derivation
 
 
@@ -86,7 +88,7 @@ class Fixture:
                 'package_sha256': self.package, 'image_id': self.candidate},
             'expected_current_image_id': self.current, 'target_services': gate.SERVICES.copy(),
             'protected_non_targets': ['redis', 'caddy'], 'migration': False, 'production': False,
-            'automatic_rollback': False}
+            'automatic_rollback': False, 'candidate_contract_sha256': self.candidate_contract}
         self.bundle['approval'] = {'schema_version': '1', 'approval_id': 'synthetic-approval-001',
             'approved_by': 'synthetic-reviewer', 'approved_at': bridge.iso(self.at - dt.timedelta(seconds=10)),
             # The approval's life is the contract's, not the fixture's: the Bridge derives
@@ -147,7 +149,9 @@ class Fixture:
 
     def admission_pointer(self):
         """The block candidate admission publishes, as the Bridge reads it."""
-        return {'schema': derivation.ADMISSION_SCHEMA, 'release_candidate_v1': {
+        return {'schema': derivation.ADMISSION_SCHEMA,
+                'candidate_contract_sha256': self.candidate_contract,
+                'release_candidate_v1': {
             'schema': derivation.CANDIDATE_SCHEMA,
             'source_repository': 'yuguangzhi3836-glitch/GO', 'source_commit': self.source,
             'application_tree': self.tree, 'source_fingerprint': self.fingerprint,
@@ -158,6 +162,14 @@ class Fixture:
                                      'task_id': self.bundle['test_pr_task']['task_id']},
             'rollback_relation': {'relation': 'REPLACES_CURRENT_KNOWN_GOOD',
                                   'previous_known_good_image_id': self.current}}}
+
+    def supported_migration_head(self):
+        """The head the canonical runtime pointer publishes for this environment."""
+        return '0133_flight_change_plan'
+
+    # The pointer publishes this beside the fact it is about.  The derivation consumes
+    # it; it never recomputes it.
+    candidate_contract = 'd0' * 32
 
     def verify_baseline(self):
         return {'version': 1, 'environment': gate.ENVIRONMENT, 'image_id': self.current,
@@ -300,7 +312,7 @@ class ProofTests(unittest.TestCase):
             args=dict(zip(fake.calls[0][2::2],fake.calls[0][3::2]))
             self.assertEqual(args['--task-canonical-sha256'],gate.digest({k:v for k,v in task.items() if k!='signature'}))
             self.assertEqual(args['--canary-evidence-id'],self.f.bundle['canary_task']['parameters']['release_id'])
-            self.assertEqual(set(task['parameters']),{'release_id','candidate_image_id','candidate_package_sha256','expected_current_image_id','canary_evidence_id','approval_id'})
+            self.assertEqual(set(task['parameters']),{'release_id','candidate_image_id','candidate_package_sha256','expected_current_image_id','canary_evidence_id','approval_id','candidate_contract_sha256'})
             self.assertNotEqual(task['parameters']['candidate_image_id'],task['parameters']['expected_current_image_id'])
             self.assertLessEqual(gate.timestamp(task['expires_at']),self.f.at+dt.timedelta(seconds=270))
     def test_wrong_keys_and_unsigned_approval(self):
@@ -580,12 +592,15 @@ class QueueTests(unittest.TestCase):
         self.stack.enter_context(patch.object(bridge,'check_deploy_pr',
             return_value=({'created_at':bridge.iso(self.f.at-dt.timedelta(seconds=10))},
                           gate.APPROVAL_IDENTITIES[0])))
-        # The plan is derived, so these three readers are the seams: the GO repository
+        # The plan is derived, so these four readers are the seams: the GO repository
         # (candidate admission), the evidence repository (the signed TEST_PR, canary and
-        # preflight Evidence) and the root-owned baseline the preflight was derived from.
+        # preflight Evidence), the root-owned baseline the preflight was derived from, and
+        # the canonical runtime pointer the environment's migration graph is read from.
         self.stack.enter_context(patch.object(bridge,'read_admission',side_effect=self.f.admission_pointer))
         self.stack.enter_context(patch.object(bridge,'read_evidence',side_effect=self.f.read_evidence))
         self.stack.enter_context(patch.object(bridge,'load_baseline',side_effect=self.f.verify_baseline))
+        self.stack.enter_context(patch.object(bridge,'read_supported_migration_head',
+                                              side_effect=self.f.supported_migration_head))
         def reader(n,h):
             r=self.f.request(n)
             return {'path':'requests/'+r['request_id']+'.json','raw':gate.canonical(r)}
@@ -842,6 +857,7 @@ class DerivationTests(unittest.TestCase):
         kwargs=dict(at=self.f.at,approval_identity=self.f.approval_identity,
                     approved_at=self.f.at-dt.timedelta(seconds=10),request_sha256=self.f.request_sha256,
                     admission=self.f.admission_pointer(),verify_baseline=self.f.verify_baseline(),
+                    supported_migration_head=self.f.supported_migration_head(),
                     ledger_records=self.records,read_evidence=self.f.read_evidence)
         kwargs.update(over)
         return derivation.derive(**kwargs)
@@ -957,14 +973,134 @@ class DerivationTests(unittest.TestCase):
         self.assertEqual(str(caught.exception),'candidate_and_live_current_disagree')
 
     def test_a_candidate_that_needs_a_migration_is_refused_not_ignored(self):
-        """#103 scopes controlled forward migration; this contract does not carry it yet,
-        so a candidate that needs one is refused up front rather than deployed with a
-        schema it does not match."""
+        """CCV1 V1 does not execute database migrations.
+
+        A candidate that declares the prohibited condition is refused by name, in the
+        stable public code, before a plan is even named -- rather than being deployed
+        against a schema it does not match.
+        """
         pointer=self.f.admission_pointer()
         pointer['release_candidate_v1']['migration_required']=True
         with self.assertRaises(gate.Reject) as caught: self.derive(admission=pointer)
-        self.assertEqual(str(caught.exception),'migration_required_not_supported')
+        self.assertEqual(str(caught.exception),derivation.E_DATABASE_MIGRATION_REQUIRED)
         self.assertFalse(self.f.bundle['plan']['migration'])
+
+    def test_a_candidate_on_another_migration_graph_is_refused(self):
+        """The candidate must declare the graph the environment is on.
+
+        V1 runs no migration, so a candidate whose declared head is not the head the
+        canonical runtime pointer publishes for this host is not deployable here --
+        and that is a different refusal from "this candidate wants a migration", which
+        is why it carries a different code.
+        """
+        pointer=self.f.admission_pointer()
+        pointer['release_candidate_v1']['migration_head']='0135_some_other_head'
+        self.assertNotEqual(pointer['release_candidate_v1']['migration_head'],
+                            self.f.supported_migration_head())
+        with self.assertRaises(gate.Reject) as caught: self.derive(admission=pointer)
+        self.assertEqual(str(caught.exception),derivation.E_DATABASE_MIGRATION_GRAPH_MISMATCH)
+
+    def test_an_unestablished_environment_graph_refuses_rather_than_passes(self):
+        """If the host's own graph cannot be established, nothing is deployed.
+
+        "I could not tell whether these two graphs agree" must not be rounded up to
+        "they agree" at the one gate whose job is to refuse exactly that.
+        """
+        for supplied in (None,'',{},[]):
+            with self.subTest(supplied=supplied):
+                with self.assertRaises(gate.Reject) as caught:
+                    self.derive(supported_migration_head=supplied)
+                self.assertEqual(str(caught.exception),
+                                 derivation.E_DATABASE_MIGRATION_GRAPH_MISMATCH)
+
+    def test_both_migration_refusals_leave_the_same_plan_state(self):
+        """Two codes, one outcome: no executable DEPLOY (CONTRACT SPEC 3.2).
+
+        The plan state is shared because from the plan's point of view the two refusals
+        end the same way; the codes stay distinct so the reason is still readable.
+        """
+        self.assertEqual(derivation.migration_refusal_plan_state(
+            derivation.E_DATABASE_MIGRATION_REQUIRED),
+            derivation.PLAN_STATE_DATABASE_MIGRATION_REFUSED)
+        self.assertEqual(derivation.migration_refusal_plan_state(
+            derivation.E_DATABASE_MIGRATION_GRAPH_MISMATCH),
+            derivation.PLAN_STATE_DATABASE_MIGRATION_REFUSED)
+        self.assertIsNone(derivation.migration_refusal_plan_state('some_other_reason'))
+        self.assertEqual(derivation.PLAN_STATE_DATABASE_MIGRATION_REFUSED,
+                         'REFUSED_DATABASE_MIGRATION_REQUIRED')
+
+    def test_the_legacy_migration_token_is_mapped_not_emitted(self):
+        """Read old, write new.
+
+        The token this module raised before the convergence is still readable as the
+        case it always meant, and no code path raises it any more.  The check is on the
+        tokens the module can *raise*, extracted the way the request-visibility
+        component extracts them, rather than on the text merely mentioning the alias.
+        """
+        import re as _re
+        self.assertEqual(
+            derivation.LEGACY_MIGRATION_REASON_ALIAS['migration_required_not_supported'],
+            derivation.E_DATABASE_MIGRATION_REQUIRED)
+        source=(ROOT/'plan_derivation.py').read_text(encoding='utf-8')
+        raised=set(_re.findall(r"Reject\(\s*'([^']+)'", source))
+        raised|=set(_re.findall(r"raise Reject\(([^)]*)\)", source))
+        legacy='migration_required_not_supported'
+        self.assertFalse([x for x in raised if legacy in x],
+                         'the legacy token is still raised: %s'
+                         % [x for x in raised if legacy in x])
+        self.assertEqual(derivation.E_DATABASE_MIGRATION_REQUIRED,
+                         'E_DATABASE_MIGRATION_REQUIRED')
+        self.assertEqual(derivation.E_DATABASE_MIGRATION_GRAPH_MISMATCH,
+                         'E_DATABASE_MIGRATION_GRAPH_MISMATCH')
+
+    def test_the_admission_record_must_state_which_candidate_it_is_about(self):
+        """The digest reaches the plan from the admission record, not from a recomputation.
+
+        The Command Center does not own the digest's implementation, so it cannot invent
+        the value; what it can do is refuse an admission record that does not state one,
+        instead of passing an empty binding down a chain that would then have nothing to
+        check.
+        """
+        for edit in ({"candidate_contract_sha256": None},
+                     {"candidate_contract_sha256": ""},
+                     {"candidate_contract_sha256": "not-a-digest"},
+                     {"candidate_contract_sha256": "A" * 64},
+                     {"candidate_contract_sha256": "a" * 63}):
+            with self.subTest(edit=edit):
+                pointer = {k: v for k, v in self.f.admission_pointer().items()
+                           if k != "candidate_contract_sha256"}
+                pointer.update(edit)
+                with self.assertRaises(gate.Reject) as caught:
+                    self.derive(admission=pointer)
+                self.assertEqual(str(caught.exception), "candidate_admission_incomplete")
+
+    def test_the_plan_carries_the_digest_the_admission_record_stated(self):
+        plan_id, bundle = self.derive()
+        self.assertEqual(bundle["plan"]["candidate_contract_sha256"],
+                         self.f.candidate_contract)
+        self.assertIn("candidate_contract_sha256", gate.PLAN_FIELDS)
+
+    def test_the_signed_deploy_task_carries_the_digest_and_it_equals_the_plans(self):
+        """Plan and Task are one value, and the gate refuses a plan that cannot state it."""
+        context = self.validate(*self.derive())
+        self.assertEqual(context["parameters"]["candidate_contract_sha256"],
+                         self.f.candidate_contract)
+        self.assertIn("candidate_contract_sha256", context["parameters"])
+
+    def test_a_plan_without_a_usable_digest_is_refused_before_the_task_exists(self):
+        for broken in (None, "", "not-a-digest", "A" * 64):
+            with self.subTest(broken=broken):
+                plan_id, bundle = self.derive()
+                plan = dict(bundle["plan"])
+                plan["candidate_contract_sha256"] = broken
+                bundle = dict(bundle, plan=plan,
+                              approval=dict(bundle["approval"],
+                                            plan_sha256=gate.digest(plan)))
+                with self.assertRaises(gate.Reject) as caught:
+                    gate.validate_bundle(bundle, plan_id, self.f.authority.public_key(),
+                                         self.f.hk.public_key(), self.f.at,
+                                         self.f.approval_identity, self.f.request_sha256)
+                self.assertEqual(str(caught.exception), "candidate_fields")
 
     def test_the_bridge_derives_and_registers_the_plan_by_itself(self):
         """End to end through the Bridge's own derivation path.
@@ -975,7 +1111,9 @@ class DerivationTests(unittest.TestCase):
         with patch.object(gate,'STORE',self.store),\
              patch.object(bridge,'read_admission',side_effect=self.f.admission_pointer),\
              patch.object(bridge,'read_evidence',side_effect=self.f.read_evidence),\
-             patch.object(bridge,'load_baseline',side_effect=self.f.verify_baseline):
+             patch.object(bridge,'load_baseline',side_effect=self.f.verify_baseline),\
+             patch.object(bridge,'read_supported_migration_head',
+                          side_effect=self.f.supported_migration_head):
             context=bridge.derive_and_register_deployment(self.f.request(),
                         {'created_at':bridge.iso(self.f.at-dt.timedelta(seconds=10))},
                         self.f.approval_identity,self.records)
@@ -1001,3 +1139,450 @@ class GitDiffTests(unittest.TestCase):
             with patch.object(bridge,'REPO',str(repo)),patch.object(bridge,'ssh_env',return_value=env),patch.object(bridge,'discover_heads',return_value={'2':head}):
                 self.assertEqual(bridge.read_pr('2',head)['path'],'requests/synthetic-request.json')
                 with self.assertRaisesRegex(gate.Reject,'head_changed'): bridge.read_pr('2','a'*40)
+
+
+# --------------------------------------------------------------------------- #
+# One environment, one mutating action
+# --------------------------------------------------------------------------- #
+# The slot is the only durable fact this harness adds to the ordinary deployment
+# fixture, so a test can look at both the Tasks that were published and the
+# environment that was -- or was not -- handed back.
+# The ledger lock primitive, taken by the racing processes themselves rather than
+# borrowed from the bridge.  On a Windows workstation the bridge's `fcntl` is a no-op
+# shim installed by the audit harness, so a race guarded by *that* would prove nothing;
+# this uses the host's real primitive (`fcntl.flock` on POSIX, `msvcrt.locking`
+# elsewhere), which is the same discipline `Ledger.held()` applies where it runs for
+# real.  Which one ran is reported with the outcome, so a green result can never be read
+# as more than it is.
+class EnvironmentHarness:
+    """A channel, a ledger and a slot document, all under one temporary root."""
+
+    def __init__(self, root):
+        self.root = pathlib.Path(root)
+        self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        self.f = Fixture()
+        self.at = self.f.at
+        self.extra_evidence = {}
+        self.store, self.key, self.channel = self.f.install_synthetic(self.root)
+        for leftover in self.store.glob('*.json'):
+            leftover.unlink()
+        self.f.seed_ledger(self.root / 'ledger')
+        self.remote = self.root / 'remote'
+        self.remote.mkdir(exist_ok=True)
+        self.published = []
+        self.stack = ExitStack()
+        self._patch()
+
+    @property
+    def slot_path(self):
+        return self.root / 'ledger' / 'environment-slots.json'
+
+    def slots(self):
+        return gate.load_environment_slots(self.slot_path)
+
+    def slot(self, environment=gate.ENVIRONMENT):
+        return gate.environment_slot(self.slots(), environment)
+
+    def fresh_canary(self, tag='b'):
+        """A newer canary run for the same candidate.
+
+        `plan_id` is a function of the candidate AND of the canary run, so a Request
+        citing a newer canary derives a name that is legitimately new.  That is the
+        "same environment, different plan" case which used to be published without
+        anything noticing; here it is what reaches the environment slot.
+        """
+        task, evidence = self.f.proof('HK_STAGING_CANARY', 60)
+        release = 'synthetic-canary-' + tag
+        task = {**task, 'task_id': release, 'nonce': 'synthetic-canary-nonce-' + tag,
+                'parameters': {**task['parameters'], 'release_id': release}}
+        task = signed(task, self.f.authority)
+        evidence = {**evidence, 'task_id': release, 'nonce': task['nonce'], 'release_id': release}
+        evidence = signed(evidence, self.f.hk, 'base64')
+        path = self.root / 'ledger' / 'ledger.json'
+        data = json.loads(path.read_text())
+        data['requests']['synthetic:canary-' + tag] = {
+            'status': 'published', 'request_id': 'synthetic-canary-' + tag, 'task': task}
+        path.write_bytes(gate.canonical(data))
+        self.extra_evidence[release] = evidence
+        return task, evidence
+
+    def with_evidence(self, task, status):
+        """The status this Task's own Evidence would carry."""
+        self.extra_evidence[task['task_id']] = {
+            'schema_version': '1', 'task_id': task['task_id'], 'nonce': task['nonce'],
+            'action_id': task['action_id'], 'environment': task['environment'],
+            'status': status,
+            'executor_result': 'DEPLOY_OK' if status == 'SUCCESS' else 'EXECUTION_FAILED'}
+        return self.extra_evidence[task['task_id']]
+
+    def read_evidence(self, task):
+        found = self.extra_evidence.get(task.get('task_id'))
+        return found if found is not None else self.f.read_evidence(task)
+
+    def canary_authority(self, path=None):
+        """The root-owned canary authority the channel reads for a CANARY Task."""
+        return {'version': 1, 'environment': gate.ENVIRONMENT,
+                'candidate_image_id': self.f.candidate,
+                'candidate_package_sha256': self.f.package,
+                'expected_current_image_id': self.f.current}
+
+    def request_for(self, number, action=None):
+        r = self.f.request(number)
+        if action is not None: r = {**r, 'action_id': action}
+        return {'path': 'requests/' + r['request_id'] + '.json', 'raw': gate.canonical(r)}
+
+    def _patch(self):
+        self.stack.enter_context(patch.object(gate, 'STORE', self.store))
+        self.stack.enter_context(patch.object(gate, 'TRUSTED_UID', os.getuid()))
+        self.stack.enter_context(patch.object(bridge, 'now', return_value=self.at))
+        self.stack.enter_context(patch.object(bridge, 'check_deploy_pr', return_value=(
+            {'created_at': bridge.iso(self.at - dt.timedelta(seconds=10))},
+            gate.APPROVAL_IDENTITIES[0])))
+        self.stack.enter_context(patch.object(bridge, 'read_admission', side_effect=self.f.admission_pointer))
+        self.stack.enter_context(patch.object(bridge, 'read_evidence', side_effect=self.read_evidence))
+        self.stack.enter_context(patch.object(bridge, 'load_baseline', side_effect=self.f.verify_baseline))
+        self.stack.enter_context(patch.object(bridge, 'load_canary_baseline',
+                                              side_effect=self.canary_authority))
+        self.stack.enter_context(patch.object(bridge, 'read_supported_migration_head',
+                                              side_effect=self.f.supported_migration_head))
+        self.stack.enter_context(patch.object(
+            bridge, 'read_pr', side_effect=lambda n, h: self.request_for(n)))
+        self.stack.enter_context(patch.object(bridge, 'publish_task', side_effect=self.publish))
+        self.stack.enter_context(patch.object(bridge, 'remote_task', side_effect=self.fetch))
+
+    def publish(self, task):
+        record = json.loads((self.root / 'ledger' / 'ledger.json').read_text())['requests']
+        assert any(r.get('status') == 'publishing' and r['task'] == task for r in record.values())
+        path = self.remote / (task['task_id'] + '.json')
+        with path.open('xb') as stream: stream.write(gate.canonical(task) + b'\n')
+        self.published.append(task)
+        return 'e' * 40
+
+    def fetch(self, task_id):
+        path = self.remote / (task_id + '.json')
+        return path.read_bytes() if path.exists() else None
+
+    def run(self, number, action=None):
+        bridge.read_pr.side_effect = lambda n, h: self.request_for(n, action)
+        return bridge.persistent_process(number, 'a' * 40, self.root / 'ledger',
+                                         self.key, self.channel)
+
+    def run_or_reason(self, number, action=None):
+        try: return {'status': 'ok', **self.run(number, action)}
+        except gate.Reject as exc:
+            return {'status': 'rejected', 'reason': str(exc), 'payload': getattr(exc, 'payload', None)}
+
+    def cycle(self, at=None):
+        with patch.object(bridge, 'now', return_value=at or self.at):
+            return bridge.environment_slot_cycle(self.root / 'ledger')
+
+    def close(self): self.stack.close()
+
+
+class _Unguarded:
+    """A stand-in for the ledger lock, used only to show the test can fail."""
+
+    def __enter__(self): return self
+    def __exit__(self, *exc): return False
+
+
+class EnvironmentSlotTests(unittest.TestCase):
+    """One environment, one mutating action -- the rule, and its edges."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.h = EnvironmentHarness(self.tmp.name)
+        self.addCleanup(self.h.close)
+
+    # -- the rule ------------------------------------------------------------- #
+    def test_second_deploy_is_refused_while_environment_is_in_flight(self):
+        """A second plan for the same environment does not get a second Task."""
+        self.assertEqual(self.h.run('2')['status'], 'published')
+        self.h.fresh_canary()
+        refused = self.h.run_or_reason('3')
+        self.assertEqual(refused['status'], 'rejected')
+        self.assertEqual(refused['reason'], 'environment_deployment_in_flight')
+        self.assertEqual(len(self.h.published), 1)
+        payload = refused['payload']
+        self.assertEqual(payload['environment'], gate.ENVIRONMENT)
+        self.assertEqual(payload['action'], gate.ACTION)
+        self.assertEqual(payload['triggered_by'], gate.APPROVAL_IDENTITIES[0])
+        self.assertEqual(payload['stage'], 'reserved')
+        self.assertTrue(payload['release_id'])
+        self.assertTrue(payload['reserved_at'])
+        # The refusal is the slot, not the plan: hand the environment back and the
+        # same Request publishes.  That is what makes it a mutex rather than an
+        # accident of plan identity.
+        self.assertEqual(self.h.slot()['state'], 'reserved')
+        self.h.with_evidence(self.h.published[0], 'SUCCESS')
+        self.assertEqual(self.h.cycle()['status'], 'reconciled')
+        self.assertEqual(self.h.slot()['state'], 'released')
+        self.assertEqual(self.h.run('3')['status'], 'published')
+        self.assertEqual(len(self.h.published), 2)
+
+    def test_the_slot_carries_the_candidate_content_address_and_nothing_more(self):
+        """The identity is the converged candidate's digest, carried as an opaque string.
+
+        The guard records it so an operator can name who holds the environment.  It
+        never opens the fact, and this is the assertion that says so: the value is the
+        plan's `candidate_contract_sha256`, and the slot holds no other candidate field
+        -- no migration state, no topology, no image internals beyond the one the Task
+        already carried for reporting.
+        """
+        self.h.run('2')
+        slot = self.h.slot()
+        self.assertEqual(slot['candidate_identity'], self.h.f.candidate_contract)
+        self.assertEqual(slot['candidate_identity'], 'd0' * 32)
+        for forbidden in ('migration', 'migration_head', 'migration_required', 'topology',
+                          'same_revision', 'capabilities', 'install_fact', 'runtime_digest'):
+            self.assertNotIn(forbidden, slot)
+        payload = self.h.cycle()['status']
+        self.assertIn(payload, ('reconciled', 'activated'))
+
+    def test_one_environment_slot_serves_both_mutating_actions(self):
+        """Both directions: the slot is per environment, not per action.
+
+        The channel publishes no rollback Task today -- `derive_formal_task` refuses an
+        action it has no builder for -- so the deployment half is exercised end to end
+        through the channel, and the rollback half at the guard, which is where the
+        shared-slot rule lives.  Both are the same rule; only the reachable path differs.
+        """
+        slots = gate.activate_environment_guard({}, self.h.at)
+        gate.reserve_environment(slots, gate.ENVIRONMENT, self.h.at, action=gate.ACTION,
+                                 request_key='2:' + 'a' * 40, request_id='synthetic-request-2',
+                                 triggered_by=gate.APPROVAL_IDENTITIES[0])
+        gate.save_environment_slots(slots, self.h.slot_path)
+        refused = self.h.run_or_reason('9', action=gate.ROLLBACK_ACTION)
+        self.assertEqual(refused['status'], 'rejected')
+        # `HK_STAGING_ROLLBACK` is not an admissible Request action in this channel, so
+        # a rollback Request is refused by the request validator itself -- before the
+        # slot is ever consulted.  The reachability fact is recorded here rather than
+        # worked around: it is why the shared-slot rule has to be exercised at the guard
+        # below, and a reader should not have to infer it from a passing test.
+        self.assertEqual(refused['reason'], 'action')
+        self.assertIsNone(refused['payload'])
+        self.assertEqual(len(self.h.published), 0)
+
+        other = EnvironmentHarness(pathlib.Path(self.tmp.name) / 'second')
+        self.addCleanup(other.close)
+        # The other direction: a reservation for the rollback action blocks a deployment.
+        slots = gate.activate_environment_guard({}, other.at)
+        gate.reserve_environment(slots, gate.ENVIRONMENT, other.at, action=gate.ROLLBACK_ACTION,
+                                 request_key='9:' + 'a' * 40, request_id='synthetic-request-9')
+        gate.save_environment_slots(slots, other.slot_path)
+        refused_deploy = other.run_or_reason('4')
+        self.assertEqual(refused_deploy['reason'], 'environment_deployment_in_flight')
+        self.assertEqual(refused_deploy['payload']['action'], gate.ROLLBACK_ACTION)
+
+    # -- the ending ----------------------------------------------------------- #
+    def test_terminal_success_releases_environment_slot(self):
+        self.h.run('2')
+        self.h.with_evidence(self.h.published[0], 'SUCCESS')
+        self.assertEqual(self.h.cycle()['status'], 'reconciled')
+        self.assertEqual(self.h.slot()['state'], 'released')
+        self.assertEqual(self.h.slot()['released_reason'], 'terminal_evidence:SUCCESS')
+        self.h.fresh_canary()
+        self.assertEqual(self.h.run('3')['status'], 'published')
+
+    def test_terminal_failed_releases_environment_slot(self):
+        """A refused execution is an ending too: the environment is not still busy."""
+        self.h.run('2')
+        self.h.with_evidence(self.h.published[0], 'FAILED')
+        self.assertEqual(self.h.cycle()['status'], 'reconciled')
+        self.assertEqual(self.h.slot()['state'], 'released')
+        self.assertEqual(self.h.slot()['released_reason'], 'terminal_evidence:FAILED')
+        self.h.fresh_canary()
+        self.assertEqual(self.h.run('3')['status'], 'published')
+
+    def test_abandoned_mutating_action_still_blocks(self):
+        """UNKNOWN is not IDLE: no timeout hands the environment back."""
+        self.h.run('2')
+        later = self.h.at + gate.IN_FLIGHT_WINDOW + dt.timedelta(minutes=1)
+        self.assertEqual(self.h.cycle(at=later)['status'], 'reconciled')
+        self.assertEqual(self.h.slot()['state'], 'abandoned')
+        self.h.fresh_canary()
+        refused = self.h.run_or_reason('3')
+        self.assertEqual(refused['reason'], 'abandoned_mutating_action_requires_operator_review')
+        self.assertEqual(len(self.h.published), 1)
+        # Six hours later it is still not idle, and a tick says so rather than
+        # quietly releasing the environment.
+        self.assertEqual(self.h.cycle(at=later + dt.timedelta(hours=6)),
+                         {'status': 'reconciled', 'changes': [], 'held': [gate.ENVIRONMENT]})
+        self.assertEqual(self.h.slot()['state'], 'abandoned')
+
+    # -- the boundaries ------------------------------------------------------- #
+    def test_read_only_actions_do_not_consume_environment_slot(self):
+        """CANARY and HEALTH must not take the slot, or liveness would deadlock deploys."""
+        self.assertEqual(self.h.run('5', action=bridge.HEALTH_ACTION)['status'], 'published')
+        self.assertEqual(self.h.run('4')['status'], 'published')
+        self.assertEqual(self.h.run('6', action=bridge.CANARY_ACTION)['status'], 'published')
+        slots = self.h.slots()
+        self.assertEqual(sorted(slots['environments']), [gate.ENVIRONMENT])
+        # The holder is still the deployment: a read-only action ran and left the
+        # environment exactly as it found it.
+        self.assertEqual(slots['environments'][gate.ENVIRONMENT]['request_key'], '4:' + 'a' * 40)
+        self.assertEqual([task['action_id'] for task in self.h.published],
+                         [bridge.HEALTH_ACTION, gate.ACTION, bridge.CANARY_ACTION])
+
+    def test_same_plan_idempotency_still_works(self):
+        """A second Request for one plan keeps the plan's own reason."""
+        self.assertEqual(self.h.run('2')['status'], 'published')
+        again = self.h.run_or_reason('3')
+        self.assertEqual(again['reason'], 'deployment_plan_already_consumed')
+        self.assertNotIn('environment', again['reason'])
+        self.assertEqual(len(self.h.published), 1)
+
+    def test_old_ledger_records_do_not_false_lock_environment(self):
+        """A months-old published deployment cannot own the environment forever."""
+        ancient = self.h.at - dt.timedelta(days=45)
+        task = signed({'schema_version': '1', 'task_id': 'go-boss-deploy-ancient',
+                       'nonce': 'synthetic-ancient-nonce', 'issued_at': bridge.iso(ancient),
+                       'expires_at': bridge.iso(ancient + dt.timedelta(minutes=3)),
+                       'authority': 'GO-COMMAND-CENTER', 'environment': gate.ENVIRONMENT,
+                       'action_id': gate.ACTION,
+                       'parameters': {'release_id': 'ancient-deploy',
+                                      'candidate_image_id': self.h.f.candidate,
+                                      'candidate_package_sha256': self.h.f.package,
+                                      'expected_current_image_id': self.h.f.current,
+                                      'canary_evidence_id': 'synthetic-hk_staging_canary',
+                                      'candidate_contract_sha256': self.h.f.candidate_contract,
+                                      'approval_id': 'approval-' + 'a' * 16}},
+                      self.h.f.authority)
+        path = self.h.root / 'ledger' / 'ledger.json'
+        data = json.loads(path.read_text())
+        data['requests']['synthetic:ancient-deploy'] = {
+            'status': 'published', 'request_id': 'synthetic-ancient-deploy', 'task': task}
+        path.write_bytes(gate.canonical(data))
+
+        self.assertEqual(self.h.cycle()['status'], 'activated')
+        slots = self.h.slots()
+        self.assertIsNone(slots['environments'].get(gate.ENVIRONMENT),
+                          'an out-of-window historical record must not hold the slot')
+        reasons = {entry['task_id']: entry['reason'] for entry in slots['legacy']['ignored']}
+        self.assertEqual(reasons.get('go-boss-deploy-ancient'), 'outside_the_in_flight_window')
+        # The seeded read-only history -- the sealed TEST_PR, the canary and the
+        # preflight -- is not mutating, so the guard never even considers it, and it is
+        # absent from the ignored list rather than being listed as ignored for a reason
+        # that would suggest it was a candidate.
+        for name in ('synthetic-HK_STAGING_TEST_PR', 'synthetic-HK_STAGING_CANARY',
+                     'synthetic-HK_STAGING_VERIFY'):
+            self.assertNotIn(name, reasons)
+        self.assertEqual(self.h.run('2')['status'], 'published')
+
+    def test_different_environments_do_not_share_one_slot(self):
+        """The slot is keyed by the Task's own environment.
+
+        The channel and the plan derivation are single-environment today, so this is
+        the guard's own contract rather than an end-to-end claim: a second environment
+        is a second slot, and neither blocks the other.
+        """
+        slots = gate.activate_environment_guard({}, self.h.at)
+        gate.reserve_environment(slots, gate.ENVIRONMENT, self.h.at, action=gate.ACTION,
+                                 request_key='2:' + 'a' * 40, request_id='synthetic-request-2')
+        gate.ensure_environment_idle(slots, 'HK-STAGING-02')
+        with self.assertRaises(gate.Reject):
+            gate.ensure_environment_idle(slots, gate.ENVIRONMENT)
+        gate.reserve_environment(slots, 'HK-STAGING-02', self.h.at, action=gate.ROLLBACK_ACTION,
+                                 request_key='9:' + 'a' * 40, request_id='synthetic-request-9')
+        self.assertEqual(sorted(slots['environments']), ['HK-STAGING-01', 'HK-STAGING-02'])
+        gate.release_environment_slot(slots, gate.ENVIRONMENT, 'test', self.h.at)
+        gate.ensure_environment_idle(slots, gate.ENVIRONMENT)
+        with self.assertRaises(gate.Reject):
+            gate.ensure_environment_idle(slots, 'HK-STAGING-02')
+
+    # -- the critical section -------------------------------------------------- #
+    def _race(self, guarded, tags=('one', 'two')):
+        """Two processes run the same check-and-reserve, and both outcomes are read.
+
+        Started through `multiprocessing` rather than a hand-rolled subprocess: the
+        component's isolated gate forbids spawning anything but its own fixture Git, which
+        is a property worth keeping, and a race that could not start would look like a
+        race that never happened.  The `fork` start method is required rather than
+        preferred -- it is the one the original regression used, and a replacement that
+        had to re-import this module in the child would also re-execute the runner script
+        the child inherits as `__main__`, running the whole suite again inside every
+        racer.  The worker lives in `slot_race_worker` so the lock primitive it takes is
+        visible as its own decision rather than as this file's.
+        """
+        root, slot = self.h.root, self.h.slot_path
+        for tag in tags:
+            (root / ('race-' + tag)).unlink(missing_ok=True)
+        context = multiprocessing.get_context('fork')
+        barrier = None if guarded else context.Barrier(2)
+        processes = []
+        for tag in tags:
+            process = context.Process(
+                target=slot_race_worker.run,
+                args=(str(ROOT), str(root), str(slot), bridge.iso(self.h.at), tag,
+                      guarded, barrier))
+            process.start()
+            processes.append((tag, process))
+        reports = {}
+        for tag, process in processes:
+            process.join(timeout=180)
+            if process.is_alive():
+                process.terminate()
+                self.fail('racer %s did not finish' % tag)
+            self.assertEqual(process.exitcode, 0, 'racer %s exited %s' % (tag, process.exitcode))
+        # The return value is not carried across a process boundary, so each racer also
+        # leaves its outcome on disk.
+        for tag in tags:
+            path = root / ('race-' + tag)
+            self.assertTrue(path.exists(), 'racer %s left no outcome' % tag)
+            reports[tag] = json.loads(path.read_text(encoding='utf-8'))
+        self.primitive = sorted({report['primitive'] for report in reports.values()})
+        return [reports[tag]['outcome'] for tag in tags]
+
+    @unittest.skipUnless(hasattr(os, 'fork'),
+                         'POSIX fork is required: the isolated runner is a script, and a '
+                         'spawn child would re-execute it as __main__')
+    def test_two_processes_check_and_reserve_is_atomic(self):
+        """Two ticks cannot both find the environment idle.
+
+        The check and the reservation are one critical section, so exactly one of two
+        concurrent processes becomes the holder and the other sees it.  The second half
+        repeats the same race with the lock removed, to show the first half can fail.
+        """
+        guarded = self._race(guarded=True)
+        self.assertEqual(sorted(guarded), ['environment_deployment_in_flight', 'reserved'],
+                         'primitive=%s outcomes=%s' % (self.primitive, guarded))
+        slots = self.h.slots()
+        self.assertEqual(len(slots['environments']), 1)
+        self.assertEqual(slots['environments'][gate.ENVIRONMENT]['state'], 'reserved')
+
+        # A fresh environment for the negative control, so the guarded result above
+        # cannot be what the second half is reading.
+        (self.h.slot_path).unlink()
+        unguarded = self._race(guarded=False)
+        self.assertEqual(unguarded, ['reserved', 'reserved'],
+                         'without the lock both readers reserved: %s' % (unguarded,))
+        slots = self.h.slots()
+        self.assertEqual(len(slots['environments']), 1,
+                         'both wrote the same key, so the second overwrote the first')
+
+    def test_a_reservation_that_never_reached_the_bus_is_released(self):
+        """A crash between the reservation and the publish must not lock the host.
+
+        The two writes are the ledger and the slot document.  If the process dies
+        between them, the ledger has no record of the reservation, and the next tick
+        releases it -- but only after the grace, so a crash inside one tick is not
+        mistaken for a completed refusal.
+        """
+        self.h.run('2')
+        path = self.h.root / 'ledger' / 'ledger.json'
+        data = json.loads(path.read_text())
+        self.assertIn('2:' + 'a' * 40, data['requests'])
+        data['requests'].pop('2:' + 'a' * 40)
+        path.write_bytes(gate.canonical(data))
+
+        early = self.h.at + dt.timedelta(seconds=30)
+        self.assertEqual(self.h.cycle(at=early)['changes'], [],
+                         'inside the grace the reservation still holds')
+        self.assertEqual(self.h.slot()['state'], 'reserved')
+        late = self.h.at + gate.RESERVATION_GRACE + dt.timedelta(seconds=30)
+        self.assertEqual(self.h.cycle(at=late)['changes'],
+                         [gate.ENVIRONMENT + ':reservation_never_reached_the_bus'])
+        self.assertEqual(self.h.slot()['state'], 'released')
+        self.h.fresh_canary()
+        self.assertEqual(self.h.run('3')['status'], 'published')

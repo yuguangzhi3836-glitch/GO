@@ -196,7 +196,14 @@ SUPERSEDED_PARAMETERS = {
                            "expected_current_image_id"},),
     "HK_STAGING_DEPLOY": ({"release_id", "candidate_image_id", "candidate_repo_digest",
                            "expected_current_image_id", "canary_evidence_id",
-                           "approval_id"},),
+                           "approval_id"},
+                          # The shape CCV1-85 replaced: the same six facts without the
+                          # candidate's content address. Nothing generates it any more, and
+                          # historical deployments keep their place in the projection with
+                          # an explicit marker rather than being dropped or re-read as
+                          # current.
+                          {"release_id", "candidate_image_id", "candidate_package_sha256",
+                           "expected_current_image_id", "canary_evidence_id", "approval_id"},),
 }
 
 ACTION_PARAMETERS = {
@@ -205,7 +212,8 @@ ACTION_PARAMETERS = {
     "HK_STAGING_CANARY": {"release_id", "candidate_image_id", "candidate_package_sha256",
                           "expected_current_image_id"},
     "HK_STAGING_DEPLOY": {"release_id", "candidate_image_id", "candidate_package_sha256",
-                          "expected_current_image_id", "canary_evidence_id", "approval_id"},
+                          "expected_current_image_id", "canary_evidence_id", "approval_id",
+                          "candidate_contract_sha256"},
     "HK_STAGING_ROLLBACK": {"release_id", "source_deploy_task_id", "approval_id"},
     "HK_STAGING_TEST_PR": {"builder_profile", "source"},
 }
@@ -238,6 +246,7 @@ TASK_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 NONCE_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 IMAGE_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 RELEASE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 INSTANCE_RE = re.compile(r"^(?:i[-Zz]?)?([0-9a-z]{16,20})[Zz]?$")
 
@@ -389,6 +398,34 @@ def parse_time(value):
     if parsed.tzinfo is None:
         raise ValueError("naive_timestamp")
     return parsed.astimezone(dt.timezone.utc)
+
+
+def candidate_digest_binding(task, evidence):
+    """Whether the Evidence names the candidate its Task named -- CCV1-85 (WP-4A).
+
+    A DEPLOY Task under the current contract states the digest of the candidate it is
+    about, and the executor that ran it reports back the digest it loaded and recomputed
+    from the candidate fact. The Command Center cannot recompute that value itself -- the
+    digest has one implementation and it belongs to candidate admission -- but it can
+    refuse the contradiction, which is the part that keeps the plan, the Task and the
+    Evidence from drifting apart as three separate claims.
+
+    Legacy is keyed on the **Task**, not on the Evidence. A historical DEPLOY Task
+    predates the field entirely, so its Evidence is read without one -- that is
+    `LEGACY_EVIDENCE_READ_COMPAT`, and it is bounded by the Task's own contract rather
+    than by a list of agent versions that would have to be maintained forever. A Task
+    that states a digest, and Evidence that omits or contradicts one, is not a legacy
+    record: it is a disagreement, and it is refused.
+    """
+    if task.get("action_id") != "HK_STAGING_DEPLOY":
+        return True
+    parameters = task.get("parameters")
+    claimed = parameters.get("candidate_contract_sha256") if isinstance(parameters, dict) else None
+    if claimed is None:
+        return True
+    stated = evidence.get("candidate_contract_sha256")
+    return (isinstance(stated, str) and stated == claimed
+            and SHA256_RE.fullmatch(stated) is not None)
 
 
 def assertion(state, value, reason, evidence=None):
@@ -1512,7 +1549,7 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
             }
         for key in ("built_image_id", "source_pr_number", "source_commit_sha",
                     "task_canonical_sha256", "deploy_record_id", "deploy_record_sha256",
-                    "rollback_record_id"):
+                    "rollback_record_id", "candidate_contract_sha256"):
             if isinstance(ev.get(key), str):
                 entry["evidence"][key] = ev[key]
         if isinstance(ev.get("agent_version"), str):
@@ -1531,6 +1568,12 @@ def task_records(loaded, task_verifier, evidence_verifier, at, stale_seconds):
             entry.update({"lifecycle": "EVIDENCE_INVALID",
                           "assertion": assertion(STATE_FAILED, "EVIDENCE_TIME_ORDER",
                                                  "started_at is after completed_at", refs)})
+        elif not candidate_digest_binding(task, ev):
+            entry.update({"lifecycle": "EVIDENCE_INVALID",
+                          "assertion": assertion(STATE_FAILED, "EVIDENCE_CANDIDATE_DIGEST_BINDING",
+                                                 "the Evidence does not name the candidate its Task "
+                                                 "named, so the execution cannot be attributed to the "
+                                                 "candidate it claims", refs)})
         elif ev["status"] != "SUCCESS":
             # CC V1-02: a signed non-success status is the failure answer, and it
             # stays the answer even outside the validity window, because a failure
