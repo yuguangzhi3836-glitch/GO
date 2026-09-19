@@ -7,7 +7,8 @@ from go_hotel.db.models import (
  OmnichannelLedgerEntryRow as Ledger,OmnichannelReconciliationRow as Recon,
  FinanceCloseBatchRow as LegacyClose,FinanceCloseLineRow as LegacyLine,SubscriptionInvoiceRow,
  FinanceScopedCloseBatchRow as Close,FinanceScopedCloseLineRow as Line,PaymentOrderFactBindingRow as FactBinding,PaymentOrderRootRow as OrderRoot,
- OrderSupplierFulfillmentRow as Fulfillment,OrderSupplierFulfillmentEventRow as FulfillmentEvent
+ OrderSupplierFulfillmentRow as Fulfillment,OrderSupplierFulfillmentEventRow as FulfillmentEvent,
+ ExternalTruthOperationRow as ExternalTruthOperation,ExternalTruthWebhookReceiptRow as ExternalTruthWebhookReceipt
 )
 def now():return datetime.now(timezone.utc)
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
@@ -15,9 +16,24 @@ def digest(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',
 def out(r):return {c.name:(getattr(r,c.name).isoformat() if isinstance(getattr(r,c.name),datetime) else getattr(r,c.name)) for c in r.__table__.columns}
 class UnifiedMoneyMovementService:
  def create(self,intent_id,b,key,actor):
+  if b.get('mode')=='EXTERNAL_CERTIFIED_FACT':raise ValueError('EXTERNAL_CERTIFIED_FACT_TRUSTED_INGRESS_REQUIRED')
   with SessionLocal() as s:
    if s.bind.dialect.name=='sqlite':s.execute(text('BEGIN IMMEDIATE'))
    result=self.create_in_session(s,intent_id,b,key,actor)
+   s.commit();return result
+ def record_verified_external_fact(self,intent_id,b,key,actor,receipt_id):
+  """Only a durable, signature-verified payment callback receipt may enter this path."""
+  with SessionLocal() as s:
+   if s.bind.dialect.name=='sqlite':s.execute(text('BEGIN IMMEDIATE'))
+   receipt=s.get(ExternalTruthWebhookReceipt,receipt_id)
+   if not receipt or receipt.source_vertical!='PAYMENT' or not receipt.signature_verified or receipt.supplier_state!='SUCCEEDED':raise ValueError('VERIFIED_PAYMENT_CALLBACK_RECEIPT_REQUIRED')
+   op=s.get(ExternalTruthOperation,receipt.external_truth_operation_id)
+   expected={'AUTHORIZATION':'AUTHORIZE','CAPTURE':'CAPTURE','REFUND':'REFUND'}
+   if not op or op.vertical!='PAYMENT' or op.payment_intent_id!=intent_id or expected.get(b.get('movement_type'))!=op.operation_type:raise ValueError('EXTERNAL_PAYMENT_RECEIPT_BINDING_INVALID')
+   external_reference=b.get('external_reference')
+   if not external_reference or (op.external_operation_id and external_reference!=op.external_operation_id):raise ValueError('EXTERNAL_PAYMENT_REFERENCE_BINDING_INVALID')
+   body=dict(b);body['mode']='EXTERNAL_CERTIFIED_FACT';body['evidence']=[{'reference':f'external-webhook-receipt://{receipt_id}','payload_hash':receipt.payload_hash}]
+   result=self.create_in_session(s,intent_id,body,key,actor)
    s.commit();return result
  def create_in_session(self,s,intent_id,b,key,actor):
   """Caller owns the transaction; lock order/payment before updating business facts."""
