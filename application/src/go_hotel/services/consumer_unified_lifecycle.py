@@ -92,7 +92,7 @@ class ConsumerUnifiedLifecycleService:
    if existing and official and s.scalar(select(Event).where(Event.consumer_unified_lifecycle_id==existing.consumer_unified_lifecycle_id,Event.evidence_reference==evidence)):
     return out(existing)|{'stale_ignored':True}
    try:
-    result=self.project_in_session(s,payload,idempotent_if_exists=not official);s.commit();return result
+    result=self.project_in_session(s,payload,idempotent_if_exists=not official,allow_external_verification_upgrade=official);s.commit();return result
    except IntegrityError:
     s.rollback()
     if official:raise
@@ -100,7 +100,7 @@ class ConsumerUnifiedLifecycleService:
     if not existing:raise
     return out(existing)|{'stale_ignored':True}
 
- def project_in_session(self,s,b,*,allow_new_refund_cycle=False,idempotent_if_exists=False):
+ def project_in_session(self,s,b,*,allow_new_refund_cycle=False,idempotent_if_exists=False,allow_external_verification_upgrade=False):
   required=('account_id','vertical','order_id','title','lifecycle_state','payment_state','refund_state','evidence_reference','source_updated_at')
   if any(b.get(x) in (None,'') for x in required):raise ValueError('COMPLETE_VERTICAL_LIFECYCLE_FACT_REQUIRED')
   if b['vertical'] not in VERTICALS or b['lifecycle_state'] not in STATES:raise ValueError('INVALID_VERTICAL_OR_LIFECYCLE_STATE')
@@ -112,7 +112,19 @@ class ConsumerUnifiedLifecycleService:
    if idempotent_if_exists:return out(r)|{'stale_ignored':True}
    existing_at=r.source_updated_at
    if existing_at.tzinfo is None:existing_at=existing_at.replace(tzinfo=timezone.utc)
-   if source_at<=existing_at:return out(r)|{'stale_ignored':True}
+   # A user-import timestamp records receipt of an unverified claim, not the
+   # provider's event clock. The first authenticated provider fact may predate
+   # that receipt. Promote it once, retaining its true source timestamp; normal
+   # stale-event protection resumes for all subsequent provider updates.
+   old_facts=r.facts_json or {};new_facts=b.get('facts') or {}
+   verification_upgrade=(allow_external_verification_upgrade
+    and r.lifecycle_state=='MANUAL_REVIEW'
+    and old_facts.get('order_origin')=='EXTERNAL_OTA'
+    and old_facts.get('source_verification')=='USER_SUBMITTED_PENDING_VERIFICATION'
+    and new_facts.get('source_verification')=='OFFICIAL_PROVIDER'
+    and new_facts.get('transaction_platform')==old_facts.get('transaction_platform')
+    and OFFICIAL_ADAPTERS.get(new_facts.get('source_adapter_id'))==old_facts.get('transaction_platform'))
+   if source_at<=existing_at and not verification_upgrade:return out(r)|{'stale_ignored':True}
    terminal={'CONVERTED_TO_CREDIT','COMPLETED','CANCELLED','FAILED'}
    if r.lifecycle_state in terminal and b['lifecycle_state']!=r.lifecycle_state:raise ValueError('UNIFIED_LIFECYCLE_TERMINAL_STATE_IMMUTABLE')
    rank={'PENDING':0,'CONFIRMED':1,'IN_PROGRESS':2,'COMPLETED':3}
