@@ -172,15 +172,48 @@ jobs:
               check('the_application_tree_is_in_this_checkout', False, 'sparse checkout?')
 
           # 4. the live Hong Kong runtime, against canonical main
+          #
+          # `modules` is the runtime module list an install fact records, so it is read out of
+          # the live commit rather than passed empty: the verifier refuses an empty list by
+          # contract -- an empty module list is a caller that has not said what to prove -- and
+          # a fabricated entry would be indistinguishable from a real one on the day step 5 is
+          # evaluated instead of being NOT_EVALUATED behind step 1.
+          #
+          # The names come from the set this line declares and the bytes from the live commit,
+          # so the list is their intersection. It has to be: the live commit predates the four
+          # modules WP-5 added, and an install fact for a host cannot name a module that was
+          # never installed there. Building the list from this line's nine names alone would
+          # assert that the live commit holds bytes it does not have.
+          live_commit = '9b93274569ed0aaff75f43f2e330aef8acb14335'
+          runtime_prefix = 'hk-staging/source/executor/runtime'
+          sys.path.insert(0, str(repo / runtime_prefix))
+          import install_fact as live_runtime
+          live_modules = []
+          for module_name in live_runtime.RUNTIME_MODULES:
+              blob = repository.object_at(live_commit,
+                                          '%s/%s.py' % (runtime_prefix, module_name))
+              if blob is None:
+                  continue
+              live_modules.append({'name': module_name,
+                                   'sha256': hashlib.sha256(blob[1]).hexdigest(),
+                                   'version': live_runtime.declared_version(blob[1])})
+          check('the_live_commit_holds_modules_an_installation_could_have_recorded',
+                bool(live_modules), live_modules)
           live = P.prove_installation(
               repository, pointer['release_candidate_v1']['source_commit'],
-              {'source_commit': '9b93274569ed0aaff75f43f2e330aef8acb14335'},
-              repository.tree_id('9b93274569ed0aaff75f43f2e330aef8acb14335', ''), [],
-              module_prefix='hk-staging/source/executor/runtime')
+              {'source_commit': live_commit},
+              repository.tree_id(live_commit, ''), live_modules,
+              module_prefix=runtime_prefix)
           check('the_live_runtime_commit_is_not_canonical',
                 P.refusal_code(live) == 'E_COMMIT_NOT_CANONICAL', live['refusal'])
           check('and_it_is_provenance_broken_rather_than_unresolvable',
                 live['refusal']['condition'] == 'PROVENANCE_BROKEN', live['refusal'])
+          # Step 1 refusing is not the whole claim: this is the post-deploy composition, and
+          # the host being a different commit from the authorized one is its own row.
+          live_steps = {step['step']: step['state'] for step in live['steps']}
+          check('and_the_host_is_not_the_commit_that_was_authorized',
+                live_steps.get(P.STEP_INSTALLED_IDENTITY_IS_THE_AUTHORIZED_COMMIT) == P.FAIL,
+                live_steps)
 
           # 5. the CLI writes the verdict the contract describes
           proc = subprocess.run(
