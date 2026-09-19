@@ -9,7 +9,7 @@ def call(fn,*args):
     except ValueError as e:
         code=str(e)
         if code in {'PROPERTY_NOT_FOUND','ROOM_TYPE_NOT_FOUND','INBOX_ITEM_NOT_FOUND','MEDIA_ASSET_NOT_FOUND'}:status=404
-        elif code in {'IDEMPOTENCY_PAYLOAD_MISMATCH','IMPORT_ALREADY_IN_PROGRESS','SUPPLIER_PROVIDER_STATE_ALREADY_USED'}:status=409
+        elif code in {'IDEMPOTENCY_PAYLOAD_MISMATCH','IMPORT_ALREADY_IN_PROGRESS','SUPPLIER_PROVIDER_STATE_ALREADY_USED','MEDIA_ASSET_REVISION_CONFLICT'}:status=409
         elif code in {'SUPPLIER_PROVIDER_VERIFIER_UNAVAILABLE','AUTHORIZATION_UNAVAILABLE'}:status=503
         else:status=422
         raise HTTPException(status,detail=code)
@@ -31,7 +31,7 @@ def product_graph(property_id:str,p:Principal=Depends(supplier_principal)):retur
 @router.get('/properties/{property_id}/operating-snapshot')
 def operating_snapshot(property_id:str,p:Principal=Depends(supplier_principal)):return call(svc.operating_snapshot,p.supplier_id,property_id)
 @router.get('/hotel-webpage')
-def hotel_webpage(p:Principal=Depends(supplier_principal)):return call(svc.webpage_workspace,p.supplier_id)
+def hotel_webpage(property_id:str|None=None,p:Principal=Depends(supplier_principal)):return call(svc.webpage_workspace,p.supplier_id,property_id)
 @router.post('/properties/{property_id}/room-types',status_code=201)
 def room_type(property_id:str,b:Payload,p:Principal=Depends(supplier_principal)):return call(svc.create_room_type,p.supplier_id,p.user_id,property_id,b.model_dump(exclude_none=True))
 @router.post('/properties/{property_id}/sellable-products',status_code=201)
@@ -72,6 +72,29 @@ def upload_media(property_id:str,b:MediaUploadPayload,p:Principal=Depends(suppli
 @router.get('/properties/{property_id}/media-uploads')
 def list_media_uploads(property_id:str,p:Principal=Depends(supplier_principal)):
     return call(media_svc.list_uploads,p.supplier_id,property_id)
+
+class MediaBindingPayload(BaseModel):
+    model_config = {'extra': 'forbid'}
+    expected_revision: int = Field(strict=True, ge=1)
+    role: str
+    room_type_id: str | None = None
+
+class MediaPublicationPayload(BaseModel):
+    model_config = {'extra': 'forbid'}
+    asset_ids: list[str] = Field(min_length=1, max_length=500)
+    confirmed: bool = Field(strict=True)
+
+@router.post('/properties/{property_id}/media-uploads/{asset_id}/binding')
+def bind_media(property_id:str,asset_id:str,b:MediaBindingPayload,p:Principal=Depends(supplier_principal)):
+    return call(media_svc.bind,p.supplier_id,p.user_id,property_id,asset_id,b.model_dump(exclude_none=True))
+
+@router.post('/properties/{property_id}/media-publication-requests')
+def request_media_publication(property_id:str,b:MediaPublicationPayload,p:Principal=Depends(supplier_principal)):
+    return call(media_svc.request_publication,p.supplier_id,p.user_id,property_id,b.model_dump())
+
+@router.get('/properties/{property_id}/media-publication-requests')
+def media_publication_requests(property_id:str,p:Principal=Depends(supplier_principal)):
+    return call(media_svc.publication_requests,p.supplier_id,property_id)
 
 @router.get('/properties/{property_id}/media-uploads/{asset_id}/original')
 def media_upload_original(property_id:str,asset_id:str,p:Principal=Depends(supplier_principal)):

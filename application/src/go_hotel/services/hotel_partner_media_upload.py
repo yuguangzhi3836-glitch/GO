@@ -15,11 +15,12 @@ import uuid
 import warnings
 
 from PIL import Image
+from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
-from go_hotel.db.models import HotelPartnerRoomTypeRow
-from go_hotel.services.hotel_partner_core import hotel_partner_core_service as core
+from go_hotel.db.models import HotelPartnerRoomTypeRow, HotelPartnerPropertyRow, HotelPartnerChangeRequestRow
+from go_hotel.services.hotel_partner_core import hotel_partner_core_service as core, now, ident, out
 from go_hotel.services.media_harvester import (
-    MediaHarvesterService, ALLOWED_ROLES, MAX_IMAGE_BYTES, now_iso,
+    MediaHarvesterService, ALLOWED_ROLES, MAX_IMAGE_BYTES, now_iso, _rights_publishable,
 )
 
 
@@ -45,8 +46,9 @@ class HotelPartnerMediaUploadService:
     def _public(rec, deduplicated=False):
         return {k: rec.get(k) for k in (
             'asset_id', 'property_id', 'room_type_id', 'role', 'sha256',
-            'width', 'height', 'byte_size', 'mime_type', 'state',
+            'width', 'height', 'byte_size', 'mime_type', 'state', 'revision', 'rights_state',
         )} | {'publishable': False, 'deduplicated': deduplicated,
+             'rights_approved': _rights_publishable(rec),
              'original_url': f"/v1/supplier/properties/{rec['property_id']}/media-uploads/{rec['asset_id']}/original"}
 
     def upload(self, supplier_id, actor, pid, body):
@@ -140,9 +142,139 @@ class HotelPartnerMediaUploadService:
 
     def list_uploads(self, supplier_id, pid):
         self._authorize(supplier_id, pid)
-        return [self._public(r) for r in self.cache._index.snapshot()['assets'].values()
+        with SessionLocal() as s:
+            bindings = (core._property(s, pid, supplier_id).operations_json or {}).get('direct_media_bindings', {})
+        return [self._public(r) | {'bound': r['asset_id'] in bindings} for r in self.cache._index.snapshot()['assets'].values()
                 if r.get('property_id') == pid and r.get('supplier_id') == supplier_id
                 and r.get('source_type') == 'HOTEL_DIRECT_UPLOAD']
+
+    def _owned_asset(self, supplier_id, pid, asset_id):
+        rec = self.cache._index.get(asset_id)
+        if rec.get('property_id') != pid or rec.get('supplier_id') != supplier_id or rec.get('source_type') != 'HOTEL_DIRECT_UPLOAD':
+            raise ValueError('MEDIA_ASSET_NOT_FOUND')
+        return rec
+
+    def bind(self, supplier_id, actor, pid, asset_id, body):
+        """Attach an original to this property's draft; a changed role creates a new identity.
+
+        Rights on a previous role/room are never copied to the new binding. No
+        canonical hotel or canonical room identity is inferred from a partner id.
+        """
+        self._authorize(supplier_id, pid)
+        if set(body) - {'expected_revision', 'role', 'room_type_id'}:
+            raise ValueError('MEDIA_BINDING_FIELDS_INVALID')
+        rec = self._owned_asset(supplier_id, pid, asset_id)
+        if type(body.get('expected_revision')) is not int or body['expected_revision'] != rec['revision']:
+            raise ValueError('MEDIA_ASSET_REVISION_CONFLICT')
+        role, room_id = body.get('role'), body.get('room_type_id')
+        if not isinstance(role, str) or role not in ALLOWED_ROLES:
+            raise ValueError('MEDIA_ROLE_INVALID')
+        if room_id is not None and (not isinstance(room_id, str) or not room_id.strip()):
+            raise ValueError('MEDIA_ROOM_TYPE_ID_REQUIRED')
+        if role == 'ROOM' and not room_id:
+            raise ValueError('MEDIA_ROOM_TYPE_ID_REQUIRED')
+        if room_id and role != 'ROOM':
+            raise ValueError('MEDIA_ROOM_ROLE_REQUIRED')
+        self._authorize(supplier_id, pid, room_id)
+        raw = self._read_bytes(rec)
+        if (role, room_id) != (rec['role'], rec.get('room_type_id')):
+            derived = self.upload(supplier_id, actor, pid, {
+                'content_base64': base64.b64encode(raw).decode(), 'role': role,
+                'room_type_id': room_id, 'rights': rec['rights_declaration'],
+            })
+            rec = self._owned_asset(supplier_id, pid, derived['asset_id'])
+        with SessionLocal() as s:
+            prop = s.scalar(select(HotelPartnerPropertyRow).where(
+                HotelPartnerPropertyRow.property_id == pid).with_for_update())
+            if prop is None or prop.supplier_id != supplier_id:
+                raise ValueError('PROPERTY_NOT_FOUND')
+            room = s.get(HotelPartnerRoomTypeRow, room_id) if room_id else None
+            if room_id and (room is None or room.property_id != pid):
+                raise ValueError('ROOM_TYPE_NOT_FOUND')
+            ops = dict(prop.operations_json or {})
+            bindings = dict(ops.get('direct_media_bindings') or {})
+            binding = {'asset_id': rec['asset_id'], 'role': role, 'room_type_id': room_id,
+                       'sha256': rec['sha256'], 'state': 'DRAFT', 'bound_by': actor}
+            bindings[rec['asset_id']] = binding
+            ops['direct_media_bindings'] = bindings
+            prop.operations_json = ops
+            prop.updated_at = now()
+            if room:
+                media = list(room.media_json or [])
+                if not any(isinstance(x, dict) and x.get('asset_id') == rec['asset_id'] for x in media):
+                    room.media_json = media + [binding]
+                    room.updated_at = now()
+            core._audit(s, pid, 'MEDIA_DRAFT_BOUND', 'MEDIA_ASSET', rec['asset_id'],
+                        {'role': role, 'room_type_id': room_id, 'sha256': rec['sha256']}, actor)
+            s.commit()
+        return self._public(rec) | {'bound': True}
+
+    def _request_view(self, supplier_id, pid, request):
+        blockers = []
+        for item in request['proposed_value_json']['assets']:
+            try:
+                rec = self._owned_asset(supplier_id, pid, item['asset_id'])
+                self._read_bytes(rec)
+                if rec['sha256'] != item['sha256']:
+                    raise ValueError('MEDIA_CACHE_INTEGRITY_FAILED')
+                if not _rights_publishable(rec):
+                    blockers.append({'asset_id': item['asset_id'], 'code': 'RIGHTS_REVIEW_REQUIRED', 'label': '图片使用授权待审核'})
+            except ValueError:
+                blockers.append({'asset_id': item['asset_id'], 'code': 'ORIGINAL_UNAVAILABLE', 'label': '图片原文件需重新核验'})
+        blockers.append({'code': 'CANONICAL_PUBLICATION_REVIEW_REQUIRED', 'label': '待管理员核验正式酒店、房型对应关系并通过网页发布门禁'})
+        status = 'PUBLISH_REQUESTED' if request['state'] == 'SUBMITTED' else 'REVIEW_' + request['state']
+        return request | {'publication_state': status, 'published': False,
+                          'blockers': blockers, 'supplier_can_publish': False}
+
+    def request_publication(self, supplier_id, actor, pid, body):
+        self._authorize(supplier_id, pid)
+        if set(body) - {'asset_ids', 'confirmed'} or body.get('confirmed') is not True:
+            raise ValueError('MEDIA_PUBLICATION_CONFIRMATION_REQUIRED')
+        ids = body.get('asset_ids')
+        if not isinstance(ids, list) or not 0 < len(ids) <= 500 or any(not isinstance(x, str) or not x for x in ids) or len(set(ids)) != len(ids):
+            raise ValueError('MEDIA_PUBLICATION_ASSETS_REQUIRED')
+        with SessionLocal() as s:
+            prop = s.scalar(select(HotelPartnerPropertyRow).where(
+                HotelPartnerPropertyRow.property_id == pid).with_for_update())
+            if prop is None or prop.supplier_id != supplier_id:
+                raise ValueError('PROPERTY_NOT_FOUND')
+            bindings = (prop.operations_json or {}).get('direct_media_bindings') or {}
+            assets = []
+            for asset_id in sorted(ids):
+                rec = self._owned_asset(supplier_id, pid, asset_id)
+                if asset_id not in bindings:
+                    raise ValueError('MEDIA_BINDING_REQUIRED')
+                self._read_bytes(rec)
+                room = s.get(HotelPartnerRoomTypeRow, rec['room_type_id']) if rec.get('room_type_id') else None
+                if rec.get('room_type_id') and (room is None or room.property_id != pid):
+                    raise ValueError('ROOM_TYPE_NOT_FOUND')
+                assets.append({key: rec.get(key) for key in ('asset_id', 'sha256', 'revision', 'role', 'room_type_id')})
+            proposal = {'assets': assets, 'scope': 'PARTNER_DRAFT_MEDIA', 'requires_canonical_review': True}
+            fingerprint = hashlib.sha256(json.dumps(proposal, sort_keys=True).encode()).hexdigest()
+            existing = s.scalars(select(HotelPartnerChangeRequestRow).where(
+                HotelPartnerChangeRequestRow.property_id == pid,
+                HotelPartnerChangeRequestRow.field_group == 'MEDIA_PUBLICATION',
+                HotelPartnerChangeRequestRow.state == 'SUBMITTED')).all()
+            for item in existing:
+                if item.proposed_value_json.get('fingerprint') == fingerprint:
+                    return self._request_view(supplier_id, pid, out(item)) | {'deduplicated': True}
+            request = HotelPartnerChangeRequestRow(change_request_id=ident('hcr'), property_id=pid,
+                field_group='MEDIA_PUBLICATION', proposed_value_json=proposal | {'fingerprint': fingerprint},
+                evidence_json=[], state='SUBMITTED', requested_by=actor, created_at=now())
+            s.add(request)
+            core._audit(s, pid, 'MEDIA_PUBLICATION_REQUESTED', 'CHANGE_REQUEST', request.change_request_id,
+                        {'asset_count': len(assets), 'fingerprint': fingerprint}, actor)
+            s.commit()
+            return self._request_view(supplier_id, pid, out(request)) | {'deduplicated': False}
+
+    def publication_requests(self, supplier_id, pid):
+        self._authorize(supplier_id, pid)
+        with SessionLocal() as s:
+            rows = s.scalars(select(HotelPartnerChangeRequestRow).where(
+                HotelPartnerChangeRequestRow.property_id == pid,
+                HotelPartnerChangeRequestRow.field_group == 'MEDIA_PUBLICATION')
+                .order_by(HotelPartnerChangeRequestRow.created_at.desc())).all()
+            return [self._request_view(supplier_id, pid, out(row)) for row in rows]
 
     def _read_bytes(self, rec):
         name = rec.get('cache_file', '')
