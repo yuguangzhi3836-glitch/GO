@@ -1,4 +1,5 @@
 import os
+import sys,types
 os.environ['DATABASE_URL']='sqlite:////tmp/go_money_movement_test.db'
 import pytest
 from datetime import datetime,timezone
@@ -28,3 +29,23 @@ def test_close_blocks_when_capture_reconciliation_is_missing():
  i=root();move(i,'AUTHORIZATION','a');move(i,'CAPTURE','c');c=svc.prepare_close(close_scope(),'maker');assert c['state']=='BLOCKED' and any(x.startswith('RECON_MISSING:') for x in c['blockers_json'])
 def test_external_executor_required_blocks_close():
  i=root();svc.create(i['payment_intent_id'],{'movement_type':'AUTHORIZATION','mode':'EXTERNAL_SANDBOX','evidence':[{'reference':'sandbox://pending'}]},'external','finance');c=svc.prepare_close(close_scope(),'maker');assert c['state']=='BLOCKED' and c['blockers_json']
+
+
+def test_close_blocks_when_incident_checker_is_unavailable(monkeypatch):
+ module=types.ModuleType('go_hotel.services.production_connector_runtime')
+ class BrokenRuntime:
+  def unresolved_incident_blockers(self,*args):raise RuntimeError('checker unavailable')
+ module.production_connector_runtime_service=BrokenRuntime()
+ monkeypatch.setitem(sys.modules,'go_hotel.services.production_connector_runtime',module)
+ c=svc.prepare_close(close_scope(),'maker')
+ assert c['state']=='BLOCKED' and 'FINANCE_INCIDENT_CHECK_UNAVAILABLE' in c['blockers_json']
+
+def test_close_approval_rechecks_incident_authority(monkeypatch):
+ c=svc.prepare_close(close_scope(),'maker')
+ assert c['state']=='PENDING_APPROVAL'
+ module=types.ModuleType('go_hotel.services.production_connector_runtime')
+ class BrokenRuntime:
+  def unresolved_incident_blockers(self,*args):raise RuntimeError('checker unavailable')
+ module.production_connector_runtime_service=BrokenRuntime()
+ monkeypatch.setitem(sys.modules,'go_hotel.services.production_connector_runtime',module)
+ with pytest.raises(ValueError,match='SCOPE_CHANGED_REPREPARE'):svc.approve_close(c['finance_scoped_close_batch_id'],'checker')
